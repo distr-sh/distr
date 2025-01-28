@@ -47,10 +47,10 @@ export default defineConfig({
         label: 'Self hosting',
         autogenerate: {directory: 'docs/self-hosting'},
       },
-      // {
-      //   label: 'Integrations',
-      //   autogenerate: {directory: 'integrations'},
-      // },
+      {
+        label: 'Integrations',
+        autogenerate: {directory: 'docs/integrations'},
+      },
     ],
     prerender: true,
   }), tailwind()],
