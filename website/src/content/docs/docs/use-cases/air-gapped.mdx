@@ -1,0 +1,24 @@
+---
+title: Air Gapped Environments
+description: An explanation on the Air gapped use-case
+sidebar:
+  order: 3
+---
+
+[Air-gapped](https://glasskube.dev/glossary/air-gapped-meaning/) environments are particularly challenging deployment targets for ISVs due to their highly restricted and isolated nature. In these setups, not only are ISVs unable to push updates to the customer’s environment, but the software purchased from the ISV is also unable to operate in a network with internet access. Serving air-gapped customers requires ISVs to navigate a unique set of peculiarities and challenges inherent to these environments.
+
+## Difficulties of Air-Gapped Environments
+
+- **Updates cannot be delivered through public registries**: Air-gapped environments block access to external networks, requiring updates to be distributed through offline methods such as portable storage devices or private registries.
+- **Limited communication channels**: Since no internet access is available, troubleshooting and support must rely on offline diagnostics or highly secure, manual transfer methods.
+- **Compliance overhead**: ISVs may need to adhere to strict regulatory or security protocols when providing software to air-gapped environments, adding complexity to the deployment process.
+- **Longer deployment cycles**: Delivering software updates and patches often involves time-consuming manual processes, which can delay critical fixes or improvements.
+- **Monitoring limitations**: Real-time monitoring tools often rely on internet connectivity, meaning ISVs must provide alternative solutions for tracking performance and uptime in an air-gapped environment.
+- **Secure data transfer**: Transferring logs, metrics, or error reports back to the ISV for analysis may require special secure methods, such as physical media or encrypted file transfers.
+- **Training and documentation needs**: Customers in air-gapped environments often require more detailed training and comprehensive documentation since ISV-provided support may not always be immediately accessible.
+
+## How does Distr tackle these challenges?
+
+:::info
+Are you serving Air-gapped customer? If so [get in touch](https://cal.glasskube.com/team/gk/demo?duration=30) and we can walk you through the Air gapped specific features.
+:::

@@ -9,7 +9,7 @@ import {Aside} from '@astrojs/starlight/components';
 
 ## Components
 
-Distr is a comprehensive platform available both as a SaaS solution and as a fully self-hostable option. It allows ISVs to deliver their applications to on-premises customers through a centralized platform. This platform enables end customers to access available application versions and maintain control over when and where installations are deployed.
+[Distr](https://distr.sh/) is a comprehensive platform available both as a [SaaS](https://glasskube.dev/glossary/saas-definition/) solution and as a fully [self-hostable](https://glasskube.dev/glossary/self-managed-software/) option. It allows ISVs to deliver their applications to on-premises customers through a centralized platform. This platform enables end customers to access available application versions and maintain control over when and where installations are deployed.
 
 The platform consists of two key components:
 
@@ -18,23 +18,25 @@ The platform consists of two key components:
 
 This architecture ensures that communication and updates between the ISV and their end customers is as close to real time as possible, facilitating efficient application lifecycle management.
 
-:::info
-Ready to get started? Create your Distr account [here](https://glasskube.cloud/signup.html) and then following the onboarding steps here
-:::
+<Aside type="note" title="Info">
+  Ready to get started? Create your Distr account
+  [here](https://glasskube.cloud/signup.html) and then following the onboarding
+  steps here
+</Aside>
 
 ## Two Portals, One Platform
 
-The Distr platform was designed with ISVs in mind, prioritizing their success by ensuring end customers are satisfied. To achieve this, the platform includes two distinct control consoles.
+The Distr platform was designed with [ISVs in mind](https://glasskube.dev/blog/5-ways-to-succeed-without-access-to-customer-environments/), prioritizing their success by ensuring end customers are satisfied. To achieve this, the platform includes two distinct control consoles.
 
-Upon signing up, ISVs are greeted with the default view: the "Vendor Platform." This can be verified from the top-right corner of the interface, this console allows ISVs to onboard customer profiles and invite their customers to the Distr platform. When an ISV sends an invite link, customers are directed to the "Customer Portal." This portal provides customers with access to the ISV’s application, available versions, and tools to manage the deployment and lifecycle of the application.
+Upon signing up, ISVs are greeted with the default view: the **"Vendor Platform"**. This can be verified from the top-right corner of the interface, this console allows ISVs to onboard customer profiles and invite their customers to the Distr platform. When an ISV sends an invite link, customers are directed to the **"Customer Portal"**. This portal provides customers with access to the ISV’s application, available versions, and tools to manage the deployment and lifecycle of the application.
 
-![vendor-portal](../../../../assets/docs/getting-started/how-it-works/vendor-portal.png)
+![vendor-portal](https://github.com/user-attachments/assets/d470a418-cc90-41e2-bf28-00f0e0b7e9ed)
 
 The Customer Portal takes a "less is more" approach, offering only the essential features customers need to manage the applications they’ve purchased.
 
-![customer-portal](../../../../assets/docs/getting-started/how-it-works/customer-portal.png)
+![customer-portal](https://github.com/user-attachments/assets/ccf16563-aaf4-4ac3-a9b6-c64f52be0259)
 
-ISVs also have the option to white-label the Customer Portal, aligning it with their corporate [branding](/products/cloud/docs/product/branding). This creates a impression of an extension of the ISV’s product suite, often leaving end customers unaware that a third-party platform powers the delivery of their on-premises offering.
+ISVs also have the option to white-label the Customer Portal, aligning it with their corporate [branding](https://glasskube.dev/docs/product/branding/). This creates a impression of an extension of the ISV’s product suite, often leaving end customers unaware that a third-party platform powers the delivery of their on-premises offering.
 
 ## Programmatic access
 
@@ -42,11 +44,11 @@ In addition to the graphical user interfaces, Distr provides programmatic access
 
 ### Distr API
 
-The Distr API, available at [API endpoint], allows users to bypass the GUI for direct programmatic interaction. The API used in Distr is the same as the open-source version, ensuring feature parity between the SaaS platform and the API. This guarantees a consistent experience regardless of the access method chosen.
+The [Distr API](https://glasskube.dev/products/cloud/docs/integrations/distr-cloud-api/), allows users to bypass the GUI for direct programmatic interaction. The API used in Distr is the same as the open-source version, ensuring feature parity between the SaaS platform and the API. This guarantees a consistent experience regardless of the access method chosen.
 
 ### Distr SDK
 
-The Distr SDK enables users and developers to embed Distr’s application management features directly into their own applications or to even write new applications that leverage the SDK. While SDK development runs in parallel with Distr development, there may be occasional gaps in feature parity due to development speed and the impracticality of implementing certain platform-specific features in the SDK. Nevertheless, the SDK provides a powerful way to integrate Distr functionality into your workflows, and we encourage you to explore its capabilities.
+The [Distr SDK](https://glasskube.dev/products/cloud/docs/integrations/distr-cloud-sdk/) enables users and developers to embed Distr’s application management features directly into their own applications or to even write new applications that leverage the SDK. While SDK development runs in parallel with Distr development, there may be occasional gaps in feature parity due to development speed and the impracticality of implementing certain platform-specific features in the SDK. Nevertheless, the SDK provides a powerful way to integrate Distr functionality into your workflows, and we encourage you to explore its capabilities.
 
 <Aside type="note" title="Info">
   For more in-depth information on both the Distr API and SDK, head over to the

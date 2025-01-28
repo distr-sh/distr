@@ -1,0 +1,14 @@
+---
+title: Distr Agents
+description: WIP
+sidebar:
+  order: 3
+---
+
+Alongside the Distr server, complete the core of the Distr platform are its lightweight agents, designed to be installed in the customer's environment alongside the ISV’s application. These agents provide the functionality necessary for managing application life cycles in decentralized and customer-controlled environments, without requiring direct access to the deployment target.
+
+Distr offers two pre-built agent types, tailored for different deployment scenarios: one for Helm and another for Docker Compose. These agents handle critical lifecycle tasks, including guided installation, updates, and performing health checks. By automating these processes, the agents simplify the operational burden for end customers and reduce the need for ISV intervention.
+
+Beyond lifecycle management, the agents are equipped to collect and provide essential metrics such as application health status and version information. They also aggregate logs, ensuring that troubleshooting can proceed even if a deployment fails and cannot report the error itself.
+
+Distr agents can be seamlessly embedded into the ISV's Helm charts and Docker Compose files, ensuring product discretion while supporting a diverse range of deployment environments. This integration provides customers with a consistent, reliable experience while maintaining the ISV's branding and operational autonomy.

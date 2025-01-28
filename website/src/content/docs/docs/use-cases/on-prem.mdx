@@ -1,0 +1,54 @@
+---
+title: On-premises Deployments
+description: An explanation on the On-prem use-case
+sidebar:
+  order: 1
+---
+
+[On-premises](https://glasskube.dev/glossary/on-premises-definition/) deployment refers to the delivery of commercial software to environments where the [ISV](https://glasskube.dev/glossary/isv-meaning/) has no direct control over the infrastructure. If there is a shared responsibility between the ISV and the end customer, this is referred to as [Bring Your Own Cloud (BYOC)](https://glasskube.dev/glossary/byoc-definition/). In cases where the external environment or device is managed entirely by the ISV, this falls under internally deployed applications category.
+
+For various reasons, enterprise software consumers often request that ISV software be deployed in their on-premises environments. These include traditional data centers as well as customer-operated cloud accounts. In these types of scenarios, customers want to use the ISV’s software but prefer to host it internally, taking full responsibility for its maintenance, upgrades, and day-to-day operations. This approach provides key benefits for customers, such as ensuring no proprietary data leaves their internal domain and maximizing the use of pre-purchased compute resources or discounted infrastructure.
+
+## Difficulties of On-Prem Deployments
+
+- Software updates cannot be pushed to these environments.
+- Communication challenges often require calls and manual coordination.
+- Troubleshooting is complex due to limited visibility into customer environments.
+- No standardized way to export logs or uptime metrics.
+- License management is often clunky or reliant on trust-based systems.
+- Onboarding processes are typically long and labor-intensive.
+- ISVs lack visibility into customer states and configurations.
+
+## How does Distr help?
+
+Distr bridges the gap between ISVs and on-prem customers by acting as a centralized platform designed to simplify deployment and management challenges.
+
+### Software updates
+
+:::info
+Distr serves as an intermediary between the ISV and the end customer. The platform can be white-labeled with the ISV's branding, offering a seamless user experience that integrates directly with the ISV’s Helm charts or Docker Compose files. This ensures end customers receive a unified solution that works right out of the box.
+:::
+
+Rather than pushing updates, Distr follows a pull-based approach. New software updates are made available on the platform, and end customers can choose when to install them based on their schedules and needs. Notifications can be configured to inform customers when a new version is ready, but the final decision to install remains entirely in their hands. This approach respects the autonomy of the end customer while maintaining an efficient update process.
+
+By using Distr, ISVs can confidently deliver on-prem deployments, improve communication, and deliver a better experience for both their team and their customers.
+
+### Communication
+
+The unified Distr platform, with its distinct [Vendor](https://glasskube.dev/products/cloud/docs/product/vendor-portal/) and [Customer Portals](https://glasskube.dev/products/cloud/docs/product/customer-portal/), provides a shared view of deployment health and configuration data to both parties. This ensures both ISVs and their end customers are working from the same set of information, enabling far more effective communication. The platform can also automatically alert end customers about key updates, such as the availability of new versions or any issues with deployment health. By consolidating shared data into one unified view, the need for frequent calls is significantly reduced, improving collaboration.
+
+### Troubleshooting
+
+In addition to sharing uptime metrics, Distr makes Helm and Docker [logs](http://localhost:3000/products/cloud/docs/product/customer-portal/#2-access-to-view-current-deployment-logs) accessible directly from the dashboard. This allows ISVs to identify issues in real time and determine the best course of action to resolve them. With all relevant information at their fingertips, troubleshooting becomes faster and more efficient for both ISVs and customers.
+
+### Uptime metrics and logs export
+
+By default, uptime metrics and [logs](https://glasskube.dev/products/cloud/docs/product/customer-portal/#2-access-to-view-current-deployment-logs) are available to both the ISV and the end customer. There’s no need to manually log into a VM or Kubernetes cluster to retrieve health statuses or debug information. This shared access saves time and improves efficiency for both parties.
+
+### License management
+
+An upcoming feature will give ISVs extensive flexibility over license management. ISVs will have granular control over feature availability, contract terms, and extensions, making it easier to customize and manage customer agreements. Distr is committed to making this process intuitive and efficient.
+
+### Onboarding
+
+Onboarding is straightforward with Distr’s [built-in wizard](https://glasskube.dev/products/cloud/docs/getting-started/quickstart/#follow-the-onboarding-wizard-to-get-started). Adding Docker and Helm applications, as well as onboarding new customers, is quick and intuitive. Once a customer is registered under the ISV’s account, they automatically receive an email with their credentials to access the Customer Portal, ensuring a smooth onboarding process.

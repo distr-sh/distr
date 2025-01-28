@@ -3,7 +3,6 @@ import {defineConfig} from 'astro/config';
 import starlight from '@astrojs/starlight';
 
 import tailwind from '@astrojs/tailwind';
-
 // https://astro.build/config
 export default defineConfig({
   site: 'https://distr.sh',
@@ -32,18 +31,18 @@ export default defineConfig({
           label: 'Getting started',
           autogenerate: {directory: 'docs/getting-started'},
         },
-        // {
-        //   label: 'Guides',
-        //   autogenerate: {directory: 'guides'},
-        // },
-        // {
-        //   label: 'Use cases',
-        //   autogenerate: {directory: 'use-cases'},
-        // },
-        // {
-        //   label: 'Product',
-        //   autogenerate: {directory: 'product'},
-        // },
+        {
+          label: 'Guides',
+          autogenerate: {directory: 'docs/guides'},
+        },
+        {
+          label: 'Use cases',
+          autogenerate: {directory: 'docs/use-cases'},
+        },
+        {
+          label: 'Product',
+          autogenerate: {directory: 'docs/product'},
+        },
         {
           label: 'Self hosting',
           autogenerate: {directory: 'docs/self-hosting'},

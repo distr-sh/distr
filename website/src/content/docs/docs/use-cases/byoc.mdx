@@ -1,0 +1,14 @@
+---
+title: Bring Your Own Cloud (BYOC)
+description: An explanation on the BYOC use-case
+sidebar:
+  order: 2
+---
+
+[BYOC](https://glasskube.dev/glossary/byoc-definition/) deployments involve delivering commercial software to environments where the ISV has some level of shared responsibility or permission to access and manage the customer-owned target deployment environment.
+
+This model is well-suited for end customers who may lack extensive infrastructure expertise but still require third-party software to be deployed within their own data centers or cloud environments. These customers might have a small or non-existent technical team and are often comfortable granting the ISV access to a dedicated cloud account or direct access to devices within their infrastructure for management purposes.
+
+The key distinction between [BYOC and on-prem deployments](https://glasskube.dev/blog/replicated-vs-apollo-vs-octopus-deploy-vs-glasskube-cloud/#the-key-differentiator-push-vs-pull-deployments) is the approach to software updates. In BYOC scenarios, updates can be both pulled by the end customer and pushed directly by the ISV. This added flexibility simplifies update management for customers who may prefer or require additional support.
+
+When onboarding a customer, ISVs can determine whether BYOC support is needed. If so, the platform will enable upgrade-pushing capabilities, allowing ISVs to manage updates proactively. Additionally, BYOC deployments provide ISVs with the ability to customize configurations, such as Helm values, which are typically reserved for end customers in the on-prem deployment model. This customization capability allows ISVs to tailor deployments to meet specific customer requirements.
