@@ -10,7 +10,7 @@ To install Distr in Kubernetes, simply run:
 
 ```shell
 helm upgrade --install --wait --namespace distr --create-namespace \
-  distr oci://ghcr.io/glasskube/charts/distr --version 0.13.2 \
+  distr oci://ghcr.io/glasskube/charts/distr --version 1.0.0 \
   --set postgresql.enabled=true
 ```
 
