@@ -1,12 +1,11 @@
 ---
 title: What is Distr?
-description: distr.sh is an open-source software distribution platform?
+description: distr.sh is an Open Source software distribution platform?
 sidebar:
   order: 1
 ---
 
-[Distr](https://distr.sh/) is an open-source commercial software distribution platform designed for [Independent Software Vendors (ISVs)](https://glasskube.dev/glossary/isv-meaning/). It supports ISVs in delivering their software solutions to end customers operating in complex, customer-controlled environments. These environments feature diverse deployment configurations, including [on-premises](https://glasskube.dev/glossary/on-premises-definition/), [self-hosted](https://glasskube.dev/glossary/self-managed-software/), [Bring Your Own Cloud (BYOC)](https://glasskube.dev/glossary/byoc-definition/), [air-gapped](https://glasskube.dev/glossary/air-gapped-meaning/) systems, and private clouds.
-[Distr](https://distr.sh/) is an open-core commercial software distribution platform designed for [Independent Software Vendors (ISVs)](https://glasskube.dev/glossary/isv-meaning/). It supports ISVs in delivering their software solutions to end customers operating in complex, customer-controlled environments. These environments feature diverse deployment configurations, including [on-premises](https://glasskube.dev/glossary/on-premises-definition/), [self-hosted](https://glasskube.dev/glossary/self-managed-software/), [Bring Your Own Cloud (BYOC)](https://glasskube.dev/glossary/byoc-definition/), [air-gapped](https://glasskube.dev/glossary/air-gapped-meaning/) systems, and private clouds.
+[Distr](https://distr.sh/) is an Open Source commercial software distribution platform designed for [Independent Software Vendors (ISVs)](https://glasskube.dev/glossary/isv-meaning/). It supports ISVs in delivering their software solutions to end customers operating in complex, customer-controlled environments. These environments feature diverse deployment configurations, including [on-premises](https://glasskube.dev/glossary/on-premises-definition/), [self-hosted](https://glasskube.dev/glossary/self-managed-software/), [Bring Your Own Cloud (BYOC)](https://glasskube.dev/glossary/byoc-definition/), [air-gapped](https://glasskube.dev/glossary/air-gapped-meaning/) systems, and private clouds.
 
 The platform is also designed to support ISVs operating edge locations or devices where they control the infrastructure. Distr was developed in response to the increasing number of ISVs managing forward-deployed environments and devices, where [traditional deployment](https://glasskube.dev/blog/on-premises-vs-cloud-vs-byoc/) and management tools fell short. The platform delivers the same robust features ISVs rely on for on-prem customers but tailored to meet the unique challenges of their complex edge locations.
 
