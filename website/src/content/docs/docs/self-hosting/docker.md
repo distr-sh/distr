@@ -1,14 +1,14 @@
 ---
 title: Docker Compose
-description: Self-hosting distr.sh with Docker Compose
+description: Self-hosting Distr with Docker Compose
 sidebar:
   order: 1
 ---
 
-The easiest way to get started hosting your own distr.sh Hub instance is with Docker Compose.
+The easiest way to get started hosting your own Distr Hub instance is with Docker Compose.
 For this, you need a working installation of Docker, as well as the Docker Compose plugin.
 
-First, download and unpack the distr.sh Docker Compose deployment manifest from the latest release:
+First, download and unpack the Distr Docker Compose deployment manifest from the latest release:
 
 <!-- TODO: update release version automatically? -->
 

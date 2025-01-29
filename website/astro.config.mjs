@@ -8,7 +8,7 @@ export default defineConfig({
   site: 'https://distr.sh',
   integrations: [
     starlight({
-      title: 'distr.sh Docs',
+      title: 'Distr Docs',
       editLink: {
         baseUrl: 'https://github.com/glasskube/distr.sh/tree/main',
       },

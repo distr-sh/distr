@@ -1,5 +1,5 @@
 ---
-title: What is distr.sh?
+title: What is Distr?
 description: distr.sh is an open-source software distribution platform?
 sidebar:
   order: 1

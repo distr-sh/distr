@@ -1,6 +1,6 @@
 ---
 title: Kubernetes
-description: Self-hosting distr.sh with Kubernetes
+description: Self-hosting Distr with Kubernetes
 sidebar:
   order: 2
 ---
