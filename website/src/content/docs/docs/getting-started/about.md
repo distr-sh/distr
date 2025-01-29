@@ -9,7 +9,7 @@ sidebar:
 
 The platform is also designed to support ISVs operating edge locations or devices where they control the infrastructure. Distr was developed in response to the increasing number of ISVs managing forward-deployed environments and devices, where [traditional deployment](https://glasskube.dev/blog/on-premises-vs-cloud-vs-byoc/) and management tools fell short. The platform delivers the same robust features ISVs rely on for on-prem customers but tailored to meet the unique challenges of their complex edge locations.
 
-Distr is built on a hub and spoke model where ISV can have a centralized view of all of their dispersed customer or internal deployments. The centralized control plane can be accessed via the GUI, API of SDK.
+Distr is built on a hub and spoke model where ISV can have a centralized view of all of their dispersed customer or internal deployments. The centralized control plane can be accessed via the GUI, API or SDK.
 
 The platform aims to deliver features that aid in the delivery, management and licensing of [“on-premises“ ready](https://glasskube.dev/white-paper/building-blocks/) applications.
 
