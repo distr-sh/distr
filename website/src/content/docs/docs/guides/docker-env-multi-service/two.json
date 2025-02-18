@@ -1,0 +1,9 @@
+[
+  "HOME=/home/app",
+  "HOSTNAME=6e2a1001f79f",
+  "PARTLY_SHARED_ENV=ONE_AND_TWO",
+  "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+  "SERVER_NAME=TWO",
+  "SHARED_ENV_DOCS_URL=https://distr.sh/docs",
+  "SHARED_ENV_PRODUCT=Distr"
+]

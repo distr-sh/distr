@@ -79,7 +79,7 @@ As the last step, you can deploy your newly onboarded docker app to the new depl
 **Environment Variables**
 
 The entered environment variables will be passed unmodified to the `docker compose` process via the `--env-file` argument.
-For more information on how to use them, please refer to the [official Docker documentation](https://docs.docker.com/compose/how-tos/environment-variables/).
+For more information on how to use them, please refer to [our guide on working with environment variables](/docs/guides/docker-env-var-template/).
 
 ### Use an existing deployment environment
 

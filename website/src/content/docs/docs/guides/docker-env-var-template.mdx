@@ -1,0 +1,119 @@
+---
+title: Configure Docker Environment Variables
+description: 'With Distr you can define environment variable templates for deploying Docker applications. Tip: With docker compose you can reference variables in multiple services.'
+sidebar:
+  order: 4
+---
+
+import {Aside, Code, TabItem, Tabs} from '@astrojs/starlight/components';
+import dockerComposeBasic from './docker-env-basic/docker-compose.yaml?raw';
+import envBasic from './docker-env-basic/.env?raw';
+import dockerComposeMultiService from './docker-env-multi-service/docker-compose.yaml?raw';
+import envMultiService from './docker-env-multi-service/.env?raw';
+import oneJson from './docker-env-multi-service/one.json?raw';
+import twoJson from './docker-env-multi-service/two.json?raw';
+import threeJson from './docker-env-multi-service/three.json?raw';
+
+Distr allows users to define environment variable templates for Docker applications.
+Users can configure and customize environment variables before deploying an application.
+
+In this guide, builds on top the [onboard a Docker application](/docs/guides/onboarding-a-docker-app/) and explains the
+environment variable templates in more detail.
+
+# What is an Environment Variable Template?
+
+Environment variables are used to pass deployment specific values to your application.
+With Distr, you can define a template for these variables, allowing users to customize them before deployment and ensuring all necessary values are set.
+
+This setup consists of three parts:
+
+1. A **parameterized Docker Compose file** that references dynamic variables.
+2. A **template file** that provides default values for those variables, allowing end users to modify them in Distr before deployment.
+3. The actual **environment** configured during the deployment of the application.
+
+<Aside type="caution">
+  It is important to note that updating the environment template will not update
+  the environment file for existing deployments. Existing deployments will need
+  to add the new variables manually when they release a new version.
+</Aside>
+
+Here’s an example of how it works:
+
+<Aside type="tip">
+  Using `:?error` ensures that the template variable must be set, else it will
+  not start
+</Aside>
+
+The docker compose file will be the same for all deployments that use that specific version of the application.
+The environment file can be kustomize for each deployment
+
+<Tabs>
+  <TabItem label="docker-compose.yaml">
+    <Code code={dockerComposeBasic} lang="yaml" />
+  </TabItem>
+  <TabItem label=".env">
+    <Code code={envBasic} lang="dotenv" />
+  </TabItem>
+</Tabs>
+
+You can execute this example with the following command:
+
+```shell
+docker compose up --env .env
+```
+
+# Referencing environment variables in multiple services
+
+<Aside type="caution">
+  As the Distr agent **does not** mount the `.env` file as file into the
+  containers, but provides the variables separately, so you have fine control
+  over which service is able to access which env variable.
+</Aside>
+
+You need to pass the environment variables to the services in the `docker-compose.yaml` file.
+
+If multiple services need the same environment variables, you can define them in `x-` sections of the `docker-compose.yaml` file.
+
+<Tabs>
+  <TabItem label="docker-compose.yaml">
+    <Code code={dockerComposeMultiService} lang="yaml" />
+  </TabItem>
+  <TabItem label=".env">
+    <Code code={envMultiService} lang="dotenv" />
+  </TabItem>
+</Tabs>
+
+You can execute this example with the following command:
+
+```shell
+docker compose up --env .env
+```
+
+When running the docker compose file you will be able to see following output for the webservers `/env` endpoint:
+
+<Tabs>
+  <TabItem label="service one">
+    <Code
+      code={oneJson}
+      lang="json"
+      title="http://localhost:3001/env"
+      frame="terminal"
+    />
+  </TabItem>
+  <TabItem label="service two">
+    <Code
+      code={twoJson}
+      lang="json"
+      title="http://localhost:3002/env"
+      frame="terminal"
+    />
+  </TabItem>
+  <TabItem label="service three">
+    <Code
+      code={threeJson}
+      lang="json"
+      title="http://localhost:3003/env"
+      frame="terminal"
+    />
+  </TabItem>
+</Tabs>
