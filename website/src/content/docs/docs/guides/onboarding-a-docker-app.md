@@ -19,31 +19,31 @@ Therefore, if you want to onboard a new Docker App, you need to have a Docker Co
 
 In the Distr web interface, navigate to the **Applications** section in the sidebar and click on the **Add application** button in the top right corner.
 
-You will be asked to enter a name. The default type of the application is **Docker** already:
+You will be asked to enter a name and select the type of the application:
 
 ![Add application](../../../../assets/docs/guides/docker_add_application.png)
 
-After you have clicked on the **Create** button, the list of applications will show your new app.
+After you have clicked on the **Create Application** button, you will be redirected to the detailed view of this application.
+In this view you can manage the versions of the application. 
 
-## Creating a first version
+![Application Detail View](../../../../assets/docs/guides/docker_app_detail.png)
 
-To add a new version to your Docker App, click on the **Manage versions** button in the application list:
+### Creating a first version
 
-![Manage versions](../../../../assets/docs/guides/docker_manage_versions.png)
-
-A modal will open where you can add a new version by entering a name and the corresponding Docker Compose file.
-In this example, we will upload a file containing Gitea and a Postgres database,
+To add a first version to your Docker App, enter the version name and your Docker Compose file in the "New Version" form.
+In this example we will upload a file containing Gitea and a Postgres database,
 whose source can be found [here](https://github.com/docker/awesome-compose/blob/master/gitea-postgres/compose.yaml) (we additionally pin the version to `1.23.1`
 and make the password an environment variable).
 
 You can optionally add a template for the environment variables that your Docker Compose file uses.
-The template will be shown to the user when they deploy this version to a deployment environment.
+The template will be shown to the user when they deploy this version to a deployment environment. 
+In this example we enter a reminder for the user to set the database password, as the deployment would fail otherwise. 
 
 ![Add version](../../../../assets/docs/guides/docker_add_version.png)
 
-Click on the **Create** button to add the version to your Docker App.
+Click on the **Create New Version** button to add the version to your Docker App.
 
-## Adding a new version
+### Adding further versions
 
 After you have created the version, you can see it in the list of versions:
 
