@@ -4,162 +4,151 @@ description: While running the Distr agent on Windows or Linux is straightforwar
 sidebar:
   order: 6
 ---
+import {Aside, Code, TabItem, Tabs} from '@astrojs/starlight/components';
 
-import {Aside} from '@astrojs/starlight/components';
+Distr is designed to be as versatile as possible. That involves being able to run on a variety of operating systems successfully. While most enterprise environments run on Linux-based VMs, there are always exceptions. What if, for testing purposed for instance, macOS is the chosen operating system for running Distr agents?
 
-Distr is designed to be as versatile as possible.
-That involves being able to run on a variety of operating systems successfully.
-While most enterprise environments run on Linux-based VMs, there are always exceptions.
-What if, for testing purposed for instance, macOS is the chosen operating system for running Distr agents?
-
-If you're using Windows or Linux, the [Quickstart guide](/docs/getting-started/quickstart/) should cover everything you need.
-But if you're setting up Distr on macOS, follow these steps to ensure a smooth deployment experience.
+If you're using Windows or Linux, the [Quickstart guide](/docs/getting-started/quickstart/) should cover everything you need. But if you're setting up Distr on macOS, follow these steps to ensure a smooth deployment experience.
 
 ## Running Distr agents
-
 <Aside type="note">
-  When we talk about "running Distr," we're specifically referring to running
-  the [Distr agents](/docs/product/agents/). Since Distr can also be
-  self-hosted, much of this guide could apply to running Distr in a local Docker
-  environment as well. However, we'll focus on the SaaS version of Distr and
-  properly configuring a local macOS target environment to deploy applications
-  through Distr.
+When we talk about "running Distr," we're specifically referring to running the [Distr agents](/docs/product/agents/). Since Distr can also be self-hosted, much of this guide could apply to running Distr in a local Docker environment as well. However, we'll focus on the SaaS version of Distr and properly configuring a local MacOS target environment to deploy applications through Distr.
 </Aside>
 
-### Prerequisites
-
+## Prerequisites
 Before you begin, make sure you have:
 
 - A macOS system with admin access
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed
 - Access to the [Distr platform](https://app.distr.sh/)
 
-### 1. Install Docker Desktop
-
+## 1. Install Docker Desktop
 First, install [Docker Desktop for Mac](https://docs.docker.com/desktop/setup/install/mac-install/). Follow the installation instructions provided by Docker.
 
-### 2. Verify the Docker Context
+### 1.1 Delete Distr volume on Docker Desktop
 
-Check the local Docker context being used:
+<Aside type="note">
+If you've already tried to install Distr on Docker Desktop and failed to deploy an application, a volume named `distr_scratch` has been created. This volume is used to store the Distr agent's data. If it exists, you need to delete it.
+</Aside>
 
-**Run:**
+Delete the volume, run:
+```sh
+docker volume rm distr_scratch
+```
 
-```shell
+## 2. Verify the Docker Context
+
+<Aside type="caution">
+When Docker Desktop runs on macOS, it creates a lightweight Linux VM, and the `desktop-linux` context points to the Docker daemon within this VM. However, Distr expects to connect to the default Docker socket (`/var/run/docker.sock`). This mismatch can cause connectivity issues, especially when pulling or deploying container images. Setting the context to `default` aligns the Docker CLI with the expected Docker endpoint, ensuring Distr can interact with the Docker daemon properly.
+</Aside>
+
+Check the current Docker context, run:
+```sh
 docker context ls
 ```
 
-Expected output:
+Expected output: 
 
-```
+```sh
 NAME              DESCRIPTION                               DOCKER ENDPOINT                                  ERROR
 default           Current DOCKER_HOST based configuration   unix:///var/run/docker.sock
 desktop-linux *   Docker Desktop                            unix:///Users/jakepage/.docker/run/docker.sock
 ```
 
-<Aside type="tip">
-  When Docker Desktop runs on macOS, it creates a lightweight Linux VM, and the
-  `desktop-linux` context points to the Docker daemon within this VM. However,
-  Distr expects to connect to the default Docker socket
-  (`/var/run/docker.sock`). This mismatch can cause connectivity issues,
-  especially when pulling or deploying container images. Setting the context to
-  `default` aligns the Docker CLI with the expected Docker endpoint, ensuring
-  Distr can interact with the Docker daemon properly.
-</Aside>
-
 If Docker is set to the `desktop-linux` context, you might encounter errors in the container logs like:
 
-```
+```sh
 unable to get image 'postgres:17.3-alpine3.20': Cannot connect to the Docker daemon at unix:///Users/jakepage/.docker/run/docker.sock. Is the docker daemon running?
 ```
 
-### 3. Set the Docker Context to the `default` context
+## 3. Set the Docker Context to `default`
 
 To switch the Docker context to `default`, run:
 
-```shell
+```sh
 docker context use default
 ```
 
 Expected output:
 
-```
+```sh
 NAME            DESCRIPTION                               DOCKER ENDPOINT                                  ERROR
 default *       Current DOCKER_HOST based configuration   unix:///var/run/docker.sock
 desktop-linux   Docker Desktop                            unix:///Users/jakepage/.docker/run/docker.sock
 ```
 
-This should be all that's needed, now [test](/docs/guides/distr-on-macos/#5-test-the-setup)
-your setup by creating a deployment on Distr.
+## 4. Update the Docker Config File
 
-### 4. Optional: Update the Docker Config File
-
-#### When should yoo do this?
-
-If, during installation, you encounter the following error message:
-
-```
-docker.credentials.errors.InitializationError: docker-credential-desktop not installed or not available in PATH
-```
-
-This error indicates that Docker is configured to use a credential store called "desktop",
-but the corresponding executable `docker-credential-desktop` is either not installed
-or not accessible through the system's PATH.
-
-#### Why this happens
-
-<Aside tag="info">
-  When Docker is configured to use a credential store, it tries to invoke an
-  external binary (docker-credential-NAME). On macOS,
-  `docker-credential-osxkeychain` is generally preferred because it integrates
-  well with the macOS Keychain. Using `docker-credential-desktop` can lead to
-  path issues, especially if the Docker Desktop installation did not properly
-  add this helper to the system's PATH.
-</Aside>
+If you're using the Distr agent on macOS, note that it does not rely on Docker's credential store (`credStore`). Having this setting in your Docker configuration can sometimes cause authentication issues. To prevent potential errors, it's best to remove the `credStore` entry from the Docker config file entirely.
 
 #### How to fix it
 
-1. Check your `~/.docker/config.json` and verify which `credsStore` is being used?
+1. **Check your current Docker config file**
+
+   Run the following command to inspect your configuration:
+
+   ```sh
+   cat ~/.docker/config.json
+   ```
+
+   If you see an entry like this:
+
    ```json
    {
-     "auths": {},
-     "credStore": "desktop"
+       "auths": {},
+       "credStore": "desktop"
    }
    ```
 
-#### Use docker-credential-osxkeychain instead.
+   You'll need to remove the `credStore` line.
 
-Since you're on a Mac, you could use `docker-credential-osxkeychain` instead of `docker-credential-desktop`.
+2. **Open the config file in a text editor**
 
-1. Install `docker-credential-helper`
-   ```shell
-   brew install docker-credential-helper
+   Use `nano` to edit the Docker configuration:
+
+   ```sh
+   nano ~/.docker/config.json
    ```
-2. Verify `docker-credential-osxkeychain` is available.
-   ```shell
-   docker-credential-osxkeychain version
-   docker-credential-osxkeychain (github.com/docker/docker-credential-helpers) v0.8.2
+
+3. **Remove the `credStore` line**
+
+   Inside the file, find the line that contains:
+
+   ```json
+   "credStore": "desktop"
    ```
-3. Set `credsStore` to `osxkeychain` in `~/.docker/config.json`
+
+   Delete this line entirely, ensuring you don't leave a trailing comma that could cause JSON parsing errors.
+
+   After editing, your file should look something like this:
+
    ```json
    {
-     "auths": {},
-     "credStore": "osxkeychain"
+       "auths": {}
    }
    ```
-4. Login to Docker Hub
-   ```shell
-   docker login -u $USER
-   Password:
-   Login Succeeded
+
+4. **Save the file**
+
+   - **Press `CTRL + X`** to exit.
+   - **Press `Y`** to confirm saving the changes.
+   - **Press `Enter`** to save with the same filename.
+
+5. **Verify the change**
+
+   Run:
+
+   ```sh
+   cat ~/.docker/config.json
    ```
 
-### 5. Test the Setup
+   Ensure that the `credStore` line is no longer present.
 
-To verify everything is configured correctly, try
-[deploying an application](/docs/guides/onboarding-a-docker-app/#creating-a-new-deployment)
-through Distr. If there are no errors related to Docker socket access, your setup is good to go.
+Removing the `credStore` setting ensures that the Distr agent operates without credential store conflicts, reducing potential authentication issues.
+
+## 6. Test the Setup
+
+To verify everything is configured correctly, try [deploying an application](/docs/guides/onboarding-a-docker-app/#creating-a-new-deployment) through Distr. If there are no errors related to Docker socket access, your setup is good to go.
 
 ---
-
-With these steps, your macOS environment should be fully configured to run Distr agents without issues.
-If you encounter any problems, feel free to reach out to us on [Discord](https://discord.gg/6qqBSAWZfW).
+With these steps, your MacOS environment should be fully configured to run Distr agents without issues. If you encounter any problems, feel free to reach out to us on [Discord](https://discord.gg/6qqBSAWZfW) or via email at support@glasskube.com.
