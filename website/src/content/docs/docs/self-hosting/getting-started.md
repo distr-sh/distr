@@ -1,14 +1,23 @@
 ---
-title: Self-hosting Distr?
-description: How to self-host
+title: Self-hosting Distr
+description: Distr can be easily self-managed in your own environment to use it as a first party software distribution platform and artifact registry.
 sidebar:
   order: 0
 ---
 
-While the easiest way to use Distr is to use our hosted version, it is also very easy to host your own instance of the Distr Hub.
-Distr is distributed as an OCI compatible container image.
-Additionally, we also provide some batteries-included deployment examples to help you get started as quickly as possible.
+While the easiest way to use Distr is to use our [hosted version](https://signup.distr.sh/).
+Distr is written in the Go programming language with minimal dependencies on a Postgres Database
+and optional S3 compatible object storage if you want to use Distr artifacts registry.
+
+Find out more information about the inner workings of Distr at [`github.com/glasskube/distr`](https://github.com/glasskube/distr/).
+
+Or checkout or [Docker Compose](./../docker) or [Kubernetes](./../kubernetes) deployment options.
 
 ## Semantic Versioning
 
 We are using [semantic versioning](https://semver.org/) for the releases of Distr Hub, Distr Agents and Distr SDKs.
+
+## Enterprise Support
+
+We also offer enterprise support for self-hosting Distr in your own environment.
+If you are interested, make sure [to get in touch](https://glasskube.dev/contact/).
