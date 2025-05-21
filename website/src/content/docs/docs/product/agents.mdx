@@ -181,6 +181,12 @@ The Distr Hub does not store the secret but can verify it.
 
 The fetched manifests most prominently contain the `distr-agent` deployment, which follows the following structure:
 
+<Aside type="danger">
+  Scaling the same agent to more than one replica will lead to an undefined
+  behavior and is not recommended. The deployment manifests should not be
+  altered.
+</Aside>
+
 ```yaml
 ---
 apiVersion: apps/v1
