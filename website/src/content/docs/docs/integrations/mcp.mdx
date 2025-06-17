@@ -5,7 +5,7 @@ sidebar:
   order: 3
 ---
 
-import {Code, TabItem, Tabs} from '@astrojs/starlight/components';
+import {Aside, Code, TabItem, Tabs} from '@astrojs/starlight/components';
 import {Image} from 'astro:assets';
 import mcpConfig from './mcp/mcp.json?raw';
 import distrMCPConfig from '../../../../assets/docs/integrations/mcp/distr-mcp-tools.png';
@@ -41,6 +41,11 @@ Which can be verified with `./dist/mcp-server --help`.
 The Distr MCP Server exposes its executable functions via [tools](https://modelcontextprotocol.io/docs/concepts/tools).
 
 If you want to use all tools, you can extend your `mcp.json` configuration file in your MCP client:
+
+<Aside type="note">
+  Make sure to use to configure the absolute path to the `mcp-server` binary in
+  the `command` section you just built above in your `mcp.json` file.
+</Aside>
 
 <Code code={mcpConfig} lang="json" title="mcp.json" />
 
