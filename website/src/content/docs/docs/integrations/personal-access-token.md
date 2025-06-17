@@ -8,7 +8,7 @@ sidebar:
 In integration scenarios, you need to authenticate with the Distr API using a Personal Access Token (PAT).
 This applies for any kind of integration, no matter whether you are using the Distr SDK or interacting with the API directly.
 
-A Personal Access Token is a unique string that you generate in the Distr web interface. It is directly associated with the user who created it.
+A Personal Access Token is a unique string that you generate in the Distr web interface. It is directly associated with the user who created it, and with the organization it was created in. It cannot be used to access data of other organizations of the same user.
 
 ## Creating a Personal Access Token
 
