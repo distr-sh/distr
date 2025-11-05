@@ -27,31 +27,60 @@ import '../styles/global.css';
       })();
     </script>
     <script is:inline>
-      !function (t, e) {
+      !(function (t, e) {
         var o, n, p, r;
-        e.__SV || (window.posthog = e, e._i = [], e.init = function (i, s, a) {
-          function g(t, e) {
-            var o = e.split(".");
-            2 == o.length && (t = t[o[0]], e = o[1]), t[e] = function () {
-              t.push([e].concat(Array.prototype.slice.call(arguments, 0)))
+        e.__SV ||
+          ((window.posthog = e),
+          (e._i = []),
+          (e.init = function (i, s, a) {
+            function g(t, e) {
+              var o = e.split('.');
+              (2 == o.length && ((t = t[o[0]]), (e = o[1])),
+                (t[e] = function () {
+                  t.push([e].concat(Array.prototype.slice.call(arguments, 0)));
+                }));
             }
-          }
 
-          (p = t.createElement("script")).type = "text/javascript", p.crossOrigin = "anonymous", p.async = !0, p.src = s.api_host + "/static/array.js", (r = t.getElementsByTagName("script")[0]).parentNode.insertBefore(p, r);
-          var u = e;
-          for (void 0 !== a ? u = e[a] = [] : a = "posthog", u.people = u.people || [], u.toString = function (t) {
-            var e = "posthog";
-            return "posthog" !== a && (e += "." + a), t || (e += " (stub)"), e
-          }, u.people.toString = function () {
-            return u.toString(1) + ".people (stub)"
-          }, o = "capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId".split(" "), n = 0; n < o.length; n++) g(u, o[n]);
-          e._i.push([i, s, a])
-        }, e.__SV = 1)
-      }(document, window.posthog || []);
+            (((p = t.createElement('script')).type = 'text/javascript'),
+              (p.crossOrigin = 'anonymous'),
+              (p.async = !0),
+              (p.src = s.api_host + '/static/array.js'),
+              (r = t.getElementsByTagName('script')[0]).parentNode.insertBefore(
+                p,
+                r,
+              ));
+            var u = e;
+            for (
+              void 0 !== a ? (u = e[a] = []) : (a = 'posthog'),
+                u.people = u.people || [],
+                u.toString = function (t) {
+                  var e = 'posthog';
+                  return (
+                    'posthog' !== a && (e += '.' + a),
+                    t || (e += ' (stub)'),
+                    e
+                  );
+                },
+                u.people.toString = function () {
+                  return u.toString(1) + '.people (stub)';
+                },
+                o =
+                  'capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId'.split(
+                    ' ',
+                  ),
+                n = 0;
+              n < o.length;
+              n++
+            )
+              g(u, o[n]);
+            e._i.push([i, s, a]);
+          }),
+          (e.__SV = 1));
+      })(document, window.posthog || []);
       posthog.init('phc_EloQUW6cgfbTc0pI9c5CXElhQ4gVGRoBsrUAoakJVoQ', {
         api_host: 'https://p.glasskube.eu',
         ui_host: 'https://eu.posthog.com',
-      })
+      });
     </script>
     <script is:inline>
       (function () {
@@ -70,7 +99,7 @@ import '../styles/global.css';
         ].forEach(function (t) {
           ko[t] = function () {
             var n = [].slice.call(arguments);
-            return n.unshift(t), ko.push(n), ko;
+            return (n.unshift(t), ko.push(n), ko);
           };
         });
         const n = document.createElement('script');
@@ -87,26 +116,28 @@ import '../styles/global.css';
     <header class="bg-white dark:bg-gray-900">
       <nav class="px-4 lg:px-6 py-2.5">
         <div class="flex flex-wrap justify-end items-center">
-          <a href="https://cal.glasskube.com/team/gk/demo"
-             target="_blank"
-             class="relative no-underline text-xs inline-flex items-center justify-center p-0.5 overflow-hidden text-sm font-medium text-gray-900 rounded-lg no-underline group bg-gradient-to-br from-purple-600 to-blue-500 group-hover:from-purple-600 group-hover:to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800">
+          <a
+            href="https://cal.glasskube.com/team/gk/demo"
+            target="_blank"
+            class="relative no-underline text-xs inline-flex items-center justify-center p-0.5 overflow-hidden text-sm font-medium text-gray-900 rounded-lg no-underline group bg-gradient-to-br from-purple-600 to-blue-500 group-hover:from-purple-600 group-hover:to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800">
             <span
-              class="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-opacity-0 ">
+              class="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-opacity-0">
               Get a demo
             </span>
           </a>
-          <a href="https://signup.distr.sh"
-             target="_blank"
-             class="ml-6 text-white no-underline text-xs bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg px-5 py-2.5 text-center">
+          <a
+            href="https://signup.distr.sh"
+            target="_blank"
+            class="ml-6 text-white no-underline text-xs bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg px-5 py-2.5 text-center">
             Get started for free
           </a>
 
-          <a href="https://app.distr.sh"
-             target="_blank"
-             class="font-medium text-blue-500 hover:underline ml-6">
+          <a
+            href="https://app.distr.sh"
+            target="_blank"
+            class="font-medium text-blue-500 hover:underline ml-6">
             Login
           </a>
-
         </div>
       </nav>
     </header>
