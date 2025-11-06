@@ -45,7 +45,13 @@ jobs:
         with:
           aws-region: eu-central-1
           role-to-assume: arn:aws:iam::639130800065:role/github-actions-distr.sh
-      - name: Deploy
+      - name: Deploy assets
+        if: github.ref == 'refs/heads/main'
+        run: >-
+          aws s3 sync dist/_astro s3://distr.sh/_astro/
+          --cache-control "max-age=31536000, public"
+          --acl=public-read
+      - name: Deploy dynamic content
         if: github.ref == 'refs/heads/main'
         run: >-
           aws s3 sync dist s3://distr.sh/
