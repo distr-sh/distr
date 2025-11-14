@@ -1,12 +1,12 @@
 ---
-
+const formsServerBaseUrl = import.meta.env.FORMS_SERVER;
 ---
 
 <section class="py-8 md:py-16 lg:py-24 bg-gray-50 dark:bg-gray-800">
   <div class="container mx-auto px-4 max-w-3xl">
     <div class="text-center">
       <h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-4">
-        Glasskube Newsletter
+        Distr Newsletter
       </h2>
       <p
         class="text-base md:text-lg text-gray-600 dark:text-gray-300 mb-6 md:mb-8">
@@ -15,6 +15,7 @@
 
       <form
         id="newsletterForm"
+        data-forms-server={formsServerBaseUrl}
         class="flex flex-col md:flex-row gap-4 justify-center">
         <input
           type="email"
@@ -62,24 +63,16 @@
   form?.addEventListener('submit', async e => {
     e.preventDefault();
     const email = emailInput.value;
+    const formsServerBaseUrl = form.dataset.formsServer;
 
     try {
-      const response = await fetch(
-        'https://cms.glasskube.eu/api/ezforms/submit',
-        {
-          method: 'POST',
-          headers: {
-            'Content-type': 'application/json; charset=UTF-8',
-          },
-          body: JSON.stringify({
-            token: '',
-            formName: 'newsletter',
-            formData: {
-              email: email,
-            },
-          }),
+      const response = await fetch(formsServerBaseUrl + '/newsletter', {
+        method: 'POST',
+        headers: {
+          'Content-type': 'application/json; charset=UTF-8',
         },
-      );
+        body: JSON.stringify({email}),
+      });
 
       if (response.ok) {
         alert('Email successfully added to our newsletter: ' + email);
