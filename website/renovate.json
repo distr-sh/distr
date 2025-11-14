@@ -12,7 +12,6 @@
     {
       "matchManagers": ["npm", "github-actions"],
       "matchUpdateTypes": ["patch"],
-      "matchCurrentVersion": "!/^0/",
       "automerge": true
     }
   ]
