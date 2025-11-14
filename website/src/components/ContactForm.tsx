@@ -65,17 +65,14 @@ export default function ContactForm({formsServerBaseUrl}: ContactFormProps) {
     loadHubSpotScript();
 
     try {
-      const response = await fetch(
-        `${formsServerBaseUrl}/contact`,
-        {
-          method: 'POST',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData),
+      const response = await fetch(`${formsServerBaseUrl}/contact`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify(formData),
+      });
 
       if (!response.ok) {
         throw new Error('Failed to submit form');

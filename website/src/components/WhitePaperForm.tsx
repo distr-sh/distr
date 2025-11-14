@@ -28,7 +28,9 @@ function loadScript() {
   }
 }
 
-export default function WhitePaperForm({formsServerBaseUrl}: WhitePaperFormProps) {
+export default function WhitePaperForm({
+  formsServerBaseUrl,
+}: WhitePaperFormProps) {
   const [formData, setFormData] = useState<WhitePaperRequest>({
     firstName: '',
     lastName: '',
@@ -53,17 +55,14 @@ export default function WhitePaperForm({formsServerBaseUrl}: WhitePaperFormProps
     loadScript();
 
     try {
-      const response = await fetch(
-        `${formsServerBaseUrl}/white-paper`,
-        {
-          method: 'POST',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData),
+      const response = await fetch(`${formsServerBaseUrl}/white-paper`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify(formData),
+      });
 
       if (response.ok) {
         alert(
