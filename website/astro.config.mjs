@@ -1,22 +1,30 @@
 // @ts-check
-import starlight from '@astrojs/starlight';
-import {defineConfig} from 'astro/config';
-import starlightLinksValidator from 'starlight-links-validator';
-
 import partytown from '@astrojs/partytown';
 import preact from '@astrojs/preact';
 import sitemap from '@astrojs/sitemap';
+import starlight from '@astrojs/starlight';
 import starlightUtils from '@lorenzo_lewis/starlight-utils';
 import tailwindcss from '@tailwindcss/vite';
-import rehypeMermaid from 'rehype-mermaid';
-
 import icon from 'astro-icon';
+import {defineConfig} from 'astro/config';
+import serviceWorker from 'astrojs-service-worker';
+import rehypeMermaid from 'rehype-mermaid';
+import starlightLinksValidator from 'starlight-links-validator';
 
 // https://astro.build/config
 export default defineConfig({
   site: 'https://distr.sh',
 
   integrations: [
+    icon({include: {lucide: ['*']}}),
+    partytown({
+      config: {
+        forward: ['dataLayer.push'],
+      },
+    }),
+    preact(),
+    sitemap(),
+    serviceWorker(),
     starlight({
       title: 'Distr',
       customCss: ['./src/styles/global.css'],
@@ -121,14 +129,6 @@ export default defineConfig({
         }),
       ],
     }),
-    sitemap(),
-    partytown({
-      config: {
-        forward: ['dataLayer.push'],
-      },
-    }),
-    preact(),
-    icon({include: {lucide: ['*']}}),
   ],
   markdown: {
     rehypePlugins: [[rehypeMermaid, {strategy: 'inline-svg'}]],
