@@ -37,42 +37,40 @@ const {
 <div
   class="bg-white dark:bg-gray-900 rounded-xl p-6 md:p-8 shadow-md max-w-6xl mx-auto"
   data-slug={slug}>
-  <!-- Header with Logo and Info -->
-  <div
-    class="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12 mb-8">
-    <Image
-      src={logo}
-      alt={`${company} Logo`}
-      class="h-24 w-auto rounded-xl object-contain"
-      width={200}
-      height={96}
-    />
-    <div class="flex flex-row gap-8">
-      <div class="text-center md:text-left">
-        <div
-          class="text-sm font-semibold text-[#00b5eb] uppercase tracking-wide mb-1">
-          Industry:
-        </div>
-        <div class="text-base font-medium text-gray-900 dark:text-white">
-          {industry}
-        </div>
-      </div>
-      <div class="text-center md:text-left">
-        <div
-          class="text-sm font-semibold text-[#00b5eb] uppercase tracking-wide mb-1">
-          Use Case:
-        </div>
-        <div class="text-base font-medium text-gray-900 dark:text-white">
-          {useCase}
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Main Content Grid -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
     <!-- Main Content (2/3) -->
     <div class="lg:col-span-2 space-y-6">
+      <!-- Header with Logo and Info -->
+      <div class="flex flex-col md:flex-row gap-6 md:gap-12 mb-8">
+        <Image
+          src={logo}
+          alt={`${company} Logo`}
+          class="h-24 w-auto rounded-xl object-contain"
+          width={200}
+          height={96}
+        />
+        <div class="flex flex-col gap-2">
+          <div class="text-center md:text-left">
+            <div
+              class="text-sm font-semibold text-[#00b5eb] uppercase tracking-wide">
+              Industry:
+            </div>
+            <div class="text-base font-medium text-gray-900 dark:text-white">
+              {industry}
+            </div>
+          </div>
+          <div class="text-center md:text-left">
+            <div
+              class="text-sm font-semibold text-[#00b5eb] uppercase tracking-wide">
+              Use Case:
+            </div>
+            <div class="text-base font-medium text-gray-900 dark:text-white">
+              {useCase}
+            </div>
+          </div>
+        </div>
+      </div>
       <!-- Challenge -->
       <div>
         <h3

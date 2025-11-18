@@ -1,6 +1,6 @@
 ---
 title: 'Distr Launch Week: Distributing Applications to Docker Swarm'
-description: ''
+description: 'Distr now supports distributing applications via Docker Swarm'
 publishDate: 2025-05-20
 lastUpdated: 2025-05-20
 slug: 'distr-docker-swarm'
@@ -16,14 +16,12 @@ tags:
   - docker swarm
 ---
 
-I am Jakob—an engineer working at Glasskube, which helps software and ai companies distribute their applications to self-managed environments.
+I am Jakob—an engineer working at Glasskube, which helps software and AI companies distribute their applications to self-managed environments.
 We build an Open Source Software Distribution platform called Distr ([`github.com/glasskube/distr`](https://github.com/glasskube/distr)).
 
 If you've ever thought that **Docker Compose** is too basic for your deployment needs, but a full **Kubernetes** setup feels like overkill, you're definitely not alone.
 
-{/_ truncate _/}
-
-![thumbnail](/src/assets/blog/2025-05-20-distr-docker-swarm/title.png)
+<hr>
 
 Luckily, Docker has come up with a solution just for this: Docker Swarm.
 This tool lets you connect multiple Docker daemons to create a Swarm cluster, giving you access to distributed computing features.

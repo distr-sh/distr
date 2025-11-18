@@ -18,8 +18,6 @@ tags:
   - Distr
 ---
 
-![thumb](/src/assets/blog/2025-04-07-registry-comparison/thumbnail.png)
-
 Software developers nowadays have a lot of options when choosing a container registry to upload containers to their infrastructure or share the artifacts with customers.
 
 But not all OCI registries serve the same purpose.

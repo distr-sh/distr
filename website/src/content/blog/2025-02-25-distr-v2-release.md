@@ -15,8 +15,6 @@ tags:
   - Releases
 ---
 
-![v1.2 thumbnail](/src/assets/blog/2025-02-25-distr-v1-2/v-1-2-thumb.png)
-
 ## Distr v1.2 is Here!
 
 It hasn't been long since we last came knocking into your inbox, but we've been all ears, soaking in the fantastic feedback many of you shared. We're excited to introduce a highly requested feature in the latest minor version of Distr.

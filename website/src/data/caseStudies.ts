@@ -46,7 +46,7 @@ export const caseStudies: CaseStudy[] = [
 
 The team needed a solution that would:
 
-<ul class="list-disc list-inside space-y-2 my-4">
+<ul class="list-disc list-inside">
   <li>Enable standardized, repeatable deployments across multiple customer environments</li>
   <li>Provide real-time visibility into deployment status and application health</li>
   <li>Support instant rollbacks when issues occurred</li>
@@ -58,7 +58,7 @@ The team needed a solution that would:
 
 <strong>Key implementation highlights:</strong>
 
-<ul class="list-disc list-inside space-y-2 my-4">
+<ul class="list-disc list-inside">
   <li><strong>Bring Your Own Cluster (BYOC) deployments:</strong> Customers run Lerian services in their own Kubernetes environments, meeting strict compliance requirements while leveraging standardized deployment workflows</li>
   <li><strong>Declarative deployments with versioned templates:</strong> All installations are predictable, fully traceable operations using Helm charts and OCI images, eliminating the inefficiency of manual scripts</li>
   <li><strong>Integrated monitoring dashboard:</strong> Real-time visibility into deployed versions, application health, container logs, and agent status—providing 100% visibility for internal teams without compromising customer autonomy</li>
@@ -70,7 +70,7 @@ By leveraging Distr's infrastructure, Lerian can focus on their core banking and
 
     result: `Lerian's Lifecycle Management platform, powered by Distr, has transformed their operational efficiency and customer experience:
 
-<ul class="list-disc list-inside space-y-2 my-4">
+<ul class="list-disc list-inside">
   <li><strong>Smoother internal operations:</strong> Standardized deployments mean any squad can deploy new versions without opening tickets, validating features in staging with full traceability</li>
   <li><strong>Faster development cycles:</strong> Execution teams gained more control and autonomy, accelerating the entire development lifecycle</li>
   <li><strong>Reduced operational load:</strong> DevOps teams at both Lerian and their customers spend significantly less time on deployment coordination and troubleshooting</li>

@@ -172,7 +172,7 @@ export default function PricingCalculator() {
                 value={internalUsers}
                 onInput={handleInternalUsersChange}
                 onBlur={handleInternalUsersBlur}
-                class="text-lg font-medium min-w-[3rem] w-12 text-center border border-gray-400 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:border-[#00b5eb] focus:ring-2 focus:ring-[#00b5eb]/20"
+                class="text-lg font-medium min-w-[4rem] w-16 text-center border border-gray-400 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:border-[#00b5eb] focus:ring-2 focus:ring-[#00b5eb]/20"
                 style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: none;"
               />
               <button
@@ -203,7 +203,7 @@ export default function PricingCalculator() {
                 value={externalCustomers}
                 onInput={handleExternalCustomersChange}
                 onBlur={handleExternalCustomersBlur}
-                class="text-lg font-medium min-w-[3rem] w-12 text-center border border-gray-400 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:border-[#00b5eb] focus:ring-2 focus:ring-[#00b5eb]/20"
+                class="text-lg font-medium min-w-[4rem] w-16 text-center border border-gray-400 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:border-[#00b5eb] focus:ring-2 focus:ring-[#00b5eb]/20"
                 style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: none;"
               />
               <button

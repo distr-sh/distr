@@ -22,8 +22,6 @@ tags:
   - Self-Managed
 ---
 
-![self-service-vs-byoc-vs-self-managed](/src/assets/blog/2024-11-25-self-managed-vs-cloud-vs-byoc/hero.jpg)
-
 Anyone who's ever had to research and source technical B2B tooling is well-used to deciphering the [pricing](/pricing/) sections of products websites. These pages are filled with recurring terms like [SaaS](/glossary/saas-definition/), [BYOC](/glossary/byoc-definition/), and [Self-Managed](/glossary/self-managed-software/). Personally, I've found myself scratching my head trying to make sense of how they all fit together and how some companies use the same terms sightly differently to others, especially since there's seemingly no standardized use for many of these terms, some even overlap or are used interchangeably.
 
 For example, while "[On-Premises](/glossary/on-premises-definition/)" and "[Self-managed](/glossary/self-managed-software/)" sound similar, they don't mean the exact same thing. As software vendors deploy to increasingly regulated and complex environments, it's essential to get some clarity on what these terms actually mean and when they should be used. Let's untangle this terminology nightmare and establish some clear distinctions around software acquisition and deployment.

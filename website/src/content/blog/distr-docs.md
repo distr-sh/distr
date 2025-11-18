@@ -30,9 +30,7 @@ But for Distr, we decided to switch to Starlight.
 In this blog post, we will compare Docusaurus and Starlight and explain why we made the switch.
 Additionally, we will share how we structured our technical documentation and what we learned along the way.
 
-{/_ truncate _/}
-
-![thumbnail](/src/assets/blog/2025-05-23-distr-docs/distr-docs-thumbnail.png)
+<hr>
 
 This post is actually the last piece of the Distr launch week.
 

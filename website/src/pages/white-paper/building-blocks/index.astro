@@ -57,20 +57,12 @@ const DESCRIPTION =
 <style>
   .whitepaper-card {
     position: relative;
-    border: 3px solid transparent;
-    background:
-      linear-gradient(
-          to bottom right,
-          var(--sl-color-accent-low),
-          var(--sl-color-accent)
-        )
-        border-box,
-      var(--sl-color-bg) padding-box;
-    -webkit-mask:
-      linear-gradient(#fff 0 0) padding-box,
-      linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
+    background: linear-gradient(
+      to bottom right,
+      var(--sl-color-accent-low),
+      var(--sl-color-accent)
+    );
+    border-radius: 1rem;
   }
 
   .not-content {

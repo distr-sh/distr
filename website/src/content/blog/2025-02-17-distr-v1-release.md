@@ -17,8 +17,6 @@ tags:
 
 The inaugural release of [Distr](https://github.com/glasskube/distr) v1.0 shipped just a little over a week ago, and we're already back with a minor update that packs major features! These updates expand Distr's functionality in valuable ways, making it an even more powerful tool for your software distribution needs.
 
-![thumbnail](/src/assets/blog/2025-02-17-distr-1-1-release/blog-thumb.png)
-
 ### 1. Feature: GitHub Release Action
 
 This action creates a new version of a [Distr](https://github.com/glasskube/distr) application, fully automating the software release lifecycle.

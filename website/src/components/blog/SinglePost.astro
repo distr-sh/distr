@@ -1,7 +1,7 @@
 ---
 import {Icon} from '@astrojs/starlight/components';
 import Image from '../common/Image.astro';
-import type {Post} from '~/types';
+import type {Post} from '~/types.ts';
 
 export interface Props {
   post: Post;
@@ -26,6 +26,8 @@ const formatDate = (date: Date) => {
   .prose {
     p {
       @apply hyphens-auto text-justify;
+      margin-top: 1rem;
+      margin-bottom: 1rem;
     }
   }
 </style>

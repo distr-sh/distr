@@ -15,8 +15,6 @@ tags:
   - Releases
 ---
 
-![thumbnail](/src/assets/blog/2025-03-25-distr-1-4-release/thumb.png)
-
 # Distr v1.4 is Live!
 
 Hey there! We listened to your feedback, and we're back with a massive new feature.
@@ -47,13 +45,7 @@ With the Distr OCI registry, software vendors can now publish and distribute not
 - 📊 **Visibility**: Track where, how, and by whom artifacts are consumed
 - 📦 **Open standards**: Built on the OCI spec and compatible with existing tooling (Docker, ORAS, etc.)
 
-<ThemedImage
-alt="Diagram showing OCI registry architecture"
-sources={{
-    light: '/src/assets/blog/2025-03-25-distr-1-4-release/diagram-light.png',
-    dark: '/src/assets/blog/2025-03-25-distr-1-4-release/diagram-dark.png',
-  }}
-/>
+![Diagram showing OCI registry architecture](/src/assets/blog/2025-03-25-distr-1-4-release/diagram-dark.png)
 
 Whether you're distributing a single binary or an entire application stack, the new registry gives you the building blocks to do it **securely**, **reliably**, and in an **OCI-compliant** way, inside your end-customers’ networks.
 

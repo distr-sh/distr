@@ -74,4 +74,9 @@
       @apply list-decimal;
     }
   }
+
+  /* Remove default list styling for custom lists outside markdown content */
+  ul.list-none li {
+    list-style-type: none;
+  }
 }
