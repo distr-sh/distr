@@ -8,38 +8,46 @@ export default function PricingCalculator() {
   );
   const [currency, setCurrency] = useState<'$' | '€'>('$');
 
-  // Base monthly pricing per internal user and external customer
+  // Base pricing per internal user and external customer
+  // Monthly billing prices
   const starterInternalUserPriceMonthly = 19;
   const starterExternalCustomerPriceMonthly = 29;
   const proInternalUserPriceMonthly = 29;
   const proExternalCustomerPriceMonthly = 69;
 
-  // Yearly pricing is 20% less expensive than monthly (save 20%)
-  const yearlyDiscount = 0.8;
+  // Yearly billing prices (billed monthly when on yearly plan)
+  const starterInternalUserPriceYearly = 16;
+  const starterExternalCustomerPriceYearly = 24;
+  const proInternalUserPriceYearly = 24;
+  const proExternalCustomerPriceYearly = 56;
+
+  // Tiered pricing for Pro external customers (51+ licenses)
+  const proExternalCustomerPriceMonthlyTier2 = 48;
+  const proExternalCustomerPriceYearlyTier2 = 39;
 
   // Get current prices based on billing cycle
   const getStarterInternalUserPrice = () => {
     return billingCycle === 'monthly'
       ? starterInternalUserPriceMonthly
-      : starterInternalUserPriceMonthly * yearlyDiscount;
+      : starterInternalUserPriceYearly;
   };
 
   const getStarterExternalCustomerPrice = () => {
     return billingCycle === 'monthly'
       ? starterExternalCustomerPriceMonthly
-      : starterExternalCustomerPriceMonthly * yearlyDiscount;
+      : starterExternalCustomerPriceYearly;
   };
 
   const getProInternalUserPrice = () => {
     return billingCycle === 'monthly'
       ? proInternalUserPriceMonthly
-      : proInternalUserPriceMonthly * yearlyDiscount;
+      : proInternalUserPriceYearly;
   };
 
   const getProExternalCustomerPrice = () => {
     return billingCycle === 'monthly'
       ? proExternalCustomerPriceMonthly
-      : proExternalCustomerPriceMonthly * yearlyDiscount;
+      : proExternalCustomerPriceYearly;
   };
 
   // Current prices based on billing cycle
@@ -50,7 +58,7 @@ export default function PricingCalculator() {
 
   // Plan limits
   const starterMaxExternalCustomers = 3;
-  const proMaxExternalCustomers = 50;
+  const proMaxExternalCustomers = 100;
 
   // Check if plans are within limits
   const isStarterAvailable = externalCustomers <= starterMaxExternalCustomers;
@@ -73,10 +81,23 @@ export default function PricingCalculator() {
       externalCustomers,
       proMaxExternalCustomers,
     );
-    return (
-      proInternalUserPrice * internalUsers +
-      proExternalCustomerPrice * cappedCustomers
-    );
+
+    // Calculate tiered pricing for external customers
+    let externalCustomerCost = 0;
+    if (cappedCustomers <= 50) {
+      // All customers at tier 1 price
+      externalCustomerCost = proExternalCustomerPrice * cappedCustomers;
+    } else {
+      // First 50 at tier 1, remaining at tier 2
+      const tier2Price =
+        billingCycle === 'monthly'
+          ? proExternalCustomerPriceMonthlyTier2
+          : proExternalCustomerPriceYearlyTier2;
+      externalCustomerCost =
+        proExternalCustomerPrice * 50 + tier2Price * (cappedCustomers - 50);
+    }
+
+    return proInternalUserPrice * internalUsers + externalCustomerCost;
   };
 
   const starterMonthlyPrice = calculateStarterMonthlyPrice();
@@ -126,7 +147,9 @@ export default function PricingCalculator() {
   };
 
   const incrementExternalCustomers = () => {
-    setExternalCustomers(externalCustomers + 1);
+    if (externalCustomers < proMaxExternalCustomers) {
+      setExternalCustomers(externalCustomers + 1);
+    }
   };
 
   const handleExternalCustomersChange = (e: any) => {
@@ -135,7 +158,11 @@ export default function PricingCalculator() {
       return; // Allow empty input temporarily
     }
     const numValue = parseInt(value, 10);
-    if (!isNaN(numValue) && numValue >= 1) {
+    if (
+      !isNaN(numValue) &&
+      numValue >= 1 &&
+      numValue <= proMaxExternalCustomers
+    ) {
       setExternalCustomers(numValue);
     }
   };
@@ -144,6 +171,8 @@ export default function PricingCalculator() {
     const value = parseInt(e.target.value, 10);
     if (isNaN(value) || value < 1) {
       setExternalCustomers(1);
+    } else if (value > proMaxExternalCustomers) {
+      setExternalCustomers(proMaxExternalCustomers);
     }
   };
 
@@ -200,6 +229,7 @@ export default function PricingCalculator() {
               <input
                 type="number"
                 min="1"
+                max={proMaxExternalCustomers}
                 value={externalCustomers}
                 onInput={handleExternalCustomersChange}
                 onBlur={handleExternalCustomersBlur}
@@ -207,8 +237,9 @@ export default function PricingCalculator() {
                 style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: none;"
               />
               <button
-                class="w-8 h-8 rounded-full border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xl flex items-center justify-center cursor-pointer transition-all hover:bg-[#00b5eb] hover:text-white hover:border-[#00b5eb] leading-none p-0"
-                onClick={incrementExternalCustomers}>
+                class="w-8 h-8 rounded-full border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xl flex items-center justify-center cursor-pointer transition-all hover:bg-[#00b5eb] hover:text-white hover:border-[#00b5eb] disabled:opacity-50 disabled:cursor-not-allowed leading-none p-0"
+                onClick={incrementExternalCustomers}
+                disabled={externalCustomers >= proMaxExternalCustomers}>
                 +
               </button>
             </div>
@@ -374,11 +405,30 @@ export default function PricingCalculator() {
               </div>
               <p class="mb-0 mt-2 text-sm">
                 {currency}
-                {formatPrice(proInternalUserPrice)}/internal user + {currency}
-                {formatPrice(proExternalCustomerPrice)}/external customer
+                {formatPrice(proInternalUserPrice)}/internal user
+                {externalCustomers > 50 ? (
+                  <>
+                    <br />
+                    {currency}
+                    {formatPrice(proExternalCustomerPrice)}/external customer
+                    (first 50) + {currency}
+                    {formatPrice(
+                      billingCycle === 'monthly'
+                        ? proExternalCustomerPriceMonthlyTier2
+                        : proExternalCustomerPriceYearlyTier2,
+                    )}
+                    /external customer (51+)
+                  </>
+                ) : (
+                  <>
+                    {' '}
+                    + {currency}
+                    {formatPrice(proExternalCustomerPrice)}/external customer
+                  </>
+                )}
                 <br />
                 <span class="text-xs text-gray-600 dark:text-gray-400 font-normal">
-                  Up to {proMaxExternalCustomers} external customers
+                  Up to {proMaxExternalCustomers} total external customers
                 </span>
               </p>
               <p class="mb-0 mt-2 text-sm">
