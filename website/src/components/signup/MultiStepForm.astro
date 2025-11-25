@@ -4,6 +4,7 @@ import distrBrandLogo from '~/assets/distr-brand.svg';
 import CalComIFrame from '~/components/booking/CalComIFrame.astro';
 
 const formsServerBaseUrl = import.meta.env.FORMS_SERVER;
+const reCaptchaKey = import.meta.env.RE_CAPTCHA_KEY;
 
 interface Props {
   flowType: string;
@@ -376,6 +377,12 @@ const signupSteps = [
                   </div>
                 )
               }
+              <div
+                class="g-recaptcha"
+                data-sitekey={reCaptchaKey}
+                data-callback="reCaptchaSubmit"
+                data-size="invisible">
+              </div>
               <button
                 type="submit"
                 id="submit-signup"
@@ -904,7 +911,9 @@ const signupSteps = [
   </div>
 </div>
 
-<script define:vars={{flowType, requirePassword, formsServerBaseUrl}}>
+<script
+  define:vars={{flowType, requirePassword, formsServerBaseUrl, reCaptchaKey}}
+>
   // Store user data across steps
   let userData = {};
   let currentStep = 1;
@@ -1068,15 +1077,36 @@ const signupSteps = [
     }
   });
 
+  /**
+   * Creates a ReCAPTCHA Token
+   *
+   * @param action should be one of the following: init, submit, telemetry
+   * @returns {Promise<String>}
+   */
+  async function recaptchaToken(action) {
+    if (typeof grecaptcha === 'undefined') {
+      return '';
+    }
+
+    return new Promise(resolve => {
+      grecaptcha.enterprise.ready(() => {
+        grecaptcha.enterprise.execute(reCaptchaKey, {action}).then(token => {
+          resolve(token);
+        });
+      });
+    });
+  }
+
   // Initialize tracking when page loads
   async function initTracking() {
+    let token = await recaptchaToken('init');
+
     try {
-      await fetch(initEndpoint, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const url = new URL(initEndpoint);
+      if (token) {
+        url.searchParams.set('token', token);
+      }
+      await fetch(url.toString());
     } catch (error) {
       console.error('Init tracking error:', error);
     }
@@ -1132,15 +1162,6 @@ const signupSteps = [
           },
           body: JSON.stringify(data),
         });
-
-        if (response.ok) {
-          // Show step indicators and move to step 2
-          document.getElementById('stepIndicators').classList.remove('hidden');
-          showStep(2);
-        } else {
-          const errorData = await response.json().catch(() => ({}));
-          showError(errorData.message || 'Failed to submit. Please try again.');
-        }
       } catch (error) {
         console.error('Network error:', error);
         showError('Network error. Please check your connection and try again.');
