@@ -41,7 +41,7 @@ Up until now, we launched:
 - On Wednesday: [Dashboard Unification with metrics](/blog/distr-dashboard/)
 - On Thursday: [OCI Artifact Registry is GA](/blog/distr-registry/)
 
-Read all about the Distr launch week here: [`#distr-launch-week`](/blog/tags/distr-launch-week/).
+Read all about the Distr launch week here: [`#distr-launch-week`](/blog/).
 
 Coming back to the original topic:
 You can check out the source code of this exact website at [`github.com/glasskube/glasskube.dev`](https://github.com/glasskube/glasskube.dev),
@@ -285,4 +285,4 @@ Which of the two documentation frameworks do you prefer?
 - [`glasskube.dev`](https://glasskube.dev) built with Docusaurus
 - [`distr.sh`](https://distr.sh/docs/getting-started/what-is-distr/) built with Starlight
 
-P.S.: Read all our announcements of this week's launch week here: [`#distr-launch-week`](/blog/tags/distr-launch-week/)
+P.S.: Read all our announcements of this week's launch week here: [`#distr-launch-week`](/blog/)

@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /get-started/
+Disallow: /onboarding/
 
 Sitemap: https://distr.sh/sitemap-index.xml

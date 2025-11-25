@@ -162,4 +162,4 @@ You can try out our new dashboard yourself by signing up for a free Distr accoun
 We are very excited about this new dashboard and hope you also like what we built.
 If you have any other feedback, please let us know!
 
-P.S.: Read all our announcements of this week's launch week here: [`#distr-launch-week`](/blog/tags/distr-launch-week/)
+P.S.: Read all our announcements of this week's launch week here: [`#distr-launch-week`](/blog/)
