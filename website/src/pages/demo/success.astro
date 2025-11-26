@@ -1,0 +1,21 @@
+---
+import StandaloneLayout from '~/layouts/StandaloneLayout.astro';
+import MultiStepForm from '~/components/signup/MultiStepForm.astro';
+
+const pageTitle = 'Onboarding - Success';
+const pageDescription =
+  'Thanks for booking a onboarding call';
+---
+
+<StandaloneLayout title={pageTitle} description={pageDescription}>
+  <MultiStepForm
+    flowType="onboarding"
+    heading="The easiest way to distribute software"
+    subheading="You will get a free 30 day trial access to our platform."
+    ctaNote="(No credit card required.)"
+    requirePassword={false}
+    successTitle="Finalize onboarding"
+    successMessage="Thank you for your interest! We will personally guide you through the platform and provide you access to Distr in a short onboarding call."
+    submitButtonText="Schedule onboarding"
+  />
+</StandaloneLayout>
