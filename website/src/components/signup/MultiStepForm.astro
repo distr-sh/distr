@@ -1162,6 +1162,17 @@ const signupSteps = [
           },
           body: JSON.stringify(data),
         });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          const errorMessage =
+            errorData.message || `Server error: ${response.status}`;
+          showError(errorMessage);
+          return;
+        }
+
+        // Success - move to step 2
+        showStep(2);
       } catch (error) {
         console.error('Network error:', error);
         showError('Network error. Please check your connection and try again.');
