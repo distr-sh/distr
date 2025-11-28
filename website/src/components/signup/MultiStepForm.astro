@@ -5,6 +5,7 @@ import CalComIFrame from '~/components/booking/CalComIFrame.astro';
 
 const formsServerBaseUrl = import.meta.env.FORMS_SERVER;
 const reCaptchaKey = import.meta.env.RE_CAPTCHA_KEY;
+const reCaptchaKeyV2 = import.meta.env.RE_CAPTCHA_KEY_v2;
 
 interface Props {
   flowType: string;
@@ -379,14 +380,15 @@ const signupSteps = [
               }
               <div
                 class="g-recaptcha"
-                data-sitekey={reCaptchaKey}
-                data-callback="reCaptchaSubmit"
-                data-size="invisible">
+                data-sitekey={reCaptchaKeyV2}
+                data-action={flowType}
+                data-callback="reCaptchaSubmit">
               </div>
+
               <button
                 type="submit"
                 id="submit-signup"
-                class="w-full mt-6 py-3 px-6 bg-accent-600 hover:bg-accent-900 disabled:bg-gray-400 text-white font-semibold rounded-md transition-colors cursor-pointer">
+                class="w-full mt-4 py-3 px-6 bg-accent-600 hover:bg-accent-900 disabled:bg-gray-400 text-white font-semibold rounded-md transition-colors cursor-pointer">
                 <span id="signup-text">Continue</span>
                 <span id="signup-loading" class="hidden">Submitting...</span>
               </button>
@@ -917,6 +919,7 @@ const signupSteps = [
   // Store user data across steps
   let userData = {};
   let currentStep = 1;
+  let reCaptchaToken = '';
 
   // Determine API endpoints based on flowType
   const apiPath = `/distr/${flowType}`;
@@ -1097,9 +1100,19 @@ const signupSteps = [
     });
   }
 
+  // Global callback for reCAPTCHA v2
+  window.reCaptchaSubmit = token => {
+    reCaptchaToken = token;
+    // Enable the submit button once reCAPTCHA is completed
+    const submitButton = document.getElementById('submit-signup');
+    if (submitButton) {
+      submitButton.disabled = false;
+    }
+  };
+
   // Initialize tracking when page loads
   async function initTracking() {
-    let token = await recaptchaToken('init');
+    // let token = await recaptchaToken('init');
 
     try {
       const url = new URL(initEndpoint);
@@ -1114,7 +1127,7 @@ const signupSteps = [
 
   document.addEventListener('DOMContentLoaded', () => {
     initializeFromURL();
-    initTracking();
+    // initTracking();
 
     // Step 1: Basic signup
     const signupForm = document.getElementById('signup');
@@ -1133,6 +1146,11 @@ const signupSteps = [
         }
       }
 
+      if (!reCaptchaToken) {
+        showError('reCaptchaToken token invalid');
+        return;
+      }
+
       const data = {
         firstName: formData.get('firstName'),
         lastName: formData.get('lastName'),
@@ -1142,6 +1160,7 @@ const signupSteps = [
         phone: formData.get('phone'),
         ...(requirePassword && {password: formData.get('password')}),
         type: formData.get('type'),
+        // reCaptchaToken: reCaptchaToken,
       };
 
       userData = {...userData, ...data};
