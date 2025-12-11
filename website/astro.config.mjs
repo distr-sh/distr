@@ -84,10 +84,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         {
           label: 'Navbar',
           items: [
-            {label: 'Home', link: '/'},
+            {label: 'Docs', link: '/docs/getting-started/what-is-distr/'},
             {label: 'Pricing', link: '/pricing/'},
-            {label: 'Docs', link: '/docs/'},
             {label: 'Blog', link: '/blog/'},
+            {label: 'Case Studies', link: '/case-studies/'},
           ],
         },
         {

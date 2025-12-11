@@ -1,7 +1,7 @@
 ---
 import Layout from '~/layouts/StarlightLayout.astro';
 import SinglePost from '~/components/blog/SinglePost.astro';
-import CTASection from '~/components/home/CTASection.astro';
+import CTAGroup from '~/components/buttons/CTAGroup.astro';
 import {getSortedPosts} from '~/utils/blog';
 import type {Post} from '~/types';
 
@@ -33,5 +33,5 @@ const {post} = Astro.props;
   <div class="mx-auto max-w-7xl px-6 sm:px-8 lg:px-10">
     <SinglePost post={post} url={slug} />
   </div>
-  <CTASection />
+  <CTAGroup />
 </Layout>

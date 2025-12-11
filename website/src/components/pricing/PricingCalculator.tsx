@@ -414,7 +414,7 @@ export default function PricingCalculator() {
               <a
                 href="/get-started/"
                 class="inline-block w-full px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-medium rounded-lg text-center transition-colors no-underline">
-                Get Started →
+                Get started for Free →
               </a>
             </div>
           </div>
@@ -518,9 +518,9 @@ export default function PricingCalculator() {
             </div>
             <div class="p-6 pt-0">
               <a
-                href="https://cal.glasskube.com/team/gk/distr-pro-early-access"
+                href="/get-started/"
                 class="inline-block w-full px-6 py-3 bg-[#00b5eb] hover:bg-[#174c76] text-white font-medium rounded-lg text-center transition-colors no-underline">
-                Get early access →
+                Get started for Free →
               </a>
             </div>
           </div>
@@ -529,7 +529,7 @@ export default function PricingCalculator() {
           <div class="mt-10 min-h-[50rem] flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
             <div class="flex justify-center items-center flex-col p-6 text-center min-h-[18rem]">
               <h3 class="text-xl font-semibold">Enterprise</h3>
-              <div class="text-4xl font-bold my-2">Get a Demo</div>
+              <div class="text-4xl font-bold my-2">Book Demo</div>
               <p class="mb-0 mt-2 text-sm"></p>
             </div>
             <hr class="mb-0 border-gray-200 dark:border-gray-700" />

@@ -1,7 +1,7 @@
 ---
 import {getCollection, render} from 'astro:content';
 import Layout from '~/layouts/StarlightLayout.astro';
-import CTASection from '~/components/home/CTASection.astro';
+import CTAGroup from '~/components/buttons/CTAGroup.astro';
 import type {GlossaryEntryConfig} from '~/content.config';
 
 export async function getStaticPaths() {
@@ -55,5 +55,5 @@ const {title, description} = entry.data as GlossaryEntryConfig;
       </article>
     </div>
   </div>
-  <CTASection />
+  <CTAGroup />
 </Layout>

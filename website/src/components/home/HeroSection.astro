@@ -1,6 +1,6 @@
 ---
-import DemoButton from '../DemoButton.astro';
-import SignupButton from '../SignupButton.astro';
+import DemoButton from '~/components/buttons/DemoButton.astro';
+import SignupButton from '~/components/buttons/SignupButton.astro';
 import HeroCarousel from './HeroCarousel.astro';
 import {images} from '~/assets/index';
 ---
@@ -20,7 +20,7 @@ import {images} from '~/assets/index';
     <div class="flex flex-col items-center gap-4 mb-8">
       <div class="flex flex-col md:flex-row gap-4 justify-center items-center">
         <DemoButton class="w-full md:w-auto" />
-        <SignupButton class="w-full md:w-auto" />
+        <SignupButton class="w-full md:w-auto text-white border-white" />
       </div>
 
       <div class="mt-6 md:mt-10 text-center">
