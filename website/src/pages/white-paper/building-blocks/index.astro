@@ -7,6 +7,7 @@ import {Image} from 'astro:assets';
 import whitepaperImage from '~/assets/white-paper/building-blocks-teaser.png';
 
 const formsServerBaseUrl = import.meta.env.FORMS_SERVER;
+const reCaptchaKeyV2 = import.meta.env.RE_CAPTCHA_KEY_v2;
 
 const TITLE = 'Building Blocks for Modern Self-Managed Software Distribution';
 const DESCRIPTION =
@@ -41,7 +42,11 @@ const DESCRIPTION =
 
         <!-- Form -->
         <div class="lg:sticky lg:top-8">
-          <WhitePaperForm client:load formsServerBaseUrl={formsServerBaseUrl} />
+          <WhitePaperForm
+            client:load
+            formsServerBaseUrl={formsServerBaseUrl}
+            reCaptchaKeyV2={reCaptchaKeyV2}
+          />
         </div>
       </div>
     </section>

@@ -13,7 +13,6 @@ import 'virtual:starlight/optional-css';
 
 import StandaloneFooter from '~/components/StandaloneFooter.astro';
 import GoogleTagManager from '~/components/telemetry/GoogleTagManager.astro';
-import HubSpot from '~/components/telemetry/HubSpot.astro';
 import ReCAPTCHA from '~/components/telemetry/ReCAPTCHA.astro';
 
 export interface Props {
@@ -43,14 +42,7 @@ const ogUrl = Astro.url.href;
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="sitemap" href="/sitemap-index.xml" />
-    {
-      import.meta.env.PROD && (
-        <>
-          <GoogleTagManager />
-          <HubSpot />
-        </>
-      )
-    }
+    {import.meta.env.PROD && <GoogleTagManager />}
     <ReCAPTCHA />
   </head>
   <body class="bg-gray-50 dark:bg-gray-900 min-h-screen">

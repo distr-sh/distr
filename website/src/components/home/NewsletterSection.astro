@@ -1,5 +1,6 @@
 ---
 const formsServerBaseUrl = import.meta.env.FORMS_SERVER;
+const reCaptchaKeyV2 = import.meta.env.RE_CAPTCHA_KEY_v2;
 ---
 
 <section class="py-8 md:py-16 lg:py-24 bg-gray-50 dark:bg-gray-800">
@@ -16,52 +17,135 @@ const formsServerBaseUrl = import.meta.env.FORMS_SERVER;
       <form
         id="newsletterForm"
         data-forms-server={formsServerBaseUrl}
-        class="flex flex-col md:flex-row gap-4 justify-center">
-        <input
-          type="email"
-          id="email"
-          name="email"
-          required
-          placeholder="your-email@corp.com"
-          class="flex-1 px-6 py-3 md:py-4 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:border-[#00b5eb] focus:outline-none transition-colors"
-        />
-        <button
-          type="submit"
-          class="px-8 py-3 md:py-4 bg-[#00b5eb] hover:bg-[#174c76] text-white font-medium rounded-lg transition-colors whitespace-nowrap">
-          Subscribe
-        </button>
+        class="flex flex-col gap-4 justify-center items-center">
+        <div
+          id="emailStep"
+          class="flex flex-col md:flex-row gap-4 justify-center w-full">
+          <input
+            type="email"
+            id="email"
+            name="email"
+            required
+            placeholder="your-email@corp.com"
+            class="flex-1 px-6 py-3 md:py-4 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:border-[#00b5eb] focus:outline-none transition-colors"
+          />
+          <button
+            type="button"
+            id="verifyButton"
+            class="px-8 py-3 md:py-4 bg-[#00b5eb] hover:bg-[#174c76] text-white font-medium rounded-lg transition-colors whitespace-nowrap cursor-pointer">
+            Subscribe
+          </button>
+        </div>
+        <div id="recaptchaStep" class="flex-col gap-4 items-center hidden">
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            Please verify you're not a bot for <span
+              id="emailDisplay"
+              class="font-semibold"></span>
+          </p>
+          <div
+            class="flex flex-col md:flex-row gap-4 items-center md:justify-between">
+            <div
+              class="g-recaptcha overflow-hidden"
+              data-sitekey={reCaptchaKeyV2}
+              data-callback="onRecaptchaCallback">
+            </div>
+            <button
+              type="submit"
+              id="submitButton"
+              disabled
+              class="w-full md:w-80 px-8 py-3 md:py-4 bg-[#00b5eb] text-white font-medium rounded-lg transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#00b5eb] cursor-pointer">
+              Complete Subscription
+            </button>
+          </div>
+        </div>
       </form>
     </div>
   </div>
 </section>
 
 <script>
-  // Load HubSpot script
-  function loadHubSpotScript() {
+  import {record} from 'astro:schema';
+
+  // Load reCAPTCHA script
+  function loadRecaptchaScript() {
     if (typeof window === 'undefined') return;
 
-    const elementId = 'hs-script';
+    const elementId = 'recaptcha-script';
     if (document.getElementById(elementId) === null) {
       const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.src = 'https://js-eu1.hs-scripts.com/144345473.js';
+      script.src = 'https://www.google.com/recaptcha/api.js';
       script.id = elementId;
+      script.async = true;
+      script.defer = true;
       document.head.appendChild(script);
     }
   }
 
-  // Handle newsletter form submission
+  // Get form elements
   const form = document.getElementById('newsletterForm') as HTMLFormElement;
   const emailInput = document.getElementById('email') as HTMLInputElement;
+  const verifyButton = document.getElementById(
+    'verifyButton',
+  ) as HTMLButtonElement;
+  const submitButton = document.getElementById(
+    'submitButton',
+  ) as HTMLButtonElement;
+  const emailStep = document.getElementById('emailStep') as HTMLDivElement;
+  const recaptchaStep = document.getElementById(
+    'recaptchaStep',
+  ) as HTMLDivElement;
+  const emailDisplay = document.getElementById(
+    'emailDisplay',
+  ) as HTMLSpanElement;
 
-  emailInput?.addEventListener('input', () => {
-    if (emailInput.value) {
-      loadHubSpotScript();
+  let recaptchaVerified = false;
+  let recaptchaToken = '';
+
+  // Define global callback for reCAPTCHA
+  (window as any).onRecaptchaCallback = function (token: string) {
+    recaptchaVerified = true;
+    recaptchaToken = token;
+    submitButton.disabled = false;
+  };
+
+  // Handle verify button click (first step)
+  verifyButton?.addEventListener('click', () => {
+    if (!emailInput.validity.valid) {
+      emailInput.reportValidity();
+      return;
     }
+
+    // Load and render reCAPTCHA
+    loadRecaptchaScript();
+
+    const email = emailInput.value;
+
+    // Hide email step, show reCAPTCHA step
+    emailStep.classList.add('hidden');
+    recaptchaStep.classList.remove('hidden');
+    emailDisplay.textContent = email;
   });
 
+  // Handle final form submission (second step)
   form?.addEventListener('submit', async e => {
     e.preventDefault();
+
+    if (!recaptchaVerified) {
+      alert('Please complete the reCAPTCHA verification.');
+      return;
+    }
+
+    // Get the reCAPTCHA token
+    let token = recaptchaToken;
+    if (!token && (window as any).grecaptcha) {
+      token = (window as any).grecaptcha.getResponse();
+    }
+
+    if (!token) {
+      alert('Please complete the reCAPTCHA verification.');
+      return;
+    }
+
     const email = emailInput.value;
     const formsServerBaseUrl = form.dataset.formsServer;
 
@@ -71,12 +155,28 @@ const formsServerBaseUrl = import.meta.env.FORMS_SERVER;
         headers: {
           'Content-type': 'application/json; charset=UTF-8',
         },
-        body: JSON.stringify({email}),
+        body: JSON.stringify({
+          email,
+          reCaptchaToken: token,
+        }),
       });
 
       if (response.ok) {
         alert('Email successfully added to our newsletter: ' + email);
+
+        // Reset form state
         form.reset();
+        recaptchaStep.classList.add('hidden');
+        recaptchaStep.classList.remove('flex');
+        emailStep.classList.remove('hidden');
+        recaptchaVerified = false;
+        recaptchaToken = '';
+        submitButton.disabled = true;
+
+        // Reset reCAPTCHA
+        if ((window as any).grecaptcha) {
+          (window as any).grecaptcha.reset();
+        }
       } else {
         throw new Error('Failed to submit');
       }

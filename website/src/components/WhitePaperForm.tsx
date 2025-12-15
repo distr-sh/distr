@@ -1,4 +1,4 @@
-import {useState} from 'preact/hooks';
+import {useEffect, useState} from 'preact/hooks';
 
 interface WhitePaperRequest {
   firstName: string;
@@ -11,25 +11,29 @@ interface WhitePaperRequest {
 
 interface WhitePaperFormProps {
   formsServerBaseUrl: string;
+  reCaptchaKeyV2: string;
 }
 
-function loadScript() {
+// Load reCAPTCHA script
+function loadRecaptchaScript() {
   if (typeof window === 'undefined') {
     return;
   }
 
-  const elementId = 'hs-script';
+  const elementId = 'recaptcha-script';
   if (document.getElementById(elementId) === null) {
     const script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.src = 'https://js-eu1.hs-scripts.com/144345473.js';
+    script.src = 'https://www.google.com/recaptcha/api.js';
     script.id = elementId;
+    script.async = true;
+    script.defer = true;
     document.head.appendChild(script);
   }
 }
 
 export default function WhitePaperForm({
   formsServerBaseUrl,
+  reCaptchaKeyV2,
 }: WhitePaperFormProps) {
   const [formData, setFormData] = useState<WhitePaperRequest>({
     firstName: '',
@@ -39,20 +43,45 @@ export default function WhitePaperForm({
     jobTitle: '',
     companyName: '',
   });
-  const [hubSpotLoaded, setHubSpotLoaded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [reCaptchaVerified, setReCaptchaVerified] = useState(false);
+  const [reCaptchaToken, setReCaptchaToken] = useState('');
 
-  const loadHubSpot = () => {
-    if (!hubSpotLoaded) {
-      loadScript();
-      setHubSpotLoaded(true);
-    }
-  };
+  // Load reCAPTCHA script and set up callback on component mount
+  useEffect(() => {
+    loadRecaptchaScript();
+
+    // Set up global callback for reCAPTCHA
+    (window as any).onWhitePaperRecaptchaCallback = (token: string) => {
+      setReCaptchaVerified(true);
+      setReCaptchaToken(token);
+    };
+
+    return () => {
+      delete (window as any).onWhitePaperRecaptchaCallback;
+    };
+  }, []);
 
   const handleSubmit = async (event: Event) => {
     event.preventDefault();
+
+    if (!reCaptchaVerified) {
+      alert('Please complete the reCAPTCHA verification.');
+      return;
+    }
+
+    // Get the reCAPTCHA token
+    let token = reCaptchaToken;
+    if (!token && (window as any).grecaptcha) {
+      token = (window as any).grecaptcha.getResponse();
+    }
+
+    if (!token) {
+      alert('Please complete the reCAPTCHA verification.');
+      return;
+    }
+
     setIsSubmitting(true);
-    loadScript();
 
     try {
       const response = await fetch(`${formsServerBaseUrl}/white-paper`, {
@@ -61,7 +90,10 @@ export default function WhitePaperForm({
           Accept: 'application/json',
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          reCaptchaToken: token,
+        }),
       });
 
       if (response.ok) {
@@ -77,6 +109,13 @@ export default function WhitePaperForm({
           jobTitle: '',
           companyName: '',
         });
+
+        // Reset reCAPTCHA
+        setReCaptchaVerified(false);
+        setReCaptchaToken('');
+        if ((window as any).grecaptcha) {
+          (window as any).grecaptcha.reset();
+        }
       } else {
         throw new Error('Failed to submit form');
       }
@@ -153,10 +192,9 @@ export default function WhitePaperForm({
               placeholder="Work Email"
               name="email"
               value={formData.email}
-              onInput={e => {
-                setFormData({...formData, email: e.currentTarget.value});
-                loadHubSpot();
-              }}
+              onInput={e =>
+                setFormData({...formData, email: e.currentTarget.value})
+              }
               required
               class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             />
@@ -222,12 +260,20 @@ export default function WhitePaperForm({
           </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          class="mt-2 px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors duration-200 disabled:cursor-not-allowed">
-          {isSubmitting ? 'Submitting...' : 'Submit'}
-        </button>
+        {/* reCAPTCHA and Submit Button */}
+        <div class="flex flex-col md:flex-row gap-4 items-center md:justify-between">
+          <div
+            class="g-recaptcha"
+            data-sitekey={reCaptchaKeyV2}
+            data-callback="onWhitePaperRecaptchaCallback"></div>
+
+          <button
+            type="submit"
+            disabled={isSubmitting || !reCaptchaVerified}
+            class="w-full md:w-80 px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors duration-200 disabled:cursor-not-allowed cursor-pointer">
+            {isSubmitting ? 'Submitting...' : 'Submit'}
+          </button>
+        </div>
       </form>
     </div>
   );

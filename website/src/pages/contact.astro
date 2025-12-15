@@ -5,6 +5,7 @@ import DemoButton from '~/components/buttons/DemoButton.astro';
 import ContactForm from '../components/ContactForm';
 
 const formsServerBaseUrl = import.meta.env.FORMS_SERVER;
+const reCaptchaKeyV2 = import.meta.env.RE_CAPTCHA_KEY_v2;
 
 const TITLE = 'Get in touch';
 const DESCRIPTION =
@@ -98,7 +99,11 @@ const DESCRIPTION =
             We will follow up as soon as possible.
           </p>
         </div>
-        <ContactForm client:load formsServerBaseUrl={formsServerBaseUrl} />
+        <ContactForm
+          client:load
+          formsServerBaseUrl={formsServerBaseUrl}
+          reCaptchaKeyV2={reCaptchaKeyV2}
+        />
       </div>
     </section>
   </div>
