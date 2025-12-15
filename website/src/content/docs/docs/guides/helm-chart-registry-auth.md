@@ -10,8 +10,8 @@ As such, it can be used to host container images, [Helm charts](/glossary/helm-c
 Because Distr requires authentication to access the registry API, but our Agents are able to inject relevant authentication credentials where they are needed.
 
 A common use-case is to host both a Helm chart and related container images on Distr.
-In this case the agent has to create a `Secret` resource in the same namespace as the helm release and supply that as an image pull secret to workloads created as part of the helm release.
-To take advantage of this feature, you have to include one or more `imagePullSecrets` entries in the values.yaml field of your application version where you want the agent to inject the secret name. For example:
+In this case the agent has to create a `Secret` resource in the same namespace as the helm release and supply that as an image pull secret to workloads created as part of the Helm release.
+To take advantage of this feature, you have to include one or more `imagePullSecrets` or `pullSecrets` entries in the values.yaml field of your application version where you want the agent to inject the secret name. For example:
 
 ```yaml
 imagePullSecrets:
@@ -20,6 +20,8 @@ myAppServer:
   imagePullSecrets: []
 myAppDb:
   imagePullSecrets: {}
+image:
+  pullSecrets: []
 ```
 
 will be transformed into
@@ -34,4 +36,7 @@ myAppServer:
 myAppDb:
   # not changed because it is not an array
   imagePullSecrets: {}
+image:
+  pullSecrets:
+    name: sh.distr.agent.v1.xxxxxx.pull
 ```
