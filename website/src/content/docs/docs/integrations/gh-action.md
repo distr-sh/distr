@@ -7,7 +7,7 @@ sidebar:
 
 ## distr-create-version-action
 
-Distr offers the [distr-create-version-action](https://github.com/glasskube/distr-create-version-action) GitHub Action that allows you to automatically create new versions of your application in Distr every time you push a new release.
+Distr offers the [distr-create-version-action](https://github.com/distr-sh/distr-create-version-action) GitHub Action that allows you to automatically create new versions of your application in Distr every time you push a new release.
 It supports both Docker and Helm applications.
 
 ### Key Features
@@ -34,7 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: glasskube/distr-create-version-action@v1
+      - uses: distr-sh/distr-create-version-action@v1
         with:
           api-token: ${{ secrets.DISTR_API_TOKEN }}
           application-id: ${{ vars.DISTR_APPLICATION_ID }}
@@ -57,6 +57,6 @@ See the **[Automatic Deployments from GitHub](/docs/guides/automatic-deployments
 
 ### Additional Resources
 
-- [GitHub Action README](https://github.com/glasskube/distr-create-version-action/blob/main/README.md) - Complete action documentation
-- [hello-distr Example](https://github.com/glasskube/hello-distr) - Real-world implementation example
+- [GitHub Action README](https://github.com/distr-sh/distr-create-version-action/blob/main/README.md) - Complete action documentation
+- [hello-distr Example](https://github.com/distr-sh/hello-distr) - Real-world implementation example
 - [Personal Access Tokens](/docs/integrations/personal-access-token/) - How to create API tokens

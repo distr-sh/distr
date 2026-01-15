@@ -48,7 +48,7 @@ Here's an example of a Compose service featuring some of the supported `deploy` 
 ```yaml
 services:
   backend:
-    image: ghcr.io/glasskube/hello-distr/backend:0.1.10
+    image: ghcr.io/distr-sh/hello-distr/backend:0.2.1
     environment:
       DB_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres/hello?sslmode=disable
     depends_on:

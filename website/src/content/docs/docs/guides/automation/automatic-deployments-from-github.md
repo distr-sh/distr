@@ -265,18 +265,18 @@ Here's how everything works together:
 
 ### Example from hello-distr
 
-The [hello-distr](https://github.com/glasskube/hello-distr) repository demonstrates this complete setup:
+The [hello-distr](https://github.com/distr-sh/hello-distr) repository demonstrates this complete setup:
 
 **docker-compose.yaml:**
 
 ```yaml
 services:
   backend:
-    image: ghcr.io/glasskube/hello-distr/backend:0.2.0 # x-release-please-version
+    image: ghcr.io/distr-sh/hello-distr/backend:0.2.1 # x-release-please-version
   frontend:
-    image: ghcr.io/glasskube/hello-distr/frontend:0.2.0 # x-release-please-version
+    image: ghcr.io/distr-sh/hello-distr/frontend:0.2.1 # x-release-please-version
   proxy:
-    image: ghcr.io/glasskube/hello-distr/proxy:0.2.0 # x-release-please-version
+    image: ghcr.io/distr-sh/hello-distr/proxy:0.2.1 # x-release-please-version
 ```
 
 **Build workflow** (`.github/workflows/build-backend.yaml`):
@@ -292,7 +292,7 @@ jobs:
     steps:
       - uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/glasskube/hello-distr/backend
+          images: ghcr.io/distr-sh/hello-distr/backend
           tags: |
             type=semver,pattern={{version}}
       - uses: docker/build-push-action@v6
@@ -336,7 +336,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create Distr Version and Update Deployments
-        uses: glasskube/distr-create-version-action@v1
+        uses: distr-sh/distr-create-version-action@v1
         with:
           api-token: ${{ secrets.DISTR_API_TOKEN }}
           application-id: ${{ vars.DISTR_APPLICATION_ID }}
@@ -366,7 +366,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create Distr Version and Update Deployments
-        uses: glasskube/distr-create-version-action@v1
+        uses: distr-sh/distr-create-version-action@v1
         with:
           api-token: ${{ secrets.DISTR_API_TOKEN }}
           application-id: ${{ vars.DISTR_APPLICATION_ID }}
@@ -429,7 +429,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create Distr Version and Update Deployments
-        uses: glasskube/distr-create-version-action@v1
+        uses: distr-sh/distr-create-version-action@v1
         with:
           api-token: ${{ secrets.DISTR_API_TOKEN }}
           application-id: ${{ vars.DISTR_APPLICATION_ID }}
@@ -608,8 +608,8 @@ Now that you have automatic deployments set up, consider:
 
 ## Additional Resources
 
-- [distr-create-version-action GitHub Repository](https://github.com/glasskube/distr-create-version-action)
-- [hello-distr Example Application](https://github.com/glasskube/hello-distr) - Complete example with Release Please, Docker builds, and automatic deployments
+- [distr-create-version-action GitHub Repository](https://github.com/distr-sh/distr-create-version-action)
+- [hello-distr Example Application](https://github.com/distr-sh/hello-distr) - Complete example with Release Please, Docker builds, and automatic deployments
 - [Release Please Documentation](https://github.com/googleapis/release-please) - Automated release management
 - [Conventional Commits Specification](https://www.conventionalcommits.org/) - Commit message format for Release Please
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)

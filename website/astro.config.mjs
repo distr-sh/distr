@@ -38,7 +38,7 @@ export default defineConfig({
       title: 'Distr',
       customCss: ['./src/styles/global.css'],
       editLink: {
-        baseUrl: 'https://github.com/glasskube/distr.sh/tree/main',
+        baseUrl: 'https://github.com/distr-sh/distr.sh/tree/main',
       },
       lastUpdated: true,
       head:
@@ -65,7 +65,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         {
           icon: 'github',
           label: 'GitHub',
-          href: 'https://github.com/glasskube/distr',
+          href: 'https://github.com/distr-sh/distr',
         },
         {
           icon: 'discord',
