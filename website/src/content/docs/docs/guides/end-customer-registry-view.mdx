@@ -6,7 +6,7 @@ sidebar:
   order: 7
 ---
 
-import {Aside, Code, TabItem, Tabs} from '@astrojs/starlight/components';
+import {Aside, Code} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
 import customerPortalLight from '~/assets/docs/guides/customer-view/customer-portal-no-num-light.png';
 import customerPortalDark from '~/assets/docs/guides/customer-view/customer-portal-no-num-dark.png';
@@ -100,80 +100,60 @@ Refer to the deployment instructions in your [Customer Portal](/docs/product/cus
 
 ## Deployment Agent quickstart from the customer portal
 
-### 1. Create a New Agent
+### Step 1: Select Application
 
-Navigate to the Deployments section and create a new agent.
-[Distr agents](/docs/product/agents/) are lightweight agent components deployed in your target environment (one per Docker Host or Kubernetes namespace)
-and can manage multiple deployed applications.
+Navigate to **Deployments** in the sidebar and click on the **+ New Deployment** button.
 
-<Aside type="tip">
-  Choose the Docker Compose agent for VM or non-Kubernetes environments, or the
-  Helm agent for Kubernetes clusters. Your software vendor can advise on the
-  best option for your use case.
-</Aside>
+Choose the application you want to deploy.
 
-### 2. Name Your Agent
+![Select Application step](../../../../assets/screenshots/distr/distr-customer-select-application.png)
 
-Provide a descriptive name, optionally including environment or customer identifiers.
+### Step 2: Deployment Configuration
 
-<ThemedImage
-  lightSrc={customerAgentNameLight}
-  darkSrc={customerAgentNameDark}
-  alt="Artifact details view"
-/>
+Give your deployment a descriptive name. This name will help you identify and manage the deployment later.
 
-### 3. Configure Namespace (Helm only)
+For Helm applications, you'll also need to specify the Kubernetes namespace where it should be deployed. Make sure the namespace exists in your cluster before proceeding.
 
-If deploying the Helm agent, specify the existing Kubernetes namespace where it will be installed.
-
-<ThemedImage
-  lightSrc={helmNSLight}
-  darkSrc={helmNSDark}
-  alt="Artifact details view"
-/>
-
-### 4. Install the Agent
-
-Run the provided installation command in your target environment:
+![Deployment Configuration step](../../../../assets/screenshots/distr/customer-create-deployment.png)
 
 <Aside type="tip">
-  You will find the exact commands in the Customer Portal.
+  You can also enable cluster-scoped permissions for Helm deployments. When
+  enabled, the agent will have cluster-wide access; otherwise, it will be
+  limited to a specific namespace. See [Helm
+  Agent](/docs/product/agents/#helm-agent) for more details.
 </Aside>
 
-<Tabs>
-  <TabItem label="Docker">
-    <Code
-      code="curl 'https://app.distr.sh/api/v1/connect?targetId=...&targetSecret=...' | docker compose -f - up -d"
-      lang="bash"
-    />
-  </TabItem>
-  <TabItem label="Helm">
-    <Code
-      code="kubectl apply -n ... -f 'https://demo.distr.sh/api/v1/connect?targetId=...&targetSecret=...'"
-      lang="bash"
-    />
-  </TabItem>
-</Tabs>
+### Step 3: Application Configuration
 
-Once running, the agent gains access to the definition files configured by the vendor on the Distr platform. It is responsible for deploying the application, fetching updates, and reporting health metrics to both the customer and vendor portals.
+Configure the environment variables for your Docker Compose application. These variables will be passed to the `docker compose` process via the `--env-file` argument.
 
-### 5. Configure Your Deployment
+The entered environment variables will be passed unmodified to the `docker compose` process via the `--env-file` argument.
+For more information on how to use them, please refer to [our guide on working with environment variables](/docs/guides/docker-env-var-template/).
 
-Select an application and version from the Deploy panel.
+You can also enable Docker Swarm mode for deployments that should run in swarm mode. See [Docker Swarm](/docs/product/agents/#docker-swarm) for more details. Additionally, you can enable container log collection to view application logs directly in the portal. Learn more about [Container Logs](/docs/product/agents/#container-logs).
 
-Customize the configuration file provided by the vendor to fit your environment.
+<Aside type="note">
+  For Helm applications, you'll configure the Helm values instead. You can
+  adjust the values from the base values file provided by the vendor when
+  creating the application version.
+</Aside>
 
-<ThemedImage
-  lightSrc={configLight}
-  darkSrc={configDark}
-  alt="Artifact details view"
-/>
+![Application Configuration step](../../../../assets/screenshots/distr/customer-deployment-configuration.png)
 
-### 6. Deploy the Application
+### Step 4: Deploy
 
-Once configured, you're ready to deploy.
+Review your configuration and click **Create Deployment** to proceed to the deployment page.
 
-### 7. Monitor Deployment Status
+![Deployment success page](../../../../assets/screenshots/distr/customer-success.png)
+
+<Aside type="caution">
+  **Important**: This command will automatically install the Distr agent, which
+  will then automatically installs the application. The agent runs in the
+  customer environment and manages the full lifecycle of your application
+  deployment.
+</Aside>
+
+### 5. Monitor Deployment Status
 
 View real-time updates as your deployment initializes.
 
@@ -183,7 +163,7 @@ View real-time updates as your deployment initializes.
   alt="Artifact details view"
 />
 
-### 8. Access Environment Logs
+### 6. Access Environment Logs
 
 Click on the status button to view application logs directly from the portal.
 
@@ -193,7 +173,7 @@ Click on the status button to view application logs directly from the portal.
   alt="Artifact details view"
 />
 
-### 9. Update Deployments
+### 7. Update Deployments
 
 Modify configuration values and update running deployments as needed.
 
@@ -203,7 +183,7 @@ Modify configuration values and update running deployments as needed.
   alt="Artifact details view"
 />
 
-### 10. Important Notes
+## Important Notes
 
 - A single agent can manage multiple deployments in the same target environment
 - To remove a deployment, first **undeploy** it before **deletion**

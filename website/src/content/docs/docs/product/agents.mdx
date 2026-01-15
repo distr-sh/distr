@@ -35,11 +35,7 @@ Distr offers specialized agents for different deployment tools, each designed to
 The Docker Compose agent is specifically designed for container-based deployments, providing comprehensive management of both single- and multi-container applications.
 It handles application updates with minimal downtime, collects container health metrics and logs, and supports environment variable templating for flexible configuration.
 
-<ThemedImage
-  lightSrc={dockerAgentLight}
-  darkSrc={dockerAgentDark}
-  alt="Docker Compose Agent interface"
-/>
+![Docker Application Configuration](../../../../assets/screenshots/distr/docker-application-config.png)
 
 <Aside type="note">
   Unless you're using Distr to deploy your own applications internally, the
@@ -164,11 +160,7 @@ Unlike regular compose mode, `docker stack deploy` is not called in every cycle,
 
 The Helm agent specializes in Kubernetes deployments, managing the complete lifecycle of Helm charts in customer environments. It handles chart installation and upgrades, monitors Kubernetes resource health, supports customer-specific value overrides, and provides rollback capabilities for failed deployments.
 
-<ThemedImage
-  lightSrc={helmAgentLight}
-  darkSrc={helmAgentDark}
-  alt="Distr Helm Agent"
-/>
+![Helm Application Configuration](../../../../assets/screenshots/distr/helm-application-config.png)
 
 In the following, we want to dive deep into how the Helm agent works.
 
@@ -349,8 +341,8 @@ The Applications section provides vendors with a dedicated space to configure an
 
 For detailed instructions on adding applications to Distr, see our platform management guides:
 
-- [Onboarding a Docker Application](/docs/guides/onboarding-a-docker-app/)
-- [Onboarding a Helm Application](/docs/guides/onboarding-a-helm-app/)
+- [Create a Application](/docs/guides/application/) - Create Docker and Helm applications
+- [Create a Deployment](/docs/guides/deployment/) - Deploy applications to customer environments
 
 ### Deployments
 

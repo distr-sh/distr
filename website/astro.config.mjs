@@ -170,5 +170,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/privacy-policy/': '/privacy-policy/',
     '/docs/guides/license-mgmt/': '/docs/guides/application-licenses/',
     '/docs/guides/onboarding-a-new-customer/': '/docs/product/rbac/',
+    '/docs/guides/onboarding-a-docker-app/': '/docs/guides/application/',
+    '/docs/guides/onboarding-a-helm-app/': '/docs/guides/application/',
   },
 });
