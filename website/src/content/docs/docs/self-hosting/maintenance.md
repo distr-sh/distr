@@ -26,7 +26,7 @@ If you only have one instance of Distr running (e.g., using Docker Compose), you
 The internal scheduling can be configured via environment variables.
 
 An example configuration file can be found on
-[`github.com/glasskube/distr/deploy/docker`](https://github.com/glasskube/distr/blob/main/deploy/docker/.env):
+[`github.com/distr-sh/distr/deploy/docker`](https://github.com/distr-sh/distr/blob/main/deploy/docker/.env):
 
 ```dotenv
 # Cron interval for cleaning deployment revision statuses older than STATUS_ENTRIES_MAX_AGE
@@ -52,7 +52,7 @@ But the concept can apply to any HA setup where the cleanup jobs are triggered b
 These jobs can also be configured via our Helm Chart.
 
 An example configuration can be found in
-[`github.com/glasskube/distr/deploy/charts/distr`](https://github.com/glasskube/distr/blob/main/deploy/charts/distr/values.yaml):
+[`github.com/distr-sh/distr/deploy/charts/distr`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/values.yaml):
 
 ```yaml
 cronJobs:

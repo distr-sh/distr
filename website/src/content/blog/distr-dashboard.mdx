@@ -25,7 +25,7 @@ import dashboardDark from '../../assets/blog/2025-05-21-dashboard/distr-dashboar
 import {TabItem, Tabs} from '@astrojs/starlight/components';
 
 I am Philip—an engineer working at Glasskube, which helps [software and AI companies](/glossary/isv-meaning/) distribute their applications to [self-managed environments](/glossary/self-managed-software/).
-We build an Open Source Software Distribution platform called Distr ([`github.com/glasskube/distr`](https://github.com/glasskube/distr)).
+We build an Open Source Software Distribution platform called Distr ([`github.com/distr-sh/distr`](https://github.com/distr-sh/distr)).
 
 Adding support for multiple deployments per target and introducing metrics forced us to rethink our current dashboard and led to redesigning it from scratch.
 
@@ -86,7 +86,7 @@ Our new dashboard is a unified view for software vendors to check all their cust
 ### Moving from a deployment table to cards
 
 The main reason for the switch to cards was the introduction of multiple deployments per deployment target in
-[Distr v1.6](https://github.com/glasskube/distr/releases/tag/1.6.0).
+[Distr v1.6](https://github.com/distr-sh/distr/releases/tag/1.6.0).
 Often software vendors receive a pretty beefy VM or quite large namespace to deploy their software to.
 Modern applications consist of multiple application components which might need to be deployed independently of each other,
 so the docker compose and [Helm Charts](/glossary/helm-chart/) stay in a manageable size.
@@ -95,7 +95,7 @@ With the introduction of cards we are now able to display a list of all deployed
 
 ### Adding CPU & Memory Utilization
 
-Deployment target metrics have been introduced in [Distr v1.9](https://github.com/glasskube/distr/releases/tag/1.9.0).
+Deployment target metrics have been introduced in [Distr v1.9](https://github.com/distr-sh/distr/releases/tag/1.9.0).
 We extended our agent to not only reconcile the application deployment but also collect—if configured—metrics from the target.
 
 Read more about the [Docker Metrics Collection](/docs/product/agents/#docker-metrics) and
@@ -106,7 +106,7 @@ These metrics allow you to spot any resource constraints directly on the Dashboa
 
 ### Avatars
 
-The introduction of images was a rather small addition in [Distr v1.6](https://github.com/glasskube/distr/releases/tag/1.6.0),
+The introduction of images was a rather small addition in [Distr v1.6](https://github.com/distr-sh/distr/releases/tag/1.6.0),
 but allows users to associate customers and deployments with images to further customize their Distr experience.
 
 ### Performance
@@ -116,7 +116,7 @@ Removing globe.js and our charting library allowed us to reduce the bundle size 
 <Tabs groupId="frontend-build">
   <TabItem value="new" label="Current Distr Dashboard">
     ```shell
-    # @glasskube/distr@1.9.1 build
+    # @distr-sh/distr@1.9.1 build
     ng build --configuration=production --source-map=true
 
     ❯ Building...
@@ -142,7 +142,7 @@ Removing globe.js and our charting library allowed us to reduce the bundle size 
   </TabItem>
   <TabItem value="old" label="Previous Distr Dashboard">
     ```shell
-    # @glasskube/distr@1.4.5 build
+    # @distr-sh/distr@1.4.5 build
     ng build --configuration=production
 
     ❯ Building...

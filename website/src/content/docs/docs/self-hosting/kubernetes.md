@@ -10,7 +10,7 @@ To install Distr in [Kubernetes](/glossary/kubernetes/), simply run:
 
 ```shell
 helm upgrade --install --wait --namespace distr --create-namespace \
-  distr oci://ghcr.io/glasskube/charts/distr \
+  distr oci://ghcr.io/distr-sh/charts/distr \
   --set postgresql.enabled=true --set minio.enabled=true
 ```
 

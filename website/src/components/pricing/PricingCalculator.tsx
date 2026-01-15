@@ -583,7 +583,7 @@ export default function PricingCalculator() {
           <p class="text-base leading-relaxed text-gray-700 dark:text-gray-300 mb-0">
             Use our{' '}
             <a
-              href="https://github.com/glasskube/distr"
+              href="https://github.com/distr-sh/distr"
               target="_blank"
               rel="noopener noreferrer"
               class="text-[#00b5eb] hover:text-[#174c76] dark:text-[#00b5eb] dark:hover:text-[#4ec9f0] font-medium underline">

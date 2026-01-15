@@ -71,7 +71,7 @@ services:
   agent:
     network_mode: host
     restart: unless-stopped
-    image: 'ghcr.io/glasskube/distr/docker-agent'
+    image: 'ghcr.io/distr-sh/distr/docker-agent'
     environment:
       # Authentication with Distr Hub, see above
       DISTR_TARGET_ID: '<targetId>'
@@ -206,7 +206,7 @@ spec:
         runAsNonRoot: true
       containers:
         - name: distr-agent
-          image: 'ghcr.io/glasskube/distr/kubernetes-agent'
+          image: 'ghcr.io/distr-sh/distr/kubernetes-agent'
           imagePullPolicy: IfNotPresent
           env:
             - name: DOCKER_CONFIG
