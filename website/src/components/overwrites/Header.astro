@@ -1,0 +1,322 @@
+---
+import LanguageSelect from '@astrojs/starlight/components/LanguageSelect.astro';
+import Search from '@astrojs/starlight/components/Search.astro';
+import SiteTitle from './SiteTitle.astro';
+import SocialIcons from './SocialIcons.astro';
+import ThemeSelect from './ThemeSelect.astro';
+import {links} from '~/data/navigation';
+
+const slug = Astro.locals.starlightRoute.entry.slug;
+---
+
+<div class="header sl-flex">
+  <div class="full-width sl-flex">
+    <SiteTitle />
+  </div>
+  <div class="sl-flex">
+    <Search />
+  </div>
+  <div class="sl-hidden md:sl-flex right-group">
+    <nav class="desktop" aria-label="Main navigation">
+      {
+        links.map((link) => (
+          <div class="nav-item">
+            {link.children ? (
+              <div class="dropdown">
+                <button
+                  class="dropdown-trigger"
+                  type="button"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                >
+                  {link.title}
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 12 12"
+                    fill="currentColor"
+                    aria-hidden="true"
+                    style="display: inline-block; margin-left: 4px;"
+                  >
+                    <path d="M6 8L2 4h8z" />
+                  </svg>
+                </button>
+                <div class="dropdown-content" role="menu">
+                  {link.children.map((child) => (
+                    <a href={child.value} class="dropdown-item" role="menuitem">
+                      {child.title}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <a href={link.value}>{link.title}</a>
+            )}
+          </div>
+        ))
+      }
+    </nav>
+    <div class="sl-flex social-icons">
+      <SocialIcons />
+    </div>
+    <LanguageSelect />
+    <ThemeSelect />
+  </div>
+</div>
+
+<style>
+  .header {
+    gap: var(--sl-nav-gap);
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+  }
+  .full-width {
+    width: 100%;
+  }
+  .right-group,
+  .social-icons {
+    gap: 1rem;
+    align-items: center;
+  }
+  .desktop::after,
+  .release-link::after,
+  .social-icons::after {
+    content: '';
+    height: 2rem;
+    border-inline-end: 1px solid var(--sl-color-gray-5);
+  }
+
+  @media (min-width: 50rem) {
+    :global(:root[data-has-sidebar]) {
+      --__sidebar-pad: calc(2 * var(--sl-nav-pad-x));
+    }
+    :global(:root:not([data-has-toc])) {
+      --__toc-width: 0rem;
+    }
+    .header {
+      --__sidebar-width: max(
+        0rem,
+        var(--sl-content-inline-start, 0rem) - var(--sl-nav-pad-x)
+      );
+      --__main-column-fr: calc(
+        (
+            100% + var(--__sidebar-pad, 0rem) -
+              var(--__toc-width, var(--sl-sidebar-width)) -
+              (2 * var(--__toc-width, var(--sl-nav-pad-x))) -
+              var(--sl-content-inline-start, 0rem) - var(--sl-content-width)
+          ) /
+          2
+      );
+      display: grid;
+      grid-template-columns:
+        /* 1 (site title): runs up until the main content column’s left edge or the width of the title, whichever is the largest  */
+        minmax(calc(var(--__sidebar-pad, 0rem)), auto)
+        /* 2 (search box): all free space that is available. */
+        1fr
+        /* 3 (right items): use the space that these need. */
+        auto;
+      align-content: center;
+    }
+  }
+  a:hover {
+    color: var(--sl-color-gray-2);
+  }
+  :root[data-theme='light'] {
+    .header a:hover {
+      color: var(--sl-color-gray-3);
+    }
+  }
+</style>
+<style is:global>
+  .header {
+    border: none !important;
+  }
+  body[data-mobile-menu-expanded] header {
+    background-color: var(--sl-color-bg);
+  }
+</style>
+
+{
+  /* prettier-ignore */
+  !slug.startsWith('docs') && <>
+    <style>
+      .header {
+        background-color: transparent;
+        -webkit-backdrop-filter: blur(16px);
+        backdrop-filter: blur(16px);
+        padding-inline-end: calc(var(--sl-nav-gap) + var(--sl-nav-pad-x));
+      }
+
+      @media (min-width: 50rem) {
+        header {
+          background-color: transparent !important;
+        }
+      }
+      @media (min-width: 50rem) {
+        .header {
+          padding-inline-end: var(--sl-nav-pad-y);
+        }
+      }
+    </style>
+  </>
+}
+
+<style>
+  .desktop {
+    display: none;
+    align-items: center;
+    gap: 1rem;
+    padding-inline-end: 1rem;
+  }
+  @media (min-width: 72rem) {
+    .desktop {
+      display: flex;
+    }
+    .mobile {
+      display: none;
+    }
+  }
+
+  .nav-item {
+    position: relative;
+  }
+
+  a {
+    color: var(--sl-color-white);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .dropdown-trigger {
+    background: none;
+    border: none;
+    color: var(--sl-color-white);
+    font-weight: 600;
+    font-size: inherit;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .dropdown-trigger:hover {
+    color: var(--sl-color-gray-2);
+  }
+
+  :root[data-theme='light'] .dropdown-trigger:hover {
+    color: var(--sl-color-gray-3);
+  }
+
+  .dropdown {
+    position: relative;
+  }
+
+  .dropdown::before {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    height: 0.5rem;
+    background: transparent;
+  }
+
+  .dropdown-content {
+    display: none;
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    background-color: var(--sl-color-bg-nav);
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0;
+    min-width: 180px;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .dropdown:hover .dropdown-content {
+    display: block;
+  }
+
+  .dropdown-item {
+    display: block;
+    padding: 0.5rem 1rem;
+    color: var(--sl-color-white);
+    font-weight: 400;
+    font-size: 0.9rem;
+    text-decoration: none;
+  }
+
+  .dropdown-item:hover {
+    background-color: var(--sl-color-gray-5);
+    color: var(--sl-color-white);
+  }
+
+  :root[data-theme='light'] .dropdown-item {
+    color: var(--sl-color-gray-1);
+  }
+
+  :root[data-theme='light'] .dropdown-item:hover {
+    background-color: var(--sl-color-gray-6);
+    color: var(--sl-color-gray-1);
+  }
+
+  /* From https://github.com/withastro/starlight/blob/main/packages/starlight/components/Select.astro */
+  label {
+    --sl-label-icon-size: 0.875rem;
+    --sl-caret-size: 1.25rem;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--sl-color-gray-1);
+  }
+
+  label:hover {
+    color: var(--sl-color-gray-2);
+  }
+
+  .icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+
+  .label-icon {
+    font-size: var(--sl-label-icon-size);
+    inset-inline-start: 0;
+  }
+
+  .caret {
+    font-size: var(--sl-caret-size);
+    inset-inline-end: 0;
+  }
+
+  select {
+    border: 0;
+    padding-block: 0.625rem;
+    padding-inline: calc(var(--sl-label-icon-size) + 0.25rem)
+      calc(var(--sl-caret-size) + 0.25rem);
+    width: var(--sl-select-width);
+    background-color: transparent;
+    text-overflow: ellipsis;
+    color: inherit;
+    cursor: pointer;
+    appearance: none;
+  }
+
+  option {
+    background-color: var(--sl-color-bg-nav);
+    color: var(--sl-color-gray-1);
+  }
+
+  @media (min-width: 50rem) {
+    select {
+      font-size: var(--sl-text-sm);
+    }
+  }
+</style>

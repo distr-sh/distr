@@ -20,7 +20,6 @@
     "@fontsource/inter": "^5.2.8",
     "@fontsource/poppins": "^5.2.7",
     "@iconify-json/lucide": "^1.2.86",
-    "@lorenzo_lewis/starlight-utils": "^0.3.2",
     "@tailwindcss/vite": "^4.1.18",
     "astro": "5.16.11",
     "astro-icon": "^1.1.5",
@@ -34,6 +33,7 @@
     "rehype-mermaid": "^3.0.0",
     "sharp": "^0.34.5",
     "starlight-links-validator": "^0.19.2",
+    "starlight-sidebar-topics": "^0.6.2",
     "tailwindcss": "^4.1.18"
   },
   "devDependencies": {

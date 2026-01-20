@@ -1,0 +1,150 @@
+---
+// This is heavily adapted from Starlight components:
+// https://github.com/withastro/starlight/blob/main/packages/starlight/components/Select.astro
+// https://github.com/withastro/starlight/blob/main/packages/starlight/components/LanguageSelect.astro
+
+import Default from '@astrojs/starlight/components/SiteTitle.astro';
+import {Icon} from '@astrojs/starlight/components';
+import {links} from '~/data/navigation';
+---
+
+<>
+  <Default><slot /></Default>
+
+  <starlight-select class="mobile">
+    <label>
+      <select aria-label="Menu">
+        <option value="" disabled selected>Menu</option>
+        {
+          links.map(link => (
+            <>
+              {link.children ? (
+                <>
+                  <option value={link.value} disabled>
+                    {link.title}
+                  </option>
+                  {link.children.map(child => (
+                    <option value={child.value} style="padding-left: 1rem;">
+                      &nbsp;&nbsp;{child.title}
+                    </option>
+                  ))}
+                </>
+              ) : (
+                <option value={link.value} set:html={link.title} />
+              )}
+            </>
+          ))
+        }
+      </select>
+      <Icon name="down-caret" class="icon caret" />
+    </label>
+  </starlight-select>
+</>
+
+<script>
+  class StarlightLanguageSelect extends HTMLElement {
+    constructor() {
+      super();
+      const select = this.querySelector('select');
+      if (select) {
+        select.addEventListener('change', e => {
+          if (e.currentTarget instanceof HTMLSelectElement) {
+            window.location.pathname = e.currentTarget.value;
+          }
+        });
+      }
+    }
+  }
+  customElements.define('starlight-select', StarlightLanguageSelect);
+</script>
+
+<style>
+  .desktop {
+    display: none;
+    align-items: center;
+    gap: 1rem;
+    padding-inline-start: 1rem;
+  }
+  @media (min-width: 72rem) {
+    .desktop {
+      display: flex;
+    }
+    .mobile {
+      display: none;
+    }
+  }
+
+  a {
+    color: var(--sl-color-white);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  /* From https://github.com/withastro/starlight/blob/main/packages/starlight/components/Select.astro */
+  label {
+    --sl-label-icon-size: 0.875rem;
+    --sl-caret-size: 1.25rem;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--sl-color-gray-1);
+  }
+
+  label:hover {
+    color: var(--sl-color-gray-2);
+  }
+
+  .icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+
+  .label-icon {
+    font-size: var(--sl-label-icon-size);
+    inset-inline-start: 0;
+  }
+
+  .caret {
+    font-size: var(--sl-caret-size);
+    inset-inline-end: 0;
+  }
+
+  select {
+    border: 0;
+    padding-block: 0.625rem;
+    padding-inline: calc(var(--sl-label-icon-size) + 0.25rem)
+      calc(var(--sl-caret-size) + 0.25rem);
+    width: var(--sl-select-width);
+    background-color: transparent;
+    text-overflow: ellipsis;
+    color: inherit;
+    cursor: pointer;
+    appearance: none;
+  }
+
+  option {
+    background-color: var(--sl-color-bg-nav);
+    color: var(--sl-color-gray-1);
+  }
+
+  option:disabled {
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+
+  option[style*='padding-left'] {
+    font-size: 0.9em;
+  }
+
+  @media (min-width: 50rem) {
+    select {
+      font-size: var(--sl-text-sm);
+    }
+  }
+  starlight-select {
+    margin-left: auto;
+  }
+</style>

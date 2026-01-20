@@ -3,13 +3,13 @@ import mdx from '@astrojs/mdx';
 import preact from '@astrojs/preact';
 import sitemap from '@astrojs/sitemap';
 import starlight from '@astrojs/starlight';
-import starlightUtils from '@lorenzo_lewis/starlight-utils';
 import tailwindcss from '@tailwindcss/vite';
 import icon from 'astro-icon';
 import {defineConfig} from 'astro/config';
 import serviceWorker from 'astrojs-service-worker';
 import rehypeMermaid from 'rehype-mermaid';
 import starlightLinksValidator from 'starlight-links-validator';
+import starlightSidebarTopics from 'starlight-sidebar-topics';
 
 // https://astro.build/config
 export default defineConfig({
@@ -75,88 +75,102 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
       ],
       components: {
         // Components can be overwritten here
+        Header: './src/components/overwrites/Header.astro',
         PageTitle: './src/components/overwrites/PageTitle.astro',
         ContentPanel: './src/components/overwrites/ContentPanel.astro',
         Footer: './src/components/overwrites/Footer.astro',
         SocialIcons: './src/components/overwrites/SocialIcons.astro',
+        ThemeSelect: './src/components/overwrites/ThemeSelect.astro',
       },
-      sidebar: [
-        {
-          label: 'Navbar',
-          items: [
-            {label: 'Docs', link: '/docs/'},
-            {label: 'Pricing', link: '/pricing/'},
-            {label: 'Blog', link: '/blog/'},
-            {label: 'Case Studies', link: '/case-studies/'},
-          ],
-        },
-        {
-          label: 'Introduction',
-          autogenerate: {directory: 'docs/intro'},
-        },
-        {
-          label: 'Use cases',
-          autogenerate: {directory: 'docs/use-cases'},
-        },
-        {
-          label: 'Guides',
-          items: [
-            {
-              label: 'Getting Started',
-              autogenerate: {directory: 'docs/guides/getting-started'},
-            },
-            {
-              label: 'Configuration',
-              collapsed: false,
-              autogenerate: {directory: 'docs/guides/configuration'},
-            },
-            {
-              label: 'Automation & CI/CD',
-              collapsed: true,
-              autogenerate: {directory: 'docs/guides/automation'},
-            },
-            {
-              label: 'Customer Management',
-              collapsed: true,
-              autogenerate: {directory: 'docs/guides/customer-management'},
-            },
-            {
-              label: 'Advanced',
-              collapsed: true,
-              autogenerate: {directory: 'docs/guides/advanced'},
-            },
-          ],
-        },
-        {
-          label: 'Product',
-          collapsed: true,
-          autogenerate: {directory: 'docs/product'},
-        },
-        {
-          label: 'Self hosting',
-          collapsed: true,
-          autogenerate: {directory: 'docs/self-hosting'},
-        },
-        {
-          label: 'Integrations',
-          collapsed: true,
-          autogenerate: {directory: 'docs/integrations'},
-        },
-        {
-          label: 'API Reference',
-          link: 'https://app.distr.sh/docs',
-        },
-        {
-          label: 'FAQs',
-          link: '/docs/faqs/',
-        },
-      ],
       tableOfContents: {
         minHeadingLevel: 2,
         maxHeadingLevel: 6,
       },
       prerender: true,
       plugins: [
+        starlightSidebarTopics(
+          [
+            {
+              label: 'Docs',
+              link: '/docs/',
+              icon: 'open-book',
+              items: [
+                {
+                  label: 'Introduction',
+                  autogenerate: {directory: 'docs/intro'},
+                },
+                {
+                  label: 'Use cases',
+                  autogenerate: {directory: 'docs/use-cases'},
+                },
+                {
+                  label: 'Product',
+                  autogenerate: {directory: 'docs/product'},
+                },
+                {
+                  label: 'FAQs',
+                  link: '/docs/faqs/',
+                },
+              ],
+            },
+            {
+              label: 'Guides',
+              link: '/docs/guides/',
+              icon: 'puzzle',
+              items: [
+                {
+                  label: 'Getting Started',
+                  autogenerate: {directory: 'docs/guides/getting-started'},
+                },
+                {
+                  label: 'Configuration',
+                  autogenerate: {directory: 'docs/guides/configuration'},
+                },
+                {
+                  label: 'Automation & CI/CD',
+                  autogenerate: {directory: 'docs/guides/automation'},
+                },
+                {
+                  label: 'Customer Management',
+                  autogenerate: {directory: 'docs/guides/customer-management'},
+                },
+                {
+                  label: 'Advanced',
+                  autogenerate: {directory: 'docs/guides/advanced'},
+                },
+              ],
+            },
+            {
+              label: 'Integrations',
+              link: '/docs/integrations/',
+              icon: 'setting',
+              items: [
+                {
+                  label: 'Integrations',
+                  autogenerate: {directory: 'docs/integrations'},
+                },
+                {
+                  label: 'API Reference',
+                  link: 'https://app.distr.sh/docs',
+                },
+              ],
+            },
+            {
+              label: 'Self-Hosting',
+              link: '/docs/self-hosting/',
+              icon: 'rocket',
+              items: [
+                {
+                  label: 'Self Hosting',
+                  autogenerate: {directory: 'docs/self-hosting'},
+                },
+              ],
+            },
+          ],
+          {
+            exclude: ['**/privacy-policy', '**/404'],
+          },
+        ),
         starlightLinksValidator({
           exclude: [
             '/',
@@ -167,11 +181,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             '/get-started/',
             '/onboarding/',
           ],
-        }),
-        starlightUtils({
-          navLinks: {
-            leading: {useSidebarLabelled: 'Navbar'},
-          },
         }),
       ],
     }),
