@@ -25,12 +25,14 @@ What if, for testing purposed, for instance, macOS is the chosen operating syste
 If you're using Windows or Linux, the [Quickstart guide](/docs/quickstart/) should cover everything you need.
 But if you're setting up Distr on macOS, follow these steps to ensure a smooth deployment experience.
 
-## 1. Install Docker Desktop
+## Prerequisites
+
+### 1. Install Docker Desktop
 
 First, install [Docker Desktop for Mac](https://docs.docker.com/desktop/setup/install/mac-install/).
 Follow the installation instructions provided by Docker.
 
-### 1.1 Delete Distr volume on Docker Desktop
+#### 1.1 Delete Distr volume on Docker Desktop
 
 If you've already tried to install Distr on Docker Desktop and failed to
 deploy an application, a volume named `distr_scratch` has been created. This
@@ -43,7 +45,7 @@ delete it.
 docker volume rm distr_scratch
 ```
 
-## 2. Set the Docker Context to `default`
+### 2. Set the Docker Context to `default`
 
 When Docker Desktop runs on macOS, it creates a lightweight Linux VM, and the
 `desktop-linux` context points to the Docker daemon within this VM. However,
@@ -73,7 +75,7 @@ default *       Current DOCKER_HOST based configuration   unix:///var/run/docker
 desktop-linux   Docker Desktop                            unix:///Users/you/.docker/run/docker.sock
 ```
 
-## 3. Disable `credStore` usage for authentication
+### 3. Disable `credStore` usage for authentication
 
 If you're using the Distr agent on macOS, docker uses macOS's credential manager (`credStore`).
 As the Distr agent does not have access to your user credential manager, we need to disable that feature.
@@ -108,7 +110,7 @@ After editing, your file should look something like this:
 
 Remember to save and close the file.
 
-## 4. Test the Setup
+### 4. Test the Setup
 
 To verify everything is configured correctly, try [creating a deployment](/docs/guides/deployment/) through Distr.
 If there are no errors related to Docker socket access, your setup is good to go.
@@ -116,3 +118,12 @@ If there are no errors related to Docker socket access, your setup is good to go
 ---
 
 With these steps, your macOS environment should be fully configured to run Distr agents without issues. If you encounter any problems, feel free to reach out to us on [Discord](https://discord.gg/6qqBSAWZfW) or via email at support@glasskube.com.
+
+## Common Issues
+
+As the Distr agent is primarily designed for Linux server environments, macOS support is limited and for demo purposes only.
+It also has some common limitations:
+
+### 1. Log Collection does not work
+
+Log and metrics collection is not supported on macOS.
