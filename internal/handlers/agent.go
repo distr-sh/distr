@@ -411,16 +411,21 @@ func agentPostStatusHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := notification.DispatchDeploymentStatusNotification(
-		ctx,
-		*deploymentTarget,
-		deployment,
-		*previousStatus,
-		&status,
-	); err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("failed to dispatch deployment status notification", zap.Error(err))
-	}
+	go func(ctx context.Context) {
+		asyncCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+
+		if err := notification.SendDeploymentStatusNotifications(
+			asyncCtx,
+			*deploymentTarget,
+			deployment,
+			*previousStatus,
+			status,
+		); err != nil {
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			log.Error("failed to dispatch deployment status notification", zap.Error(err))
+		}
+	}(context.WithoutCancel(ctx))
 
 	w.WriteHeader(http.StatusOK)
 }

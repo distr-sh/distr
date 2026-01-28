@@ -62,6 +62,8 @@ var (
 	cleanupDeploymentTargetLogRecordTimeout time.Duration
 	cleanupOIDCStateCron                    *string
 	cleanupOIDCStateCronTimeout             time.Duration
+	deploymentStatusNotificationCron        *string
+	deploymentStatusNotificationTimeout     time.Duration
 	oidcGithubEnabled                       bool
 	oidcGithubClientID                      *string
 	oidcGithubClientSecret                  *string
@@ -200,6 +202,9 @@ func Initialize() {
 		envparse.PositiveDuration, 0)
 	cleanupOIDCStateCron = envutil.GetEnvOrNil("CLEANUP_OIDC_STATE_CRON")
 	cleanupOIDCStateCronTimeout = envutil.GetEnvParsedOrDefault("CLEANUP_OIDC_STATE_CRON_TIMEOUT",
+		envparse.PositiveDuration, 0)
+	deploymentStatusNotificationCron = envutil.GetEnvOrNil("DEPLOYMENT_STATUS_NOTIFICATION_CRON")
+	deploymentStatusNotificationTimeout = envutil.GetEnvParsedOrDefault("DEPLOYMENT_STATUS_NOTIFICATION_TIMEOUT",
 		envparse.PositiveDuration, 0)
 
 	oidcGithubEnabled = envutil.GetEnvParsedOrDefault("OIDC_GITHUB_ENABLED", strconv.ParseBool, false)
@@ -407,6 +412,14 @@ func CleanupDeploymentTargetLogRecordCron() *string {
 
 func CleanupDeploymentTargetLogRecordTimeout() time.Duration {
 	return cleanupDeploymentTargetLogRecordTimeout
+}
+
+func DeploymentStatusNotificationCron() *string {
+	return deploymentStatusNotificationCron
+}
+
+func DeploymentStatusNotificationTimeout() time.Duration {
+	return deploymentStatusNotificationTimeout
 }
 
 func CleanupOIDCStateCron() *string {

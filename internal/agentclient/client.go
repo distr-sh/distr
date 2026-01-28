@@ -161,7 +161,7 @@ func (c *Client) EnsureToken(ctx context.Context, loggingEnabled bool) error {
 		}
 		if err := c.Login(ctx); err != nil {
 			if c.HasTokenExpired() {
-				return err
+				return fmt.Errorf("login failed: %w", err)
 			} else if loggingEnabled {
 				c.logger.Warn("token refresh failed but previous token is still valid", zap.Error(err))
 			}

@@ -48,6 +48,29 @@ const (
 	`
 )
 
+func GetDeploymentStatusNotificationConfigurationsForAllOrganizations(
+	ctx context.Context,
+) ([]types.DeploymentStatusNotificationConfiguration, error) {
+	db := internalctx.GetDb(ctx)
+
+	rows, err := db.Query(
+		ctx,
+		`SELECT `+deploymentStatusNotificationConfigurationOutputExpr+`
+		FROM DeploymentStatusNotificationConfiguration c
+		WHERE c.enabled = true`,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.DeploymentStatusNotificationConfiguration])
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 func GetDeploymentStatusNotificationConfigurations(
 	ctx context.Context,
 	organizationID uuid.UUID,
@@ -203,7 +226,10 @@ func UpdateDeploymentStatusNotificationConfiguration(
 	})
 }
 
-func updateDeploymentStatusConfigUserAccountIDs(ctx context.Context, config *types.DeploymentStatusNotificationConfiguration) error {
+func updateDeploymentStatusConfigUserAccountIDs(
+	ctx context.Context,
+	config *types.DeploymentStatusNotificationConfiguration,
+) error {
 	db := internalctx.GetDb(ctx)
 
 	_, err := db.Exec(
@@ -242,7 +268,10 @@ func updateDeploymentStatusConfigUserAccountIDs(ctx context.Context, config *typ
 	return nil
 }
 
-func updateDeploymentStatusConfigDeploymentTargetIDs(ctx context.Context, config *types.DeploymentStatusNotificationConfiguration) error {
+func updateDeploymentStatusConfigDeploymentTargetIDs(
+	ctx context.Context,
+	config *types.DeploymentStatusNotificationConfiguration,
+) error {
 	db := internalctx.GetDb(ctx)
 
 	_, err := db.Exec(
@@ -279,7 +308,11 @@ func updateDeploymentStatusConfigDeploymentTargetIDs(ctx context.Context, config
 	return nil
 }
 
-func getDeploymentStatusNotificationConfigurationInto(ctx context.Context, id uuid.UUID, target *types.DeploymentStatusNotificationConfiguration) error {
+func getDeploymentStatusNotificationConfigurationInto(
+	ctx context.Context,
+	id uuid.UUID,
+	target *types.DeploymentStatusNotificationConfiguration,
+) error {
 	db := internalctx.GetDb(ctx)
 	if rows, err := db.Query(
 		ctx,

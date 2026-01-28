@@ -2,8 +2,10 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
@@ -50,28 +52,39 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 	return nil
 }
 
-func ExistsNotificationRecord(ctx context.Context, configID, previousID uuid.UUID) (bool, error) {
+func GetLatestNotificationRecord(
+	ctx context.Context,
+	configID, previousID uuid.UUID,
+) (*types.NotificationRecord, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`SELECT exists(
-			SELECT 1
-			FROM NotificationRecord
-			WHERE deployment_status_notification_configuration_id = @deploymentStatusNotificationConfigurationID
-				AND previous_deployment_revision_status_id = @previousDeploymentStatusID
-		)`,
+		`SELECT
+			id,
+			created_at,
+			deployment_status_notification_configuration_id,
+			previous_deployment_revision_status_id,
+			current_deployment_revision_status_id,
+			message
+		FROM NotificationRecord
+		WHERE deployment_status_notification_configuration_id = @deploymentStatusNotificationConfigurationID
+			AND previous_deployment_revision_status_id = @previousDeploymentStatusID
+		ORDER BY created_at DESC LIMIT 1`,
 		pgx.NamedArgs{
 			"deploymentStatusNotificationConfigurationID": configID,
 			"previousDeploymentStatusID":                  previousID,
 		},
 	)
 	if err != nil {
-		return false, fmt.Errorf("failed to query NotificationRecord exists: %w", err)
+		return nil, fmt.Errorf("failed to query NotificationRecord exists: %w", err)
 	}
 
-	if exists, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[bool]); err != nil {
-		return false, fmt.Errorf("failed to collect NotificationRecord exists: %w", err)
+	if record, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.NotificationRecord]); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, apierrors.ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to collect NotificationRecord exists: %w", err)
 	} else {
-		return exists, nil
+		return &record, nil
 	}
 }

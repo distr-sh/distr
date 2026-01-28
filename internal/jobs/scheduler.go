@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"github.com/distr-sh/distr/internal/db/queryable"
+	"github.com/distr-sh/distr/internal/mail"
 	"github.com/go-co-op/gocron/v2"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
@@ -13,7 +14,12 @@ type Scheduler struct {
 	runner    *runner
 }
 
-func NewScheduler(logger *zap.Logger, db queryable.Queryable, traceProvider trace.TracerProvider) (*Scheduler, error) {
+func NewScheduler(
+	logger *zap.Logger,
+	db queryable.Queryable,
+	mailer mail.Mailer,
+	traceProvider trace.TracerProvider,
+) (*Scheduler, error) {
 	if scheduler, err := gocron.NewScheduler(
 		gocron.WithLogger(&gocronLoggerAdapter{logger: logger.Sugar()}),
 	); err != nil {
@@ -22,7 +28,7 @@ func NewScheduler(logger *zap.Logger, db queryable.Queryable, traceProvider trac
 		return &Scheduler{
 			scheduler: scheduler,
 			logger:    logger,
-			runner:    NewRunner(logger, db, traceProvider),
+			runner:    NewRunner(logger, db, mailer, traceProvider),
 		}, nil
 	}
 }

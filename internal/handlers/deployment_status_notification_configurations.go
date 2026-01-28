@@ -52,7 +52,11 @@ func getDeploymentStatusNotificationConfigurationsHandler() http.HandlerFunc {
 		ctx := r.Context()
 		auth := auth.Authentication.Require(ctx)
 
-		configs, err := db.GetDeploymentStatusNotificationConfigurations(ctx, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID())
+		configs, err := db.GetDeploymentStatusNotificationConfigurations(
+			ctx,
+			*auth.CurrentOrgID(),
+			auth.CurrentCustomerOrgID(),
+		)
 		if err != nil {
 			internalctx.GetLogger(ctx).Error("failed to get notification configurations", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)

@@ -17,5 +17,5 @@ type DeploymentRevisionStatus struct {
 const deploymentRevisionStatusStaleDuration = 1 * time.Minute
 
 func (s *DeploymentRevisionStatus) IsStale() bool {
-	return time.Since(s.CreatedAt) > deploymentRevisionStatusStaleDuration
+	return s != nil && time.Since(s.CreatedAt) > deploymentRevisionStatusStaleDuration
 }
