@@ -22,9 +22,53 @@ func NewManifestHandler() manifest.ManifestHandler {
 	return &handler{}
 }
 
-// Delete implements manifest.ManifestHandler.
-func (h *handler) Delete(ctx context.Context, name string, reference string) error {
-	panic("TODO: implement")
+// Delete removes a manifest by tag reference.
+func (h *handler) Delete(ctx context.Context, nameStr string, reference string) error {
+	if _, err := digest.Parse(reference); err == nil {
+		return apierrors.NewBadRequest("digest-based deletion is not supported, delete by tag instead")
+	}
+
+	n, err := name.Parse(nameStr)
+	if err != nil {
+		return fmt.Errorf("%w: %w", manifest.ErrNameUnknown, err)
+	}
+
+	artifact, err := db.GetArtifactByName(ctx, n.OrgName, n.ArtifactName)
+	if err != nil {
+		if errors.Is(err, apierrors.ErrNotFound) {
+			return fmt.Errorf("%w: %w", manifest.ErrNameUnknown, err)
+		}
+		return err
+	}
+
+	return db.RunTx(ctx, func(ctx context.Context) error {
+		version, err := db.GetArtifactVersionByTag(ctx, artifact.ID, reference)
+		if err != nil {
+			if errors.Is(err, apierrors.ErrNotFound) {
+				return fmt.Errorf("%w: %w", manifest.ErrManifestUnknown, err)
+			}
+			return err
+		}
+
+		versionsWithSameDigest, err := db.GetArtifactVersionsByDigest(ctx, artifact.ID, string(version.ManifestBlobDigest))
+		if err != nil {
+			return err
+		}
+
+		if err := db.CheckArtifactVersionDeletionForLicenses(ctx, artifact.ID, version, versionsWithSameDigest); err != nil {
+			return err
+		}
+
+		isLast, err := db.IsLastTagOfArtifact(ctx, artifact.ID, reference)
+		if err != nil {
+			return err
+		}
+		if isLast {
+			return apierrors.NewConflict("cannot delete tag: it is the last tag of the artifact")
+		}
+
+		return db.DeleteArtifactVersion(ctx, artifact.ID, reference)
+	})
 }
 
 // Get implements manifest.ManifestHandler.
