@@ -16,6 +16,7 @@ import {DashboardComponent} from './components/dashboard/dashboard.component';
 import {HomeComponent} from './components/home/home.component';
 import {CustomerUsersComponent} from './components/users/customers/customer-users.component';
 import {VendorUsersComponent} from './components/users/vendors/vendor-users.component';
+import {DeploymentStatusNotificationConfigurationsComponent} from './deployment-status-notification-configurations/deployment-status-notification-configurations.component';
 import {DeploymentTargetsComponent} from './deployments/deployment-targets.component';
 import {LicensesComponent} from './licenses/licenses.component';
 import {OrganizationBrandingComponent} from './organization-branding/organization-branding.component';
@@ -229,6 +230,15 @@ export const routes: Routes = [
             path: 'registry',
             canActivate: [registryHostSetOrRedirectGuard('/tutorials')],
             component: RegistryTutorialComponent,
+          },
+        ],
+      },
+      {
+        path: 'notifications',
+        children: [
+          {
+            path: 'deployment-status',
+            component: DeploymentStatusNotificationConfigurationsComponent,
           },
         ],
       },

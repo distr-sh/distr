@@ -265,6 +265,46 @@
           </a>
         </li>
 
+        <li>
+          <button
+            type="button"
+            (click)="toggle(notificationsSubMenuOpen)"
+            class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
+            aria-controls="dropdown-example">
+            <fa-icon
+              [icon]="faBullhorn"
+              size="lg"
+              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+            <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Notifications</span>
+            <fa-icon
+              [icon]="faChevronDown"
+              [class.rotate-180]="notificationsSubMenuOpen()"
+              class="transition duration-150"></fa-icon>
+          </button>
+          @if (notificationsSubMenuOpen()) {
+            <ul class="py-2 space-y-2">
+              <li>
+                <a
+                  (click)="sidebar.hide()"
+                  routerLinkActive="bg-gray-100 dark:bg-gray-700"
+                  routerLink="/notifications/deployment-status"
+                  class="flex items-center p-2 pl-11 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                  Deployment Status
+                </a>
+              </li>
+              <li>
+                <a
+                  (click)="sidebar.hide()"
+                  routerLinkActive="bg-gray-100 dark:bg-gray-700"
+                  routerLink="/artifact-pulls"
+                  class="flex items-center p-2 pl-11 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                  <span class="">Histry</span>
+                </a>
+              </li>
+            </ul>
+          }
+        </li>
+
         @if (auth.hasAnyRole('read_write', 'admin')) {
           <li>
             <a
