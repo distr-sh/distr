@@ -9,6 +9,7 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"go.uber.org/zap"
 )
 
 const (
@@ -137,7 +138,7 @@ func CreateDeploymentStatusNotificationConfiguration(
 	ctx context.Context,
 	config *types.DeploymentStatusNotificationConfiguration,
 ) error {
-	return RunTx(ctx, func(ctx context.Context) error {
+	return RunTxRR(ctx, func(ctx context.Context) error {
 		db := internalctx.GetDb(ctx)
 
 		rows, err := db.Query(
@@ -190,7 +191,7 @@ func UpdateDeploymentStatusNotificationConfiguration(
 	ctx context.Context,
 	config *types.DeploymentStatusNotificationConfiguration,
 ) error {
-	return RunTx(ctx, func(ctx context.Context) error {
+	return RunTxRR(ctx, func(ctx context.Context) error {
 		db := internalctx.GetDb(ctx)
 
 		_, err := db.Exec(
@@ -232,7 +233,7 @@ func updateDeploymentStatusConfigUserAccountIDs(
 ) error {
 	db := internalctx.GetDb(ctx)
 
-	_, err := db.Exec(
+	cmd, err := db.Exec(
 		ctx,
 		`INSERT INTO DeploymentStatusNotificationConfiguration_Organization_UserAccount (
 			deployment_status_notification_configuration_id,
@@ -251,11 +252,14 @@ func updateDeploymentStatusConfigUserAccountIDs(
 		return fmt.Errorf("failed to insert user account IDs: %w", err)
 	}
 
+	log := internalctx.GetLogger(ctx)
+	log.Debug("inserted config user relations", zap.Int64("rowsAffected", cmd.RowsAffected()))
+
 	_, err = db.Exec(
 		ctx,
 		`DELETE FROM DeploymentStatusNotificationConfiguration_Organization_UserAccount
 		WHERE deployment_status_notification_configuration_id = @id
-			AND user_account_id != any(@userAccountIDs)`,
+			AND NOT user_account_id = any(@userAccountIDs)`,
 		pgx.NamedArgs{
 			"id":             config.ID,
 			"userAccountIDs": config.UserAccountIDs,
@@ -264,6 +268,8 @@ func updateDeploymentStatusConfigUserAccountIDs(
 	if err != nil {
 		return fmt.Errorf("failed to delete user account IDs: %w", err)
 	}
+
+	log.Debug("deleted config user relations", zap.Int64("rowsAffected", cmd.RowsAffected()))
 
 	return nil
 }
@@ -274,7 +280,7 @@ func updateDeploymentStatusConfigDeploymentTargetIDs(
 ) error {
 	db := internalctx.GetDb(ctx)
 
-	_, err := db.Exec(
+	cmd, err := db.Exec(
 		ctx,
 		`INSERT INTO DeploymentStatusNotificationConfiguration_DeploymentTarget (
 			deployment_status_notification_configuration_id,
@@ -291,11 +297,14 @@ func updateDeploymentStatusConfigDeploymentTargetIDs(
 		return fmt.Errorf("failed to insert deployment target IDs: %w", err)
 	}
 
+	log := internalctx.GetLogger(ctx)
+	log.Debug("inserted config DeplyomentTarget relations", zap.Int64("rowsAffected", cmd.RowsAffected()))
+
 	_, err = db.Exec(
 		ctx,
 		`DELETE FROM DeploymentStatusNotificationConfiguration_DeploymentTarget
 		WHERE deployment_status_notification_configuration_id = @id
-			AND deployment_target_id != any(@deploymentTargetIDs)`,
+			AND NOT deployment_target_id = any(@deploymentTargetIDs)`,
 		pgx.NamedArgs{
 			"id":                  config.ID,
 			"deploymentTargetIDs": config.DeploymentTargetIDs,
@@ -304,6 +313,8 @@ func updateDeploymentStatusConfigDeploymentTargetIDs(
 	if err != nil {
 		return fmt.Errorf("failed to delete deployment target IDs: %w", err)
 	}
+
+	log.Debug("deleted config DeploymentTarget relations", zap.Int64("rowsAffected", cmd.RowsAffected()))
 
 	return nil
 }

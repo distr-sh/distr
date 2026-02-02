@@ -366,6 +366,9 @@ func GetDeploymentIDForRevisionID(ctx context.Context, revisionID uuid.UUID) (uu
 
 	deploymentID, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[uuid.UUID])
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			err = apierrors.ErrNotFound
+		}
 		return uuid.Nil, fmt.Errorf("failed to scan Deployment ID: %w", err)
 	}
 

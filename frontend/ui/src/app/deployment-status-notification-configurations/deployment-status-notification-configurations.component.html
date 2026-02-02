@@ -25,7 +25,7 @@
           @if (auth.hasRole('read_write') || auth.hasRole('admin')) {
             <button
               type="button"
-              (click)="showDialog()"
+              (click)="showDrawer()"
               class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
               <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2"></fa-icon>
               Create Configuration
@@ -69,7 +69,7 @@
                   @if (auth.hasAnyRole('read_write', 'admin')) {
                     <button
                       type="button"
-                      (click)="showDialog(config)"
+                      (click)="showDrawer(config)"
                       class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
                       <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
                       Edit
@@ -99,3 +99,111 @@
     </div>
   </div>
 </section>
+
+<ng-template #editConfigDrawer>
+  <div
+    class="h-screen p-4 overflow-y-auto bg-white w-lg dark:bg-gray-800"
+    tabindex="-1"
+    aria-labelledby="drawer-right-label"
+    animate.enter="animate-fly-in-right"
+    animate.leave="animate-fly-out-right">
+    <h2
+      id="drawer-label"
+      class="inline-flex items-center mb-6 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
+      @if (editConfigRef(); as config) {
+        Update {{ config.name }}
+      } @else {
+        New Configuration
+      }
+    </h2>
+    <button
+      type="button"
+      (click)="hideDrawer()"
+      aria-controls="manage-deployment-target-drawer"
+      class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 right-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
+      <fa-icon [icon]="faXmark" class="w-5 h-5"></fa-icon>
+      <span class="sr-only">Close menu</span>
+    </button>
+    <form [formGroup]="editConfigForm" (ngSubmit)="saveConfig()">
+      <div class="mb-4 space-y-4">
+        <div>
+          <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name</label>
+          <input
+            formControlName="name"
+            autotrim
+            type="text"
+            name="title"
+            id="name"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+            value=""
+            placeholder="Name" />
+        </div>
+
+        <label class="inline-flex items-center cursor-pointer">
+          <input type="checkbox" class="sr-only peer" formControlName="enabled" />
+          <div
+            class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+          <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Enabled</span>
+        </label>
+
+        <div class="space-y-1">
+          <h3 class="text-sm font-medium text-gray-900 dark:text-white">Deployments</h3>
+          <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 space-y-2">
+            @for (customersEntry of deploymentTargetCustomers(); track customersEntry.customer?.id) {
+              <div class="space-y-1">
+                @if (customersEntry.customer; as customer) {
+                  <h4 class="text-sm dark:text-white font-semibold">{{ customer.name }}</h4>
+                }
+                @for (deploymentTarget of customersEntry.deploymentTargets; track deploymentTarget.id) {
+                  <label class="flex items-center overflow-hidden">
+                    <input
+                      type="checkbox"
+                      class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                      [formControl]="editConfigForm.controls.deploymentTargetIds.controls[deploymentTarget.id!]" />
+                    <span class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">{{
+                      deploymentTarget.name
+                    }}</span>
+                  </label>
+                }
+              </div>
+            }
+          </div>
+          @if (
+            editConfigForm.controls.deploymentTargetIds.touched && editConfigForm.controls.deploymentTargetIds.errors
+          ) {
+            <div class="text-sm text-red-500">Check at least one deployment.</div>
+          }
+        </div>
+
+        <div class="space-y-1">
+          <h3 class="text-sm font-medium text-gray-900 dark:text-white">Users to notify</h3>
+          <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 space-y-1">
+            @for (user of users(); track user.id) {
+              <label class="flex items-center overflow-hidden">
+                <input
+                  type="checkbox"
+                  class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                  [formControl]="editConfigForm.controls.userAccountIds.controls[user.id!]" />
+                <span class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">{{
+                  user.name || user.email
+                }}</span>
+              </label>
+            }
+          </div>
+          @if (editConfigForm.controls.userAccountIds.touched && editConfigForm.controls.userAccountIds.errors) {
+            <div class="text-sm text-red-500">Check at least one user.</div>
+          }
+        </div>
+      </div>
+      <div class="mt-8 flex justify-center w-full pb-4 space-x-4 sm:mt-0">
+        <button
+          type="submit"
+          [disabled]="editFormLoading()"
+          class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+          <fa-icon [icon]="faPen" class="mr-2"></fa-icon>
+          Save
+        </button>
+      </div>
+    </form>
+  </div>
+</ng-template>

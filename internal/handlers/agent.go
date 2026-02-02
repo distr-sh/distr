@@ -368,9 +368,13 @@ func agentPostStatusHandler(w http.ResponseWriter, r *http.Request) {
 
 	deploymentID, err := db.GetDeploymentIDForRevisionID(ctx, requestBody.RevisionID)
 	if err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("failed to get deployment ID", zap.Error(err))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		if errors.Is(err, apierrors.ErrNotFound) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else {
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			log.Error("failed to get deployment ID", zap.Error(err))
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
 		return
 	}
 
