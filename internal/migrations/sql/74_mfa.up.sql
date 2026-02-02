@@ -14,7 +14,5 @@ CREATE TABLE UserAccount_MFARecoveryCode (
   used_at TIMESTAMP
 );
 
-CREATE INDEX fk_UserAccount_MFARecoveryCode_user_account_id
-  ON UserAccount_MFARecoveryCode(user_account_id);
 CREATE INDEX idx_UserAccount_MFARecoveryCode_used_at
   ON UserAccount_MFARecoveryCode(user_account_id, used_at);
