@@ -174,7 +174,7 @@ func authLoginHandler(w http.ResponseWriter, r *http.Request) {
 				}
 
 				if err := db.MarkMFARecoveryCodeAsUsed(ctx, *matchedCodeID); err != nil {
-					log.Warn("failed to mark recovery code as used", zap.Error(err))
+					return err
 				}
 			}
 		}
