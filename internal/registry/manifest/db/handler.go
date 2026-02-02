@@ -64,7 +64,9 @@ func (h *handler) Delete(ctx context.Context, nameStr string, reference string) 
 			return err
 		}
 		if isLast {
-			return apierrors.NewConflict("Cannot delete tag: it is the last tag of the artifact. At least one tag must remain for the artifact.")
+			return apierrors.NewConflict(
+				"Cannot delete tag: it is the last tag of the artifact. At least one tag must remain for the artifact.",
+			)
 		}
 
 		return db.DeleteArtifactVersion(ctx, artifact.ID, reference)
