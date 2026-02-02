@@ -76,8 +76,8 @@
       ]
     },
     {
-      "matchPackageNames": [
-        "distr-sh/hello-distr"
+      "matchSourceUrls": [
+        "https://github.com/distr-sh/hello-distr"
       ],
       "groupName": "distr-sh/hello-distr"
     }

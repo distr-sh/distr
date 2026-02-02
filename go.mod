@@ -19,12 +19,12 @@ require (
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/exaring/otelpgx v0.10.0
 	github.com/fsnotify/fsnotify v1.9.0
-	github.com/getsentry/sentry-go v0.41.0
-	github.com/getsentry/sentry-go/otel v0.41.0
+	github.com/getsentry/sentry-go v0.42.0
+	github.com/getsentry/sentry-go/otel v0.42.0
 	github.com/go-chi/chi/v5 v5.2.4
 	github.com/go-chi/httprate v0.15.0
 	github.com/go-chi/jwtauth/v5 v5.3.3
-	github.com/go-co-op/gocron/v2 v2.19.0
+	github.com/go-co-op/gocron/v2 v2.19.1
 	github.com/go-logr/zapr v1.3.0
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/google/uuid v1.6.0
@@ -36,7 +36,7 @@ require (
 	github.com/oaswrap/spec v0.3.6
 	github.com/oaswrap/spec-ui v0.1.4
 	github.com/oaswrap/spec/adapter/chiopenapi v0.3.6
-	github.com/onsi/gomega v1.39.0
+	github.com/onsi/gomega v1.39.1
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.144.0
 	github.com/spf13/cobra v1.10.2
 	github.com/stripe/stripe-go/v84 v84.2.0
@@ -322,7 +322,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.39.0 // indirect
 	go.opentelemetry.io/otel/metric v1.39.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.9.0 // indirect
-	golang.org/x/net v0.48.0 // indirect
+	golang.org/x/net v0.49.0 // indirect
 	golang.org/x/oauth2 v0.34.0
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.40.0 // indirect
