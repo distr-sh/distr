@@ -20,5 +20,6 @@ type NotificationRecord struct {
 
 type NotificationRecordWithCurrentStatus struct {
 	NotificationRecord
+	DeploymentTargetName            *string                   `db:"deployment_target_name"`
 	CurrentDeploymentRevisionStatus *DeploymentRevisionStatus `db:"current_deployment_revision_status"`
 }

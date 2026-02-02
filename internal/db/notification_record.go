@@ -82,7 +82,7 @@ func GetLatestNotificationRecord(
 		`SELECT`+notificationRecordOutputExpr+`FROM NotificationRecord r
 		WHERE r.deployment_status_notification_configuration_id = @deploymentStatusNotificationConfigurationID
 			AND r.previous_deployment_revision_status_id = @previousDeploymentStatusID
-		ORDER BY created_at DESC LIMIT 1`,
+		ORDER BY r.created_at DESC LIMIT 1`,
 		pgx.NamedArgs{
 			"deploymentStatusNotificationConfigurationID": configID,
 			"previousDeploymentStatusID":                  previousID,
@@ -112,10 +112,12 @@ func GetNotificationRecords(
 	rows, err := db.Query(
 		ctx,
 		`SELECT`+notificationRecordOutputExpr+`,
+			dt.name AS deployment_target_name,
 			CASE WHEN s.id IS NOT NULL THEN (
 				s.id, s.created_at, s.deployment_revision_id, s.type, s.message
 			) END current_deployment_revision_status
 		FROM NotificationRecord r
+		LEFT JOIN DeploymentTarget dt ON r.deployment_target_id = dt.id
 		LEFT JOIN DeploymentRevisionStatus s
 			ON r.current_deployment_revision_status_id = s.id
 		WHERE r.organization_id = @organizationID

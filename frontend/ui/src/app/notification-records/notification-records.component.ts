@@ -1,12 +1,11 @@
 import {DatePipe} from '@angular/common';
 import {Component, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
-import {StatusDotComponent} from '../components/status-dot';
 import {NotificationRecordsService} from '../services/notification-records.service';
 
 @Component({
   templateUrl: './notification-records.component.html',
-  imports: [DatePipe, StatusDotComponent],
+  imports: [DatePipe],
 })
 export class NotificationRecordsComponent {
   private readonly notificationRecordsService = inject(NotificationRecordsService);

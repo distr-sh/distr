@@ -18,6 +18,7 @@ func NotificationRecordWithCurrentStatusToAPI(
 			CurrentDeploymentRevisionStatusID:           record.CurrentDeploymentRevisionStatusID,
 			Message:                                     record.Message,
 		},
+		DeploymentTargetName: record.DeploymentTargetName,
 	}
 
 	apiRecord.CurrentDeploymentRevisionStatus = PtrOrNil(

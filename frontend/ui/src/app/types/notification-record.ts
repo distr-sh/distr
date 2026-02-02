@@ -4,6 +4,7 @@ export interface NotificationRecord {
   id: string;
   createdAt: string;
   deploymentTargetId?: string;
+  deploymentTargetName?: string;
   message: string;
   currentDeploymentRevisionStatus?: DeploymentRevisionStatus;
 }
