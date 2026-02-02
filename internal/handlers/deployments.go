@@ -14,6 +14,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/deploymentvalues"
+	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
@@ -49,7 +50,7 @@ func DeploymentsRouter(r chiopenapi.Router) {
 		r.Get("/status", getDeploymentStatus).
 			With(option.Description("Get deployment status")).
 			With(option.Request(DeploymentTimeseriesRequest{})).
-			With(option.Response(http.StatusOK, []types.DeploymentRevisionStatus{}))
+			With(option.Response(http.StatusOK, []api.DeploymentRevisionStatus{}))
 		r.Get("/status/export", exportDeploymentStatusHandler()).
 			With(option.Description("Export deployment status")).
 			With(option.Request(DeploymentIDRequest{})).
@@ -469,7 +470,7 @@ func getDeploymentStatus(w http.ResponseWriter, r *http.Request) {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	} else {
-		RespondJSON(w, deploymentStatus)
+		RespondJSON(w, mapping.List(deploymentStatus, mapping.DeploymentRevisionStatusToAPI))
 	}
 }
 
