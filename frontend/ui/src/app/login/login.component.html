@@ -163,8 +163,17 @@
                     placeholder="Enter code"
                     required />
                 </div>
-                <div class="text-xs text-gray-500 mt-1">
+                <div class="text-xs text-gray-500 mt-1 space-y-1">
+                  <p>
                   You can use a code from your authenticator app or a one-time recovery code.
+                  </p>
+                  <p>
+                  If you lost access to your
+                  authenticator app and recovery codes, please contact our
+                  <a class="font-medium text-blue-600 dark:text-blue-500 hover:underline" href="mailto:support@distr.sh"
+                    >support</a
+                  > to regain access to your account.
+                  </p>
                 </div>
                 @if (mfaCodeForm.controls.mfaCode.touched && mfaCodeForm.controls.mfaCode.errors) {
                   <div class="text-sm text-red-500">Please enter your MFA code</div>
