@@ -49,7 +49,8 @@ func HashRecoveryCode(code string) ([]byte, []byte, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	hash := generateHash(code, salt)
+	normalized := NormalizeRecoveryCode(code)
+	hash := generateHash(normalized, salt)
 	return salt, hash, nil
 }
 

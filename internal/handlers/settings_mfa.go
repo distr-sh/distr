@@ -203,7 +203,7 @@ func mfaDisableHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := security.VerifyPassword(*user, request.Password); err != nil {
-		http.Error(w, "invalid password", http.StatusBadRequest)
+		http.Error(w, "invalid password", http.StatusUnauthorized)
 		return
 	}
 
