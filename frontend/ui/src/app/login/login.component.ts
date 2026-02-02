@@ -32,7 +32,7 @@ export class LoginComponent implements OnInit {
   protected readonly mfaCodeForm = this.fb.group({
     mfaCode: this.fb.control('', [
       Validators.required,
-      Validators.pattern(/^(\d*)|(\w+-\w+)$/),
+      Validators.pattern(/^(\d{6}|\w{5}-\w{5})$/),
       Validators.minLength(6),
       Validators.maxLength(11),
     ]),
