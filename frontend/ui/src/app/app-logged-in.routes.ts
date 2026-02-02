@@ -19,6 +19,7 @@ import {VendorUsersComponent} from './components/users/vendors/vendor-users.comp
 import {DeploymentStatusNotificationConfigurationsComponent} from './deployment-status-notification-configurations/deployment-status-notification-configurations.component';
 import {DeploymentTargetsComponent} from './deployments/deployment-targets.component';
 import {LicensesComponent} from './licenses/licenses.component';
+import {NotificationRecordsComponent} from './notification-records/notification-records.component';
 import {OrganizationBrandingComponent} from './organization-branding/organization-branding.component';
 import {OrganizationSettingsComponent} from './organization-settings/organization-settings.component';
 import {CustomerSecretsPageComponent} from './secrets/customer-secrets-page.component';
@@ -239,6 +240,10 @@ export const routes: Routes = [
           {
             path: 'deployment-status',
             component: DeploymentStatusNotificationConfigurationsComponent,
+          },
+          {
+            path: 'history',
+            component: NotificationRecordsComponent,
           },
         ],
       },

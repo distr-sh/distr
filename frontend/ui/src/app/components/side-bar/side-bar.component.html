@@ -8,7 +8,7 @@
     [class.-translate-x-full]="!sidebar.showSidebar()"
     aria-label="Sidebar">
     <div class="h-full flex flex-col px-3 py-2 gap-2 overflow-y-auto bg-white dark:bg-gray-800">
-      <ul class="space-y-2 font-medium flex-1" *appRequireVendor>
+      <ul class="space-y-1 font-medium flex-1" *appRequireVendor>
         @if (auth.hasAnyRole('admin') && hasNoSubscription()) {
           <li>
             <a
@@ -58,13 +58,13 @@
               class="transition duration-150"></fa-icon>
           </button>
           @if (agentsSubMenuOpen()) {
-            <ul class="py-2 space-y-2">
+            <ul class="space-y-1">
               <li>
                 <a
                   (click)="sidebar.hide()"
                   routerLinkActive="bg-gray-100 dark:bg-gray-700"
                   routerLink="/applications"
-                  class="flex items-center p-2 pl-11 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                  class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                   <span class="">Applications</span>
                 </a>
               </li>
@@ -74,7 +74,7 @@
                   routerLinkActive="bg-gray-100 dark:bg-gray-700"
                   routerLink="/deployments"
                   routerLinkActive="bg-gray-100 dark:bg-gray-700"
-                  class="flex items-center p-2 pl-11 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                  class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                   <span class="">Deployments</span>
                 </a>
               </li>
@@ -99,13 +99,13 @@
               class="transition duration-150"></fa-icon>
           </button>
           @if (registrySubMenuOpen()) {
-            <ul class="py-2 space-y-2">
+            <ul class="space-y-1">
               <li>
                 <a
                   (click)="sidebar.hide()"
                   routerLinkActive="bg-gray-100 dark:bg-gray-700"
                   routerLink="/artifacts"
-                  class="flex items-center p-2 pl-11 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                  class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                   <span class="">Artifacts</span>
                 </a>
               </li>
@@ -114,7 +114,7 @@
                   (click)="sidebar.hide()"
                   routerLinkActive="bg-gray-100 dark:bg-gray-700"
                   routerLink="/artifact-pulls"
-                  class="flex items-center p-2 pl-11 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                  class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                   <span class="">Downloads</span>
                 </a>
               </li>
@@ -140,13 +140,13 @@
                 class="transition duration-150"></fa-icon>
             </button>
             @if (licenseSubMenuOpen()) {
-              <ul class="py-2 space-y-2">
+              <ul class="space-y-1">
                 <li>
                   <a
                     (click)="sidebar.hide()"
                     routerLinkActive="bg-gray-100 dark:bg-gray-700"
                     routerLink="/licenses/applications"
-                    class="flex items-center p-2 pl-11 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                    class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                     <span class="">Application Licenses</span>
                   </a>
                 </li>
@@ -155,7 +155,7 @@
                     (click)="sidebar.hide()"
                     routerLinkActive="bg-gray-100 dark:bg-gray-700"
                     routerLink="/licenses/artifacts"
-                    class="flex items-center p-2 pl-11 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                    class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                     <span class="">Artifact Licenses</span>
                   </a>
                 </li>
@@ -219,7 +219,7 @@
           </div>
         </ng-template>
 
-        <hr class="border-gray-200 dark:border-gray-600" />
+        <hr class="border-gray-200 dark:border-gray-600 my-4" />
 
         <li>
           <a
@@ -282,13 +282,13 @@
               class="transition duration-150"></fa-icon>
           </button>
           @if (notificationsSubMenuOpen()) {
-            <ul class="py-2 space-y-2">
+            <ul class="space-y-1">
               <li>
                 <a
                   (click)="sidebar.hide()"
                   routerLinkActive="bg-gray-100 dark:bg-gray-700"
                   routerLink="/notifications/deployment-status"
-                  class="flex items-center p-2 pl-11 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                  class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                   Deployment Status
                 </a>
               </li>
@@ -296,9 +296,9 @@
                 <a
                   (click)="sidebar.hide()"
                   routerLinkActive="bg-gray-100 dark:bg-gray-700"
-                  routerLink="/artifact-pulls"
-                  class="flex items-center p-2 pl-11 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                  <span class="">Histry</span>
+                  routerLink="/notifications/history"
+                  class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                  <span class="">History</span>
                 </a>
               </li>
             </ul>
@@ -354,7 +354,7 @@
         }
       </ul>
 
-      <ul class="space-y-2 font-medium flex-1" *appRequireCustomer>
+      <ul class="space-y-1 font-medium flex-1" *appRequireCustomer>
         <li>
           <a
             (click)="sidebar.hide()"
@@ -401,7 +401,7 @@
           </li>
         }
 
-        <hr class="border-gray-200 dark:border-gray-600" />
+        <hr class="border-gray-200 dark:border-gray-600 my-4" />
 
         @if (auth.hasRole('admin')) {
           <li>
