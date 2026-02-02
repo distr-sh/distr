@@ -156,6 +156,9 @@ func sendDeploymentStatusNotificationsWithConfig(
 	}
 
 	record := types.NotificationRecord{
+		OrganizationID:                              deploymentTarget.OrganizationID,
+		CustomerOrganizationID:                      deploymentTarget.CustomerOrganizationID,
+		DeploymentTargetID:                          &deploymentTarget.ID,
 		DeploymentStatusNotificationConfigurationID: &config.ID,
 		PreviousDeploymentRevisionStatusID:          &previousStatus.ID,
 	}

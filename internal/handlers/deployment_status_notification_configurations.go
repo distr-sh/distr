@@ -60,7 +60,7 @@ func getDeploymentStatusNotificationConfigurationsHandler() http.HandlerFunc {
 		if err != nil {
 			internalctx.GetLogger(ctx).Error("failed to get notification configurations", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 
@@ -85,7 +85,7 @@ func createDeploymentStatusNotificationConfigurationHandler() http.HandlerFunc {
 		if err := db.CreateDeploymentStatusNotificationConfiguration(ctx, &config); err != nil {
 			internalctx.GetLogger(ctx).Error("failed to create notification configuration", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 
@@ -117,7 +117,7 @@ func updateDeploymentStatusNotificationHandler() http.HandlerFunc {
 		if err := db.UpdateDeploymentStatusNotificationConfiguration(ctx, &config); err != nil {
 			internalctx.GetLogger(ctx).Error("failed to update notification configuration", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 
@@ -148,7 +148,7 @@ func deleteDeploymentStatusNotificationHandler() http.HandlerFunc {
 			} else {
 				internalctx.GetLogger(ctx).Error("failed to delete notification configuration", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
-				w.WriteHeader(http.StatusInternalServerError)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			}
 			return
 		}
