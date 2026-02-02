@@ -1,6 +1,6 @@
 import {HttpClient, HttpErrorResponse, HttpInterceptorFn, HttpRequest} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
-import {TokenResponse, UserRole} from '@distr-sh/distr-sdk';
+import {LoginResponse, TokenResponse, UserRole} from '@distr-sh/distr-sdk';
 import dayjs from 'dayjs';
 import {jwtDecode} from 'jwt-decode';
 import {catchError, map, Observable, of, tap, throwError} from 'rxjs';
@@ -76,13 +76,15 @@ export class AuthService {
     return this.getClaims()?.c_org !== undefined;
   }
 
-  public login(email: string, password: string): Observable<void> {
-    return this.httpClient.post<TokenResponse>(`${authBaseUrl}/login`, {email, password}).pipe(
+  public login(email: string, password: string, mfaCode?: string): Observable<{requiresMfa: boolean}> {
+    return this.httpClient.post<LoginResponse>(`${authBaseUrl}/login`, {email, password, mfaCode}).pipe(
       tap((r) => {
-        this.token = r.token;
-        this.actionToken = null;
+        if (!r.requiresMfa) {
+          this.token = r.token;
+          this.actionToken = null;
+        }
       }),
-      map(() => undefined)
+      map((r) => ({requiresMfa: r.requiresMfa}))
     );
   }
 

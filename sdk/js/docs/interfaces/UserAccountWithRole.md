@@ -84,6 +84,16 @@
 
 ---
 
+### mfaEnabled
+
+> **mfaEnabled**: `boolean`
+
+#### Inherited from
+
+[`UserAccount`](UserAccount.md).[`mfaEnabled`](UserAccount.md#mfaenabled)
+
+---
+
 ### name?
 
 > `optional` **name**: `string`

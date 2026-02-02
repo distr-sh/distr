@@ -106,6 +106,270 @@
           </div>
         </div>
       </form>
+
+      <div class="space-y-4">
+        <h2 class="text-xl font-bold dark:text-white">Multi-Factor Authentication</h2>
+
+        <div class="text-gray-500 text-sm">
+          Multi-factor authentication (MFA) adds an additional layer of security to your account by requiring a second
+          form of verification during the login process. This helps protect your account from unauthorized access, even
+          if your password is compromised.
+        </div>
+
+        @if (user()?.mfaEnabled) {
+          <div class="text-sm dark:text-white">
+            <fa-icon class="text-green-500 me-1" [icon]="faCheck" />
+            Multi-factor authentication is currently enabled on your account.
+          </div>
+
+          @if (recoveryCodes(); as codes) {
+            <div
+              class="p-4 mb-4 bg-yellow-50 border border-yellow-300 rounded-lg dark:bg-gray-800 dark:border-yellow-800">
+              <div class="flex items-start">
+                <fa-icon class="text-yellow-400" [icon]="faCircleExclamation" />
+                <div class="ml-3 text-sm">
+                  <h3 class="font-semibold text-yellow-800 dark:text-yellow-300">Save Your Recovery Codes</h3>
+                  <div class="mt-2 text-yellow-700 dark:text-yellow-400">
+                    <p class="mb-2">
+                      These recovery codes can be used to access your account if you lose access to your authenticator
+                      app. Each code can only be used once.
+                    </p>
+                    <p class="font-semibold">Store these codes in a safe place. You won't be able to see them again.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-4">
+                <div class="grid grid-cols-2 gap-2 font-mono text-sm">
+                  @for (code of codes; track code) {
+                    <div class="p-2 rounded border border-gray-200 dark:border-gray-700 rounded-md dark:text-white">
+                      {{ code }}
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <div class="mt-4 flex gap-2">
+                <button
+                  type="button"
+                  (click)="copyRecoveryCodes()"
+                  class="text-gray-900 inline-flex items-center justify-center bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700">
+                  Copy Codes
+                </button>
+                <button
+                  type="button"
+                  (click)="downloadRecoveryCodes()"
+                  class="text-gray-900 inline-flex items-center justify-center bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700">
+                  Download Codes
+                </button>
+                <button
+                  type="button"
+                  (click)="acknowledgeRecoveryCodes()"
+                  class="ml-auto text-white inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+                  I've Saved My Codes
+                </button>
+              </div>
+            </div>
+          } @else {
+            <div class="mt-4 bg-gray-50 dark:bg-gray-800 rounded-lg flex items-center">
+              <div class="flex-grow">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Recovery Codes</h3>
+                <div class="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                  @if (recoveryCodesCount() === 0) {
+                    <fa-icon class="text-red-500 me-1" [icon]="faExclamationTriangle" />
+                    You have no unused recovery codes remaining. It is recommended to regenerate your recovery codes to
+                    ensure you have backup access to your account.
+                  } @else {
+                    @if (recoveryCodesCount() < 3) {
+                      <fa-icon class="text-yellow-500 me-1" [icon]="faExclamationTriangle" />
+                    }
+                    You have {{ recoveryCodesCount() }} unused recovery codes remaining.
+                  }
+                </div>
+              </div>
+              <button
+                type="button"
+                (click)="showRegenerateRecoveryCodesDialog()"
+                class="text-gray-900 inline-flex items-center justify-center bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700">
+                Regenerate
+              </button>
+            </div>
+          }
+
+          <button
+            type="button"
+            (click)="disableMfa()"
+            class="text-white inline-flex items-center justify-center bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800 disabled:opacity-60 disabled:cursor-not-allowed">
+            Disable MFA
+          </button>
+        } @else if (mfaSetupData(); as mfaSetupData) {
+          <div class="text-sm dark:text-white">
+            Scan the QR code below with your authenticator app and enter the generated code to enable MFA.
+          </div>
+          <img [src]="mfaSetupData.qrCodeUrl" alt="MFA QR Code" class="p-2 bg-white rounded-lg" />
+          <div class="text-sm text-gray-500">
+            Setup key for manual configuration: <code class="select-all">{{ mfaSetupData.secret }}</code>
+          </div>
+
+          <form [formGroup]="setupMfaForm" (ngSubmit)="enableMfa()">
+            <div class="flex gap-2">
+              <input
+                formControlName="mfaCode"
+                autotrim
+                autocomplete="one-time-code"
+                type="text"
+                name="mfaCode"
+                id="mfaCode"
+                class="bg-gray-50 border border-gray-300 text-sm text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                placeholder="Enter MFA Code" />
+              <button
+                type="submit"
+                [disabled]="formLoading() || setupMfaForm.invalid"
+                class="flex-0 text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60 disabled:cursor-not-allowed">
+                Enable
+              </button>
+            </div>
+          </form>
+        } @else {
+          <div class="text-sm dark:text-white">
+            <fa-icon class="text-red-500 me-1" [icon]="faXmark" />
+            Multi-factor authentication is currently disabled on your account.
+          </div>
+
+          <button
+            type="button"
+            (click)="startMfaSetup()"
+            class="text-white inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60 disabled:cursor-not-allowed">
+            Start Setup
+          </button>
+        }
+      </div>
     </div>
   </div>
 </section>
+
+<ng-template #disableMfaDialog>
+  <div
+    style="transform-origin: top center"
+    class="p-4 max-w-lg mt-12 max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-900 modal-fly-in"
+    animate.leave="modal-fly-out">
+    <!-- Modal header -->
+    <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Disable Multi-Factor Authentication</h2>
+      <button
+        type="button"
+        (click)="disableMfaDialogRef?.dismiss()"
+        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+        <fa-icon [icon]="faXmark"></fa-icon>
+        <span class="sr-only">Close modal</span>
+      </button>
+    </div>
+    <!-- Modal body -->
+    <div class="p-4 md:p-5 space-y-4">
+      <section class="antialiased">
+        <div class="mx-auto max-w-screen-xl px-4 2xl:px-0">
+          <div
+            class="flex items-center p-4 mb-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
+            role="alert">
+            <fa-icon [icon]="faCircleExclamation" />
+            <span class="sr-only">Info</span>
+            <div class="ms-3 text-sm font-medium">
+              <p>
+                Disabling multi-factor authentication will reduce the security of your account. Are you sure you want to
+                proceed?
+              </p>
+            </div>
+          </div>
+
+          <form class="mx-auto" (ngSubmit)="disableMfaFinish()" [formGroup]="disableMfaForm">
+            <div class="flex flex-col space-y-5">
+              <div class="space-y-2">
+                <label for="name" class="block text-sm font-medium text-gray-900 dark:text-white"> Password </label>
+                <input
+                  type="password"
+                  id="password"
+                  formControlName="password"
+                  autocomplete="off"
+                  placeholder="Enter your password"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+                @if (disableMfaForm.controls.password.touched && disableMfaForm.controls.password.errors) {
+                  <div class="text-sm text-red-500">Please enter your password</div>
+                }
+              </div>
+
+              <button
+                type="submit"
+                [disabled]="formLoading()"
+                class="self-end text-white inline-flex items-center justify-center bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800 disabled:opacity-60 disabled:cursor-not-allowed">
+                Really disable MFA
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #regenerateRecoveryCodesDialog>
+  <div
+    style="transform-origin: top center"
+    class="p-4 max-w-lg mt-12 max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-900 modal-fly-in"
+    animate.leave="modal-fly-out">
+    <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Regenerate Recovery Codes</h2>
+      <button
+        type="button"
+        (click)="regenerateRecoveryCodesDialogRef?.dismiss()"
+        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+        <fa-icon [icon]="faXmark"></fa-icon>
+        <span class="sr-only">Close modal</span>
+      </button>
+    </div>
+
+    <div class="p-4 md:p-5 space-y-4">
+      <div
+        class="flex items-center p-4 mb-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
+        role="alert">
+        <fa-icon [icon]="faCircleExclamation" />
+        <span class="sr-only">Warning</span>
+        <div class="ml-3 text-sm font-medium">
+          This will invalidate all your existing recovery codes and generate new ones. Make sure to save the new codes.
+        </div>
+      </div>
+
+      <form [formGroup]="regenerateRecoveryCodesForm" (ngSubmit)="regenerateRecoveryCodes()">
+        <div class="space-y-4">
+          <div>
+            <label for="mfa-regen-password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+              Confirm your password
+            </label>
+            <input
+              type="password"
+              formControlName="password"
+              id="mfa-regen-password"
+              autotrim
+              class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              placeholder="Enter your password"
+              required />
+          </div>
+
+          <div class="flex justify-end gap-2">
+            <button
+              type="button"
+              (click)="regenerateRecoveryCodesDialogRef?.dismiss()"
+              class="text-gray-900 bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              [disabled]="formLoading() || regenerateRecoveryCodesForm.invalid"
+              class="text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60 disabled:cursor-not-allowed">
+              Regenerate Codes
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</ng-template>

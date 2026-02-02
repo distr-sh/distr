@@ -60,6 +60,12 @@
 
 ---
 
+### mfaEnabled
+
+> **mfaEnabled**: `boolean`
+
+---
+
 ### name?
 
 > `optional` **name**: `string`

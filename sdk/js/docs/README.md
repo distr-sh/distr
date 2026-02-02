@@ -52,6 +52,7 @@
 - [IsOutdatedResult](type-aliases/IsOutdatedResult.md)
 - [IsOutdatedResultItem](type-aliases/IsOutdatedResultItem.md)
 - [LatestVersionStrategy](type-aliases/LatestVersionStrategy.md)
+- [LoginResponse](type-aliases/LoginResponse.md)
 - [UpdateAllDeploymentsResult](type-aliases/UpdateAllDeploymentsResult.md)
 - [UpdateDeploymentParams](type-aliases/UpdateDeploymentParams.md)
 - [UserRole](type-aliases/UserRole.md)

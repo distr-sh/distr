@@ -130,3 +130,15 @@ var regErrTagAlreadyExists = &regError{
 	Code:    "UNSUPPORTED",
 	Message: "this tag already exists and cannot be overwritten",
 }
+
+var regErrConflict = &regError{
+	Status:  http.StatusConflict,
+	Code:    "DENIED",
+	Message: "operation cannot be completed due to a conflict",
+}
+
+var regErrBadRequest = &regError{
+	Status:  http.StatusBadRequest,
+	Code:    "UNSUPPORTED",
+	Message: "the request is invalid or not supported",
+}

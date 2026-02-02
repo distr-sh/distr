@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.41.1
 	github.com/aws/aws-sdk-go-v2/config v1.32.7
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.7
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.95.1
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.96.0
 	github.com/aws/aws-sdk-go-v2/service/ses v1.34.18
 	github.com/compose-spec/compose-go/v2 v2.9.1
 	github.com/containerd/log v0.1.0
@@ -38,8 +38,9 @@ require (
 	github.com/oaswrap/spec/adapter/chiopenapi v0.3.6
 	github.com/onsi/gomega v1.39.1
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.144.0
+	github.com/pquerna/otp v1.5.0
 	github.com/spf13/cobra v1.10.2
-	github.com/stripe/stripe-go/v84 v84.2.0
+	github.com/stripe/stripe-go/v84 v84.3.0
 	github.com/wneessen/go-mail v0.7.2
 	go.opentelemetry.io/collector/component v1.50.0
 	go.opentelemetry.io/collector/confmap v1.50.0
@@ -75,6 +76,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/signin v1.0.5 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/invopop/jsonschema v0.13.0 // indirect

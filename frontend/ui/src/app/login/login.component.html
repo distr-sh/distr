@@ -5,122 +5,201 @@
         <img class="h-full mr-4 border-none" src="distr-logo.svg" alt="Distr Logo" />
         <a href="https://distr.sh/" target="_blank">Distr</a>
       </div>
-      <div
-        class="w-full bg-white rounded-lg shadow-sm dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
-        <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
-          <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
-            Sign in to your account
-          </h1>
-          <form class="space-y-4 md:space-y-6" [formGroup]="formGroup" (ngSubmit)="submit()">
-            <div>
-              <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Your email</label>
-              <input
-                type="email"
-                formControlName="email"
-                autotrim
-                id="email"
-                autocomplete="email"
-                class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                placeholder="name@company.com"
-                required />
-              @if (formGroup.controls.email.touched && formGroup.controls.email.errors) {
-                <div class="text-sm text-red-500">Please enter a valid email address</div>
+      @if (!mfaRequired()) {
+        <div
+          class="w-full bg-white rounded-lg shadow-sm dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
+          <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
+            <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
+              Sign in to your account
+            </h1>
+            <form class="space-y-4 md:space-y-6" [formGroup]="emailPasswordForm" (ngSubmit)="submit()">
+              <div>
+                <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >Your email</label
+                >
+                <input
+                  type="email"
+                  formControlName="email"
+                  autotrim
+                  id="email"
+                  autocomplete="email"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  placeholder="name@company.com"
+                  required />
+                @if (emailPasswordForm.controls.email.touched && emailPasswordForm.controls.email.errors) {
+                  <div class="text-sm text-red-500">Please enter a valid email address</div>
+                }
+              </div>
+              <div>
+                <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >Password</label
+                >
+                <input
+                  type="password"
+                  formControlName="password"
+                  id="password"
+                  autocomplete="current-password"
+                  placeholder="Your password"
+                  autotrim
+                  class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  required />
+                @if (emailPasswordForm.controls.password.touched && emailPasswordForm.controls.password.errors) {
+                  <div class="text-sm text-red-500">Please enter your password</div>
+                }
+              </div>
+              @if (errorMessage(); as errorMessage) {
+                <div class="text-sm text-red-500">{{ errorMessage }}</div>
               }
-            </div>
-            <div>
-              <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >Password</label
-              >
-              <input
-                type="password"
-                formControlName="password"
-                id="password"
-                autocomplete="current-password"
-                autotrim
-                class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                required />
-              @if (formGroup.controls.password.touched && formGroup.controls.password.errors) {
-                <div class="text-sm text-red-500">Please enter your password</div>
+              <div class="flex items-center justify-between">
+                <a
+                  routerLink="/forgot"
+                  [queryParams]="{
+                    email: emailPasswordForm.controls.email.valid ? emailPasswordForm.value.email : undefined,
+                  }"
+                  class="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">
+                  Forgot password?
+                </a>
+              </div>
+              <button
+                type="submit"
+                [disabled]="loading()"
+                class="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+                Sign in
+              </button>
+              @if (loginConfig$ | async; as loginConfig) {
+                @if (
+                  loginConfig.oidcGithubEnabled ||
+                  loginConfig.oidcGoogleEnabled ||
+                  loginConfig.oidcMicrosoftEnabled ||
+                  loginConfig.oidcGenericEnabled
+                ) {
+                  <p class="text-sm text-center font-light text-gray-500 dark:text-gray-400">
+                    Or use one of these to sign in:
+                  </p>
+                  <div class="flex flex-row justify-center w-full gap-2">
+                    @if (loginConfig.oidcGithubEnabled) {
+                      <a
+                        [href]="getLoginURL('github')"
+                        type="button"
+                        class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                        <fa-icon class="w-4 h-4 me-1 flex align-middle" [icon]="faGithub"> </fa-icon>
+                        GitHub
+                      </a>
+                    }
+                    @if (loginConfig.oidcGoogleEnabled) {
+                      <a
+                        [href]="getLoginURL('google')"
+                        type="button"
+                        class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                        <fa-icon class="w-4 h-4 me-1 flex align-middle" [icon]="faGoogle"> </fa-icon>
+                        Google
+                      </a>
+                    }
+                    @if (loginConfig.oidcMicrosoftEnabled) {
+                      <a
+                        [href]="getLoginURL('microsoft')"
+                        type="button"
+                        class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                        <fa-icon class="w-4 h-4 me-1 flex align-middle" [icon]="faMicrosoft"> </fa-icon>
+                        Microsoft
+                      </a>
+                    }
+                    @if (loginConfig.oidcGenericEnabled) {
+                      <a
+                        [href]="getLoginURL('generic')"
+                        type="button"
+                        class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                        <fa-icon class="w-4 h-4 me-1 flex align-middle" [icon]="faArrowRightToBracket"> </fa-icon>
+                        Generic OIDC Provider
+                      </a>
+                    }
+                  </div>
+                }
+                @if (loginConfig.registrationEnabled) {
+                  <p class="text-sm text-center font-light text-gray-500 dark:text-gray-400">
+                    Don’t have an account yet?<br />
+                    <a routerLink="/register" class="font-medium text-primary-600 hover:underline dark:text-primary-500"
+                      >Sign up</a
+                    >
+                  </p>
+                }
               }
-            </div>
-            @if (errorMessage) {
-              <div class="text-sm text-red-500">{{ errorMessage }}</div>
-            }
-            <div class="flex items-center justify-between">
-              <a
-                routerLink="/forgot"
-                [queryParams]="{email: formGroup.controls.email.valid ? formGroup.value.email : undefined}"
-                class="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">
-                Forgot password?
-              </a>
-            </div>
-            <button
-              type="submit"
-              [disabled]="loading"
-              class="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
-              Sign in
-            </button>
-            @if (loginConfig$ | async; as loginConfig) {
-              @if (
-                loginConfig.oidcGithubEnabled ||
-                loginConfig.oidcGoogleEnabled ||
-                loginConfig.oidcMicrosoftEnabled ||
-                loginConfig.oidcGenericEnabled
-              ) {
-                <p class="text-sm text-center font-light text-gray-500 dark:text-gray-400">
-                  Or use one of these to sign in:
-                </p>
-                <div class="flex flex-row justify-center w-full gap-2">
-                  @if (loginConfig.oidcGithubEnabled) {
-                    <a
-                      [href]="getLoginURL('github')"
-                      type="button"
-                      class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                      <fa-icon class="w-4 h-4 me-1 flex align-middle" [icon]="faGithub"> </fa-icon>
-                      GitHub
-                    </a>
-                  }
-                  @if (loginConfig.oidcGoogleEnabled) {
-                    <a
-                      [href]="getLoginURL('google')"
-                      type="button"
-                      class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                      <fa-icon class="w-4 h-4 me-1 flex align-middle" [icon]="faGoogle"> </fa-icon>
-                      Google
-                    </a>
-                  }
-                  @if (loginConfig.oidcMicrosoftEnabled) {
-                    <a
-                      [href]="getLoginURL('microsoft')"
-                      type="button"
-                      class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                      <fa-icon class="w-4 h-4 me-1 flex align-middle" [icon]="faMicrosoft"> </fa-icon>
-                      Microsoft
-                    </a>
-                  }
-                  @if (loginConfig.oidcGenericEnabled) {
-                    <a
-                      [href]="getLoginURL('generic')"
-                      type="button"
-                      class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                      <fa-icon class="w-4 h-4 me-1 flex align-middle" [icon]="faArrowRightToBracket"> </fa-icon>
-                      Generic OIDC Provider
-                    </a>
-                  }
-                </div>
-              }
-              @if (loginConfig.registrationEnabled) {
-                <p class="text-sm text-center font-light text-gray-500 dark:text-gray-400">
-                  Don’t have an account yet?<br />
-                  <a routerLink="/register" class="font-medium text-primary-600 hover:underline dark:text-primary-500"
-                    >Sign up</a
-                  >
-                </p>
-              }
-            }
-          </form>
+            </form>
+          </div>
         </div>
-      </div>
+      } @else {
+        <div
+          class="w-full bg-white rounded-lg shadow-sm dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
+          <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
+            <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
+              Sign in to your account
+            </h1>
+            <form class="space-y-4 md:space-y-6" [formGroup]="mfaCodeForm" (ngSubmit)="submit()">
+              <div>
+                <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >Your email</label
+                >
+                <input
+                  type="email"
+                  id="email"
+                  [value]="emailPasswordForm.value.email"
+                  disabled
+                  class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 disabled:opacity-50" />
+              </div>
+              <div>
+                <label for="totp" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">MFA Code</label>
+                <!--
+                This input field is wrapped in a div in order to make autofill services ignore the help text below.
+                This is needed because some interpret the phrase "recovery code" as conflicting with the TOTP field name.
+                -->
+                <div>
+                  <input
+                    type="text"
+                    formControlName="mfaCode"
+                    id="totp"
+                    autocomplete="one-time-code"
+                    autotrim
+                    class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    placeholder="Enter code"
+                    required />
+                </div>
+                <div class="text-xs text-gray-500 mt-1 space-y-1">
+                  <p>You can use a code from your authenticator app or a one-time recovery code.</p>
+                  <p>
+                    If you lost access to your authenticator app and recovery codes, please contact our
+                    <a
+                      class="font-medium text-blue-600 dark:text-blue-500 hover:underline"
+                      href="mailto:support@distr.sh"
+                      >support</a
+                    >
+                    to regain access to your account.
+                  </p>
+                </div>
+                @if (mfaCodeForm.controls.mfaCode.touched && mfaCodeForm.controls.mfaCode.errors) {
+                  <div class="text-sm text-red-500">Please enter your MFA code</div>
+                }
+              </div>
+              @if (errorMessage(); as errorMessage) {
+                <div class="text-sm text-red-500">{{ errorMessage }}</div>
+              }
+              <div class="flex items-center justify-between">
+                <button
+                  type="button"
+                  (click)="reset()"
+                  class="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">
+                  Back to login
+                </button>
+              </div>
+              <button
+                type="submit"
+                [disabled]="loading()"
+                class="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+                Continue
+              </button>
+            </form>
+          </div>
+        </div>
+      }
     </div>
   </section>
 }

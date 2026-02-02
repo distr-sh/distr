@@ -26,6 +26,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
+	"github.com/pquerna/otp/totp"
 	"go.uber.org/zap"
 )
 
@@ -133,6 +134,47 @@ func authLoginHandler(w http.ResponseWriter, r *http.Request) {
 						org = o
 						break
 					}
+				}
+			}
+		}
+
+		if user.MFAEnabled {
+			if request.MFACode == nil {
+				RespondJSON(w, api.AuthLoginResponse{RequiresMFA: true})
+				return nil
+			}
+
+			if user.MFASecret == nil {
+				// this can never happen because we guard against it with a db constraint
+				sentry.GetHubFromContext(ctx).CaptureException(errors.New("user has mfa enabled but no secret"))
+				http.Error(w, "MFA configuration error", http.StatusInternalServerError)
+				return nil
+			}
+
+			valid := totp.Validate(*request.MFACode, *user.MFASecret)
+
+			if !valid {
+				normalized := security.NormalizeRecoveryCode(*request.MFACode)
+				codes, err := db.GetUnusedMFARecoveryCodes(ctx, user.ID)
+				if err != nil {
+					return fmt.Errorf("failed to get recovery codes: %w", err)
+				}
+
+				var matchedCodeID *uuid.UUID
+				for _, code := range codes {
+					if security.VerifyRecoveryCode(normalized, code.CodeSalt, code.CodeHash) {
+						matchedCodeID = &code.ID
+						break
+					}
+				}
+
+				if matchedCodeID == nil {
+					http.Error(w, "invalid MFA code or recovery code", http.StatusUnauthorized)
+					return nil
+				}
+
+				if err := db.MarkMFARecoveryCodeAsUsed(ctx, *matchedCodeID); err != nil {
+					return err
 				}
 			}
 		}

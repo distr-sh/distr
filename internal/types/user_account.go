@@ -19,6 +19,9 @@ type UserAccount struct {
 	Name                   string     `db:"name" json:"name,omitempty"`
 	ImageID                *uuid.UUID `db:"image_id" json:"-"`
 	LastUsedOrganizationID *uuid.UUID `db:"last_used_organization_id" json:"-"`
+	MFASecret              *string    `db:"mfa_secret" json:"-"`
+	MFAEnabled             bool       `db:"mfa_enabled" json:"mfaEnabled"`
+	MFAEnabledAt           *time.Time `db:"mfa_enabled_at" json:"-"`
 	Password               string     `db:"-" json:"-"`
 	// Remember to update AsUserAccountWithRole when adding fields!
 }
@@ -37,6 +40,9 @@ func (u *UserAccount) AsUserAccountWithRole(
 		PasswordSalt:           slices.Clone(u.PasswordSalt),
 		Name:                   u.Name,
 		ImageID:                u.ImageID,
+		MFASecret:              util.PtrCopy(u.MFASecret),
+		MFAEnabled:             u.MFAEnabled,
+		MFAEnabledAt:           util.PtrCopy(u.MFAEnabledAt),
 		Password:               u.Password,
 		UserRole:               role,
 		JoinedOrgAt:            joinedOrgAt,
@@ -57,6 +63,9 @@ type UserAccountWithUserRole struct {
 	Name                   string     `db:"name" json:"name,omitempty"`
 	ImageID                *uuid.UUID `db:"image_id" json:"imageId,omitempty"`
 	LastUsedOrganizationID *uuid.UUID `db:"last_used_organization_id" json:"-"`
+	MFASecret              *string    `db:"mfa_secret" json:"-"`
+	MFAEnabled             bool       `db:"mfa_enabled" json:"mfaEnabled"`
+	MFAEnabledAt           *time.Time `db:"mfa_enabled_at" json:"-"`
 	// not copy+pasted
 	UserRole UserRole `db:"user_role" json:"userRole"`
 	// not copy+pasted
@@ -78,6 +87,9 @@ func (u *UserAccountWithUserRole) AsUserAccount() UserAccount {
 		Name:                   u.Name,
 		ImageID:                u.ImageID,
 		LastUsedOrganizationID: u.LastUsedOrganizationID,
+		MFASecret:              util.PtrCopy(u.MFASecret),
+		MFAEnabled:             u.MFAEnabled,
+		MFAEnabledAt:           util.PtrCopy(u.MFAEnabledAt),
 		Password:               u.Password,
 	}
 }

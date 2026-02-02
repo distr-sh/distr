@@ -25,7 +25,10 @@ const (
 		u.password_salt,
 		u.name,
 		u.image_id,
-		u.last_used_organization_id`
+		u.last_used_organization_id,
+		u.mfa_secret,
+		u.mfa_enabled,
+		u.mfa_enabled_at`
 	userAccountWithRoleOutputExpr = userAccountOutputExpr +
 		", j.user_role, j.created_at, j.customer_organization_id "
 	userAccountWithRoleOutputExprWithAlias = userAccountWithRoleOutputExpr + " as joined_org_at "
@@ -542,4 +545,46 @@ func ExistsUserAccountWithEmail(ctx context.Context, email string) (bool, error)
 		return false, err
 	}
 	return exists, nil
+}
+
+func UpdateUserAccountMFASecret(ctx context.Context, userID uuid.UUID, secret string) error {
+	db := internalctx.GetDb(ctx)
+	cmd, err := db.Exec(ctx,
+		`UPDATE UserAccount SET mfa_secret = @secret WHERE id = @id`,
+		pgx.NamedArgs{"secret": secret, "id": userID},
+	)
+	if err != nil {
+		return fmt.Errorf("could not update MFA secret: %w", err)
+	} else if cmd.RowsAffected() == 0 {
+		return apierrors.ErrNotFound
+	}
+	return nil
+}
+
+func EnableUserAccountMFA(ctx context.Context, userID uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	cmd, err := db.Exec(ctx,
+		`UPDATE UserAccount SET mfa_enabled = true, mfa_enabled_at = now() WHERE id = @id`,
+		pgx.NamedArgs{"id": userID},
+	)
+	if err != nil {
+		return fmt.Errorf("could not enable MFA: %w", err)
+	} else if cmd.RowsAffected() == 0 {
+		return apierrors.ErrNotFound
+	}
+	return nil
+}
+
+func DisableUserAccountMFA(ctx context.Context, userID uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	cmd, err := db.Exec(ctx,
+		`UPDATE UserAccount SET mfa_enabled = false, mfa_secret = NULL, mfa_enabled_at = NULL WHERE id = @id`,
+		pgx.NamedArgs{"id": userID},
+	)
+	if err != nil {
+		return fmt.Errorf("could not disable MFA: %w", err)
+	} else if cmd.RowsAffected() == 0 {
+		return apierrors.ErrNotFound
+	}
+	return nil
 }

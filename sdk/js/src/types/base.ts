@@ -11,6 +11,8 @@ export interface TokenResponse {
   token: string;
 }
 
+export type LoginResponse = ({requiresMfa: false} & TokenResponse) | {requiresMfa: true};
+
 export interface DeploymentTargetAccessResponse {
   connectUrl: string;
   targetId: string;

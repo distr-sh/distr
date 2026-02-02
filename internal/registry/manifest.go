@@ -136,14 +136,16 @@ func (handler *manifests) handle(resp http.ResponseWriter, req *http.Request) *r
 			return regErrInternal(err)
 		}
 		return handler.handlePut(resp, req, repo, target)
-	// case http.MethodDelete:
-	// 	if err := handler.authz.AuthorizeReference(req.Context(), repo, target, authz.ActionWrite); err != nil {
-	// 		if errors.Is(err, authz.ErrAccessDenied) {
-	// 			return regErrDenied
-	// 		}
-	// 		return regErrInternal(err)
-	// 	}
-	// 	return handler.handleDelete(resp, req, repo, target)
+	case http.MethodDelete:
+		if err := handler.authz.AuthorizeReference(req.Context(), repo, target, authz.ActionWrite); err != nil {
+			if errors.Is(err, authz.ErrAccessDenied) {
+				return regErrDenied
+			} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
+				return regErrNameInvalid
+			}
+			return regErrInternal(err)
+		}
+		return handler.handleDelete(resp, req, repo, target)
 	default:
 		return regErrMethodUnknown
 	}
@@ -487,18 +489,27 @@ func (handler *manifests) handlePut(resp http.ResponseWriter, req *http.Request,
 	return nil
 }
 
-// func (handler *manifests) handleDelete(resp http.ResponseWriter, req *http.Request, repo, target string) *regError {
-// 	if err := handler.manifestHandler.Delete(req.Context(), repo, target); errors.Is(err, manifest.ErrNameUnknown) {
-// 		return regErrNameUnknown
-// 	} else if errors.Is(err, manifest.ErrManifestUnknown) {
-// 		return regErrManifestUnknown
-// 	} else if err != nil {
-// 		regErrInternal(err)
-// 	}
+func (handler *manifests) handleDelete(resp http.ResponseWriter, req *http.Request, repo, target string) *regError {
+	err := handler.manifestHandler.Delete(req.Context(), repo, target)
+	if err != nil {
+		if errors.Is(err, imanifest.ErrNameUnknown) {
+			return regErrNameUnknown
+		}
+		if errors.Is(err, imanifest.ErrManifestUnknown) {
+			return regErrManifestUnknown
+		}
+		if errors.Is(err, apierrors.ErrConflict) {
+			return regErrConflict
+		}
+		if errors.Is(err, apierrors.ErrBadRequest) {
+			return regErrBadRequest
+		}
+		return regErrInternal(err)
+	}
 
-// 	resp.WriteHeader(http.StatusAccepted)
-// 	return nil
-// }
+	resp.WriteHeader(http.StatusAccepted)
+	return nil
+}
 
 func checkIncompatibleManifest(data []byte) *regError {
 	var mf struct {

@@ -8,6 +8,7 @@ export interface UserAccount extends BaseModel {
   name?: string;
   imageId?: string;
   imageUrl?: string;
+  mfaEnabled: boolean;
 }
 
 export interface UserAccountWithRole extends UserAccount {

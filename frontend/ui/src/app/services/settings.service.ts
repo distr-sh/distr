@@ -11,6 +11,23 @@ export interface UpdateUserAccountRequest {
   imageId?: string;
 }
 
+export interface MFASetupData {
+  qrCodeUrl: string;
+  secret: string;
+}
+
+export interface EnableMFAResponse {
+  recoveryCodes: string[];
+}
+
+export interface RegenerateMFARecoveryCodesResponse {
+  recoveryCodes: string[];
+}
+
+export interface MFARecoveryCodesStatus {
+  remainingCodes: number;
+}
+
 @Injectable({providedIn: 'root'})
 export class SettingsService {
   private readonly httpClient = inject(HttpClient);
@@ -31,5 +48,29 @@ export class SettingsService {
 
   public confirmEmailVerification() {
     return this.httpClient.post<void>(`${this.baseUrl}/verify/confirm`, undefined);
+  }
+
+  public startMFASetup() {
+    return this.httpClient.post<MFASetupData>(`${this.baseUrl}/mfa/setup`, undefined);
+  }
+
+  public enableMFA(code: string) {
+    return this.httpClient
+      .post<EnableMFAResponse>(`${this.baseUrl}/mfa/enable`, {code})
+      .pipe(tap(() => this.ctx.reload()));
+  }
+
+  public disableMFA(password: string) {
+    return this.httpClient.post<void>(`${this.baseUrl}/mfa/disable`, {password}).pipe(tap(() => this.ctx.reload()));
+  }
+
+  public regenerateMFARecoveryCodes(password: string) {
+    return this.httpClient.post<RegenerateMFARecoveryCodesResponse>(`${this.baseUrl}/mfa/recovery-codes/regenerate`, {
+      password,
+    });
+  }
+
+  public getMFARecoveryCodesStatus() {
+    return this.httpClient.get<MFARecoveryCodesStatus>(`${this.baseUrl}/mfa/recovery-codes/status`);
   }
 }

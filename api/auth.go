@@ -6,12 +6,14 @@ import (
 )
 
 type AuthLoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string  `json:"email"`
+	Password string  `json:"password"`
+	MFACode  *string `json:"mfaCode"`
 }
 
 type AuthLoginResponse struct {
-	Token string `json:"token"`
+	Token       string `json:"token,omitempty"`
+	RequiresMFA bool   `json:"requiresMfa"`
 }
 
 type AuthRegistrationRequest struct {

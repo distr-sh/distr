@@ -10,7 +10,31 @@
   }
 }
 
+@keyframes fly-fade-top {
+  0% {
+    opacity: 0.8;
+    transform: translateY(-100%);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @theme {
   --animate-fly-in-right: fly-in-right 150ms ease-out;
   --animate-fly-out-right: fly-in-right 150ms ease-in reverse;
+}
+
+.modal-fly-in {
+  animation: fly-fade-top 150ms ease-out;
+}
+
+.modal-fly-out {
+  opacity: 0;
+  transform: translateY(-100%);
+  transition:
+    opacity 150ms ease-in,
+    transform 150ms ease-in;
 }
