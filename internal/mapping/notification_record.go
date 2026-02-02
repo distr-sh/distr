@@ -20,7 +20,10 @@ func NotificationRecordWithCurrentStatusToAPI(
 		},
 	}
 
-	apiRecord.CurrentDeploymentRevisionStatus = PtrOrNil(record.CurrentDeploymentRevisionStatus, DeploymentRevisionStatusToAPI)
+	apiRecord.CurrentDeploymentRevisionStatus = PtrOrNil(
+		record.CurrentDeploymentRevisionStatus,
+		DeploymentRevisionStatusToAPI,
+	)
 
 	return apiRecord
 }
