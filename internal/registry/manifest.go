@@ -498,8 +498,11 @@ func (handler *manifests) handleDelete(resp http.ResponseWriter, req *http.Reque
 		if errors.Is(err, imanifest.ErrManifestUnknown) {
 			return regErrManifestUnknown
 		}
-		if errors.Is(err, apierrors.ErrConflict) || errors.Is(err, apierrors.ErrBadRequest) {
-			return regErrDenied
+		if errors.Is(err, apierrors.ErrConflict) {
+			return regErrConflict
+		}
+		if errors.Is(err, apierrors.ErrBadRequest) {
+			return regErrBadRequest
 		}
 		return regErrInternal(err)
 	}
