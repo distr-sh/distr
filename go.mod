@@ -42,7 +42,7 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/stripe/stripe-go/v84 v84.3.0
 	github.com/wneessen/go-mail v0.7.2
-	go.opentelemetry.io/collector/component v1.50.0
+	go.opentelemetry.io/collector/component v1.51.0
 	go.opentelemetry.io/collector/confmap v1.50.0
 	go.opentelemetry.io/collector/consumer v1.51.0
 	go.opentelemetry.io/collector/pdata v1.51.0
