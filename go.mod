@@ -43,7 +43,7 @@ require (
 	github.com/stripe/stripe-go/v84 v84.3.0
 	github.com/wneessen/go-mail v0.7.2
 	go.opentelemetry.io/collector/component v1.51.0
-	go.opentelemetry.io/collector/confmap v1.50.0
+	go.opentelemetry.io/collector/confmap v1.51.0
 	go.opentelemetry.io/collector/consumer v1.51.0
 	go.opentelemetry.io/collector/pdata v1.51.0
 	go.opentelemetry.io/collector/receiver v1.51.0
@@ -251,7 +251,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
 	github.com/knadh/koanf/maps v0.1.2 // indirect
 	github.com/knadh/koanf/providers/confmap v1.0.0 // indirect
-	github.com/knadh/koanf/v2 v2.3.0 // indirect
+	github.com/knadh/koanf/v2 v2.3.2 // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.3 // indirect
