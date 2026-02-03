@@ -28,6 +28,8 @@ func chain[T any](fns ...func(T) T) func(T) T {
 	}
 }
 
+func ident[T any](v T) T { return v }
+
 func withValueInterceptor(f func(string) string) templateDataOption {
 	return func(config *templateDataConfig) {
 		config.valueInterceptor = chain(config.valueInterceptor, f)
@@ -35,7 +37,7 @@ func withValueInterceptor(f func(string) string) templateDataOption {
 }
 
 func getTemplateData(secrets []types.SecretWithUpdatedBy, options ...templateDataOption) templateData {
-	var config templateDataConfig
+	config := templateDataConfig{valueInterceptor: ident[string]}
 	for _, opt := range options {
 		opt(&config)
 	}
