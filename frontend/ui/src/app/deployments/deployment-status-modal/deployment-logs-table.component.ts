@@ -9,8 +9,10 @@ import {
 import {DeploymentLogsService} from '../../services/deployment-logs.service';
 import {DeploymentLogRecord} from '../../types/deployment-log-record';
 
+const ansiEscapePattern = /\u001b[^m]*m/g;
+
 function logRecordToTimeseriesEntry(record: DeploymentLogRecord): TimeseriesEntry {
-  return {date: record.timestamp, status: record.severity, detail: record.body.trim()};
+  return {date: record.timestamp, status: record.severity, detail: record.body.trim().replace(ansiEscapePattern, '')};
 }
 
 class LogsTimeseriesSource implements TimeseriesSource {

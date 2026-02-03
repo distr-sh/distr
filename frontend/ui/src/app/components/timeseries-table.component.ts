@@ -132,7 +132,6 @@ export class TimeseriesTableComponent {
           switchMap((after) => source.loadAfter(after))
         )
       ).pipe(
-        tap((entries) => console.log({entries})),
         tap((entries) =>
           entries
             .map((entry) => new Date(entry.date))
