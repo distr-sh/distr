@@ -106,12 +106,27 @@
                                 class="flex flex-col text-start text-sm font-medium text-gray-900 dark:text-gray-300"
                                 role="none">
                                 {{ org.name }}
-                                @if (switchOptions.isVendorSomewhere) {
-                                  <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
-                                    <ng-template appRequireVendor>Vendor</ng-template>
-                                    <ng-template appRequireCustomer>Customer</ng-template>
-                                  </span>
-                                }
+                                <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
+                                  @if (switchOptions.isVendorSomewhere) {
+                                    @if (org.customerOrganizationId) {
+                                      Customer
+                                    } @else {
+                                      Vendor
+                                    }
+                                    &bull;
+                                  }
+                                  @switch (org.userRole) {
+                                    @case ('admin') {
+                                      Administrator
+                                    }
+                                    @case ('read_write') {
+                                      User
+                                    }
+                                    @case ('read_only') {
+                                      Viewer
+                                    }
+                                  }
+                                </span>
                               </span>
                             </button>
                           </li>
