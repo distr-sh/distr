@@ -112,3 +112,43 @@ func UpdateEmail(userAccount types.UserAccount, org types.Organization, token st
 		"Token":       token,
 	}
 }
+
+func DeploymentStatusNotificationError(
+	deploymentTarget types.DeploymentTarget,
+	deployment types.DeploymentWithLatestRevision,
+	currentStatus types.DeploymentRevisionStatus,
+) (*template.Template, any) {
+	return deploymentStatusNotification("error", deploymentTarget, deployment, nil, &currentStatus)
+}
+
+func DeploymentStatusNotificationStale(
+	deploymentTarget types.DeploymentTarget,
+	deployment types.DeploymentWithLatestRevision,
+	previousStatus types.DeploymentRevisionStatus,
+) (*template.Template, any) {
+	return deploymentStatusNotification("stale", deploymentTarget, deployment, &previousStatus, nil)
+}
+
+func DeploymentStatusNotificationRecovered(
+	deploymentTarget types.DeploymentTarget,
+	deployment types.DeploymentWithLatestRevision,
+	currentStatus types.DeploymentRevisionStatus,
+) (*template.Template, any) {
+	return deploymentStatusNotification("recovered", deploymentTarget, deployment, nil, &currentStatus)
+}
+
+func deploymentStatusNotification(
+	eventType string,
+	deploymentTarget types.DeploymentTarget,
+	deployment types.DeploymentWithLatestRevision,
+	previousStatus *types.DeploymentRevisionStatus,
+	currentStatus *types.DeploymentRevisionStatus,
+) (*template.Template, any) {
+	return templates.Lookup("deployment-status-notification.html"), map[string]any{
+		"EventType":        eventType,
+		"DeploymentTarget": deploymentTarget,
+		"Deployment":       deployment,
+		"PreviousStatus":   previousStatus,
+		"CurrentStatus":    currentStatus,
+	}
+}

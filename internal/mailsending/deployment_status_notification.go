@@ -2,10 +2,10 @@ package mailsending
 
 import (
 	"context"
-	"fmt"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/mail"
+	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/types"
 )
 
@@ -20,16 +20,11 @@ func DeploymentStatusNotificationError(
 
 	mail := mail.New(
 		mail.Subject("Deployment Status Notification [Error]"),
-		mail.TextBody(fmt.Sprintf(`Deployment status has changed:
- * Status: error
- * Deployment Target: %v
- * Application: %v
- * Timestamp: %v
- * Message: %v`,
-			deploymentTarget.Name,
-			deployment.ApplicationName,
-			currentStatus.CreatedAt,
-			currentStatus.Message)),
+		mail.HtmlBodyTemplate(mailtemplates.DeploymentStatusNotificationError(
+			deploymentTarget.DeploymentTarget,
+			deployment,
+			currentStatus,
+		)),
 		mail.To(user.Email),
 	)
 
@@ -47,13 +42,11 @@ func DeploymentStatusNotificationStale(
 
 	mail := mail.New(
 		mail.Subject("Deployment Status Notification [Stale]"),
-		mail.TextBody(fmt.Sprintf(`Deployment status is stale:
- * Deployment Target: %v
- * Application: %v
- * Last Timestamp: %v`,
-			deploymentTarget.Name,
-			deployment.ApplicationName,
-			previousStatus.CreatedAt)),
+		mail.HtmlBodyTemplate(mailtemplates.DeploymentStatusNotificationStale(
+			deploymentTarget.DeploymentTarget,
+			deployment,
+			previousStatus,
+		)),
 		mail.To(user.Email),
 	)
 
@@ -71,17 +64,11 @@ func DeploymentStatusNotificationRecovered(
 
 	mail := mail.New(
 		mail.Subject("Deployment Status Notification [Recovered]"),
-		mail.TextBody(fmt.Sprintf(`Deployment status has changed:
- * Status: %v
- * Deployment Target: %v
- * Application: %v
- * Timestamp: %v
- * Message: %v`,
-			currentStatus.Type,
-			deploymentTarget.Name,
-			deployment.ApplicationName,
-			currentStatus.CreatedAt,
-			currentStatus.Message)),
+		mail.HtmlBodyTemplate(mailtemplates.DeploymentStatusNotificationRecovered(
+			deploymentTarget.DeploymentTarget,
+			deployment,
+			currentStatus,
+		)),
 		mail.To(user.Email),
 	)
 
