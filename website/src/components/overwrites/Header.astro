@@ -119,11 +119,13 @@ const slug = Astro.locals.starlightRoute.entry.slug;
       align-content: center;
     }
   }
-  a:hover {
+  .desktop a:hover,
+  .dropdown-trigger:hover {
     color: var(--sl-color-gray-2);
   }
   :root[data-theme='light'] {
-    .header a:hover {
+    .desktop a:hover,
+    .dropdown-trigger:hover {
       color: var(--sl-color-gray-3);
     }
   }

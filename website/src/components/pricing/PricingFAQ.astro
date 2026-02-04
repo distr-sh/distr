@@ -19,8 +19,8 @@ import {PricingFAQs} from '~/data/pricingFaq';
             class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow scroll-mt-24 group"
             id={faq.id}>
             <summary class="p-6 md:p-8 cursor-pointer list-none">
-              <h3 class="text-xl md:text-2xl font-semibold m-0 inline-flex items-center gap-2 text-gray-900 dark:text-white group-hover:text-[#00b5eb] dark:group-hover:text-[#00b5eb] transition-colors">
-                <span class="text-[#00b5eb] opacity-0 group-hover:opacity-100 transition-opacity">
+              <h3 class="text-xl md:text-2xl font-semibold m-0 inline-flex items-center gap-2 text-gray-900 dark:text-white group-hover:text-accent-600 dark:group-hover:text-accent-600 transition-colors">
+                <span class="text-accent-600 opacity-0 group-hover:opacity-100 transition-opacity">
                   #
                 </span>
                 <span>{faq.question}</span>
@@ -70,12 +70,12 @@ import {PricingFAQs} from '~/data/pricingFaq';
   }
 
   :global(.prose a) {
-    color: #00b5eb;
+    color: var(--color-accent-600);
     text-decoration: underline;
   }
 
   :global(.prose a:hover) {
-    color: #0099cc;
+    color: var(--color-accent-900);
   }
 
   /* Details/Summary accordion styles */

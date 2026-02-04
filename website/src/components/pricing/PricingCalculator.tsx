@@ -213,7 +213,7 @@ export default function PricingCalculator() {
             </div>
             <div class="flex items-center justify-start gap-3 w-full">
               <button
-                class="w-8 h-8 rounded-full border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xl flex items-center justify-center cursor-pointer transition-all hover:bg-[#00b5eb] hover:text-white hover:border-[#00b5eb] disabled:opacity-50 disabled:cursor-not-allowed leading-none p-0"
+                class="w-8 h-8 rounded-full border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xl flex items-center justify-center cursor-pointer transition-all hover:bg-accent-600 hover:text-white hover:border-accent-600 disabled:opacity-50 disabled:cursor-not-allowed leading-none p-0"
                 onClick={decrementInternalUsers}
                 disabled={internalUsers <= 1}>
                 -
@@ -224,11 +224,11 @@ export default function PricingCalculator() {
                 value={internalUsers}
                 onInput={handleInternalUsersChange}
                 onBlur={handleInternalUsersBlur}
-                class="text-lg font-medium min-w-[4rem] w-16 text-center border border-gray-400 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:border-[#00b5eb] focus:ring-2 focus:ring-[#00b5eb]/20"
+                class="text-lg font-medium min-w-[4rem] w-16 text-center border border-gray-400 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:border-accent-600 focus:ring-2 focus:ring-accent-600/20"
                 style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: none;"
               />
               <button
-                class="w-8 h-8 rounded-full border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xl flex items-center justify-center cursor-pointer transition-all hover:bg-[#00b5eb] hover:text-white hover:border-[#00b5eb] leading-none p-0"
+                class="w-8 h-8 rounded-full border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xl flex items-center justify-center cursor-pointer transition-all hover:bg-accent-600 hover:text-white hover:border-accent-600 leading-none p-0"
                 onClick={incrementInternalUsers}>
                 +
               </button>
@@ -244,7 +244,7 @@ export default function PricingCalculator() {
             </div>
             <div class="flex items-center justify-start gap-3 w-full">
               <button
-                class="w-8 h-8 rounded-full border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xl flex items-center justify-center cursor-pointer transition-all hover:bg-[#00b5eb] hover:text-white hover:border-[#00b5eb] disabled:opacity-50 disabled:cursor-not-allowed leading-none p-0"
+                class="w-8 h-8 rounded-full border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xl flex items-center justify-center cursor-pointer transition-all hover:bg-accent-600 hover:text-white hover:border-accent-600 disabled:opacity-50 disabled:cursor-not-allowed leading-none p-0"
                 onClick={decrementExternalCustomers}
                 disabled={externalCustomers <= 1}>
                 -
@@ -255,11 +255,11 @@ export default function PricingCalculator() {
                 value={externalCustomers}
                 onInput={handleExternalCustomersChange}
                 onBlur={handleExternalCustomersBlur}
-                class="text-lg font-medium min-w-[4rem] w-16 text-center border border-gray-400 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:border-[#00b5eb] focus:ring-2 focus:ring-[#00b5eb]/20"
+                class="text-lg font-medium min-w-[4rem] w-16 text-center border border-gray-400 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:border-accent-600 focus:ring-2 focus:ring-accent-600/20"
                 style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: none;"
               />
               <button
-                class="w-8 h-8 rounded-full border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xl flex items-center justify-center cursor-pointer transition-all hover:bg-[#00b5eb] hover:text-white hover:border-[#00b5eb] leading-none p-0"
+                class="w-8 h-8 rounded-full border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xl flex items-center justify-center cursor-pointer transition-all hover:bg-accent-600 hover:text-white hover:border-accent-600 leading-none p-0"
                 onClick={incrementExternalCustomers}>
                 +
               </button>
@@ -301,7 +301,7 @@ export default function PricingCalculator() {
                 onClick={() => setBillingCycle('yearly')}>
                 <span>Yearly</span>
                 {!shouldForceYearly && (
-                  <span class="inline-block bg-[#00b5eb]/20 text-[#174c76] dark:text-[#00b5eb] px-2 py-0.5 rounded-xl text-[0.7rem] font-semibold whitespace-nowrap leading-tight">
+                  <span class="inline-block bg-accent-600/20 text-accent-900 dark:text-accent-600 px-2 py-0.5 rounded-xl text-[0.7rem] font-semibold whitespace-nowrap leading-tight">
                     Save 20%
                   </span>
                 )}
@@ -406,14 +406,14 @@ export default function PricingCalculator() {
                   Basic email support + onboarding
                 </li>
               </ul>
-              <div class="mt-6 mb-0 p-3 bg-gray-100 dark:bg-[#00b5eb]/15 border-l-4 border-[#00b5eb] rounded text-sm leading-snug text-gray-800 dark:text-gray-200 font-medium italic">
+              <div class="mt-6 mb-0 p-3 bg-gray-100 dark:bg-accent-600/15 border-l-4 border-accent-600 rounded text-sm leading-snug text-gray-800 dark:text-gray-200 font-medium italic">
                 Fastest route to validate customer-install GTM
               </div>
             </div>
             <div class="p-6 pt-0">
               <a
                 href="/onboarding/"
-                class="inline-block w-full px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-medium rounded-lg text-center transition-colors no-underline">
+                class="inline-block w-full px-6 py-3 bg-accent-600 hover:bg-accent-700 border-2 border-accent-600 text-white font-medium rounded-lg text-center transition-colors no-underline">
                 Start free trial →
               </a>
             </div>
@@ -421,10 +421,10 @@ export default function PricingCalculator() {
 
           {/* Pro Plan */}
           <div
-            class={`mt-5 min-h-[55rem] flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg border-2 border-[#00b5eb] relative pt-4 transition-all ${
+            class={`mt-5 min-h-[55rem] flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg border-2 border-accent-600 relative pt-4 transition-all ${
               shouldBlurPro ? 'opacity-50 blur-sm pointer-events-none' : ''
             }`}>
-            <div class="absolute top-0 left-0 right-0 bg-[#00b5eb] text-white py-1.5 text-base font-medium z-10 shadow-md text-center w-full">
+            <div class="absolute top-0 left-0 right-0 bg-accent-600 text-white py-1.5 text-base font-medium z-10 shadow-md text-center w-full">
               Most popular
             </div>
             <div class="flex justify-center items-center flex-col p-6 text-center min-h-[9rem] pt-8">
@@ -511,7 +511,7 @@ export default function PricingCalculator() {
                   White glove onboarding + private Slack
                 </li>
               </ul>
-              <div class="mt-6 mb-0 p-3 bg-gray-100 dark:bg-[#00b5eb]/15 border-l-4 border-[#00b5eb] rounded text-sm leading-snug text-gray-800 dark:text-gray-200 font-medium italic">
+              <div class="mt-6 mb-0 p-3 bg-gray-100 dark:bg-accent-600/15 border-l-4 border-accent-600 rounded text-sm leading-snug text-gray-800 dark:text-gray-200 font-medium italic">
                 Production-grade rollout engine — version control + identity
                 control at scale
               </div>
@@ -519,7 +519,7 @@ export default function PricingCalculator() {
             <div class="p-6 pt-0">
               <a
                 href="/onboarding/"
-                class="inline-block w-full px-6 py-3 bg-[#00b5eb] hover:bg-[#174c76] text-white font-medium rounded-lg text-center transition-colors no-underline">
+                class="inline-block w-full px-6 py-3 bg-accent-600 hover:bg-accent-700 text-white font-medium rounded-lg text-center transition-colors no-underline">
                 Start free trial →
               </a>
             </div>
@@ -561,7 +561,7 @@ export default function PricingCalculator() {
                   SLA + Dedicated Support Engineer
                 </li>
               </ul>
-              <div class="mt-6 mb-0 p-3 bg-gray-100 dark:bg-[#00b5eb]/15 border-l-4 border-[#00b5eb] rounded text-sm leading-snug text-gray-800 dark:text-gray-200 font-medium italic">
+              <div class="mt-6 mb-0 p-3 bg-gray-100 dark:bg-accent-600/15 border-l-4 border-accent-600 rounded text-sm leading-snug text-gray-800 dark:text-gray-200 font-medium italic">
                 End-to-end commercial distribution suite — unified platform
               </div>
             </div>
@@ -576,7 +576,7 @@ export default function PricingCalculator() {
         </div>
 
         {/* Self-Hosting Info Box */}
-        <div class="mt-20 w-2/3 mx-auto p-6 bg-gradient-to-r from-[#00b5eb]/10 to-[#174c76]/10 dark:from-[#00b5eb]/20 dark:to-[#174c76]/20 rounded-lg border-2 border-[#00b5eb]/30 dark:border-[#00b5eb]/50">
+        <div class="mt-20 w-2/3 mx-auto p-6 bg-gradient-to-r from-accent-600/10 to-accent-900/10 dark:from-accent-600/20 dark:to-accent-900/20 rounded-lg border-2 border-accent-600/30 dark:border-accent-600/50">
           <h3 class="text-2xl font-bold mb-3 text-gray-900 dark:text-white">
             Self-Hosting Distr?
           </h3>
@@ -586,14 +586,14 @@ export default function PricingCalculator() {
               href="https://github.com/distr-sh/distr"
               target="_blank"
               rel="noopener noreferrer"
-              class="text-[#00b5eb] hover:text-[#174c76] dark:text-[#00b5eb] dark:hover:text-[#4ec9f0] font-medium underline">
+              class="text-accent-600 hover:text-accent-900 dark:text-accent-600 dark:hover:text-accent-200 font-medium underline">
               community edition
             </a>{' '}
             with unlimited users and customer organizations for free with all
             Starter features included. For self-hosting our Pro edition, please{' '}
             <a
               href="/contact/"
-              class="text-[#00b5eb] hover:text-[#174c76] dark:text-[#00b5eb] dark:hover:text-[#4ec9f0] font-medium underline">
+              class="text-accent-600 hover:text-accent-900 dark:text-accent-600 dark:hover:text-accent-200 font-medium underline">
               contact us
             </a>
             .
