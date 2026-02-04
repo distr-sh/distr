@@ -54,8 +54,9 @@ export class DeploymentStatusNotificationConfigurationsComponent {
     )
   );
   private readonly allUsers = toSignal(this.usersService.getUsers());
-  // TODO: filter users based on customer org ID
-  protected readonly users = computed(() => this.allUsers()?.filter((it) => it.customerOrganizationId === undefined));
+  protected readonly users = this.auth.isCustomer()
+    ? this.allUsers
+    : computed(() => this.allUsers()?.filter((it) => it.customerOrganizationId === undefined));
   private readonly deploymentTargets = toSignal(this.deploymentTargetsService.list());
   private readonly customers = this.auth.isVendor()
     ? toSignal(this.customersService.getCustomerOrganizations())

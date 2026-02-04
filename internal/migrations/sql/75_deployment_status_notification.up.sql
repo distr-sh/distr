@@ -32,3 +32,9 @@ CREATE TABLE NotificationRecord (
   current_deployment_revision_status_id UUID REFERENCES DeploymentRevisionStatus(id) ON DELETE CASCADE,
   message TEXT NOT NULL
 );
+
+ALTER TYPE CUSTOMER_ORGANIZATION_FEATURE ADD VALUE IF NOT EXISTS 'notifications';
+
+UPDATE CustomerOrganization
+  SET features = array_append(features, 'notifications')
+  WHERE NOT 'notifications' = any(features);
