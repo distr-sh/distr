@@ -135,7 +135,7 @@ func createHelloDistrApp(ctx context.Context) (*types.Application, error) {
 	}
 
 	version := types.ApplicationVersion{
-		Name:             "0.2.4", // renovate: datasource=github-releases depName=distr-sh/hello-distr
+		Name:             "0.4.1", // renovate: datasource=github-releases depName=distr-sh/hello-distr
 		LinkTemplate:     "http://{{ .Env.HELLO_DISTR_HOST }}",
 		ComposeFileData:  composeFileData,
 		TemplateFileData: templateFileData,

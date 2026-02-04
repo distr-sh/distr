@@ -1,5 +1,45 @@
 # Changelog
 
+## [2.8.0](https://github.com/distr-sh/distr/compare/2.7.1...2.8.0) (2026-02-03)
+
+
+### Features
+
+* **registry:** implement OCI manifest deletion by tag ([#1742](https://github.com/distr-sh/distr/issues/1742)) ([94303ad](https://github.com/distr-sh/distr/commit/94303ad57d26e88597c7105711bb6fb2a5c644cd))
+* totp multi-factor authentication ([#1734](https://github.com/distr-sh/distr/issues/1734)) ([e69179b](https://github.com/distr-sh/distr/commit/e69179bd25e2878cce1d3ec2c41cdb36a9bcdb32))
+
+
+### Bug Fixes
+
+* **backend:** set width on email logos ([#1758](https://github.com/distr-sh/distr/issues/1758)) ([d2d6c55](https://github.com/distr-sh/distr/commit/d2d6c55617ef21923784862f72e30de3183b764b))
+* **deps:** update module github.com/aws/aws-sdk-go-v2/service/s3 to v1.96.0 ([#1748](https://github.com/distr-sh/distr/issues/1748)) ([12ae198](https://github.com/distr-sh/distr/commit/12ae1988e23989ef61bd26b0ef484f89373fb843))
+* **deps:** update module github.com/getsentry/sentry-go/otel to v0.42.0 ([#1723](https://github.com/distr-sh/distr/issues/1723)) ([da7a28d](https://github.com/distr-sh/distr/commit/da7a28dede784c31afb0bd4ac98875b79e902130))
+* **deps:** update module github.com/go-co-op/gocron/v2 to v2.19.1 ([#1731](https://github.com/distr-sh/distr/issues/1731)) ([555c5ac](https://github.com/distr-sh/distr/commit/555c5ac6736bfca261c3649ae1b8a0844ab63612))
+* **deps:** update module github.com/onsi/gomega to v1.39.1 ([#1745](https://github.com/distr-sh/distr/issues/1745)) ([ddda70f](https://github.com/distr-sh/distr/commit/ddda70f320be5bab271222c9dff2f5d649abcadf))
+* **deps:** update module github.com/stripe/stripe-go/v84 to v84.3.0 ([#1749](https://github.com/distr-sh/distr/issues/1749)) ([00d20ec](https://github.com/distr-sh/distr/commit/00d20ece596dbef429a0ba74ec4496065595edae))
+* **deps:** update module go.opentelemetry.io/collector/consumer to v1.51.0 ([#1753](https://github.com/distr-sh/distr/issues/1753)) ([28f5f45](https://github.com/distr-sh/distr/commit/28f5f4552fa6c6741712663d36ec36e7ae500c80))
+* **deps:** update module go.opentelemetry.io/collector/receiver to v1.51.0 ([#1756](https://github.com/distr-sh/distr/issues/1756)) ([922acf0](https://github.com/distr-sh/distr/commit/922acf0ffdaae7d2e471b0d73fc5a722850587bc))
+* **deps:** update opentelemetry-go monorepo to v1.40.0 ([#1755](https://github.com/distr-sh/distr/issues/1755)) ([c4632fe](https://github.com/distr-sh/distr/commit/c4632fe0d9a9a2dbdf20bc50a58e9ba9f23878f8))
+* **deps:** update opentelemetry-go-contrib monorepo to v0.65.0 ([#1757](https://github.com/distr-sh/distr/issues/1757)) ([beb715f](https://github.com/distr-sh/distr/commit/beb715f20d5378ed519e6e7c40e36b55e77778f1))
+
+
+### Other
+
+* add escaping newline characters in env secrets ([#1760](https://github.com/distr-sh/distr/issues/1760)) ([e8c0696](https://github.com/distr-sh/distr/commit/e8c06963410f0c5024770ae9e44d39f9505b2f4e))
+* **deps:** update anchore/sbom-action action to v0.22.1 ([#1727](https://github.com/distr-sh/distr/issues/1727)) ([947ce71](https://github.com/distr-sh/distr/commit/947ce71c4687807ddf8471fab75438c5f966a0e0))
+* **deps:** update angular monorepo to v21.1.2 ([#1732](https://github.com/distr-sh/distr/issues/1732)) ([2d08949](https://github.com/distr-sh/distr/commit/2d08949063bc4b5ef2d1ec77b2690ad6a1fdc162))
+* **deps:** update angular-cli monorepo to v21.1.2 ([#1729](https://github.com/distr-sh/distr/issues/1729)) ([8902c0e](https://github.com/distr-sh/distr/commit/8902c0e63a920721dbad0ccd8b1681d30b0684a9))
+* **deps:** update axllent/mailpit docker tag to v1.29.0 ([#1746](https://github.com/distr-sh/distr/issues/1746)) ([46a7d40](https://github.com/distr-sh/distr/commit/46a7d40ab90ad9153de10d23eb6edadf49fc6946))
+* **deps:** update dependency @angular/cdk to v21.1.2 ([#1736](https://github.com/distr-sh/distr/issues/1736)) ([2df34af](https://github.com/distr-sh/distr/commit/2df34af3d5da2779ea84f92710c062b4a200b0ac))
+* **deps:** update dependency @codemirror/view to v6.39.12 ([#1740](https://github.com/distr-sh/distr/issues/1740)) ([bbd6393](https://github.com/distr-sh/distr/commit/bbd6393307acb616fffa705db24edae49b9cbcfd))
+* **deps:** update dependency autoprefixer to v10.4.24 ([#1744](https://github.com/distr-sh/distr/issues/1744)) ([652e029](https://github.com/distr-sh/distr/commit/652e029750cb15b9a766e6c9136141b9914f5363))
+* **deps:** update dependency jsdom to v28 ([#1750](https://github.com/distr-sh/distr/issues/1750)) ([5aa88ac](https://github.com/distr-sh/distr/commit/5aa88acd5d66f0ab17714cc7f6c7617a70e042ff))
+* **deps:** update dependency stripe to v1.35.0 ([#1747](https://github.com/distr-sh/distr/issues/1747)) ([0aaa75d](https://github.com/distr-sh/distr/commit/0aaa75dc60babf740dc0a5d283ecd6db601f8328))
+* **deps:** update distr-sh/hello-distr to v0.2.4 ([#1737](https://github.com/distr-sh/distr/issues/1737)) ([7cdfcda](https://github.com/distr-sh/distr/commit/7cdfcdad6713aa79c269894e8ec8569e3ebbbe0c))
+* **deps:** update distr-sh/hello-distr to v0.4.1 ([#1759](https://github.com/distr-sh/distr/issues/1759)) ([5daf8ab](https://github.com/distr-sh/distr/commit/5daf8ab82cb307bdb1dcd0fd815d987cbea74d38))
+* **deps:** update docker/login-action action to v3.7.0 ([#1730](https://github.com/distr-sh/distr/issues/1730)) ([cd6f146](https://github.com/distr-sh/distr/commit/cd6f1465f5b79d06fa6def97dd7e4b9d45717325))
+* **frontend:** strip ANSI color escape sequences from logs ([#1761](https://github.com/distr-sh/distr/issues/1761)) ([b64191f](https://github.com/distr-sh/distr/commit/b64191f54a9a91a51723f7cb29c8fb59d779fbbe))
+
 ## [2.7.1](https://github.com/distr-sh/distr/compare/2.7.0...2.7.1) (2026-01-27)
 
 

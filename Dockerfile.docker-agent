@@ -19,7 +19,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} \
   -ldflags="-s -w -X github.com/distr-sh/distr/internal/buildconfig.version=${VERSION:-snapshot} -X github.com/distr-sh/distr/internal/buildconfig.commit=${COMMIT}" \
   ./cmd/agent/docker/
 
-FROM docker:29.2.0-alpine3.23
+FROM docker:29.2.1-alpine3.23
 WORKDIR /
 COPY --from=builder /workspace/agent .
 
