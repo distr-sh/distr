@@ -34,7 +34,3 @@ CREATE TABLE NotificationRecord (
 );
 
 ALTER TYPE CUSTOMER_ORGANIZATION_FEATURE ADD VALUE IF NOT EXISTS 'notifications';
-
-UPDATE CustomerOrganization
-  SET features = array_append(features, 'notifications')
-  WHERE NOT 'notifications' = any(features);
