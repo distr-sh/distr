@@ -21,7 +21,7 @@
                 size="lg"
                 class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
               <span class="flex-grow ms-3">Tutorials</span>
-              @if (tutorialsService.notAllStarted$ | async) {
+              @if (!isAllTutorialsStarted()) {
                 <span class="w-2.5 h-2.5 mr-1.5 text-xs font-semibold rounded-full bg-blue-700 dark:bg-blue-600"></span>
               }
             </a>
@@ -123,7 +123,7 @@
         </li>
 
         <li>
-          @if (featureFlags.isLicensingEnabled$ | async) {
+          @if (isLicensingFeatureEnabled()) {
             <button
               type="button"
               (click)="toggle(licenseSubMenuOpen)"
@@ -184,40 +184,14 @@
                 [cdkConnectedOverlayOrigin]="tooltipTrigger"
                 [cdkConnectedOverlayBackdropClass]="'transparent'"
                 [cdkConnectedOverlayPositions]="[
-                  {originX: 'center', overlayX: 'start', originY: 'center', overlayY: 'center'},
+                  {originX: 'end', overlayX: 'start', originY: 'center', overlayY: 'center'},
                 ]"
                 [cdkConnectedOverlayOpen]="licenseOverlayOpen()">
-                <ng-container *ngTemplateOutlet="licenseOverlayContent"></ng-container>
+                <ng-container *ngTemplateOutlet="proFeatureOverlayContent"></ng-container>
               </ng-template>
             </a>
           }
         </li>
-
-        <ng-template #licenseOverlayContent>
-          <div
-            role="tooltip"
-            class="p-3 text-sm font-medium text-gray-900 bg-white border border-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-w-64">
-            <div>
-              The Licensing feature is a
-              <span
-                class="bg-gray-300 text-gray-900 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-gray-500 dark:text-gray-100">
-                Beta</span
-              >
-              feature.
-            </div>
-            To request access, reach out to us on
-            <a
-              href="https://discord.gg/6qqBSAWZfW"
-              target="_blank"
-              class="text-gray-600 dark:text-gray-400 hover:underline"
-              >Discord</a
-            >
-            or by email at
-            <a href="mailto:support@glasskube.com" class="text-gray-600 dark:text-gray-400 hover:underline"
-              >support&#64;glasskube.com</a
-            >.
-          </div>
-        </ng-template>
 
         <hr class="border-gray-200 dark:border-gray-600 my-4" />
 
@@ -266,42 +240,73 @@
         </li>
 
         <li>
-          <button
-            type="button"
-            (click)="toggle(notificationsSubMenuOpen)"
-            class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
-            aria-controls="dropdown-example">
-            <fa-icon
-              [icon]="faBullhorn"
-              size="lg"
-              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
-            <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Notifications</span>
-            <fa-icon
-              [icon]="faChevronDown"
-              [class.rotate-180]="notificationsSubMenuOpen()"
-              class="transition duration-150"></fa-icon>
-          </button>
-          @if (notificationsSubMenuOpen()) {
-            <ul class="space-y-1">
-              <li>
-                <a
-                  (click)="sidebar.hide()"
-                  routerLinkActive="bg-gray-100 dark:bg-gray-700"
-                  routerLink="/notifications/deployment-status"
-                  class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                  Deployment Status
-                </a>
-              </li>
-              <li>
-                <a
-                  (click)="sidebar.hide()"
-                  routerLinkActive="bg-gray-100 dark:bg-gray-700"
-                  routerLink="/notifications/history"
-                  class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                  <span class="">History</span>
-                </a>
-              </li>
-            </ul>
+          @if (isNotificationsFeatureEnabled()) {
+            <button
+              type="button"
+              (click)="toggle(notificationsSubMenuOpen)"
+              class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
+              aria-controls="dropdown-example">
+              <fa-icon
+                [icon]="faBullhorn"
+                size="lg"
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+              <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Notifications</span>
+              <fa-icon
+                [icon]="faChevronDown"
+                [class.rotate-180]="notificationsSubMenuOpen()"
+                class="transition duration-150"></fa-icon>
+            </button>
+            @if (notificationsSubMenuOpen()) {
+              <ul class="space-y-1">
+                <li>
+                  <a
+                    (click)="sidebar.hide()"
+                    routerLinkActive="bg-gray-100 dark:bg-gray-700"
+                    routerLink="/notifications/deployment-status"
+                    class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                    Deployment Status
+                  </a>
+                </li>
+                <li>
+                  <a
+                    (click)="sidebar.hide()"
+                    routerLinkActive="bg-gray-100 dark:bg-gray-700"
+                    routerLink="/notifications/history"
+                    class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                    <span class="">History</span>
+                  </a>
+                </li>
+              </ul>
+            }
+          } @else {
+            <a
+              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group cursor-pointer"
+              title="Contact support to enable licensing"
+              (click)="toggle(notificationsOverlayOpen)"
+              cdkOverlayOrigin
+              #tooltipTrigger="cdkOverlayOrigin">
+              <fa-icon
+                [icon]="faBullhorn"
+                size="lg"
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+              <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Notifications</span>
+              <span
+                class="ml-2 bg-gray-300 text-gray-900 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-gray-500 dark:text-gray-100"
+                >Pro</span
+              >
+              <ng-template
+                cdkConnectedOverlay
+                [cdkConnectedOverlayHasBackdrop]="true"
+                (backdropClick)="toggle(notificationsOverlayOpen)"
+                [cdkConnectedOverlayOrigin]="tooltipTrigger"
+                [cdkConnectedOverlayBackdropClass]="'transparent'"
+                [cdkConnectedOverlayPositions]="[
+                  {originX: 'end', overlayX: 'start', originY: 'center', overlayY: 'center'},
+                ]"
+                [cdkConnectedOverlayOpen]="notificationsOverlayOpen()">
+                <ng-container *ngTemplateOutlet="proFeatureOverlayContent"></ng-container>
+              </ng-template>
+            </a>
           }
         </li>
 
@@ -487,3 +492,26 @@
     </div>
   </aside>
 }
+
+<ng-template #proFeatureOverlayContent>
+  <div
+    role="tooltip"
+    class="p-3 text-sm font-medium text-gray-900 bg-white border border-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-w-64">
+    <div class="mb-1">
+      This feature is available to organizations with a
+      <span
+        class="bg-gray-300 text-gray-900 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-gray-500 dark:text-gray-100">
+        Pro</span
+      >
+      subscription.
+    </div>
+    To request access, reach out to us on
+    <a href="https://discord.gg/6qqBSAWZfW" target="_blank" class="text-gray-600 dark:text-gray-400 hover:underline"
+      >Discord</a
+    >
+    or by email at
+    <a href="mailto:support@glasskube.com" class="text-gray-600 dark:text-gray-400 hover:underline"
+      >support&#64;glasskube.com</a
+    >.
+  </div>
+</ng-template>

@@ -103,6 +103,24 @@ func GetDeploymentStatusNotificationConfigurations(
 	return result, nil
 }
 
+func CountDeploymentStatusNotificationConfigurations(
+	ctx context.Context,
+	organizationID uuid.UUID,
+) (int64, error) {
+	db := internalctx.GetDb(ctx)
+
+	rows, err := db.Query(
+		ctx,
+		`SELECT count(id) FROM DeploymentStatusNotificationConfiguration WHERE organization_id = @organizationID`,
+		pgx.NamedArgs{"organizationID": organizationID},
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return pgx.CollectExactlyOneRow(rows, pgx.RowTo[int64])
+}
+
 func GetDeploymentStatusNotificationConfigurationsForDeploymentTarget(
 	ctx context.Context,
 	deploymentTargetID uuid.UUID,
@@ -346,7 +364,7 @@ func getDeploymentStatusNotificationConfigurationInto(
 func DeleteDeploymentStatusNotificationConfiguration(
 	ctx context.Context,
 	id uuid.UUID,
-	orgID uuid.UUID,
+	organizationID uuid.UUID,
 	customerOrgID *uuid.UUID,
 ) error {
 	db := internalctx.GetDb(ctx)
@@ -355,11 +373,11 @@ func DeleteDeploymentStatusNotificationConfiguration(
 		ctx,
 		`DELETE FROM DeploymentStatusNotificationConfiguration
 		WHERE id = @id
-			AND organization_id = @orgID
+			AND organization_id = @organizationID
 			AND (@customerOrgIsNull AND customer_organization_id IS NULL) OR (customer_organization_id = @customerOrgID)`,
 		pgx.NamedArgs{
 			"id":                id,
-			"orgID":             orgID,
+			"organizationID":    organizationID,
 			"customerOrgIsNull": customerOrgID == nil,
 			"customerOrgID":     customerOrgID,
 		},
@@ -374,4 +392,22 @@ func DeleteDeploymentStatusNotificationConfiguration(
 	}
 
 	return nil
+}
+
+func DeleteDeploymentStatusNotificationConfigurationsWithOrganizationID(
+	ctx context.Context,
+	organizationID uuid.UUID,
+) (int64, error) {
+	db := internalctx.GetDb(ctx)
+
+	cmd, err := db.Exec(
+		ctx,
+		`DELETE FROM DeploymentStatusNotificationConfiguration WHERE organization_id = @organizationID`,
+		pgx.NamedArgs{"organizationID": organizationID},
+	)
+	if err != nil {
+		return 0, fmt.Errorf("failed to delete DeploymentStatusNotificationConfiguration: %w", err)
+	}
+
+	return cmd.RowsAffected(), nil
 }

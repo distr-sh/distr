@@ -8,6 +8,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mapping"
+	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/getsentry/sentry-go"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
@@ -16,6 +17,8 @@ import (
 
 func NotificationRecordsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Notifications"))
+
+	r.Use(middleware.ProFeature)
 
 	r.Get("/", getNotificationRecordsHandler()).
 		With(option.Response(http.StatusOK, []api.NotificationRecordWithCurrentStatus{}))

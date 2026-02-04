@@ -8,6 +8,7 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
@@ -18,6 +19,8 @@ import (
 
 func DeploymentStatusNotificationConfigurationsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Notifications"))
+
+	r.Use(middleware.ProFeature)
 
 	r.Get("/", getDeploymentStatusNotificationConfigurationsHandler()).
 		With(option.Description("list all deployment status notification configurations")).

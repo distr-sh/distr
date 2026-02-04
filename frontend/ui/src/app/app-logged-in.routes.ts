@@ -66,6 +66,13 @@ function licensingEnabledGuard(): CanActivateFn {
   };
 }
 
+function notificationsEnabledGuard(): CanActivateFn {
+  return async () => {
+    const featureFlags = inject(FeatureFlagService);
+    return await firstValueFrom(featureFlags.isNotificationsEnabled$);
+  };
+}
+
 function registryHostSetOrRedirectGuard(redirectTo: string): CanActivateFn {
   return async () => {
     const router = inject(Router);
@@ -236,6 +243,7 @@ export const routes: Routes = [
       },
       {
         path: 'notifications',
+        canActivate: [notificationsEnabledGuard()],
         children: [
           {
             path: 'deployment-status',
