@@ -84,7 +84,7 @@ func GetDeploymentStatusNotificationConfigurations(
 		`SELECT `+deploymentStatusNotificationConfigurationOutputExpr+`
 		FROM DeploymentStatusNotificationConfiguration c
 		WHERE c.organization_id = @orgID
-			AND (@customerOrgIsNull AND customer_organization_id IS NULL) OR (customer_organization_id = @customerOrgID)`,
+			AND ((@customerOrgIsNull AND customer_organization_id IS NULL) OR (customer_organization_id = @customerOrgID))`,
 		pgx.NamedArgs{
 			"orgID":             organizationID,
 			"customerOrgID":     customerOrganizationID,
@@ -219,7 +219,7 @@ func UpdateDeploymentStatusNotificationConfiguration(
 				enabled = @enabled
 			WHERE id = @id
 				AND organization_id = @orgID
-				AND (@customerOrgIsNull AND customer_organization_id IS NULL) OR (customer_organization_id = @customerOrgID)`,
+				AND ((@customerOrgIsNull AND customer_organization_id IS NULL) OR (customer_organization_id = @customerOrgID))`,
 			pgx.NamedArgs{
 				"id":                config.ID,
 				"name":              config.Name,
@@ -316,7 +316,7 @@ func updateDeploymentStatusConfigDeploymentTargetIDs(
 	}
 
 	log := internalctx.GetLogger(ctx)
-	log.Debug("inserted config DeplyomentTarget relations", zap.Int64("rowsAffected", cmd.RowsAffected()))
+	log.Debug("inserted config DeploymentTarget relations", zap.Int64("rowsAffected", cmd.RowsAffected()))
 
 	_, err = db.Exec(
 		ctx,
@@ -374,7 +374,7 @@ func DeleteDeploymentStatusNotificationConfiguration(
 		`DELETE FROM DeploymentStatusNotificationConfiguration
 		WHERE id = @id
 			AND organization_id = @organizationID
-			AND (@customerOrgIsNull AND customer_organization_id IS NULL) OR (customer_organization_id = @customerOrgID)`,
+			AND ((@customerOrgIsNull AND customer_organization_id IS NULL) OR (customer_organization_id = @customerOrgID))`,
 		pgx.NamedArgs{
 			"id":                id,
 			"organizationID":    organizationID,

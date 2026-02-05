@@ -365,13 +365,14 @@ func agentPostStatusHandler(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx).With(zap.Any("status", requestBody))
+	sentry := sentry.GetHubFromContext(ctx)
 
 	deploymentID, err := db.GetDeploymentIDForRevisionID(ctx, requestBody.RevisionID)
 	if err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		} else {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
+			sentry.CaptureException(err)
 			log.Error("failed to get deployment ID", zap.Error(err))
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
@@ -392,7 +393,7 @@ func agentPostStatusHandler(w http.ResponseWriter, r *http.Request) {
 
 	previousStatus, err := db.GetLatestDeploymentRevisionStatus(ctx, deploymentID)
 	if err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
+		sentry.CaptureException(err)
 		log.Error("failed to get latest deployment revision status", zap.Error(err))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -409,27 +410,35 @@ func agentPostStatusHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		} else {
 			log.Error("failed to create deployment revision status", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
+			sentry.CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
 		return
 	}
 
-	go func(ctx context.Context) {
-		asyncCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-		defer cancel()
+	if previousStatus != nil {
+		go func(ctx context.Context) {
+			defer func() {
+				if r := recover(); r != nil {
+					sentry.Recover(r)
+					log.Error("panic in deployment status notification", zap.Any("reason", r))
+				}
+			}()
+			asyncCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+			defer cancel()
 
-		if err := notification.SendDeploymentStatusNotifications(
-			asyncCtx,
-			*deploymentTarget,
-			deployment,
-			*previousStatus,
-			status,
-		); err != nil {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			log.Error("failed to dispatch deployment status notification", zap.Error(err))
-		}
-	}(context.WithoutCancel(ctx))
+			if err := notification.SendDeploymentStatusNotifications(
+				asyncCtx,
+				*deploymentTarget,
+				deployment,
+				*previousStatus,
+				status,
+			); err != nil {
+				sentry.CaptureException(err)
+				log.Error("failed to dispatch deployment status notification", zap.Error(err))
+			}
+		}(context.WithoutCancel(ctx))
+	}
 
 	w.WriteHeader(http.StatusOK)
 }
