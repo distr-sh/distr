@@ -113,13 +113,28 @@ func GetNotificationRecords(
 		ctx,
 		`SELECT`+notificationRecordOutputExpr+`,
 			dt.name AS deployment_target_name,
+			co.name AS customer_organization_name,
+			a.name AS application_name,
+			av.name AS application_version_name,
 			CASE WHEN s.id IS NOT NULL THEN (
 				s.id, s.created_at, s.deployment_revision_id, s.type, s.message
 			) END current_deployment_revision_status
 		FROM NotificationRecord r
-		LEFT JOIN DeploymentTarget dt ON r.deployment_target_id = dt.id
+		LEFT JOIN DeploymentTarget dt
+			ON r.deployment_target_id = dt.id
+		LEFT JOIN CustomerOrganization co
+			ON dt.customer_organization_id = co.id
 		LEFT JOIN DeploymentRevisionStatus s
 			ON r.current_deployment_revision_status_id = s.id
+		LEFT JOIN DeploymentRevisionStatus s_prev
+			ON r.previous_deployment_revision_status_id = s_prev.id
+		LEFT JOIN DeploymentRevision dr
+			ON s.deployment_revision_id = dr.id
+				OR (s.id IS NULL AND s_prev.deployment_revision_id = dr.id)
+		LEFT JOIN ApplicationVersion av
+			ON dr.application_version_id = av.id
+		LEFT JOIN Application a
+			ON av.application_id = a.id
 		WHERE r.organization_id = @organizationID
 			AND ((@isVendor AND r.customer_organization_id IS NULL)
 				OR r.customer_organization_id = @customerOrganizationID)

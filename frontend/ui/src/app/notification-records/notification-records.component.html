@@ -6,7 +6,9 @@
           <thead class="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
             <tr>
               <th scope="col" class="p-4">Date</th>
+              <th scope="col" class="p-4">Customer</th>
               <th scope="col" class="p-4">Deployment</th>
+              <th scope="col" class="p-4">Application</th>
               <th scope="col" class="p-4">Trigger</th>
               <th scope="col" class="p-4">Errors</th>
             </tr>
@@ -17,8 +19,21 @@
                 <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                   {{ record.createdAt | date: 'short' }}
                 </td>
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                <td
+                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
+                  @if (record.customerOrganizationName) {
+                    {{ record.customerOrganizationName }}
+                  } @else {
+                    <span class="text-gray-500">-</span>
+                  }
+                </td>
+                <td
+                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
                   {{ record.deploymentTargetName }}
+                </td>
+                <td
+                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
+                  {{ record.applicationName }}@{{ record.applicationVersionName }}
                 </td>
                 <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                   @if (record.currentDeploymentRevisionStatus; as s) {

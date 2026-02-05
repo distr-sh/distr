@@ -19,5 +19,8 @@ type NotificationRecord struct {
 type NotificationRecordWithCurrentStatus struct {
 	NotificationRecord
 	DeploymentTargetName            *string                   `json:"deploymentTargetName,omitempty"`
+	CustomerOrganizationName        *string                   `json:"customerOrganizationName,omitempty"`
+	ApplicationName                 *string                   `json:"applicationName,omitempty"`
+	ApplicationVersionName          *string                   `json:"applicationVersionName,omitempty"`
 	CurrentDeploymentRevisionStatus *DeploymentRevisionStatus `json:"currentDeploymentRevisionStatus,omitempty"`
 }
