@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.2](https://github.com/distr-sh/distr/compare/2.8.1...2.8.2) (2026-02-05)
+
+
+### Bug Fixes
+
+* prevent template errors for mailsending ([#1774](https://github.com/distr-sh/distr/issues/1774)) ([a10e1a7](https://github.com/distr-sh/distr/commit/a10e1a782f948ba1ce8afca18e75bde24483d26a))
+
 ## [2.8.1](https://github.com/distr-sh/distr/compare/2.8.0...2.8.1) (2026-02-05)
 
 
