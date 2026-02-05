@@ -2,9 +2,18 @@ import {DatePipe} from '@angular/common';
 import {Component, computed, inject, Signal, signal, TemplateRef, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule} from '@angular/forms';
+import {RouterLink} from '@angular/router';
 import {CustomerOrganization, DeploymentTarget, Named} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCheck, faMagnifyingGlass, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {
+  faCheck,
+  faClockRotateLeft,
+  faMagnifyingGlass,
+  faPen,
+  faPlus,
+  faTrash,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {validateRecordAtLeast} from '../../util/validation';
@@ -22,7 +31,7 @@ import {
 
 @Component({
   templateUrl: './deployment-status-notification-configurations.component.html',
-  imports: [FaIconComponent, ReactiveFormsModule, DatePipe],
+  imports: [FaIconComponent, ReactiveFormsModule, DatePipe, RouterLink],
 })
 export class DeploymentStatusNotificationConfigurationsComponent {
   protected readonly auth = inject(AuthService);
@@ -97,6 +106,7 @@ export class DeploymentStatusNotificationConfigurationsComponent {
   protected readonly faTrash = faTrash;
   protected readonly faCheck = faCheck;
   protected readonly faXmark = faXmark;
+  protected readonly faHistory = faClockRotateLeft;
 
   protected async showDrawer(config?: DeploymentStatusNotificationConfiguration) {
     this.hideDrawer();

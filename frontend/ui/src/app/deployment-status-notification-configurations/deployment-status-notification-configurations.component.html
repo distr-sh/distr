@@ -22,13 +22,20 @@
         </div>
         <div
           class="w-full md:w-auto flex flex-col md:flex-row items-stretch md:items-center justify-end gap-4 flex-shrink-0 flex-grow">
+          <button
+            type="button"
+            routerLink="/notifications/history"
+            class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+            <fa-icon [icon]="faHistory" class="text-gray-500 dark:text-gray-400 mr-2"></fa-icon>
+            Notification History
+          </button>
           @if (auth.hasRole('read_write') || auth.hasRole('admin')) {
             <button
               type="button"
               (click)="showDrawer()"
               class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
               <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2"></fa-icon>
-              Create Configuration
+              Create Error Notification Config
             </button>
           }
         </div>
@@ -128,13 +135,17 @@
     animate.leave="animate-fly-out-right">
     <h2
       id="drawer-label"
-      class="inline-flex items-center mb-6 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
+      class="inline-flex items-center mb-2 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
       @if (editConfigRef(); as config) {
         Update {{ config.name }}
       } @else {
         New Configuration
       }
     </h2>
+    <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
+      You will receive notifications when a deployment changes to an error or stale status, and as soon as the
+      deployment has recovered.
+    </p>
     <button
       type="button"
       (click)="hideDrawer()"
@@ -143,6 +154,7 @@
       <fa-icon [icon]="faXmark" class="w-5 h-5"></fa-icon>
       <span class="sr-only">Close menu</span>
     </button>
+
     <form [formGroup]="editConfigForm" (ngSubmit)="saveConfig()">
       <div class="mb-4 space-y-4">
         <div>
