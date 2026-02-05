@@ -13,7 +13,6 @@ import {
   faCheckDouble,
   faChevronDown,
   faChevronUp,
-  faCircle,
   faCircleExclamation,
   faClipboard,
   faLightbulb,
