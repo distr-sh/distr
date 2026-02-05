@@ -172,7 +172,6 @@ export class DeploymentStatusNotificationConfigurationsComponent {
   }
 
   protected async toggleConfigEnabled(config: DeploymentStatusNotificationConfiguration) {
-    console.log('Toggling enabled for config', config);
     try {
       const request = {...config, enabled: !config.enabled};
       this.enabledToggleLoading.set(true);
