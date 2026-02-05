@@ -2,7 +2,7 @@ module github.com/distr-sh/distr
 
 go 1.25.0
 
-toolchain go1.25.6
+toolchain go1.25.7
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
