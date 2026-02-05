@@ -8,13 +8,13 @@
     <div class="message-container">
       {{ template "fragments/header.html" . }}
       <main>
-        {{if .UserAccount.Name}}
-        <p>Hi {{.UserAccount.Name}}</p>
-        {{else}}
-        <p>Hi,</p>
-        {{end}} Welcome to Distr! Please
-        <a href="{{.Host}}/verify?jwt={{.Token | QueryEscape}}">click this link</a> to verify that this is your email
-        address.
+        {{template "fragments/greeting.html" . }}
+
+        <p>
+          Welcome to {{ if and .Organization .Organization.Name }}{{ .Organization.Name }}{{ else }}Distr{{ end }}!
+          Please <a href="{{.Host}}/verify?jwt={{.Token | QueryEscape}}">click this link</a> to verify that this is your
+          email address.
+        </p>
 
         <p>Alternatively, you can copy and paste the following URL into your browser:</p>
 

@@ -55,36 +55,27 @@ func parse(fsys fs.FS, patterns ...string) (*template.Template, error) {
 func InviteUser(
 	userAccount types.UserAccount,
 	organization types.OrganizationWithBranding,
+	invitingUser types.UserAccount,
+	targetOrgName string,
 	inviteURL string,
 ) (*template.Template, any) {
 	return templates.Lookup("invite-user.html"),
 		map[string]any{
-			"UserAccount":  userAccount,
-			"Organization": organization,
-			"Host":         customdomains.AppDomainOrDefault(organization.Organization),
-			"InviteURL":    inviteURL,
-		}
-}
-
-func InviteCustomer(
-	userAccount types.UserAccount,
-	organization types.OrganizationWithBranding,
-	inviteURL string,
-) (*template.Template, any) {
-	return templates.Lookup("invite-customer.html"),
-		map[string]any{
-			"UserAccount":  userAccount,
-			"Organization": organization,
-			"Host":         customdomains.AppDomainOrDefault(organization.Organization),
-			"InviteURL":    inviteURL,
+			"UserAccount":   userAccount,
+			"Organization":  organization,
+			"InvitingUser":  invitingUser,
+			"TargetOrgName": targetOrgName,
+			"Host":          customdomains.AppDomainOrDefault(organization.Organization),
+			"InviteURL":     inviteURL,
 		}
 }
 
 func VerifyEmail(userAccount types.UserAccount, org types.Organization, token string) (*template.Template, any) {
 	return templates.Lookup("verify-email-registration.html"), map[string]any{
-		"UserAccount": userAccount,
-		"Host":        customdomains.AppDomainOrDefault(org),
-		"Token":       token,
+		"UserAccount":  userAccount,
+		"Organization": org,
+		"Host":         customdomains.AppDomainOrDefault(org),
+		"Token":        token,
 	}
 }
 
@@ -107,8 +98,9 @@ func PasswordReset(
 
 func UpdateEmail(userAccount types.UserAccount, org types.Organization, token string) (*template.Template, any) {
 	return templates.Lookup("update-email.html"), map[string]any{
-		"UserAccount": userAccount,
-		"Host":        customdomains.AppDomainOrDefault(org),
-		"Token":       token,
+		"UserAccount":  userAccount,
+		"Organization": org,
+		"Host":         customdomains.AppDomainOrDefault(org),
+		"Token":        token,
 	}
 }
