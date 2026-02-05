@@ -92,6 +92,11 @@ func createOrganization(w http.ResponseWriter, r *http.Request) {
 	auth := auth.Authentication.Require(ctx)
 	log := internalctx.GetLogger(ctx)
 
+	if auth.IsSuperAdmin() {
+		http.Error(w, "super admins cannot create organizations", http.StatusForbidden)
+		return
+	}
+
 	body, err := JsonBody[api.CreateUpdateOrganizationRequest](w, r)
 	if err != nil {
 		return

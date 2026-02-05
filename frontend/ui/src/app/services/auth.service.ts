@@ -21,6 +21,7 @@ export interface JWTClaims {
   exp: string;
   role: UserRole;
   image_url: string | undefined;
+  is_super_admin?: boolean;
   [claim: string]: unknown;
 }
 
@@ -74,6 +75,10 @@ export class AuthService {
 
   public isCustomer(): boolean {
     return this.getClaims()?.c_org !== undefined;
+  }
+
+  public isSuperAdmin(): boolean {
+    return this.getClaims()?.is_super_admin === true;
   }
 
   public login(email: string, password: string, mfaCode?: string): Observable<{requiresMfa: boolean}> {

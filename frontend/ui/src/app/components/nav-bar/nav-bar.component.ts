@@ -1,11 +1,11 @@
-import {OverlayModule} from '@angular/cdk/overlay';
-import {AsyncPipe, TitleCasePipe} from '@angular/common';
-import {HttpErrorResponse} from '@angular/common/http';
-import {Component, inject, input, OnInit, TemplateRef, ViewChild} from '@angular/core';
-import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
-import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {ActivatedRoute, RouterLink} from '@angular/router';
-import {FaIconComponent} from '@fortawesome/angular-fontawesome';
+import { OverlayModule } from '@angular/cdk/overlay';
+import { AsyncPipe, TitleCasePipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, inject, input, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import {
   faArrowLeft,
   faBarsStaggered,
@@ -22,23 +22,23 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import {catchError, combineLatestWith, EMPTY, lastValueFrom, map, Observable, of} from 'rxjs';
-import {getFormDisplayedError} from '../../../util/errors';
-import {SecureImagePipe} from '../../../util/secureImage';
-import {dropdownAnimation} from '../../animations/dropdown';
-import {modalFlyInOut} from '../../animations/modal';
-import {AutotrimDirective} from '../../directives/autotrim.directive';
-import {RequireCustomerDirective, RequireVendorDirective} from '../../directives/required-role.directive';
-import {AuthService} from '../../services/auth.service';
-import {OrganizationBrandingService} from '../../services/organization-branding.service';
-import {OrganizationService} from '../../services/organization.service';
-import {DialogRef, OverlayService} from '../../services/overlay.service';
-import {SidebarService} from '../../services/sidebar.service';
-import {ToastService} from '../../services/toast.service';
-import {UsersService} from '../../services/users.service';
-import {Organization, OrganizationWithUserRole} from '../../types/organization';
-import {ColorSchemeSwitcherComponent} from '../color-scheme-switcher/color-scheme-switcher.component';
-import {NavBarSubscriptionBannerComponent} from './nav-bar-subscription-banner/nav-bar-subscription-banner.component';
+import { catchError, combineLatestWith, EMPTY, lastValueFrom, map, Observable, of } from 'rxjs';
+import { getFormDisplayedError } from '../../../util/errors';
+import { SecureImagePipe } from '../../../util/secureImage';
+import { dropdownAnimation } from '../../animations/dropdown';
+import { modalFlyInOut } from '../../animations/modal';
+import { AutotrimDirective } from '../../directives/autotrim.directive';
+import { RequireCustomerDirective, RequireVendorDirective } from '../../directives/required-role.directive';
+import { AuthService } from '../../services/auth.service';
+import { OrganizationBrandingService } from '../../services/organization-branding.service';
+import { OrganizationService } from '../../services/organization.service';
+import { DialogRef, OverlayService } from '../../services/overlay.service';
+import { SidebarService } from '../../services/sidebar.service';
+import { ToastService } from '../../services/toast.service';
+import { UsersService } from '../../services/users.service';
+import { Organization, OrganizationWithUserRole } from '../../types/organization';
+import { ColorSchemeSwitcherComponent } from '../color-scheme-switcher/color-scheme-switcher.component';
+import { NavBarSubscriptionBannerComponent } from './nav-bar-subscription-banner/nav-bar-subscription-banner.component';
 
 type SwitchOptions = {
   currentOrg: Organization;
@@ -67,7 +67,7 @@ type SwitchOptions = {
   animations: [dropdownAnimation, modalFlyInOut],
 })
 export class NavBarComponent implements OnInit {
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
   private readonly overlay = inject(OverlayService);
   public readonly sidebar = inject(SidebarService);
   private readonly toast = inject(ToastService);

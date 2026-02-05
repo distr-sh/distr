@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"slices"
@@ -68,10 +69,21 @@ func LoggingMiddleware(handler http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
+func isSuperAdmin(ctx context.Context) bool {
+	if auth, err := auth.Authentication.Get(ctx); err == nil {
+		return auth.IsSuperAdmin()
+	}
+	return false
+}
+
 func RequireAnyUserRole(userRoles ...types.UserRole) func(handler http.Handler) http.Handler {
 	return func(handler http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
+			if isSuperAdmin(ctx) {
+				handler.ServeHTTP(w, r)
+				return
+			}
 			if auth, err := auth.Authentication.Get(ctx); err != nil {
 				http.Error(w, err.Error(), http.StatusForbidden)
 			} else if auth.CurrentUserRole() == nil || !slices.Contains(userRoles, *auth.CurrentUserRole()) {
@@ -123,6 +135,10 @@ var ProFeature = RequireAnySubscriptionType(
 func RequireVendor(handler http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		if isSuperAdmin(ctx) {
+			handler.ServeHTTP(w, r)
+			return
+		}
 		if auth, err := auth.Authentication.Get(ctx); err != nil {
 			http.Error(w, err.Error(), http.StatusForbidden)
 		} else if auth.CurrentCustomerOrgID() != nil {
@@ -202,13 +218,30 @@ func getTokenIdKey(token any, id uuid.UUID) string {
 
 var RequireOrgAndRole = auth.Authentication.ValidatorMiddleware(
 	func(value authinfo.AuthInfoWithUserAndOrganization) error {
-		if value.CurrentOrgID() == nil || value.CurrentOrg() == nil || value.CurrentUserRole() == nil {
-			return authn.ErrBadAuthentication
-		} else {
+		if value.IsSuperAdmin() {
+			// Super admins still need org context, but don't need a role
+			if value.CurrentOrgID() == nil || value.CurrentOrg() == nil {
+				return authn.ErrBadAuthentication
+			}
 			return nil
 		}
+		if value.CurrentOrgID() == nil || value.CurrentOrg() == nil || value.CurrentUserRole() == nil {
+			return authn.ErrBadAuthentication
+		}
+		return nil
 	},
 )
+
+func BlockSuperAdmin(handler http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		if isSuperAdmin(r.Context()) {
+			http.Error(w, "super admins cannot modify resources", http.StatusForbidden)
+			return
+		}
+		handler.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
+}
 
 func FeatureFlagMiddleware(feature types.Feature) func(handler http.Handler) http.Handler {
 	return func(handler http.Handler) http.Handler {

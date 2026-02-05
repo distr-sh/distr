@@ -184,6 +184,29 @@ func GetOrganizationsForUser(ctx context.Context, userID uuid.UUID) ([]types.Org
 	}
 }
 
+func GetAllOrganizationsForSuperAdmin(ctx context.Context) ([]types.OrganizationWithUserRole, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx, `
+		SELECT`+organizationOutputExpr+`,
+			NULL::USER_ROLE as user_role,
+			NULL::UUID as customer_organization_id,
+			NULL::TEXT as customer_organization_name,
+			o.created_at as joined_org_at
+			FROM Organization o
+			WHERE o.deleted_at IS NULL
+			ORDER BY o.created_at
+	`)
+	if err != nil {
+		return nil, err
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.OrganizationWithUserRole])
+	if err != nil {
+		return nil, err
+	} else {
+		return result, nil
+	}
+}
+
 func GetOrganizationByID(ctx context.Context, orgID uuid.UUID) (*types.Organization, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,

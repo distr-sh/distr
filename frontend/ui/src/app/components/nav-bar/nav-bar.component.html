@@ -70,7 +70,11 @@
                       class="flex flex-col text-end text-sm font-medium text-gray-900 dark:text-gray-300"
                       role="none">
                       {{ switchOptions.currentOrg.name }}
-                      @if (switchOptions.isVendorSomewhere) {
+                      @if (auth.isSuperAdmin()) {
+                        <span class="text-xs font-light text-amber-600 dark:text-amber-400" role="none">
+                          Super Admin (Read-Only)
+                        </span>
+                      } @else if (switchOptions.isVendorSomewhere) {
                         <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
                           {{ user.userRole | titlecase }}
                         </span>
@@ -107,23 +111,27 @@
                                 role="none">
                                 {{ org.name }}
                                 <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
-                                  @if (switchOptions.isVendorSomewhere) {
-                                    @if (org.customerOrganizationId) {
-                                      Customer
-                                    } @else {
-                                      Vendor
+                                  @if (auth.isSuperAdmin()) {
+                                    All Organizations
+                                  } @else {
+                                    @if (switchOptions.isVendorSomewhere) {
+                                      @if (org.customerOrganizationId) {
+                                        Customer
+                                      } @else {
+                                        Vendor
+                                      }
+                                      &bull;
                                     }
-                                    &bull;
-                                  }
-                                  @switch (org.userRole) {
-                                    @case ('admin') {
-                                      Administrator
-                                    }
-                                    @case ('read_write') {
-                                      User
-                                    }
-                                    @case ('read_only') {
-                                      Viewer
+                                    @switch (org.userRole) {
+                                      @case ('admin') {
+                                        Administrator
+                                      }
+                                      @case ('read_write') {
+                                        User
+                                      }
+                                      @case ('read_only') {
+                                        Viewer
+                                      }
                                     }
                                   }
                                 </span>

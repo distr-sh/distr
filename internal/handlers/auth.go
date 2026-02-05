@@ -65,6 +65,47 @@ func authSwitchContextHandler() func(writer http.ResponseWriter, request *http.R
 			return
 		}
 
+		// Super admins can switch to any organization
+		if auth.IsSuperAdmin() {
+			user, err := db.GetUserAccountByID(ctx, auth.CurrentUserID())
+			if err != nil {
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				log.Error("failed to get user account", zap.Error(err))
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+			org, err := db.GetOrganizationByID(ctx, request.OrganizationID)
+			if errors.Is(err, apierrors.ErrNotFound) {
+				http.Error(w, "organization not found", http.StatusNotFound)
+				return
+			} else if err != nil {
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				log.Error("failed to get organization", zap.Error(err))
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+			_, tokenString, err := authjwt.GenerateDefaultToken(*user, types.OrganizationWithUserRole{
+				Organization:           *org,
+				UserRole:               types.UserRole(""), // Super admins don't have a role
+				CustomerOrganizationID: nil,
+			})
+			if err != nil {
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				log.Error("failed to generate token", zap.Error(err))
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+			if err := db.UpdateUserAccountLastUsedOrganizationID(ctx, user.ID, request.OrganizationID); err != nil {
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				log.Error("failed to update last used organization ID", zap.Error(err))
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+			RespondJSON(w, api.AuthLoginResponse{Token: tokenString})
+			return
+		}
+
+		// Regular users: validate membership
 		if user, org, err := db.GetUserAccountAndOrg(
 			ctx, auth.CurrentUserID(), request.OrganizationID); errors.Is(err, apierrors.ErrNotFound) {
 			http.Error(w, "bad request", http.StatusBadRequest)
