@@ -226,7 +226,7 @@ func validateDeploymentRequest(
 	var license *types.ApplicationLicense
 	var app *types.Application
 	var version *types.ApplicationVersion
-	var target *types.DeploymentTargetWithCreatedBy
+	var target *types.DeploymentTargetFull
 	var secrets []types.SecretWithUpdatedBy
 
 	org := auth.CurrentOrg()
@@ -356,7 +356,7 @@ func validateDeploymentRequestLicense(
 	request api.DeploymentRequest,
 	license *types.ApplicationLicense,
 	app *types.Application,
-	target *types.DeploymentTargetWithCreatedBy,
+	target *types.DeploymentTargetFull,
 	deployment *types.DeploymentWithLatestRevision,
 ) error {
 	if license != nil {
@@ -389,7 +389,7 @@ func validateDeploymentRequestLicense(
 
 func validateDeploymentRequestDeploymentType(
 	w http.ResponseWriter,
-	target *types.DeploymentTargetWithCreatedBy,
+	target *types.DeploymentTargetFull,
 	application *types.Application,
 ) error {
 	if target.Type != application.Type {
@@ -402,7 +402,7 @@ func validateDeploymentRequestDeploymentTarget(
 	ctx context.Context,
 	w http.ResponseWriter,
 	request api.DeploymentRequest,
-	target *types.DeploymentTargetWithCreatedBy,
+	target *types.DeploymentTargetFull,
 ) error {
 	auth := auth.Authentication.Require(ctx)
 

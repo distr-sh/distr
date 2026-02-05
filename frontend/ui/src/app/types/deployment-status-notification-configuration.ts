@@ -1,3 +1,5 @@
+import {DeploymentTarget, UserAccount} from '@distr-sh/distr-sdk';
+
 export interface CreateUpdateDeploymentStatusNotificationConfigurationRequest {
   name: string;
   enabled: boolean;
@@ -12,4 +14,6 @@ export interface DeploymentStatusNotificationConfiguration {
   enabled: boolean;
   deploymentTargetIds?: string[];
   userAccountIds?: string[];
+  userAccounts?: UserAccount[];
+  deploymentTargets?: DeploymentTarget[];
 }

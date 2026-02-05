@@ -45,7 +45,15 @@ const (
 			WHERE j.deployment_status_notification_configuration_id = c.id
 				AND j.user_account_id = u.id
 		)
-	) AS user_accounts
+	) AS user_accounts,
+	(
+		SELECT array_agg(row(` + deploymentTargetOutputExprBase + `))
+		FROM DeploymentTarget dt
+		WHERE exists(
+			SELECT 1 FROM DeploymentStatusNotificationConfiguration_DeploymentTarget j
+			WHERE j.deployment_status_notification_configuration_id = c.id AND j.deployment_target_id = dt.id
+		)
+	) AS deployment_targets
 	`
 )
 

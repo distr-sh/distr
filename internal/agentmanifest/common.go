@@ -18,7 +18,7 @@ import (
 
 func Get(
 	ctx context.Context,
-	deploymentTarget types.DeploymentTargetWithCreatedBy,
+	deploymentTarget types.DeploymentTargetFull,
 	org types.Organization,
 	secret *string,
 ) (io.Reader, error) {
@@ -33,7 +33,7 @@ func Get(
 }
 
 func getTemplateData(
-	deploymentTarget types.DeploymentTargetWithCreatedBy,
+	deploymentTarget types.DeploymentTargetFull,
 	org types.Organization,
 	secret *string,
 ) (map[string]any, error) {
@@ -90,7 +90,7 @@ func getTemplateData(
 	return result, nil
 }
 
-func getTemplate(deploymentTarget types.DeploymentTargetWithCreatedBy) (*template.Template, error) {
+func getTemplate(deploymentTarget types.DeploymentTargetFull) (*template.Template, error) {
 	if deploymentTarget.Type == types.DeploymentTypeDocker {
 		return resources.GetTemplate(path.Join(
 			"agent/docker",

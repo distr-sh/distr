@@ -12,7 +12,7 @@ import (
 func DeploymentStatusNotificationError(
 	ctx context.Context,
 	user types.UserAccount,
-	deploymentTarget types.DeploymentTargetWithCreatedBy,
+	deploymentTarget types.DeploymentTargetFull,
 	deployment types.DeploymentWithLatestRevision,
 	currentStatus types.DeploymentRevisionStatus,
 ) error {
@@ -34,7 +34,7 @@ func DeploymentStatusNotificationError(
 func DeploymentStatusNotificationStale(
 	ctx context.Context,
 	user types.UserAccount,
-	deploymentTarget types.DeploymentTargetWithCreatedBy,
+	deploymentTarget types.DeploymentTargetFull,
 	deployment types.DeploymentWithLatestRevision,
 	previousStatus types.DeploymentRevisionStatus,
 ) error {
@@ -56,7 +56,7 @@ func DeploymentStatusNotificationStale(
 func DeploymentStatusNotificationRecovered(
 	ctx context.Context,
 	user types.UserAccount,
-	deploymentTarget types.DeploymentTargetWithCreatedBy,
+	deploymentTarget types.DeploymentTargetFull,
 	deployment types.DeploymentWithLatestRevision,
 	currentStatus types.DeploymentRevisionStatus,
 ) error {

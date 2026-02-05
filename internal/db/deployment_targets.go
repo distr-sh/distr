@@ -33,11 +33,11 @@ const (
 			dt.resources_memory_request,
 			dt.resources_cpu_limit,
 			dt.resources_memory_limit
-		) END AS resources
+		) END
 	`
 	deploymentTargetOutputExpr = deploymentTargetOutputExprBase +
 		", CASE WHEN co.id IS NOT NULL THEN (" + customerOrganizationOutputExpr + ") END AS customer_organization"
-	deploymentTargetWithStatusOutputExpr = deploymentTargetOutputExpr + `,
+	deploymentTargetFullOutputExpr = deploymentTargetOutputExpr + `,
 		CASE WHEN status.id IS NOT NULL
 			THEN (status.id, status.created_at, status.message) END
 			AS current_status,
@@ -75,11 +75,11 @@ func GetDeploymentTargets(
 	ctx context.Context,
 	orgID uuid.UUID,
 	customerOrgID *uuid.UUID,
-) ([]types.DeploymentTargetWithCreatedBy, error) {
+) ([]types.DeploymentTargetFull, error) {
 	db := internalctx.GetDb(ctx)
 	isVendor := customerOrgID == nil
 	if rows, err := db.Query(ctx,
-		"SELECT"+deploymentTargetWithStatusOutputExpr+"FROM"+deploymentTargetFromExpr+
+		"SELECT"+deploymentTargetFullOutputExpr+"FROM"+deploymentTargetFromExpr+
 			"WHERE dt.organization_id = @orgId "+
 			"AND (@isVendor OR dt.customer_organization_id = @customerOrgId) "+
 			"ORDER BY co.name, dt.name",
@@ -88,7 +88,7 @@ func GetDeploymentTargets(
 		return nil, fmt.Errorf("failed to query DeploymentTargets: %w", err)
 	} else if result, err := pgx.CollectRows(
 		rows,
-		pgx.RowToStructByName[types.DeploymentTargetWithCreatedBy],
+		pgx.RowToStructByPos[types.DeploymentTargetFull],
 	); err != nil {
 		return nil, fmt.Errorf("failed to get DeploymentTargets: %w", err)
 	} else {
@@ -129,10 +129,10 @@ func GetDeploymentTarget(
 	ctx context.Context,
 	id uuid.UUID,
 	orgID *uuid.UUID,
-) (*types.DeploymentTargetWithCreatedBy, error) {
+) (*types.DeploymentTargetFull, error) {
 	db := internalctx.GetDb(ctx)
 	var args pgx.NamedArgs
-	query := "SELECT" + deploymentTargetWithStatusOutputExpr + "FROM" + deploymentTargetFromExpr +
+	query := "SELECT" + deploymentTargetFullOutputExpr + "FROM" + deploymentTargetFromExpr +
 		" WHERE dt.id = @id "
 	if orgID != nil {
 		args = pgx.NamedArgs{"id": id, "orgId": *orgID, "checkOrg": true}
@@ -144,7 +144,7 @@ func GetDeploymentTarget(
 	if err != nil {
 		return nil, fmt.Errorf("failed to query DeploymentTargets: %w", err)
 	}
-	result, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[types.DeploymentTargetWithCreatedBy])
+	result, err := pgx.CollectOneRow(rows, pgx.RowToStructByPos[types.DeploymentTargetFull])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, apierrors.ErrNotFound
 	} else if err != nil {
@@ -157,18 +157,18 @@ func GetDeploymentTarget(
 func GetDeploymentTargetForDeploymentID(
 	ctx context.Context,
 	id uuid.UUID,
-) (*types.DeploymentTargetWithCreatedBy, error) {
+) (*types.DeploymentTargetFull, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
 		fmt.Sprintf("SELECT %v FROM %v JOIN Deployment d ON dt.id = d.deployment_target_id WHERE d.id = @id ",
-			deploymentTargetWithStatusOutputExpr, deploymentTargetFromExpr),
+			deploymentTargetFullOutputExpr, deploymentTargetFromExpr),
 		pgx.NamedArgs{"id": id},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query DeploymentTargets: %w", err)
 	}
-	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.DeploymentTargetWithCreatedBy])
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByPos[types.DeploymentTargetFull])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, apierrors.ErrNotFound
 	} else if err != nil {
@@ -180,7 +180,7 @@ func GetDeploymentTargetForDeploymentID(
 
 func CreateDeploymentTarget(
 	ctx context.Context,
-	dt *types.DeploymentTargetWithCreatedBy,
+	dt *types.DeploymentTargetFull,
 	orgID, createdByID uuid.UUID,
 	customerOrgID *uuid.UUID,
 ) error {
@@ -216,13 +216,13 @@ func CreateDeploymentTarget(
 				@resourcesCpuRequest, @resourcesMemoryRequest, @resourcesCpuLimit, @resourcesMemoryLimit)
 			RETURNING *
 		)
-		SELECT `+deploymentTargetOutputExpr+` FROM inserted dt`+deploymentTargetJoinExpr,
+		SELECT `+deploymentTargetFullOutputExpr+` FROM inserted dt`+deploymentTargetJoinExpr,
 		args,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to query DeploymentTargets: %w", err)
 	}
-	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByNameLax[types.DeploymentTargetWithCreatedBy])
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByPos[types.DeploymentTargetFull])
 	if err != nil {
 		return fmt.Errorf("could not save DeploymentTarget: %w", err)
 	} else {
@@ -231,7 +231,7 @@ func CreateDeploymentTarget(
 	}
 }
 
-func UpdateDeploymentTarget(ctx context.Context, dt *types.DeploymentTargetWithCreatedBy, orgID uuid.UUID) error {
+func UpdateDeploymentTarget(ctx context.Context, dt *types.DeploymentTargetFull, orgID uuid.UUID) error {
 	agentUpdateStr := ""
 	db := internalctx.GetDb(ctx)
 	args := pgx.NamedArgs{
@@ -261,12 +261,12 @@ func UpdateDeploymentTarget(ctx context.Context, dt *types.DeploymentTargetWithC
 				resources_memory_limit = @memoryLimit `+agentUpdateStr+`
 			WHERE id = @id AND organization_id = @orgId RETURNING *
 		)
-		SELECT `+deploymentTargetWithStatusOutputExpr+` FROM updated dt`+deploymentTargetJoinExpr,
+		SELECT `+deploymentTargetFullOutputExpr+` FROM updated dt`+deploymentTargetJoinExpr,
 		args)
 	if err != nil {
 		return fmt.Errorf("could not update DeploymentTarget: %w", err)
 	} else if updated, err := pgx.CollectExactlyOneRow(
-		rows, pgx.RowToStructByNameLax[types.DeploymentTargetWithCreatedBy],
+		rows, pgx.RowToStructByPos[types.DeploymentTargetFull],
 	); err != nil {
 		return fmt.Errorf("could not get updated DeploymentTarget: %w", err)
 	} else {
@@ -296,7 +296,7 @@ func UpdateDeploymentTargetAccess(ctx context.Context, dt *types.DeploymentTarge
 	if err != nil {
 		return fmt.Errorf("could not update DeploymentTarget: %w", err)
 	} else if updated, err := pgx.CollectExactlyOneRow(
-		rows, pgx.RowToStructByNameLax[types.DeploymentTarget],
+		rows, pgx.RowToStructByPos[types.DeploymentTarget],
 	); err != nil {
 		return fmt.Errorf("could not get updated DeploymentTarget: %w", err)
 	} else {
@@ -307,7 +307,7 @@ func UpdateDeploymentTargetAccess(ctx context.Context, dt *types.DeploymentTarge
 
 func UpdateDeploymentTargetReportedAgentVersionID(
 	ctx context.Context,
-	dt *types.DeploymentTargetWithCreatedBy,
+	dt *types.DeploymentTargetFull,
 	agentVersionID uuid.UUID,
 ) error {
 	db := internalctx.GetDb(ctx)
@@ -319,13 +319,13 @@ func UpdateDeploymentTargetReportedAgentVersionID(
 			WHERE id = @id
 			RETURNING *
 		)
-		SELECT`+deploymentTargetWithStatusOutputExpr+`FROM updated dt`+deploymentTargetJoinExpr,
+		SELECT`+deploymentTargetFullOutputExpr+`FROM updated dt`+deploymentTargetJoinExpr,
 		pgx.NamedArgs{"id": dt.ID, "agentVersionId": agentVersionID},
 	)
 	if err != nil {
 		return err
 	} else if updated, err := pgx.CollectExactlyOneRow(rows,
-		pgx.RowToAddrOfStructByName[types.DeploymentTargetWithCreatedBy]); err != nil {
+		pgx.RowToAddrOfStructByName[types.DeploymentTargetFull]); err != nil {
 		return err
 	} else {
 		*dt = *updated
@@ -372,7 +372,7 @@ func CleanupDeploymentTargetStatus(ctx context.Context) (int64, error) {
 	}
 }
 
-func addDeploymentsToTarget(ctx context.Context, dt *types.DeploymentTargetWithCreatedBy) error {
+func addDeploymentsToTarget(ctx context.Context, dt *types.DeploymentTargetFull) error {
 	if d, err := GetDeploymentsForDeploymentTarget(ctx, dt.ID); errors.Is(err, apierrors.ErrNotFound) {
 		return nil
 	} else if err != nil {

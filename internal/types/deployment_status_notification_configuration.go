@@ -15,6 +15,10 @@ type DeploymentStatusNotificationConfiguration struct {
 	Enabled                bool        `db:"enabled" json:"enabled"`
 	DeploymentTargetIDs    []uuid.UUID `db:"deployment_target_ids" json:"deploymentTargetIds"`
 	UserAccountIDs         []uuid.UUID `db:"user_account_ids" json:"userAccountIds"`
+
 	// UserAccounts is only populated from the database. It is never used by insert or update operations.
-	UserAccounts []UserAccount `db:"user_accounts" json:"-"`
+	UserAccounts []UserAccount `db:"user_accounts" json:"userAccounts"`
+
+	// DeploymentTargets is only populated from the database. It is never used by insert or update operations.
+	DeploymentTargets []DeploymentTarget `db:"deployment_targets" json:"deploymentTargets"`
 }

@@ -40,8 +40,8 @@
               <th scope="col" class="p-4">Name</th>
               <th scope="col" class="p-4">Enabled</th>
               <th scope="col" class="p-4">Created at</th>
-              <th scope="col" class="p-4"># of Deployment Targets</th>
-              <th scope="col" class="p-4"># of Users</th>
+              <th scope="col" class="p-4">Deployment Targets</th>
+              <th scope="col" class="p-4">Users</th>
               <th scope="col" class="p-4"></th>
             </tr>
           </thead>
@@ -59,11 +59,25 @@
                 <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
                   {{ config.createdAt | date }}
                 </td>
-                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
-                  {{ config.deploymentTargetIds?.length ?? 0 }}
+                <td
+                  class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
+                  [title]="getNames(config.deploymentTargets)">
+                  @for (dt of config.deploymentTargets; track dt.id; let last = $last) {
+                    <ng-container>{{ dt.name }}</ng-container>
+                    @if (!last) {
+                      <ng-container>, </ng-container>
+                    }
+                  }
                 </td>
-                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
-                  {{ config.userAccountIds?.length ?? 0 }}
+                <td
+                  class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
+                  [title]="getNames(config.userAccounts)">
+                  @for (user of config.userAccounts; track user.id; let last = $last) {
+                    <ng-container>{{ user.name || user.email }}</ng-container>
+                    @if (!last) {
+                      <ng-container>, </ng-container>
+                    }
+                  }
                 </td>
                 <td class="px-4 py-3 flex gap-2 justify-end">
                   @if (auth.hasAnyRole('read_write', 'admin')) {

@@ -550,7 +550,7 @@ func getVerifiedDeploymentTarget(
 	ctx context.Context,
 	targetID uuid.UUID,
 	targetSecret string,
-) (*types.DeploymentTargetWithCreatedBy, error) {
+) (*types.DeploymentTargetFull, error) {
 	if deploymentTarget, err := db.GetDeploymentTarget(ctx, targetID, nil); err != nil {
 		return nil, fmt.Errorf("failed to get deployment target from DB: %w", err)
 	} else if deploymentTarget.AccessKeySalt == nil || deploymentTarget.AccessKeyHash == nil {

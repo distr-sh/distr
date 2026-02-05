@@ -15,7 +15,7 @@ import (
 
 func SendDeploymentStatusNotifications(
 	ctx context.Context,
-	deploymentTarget types.DeploymentTargetWithCreatedBy,
+	deploymentTarget types.DeploymentTargetFull,
 	deployment types.DeploymentWithLatestRevision,
 	previousStatus types.DeploymentRevisionStatus,
 	currentStatus types.DeploymentRevisionStatus,
@@ -101,7 +101,7 @@ func RunDeploymentStatusNotifications(ctx context.Context) error {
 
 func sendDeploymentStatusNotificationsWithConfig(
 	ctx context.Context,
-	deploymentTarget types.DeploymentTargetWithCreatedBy,
+	deploymentTarget types.DeploymentTargetFull,
 	deployment types.DeploymentWithLatestRevision,
 	previousStatus types.DeploymentRevisionStatus,
 	currentStatus *types.DeploymentRevisionStatus,

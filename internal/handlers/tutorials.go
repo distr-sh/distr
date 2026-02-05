@@ -100,7 +100,7 @@ func saveTutorialProgress(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func createSampleAppAndDeployment(ctx context.Context) (*types.DeploymentTargetWithCreatedBy, error) {
+func createSampleAppAndDeployment(ctx context.Context) (*types.DeploymentTargetFull, error) {
 	if app, err := createHelloDistrApp(ctx); err != nil {
 		return nil, fmt.Errorf("failed to create hello-distr app: %w", err)
 	} else if dt, err := createHelloDistrDeploymentTarget(ctx); err != nil {
@@ -153,9 +153,9 @@ func createHelloDistrApp(ctx context.Context) (*types.Application, error) {
 	return &application, nil
 }
 
-func createHelloDistrDeploymentTarget(ctx context.Context) (*types.DeploymentTargetWithCreatedBy, error) {
+func createHelloDistrDeploymentTarget(ctx context.Context) (*types.DeploymentTargetFull, error) {
 	auth := auth.Authentication.Require(ctx)
-	dt := types.DeploymentTargetWithCreatedBy{
+	dt := types.DeploymentTargetFull{
 		DeploymentTarget: types.DeploymentTarget{
 			Name:           "hello-distr-tutorial",
 			Type:           types.DeploymentTypeDocker,
