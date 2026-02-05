@@ -1,1 +1,5 @@
-Dear user,
+{{if .UserAccount.Name}}
+<p>Hi {{.UserAccount.Name}},</p>
+{{else}}
+<p>Hi,</p>
+{{end}}
