@@ -25,13 +25,19 @@
             <span>{{ .EventType }}</span>
             {{ end }}
           </li>
+          {{ with .DeploymentTarget.CustomerOrganization }}
+          <li>
+            <strong>Affected customer:</strong>
+            {{ .Name }}
+          </li>
+          {{ end }}
           <li>
             <strong>Affected deployment:</strong>
             {{ .DeploymentTarget.Name }}
           </li>
           <li>
             <strong>Affected application:</strong>
-            {{ .Deployment.ApplicationName }}
+            {{ .Deployment.ApplicationName }}@{{ .Deployment.ApplicationVersionName }}
           </li>
           {{ if or (eq .EventType "error") (eq .EventType "recovered") }}
           <li>

@@ -114,7 +114,7 @@ func UpdateEmail(userAccount types.UserAccount, org types.Organization, token st
 }
 
 func DeploymentStatusNotificationError(
-	deploymentTarget types.DeploymentTarget,
+	deploymentTarget types.DeploymentTargetFull,
 	deployment types.DeploymentWithLatestRevision,
 	currentStatus types.DeploymentRevisionStatus,
 ) (*template.Template, any) {
@@ -122,7 +122,7 @@ func DeploymentStatusNotificationError(
 }
 
 func DeploymentStatusNotificationStale(
-	deploymentTarget types.DeploymentTarget,
+	deploymentTarget types.DeploymentTargetFull,
 	deployment types.DeploymentWithLatestRevision,
 	previousStatus types.DeploymentRevisionStatus,
 ) (*template.Template, any) {
@@ -130,7 +130,7 @@ func DeploymentStatusNotificationStale(
 }
 
 func DeploymentStatusNotificationRecovered(
-	deploymentTarget types.DeploymentTarget,
+	deploymentTarget types.DeploymentTargetFull,
 	deployment types.DeploymentWithLatestRevision,
 	currentStatus types.DeploymentRevisionStatus,
 ) (*template.Template, any) {
@@ -139,7 +139,7 @@ func DeploymentStatusNotificationRecovered(
 
 func deploymentStatusNotification(
 	eventType string,
-	deploymentTarget types.DeploymentTarget,
+	deploymentTarget types.DeploymentTargetFull,
 	deployment types.DeploymentWithLatestRevision,
 	previousStatus *types.DeploymentRevisionStatus,
 	currentStatus *types.DeploymentRevisionStatus,

@@ -2,6 +2,7 @@ package mailsending
 
 import (
 	"context"
+	"fmt"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/mail"
@@ -12,6 +13,7 @@ import (
 func DeploymentStatusNotificationError(
 	ctx context.Context,
 	user types.UserAccount,
+	organization types.Organization,
 	deploymentTarget types.DeploymentTargetFull,
 	deployment types.DeploymentWithLatestRevision,
 	currentStatus types.DeploymentRevisionStatus,
@@ -19,9 +21,14 @@ func DeploymentStatusNotificationError(
 	mailer := internalctx.GetMailer(ctx)
 
 	mail := mail.New(
-		mail.Subject("Deployment Status Notification [Error]"),
+		mail.Subject(getDeploymentStatusNotificationSubject(
+			"Error",
+			organization,
+			deploymentTarget,
+			deployment,
+		)),
 		mail.HtmlBodyTemplate(mailtemplates.DeploymentStatusNotificationError(
-			deploymentTarget.DeploymentTarget,
+			deploymentTarget,
 			deployment,
 			currentStatus,
 		)),
@@ -34,6 +41,7 @@ func DeploymentStatusNotificationError(
 func DeploymentStatusNotificationStale(
 	ctx context.Context,
 	user types.UserAccount,
+	organization types.Organization,
 	deploymentTarget types.DeploymentTargetFull,
 	deployment types.DeploymentWithLatestRevision,
 	previousStatus types.DeploymentRevisionStatus,
@@ -41,9 +49,14 @@ func DeploymentStatusNotificationStale(
 	mailer := internalctx.GetMailer(ctx)
 
 	mail := mail.New(
-		mail.Subject("Deployment Status Notification [Stale]"),
+		mail.Subject(getDeploymentStatusNotificationSubject(
+			"Stale",
+			organization,
+			deploymentTarget,
+			deployment,
+		)),
 		mail.HtmlBodyTemplate(mailtemplates.DeploymentStatusNotificationStale(
-			deploymentTarget.DeploymentTarget,
+			deploymentTarget,
 			deployment,
 			previousStatus,
 		)),
@@ -56,6 +69,7 @@ func DeploymentStatusNotificationStale(
 func DeploymentStatusNotificationRecovered(
 	ctx context.Context,
 	user types.UserAccount,
+	organization types.Organization,
 	deploymentTarget types.DeploymentTargetFull,
 	deployment types.DeploymentWithLatestRevision,
 	currentStatus types.DeploymentRevisionStatus,
@@ -63,9 +77,14 @@ func DeploymentStatusNotificationRecovered(
 	mailer := internalctx.GetMailer(ctx)
 
 	mail := mail.New(
-		mail.Subject("Deployment Status Notification [Recovered]"),
+		mail.Subject(getDeploymentStatusNotificationSubject(
+			"Recovered",
+			organization,
+			deploymentTarget,
+			deployment,
+		)),
 		mail.HtmlBodyTemplate(mailtemplates.DeploymentStatusNotificationRecovered(
-			deploymentTarget.DeploymentTarget,
+			deploymentTarget,
 			deployment,
 			currentStatus,
 		)),
@@ -73,4 +92,19 @@ func DeploymentStatusNotificationRecovered(
 	)
 
 	return mailer.Send(ctx, mail)
+}
+
+func getDeploymentStatusNotificationSubject(eventType string,
+	organization types.Organization,
+	deploymentTarget types.DeploymentTargetFull,
+	deployment types.DeploymentWithLatestRevision,
+) string {
+	deploymentTargetName := deploymentTarget.Name
+	if deploymentTarget.CustomerOrganization != nil {
+		deploymentTargetName = deploymentTarget.CustomerOrganization.Name + " " + deploymentTargetName
+	}
+
+	return fmt.Sprintf("[%v] %v deployment %v@%v (%v)",
+		eventType, organization.Name, deployment.ApplicationName, deployment.ApplicationVersionName,
+		deploymentTargetName)
 }

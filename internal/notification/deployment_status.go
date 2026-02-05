@@ -17,14 +17,18 @@ func SendDeploymentStatusNotifications(
 	ctx context.Context,
 	deploymentTarget types.DeploymentTargetFull,
 	deployment types.DeploymentWithLatestRevision,
-	previousStatus types.DeploymentRevisionStatus,
+	previousStatus *types.DeploymentRevisionStatus,
 	currentStatus types.DeploymentRevisionStatus,
 ) error {
 	log := internalctx.GetLogger(ctx).With(
-		zap.String("previousStatus", string(previousStatus.Type)),
-		zap.Time("previousStatusCreatedAt", previousStatus.CreatedAt),
 		zap.String("currentStatus", string(currentStatus.Type)),
 		zap.Time("currentStatusCreatedAt", currentStatus.CreatedAt))
+	if previousStatus != nil {
+		log = log.With(
+			zap.String("previousStatus", string(previousStatus.Type)),
+			zap.Time("previousStatusCreatedAt", previousStatus.CreatedAt),
+		)
+	}
 	ctx = internalctx.WithLogger(ctx, log)
 
 	if !shouldNotify(previousStatus, currentStatus) {
@@ -86,7 +90,7 @@ func RunDeploymentStatusNotifications(ctx context.Context) error {
 				}
 
 				if err := sendDeploymentStatusNotificationsWithConfig(
-					ctx, *deploymentTarget, deployment, *deployment.LatestStatus, nil, config,
+					ctx, *deploymentTarget, deployment, deployment.LatestStatus, nil, config,
 				); err != nil {
 					return fmt.Errorf("failed to send deployment status notifications with config: %w", err)
 				}
@@ -103,7 +107,7 @@ func sendDeploymentStatusNotificationsWithConfig(
 	ctx context.Context,
 	deploymentTarget types.DeploymentTargetFull,
 	deployment types.DeploymentWithLatestRevision,
-	previousStatus types.DeploymentRevisionStatus,
+	previousStatus *types.DeploymentRevisionStatus,
 	currentStatus *types.DeploymentRevisionStatus,
 	config types.DeploymentStatusNotificationConfiguration,
 ) error {
@@ -113,9 +117,17 @@ func sendDeploymentStatusNotificationsWithConfig(
 
 	log := internalctx.GetLogger(ctx).With(zap.Stringer("configId", config.ID))
 
-	existingRecord, err := db.GetLatestNotificationRecord(ctx, config.ID, previousStatus.ID)
-	if err != nil && !errors.Is(err, apierrors.ErrNotFound) {
-		return fmt.Errorf("failed to get latest notification record: %w", err)
+	organization, err := db.GetOrganizationByID(ctx, config.OrganizationID)
+	if err != nil {
+		return fmt.Errorf("failed to get organization: %w", err)
+	}
+
+	var existingRecord *types.NotificationRecord
+	if previousStatus != nil {
+		existingRecord, err = db.GetLatestNotificationRecord(ctx, config.ID, previousStatus.ID)
+		if err != nil && !errors.Is(err, apierrors.ErrNotFound) {
+			return fmt.Errorf("failed to get latest notification record: %w", err)
+		}
 	}
 
 	if currentStatus == nil {
@@ -142,11 +154,32 @@ func sendDeploymentStatusNotificationsWithConfig(
 		log.Info("send notification")
 		var err error
 		if currentStatus == nil {
-			err = mailsending.DeploymentStatusNotificationStale(ctx, user, deploymentTarget, deployment, previousStatus)
+			err = mailsending.DeploymentStatusNotificationStale(
+				ctx,
+				user,
+				*organization,
+				deploymentTarget,
+				deployment,
+				*previousStatus,
+			)
 		} else if currentStatus.Type == types.DeploymentStatusTypeError {
-			err = mailsending.DeploymentStatusNotificationError(ctx, user, deploymentTarget, deployment, *currentStatus)
+			err = mailsending.DeploymentStatusNotificationError(
+				ctx,
+				user,
+				*organization,
+				deploymentTarget,
+				deployment,
+				*currentStatus,
+			)
 		} else {
-			err = mailsending.DeploymentStatusNotificationRecovered(ctx, user, deploymentTarget, deployment, *currentStatus)
+			err = mailsending.DeploymentStatusNotificationRecovered(
+				ctx,
+				user,
+				*organization,
+				deploymentTarget,
+				deployment,
+				*currentStatus,
+			)
 		}
 
 		if err != nil {
@@ -156,15 +189,18 @@ func sendDeploymentStatusNotificationsWithConfig(
 	}
 
 	record := types.NotificationRecord{
-		OrganizationID:                              deploymentTarget.OrganizationID,
-		CustomerOrganizationID:                      deploymentTarget.CustomerOrganizationID,
+		OrganizationID:                              config.OrganizationID,
+		CustomerOrganizationID:                      config.CustomerOrganizationID,
 		DeploymentTargetID:                          &deploymentTarget.ID,
 		DeploymentStatusNotificationConfigurationID: &config.ID,
-		PreviousDeploymentRevisionStatusID:          &previousStatus.ID,
 	}
 
 	if currentStatus != nil {
 		record.CurrentDeploymentRevisionStatusID = &currentStatus.ID
+	}
+
+	if previousStatus != nil {
+		record.PreviousDeploymentRevisionStatusID = &previousStatus.ID
 	}
 
 	if aggErr != nil {
@@ -178,20 +214,33 @@ func sendDeploymentStatusNotificationsWithConfig(
 	return nil
 }
 
-func shouldNotifyError(previousStatus, currentStatus types.DeploymentRevisionStatus) bool {
-	return (previousStatus.Type != types.DeploymentStatusTypeError || previousStatus.IsStale()) &&
-		currentStatus.Type == types.DeploymentStatusTypeError
+func shouldNotifyError(
+	previousStatus *types.DeploymentRevisionStatus,
+	currentStatus types.DeploymentRevisionStatus,
+) bool {
+	return currentStatus.Type == types.DeploymentStatusTypeError &&
+		(previousStatus == nil ||
+			previousStatus.Type != types.DeploymentStatusTypeError ||
+			previousStatus.IsStale())
 }
 
-func shouldNotifyStaleRecovered(previousStatus, currentStatus types.DeploymentRevisionStatus) bool {
-	return previousStatus.IsStale() && currentStatus.Type != types.DeploymentStatusTypeError
+func shouldNotifyStaleRecovered(
+	previousStatus *types.DeploymentRevisionStatus,
+	currentStatus types.DeploymentRevisionStatus,
+) bool {
+	return previousStatus != nil && previousStatus.IsStale() && currentStatus.Type != types.DeploymentStatusTypeError
 }
 
-func shouldNotifyErrorRecovered(previousStatus, currentStatus types.DeploymentRevisionStatus) bool {
-	return previousStatus.Type == types.DeploymentStatusTypeError && currentStatus.Type != types.DeploymentStatusTypeError
+func shouldNotifyErrorRecovered(
+	previousStatus *types.DeploymentRevisionStatus,
+	currentStatus types.DeploymentRevisionStatus,
+) bool {
+	return previousStatus != nil &&
+		previousStatus.Type == types.DeploymentStatusTypeError &&
+		currentStatus.Type != types.DeploymentStatusTypeError
 }
 
-func shouldNotify(previousStatus, currentStatus types.DeploymentRevisionStatus) bool {
+func shouldNotify(previousStatus *types.DeploymentRevisionStatus, currentStatus types.DeploymentRevisionStatus) bool {
 	return shouldNotifyError(previousStatus, currentStatus) ||
 		shouldNotifyStaleRecovered(previousStatus, currentStatus) ||
 		shouldNotifyErrorRecovered(previousStatus, currentStatus)
