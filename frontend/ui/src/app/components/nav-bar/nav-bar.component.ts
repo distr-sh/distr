@@ -217,5 +217,4 @@ export class NavBarComponent implements OnInit {
   protected readonly faXmark = faXmark;
   protected readonly faClipboard = faClipboard;
   protected readonly faUserCircle = faUserCircle;
-  protected readonly faCircle = faCircle;
 }
