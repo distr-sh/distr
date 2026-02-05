@@ -261,8 +261,8 @@
         </thead>
         <tbody>
           @let deploymentIdsWithUpdate1 = deploymentIdsWithUpdate();
-          @for (deployment of deploymentTarget().deployments; track deployment.id; let isLast = $last) {
-            <tr class="hover:bg-gray-100 dark:hover:bg-gray-700">
+          @for (deployment of deploymentTarget().deployments; track deployment.id) {
+            <tr class="hover:bg-gray-100 dark:hover:bg-gray-700 border-t-2 border-gray-300 dark:border-gray-500">
               <td rowspan="2" class="px-4 py-2 font-medium text-gray-900 whitespace-normal dark:text-white align-top">
                 <fa-icon class="text-gray-500 dark:text-gray-400 text-2xl" [icon]="faShip"></fa-icon>
               </td>
@@ -279,16 +279,19 @@
                 <div class="truncate">{{ deployment.applicationVersionName }}</div>
               </td>
             </tr>
-            <tr class="hover:bg-gray-100 dark:hover:bg-gray-700" [class.border-b-2]="!isLast" [class.border-gray-300]="!isLast" [class.dark:border-gray-500]="!isLast">
+            <tr class="hover:bg-gray-100 dark:hover:bg-gray-700">
               @if (fullVersion()) {
-                <td class="px-4 py-2 font-medium text-gray-900 whitespace-normal dark:text-white text-xs border-t border-gray-200 dark:border-gray-600" colspan="2">
+                <td
+                  class="px-4 py-2 font-medium text-gray-900 whitespace-normal dark:text-white text-xs border-t border-gray-200 dark:border-gray-600"
+                  colspan="2">
                   <div class="text-gray-500 dark:text-gray-400 break-words">Last modified:</div>
                   {{ deployment.deploymentRevisionCreatedAt | date: 'short' }}
                 </td>
               } @else {
                 <td colspan="2" class="border-t border-gray-200 dark:border-gray-600"></td>
               }
-              <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white border-t border-gray-200 dark:border-gray-600">
+              <td
+                class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white border-t border-gray-200 dark:border-gray-600">
                 <button (click)="openStatusModal(deployment)" class="flex items-center">
                   <div class="size-4 me-1" appDeploymentStatusDot [deployment]="deployment"></div>
                   @if (deployment.latestStatus; as drs) {
@@ -309,7 +312,8 @@
                 </button>
               </td>
               @if (deployment.applicationLink) {
-                <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white text-right border-t border-gray-200 dark:border-gray-600">
+                <td
+                  class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white text-right border-t border-gray-200 dark:border-gray-600">
                   <a
                     [href]="deployment.applicationLink"
                     target="_blank"
@@ -323,7 +327,8 @@
                 </td>
               }
               @if (fullVersion()) {
-                <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white text-right border-t border-gray-200 dark:border-gray-600">
+                <td
+                  class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white text-right border-t border-gray-200 dark:border-gray-600">
                   <div class="flex items-center justify-end space-x-2">
                     @if (deployment.latestStatus) {
                       <button
