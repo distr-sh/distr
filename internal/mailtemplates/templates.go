@@ -70,11 +70,15 @@ func InviteUser(
 		}
 }
 
-func VerifyEmail(userAccount types.UserAccount, org types.Organization, token string) (*template.Template, any) {
+func VerifyEmail(
+	userAccount types.UserAccount,
+	org types.OrganizationWithBranding,
+	token string,
+) (*template.Template, any) {
 	return templates.Lookup("verify-email-registration.html"), map[string]any{
 		"UserAccount":  userAccount,
 		"Organization": org,
-		"Host":         customdomains.AppDomainOrDefault(org),
+		"Host":         customdomains.AppDomainOrDefault(org.Organization),
 		"Token":        token,
 	}
 }
@@ -96,11 +100,15 @@ func PasswordReset(
 	}
 }
 
-func UpdateEmail(userAccount types.UserAccount, org types.Organization, token string) (*template.Template, any) {
+func UpdateEmail(
+	userAccount types.UserAccount,
+	org types.OrganizationWithBranding,
+	token string,
+) (*template.Template, any) {
 	return templates.Lookup("update-email.html"), map[string]any{
 		"UserAccount":  userAccount,
 		"Organization": org,
-		"Host":         customdomains.AppDomainOrDefault(org),
+		"Host":         customdomains.AppDomainOrDefault(org.Organization),
 		"Token":        token,
 	}
 }
