@@ -14,8 +14,8 @@ icon: >-
   https://github.com/distr-sh/distr/raw/refs/heads/main/frontend/ui/public/distr-logo.svg
 home: https://distr.sh/docs/
 type: application
-version: 2.8.2
-appVersion: 2.8.2
+version: 2.9.0
+appVersion: 2.9.0
 dependencies:
   - name: postgresql
     repository: oci://registry-1.docker.io/bitnamicharts
