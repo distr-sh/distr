@@ -1,4 +1,4 @@
-import { DeploymentRevisionStatus } from '@distr-sh/distr-sdk';
+import {DeploymentRevisionStatus} from '@distr-sh/distr-sdk';
 
 export interface NotificationRecord {
   id: string;
