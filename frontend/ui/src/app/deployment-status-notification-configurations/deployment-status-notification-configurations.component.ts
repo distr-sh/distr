@@ -1,20 +1,20 @@
-import { DatePipe } from '@angular/common';
-import { Component, computed, inject, Signal, signal, TemplateRef, viewChild } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { CustomerOrganization, DeploymentTarget, Named } from '@distr-sh/distr-sdk';
-import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faCheck, faMagnifyingGlass, faPen, faPlus, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons';
-import { firstValueFrom, startWith, Subject, switchMap } from 'rxjs';
-import { getFormDisplayedError } from '../../util/errors';
-import { validateRecordAtLeast } from '../../util/validation';
-import { AuthService } from '../services/auth.service';
-import { CustomerOrganizationsService } from '../services/customer-organizations.service';
-import { DeploymentStatusNotificationConfigurationsService } from '../services/deployment-status-notification-configurations.service';
-import { DeploymentTargetsService } from '../services/deployment-targets.service';
-import { DialogRef, OverlayService } from '../services/overlay.service';
-import { ToastService } from '../services/toast.service';
-import { UsersService } from '../services/users.service';
+import {DatePipe} from '@angular/common';
+import {Component, computed, inject, Signal, signal, TemplateRef, viewChild} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
+import {FormBuilder, ReactiveFormsModule} from '@angular/forms';
+import {CustomerOrganization, DeploymentTarget, Named} from '@distr-sh/distr-sdk';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
+import {faCheck, faMagnifyingGlass, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
+import {getFormDisplayedError} from '../../util/errors';
+import {validateRecordAtLeast} from '../../util/validation';
+import {AuthService} from '../services/auth.service';
+import {CustomerOrganizationsService} from '../services/customer-organizations.service';
+import {DeploymentStatusNotificationConfigurationsService} from '../services/deployment-status-notification-configurations.service';
+import {DeploymentTargetsService} from '../services/deployment-targets.service';
+import {DialogRef, OverlayService} from '../services/overlay.service';
+import {ToastService} from '../services/toast.service';
+import {UsersService} from '../services/users.service';
 import {
   CreateUpdateDeploymentStatusNotificationConfigurationRequest,
   DeploymentStatusNotificationConfiguration,
@@ -39,12 +39,14 @@ export class DeploymentStatusNotificationConfigurationsComponent {
     id: this.fb.control(''),
     name: this.fb.control(''),
     enabled: this.fb.control(true),
-    userAccountIds: this.fb.record<boolean>({}, { validators: [validateRecordAtLeast(1)] }),
-    deploymentTargetIds: this.fb.record<boolean>({}, { validators: [validateRecordAtLeast(1)] }),
+    userAccountIds: this.fb.record<boolean>({}, {validators: [validateRecordAtLeast(1)]}),
+    deploymentTargetIds: this.fb.record<boolean>({}, {validators: [validateRecordAtLeast(1)]}),
   });
   protected readonly editFormLoading = signal(false);
   private readonly editConfigDrawerTpl = viewChild.required<TemplateRef<unknown>>('editConfigDrawer');
   private editConfigDrawerRef?: DialogRef;
+
+  protected readonly enabledToggleLoading = signal(false);
 
   private readonly reload$ = new Subject<void>();
   protected readonly configs = toSignal(
@@ -62,19 +64,19 @@ export class DeploymentStatusNotificationConfigurationsComponent {
     ? toSignal(this.customersService.getCustomerOrganizations())
     : signal([]).asReadonly();
   protected readonly deploymentTargetCustomers: Signal<
-    { customer?: CustomerOrganization; deploymentTargets: DeploymentTarget[] }[]
+    {customer?: CustomerOrganization; deploymentTargets: DeploymentTarget[]}[]
   > = computed(() => {
     const deploymentTargets = this.deploymentTargets() ?? [];
     const customers = this.customers();
     return customers?.length
       ? [
-        { deploymentTargets: deploymentTargets.filter((it) => it.customerOrganization === undefined) },
-        ...customers.map((customer) => ({
-          customer,
-          deploymentTargets: deploymentTargets.filter((it) => it.customerOrganization?.id === customer.id),
-        })),
-      ].filter((entry) => entry.deploymentTargets.length > 0)
-      : [{ deploymentTargets }];
+          {deploymentTargets: deploymentTargets.filter((it) => it.customerOrganization === undefined)},
+          ...customers.map((customer) => ({
+            customer,
+            deploymentTargets: deploymentTargets.filter((it) => it.customerOrganization?.id === customer.id),
+          })),
+        ].filter((entry) => entry.deploymentTargets.length > 0)
+      : [{deploymentTargets}];
   });
 
   protected readonly filterForm = this.fb.group({
@@ -117,8 +119,8 @@ export class DeploymentStatusNotificationConfigurationsComponent {
         id: config.id,
         name: config.name,
         enabled: config.enabled,
-        deploymentTargetIds: config.deploymentTargetIds?.reduce((acc, id) => ({ ...acc, [id]: true }), {}),
-        userAccountIds: config.userAccountIds?.reduce((acc, id) => ({ ...acc, [id]: true }), {}),
+        deploymentTargetIds: config.deploymentTargetIds?.reduce((acc, id) => ({...acc, [id]: true}), {}),
+        userAccountIds: config.userAccountIds?.reduce((acc, id) => ({...acc, [id]: true}), {}),
       });
     }
 
@@ -166,6 +168,24 @@ export class DeploymentStatusNotificationConfigurationsComponent {
       }
     } finally {
       this.editFormLoading.set(false);
+    }
+  }
+
+  protected async toggleConfigEnabled(config: DeploymentStatusNotificationConfiguration) {
+    console.log('Toggling enabled for config', config);
+    try {
+      const request = {...config, enabled: !config.enabled};
+      this.enabledToggleLoading.set(true);
+      await firstValueFrom(this.svc.update(config.id, request));
+      this.toast.success(`Deployment status notification configuration ${request.enabled ? 'enabled' : 'disabled'}`);
+      this.reload$.next();
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    } finally {
+      this.enabledToggleLoading.set(false);
     }
   }
 

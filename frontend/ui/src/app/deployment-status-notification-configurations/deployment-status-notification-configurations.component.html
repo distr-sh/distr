@@ -49,12 +49,17 @@
             @for (config of filteredConfigs(); track config.id) {
               <tr class="border-b border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
                 <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">{{ config.name }}</td>
-                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
-                  @if (config.enabled) {
-                    <fa-icon class="text-green-500" [icon]="faCheck" />
-                  } @else {
-                    <fa-icon class="text-red-500" [icon]="faXmark" />
-                  }
+                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap align-middle">
+                  <label class="inline-flex items-center cursor-pointer my-1">
+                    <input
+                      type="checkbox"
+                      class="sr-only peer"
+                      aria-label="Enabled"
+                      [checked]="config.enabled"
+                      (change)="toggleConfigEnabled(config)" />
+                    <div
+                      class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+                  </label>
                 </td>
                 <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
                   {{ config.createdAt | date }}
