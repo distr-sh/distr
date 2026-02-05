@@ -54,6 +54,8 @@ func SendUserInviteMail(
 	email := mail.New(
 		mail.To(userAccount.Email),
 		mail.From(*from),
+		mail.Bcc(currentUser.Email),
+		mail.ReplyTo(currentUser.Email),
 		mail.Subject(subject),
 		mail.HtmlBodyTemplate(mailtemplates.InviteUser(userAccount, organization, *currentUser, targetOrgName, inviteURL)),
 	)
