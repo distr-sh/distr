@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/distr-sh/distr/internal/validation"
 	"github.com/google/uuid"
@@ -9,12 +10,12 @@ import (
 )
 
 type DeploymentTarget struct {
-	Base
+	ID                     uuid.UUID                  `db:"id" json:"id"`
+	CreatedAt              time.Time                  `db:"created_at" json:"createdAt"`
 	Name                   string                     `db:"name" json:"name"`
 	Type                   DeploymentType             `db:"type" json:"type"`
 	AccessKeySalt          *[]byte                    `db:"access_key_salt" json:"-"`
 	AccessKeyHash          *[]byte                    `db:"access_key_hash" json:"-"`
-	CurrentStatus          *DeploymentTargetStatus    `db:"current_status" json:"currentStatus,omitempty"`
 	Namespace              *string                    `db:"namespace" json:"namespace,omitempty"`
 	Scope                  *DeploymentTargetScope     `db:"scope" json:"scope,omitempty"`
 	OrganizationID         uuid.UUID                  `db:"organization_id" json:"-"`
@@ -67,9 +68,10 @@ func (dt *DeploymentTarget) Validate() error {
 	return nil
 }
 
-type DeploymentTargetWithCreatedBy struct {
+type DeploymentTargetFull struct {
 	DeploymentTarget
 	CustomerOrganization *CustomerOrganization          `db:"customer_organization" json:"customerOrganization,omitempty"`
+	CurrentStatus        *DeploymentTargetStatus        `db:"current_status" json:"currentStatus,omitempty"`
 	Deployments          []DeploymentWithLatestRevision `db:"-" json:"deployments"`
 	AgentVersion         AgentVersion                   `db:"agent_version" json:"agentVersion"`
 }

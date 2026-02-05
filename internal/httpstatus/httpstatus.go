@@ -15,7 +15,10 @@ func CheckStatus(r *http.Response, err error) (*http.Response, error) {
 		return r, err
 	} else {
 		if errorBody, err := io.ReadAll(r.Body); err == nil {
-			return r, fmt.Errorf("%w: %v (%v)", ErrHttpStatus, r.Status, strings.TrimSpace(string(errorBody)))
+			errorBodyStr := strings.TrimSpace(string(errorBody))
+			if errorBodyStr != "" {
+				return r, fmt.Errorf("%w: %v (%v)", ErrHttpStatus, r.Status, errorBodyStr)
+			}
 		}
 		return r, fmt.Errorf("%w: %v", ErrHttpStatus, r.Status)
 	}

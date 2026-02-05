@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -23,6 +24,7 @@ import (
 	"github.com/distr-sh/distr/internal/deploymentvalues"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/notification"
 	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
@@ -66,7 +68,7 @@ func AgentRouter(r chiopenapi.Router) {
 			// agent routes, authenticated via token
 			r.Get("/manifest", agentManifestHandler())
 			r.Get("/resources", agentResourcesHandler)
-			r.Post("/status", angentPostStatusHandler)
+			r.Post("/status", agentPostStatusHandler)
 			r.Post("/metrics", agentPostMetricsHander)
 			r.Put("/logs", agentPutDeploymentLogsHandler())
 			r.Put("/deployment-target-logs", agentPutDeploymentTargetLogsHandler())
@@ -355,27 +357,82 @@ func patchProjectName(data map[string]any, deploymentID uuid.UUID) ([]byte, erro
 	return buf.Bytes(), nil
 }
 
-func angentPostStatusHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
-
-	status, err := JsonBody[api.AgentDeploymentStatus](w, r)
+func agentPostStatusHandler(w http.ResponseWriter, r *http.Request) {
+	requestBody, err := JsonBody[api.AgentDeploymentStatus](w, r)
 	if err != nil {
 		return
 	}
-	if err := db.CreateDeploymentRevisionStatus(ctx, status.RevisionID, status.Type, status.Message); err != nil {
+
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx).With(zap.Any("status", requestBody))
+	sentry := sentry.GetHubFromContext(ctx)
+
+	deploymentID, err := db.GetDeploymentIDForRevisionID(ctx, requestBody.RevisionID)
+	if err != nil {
+		if errors.Is(err, apierrors.ErrNotFound) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else {
+			sentry.CaptureException(err)
+			log.Error("failed to get deployment ID", zap.Error(err))
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	deploymentTarget := internalctx.GetDeploymentTarget(ctx)
+	var deployment types.DeploymentWithLatestRevision
+	if i := slices.IndexFunc(
+		deploymentTarget.Deployments,
+		func(d types.DeploymentWithLatestRevision) bool { return d.ID == deploymentID },
+	); i < 0 {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	} else {
+		deployment = deploymentTarget.Deployments[i]
+	}
+
+	previousStatus, err := db.GetLatestDeploymentRevisionStatus(ctx, deploymentID)
+	if err != nil {
+		sentry.CaptureException(err)
+		log.Error("failed to get latest deployment revision status", zap.Error(err))
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	status := types.DeploymentRevisionStatus{
+		DeploymentRevisionID: requestBody.RevisionID,
+		Type:                 requestBody.Type,
+		Message:              requestBody.Message,
+	}
+
+	if err := db.CreateDeploymentRevisionStatus(ctx, &status); err != nil {
 		if errors.Is(err, apierrors.ErrConflict) {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		} else {
-			log.Error("failed to create deployment revision status – skipping cleanup of old statuses", zap.Error(err),
-				zap.Reflect("status", status))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
+			log.Error("failed to create deployment revision status", zap.Error(err))
+			sentry.CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
 		}
-	} else {
-		w.WriteHeader(http.StatusOK)
+		return
 	}
+
+	go func(ctx context.Context) {
+		asyncCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+
+		if err := notification.SendDeploymentStatusNotifications(
+			asyncCtx,
+			*deploymentTarget,
+			deployment,
+			previousStatus,
+			status,
+		); err != nil {
+			sentry.CaptureException(err)
+			log.Error("failed to dispatch deployment status notification", zap.Error(err))
+		}
+	}(context.WithoutCancel(ctx))
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func agentPostMetricsHander(w http.ResponseWriter, r *http.Request) {
@@ -485,7 +542,7 @@ func getVerifiedDeploymentTarget(
 	ctx context.Context,
 	targetID uuid.UUID,
 	targetSecret string,
-) (*types.DeploymentTargetWithCreatedBy, error) {
+) (*types.DeploymentTargetFull, error) {
 	if deploymentTarget, err := db.GetDeploymentTarget(ctx, targetID, nil); err != nil {
 		return nil, fmt.Errorf("failed to get deployment target from DB: %w", err)
 	} else if deploymentTarget.AccessKeySalt == nil || deploymentTarget.AccessKeyHash == nil {

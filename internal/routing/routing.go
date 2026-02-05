@@ -155,10 +155,13 @@ func ApiRouter(
 					r.Route("/context", handlers.ContextRouter)
 					r.Route("/customer-organizations", handlers.CustomerOrganizationsRouter)
 					r.Route("/dashboard", handlers.DashboardRouter)
+					r.Route("/deployment-status-notification-configurations",
+						handlers.DeploymentStatusNotificationConfigurationsRouter)
 					r.Route("/deployment-target-metrics", handlers.DeploymentTargetMetricsRouter)
 					r.Route("/deployment-targets", handlers.DeploymentTargetsRouter)
 					r.Route("/deployments", handlers.DeploymentsRouter)
 					r.Route("/files", handlers.FileRouter)
+					r.Route("/notification-records", handlers.NotificationRecordsRouter)
 					r.Route("/organization", handlers.OrganizationRouter)
 					r.Route("/organizations", handlers.OrganizationsRouter)
 					r.Route("/secrets", handlers.SecretsRouter)

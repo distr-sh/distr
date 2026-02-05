@@ -30,29 +30,35 @@ func SendUserInviteMail(
 		return err
 	}
 	from.Name = organization.Name
-	var email mail.Mail
-	if customerOrgID != nil {
-		if currentUser, err := db.GetUserAccountByID(ctx, auth.CurrentUserID()); err != nil {
-			log.Error("could not get current user for invite mail", zap.Error(err))
-			return err
-		} else {
-			email = mail.New(
-				mail.To(userAccount.Email),
-				mail.From(*from),
-				mail.Bcc(currentUser.Email),
-				mail.ReplyTo(currentUser.Email),
-				mail.Subject("Welcome to Distr"),
-				mail.HtmlBodyTemplate(mailtemplates.InviteCustomer(userAccount, organization, inviteURL)),
-			)
-		}
-	} else {
-		email = mail.New(
-			mail.To(userAccount.Email),
-			mail.From(*from),
-			mail.Subject("Welcome to Distr"),
-			mail.HtmlBodyTemplate(mailtemplates.InviteUser(userAccount, organization, inviteURL)),
-		)
+	subject := "Welcome to Distr"
+	if organization.Name != "" {
+		subject = "Welcome to " + organization.Name
 	}
+
+	currentUser, err := db.GetUserAccountByID(ctx, auth.CurrentUserID())
+	if err != nil {
+		log.Error("could not get current user for invite mail", zap.Error(err))
+		return err
+	}
+
+	targetOrgName := organization.Name
+	if customerOrgID != nil {
+		customerOrg, err := db.GetCustomerOrganizationByID(ctx, *customerOrgID)
+		if err != nil {
+			log.Error("could not get customer organization for invite mail", zap.Error(err))
+			return err
+		}
+		targetOrgName = customerOrg.Name
+	}
+
+	email := mail.New(
+		mail.To(userAccount.Email),
+		mail.From(*from),
+		mail.Bcc(currentUser.Email),
+		mail.ReplyTo(currentUser.Email),
+		mail.Subject(subject),
+		mail.HtmlBodyTemplate(mailtemplates.InviteUser(userAccount, organization, *currentUser, targetOrgName, inviteURL)),
+	)
 
 	if err := mailer.Send(ctx, email); err != nil {
 		log.Error(

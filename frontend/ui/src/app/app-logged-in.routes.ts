@@ -16,8 +16,10 @@ import {DashboardComponent} from './components/dashboard/dashboard.component';
 import {HomeComponent} from './components/home/home.component';
 import {CustomerUsersComponent} from './components/users/customers/customer-users.component';
 import {VendorUsersComponent} from './components/users/vendors/vendor-users.component';
+import {DeploymentStatusNotificationConfigurationsComponent} from './deployment-status-notification-configurations/deployment-status-notification-configurations.component';
 import {DeploymentTargetsComponent} from './deployments/deployment-targets.component';
 import {LicensesComponent} from './licenses/licenses.component';
+import {NotificationRecordsComponent} from './notification-records/notification-records.component';
 import {OrganizationBrandingComponent} from './organization-branding/organization-branding.component';
 import {OrganizationSettingsComponent} from './organization-settings/organization-settings.component';
 import {CustomerSecretsPageComponent} from './secrets/customer-secrets-page.component';
@@ -61,6 +63,13 @@ function licensingEnabledGuard(): CanActivateFn {
   return async () => {
     const featureFlags = inject(FeatureFlagService);
     return await firstValueFrom(featureFlags.isLicensingEnabled$);
+  };
+}
+
+function notificationsEnabledGuard(): CanActivateFn {
+  return async () => {
+    const featureFlags = inject(FeatureFlagService);
+    return await firstValueFrom(featureFlags.isNotificationsEnabled$);
   };
 }
 
@@ -229,6 +238,20 @@ export const routes: Routes = [
             path: 'registry',
             canActivate: [registryHostSetOrRedirectGuard('/tutorials')],
             component: RegistryTutorialComponent,
+          },
+        ],
+      },
+      {
+        path: 'notifications',
+        canActivate: [notificationsEnabledGuard()],
+        children: [
+          {
+            path: 'deployment-status',
+            component: DeploymentStatusNotificationConfigurationsComponent,
+          },
+          {
+            path: 'history',
+            component: NotificationRecordsComponent,
           },
         ],
       },

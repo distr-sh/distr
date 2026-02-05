@@ -23,6 +23,11 @@ func ReconcileStarterFeaturesForOrganizationID(ctx context.Context, orgID uuid.U
 			return err
 		} else if _, err := db.DeleteArtifactLicensesWithOrganizationID(ctx, orgID); err != nil {
 			return err
+		} else if _, err := db.DeleteDeploymentStatusNotificationConfigurationsWithOrganizationID(
+			ctx,
+			orgID,
+		); err != nil {
+			return err
 		} else {
 			return nil
 		}

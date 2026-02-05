@@ -31,11 +31,11 @@ func DeploymentTargetsRouter(r chiopenapi.Router) {
 	r.Use(middleware.RequireOrgAndRole)
 	r.Get("/", getDeploymentTargets).
 		With(option.Description("List all deployment targets")).
-		With(option.Response(http.StatusOK, []types.DeploymentTargetWithCreatedBy{}))
+		With(option.Response(http.StatusOK, []types.DeploymentTargetFull{}))
 	r.With(middleware.RequireReadWriteOrAdmin).
 		Post("/", createDeploymentTarget).
 		With(option.Description("Create a new deployment target")).
-		With(option.Response(http.StatusOK, []types.DeploymentTargetWithCreatedBy{}))
+		With(option.Response(http.StatusOK, []types.DeploymentTargetFull{}))
 	r.Route("/{deploymentTargetId}", func(r chiopenapi.Router) {
 		type DeploymentTargetIDRequest struct {
 			DeploymentTargetID uuid.UUID `path:"deploymentTargetId"`
@@ -50,15 +50,15 @@ func DeploymentTargetsRouter(r chiopenapi.Router) {
 		r.Get("/", getDeploymentTarget).
 			With(option.Description("Get a deployment target")).
 			With(option.Request(DeploymentTargetIDRequest{})).
-			With(option.Response(http.StatusOK, []types.DeploymentTargetWithCreatedBy{}))
+			With(option.Response(http.StatusOK, []types.DeploymentTargetFull{}))
 		r.With(middleware.RequireReadWriteOrAdmin).Group(func(r chiopenapi.Router) {
 			r.Put("/", updateDeploymentTarget).
 				With(option.Description("Update a deployment target")).
 				With(option.Request(struct {
 					DeploymentTargetIDRequest
-					types.DeploymentTargetWithCreatedBy
+					types.DeploymentTargetFull
 				}{})).
-				With(option.Response(http.StatusOK, []types.DeploymentTargetWithCreatedBy{}))
+				With(option.Response(http.StatusOK, []types.DeploymentTargetFull{}))
 			r.Delete("/", deleteDeploymentTarget).
 				With(option.Description("Delete a deployment target")).
 				With(option.Request(DeploymentTargetIDRequest{}))
@@ -118,7 +118,7 @@ func createDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
-	if dt, err := JsonBody[types.DeploymentTargetWithCreatedBy](w, r); err != nil {
+	if dt, err := JsonBody[types.DeploymentTargetFull](w, r); err != nil {
 		return
 	} else if err = dt.Validate(); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -183,7 +183,7 @@ func updateDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
-	dt, err := JsonBody[types.DeploymentTargetWithCreatedBy](w, r)
+	dt, err := JsonBody[types.DeploymentTargetFull](w, r)
 	if err != nil {
 		return
 	}

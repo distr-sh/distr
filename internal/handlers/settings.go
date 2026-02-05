@@ -207,10 +207,20 @@ func userSettingsUpdateEmailHandler() http.HandlerFunc {
 		}
 		user.Email = oldEmail
 
+		branding, err := db.GetOrganizationBranding(ctx, *auth.CurrentOrgID())
+		if err != nil && !errors.Is(err, apierrors.ErrNotFound) {
+			log.Error("failed to get organization branding", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		owb := types.OrganizationWithBranding{Organization: *auth.CurrentOrg(), Branding: branding}
+
 		msg := mail.New(
 			mail.To(body.Email),
 			mail.Subject("[Action required] Distr E-Mail address change"),
-			mail.HtmlBodyTemplate(mailtemplates.UpdateEmail(*user, *auth.CurrentOrg(), token)),
+			mail.HtmlBodyTemplate(mailtemplates.UpdateEmail(*user, owb, token)),
 		)
 
 		if err := mailer.Send(ctx, msg); err != nil {
@@ -226,11 +236,13 @@ func userSettingsUpdateEmailHandler() http.HandlerFunc {
 
 func userSettingsVerifyRequestHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 	userAccount := auth.CurrentUser()
 	if userAccount.EmailVerifiedAt != nil {
 		w.WriteHeader(http.StatusNoContent)
 	} else if err := mailsending.SendUserVerificationMail(ctx, *userAccount, *auth.CurrentOrg()); err != nil {
+		log.Error("failed to send verification mail", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 	} else {

@@ -4,6 +4,7 @@ import (
 	"github.com/distr-sh/distr/internal/cleanup"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/jobs"
+	"github.com/distr-sh/distr/internal/notification"
 )
 
 func (r *Registry) GetJobsScheduler() *jobs.Scheduler {
@@ -11,7 +12,7 @@ func (r *Registry) GetJobsScheduler() *jobs.Scheduler {
 }
 
 func (r *Registry) createJobsScheduler() (*jobs.Scheduler, error) {
-	scheduler, err := jobs.NewScheduler(r.GetLogger(), r.GetDbPool(), r.GetTracers().Always())
+	scheduler, err := jobs.NewScheduler(r.GetLogger(), r.GetDbPool(), r.GetMailer(), r.GetTracers().Always())
 	if err != nil {
 		return nil, err
 	}
@@ -90,6 +91,20 @@ func (r *Registry) createJobsScheduler() (*jobs.Scheduler, error) {
 		err = scheduler.RegisterCronJob(
 			*cron,
 			jobs.NewJob("OIDCStateCleanup", cleanup.RunOIDCStateCleanup, env.CleanupOIDCStateCronTimeout()),
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if cron := env.DeploymentStatusNotificationCron(); cron != nil {
+		err = scheduler.RegisterCronJob(
+			*cron,
+			jobs.NewJob(
+				"DeploymentStatusNotification",
+				notification.RunDeploymentStatusNotifications,
+				env.DeploymentStatusNotificationTimeout(),
+			),
 		)
 		if err != nil {
 			return nil, err

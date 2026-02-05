@@ -1,6 +1,6 @@
 import {BaseModel} from './base';
 
-export type CustomerOrganizationFeature = 'deployment_targets' | 'artifacts';
+export type CustomerOrganizationFeature = 'deployment_targets' | 'artifacts' | 'notifications';
 
 export interface CustomerOrganization extends Required<BaseModel> {
   name: string;

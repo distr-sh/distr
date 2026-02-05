@@ -8,11 +8,11 @@
     <div class="message-container">
       {{ template "fragments/header.html" . }}
       <main>
-        <p>Hi,</p>
+        {{template "fragments/greeting.html" . }}
 
         <p>
-          Your e-mail address has been added to the <strong>{{.Organization.Name}}</strong> organization on
-          <a href="{{.Host}}/">{{.Host}}</a>.
+          {{ if .InvitingUser.Name }}{{ .InvitingUser.Name }}{{ else }}{{ .InvitingUser.Email }}{{ end }} invited you to
+          the <strong>{{.TargetOrgName}}</strong> organization on <a href="{{.Host}}/">{{.Host}}</a>.
         </p>
 
         {{ if .InviteURL }}
@@ -21,10 +21,7 @@
           <a href="{{ .InviteURL | UnsafeURL }}">here</a>.
         </p>
         {{ else }}
-        <p>
-          Log in with your existing account at <a href="{{ .Host }}/">{{ .Host }}</a> and explore their Vendor Portal in
-          the top right corner.
-        </p>
+        <p>Log in with your existing account at <a href="{{ .Host }}/">{{ .Host }}</a>.</p>
         {{ end }}
 
         <p>{{template "fragments/signature.html" . }}</p>

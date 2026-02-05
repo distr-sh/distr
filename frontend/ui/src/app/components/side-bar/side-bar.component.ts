@@ -1,5 +1,5 @@
 import {CdkConnectedOverlay, CdkOverlayOrigin} from '@angular/cdk/overlay';
-import {AsyncPipe, NgTemplateOutlet} from '@angular/common';
+import {NgTemplateOutlet} from '@angular/common';
 import {Component, inject, input, signal, WritableSignal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {RouterLink, RouterLinkActive} from '@angular/router';
@@ -11,6 +11,7 @@ import {
   faAsterisk,
   faBox,
   faBoxesStacked,
+  faBullhorn,
   faChevronDown,
   faCreditCard,
   faDashboard,
@@ -39,7 +40,6 @@ import {TutorialsService} from '../../services/tutorials.service';
   imports: [
     RouterLink,
     FaIconComponent,
-    AsyncPipe,
     RouterLinkActive,
     CdkOverlayOrigin,
     CdkConnectedOverlay,
@@ -51,9 +51,9 @@ import {TutorialsService} from '../../services/tutorials.service';
 export class SideBarComponent {
   protected readonly auth = inject(AuthService);
   protected readonly sidebar = inject(SidebarService);
-  protected readonly featureFlags = inject(FeatureFlagService);
-  protected readonly tutorialsService = inject(TutorialsService);
-  protected readonly organizationService = inject(OrganizationService);
+  private readonly organizationService = inject(OrganizationService);
+  private readonly tutorialsService = inject(TutorialsService);
+  private readonly featureFlags = inject(FeatureFlagService);
   private readonly contextService = inject(ContextService);
 
   protected readonly buildConfig = buildConfig;
@@ -73,12 +73,19 @@ export class SideBarComponent {
   protected readonly faHome = faHome;
   protected readonly faChevronDown = faChevronDown;
   protected readonly faAsterisk = faAsterisk;
+  protected readonly faBullhorn = faBullhorn;
 
   protected feedbackAlert = true;
   protected readonly agentsSubMenuOpen = signal(true);
-  protected readonly licenseSubMenuOpen = signal(true);
+  protected readonly licenseSubMenuOpen = signal(false);
   protected readonly registrySubMenuOpen = signal(true);
+  protected readonly notificationsSubMenuOpen = signal(false);
   protected readonly licenseOverlayOpen = signal(false);
+  protected readonly notificationsOverlayOpen = signal(false);
+
+  protected readonly isAllTutorialsStarted = toSignal(this.tutorialsService.allStarted$);
+  protected readonly isLicensingFeatureEnabled = toSignal(this.featureFlags.isLicensingEnabled$);
+  protected readonly isNotificationsFeatureEnabled = toSignal(this.featureFlags.isNotificationsEnabled$);
 
   public readonly isSubscriptionBannerVisible = input<boolean>();
   public readonly isSidebarVisible = input<boolean>();

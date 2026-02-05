@@ -1,5 +1,50 @@
 # Changelog
 
+## [2.9.0](https://github.com/distr-sh/distr/compare/2.8.2...2.9.0) (2026-02-05)
+
+
+### Features
+
+* deployment status notifications ([#1717](https://github.com/distr-sh/distr/issues/1717)) ([16444be](https://github.com/distr-sh/distr/commit/16444be8fe2cededf04321c83da45c7d4b8b6d90))
+
+
+### Other
+
+* **deps:** update dependency semver to v7.7.4 ([#1778](https://github.com/distr-sh/distr/issues/1778)) ([f5615fa](https://github.com/distr-sh/distr/commit/f5615fa1d6aa1267a139a26f53dc0b30a622d2ad))
+
+## [2.8.2](https://github.com/distr-sh/distr/compare/2.8.1...2.8.2) (2026-02-05)
+
+
+### Bug Fixes
+
+* prevent template errors for mailsending ([#1774](https://github.com/distr-sh/distr/issues/1774)) ([a10e1a7](https://github.com/distr-sh/distr/commit/a10e1a782f948ba1ce8afca18e75bde24483d26a))
+
+## [2.8.1](https://github.com/distr-sh/distr/compare/2.8.0...2.8.1) (2026-02-05)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/go-chi/chi/v5 to v5.2.5 ([#1773](https://github.com/distr-sh/distr/issues/1773)) ([eff9e4a](https://github.com/distr-sh/distr/commit/eff9e4a4d13486d96693f3d73fc43886e758e958))
+* **deps:** update module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver to v0.145.0 ([#1763](https://github.com/distr-sh/distr/issues/1763)) ([30ab955](https://github.com/distr-sh/distr/commit/30ab95500b9ab209e053b946e1a50e66daa94b3e))
+* **deps:** update module go.opentelemetry.io/collector/confmap to v1.51.0 ([#1752](https://github.com/distr-sh/distr/issues/1752)) ([a4e57a4](https://github.com/distr-sh/distr/commit/a4e57a42cee4c446ef0b0c0887a88b893c57040a))
+* **frontend:** correctly display vendor/customer state of an organization in the navbar ([#1767](https://github.com/distr-sh/distr/issues/1767)) ([a6707ef](https://github.com/distr-sh/distr/commit/a6707effd9be8e5f3b5778ef028901c354c65cae))
+
+
+### Other
+
+* **deps:** bump the npm_and_yarn group across 2 directories with 1 update ([#1764](https://github.com/distr-sh/distr/issues/1764)) ([81d3471](https://github.com/distr-sh/distr/commit/81d3471a02b7e0e91a1bd15879c7c3771afbfd90))
+* **deps:** update anchore/sbom-action action to v0.22.2 ([#1768](https://github.com/distr-sh/distr/issues/1768)) ([57808e9](https://github.com/distr-sh/distr/commit/57808e92aa5a5f755ba85ed982fd7fd61c974637))
+* **deps:** update angular monorepo to v21.1.3 ([#1771](https://github.com/distr-sh/distr/issues/1771)) ([8a72d34](https://github.com/distr-sh/distr/commit/8a72d34bb92719d92ae9c8e535c7f4c571b28cb8))
+* **deps:** update dependency @angular/cdk to v21.1.3 ([#1770](https://github.com/distr-sh/distr/issues/1770)) ([572ea40](https://github.com/distr-sh/distr/commit/572ea40e3f66fb901ab08b4231dd2a6f7c9e3d33))
+* **deps:** update dependency go to v1.25.7 ([#1769](https://github.com/distr-sh/distr/issues/1769)) ([e5ca5ca](https://github.com/distr-sh/distr/commit/e5ca5ca8925145c1840b13759dd73ed3a77c7f03))
+* **deps:** update dependency ngx-markdown to v21.1.0 ([#1766](https://github.com/distr-sh/distr/issues/1766)) ([de8e152](https://github.com/distr-sh/distr/commit/de8e152b574d7a154c21e9c74eb6e3c7c88b7939))
+* **deps:** update docker docker tag to v29.2.1 ([#1765](https://github.com/distr-sh/distr/issues/1765)) ([f79de3f](https://github.com/distr-sh/distr/commit/f79de3fd7f9272175ebbcd8b6292db1788445621))
+
+
+### Refactoring
+
+* merge user invitation email templates ([#1772](https://github.com/distr-sh/distr/issues/1772)) ([3d38174](https://github.com/distr-sh/distr/commit/3d381743126cf221b474824ef234ecace5b8fed1))
+
 ## [2.8.0](https://github.com/distr-sh/distr/compare/2.7.1...2.8.0) (2026-02-03)
 
 

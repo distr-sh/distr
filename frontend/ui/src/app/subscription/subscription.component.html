@@ -223,7 +223,7 @@
                               subscriptionInfoData.currentCustomerOrganizationCount >
                               subscriptionInfoData.limits.starter.maxCustomerOrganizations
                             ">
-                            ✓
+                            <fa-icon [icon]="faCheck" />
                             {{ getPlanLimits('starter').customers }}
                             <span class="text-xs">
                               (current: {{ subscriptionInfoData.currentCustomerOrganizationCount }})
@@ -238,7 +238,7 @@
                               subscriptionInfoData.currentMaxUsersPerCustomer >
                               subscriptionInfoData.limits.starter.maxUsersPerCustomerOrganization
                             ">
-                            ✓
+                            <fa-icon [icon]="faCheck" />
                             {{ getPlanLimits('starter').users }}
                             <span class="text-xs">
                               (current max: {{ subscriptionInfoData.currentMaxUsersPerCustomer }})
@@ -253,7 +253,7 @@
                               subscriptionInfoData.currentMaxDeploymentTargetsPerCustomer >
                               subscriptionInfoData.limits.starter.maxDeploymentsPerCustomerOrganization
                             ">
-                            ✓
+                            <fa-icon [icon]="faCheck" />
                             {{ getPlanLimits('starter').deployments }}
                             <span class="text-xs">
                               (current max: {{ subscriptionInfoData.currentMaxDeploymentTargetsPerCustomer }})
@@ -266,7 +266,8 @@
                             [class.dark:text-red-300]="
                               subscriptionInfoData.hasApplicationLicenses || subscriptionInfoData.hasArtifactLicenses
                             ">
-                            ✗ License Management
+                            <fa-icon [icon]="faXmark" />
+                            License Management
                             <span class="text-xs">
                               (Pro feature)
                               @if (
@@ -279,10 +280,25 @@
                           <li
                             [class.text-red-600]="subscriptionInfoData.hasNonAdminRoles"
                             [class.dark:text-red-300]="subscriptionInfoData.hasNonAdminRoles">
-                            ✗ RBAC
+                            <fa-icon [icon]="faXmark" />
+                            Role based access control (RBAC)
                             <span class="text-xs">
                               (Pro feature)
                               @if (subscriptionInfoData.hasNonAdminRoles) {
+                                <span class="font-semibold">- in use</span>
+                              }
+                            </span>
+                          </li>
+                          <li
+                            [class.text-red-600]="subscriptionInfoData.hasDeploymentStatusNotificationConfigurations"
+                            [class.dark:text-red-300]="
+                              subscriptionInfoData.hasDeploymentStatusNotificationConfigurations
+                            ">
+                            <fa-icon [icon]="faXmark" />
+                            Deployment status notifications
+                            <span class="text-xs">
+                              (Pro feature)
+                              @if (subscriptionInfoData.hasDeploymentStatusNotificationConfigurations) {
                                 <span class="font-semibold">- in use</span>
                               }
                             </span>
@@ -303,26 +319,42 @@
                         <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Production rollouts with governance</p>
                         <ul class="space-y-1 text-sm text-gray-600 dark:text-gray-400">
                           <li>
-                            ✓ {{ getPlanLimits('pro').customers }} customers
+                            <fa-icon [icon]="faCheck" class="text-green-500" />
+                            {{ getPlanLimits('pro').customers }} customers
                             <span class="text-xs"
                               >(current: {{ subscriptionInfoData.currentCustomerOrganizationCount }})</span
                             >
                           </li>
                           <li>
-                            ✓ {{ getPlanLimits('pro').users }}
+                            <fa-icon [icon]="faCheck" class="text-green-500" />
+                            {{ getPlanLimits('pro').users }}
                             <span class="text-xs"
                               >(current max: {{ subscriptionInfoData.currentMaxUsersPerCustomer }})</span
                             >
                           </li>
                           <li>
-                            ✓ {{ getPlanLimits('pro').deployments }}
+                            <fa-icon [icon]="faCheck" class="text-green-500" />
+                            {{ getPlanLimits('pro').deployments }}
                             <span class="text-xs"
                               >(current max: {{ subscriptionInfoData.currentMaxDeploymentTargetsPerCustomer }})</span
                             >
                           </li>
-                          <li>✓ License management for applications and artifacts</li>
-                          <li>✓ Role based access control (RBAC)</li>
-                          <li>✓ Single-Sign-On (SSO)</li>
+                          <li>
+                            <fa-icon [icon]="faCheck" class="text-green-500" />
+                            License management for applications and artifacts
+                          </li>
+                          <li>
+                            <fa-icon [icon]="faCheck" class="text-green-500" />
+                            Role based access control (RBAC)
+                          </li>
+                          <li>
+                            <fa-icon [icon]="faCheck" class="text-green-500" />
+                            Deployment status notifications
+                          </li>
+                          <li>
+                            <fa-icon [icon]="faCheck" class="text-green-500" />
+                            Single-Sign-On (SSO)
+                          </li>
                         </ul>
                       </label>
                     </div>

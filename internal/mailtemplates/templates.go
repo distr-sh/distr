@@ -55,36 +55,31 @@ func parse(fsys fs.FS, patterns ...string) (*template.Template, error) {
 func InviteUser(
 	userAccount types.UserAccount,
 	organization types.OrganizationWithBranding,
+	invitingUser types.UserAccount,
+	targetOrgName string,
 	inviteURL string,
 ) (*template.Template, any) {
 	return templates.Lookup("invite-user.html"),
 		map[string]any{
-			"UserAccount":  userAccount,
-			"Organization": organization,
-			"Host":         customdomains.AppDomainOrDefault(organization.Organization),
-			"InviteURL":    inviteURL,
+			"UserAccount":   userAccount,
+			"Organization":  organization,
+			"InvitingUser":  invitingUser,
+			"TargetOrgName": targetOrgName,
+			"Host":          customdomains.AppDomainOrDefault(organization.Organization),
+			"InviteURL":     inviteURL,
 		}
 }
 
-func InviteCustomer(
+func VerifyEmail(
 	userAccount types.UserAccount,
-	organization types.OrganizationWithBranding,
-	inviteURL string,
+	org types.OrganizationWithBranding,
+	token string,
 ) (*template.Template, any) {
-	return templates.Lookup("invite-customer.html"),
-		map[string]any{
-			"UserAccount":  userAccount,
-			"Organization": organization,
-			"Host":         customdomains.AppDomainOrDefault(organization.Organization),
-			"InviteURL":    inviteURL,
-		}
-}
-
-func VerifyEmail(userAccount types.UserAccount, org types.Organization, token string) (*template.Template, any) {
 	return templates.Lookup("verify-email-registration.html"), map[string]any{
-		"UserAccount": userAccount,
-		"Host":        customdomains.AppDomainOrDefault(org),
-		"Token":       token,
+		"UserAccount":  userAccount,
+		"Organization": org,
+		"Host":         customdomains.AppDomainOrDefault(org.Organization),
+		"Token":        token,
 	}
 }
 
@@ -105,10 +100,55 @@ func PasswordReset(
 	}
 }
 
-func UpdateEmail(userAccount types.UserAccount, org types.Organization, token string) (*template.Template, any) {
+func UpdateEmail(
+	userAccount types.UserAccount,
+	org types.OrganizationWithBranding,
+	token string,
+) (*template.Template, any) {
 	return templates.Lookup("update-email.html"), map[string]any{
-		"UserAccount": userAccount,
-		"Host":        customdomains.AppDomainOrDefault(org),
-		"Token":       token,
+		"UserAccount":  userAccount,
+		"Organization": org,
+		"Host":         customdomains.AppDomainOrDefault(org.Organization),
+		"Token":        token,
+	}
+}
+
+func DeploymentStatusNotificationError(
+	deploymentTarget types.DeploymentTargetFull,
+	deployment types.DeploymentWithLatestRevision,
+	currentStatus types.DeploymentRevisionStatus,
+) (*template.Template, any) {
+	return deploymentStatusNotification("error", deploymentTarget, deployment, nil, &currentStatus)
+}
+
+func DeploymentStatusNotificationStale(
+	deploymentTarget types.DeploymentTargetFull,
+	deployment types.DeploymentWithLatestRevision,
+	previousStatus types.DeploymentRevisionStatus,
+) (*template.Template, any) {
+	return deploymentStatusNotification("stale", deploymentTarget, deployment, &previousStatus, nil)
+}
+
+func DeploymentStatusNotificationRecovered(
+	deploymentTarget types.DeploymentTargetFull,
+	deployment types.DeploymentWithLatestRevision,
+	currentStatus types.DeploymentRevisionStatus,
+) (*template.Template, any) {
+	return deploymentStatusNotification("recovered", deploymentTarget, deployment, nil, &currentStatus)
+}
+
+func deploymentStatusNotification(
+	eventType string,
+	deploymentTarget types.DeploymentTargetFull,
+	deployment types.DeploymentWithLatestRevision,
+	previousStatus *types.DeploymentRevisionStatus,
+	currentStatus *types.DeploymentRevisionStatus,
+) (*template.Template, any) {
+	return templates.Lookup("deployment-status-notification.html"), map[string]any{
+		"EventType":        eventType,
+		"DeploymentTarget": deploymentTarget,
+		"Deployment":       deployment,
+		"PreviousStatus":   previousStatus,
+		"CurrentStatus":    currentStatus,
 	}
 }
