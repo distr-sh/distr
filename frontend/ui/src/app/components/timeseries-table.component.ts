@@ -30,7 +30,8 @@ export interface TimeseriesExporter {
     @if (entries$ | async; as entries) {
       <div class="relative overflow-x-auto">
         <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-          <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-800 dark:text-gray-400 sr-only">
+          <thead
+            class="dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-800 dark:text-gray-400 sr-only">
             <tr>
               <th scope="col">Date</th>
               <th scope="col">Status</th>

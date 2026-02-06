@@ -25,7 +25,7 @@
       <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
         <tbody>
           @for (artifact of artifacts(); track artifact.artifact.id) {
-            <tr class="border-b border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+            <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
               <td class="px-4 py-2 font-medium text-gray-900 whitespace-normal dark:text-white flex items-center gap-4">
                 @if (artifact.artifact.imageUrl) {
                   <img class="w-4 h-4 rounded-full" [attr.src]="artifact.artifact.imageUrl | secureImage | async" />
