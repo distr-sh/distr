@@ -12,6 +12,7 @@ type CustomerOrganizationFeature string
 const (
 	CustomerOrganizationFeatureDeploymentTargets CustomerOrganizationFeature = "deployment_targets"
 	CustomerOrganizationFeatureArtifacts         CustomerOrganizationFeature = "artifacts"
+	CustomerOrganizationFeatureNotifications     CustomerOrganizationFeature = "notifications"
 )
 
 func ParseCustomerOrganizationFeature(value string) (CustomerOrganizationFeature, error) {

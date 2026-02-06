@@ -6,13 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"text/template"
-	"time"
 
 	"github.com/compose-spec/compose-go/v2/dotenv"
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
-	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -355,98 +353,29 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 	}
 }
 
-func CreateDeploymentRevisionStatus(
-	ctx context.Context,
-	revisionID uuid.UUID,
-	statusType types.DeploymentStatusType,
-	message string,
-) error {
+func GetDeploymentIDForRevisionID(ctx context.Context, revisionID uuid.UUID) (uuid.UUID, error) {
 	db := internalctx.GetDb(ctx)
-	_, err := db.Exec(ctx, `
-		INSERT INTO DeploymentRevisionStatus (deployment_revision_id, message, type)
-		VALUES (@deploymentRevisionId, @message, @type)`,
-		pgx.NamedArgs{"deploymentRevisionId": revisionID, "message": message, "type": statusType})
+	rows, err := db.Query(
+		ctx,
+		"SELECT deployment_id from DeploymentRevision WHERE id = @revisionId",
+		pgx.NamedArgs{"revisionId": revisionID},
+	)
 	if err != nil {
-		var pgError *pgconn.PgError
-		if errors.As(err, &pgError) && pgError.Code == pgerrcode.ForeignKeyViolation {
-			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+		return uuid.Nil, fmt.Errorf("failed to query Deployment ID: %w", err)
+	}
+
+	deploymentID, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[uuid.UUID])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			err = apierrors.ErrNotFound
 		}
-		return err
-	} else {
-		return nil
+		return uuid.Nil, fmt.Errorf("failed to scan Deployment ID: %w", err)
 	}
+
+	return deploymentID, nil
 }
 
-func BulkCreateDeploymentRevisionStatusWithCreatedAt(
-	ctx context.Context,
-	deploymentRevisionID uuid.UUID,
-	statuses []types.DeploymentRevisionStatus,
-) error {
-	db := internalctx.GetDb(ctx)
-	_, err := db.CopyFrom(
-		ctx,
-		pgx.Identifier{"deploymentrevisionstatus"},
-		[]string{"deployment_revision_id", "type", "message", "created_at"},
-		pgx.CopyFromSlice(len(statuses), func(i int) ([]any, error) {
-			return []any{
-				deploymentRevisionID,
-				types.DeploymentStatusTypeHealthy,
-				statuses[i].Message,
-				statuses[i].CreatedAt,
-			}, nil
-		}),
-	)
-	return err
-}
-
-// CleanupDeploymentRevisionStatus deletes all DeploymentRevisionStatus entries older than [env.StatusEntriesMaxAge()],
-// always keeping the latest entry across all DeploymentRevisions of every Deployment
-func CleanupDeploymentRevisionStatus(ctx context.Context) (int64, error) {
-	if env.StatusEntriesMaxAge() == nil {
-		return 0, nil
-	}
-
-	db := internalctx.GetDb(ctx)
-	if cmd, err := db.Exec(
-		ctx,
-		`DELETE FROM DeploymentRevisionStatus drs
-		USING (
-			SELECT
-				dr1.id AS deployment_revision_id,
-				max(dr2.max_created_at) AS max_created_at
-			FROM DeploymentRevision dr1
-			JOIN (
-				SELECT dr.id, dr.deployment_id, (
-					SELECT max(drs.created_at)
-					FROM DeploymentRevisionStatus drs
-					WHERE drs.deployment_revision_id = dr.id
-				) AS max_created_at
-				FROM DeploymentRevision dr
-			) dr2 ON dr1.deployment_id = dr2.deployment_id
-			GROUP BY dr1.id
-		) max_created_at
-		WHERE drs.deployment_revision_id = max_created_at.deployment_revision_id
-			AND drs.created_at < max_created_at.max_created_at
-			AND current_timestamp - drs.created_at > @statusEntriesMaxAge`,
-		pgx.NamedArgs{"statusEntriesMaxAge": env.StatusEntriesMaxAge()},
-	); err != nil {
-		return 0, err
-	} else {
-		return cmd.RowsAffected(), nil
-	}
-}
-
-func GetDeploymentStatus(
-	ctx context.Context,
-	deploymentID uuid.UUID,
-	maxRows int,
-	before time.Time,
-	after time.Time,
-) ([]types.DeploymentRevisionStatus, error) {
-	if before.IsZero() {
-		before = time.Now()
-	}
-
+func GetDeploymentRevisionIDs(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
@@ -454,86 +383,13 @@ func GetDeploymentStatus(
 		pgx.NamedArgs{"deploymentId": deploymentID},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query DeploymentRevision for status: %w", err)
+		return nil, fmt.Errorf("failed to query DeploymentRevision IDs: %w", err)
 	}
+
 	deploymentRevisionIDs, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID])
 	if err != nil {
-		return nil, fmt.Errorf("failed to scan DeploymentRevision for status: %w", err)
+		return nil, fmt.Errorf("failed to scan DeploymentRevision IDs: %w", err)
 	}
 
-	rows, err = db.Query(
-		ctx,
-		`SELECT id, created_at, deployment_revision_id, type, message
-		FROM DeploymentRevisionStatus
-		WHERE deployment_revision_id = ANY (@deploymentRevisionIds)
-			AND created_at BETWEEN @after AND @before
-		ORDER BY created_at DESC
-		LIMIT @maxRows`,
-		pgx.NamedArgs{
-			"deploymentRevisionIds": deploymentRevisionIDs,
-			"maxRows":               maxRows,
-			"before":                before,
-			"after":                 after,
-		},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query DeploymentRevisionStatus: %w", err)
-	} else if result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.DeploymentRevisionStatus]); err != nil {
-		return nil, fmt.Errorf("failed to get DeploymentRevisionStatus: %w", err)
-	} else {
-		return result, nil
-	}
-}
-
-func GetDeploymentStatusForExport(
-	ctx context.Context,
-	deploymentID uuid.UUID,
-	limit int,
-	callback func(types.DeploymentRevisionStatus) error,
-) error {
-	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(
-		ctx,
-		"SELECT id from DeploymentRevision WHERE deployment_id = @deploymentId",
-		pgx.NamedArgs{"deploymentId": deploymentID},
-	)
-	if err != nil {
-		return fmt.Errorf("failed to query DeploymentRevision for status: %w", err)
-	}
-	deploymentRevisionIDs, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID])
-	if err != nil {
-		return fmt.Errorf("failed to scan DeploymentRevision for status: %w", err)
-	}
-
-	rows, err = db.Query(
-		ctx,
-		`SELECT id, created_at, deployment_revision_id, type, message
-		FROM DeploymentRevisionStatus
-		WHERE deployment_revision_id = ANY (@deploymentRevisionIds)
-		ORDER BY created_at DESC
-		LIMIT @limit`,
-		pgx.NamedArgs{
-			"deploymentRevisionIds": deploymentRevisionIDs,
-			"limit":                 limit,
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("failed to query DeploymentRevisionStatus: %w", err)
-	}
-
-	var status types.DeploymentRevisionStatus
-	_, err = pgx.ForEachRow(rows, []any{
-		&status.ID,
-		&status.CreatedAt,
-		&status.DeploymentRevisionID,
-		&status.Type,
-		&status.Message,
-	}, func() error {
-		return callback(status)
-	})
-	if err != nil {
-		return fmt.Errorf("could not iterate DeploymentRevisionStatus: %w", err)
-	}
-
-	return nil
+	return deploymentRevisionIDs, nil
 }

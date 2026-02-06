@@ -7,6 +7,7 @@ import (
 	"github.com/distr-sh/distr/internal/buildconfig"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db/queryable"
+	"github.com/distr-sh/distr/internal/mail"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
@@ -18,13 +19,20 @@ const (
 
 type runner struct {
 	db     queryable.Queryable
+	mailer mail.Mailer
 	logger *zap.Logger
 	tracer trace.Tracer
 }
 
-func NewRunner(logger *zap.Logger, db queryable.Queryable, traceProvider trace.TracerProvider) *runner {
+func NewRunner(
+	logger *zap.Logger,
+	db queryable.Queryable,
+	mailer mail.Mailer,
+	traceProvider trace.TracerProvider,
+) *runner {
 	runner := runner{
 		db:     db,
+		mailer: mailer,
 		logger: logger,
 		tracer: traceProvider.Tracer(tracerScope, trace.WithInstrumentationVersion(buildconfig.Version())),
 	}
@@ -67,5 +75,6 @@ func (runner *runner) Run(ctx context.Context, job Job) {
 func (runner *runner) jobCtx(ctx context.Context, job Job) context.Context {
 	ctx = internalctx.WithLogger(ctx, runner.logger.With(zap.String("job", job.name)))
 	ctx = internalctx.WithDb(ctx, runner.db)
+	ctx = internalctx.WithMailer(ctx, runner.mailer)
 	return ctx
 }

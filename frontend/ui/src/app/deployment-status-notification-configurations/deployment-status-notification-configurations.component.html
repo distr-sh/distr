@@ -1,0 +1,241 @@
+<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
+  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
+    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+      <div
+        class="flex flex-col md:flex-row items-stretch md:items-center md:space-x-3 space-y-3 md:space-y-0 justify-between m-4 dark:border-gray-700">
+        <div class="w-full md:w-1/2">
+          <form class="flex items-center" [formGroup]="filterForm">
+            <label for="simple-search" class="sr-only">Search</label>
+            <div class="relative w-full">
+              <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <fa-icon [icon]="faMagnifyingGlass" class="text-gray-500 dark:text-gray-400"></fa-icon>
+              </div>
+              <input
+                type="text"
+                id="simple-search"
+                placeholder="Filter configurations"
+                [formControl]="filterForm.controls.search"
+                autotrim
+                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+            </div>
+          </form>
+        </div>
+        <div
+          class="w-full md:w-auto flex flex-col md:flex-row items-stretch md:items-center justify-end gap-4 flex-shrink-0 flex-grow">
+          <button
+            type="button"
+            routerLink="/notifications/history"
+            class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+            <fa-icon [icon]="faHistory" class="text-gray-500 dark:text-gray-400 mr-2"></fa-icon>
+            Notification History
+          </button>
+          @if (auth.hasRole('read_write') || auth.hasRole('admin')) {
+            <button
+              type="button"
+              (click)="showDrawer()"
+              class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+              <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2"></fa-icon>
+              Create Error Notification Config
+            </button>
+          }
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+          <thead class="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
+            <tr>
+              <th scope="col" class="p-4">Name</th>
+              <th scope="col" class="p-4">Enabled</th>
+              <th scope="col" class="p-4">Created at</th>
+              <th scope="col" class="p-4">Deployment Targets</th>
+              <th scope="col" class="p-4">Users</th>
+              <th scope="col" class="p-4"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (config of filteredConfigs(); track config.id) {
+              <tr class="border-b border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">{{ config.name }}</td>
+                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap align-middle">
+                  <label class="inline-flex items-center cursor-pointer my-1">
+                    <input
+                      type="checkbox"
+                      class="sr-only peer"
+                      aria-label="Enabled"
+                      [checked]="config.enabled"
+                      (change)="toggleConfigEnabled(config)" />
+                    <div
+                      class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+                  </label>
+                </td>
+                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
+                  {{ config.createdAt | date }}
+                </td>
+                <td
+                  class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
+                  [title]="getNames(config.deploymentTargets)">
+                  @for (dt of config.deploymentTargets; track dt.id; let last = $last) {
+                    <ng-container>{{ dt.name }}</ng-container>
+                    @if (!last) {
+                      <ng-container>, </ng-container>
+                    }
+                  }
+                </td>
+                <td
+                  class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
+                  [title]="getNames(config.userAccounts)">
+                  @for (user of config.userAccounts; track user.id; let last = $last) {
+                    <ng-container>{{ user.name || user.email }}</ng-container>
+                    @if (!last) {
+                      <ng-container>, </ng-container>
+                    }
+                  }
+                </td>
+                <td class="px-4 py-3 flex gap-2 justify-end">
+                  @if (auth.hasAnyRole('read_write', 'admin')) {
+                    <button
+                      type="button"
+                      (click)="showDrawer(config)"
+                      class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                      <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Delete"
+                      (click)="deleteConfig(config)"
+                      class="py-2 px-3 text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900">
+                      <fa-icon [icon]="faTrash" class="h-4 w-4"></fa-icon>
+                    </button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr class="border-b border-gray-200 dark:border-gray-600">
+                <td
+                  colspan="5"
+                  class="px-4 py-3 font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap text-center">
+                  No configurations found
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<ng-template #editConfigDrawer>
+  <div
+    class="h-screen p-4 overflow-y-auto bg-white w-lg dark:bg-gray-800"
+    tabindex="-1"
+    aria-labelledby="drawer-right-label"
+    animate.enter="animate-fly-in-right"
+    animate.leave="animate-fly-out-right">
+    <h2
+      id="drawer-label"
+      class="inline-flex items-center mb-2 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
+      @if (editConfigRef(); as config) {
+        Update {{ config.name }}
+      } @else {
+        New Configuration
+      }
+    </h2>
+    <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
+      You will receive notifications when a deployment changes to an error or stale status, and as soon as the
+      deployment has recovered.
+    </p>
+    <button
+      type="button"
+      (click)="hideDrawer()"
+      aria-controls="manage-deployment-target-drawer"
+      class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 right-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
+      <fa-icon [icon]="faXmark" class="w-5 h-5"></fa-icon>
+      <span class="sr-only">Close menu</span>
+    </button>
+
+    <form [formGroup]="editConfigForm" (ngSubmit)="saveConfig()">
+      <div class="mb-4 space-y-4">
+        <div>
+          <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name</label>
+          <input
+            formControlName="name"
+            autotrim
+            type="text"
+            name="title"
+            id="name"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+            value=""
+            placeholder="Name" />
+        </div>
+
+        <label class="inline-flex items-center cursor-pointer">
+          <input type="checkbox" class="sr-only peer" formControlName="enabled" />
+          <div
+            class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+          <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Enabled</span>
+        </label>
+
+        <div class="space-y-1">
+          <h3 class="text-sm font-medium text-gray-900 dark:text-white">Deployments</h3>
+          <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 space-y-2">
+            @for (customersEntry of deploymentTargetCustomers(); track customersEntry.customer?.id) {
+              <div class="space-y-1">
+                @if (customersEntry.customer; as customer) {
+                  <h4 class="text-sm dark:text-white font-semibold">{{ customer.name }}</h4>
+                }
+                @for (deploymentTarget of customersEntry.deploymentTargets; track deploymentTarget.id) {
+                  <label class="flex items-center w-full">
+                    <input
+                      type="checkbox"
+                      class="size-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                      [formControl]="editConfigForm.controls.deploymentTargetIds.controls[deploymentTarget.id!]" />
+                    <span
+                      class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 overflow-hidden text-ellipsis"
+                      >{{ deploymentTarget.name }}</span
+                    >
+                  </label>
+                }
+              </div>
+            }
+          </div>
+          @if (
+            editConfigForm.controls.deploymentTargetIds.touched && editConfigForm.controls.deploymentTargetIds.errors
+          ) {
+            <div class="text-sm text-red-500">Check at least one deployment.</div>
+          }
+        </div>
+
+        <div class="space-y-1">
+          <h3 class="text-sm font-medium text-gray-900 dark:text-white">Users to notify</h3>
+          <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 space-y-1">
+            @for (user of users(); track user.id) {
+              <label class="flex items-center w-full">
+                <input
+                  type="checkbox"
+                  class="size-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                  [formControl]="editConfigForm.controls.userAccountIds.controls[user.id!]" />
+                <span class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 overflow-hidden text-ellipsis">{{
+                  user.name || user.email
+                }}</span>
+              </label>
+            }
+          </div>
+          @if (editConfigForm.controls.userAccountIds.touched && editConfigForm.controls.userAccountIds.errors) {
+            <div class="text-sm text-red-500">Check at least one user.</div>
+          }
+        </div>
+      </div>
+      <div class="mt-8 flex justify-center w-full pb-4 space-x-4 sm:mt-0">
+        <button
+          type="submit"
+          [disabled]="editFormLoading()"
+          class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+          <fa-icon [icon]="faPen" class="mr-2"></fa-icon>
+          Save
+        </button>
+      </div>
+    </form>
+  </div>
+</ng-template>

@@ -63,12 +63,12 @@ export class TutorialsService {
     shareReplay(1)
   );
 
-  public readonly notAllStarted$ = this.tutorialsProgress$.pipe(
-    map((tutorials) => tutorials.some((t) => !t.progress?.createdAt))
+  public readonly allStarted$ = this.tutorialsProgress$.pipe(
+    map((tutorials) => tutorials.every((t) => t.progress?.createdAt))
   );
 
   public readonly allCompleted$ = this.tutorialsProgress$.pipe(
-    map((tutorials) => !tutorials.some((t) => !t.progress?.completedAt))
+    map((tutorials) => tutorials.every((t) => t.progress?.completedAt))
   );
 
   private list(): Observable<TutorialProgress[]> {

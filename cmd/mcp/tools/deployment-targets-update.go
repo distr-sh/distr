@@ -22,7 +22,7 @@ func (m *Manager) NewUpdateDeploymentTargetTool() server.ServerTool {
 			mcp.WithBoolean("metricsEnabled", mcp.DefaultBool(true)),
 		),
 		Handler: func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			var deployment types.DeploymentTargetWithCreatedBy
+			var deployment types.DeploymentTargetFull
 
 			id, err := ParseUUID(request, "id")
 			if err != nil {

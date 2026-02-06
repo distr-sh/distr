@@ -70,11 +70,15 @@ func InviteUser(
 		}
 }
 
-func VerifyEmail(userAccount types.UserAccount, org types.Organization, token string) (*template.Template, any) {
+func VerifyEmail(
+	userAccount types.UserAccount,
+	org types.OrganizationWithBranding,
+	token string,
+) (*template.Template, any) {
 	return templates.Lookup("verify-email-registration.html"), map[string]any{
 		"UserAccount":  userAccount,
 		"Organization": org,
-		"Host":         customdomains.AppDomainOrDefault(org),
+		"Host":         customdomains.AppDomainOrDefault(org.Organization),
 		"Token":        token,
 	}
 }
@@ -96,11 +100,55 @@ func PasswordReset(
 	}
 }
 
-func UpdateEmail(userAccount types.UserAccount, org types.Organization, token string) (*template.Template, any) {
+func UpdateEmail(
+	userAccount types.UserAccount,
+	org types.OrganizationWithBranding,
+	token string,
+) (*template.Template, any) {
 	return templates.Lookup("update-email.html"), map[string]any{
 		"UserAccount":  userAccount,
 		"Organization": org,
-		"Host":         customdomains.AppDomainOrDefault(org),
+		"Host":         customdomains.AppDomainOrDefault(org.Organization),
 		"Token":        token,
+	}
+}
+
+func DeploymentStatusNotificationError(
+	deploymentTarget types.DeploymentTargetFull,
+	deployment types.DeploymentWithLatestRevision,
+	currentStatus types.DeploymentRevisionStatus,
+) (*template.Template, any) {
+	return deploymentStatusNotification("error", deploymentTarget, deployment, nil, &currentStatus)
+}
+
+func DeploymentStatusNotificationStale(
+	deploymentTarget types.DeploymentTargetFull,
+	deployment types.DeploymentWithLatestRevision,
+	previousStatus types.DeploymentRevisionStatus,
+) (*template.Template, any) {
+	return deploymentStatusNotification("stale", deploymentTarget, deployment, &previousStatus, nil)
+}
+
+func DeploymentStatusNotificationRecovered(
+	deploymentTarget types.DeploymentTargetFull,
+	deployment types.DeploymentWithLatestRevision,
+	currentStatus types.DeploymentRevisionStatus,
+) (*template.Template, any) {
+	return deploymentStatusNotification("recovered", deploymentTarget, deployment, nil, &currentStatus)
+}
+
+func deploymentStatusNotification(
+	eventType string,
+	deploymentTarget types.DeploymentTargetFull,
+	deployment types.DeploymentWithLatestRevision,
+	previousStatus *types.DeploymentRevisionStatus,
+	currentStatus *types.DeploymentRevisionStatus,
+) (*template.Template, any) {
+	return templates.Lookup("deployment-status-notification.html"), map[string]any{
+		"EventType":        eventType,
+		"DeploymentTarget": deploymentTarget,
+		"Deployment":       deployment,
+		"PreviousStatus":   previousStatus,
+		"CurrentStatus":    currentStatus,
 	}
 }

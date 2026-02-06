@@ -1,3 +1,5 @@
+import {AbstractControl, FormRecord, ValidationErrors, ValidatorFn} from '@angular/forms';
+
 export const KUBERNETES_RESOURCE_MAX_LENGTH = 253;
 export const KUBERNETES_RESOURCE_NAME_REGEX = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/;
 export const HELM_RELEASE_NAME_REGEX = /^[a-z0-9]([-a-z0-9]*)?[a-z0-9]$/;
@@ -31,3 +33,16 @@ export const HELM_RELEASE_NAME_MAX_LENGTH = 53;
  */
 export const RESOURCE_QUANTITY_REGEX =
   /^(\d+|\d+\.\d+|\d+\.|\.\d+)(m|k|M|G|T|P|E|Ki|Mi|Gi|Ti|Pi|Ei|((e|E)(\d+|\d+\.\d+|\d+\.|\.\d+)))?$/;
+
+export function validateRecordAtLeast(minRequiredCount: number, evalFunc: (v: any) => unknown = (v) => v): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    if (control instanceof FormRecord) {
+      const truthyValuesCount = Object.values(control.value).filter(evalFunc).length;
+      if (truthyValuesCount < minRequiredCount) {
+        return {validateRecordAtLeast: true};
+      }
+    }
+
+    return null;
+  };
+}

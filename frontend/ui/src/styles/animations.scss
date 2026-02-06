@@ -1,3 +1,15 @@
+@keyframes fly-in-right {
+  from {
+    opacity: 0.8;
+    transform: translateX(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @keyframes fly-fade-top {
   0% {
     opacity: 0.8;
@@ -8,6 +20,11 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@theme {
+  --animate-fly-in-right: fly-in-right 150ms ease-out;
+  --animate-fly-out-right: fly-in-right 150ms ease-in reverse;
 }
 
 .modal-fly-in {

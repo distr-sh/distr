@@ -14,6 +14,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/deploymentvalues"
+	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
@@ -49,7 +50,7 @@ func DeploymentsRouter(r chiopenapi.Router) {
 		r.Get("/status", getDeploymentStatus).
 			With(option.Description("Get deployment status")).
 			With(option.Request(DeploymentTimeseriesRequest{})).
-			With(option.Response(http.StatusOK, []types.DeploymentRevisionStatus{}))
+			With(option.Response(http.StatusOK, []api.DeploymentRevisionStatus{}))
 		r.Get("/status/export", exportDeploymentStatusHandler()).
 			With(option.Description("Export deployment status")).
 			With(option.Request(DeploymentIDRequest{})).
@@ -225,7 +226,7 @@ func validateDeploymentRequest(
 	var license *types.ApplicationLicense
 	var app *types.Application
 	var version *types.ApplicationVersion
-	var target *types.DeploymentTargetWithCreatedBy
+	var target *types.DeploymentTargetFull
 	var secrets []types.SecretWithUpdatedBy
 
 	org := auth.CurrentOrg()
@@ -355,7 +356,7 @@ func validateDeploymentRequestLicense(
 	request api.DeploymentRequest,
 	license *types.ApplicationLicense,
 	app *types.Application,
-	target *types.DeploymentTargetWithCreatedBy,
+	target *types.DeploymentTargetFull,
 	deployment *types.DeploymentWithLatestRevision,
 ) error {
 	if license != nil {
@@ -388,7 +389,7 @@ func validateDeploymentRequestLicense(
 
 func validateDeploymentRequestDeploymentType(
 	w http.ResponseWriter,
-	target *types.DeploymentTargetWithCreatedBy,
+	target *types.DeploymentTargetFull,
 	application *types.Application,
 ) error {
 	if target.Type != application.Type {
@@ -401,7 +402,7 @@ func validateDeploymentRequestDeploymentTarget(
 	ctx context.Context,
 	w http.ResponseWriter,
 	request api.DeploymentRequest,
-	target *types.DeploymentTargetWithCreatedBy,
+	target *types.DeploymentTargetFull,
 ) error {
 	auth := auth.Authentication.Require(ctx)
 
@@ -464,12 +465,12 @@ func getDeploymentStatus(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if deploymentStatus, err := db.GetDeploymentStatus(ctx, deployment.ID, limit, before, after); err != nil {
+	if deploymentStatus, err := db.GetDeploymentRevisionStatus(ctx, deployment.ID, limit, before, after); err != nil {
 		internalctx.GetLogger(ctx).Error("failed to get deploymentstatus", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	} else {
-		RespondJSON(w, deploymentStatus)
+		RespondJSON(w, mapping.List(deploymentStatus, mapping.DeploymentRevisionStatusToAPI))
 	}
 }
 
@@ -487,7 +488,7 @@ func exportDeploymentStatusHandler() http.HandlerFunc {
 
 		SetFileDownloadHeaders(w, filename)
 
-		err := db.GetDeploymentStatusForExport(
+		err := db.GetDeploymentRevisionStatusForExport(
 			ctx, deployment.ID, limit,
 			func(record types.DeploymentRevisionStatus) error {
 				_, err := fmt.Fprintf(w, "[%s] [%s] %s\n",

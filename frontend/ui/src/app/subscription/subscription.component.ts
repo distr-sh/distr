@@ -4,7 +4,7 @@ import {Component, computed, DestroyRef, inject, OnInit, signal, TemplateRef, vi
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {NonNullableFormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCreditCard, faShoppingCart} from '@fortawesome/free-solid-svg-icons';
+import {faCheck, faCreditCard, faShoppingCart, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {never} from '../../util/exhaust';
@@ -21,8 +21,10 @@ import {PendingSubscriptionUpdate, SubscriptionUpdateModalComponent} from './sub
   imports: [FaIconComponent, ReactiveFormsModule, CommonModule, OverlayModule, SubscriptionUpdateModalComponent],
 })
 export class SubscriptionComponent implements OnInit {
-  protected readonly faShoppingCart = faShoppingCart;
+  protected readonly faCheck = faCheck;
   protected readonly faCreditCard = faCreditCard;
+  protected readonly faShoppingCart = faShoppingCart;
+  protected readonly faXmark = faXmark;
 
   protected readonly unlimited = UNLIMITED_QTY;
 

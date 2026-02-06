@@ -21,7 +21,7 @@ func (m *Manager) NewCreateDeploymentTargetTool() server.ServerTool {
 			mcp.WithBoolean("metricsEnabled", mcp.DefaultBool(true)),
 		),
 		Handler: func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			var deployment types.DeploymentTargetWithCreatedBy
+			var deployment types.DeploymentTargetFull
 
 			if name := mcp.ParseString(request, "name", ""); name == "" {
 				return mcp.NewToolResultError("name is required"), nil

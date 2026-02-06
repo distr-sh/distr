@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.9.0](https://github.com/distr-sh/distr/compare/2.8.2...2.9.0) (2026-02-05)
+
+
+### Features
+
+* deployment status notifications ([#1717](https://github.com/distr-sh/distr/issues/1717)) ([16444be](https://github.com/distr-sh/distr/commit/16444be8fe2cededf04321c83da45c7d4b8b6d90))
+
+
+### Other
+
+* **deps:** update dependency semver to v7.7.4 ([#1778](https://github.com/distr-sh/distr/issues/1778)) ([f5615fa](https://github.com/distr-sh/distr/commit/f5615fa1d6aa1267a139a26f53dc0b30a622d2ad))
+
+## [2.8.2](https://github.com/distr-sh/distr/compare/2.8.1...2.8.2) (2026-02-05)
+
+
+### Bug Fixes
+
+* prevent template errors for mailsending ([#1774](https://github.com/distr-sh/distr/issues/1774)) ([a10e1a7](https://github.com/distr-sh/distr/commit/a10e1a782f948ba1ce8afca18e75bde24483d26a))
+
 ## [2.8.1](https://github.com/distr-sh/distr/compare/2.8.0...2.8.1) (2026-02-05)
 
 

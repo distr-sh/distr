@@ -1,0 +1,64 @@
+<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
+  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
+    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+          <thead class="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
+            <tr>
+              <th scope="col" class="p-4">Date</th>
+              <th scope="col" class="p-4">Customer</th>
+              <th scope="col" class="p-4">Deployment</th>
+              <th scope="col" class="p-4">Application</th>
+              <th scope="col" class="p-4">Trigger</th>
+              <th scope="col" class="p-4">Notification Errors</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (record of notificationRecords(); track record.id) {
+              <tr class="border-b border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                  {{ record.createdAt | date: 'short' }}
+                </td>
+                <td
+                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
+                  @if (record.customerOrganizationName) {
+                    {{ record.customerOrganizationName }}
+                  } @else {
+                    <span class="text-gray-500">-</span>
+                  }
+                </td>
+                <td
+                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
+                  {{ record.deploymentTargetName }}
+                </td>
+                <td
+                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
+                  {{ record.applicationName }}@{{ record.applicationVersionName }}
+                </td>
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                  @if (record.currentDeploymentRevisionStatus; as s) {
+                    @if (s.type === 'error') {
+                      <span class="text-red-500"> Error: </span>
+                    } @else {
+                      <span class="text-green-500"> Recovered: </span>
+                    }
+                    {{ s.message }}
+                  } @else {
+                    <span class="text-yellow-500 dark:text-yellow-300">Stale</span>
+                  }
+                </td>
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                  @if (record.message; as m) {
+                    <span class="whitespace-pre-wrap">{{ m }}</span>
+                  } @else {
+                    <span class="text-gray-500">-</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>

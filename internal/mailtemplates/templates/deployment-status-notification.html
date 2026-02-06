@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    {{ template "fragments/style.html" }}
+  </head>
+  <body>
+    <div class="message-container">
+      {{ template "fragments/header.html" . }}
+      <main>
+        <p>Hi,</p>
+
+        <p>We observed the following event affecting your deployment:</p>
+
+        <ul>
+          <li>
+            <strong>Event type:</strong>
+            {{ if eq .EventType "error" }}
+            <span class="text-danger">ERROR</span>
+            {{ else if eq .EventType "stale" }}
+            <span class="text-warning">STALE</span>
+            {{ else if eq .EventType "recovered" }}
+            <span class="text-success">RECOVERED</span>
+            {{ else }}
+            <span>{{ .EventType }}</span>
+            {{ end }}
+          </li>
+          {{ with .DeploymentTarget.CustomerOrganization }}
+          <li>
+            <strong>Affected customer:</strong>
+            {{ .Name }}
+          </li>
+          {{ end }}
+          <li>
+            <strong>Affected deployment:</strong>
+            {{ .DeploymentTarget.Name }}
+          </li>
+          <li>
+            <strong>Affected application:</strong>
+            {{ .Deployment.ApplicationName }}@{{ .Deployment.ApplicationVersionName }}
+          </li>
+          {{ if or (eq .EventType "error") (eq .EventType "recovered") }}
+          <li>
+            <strong>Timestamp:</strong>
+            {{ .CurrentStatus.CreatedAt }}
+          </li>
+          <li>
+            <strong>Message:</strong>
+            {{ .CurrentStatus.Message }}
+          </li>
+          {{ else if eq .EventType "stale" }}
+          <li>
+            <strong>Last status update:</strong>
+            {{ .PreviousStatus.CreatedAt }}
+          </li>
+          {{ end }}
+        </ul>
+
+        <p>This is an automated alert.</p>
+
+        <p>{{template "fragments/signature.html" . }}</p>
+      </main>
+      {{template "fragments/footer.html" . }}
+    </div>
+  </body>
+</html>
