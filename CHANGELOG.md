@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.1](https://github.com/distr-sh/distr/compare/2.9.0...2.9.1) (2026-02-06)
+
+
+### Other
+
+* **deps:** update angular-cli monorepo to v21.1.3 ([#1780](https://github.com/distr-sh/distr/issues/1780)) ([a833ed9](https://github.com/distr-sh/distr/commit/a833ed90e73355d00fe0ae979021d992b3b482a0))
+
 ## [2.9.0](https://github.com/distr-sh/distr/compare/2.8.2...2.9.0) (2026-02-05)
 
 
