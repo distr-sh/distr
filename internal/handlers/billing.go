@@ -12,13 +12,13 @@ func BillingRouter(r chiopenapi.Router) {
 	r.Route("/subscription", func(r chiopenapi.Router) {
 		r.Get("/", GetSubscriptionHandler)
 		r.Group(func(r chiopenapi.Router) {
-			r.Use(middleware.RequireAdmin)
+			r.Use(middleware.RequireAdmin, middleware.BlockSuperAdmin)
 			r.Post("/", CreateSubscriptionHandler)
 			r.Put("/", UpdateSubscriptionHandler)
 		})
 	})
 	r.Group(func(r chiopenapi.Router) {
-		r.Use(middleware.RequireAdmin)
+		r.Use(middleware.RequireAdmin, middleware.BlockSuperAdmin)
 		r.Post("/portal", CreateBillingPortalSessionHandler)
 	})
 }

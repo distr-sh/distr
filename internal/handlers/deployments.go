@@ -29,7 +29,7 @@ import (
 func DeploymentsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Deployments"))
 	r.Use(middleware.RequireOrgAndRole)
-	r.With(middleware.RequireReadWriteOrAdmin).
+	r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 		Put("/", putDeployment).
 		With(option.Description("Create or update a deployment")).
 		With(option.Request(api.DeploymentRequest{}))
@@ -73,7 +73,7 @@ func DeploymentsRouter(r chiopenapi.Router) {
 				ResourceRequest
 			}{})).
 			With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
-		r.With(middleware.RequireReadWriteOrAdmin).Group(func(r chiopenapi.Router) {
+		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
 			r.Patch("/", patchDeploymentHandler()).
 				With(option.Description("Partially update a deployment")).
 				With(option.Request(struct {

@@ -92,10 +92,15 @@ export class NavBarComponent implements OnInit {
       return EMPTY;
     })
   );
-  protected readonly availableOrgs = toSignal(this.ctx.getAvailableOrganizations(), {initialValue: []});
+
+  protected readonly allOrgs = toSignal(this.ctx.getAvailableOrganizations(), {initialValue: []});
+  protected readonly availableOrgs = computed(() => {
+    const current = this.currentOrg();
+    return this.allOrgs().filter((org) => org.id !== current?.id);
+  });
   protected readonly currentOrg = toSignal(this.ctx.getOrganization());
   protected readonly isVendorSomewhere = computed(() =>
-    [...this.availableOrgs(), this.currentOrg()]
+    this.allOrgs()
       .filter((org) => org !== undefined)
       .some((org) => org.customerOrganizationId === undefined)
   );

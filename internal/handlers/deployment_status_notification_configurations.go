@@ -26,7 +26,7 @@ func DeploymentStatusNotificationConfigurationsRouter(r chiopenapi.Router) {
 		With(option.Description("list all deployment status notification configurations")).
 		With(option.Response(http.StatusOK, []types.DeploymentStatusNotificationConfiguration{}))
 
-	r.Post("/", createDeploymentStatusNotificationConfigurationHandler()).
+	r.With(middleware.BlockSuperAdmin).Post("/", createDeploymentStatusNotificationConfigurationHandler()).
 		With(option.Description("create a new deployment status notification configuration")).
 		With(option.Request(types.DeploymentStatusNotificationConfiguration{})).
 		With(option.Response(http.StatusOK, types.DeploymentStatusNotificationConfiguration{}))
@@ -36,7 +36,7 @@ func DeploymentStatusNotificationConfigurationsRouter(r chiopenapi.Router) {
 			ID string `path:"id"`
 		}
 
-		r.Put("/", updateDeploymentStatusNotificationHandler()).
+		r.With(middleware.BlockSuperAdmin).Put("/", updateDeploymentStatusNotificationHandler()).
 			With(option.Description("update an existing deployment status notification configuration")).
 			With(option.Request(struct {
 				IDRequest
@@ -44,7 +44,7 @@ func DeploymentStatusNotificationConfigurationsRouter(r chiopenapi.Router) {
 			}{})).
 			With(option.Response(http.StatusOK, types.DeploymentStatusNotificationConfiguration{}))
 
-		r.Delete("/", deleteDeploymentStatusNotificationHandler()).
+		r.With(middleware.BlockSuperAdmin).Delete("/", deleteDeploymentStatusNotificationHandler()).
 			With(option.Description("delete an existing deployment status notification configuration")).
 			With(option.Request(IDRequest{}))
 	})

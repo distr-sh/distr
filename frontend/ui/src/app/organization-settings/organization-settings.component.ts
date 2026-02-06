@@ -28,7 +28,7 @@ export class OrganizationSettingsComponent implements OnInit {
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly ff = inject(FeatureFlagService);
   private readonly overlayService = inject(OverlayService);
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
 
   protected readonly isPrePostScriptEnabled = toSignal(this.ff.isPrePostScriptEnabled$);
 

@@ -10,6 +10,7 @@ import {lastValueFrom, map, Observable} from 'rxjs';
 import {base64ToBlob} from '../../util/blob';
 import {getFormDisplayedError} from '../../util/errors';
 import {AutotrimDirective} from '../directives/autotrim.directive';
+import {AuthService} from '../services/auth.service';
 import {OrganizationBrandingService} from '../services/organization-branding.service';
 import {ToastService} from '../services/toast.service';
 
@@ -21,9 +22,11 @@ import {ToastService} from '../services/toast.service';
 export class OrganizationBrandingComponent implements OnInit {
   protected readonly faFloppyDisk = faFloppyDisk;
 
+  protected readonly auth = inject(AuthService);
   private readonly organizationBrandingService = inject(OrganizationBrandingService);
+  private readonly toast = inject(ToastService);
+
   private organizationBranding?: OrganizationBranding;
-  private toast = inject(ToastService);
 
   protected markdownPreviewMode = false;
 

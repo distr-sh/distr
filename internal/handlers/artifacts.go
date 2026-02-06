@@ -35,28 +35,24 @@ func ArtifactsRouter(r chiopenapi.Router) {
 			With(option.Description("Get an artifact by ID")).
 			With(option.Request(ArtifactRequest{})).
 			With(option.Response(http.StatusOK, []api.ArtifactResponse{}))
-		r.With(middleware.RequireVendor).Group(func(r chiopenapi.Router) {
-			r.Patch("/image", patchImageArtifactHandler).
-				With(option.Description("Update artifact image")).
-				With(option.Request(struct {
-					ArtifactRequest
-					api.PatchImageRequest
-				}{})).
-				With(option.Response(http.StatusOK, []api.ArtifactResponse{}))
-			r.With(middleware.RequireReadWriteOrAdmin).
-				Delete("/", deleteArtifactHandler).
-				With(option.Description("Delete an artifact")).
-				With(option.Request(ArtifactRequest{}))
-			r.Route("/tags/{tagName}", func(r chiopenapi.Router) {
-				r.With(middleware.RequireReadWriteOrAdmin).
-					Delete("/", deleteArtifactTagHandler).
-					With(option.Description("Delete an artifact tag")).
+		r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
+			Group(func(r chiopenapi.Router) {
+				r.Patch("/image", patchImageArtifactHandler).
+					With(option.Description("Update artifact image")).
 					With(option.Request(struct {
 						ArtifactRequest
-						TagName string `path:"tagName"`
+						api.PatchImageRequest
+					}{})).
+					With(option.Response(http.StatusOK, []api.ArtifactResponse{}))
+				r.Delete("/", deleteArtifactHandler).
+					With(option.Description("Delete an artifact")).
+					With(option.Request(ArtifactRequest{}))
+				r.Delete("/tags/{tagName}", deleteArtifactTagHandler).
+					With(option.Description("Delete an artifact tag")).
+					With(option.Request(struct {
+						ArtifactRequestTagName string `path:"tagName"`
 					}{}))
 			})
-		})
 	})
 }
 

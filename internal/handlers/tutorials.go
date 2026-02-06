@@ -28,7 +28,7 @@ func TutorialsRouter(r chiopenapi.Router) {
 	r.Get("/", getTutorialProgresses)
 	r.Route("/{tutorial}", func(r chiopenapi.Router) {
 		r.Get("/", getTutorialProgress)
-		r.Put("/", saveTutorialProgress)
+		r.With(middleware.BlockSuperAdmin).Put("/", saveTutorialProgress)
 	})
 }
 

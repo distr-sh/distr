@@ -24,7 +24,7 @@ func ArtifactLicensesRouter(r chiopenapi.Router) {
 	r.Get("/", getArtifactLicenses).
 		With(option.Description("List all artifact licenses")).
 		With(option.Response(http.StatusOK, []types.ArtifactLicense{}))
-	r.With(middleware.RequireReadWriteOrAdmin).Group(func(r chiopenapi.Router) {
+	r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
 		r.Post("/", createArtifactLicense).
 			With(option.Description("Create a new artifact license")).
 			With(option.Request(types.ArtifactLicense{})).

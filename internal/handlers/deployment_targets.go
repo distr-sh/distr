@@ -32,7 +32,7 @@ func DeploymentTargetsRouter(r chiopenapi.Router) {
 	r.Get("/", getDeploymentTargets).
 		With(option.Description("List all deployment targets")).
 		With(option.Response(http.StatusOK, []types.DeploymentTargetFull{}))
-	r.With(middleware.RequireReadWriteOrAdmin).
+	r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 		Post("/", createDeploymentTarget).
 		With(option.Description("Create a new deployment target")).
 		With(option.Response(http.StatusOK, []types.DeploymentTargetFull{}))
@@ -51,7 +51,7 @@ func DeploymentTargetsRouter(r chiopenapi.Router) {
 			With(option.Description("Get a deployment target")).
 			With(option.Request(DeploymentTargetIDRequest{})).
 			With(option.Response(http.StatusOK, []types.DeploymentTargetFull{}))
-		r.With(middleware.RequireReadWriteOrAdmin).Group(func(r chiopenapi.Router) {
+		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
 			r.Put("/", updateDeploymentTarget).
 				With(option.Description("Update a deployment target")).
 				With(option.Request(struct {
@@ -72,7 +72,7 @@ func DeploymentTargetsRouter(r chiopenapi.Router) {
 				With(option.Description("Get notes for this deployment target")).
 				With(option.Request(DeploymentTargetIDRequest{})).
 				With(option.Response(http.StatusOK, api.DeploymentTargetNotes{}))
-			r.With(middleware.RequireReadWriteOrAdmin).
+			r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 				Put("/", putDeploymentTargetNotesHandler()).
 				With(option.Description("Set notes for this deployment target")).
 				With(option.Request(struct {

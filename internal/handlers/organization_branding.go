@@ -26,16 +26,17 @@ func OrganizationBrandingRouter(r chiopenapi.Router) {
 	r.Get("/", getOrganizationBranding).
 		With(option.Description("Get organization branding")).
 		With(option.Response(http.StatusOK, types.OrganizationBranding{}))
-	r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin).Group(func(r chiopenapi.Router) {
-		r.Post("/", createOrganizationBranding).
-			With(option.Description("Create organization branding")).
-			With(option.Request(nil, option.ContentType("multipart/formdata"))).
-			With(option.Response(http.StatusOK, types.OrganizationBranding{}))
-		r.Put("/", updateOrganizationBranding).
-			With(option.Description("Update organization branding")).
-			With(option.Request(nil, option.ContentType("multipart/formdata"))).
-			With(option.Response(http.StatusOK, types.OrganizationBranding{}))
-	})
+	r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
+		Group(func(r chiopenapi.Router) {
+			r.Post("/", createOrganizationBranding).
+				With(option.Description("Create organization branding")).
+				With(option.Request(nil, option.ContentType("multipart/formdata"))).
+				With(option.Response(http.StatusOK, types.OrganizationBranding{}))
+			r.Put("/", updateOrganizationBranding).
+				With(option.Description("Update organization branding")).
+				With(option.Request(nil, option.ContentType("multipart/formdata"))).
+				With(option.Response(http.StatusOK, types.OrganizationBranding{}))
+		})
 }
 
 func getOrganizationBranding(w http.ResponseWriter, r *http.Request) {
