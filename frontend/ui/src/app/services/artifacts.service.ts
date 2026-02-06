@@ -7,6 +7,7 @@ export interface HasDownloads {
   downloadsTotal?: number;
   downloadedByCount?: number;
   downloadedByUsers?: string[];
+  downloadedByCustomerOrganizations?: string[];
 }
 
 export interface ArtifactUser {

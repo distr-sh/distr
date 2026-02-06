@@ -109,18 +109,27 @@ export class ArtifactVersionsComponent {
   }
 
   protected calcVersionDownloads(version: TaggedArtifactVersion): HasDownloads {
-    let downloadsTotal = version.downloadsTotal ?? 0;
-    let downloadedBySet: {[id: string]: boolean} = {};
-    (version.downloadedByUsers ?? []).forEach((id: string) => (downloadedBySet[id] = true));
-    for (let tag of version.tags) {
-      (tag.downloads.downloadedByUsers ?? []).forEach((id: string) => (downloadedBySet[id] = true));
-      downloadsTotal = downloadsTotal + (tag.downloads.downloadsTotal ?? 0);
-    }
-    const downloadedByUsers = Object.keys(downloadedBySet);
+    const downloadsTotal = version.tags.reduce(
+      (sum, tag) => sum + (tag.downloads.downloadsTotal ?? 0),
+      version.downloadsTotal ?? 0
+    );
+    const downloadedByUsers = Array.from(
+      new Set<string>([
+        ...(version.downloadedByUsers ?? []),
+        ...version.tags.flatMap((t) => t.downloads.downloadedByUsers ?? []),
+      ])
+    );
+    const downloadedByCustomerOrganizations = Array.from(
+      new Set<string>([
+        ...(version.downloadedByCustomerOrganizations ?? []),
+        ...version.tags.flatMap((t) => t.downloads.downloadedByCustomerOrganizations ?? []),
+      ])
+    );
     return {
       downloadsTotal,
       downloadedByUsers,
       downloadedByCount: downloadedByUsers.length,
+      downloadedByCustomerOrganizations,
     };
   }
 
