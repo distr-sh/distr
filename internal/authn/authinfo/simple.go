@@ -12,6 +12,7 @@ type SimpleAuthInfo struct {
 	customerOrganizationID *uuid.UUID
 	emailVerified          bool
 	userRole               *types.UserRole
+	isSuperAdmin           bool
 	rawToken               any
 }
 
@@ -32,6 +33,9 @@ func (i *SimpleAuthInfo) CurrentUserEmail() string { return i.userEmail }
 
 // CurrentUserRole implements AuthInfo.
 func (i *SimpleAuthInfo) CurrentUserRole() *types.UserRole { return i.userRole }
+
+// IsSuperAdmin implements AuthInfo.
+func (i *SimpleAuthInfo) IsSuperAdmin() bool { return i.isSuperAdmin }
 
 // Token implements AuthInfo.
 func (i *SimpleAuthInfo) Token() any { return i.rawToken }

@@ -30,12 +30,12 @@ func SettingsRouter(r chiopenapi.Router) {
 	r.Route("/user", func(r chiopenapi.Router) {
 		r.WithOptions(option.GroupTags("Settings"))
 
-		r.Post("/", userSettingsUpdateHandler).
+		r.With(middleware.BlockSuperAdmin).Post("/", userSettingsUpdateHandler).
 			With(option.Description("Update user settings")).
 			With(option.Request(api.UpdateUserAccountRequest{})).
 			With(option.Response(http.StatusOK, types.UserAccount{}))
 
-		r.Post("/email", userSettingsUpdateEmailHandler()).
+		r.With(middleware.BlockSuperAdmin).Post("/email", userSettingsUpdateEmailHandler()).
 			With(option.Description("Update current user email address")).
 			With(option.Request(api.UpdateUserAccountEmailRequest{})).
 			With(option.Response(http.StatusAccepted, nil))
@@ -44,30 +44,30 @@ func SettingsRouter(r chiopenapi.Router) {
 	r.Route("/verify", func(r chiopenapi.Router) {
 		r.WithOptions(option.GroupHidden(true))
 
-		r.With(requestVerificationMailRateLimitPerUser).
+		r.With(requestVerificationMailRateLimitPerUser, middleware.BlockSuperAdmin).
 			Post("/request", userSettingsVerifyRequestHandler)
 
-		r.Post("/confirm", userSettingsVerifyConfirmHandler)
+		r.With(middleware.BlockSuperAdmin).Post("/confirm", userSettingsVerifyConfirmHandler)
 	})
 
 	r.Route("/mfa", func(r chiopenapi.Router) {
 		r.WithOptions(option.GroupTags("Security"))
 
-		r.Post("/setup", mfaSetupHandler).
+		r.With(middleware.BlockSuperAdmin).Post("/setup", mfaSetupHandler).
 			With(option.Description("Setup a new TOTP secret for the current user. MFA must still be enabled afterwards")).
 			With(option.Response(http.StatusOK, api.SetupMFAResponse{}))
 
-		r.Post("/enable", mfaEnableHandler).
+		r.With(middleware.BlockSuperAdmin).Post("/enable", mfaEnableHandler).
 			With(option.Description("Enable MFA for the current user and receive recovery codes")).
 			With(option.Request(api.EnableMFARequest{})).
 			With(option.Response(http.StatusOK, api.EnableMFAResponse{}))
 
-		r.Post("/disable", mfaDisableHandler).
+		r.With(middleware.BlockSuperAdmin).Post("/disable", mfaDisableHandler).
 			With(option.Description(
 				"Disable MFA for the current user. This will also remove the TOTP secret and all recovery codes")).
 			With(option.Request(api.DisableMFARequest{}))
 
-		r.Post("/recovery-codes/regenerate", mfaRegenerateRecoveryCodesHandler).
+		r.With(middleware.BlockSuperAdmin).Post("/recovery-codes/regenerate", mfaRegenerateRecoveryCodesHandler).
 			With(option.Description("Regenerate all recovery codes. This invalidates all existing codes")).
 			With(option.Request(api.RegenerateMFARecoveryCodesRequest{})).
 			With(option.Response(http.StatusOK, api.RegenerateMFARecoveryCodesResponse{}))
@@ -86,7 +86,7 @@ func SettingsRouter(r chiopenapi.Router) {
 			With(option.Description("List all access tokens")).
 			With(option.Response(http.StatusOK, []api.AccessToken{}))
 
-		r.Post("/", createAccessTokenHandler()).
+		r.With(middleware.BlockSuperAdmin).Post("/", createAccessTokenHandler()).
 			With(option.Description("Create a new access token")).
 			With(option.Request(api.CreateAccessTokenRequest{})).
 			With(option.Response(http.StatusCreated, api.AccessTokenWithKey{}))
@@ -96,7 +96,7 @@ func SettingsRouter(r chiopenapi.Router) {
 				AccessTokenID uuid.UUID `path:"accessTokenId"`
 			}
 
-			r.Delete("/", deleteAccessTokenHandler()).
+			r.With(middleware.BlockSuperAdmin).Delete("/", deleteAccessTokenHandler()).
 				With(option.Description("Delete an access token")).
 				With(option.Request(AccessTokenIDRequest{}))
 		})

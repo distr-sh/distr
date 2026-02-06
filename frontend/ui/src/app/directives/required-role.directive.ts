@@ -37,7 +37,7 @@ export class RequireRoleDirective extends EmbeddedViewToggler {
 
   constructor() {
     super();
-    effect(() => this.toggleEmbeddedView(this.auth.hasAnyRole(...[this.role()].flat())));
+    effect(() => this.toggleEmbeddedView(this.auth.isSuperAdmin() || this.auth.hasAnyRole(...[this.role()].flat())));
   }
 }
 

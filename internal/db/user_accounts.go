@@ -28,7 +28,8 @@ const (
 		u.last_used_organization_id,
 		u.mfa_secret,
 		u.mfa_enabled,
-		u.mfa_enabled_at`
+		u.mfa_enabled_at,
+		u.is_super_admin`
 	userAccountWithRoleOutputExpr = userAccountOutputExpr +
 		", j.user_role, j.created_at, j.customer_organization_id "
 	userAccountWithRoleOutputExprWithAlias = userAccountWithRoleOutputExpr + " as joined_org_at "

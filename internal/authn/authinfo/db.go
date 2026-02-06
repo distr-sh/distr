@@ -27,32 +27,66 @@ func (a DbAuthInfo) CurrentOrg() *types.Organization {
 
 func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganization] {
 	fn := func(ctx context.Context, a AuthInfo) (AuthInfoWithUserAndOrganization, error) {
-		if a.CurrentOrgID() != nil && a.CurrentUserRole() != nil {
-			if u, o, err := db.GetUserAccountAndOrg(
-				ctx,
-				a.CurrentUserID(),
-				*a.CurrentOrgID(),
-			); errors.Is(err, apierrors.ErrNotFound) {
-				return nil, authn.ErrBadAuthentication
-			} else if err != nil {
-				return nil, err
-			} else if u.UserRole != *a.CurrentUserRole() {
-				return nil, authn.ErrBadAuthentication
-			} else {
+		if a.CurrentOrgID() != nil {
+			// Super admins: skip membership check, just verify user and org exist
+			if a.IsSuperAdmin() {
+				user, err := db.GetUserAccountByID(ctx, a.CurrentUserID())
+				if errors.Is(err, apierrors.ErrNotFound) {
+					return nil, authn.ErrBadAuthentication
+				} else if err != nil {
+					return nil, err
+				}
+				org, err := db.GetOrganizationByID(ctx, *a.CurrentOrgID())
+				if errors.Is(err, apierrors.ErrNotFound) {
+					return nil, authn.ErrBadAuthentication
+				} else if err != nil {
+					return nil, err
+				}
 				return &DbAuthInfo{
 					AuthInfo: &SimpleAuthInfo{
 						userID:                 a.CurrentUserID(),
 						userEmail:              a.CurrentUserEmail(),
 						organizationID:         a.CurrentOrgID(),
-						customerOrganizationID: u.CustomerOrganizationID,
+						customerOrganizationID: nil,
 						emailVerified:          a.CurrentUserEmailVerified(),
-						userRole:               a.CurrentUserRole(),
+						userRole:               nil, // Super admins don't have a role
+						isSuperAdmin:           true,
 						rawToken:               a.Token(),
 					},
-					user: util.PtrTo(u.AsUserAccount()),
-					org:  o,
+					user: user,
+					org:  org,
 				}, nil
 			}
+			// Regular users: require org membership and validate role
+			if a.CurrentUserRole() != nil {
+				if u, o, err := db.GetUserAccountAndOrg(
+					ctx,
+					a.CurrentUserID(),
+					*a.CurrentOrgID(),
+				); errors.Is(err, apierrors.ErrNotFound) {
+					return nil, authn.ErrBadAuthentication
+				} else if err != nil {
+					return nil, err
+				} else if u.UserRole != *a.CurrentUserRole() {
+					return nil, authn.ErrBadAuthentication
+				} else {
+					return &DbAuthInfo{
+						AuthInfo: &SimpleAuthInfo{
+							userID:                 a.CurrentUserID(),
+							userEmail:              a.CurrentUserEmail(),
+							organizationID:         a.CurrentOrgID(),
+							customerOrganizationID: u.CustomerOrganizationID,
+							emailVerified:          a.CurrentUserEmailVerified(),
+							userRole:               a.CurrentUserRole(),
+							isSuperAdmin:           false,
+							rawToken:               a.Token(),
+						},
+						user: util.PtrTo(u.AsUserAccount()),
+						org:  o,
+					}, nil
+				}
+			}
+			return nil, authn.ErrBadAuthentication
 		} else {
 			// some special tokens like password reset don't have an organization ID
 			if u, err := db.GetUserAccountByID(ctx, a.CurrentUserID()); errors.Is(err, apierrors.ErrNotFound) {

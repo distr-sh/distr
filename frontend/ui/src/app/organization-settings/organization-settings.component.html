@@ -168,36 +168,40 @@
             </div>
           </div>
 
-          <div class="flex justify-center w-full space-x-4 mt-8 sm:mt-0">
-            <button
-              type="submit"
-              [disabled]="formLoading() || form.invalid"
-              class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60 disabled:cursor-not-allowed">
-              <fa-icon [icon]="faFloppyDisk" size="lg" class="h-4 w-4 mr-2 -ml-0.5 mb-1"></fa-icon>
-              Save
-            </button>
-          </div>
+          @if (!auth.isSuperAdmin()) {
+            <div class="flex justify-center w-full space-x-4 mt-8 sm:mt-0">
+              <button
+                type="submit"
+                [disabled]="formLoading() || form.invalid"
+                class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60 disabled:cursor-not-allowed">
+                <fa-icon [icon]="faFloppyDisk" size="lg" class="h-4 w-4 mr-2 -ml-0.5 mb-1"></fa-icon>
+                Save
+              </button>
+            </div>
+          }
         </div>
       </form>
 
-      <h2 class="text-xl font-bold dark:text-white mt-8 mb-2">Danger Zone</h2>
-      <div
-        class="flex flex-col rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
-        <div class="p-4 flex items-center justify-between dark:text-white">
-          <div>
-            <div>Delete this organization</div>
-            <div class="text-xs font-normal text-gray-500 dark:text-gray-400">
-              Permanently delete this organization and all associated data.
+      @if (!auth.isSuperAdmin()) {
+        <h2 class="text-xl font-bold dark:text-white mt-8 mb-2">Danger Zone</h2>
+        <div
+          class="flex flex-col rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
+          <div class="p-4 flex items-center justify-between dark:text-white">
+            <div>
+              <div>Delete this organization</div>
+              <div class="text-xs font-normal text-gray-500 dark:text-gray-400">
+                Permanently delete this organization and all associated data.
+              </div>
             </div>
+            <button
+              type="button"
+              class="text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900"
+              (click)="deleteOrganization()">
+              Delete
+            </button>
           </div>
-          <button
-            type="button"
-            class="text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900"
-            (click)="deleteOrganization()">
-            Delete
-          </button>
         </div>
-      </div>
+      }
     </div>
   </div>
 </section>

@@ -26,6 +26,7 @@ const (
 	OrgIdKey             = "org"
 	CustomerOrgIDKey     = "c_org"
 	PasswordResetKey     = "password_reset"
+	SuperAdminKey        = "is_super_admin"
 
 	audienceUserValue  = "user"
 	audienceAgentValue = "agent"
@@ -75,9 +76,14 @@ func generateUserToken(
 	if url := mapping.CreateImageURL(user.ImageID); url != nil {
 		claims[UserImageURLKey] = *url
 	}
+	if user.IsSuperAdmin {
+		claims[SuperAdminKey] = true
+	}
 	if org != nil {
-		claims[UserRoleKey] = org.UserRole
 		claims[OrgIdKey] = org.ID.String()
+		if !user.IsSuperAdmin {
+			claims[UserRoleKey] = org.UserRole
+		}
 		if org.CustomerOrganizationID != nil {
 			claims[CustomerOrgIDKey] = org.CustomerOrganizationID.String()
 		}

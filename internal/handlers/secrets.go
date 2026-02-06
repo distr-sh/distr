@@ -29,7 +29,7 @@ func SecretsRouter(r chiopenapi.Router) {
 		With(option.Response(http.StatusOK, []api.SecretWithoutValue{}))
 
 	r.Group(func(r chiopenapi.Router) {
-		r.Use(middleware.RequireReadWriteOrAdmin)
+		r.Use(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin)
 
 		r.Post("/", createSecretHandler()).
 			With(option.Description("Create a secret")).

@@ -38,7 +38,8 @@ import {UserSettingsComponent} from './user-settings/user-settings.component';
 
 function requiredRoleGuard(...userRole: UserRole[]): CanActivateFn {
   return () => {
-    if (inject(AuthService).hasAnyRole(...userRole)) {
+    const auth = inject(AuthService);
+    if (auth.isSuperAdmin() || auth.hasAnyRole(...userRole)) {
       return true;
     }
     return inject(Router).createUrlTree(['/']);

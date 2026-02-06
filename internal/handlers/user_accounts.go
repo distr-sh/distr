@@ -33,12 +33,12 @@ func UserAccountsRouter(r chiopenapi.Router) {
 		r.Get("/", getUserAccountsHandler).
 			With(option.Description("List all user accounts")).
 			With(option.Response(http.StatusOK, []api.UserAccountResponse{}))
-		r.With(middleware.RequireReadWriteOrAdmin).
+		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 			Post("/", createUserAccountHandler).
 			With(option.Description("Create a new user account")).
 			With(option.Request(api.CreateUserAccountRequest{})).
 			With(option.Response(http.StatusOK, api.CreateUserAccountResponse{}))
-		r.With(middleware.RequireReadWriteOrAdmin).Route("/{userId}", func(r chiopenapi.Router) {
+		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Route("/{userId}", func(r chiopenapi.Router) {
 			type UserAccountRequest struct {
 				UserId string `json:"-" path:"userId"`
 			}

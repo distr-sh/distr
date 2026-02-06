@@ -34,7 +34,7 @@ func OrganizationRouter(r chiopenapi.Router) {
 		With(option.Description("Get current organization")).
 		With(option.Response(http.StatusOK, api.OrganizationResponse{}))
 
-	r.With(middleware.RequireVendor).Group(func(r chiopenapi.Router) {
+	r.With(middleware.RequireVendor, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
 		r.Post("/", createOrganization).
 			With(option.Description("Create a new organization")).
 			With(option.Request(api.CreateUpdateOrganizationRequest{})).
@@ -91,6 +91,11 @@ func createOrganization(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 	log := internalctx.GetLogger(ctx)
+
+	if auth.IsSuperAdmin() {
+		http.Error(w, "super admins cannot create organizations", http.StatusForbidden)
+		return
+	}
 
 	body, err := JsonBody[api.CreateUpdateOrganizationRequest](w, r)
 	if err != nil {

@@ -12,6 +12,7 @@ type AuthInfo interface {
 	CurrentOrgID() *uuid.UUID
 	CurrentCustomerOrgID() *uuid.UUID
 	CurrentUserEmailVerified() bool
+	IsSuperAdmin() bool
 	Token() any
 }
 

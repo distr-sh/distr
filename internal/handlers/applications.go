@@ -33,7 +33,7 @@ func ApplicationsRouter(r chiopenapi.Router) {
 		With(option.Description("List all applications")).
 		With(option.Response(http.StatusOK, []api.ApplicationResponse{}))
 
-	r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin).
+	r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 		Post("/", createApplication).
 		With(option.Description("Create a new application")).
 		With(option.Response(http.StatusOK, api.ApplicationResponse{}))
@@ -48,32 +48,33 @@ func ApplicationsRouter(r chiopenapi.Router) {
 				With(option.Description("Get an application by ID")).
 				With(option.Request(ApplicationRequest{})).
 				With(option.Response(http.StatusOK, api.ApplicationResponse{}))
-			r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin).Group(func(r chiopenapi.Router) {
-				r.Delete("/", deleteApplication).
-					With(option.Description("Delete an application")).
-					With(option.Request(ApplicationRequest{}))
-				r.Put("/", updateApplication).
-					With(option.Description("Update an application")).
-					With((option.Request(struct {
-						ApplicationRequest
-						types.Application
-					}{}))).
-					With(option.Response(http.StatusOK, api.ApplicationResponse{}))
-				r.Patch("/", patchApplicationHandler()).
-					With(option.Description("Partially update an application")).
-					With(option.Request(struct {
-						ApplicationRequest
-						api.PatchApplicationRequest
-					}{})).
-					With(option.Response(http.StatusOK, api.ApplicationResponse{}))
-				r.Patch("/image", patchImageApplication).
-					With(option.Description("Update application image")).
-					With(option.Request(struct {
-						ApplicationRequest
-						api.PatchImageRequest
-					}{})).
-					With(option.Response(http.StatusOK, api.ApplicationResponse{}))
-			})
+			r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
+				Group(func(r chiopenapi.Router) {
+					r.Delete("/", deleteApplication).
+						With(option.Description("Delete an application")).
+						With(option.Request(ApplicationRequest{}))
+					r.Put("/", updateApplication).
+						With(option.Description("Update an application")).
+						With((option.Request(struct {
+							ApplicationRequest
+							types.Application
+						}{}))).
+						With(option.Response(http.StatusOK, api.ApplicationResponse{}))
+					r.Patch("/", patchApplicationHandler()).
+						With(option.Description("Partially update an application")).
+						With(option.Request(struct {
+							ApplicationRequest
+							api.PatchApplicationRequest
+						}{})).
+						With(option.Response(http.StatusOK, api.ApplicationResponse{}))
+					r.Patch("/image", patchImageApplication).
+						With(option.Description("Update application image")).
+						With(option.Request(struct {
+							ApplicationRequest
+							api.PatchImageRequest
+						}{})).
+						With(option.Response(http.StatusOK, api.ApplicationResponse{}))
+				})
 		})
 
 		r.Route("/versions", func(r chiopenapi.Router) {
@@ -84,6 +85,7 @@ func ApplicationsRouter(r chiopenapi.Router) {
 				Group(func(r chiopenapi.Router) {
 					r.With(middleware.RequireVendor).
 						With(middleware.RequireAnyUserRole(types.UserRoleReadWrite, types.UserRoleAdmin)).
+						With(middleware.BlockSuperAdmin).
 						Post("/", createApplicationVersion).
 						With(option.Description("Create a new application version")).
 						With(option.Request(struct {
@@ -102,7 +104,7 @@ func ApplicationsRouter(r chiopenapi.Router) {
 					With(option.Description("Get an application version")).
 					With(option.Request(ApplicationVersionRequest{})).
 					With(option.Response(http.StatusOK, types.ApplicationVersion{}))
-				r.With(middleware.RequireVendor, applicationMiddleware).
+				r.With(middleware.RequireVendor, middleware.BlockSuperAdmin, applicationMiddleware).
 					Put("/", updateApplicationVersion).
 					With(option.Description("Update an application version")).
 					With(option.Request(struct {

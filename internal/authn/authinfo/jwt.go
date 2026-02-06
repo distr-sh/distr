@@ -40,6 +40,9 @@ func FromUserJWT(token jwt.Token) (*SimpleAuthInfo, error) {
 	if verified, ok := token.Get(authjwt.UserEmailVerifiedKey); ok {
 		result.emailVerified = verified.(bool)
 	}
+	if isSuperAdmin, ok := token.Get(authjwt.SuperAdminKey); ok {
+		result.isSuperAdmin = isSuperAdmin.(bool)
+	}
 	return &result, nil
 }
 

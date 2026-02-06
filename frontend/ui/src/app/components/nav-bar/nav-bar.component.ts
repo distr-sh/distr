@@ -1,8 +1,8 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe, TitleCasePipe} from '@angular/common';
 import {HttpErrorResponse} from '@angular/common/http';
-import {Component, inject, input, OnInit, TemplateRef, ViewChild} from '@angular/core';
-import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
+import {Component, computed, inject, input, OnInit, TemplateRef, ViewChild} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -22,7 +22,7 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import {catchError, combineLatestWith, EMPTY, lastValueFrom, map, Observable, of} from 'rxjs';
+import {catchError, EMPTY, lastValueFrom, map, of} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {dropdownAnimation} from '../../animations/dropdown';
@@ -30,6 +30,7 @@ import {modalFlyInOut} from '../../animations/modal';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {RequireCustomerDirective, RequireVendorDirective} from '../../directives/required-role.directive';
 import {AuthService} from '../../services/auth.service';
+import {ContextService} from '../../services/context.service';
 import {OrganizationBrandingService} from '../../services/organization-branding.service';
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
@@ -67,7 +68,7 @@ type SwitchOptions = {
   animations: [dropdownAnimation, modalFlyInOut],
 })
 export class NavBarComponent implements OnInit {
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
   private readonly overlay = inject(OverlayService);
   public readonly sidebar = inject(SidebarService);
   private readonly toast = inject(ToastService);
@@ -75,7 +76,7 @@ export class NavBarComponent implements OnInit {
   private readonly usersService = inject(UsersService);
   private readonly organizationService = inject(OrganizationService);
   private readonly organizationBranding = inject(OrganizationBrandingService);
-  protected readonly organization$ = this.organizationService.get();
+  private readonly ctx = inject(ContextService);
   protected readonly user$ = this.usersService.get().pipe(
     catchError(() => {
       const claims = this.auth.getClaims();
@@ -91,24 +92,26 @@ export class NavBarComponent implements OnInit {
       return EMPTY;
     })
   );
-  protected readonly switchOptions$: Observable<SwitchOptions> = this.organizationService.getAll().pipe(
-    takeUntilDestroyed(),
-    combineLatestWith(this.organization$),
-    map(([orgs, currentOrg]) => {
-      return {
-        currentOrg,
-        availableOrgs: orgs.filter((o) => o.id !== currentOrg.id),
-        isVendorSomewhere: orgs.some((o) => o.customerOrganizationId === undefined),
-      };
-    })
-  );
 
-  protected readonly isTrial = toSignal(this.organization$.pipe(map((org) => org.subscriptionType === 'trial')));
-  protected readonly isSubscriptionExpired = toSignal(
-    this.organization$.pipe(
-      map((org) => org.subscriptionType !== 'community' && dayjs(org.subscriptionEndsAt).isBefore())
-    )
+  protected readonly allOrgs = toSignal(this.ctx.getAvailableOrganizations(), {initialValue: []});
+  protected readonly availableOrgs = computed(() => {
+    const current = this.currentOrg();
+    return this.allOrgs().filter((org) => org.id !== current?.id);
+  });
+  protected readonly currentOrg = toSignal(this.ctx.getOrganization());
+  protected readonly isVendorSomewhere = computed(() =>
+    this.allOrgs()
+      .filter((org) => org !== undefined)
+      .some((org) => org.customerOrganizationId === undefined)
   );
+  protected readonly isTrial = computed(() => this.currentOrg()?.subscriptionType === 'trial');
+  protected readonly isSubscriptionExpired = computed(() => {
+    const org = this.currentOrg();
+    if (org && org.subscriptionType !== 'community') {
+      return dayjs(org.subscriptionEndsAt).isBefore();
+    }
+    return false;
+  });
 
   userOpened = false;
   organizationsOpened = false;
