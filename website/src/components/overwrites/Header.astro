@@ -4,24 +4,39 @@ import Search from '@astrojs/starlight/components/Search.astro';
 import SiteTitle from './SiteTitle.astro';
 import SocialIcons from './SocialIcons.astro';
 import ThemeSelect from './ThemeSelect.astro';
+import MegaMenu from '~/components/navigation/MegaMenu.astro';
 import {links} from '~/data/navigation';
+import {megaMenuConfigs} from '~/data/megaMenuConfig';
 
 const slug = Astro.locals.starlightRoute.entry.slug;
 ---
 
 <div class="header sl-flex">
-  <div class="full-width sl-flex">
+  <div class="sl-flex left-group">
     <SiteTitle />
+    <div class="search-wrapper">
+      <Search />
+    </div>
   </div>
-  <div class="sl-flex">
-    <Search />
-  </div>
-  <div class="sl-hidden md:sl-flex right-group">
+  <div class="sl-flex nav-centered">
     <nav class="desktop" aria-label="Main navigation">
       {
-        links.map((link) => (
+        links.map((link) => {
+          const megaMenuConfig = link.isMegaMenu && link.megaMenuType
+            ? megaMenuConfigs[link.megaMenuType]
+            : null;
+
+          return (
           <div class="nav-item">
-            {link.children ? (
+            {link.isMegaMenu && megaMenuConfig ? (
+              <MegaMenu
+                title={link.title}
+                items={megaMenuConfig.items}
+                columns={megaMenuConfig.columns}
+                itemWidth={megaMenuConfig.itemWidth}
+                href={link.value}
+              />
+            ) : link.children ? (
               <div class="dropdown">
                 <button
                   class="dropdown-trigger"
@@ -53,9 +68,12 @@ const slug = Astro.locals.starlightRoute.entry.slug;
               <a href={link.value}>{link.title}</a>
             )}
           </div>
-        ))
+          );
+        })
       }
     </nav>
+  </div>
+  <div class="sl-hidden md:sl-flex right-group">
     <div class="sl-flex social-icons">
       <SocialIcons />
     </div>
@@ -71,15 +89,63 @@ const slug = Astro.locals.starlightRoute.entry.slug;
     align-items: center;
     height: 100%;
   }
-  .full-width {
-    width: 100%;
+  .left-group {
+    gap: 1rem;
+    align-items: center;
+    flex: 0 0 auto;
   }
-  .right-group,
+  .nav-centered {
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+  }
+  .right-group {
+    gap: 1rem;
+    align-items: center;
+    flex: 0 0 auto;
+    justify-content: flex-end;
+  }
   .social-icons {
     gap: 1rem;
     align-items: center;
   }
-  .desktop::after,
+
+  /* Responsive widths */
+  @media (min-width: 72rem) and (max-width: 100rem) {
+    /* < 1600px: 400px sides, hide search and social icons */
+    .left-group {
+      min-width: 400px;
+    }
+    .right-group {
+      min-width: 400px;
+    }
+    .search-wrapper {
+      display: none;
+    }
+    .social-icons {
+      display: none !important;
+    }
+  }
+
+  @media (min-width: 100rem) {
+    /* >= 1600px: 550px sides, show everything */
+    .left-group {
+      min-width: 550px;
+    }
+    .right-group {
+      min-width: 550px;
+    }
+  }
+
+  @media (max-width: 72rem) {
+    /* Mobile: no minimum width */
+    .left-group {
+      min-width: auto;
+    }
+    .right-group {
+      min-width: auto;
+    }
+  }
   .release-link::after,
   .social-icons::after {
     content: '';
@@ -111,12 +177,30 @@ const slug = Astro.locals.starlightRoute.entry.slug;
       display: grid;
       grid-template-columns:
         /* 1 (site title): runs up until the main content column’s left edge or the width of the title, whichever is the largest  */
-        minmax(calc(var(--__sidebar-pad, 0rem)), auto)
-        /* 2 (search box): all free space that is available. */
+        auto
+        /* 2 (nav): centered, takes available space */
         1fr
-        /* 3 (right items): use the space that these need. */
+        /* 3 (right items): right side controls - matches left width */
         auto;
       align-content: center;
+    }
+  }
+
+  @media (min-width: 72rem) and (max-width: 100rem) {
+    .header {
+      grid-template-columns:
+        minmax(400px, auto)
+        1fr
+        minmax(400px, auto);
+    }
+  }
+
+  @media (min-width: 100rem) {
+    .header {
+      grid-template-columns:
+        minmax(550px, auto)
+        1fr
+        minmax(550px, auto);
     }
   }
   .desktop a:hover,
@@ -168,7 +252,8 @@ const slug = Astro.locals.starlightRoute.entry.slug;
   .desktop {
     display: none;
     align-items: center;
-    gap: 1rem;
+    justify-content: center;
+    gap: 2rem;
     padding-inline-end: 1rem;
   }
   @media (min-width: 72rem) {
