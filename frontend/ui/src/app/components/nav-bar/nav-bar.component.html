@@ -1,11 +1,10 @@
 <nav class="sticky top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-  @let organization = organization$ | async;
-
+  @let organization = currentOrg();
   @if (isSubscriptionBannerVisible() && organization) {
     <app-nav-bar-subscription-banner
       [organization]="organization"
-      [isTrial]="isTrial() ?? false"
-      [isSubscriptionExpired]="isSubscriptionExpired() ?? false">
+      [isTrial]="isTrial()"
+      [isSubscriptionExpired]="isSubscriptionExpired()">
     </app-nav-bar-subscription-banner>
   }
 
@@ -55,119 +54,113 @@
               <app-color-scheme-switcher></app-color-scheme-switcher>
             </div>
 
-            @if (switchOptions$ | async; as switchOptions) {
-              @if (switchOptions.isVendorSomewhere || switchOptions.availableOrgs.length > 0) {
-                <div class="ms-2 me-4">
-                  <button
-                    type="button"
-                    class="flex items-center text-sm"
-                    aria-expanded="false"
-                    cdkOverlayOrigin
-                    #organizationsDropdownTrigger="cdkOverlayOrigin"
-                    (click)="organizationsOpened = !organizationsOpened">
-                    <span class="sr-only">Show Organizations</span>
-                    <span
-                      class="flex flex-col text-end text-sm font-medium text-gray-900 dark:text-gray-300"
-                      role="none">
-                      {{ switchOptions.currentOrg.name }}
-                      @if (auth.isSuperAdmin()) {
-                        <span class="text-xs font-light text-amber-600 dark:text-amber-400" role="none">
-                          Super Admin (Read-Only)
-                        </span>
-                      } @else if (switchOptions.isVendorSomewhere) {
-                        <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
-                          {{ user.userRole | titlecase }}
-                        </span>
-                      }
-                    </span>
-                    <fa-icon
-                      class="ml-2 text-gray-900 dark:text-gray-300"
-                      [icon]="organizationsOpened ? faChevronUp : faChevronDown"></fa-icon>
-                  </button>
-                </div>
-                <ng-template
-                  cdkConnectedOverlay
-                  [cdkConnectedOverlayHasBackdrop]="true"
-                  (backdropClick)="organizationsOpened = false"
-                  [cdkConnectedOverlayBackdropClass]="'transparent'"
-                  [cdkConnectedOverlayOrigin]="organizationsDropdownTrigger"
-                  [cdkConnectedOverlayOpen]="organizationsOpened">
-                  <div
-                    @dropdown
-                    style="transform-origin: top center"
-                    class="my-2 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600">
-                    @if (switchOptions.availableOrgs.length > 0) {
-                      <ul class="py-1" role="none">
-                        @for (org of switchOptions.availableOrgs; track org.id) {
-                          <li>
-                            <button
-                              (click)="switchContext(org)"
-                              [title]="'Switch to this organization'"
-                              class="flex items-center w-full text-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
-                              role="menuitem">
-                              <fa-icon class="me-4" [icon]="faShuffle"></fa-icon>
-                              <span
-                                class="flex flex-col text-start text-sm font-medium text-gray-900 dark:text-gray-300"
-                                role="none">
-                                {{ org.name }}
-                                <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
-                                  @if (auth.isSuperAdmin()) {
-                                    All Organizations
-                                  } @else {
-                                    @if (switchOptions.isVendorSomewhere) {
-                                      @if (org.customerOrganizationId) {
-                                        Customer
-                                      } @else {
-                                        Vendor
-                                      }
-                                      &bull;
-                                    }
-                                    @switch (org.userRole) {
-                                      @case ('admin') {
-                                        Administrator
-                                      }
-                                      @case ('read_write') {
-                                        User
-                                      }
-                                      @case ('read_only') {
-                                        Viewer
-                                      }
-                                    }
-                                  }
-                                </span>
-                              </span>
-                            </button>
-                          </li>
-                        }
-                      </ul>
-                    } @else {
-                      <ul class="py-1" role="none">
-                        <li>
-                          <div
-                            class="flex items-center text-start px-4 py-2 text-sm text-gray-700 dark:text-gray-300"
-                            role="menuitem">
-                            You are not part of any other organization.
-                          </div>
-                        </li>
-                      </ul>
+            @if (isVendorSomewhere() || availableOrgs().length > 1) {
+              <div class="ms-2 me-4">
+                <button
+                  type="button"
+                  class="flex items-center text-sm"
+                  aria-expanded="false"
+                  cdkOverlayOrigin
+                  #organizationsDropdownTrigger="cdkOverlayOrigin"
+                  (click)="organizationsOpened = !organizationsOpened">
+                  <span class="sr-only">Show Organizations</span>
+                  <span class="flex flex-col text-end text-sm font-medium text-gray-900 dark:text-gray-300" role="none">
+                    {{ currentOrg()?.name }}
+                    @if (auth.isSuperAdmin()) {
+                      <span class="text-xs font-light text-amber-600 dark:text-amber-400" role="none">
+                        Super Admin (Read-Only)
+                      </span>
+                    } @else if (isVendorSomewhere()) {
+                      <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
+                        {{ user.userRole | titlecase }}
+                      </span>
                     }
-                    @if (switchOptions.isVendorSomewhere) {
-                      <ul class="py-1" role="none">
+                  </span>
+                  <fa-icon
+                    class="ml-2 text-gray-900 dark:text-gray-300"
+                    [icon]="organizationsOpened ? faChevronUp : faChevronDown"></fa-icon>
+                </button>
+              </div>
+              <ng-template
+                cdkConnectedOverlay
+                [cdkConnectedOverlayHasBackdrop]="true"
+                (backdropClick)="organizationsOpened = false"
+                [cdkConnectedOverlayBackdropClass]="'transparent'"
+                [cdkConnectedOverlayOrigin]="organizationsDropdownTrigger"
+                [cdkConnectedOverlayOpen]="organizationsOpened">
+                <div
+                  @dropdown
+                  style="transform-origin: top center"
+                  class="my-2 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600">
+                  @if (availableOrgs().length > 0) {
+                    <ul class="py-1" role="none">
+                      @for (org of availableOrgs(); track org.id) {
                         <li>
                           <button
-                            (click)="showCreateOrgModal()"
-                            type="button"
-                            class="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                            (click)="switchContext(org)"
+                            [title]="'Switch to this organization'"
+                            class="flex items-center w-full text-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
                             role="menuitem">
-                            <fa-icon [icon]="faPlus"></fa-icon>
-                            Create Organization
+                            <fa-icon class="me-4" [icon]="faShuffle"></fa-icon>
+                            <span
+                              class="flex flex-col text-start text-sm font-medium text-gray-900 dark:text-gray-300"
+                              role="none">
+                              {{ org.name }}
+                              <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
+                                @if (!auth.isSuperAdmin()) {
+                                  @if (isVendorSomewhere()) {
+                                    @if (org.customerOrganizationId) {
+                                      Customer
+                                    } @else {
+                                      Vendor
+                                    }
+                                    &bull;
+                                  }
+                                  @switch (org.userRole) {
+                                    @case ('admin') {
+                                      Administrator
+                                    }
+                                    @case ('read_write') {
+                                      User
+                                    }
+                                    @case ('read_only') {
+                                      Viewer
+                                    }
+                                  }
+                                }
+                              </span>
+                            </span>
                           </button>
                         </li>
-                      </ul>
-                    }
-                  </div>
-                </ng-template>
-              }
+                      }
+                    </ul>
+                  } @else {
+                    <ul class="py-1" role="none">
+                      <li>
+                        <div
+                          class="flex items-center text-start px-4 py-2 text-sm text-gray-700 dark:text-gray-300"
+                          role="menuitem">
+                          You are not part of any other organization.
+                        </div>
+                      </li>
+                    </ul>
+                  }
+                  @if (!auth.isSuperAdmin() && isVendorSomewhere()) {
+                    <ul class="py-1" role="none">
+                      <li>
+                        <button
+                          (click)="showCreateOrgModal()"
+                          type="button"
+                          class="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                          role="menuitem">
+                          <fa-icon [icon]="faPlus"></fa-icon>
+                          Create Organization
+                        </button>
+                      </li>
+                    </ul>
+                  }
+                </div>
+              </ng-template>
             }
 
             <div class="ml-1">
@@ -215,15 +208,17 @@
                       Edit Your Profile
                     </a>
                   </li>
-                  <li>
-                    <a
-                      (click)="userOpened = false"
-                      routerLink="/settings/access-tokens"
-                      class="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
-                      role="menuitem">
-                      Personal Access Tokens
-                    </a>
-                  </li>
+                  @if (!auth.isSuperAdmin()) {
+                    <li>
+                      <a
+                        (click)="userOpened = false"
+                        routerLink="/settings/access-tokens"
+                        class="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                        role="menuitem">
+                        Personal Access Tokens
+                      </a>
+                    </li>
+                  }
                 </ul>
                 <ul class="py-1" role="none">
                   <li>

@@ -188,7 +188,7 @@ func GetAllOrganizationsForSuperAdmin(ctx context.Context) ([]types.Organization
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `
 		SELECT`+organizationOutputExpr+`,
-			NULL::USER_ROLE as user_role,
+			'' as user_role,
 			NULL::UUID as customer_organization_id,
 			NULL::TEXT as customer_organization_name,
 			o.created_at as joined_org_at

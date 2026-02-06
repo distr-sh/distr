@@ -154,18 +154,30 @@ func authLoginHandler(w http.ResponseWriter, r *http.Request) {
 			return nil
 		}
 
-		var org types.OrganizationWithUserRole
-		orgs, err := db.GetOrganizationsForUser(ctx, user.ID)
+		var orgs []types.OrganizationWithUserRole
+		if user.IsSuperAdmin {
+			orgs, err = db.GetAllOrganizationsForSuperAdmin(ctx)
+		} else {
+			orgs, err = db.GetOrganizationsForUser(ctx, user.ID)
+		}
+
 		if err != nil {
 			return err
-		} else if len(orgs) == 0 {
-			org.Name = user.Email
-			org.UserRole = types.UserRoleAdmin
-			if err := db.CreateOrganization(ctx, &org.Organization); err != nil {
-				return err
-			} else if err := db.CreateUserAccountOrganizationAssignment(
-				ctx, user.ID, org.ID, org.UserRole, org.CustomerOrganizationID); err != nil {
-				return err
+		}
+
+		var org types.OrganizationWithUserRole
+		if len(orgs) == 0 {
+			if !user.IsSuperAdmin {
+				org.Name = user.Email
+				org.UserRole = types.UserRoleAdmin
+				if err := db.CreateOrganization(ctx, &org.Organization); err != nil {
+					return err
+				} else if err := db.CreateUserAccountOrganizationAssignment(
+					ctx, user.ID, org.ID, org.UserRole, org.CustomerOrganizationID); err != nil {
+					return err
+				}
+			} else {
+				return errors.New("super admin has no organizations, this should never happen")
 			}
 		} else {
 			org = orgs[0]

@@ -219,7 +219,7 @@
           </a>
         </li>
 
-        @if (auth.hasRole('admin')) {
+        @if (auth.isSuperAdmin() || auth.hasRole('admin')) {
           <li>
             <a
               class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
@@ -249,7 +249,7 @@
           </a>
         </li>
 
-        @if (auth.hasAnyRole('read_write', 'admin')) {
+        @if (auth.isSuperAdmin() || auth.hasAnyRole('read_write', 'admin')) {
           <li>
             <a
               class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
@@ -265,7 +265,7 @@
           </li>
         }
 
-        @if (auth.hasRole('admin')) {
+        @if (auth.isSuperAdmin() || auth.hasRole('admin')) {
           @if (edition === 'enterprise') {
             <li>
               <a
@@ -395,7 +395,7 @@
         }
       </ul>
 
-      @if (hasNoSubscription() && feedbackAlert) {
+      @if (!auth.isSuperAdmin() && hasNoSubscription() && feedbackAlert) {
         <div id="alert-update" class="p-4 bg-gray-50 rounded-lg dark:bg-gray-700" role="alert" *appRequireVendor>
           <div class="flex justify-between items-center mb-3">
             <span

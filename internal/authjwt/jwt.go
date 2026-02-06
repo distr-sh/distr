@@ -80,8 +80,10 @@ func generateUserToken(
 		claims[SuperAdminKey] = true
 	}
 	if org != nil {
-		claims[UserRoleKey] = org.UserRole
 		claims[OrgIdKey] = org.ID.String()
+		if !user.IsSuperAdmin {
+			claims[UserRoleKey] = org.UserRole
+		}
 		if org.CustomerOrganizationID != nil {
 			claims[CustomerOrgIDKey] = org.CustomerOrganizationID.String()
 		}
