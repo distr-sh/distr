@@ -50,7 +50,8 @@ func ArtifactsRouter(r chiopenapi.Router) {
 				r.Delete("/tags/{tagName}", deleteArtifactTagHandler).
 					With(option.Description("Delete an artifact tag")).
 					With(option.Request(struct {
-						ArtifactRequestTagName string `path:"tagName"`
+						ArtifactRequest
+						TagName string `path:"tagName"`
 					}{}))
 			})
 	})
