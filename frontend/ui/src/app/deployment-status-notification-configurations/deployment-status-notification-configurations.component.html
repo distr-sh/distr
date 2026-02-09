@@ -29,7 +29,7 @@
             <fa-icon [icon]="faHistory" class="text-gray-500 dark:text-gray-400 mr-2"></fa-icon>
             Notification History
           </button>
-          @if (auth.hasRole('read_write') || auth.hasRole('admin')) {
+          @if (auth.hasAnyRole('read_write', 'admin')) {
             <button
               type="button"
               (click)="showDrawer()"
@@ -62,6 +62,7 @@
                       type="checkbox"
                       class="sr-only peer"
                       aria-label="Enabled"
+                      [disabled]="!auth.hasAnyRole('read_write', 'admin')"
                       [checked]="config.enabled"
                       (change)="toggleConfigEnabled(config)" />
                     <div
