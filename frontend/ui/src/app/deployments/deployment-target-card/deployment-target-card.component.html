@@ -19,11 +19,6 @@
               {{ deploymentTarget().name }}
             </h3>
           </div>
-          @if (deploymentTarget().id; as id) {
-            <div>
-              <app-uuid [uuid]="id" [small]="true"></app-uuid>
-            </div>
-          }
           <div class="flex flex-col items-start lg:flex-row lg:items-center lg:gap-2">
             <dl class="inline-flex gap-1 text-sm">
               <dt class="text-gray-500 dark:text-gray-400">Created:</dt>
@@ -117,6 +112,13 @@
             style="transform-origin: top center"
             class="my-2 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600">
             <ul class="py-1" role="none">
+              @if (deploymentTarget().id; as id) {
+                <li>
+                  <div class="px-4 py-2">
+                    <app-uuid [uuid]="id" [small]="true"></app-uuid>
+                  </div>
+                </li>
+              }
               <li>
                 <button
                   type="button"
@@ -224,10 +226,7 @@
       }
     </div>
   </div>
-
-  @if (deploymentTarget().deployments.length > 0) {
-    <hr class="border-gray-200 dark:border-gray-600" />
-  }
+  <hr class="border-gray-200 dark:border-gray-600" />
   @if (deploymentTarget().deployments.length > 0) {
     <div class="overflow-hidden">
       <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400 table-fixed">
@@ -402,9 +401,9 @@
                         [applicationName]="deployment.applicationName"
                         [applicationVersionName]="deployment.applicationVersionName" />
                     </div>
-                    <div class="text-gray-500 dark:text-gray-400 text-xs text-right whitespace-nowrap">
-                      <div class="break-words">Last modified:</div>
-                      {{ deployment.deploymentRevisionCreatedAt | date: 'short' }}
+                    <div class="text-xs text-right whitespace-nowrap">
+                      <div class="text-gray-500 dark:text-gray-400 break-words">Last modified:</div>
+                      <div class="text-gray-900 dark:text-white">{{ deployment.deploymentRevisionCreatedAt | date: 'short' }}</div>
                     </div>
                   </div>
                 </div>
@@ -415,6 +414,7 @@
       </table>
     </div>
   } @else {
+  <hr class="border-gray-200 dark:border-gray-600" />
     <div class="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm p-4">
       No applications deployed.
     </div>
