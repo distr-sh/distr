@@ -25,9 +25,12 @@ const (
 
 	artifactDownloadsOutExpr = `
 		count(DISTINCT avpl.id) AS downloads_total,
-		count(DISTINCT avpl.useraccount_id) AS downloaded_by_count,
+		count(DISTINCT avpl.useraccount_id) FILTER (WHERE oua_dl.customer_organization_id IS NULL)
+			+ count(DISTINCT oua_dl.customer_organization_id)
+			AS downloaded_by_count,
 		coalesce(array_agg(DISTINCT avpl.useraccount_id)
-			FILTER (WHERE avpl.useraccount_id IS NOT NULL), ARRAY[]::UUID[])
+			FILTER (WHERE avpl.useraccount_id IS NOT NULL
+				AND oua_dl.customer_organization_id IS NULL), ARRAY[]::UUID[])
 			AS downloaded_by_users,
 		coalesce(array_agg(DISTINCT oua_dl.customer_organization_id)
 			FILTER (WHERE oua_dl.customer_organization_id IS NOT NULL), ARRAY[]::UUID[])
@@ -220,11 +223,14 @@ func GetVersionsForArtifact(ctx context.Context, artifactID uuid.UUID, customerO
 					SELECT array_agg(row (avt.id, avt.name, (
 						SELECT ROW(
 							count(distinct avplx.id),
-							count(DISTINCT avplx.useraccount_id),
+							count(DISTINCT avplx.useraccount_id)
+								FILTER (WHERE oua_dlx.customer_organization_id IS NULL)
+								+ count(DISTINCT oua_dlx.customer_organization_id),
 							coalesce(array_agg(DISTINCT avplx.useraccount_id)
-									 FILTER (WHERE avplx.useraccount_id IS NOT NULL), ARRAY[]::UUID[]),
+								FILTER (WHERE avplx.useraccount_id IS NOT NULL
+									AND oua_dlx.customer_organization_id IS NULL), ARRAY[]::UUID[]),
 							coalesce(array_agg(DISTINCT oua_dlx.customer_organization_id)
-									 FILTER (WHERE oua_dlx.customer_organization_id IS NOT NULL), ARRAY[]::UUID[])
+								FILTER (WHERE oua_dlx.customer_organization_id IS NOT NULL), ARRAY[]::UUID[])
 						)
 						FROM ArtifactVersionPull avplx
 						LEFT JOIN Organization_UserAccount oua_dlx

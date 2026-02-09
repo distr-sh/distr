@@ -128,8 +128,8 @@ export class ArtifactVersionsComponent {
     return {
       downloadsTotal,
       downloadedByUsers,
-      downloadedByCount: downloadedByUsers.length,
       downloadedByCustomerOrganizations,
+      downloadedByCount: downloadedByUsers.length + downloadedByCustomerOrganizations.length,
     };
   }
 

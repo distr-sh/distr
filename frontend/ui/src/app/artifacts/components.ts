@@ -29,7 +29,7 @@ export class ArtifactsDownloadCountComponent {
   selector: 'app-artifacts-downloaded-by',
   template: `
     <div class="flex -space-x-3 hover:-space-x-1 rtl:space-x-reverse justify-end">
-      @let shownUsers = downloadedBy$ | async;
+      @let shownUsers = downloadedByUsers();
       @for (user of shownUsers; track user.id) {
         @if (user.imageUrl; as imageUrl) {
           <img
@@ -40,16 +40,6 @@ export class ArtifactsDownloadCountComponent {
           <fa-icon [icon]="faUserCircle" size="xl" class="text-xl text-gray-400"></fa-icon>
         }
       }
-      @if ((source().downloadedByCount ?? 0) - (shownUsers?.length ?? 0); as count) {
-        @if (count > 0) {
-          <div
-            class="flex items-center justify-center size-8 text-xs font-medium text-white bg-gray-500 dark:bg-gray-700 border-2 border-white rounded-full dark:border-gray-800">
-            +{{ count }}
-          </div>
-        }
-      }
-    </div>
-    <div class="flex -space-x-3 hover:-space-x-1 rtl:space-x-reverse justify-end">
       @let shownCustomers = downloadedByCustomerOrganizations();
       @for (customer of shownCustomers; track customer.id) {
         @if (customer.imageUrl; as imageUrl) {
@@ -61,7 +51,7 @@ export class ArtifactsDownloadCountComponent {
           <fa-icon [icon]="faUserCircle" size="xl" class="text-xl text-gray-400"></fa-icon>
         }
       }
-      @if ((source().downloadedByCount ?? 0) - (shownUsers?.length ?? 0); as count) {
+      @if ((source().downloadedByCount ?? 0) - (shownUsers?.length ?? 0) - (shownCustomers?.length ?? 0); as count) {
         @if (count > 0) {
           <div
             class="flex items-center justify-center size-8 text-xs font-medium text-white bg-gray-500 dark:bg-gray-700 border-2 border-white rounded-full dark:border-gray-800">
@@ -79,13 +69,15 @@ export class ArtifactsDownloadedByComponent {
   private readonly usersService = inject(UsersService);
   private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
 
-  public readonly downloadedBy$ = toObservable(this.source).pipe(
-    switchMap((dl) => {
-      const userObservables = (dl.downloadedByUsers ?? []).map((id) =>
-        this.usersService.getUser(id).pipe(catchError((e) => of(undefined)))
-      );
-      return zip(...userObservables).pipe(map((it) => it.filter((u) => u !== undefined)));
-    })
+  public readonly downloadedByUsers = toSignal(
+    toObservable(this.source).pipe(
+      switchMap((dl) => {
+        const userObservables = (dl.downloadedByUsers ?? []).map((id) =>
+          this.usersService.getUser(id).pipe(catchError((e) => of(undefined)))
+        );
+        return zip(...userObservables).pipe(map((it) => it.filter((u) => u !== undefined)));
+      })
+    )
   );
 
   private readonly customerOrganizations = toSignal(this.customerOrganizationsService.getCustomerOrganizations());
