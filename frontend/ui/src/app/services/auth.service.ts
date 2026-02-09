@@ -19,7 +19,7 @@ export interface JWTClaims {
   email_verified: boolean;
   name: string;
   exp: string;
-  role: UserRole;
+  role?: UserRole;
   image_url: string | undefined;
   is_super_admin?: boolean;
   [claim: string]: unknown;
