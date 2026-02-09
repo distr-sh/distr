@@ -8,9 +8,8 @@
         <div
           class="grid gap-4 items-stretch 5xl:grid-cols-6 4xl:grid-cols-5 3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-2">
           @for (deploymentTarget of deploymentTargetWithMetrics$ | async; track deploymentTarget.id) {
-            <app-deployment-target-card
+            <app-deployment-target-dashboard-card
               [deploymentTarget]="deploymentTarget"
-              [fullVersion]="false"
               [deploymentTargetMetrics]="deploymentTarget.metrics" />
           } @empty {
             <div class="text-gray-500 dark:text-gray-400">Nothing to show yet.</div>

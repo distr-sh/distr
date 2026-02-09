@@ -54,7 +54,6 @@
         @for (deploymentTarget of customerDeploymentTargets.deploymentTargets; track deploymentTarget.id) {
           <app-deployment-target-card
             [deploymentTarget]="deploymentTarget"
-            [fullVersion]="true"
             [deploymentTargetMetrics]="deploymentTarget.metrics" />
         } @empty {
           <div class="text-gray-500 dark:text-gray-400">No agents found.</div>

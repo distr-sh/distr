@@ -1,0 +1,409 @@
+<div
+  class="h-full rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 font-medium text-gray-900 dark:text-white flex flex-col">
+  <div class="p-4 justify-between items-stretch md:flex min-w-0">
+    <div class="justify-between sm:flex sm:items-center min-w-0">
+      <div class="flex gap-3 items-start lg:items-center mb-2 md:mb-0 min-w-0">
+        <div class="relative self-start flex-shrink-0">
+          <img
+            [ngSrc]="'/' + deploymentTarget().type + '.png'"
+            [alt]="deploymentTarget().type"
+            class="size-10 rounded-sm max-w-none"
+            height="199"
+            width="199" />
+          <app-status-dot class="absolute size-2.5 -bottom-0.5 -end-0.5" [deploymentTarget]="deploymentTarget()">
+          </app-status-dot>
+        </div>
+        <div class="min-w-0">
+          <div class="flex gap-2">
+            <h3 class="font-bold truncate break-all" [title]="deploymentTarget().name">
+              {{ deploymentTarget().name }}
+            </h3>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    @if (deploymentTarget().metricsEnabled) {
+      @if (deploymentTargetMetrics(); as metrics) {
+        <app-deployment-target-metrics [metrics]="metrics"></app-deployment-target-metrics>
+      }
+    }
+  </div>
+  <hr class="border-gray-300 dark:border-gray-500" />
+  @if (deploymentTarget().deployments.length > 0) {
+    <div class="overflow-hidden">
+      <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400 table-fixed">
+        <thead class="sr-only">
+          <tr>
+            <th scope="col" class="px-4 py-2">Icon</th>
+            <th scope="col" class="px-4 py-2">Application & Version</th>
+            <th scope="col" class="px-4 py-2">Status & Link</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (deployment of deploymentTarget().deployments; track deployment.id) {
+            <tr class="hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-300 dark:border-gray-500">
+              <td class="px-4 py-2">
+                <div class="flex items-center gap-3">
+                  <div class="flex-shrink-0">
+                    <fa-icon class="text-gray-500 dark:text-gray-400 text-2xl" [icon]="faShip"></fa-icon>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div
+                      class="font-medium text-gray-900 dark:text-white truncate break-all"
+                      [title]="deployment.applicationName">
+                      {{ deployment.applicationName }}
+                    </div>
+                    <div
+                      class="text-gray-500 dark:text-gray-400 text-xs truncate break-all"
+                      [title]="deployment.applicationVersionName">
+                      {{ deployment.applicationVersionName }}
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-3 flex-shrink-0">
+                    <div class="flex items-center">
+                      <div class="size-4 me-1" appDeploymentStatusDot [deployment]="deployment"></div>
+                      @if (deployment.latestStatus; as drs) {
+                        @if (drs.type === 'error') {
+                          Error
+                        } @else if (drs | isStale) {
+                          Stale
+                        } @else if (drs.type === 'progressing') {
+                          Progressing
+                        } @else if (drs.type === 'running') {
+                          Running
+                        } @else {
+                          Healthy
+                        }
+                      } @else {
+                        No status
+                      }
+                    </div>
+                    @if (deployment.applicationLink) {
+                      <a
+                        [href]="deployment.applicationLink"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="px-2 py-1 inline-flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                        <fa-icon
+                          [icon]="faArrowUpRightFromSquare"
+                          class="h-5 w-5 mr-1 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
+                        Open
+                      </a>
+                    }
+                  </div>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <hr class="border-gray-300 dark:border-gray-500" />
+    <div class="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm p-4">
+      No applications deployed.
+    </div>
+  }
+</div>
+
+<ng-template #instructionsModal>
+  <div
+    @modalFlyInOut
+    style="transform-origin: top center"
+    class="p-4 w-full mt-12 max-w-4xl max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-700">
+    <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+      <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Setup Instructions</h3>
+      <button
+        type="button"
+        (click)="hideModal()"
+        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+        <fa-icon [icon]="faXmark"></fa-icon>
+        <span class="sr-only">Close modal</span>
+      </button>
+    </div>
+    <div class="p-4 md:p-5 space-y-4">
+      <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
+        To setup this Deployment, the Distr Agent must be installed on the target server/VM. Simply connect to the
+        target (e.g. via SSH) and execute the following:
+      </p>
+      <app-connect-instructions [deploymentTarget]="deploymentTarget()"></app-connect-instructions>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #deploymentModal>
+  <app-deployment-modal
+    @modalFlyInOut
+    [deploymentTarget]="selectedDeploymentTarget()!"
+    [deployment]="selectedDeployment()"
+    (closed)="hideModal()">
+  </app-deployment-modal>
+</ng-template>
+
+<ng-template #deploymentTargetStatusModal>
+  <div></div>
+</ng-template>
+
+<ng-template #deploymentStatusModal>
+  <div></div>
+</ng-template>
+
+<ng-template #deleteConfirmModal>
+  <div></div>
+</ng-template>
+
+<ng-template #manageDeploymentTargetDrawer>
+  <div
+    @drawerFlyInOut
+    id="manage-deployment-target-drawer"
+    class="h-screen p-4 overflow-y-auto bg-white w-80 dark:bg-gray-800"
+    tabindex="-1"
+    aria-labelledby="drawer-right-label">
+    <h5
+      id="drawer-label"
+      class="inline-flex items-center mb-6 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
+      Modify {{ deploymentTarget().name }}
+    </h5>
+    <button
+      type="button"
+      (click)="hideDrawer()"
+      aria-controls="manage-deployment-target-drawer"
+      class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 right-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
+      <fa-icon [icon]="faXmark" class="w-5 h-5"></fa-icon>
+      <span class="sr-only">Close menu</span>
+    </button>
+    <form [formGroup]="editForm" (ngSubmit)="saveDeploymentTarget()">
+      <div class="mb-4 space-y-4">
+        @if (deploymentTarget().customerOrganization !== undefined && auth.isVendor()) {
+          <div
+            class="flex items-center p-4 mb-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
+            role="alert">
+            <fa-icon [icon]="faCircleExclamation" />
+            <span class="sr-only">Info</span>
+            <div class="ms-3 text-sm font-medium">{{ customerManagedWarning }}</div>
+          </div>
+        }
+        <div>
+          <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name *</label>
+          <input
+            formControlName="name"
+            autotrim
+            type="text"
+            name="title"
+            id="name"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+            value=""
+            placeholder="Deployment name"
+            required="" />
+          @if (editForm.controls.name.invalid && editForm.controls.name.touched) {
+            <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
+          }
+        </div>
+        <div>
+          <label for="category" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Type *</label>
+          <select
+            formControlName="type"
+            id="category"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:select-none">
+            <option value="docker">Docker</option>
+            <option value="kubernetes">Kubernetes</option>
+          </select>
+        </div>
+        @if (editForm.controls.type.value === 'kubernetes') {
+          <div>
+            <label for="namespace" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+              Namespace
+            </label>
+            <input
+              type="text"
+              id="namespace"
+              formControlName="namespace"
+              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:select-none" />
+          </div>
+          <div>
+            <label for="scope" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Scope</label>
+            <input
+              type="text"
+              id="scope"
+              formControlName="scope"
+              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:select-none" />
+          </div>
+        }
+        <div class="flex items-center">
+          <input
+            id="metrics-checkbox"
+            type="checkbox"
+            formControlName="metricsEnabled"
+            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+          <label for="metrics-checkbox" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+            Report Metrics
+          </label>
+        </div>
+        @if (editForm.controls.metricsEnabled.disabled) {
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            Metrics reporting is not available for a namespace scoped agent.
+          </p>
+        }
+
+        @if (editForm.controls.customResources.enabled) {
+          <div class="flex items-center">
+            <input
+              id="custom-resources"
+              type="checkbox"
+              formControlName="customResources"
+              class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+            <label for="custom-resources" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+              Set custom resource requirements for the Distr agent
+            </label>
+          </div>
+        }
+
+        @if (editForm.controls.resources.enabled) {
+          <ng-container formGroupName="resources">
+            <div>
+              <label for="cpuRequest" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >CPU Request</label
+              >
+              <input
+                type="text"
+                id="cpuRequest"
+                formControlName="cpuRequest"
+                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:select-none" />
+              @if (
+                editForm.controls.resources.controls.cpuRequest.invalid &&
+                editForm.controls.resources.controls.cpuRequest.touched
+              ) {
+                <p class="mt-1 text-sm text-red-600 dark:text-red-500">
+                  Field is required and must be a valid Kubernetes quantity.
+                </p>
+              }
+            </div>
+
+            <div>
+              <label for="memoryRequest" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >Memory Request</label
+              >
+              <input
+                type="text"
+                id="memoryRequest"
+                formControlName="memoryRequest"
+                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:select-none" />
+              @if (
+                editForm.controls.resources.controls.memoryRequest.invalid &&
+                editForm.controls.resources.controls.memoryRequest.touched
+              ) {
+                <p class="mt-1 text-sm text-red-600 dark:text-red-500">
+                  Field is required and must be a valid Kubernetes quantity.
+                </p>
+              }
+            </div>
+
+            <div>
+              <label for="cpuLimit" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >CPU Limit</label
+              >
+              <input
+                type="text"
+                id="cpuLimit"
+                formControlName="cpuLimit"
+                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:select-none" />
+              @if (
+                editForm.controls.resources.controls.cpuLimit.invalid &&
+                editForm.controls.resources.controls.cpuLimit.touched
+              ) {
+                <p class="mt-1 text-sm text-red-600 dark:text-red-500">
+                  Field is required and must be a valid Kubernetes quantity.
+                </p>
+              }
+            </div>
+
+            <div>
+              <label for="memoryLimit" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >Memory Limit</label
+              >
+              <input
+                type="text"
+                id="memoryLimit"
+                formControlName="memoryLimit"
+                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:select-none" />
+              @if (
+                editForm.controls.resources.controls.memoryLimit.invalid &&
+                editForm.controls.resources.controls.memoryLimit.touched
+              ) {
+                <p class="mt-1 text-sm text-red-600 dark:text-red-500">
+                  Field is required and must be a valid Kubernetes quantity.
+                </p>
+              }
+            </div>
+          </ng-container>
+
+          @if (editForm.controls.resources.dirty) {
+            <div class="text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400" role="alert">
+              Changes in the resource requirements are only applied after a reconnect!
+            </div>
+          }
+        }
+      </div>
+      <div class="mt-8 flex justify-center w-full pb-4 space-x-4 sm:mt-0">
+        <button
+          type="submit"
+          [disabled]="editFormLoading"
+          class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+          <fa-icon [icon]="faPen" class="me-2"></fa-icon>
+          Update
+        </button>
+      </div>
+    </form>
+  </div>
+</ng-template>
+
+<ng-template #deploymentTargetNotesDrawer>
+  <div
+    @drawerFlyInOut
+    id="manage-deployment-target-drawer"
+    class="h-screen p-4 overflow-y-auto bg-white w-120 dark:bg-gray-800"
+    tabindex="-1"
+    aria-labelledby="drawer-right-label">
+    <h5
+      id="notes-label"
+      class="inline-flex items-center mb-6 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
+      Notes for {{ deploymentTarget().name }}
+    </h5>
+    <button
+      type="button"
+      (click)="hideDrawer()"
+      aria-controls="manage-deployment-target-drawer"
+      class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 right-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
+      <fa-icon [icon]="faXmark" class="size-5"></fa-icon>
+      <span class="sr-only">Close menu</span>
+    </button>
+    <form [formGroup]="notesForm" (ngSubmit)="saveDeploymentTargetNotes()">
+      <div class="mb-4 space-y-4">
+        <div>
+          <textarea
+            aria-labelledby="notes-label"
+            placeholder="Enter notes"
+            formControlName="notes"
+            rows="15"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"></textarea>
+        </div>
+      </div>
+      @if (auth.hasAnyRole('read_write', 'admin')) {
+        <div class="mt-8 flex justify-center w-full pb-4 space-x-4 sm:mt-0">
+          <button
+            type="submit"
+            [disabled]="editFormLoading"
+            class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+            <fa-icon [icon]="faPen" class="me-2" />
+            Save
+          </button>
+        </div>
+      }
+    </form>
+  </div>
+</ng-template>
+
+<ng-template #deleteDeploymentProgressModal>
+  <div></div>
+</ng-template>
