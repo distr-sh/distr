@@ -229,191 +229,179 @@
   <hr class="border-gray-200 dark:border-gray-600" />
   @if (deploymentTarget().deployments.length > 0) {
     <div class="overflow-hidden">
-      <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400 table-fixed">
-        <thead class="sr-only uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400 text-xs">
-          <tr>
-            <th scope="col" class="px-4 py-2">Application</th>
-            <th scope="col" class="px-4 py-2">Last modified</th>
-            <th scope="col" class="px-4 py-2">Status</th>
-            <th scope="col" class="px-4 py-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          @let deploymentIdsWithUpdate1 = deploymentIdsWithUpdate();
-          @for (deployment of deploymentTarget().deployments; track deployment.id) {
-            <tr class="hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-300 dark:border-gray-500">
-              <td class="px-4 py-2" colspan="4">
-                <div class="flex flex-col gap-1">
-                  <div class="flex items-center justify-between gap-3">
-                    <div class="flex-1 min-w-0">
-                      <app-deployment-app-name
-                        [applicationName]="deployment.applicationName"
-                        [applicationVersionName]="deployment.applicationVersionName" />
-                    </div>
-                    <div class="flex items-center justify-end space-x-2">
-                      @if (deployment.applicationLink) {
-                        <a
-                          [href]="deployment.applicationLink"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="px-2 py-1 inline-flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                          <fa-icon
-                            [icon]="faArrowUpRightFromSquare"
-                            class="h-5 w-5 mr-1 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
-                          Open
-                        </a>
-                      }
-                      @if (deployment.latestStatus) {
-                        <button
-                          type="button"
-                          (click)="openStatusModal(deployment)"
-                          aria-controls="manage-deployment-target-drawer"
-                          class="px-2 py-1 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                          <fa-icon
-                            [icon]="faHeartPulse"
-                            class="h-5 w-5 mr-1 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
-                          Inspect
-                        </button>
-                      }
-                      @if (auth.hasAnyRole('read_write', 'admin')) {
-                        <button
-                          type="button"
-                          (click)="showDeploymentModal(deployment)"
-                          class="relative px-2 py-1 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed">
-                          <div class="relative">
-                            <fa-icon [icon]="faRotate" class="h-5 w-5 mr-1 -ml-0.5 text-gray-500 dark:text-gray-400" />
-                          </div>
-                          Update
-                          @if (deployment.id && deploymentIdsWithUpdate1.has(deployment.id)) {
-                            <span class="rounded-full size-2 bg-blue-400 absolute -bottom-0.5 -right-0.5"></span>
-                          }
-                        </button>
-
-                        <button
-                          type="button"
-                          aria-label="More actions"
-                          class="p-1 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
-                          cdkOverlayOrigin
-                          #dropdownTrigger="cdkOverlayOrigin"
-                          (click)="showDeploymentDropdownForId.set(deployment.id)">
-                          <fa-icon
-                            [icon]="faEllipsisVertical"
-                            class="h-5 w-5 text-gray-500 dark:text-gray-400"></fa-icon>
-                        </button>
-
-                        <ng-template
-                          cdkConnectedOverlay
-                          [cdkConnectedOverlayHasBackdrop]="true"
-                          (backdropClick)="showDeploymentDropdownForId.set(undefined)"
-                          (detach)="showDeploymentDropdownForId.set(undefined)"
-                          [cdkConnectedOverlayBackdropClass]="'transparent'"
-                          [cdkConnectedOverlayOrigin]="dropdownTrigger"
-                          [cdkConnectedOverlayPositions]="[
-                            {originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top'},
-                          ]"
-                          [cdkConnectedOverlayOpen]="showDeploymentDropdownForId() === deployment.id">
-                          <div
-                            @dropdown
-                            style="transform-origin: top center"
-                            class="my-2 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600">
-                            <ul class="py-1" role="none">
-                              <li>
-                                <button
-                                  type="button"
-                                  class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
-                                  (click)="
-                                    setLogsEnabled(deployment, !deployment.logsEnabled);
-                                    showDeploymentDropdownForId.set(undefined)
-                                  "
-                                  [title]="
-                                    isLoggingSupported()
-                                      ? ''
-                                      : 'Agent must have version 1.9.0 or greater. Please update this agent.'
-                                  "
-                                  [disabled]="!isLoggingSupported()">
-                                  @if (deployment.logsEnabled) {
-                                    Disable logs collection
-                                  } @else {
-                                    Enable logs collection
-                                  }
-                                </button>
-                              </li>
-                              <li
-                                class="text-yellow-400 hover:bg-yellow-500 hover:text-white dark:text-yellow-300 dark:hover:text-white dark:hover:bg-yellow-400">
-                                <button
-                                  type="button"
-                                  class="text-start block w-full px-4 py-2 text-sm"
-                                  (click)="forceRestart(deployment); showDeploymentDropdownForId.set(undefined)"
-                                  [title]="
-                                    isForceRestartSupported()
-                                      ? ''
-                                      : 'Agent must have version 1.12.0 or greater. Please update this agent.'
-                                  "
-                                  [disabled]="!isForceRestartSupported()">
-                                  Force restart workloads
-                                </button>
-                              </li>
-                              <li>
-                                <button
-                                  type="button"
-                                  aria-label="Delete"
-                                  (click)="
-                                    showDeploymentDropdownForId.set(undefined);
-                                    deleteDeployment(deployment, undeployConfirmTemplate)
-                                  "
-                                  class="text-start block w-full px-4 py-2 text-sm text-red-700 enabled:hover:text-white enabled:hover:bg-red-800 dark:text-red-500 dark:enabled:hover:text-white dark:enabled:hover:bg-red-600 disabled:opacity-60 disabled:cursor-not-allowed"
-                                  [title]="
-                                    isUndeploySupported()
-                                      ? ''
-                                      : 'Agent must have version 1.3.0 or greater. Please update this agent.'
-                                  "
-                                  [disabled]="!isUndeploySupported()">
-                                  <fa-icon [icon]="faTriangleExclamation" class="inline-block w-4 mr-2"></fa-icon>
-                                  Undeploy
-                                </button>
-                                <ng-template #undeployConfirmTemplate>
-                                  <div
-                                    class="p-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
-                                    role="alert">
-                                    <span class="font-semibold me-1">WARNING!</span>
-                                    You are about to uninstall
-                                    {{ deployment.applicationName + '@' + deployment.applicationVersionName }} on
-                                    {{ deploymentTarget().name }}. This will also delete all:
-                                    <ul class="my-1.5 list-disc list-inside">
-                                      <li>associated configuration</li>
-                                      <li>revision history</li>
-                                      <li>status logs</li>
-                                      <li>application data</li>
-                                    </ul>
-
-                                    This action can not be undone. If you want to continue, please type
-                                    <code>UNDEPLOY</code> into the text box and confirm.
-                                  </div>
-                                </ng-template>
-                              </li>
-                            </ul>
-                          </div>
-                        </ng-template>
-                      }
-                    </div>
+      <ul class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+        @let deploymentIdsWithUpdate1 = deploymentIdsWithUpdate();
+        @for (deployment of deploymentTarget().deployments; track deployment.id) {
+          <li class="hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-300 dark:border-gray-500">
+            <div class="px-4 py-2">
+              <div class="flex flex-col gap-1">
+                <div class="flex items-center justify-between gap-3">
+                  <div class="flex-1 min-w-0">
+                    <app-deployment-app-name
+                      [applicationName]="deployment.applicationName"
+                      [applicationVersionName]="deployment.applicationVersionName" />
                   </div>
-                  <div class="flex items-center justify-between gap-3">
-                    <button (click)="openStatusModal(deployment)" class="flex items-center">
-                      <app-deployment-status-text [deployment]="deployment" />
-                    </button>
-                    <div class="text-xs text-end whitespace-nowrap">
-                      <div class="text-gray-500 dark:text-gray-400 break-words">Last modified</div>
-                      <div class="text-gray-900 dark:text-white">
-                        {{ deployment.deploymentRevisionCreatedAt | date: 'short' }}
-                      </div>
+                  <div class="flex items-center justify-end space-x-2">
+                    @if (deployment.applicationLink) {
+                      <a
+                        [href]="deployment.applicationLink"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="px-2 py-1 inline-flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                        <fa-icon
+                          [icon]="faArrowUpRightFromSquare"
+                          class="h-5 w-5 mr-1 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
+                        Open
+                      </a>
+                    }
+                    @if (deployment.latestStatus) {
+                      <button
+                        type="button"
+                        (click)="openStatusModal(deployment)"
+                        aria-controls="manage-deployment-target-drawer"
+                        class="px-2 py-1 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                        <fa-icon
+                          [icon]="faHeartPulse"
+                          class="h-5 w-5 mr-1 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
+                        Inspect
+                      </button>
+                    }
+                    @if (auth.hasAnyRole('read_write', 'admin')) {
+                      <button
+                        type="button"
+                        (click)="showDeploymentModal(deployment)"
+                        class="relative px-2 py-1 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed">
+                        <div class="relative">
+                          <fa-icon [icon]="faRotate" class="h-5 w-5 mr-1 -ml-0.5 text-gray-500 dark:text-gray-400" />
+                        </div>
+                        Update
+                        @if (deployment.id && deploymentIdsWithUpdate1.has(deployment.id)) {
+                          <span class="rounded-full size-2 bg-blue-400 absolute -bottom-0.5 -right-0.5"></span>
+                        }
+                      </button>
+
+                      <button
+                        type="button"
+                        aria-label="More actions"
+                        class="p-1 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+                        cdkOverlayOrigin
+                        #dropdownTrigger="cdkOverlayOrigin"
+                        (click)="showDeploymentDropdownForId.set(deployment.id)">
+                        <fa-icon [icon]="faEllipsisVertical" class="h-5 w-5 text-gray-500 dark:text-gray-400"></fa-icon>
+                      </button>
+
+                      <ng-template
+                        cdkConnectedOverlay
+                        [cdkConnectedOverlayHasBackdrop]="true"
+                        (backdropClick)="showDeploymentDropdownForId.set(undefined)"
+                        (detach)="showDeploymentDropdownForId.set(undefined)"
+                        [cdkConnectedOverlayBackdropClass]="'transparent'"
+                        [cdkConnectedOverlayOrigin]="dropdownTrigger"
+                        [cdkConnectedOverlayPositions]="[
+                          {originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top'},
+                        ]"
+                        [cdkConnectedOverlayOpen]="showDeploymentDropdownForId() === deployment.id">
+                        <div
+                          @dropdown
+                          style="transform-origin: top center"
+                          class="my-2 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600">
+                          <ul class="py-1" role="none">
+                            <li>
+                              <button
+                                type="button"
+                                class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                                (click)="
+                                  setLogsEnabled(deployment, !deployment.logsEnabled);
+                                  showDeploymentDropdownForId.set(undefined)
+                                "
+                                [title]="
+                                  isLoggingSupported()
+                                    ? ''
+                                    : 'Agent must have version 1.9.0 or greater. Please update this agent.'
+                                "
+                                [disabled]="!isLoggingSupported()">
+                                @if (deployment.logsEnabled) {
+                                  Disable logs collection
+                                } @else {
+                                  Enable logs collection
+                                }
+                              </button>
+                            </li>
+                            <li
+                              class="text-yellow-400 hover:bg-yellow-500 hover:text-white dark:text-yellow-300 dark:hover:text-white dark:hover:bg-yellow-400">
+                              <button
+                                type="button"
+                                class="text-start block w-full px-4 py-2 text-sm"
+                                (click)="forceRestart(deployment); showDeploymentDropdownForId.set(undefined)"
+                                [title]="
+                                  isForceRestartSupported()
+                                    ? ''
+                                    : 'Agent must have version 1.12.0 or greater. Please update this agent.'
+                                "
+                                [disabled]="!isForceRestartSupported()">
+                                Force restart workloads
+                              </button>
+                            </li>
+                            <li>
+                              <button
+                                type="button"
+                                aria-label="Delete"
+                                (click)="
+                                  showDeploymentDropdownForId.set(undefined);
+                                  deleteDeployment(deployment, undeployConfirmTemplate)
+                                "
+                                class="text-start block w-full px-4 py-2 text-sm text-red-700 enabled:hover:text-white enabled:hover:bg-red-800 dark:text-red-500 dark:enabled:hover:text-white dark:enabled:hover:bg-red-600 disabled:opacity-60 disabled:cursor-not-allowed"
+                                [title]="
+                                  isUndeploySupported()
+                                    ? ''
+                                    : 'Agent must have version 1.3.0 or greater. Please update this agent.'
+                                "
+                                [disabled]="!isUndeploySupported()">
+                                <fa-icon [icon]="faTriangleExclamation" class="inline-block w-4 mr-2"></fa-icon>
+                                Undeploy
+                              </button>
+                              <ng-template #undeployConfirmTemplate>
+                                <div
+                                  class="p-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
+                                  role="alert">
+                                  <span class="font-semibold me-1">WARNING!</span>
+                                  You are about to uninstall
+                                  {{ deployment.applicationName + '@' + deployment.applicationVersionName }} on
+                                  {{ deploymentTarget().name }}. This will also delete all:
+                                  <ul class="my-1.5 list-disc list-inside">
+                                    <li>associated configuration</li>
+                                    <li>revision history</li>
+                                    <li>status logs</li>
+                                    <li>application data</li>
+                                  </ul>
+
+                                  This action can not be undone. If you want to continue, please type
+                                  <code>UNDEPLOY</code> into the text box and confirm.
+                                </div>
+                              </ng-template>
+                            </li>
+                          </ul>
+                        </div>
+                      </ng-template>
+                    }
+                  </div>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                  <button (click)="openStatusModal(deployment)" class="flex items-center">
+                    <app-deployment-status-text [deployment]="deployment" />
+                  </button>
+                  <div class="text-xs text-end whitespace-nowrap">
+                    <div class="text-gray-500 dark:text-gray-400 break-words">Last modified</div>
+                    <div class="text-gray-900 dark:text-white">
+                      {{ deployment.deploymentRevisionCreatedAt | date: 'short' }}
                     </div>
                   </div>
                 </div>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+              </div>
+            </div>
+          </li>
+        }
+      </ul>
     </div>
   } @else {
     <hr class="border-gray-200 dark:border-gray-600" />

@@ -29,50 +29,40 @@
       }
     }
   </div>
-  <hr class="border-gray-300 dark:border-gray-500" />
   @if (deploymentTarget().deployments.length > 0) {
-    <div class="overflow-hidden">
-      <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400 table-fixed">
-        <thead class="sr-only">
-          <tr>
-            <th scope="col" class="px-4 py-2">Icon</th>
-            <th scope="col" class="px-4 py-2">Application & Version</th>
-            <th scope="col" class="px-4 py-2">Status & Link</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (deployment of deploymentTarget().deployments; track deployment.id) {
-            <tr class="hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-300 dark:border-gray-500">
-              <td class="px-4 py-2" colspan="3">
-                <div class="flex items-center gap-3">
-                  <app-deployment-app-name
-                    class="flex-1 min-w-0"
-                    [applicationName]="deployment.applicationName"
-                    [applicationVersionName]="deployment.applicationVersionName" />
-                  <div class="flex items-center gap-3 flex-shrink-0">
-                    <app-deployment-status-text [deployment]="deployment" />
-                    @if (deployment.applicationLink) {
-                      <a
-                        [href]="deployment.applicationLink"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="px-2 py-1 inline-flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                        <fa-icon
-                          [icon]="faArrowUpRightFromSquare"
-                          class="h-5 w-5 mr-1 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
-                        Open
-                      </a>
-                    }
-                  </div>
-                </div>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+    <hr class="border-gray-200 dark:border-gray-600" />
+  }
+  @if (deploymentTarget().deployments.length > 0) {
+    <ul class="overflow-hidden">
+      @for (deployment of deploymentTarget().deployments; track deployment.id) {
+        <li class="hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-300 dark:border-gray-500">
+          <div class="px-4 py-2">
+            <div class="flex items-center gap-3">
+              <app-deployment-app-name
+                class="flex-1 min-w-0"
+                [applicationName]="deployment.applicationName"
+                [applicationVersionName]="deployment.applicationVersionName" />
+              <div class="flex items-center gap-3 flex-shrink-0">
+                <app-deployment-status-text [deployment]="deployment" />
+                @if (deployment.applicationLink) {
+                  <a
+                    [href]="deployment.applicationLink"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="px-2 py-1 inline-flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                    <fa-icon
+                      [icon]="faArrowUpRightFromSquare"
+                      class="h-5 w-5 mr-1 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
+                    Open
+                  </a>
+                }
+              </div>
+            </div>
+          </div>
+        </li>
+      }
+    </ul>
   } @else {
-    <hr class="border-gray-300 dark:border-gray-500" />
     <div class="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm p-4">
       No applications deployed.
     </div>
