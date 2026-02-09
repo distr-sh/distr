@@ -30,12 +30,12 @@ func SettingsRouter(r chiopenapi.Router) {
 	r.Route("/user", func(r chiopenapi.Router) {
 		r.WithOptions(option.GroupTags("Settings"))
 
-		r.With(middleware.BlockSuperAdmin).Post("/", userSettingsUpdateHandler).
+		r.Post("/", userSettingsUpdateHandler).
 			With(option.Description("Update user settings")).
 			With(option.Request(api.UpdateUserAccountRequest{})).
 			With(option.Response(http.StatusOK, types.UserAccount{}))
 
-		r.With(middleware.BlockSuperAdmin).Post("/email", userSettingsUpdateEmailHandler()).
+		r.Post("/email", userSettingsUpdateEmailHandler()).
 			With(option.Description("Update current user email address")).
 			With(option.Request(api.UpdateUserAccountEmailRequest{})).
 			With(option.Response(http.StatusAccepted, nil))
@@ -47,27 +47,27 @@ func SettingsRouter(r chiopenapi.Router) {
 		r.With(requestVerificationMailRateLimitPerUser, middleware.BlockSuperAdmin).
 			Post("/request", userSettingsVerifyRequestHandler)
 
-		r.With(middleware.BlockSuperAdmin).Post("/confirm", userSettingsVerifyConfirmHandler)
+		r.Post("/confirm", userSettingsVerifyConfirmHandler)
 	})
 
 	r.Route("/mfa", func(r chiopenapi.Router) {
 		r.WithOptions(option.GroupTags("Security"))
 
-		r.With(middleware.BlockSuperAdmin).Post("/setup", mfaSetupHandler).
+		r.Post("/setup", mfaSetupHandler).
 			With(option.Description("Setup a new TOTP secret for the current user. MFA must still be enabled afterwards")).
 			With(option.Response(http.StatusOK, api.SetupMFAResponse{}))
 
-		r.With(middleware.BlockSuperAdmin).Post("/enable", mfaEnableHandler).
+		r.Post("/enable", mfaEnableHandler).
 			With(option.Description("Enable MFA for the current user and receive recovery codes")).
 			With(option.Request(api.EnableMFARequest{})).
 			With(option.Response(http.StatusOK, api.EnableMFAResponse{}))
 
-		r.With(middleware.BlockSuperAdmin).Post("/disable", mfaDisableHandler).
+		r.Post("/disable", mfaDisableHandler).
 			With(option.Description(
 				"Disable MFA for the current user. This will also remove the TOTP secret and all recovery codes")).
 			With(option.Request(api.DisableMFARequest{}))
 
-		r.With(middleware.BlockSuperAdmin).Post("/recovery-codes/regenerate", mfaRegenerateRecoveryCodesHandler).
+		r.Post("/recovery-codes/regenerate", mfaRegenerateRecoveryCodesHandler).
 			With(option.Description("Regenerate all recovery codes. This invalidates all existing codes")).
 			With(option.Request(api.RegenerateMFARecoveryCodesRequest{})).
 			With(option.Response(http.StatusOK, api.RegenerateMFARecoveryCodesResponse{}))
