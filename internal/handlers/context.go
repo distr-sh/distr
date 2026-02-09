@@ -11,6 +11,7 @@ import (
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -52,7 +53,7 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 	if auth.IsSuperAdmin() {
 		// Super admins: use current org's creation time as join date, no role
 		joinDate = auth.CurrentOrg().CreatedAt
-		userRole = new(types.UserRole) // zero value, not used for super admins
+		userRole = util.PtrTo(types.UserRoleAdmin)
 	} else {
 		// Regular users: find their actual join date and role
 		for _, org := range orgs {
