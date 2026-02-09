@@ -243,11 +243,13 @@
           @for (deployment of deploymentTarget().deployments; track deployment.id) {
             <tr class="hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-300 dark:border-gray-500">
               <td class="px-4 py-2" colspan="4">
-                <div class="flex flex-col gap-2">
+                <div class="flex flex-col gap-1">
                   <div class="flex items-center justify-between gap-3">
-                    <button (click)="openStatusModal(deployment)" class="flex items-center">
-                      <app-deployment-status-text [deployment]="deployment" />
-                    </button>
+                    <div class="flex-1 min-w-0">
+                      <app-deployment-app-name
+                        [applicationName]="deployment.applicationName"
+                        [applicationVersionName]="deployment.applicationVersionName" />
+                    </div>
                     <div class="flex items-center justify-end space-x-2">
                       @if (deployment.applicationLink) {
                         <a
@@ -396,13 +398,11 @@
                     </div>
                   </div>
                   <div class="flex items-center justify-between gap-3">
-                    <div class="flex-1 min-w-0">
-                      <app-deployment-app-name
-                        [applicationName]="deployment.applicationName"
-                        [applicationVersionName]="deployment.applicationVersionName" />
-                    </div>
-                    <div class="text-xs text-right whitespace-nowrap">
-                      <div class="text-gray-500 dark:text-gray-400 break-words">Last modified:</div>
+                    <button (click)="openStatusModal(deployment)" class="flex items-center">
+                      <app-deployment-status-text [deployment]="deployment" />
+                    </button>
+                    <div class="text-xs text-end whitespace-nowrap">
+                      <div class="text-gray-500 dark:text-gray-400 break-words">Last modified</div>
                       <div class="text-gray-900 dark:text-white">
                         {{ deployment.deploymentRevisionCreatedAt | date: 'short' }}
                       </div>
