@@ -32,23 +32,24 @@ func AlertConfigurationsRouter(r chiopenapi.Router) {
 		With(option.Request(types.AlertConfiguration{})).
 		With(option.Response(http.StatusOK, types.AlertConfiguration{}))
 
-	r.Route("/{id}", func(r chiopenapi.Router) {
-		type IDRequest struct {
-			ID string `path:"id"`
-		}
+	r.With(middleware.RequireReadWriteOrAdmin).
+		Route("/{id}", func(r chiopenapi.Router) {
+			type IDRequest struct {
+				ID string `path:"id"`
+			}
 
-		r.Put("/", updateAlertConfigurationHandler()).
-			With(option.Description("update an existing alert configuration")).
-			With(option.Request(struct {
-				IDRequest
-				types.AlertConfiguration
-			}{})).
-			With(option.Response(http.StatusOK, types.AlertConfiguration{}))
+			r.Put("/", updateAlertConfigurationHandler()).
+				With(option.Description("update an existing alert configuration")).
+				With(option.Request(struct {
+					IDRequest
+					types.AlertConfiguration
+				}{})).
+				With(option.Response(http.StatusOK, types.AlertConfiguration{}))
 
-		r.Delete("/", deleteAlertConfigurationHandler()).
-			With(option.Description("delete an existing alert configuration")).
-			With(option.Request(IDRequest{}))
-	})
+			r.Delete("/", deleteAlertConfigurationHandler()).
+				With(option.Description("delete an existing alert configuration")).
+				With(option.Request(IDRequest{}))
+		})
 }
 
 func getAlertConfigurationsHandler() http.HandlerFunc {

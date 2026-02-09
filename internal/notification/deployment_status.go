@@ -237,7 +237,8 @@ func shouldNotifyErrorRecovered(
 ) bool {
 	return previousStatus != nil &&
 		previousStatus.Type == types.DeploymentStatusTypeError &&
-		currentStatus.Type != types.DeploymentStatusTypeError
+		currentStatus.Type != types.DeploymentStatusTypeError &&
+		currentStatus.Type != types.DeploymentStatusTypeProgressing
 }
 
 func shouldNotify(previousStatus *types.DeploymentRevisionStatus, currentStatus types.DeploymentRevisionStatus) bool {
