@@ -5,7 +5,7 @@ import {
   CustomerOrganization,
   CustomerOrganizationWithUsage,
 } from '@distr-sh/distr-sdk';
-import {Observable} from 'rxjs';
+import {Observable, shareReplay} from 'rxjs';
 
 const baseUrl = '/api/v1/customer-organizations';
 
@@ -38,5 +38,16 @@ export class CustomerOrganizationsService {
 
   public deleteCustomerOrganization(id: string): Observable<void> {
     return this.httpClient.delete<void>(`${baseUrl}/${id}`);
+  }
+}
+
+@Injectable()
+export class CustomerOrganizationsCache {
+  private readonly svc = inject(CustomerOrganizationsService);
+
+  private readonly upstream = this.svc.getCustomerOrganizations().pipe(shareReplay(1));
+
+  public getCustomerOrganizations(): Observable<CustomerOrganizationWithUsage[]> {
+    return this.upstream;
   }
 }

@@ -5,8 +5,9 @@ import {ReactiveList} from './cache';
 
 export interface HasDownloads {
   downloadsTotal?: number;
-  downloadedByCount?: number;
+  downloadedByUsersCount?: number;
   downloadedByUsers?: string[];
+  downloadedByCustomerOrganizationsCount?: number;
   downloadedByCustomerOrganizations?: string[];
 }
 

@@ -21,6 +21,7 @@ import {
   TaggedArtifactVersion,
 } from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
+import {CustomerOrganizationsCache} from '../../services/customer-organizations.service';
 import {ImageUploadService} from '../../services/image-upload.service';
 import {OrganizationService} from '../../services/organization.service';
 import {OverlayService} from '../../services/overlay.service';
@@ -45,6 +46,7 @@ import {ArtifactsDownloadCountComponent, ArtifactsDownloadedByComponent, Artifac
   ],
   animations: [dropdownAnimation],
   templateUrl: './artifact-versions.component.html',
+  providers: [CustomerOrganizationsCache],
 })
 export class ArtifactVersionsComponent {
   protected readonly auth = inject(AuthService);
@@ -129,7 +131,7 @@ export class ArtifactVersionsComponent {
       downloadsTotal,
       downloadedByUsers,
       downloadedByCustomerOrganizations,
-      downloadedByCount: downloadedByUsers.length + downloadedByCustomerOrganizations.length,
+      downloadedByUsersCount: downloadedByUsers.length + downloadedByCustomerOrganizations.length,
     };
   }
 

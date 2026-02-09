@@ -12,6 +12,7 @@ import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {RequireCustomerDirective, RequireVendorDirective} from '../../directives/required-role.directive';
 import {ArtifactsService} from '../../services/artifacts.service';
+import {CustomerOrganizationsCache} from '../../services/customer-organizations.service';
 import {OrganizationService} from '../../services/organization.service';
 import {ArtifactsDownloadCountComponent, ArtifactsDownloadedByComponent} from '../components';
 
@@ -31,6 +32,7 @@ import {ArtifactsDownloadCountComponent, ArtifactsDownloadedByComponent} from '.
     SecureImagePipe,
   ],
   templateUrl: './artifacts.component.html',
+  providers: [CustomerOrganizationsCache],
 })
 export class ArtifactsComponent {
   private readonly artifacts = inject(ArtifactsService);

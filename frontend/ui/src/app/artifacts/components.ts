@@ -1,12 +1,11 @@
 import {AsyncPipe} from '@angular/common';
 import {Component, computed, inject, input, signal} from '@angular/core';
-import {toObservable, toSignal} from '@angular/core/rxjs-interop';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faDownload, faEllipsis, faUserCircle} from '@fortawesome/free-solid-svg-icons';
-import {catchError, map, of, switchMap, zip} from 'rxjs';
 import {SecureImagePipe} from '../../util/secureImage';
 import {HasDownloads} from '../services/artifacts.service';
-import {CustomerOrganizationsService} from '../services/customer-organizations.service';
+import {CustomerOrganizationsCache} from '../services/customer-organizations.service';
 import {UsersService} from '../services/users.service';
 
 @Component({
@@ -51,7 +50,10 @@ export class ArtifactsDownloadCountComponent {
           <fa-icon [icon]="faUserCircle" size="xl" class="text-xl text-gray-400"></fa-icon>
         }
       }
-      @if ((source().downloadedByCount ?? 0) - (shownUsers?.length ?? 0) - (shownCustomers?.length ?? 0); as count) {
+      @if (
+        (source().downloadedByUsersCount ?? 0) - (shownUsers?.length ?? 0) - (shownCustomers?.length ?? 0);
+        as count
+      ) {
         @if (count > 0) {
           <div
             class="flex items-center justify-center size-8 text-xs font-medium text-white bg-gray-500 dark:bg-gray-700 border-2 border-white rounded-full dark:border-gray-800">
@@ -67,18 +69,15 @@ export class ArtifactsDownloadedByComponent {
   public readonly source = input.required<HasDownloads>();
 
   private readonly usersService = inject(UsersService);
-  private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
+  private readonly customerOrganizationsService = inject(CustomerOrganizationsCache);
 
-  public readonly downloadedByUsers = toSignal(
-    toObservable(this.source).pipe(
-      switchMap((dl) => {
-        const userObservables = (dl.downloadedByUsers ?? []).map((id) =>
-          this.usersService.getUser(id).pipe(catchError((e) => of(undefined)))
-        );
-        return zip(...userObservables).pipe(map((it) => it.filter((u) => u !== undefined)));
-      })
-    )
-  );
+  private readonly users = toSignal(this.usersService.getUsers());
+  protected readonly downloadedByUsers = computed(() => {
+    const users = this.users();
+    return this.source()
+      .downloadedByUsers?.map((id) => users?.find((u) => u.id === id))
+      .filter((u) => u !== undefined);
+  });
 
   private readonly customerOrganizations = toSignal(this.customerOrganizationsService.getCustomerOrganizations());
   protected readonly downloadedByCustomerOrganizations = computed(() => {
@@ -86,6 +85,15 @@ export class ArtifactsDownloadedByComponent {
     return this.source()
       .downloadedByCustomerOrganizations?.map((id) => orgs?.find((o) => o.id === id))
       .filter((o) => o !== undefined);
+  });
+
+  protected readonly count = computed(() => {
+    return (
+      (this.source().downloadedByUsersCount ?? 0) +
+      (this.source().downloadedByCustomerOrganizationsCount ?? 0) -
+      (this.downloadedByUsers()?.length ?? 0) -
+      (this.downloadedByCustomerOrganizations()?.length ?? 0)
+    );
   });
 
   protected readonly faUserCircle = faUserCircle;
