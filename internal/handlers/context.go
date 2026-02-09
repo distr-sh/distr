@@ -70,7 +70,7 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var customerOrg *api.CustomerOrganization
-	if customerOrgID := auth.CurrentCustomerOrgID(); customerOrgID != nil {
+	if customerOrgID != nil {
 		if co, err := db.GetCustomerOrganizationByID(ctx, *customerOrgID); err != nil {
 			log.Error("failed to get customer organization", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
