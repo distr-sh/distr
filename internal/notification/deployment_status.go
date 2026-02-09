@@ -36,7 +36,7 @@ func SendDeploymentStatusNotifications(
 		return nil
 	}
 
-	configs, err := db.GetDeploymentStatusNotificationConfigurationsForDeploymentTarget(ctx, deploymentTarget.ID)
+	configs, err := db.GetAlertConfigurationsForDeploymentTarget(ctx, deploymentTarget.ID)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func RunDeploymentStatusNotifications(ctx context.Context) error {
 
 	log.Info("sending stale status notifications for all deployments")
 
-	configs, err := db.GetDeploymentStatusNotificationConfigurationsForAllOrganizations(ctx)
+	configs, err := db.GetAlertConfigurationsForAllOrganizations(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get all configs: %w", err)
 	}
@@ -109,7 +109,7 @@ func sendDeploymentStatusNotificationsWithConfig(
 	deployment types.DeploymentWithLatestRevision,
 	previousStatus *types.DeploymentRevisionStatus,
 	currentStatus *types.DeploymentRevisionStatus,
-	config types.DeploymentStatusNotificationConfiguration,
+	config types.AlertConfiguration,
 ) error {
 	if !config.Enabled {
 		return nil
@@ -189,10 +189,10 @@ func sendDeploymentStatusNotificationsWithConfig(
 	}
 
 	record := types.NotificationRecord{
-		OrganizationID:                              config.OrganizationID,
-		CustomerOrganizationID:                      config.CustomerOrganizationID,
-		DeploymentTargetID:                          &deploymentTarget.ID,
-		DeploymentStatusNotificationConfigurationID: &config.ID,
+		OrganizationID:         config.OrganizationID,
+		CustomerOrganizationID: config.CustomerOrganizationID,
+		DeploymentTargetID:     &deploymentTarget.ID,
+		AlertConfigurationID:   &config.ID,
 	}
 
 	if currentStatus != nil {

@@ -18,7 +18,7 @@ const notificationRecordOutputExpr = `
 	r.organization_id,
 	r.customer_organization_id,
 	r.deployment_target_id,
-	r.deployment_status_notification_configuration_id,
+	r.alert_configuration_id,
 	r.previous_deployment_revision_status_id,
 	r.current_deployment_revision_status_id,
 	r.message `
@@ -32,7 +32,7 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 				organization_id,
 				customer_organization_id,
 				deployment_target_id,
-				deployment_status_notification_configuration_id,
+				alert_configuration_id,
 				previous_deployment_revision_status_id,
 				current_deployment_revision_status_id,
 				message
@@ -41,7 +41,7 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 				@organizationID,
 				@customerOrganizationID,
 				@deploymentTargetID,
-				@deploymentStatusNotificationConfigurationID,
+				@alertConfigurationID,
 				@previousDeploymentStatusID,
 				@currentDeploymentStatusID,
 				@message
@@ -50,13 +50,13 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 		)
 		SELECT`+notificationRecordOutputExpr+`FROM inserted r`,
 		pgx.NamedArgs{
-			"organizationID":                              record.OrganizationID,
-			"customerOrganizationID":                      record.CustomerOrganizationID,
-			"deploymentTargetID":                          record.DeploymentTargetID,
-			"deploymentStatusNotificationConfigurationID": record.DeploymentStatusNotificationConfigurationID,
-			"previousDeploymentStatusID":                  record.PreviousDeploymentRevisionStatusID,
-			"currentDeploymentStatusID":                   record.CurrentDeploymentRevisionStatusID,
-			"message":                                     record.Message,
+			"organizationID":             record.OrganizationID,
+			"customerOrganizationID":     record.CustomerOrganizationID,
+			"deploymentTargetID":         record.DeploymentTargetID,
+			"alertConfigurationID":       record.AlertConfigurationID,
+			"previousDeploymentStatusID": record.PreviousDeploymentRevisionStatusID,
+			"currentDeploymentStatusID":  record.CurrentDeploymentRevisionStatusID,
+			"message":                    record.Message,
 		},
 	)
 	if err != nil {
@@ -80,12 +80,12 @@ func GetLatestNotificationRecord(
 	rows, err := db.Query(
 		ctx,
 		`SELECT`+notificationRecordOutputExpr+`FROM NotificationRecord r
-		WHERE r.deployment_status_notification_configuration_id = @deploymentStatusNotificationConfigurationID
+		WHERE r.alert_configuration_id = @alertConfigurationID
 			AND r.previous_deployment_revision_status_id = @previousDeploymentStatusID
 		ORDER BY r.created_at DESC LIMIT 1`,
 		pgx.NamedArgs{
-			"deploymentStatusNotificationConfigurationID": configID,
-			"previousDeploymentStatusID":                  previousID,
+			"alertConfigurationID":       configID,
+			"previousDeploymentStatusID": previousID,
 		},
 	)
 	if err != nil {
