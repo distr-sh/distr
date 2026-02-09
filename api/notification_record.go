@@ -7,13 +7,13 @@ import (
 )
 
 type NotificationRecord struct {
-	ID                                          uuid.UUID  `json:"id"`
-	CreatedAt                                   time.Time  `json:"createdAt"`
-	DeploymentTargetID                          *uuid.UUID `json:"deploymentTargetId"`
-	DeploymentStatusNotificationConfigurationID *uuid.UUID `json:"deploymentStatusNotificationConfigurationId,omitempty"`
-	PreviousDeploymentRevisionStatusID          *uuid.UUID `json:"previousDeploymentStatusId,omitempty"`
-	CurrentDeploymentRevisionStatusID           *uuid.UUID `json:"currentDeploymentStatusId,omitempty"`
-	Message                                     string     `json:"message"`
+	ID                                 uuid.UUID  `json:"id"`
+	CreatedAt                          time.Time  `json:"createdAt"`
+	DeploymentTargetID                 *uuid.UUID `json:"deploymentTargetId"`
+	AlertConfigurationID               *uuid.UUID `json:"alertConfigurationId,omitempty"`
+	PreviousDeploymentRevisionStatusID *uuid.UUID `json:"previousDeploymentStatusId,omitempty"`
+	CurrentDeploymentRevisionStatusID  *uuid.UUID `json:"currentDeploymentStatusId,omitempty"`
+	Message                            string     `json:"message"`
 }
 
 type NotificationRecordWithCurrentStatus struct {

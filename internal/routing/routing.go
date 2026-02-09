@@ -155,8 +155,7 @@ func ApiRouter(
 					r.Route("/context", handlers.ContextRouter)
 					r.Route("/customer-organizations", handlers.CustomerOrganizationsRouter)
 					r.Route("/dashboard", handlers.DashboardRouter)
-					r.Route("/deployment-status-notification-configurations",
-						handlers.DeploymentStatusNotificationConfigurationsRouter)
+					r.Route("/alert-configurations", handlers.AlertConfigurationsRouter)
 					r.Route("/deployment-target-metrics", handlers.DeploymentTargetMetricsRouter)
 					r.Route("/deployment-targets", handlers.DeploymentTargetsRouter)
 					r.Route("/deployments", handlers.DeploymentsRouter)

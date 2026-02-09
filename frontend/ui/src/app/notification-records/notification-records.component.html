@@ -36,21 +36,22 @@
                   class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
                   {{ record.applicationName }}@{{ record.applicationVersionName }}
                 </td>
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                <td
+                  class="px-4 py-3 font-medium text-gray-900 whitespace-pre-wrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
                   @if (record.currentDeploymentRevisionStatus; as s) {
                     @if (s.type === 'error') {
-                      <span class="text-red-500"> Error: </span>
+                      <span class="text-red-500">Error:</span>
                     } @else {
-                      <span class="text-green-500"> Recovered: </span>
+                      <span class="text-green-500">Recovered:</span>
                     }
                     {{ s.message }}
                   } @else {
                     <span class="text-yellow-500 dark:text-yellow-300">Stale</span>
                   }
                 </td>
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-pre-wrap dark:text-white">
                   @if (record.message; as m) {
-                    <span class="whitespace-pre-wrap">{{ m }}</span>
+                    {{ m }}
                   } @else {
                     <span class="text-gray-500">-</span>
                   }

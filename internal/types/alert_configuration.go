@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type DeploymentStatusNotificationConfiguration struct {
+type AlertConfiguration struct {
 	ID                     uuid.UUID   `db:"id" json:"id"`
 	CreatedAt              time.Time   `db:"created_at" json:"createdAt"`
 	OrganizationID         uuid.UUID   `db:"organization_id" json:"organizationId"`

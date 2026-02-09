@@ -17,51 +17,53 @@ import (
 	"go.uber.org/zap"
 )
 
-func DeploymentStatusNotificationConfigurationsRouter(r chiopenapi.Router) {
+func AlertConfigurationsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Notifications"))
 
 	r.Use(middleware.ProFeature)
 
-	r.Get("/", getDeploymentStatusNotificationConfigurationsHandler()).
-		With(option.Description("list all deployment status notification configurations")).
-		With(option.Response(http.StatusOK, []types.DeploymentStatusNotificationConfiguration{}))
+	r.Get("/", getAlertConfigurationsHandler()).
+		With(option.Description("list all alert configurations")).
+		With(option.Response(http.StatusOK, []types.AlertConfiguration{}))
 
-	r.Post("/", createDeploymentStatusNotificationConfigurationHandler()).
-		With(option.Description("create a new deployment status notification configuration")).
-		With(option.Request(types.DeploymentStatusNotificationConfiguration{})).
-		With(option.Response(http.StatusOK, types.DeploymentStatusNotificationConfiguration{}))
+	r.With(middleware.RequireReadWriteOrAdmin).
+		Post("/", createAlertConfigurationHandler()).
+		With(option.Description("create a new alert configuration")).
+		With(option.Request(types.AlertConfiguration{})).
+		With(option.Response(http.StatusOK, types.AlertConfiguration{}))
 
-	r.Route("/{id}", func(r chiopenapi.Router) {
-		type IDRequest struct {
-			ID string `path:"id"`
-		}
+	r.With(middleware.RequireReadWriteOrAdmin).
+		Route("/{id}", func(r chiopenapi.Router) {
+			type IDRequest struct {
+				ID string `path:"id"`
+			}
 
-		r.Put("/", updateDeploymentStatusNotificationHandler()).
-			With(option.Description("update an existing deployment status notification configuration")).
-			With(option.Request(struct {
-				IDRequest
-				types.DeploymentStatusNotificationConfiguration
-			}{})).
-			With(option.Response(http.StatusOK, types.DeploymentStatusNotificationConfiguration{}))
+			r.Put("/", updateAlertConfigurationHandler()).
+				With(option.Description("update an existing alert configuration")).
+				With(option.Request(struct {
+					IDRequest
+					types.AlertConfiguration
+				}{})).
+				With(option.Response(http.StatusOK, types.AlertConfiguration{}))
 
-		r.Delete("/", deleteDeploymentStatusNotificationHandler()).
-			With(option.Description("delete an existing deployment status notification configuration")).
-			With(option.Request(IDRequest{}))
-	})
+			r.Delete("/", deleteAlertConfigurationHandler()).
+				With(option.Description("delete an existing alert configuration")).
+				With(option.Request(IDRequest{}))
+		})
 }
 
-func getDeploymentStatusNotificationConfigurationsHandler() http.HandlerFunc {
+func getAlertConfigurationsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		auth := auth.Authentication.Require(ctx)
 
-		configs, err := db.GetDeploymentStatusNotificationConfigurations(
+		configs, err := db.GetAlertConfigurations(
 			ctx,
 			*auth.CurrentOrgID(),
 			auth.CurrentCustomerOrgID(),
 		)
 		if err != nil {
-			internalctx.GetLogger(ctx).Error("failed to get notification configurations", zap.Error(err))
+			internalctx.GetLogger(ctx).Error("failed to get alert configurations", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
@@ -72,12 +74,12 @@ func getDeploymentStatusNotificationConfigurationsHandler() http.HandlerFunc {
 	}
 }
 
-func createDeploymentStatusNotificationConfigurationHandler() http.HandlerFunc {
+func createAlertConfigurationHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		auth := auth.Authentication.Require(ctx)
 
-		config, err := JsonBody[types.DeploymentStatusNotificationConfiguration](w, r)
+		config, err := JsonBody[types.AlertConfiguration](w, r)
 		if err != nil {
 			return
 		}
@@ -85,8 +87,8 @@ func createDeploymentStatusNotificationConfigurationHandler() http.HandlerFunc {
 		config.OrganizationID = *auth.CurrentOrgID()
 		config.CustomerOrganizationID = auth.CurrentCustomerOrgID()
 
-		if err := db.CreateDeploymentStatusNotificationConfiguration(ctx, &config); err != nil {
-			internalctx.GetLogger(ctx).Error("failed to create notification configuration", zap.Error(err))
+		if err := db.CreateAlertConfiguration(ctx, &config); err != nil {
+			internalctx.GetLogger(ctx).Error("failed to create alert configuration", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
@@ -97,7 +99,7 @@ func createDeploymentStatusNotificationConfigurationHandler() http.HandlerFunc {
 	}
 }
 
-func updateDeploymentStatusNotificationHandler() http.HandlerFunc {
+func updateAlertConfigurationHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		auth := auth.Authentication.Require(ctx)
@@ -108,7 +110,7 @@ func updateDeploymentStatusNotificationHandler() http.HandlerFunc {
 			return
 		}
 
-		config, err := JsonBody[types.DeploymentStatusNotificationConfiguration](w, r)
+		config, err := JsonBody[types.AlertConfiguration](w, r)
 		if err != nil {
 			return
 		}
@@ -117,8 +119,8 @@ func updateDeploymentStatusNotificationHandler() http.HandlerFunc {
 		config.OrganizationID = *auth.CurrentOrgID()
 		config.CustomerOrganizationID = auth.CurrentCustomerOrgID()
 
-		if err := db.UpdateDeploymentStatusNotificationConfiguration(ctx, &config); err != nil {
-			internalctx.GetLogger(ctx).Error("failed to update notification configuration", zap.Error(err))
+		if err := db.UpdateAlertConfiguration(ctx, &config); err != nil {
+			internalctx.GetLogger(ctx).Error("failed to update alert configuration", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
@@ -129,7 +131,7 @@ func updateDeploymentStatusNotificationHandler() http.HandlerFunc {
 	}
 }
 
-func deleteDeploymentStatusNotificationHandler() http.HandlerFunc {
+func deleteAlertConfigurationHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		auth := auth.Authentication.Require(ctx)
@@ -140,7 +142,7 @@ func deleteDeploymentStatusNotificationHandler() http.HandlerFunc {
 			return
 		}
 
-		if err := db.DeleteDeploymentStatusNotificationConfiguration(
+		if err := db.DeleteAlertConfiguration(
 			ctx,
 			id,
 			*auth.CurrentOrgID(),
@@ -149,7 +151,7 @@ func deleteDeploymentStatusNotificationHandler() http.HandlerFunc {
 			if errors.Is(err, apierrors.ErrNotFound) {
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			} else {
-				internalctx.GetLogger(ctx).Error("failed to delete notification configuration", zap.Error(err))
+				internalctx.GetLogger(ctx).Error("failed to delete alert configuration", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			}

@@ -17,25 +17,22 @@ import {
 import {firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {validateRecordAtLeast} from '../../util/validation';
+import {AlertConfigurationsService} from '../services/alert-configurations.service';
 import {AuthService} from '../services/auth.service';
 import {CustomerOrganizationsService} from '../services/customer-organizations.service';
-import {DeploymentStatusNotificationConfigurationsService} from '../services/deployment-status-notification-configurations.service';
 import {DeploymentTargetsService} from '../services/deployment-targets.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
 import {UsersService} from '../services/users.service';
-import {
-  CreateUpdateDeploymentStatusNotificationConfigurationRequest,
-  DeploymentStatusNotificationConfiguration,
-} from '../types/deployment-status-notification-configuration';
+import {AlertConfiguration, CreateUpdateAlertConfigurationRequest} from '../types/alert-configuration';
 
 @Component({
-  templateUrl: './deployment-status-notification-configurations.component.html',
+  templateUrl: './alert-configurations.component.html',
   imports: [FaIconComponent, ReactiveFormsModule, DatePipe, RouterLink],
 })
-export class DeploymentStatusNotificationConfigurationsComponent {
+export class AlertConfigurationsComponent {
   protected readonly auth = inject(AuthService);
-  private readonly svc = inject(DeploymentStatusNotificationConfigurationsService);
+  private readonly svc = inject(AlertConfigurationsService);
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly overlay = inject(OverlayService);
   private readonly usersService = inject(UsersService);
@@ -43,7 +40,7 @@ export class DeploymentStatusNotificationConfigurationsComponent {
   private readonly customersService = inject(CustomerOrganizationsService);
   private readonly toast = inject(ToastService);
 
-  protected readonly editConfigRef = signal<DeploymentStatusNotificationConfiguration | undefined>(undefined);
+  protected readonly editConfigRef = signal<AlertConfiguration | undefined>(undefined);
   protected readonly editConfigForm = this.fb.group({
     id: this.fb.control(''),
     name: this.fb.control(''),
@@ -108,7 +105,7 @@ export class DeploymentStatusNotificationConfigurationsComponent {
   protected readonly faXmark = faXmark;
   protected readonly faHistory = faClockRotateLeft;
 
-  protected async showDrawer(config?: DeploymentStatusNotificationConfiguration) {
+  protected async showDrawer(config?: AlertConfiguration) {
     this.hideDrawer();
     this.editConfigRef.set(config);
     this.editConfigForm.reset();
@@ -148,7 +145,7 @@ export class DeploymentStatusNotificationConfigurationsComponent {
     }
 
     const formValue = this.editConfigForm.value;
-    const requestValue: CreateUpdateDeploymentStatusNotificationConfigurationRequest = {
+    const requestValue: CreateUpdateAlertConfigurationRequest = {
       name: formValue.name ?? '',
       enabled: formValue.enabled ?? true,
       deploymentTargetIds: Object.entries(formValue.deploymentTargetIds ?? {})
@@ -164,10 +161,10 @@ export class DeploymentStatusNotificationConfigurationsComponent {
     try {
       if (formValue.id) {
         await firstValueFrom(this.svc.update(formValue.id, requestValue));
-        this.toast.success('Deployment status notification configuration updated');
+        this.toast.success('Alert configuration updated');
       } else {
         await firstValueFrom(this.svc.create(requestValue));
-        this.toast.success('Deployment status notification configuration created');
+        this.toast.success('Alert configuration created');
       }
       this.reload$.next();
       this.hideDrawer();
@@ -181,12 +178,12 @@ export class DeploymentStatusNotificationConfigurationsComponent {
     }
   }
 
-  protected async toggleConfigEnabled(config: DeploymentStatusNotificationConfiguration) {
+  protected async toggleConfigEnabled(config: AlertConfiguration) {
     try {
       const request = {...config, enabled: !config.enabled};
       this.enabledToggleLoading.set(true);
       await firstValueFrom(this.svc.update(config.id, request));
-      this.toast.success(`Deployment status notification configuration ${request.enabled ? 'enabled' : 'disabled'}`);
+      this.toast.success(`Alert configuration ${request.enabled ? 'enabled' : 'disabled'}`);
       this.reload$.next();
     } catch (e) {
       const msg = getFormDisplayedError(e);
@@ -198,10 +195,10 @@ export class DeploymentStatusNotificationConfigurationsComponent {
     }
   }
 
-  protected async deleteConfig(config: DeploymentStatusNotificationConfiguration) {
+  protected async deleteConfig(config: AlertConfiguration) {
     this.svc.delete(config.id).subscribe({
       next: () => {
-        this.toast.success('Deployment status notification configuration deleted');
+        this.toast.success('Alert configuration deleted');
         this.reload$.next();
       },
       error: (e) => this.toast.error(e),

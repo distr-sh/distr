@@ -290,15 +290,13 @@
                             </span>
                           </li>
                           <li
-                            [class.text-red-600]="subscriptionInfoData.hasDeploymentStatusNotificationConfigurations"
-                            [class.dark:text-red-300]="
-                              subscriptionInfoData.hasDeploymentStatusNotificationConfigurations
-                            ">
+                            [class.text-red-600]="subscriptionInfoData.hasAlertConfigurations"
+                            [class.dark:text-red-300]="subscriptionInfoData.hasAlertConfigurations">
                             <fa-icon [icon]="faXmark" />
                             Deployment status notifications
                             <span class="text-xs">
                               (Pro feature)
-                              @if (subscriptionInfoData.hasDeploymentStatusNotificationConfigurations) {
+                              @if (subscriptionInfoData.hasAlertConfigurations) {
                                 <span class="font-semibold">- in use</span>
                               }
                             </span>
