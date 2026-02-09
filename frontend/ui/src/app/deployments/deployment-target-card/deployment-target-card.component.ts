@@ -10,6 +10,7 @@ import {modalFlyInOut} from '../../animations/modal';
 import {ConnectInstructionsComponent} from '../../components/connect-instructions/connect-instructions.component';
 import {StatusDotComponent} from '../../components/status-dot';
 import {UuidComponent} from '../../components/uuid';
+import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {DeploymentModalComponent} from '../deployment-modal.component';
 import {DeploymentStatusModalComponent} from '../deployment-status-modal/deployment-status-modal.component';
 import {DeploymentTargetStatusModalComponent} from '../deployment-target-status-modal/deployment-target-status-modal.component';
@@ -38,6 +39,7 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
     DeploymentTargetStatusModalComponent,
     DeploymentAppNameComponent,
     DeploymentStatusTextComponent,
+    AutotrimDirective,
   ],
   animations: [modalFlyInOut, drawerFlyInOut, dropdownAnimation],
 })

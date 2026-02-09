@@ -310,9 +310,9 @@ export abstract class DeploymentTargetCardBaseComponent {
     this.showModal(this.deploymentTargetStatusModal());
   }
 
-  protected setLogsEnabled(deplyoment: DeploymentWithLatestRevision, logsEnabled: boolean) {
-    if (deplyoment.id) {
-      this.deploymentTargets.patchDeployment(deplyoment.id, {logsEnabled}).subscribe({
+  protected setLogsEnabled(deployment: DeploymentWithLatestRevision, logsEnabled: boolean) {
+    if (deployment.id) {
+      this.deploymentTargets.patchDeployment(deployment.id, {logsEnabled}).subscribe({
         next: () => this.toast.success('Deployment has been updated.'),
         error: (e) => {
           const msg = getFormDisplayedError(e);
@@ -446,7 +446,12 @@ export abstract class DeploymentTargetCardBaseComponent {
           await firstValueFrom(this.deploymentTargets.update(dt));
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    }
   }
 
   protected showModal(templateRef: TemplateRef<unknown>) {
