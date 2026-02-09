@@ -4,13 +4,14 @@ import {NgOptimizedImage} from '@angular/common';
 import {Component} from '@angular/core';
 import {ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {IsStalePipe} from '../../../util/model';
 import {drawerFlyInOut} from '../../animations/drawer';
 import {dropdownAnimation} from '../../animations/dropdown';
 import {modalFlyInOut} from '../../animations/modal';
 import {ConnectInstructionsComponent} from '../../components/connect-instructions/connect-instructions.component';
-import {DeploymentStatusDotDirective, StatusDotComponent} from '../../components/status-dot';
+import {StatusDotComponent} from '../../components/status-dot';
 import {DeploymentModalComponent} from '../deployment-modal.component';
+import {DeploymentAppNameComponent} from './deployment-app-name.component';
+import {DeploymentStatusTextComponent} from './deployment-status-text.component';
 import {DeploymentTargetCardBaseComponent} from './deployment-target-card-base.component';
 import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.component';
 
@@ -20,7 +21,6 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
   imports: [
     NgOptimizedImage,
     StatusDotComponent,
-    DeploymentStatusDotDirective,
     FaIconComponent,
     OverlayModule,
     ConnectInstructionsComponent,
@@ -28,7 +28,8 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
     DeploymentModalComponent,
     DeploymentTargetMetricsComponent,
     TextFieldModule,
-    IsStalePipe,
+    DeploymentAppNameComponent,
+    DeploymentStatusTextComponent,
   ],
   animations: [modalFlyInOut, drawerFlyInOut, dropdownAnimation],
 })

@@ -45,40 +45,12 @@
             <tr class="hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-300 dark:border-gray-500">
               <td class="px-4 py-2">
                 <div class="flex items-center gap-3">
-                  <div class="flex-shrink-0">
-                    <fa-icon class="text-gray-500 dark:text-gray-400 text-2xl" [icon]="faShip"></fa-icon>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <div
-                      class="font-medium text-gray-900 dark:text-white truncate break-all"
-                      [title]="deployment.applicationName">
-                      {{ deployment.applicationName }}
-                    </div>
-                    <div
-                      class="text-gray-500 dark:text-gray-400 text-xs truncate break-all"
-                      [title]="deployment.applicationVersionName">
-                      {{ deployment.applicationVersionName }}
-                    </div>
-                  </div>
+                  <app-deployment-app-name
+                    class="flex-1 min-w-0"
+                    [applicationName]="deployment.applicationName"
+                    [applicationVersionName]="deployment.applicationVersionName" />
                   <div class="flex items-center gap-3 flex-shrink-0">
-                    <div class="flex items-center">
-                      <div class="size-4 me-1" appDeploymentStatusDot [deployment]="deployment"></div>
-                      @if (deployment.latestStatus; as drs) {
-                        @if (drs.type === 'error') {
-                          Error
-                        } @else if (drs | isStale) {
-                          Stale
-                        } @else if (drs.type === 'progressing') {
-                          Progressing
-                        } @else if (drs.type === 'running') {
-                          Running
-                        } @else {
-                          Healthy
-                        }
-                      } @else {
-                        No status
-                      }
-                    </div>
+                    <app-deployment-status-text [deployment]="deployment" />
                     @if (deployment.applicationLink) {
                       <a
                         [href]="deployment.applicationLink"

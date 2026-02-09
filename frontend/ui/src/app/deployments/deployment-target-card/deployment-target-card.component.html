@@ -1,9 +1,9 @@
 <div
   class="h-full rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 font-medium text-gray-900 dark:text-white flex flex-col">
-  <div class="p-4 justify-between items-stretch md:flex">
-    <div class="justify-between sm:flex sm:items-center">
-      <div class="flex gap-3 items-start lg:items-center mb-2 md:mb-0">
-        <div class="relative self-start">
+  <div class="p-4 justify-between items-stretch md:flex min-w-0">
+    <div class="justify-between sm:flex sm:items-center min-w-0">
+      <div class="flex gap-3 items-start lg:items-center mb-2 md:mb-0 min-w-0">
+        <div class="relative self-start flex-shrink-0">
           <img
             [ngSrc]="'/' + deploymentTarget().type + '.png'"
             [alt]="deploymentTarget().type"
@@ -13,13 +13,17 @@
           <app-status-dot class="absolute size-2.5 -bottom-0.5 -end-0.5" [deploymentTarget]="deploymentTarget()">
           </app-status-dot>
         </div>
-        <div>
+        <div class="min-w-0">
           <div class="flex gap-2">
-            <h3 class="font-bold break-all">{{ deploymentTarget().name }}</h3>
-            @if (deploymentTarget().id; as id) {
-              <app-uuid [uuid]="id" [small]="true"></app-uuid>
-            }
+            <h3 class="font-bold truncate break-all" [title]="deploymentTarget().name">
+              {{ deploymentTarget().name }}
+            </h3>
           </div>
+          @if (deploymentTarget().id; as id) {
+            <div>
+              <app-uuid [uuid]="id" [small]="true"></app-uuid>
+            </div>
+          }
           <div class="flex flex-col items-start lg:flex-row lg:items-center lg:gap-2">
             <dl class="inline-flex gap-1 text-sm">
               <dt class="text-gray-500 dark:text-gray-400">Created:</dt>
@@ -222,9 +226,11 @@
   </div>
 
   @if (deploymentTarget().deployments.length > 0) {
-    <hr class="border-b border-gray-200 dark:border-gray-600" />
-    <div class="items-center sm:flex sm:flex-wrap xl:flex">
-      <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+    <hr class="border-gray-200 dark:border-gray-600" />
+  }
+  @if (deploymentTarget().deployments.length > 0) {
+    <div class="overflow-hidden">
+      <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400 table-fixed">
         <thead class="sr-only uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400 text-xs">
           <tr>
             <th scope="col" class="px-4 py-2">Application</th>
@@ -236,69 +242,28 @@
         <tbody>
           @let deploymentIdsWithUpdate1 = deploymentIdsWithUpdate();
           @for (deployment of deploymentTarget().deployments; track deployment.id) {
-            <tr class="hover:bg-gray-100 dark:hover:bg-gray-700 border-t-2 border-gray-300 dark:border-gray-500">
-              <td rowspan="2" class="px-4 py-2 font-medium text-gray-900 whitespace-normal dark:text-white align-top">
-                <fa-icon class="text-gray-500 dark:text-gray-400 text-2xl" [icon]="faShip"></fa-icon>
-              </td>
-              <td
-                class="px-4 py-1 font-medium text-gray-900 dark:text-white overflow-hidden text-ellipsis"
-                [title]="deployment.applicationName">
-                <div class="truncate">{{ deployment.applicationName }}</div>
-              </td>
-            </tr>
-            <tr class="hover:bg-gray-100 dark:hover:bg-gray-700">
-              <td
-                class="px-4 py-1 pb-2 text-gray-500 dark:text-gray-400 text-xs overflow-hidden text-ellipsis"
-                [title]="deployment.applicationVersionName">
-                <div class="truncate">{{ deployment.applicationVersionName }}</div>
-              </td>
-            </tr>
-            <tr class="hover:bg-gray-100 dark:hover:bg-gray-700">
-              <td
-                class="px-4 py-2 font-medium text-gray-900 whitespace-normal dark:text-white text-xs border-t border-gray-200 dark:border-gray-600"
-                colspan="2">
-                <div class="text-gray-500 dark:text-gray-400 break-words">Last modified:</div>
-                {{ deployment.deploymentRevisionCreatedAt | date: 'short' }}
-              </td>
-              <td
-                class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white border-t border-gray-200 dark:border-gray-600">
-                <button (click)="openStatusModal(deployment)" class="flex items-center">
-                  <div class="size-4 me-1" appDeploymentStatusDot [deployment]="deployment"></div>
-                  @if (deployment.latestStatus; as drs) {
-                    @if (drs.type === 'error') {
-                      Error
-                    } @else if (drs | isStale) {
-                      Stale
-                    } @else if (drs.type === 'progressing') {
-                      Progressing
-                    } @else if (drs.type === 'running') {
-                      Running
-                    } @else {
-                      Healthy
-                    }
-                  } @else {
-                    No status
-                  }
+            <tr class="hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-300 dark:border-gray-500">
+              <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white" colspan="2">
+                <button (click)="openStatusModal(deployment)">
+                  <app-deployment-status-text [deployment]="deployment" />
                 </button>
               </td>
-              @if (deployment.applicationLink) {
-                <td
-                  class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white text-right border-t border-gray-200 dark:border-gray-600">
-                  <a
-                    [href]="deployment.applicationLink"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="px-2 py-1 inline-flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                    <fa-icon
-                      [icon]="faArrowUpRightFromSquare"
-                      class="h-5 w-5 mr-1 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
-                    Open
-                  </a>
-                </td>
-              }
               <td
-                class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white text-right border-t border-gray-200 dark:border-gray-600">
+                class="px-4 py-2 font-medium text-gray-900 whitespace-normal dark:text-white text-xs text-right"
+                colspan="3">
                 <div class="flex items-center justify-end space-x-2">
+                  @if (deployment.applicationLink) {
+                    <a
+                      [href]="deployment.applicationLink"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="px-2 py-1 inline-flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                      <fa-icon
+                        [icon]="faArrowUpRightFromSquare"
+                        class="h-5 w-5 mr-1 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
+                      Open
+                    </a>
+                  }
                   @if (deployment.latestStatus) {
                     <button
                       type="button"
@@ -430,6 +395,19 @@
                     </ng-template>
                   }
                 </div>
+              </td>
+            </tr>
+            <tr class="hover:bg-gray-100 dark:hover:bg-gray-700">
+              <td class="px-4 py-2" colspan="3">
+                <app-deployment-app-name
+                  [applicationName]="deployment.applicationName"
+                  [applicationVersionName]="deployment.applicationVersionName" />
+              </td>
+              <td
+                class="px-4 py-2 font-medium text-gray-900 whitespace-normal dark:text-white text-xs text-right"
+                colspan="2">
+                <div class="text-gray-500 dark:text-gray-400 break-words">Last modified:</div>
+                {{ deployment.deploymentRevisionCreatedAt | date: 'short' }}
               </td>
             </tr>
           }
