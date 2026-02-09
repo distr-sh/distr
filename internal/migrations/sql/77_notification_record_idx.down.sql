@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS idx_notification_record_config_prev_status_created;
+DROP INDEX IF EXISTS idx_notification_record_org_customer_created;

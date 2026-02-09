@@ -47,6 +47,7 @@ func runServe(ctx context.Context, opts ServeOptions) {
 		EnableTracing:    env.OtelExporterSentryEnabled(),
 		TracesSampleRate: 1.0,
 		Release:          buildconfig.Version(),
+		IgnoreErrors:     []string{context.Canceled.Error()},
 	}))
 	defer sentry.Flush(5 * time.Second)
 	defer func() {
