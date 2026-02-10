@@ -1,0 +1,15 @@
+ALTER TABLE DeploymentStatusNotificationConfiguration
+  RENAME TO AlertConfiguration;
+
+ALTER TABLE DeploymentStatusNotificationConfiguration_DeploymentTarget
+  RENAME TO AlertConfiguration_DeploymentTarget;
+ALTER TABLE AlertConfiguration_DeploymentTarget
+  RENAME COLUMN deployment_status_notification_configuration_id TO alert_configuration_id;
+
+ALTER TABLE DeploymentStatusNotificationConfiguration_Organization_UserAccount
+  RENAME TO AlertConfiguration_Organization_UserAccount;
+ALTER TABLE AlertConfiguration_Organization_UserAccount
+  RENAME COLUMN deployment_status_notification_configuration_id TO alert_configuration_id;
+
+ALTER TABLE NotificationRecord
+  RENAME COLUMN deployment_status_notification_configuration_id TO alert_configuration_id;

@@ -10,13 +10,13 @@ func NotificationRecordWithCurrentStatusToAPI(
 ) api.NotificationRecordWithCurrentStatus {
 	apiRecord := api.NotificationRecordWithCurrentStatus{
 		NotificationRecord: api.NotificationRecord{
-			ID:                 record.ID,
-			CreatedAt:          record.CreatedAt,
-			DeploymentTargetID: record.DeploymentTargetID,
-			DeploymentStatusNotificationConfigurationID: record.DeploymentStatusNotificationConfigurationID,
-			PreviousDeploymentRevisionStatusID:          record.PreviousDeploymentRevisionStatusID,
-			CurrentDeploymentRevisionStatusID:           record.CurrentDeploymentRevisionStatusID,
-			Message:                                     record.Message,
+			ID:                                 record.ID,
+			CreatedAt:                          record.CreatedAt,
+			DeploymentTargetID:                 record.DeploymentTargetID,
+			AlertConfigurationID:               record.AlertConfigurationID,
+			PreviousDeploymentRevisionStatusID: record.PreviousDeploymentRevisionStatusID,
+			CurrentDeploymentRevisionStatusID:  record.CurrentDeploymentRevisionStatusID,
+			Message:                            record.Message,
 		},
 		DeploymentTargetName:     record.DeploymentTargetName,
 		CustomerOrganizationName: record.CustomerOrganizationName,

@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import {firstValueFrom, map} from 'rxjs';
 import {getRemoteEnvironment} from '../env/remote';
 import {AccessTokensComponent} from './access-tokens/access-tokens.component';
+import {AlertConfigurationsComponent} from './alert-configurations/alert-configurations.component';
 import {ApplicationDetailComponent} from './applications/application-detail.component';
 import {ApplicationsPageComponent} from './applications/applications-page.component';
 import {ArtifactLicensesComponent} from './artifacts/artifact-licenses/artifact-licenses.component';
@@ -16,7 +17,6 @@ import {DashboardComponent} from './components/dashboard/dashboard.component';
 import {HomeComponent} from './components/home/home.component';
 import {CustomerUsersComponent} from './components/users/customers/customer-users.component';
 import {VendorUsersComponent} from './components/users/vendors/vendor-users.component';
-import {DeploymentStatusNotificationConfigurationsComponent} from './deployment-status-notification-configurations/deployment-status-notification-configurations.component';
 import {DeploymentTargetsComponent} from './deployments/deployment-targets.component';
 import {LicensesComponent} from './licenses/licenses.component';
 import {NotificationRecordsComponent} from './notification-records/notification-records.component';
@@ -247,8 +247,8 @@ export const routes: Routes = [
         canActivate: [notificationsEnabledGuard()],
         children: [
           {
-            path: 'deployment-status',
-            component: DeploymentStatusNotificationConfigurationsComponent,
+            path: 'alert-configurations',
+            component: AlertConfigurationsComponent,
           },
           {
             path: 'history',

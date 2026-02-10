@@ -324,29 +324,29 @@ func buildSubscriptionInfo(ctx context.Context, org *types.Organization) (*api.S
 		return nil, fmt.Errorf("failed to check non-admin roles: %w", err)
 	}
 
-	hasDeploymentStatusNotificationConfigurations, err := checkHasDeploymentStatusNotificationConfigurations(
+	hasAlertConfigurations, err := checkHasAlertConfigurations(
 		ctx,
 		org.ID,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to check deployment target notification configurations: %w", err)
+		return nil, fmt.Errorf("failed to check alert configurations: %w", err)
 	}
 
 	info := &api.SubscriptionInfo{
-		SubscriptionType:                              org.SubscriptionType,
-		SubscriptionEndsAt:                            org.SubscriptionEndsAt,
-		SubscriptionPeriod:                            org.SubscriptionPeriod,
-		SubscriptionCustomerOrganizationQty:           org.SubscriptionCustomerOrganizationQty,
-		SubscriptionUserAccountQty:                    org.SubscriptionUserAccountQty,
-		CurrentUserAccountCount:                       usage.userAccountCount,
-		CurrentCustomerOrganizationCount:              usage.customerOrganizationCount,
-		CurrentMaxUsersPerCustomer:                    usage.maxUsersPerCustomer,
-		CurrentMaxDeploymentTargetsPerCustomer:        usage.maxDeploymentTargetsPerCustomer,
-		HasApplicationLicenses:                        hasApplicationLicenses,
-		HasArtifactLicenses:                           hasArtifactLicenses,
-		HasNonAdminRoles:                              hasNonAdminRoles,
-		HasDeploymentStatusNotificationConfigurations: hasDeploymentStatusNotificationConfigurations,
-		Limits: map[types.SubscriptionType]api.SubscriptionLimits{},
+		SubscriptionType:                       org.SubscriptionType,
+		SubscriptionEndsAt:                     org.SubscriptionEndsAt,
+		SubscriptionPeriod:                     org.SubscriptionPeriod,
+		SubscriptionCustomerOrganizationQty:    org.SubscriptionCustomerOrganizationQty,
+		SubscriptionUserAccountQty:             org.SubscriptionUserAccountQty,
+		CurrentUserAccountCount:                usage.userAccountCount,
+		CurrentCustomerOrganizationCount:       usage.customerOrganizationCount,
+		CurrentMaxUsersPerCustomer:             usage.maxUsersPerCustomer,
+		CurrentMaxDeploymentTargetsPerCustomer: usage.maxDeploymentTargetsPerCustomer,
+		HasApplicationLicenses:                 hasApplicationLicenses,
+		HasArtifactLicenses:                    hasArtifactLicenses,
+		HasNonAdminRoles:                       hasNonAdminRoles,
+		HasAlertConfigurations:                 hasAlertConfigurations,
+		Limits:                                 map[types.SubscriptionType]api.SubscriptionLimits{},
 	}
 
 	for _, st := range types.AllSubscriptionTypes {
@@ -445,14 +445,14 @@ func checkHasNonAdminRoles(ctx context.Context, orgID uuid.UUID) (bool, error) {
 	return false, nil
 }
 
-func checkHasDeploymentStatusNotificationConfigurations(ctx context.Context, orgID uuid.UUID) (bool, error) {
-	deploymentStatusNotificationConfigurationCount, err := db.CountDeploymentStatusNotificationConfigurations(
+func checkHasAlertConfigurations(ctx context.Context, orgID uuid.UUID) (bool, error) {
+	alertConfigurationCount, err := db.CountAlertConfigurations(
 		ctx,
 		orgID,
 	)
 	if err != nil {
-		return false, fmt.Errorf("failed to get deployment status notification configurations count: %w", err)
+		return false, fmt.Errorf("failed to get alert configurations count: %w", err)
 	}
 
-	return deploymentStatusNotificationConfigurationCount > 0, nil
+	return alertConfigurationCount > 0, nil
 }
