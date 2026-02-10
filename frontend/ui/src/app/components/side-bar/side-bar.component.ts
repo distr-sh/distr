@@ -11,7 +11,6 @@ import {
   faAsterisk,
   faBox,
   faBoxesStacked,
-  faBullhorn,
   faChevronDown,
   faCreditCard,
   faDashboard,
@@ -73,15 +72,13 @@ export class SideBarComponent {
   protected readonly faHome = faHome;
   protected readonly faChevronDown = faChevronDown;
   protected readonly faAsterisk = faAsterisk;
-  protected readonly faBullhorn = faBullhorn;
 
   protected feedbackAlert = true;
   protected readonly agentsSubMenuOpen = signal(true);
   protected readonly licenseSubMenuOpen = signal(false);
   protected readonly registrySubMenuOpen = signal(true);
-  protected readonly notificationsSubMenuOpen = signal(false);
+  protected readonly deploymentsSubMenuOpen = signal(true);
   protected readonly licenseOverlayOpen = signal(false);
-  protected readonly notificationsOverlayOpen = signal(false);
 
   protected readonly isAllTutorialsStarted = toSignal(this.tutorialsService.allStarted$);
   protected readonly isLicensingFeatureEnabled = toSignal(this.featureFlags.isLicensingEnabled$);
