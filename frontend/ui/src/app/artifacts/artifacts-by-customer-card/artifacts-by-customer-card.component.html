@@ -4,7 +4,7 @@
     <div class="justify-between sm:flex sm:items-center">
       <div class="flex gap-3 items-start lg:items-center mb-2 md:mb-0">
         @if (customer().imageUrl; as imageUrl) {
-          <img class="size-8 rounded-full" [attr.src]="imageUrl | secureImage | async" alt="" />
+          <img class="size-8 rounded-sm" [attr.src]="imageUrl | secureImage | async" alt="" />
         } @else {
           <fa-icon [icon]="faBuildingUser" class="text-xl text-gray-400"></fa-icon>
         }
