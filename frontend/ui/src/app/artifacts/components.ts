@@ -1,11 +1,11 @@
 import {AsyncPipe} from '@angular/common';
 import {Component, computed, inject, input, signal} from '@angular/core';
-import {toObservable} from '@angular/core/rxjs-interop';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faDownload, faEllipsis, faUserCircle} from '@fortawesome/free-solid-svg-icons';
-import {catchError, map, of, switchMap, zip} from 'rxjs';
 import {SecureImagePipe} from '../../util/secureImage';
 import {HasDownloads} from '../services/artifacts.service';
+import {CustomerOrganizationsCache} from '../services/customer-organizations.service';
 import {UsersService} from '../services/users.service';
 
 @Component({
@@ -27,8 +27,8 @@ export class ArtifactsDownloadCountComponent {
 @Component({
   selector: 'app-artifacts-downloaded-by',
   template: `
-    <div class="flex -space-x-3 hover:-space-x-1 rtl:space-x-reverse">
-      @let shownUsers = downloadedBy$ | async;
+    <div class="flex -space-x-3 hover:-space-x-1 rtl:space-x-reverse justify-end">
+      @let shownUsers = downloadedByUsers();
       @for (user of shownUsers; track user.id) {
         @if (user.imageUrl; as imageUrl) {
           <img
@@ -36,10 +36,25 @@ export class ArtifactsDownloadCountComponent {
             [attr.src]="imageUrl | secureImage | async"
             [title]="user.name ?? user.email" />
         } @else {
-          <fa-icon [icon]="faUserCircle" size="xl" class="text-xl text-gray-400"></fa-icon>
+          <fa-icon
+            [icon]="faUserCircle"
+            size="xl"
+            class="text-xl text-gray-400"
+            [title]="user.name ?? user.email"></fa-icon>
         }
       }
-      @if ((source().downloadedByCount ?? 0) - (shownUsers?.length ?? 0); as count) {
+      @let shownCustomers = downloadedByCustomerOrganizations();
+      @for (customer of shownCustomers; track customer.id) {
+        @if (customer.imageUrl; as imageUrl) {
+          <img
+            class="size-8 border-2 border-white rounded-full dark:border-gray-800 transition-all duration-100 ease-in-out"
+            [attr.src]="imageUrl | secureImage | async"
+            [title]="customer.name" />
+        } @else {
+          <fa-icon [icon]="faUserCircle" size="xl" class="text-xl text-gray-400" [title]="customer.name"></fa-icon>
+        }
+      }
+      @if (count(); as count) {
         @if (count > 0) {
           <div
             class="flex items-center justify-center size-8 text-xs font-medium text-white bg-gray-500 dark:bg-gray-700 border-2 border-white rounded-full dark:border-gray-800">
@@ -53,15 +68,35 @@ export class ArtifactsDownloadCountComponent {
 })
 export class ArtifactsDownloadedByComponent {
   public readonly source = input.required<HasDownloads>();
+
   private readonly usersService = inject(UsersService);
-  public readonly downloadedBy$ = toObservable(this.source).pipe(
-    switchMap((dl) => {
-      const userObservables = (dl.downloadedByUsers ?? []).map((id) =>
-        this.usersService.getUser(id).pipe(catchError((e) => of(undefined)))
-      );
-      return zip(...userObservables).pipe(map((it) => it.filter((u) => u !== undefined)));
-    })
-  );
+  private readonly customerOrganizationsService = inject(CustomerOrganizationsCache);
+
+  private readonly users = toSignal(this.usersService.getUsers());
+  protected readonly downloadedByUsers = computed(() => {
+    const users = this.users();
+    return this.source()
+      .downloadedByUsers?.map((id) => users?.find((u) => u.id === id))
+      .filter((u) => u !== undefined);
+  });
+
+  private readonly customerOrganizations = toSignal(this.customerOrganizationsService.getCustomerOrganizations());
+  protected readonly downloadedByCustomerOrganizations = computed(() => {
+    const orgs = this.customerOrganizations();
+    return this.source()
+      .downloadedByCustomerOrganizations?.map((id) => orgs?.find((o) => o.id === id))
+      .filter((o) => o !== undefined);
+  });
+
+  protected readonly count = computed(() => {
+    return (
+      (this.source().downloadedByUsersCount ?? 0) +
+      (this.source().downloadedByCustomerOrganizationsCount ?? 0) -
+      (this.downloadedByUsers()?.length ?? 0) -
+      (this.downloadedByCustomerOrganizations()?.length ?? 0)
+    );
+  });
+
   protected readonly faUserCircle = faUserCircle;
 }
 

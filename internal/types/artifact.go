@@ -23,9 +23,11 @@ type Artifact struct {
 }
 
 type DownloadMetrics struct {
-	DownloadsTotal    int         `db:"downloads_total" json:"downloadsTotal"`
-	DownloadedByCount int         `db:"downloaded_by_count" json:"downloadedByCount"`
-	DownloadedByUsers []uuid.UUID `db:"downloaded_by_users" json:"downloadedByUsers,omitempty"`
+	DownloadsTotal                         int         `db:"downloads_total" json:"downloadsTotal"`
+	DownloadedByUsersCount                 int         `db:"downloaded_by_users_count" json:"downloadedByUsersCount"`
+	DownloadedByUsers                      []uuid.UUID `db:"downloaded_by_users" json:"downloadedByUsers,omitempty"`
+	DownloadedByCustomerOrganizationsCount int         `db:"downloaded_by_customer_organizations_count" json:"downloadedByCustomerOrganizationsCount"` //nolint:lll
+	DownloadedByCustomerOrganizations      []uuid.UUID `db:"downloaded_by_customer_organizations" json:"downloadedByCustomerOrganizations,omitempty"`  //nolint:lll
 }
 
 type ArtifactVersionTag struct {
@@ -44,19 +46,15 @@ type TaggedArtifactVersion struct {
 	Tags                []ArtifactVersionTag `db:"tags" json:"tags"`
 	Size                int64                `db:"size" json:"size"`
 
-	DownloadsTotal    int         `db:"downloads_total" json:"downloadsTotal"`
-	DownloadedByCount int         `db:"downloaded_by_count" json:"downloadedByCount"`
-	DownloadedByUsers []uuid.UUID `db:"downloaded_by_users" json:"downloadedByUsers,omitempty"`
+	DownloadMetrics
 
 	InferredType ManifestType `db:"-" json:"inferredType"`
 }
 
 type ArtifactWithDownloads struct {
 	Artifact
-	OrganizationSlug  string      `db:"organization_slug" json:"-"`
-	DownloadsTotal    int         `db:"downloads_total" json:"downloadsTotal"`
-	DownloadedByCount int         `db:"downloaded_by_count" json:"downloadedByCount"`
-	DownloadedByUsers []uuid.UUID `db:"downloaded_by_users" json:"downloadedByUsers,omitempty"`
+	OrganizationSlug string `db:"organization_slug" json:"-"`
+	DownloadMetrics
 }
 
 type ArtifactWithTaggedVersion struct {
