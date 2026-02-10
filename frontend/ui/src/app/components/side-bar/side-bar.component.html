@@ -314,60 +314,19 @@
         </li>
 
         @if (hasCustomerOrganizationFeature('deployment_targets')) {
-          @if (isNotificationsFeatureEnabled() && hasCustomerOrganizationFeature('notifications')) {
-            <li>
-              <button
-                type="button"
-                (click)="toggle(deploymentsSubMenuOpen)"
-                class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
-                <fa-icon
-                  [icon]="faDashboard"
-                  size="lg"
-                  class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
-                <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Agents</span>
-                <fa-icon
-                  [icon]="faChevronDown"
-                  [class.rotate-180]="deploymentsSubMenuOpen()"
-                  class="transition duration-150"></fa-icon>
-              </button>
-              @if (deploymentsSubMenuOpen()) {
-                <ul class="space-y-1">
-                  <li>
-                    <a
-                      (click)="sidebar.hide()"
-                      routerLinkActive="bg-gray-100 dark:bg-gray-700"
-                      routerLink="/deployments"
-                      class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                      <span>Deployments</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      (click)="sidebar.hide()"
-                      routerLinkActive="bg-gray-100 dark:bg-gray-700"
-                      routerLink="/notifications/alert-configurations"
-                      class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                      <span>Alerts</span>
-                    </a>
-                  </li>
-                </ul>
-              }
-            </li>
-          } @else {
-            <li>
-              <a
-                (click)="sidebar.hide()"
-                routerLinkActive="bg-gray-100 dark:bg-gray-700"
-                routerLink="/deployments"
-                class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                <fa-icon
-                  [icon]="faDashboard"
-                  size="lg"
-                  class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
-                <span class="ms-3">Deployments</span>
-              </a>
-            </li>
-          }
+          <li>
+            <a
+              (click)="sidebar.hide()"
+              routerLinkActive="bg-gray-100 dark:bg-gray-700"
+              routerLink="/deployments"
+              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              <fa-icon
+                [icon]="faDashboard"
+                size="lg"
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+              <span class="ms-3">Deployments</span>
+            </a>
+          </li>
         }
 
         @if (hasCustomerOrganizationFeature('artifacts')) {
