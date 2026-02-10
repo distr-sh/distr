@@ -85,7 +85,6 @@
                 <div class="flex items-center mr-3">
                   @if (application.imageUrl) {
                     <img
-                      [routerLink]="application.id"
                       class="w-8 h-8 mr-3 rounded-sm"
                       [attr.src]="application.imageUrl | secureImage | async"
                       alt="" />

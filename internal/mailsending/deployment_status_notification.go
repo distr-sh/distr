@@ -105,6 +105,6 @@ func getDeploymentStatusNotificationSubject(eventType string,
 	}
 
 	return fmt.Sprintf("[%v] %v deployment %v@%v (%v)",
-		eventType, organization.Name, deployment.ApplicationName, deployment.ApplicationVersionName,
+		eventType, organization.Name, deployment.Application.Name, deployment.ApplicationVersionName,
 		deploymentTargetName)
 }

@@ -3,13 +3,11 @@
   <div class="p-4 justify-between items-stretch md:flex">
     <div class="justify-between sm:flex sm:items-center">
       <div class="flex gap-3 items-start lg:items-center mb-2 md:mb-0">
-        <div class="relative">
-          @if (customer().imageUrl; as imageUrl) {
-            <img class="w-8 h-8 rounded-full" [attr.src]="imageUrl | secureImage | async" alt="" />
-          } @else {
-            <fa-icon [icon]="faBuildingUser" class="text-xl text-gray-400"></fa-icon>
-          }
-        </div>
+        @if (customer().imageUrl; as imageUrl) {
+          <img class="size-8 rounded-sm" [attr.src]="imageUrl | secureImage | async" alt="" />
+        } @else {
+          <fa-icon [icon]="faBuildingUser" class="text-xl text-gray-400"></fa-icon>
+        }
         <div>
           <div class="flex gap-2">
             <h3 class="font-bold break-all">{{ customer().name }}</h3>
@@ -42,18 +40,16 @@
                   </span>
                 </div>
               </td>
-              <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white text-xs">
-                @if (isOnLatest(artifact)) {
-                  <div class="flex items-center">
-                    <div class="size-2 -bottom-0.5 -end-0.5 rounded-full bg-lime-600 me-1"></div>
+              <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white text-sm">
+                <div class="flex items-center gap-1">
+                  @if (isOnLatest(artifact)) {
+                    <div class="size-3 rounded-full bg-lime-600"></div>
                     OK
-                  </div>
-                } @else {
-                  <div class="flex items-center">
-                    <div class="size-2 -bottom-0.5 -end-0.5 rounded-full bg-yellow-300 me-1"></div>
+                  } @else {
+                    <div class="size-3 rounded-full bg-yellow-300"></div>
                     newer version available
-                  </div>
-                }
+                  }
+                </div>
               </td>
             </tr>
           }

@@ -12,9 +12,19 @@
 
 ## Properties
 
-### applicationId
+### application
+
+> **application**: [`Application`](Application.md)
+
+---
+
+### ~~applicationId~~
 
 > **applicationId**: `string`
+
+#### Deprecated
+
+Use application.id instead
 
 ---
 
@@ -30,9 +40,13 @@
 
 ---
 
-### applicationName
+### ~~applicationName~~
 
 > **applicationName**: `string`
+
+#### Deprecated
+
+Use application.name instead
 
 ---
 

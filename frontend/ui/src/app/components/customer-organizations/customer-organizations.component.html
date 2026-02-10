@@ -65,12 +65,12 @@
                     type="button"
                     (click)="uploadImage(customer)"
                     aria-label="Upload customer avatar"
-                    class="size-8 rounded-full bg-gray-900 dark:bg-gray-400 text-white dark:text-gray-800">
+                    class="size-8 rounded-sm bg-gray-900 dark:bg-gray-400 text-white dark:text-gray-800">
                     @if (customer.imageUrl) {
                       <img
                         [src]="customer.imageUrl | secureImage | async"
                         alt="customer avatar"
-                        class="size-full rounded-full" />
+                        class="size-full rounded-sm" />
                     } @else {
                       <fa-icon [icon]="faBuildingUser" size="lg" />
                     }

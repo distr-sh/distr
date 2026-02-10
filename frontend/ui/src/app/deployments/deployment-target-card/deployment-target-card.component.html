@@ -1,9 +1,9 @@
 <div
   class="h-full rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 font-medium text-gray-900 dark:text-white flex flex-col">
-  <div class="p-4 justify-between items-stretch md:flex min-w-0">
-    <div class="justify-between sm:flex sm:items-center min-w-0">
-      <div class="flex gap-3 items-start lg:items-center mb-2 md:mb-0 min-w-0">
-        <div class="relative self-start flex-shrink-0">
+  <div class="mx-4 my-1 md:flex justify-between items-center min-w-0">
+    <div class="sm:flex justify-between items-center min-w-0">
+      <div class="flex gap-3 items-center mb-2 md:mb-0 min-w-0">
+        <div class="relative flex-shrink-0 my-2">
           <img
             [ngSrc]="'/' + deploymentTarget().type + '.png'"
             [alt]="deploymentTarget().type"
@@ -31,36 +31,13 @@
       </div>
     </div>
 
-    <div class="space-y-4 sm:flex sm:space-x-2 sm:space-y-0 items-center self-start">
+    <div class="flex gap-2 items-center">
       @let status = deploymentTarget().currentStatus;
       @let deployEnabled = isMultiDeploymentSupported() || deploymentTarget().deployments.length === 0;
 
       @if (deploymentTarget().metricsEnabled) {
         @if (deploymentTargetMetrics(); as metrics) {
-          <button
-            type="button"
-            (click)="toggle(metricsOpened)"
-            cdkOverlayOrigin
-            #tooltipTrigger="cdkOverlayOrigin"
-            class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed">
-            <fa-icon [icon]="faHeartPulse" class="text-gray-500 dark:text-gray-400"></fa-icon>
-          </button>
-          <ng-template
-            cdkConnectedOverlay
-            [cdkConnectedOverlayHasBackdrop]="true"
-            (backdropClick)="toggle(metricsOpened)"
-            [cdkConnectedOverlayOrigin]="tooltipTrigger"
-            [cdkConnectedOverlayBackdropClass]="'transparent'"
-            [cdkConnectedOverlayOpen]="metricsOpened()">
-            <ng-container *ngTemplateOutlet="metricsOverlay"></ng-container>
-          </ng-template>
-          <ng-template #metricsOverlay>
-            <div
-              role="tooltip"
-              class="p-3 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 font-medium border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-w-64">
-              <app-deployment-target-metrics [metrics]="metrics" [fullVersion]="true"></app-deployment-target-metrics>
-            </div>
-          </ng-template>
+          <app-deployment-target-metrics [metrics]="metrics" />
         }
       }
       @if (auth.hasAnyRole('read_write', 'admin')) {
@@ -238,7 +215,7 @@
                 <div class="flex items-center justify-between gap-3">
                   <div class="flex-1 min-w-0">
                     <app-deployment-app-name
-                      [applicationName]="deployment.applicationName"
+                      [application]="deployment.application"
                       [applicationVersionName]="deployment.applicationVersionName" />
                   </div>
                   <div class="flex items-center justify-end space-x-2">
@@ -366,7 +343,7 @@
                                   role="alert">
                                   <span class="font-semibold me-1">WARNING!</span>
                                   You are about to uninstall
-                                  {{ deployment.applicationName + '@' + deployment.applicationVersionName }} on
+                                  {{ deployment.application.name }}@{{ deployment.applicationVersionName }} on
                                   {{ deploymentTarget().name }}. This will also delete all:
                                   <ul class="my-1.5 list-disc list-inside">
                                     <li>associated configuration</li>

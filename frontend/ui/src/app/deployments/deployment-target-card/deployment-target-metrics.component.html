@@ -1,4 +1,9 @@
-<div class="flex space-x-1 items-center justify-end rtl:space-x-reverse">
+<div
+  class="flex space-x-1 items-center justify-end rtl:space-x-reverse"
+  (mouseenter)="hovered.set(true)"
+  (mouseleave)="hovered.set(false)"
+  cdkOverlayOrigin
+  #metricsOverlayOrigin="cdkOverlayOrigin">
   <div class="flex flex-col justify-center items-center">
     <div class="relative">
       <div class="gauge z-0 percent-{{ getPercentClass(metrics().cpuUsage) }} relative">
@@ -7,13 +12,6 @@
       <div class="absolute inset-0 flex items-center justify-center text-xs font-thin text-black dark:text-white">
         {{ metrics().cpuUsage | percent }}
       </div>
-    </div>
-    <div class="bg-white dark:bg-gray-800 text-xs content-center text-center mt-1 font-thin">
-      @if (fullVersion()) {
-        CPU<br />{{ metrics().cpuCoresMillis / 1000 }} Cores
-      } @else {
-        CPU
-      }
     </div>
   </div>
   <div class="flex flex-col justify-center items-center">
@@ -25,12 +23,28 @@
         {{ metrics().memoryUsage | percent }}
       </div>
     </div>
-    <div class="bg-white dark:bg-gray-800 text-xs content-center text-center mt-1 font-thin">
-      @if (fullVersion()) {
-        RAM<br />{{ metrics().memoryBytes | bytes: '1.0-0' }}
-      } @else {
-        RAM
-      }
-    </div>
   </div>
 </div>
+
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="metricsOverlayOrigin"
+  [cdkConnectedOverlayOpen]="hovered()"
+  [cdkConnectedOverlayPush]="true"
+  [cdkConnectedOverlayPositions]="[
+    {originX: 'center', originY: 'bottom', overlayX: 'center', overlayY: 'top'},
+    {originX: 'center', originY: 'top', overlayX: 'center', overlayY: 'bottom'},
+  ]">
+  <div class="mt-1 px-3 py-2 text-xs rounded-lg shadow-lg bg-gray-800 dark:bg-gray-700 text-white whitespace-nowrap">
+    <div class="flex gap-4">
+      <div>
+        <span class="font-semibold">CPU:</span>
+        {{ metrics().cpuUsage | percent: '1.1-1' }} &middot; {{ metrics().cpuCoresMillis / 1000 }} Cores
+      </div>
+      <div>
+        <span class="font-semibold">RAM:</span>
+        {{ metrics().memoryUsage | percent: '1.1-1' }} &middot; {{ metrics().memoryBytes | bytes: '1.0-0' }}
+      </div>
+    </div>
+  </div>
+</ng-template>

@@ -1,9 +1,11 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {TextFieldModule} from '@angular/cdk/text-field';
-import {NgOptimizedImage} from '@angular/common';
+import {AsyncPipe, NgOptimizedImage} from '@angular/common';
 import {Component} from '@angular/core';
 import {ReactiveFormsModule} from '@angular/forms';
+import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
+import {SecureImagePipe} from '../../../util/secureImage';
 import {drawerFlyInOut} from '../../animations/drawer';
 import {dropdownAnimation} from '../../animations/dropdown';
 import {modalFlyInOut} from '../../animations/modal';
@@ -32,6 +34,9 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
     DeploymentAppNameComponent,
     DeploymentStatusTextComponent,
     AutotrimDirective,
+    SecureImagePipe,
+    AsyncPipe,
+    RouterLink,
   ],
   animations: [modalFlyInOut, drawerFlyInOut, dropdownAnimation],
 })

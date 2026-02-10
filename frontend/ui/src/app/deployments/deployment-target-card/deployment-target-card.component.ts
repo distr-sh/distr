@@ -1,6 +1,6 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {TextFieldModule} from '@angular/cdk/text-field';
-import {DatePipe, NgOptimizedImage, NgTemplateOutlet} from '@angular/common';
+import {DatePipe, NgOptimizedImage} from '@angular/common';
 import {Component, computed, inject, resource, signal, TemplateRef, viewChild, WritableSignal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {ReactiveFormsModule} from '@angular/forms';
@@ -53,7 +53,6 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
     ReactiveFormsModule,
     DeploymentModalComponent,
     DeploymentTargetMetricsComponent,
-    NgTemplateOutlet,
     DeploymentStatusModalComponent,
     TextFieldModule,
     DeploymentTargetStatusModalComponent,

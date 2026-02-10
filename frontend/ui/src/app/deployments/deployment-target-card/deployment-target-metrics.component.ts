@@ -1,7 +1,6 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {PercentPipe} from '@angular/common';
-import {Component, input} from '@angular/core';
-import {ReactiveFormsModule} from '@angular/forms';
+import {Component, input, signal} from '@angular/core';
 import {BytesPipe} from '../../../util/units';
 import {drawerFlyInOut} from '../../animations/drawer';
 import {dropdownAnimation} from '../../animations/dropdown';
@@ -11,13 +10,13 @@ import {DeploymentTargetLatestMetrics} from '../../services/deployment-target-me
 @Component({
   selector: 'app-deployment-target-metrics',
   templateUrl: './deployment-target-metrics.component.html',
-  imports: [OverlayModule, ReactiveFormsModule, BytesPipe, PercentPipe],
+  imports: [OverlayModule, BytesPipe, PercentPipe],
   animations: [modalFlyInOut, drawerFlyInOut, dropdownAnimation],
   styleUrls: ['./deployment-target-metrics.component.scss'],
 })
 export class DeploymentTargetMetricsComponent {
-  public readonly fullVersion = input(false);
   public readonly metrics = input.required<DeploymentTargetLatestMetrics>();
+  protected readonly hovered = signal(false);
 
   protected getPercentClass(usage: number | undefined): string {
     const val = Math.ceil((usage || 0) * 100);

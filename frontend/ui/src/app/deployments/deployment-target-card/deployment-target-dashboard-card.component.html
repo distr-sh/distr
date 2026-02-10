@@ -1,31 +1,42 @@
 <div
   class="h-full rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 font-medium text-gray-900 dark:text-white flex flex-col">
-  <div class="p-4 justify-between items-stretch md:flex min-w-0">
-    <div class="justify-between sm:flex sm:items-center min-w-0">
-      <div class="flex gap-3 items-start lg:items-center mb-2 md:mb-0 min-w-0">
-        <div class="relative self-start flex-shrink-0">
-          <img
-            [ngSrc]="'/' + deploymentTarget().type + '.png'"
-            [alt]="deploymentTarget().type"
-            class="size-10 rounded-sm max-w-none"
-            height="199"
-            width="199" />
-          <app-status-dot class="absolute size-2.5 -bottom-0.5 -end-0.5" [deploymentTarget]="deploymentTarget()">
-          </app-status-dot>
+  <div class="mx-4 my-1 flex justify-between items-center min-w-0">
+    <div class="flex justify-between items-center min-w-0">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="relative self-start flex-shrink-0 my-2">
+          @if (deploymentTarget().customerOrganization?.imageId; as imageId) {
+            <img class="size-10 rounded-sm" [attr.src]="imageId | secureImage | async" alt="" />
+            <app-status-dot class="absolute size-2.5 -bottom-0 -end-0" [deploymentTarget]="deploymentTarget()" />
+          } @else {
+            <img
+              [ngSrc]="'/' + deploymentTarget().type + '.png'"
+              [alt]="deploymentTarget().type"
+              class="size-10 rounded-sm max-w-none"
+              height="199"
+              width="199" />
+            <app-status-dot class="absolute size-2.5 -bottom-0.5 -end-0.5" [deploymentTarget]="deploymentTarget()" />
+          }
         </div>
         <div class="min-w-0">
-          <div class="flex gap-2">
-            <h3 class="font-bold truncate break-all" [title]="deploymentTarget().name">
-              {{ deploymentTarget().name }}
-            </h3>
-          </div>
+          <a routerLink="/deployments" class="hover:underline" [queryParams]="{search: deploymentTarget().name}">
+            @if (deploymentTarget().customerOrganization; as customer) {
+              <h3 class="font-bold leading-none truncate" [title]="deploymentTarget().name">
+                {{ customer.name }}
+              </h3>
+              <div class="text-gray-500 dark:text-gray-400 text-sm truncate">{{ deploymentTarget().name }}</div>
+            } @else {
+              <h3 class="font-bold truncate" [title]="deploymentTarget().name">
+                {{ deploymentTarget().name }}
+              </h3>
+            }
+          </a>
         </div>
       </div>
     </div>
 
     @if (deploymentTarget().metricsEnabled) {
       @if (deploymentTargetMetrics(); as metrics) {
-        <app-deployment-target-metrics [metrics]="metrics"></app-deployment-target-metrics>
+        <app-deployment-target-metrics [metrics]="metrics" />
       }
     }
   </div>
@@ -37,10 +48,10 @@
       @for (deployment of deploymentTarget().deployments; track deployment.id) {
         <li class="hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-300 dark:border-gray-500">
           <div class="px-4 py-2">
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 text-sm">
               <app-deployment-app-name
                 class="flex-1 min-w-0"
-                [applicationName]="deployment.applicationName"
+                [application]="deployment.application"
                 [applicationVersionName]="deployment.applicationVersionName" />
               <div class="flex items-center gap-3 flex-shrink-0">
                 <app-deployment-status-text [deployment]="deployment" />

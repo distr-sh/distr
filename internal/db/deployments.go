@@ -79,6 +79,7 @@ func GetDeploymentsForDeploymentTarget(
 				dr.ignore_revision_skew AS ignore_revision_skew,
 				a.id AS application_id,
 				a.name AS application_name,
+				(`+applicationOutputExpr+`) AS application,
 				av.name AS application_version_name,
 				av.link_template AS application_link_template,
 				CASE WHEN drs.id IS NOT NULL THEN (

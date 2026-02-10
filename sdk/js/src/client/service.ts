@@ -215,7 +215,7 @@ export class DistrService {
     const {deploymentTargetId, applicationId, applicationVersionId, kubernetesDeployment} = params;
 
     const existing = await this.client.getDeploymentTarget(deploymentTargetId);
-    const existingDeployment = existing.deployments.find((d) => d.applicationId === applicationId);
+    const existingDeployment = existing.deployments.find((d) => d.application.id === applicationId);
     if (!existingDeployment) {
       throw new Error(`cannot update deployment, no deployment found for application ${applicationId}`);
     }
@@ -242,7 +242,7 @@ export class DistrService {
     const skippedTargets: UpdateAllDeploymentsResult['skippedTargets'] = [];
 
     for (const target of allTargets) {
-      const deployment = target.deployments?.find((d) => d.applicationId === applicationId);
+      const deployment = target.deployments?.find((d) => d.application.id === applicationId);
       if (!deployment) {
         skippedTargets.push({
           deploymentTargetId: target.id!,
@@ -298,14 +298,14 @@ export class DistrService {
     const results: IsOutdatedResultItem[] = [];
     for (const deployment of existing.deployments) {
       const {app, newerVersions} = await this.getNewerVersions(
-        deployment.applicationId!,
-        deployment.applicationVersionId!
+        deployment.application.id!,
+        deployment.applicationVersionId
       );
       results.push({
         deployment: {
           id: deployment.id!,
-          applicationId: deployment.applicationId!,
-          applicationVersionId: deployment.applicationVersionId!,
+          applicationId: deployment.application.id!,
+          applicationVersionId: deployment.applicationVersionId,
         },
         application: app,
         newerVersions: newerVersions,

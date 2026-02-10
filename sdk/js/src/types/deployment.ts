@@ -1,3 +1,4 @@
+import {Application} from './application';
 import {BaseModel} from './base';
 
 export interface Deployment extends BaseModel {
@@ -26,7 +27,14 @@ export interface PatchDeploymentRequest {
 }
 
 export interface DeploymentWithLatestRevision extends Deployment {
+  application: Application;
+  /**
+   * @deprecated Use application.id instead
+   */
   applicationId: string;
+  /**
+   * @deprecated Use application.name instead
+   */
   applicationName: string;
   applicationVersionId: string;
   applicationVersionName: string;

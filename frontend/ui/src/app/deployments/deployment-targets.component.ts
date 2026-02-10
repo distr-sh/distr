@@ -3,7 +3,7 @@ import {AsyncPipe} from '@angular/common';
 import {AfterViewInit, Component, computed, inject, signal, TemplateRef, ViewChild} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {RouterLink} from '@angular/router';
+import {ActivatedRoute, RouterLink} from '@angular/router';
 import {
   ApplicationVersion,
   CustomerOrganization,
@@ -15,6 +15,7 @@ import {faBullhorn, faLightbulb, faMagnifyingGlass, faPlus} from '@fortawesome/f
 import {catchError, combineLatest, combineLatestWith, first, map, Observable, of} from 'rxjs';
 import {compareBy} from '../../util/arrays';
 import {filteredByFormControl} from '../../util/filter';
+import {SecureImagePipe} from '../../util/secureImage';
 import {drawerFlyInOut} from '../animations/drawer';
 import {modalFlyInOut} from '../animations/modal';
 import {QuotaLimitComponent} from '../components/quota-limit.component';
@@ -27,7 +28,6 @@ import {
 } from '../services/deployment-target-metrics.service';
 import {DeploymentTargetsService} from '../services/deployment-targets.service';
 import {FeatureFlagService} from '../services/feature-flag.service';
-import {LicensesService} from '../services/licenses.service';
 import {OrganizationService} from '../services/organization.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {DeploymentModalComponent} from './deployment-modal.component';
@@ -56,6 +56,7 @@ export interface CustomerDeploymentTargets {
     OverlayModule,
     DeploymentTargetCardComponent,
     DeploymentModalComponent,
+    SecureImagePipe,
     QuotaLimitComponent,
     RouterLink,
   ],
@@ -67,12 +68,12 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   public readonly auth = inject(AuthService);
   private readonly overlay = inject(OverlayService);
   private readonly applications = inject(ApplicationsService);
-  private readonly licenses = inject(LicensesService);
   private readonly deploymentTargets = inject(DeploymentTargetsService);
   private readonly deploymentTargetMetrics = inject(DeploymentTargetsMetricsService);
   private readonly organizationService = inject(OrganizationService);
   private readonly context = inject(ContextService);
   private readonly featureFlags = inject(FeatureFlagService);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly plusIcon = faPlus;
@@ -100,7 +101,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   selectedApplicationVersionId = signal<string | undefined>(undefined);
 
   readonly filterForm = new FormGroup({
-    search: new FormControl(''),
+    search: new FormControl(this.route.snapshot.queryParamMap.get('search') ?? ''),
   });
 
   readonly deploymentTargets$ = this.deploymentTargets.poll().pipe(takeUntilDestroyed());
@@ -140,7 +141,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
     map((deploymentTargets) =>
       // For vendors: group deployment targets by customer organization
       // For customers: just put all deployment targets into one group
-      this.auth.isVendor()
+      (this.auth.isVendor()
         ? [
             {deploymentTargets: deploymentTargets.filter((it) => it.customerOrganization === undefined)},
             ...Object.values(
@@ -157,6 +158,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
             })),
           ]
         : [{deploymentTargets}]
+      ).filter((it) => it.deploymentTargets.length > 0)
     )
   );
 

@@ -17,19 +17,22 @@ type Deployment struct {
 
 type DeploymentWithLatestRevision struct {
 	Deployment
-	DeploymentRevisionID        uuid.UUID                 `db:"deployment_revision_id" json:"deploymentRevisionId"`
-	DeploymentRevisionCreatedAt time.Time                 `db:"deployment_revision_created_at" json:"deploymentRevisionCreatedAt"` //nolint:lll
-	ApplicationID               uuid.UUID                 `db:"application_id" json:"applicationId"`
-	ApplicationName             string                    `db:"application_name" json:"applicationName"`
-	ApplicationVersionID        uuid.UUID                 `db:"application_version_id" json:"applicationVersionId"`
-	ApplicationVersionName      string                    `db:"application_version_name" json:"applicationVersionName"`
-	ApplicationLinkTemplate     string                    `db:"application_link_template" json:"-"`
-	ApplicationLink             string                    `db:"-" json:"applicationLink"`
-	ValuesYaml                  []byte                    `db:"values_yaml" json:"valuesYaml,omitempty"`
-	EnvFileData                 []byte                    `db:"env_file_data" json:"envFileData,omitempty"`
-	LatestStatus                *DeploymentRevisionStatus `db:"latest_status" json:"latestStatus,omitempty"`
-	ForceRestart                bool                      `db:"force_restart" json:"forceRestart"`
-	IgnoreRevisionSkew          bool                      `db:"ignore_revision_skew" json:"ignoreRevisionSkew"`
+	DeploymentRevisionID        uuid.UUID `db:"deployment_revision_id" json:"deploymentRevisionId"`
+	DeploymentRevisionCreatedAt time.Time `db:"deployment_revision_created_at" json:"deploymentRevisionCreatedAt"` //nolint:lll
+	// Deprecated: Use [DeploymentWithLatestRevision.Application] instead
+	ApplicationID uuid.UUID `db:"application_id" json:"applicationId"`
+	// Deprecated: Use [DeploymentWithLatestRevision.Application] instead
+	ApplicationName         string                    `db:"application_name" json:"applicationName"`
+	Application             Application               `db:"application" json:"application"`
+	ApplicationVersionID    uuid.UUID                 `db:"application_version_id" json:"applicationVersionId"`
+	ApplicationVersionName  string                    `db:"application_version_name" json:"applicationVersionName"`
+	ApplicationLinkTemplate string                    `db:"application_link_template" json:"-"`
+	ApplicationLink         string                    `db:"-" json:"applicationLink"`
+	ValuesYaml              []byte                    `db:"values_yaml" json:"valuesYaml,omitempty"`
+	EnvFileData             []byte                    `db:"env_file_data" json:"envFileData,omitempty"`
+	LatestStatus            *DeploymentRevisionStatus `db:"latest_status" json:"latestStatus,omitempty"`
+	ForceRestart            bool                      `db:"force_restart" json:"forceRestart"`
+	IgnoreRevisionSkew      bool                      `db:"ignore_revision_skew" json:"ignoreRevisionSkew"`
 }
 
 func (d *DeploymentWithLatestRevision) GetValuesYAML() []byte {
