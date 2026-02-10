@@ -4,13 +4,18 @@
     <div class="flex justify-between items-center min-w-0">
       <div class="flex items-center gap-3 min-w-0">
         <div class="relative self-start flex-shrink-0 my-2">
-          <img
-            [ngSrc]="'/' + deploymentTarget().type + '.png'"
-            [alt]="deploymentTarget().type"
-            class="size-10 rounded-sm max-w-none"
-            height="199"
-            width="199" />
-          <app-status-dot class="absolute size-2.5 -bottom-0.5 -end-0.5" [deploymentTarget]="deploymentTarget()" />
+          @if (deploymentTarget().customerOrganization?.imageId; as imageId) {
+            <img class="size-10 rounded-full" [attr.src]="imageId | secureImage | async" alt="" />
+            <app-status-dot class="absolute size-2.5 -bottom-0 -end-0" [deploymentTarget]="deploymentTarget()" />
+          } @else {
+            <img
+              [ngSrc]="'/' + deploymentTarget().type + '.png'"
+              [alt]="deploymentTarget().type"
+              class="size-10 rounded-sm max-w-none"
+              height="199"
+              width="199" />
+            <app-status-dot class="absolute size-2.5 -bottom-0.5 -end-0.5" [deploymentTarget]="deploymentTarget()" />
+          }
         </div>
         <div class="min-w-0">
           @if (deploymentTarget().customerOrganization; as customer) {
