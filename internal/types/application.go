@@ -12,6 +12,6 @@ type Application struct {
 	OrganizationID uuid.UUID            `db:"organization_id" json:"-"`
 	Name           string               `db:"name" json:"name"`
 	Type           DeploymentType       `db:"type" json:"type"`
-	ImageID        *uuid.UUID           `db:"image_id" json:"imageId"`
+	ImageID        *uuid.UUID           `db:"image_id" json:"imageId,omitempty"`
 	Versions       []ApplicationVersion `db:"versions" json:"versions"`
 }
