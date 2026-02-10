@@ -19,9 +19,9 @@ type DeploymentWithLatestRevision struct {
 	Deployment
 	DeploymentRevisionID        uuid.UUID `db:"deployment_revision_id" json:"deploymentRevisionId"`
 	DeploymentRevisionCreatedAt time.Time `db:"deployment_revision_created_at" json:"deploymentRevisionCreatedAt"` //nolint:lll
-	// Deprectated: Use [DeploymentWithLatestRevision.Application] instead
+	// Deprecated: Use [DeploymentWithLatestRevision.Application] instead
 	ApplicationID uuid.UUID `db:"application_id" json:"applicationId"`
-	// Deprectated: Use [DeploymentWithLatestRevision.Application] instead
+	// Deprecated: Use [DeploymentWithLatestRevision.Application] instead
 	ApplicationName         string                    `db:"application_name" json:"applicationName"`
 	Application             Application               `db:"application" json:"application"`
 	ApplicationVersionID    uuid.UUID                 `db:"application_version_id" json:"applicationVersionId"`
