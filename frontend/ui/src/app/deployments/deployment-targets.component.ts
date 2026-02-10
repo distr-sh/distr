@@ -126,7 +126,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
     map((deploymentTargets) =>
       // For vendors: group deployment targets by customer organization
       // For customers: just put all deployment targets into one group
-      this.auth.isVendor()
+      (this.auth.isVendor()
         ? [
             {deploymentTargets: deploymentTargets.filter((it) => it.customerOrganization === undefined)},
             ...Object.values(
@@ -143,6 +143,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
             })),
           ]
         : [{deploymentTargets}]
+      ).filter((it) => it.deploymentTargets.length > 0)
     )
   );
 
