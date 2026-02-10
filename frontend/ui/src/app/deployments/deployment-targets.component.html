@@ -44,6 +44,10 @@
       @if (auth.isVendor() && customerDeploymentTargets.customerOrganization; as customer) {
         <div class="space-y-2 mb-3 mt-6">
           <h2 class="text-xl font-extrabold leading-none tracking-tight text-gray-900 md:text-2xl dark:text-white">
+            @if (customer.imageId) {
+              <img class="inline size-8 rounded-full me-1" [attr.src]="customer.imageId | secureImage | async" alt="" />
+            }
+
             {{ customer.name }}
           </h2>
           <app-quota-limit [usage]="customerDeploymentTargets.deploymentTargets.length" [limit]="limit()" />

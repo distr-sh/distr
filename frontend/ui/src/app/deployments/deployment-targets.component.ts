@@ -14,6 +14,7 @@ import {faLightbulb, faMagnifyingGlass, faPlus} from '@fortawesome/free-solid-sv
 import {catchError, combineLatest, combineLatestWith, first, map, Observable, of} from 'rxjs';
 import {compareBy} from '../../util/arrays';
 import {filteredByFormControl} from '../../util/filter';
+import {SecureImagePipe} from '../../util/secureImage';
 import {drawerFlyInOut} from '../animations/drawer';
 import {modalFlyInOut} from '../animations/modal';
 import {QuotaLimitComponent} from '../components/quota-limit.component';
@@ -54,6 +55,7 @@ export interface CustomerDeploymentTargets {
     OverlayModule,
     DeploymentTargetCardComponent,
     DeploymentModalComponent,
+    SecureImagePipe,
     QuotaLimitComponent,
   ],
   templateUrl: './deployment-targets.component.html',
