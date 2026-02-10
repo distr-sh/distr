@@ -292,7 +292,7 @@ func validateDeploymentRequest(
 			return badRequestError(w, "can not update license")
 		}
 
-		if existingDeployment.ApplicationID != app.ID {
+		if existingDeployment.Application.ID != app.ID {
 			return badRequestError(w, "can not change application of existing deployment")
 		}
 	}
@@ -380,7 +380,7 @@ func validateDeploymentRequestLicense(
 		if app.ID != license.ApplicationID {
 			return invalidLicenseError(w)
 		}
-		if deployment != nil && deployment.ApplicationID != license.ApplicationID {
+		if deployment != nil && deployment.Application.ID != license.ApplicationID {
 			return badRequestError(w, "license and deployment have applicationId mismatch")
 		}
 	}
