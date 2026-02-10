@@ -22,7 +22,7 @@ export interface SubscriptionInfo {
   hasApplicationLicenses: boolean;
   hasArtifactLicenses: boolean;
   hasNonAdminRoles: boolean;
-  hasDeploymentStatusNotificationConfigurations: boolean;
+  hasAlertConfigurations: boolean;
   limits: {[key in SubscriptionType]: SubscriptionLimits};
 }
 

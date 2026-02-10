@@ -3,7 +3,7 @@ import {Component, inject, OnDestroy, OnInit} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {catchError, combineLatestWith, first, map, of, shareReplay, Subject, switchMap, takeUntil} from 'rxjs';
 import {ArtifactsByCustomerCardComponent} from '../../artifacts/artifacts-by-customer-card/artifacts-by-customer-card.component';
-import {DeploymentTargetCardComponent} from '../../deployments/deployment-target-card/deployment-target-card.component';
+import {DeploymentTargetDashboardCardComponent} from '../../deployments/deployment-target-card/deployment-target-dashboard-card.component';
 import {DeploymentTargetViewData} from '../../deployments/deployment-targets.component';
 import {DashboardService} from '../../services/dashboard.service';
 import {DeploymentTargetsMetricsService} from '../../services/deployment-target-metrics.service';
@@ -12,7 +12,7 @@ import {ToastService} from '../../services/toast.service';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [AsyncPipe, ArtifactsByCustomerCardComponent, DeploymentTargetCardComponent],
+  imports: [AsyncPipe, ArtifactsByCustomerCardComponent, DeploymentTargetDashboardCardComponent],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit, OnDestroy {

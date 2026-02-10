@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	deploymentStatusNotificationConfigurationOutputExpr = `
+	alertConfigurationOutputExpr = `
 	c.id,
 	c.created_at,
 	c.organization_id,
@@ -24,16 +24,16 @@ const (
 		SELECT array_agg(dt.id)
 		FROM DeploymentTarget dt
 		WHERE exists(
-			SELECT 1 FROM DeploymentStatusNotificationConfiguration_DeploymentTarget j
-			WHERE j.deployment_status_notification_configuration_id = c.id AND j.deployment_target_id = dt.id
+			SELECT 1 FROM AlertConfiguration_DeploymentTarget j
+			WHERE j.alert_configuration_id = c.id AND j.deployment_target_id = dt.id
 		)
 	) AS deployment_target_ids,
 	(
 		SELECT array_agg(u.id)
 		FROM UserAccount u
 		WHERE exists(
-			SELECT 1 FROM DeploymentStatusNotificationConfiguration_Organization_UserAccount j
-			WHERE j.deployment_status_notification_configuration_id = c.id
+			SELECT 1 FROM AlertConfiguration_Organization_UserAccount j
+			WHERE j.alert_configuration_id = c.id
 				AND j.user_account_id = u.id
 		)
 	) AS user_account_ids,
@@ -41,8 +41,8 @@ const (
 		SELECT array_agg(row(` + userAccountOutputExpr + `))
 		FROM UserAccount u
 		WHERE exists(
-			SELECT 1 FROM DeploymentStatusNotificationConfiguration_Organization_UserAccount j
-			WHERE j.deployment_status_notification_configuration_id = c.id
+			SELECT 1 FROM AlertConfiguration_Organization_UserAccount j
+			WHERE j.alert_configuration_id = c.id
 				AND j.user_account_id = u.id
 		)
 	) AS user_accounts,
@@ -50,29 +50,27 @@ const (
 		SELECT array_agg(row(` + deploymentTargetOutputExprBase + `))
 		FROM DeploymentTarget dt
 		WHERE exists(
-			SELECT 1 FROM DeploymentStatusNotificationConfiguration_DeploymentTarget j
-			WHERE j.deployment_status_notification_configuration_id = c.id AND j.deployment_target_id = dt.id
+			SELECT 1 FROM AlertConfiguration_DeploymentTarget j
+			WHERE j.alert_configuration_id = c.id AND j.deployment_target_id = dt.id
 		)
 	) AS deployment_targets
 	`
 )
 
-func GetDeploymentStatusNotificationConfigurationsForAllOrganizations(
-	ctx context.Context,
-) ([]types.DeploymentStatusNotificationConfiguration, error) {
+func GetAlertConfigurationsForAllOrganizations(ctx context.Context) ([]types.AlertConfiguration, error) {
 	db := internalctx.GetDb(ctx)
 
 	rows, err := db.Query(
 		ctx,
-		`SELECT `+deploymentStatusNotificationConfigurationOutputExpr+`
-		FROM DeploymentStatusNotificationConfiguration c
+		`SELECT `+alertConfigurationOutputExpr+`
+		FROM AlertConfiguration c
 		WHERE c.enabled = true`,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.DeploymentStatusNotificationConfiguration])
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.AlertConfiguration])
 	if err != nil {
 		return nil, err
 	}
@@ -80,17 +78,17 @@ func GetDeploymentStatusNotificationConfigurationsForAllOrganizations(
 	return result, nil
 }
 
-func GetDeploymentStatusNotificationConfigurations(
+func GetAlertConfigurations(
 	ctx context.Context,
 	organizationID uuid.UUID,
 	customerOrganizationID *uuid.UUID,
-) ([]types.DeploymentStatusNotificationConfiguration, error) {
+) ([]types.AlertConfiguration, error) {
 	db := internalctx.GetDb(ctx)
 
 	rows, err := db.Query(
 		ctx,
-		`SELECT `+deploymentStatusNotificationConfigurationOutputExpr+`
-		FROM DeploymentStatusNotificationConfiguration c
+		`SELECT `+alertConfigurationOutputExpr+`
+		FROM AlertConfiguration c
 		WHERE c.organization_id = @orgID
 			AND ((@customerOrgIsNull AND customer_organization_id IS NULL) OR (customer_organization_id = @customerOrgID))`,
 		pgx.NamedArgs{
@@ -103,7 +101,7 @@ func GetDeploymentStatusNotificationConfigurations(
 		return nil, err
 	}
 
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.DeploymentStatusNotificationConfiguration])
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.AlertConfiguration])
 	if err != nil {
 		return nil, err
 	}
@@ -111,15 +109,12 @@ func GetDeploymentStatusNotificationConfigurations(
 	return result, nil
 }
 
-func CountDeploymentStatusNotificationConfigurations(
-	ctx context.Context,
-	organizationID uuid.UUID,
-) (int64, error) {
+func CountAlertConfigurations(ctx context.Context, organizationID uuid.UUID) (int64, error) {
 	db := internalctx.GetDb(ctx)
 
 	rows, err := db.Query(
 		ctx,
-		`SELECT count(id) FROM DeploymentStatusNotificationConfiguration WHERE organization_id = @organizationID`,
+		`SELECT count(id) FROM AlertConfiguration WHERE organization_id = @organizationID`,
 		pgx.NamedArgs{"organizationID": organizationID},
 	)
 	if err != nil {
@@ -129,19 +124,19 @@ func CountDeploymentStatusNotificationConfigurations(
 	return pgx.CollectExactlyOneRow(rows, pgx.RowTo[int64])
 }
 
-func GetDeploymentStatusNotificationConfigurationsForDeploymentTarget(
+func GetAlertConfigurationsForDeploymentTarget(
 	ctx context.Context,
 	deploymentTargetID uuid.UUID,
-) ([]types.DeploymentStatusNotificationConfiguration, error) {
+) ([]types.AlertConfiguration, error) {
 	db := internalctx.GetDb(ctx)
 
 	rows, err := db.Query(
 		ctx,
-		`SELECT `+deploymentStatusNotificationConfigurationOutputExpr+`
-		FROM DeploymentStatusNotificationConfiguration c
+		`SELECT `+alertConfigurationOutputExpr+`
+		FROM AlertConfiguration c
 		WHERE exists(
-			SELECT 1 FROM DeploymentStatusNotificationConfiguration_DeploymentTarget j
-			WHERE j.deployment_status_notification_configuration_id = c.id
+			SELECT 1 FROM AlertConfiguration_DeploymentTarget j
+			WHERE j.alert_configuration_id = c.id
 				AND j.deployment_target_id = @deploymentTargetID
 		)`,
 		pgx.NamedArgs{
@@ -152,7 +147,7 @@ func GetDeploymentStatusNotificationConfigurationsForDeploymentTarget(
 		return nil, err
 	}
 
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.DeploymentStatusNotificationConfiguration])
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.AlertConfiguration])
 	if err != nil {
 		return nil, err
 	}
@@ -160,17 +155,14 @@ func GetDeploymentStatusNotificationConfigurationsForDeploymentTarget(
 	return result, nil
 }
 
-func CreateDeploymentStatusNotificationConfiguration(
-	ctx context.Context,
-	config *types.DeploymentStatusNotificationConfiguration,
-) error {
+func CreateAlertConfiguration(ctx context.Context, config *types.AlertConfiguration) error {
 	return RunTxRR(ctx, func(ctx context.Context) error {
 		db := internalctx.GetDb(ctx)
 
 		rows, err := db.Query(
 			ctx,
 			`WITH inserted AS (
-			INSERT INTO DeploymentStatusNotificationConfiguration (
+			INSERT INTO AlertConfiguration (
 				organization_id,
 				customer_organization_id,
 				name,
@@ -192,7 +184,7 @@ func CreateDeploymentStatusNotificationConfiguration(
 			},
 		)
 		if err != nil {
-			return fmt.Errorf("failed to insert DeploymentStatusNotificationConfiguration: %w", err)
+			return fmt.Errorf("failed to insert AlertConfiguration: %w", err)
 		}
 
 		if insertedID, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[uuid.UUID]); err != nil {
@@ -201,28 +193,25 @@ func CreateDeploymentStatusNotificationConfiguration(
 			config.ID = insertedID
 		}
 
-		if err := updateDeploymentStatusConfigUserAccountIDs(ctx, config); err != nil {
+		if err := updateAlertConfigUserAccountIDs(ctx, config); err != nil {
 			return fmt.Errorf("failed to update user account IDs: %w", err)
 		}
 
-		if err := updateDeploymentStatusConfigDeploymentTargetIDs(ctx, config); err != nil {
+		if err := updateAlertConfigDeploymentTargetIDs(ctx, config); err != nil {
 			return fmt.Errorf("failed to update deployment target IDs: %w", err)
 		}
 
-		return getDeploymentStatusNotificationConfigurationInto(ctx, config.ID, config)
+		return getAlertConfigurationInto(ctx, config.ID, config)
 	})
 }
 
-func UpdateDeploymentStatusNotificationConfiguration(
-	ctx context.Context,
-	config *types.DeploymentStatusNotificationConfiguration,
-) error {
+func UpdateAlertConfiguration(ctx context.Context, config *types.AlertConfiguration) error {
 	return RunTxRR(ctx, func(ctx context.Context) error {
 		db := internalctx.GetDb(ctx)
 
 		_, err := db.Exec(
 			ctx,
-			`UPDATE DeploymentStatusNotificationConfiguration SET
+			`UPDATE AlertConfiguration SET
 				name = @name,
 				enabled = @enabled
 			WHERE id = @id
@@ -238,36 +227,33 @@ func UpdateDeploymentStatusNotificationConfiguration(
 			},
 		)
 		if err != nil {
-			return fmt.Errorf("failed to update DeploymentStatusNotificationConfiguration: %w", err)
+			return fmt.Errorf("failed to update AlertConfiguration: %w", err)
 		}
 
-		if err := updateDeploymentStatusConfigUserAccountIDs(ctx, config); err != nil {
+		if err := updateAlertConfigUserAccountIDs(ctx, config); err != nil {
 			return fmt.Errorf("failed to update user account IDs: %w", err)
 		}
 
-		if err := updateDeploymentStatusConfigDeploymentTargetIDs(ctx, config); err != nil {
+		if err := updateAlertConfigDeploymentTargetIDs(ctx, config); err != nil {
 			return fmt.Errorf("failed to update deployment target IDs: %w", err)
 		}
 
-		return getDeploymentStatusNotificationConfigurationInto(ctx, config.ID, config)
+		return getAlertConfigurationInto(ctx, config.ID, config)
 	})
 }
 
-func updateDeploymentStatusConfigUserAccountIDs(
-	ctx context.Context,
-	config *types.DeploymentStatusNotificationConfiguration,
-) error {
+func updateAlertConfigUserAccountIDs(ctx context.Context, config *types.AlertConfiguration) error {
 	db := internalctx.GetDb(ctx)
 
 	cmd, err := db.Exec(
 		ctx,
-		`INSERT INTO DeploymentStatusNotificationConfiguration_Organization_UserAccount (
-			deployment_status_notification_configuration_id,
+		`INSERT INTO AlertConfiguration_Organization_UserAccount (
+			alert_configuration_id,
 			organization_id,
 			user_account_id
 		)
 		(SELECT @id, @organizationID, id FROM UserAccount WHERE id = any(@userAccountIDs))
-		ON CONFLICT (deployment_status_notification_configuration_id, organization_id, user_account_id) DO NOTHING`,
+		ON CONFLICT (alert_configuration_id, organization_id, user_account_id) DO NOTHING`,
 		pgx.NamedArgs{
 			"id":             config.ID,
 			"organizationID": config.OrganizationID,
@@ -283,8 +269,8 @@ func updateDeploymentStatusConfigUserAccountIDs(
 
 	_, err = db.Exec(
 		ctx,
-		`DELETE FROM DeploymentStatusNotificationConfiguration_Organization_UserAccount
-		WHERE deployment_status_notification_configuration_id = @id
+		`DELETE FROM AlertConfiguration_Organization_UserAccount
+		WHERE alert_configuration_id = @id
 			AND NOT user_account_id = any(@userAccountIDs)`,
 		pgx.NamedArgs{
 			"id":             config.ID,
@@ -300,20 +286,17 @@ func updateDeploymentStatusConfigUserAccountIDs(
 	return nil
 }
 
-func updateDeploymentStatusConfigDeploymentTargetIDs(
-	ctx context.Context,
-	config *types.DeploymentStatusNotificationConfiguration,
-) error {
+func updateAlertConfigDeploymentTargetIDs(ctx context.Context, config *types.AlertConfiguration) error {
 	db := internalctx.GetDb(ctx)
 
 	cmd, err := db.Exec(
 		ctx,
-		`INSERT INTO DeploymentStatusNotificationConfiguration_DeploymentTarget (
-			deployment_status_notification_configuration_id,
+		`INSERT INTO AlertConfiguration_DeploymentTarget (
+			alert_configuration_id,
 			deployment_target_id
 		)
 		SELECT @id, id FROM DeploymentTarget WHERE id = any(@deploymentTargetIDs)
-		ON CONFLICT (deployment_status_notification_configuration_id, deployment_target_id) DO NOTHING`,
+		ON CONFLICT (alert_configuration_id, deployment_target_id) DO NOTHING`,
 		pgx.NamedArgs{
 			"id":                  config.ID,
 			"deploymentTargetIDs": config.DeploymentTargetIDs,
@@ -328,8 +311,8 @@ func updateDeploymentStatusConfigDeploymentTargetIDs(
 
 	_, err = db.Exec(
 		ctx,
-		`DELETE FROM DeploymentStatusNotificationConfiguration_DeploymentTarget
-		WHERE deployment_status_notification_configuration_id = @id
+		`DELETE FROM AlertConfiguration_DeploymentTarget
+		WHERE alert_configuration_id = @id
 			AND NOT deployment_target_id = any(@deploymentTargetIDs)`,
 		pgx.NamedArgs{
 			"id":                  config.ID,
@@ -345,31 +328,27 @@ func updateDeploymentStatusConfigDeploymentTargetIDs(
 	return nil
 }
 
-func getDeploymentStatusNotificationConfigurationInto(
-	ctx context.Context,
-	id uuid.UUID,
-	target *types.DeploymentStatusNotificationConfiguration,
-) error {
+func getAlertConfigurationInto(ctx context.Context, id uuid.UUID, target *types.AlertConfiguration) error {
 	db := internalctx.GetDb(ctx)
 	if rows, err := db.Query(
 		ctx,
-		`SELECT`+deploymentStatusNotificationConfigurationOutputExpr+
-			`FROM DeploymentStatusNotificationConfiguration c WHERE c.id = @id`,
+		`SELECT`+alertConfigurationOutputExpr+
+			`FROM AlertConfiguration c WHERE c.id = @id`,
 		pgx.NamedArgs{"id": id},
 	); err != nil {
-		return fmt.Errorf("failed to query DeploymentStatusNotificationConfiguration: %w", err)
+		return fmt.Errorf("failed to query AlertConfiguration: %w", err)
 	} else if result, err := pgx.CollectExactlyOneRow(
 		rows,
-		pgx.RowToStructByName[types.DeploymentStatusNotificationConfiguration],
+		pgx.RowToStructByName[types.AlertConfiguration],
 	); err != nil {
-		return fmt.Errorf("failed to collect DeploymentStatusNotificationConfiguration: %w", err)
+		return fmt.Errorf("failed to collect AlertConfiguration: %w", err)
 	} else {
 		*target = result
 		return nil
 	}
 }
 
-func DeleteDeploymentStatusNotificationConfiguration(
+func DeleteAlertConfiguration(
 	ctx context.Context,
 	id uuid.UUID,
 	organizationID uuid.UUID,
@@ -379,7 +358,7 @@ func DeleteDeploymentStatusNotificationConfiguration(
 
 	cmd, err := db.Exec(
 		ctx,
-		`DELETE FROM DeploymentStatusNotificationConfiguration
+		`DELETE FROM AlertConfiguration
 		WHERE id = @id
 			AND organization_id = @organizationID
 			AND ((@customerOrgIsNull AND customer_organization_id IS NULL) OR (customer_organization_id = @customerOrgID))`,
@@ -396,25 +375,22 @@ func DeleteDeploymentStatusNotificationConfiguration(
 	}
 
 	if err != nil {
-		return fmt.Errorf("failed to delete DeploymentStatusNotificationConfiguration: %w", err)
+		return fmt.Errorf("failed to delete AlertConfiguration: %w", err)
 	}
 
 	return nil
 }
 
-func DeleteDeploymentStatusNotificationConfigurationsWithOrganizationID(
-	ctx context.Context,
-	organizationID uuid.UUID,
-) (int64, error) {
+func DeleteAlertConfigurationsWithOrganizationID(ctx context.Context, organizationID uuid.UUID) (int64, error) {
 	db := internalctx.GetDb(ctx)
 
 	cmd, err := db.Exec(
 		ctx,
-		`DELETE FROM DeploymentStatusNotificationConfiguration WHERE organization_id = @organizationID`,
+		`DELETE FROM AlertConfiguration WHERE organization_id = @organizationID`,
 		pgx.NamedArgs{"organizationID": organizationID},
 	)
 	if err != nil {
-		return 0, fmt.Errorf("failed to delete DeploymentStatusNotificationConfiguration: %w", err)
+		return 0, fmt.Errorf("failed to delete AlertConfiguration: %w", err)
 	}
 
 	return cmd.RowsAffected(), nil
