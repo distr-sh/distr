@@ -42,18 +42,16 @@
                   </span>
                 </div>
               </td>
-              <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white text-xs">
-                @if (isOnLatest(artifact)) {
-                  <div class="flex items-center">
-                    <div class="size-2 -bottom-0.5 -end-0.5 rounded-full bg-lime-600 me-1"></div>
+              <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white text-sm">
+                <div class="flex items-center gap-1">
+                  @if (isOnLatest(artifact)) {
+                    <div class="size-3 rounded-full bg-lime-600"></div>
                     OK
-                  </div>
-                } @else {
-                  <div class="flex items-center">
-                    <div class="size-2 -bottom-0.5 -end-0.5 rounded-full bg-yellow-300 me-1"></div>
+                  } @else {
+                    <div class="size-3 rounded-full bg-yellow-300"></div>
                     newer version available
-                  </div>
-                }
+                  }
+                </div>
               </td>
             </tr>
           }
