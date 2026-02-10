@@ -1,9 +1,9 @@
 <div
   class="h-full rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 font-medium text-gray-900 dark:text-white flex flex-col">
-  <div class="p-4 justify-between items-stretch md:flex min-w-0">
-    <div class="justify-between sm:flex sm:items-center min-w-0">
-      <div class="flex gap-3 items-start lg:items-center mb-2 md:mb-0 min-w-0">
-        <div class="relative self-start flex-shrink-0">
+  <div class="mx-4 my-3 md:flex justify-between items-center min-w-0">
+    <div class="sm:flex justify-between items-center min-w-0">
+      <div class="flex gap-3 items-center mb-2 md:mb-0 min-w-0">
+        <div class="relative flex-shrink-0">
           <img
             [ngSrc]="'/' + deploymentTarget().type + '.png'"
             [alt]="deploymentTarget().type"
@@ -31,7 +31,7 @@
       </div>
     </div>
 
-    <div class="space-y-4 sm:flex sm:space-x-2 sm:space-y-0 items-center self-start">
+    <div class="flex gap-2 items-center">
       @let status = deploymentTarget().currentStatus;
       @let deployEnabled = isMultiDeploymentSupported() || deploymentTarget().deployments.length === 0;
 

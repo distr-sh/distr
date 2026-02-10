@@ -1,17 +1,16 @@
 <div
   class="h-full rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 font-medium text-gray-900 dark:text-white flex flex-col">
-  <div class="p-4 justify-between items-stretch md:flex min-w-0">
-    <div class="justify-between sm:flex sm:items-center min-w-0">
-      <div class="flex gap-3 items-start lg:items-center mb-2 md:mb-0 min-w-0">
-        <div class="relative self-start flex-shrink-0">
+  <div class="mx-4 my-1 flex justify-between items-center min-w-0">
+    <div class="flex justify-between items-center min-w-0">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="relative self-start flex-shrink-0 my-2">
           <img
             [ngSrc]="'/' + deploymentTarget().type + '.png'"
             [alt]="deploymentTarget().type"
             class="size-10 rounded-sm max-w-none"
             height="199"
             width="199" />
-          <app-status-dot class="absolute size-2.5 -bottom-0.5 -end-0.5" [deploymentTarget]="deploymentTarget()">
-          </app-status-dot>
+          <app-status-dot class="absolute size-2.5 -bottom-0.5 -end-0.5" [deploymentTarget]="deploymentTarget()" />
         </div>
         <div class="min-w-0">
           <div class="flex gap-2">
