@@ -36,7 +36,11 @@ export class ArtifactsDownloadCountComponent {
             [attr.src]="imageUrl | secureImage | async"
             [title]="user.name ?? user.email" />
         } @else {
-          <fa-icon [icon]="faUserCircle" size="xl" class="text-xl text-gray-400"></fa-icon>
+          <fa-icon
+            [icon]="faUserCircle"
+            size="xl"
+            class="text-xl text-gray-400"
+            [title]="user.name ?? user.email"></fa-icon>
         }
       }
       @let shownCustomers = downloadedByCustomerOrganizations();
@@ -47,13 +51,10 @@ export class ArtifactsDownloadCountComponent {
             [attr.src]="imageUrl | secureImage | async"
             [title]="customer.name" />
         } @else {
-          <fa-icon [icon]="faUserCircle" size="xl" class="text-xl text-gray-400"></fa-icon>
+          <fa-icon [icon]="faUserCircle" size="xl" class="text-xl text-gray-400" [title]="customer.name"></fa-icon>
         }
       }
-      @if (
-        (source().downloadedByUsersCount ?? 0) - (shownUsers?.length ?? 0) - (shownCustomers?.length ?? 0);
-        as count
-      ) {
+      @if (count(); as count) {
         @if (count > 0) {
           <div
             class="flex items-center justify-center size-8 text-xs font-medium text-white bg-gray-500 dark:bg-gray-700 border-2 border-white rounded-full dark:border-gray-800">
