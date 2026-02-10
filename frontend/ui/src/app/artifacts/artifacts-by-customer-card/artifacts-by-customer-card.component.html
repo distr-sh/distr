@@ -3,13 +3,11 @@
   <div class="p-4 justify-between items-stretch md:flex">
     <div class="justify-between sm:flex sm:items-center">
       <div class="flex gap-3 items-start lg:items-center mb-2 md:mb-0">
-        <div class="relative">
-          @if (customer().imageUrl; as imageUrl) {
-            <img class="w-8 h-8 rounded-full" [attr.src]="imageUrl | secureImage | async" alt="" />
-          } @else {
-            <fa-icon [icon]="faBuildingUser" class="text-xl text-gray-400"></fa-icon>
-          }
-        </div>
+        @if (customer().imageUrl; as imageUrl) {
+          <img class="size-8 rounded-full" [attr.src]="imageUrl | secureImage | async" alt="" />
+        } @else {
+          <fa-icon [icon]="faBuildingUser" class="text-xl text-gray-400"></fa-icon>
+        }
         <div>
           <div class="flex gap-2">
             <h3 class="font-bold break-all">{{ customer().name }}</h3>

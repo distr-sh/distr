@@ -13,11 +13,16 @@
           <app-status-dot class="absolute size-2.5 -bottom-0.5 -end-0.5" [deploymentTarget]="deploymentTarget()" />
         </div>
         <div class="min-w-0">
-          <div class="flex gap-2">
-            <h3 class="font-bold truncate break-all" [title]="deploymentTarget().name">
+          @if (deploymentTarget().customerOrganization; as customer) {
+            <h3 class="font-bold leading-none truncate" [title]="deploymentTarget().name">
+              {{ customer.name }}
+            </h3>
+            <div class="text-gray-500 dark:text-gray-400 text-sm truncate">{{ deploymentTarget().name }}</div>
+          } @else {
+            <h3 class="font-bold truncate" [title]="deploymentTarget().name">
               {{ deploymentTarget().name }}
             </h3>
-          </div>
+          }
         </div>
       </div>
     </div>
