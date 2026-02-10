@@ -238,7 +238,7 @@
                 <div class="flex items-center justify-between gap-3">
                   <div class="flex-1 min-w-0">
                     <app-deployment-app-name
-                      [applicationName]="deployment.applicationName"
+                      [application]="deployment.application"
                       [applicationVersionName]="deployment.applicationVersionName" />
                   </div>
                   <div class="flex items-center justify-end space-x-2">
@@ -366,7 +366,7 @@
                                   role="alert">
                                   <span class="font-semibold me-1">WARNING!</span>
                                   You are about to uninstall
-                                  {{ deployment.applicationName + '@' + deployment.applicationVersionName }} on
+                                  {{ deployment.application.name }}@{{ deployment.applicationVersionName }} on
                                   {{ deploymentTarget().name }}. This will also delete all:
                                   <ul class="my-1.5 list-disc list-inside">
                                     <li>associated configuration</li>

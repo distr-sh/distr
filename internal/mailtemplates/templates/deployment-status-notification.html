@@ -37,7 +37,7 @@
           </li>
           <li>
             <strong>Affected application:</strong>
-            {{ .Deployment.ApplicationName }}@{{ .Deployment.ApplicationVersionName }}
+            {{ .Deployment.Application.Name }}@{{ .Deployment.ApplicationVersionName }}
           </li>
           {{ if or (eq .EventType "error") (eq .EventType "recovered") }}
           <li>

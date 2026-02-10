@@ -3,6 +3,7 @@ import {DeploymentType, HelmChartType} from './deployment';
 
 export interface Application extends BaseModel, Named {
   type: DeploymentType;
+  imageId?: string;
   imageUrl?: string;
   versions?: ApplicationVersion[];
 }
