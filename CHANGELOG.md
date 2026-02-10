@@ -1,5 +1,40 @@
 # Changelog
 
+## [2.10.0](https://github.com/distr-sh/distr/compare/2.9.0...2.10.0) (2026-02-10)
+
+
+### Features
+
+* add downloaded by customer organizations ([#1783](https://github.com/distr-sh/distr/issues/1783)) ([0a59eaa](https://github.com/distr-sh/distr/commit/0a59eaaebc3fc93896899f6dd5a1a143cd48c4cf))
+* add superadmin user with extended read-only capabilities ([#1782](https://github.com/distr-sh/distr/issues/1782)) ([69ef346](https://github.com/distr-sh/distr/commit/69ef34600e2164a1a1d319dfb5d113930427031d))
+
+
+### Bug Fixes
+
+* add permissions check for notification config api ([#1793](https://github.com/distr-sh/distr/issues/1793)) ([f184f17](https://github.com/distr-sh/distr/commit/f184f170cd6cb96416aa6c21311bb57cb262a045))
+* **backend:** do not report status "progressing" as recovered from error ([#1792](https://github.com/distr-sh/distr/issues/1792)) ([df618c7](https://github.com/distr-sh/distr/commit/df618c73eb8aa407f5a26c2b99495a86ec0136bf))
+* **deps:** update module golang.org/x/crypto to v0.48.0 ([#1795](https://github.com/distr-sh/distr/issues/1795)) ([ca88fd9](https://github.com/distr-sh/distr/commit/ca88fd96fbb7264e8151e517a773d8113c237f2f))
+* **deps:** update module golang.org/x/oauth2 to v0.35.0 ([#1787](https://github.com/distr-sh/distr/issues/1787)) ([4554faf](https://github.com/distr-sh/distr/commit/4554faf97b990c96a38cabc93164e752329e236d))
+* **ui:** update user name without profile image ([#1796](https://github.com/distr-sh/distr/issues/1796)) ([2e849df](https://github.com/distr-sh/distr/commit/2e849df1c4150a50aa2f685a15c096fb8d33c62e))
+
+
+### Other
+
+* **deps:** update angular-cli monorepo to v21.1.3 ([#1780](https://github.com/distr-sh/distr/issues/1780)) ([a833ed9](https://github.com/distr-sh/distr/commit/a833ed90e73355d00fe0ae979021d992b3b482a0))
+* **deps:** update codemirror ([#1784](https://github.com/distr-sh/distr/issues/1784)) ([26b7516](https://github.com/distr-sh/distr/commit/26b75169c60bcab9b549e05ac1eb3efbe166beef))
+* **deps:** update dependency pnpm to v10.29.2 ([#1786](https://github.com/distr-sh/distr/issues/1786)) ([0303c02](https://github.com/distr-sh/distr/commit/0303c02e1d3ddbc46f1375e263ef4a095ce7a907))
+* **deps:** update dependency posthog-js to v1.343.0 ([#1788](https://github.com/distr-sh/distr/issues/1788)) ([b19bc39](https://github.com/distr-sh/distr/commit/b19bc39c648810189aaff12a59c75644867c5880))
+* **deps:** update dependency typedoc-plugin-markdown to v4.10.0 ([#1785](https://github.com/distr-sh/distr/issues/1785)) ([058ca5c](https://github.com/distr-sh/distr/commit/058ca5c93905aacf9199ff3c5d82df606e356382))
+* **deps:** update sentry-javascript monorepo to v10.38.0 ([#1789](https://github.com/distr-sh/distr/issues/1789)) ([5f385f4](https://github.com/distr-sh/distr/commit/5f385f46c7aebc02d197705d62f2fe69ff98d8b7))
+* do not report "context cancelled" ([#1791](https://github.com/distr-sh/distr/issues/1791)) ([02a5e0b](https://github.com/distr-sh/distr/commit/02a5e0bc835c007c04d12ce69f5f425cbbbff5ae))
+* rename DeploymentStatusNotificationConfiguration to AlertConfiguration ([#1794](https://github.com/distr-sh/distr/issues/1794)) ([f2293fc](https://github.com/distr-sh/distr/commit/f2293fc8c4fc0610c6c355eec2dbd24385eccfc1))
+* rework deployment target card ([#1775](https://github.com/distr-sh/distr/issues/1775)) ([b5f3368](https://github.com/distr-sh/distr/commit/b5f33681975381bf1ac9c9e2e7cc664aaaa2f3e6))
+
+
+### Performance
+
+* **backend:** add NotificationRecord index ([#1790](https://github.com/distr-sh/distr/issues/1790)) ([7ee9c9b](https://github.com/distr-sh/distr/commit/7ee9c9b38ca9f163fc6229f424243287762fed31))
+
 ## [2.9.0](https://github.com/distr-sh/distr/compare/2.8.2...2.9.0) (2026-02-05)
 
 
