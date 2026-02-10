@@ -112,7 +112,7 @@ export class UserSettingsComponent {
       const result = await firstValueFrom(
         this.settingsService.updateUserSettings({
           name: this.generalForm.value.name ?? undefined,
-          imageId: this.generalForm.value.imageId ?? undefined,
+          imageId: this.generalForm.value.imageId || undefined,
         })
       );
       this.toast.success('User settings saved successfully.');
