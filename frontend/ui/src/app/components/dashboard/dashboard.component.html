@@ -6,7 +6,7 @@
       </h2>
       <div class="grid grid-flow-col gap-4 mb-4">
         <div
-          class="grid gap-4 items-stretch 5xl:grid-cols-6 4xl:grid-cols-5 3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-2">
+          class="grid gap-4 items-stretch 5xl:grid-cols-6 4xl:grid-cols-5 3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-2 grid-cols-1">
           @for (deploymentTarget of deploymentTargetWithMetrics$ | async; track deploymentTarget.id) {
             <app-deployment-target-dashboard-card
               [deploymentTarget]="deploymentTarget"
@@ -24,7 +24,7 @@
       </h2>
       <div class="grid grid-flow-col gap-4 mb-4">
         <div
-          class="grid gap-4 items-stretch 5xl:grid-cols-6 4xl:grid-cols-5 3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-2">
+          class="grid gap-4 items-stretch 5xl:grid-cols-6 4xl:grid-cols-5 3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-2 grid-cols-1">
           @for (item of artifactsByCustomer$ | async; track item.customer.id) {
             <app-artifacts-by-customer-card [customer]="item.customer" [artifacts]="item.artifacts ?? []" />
           } @empty {
