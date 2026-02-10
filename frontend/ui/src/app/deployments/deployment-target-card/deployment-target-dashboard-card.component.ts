@@ -3,6 +3,7 @@ import {TextFieldModule} from '@angular/cdk/text-field';
 import {AsyncPipe, NgOptimizedImage} from '@angular/common';
 import {Component} from '@angular/core';
 import {ReactiveFormsModule} from '@angular/forms';
+import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {drawerFlyInOut} from '../../animations/drawer';
@@ -35,6 +36,7 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
     AutotrimDirective,
     SecureImagePipe,
     AsyncPipe,
+    RouterLink,
   ],
   animations: [modalFlyInOut, drawerFlyInOut, dropdownAnimation],
 })
