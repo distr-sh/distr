@@ -25,16 +25,16 @@ const (
 
 	artifactDownloadsOutExpr = `
 		count(DISTINCT avpl.id) AS downloads_total,
-		count(DISTINCT avpl.useraccount_id) FILTER (WHERE oua_dl.customer_organization_id IS NULL)
+		count(DISTINCT avpl.useraccount_id) FILTER (WHERE avpl.customer_organization_id IS NULL)
 			AS downloaded_by_users_count,
 		coalesce(array_agg(DISTINCT avpl.useraccount_id)
 			FILTER (WHERE avpl.useraccount_id IS NOT NULL
-				AND oua_dl.customer_organization_id IS NULL), ARRAY[]::UUID[])
+				AND avpl.customer_organization_id IS NULL), ARRAY[]::UUID[])
 			AS downloaded_by_users,
-		count(DISTINCT oua_dl.customer_organization_id)
+		count(DISTINCT avpl.customer_organization_id)
 			AS downloaded_by_customer_organizations_count,
-		coalesce(array_agg(DISTINCT oua_dl.customer_organization_id)
-			FILTER (WHERE oua_dl.customer_organization_id IS NOT NULL), ARRAY[]::UUID[])
+		coalesce(array_agg(DISTINCT avpl.customer_organization_id)
+			FILTER (WHERE avpl.customer_organization_id IS NOT NULL), ARRAY[]::UUID[])
 			AS downloaded_by_customer_organizations `
 
 	artifactWithDownloadsOutputExpr = artifactOutputExpr +
@@ -66,9 +66,6 @@ func GetArtifactsByOrgID(ctx context.Context, orgID uuid.UUID) ([]types.Artifact
 				ON a.id = av.artifact_id
 			LEFT JOIN ArtifactVersionPull avpl
 				ON avpl.artifact_version_id = av.id
-			LEFT JOIN Organization_UserAccount oua_dl
-				ON oua_dl.organization_id = a.organization_id
-					AND oua_dl.user_account_id = avpl.useraccount_id
 			WHERE a.organization_id = @orgId
 			GROUP BY a.id, a.created_at, a.organization_id, a.name, o.slug
 			ORDER BY max(av.created_at) DESC`,
@@ -100,9 +97,6 @@ func GetArtifactsByLicenseOwnerID(ctx context.Context, orgID uuid.UUID, ownerID 
 				ON a.id = av.artifact_id
 			LEFT JOIN ArtifactVersionPull avpl
 				ON avpl.artifact_version_id = av.id AND avpl.useraccount_id = oua.user_account_id
-			LEFT JOIN Organization_UserAccount oua_dl
-				ON oua_dl.organization_id = a.organization_id
-					AND oua_dl.user_account_id = avpl.useraccount_id
 			WHERE a.organization_id = @orgId
 			AND EXISTS(
 				SELECT ala.id
@@ -225,18 +219,15 @@ func GetVersionsForArtifact(ctx context.Context, artifactID uuid.UUID, customerO
 						SELECT ROW(
 							count(distinct avplx.id),
 							count(DISTINCT avplx.useraccount_id)
-								FILTER (WHERE oua_dlx.customer_organization_id IS NULL),
+								FILTER (WHERE avplx.customer_organization_id IS NULL),
 							coalesce(array_agg(DISTINCT avplx.useraccount_id)
 								FILTER (WHERE avplx.useraccount_id IS NOT NULL
-									AND oua_dlx.customer_organization_id IS NULL), ARRAY[]::UUID[]),
-							count(DISTINCT oua_dlx.customer_organization_id),
-							coalesce(array_agg(DISTINCT oua_dlx.customer_organization_id)
-								FILTER (WHERE oua_dlx.customer_organization_id IS NOT NULL), ARRAY[]::UUID[])
+									AND avplx.customer_organization_id IS NULL), ARRAY[]::UUID[]),
+							count(DISTINCT avplx.customer_organization_id),
+							coalesce(array_agg(DISTINCT avplx.customer_organization_id)
+								FILTER (WHERE avplx.customer_organization_id IS NOT NULL), ARRAY[]::UUID[])
 						)
 						FROM ArtifactVersionPull avplx
-						LEFT JOIN Organization_UserAccount oua_dlx
-							ON oua_dlx.organization_id = a.organization_id
-								AND oua_dlx.user_account_id = avplx.useraccount_id
 						WHERE @isVendorUser AND avplx.artifact_version_id = avt.id
 						)) ORDER BY avt.name
 					)
