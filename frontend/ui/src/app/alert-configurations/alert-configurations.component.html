@@ -42,7 +42,8 @@
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-          <thead class="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
+          <thead
+            class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
             <tr>
               <th scope="col" class="p-4">Name</th>
               <th scope="col" class="p-4">Enabled</th>
@@ -54,7 +55,7 @@
           </thead>
           <tbody>
             @for (config of filteredConfigs(); track config.id) {
-              <tr class="border-b border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
                 <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">{{ config.name }}</td>
                 <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap align-middle">
                   <label class="inline-flex items-center cursor-pointer my-1">
@@ -112,7 +113,7 @@
                 </td>
               </tr>
             } @empty {
-              <tr class="border-b border-gray-200 dark:border-gray-600">
+              <tr class="border-t border-gray-200 dark:border-gray-600">
                 <td
                   colspan="5"
                   class="px-4 py-3 font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap text-center">
