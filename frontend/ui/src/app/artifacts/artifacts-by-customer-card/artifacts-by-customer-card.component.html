@@ -18,44 +18,39 @@
   </div>
 
   @if (artifacts().length > 0) {
-    <hr class="border-b border-gray-200 dark:border-gray-600" />
-    <div class="items-center sm:flex sm:flex-wrap xl:flex">
-      <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-        <tbody>
-          @for (artifact of artifacts(); track artifact.artifact.id) {
-            <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
-              <td class="px-4 py-2 font-medium text-gray-900 whitespace-normal dark:text-white flex items-center gap-4">
-                @if (artifact.artifact.imageUrl) {
-                  <img class="w-4 h-4 rounded-full" [attr.src]="artifact.artifact.imageUrl | secureImage | async" />
-                } @else {
-                  <div class="shrink-0 text-gray-900 dark:text-gray-400">
-                    <fa-icon [icon]="faBox" size="lg" class="text-gray-500 dark:text-gray-400"></fa-icon>
-                  </div>
-                }
-                <div class="leading-tight break-all">
-                  {{ artifact.artifact.name }}
-                  <span
-                    class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-md dark:bg-gray-700 dark:text-blue-400 border border-blue-400">
-                    {{ artifact.latestPulledVersion }}
-                  </span>
-                </div>
-              </td>
-              <td class="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white text-sm">
-                <div class="flex items-center gap-1">
-                  @if (isOnLatest(artifact)) {
-                    <div class="size-3 rounded-full bg-lime-600"></div>
-                    OK
-                  } @else {
-                    <div class="size-3 rounded-full bg-yellow-300"></div>
-                    newer version available
-                  }
-                </div>
-              </td>
-            </tr>
+    <hr class="border-gray-200 dark:border-gray-600" />
+    <ul class="items-center sm:flex sm:flex-wrap xl:flex">
+      @for (artifact of artifacts(); track artifact.artifact.id) {
+        <li
+          class="w-full flex gap-3 items-center px-4 py-2 border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm font-medium text-gray-900 whitespace-normal dark:text-white">
+          @if (artifact.artifact.imageUrl) {
+            <img class="size-8 rounded-full" [attr.src]="artifact.artifact.imageUrl | secureImage | async" />
+          } @else {
+            <div class="shrink-0 text-gray-900 dark:text-gray-400">
+              <fa-icon [icon]="faBox" class="text-2xl text-gray-500 dark:text-gray-400"></fa-icon>
+            </div>
           }
-        </tbody>
-      </table>
-    </div>
+
+          <div class="leading-tight break-all flex-grow">
+            {{ artifact.artifact.name }}
+            <span
+              class="bg-blue-100 text-blue-800 text-xs font-medium px-1.5 py-0.5 rounded-md dark:bg-gray-700 dark:text-blue-400 border border-blue-400">
+              {{ artifact.latestPulledVersion }}
+            </span>
+          </div>
+
+          <div class="flex items-center gap-1">
+            @if (isOnLatest(artifact)) {
+              <div class="size-3 rounded-full bg-lime-600"></div>
+              Latest
+            } @else {
+              <div class="size-3 rounded-full bg-yellow-300"></div>
+              Outdated
+            }
+          </div>
+        </li>
+      }
+    </ul>
   } @else {
     <div class="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm p-4">
       No artifacts pulled.
