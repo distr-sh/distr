@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.10.2](https://github.com/distr-sh/distr/compare/2.10.1...2.10.2) (2026-02-11)
+
+
+### Other
+
+* minor dashboard layout fixes ([#1812](https://github.com/distr-sh/distr/issues/1812)) ([66ab8ae](https://github.com/distr-sh/distr/commit/66ab8ae066dd1b51adfbee5b63ce061c5ba84952))
+
 ## [2.10.1](https://github.com/distr-sh/distr/compare/2.10.0...2.10.1) (2026-02-11)
 
 
