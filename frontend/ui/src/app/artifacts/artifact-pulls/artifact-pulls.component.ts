@@ -1,19 +1,15 @@
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {Component, DestroyRef, inject} from '@angular/core';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
-import {FormControl, ReactiveFormsModule} from '@angular/forms';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
+import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {ActivatedRoute, Params, Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faDownload} from '@fortawesome/free-solid-svg-icons';
-import {combineLatest, debounceTime, first, map, of, scan, shareReplay, startWith, Subject, switchMap, tap} from 'rxjs';
+import {faDownload, faFilterCircleXmark} from '@fortawesome/free-solid-svg-icons';
+import dayjs from 'dayjs';
+import {debounceTime, first, map, of, scan, shareReplay, startWith, Subject, switchMap, tap} from 'rxjs';
+import {formatRemoteAddress} from '../../../util/format';
 import {ArtifactPullFilters, ArtifactPullsService} from '../../services/artifact-pulls.service';
 import {ToastService} from '../../services/toast.service';
-import {ArtifactPullFilterOption} from '../../types/artifact-version-pull';
-
-interface FilterDef {
-  queryParam: string;
-  control: FormControl<string | null>;
-}
 
 @Component({
   templateUrl: './artifact-pulls.component.html',
@@ -27,6 +23,8 @@ export class ArtifactPullsComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly faDownload = faDownload;
+  protected readonly faFilterCircleXmark = faFilterCircleXmark;
+  protected readonly today = dayjs().format('YYYY-MM-DD');
   protected hasMore = true;
   protected isExporting = false;
   private currentOldestPull?: Date;
@@ -34,46 +32,36 @@ export class ArtifactPullsComponent {
   private readonly showMore$ = new Subject<void>();
   private initializing = true;
 
-  protected readonly customerOrgFilter = new FormControl('');
-  protected readonly userAccountFilter = new FormControl('');
-  protected readonly remoteAddressFilter = new FormControl('');
-  protected readonly artifactFilter = new FormControl('');
-  protected readonly artifactVersionFilter = new FormControl('');
-  protected readonly dateFromFilter = new FormControl('');
-  protected readonly dateToFilter = new FormControl('');
+  protected readonly filterForm = new FormGroup({
+    customerOrganizationId: new FormControl(''),
+    userAccountId: new FormControl(''),
+    remoteAddress: new FormControl(''),
+    artifactId: new FormControl(''),
+    artifactVersionId: new FormControl(''),
+    from: new FormControl(''),
+    to: new FormControl(''),
+  });
 
-  private readonly filterDefs: FilterDef[] = [
-    {queryParam: 'customerOrganizationId', control: this.customerOrgFilter},
-    {queryParam: 'userAccountId', control: this.userAccountFilter},
-    {queryParam: 'remoteAddress', control: this.remoteAddressFilter},
-    {queryParam: 'artifactId', control: this.artifactFilter},
-    {queryParam: 'artifactVersionId', control: this.artifactVersionFilter},
-    {queryParam: 'from', control: this.dateFromFilter},
-    {queryParam: 'to', control: this.dateToFilter},
-  ];
+  protected readonly filterOptions = toSignal(this.pullsService.getFilterOptions());
 
-  protected readonly filterOptions$ = this.pullsService.getFilterOptions().pipe(shareReplay(1));
-
-  protected readonly versionOptions$ = this.artifactFilter.valueChanges.pipe(
-    startWith(this.artifactFilter.value),
-    switchMap((artifactId) => {
-      if (!this.initializing) {
-        this.artifactVersionFilter.setValue('', {emitEvent: false});
-      }
-      if (artifactId) {
-        return this.pullsService.getVersionOptions(artifactId);
-      }
-      return of([] as ArtifactPullFilterOption[]);
-    }),
-    shareReplay(1)
+  protected readonly versionOptions = toSignal(
+    this.filterForm.controls.artifactId.valueChanges.pipe(
+      startWith(this.filterForm.controls.artifactId.value),
+      switchMap((artifactId) => {
+        if (!this.initializing) {
+          this.filterForm.controls.artifactVersionId.setValue('', {emitEvent: false});
+        }
+        if (artifactId) {
+          return this.pullsService.getVersionOptions(artifactId);
+        }
+        return of([]);
+      })
+    ),
+    {initialValue: []}
   );
 
-  private readonly allFilterValues$ = combineLatest(
-    this.filterDefs.map((f) => f.control.valueChanges.pipe(startWith(f.control.value)))
-  );
-
-  private readonly filters$ = this.filterOptions$.pipe(
-    switchMap(() => this.allFilterValues$),
+  private readonly filters$ = this.filterForm.valueChanges.pipe(
+    startWith(this.filterForm.value),
     debounceTime(300),
     tap(() => (this.initializing = false)),
     tap((values) => this.syncQueryParams(values)),
@@ -116,16 +104,20 @@ export class ArtifactPullsComponent {
     this.showMore$.next();
   }
 
+  protected resetFilters() {
+    this.filterForm.reset();
+  }
+
   protected exportCsv() {
     this.isExporting = true;
     const toastRef = this.toast.info('Download started...');
-    const filters = this.buildFilters(this.filterDefs.map((f) => f.control.value));
+    const filters = this.buildFilters(this.filterForm.value);
     this.pullsService.export(filters).subscribe({
       next: (blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${new Date().toISOString().split('T')[0]}_artifact_pulls.csv`;
+        a.download = `${dayjs().format('YYYY-MM-DD')}_artifact_pulls.csv`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -150,19 +142,11 @@ export class ArtifactPullsComponent {
     return name;
   }
 
-  protected formatRemoteAddress(addr: string): string {
-    if (addr.includes(']')) {
-      return addr.substring(0, addr.lastIndexOf(']') + 1);
-    } else if (addr.includes(':')) {
-      return addr.substring(0, addr.lastIndexOf(':'));
-    } else {
-      return addr;
-    }
-  }
+  protected readonly formatRemoteAddress = formatRemoteAddress;
 
   private initFromQueryParams() {
     const params = this.route.snapshot.queryParams;
-    const hasParams = this.filterDefs.some((f) => params[f.queryParam]);
+    const hasParams = Object.keys(this.filterForm.controls).some((key) => params[key]);
     if (!hasParams) {
       return;
     }
@@ -170,53 +154,59 @@ export class ArtifactPullsComponent {
     // Wait for filter options to load, then apply query params.
     // This ensures <select> elements have their <option> children
     // before we set a value, preventing Angular from resetting them.
-    this.filterOptions$.pipe(first(), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      // Use setTimeout to let Angular complete the render cycle
-      // so that <option> elements from @for are in the DOM
-      setTimeout(() => {
-        for (const def of this.filterDefs) {
-          const value = params[def.queryParam];
-          if (value) {
-            def.control.setValue(value);
+    this.pullsService
+      .getFilterOptions()
+      .pipe(first(), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        // Use setTimeout to let Angular complete the render cycle
+        // so that <option> elements from @for are in the DOM
+        setTimeout(() => {
+          const patch: Record<string, string> = {};
+          for (const key of Object.keys(this.filterForm.controls)) {
+            if (params[key]) {
+              patch[key] = params[key];
+            }
           }
-        }
+          this.filterForm.patchValue(patch);
+        });
       });
-    });
   }
 
-  private syncQueryParams(values: (string | null)[]) {
+  private syncQueryParams(values: typeof this.filterForm.value) {
     const queryParams: Params = {};
-    for (let i = 0; i < this.filterDefs.length; i++) {
-      queryParams[this.filterDefs[i].queryParam] = values[i] || null;
+    for (const [key, value] of Object.entries(values)) {
+      queryParams[key] = value || null;
     }
     this.router.navigate([], {queryParams, replaceUrl: true});
   }
 
-  private buildFilters(values: (string | null)[]): ArtifactPullFilters {
+  private buildFilters(values: typeof this.filterForm.value): ArtifactPullFilters {
     const filters: ArtifactPullFilters = {};
-    const [custOrg, user, addr, artifact, version, from, to] = values;
-    if (custOrg) {
-      filters.customerOrganizationId = custOrg;
+    if (values.customerOrganizationId) {
+      filters.customerOrganizationId = values.customerOrganizationId;
     }
-    if (user) {
-      filters.userAccountId = user;
+    if (values.userAccountId) {
+      filters.userAccountId = values.userAccountId;
     }
-    if (addr) {
-      filters.remoteAddress = addr;
+    if (values.remoteAddress) {
+      filters.remoteAddress = values.remoteAddress;
     }
-    if (artifact) {
-      filters.artifactId = artifact;
+    if (values.artifactId) {
+      filters.artifactId = values.artifactId;
     }
-    if (version) {
-      filters.artifactVersionId = version;
+    if (values.artifactVersionId) {
+      filters.artifactVersionId = values.artifactVersionId;
+    }
+    const from = values.from;
+    const to = values.to;
+    if (from && to && dayjs(from).isAfter(dayjs(to))) {
+      return filters;
     }
     if (from) {
-      const [y, m, d] = from.split('-').map(Number);
-      filters.after = new Date(y, m - 1, d);
+      filters.after = dayjs(from).startOf('day').toDate();
     }
     if (to) {
-      const [y, m, d] = to.split('-').map(Number);
-      filters.before = new Date(y, m - 1, d, 23, 59, 59, 999);
+      filters.before = dayjs(to).endOf('day').toDate();
     }
     return filters;
   }

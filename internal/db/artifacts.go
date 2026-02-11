@@ -696,20 +696,17 @@ func GetArtifactVersionPullFilterOptions(
 	db := internalctx.GetDb(ctx)
 	result := &types.ArtifactVersionPullFilterOptions{}
 
-	pullBaseJoin := `FROM ArtifactVersionPull p
+	pullBaseJoin := ` FROM ArtifactVersionPull p
 		JOIN ArtifactVersion v ON v.id = p.artifact_version_id
-		JOIN Artifact a ON a.id = v.artifact_id
-		WHERE a.organization_id = @orgId`
+		JOIN Artifact a ON a.id = v.artifact_id`
 	args := pgx.NamedArgs{"orgId": orgID}
 
 	// Customer organizations
 	rows, err := db.Query(ctx,
-		`SELECT DISTINCT co.id, co.name
-		FROM ArtifactVersionPull p
-			JOIN ArtifactVersion v ON v.id = p.artifact_version_id
-			JOIN Artifact a ON a.id = v.artifact_id
+		`SELECT co.id, co.name`+pullBaseJoin+`
 			JOIN CustomerOrganization co ON co.id = p.customer_organization_id
 		WHERE a.organization_id = @orgId
+		GROUP BY co.id, co.name
 		ORDER BY co.name`, args)
 	if err != nil {
 		return nil, fmt.Errorf("could not query customer organizations for filter options: %w", err)
@@ -720,12 +717,10 @@ func GetArtifactVersionPullFilterOptions(
 
 	// User accounts
 	rows, err = db.Query(ctx,
-		`SELECT DISTINCT u.id, COALESCE(NULLIF(u.name, ''), u.email) AS name
-		FROM ArtifactVersionPull p
-			JOIN ArtifactVersion v ON v.id = p.artifact_version_id
-			JOIN Artifact a ON a.id = v.artifact_id
+		`SELECT u.id, COALESCE(NULLIF(u.name, ''), u.email) AS name`+pullBaseJoin+`
 			JOIN UserAccount u ON u.id = p.useraccount_id
 		WHERE a.organization_id = @orgId
+		GROUP BY u.id, u.name, u.email
 		ORDER BY name`, args)
 	if err != nil {
 		return nil, fmt.Errorf("could not query user accounts for filter options: %w", err)
@@ -736,8 +731,10 @@ func GetArtifactVersionPullFilterOptions(
 
 	// Remote addresses
 	rows, err = db.Query(ctx,
-		`SELECT DISTINCT p.remote_address `+pullBaseJoin+`
+		`SELECT p.remote_address`+pullBaseJoin+`
+		WHERE a.organization_id = @orgId
 			AND p.remote_address IS NOT NULL
+		GROUP BY p.remote_address
 		ORDER BY p.remote_address`, args)
 	if err != nil {
 		return nil, fmt.Errorf("could not query remote addresses for filter options: %w", err)
@@ -748,7 +745,10 @@ func GetArtifactVersionPullFilterOptions(
 
 	// Artifacts
 	rows, err = db.Query(ctx,
-		`SELECT DISTINCT a.id, a.name `+pullBaseJoin+` ORDER BY a.name`, args)
+		`SELECT a.id, a.name`+pullBaseJoin+`
+		WHERE a.organization_id = @orgId
+		GROUP BY a.id, a.name
+		ORDER BY a.name`, args)
 	if err != nil {
 		return nil, fmt.Errorf("could not query artifacts for filter options: %w", err)
 	}
@@ -766,12 +766,13 @@ func GetArtifactVersionPullVersionOptions(
 ) ([]types.FilterOption, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		`SELECT DISTINCT v.id, v.name
+		`SELECT v.id, v.name
 		FROM ArtifactVersionPull p
 			JOIN ArtifactVersion v ON v.id = p.artifact_version_id
 			JOIN Artifact a ON a.id = v.artifact_id
 		WHERE a.organization_id = @orgId
 			AND a.id = @artifactId
+		GROUP BY v.id, v.name
 		ORDER BY v.name`,
 		pgx.NamedArgs{"orgId": orgID, "artifactId": artifactID})
 	if err != nil {

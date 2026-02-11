@@ -105,7 +105,7 @@ func parseArtifactPullFilters(r *http.Request, orgID uuid.UUID) (types.ArtifactV
 		filter.UserAccountID = &id
 	}
 
-	if addr := r.FormValue("remoteAddress"); addr != "" 
+	if addr := r.FormValue("remoteAddress"); addr != "" {
 		filter.RemoteAddress = &addr
 	}
 
@@ -126,10 +126,6 @@ func parseArtifactPullFilters(r *http.Request, orgID uuid.UUID) (types.ArtifactV
 	}
 
 	return filter, nil
-}
-
-func parseString(s string) (string, error) {
-	return s, nil
 }
 
 func getArtifactPullsHandler() http.HandlerFunc {
@@ -236,10 +232,10 @@ func exportArtifactPullsHandler() http.HandlerFunc {
 			apiPull := mapping.ArtifactVersionPullToAPI(pull)
 			if err := csvWriter.Write([]string{
 				apiPull.CreatedAt.Format(time.RFC3339),
-				ptrOrEmpty(apiPull.CustomerOrganizationName),
-				ptrOrEmpty(apiPull.UserAccountName),
-				ptrOrEmpty(apiPull.UserAccountEmail),
-				ptrOrEmpty(apiPull.RemoteAddress),
+				derefOrDefault(apiPull.CustomerOrganizationName),
+				derefOrDefault(apiPull.UserAccountName),
+				derefOrDefault(apiPull.UserAccountEmail),
+				derefOrDefault(apiPull.RemoteAddress),
 				apiPull.Artifact.Name,
 				apiPull.ArtifactVersion.Name,
 			}); err != nil {
@@ -255,7 +251,7 @@ func exportArtifactPullsHandler() http.HandlerFunc {
 	}
 }
 
-func ptrOrEmpty(s *string) string {
+func derefOrDefault(s *string) string {
 	if s != nil {
 		return *s
 	}

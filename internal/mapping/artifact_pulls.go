@@ -40,7 +40,7 @@ func ArtifactVersionPullFilterOptionsToAPI(
 
 func FilterOptionToAPI(opt types.FilterOption) api.ArtifactPullFilterOption {
 	return api.ArtifactPullFilterOption{
-		ID:   opt.ID.String(),
+		ID:   opt.ID,
 		Name: opt.Name,
 	}
 }
