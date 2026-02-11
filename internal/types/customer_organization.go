@@ -21,6 +21,8 @@ func ParseCustomerOrganizationFeature(value string) (CustomerOrganizationFeature
 		return CustomerOrganizationFeatureDeploymentTargets, nil
 	case string(CustomerOrganizationFeatureArtifacts):
 		return CustomerOrganizationFeatureArtifacts, nil
+	case string(CustomerOrganizationFeatureAlerts):
+		return CustomerOrganizationFeatureAlerts, nil
 	default:
 		return "", errors.New("invalid customer organization feature")
 	}
