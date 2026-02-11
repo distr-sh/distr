@@ -6,7 +6,6 @@
         <div class="relative self-start flex-shrink-0">
           @if (deploymentTarget().customerOrganization?.imageId; as imageId) {
             <img class="size-10 rounded-sm" [attr.src]="imageId | secureImage | async" alt="" />
-            <app-status-dot class="absolute size-2.5 -bottom-0 -end-0" [deploymentTarget]="deploymentTarget()" />
           } @else {
             <img
               [ngSrc]="'/' + deploymentTarget().type + '.png'"
@@ -14,8 +13,8 @@
               class="size-10 rounded-sm max-w-none"
               height="199"
               width="199" />
-            <app-status-dot class="absolute size-2.5 -bottom-0.5 -end-0.5" [deploymentTarget]="deploymentTarget()" />
           }
+          <app-status-dot class="absolute size-2.5 -bottom-0.5 -end-0.5" [deploymentTarget]="deploymentTarget()" />
         </div>
         <div class="min-w-0">
           <a routerLink="/deployments" class="hover:underline" [queryParams]="{search: deploymentTarget().name}">
@@ -46,7 +45,7 @@
   @if (deploymentTarget().deployments.length > 0) {
     <ul class="overflow-hidden">
       @for (deployment of deploymentTarget().deployments; track deployment.id) {
-        <li class="hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-300 dark:border-gray-500">
+        <li class="hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
           <div class="px-4 py-2">
             <div class="flex items-center gap-3 text-sm">
               <app-deployment-app-name

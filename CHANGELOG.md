@@ -1,5 +1,32 @@
 # Changelog
 
+## [2.10.2](https://github.com/distr-sh/distr/compare/2.10.1...2.10.2) (2026-02-11)
+
+
+### Other
+
+* minor dashboard layout fixes ([#1812](https://github.com/distr-sh/distr/issues/1812)) ([66ab8ae](https://github.com/distr-sh/distr/commit/66ab8ae066dd1b51adfbee5b63ce061c5ba84952))
+
+## [2.10.1](https://github.com/distr-sh/distr/compare/2.10.0...2.10.1) (2026-02-11)
+
+
+### Bug Fixes
+
+* CustomerOrganizationFeature validation ([#1810](https://github.com/distr-sh/distr/issues/1810)) ([0a48648](https://github.com/distr-sh/distr/commit/0a4864837455ed8d2bfb8f460fda019543d29e17))
+* **deps:** update kubernetes packages to v0.35.1 ([#1802](https://github.com/distr-sh/distr/issues/1802)) ([2c24d04](https://github.com/distr-sh/distr/commit/2c24d04584d46acf64302ae6d1e48447a77ea62b))
+* rename customer feature "notifications" to "alerts" and validate "alerts" depends on "deployment_targets" ([#1809](https://github.com/distr-sh/distr/issues/1809)) ([c34b1ed](https://github.com/distr-sh/distr/commit/c34b1ed35857e56ab83167d9bef41d541ab7cf9b))
+
+
+### Other
+
+* also streamline Deployment sidebar for vendors and customers ([#1799](https://github.com/distr-sh/distr/issues/1799)) ([7f19bb3](https://github.com/distr-sh/distr/commit/7f19bb3d645fa624be4e06ae4a2a963ee403e246))
+* **deps:** update dependency go to v1.26.0 ([#1800](https://github.com/distr-sh/distr/issues/1800)) ([008bd66](https://github.com/distr-sh/distr/commit/008bd660384d52eb9f8e5a99160d2f534a5f6b9d))
+* **deps:** update dependency golangci-lint to v2.9.0 ([#1803](https://github.com/distr-sh/distr/issues/1803)) ([a86f755](https://github.com/distr-sh/distr/commit/a86f7555afc7745223325259c787184374a74e8f))
+* **deps:** update docker/build-push-action action to v6.19.0 ([#1811](https://github.com/distr-sh/distr/issues/1811)) ([be78c40](https://github.com/distr-sh/distr/commit/be78c406aa94a4ef1c02ea6fa2d77999d4287cdb))
+* **deps:** update font awesome to v7.2.0 ([#1801](https://github.com/distr-sh/distr/issues/1801)) ([c0bb006](https://github.com/distr-sh/distr/commit/c0bb006e254ac16c94bf4203764254cd54e33329))
+* **ui:** minor deployments and dashboard page adjustments ([#1806](https://github.com/distr-sh/distr/issues/1806)) ([b3f4a38](https://github.com/distr-sh/distr/commit/b3f4a38d0d92e870b9a4ad646494ec33c1d3c2ea))
+* various dashboard and deployments page improvements ([#1797](https://github.com/distr-sh/distr/issues/1797)) ([aa9235f](https://github.com/distr-sh/distr/commit/aa9235f640b3833cbfad937c912618a5ef03b5b0))
+
 ## [2.10.0](https://github.com/distr-sh/distr/compare/2.9.0...2.10.0) (2026-02-10)
 
 
