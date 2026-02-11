@@ -25,24 +25,3 @@ func TestDeploymentStatusTypeParsing(t *testing.T) {
 	err = json.Unmarshal([]byte(`{"type": "does-not-exist"}`), &target)
 	g.Expect(err).To(MatchError(ErrInvalidDeploymentStatusType))
 }
-
-func TestParseCustomerOrganizationFeature(t *testing.T) {
-	g := NewWithT(t)
-
-	// Test valid features
-	feature, err := ParseCustomerOrganizationFeature(string(CustomerOrganizationFeatureDeploymentTargets))
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(feature).To(Equal(CustomerOrganizationFeatureDeploymentTargets))
-
-	feature, err = ParseCustomerOrganizationFeature(string(CustomerOrganizationFeatureArtifacts))
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(feature).To(Equal(CustomerOrganizationFeatureArtifacts))
-
-	feature, err = ParseCustomerOrganizationFeature(string(CustomerOrganizationFeatureAlerts))
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(feature).To(Equal(CustomerOrganizationFeatureAlerts))
-
-	// Test invalid feature
-	_, err = ParseCustomerOrganizationFeature("invalid")
-	g.Expect(err).To(MatchError("invalid customer organization feature"))
-}

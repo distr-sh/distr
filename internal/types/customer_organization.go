@@ -1,11 +1,14 @@
 package types
 
 import (
-	"errors"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+var ErrInvalidCustomerOrganizationFeature = fmt.Errorf("invalid customer organization feature")
 
 type CustomerOrganizationFeature string
 
@@ -24,7 +27,19 @@ func ParseCustomerOrganizationFeature(value string) (CustomerOrganizationFeature
 	case string(CustomerOrganizationFeatureAlerts):
 		return CustomerOrganizationFeatureAlerts, nil
 	default:
-		return "", errors.New("invalid customer organization feature")
+		return "", fmt.Errorf("%w: %v", ErrInvalidCustomerOrganizationFeature, value)
+	}
+}
+
+func (ref *CustomerOrganizationFeature) UnmarshalJSON(data []byte) error {
+	var featureStr string
+	if err := json.Unmarshal(data, &featureStr); err != nil {
+		return err
+	} else if feature, err := ParseCustomerOrganizationFeature(featureStr); err != nil {
+		return err
+	} else {
+		*ref = feature
+		return nil
 	}
 }
 
