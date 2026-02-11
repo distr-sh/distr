@@ -1,7 +1,14 @@
 <div
   class="flex space-x-1 items-center justify-end rtl:space-x-reverse"
+  tabindex="0"
+  role="button"
+  [attr.aria-haspopup]="'dialog'"
+  [attr.aria-expanded]="hovered()"
   (mouseenter)="hovered.set(true)"
   (mouseleave)="hovered.set(false)"
+  (focus)="hovered.set(true)"
+  (blur)="hovered.set(false)"
+  (click)="hovered.set(!hovered())"
   cdkOverlayOrigin
   #metricsOverlayOrigin="cdkOverlayOrigin">
   <div class="flex flex-col justify-center items-center">
