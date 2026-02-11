@@ -17,6 +17,11 @@ type CreateUpdateCustomerOrganizationRequest struct {
 }
 
 func (r *CreateUpdateCustomerOrganizationRequest) Validate() error {
+	for _, f := range r.Features {
+		if _, err := types.ParseCustomerOrganizationFeature(string(f)); err != nil {
+			return validation.NewValidationFailedError(fmt.Sprintf("invalid feature: %v", f))
+		}
+	}
 	if slices.Contains(r.Features, types.CustomerOrganizationFeatureAlerts) &&
 		!slices.Contains(r.Features, types.CustomerOrganizationFeatureDeploymentTargets) {
 		return validation.NewValidationFailedError(fmt.Sprintf("feature %v requires feature %v",
