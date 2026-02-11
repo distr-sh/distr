@@ -30,20 +30,19 @@ func TestParseCustomerOrganizationFeature(t *testing.T) {
 	g := NewWithT(t)
 
 	// Test valid features
-	feature, err := ParseCustomerOrganizationFeature("deployment_targets")
+	feature, err := ParseCustomerOrganizationFeature(string(CustomerOrganizationFeatureDeploymentTargets))
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(feature).To(Equal(CustomerOrganizationFeatureDeploymentTargets))
 
-	feature, err = ParseCustomerOrganizationFeature("artifacts")
+	feature, err = ParseCustomerOrganizationFeature(string(CustomerOrganizationFeatureArtifacts))
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(feature).To(Equal(CustomerOrganizationFeatureArtifacts))
 
-	feature, err = ParseCustomerOrganizationFeature("alerts")
+	feature, err = ParseCustomerOrganizationFeature(string(CustomerOrganizationFeatureAlerts))
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(feature).To(Equal(CustomerOrganizationFeatureAlerts))
 
 	// Test invalid feature
 	_, err = ParseCustomerOrganizationFeature("invalid")
-	g.Expect(err).To(HaveOccurred())
-	g.Expect(err.Error()).To(Equal("invalid customer organization feature"))
+	g.Expect(err).To(MatchError("invalid customer organization feature"))
 }
