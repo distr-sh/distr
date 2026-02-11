@@ -39,6 +39,7 @@ linters:
     - unused
     - whitespace
     - gocritic
+    - misspell
   exclusions:
     generated: lax
     presets:

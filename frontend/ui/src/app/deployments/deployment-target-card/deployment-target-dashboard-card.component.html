@@ -1,9 +1,9 @@
 <div
   class="h-full rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 font-medium text-gray-900 dark:text-white flex flex-col">
-  <div class="mx-4 my-1 flex justify-between items-center min-w-0">
+  <div class="mx-4 my-3 flex justify-between items-center min-w-0">
     <div class="flex justify-between items-center min-w-0">
       <div class="flex items-center gap-3 min-w-0">
-        <div class="relative self-start flex-shrink-0 my-2">
+        <div class="relative self-start flex-shrink-0">
           @if (deploymentTarget().customerOrganization?.imageId; as imageId) {
             <img class="size-10 rounded-sm" [attr.src]="imageId | secureImage | async" alt="" />
             <app-status-dot class="absolute size-2.5 -bottom-0 -end-0" [deploymentTarget]="deploymentTarget()" />

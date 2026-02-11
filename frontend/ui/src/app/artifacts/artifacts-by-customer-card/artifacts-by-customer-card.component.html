@@ -1,17 +1,17 @@
 <div
   class="h-full rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 font-medium text-gray-900 dark:text-white flex flex-col">
-  <div class="p-4 justify-between items-stretch md:flex">
-    <div class="justify-between sm:flex sm:items-center">
-      <div class="flex gap-3 items-start lg:items-center mb-2 md:mb-0">
-        @if (customer().imageUrl; as imageUrl) {
-          <img class="size-8 rounded-sm" [attr.src]="imageUrl | secureImage | async" alt="" />
-        } @else {
-          <fa-icon [icon]="faBuildingUser" class="text-xl text-gray-400"></fa-icon>
-        }
-        <div>
-          <div class="flex gap-2">
-            <h3 class="font-bold break-all">{{ customer().name }}</h3>
-          </div>
+  <div class="mx-4 my-3 justify-between items-stretch md:flex">
+    <div class="flex gap-3 items-start lg:items-center mb-2 md:mb-0">
+      @if (customer().imageUrl; as imageUrl) {
+        <img class="size-10 rounded-sm" [attr.src]="imageUrl | secureImage | async" alt="" />
+      } @else {
+        <fa-icon
+          [icon]="faBuildingUser"
+          class="size-10 flex items-center justify-center text-2xl text-gray-400"></fa-icon>
+      }
+      <div>
+        <div class="flex gap-2">
+          <h3 class="font-bold break-all leading-tight">{{ customer().name }}</h3>
         </div>
       </div>
     </div>
