@@ -76,6 +76,9 @@ func createCustomerOrganizationHandler() http.HandlerFunc {
 		request, err := JsonBody[api.CreateUpdateCustomerOrganizationRequest](w, r)
 		if err != nil {
 			return
+		} else if err := request.Validate(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
 
 		customerOrganization := types.CustomerOrganization{
@@ -127,6 +130,9 @@ func updateCustomerOrganizationHandler() http.HandlerFunc {
 		auth := auth.Authentication.Require(ctx)
 		request, err := JsonBody[api.CreateUpdateCustomerOrganizationRequest](w, r)
 		if err != nil {
+			return
+		} else if err := request.Validate(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
