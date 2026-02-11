@@ -6,4 +6,4 @@
 
 # Type Alias: CustomerOrganizationFeature
 
-> **CustomerOrganizationFeature** = `"deployment_targets"` \| `"artifacts"` \| `"notifications"`
+> **CustomerOrganizationFeature** = `"deployment_targets"` \| `"artifacts"` \| `"alerts"`

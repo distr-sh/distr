@@ -85,7 +85,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
       combineLatestWith(this.context.getCustomerOrganization()),
       map(
         ([enabled, customerOrg]) =>
-          enabled && this.auth.isCustomer() && (customerOrg?.features?.includes('notifications') ?? false)
+          enabled && this.auth.isCustomer() && (customerOrg?.features?.includes('alerts') ?? false)
       )
     ),
     {initialValue: false}
