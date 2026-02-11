@@ -19,7 +19,7 @@
 
   @if (artifacts().length > 0) {
     <hr class="border-gray-200 dark:border-gray-600" />
-    <ul class="items-center sm:flex sm:flex-wrap xl:flex">
+    <ul>
       @for (artifact of artifacts(); track artifact.artifact.id) {
         <li
           class="w-full flex gap-3 items-center px-4 py-2 border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm font-medium text-gray-900 whitespace-normal dark:text-white">
