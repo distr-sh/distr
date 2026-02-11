@@ -32,11 +32,7 @@ import {ToastService} from '../../services/toast.service';
 import {QuotaLimitComponent} from '../quota-limit.component';
 import {UuidComponent} from '../uuid';
 
-export const ALL_CUSTOMER_FEATURES: CustomerOrganizationFeature[] = [
-  'deployment_targets',
-  'artifacts',
-  'notifications',
-];
+export const ALL_CUSTOMER_FEATURES: CustomerOrganizationFeature[] = ['deployment_targets', 'artifacts', 'alerts'];
 
 @Component({
   templateUrl: './customer-organizations.component.html',
@@ -204,7 +200,7 @@ export class CustomerOrganizationsComponent {
       });
   }
 
-  protected async removeFeature(customer: CustomerOrganization, feature: string): Promise<void> {
+  protected async removeFeature(customer: CustomerOrganization, feature: CustomerOrganizationFeature): Promise<void> {
     const updatedFeatures = customer.features.filter((f) => f !== feature);
     try {
       await firstValueFrom(
@@ -247,14 +243,14 @@ export class CustomerOrganizationsComponent {
     return customer.features.length === ALL_CUSTOMER_FEATURES.length;
   }
 
-  protected getFeatureLabel(feature: string): string {
+  protected getFeatureLabel(feature: CustomerOrganizationFeature): string {
     switch (feature) {
       case 'deployment_targets':
         return 'Deployments';
       case 'artifacts':
         return 'Artifacts';
-      case 'notifications':
-        return 'Notifications';
+      case 'alerts':
+        return 'Alerts';
       default:
         return feature;
     }
