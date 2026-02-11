@@ -43,14 +43,14 @@
     {originX: 'center', originY: 'top', overlayX: 'center', overlayY: 'bottom'},
   ]">
   <div class="mt-1 px-3 py-2 text-xs rounded-lg shadow-lg bg-gray-800 dark:bg-gray-700 text-white whitespace-nowrap">
-    <div class="flex gap-4">
+    <div class="flex flex-col gap-2">
       <div>
         <span class="font-semibold">CPU:</span>
-        {{ metrics().cpuUsage | percent: '1.1-1' }} &middot; {{ metrics().cpuCoresMillis / 1000 }} Cores
+        {{ metrics().cpuUsage | percent: '1.1-1' }} of {{ metrics().cpuCoresMillis / 1000 }} Cores
       </div>
       <div>
         <span class="font-semibold">RAM:</span>
-        {{ metrics().memoryUsage | percent: '1.1-1' }} &middot; {{ metrics().memoryBytes | bytes: '1.0-0' }}
+        {{ metrics().memoryUsage | percent: '1.1-1' }} of {{ metrics().memoryBytes | bytes: '1.0-0' }}
       </div>
     </div>
   </div>
