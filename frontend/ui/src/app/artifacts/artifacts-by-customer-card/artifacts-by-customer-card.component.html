@@ -24,7 +24,7 @@
         <li
           class="w-full flex gap-3 items-center px-4 py-2 border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm font-medium text-gray-900 whitespace-normal dark:text-white">
           @if (artifact.artifact.imageUrl) {
-            <img class="size-8 rounded-full" [attr.src]="artifact.artifact.imageUrl | secureImage | async" />
+            <img class="size-8 rounded-full" [attr.src]="artifact.artifact.imageUrl | secureImage | async" alt="" />
           } @else {
             <div class="shrink-0 text-gray-900 dark:text-gray-400">
               <fa-icon [icon]="faBox" class="text-2xl text-gray-500 dark:text-gray-400"></fa-icon>
