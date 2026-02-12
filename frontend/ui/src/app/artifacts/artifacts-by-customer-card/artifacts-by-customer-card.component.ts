@@ -2,6 +2,7 @@ import {OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
 import {Component, inject, input} from '@angular/core';
 import {ReactiveFormsModule} from '@angular/forms';
+import {RouterLink} from '@angular/router';
 import {CustomerOrganization} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
@@ -27,7 +28,7 @@ import {DashboardArtifact} from '../../services/dashboard.service';
 @Component({
   selector: 'app-artifacts-by-customer-card',
   templateUrl: './artifacts-by-customer-card.component.html',
-  imports: [FaIconComponent, OverlayModule, ReactiveFormsModule, AsyncPipe, SecureImagePipe],
+  imports: [FaIconComponent, OverlayModule, ReactiveFormsModule, AsyncPipe, SecureImagePipe, RouterLink],
   animations: [modalFlyInOut, drawerFlyInOut, dropdownAnimation],
 })
 export class ArtifactsByCustomerCardComponent {

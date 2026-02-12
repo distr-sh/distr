@@ -91,10 +91,10 @@
           <button
             type="button"
             (click)="exportCsv()"
-            [disabled]="isExporting"
+            [disabled]="isExporting()"
             class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
             <fa-icon [icon]="faDownload" class="mr-2"></fa-icon>
-            @if (isExporting) {
+            @if (isExporting()) {
               Exporting...
             } @else {
               Export CSV
@@ -116,7 +116,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (pull of pulls$ | async; track pull.createdAt) {
+            @for (pull of pulls(); track pull.createdAt) {
               <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
                 <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                   {{ pull.createdAt | date: 'short' }}
@@ -155,7 +155,7 @@
           </tbody>
         </table>
       </div>
-      @if (hasMore) {
+      @if (hasMore()) {
         <div class="flex justify-center px-2 py-4">
           <button
             type="button"

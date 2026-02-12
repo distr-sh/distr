@@ -1,5 +1,5 @@
-import {AsyncPipe, DatePipe} from '@angular/common';
-import {Component, DestroyRef, inject} from '@angular/core';
+import {DatePipe} from '@angular/common';
+import {Component, DestroyRef, inject, signal} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {ActivatedRoute, Params, Router} from '@angular/router';
@@ -7,13 +7,14 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faDownload, faFilterCircleXmark} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {debounceTime, first, map, of, scan, shareReplay, startWith, Subject, switchMap, tap} from 'rxjs';
+import {downloadBlob} from '../../../util/blob';
 import {formatRemoteAddress} from '../../../util/format';
 import {ArtifactPullFilters, ArtifactPullsService} from '../../services/artifact-pulls.service';
 import {ToastService} from '../../services/toast.service';
 
 @Component({
   templateUrl: './artifact-pulls.component.html',
-  imports: [AsyncPipe, DatePipe, ReactiveFormsModule, FaIconComponent],
+  imports: [DatePipe, ReactiveFormsModule, FaIconComponent],
 })
 export class ArtifactPullsComponent {
   private readonly pullsService = inject(ArtifactPullsService);
@@ -25,8 +26,8 @@ export class ArtifactPullsComponent {
   protected readonly faDownload = faDownload;
   protected readonly faFilterCircleXmark = faFilterCircleXmark;
   protected readonly today = dayjs().format('YYYY-MM-DD');
-  protected hasMore = true;
-  protected isExporting = false;
+  protected readonly hasMore = signal(true);
+  protected readonly isExporting = signal(false);
   private currentOldestPull?: Date;
   private readonly fetchCount = 50;
   private readonly showMore$ = new Subject<void>();
@@ -69,31 +70,33 @@ export class ArtifactPullsComponent {
     shareReplay(1)
   );
 
-  protected readonly pulls$ = this.filters$.pipe(
-    switchMap((filters) => {
-      this.currentOldestPull = undefined;
-      this.hasMore = true;
-      return this.showMore$.pipe(
-        startWith(undefined),
-        switchMap(() =>
-          this.pullsService.get({
-            ...filters,
-            before: this.currentOldestPull,
-            count: this.fetchCount,
-          })
-        ),
-        tap((it) => {
-          if (it.length > 0) {
-            this.currentOldestPull = new Date(it[it.length - 1].createdAt);
-          }
-          if (it.length < this.fetchCount) {
-            this.hasMore = false;
-          }
-        }),
-        scan((all, next) => [...all, ...next])
-      );
-    }),
-    shareReplay(1)
+  protected readonly pulls = toSignal(
+    this.filters$.pipe(
+      switchMap((filters) => {
+        this.currentOldestPull = undefined;
+        this.hasMore.set(true);
+        return this.showMore$.pipe(
+          startWith(undefined),
+          switchMap(() =>
+            this.pullsService.get({
+              ...filters,
+              before: this.currentOldestPull,
+              count: this.fetchCount,
+            })
+          ),
+          tap((it) => {
+            if (it.length > 0) {
+              this.currentOldestPull = new Date(it[it.length - 1].createdAt);
+            }
+            if (it.length < this.fetchCount) {
+              this.hasMore.set(false);
+            }
+          }),
+          scan((all, next) => [...all, ...next])
+        );
+      })
+    ),
+    {initialValue: []}
   );
 
   constructor() {
@@ -117,25 +120,18 @@ export class ArtifactPullsComponent {
   }
 
   protected exportCsv() {
-    this.isExporting = true;
+    this.isExporting.set(true);
     const toastRef = this.toast.info('Download started...');
     const filters = this.buildFilters(this.filterForm.value);
     this.pullsService.export(filters).subscribe({
       next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${dayjs().format('YYYY-MM-DD')}_artifact_pulls.csv`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        this.isExporting = false;
+        downloadBlob(blob, `${dayjs().format('YYYY-MM-DD')}_artifact_pulls.csv`);
+        this.isExporting.set(false);
         toastRef.toastRef.close();
         this.toast.success('Download completed successfully');
       },
       error: () => {
-        this.isExporting = false;
+        this.isExporting.set(false);
         toastRef.toastRef.close();
         this.toast.error('Export failed');
       },
@@ -145,7 +141,7 @@ export class ArtifactPullsComponent {
   protected formatVersionName(name: string): string {
     const shaPrefix = 'sha256:';
     if (name.startsWith(shaPrefix)) {
-      return name.substring(0, shaPrefix.length + 10);
+      return name.substring(0, 17);
     }
     return name;
   }
