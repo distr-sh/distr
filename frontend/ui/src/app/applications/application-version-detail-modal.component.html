@@ -27,104 +27,147 @@
       <!-- Modal body -->
       <div class="p-4 md:p-5 space-y-4">
         @if (versionDetail(); as detail) {
-          <div class="flex flex-wrap col-span-2 text-gray-500 dark:text-gray-400">
-            <!-- Link Tab (Common for both Docker and Kubernetes) -->
-            <input type="radio" id="tab-link" name="version-detail-tabs" class="hidden peer/link" checked />
-            <label
-              for="tab-link"
-              class="tab-label peer-checked/link:text-blue-600 dark:peer-checked/link:text-blue-500 peer-checked/link:border-blue-600 dark:peer-checked/link:border-blue-600 text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300 group">
-              General
-            </label>
-            <div class="order-12 mt-4 w-full hidden peer-checked/link:block">
-              <div class="space-y-2">
-                <label for="linkTemplate" class="block text-sm font-medium text-gray-900 dark:text-white">
-                  Version Link Template
-                </label>
-                <input
-                  type="text"
-                  id="linkTemplate"
-                  [formControl]="versionDetailsForm.controls.linkTemplate"
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
-                <p class="text-xs text-gray-500 dark:text-gray-400">
-                  You can use the Go template language to get a dynamic link based on
-                  @if (detail.application.type === 'docker') {
-                    <span ngNonBindable
-                      >environment variables (<code>{{ .Env.HOSTNAME }}</code
-                      >).</span
-                    >
-                  } @else if (detail.application.type === 'kubernetes') {
-                    <span ngNonBindable
-                      >user provided values (<code>{{ .Values.app.ingress.hostname }}</code
-                      >).</span
-                    >
-                  }
-                </p>
-              </div>
+          <div class="text-gray-500 dark:text-gray-400">
+            <div class="flex flex-wrap border-b border-gray-200 dark:border-gray-600">
+              <button
+                type="button"
+                (click)="activeTab.set('link')"
+                class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                [class.text-blue-600]="activeTab() === 'link'"
+                [class.dark:text-blue-500]="activeTab() === 'link'"
+                [class.border-blue-600]="activeTab() === 'link'"
+                [class.border-transparent]="activeTab() !== 'link'">
+                General
+              </button>
+
+              @if (detail.application.type === 'docker') {
+                <button
+                  type="button"
+                  (click)="activeTab.set('compose')"
+                  class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                  [class.text-blue-600]="activeTab() === 'compose'"
+                  [class.dark:text-blue-500]="activeTab() === 'compose'"
+                  [class.border-blue-600]="activeTab() === 'compose'"
+                  [class.border-transparent]="activeTab() !== 'compose'">
+                  Docker Compose File
+                </button>
+                <button
+                  type="button"
+                  (click)="activeTab.set('environment')"
+                  class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                  [class.text-blue-600]="activeTab() === 'environment'"
+                  [class.dark:text-blue-500]="activeTab() === 'environment'"
+                  [class.border-blue-600]="activeTab() === 'environment'"
+                  [class.border-transparent]="activeTab() !== 'environment'">
+                  Template for Environment File
+                </button>
+              } @else if (detail.application.type === 'kubernetes') {
+                <button
+                  type="button"
+                  (click)="activeTab.set('basevalues')"
+                  class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                  [class.text-blue-600]="activeTab() === 'basevalues'"
+                  [class.dark:text-blue-500]="activeTab() === 'basevalues'"
+                  [class.border-blue-600]="activeTab() === 'basevalues'"
+                  [class.border-transparent]="activeTab() !== 'basevalues'">
+                  Base Values
+                </button>
+                <button
+                  type="button"
+                  (click)="activeTab.set('customervalues')"
+                  class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                  [class.text-blue-600]="activeTab() === 'customervalues'"
+                  [class.dark:text-blue-500]="activeTab() === 'customervalues'"
+                  [class.border-blue-600]="activeTab() === 'customervalues'"
+                  [class.border-transparent]="activeTab() !== 'customervalues'">
+                  Template for Customer Values
+                </button>
+              }
+
+              @for (resource of detail.resources; track resource.id) {
+                <button
+                  type="button"
+                  (click)="activeTab.set('resource-' + $index)"
+                  class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+                  [class.text-blue-600]="activeTab() === 'resource-' + $index"
+                  [class.dark:text-blue-500]="activeTab() === 'resource-' + $index"
+                  [class.border-blue-600]="activeTab() === 'resource-' + $index"
+                  [class.border-transparent]="activeTab() !== 'resource-' + $index">
+                  {{ resource.name }}
+                </button>
+              }
             </div>
 
-            @if (detail.application.type === 'docker') {
-              <input type="radio" id="tab-compose" name="version-detail-tabs" class="hidden peer/compose" />
-              <label
-                for="tab-compose"
-                class="tab-label peer-checked/compose:text-blue-600 dark:peer-checked/compose:text-blue-500 peer-checked/compose:border-blue-600 dark:peer-checked/compose:border-blue-500 text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300 group">
-                Docker Compose File
-              </label>
-              <div class="order-12 mt-4 w-full hidden peer-checked/compose:block">
-                <app-editor
-                  id="compose-file"
-                  language="yaml"
-                  class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  [formControl]="versionDetailsForm.controls.docker.controls.compose">
-                </app-editor>
-              </div>
+            <div class="mt-4">
+              @if (activeTab() === 'link') {
+                <div class="space-y-2">
+                  <label for="linkTemplate" class="block text-sm font-medium text-gray-900 dark:text-white">
+                    Version Link Template
+                  </label>
+                  <input
+                    type="text"
+                    id="linkTemplate"
+                    [formControl]="versionDetailsForm.controls.linkTemplate"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    You can use the Go template language to get a dynamic link based on
+                    @if (detail.application.type === 'docker') {
+                      <span ngNonBindable
+                        >environment variables (<code>{{ .Env.HOSTNAME }}</code
+                        >).</span
+                      >
+                    } @else if (detail.application.type === 'kubernetes') {
+                      <span ngNonBindable
+                        >user provided values (<code>{{ .Values.app.ingress.hostname }}</code
+                        >).</span
+                      >
+                    }
+                  </p>
+                </div>
+              }
 
-              <input type="radio" id="tab-environment" name="version-detail-tabs" class="hidden peer/environment" />
-              <label
-                for="tab-environment"
-                class="tab-label peer-checked/environment:text-blue-600 dark:peer-checked/environment:text-blue-500 peer-checked/environment:border-blue-600 dark:peer-checked/environment:border-blue-500 text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300">
-                Template for Environment File
-              </label>
-              <div class="order-12 mt-4 w-full hidden peer-checked/environment:block">
-                <app-editor
-                  id="env-file"
-                  class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  [formControl]="versionDetailsForm.controls.docker.controls.template">
-                </app-editor>
-              </div>
-            } @else if (detail.application.type === 'kubernetes') {
-              <input type="radio" id="tab-basevalues" name="version-detail-tabs" class="hidden peer/basevalues" />
-              <label
-                for="tab-basevalues"
-                class="tab-label peer-checked/basevalues:text-blue-600 dark:peer-checked/basevalues:text-blue-500 peer-checked/basevalues:border-blue-600 dark:peer-checked/basevalues:border-blue-500 text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300 group">
-                Base Values
-              </label>
-              <div class="order-12 mt-4 w-full hidden peer-checked/basevalues:block">
-                <app-editor
-                  id="basevalues-file"
-                  language="yaml"
-                  class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  [formControl]="versionDetailsForm.controls.kubernetes.controls.baseValues">
-                </app-editor>
-              </div>
+              @if (detail.application.type === 'docker') {
+                @if (activeTab() === 'compose') {
+                  <app-editor
+                    id="compose-file"
+                    language="yaml"
+                    class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    [formControl]="versionDetailsForm.controls.docker.controls.compose">
+                  </app-editor>
+                }
+                @if (activeTab() === 'environment') {
+                  <app-editor
+                    id="env-file"
+                    class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    [formControl]="versionDetailsForm.controls.docker.controls.template">
+                  </app-editor>
+                }
+              } @else if (detail.application.type === 'kubernetes') {
+                @if (activeTab() === 'basevalues') {
+                  <app-editor
+                    id="basevalues-file"
+                    language="yaml"
+                    class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    [formControl]="versionDetailsForm.controls.kubernetes.controls.baseValues">
+                  </app-editor>
+                }
+                @if (activeTab() === 'customervalues') {
+                  <app-editor
+                    id="customervalues-file"
+                    class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    [formControl]="versionDetailsForm.controls.kubernetes.controls.template">
+                  </app-editor>
+                }
+              }
 
-              <input
-                type="radio"
-                id="tab-customervalues"
-                name="version-detail-tabs"
-                class="hidden peer/customervalues" />
-              <label
-                for="tab-customervalues"
-                class="tab-label peer-checked/customervalues:text-blue-600 dark:peer-checked/customervalues:text-blue-500 peer-checked/customervalues:border-blue-600 dark:peer-checked/customervalues:border-blue-500 text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300">
-                Template for Customer Values
-              </label>
-              <div class="order-12 mt-4 w-full hidden peer-checked/customervalues:block">
-                <app-editor
-                  id="customervalues-file"
-                  class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  [formControl]="versionDetailsForm.controls.kubernetes.controls.template">
-                </app-editor>
-              </div>
-            }
+              @for (resource of detail.resources; track resource.id) {
+                @if (activeTab() === 'resource-' + $index) {
+                  <div
+                    class="markdown p-4 bg-gray-50 dark:bg-gray-600 rounded-lg border border-gray-200 dark:border-gray-500 text-gray-900 dark:text-white"
+                    [innerHTML]="resource.content | markdown | async"></div>
+                }
+              }
+            </div>
           </div>
         }
       </div>

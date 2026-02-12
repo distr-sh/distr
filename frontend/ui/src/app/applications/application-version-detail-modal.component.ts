@@ -1,6 +1,8 @@
-import {Component, effect, input, output} from '@angular/core';
+import {AsyncPipe} from '@angular/common';
+import {Component, effect, input, output, signal} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
-import {Application, ApplicationVersion} from '@distr-sh/distr-sdk';
+import {Application, ApplicationVersion, ApplicationVersionResource} from '@distr-sh/distr-sdk';
+import {MarkdownPipe} from 'ngx-markdown';
 import {EditorComponent} from '../components/editor.component';
 
 export interface ApplicationVersionDetail {
@@ -15,16 +17,18 @@ export interface ApplicationVersionDetail {
     compose: string | null;
     template: string | null;
   };
+  resources?: ApplicationVersionResource[];
 }
 
 @Component({
   selector: 'app-application-version-detail-modal',
   templateUrl: './application-version-detail-modal.component.html',
-  imports: [ReactiveFormsModule, EditorComponent],
+  imports: [ReactiveFormsModule, EditorComponent, MarkdownPipe, AsyncPipe],
 })
 export class ApplicationVersionDetailModalComponent {
   versionDetail = input.required<ApplicationVersionDetail>();
   closed = output<void>();
+  activeTab = signal('link');
 
   versionDetailsForm = new FormGroup({
     name: new FormControl(''),

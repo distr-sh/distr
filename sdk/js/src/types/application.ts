@@ -21,6 +21,14 @@ export interface ApplicationVersion {
   chartVersion?: string;
 }
 
+export interface ApplicationVersionResource {
+  id?: string;
+  applicationVersionId?: string;
+  name: string;
+  content: string;
+  visibleToCustomers: boolean;
+}
+
 export interface PatchApplicationRequest {
   name?: string;
   versions?: {id: string; archivedAt?: string}[];

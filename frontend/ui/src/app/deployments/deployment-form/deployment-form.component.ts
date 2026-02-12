@@ -9,6 +9,7 @@ import {
   input,
   OnDestroy,
   OnInit,
+  signal,
 } from '@angular/core';
 import {toObservable} from '@angular/core/rxjs-interop';
 import {
@@ -21,7 +22,8 @@ import {
   Validators,
 } from '@angular/forms';
 import {RouterLink} from '@angular/router';
-import {DeploymentRequest, DeploymentType} from '@distr-sh/distr-sdk';
+import {ApplicationVersionResource, DeploymentRequest, DeploymentType} from '@distr-sh/distr-sdk';
+import {MarkdownPipe} from 'ngx-markdown';
 import {
   BehaviorSubject,
   catchError,
@@ -81,7 +83,7 @@ type DeploymentFormValueCallback = (v: DeploymentFormValue | undefined) => void;
 
 @Component({
   selector: 'app-deployment-form',
-  imports: [ReactiveFormsModule, AsyncPipe, EditorComponent, AutotrimDirective, RouterLink],
+  imports: [ReactiveFormsModule, AsyncPipe, EditorComponent, AutotrimDirective, RouterLink, MarkdownPipe],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -127,6 +129,7 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
     ignoreRevisionSkew: this.fb.nonNullable.control<boolean>(false),
   });
   protected readonly composeFile = this.fb.nonNullable.control({disabled: true, value: ''});
+  protected readonly resources = signal<ApplicationVersionResource[]>([]);
 
   private readonly deploymentId$ = this.deployForm.controls.deploymentId.valueChanges.pipe(
     startWith(this.deployForm.controls.deploymentId.value),
@@ -361,6 +364,20 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
       )
       .subscribe((composeFile) => {
         this.composeFile.patchValue(composeFile ?? '');
+      });
+
+    combineLatest([this.applicationId$, this.applicationVersionId$])
+      .pipe(
+        debounceTime(5),
+        switchMap(([applicationId, versionId]) =>
+          versionId && applicationId
+            ? this.applications.getResources(applicationId, versionId).pipe(catchError(() => of([])))
+            : of([])
+        ),
+        takeUntil(this.destroyed$)
+      )
+      .subscribe((resources) => {
+        this.resources.set(resources);
       });
 
     this.licenses$.pipe(takeUntil(this.destroyed$)).subscribe((licenses) => {

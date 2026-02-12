@@ -136,6 +136,34 @@
           This Docker Compose file comes from the application version and is read-only.
         </div>
       </div>
+
+      @for (resource of resources(); track resource.id) {
+        <input
+          type="radio"
+          [id]="'tab-deploy-resource-' + $index"
+          name="deployment-tabs"
+          [class]="'hidden peer/deployresource' + $index" />
+        <label
+          [for]="'tab-deploy-resource-' + $index"
+          [class]="
+            'tab-label peer-checked/deployresource' +
+            $index +
+            ':text-blue-600 dark:peer-checked/deployresource' +
+            $index +
+            ':text-blue-500 peer-checked/deployresource' +
+            $index +
+            ':border-blue-600 dark:peer-checked/deployresource' +
+            $index +
+            ':border-blue-500 text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300 group'
+          ">
+          {{ resource.name }}
+        </label>
+        <div [class]="'order-12 mt-4 w-full hidden peer-checked/deployresource' + $index + ':block'">
+          <div
+            class="markdown p-4 bg-gray-50 dark:bg-gray-600 rounded-lg border border-gray-200 dark:border-gray-500 text-gray-900 dark:text-white"
+            [innerHTML]="resource.content | markdown | async"></div>
+        </div>
+      }
     </div>
   }
 

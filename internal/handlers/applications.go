@@ -124,6 +124,10 @@ func ApplicationsRouter(r chiopenapi.Router) {
 					With(option.Description("Get application version values file")).
 					With(option.Request(ApplicationVersionRequest{})).
 					With(option.Response(http.StatusOK, map[string]any{}, option.ContentType("application/yaml")))
+				r.Get("/resources", getApplicationVersionResources).
+					With(option.Description("Get application version resources")).
+					With(option.Request(ApplicationVersionRequest{})).
+					With(option.Response(http.StatusOK, []types.ApplicationVersionResource{}))
 			})
 		})
 	})
@@ -391,7 +395,26 @@ func createApplicationVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := db.CreateApplicationVersion(ctx, &applicationVersion); err != nil {
+	var resources []types.ApplicationVersionResource
+	if resourcesJSON := r.FormValue("resources"); resourcesJSON != "" {
+		if err := json.NewDecoder(strings.NewReader(resourcesJSON)).Decode(&resources); err != nil {
+			log.Error("failed to decode resources", zap.Error(err))
+			http.Error(w, "invalid resources JSON", http.StatusBadRequest)
+			return
+		}
+	}
+
+	if err := db.RunTx(ctx, func(ctx context.Context) error {
+		if err := db.CreateApplicationVersion(ctx, &applicationVersion); err != nil {
+			return err
+		}
+		if len(resources) > 0 {
+			if err := db.CreateApplicationVersionResources(ctx, applicationVersion.ID, resources); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
 			http.NotFound(w, r)
 		} else if errors.Is(err, apierrors.ErrAlreadyExists) {
@@ -481,6 +504,31 @@ func getApplicationVersionFileHandler(fileAccessor func(types.ApplicationVersion
 			}
 		}
 	}
+}
+
+func getApplicationVersionResources(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+	a := auth.Authentication.Require(ctx)
+	applicationVersionID, err := uuid.Parse(r.PathValue("applicationVersionId"))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	var resources []types.ApplicationVersionResource
+	if a.CurrentCustomerOrgID() != nil {
+		resources, err = db.GetApplicationVersionResourcesVisibleToCustomers(ctx, applicationVersionID)
+	} else {
+		resources, err = db.GetApplicationVersionResources(ctx, applicationVersionID)
+	}
+	if err != nil {
+		log.Error("failed to get application version resources", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	RespondJSON(w, resources)
 }
 
 func deleteApplication(w http.ResponseWriter, r *http.Request) {

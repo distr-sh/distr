@@ -1,6 +1,11 @@
 import {HttpClient, HttpErrorResponse} from '@angular/common/http';
 import {Injectable} from '@angular/core';
-import {Application, ApplicationVersion, PatchApplicationRequest} from '@distr-sh/distr-sdk';
+import {
+  Application,
+  ApplicationVersion,
+  ApplicationVersionResource,
+  PatchApplicationRequest,
+} from '@distr-sh/distr-sdk';
 import {catchError, Observable, of, Subject, switchMap, tap, throwError} from 'rxjs';
 import {DefaultReactiveList, ReactiveList} from './cache';
 import {CrudService} from './interfaces';
@@ -65,6 +70,12 @@ export class ApplicationsService implements CrudService<Application> {
     return this.getFile(applicationId, versionId, 'compose-file');
   }
 
+  getResources(applicationId: string, versionId: string): Observable<ApplicationVersionResource[]> {
+    return this.httpClient.get<ApplicationVersionResource[]>(
+      `${this.applicationsUrl}/${applicationId}/versions/${versionId}/resources`
+    );
+  }
+
   private getFile(applicationId: string, versionId: string, file: string): Observable<string | null> {
     return this.httpClient
       .get(`${this.applicationsUrl}/${applicationId}/versions/${versionId}/${file}`, {responseType: 'text'})
@@ -83,12 +94,16 @@ export class ApplicationsService implements CrudService<Application> {
     application: Application,
     applicationVersion: ApplicationVersion,
     compose: string,
-    template?: string | null
+    template?: string | null,
+    resources?: ApplicationVersionResource[]
   ): Observable<ApplicationVersion> {
     const formData = new FormData();
     formData.append('composefile', new Blob([compose], {type: 'application/yaml'}));
     if (template) {
       formData.append('templatefile', new Blob([template], {type: 'application/yaml'}));
+    }
+    if (resources && resources.length > 0) {
+      formData.append('resources', JSON.stringify(resources));
     }
 
     return this.doCreateVersion(application, applicationVersion, formData);
@@ -98,7 +113,8 @@ export class ApplicationsService implements CrudService<Application> {
     application: Application,
     applicationVersion: ApplicationVersion,
     baseValues?: string | null,
-    template?: string | null
+    template?: string | null,
+    resources?: ApplicationVersionResource[]
   ): Observable<ApplicationVersion> {
     const formData = new FormData();
     if (baseValues) {
@@ -106,6 +122,9 @@ export class ApplicationsService implements CrudService<Application> {
     }
     if (template) {
       formData.append('templatefile', new Blob([template], {type: 'application/yaml'}));
+    }
+    if (resources && resources.length > 0) {
+      formData.append('resources', JSON.stringify(resources));
     }
     return this.doCreateVersion(application, applicationVersion, formData);
   }
