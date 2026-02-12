@@ -224,6 +224,11 @@ func handleUpdateOrganization(
 			needsUpdate = true
 		}
 
+		if request.PrePostScriptsEnabled != org.HasFeature(types.FeaturePrePostScripts) {
+			org.SetFeature(types.FeaturePrePostScripts, request.PrePostScriptsEnabled)
+			needsUpdate = true
+		}
+
 		if needsUpdate {
 			return db.UpdateOrganization(ctx, org)
 		}
