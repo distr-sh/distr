@@ -143,15 +143,17 @@ func updateApplicationLicense(w http.ResponseWriter, r *http.Request) {
 		}
 
 		isNarrowing := false
-		if len(existing.Versions) == 0 && len(license.Versions) > 0 {
-			isNarrowing = true
-		} else {
-			for _, ev := range existing.Versions {
-				if !slices.ContainsFunc(license.Versions, func(v types.ApplicationVersion) bool {
-					return v.ID == ev.ID
-				}) {
-					isNarrowing = true
-					break
+		if len(license.Versions) > 0 {
+			if len(existing.Versions) == 0 {
+				isNarrowing = true
+			} else {
+				for _, ev := range existing.Versions {
+					if !slices.ContainsFunc(license.Versions, func(v types.ApplicationVersion) bool {
+						return v.ID == ev.ID
+					}) {
+						isNarrowing = true
+						break
+					}
 				}
 			}
 		}
@@ -169,33 +171,11 @@ func updateApplicationLicense(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		for _, version := range license.Versions {
-			alreadyExists := slices.ContainsFunc(existing.Versions, func(v types.ApplicationVersion) bool {
-				return v.ID == version.ID
-			})
-			if !alreadyExists {
-				if err := db.AddVersionToApplicationLicense(ctx, &license.ApplicationLicenseBase, version.ID); err != nil {
-					log.Warn("could not add version to license", zap.Error(err))
-					sentry.GetHubFromContext(ctx).CaptureException(err)
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return err
-				}
-			}
-		}
-
-		for _, existingVersion := range existing.Versions {
-			stillExists := slices.ContainsFunc(license.Versions, func(v types.ApplicationVersion) bool {
-				return v.ID == existingVersion.ID
-			})
-			if !stillExists {
-				if err := db.RemoveVersionFromApplicationLicense(
-					ctx, &license.ApplicationLicenseBase, existingVersion.ID); err != nil {
-					log.Warn("could not remove version from license", zap.Error(err))
-					sentry.GetHubFromContext(ctx).CaptureException(err)
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return err
-				}
-			}
+		if err := db.SetApplicationLicenseVersions(ctx, license.ID, newVersionIDs); err != nil {
+			log.Warn("could not update license versions", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return err
 		}
 
 		if updatedLicense, err := db.GetApplicationLicenseByID(ctx, license.ID); err != nil {

@@ -265,11 +265,45 @@ func GetApplicationLicenseByID(ctx context.Context, id uuid.UUID) (*types.Applic
 	}
 }
 
+func SetApplicationLicenseVersions(ctx context.Context, licenseID uuid.UUID, versionIDs []uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	_, err := db.Exec(
+		ctx,
+		`INSERT INTO ApplicationLicense_ApplicationVersion (application_license_id, application_version_id)
+		SELECT @licenseId, id FROM ApplicationVersion WHERE id = any(@versionIds)
+		ON CONFLICT (application_license_id, application_version_id) DO NOTHING`,
+		pgx.NamedArgs{
+			"licenseId":  licenseID,
+			"versionIds": versionIDs,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("could not insert version relations: %w", err)
+	}
+	_, err = db.Exec(
+		ctx,
+		`DELETE FROM ApplicationLicense_ApplicationVersion
+		WHERE application_license_id = @licenseId
+			AND NOT application_version_id = any(@versionIds)`,
+		pgx.NamedArgs{
+			"licenseId":  licenseID,
+			"versionIds": versionIDs,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("could not delete version relations: %w", err)
+	}
+	return nil
+}
+
 func GetDeploymentsUsingVersionsNotInList(
 	ctx context.Context,
 	licenseID uuid.UUID,
 	allowedVersionIDs []uuid.UUID,
 ) ([]types.DeploymentVersionUsage, error) {
+	if len(allowedVersionIDs) == 0 {
+		return nil, nil
+	}
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
