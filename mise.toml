@@ -4,7 +4,7 @@ go = "1.26.0"
 golangci-lint = "2.9.0"
 helm-docs = "1.14.2"
 watchexec = "2.3.2"
-pnpm = "10.29.2"
+pnpm = "10.29.3"
 stripe = "1.35.0"
 "go:github.com/go-delve/delve/cmd/dlv" = "1.26.0"
 
