@@ -9,3 +9,15 @@ export interface ArtifactVersionPull {
   artifact: BaseArtifact;
   artifactVersion: BaseArtifactVersion;
 }
+
+export interface ArtifactPullFilterOption {
+  id: string;
+  name: string;
+}
+
+export interface ArtifactVersionPullFilterOptions {
+  customerOrganizations: ArtifactPullFilterOption[];
+  userAccounts: ArtifactPullFilterOption[];
+  remoteAddresses: string[];
+  artifacts: ArtifactPullFilterOption[];
+}
