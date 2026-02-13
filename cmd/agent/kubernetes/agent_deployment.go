@@ -7,19 +7,28 @@ import (
 
 	"github.com/distr-sh/distr/api"
 	"github.com/google/uuid"
-	"helm.sh/helm/v3/pkg/release"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	applyconfigurationscorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 )
 
 const LabelDeplyoment = "agent.distr.sh/deployment"
 
+type State string
+
+const (
+	StateUnspecified State = ""
+	StateProgressing State = "progressing"
+	StateReady       State = "ready"
+	StateFailed      State = "failed"
+)
+
 type AgentDeployment struct {
 	ID           uuid.UUID `json:"id"`
 	RevisionID   uuid.UUID `json:"revisionId"`
 	ReleaseName  string    `json:"releaseName"`
-	HelmRevision int       `json:"helmRevision"`
+	HelmRevision *int      `json:"helmRevision,omitempty"`
 	LogsEnabled  bool      `json:"logsEnabled"`
+	State        State     `json:"phase"`
 }
 
 func (d AgentDeployment) GetDeploymentID() uuid.UUID {
@@ -34,13 +43,12 @@ func (d *AgentDeployment) SecretName() string {
 	return fmt.Sprintf("sh.distr.agent.v1.%v", d.ReleaseName)
 }
 
-func NewAgentDeployment(deployment api.AgentDeployment, release *release.Release) AgentDeployment {
+func NewAgentDeployment(deployment api.AgentDeployment) AgentDeployment {
 	return AgentDeployment{
-		ReleaseName:  release.Name,
-		HelmRevision: release.Version,
-		ID:           deployment.ID,
-		RevisionID:   deployment.RevisionID,
-		LogsEnabled:  deployment.LogsEnabled,
+		ReleaseName: deployment.ReleaseName,
+		ID:          deployment.ID,
+		RevisionID:  deployment.RevisionID,
+		LogsEnabled: deployment.LogsEnabled,
 	}
 }
 

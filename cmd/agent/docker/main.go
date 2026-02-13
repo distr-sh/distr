@@ -20,7 +20,6 @@ import (
 	dockercommand "github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/flags"
 	"github.com/google/uuid"
-	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -136,6 +135,7 @@ loop:
 						} else if err := DeleteDeployment(deployment); err != nil {
 							logger.Error("could not delete deployment", zap.Error(err))
 						}
+						CleanupLogsTimestamps(deployment)
 					}
 				}
 			}
@@ -163,23 +163,22 @@ loop:
 						agentDeployment = &existing
 					}
 
-					if agentDeployment == nil || agentDeployment.RevisionID != deployment.RevisionID {
+					if agentDeployment == nil ||
+						agentDeployment.RevisionID != deployment.RevisionID ||
+						agentDeployment.State == StateFailed ||
+						agentDeployment.State == StateProgressing {
 						func() {
 							progressCtx, progressCancel := context.WithCancel(ctx)
 							defer progressCancel()
 							go sendProgressInterval(progressCtx, deployment.RevisionID)
-
-							if agentDeployment, status, err = DockerEngineApply(ctx, deployment); err == nil {
-								multierr.AppendInto(&err, SaveDeployment(*agentDeployment))
-							}
-
+							agentDeployment, status, err = DockerEngineApply(ctx, deployment)
 							if err == nil && deployment.ForceRestart {
-								multierr.AppendInto(&err, RunDockerRestart(ctx, *agentDeployment))
+								err = errors.Join(err, RunDockerRestart(ctx, *agentDeployment))
 							}
 						}()
 					} else {
 						if statusType1, statusMessage, err1 := CheckStatus(ctx, *agentDeployment); err1 != nil {
-							multierr.AppendInto(&err, err1)
+							err = errors.Join(err, err1)
 						} else {
 							status = statusMessage
 							statusType = statusType1

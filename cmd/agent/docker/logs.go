@@ -4,7 +4,10 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"io"
+	"os"
+	"path"
 	"time"
 
 	"github.com/distr-sh/distr/internal/deploymentlogs"
@@ -17,7 +20,6 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -25,7 +27,6 @@ type logsWatcher struct {
 	dockerCli      dockercommand.Cli
 	composeService composeapi.Compose
 	logsExporter   deploymentlogs.Exporter
-	last           map[uuid.UUID]time.Time
 }
 
 func NewLogsWatcher() *logsWatcher {
@@ -33,7 +34,6 @@ func NewLogsWatcher() *logsWatcher {
 		dockerCli:      dockerCli,
 		composeService: compose.NewComposeService(dockerCli),
 		logsExporter:   deploymentlogs.ChunkExporter(client, 100),
-		last:           make(map[uuid.UUID]time.Time),
 	}
 }
 
@@ -67,14 +67,18 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 		now := time.Now()
 		var toplevelErr error
 
+		since, err := GetLastLogsTimestamp(d)
+		if err != nil {
+			logger.Warn("could not get last logs timestamp", zap.Error(err))
+		}
+
 		switch d.DockerType {
 		case types.DockerTypeCompose:
 			logOptions := composeapi.LogOptions{Timestamps: true}
-			if since, ok := lw.last[d.ID]; ok {
+			if since != nil {
 				logOptions.Since = since.Format(time.RFC3339Nano)
-			} else {
-				logOptions.Since = now.Format(time.RFC3339Nano)
 			}
+
 			toplevelErr = lw.composeService.Logs(ctx, d.ProjectName, &composeCollector{deploymentCollector}, logOptions)
 			if toplevelErr != nil {
 				logger.Warn("could not get compose logs", zap.Error(toplevelErr))
@@ -99,7 +103,7 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 					// fake closure to close the ReadCloser returned by ServiceLogs after each iteration
 					err := func() error {
 						logOptions := container.LogsOptions{Timestamps: true, ShowStdout: true, ShowStderr: true}
-						if since, ok := lw.last[d.ID]; ok {
+						if since != nil {
 							logOptions.Since = since.Format(time.RFC3339Nano)
 						}
 						rc, err := apiClient.ServiceLogs(ctx, svc.ID, logOptions)
@@ -119,7 +123,9 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 		}
 
 		if toplevelErr == nil {
-			lw.last[d.ID] = now
+			if err := UpdateLastLogsTimestamp(d, now); err != nil {
+				logger.Warn("could not update last logs timestamp for deployment", zap.Error(err))
+			}
 		}
 	}
 
@@ -178,4 +184,51 @@ func decodeServiceLogs(resource string, r io.Reader, consumer deploymentlogs.Dep
 		}
 	}
 	return nil
+}
+
+func UpdateLastLogsTimestamp(deployment AgentDeployment, timestamp time.Time) error {
+	if err := os.MkdirAll(path.Dir(lastLogsTimestampFileName(deployment)), 0o700); err != nil {
+		return err
+	}
+
+	file, err := os.Create(lastLogsTimestampFileName(deployment))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(timestamp.Format(time.RFC3339Nano))
+	return err
+}
+
+func GetLastLogsTimestamp(deployment AgentDeployment) (*time.Time, error) {
+	file, err := os.Open(lastLogsTimestampFileName(deployment))
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	if data, err := io.ReadAll(file); err != nil {
+		return nil, err
+	} else if ts, err := time.Parse(time.RFC3339Nano, string(data)); err != nil {
+		return nil, err
+	} else {
+		return &ts, nil
+	}
+}
+
+func CleanupLogsTimestamps(deployment AgentDeployment) {
+	if err := os.Remove(lastLogsTimestampFileName(deployment)); err != nil {
+		logger.Warn("could not remove last logs timestamp file", zap.Error(err))
+	}
+}
+
+func lastLogsTimestampFileName(deployment AgentDeployment) string {
+	return path.Join(lastLogsTimestampDir(), deployment.ID.String())
+}
+
+func lastLogsTimestampDir() string {
+	return path.Join(ScratchDir(), "logTimestamp")
 }
