@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.11.0](https://github.com/distr-sh/distr/compare/2.10.2...2.11.0) (2026-02-13)
+
+
+### Features
+
+* artifact pulls filters ([#1808](https://github.com/distr-sh/distr/issues/1808)) ([1fc872f](https://github.com/distr-sh/distr/commit/1fc872fa676fbd4eba8b1ea311882406b2117843))
+
+
+### Other
+
+* **deps:** update angular-cli monorepo to v21.1.4 ([#1818](https://github.com/distr-sh/distr/issues/1818)) ([21960fd](https://github.com/distr-sh/distr/commit/21960fd264615c702d95edcf89e1fbe56a2f4157))
+* **deps:** update axllent/mailpit docker tag to v1.29.1 ([#1827](https://github.com/distr-sh/distr/issues/1827)) ([d9da8de](https://github.com/distr-sh/distr/commit/d9da8ded2f1375a84d1f6efbb01d7c1226510902))
+* **deps:** update dependency @angular/cdk to v21.1.4 ([#1819](https://github.com/distr-sh/distr/issues/1819)) ([6914dd1](https://github.com/distr-sh/distr/commit/6914dd147e67089cac6457a4f18e005ab5f308a1))
+* **deps:** update dependency @codemirror/view to v6.39.14 ([#1822](https://github.com/distr-sh/distr/issues/1822)) ([724b5ec](https://github.com/distr-sh/distr/commit/724b5ec989c4759dac88b30b85f1d82c6e0526ab))
+* **deps:** update dependency marked to v17.0.2 ([#1815](https://github.com/distr-sh/distr/issues/1815)) ([41bb3c5](https://github.com/distr-sh/distr/commit/41bb3c507947a416aa295b666ad77efa0eb06d87))
+* **deps:** update dependency pnpm to v10.29.3 ([#1816](https://github.com/distr-sh/distr/issues/1816)) ([56c69fd](https://github.com/distr-sh/distr/commit/56c69fd1882878829e30dfcca7bf2e7553398c2e))
+* **deps:** update docker/build-push-action action to v6.19.2 ([#1820](https://github.com/distr-sh/distr/issues/1820)) ([477a4c7](https://github.com/distr-sh/distr/commit/477a4c71de6804afbe0b187490b0938f9e8e8f74))
+
 ## [2.10.2](https://github.com/distr-sh/distr/compare/2.10.1...2.10.2) (2026-02-11)
 
 
