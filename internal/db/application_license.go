@@ -284,7 +284,7 @@ func SetApplicationLicenseVersions(ctx context.Context, licenseID uuid.UUID, ver
 		ctx,
 		`DELETE FROM ApplicationLicense_ApplicationVersion
 		WHERE application_license_id = @licenseId
-			AND NOT application_version_id = any(@versionIds)`,
+			AND NOT (application_version_id = any(@versionIds))`,
 		pgx.NamedArgs{
 			"licenseId":  licenseID,
 			"versionIds": versionIDs,
