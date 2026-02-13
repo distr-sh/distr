@@ -232,6 +232,7 @@ export class RegistryTutorialComponent implements OnInit, AfterViewInit, OnDestr
             this.organizationService.update({
               ...this.organization!,
               artifactVersionMutable: this.organization?.features.includes('artifact_version_mutable') ?? false,
+              prePostScriptsEnabled: this.organization?.features.includes('pre_post_scripts') ?? false,
               slug: formVal.slug!,
             })
           );

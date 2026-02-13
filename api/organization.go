@@ -11,6 +11,7 @@ type CreateUpdateOrganizationRequest struct {
 	PostConnectScript      *string `json:"postConnectScript"`
 	ConnectScriptIsSudo    bool    `json:"connectScriptIsSudo"`
 	ArtifactVersionMutable bool    `json:"artifactVersionMutable"`
+	PrePostScriptsEnabled  bool    `json:"prePostScriptsEnabled"`
 }
 
 type OrganizationResponse struct {
