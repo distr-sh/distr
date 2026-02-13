@@ -10,7 +10,7 @@
             type="date"
             formControlName="from"
             [max]="filterForm.controls.to.value || today"
-            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+            class="min-w-32 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 dark:[color-scheme:dark]" />
         </div>
         <div>
           <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">To</label>
@@ -19,14 +19,14 @@
             formControlName="to"
             [min]="filterForm.controls.from.value || ''"
             [max]="today"
-            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+            class="min-w-32 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 dark:[color-scheme:dark]" />
         </div>
         @if (filterOptions(); as options) {
           <div>
             <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">Customer</label>
             <select
               formControlName="customerOrganizationId"
-              class="max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+              class="min-w-32 max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
               <option value="">All</option>
               @for (opt of options.customerOrganizations; track opt.id) {
                 <option [value]="opt.id">{{ opt.name }}</option>
@@ -37,7 +37,7 @@
             <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">User</label>
             <select
               formControlName="userAccountId"
-              class="max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+              class="min-w-32 max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
               <option value="">All</option>
               @for (opt of options.userAccounts; track opt.id) {
                 <option [value]="opt.id">{{ opt.name }}</option>
@@ -48,7 +48,7 @@
             <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">Address</label>
             <select
               formControlName="remoteAddress"
-              class="max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+              class="min-w-32 max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
               <option value="">All</option>
               @for (addr of options.remoteAddresses; track addr) {
                 <option [value]="addr">{{ addr }}</option>
@@ -59,7 +59,7 @@
             <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">Artifact</label>
             <select
               formControlName="artifactId"
-              class="max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+              class="min-w-32 max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
               <option value="">All</option>
               @for (opt of options.artifacts; track opt.id) {
                 <option [value]="opt.id">{{ opt.name }}</option>
@@ -71,7 +71,7 @@
               <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">Version</label>
               <select
                 formControlName="artifactVersionId"
-                class="max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                class="min-w-32 max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
                 <option value="">All</option>
                 @for (opt of versionOptions(); track opt.id) {
                   <option [value]="opt.id">{{ formatVersionName(opt.name) }}</option>
@@ -85,7 +85,7 @@
             type="button"
             (click)="resetFilters()"
             class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-            <fa-icon [icon]="faFilterCircleXmark" class="mr-2"></fa-icon>
+            <fa-icon [icon]="faFilterCircleXmark" class="mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
             Reset
           </button>
           <button
@@ -93,7 +93,7 @@
             (click)="exportCsv()"
             [disabled]="isExporting()"
             class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
-            <fa-icon [icon]="faDownload" class="mr-2"></fa-icon>
+            <fa-icon [icon]="faDownload" class="mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
             @if (isExporting()) {
               Exporting...
             } @else {
@@ -137,7 +137,7 @@
                 </td>
                 <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                   @if (pull.remoteAddress) {
-                    {{ formatRemoteAddress(pull.remoteAddress) }}
+                    {{ pull.remoteAddress }}
                   } @else {
                     <span class="text-gray-500 dark:text-gray-400">unknown</span>
                   }

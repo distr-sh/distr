@@ -8,7 +8,6 @@ import {faDownload, faFilterCircleXmark} from '@fortawesome/free-solid-svg-icons
 import dayjs from 'dayjs';
 import {debounceTime, first, map, of, scan, shareReplay, startWith, Subject, switchMap, tap} from 'rxjs';
 import {downloadBlob} from '../../../util/blob';
-import {formatRemoteAddress} from '../../../util/format';
 import {ArtifactPullFilters, ArtifactPullsService} from '../../services/artifact-pulls.service';
 import {ToastService} from '../../services/toast.service';
 
@@ -145,8 +144,6 @@ export class ArtifactPullsComponent {
     }
     return name;
   }
-
-  protected readonly formatRemoteAddress = formatRemoteAddress;
 
   private initFromQueryParams() {
     const params = this.route.snapshot.queryParams;
