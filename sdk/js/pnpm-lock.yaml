@@ -98,8 +98,8 @@ packages:
   lunr@2.3.9:
     resolution: {integrity: sha512-zTU3DaZaF3Rt9rhN3uBMGQD3dD2/vFQqnvZCDv4dl5iOzq2IZQqTxu90r4E5J+nP70J3ilqVCrbho2eWaeW8Ow==}
 
-  markdown-it@14.1.0:
-    resolution: {integrity: sha512-a54IwgWPaeBCAAsv13YgmALOF1elABB08FxO9i+r4VFk5Vl4pKokRPeX8u5TCgSsPi6ec1otfLjdOpVcgbpshg==}
+  markdown-it@14.1.1:
+    resolution: {integrity: sha512-BuU2qnTti9YKgK5N+IeMubp14ZUKUUw7yeJbkjtosvHiP0AZ5c8IAgEMk79D0eC8F23r4Ac/q8cAIFdm2FtyoA==}
     hasBin: true
 
   mdurl@2.0.0:
@@ -247,7 +247,7 @@ snapshots:
 
   lunr@2.3.9: {}
 
-  markdown-it@14.1.0:
+  markdown-it@14.1.1:
     dependencies:
       argparse: 2.0.1
       entities: 4.5.0
@@ -299,7 +299,7 @@ snapshots:
     dependencies:
       '@gerrit0/mini-shiki': 3.21.0
       lunr: 2.3.9
-      markdown-it: 14.1.0
+      markdown-it: 14.1.1
       minimatch: 9.0.5
       typescript: 5.9.3
       yaml: 2.8.2
