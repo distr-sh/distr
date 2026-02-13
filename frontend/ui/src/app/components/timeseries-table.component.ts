@@ -3,6 +3,7 @@ import {Component, inject, input} from '@angular/core';
 import {toObservable} from '@angular/core/rxjs-interop';
 import {filter, interval, map, merge, Observable, scan, Subject, switchMap, tap} from 'rxjs';
 import {distinctBy} from '../../util/arrays';
+import {downloadBlob} from '../../util/blob';
 import {ToastService} from '../services/toast.service';
 
 export interface TimeseriesEntry {
@@ -174,14 +175,7 @@ export class TimeseriesTableComponent {
 
     exporter.export().subscribe({
       next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+        downloadBlob(blob, filename);
         this.isExporting = false;
         toastRef.toastRef.close();
         this.toastService.success('Download completed successfully');

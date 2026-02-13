@@ -11,7 +11,18 @@
       }
       <div>
         <div class="flex gap-2">
-          <h3 class="font-bold break-all leading-tight">{{ customer().name }}</h3>
+          @if (artifacts().length > 0) {
+            <h3 class="font-bold break-all leading-tight">
+              <a
+                routerLink="/artifact-pulls"
+                [queryParams]="{customerOrganizationId: customer().id}"
+                class="hover:underline">
+                {{ customer().name }}
+              </a>
+            </h3>
+          } @else {
+            <h3 class="font-bold break-all leading-tight">{{ customer().name }}</h3>
+          }
         </div>
       </div>
     </div>
