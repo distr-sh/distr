@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/google/uuid"
 )
 
 type ArtifactResponse struct {
@@ -24,4 +25,16 @@ type ArtifactVersionPullResponse struct {
 	CustomerOrganizationName *string               `json:"customerOrganizationName,omitempty"`
 	Artifact                 types.Artifact        `json:"artifact"`
 	ArtifactVersion          types.ArtifactVersion `json:"artifactVersion"`
+}
+
+type ArtifactPullFilterOption struct {
+	ID   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
+}
+
+type ArtifactVersionPullFilterOptions struct {
+	CustomerOrganizations []ArtifactPullFilterOption `json:"customerOrganizations"`
+	UserAccounts          []ArtifactPullFilterOption `json:"userAccounts"`
+	RemoteAddresses       []string                   `json:"remoteAddresses"`
+	Artifacts             []ArtifactPullFilterOption `json:"artifacts"`
 }
