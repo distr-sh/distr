@@ -24,7 +24,7 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"helm.sh/helm/v3/pkg/storage/driver"
+	"helm.sh/helm/v4/pkg/storage/driver"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	applyconfigurationscorev1 "k8s.io/client-go/applyconfigurations/core/v1"
@@ -232,10 +232,10 @@ func verifyLatestHelmRelease(
 	if latestRelease, err := GetLatestHelmRelease(ctx, namespace, deployment); err != nil {
 		return fmt.Errorf("could not get latest helm revision: %w", err)
 	} else if currentDeployment == nil {
-		return fmt.Errorf("helm release %v already exists but was not created by the agent", latestRelease.Name)
-	} else if currentDeployment.HelmRevision != nil && *currentDeployment.HelmRevision != latestRelease.Version {
+		return fmt.Errorf("helm release %v already exists but was not created by the agent", latestRelease.Name())
+	} else if currentDeployment.HelmRevision != nil && *currentDeployment.HelmRevision != latestRelease.Version() {
 		msg := fmt.Sprintf("actual helm revision for %v (%v) is different from latest deployed by agent",
-			latestRelease.Name, latestRelease.Version)
+			latestRelease.Name(), latestRelease.Version())
 		if currentDeployment.HelmRevision != nil {
 			msg += fmt.Sprintf(" (%v)", *currentDeployment.HelmRevision)
 		} else {

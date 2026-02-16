@@ -8,13 +8,16 @@ import (
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/agentauth"
 	"github.com/distr-sh/distr/internal/agentenv"
+	"github.com/distr-sh/distr/internal/util"
+	slogzap "github.com/samber/slog-zap/v2"
 	"go.uber.org/zap"
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/chart"
-	"helm.sh/helm/v3/pkg/chart/loader"
-	"helm.sh/helm/v3/pkg/cli"
-	"helm.sh/helm/v3/pkg/registry"
-	"helm.sh/helm/v3/pkg/release"
+	"helm.sh/helm/v4/pkg/action"
+	"helm.sh/helm/v4/pkg/chart"
+	"helm.sh/helm/v4/pkg/chart/loader"
+	"helm.sh/helm/v4/pkg/cli"
+	"helm.sh/helm/v4/pkg/kube"
+	"helm.sh/helm/v4/pkg/registry"
+	"helm.sh/helm/v4/pkg/release"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -33,50 +36,57 @@ func GetHelmActionConfig(
 	}
 
 	var cfg action.Configuration
-	var clientOpts []registry.ClientOption
-	if agentenv.DistrRegistryPlainHTTP {
-		clientOpts = append(clientOpts, registry.ClientOptPlainHTTP())
-	}
+	cfg.SetLogger(slogzap.Option{Logger: logger.With(zap.String("component", "helm"))}.NewZapHandler())
+
 	if deployment != nil {
+		var clientOpts []registry.ClientOption
+
+		if agentenv.DistrRegistryPlainHTTP {
+			clientOpts = append(clientOpts, registry.ClientOptPlainHTTP())
+		}
+
 		if authorizer, err := agentauth.EnsureAuth(ctx, agentClient.RawToken(), *deployment); err != nil {
 			return nil, err
-		} else if rc, err := registry.NewClient(
-			append(clientOpts, registry.ClientOptAuthorizer(*authorizer))...,
-		); err != nil {
+		} else {
+			clientOpts = append(clientOpts, registry.ClientOptAuthorizer(*authorizer))
+		}
+
+		if rc, err := registry.NewClient(clientOpts...); err != nil {
 			return nil, err
 		} else {
 			cfg.RegistryClient = rc
 		}
 	}
-	if err := cfg.Init(
-		k8sConfigFlags,
-		namespace,
-		"secret",
-		func(format string, v ...any) { logger.Sugar().Debugf(format, v...) },
-	); err != nil {
+
+	if err := cfg.Init(k8sConfigFlags, namespace, "secret"); err != nil {
 		return nil, err
-	} else {
-		return &cfg, nil
 	}
+
+	return &cfg, nil
 }
 
 func GetLatestHelmRelease(
 	ctx context.Context,
 	namespace string,
 	deployment api.AgentDeployment,
-) (*release.Release, error) {
+) (release.Accessor, error) {
 	cfg, err := GetHelmActionConfig(ctx, namespace, nil)
 	if err != nil {
 		return nil, err
 	}
+
 	// Get returns the latest revision by default
-	return action.NewGet(cfg).Run(deployment.ReleaseName)
+	if releaser, err := action.NewGet(cfg).Run(deployment.ReleaseName); err != nil {
+		return nil, err
+	} else {
+		return release.NewAccessor(releaser)
+	}
 }
 
 func RunHelmPreflight(
 	action *action.ChartPathOptions,
 	deployment api.AgentDeployment,
-) (*chart.Chart, error) {
+) (chart.Charter, error) {
 	chartName := deployment.ChartName
 	action.Version = deployment.ChartVersion
 	if registry.IsOCI(deployment.ChartUrl) {
@@ -86,11 +96,11 @@ func RunHelmPreflight(
 	}
 	if chartPath, err := action.LocateChart(chartName, helmEnvSettings); err != nil {
 		return nil, fmt.Errorf("could not locate chart: %w", err)
-	} else if chart, err := loader.Load(chartPath); err != nil {
+	} else if charter, err := loader.Load(chartPath); err != nil {
 		return nil, fmt.Errorf("chart loading failed: %w", err)
 	} else {
 		addImagePullSecretToValues(deployment.ReleaseName, deployment.Values)
-		return chart, nil
+		return charter, nil
 	}
 }
 
@@ -108,12 +118,13 @@ func RunHelmInstall(
 	installAction.ReleaseName = deployment.ReleaseName
 
 	installAction.Timeout = 5 * time.Minute
-	installAction.Wait = true
-	installAction.Atomic = true
+	installAction.WaitStrategy = kube.StatusWatcherStrategy
+	installAction.DryRunStrategy = action.DryRunNone
+	installAction.RollbackOnFailure = true
 	installAction.Namespace = namespace
 	installAction.PlainHTTP = agentenv.DistrRegistryPlainHTTP
 
-	chart, err := RunHelmPreflight(&installAction.ChartPathOptions, deployment)
+	c, err := RunHelmPreflight(&installAction.ChartPathOptions, deployment)
 	if err != nil {
 		return nil, fmt.Errorf("helm preflight failed: %w", err)
 	}
@@ -124,13 +135,15 @@ func RunHelmInstall(
 		logger.Warn("failed to save deployment before install", zap.Error(err))
 	}
 
-	release, err := installAction.RunWithContext(ctx, chart, deployment.Values)
+	releaser, err := installAction.RunWithContext(ctx, c, deployment.Values)
 	if err != nil {
 		err = fmt.Errorf("helm install failed: %w", err)
 		agentDeployment.State = StateFailed
+	} else if acc, err := release.NewAccessor(releaser); err != nil {
+		return nil, fmt.Errorf("failed to create release accessor: %w", err)
 	} else {
 		agentDeployment.State = StateReady
-		agentDeployment.HelmRevision = &release.Version
+		agentDeployment.HelmRevision = util.PtrTo(acc.Version())
 	}
 
 	if err := SaveDeployment(ctx, namespace, agentDeployment); err != nil {
@@ -154,8 +167,9 @@ func RunHelmUpgrade(
 	upgradeAction.CleanupOnFail = true
 
 	upgradeAction.Timeout = 5 * time.Minute
-	upgradeAction.Wait = true
-	upgradeAction.Atomic = true
+	upgradeAction.WaitStrategy = kube.StatusWatcherStrategy
+	upgradeAction.DryRunStrategy = action.DryRunNone
+	upgradeAction.CleanupOnFail = true
 	upgradeAction.Namespace = namespace
 	upgradeAction.PlainHTTP = agentenv.DistrRegistryPlainHTTP
 
@@ -164,14 +178,19 @@ func RunHelmUpgrade(
 		return nil, fmt.Errorf("helm preflight failed: %w", err)
 	}
 
-	release, err := upgradeAction.RunWithContext(ctx, deployment.ReleaseName, chart, deployment.Values)
+	releaser, err := upgradeAction.RunWithContext(ctx, deployment.ReleaseName, chart, deployment.Values)
 	if err != nil {
 		return nil, fmt.Errorf("helm upgrade failed: %w", err)
 	}
 
+	acc, err := release.NewAccessor(releaser)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create release accessor: %w", err)
+	}
+
 	agentDeployment := NewAgentDeployment(deployment)
 	agentDeployment.State = StateReady
-	agentDeployment.HelmRevision = &release.Version
+	agentDeployment.HelmRevision = util.PtrTo(acc.Version())
 	if err := SaveDeployment(ctx, namespace, agentDeployment); err != nil {
 		logger.Warn("failed to save deployment after upgrade", zap.Error(err))
 	}
@@ -187,7 +206,7 @@ func RunHelmUninstall(ctx context.Context, namespace, releaseName string) error 
 
 	uninstallAction := action.NewUninstall(config)
 	uninstallAction.Timeout = 5 * time.Minute
-	uninstallAction.Wait = true
+	uninstallAction.WaitStrategy = kube.StatusWatcherStrategy
 	uninstallAction.IgnoreNotFound = true
 	if _, err := uninstallAction.Run(releaseName); err != nil {
 		return fmt.Errorf("helm uninstall failed: %w", err)
@@ -201,11 +220,13 @@ func GetHelmManifest(ctx context.Context, namespace, releaseName string) ([]*uns
 		return nil, err
 	}
 	getAction := action.NewGet(cfg)
-	if release, err := getAction.Run(releaseName); err != nil {
+	if releaser, err := getAction.Run(releaseName); err != nil {
+		return nil, err
+	} else if acc, err := release.NewAccessor(releaser); err != nil {
 		return nil, err
 	} else {
 		// decode the release manifests which is represented as multi-document YAML
-		return DecodeResourceYaml([]byte(release.Manifest))
+		return DecodeResourceYaml([]byte(acc.Manifest()))
 	}
 }
 
