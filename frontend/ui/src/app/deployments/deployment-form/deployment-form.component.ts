@@ -130,6 +130,7 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
   });
   protected readonly composeFile = this.fb.nonNullable.control({disabled: true, value: ''});
   protected readonly resources = signal<ApplicationVersionResource[]>([]);
+  protected readonly activeTab = signal('environment');
 
   private readonly deploymentId$ = this.deployForm.controls.deploymentId.valueChanges.pipe(
     startWith(this.deployForm.controls.deploymentId.value),

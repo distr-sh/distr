@@ -87,83 +87,112 @@
       }
     </div>
   }
-  @if (deployForm.controls.envFileData.enabled && deployForm.controls.applicationVersionId.valid) {
-    <div class="flex flex-wrap col-span-2 text-gray-500 dark:text-gray-400">
-      <input type="radio" id="tab-environment" name="deployment-tabs" class="hidden peer/environment" checked />
-      <label
-        for="tab-environment"
-        class="tab-label peer-checked/environment:text-blue-600 dark:peer-checked/environment:text-blue-500 peer-checked/environment:border-blue-600 dark:peer-checked/environment:border-blue-500 text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300">
-        Environment
-      </label>
-      <div class="order-12 mt-4 w-full hidden peer-checked/environment:block">
-        <app-editor
-          id="env-file"
-          class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-          formControlName="envFileData">
-        </app-editor>
-
-        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          Set your environment variables here. Documentation:
-          <a
-            target="_blank"
-            class="text-primary-600 underline"
-            href="https://docs.docker.com/compose/how-tos/environment-variables/variable-interpolation/#env-file-syntax">
-            Env File Syntax</a
-          >.
-          @if (auth.hasAnyRole('read_write', 'admin')) {
-            You can also
-            <a [routerLink]="secretsUrl()" target="_blank" class="text-primary-600 underline"
-              >configure and reference secrets</a
-            >.
+  @if (deployForm.controls.valuesYaml.enabled && deployForm.controls.applicationVersionId.valid && resources().length > 0) {
+    <div class="col-span-2 text-gray-500 dark:text-gray-400">
+      <div class="flex flex-wrap border-b border-gray-200 dark:border-gray-600">
+        @for (resource of resources(); track resource.id) {
+          <button
+            type="button"
+            (click)="activeTab.set('resource-' + $index)"
+            class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+            [class.text-blue-600]="activeTab() === 'resource-' + $index"
+            [class.dark:text-blue-500]="activeTab() === 'resource-' + $index"
+            [class.border-blue-600]="activeTab() === 'resource-' + $index"
+            [class.border-transparent]="activeTab() !== 'resource-' + $index">
+            {{ resource.name }}
+          </button>
+        }
+      </div>
+      <div class="mt-4">
+        @for (resource of resources(); track resource.id) {
+          @if (activeTab() === 'resource-' + $index) {
+            <div
+              class="markdown p-4 bg-gray-50 dark:bg-gray-600 rounded-lg border border-gray-200 dark:border-gray-500 text-gray-900 dark:text-white"
+              [innerHTML]="resource.content | markdown | async"></div>
           }
-        </div>
+        }
+      </div>
+    </div>
+  }
+  @if (deployForm.controls.envFileData.enabled && deployForm.controls.applicationVersionId.valid) {
+    <div class="col-span-2 text-gray-500 dark:text-gray-400">
+      <div class="flex flex-wrap border-b border-gray-200 dark:border-gray-600">
+        <button
+          type="button"
+          (click)="activeTab.set('environment')"
+          class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+          [class.text-blue-600]="activeTab() === 'environment'"
+          [class.dark:text-blue-500]="activeTab() === 'environment'"
+          [class.border-blue-600]="activeTab() === 'environment'"
+          [class.border-transparent]="activeTab() !== 'environment'">
+          Environment
+        </button>
+        <button
+          type="button"
+          (click)="activeTab.set('compose')"
+          class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+          [class.text-blue-600]="activeTab() === 'compose'"
+          [class.dark:text-blue-500]="activeTab() === 'compose'"
+          [class.border-blue-600]="activeTab() === 'compose'"
+          [class.border-transparent]="activeTab() !== 'compose'">
+          Docker Compose File
+        </button>
+        @for (resource of resources(); track resource.id) {
+          <button
+            type="button"
+            (click)="activeTab.set('resource-' + $index)"
+            class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+            [class.text-blue-600]="activeTab() === 'resource-' + $index"
+            [class.dark:text-blue-500]="activeTab() === 'resource-' + $index"
+            [class.border-blue-600]="activeTab() === 'resource-' + $index"
+            [class.border-transparent]="activeTab() !== 'resource-' + $index">
+            {{ resource.name }}
+          </button>
+        }
       </div>
 
-      <input type="radio" id="tab-compose" name="deployment-tabs" class="hidden peer/compose" />
-      <label
-        for="tab-compose"
-        class="tab-label peer-checked/compose:text-blue-600 dark:peer-checked/compose:text-blue-500 peer-checked/compose:border-blue-600 dark:peer-checked/compose:border-blue-500 text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300 group">
-        Docker Compose File
-      </label>
-      <div class="order-12 mt-4 w-full hidden peer-checked/compose:block">
-        <app-editor
-          id="compose-file"
-          language="yaml"
-          class="cursor-not-allowed block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-          [formControl]="composeFile">
-        </app-editor>
-        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          This Docker Compose file comes from the application version and is read-only.
-        </div>
+      <div class="mt-4">
+        @if (activeTab() === 'environment') {
+          <app-editor
+            id="env-file"
+            class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            formControlName="envFileData">
+          </app-editor>
+          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Set your environment variables here. Documentation:
+            <a
+              target="_blank"
+              class="text-primary-600 underline"
+              href="https://docs.docker.com/compose/how-tos/environment-variables/variable-interpolation/#env-file-syntax">
+              Env File Syntax</a
+            >.
+            @if (auth.hasAnyRole('read_write', 'admin')) {
+              You can also
+              <a [routerLink]="secretsUrl()" target="_blank" class="text-primary-600 underline"
+                >configure and reference secrets</a
+              >.
+            }
+          </div>
+        }
+        @if (activeTab() === 'compose') {
+          <app-editor
+            id="compose-file"
+            language="yaml"
+            class="cursor-not-allowed block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            [formControl]="composeFile">
+          </app-editor>
+          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            This Docker Compose file comes from the application version and is read-only.
+          </div>
+        }
+        @for (resource of resources(); track resource.id) {
+          @if (activeTab() === 'resource-' + $index) {
+            <div
+              class="markdown p-4 bg-gray-50 dark:bg-gray-600 rounded-lg border border-gray-200 dark:border-gray-500 text-gray-900 dark:text-white"
+              [innerHTML]="resource.content | markdown | async"></div>
+          }
+        }
       </div>
-
-      @for (resource of resources(); track resource.id) {
-        <input
-          type="radio"
-          [id]="'tab-deploy-resource-' + $index"
-          name="deployment-tabs"
-          [class]="'hidden peer/deployresource' + $index" />
-        <label
-          [for]="'tab-deploy-resource-' + $index"
-          [class]="
-            'tab-label peer-checked/deployresource' +
-            $index +
-            ':text-blue-600 dark:peer-checked/deployresource' +
-            $index +
-            ':text-blue-500 peer-checked/deployresource' +
-            $index +
-            ':border-blue-600 dark:peer-checked/deployresource' +
-            $index +
-            ':border-blue-500 text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300 group'
-          ">
-          {{ resource.name }}
-        </label>
-        <div [class]="'order-12 mt-4 w-full hidden peer-checked/deployresource' + $index + ':block'">
-          <div
-            class="markdown p-4 bg-gray-50 dark:bg-gray-600 rounded-lg border border-gray-200 dark:border-gray-500 text-gray-900 dark:text-white"
-            [innerHTML]="resource.content | markdown | async"></div>
-        </div>
-      }
     </div>
   }
 

@@ -543,16 +543,7 @@
                   </div>
                 }
                 <div class="space-y-4 mt-4">
-                  <div class="flex items-center justify-between">
-                    <label class="block text-sm font-medium text-gray-900 dark:text-white">Additional Resources</label>
-                    <button
-                      type="button"
-                      (click)="addResource()"
-                      class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-500 dark:hover:text-blue-400">
-                      <fa-icon [icon]="faPlus" class="mr-1"></fa-icon>
-                      Add Resource
-                    </button>
-                  </div>
+                  <label class="block text-sm font-medium text-gray-900 dark:text-white">Additional Resources</label>
                   @for (resource of newVersionForm.controls.resources.controls; track $index) {
                     <div
                       class="p-4 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 space-y-3">
@@ -602,6 +593,13 @@
                       </div>
                     </div>
                   }
+                  <button
+                    type="button"
+                    (click)="addResource()"
+                    class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-500 dark:hover:text-blue-400">
+                    <fa-icon [icon]="faPlus" class="mr-1"></fa-icon>
+                    Add Resource
+                  </button>
                 </div>
 
                 <div class="flex justify-stretch sm:justify-end mt-5 space-x-2.5">
