@@ -1,4 +1,4 @@
-import {AsyncPipe, JsonPipe} from '@angular/common';
+import {AsyncPipe} from '@angular/common';
 import {
   AfterViewInit,
   Component,
@@ -83,7 +83,7 @@ type DeploymentFormValueCallback = (v: DeploymentFormValue | undefined) => void;
 
 @Component({
   selector: 'app-deployment-form',
-  imports: [ReactiveFormsModule, AsyncPipe, EditorComponent, AutotrimDirective, RouterLink, JsonPipe],
+  imports: [ReactiveFormsModule, AsyncPipe, EditorComponent, AutotrimDirective, RouterLink],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,

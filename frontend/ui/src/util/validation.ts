@@ -6,7 +6,7 @@ export const HELM_RELEASE_NAME_REGEX = /^[a-z0-9]([-a-z0-9]*)?[a-z0-9]$/;
 export const HELM_RELEASE_NAME_MAX_LENGTH = 53;
 
 /**
- * Pattern for a valid time.Duration from the Goland standard library
+ * Pattern for a valid time.Duration from the Golang standard library
  *
  * @see https://pkg.go.dev/time#ParseDuration
  */

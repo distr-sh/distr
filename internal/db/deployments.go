@@ -431,7 +431,7 @@ func GetDeploymentRevisionIDs(ctx context.Context, deploymentID uuid.UUID) ([]uu
 	rows, err := db.Query(
 		ctx,
 		"SELECT id from DeploymentRevision WHERE deployment_id = @deploymentId",
-		pgx.NamedArgs{"de ploymentId": deploymentID},
+		pgx.NamedArgs{"deploymentId": deploymentID},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query DeploymentRevision IDs: %w", err)
