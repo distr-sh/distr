@@ -19,7 +19,6 @@ export type ApplicationVersionFiles = {
   composeFile?: string;
   baseValuesFile?: string;
   templateFile?: string;
-  resources?: ApplicationVersionResource[];
 };
 
 /**
@@ -69,9 +68,6 @@ export class Client {
     }
     if (files?.templateFile) {
       formData.append('templatefile', new Blob([files.templateFile], {type: 'application/yaml'}));
-    }
-    if (files?.resources && files.resources.length > 0) {
-      formData.append('resources', JSON.stringify(files.resources));
     }
     const path = `applications/${applicationId}/versions`;
     const response = await fetch(`${this.config.apiBase}${path}`, {

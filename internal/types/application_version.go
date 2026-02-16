@@ -29,6 +29,8 @@ type ApplicationVersion struct {
 	ValuesFileData   []byte `db:"values_file_data" json:"-"`
 	TemplateFileData []byte `db:"template_file_data" json:"-"`
 	ComposeFileData  []byte `db:"compose_file_data" json:"-"`
+
+	Resources []ApplicationVersionResource `db:"-" json:"resources,omitempty"`
 }
 
 func (av ApplicationVersion) ParsedValuesFile() (result map[string]any, err error) {

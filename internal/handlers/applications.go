@@ -395,23 +395,12 @@ func createApplicationVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var resources []types.ApplicationVersionResource
-	if resourcesJSON := r.FormValue("resources"); resourcesJSON != "" {
-		if err := json.NewDecoder(strings.NewReader(resourcesJSON)).Decode(&resources); err != nil {
-			log.Error("failed to decode resources", zap.Error(err))
-			http.Error(w, "invalid resources JSON", http.StatusBadRequest)
-			return
-		}
-	}
-
 	if err := db.RunTx(ctx, func(ctx context.Context) error {
 		if err := db.CreateApplicationVersion(ctx, &applicationVersion); err != nil {
 			return err
 		}
-		if len(resources) > 0 {
-			if err := db.CreateApplicationVersionResources(ctx, applicationVersion.ID, resources); err != nil {
-				return err
-			}
+		if err := db.CreateApplicationVersionResources(ctx, applicationVersion.ID, applicationVersion.Resources); err != nil {
+			return err
 		}
 		return nil
 	}); err != nil {

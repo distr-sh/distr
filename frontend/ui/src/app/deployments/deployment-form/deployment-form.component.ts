@@ -379,6 +379,7 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
       )
       .subscribe((resources) => {
         this.resources.set(resources);
+        this.activeTab.set(this.deploymentType() === 'docker' ? 'environment' : 'resource-0');
       });
 
     this.licenses$.pipe(takeUntil(this.destroyed$)).subscribe((licenses) => {

@@ -94,16 +94,12 @@ export class ApplicationsService implements CrudService<Application> {
     application: Application,
     applicationVersion: ApplicationVersion,
     compose: string,
-    template?: string | null,
-    resources?: ApplicationVersionResource[]
+    template?: string | null
   ): Observable<ApplicationVersion> {
     const formData = new FormData();
     formData.append('composefile', new Blob([compose], {type: 'application/yaml'}));
     if (template) {
       formData.append('templatefile', new Blob([template], {type: 'application/yaml'}));
-    }
-    if (resources && resources.length > 0) {
-      formData.append('resources', JSON.stringify(resources));
     }
 
     return this.doCreateVersion(application, applicationVersion, formData);
@@ -113,8 +109,7 @@ export class ApplicationsService implements CrudService<Application> {
     application: Application,
     applicationVersion: ApplicationVersion,
     baseValues?: string | null,
-    template?: string | null,
-    resources?: ApplicationVersionResource[]
+    template?: string | null
   ): Observable<ApplicationVersion> {
     const formData = new FormData();
     if (baseValues) {
@@ -122,9 +117,6 @@ export class ApplicationsService implements CrudService<Application> {
     }
     if (template) {
       formData.append('templatefile', new Blob([template], {type: 'application/yaml'}));
-    }
-    if (resources && resources.length > 0) {
-      formData.append('resources', JSON.stringify(resources));
     }
     return this.doCreateVersion(application, applicationVersion, formData);
   }

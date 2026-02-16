@@ -555,7 +555,7 @@
                           type="button"
                           (click)="removeResource($index)"
                           class="text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-400">
-                          <fa-icon [icon]="faMinus"></fa-icon>
+                          <fa-icon [icon]="faTrash"></fa-icon>
                         </button>
                       </div>
                       <div>
@@ -569,13 +569,31 @@
                         }
                       </div>
                       <div>
-                        <label class="block mb-1 text-sm font-medium text-gray-900 dark:text-white"
-                          >Content (Markdown) *</label
-                        >
-                        <textarea
-                          [formControl]="resource.controls.content"
-                          rows="6"
-                          class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"></textarea>
+                        <div class="flex items-end justify-between mb-1">
+                          <label class="block text-sm font-medium text-gray-900 dark:text-white"
+                            >Content (Markdown) *</label
+                          >
+                          <button
+                            type="button"
+                            class="py-1 px-2 text-xs font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+                            (click)="toggleResourcePreview($index)">
+                            @if (resourcePreviewIndices().has($index)) {
+                              Write
+                            } @else {
+                              Preview
+                            }
+                          </button>
+                        </div>
+                        @if (resourcePreviewIndices().has($index)) {
+                          <div
+                            class="markdown p-2.5 min-h-[9.5rem] rounded-lg border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white"
+                            [innerHTML]="resource.controls.content.value | markdown | async"></div>
+                        } @else {
+                          <textarea
+                            [formControl]="resource.controls.content"
+                            rows="6"
+                            class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"></textarea>
+                        }
                         @if (resource.controls.content.invalid && resource.controls.content.touched) {
                           <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
                         }

@@ -88,57 +88,33 @@
     </div>
   }
   @if (
-    deployForm.controls.valuesYaml.enabled && deployForm.controls.applicationVersionId.valid && resources().length > 0
+    deployForm.controls.applicationVersionId.valid &&
+    (deployForm.controls.envFileData.enabled || resources().length > 0)
   ) {
     <div class="col-span-2 text-gray-500 dark:text-gray-400">
       <div class="flex flex-wrap border-b border-gray-200 dark:border-gray-600">
-        @for (resource of resources(); track resource.id) {
+        @if (deployForm.controls.envFileData.enabled) {
           <button
             type="button"
-            (click)="activeTab.set('resource-' + $index)"
+            (click)="activeTab.set('environment')"
             class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
-            [class.text-blue-600]="activeTab() === 'resource-' + $index"
-            [class.dark:text-blue-500]="activeTab() === 'resource-' + $index"
-            [class.border-blue-600]="activeTab() === 'resource-' + $index"
-            [class.border-transparent]="activeTab() !== 'resource-' + $index">
-            {{ resource.name }}
+            [class.text-blue-600]="activeTab() === 'environment'"
+            [class.dark:text-blue-500]="activeTab() === 'environment'"
+            [class.border-blue-600]="activeTab() === 'environment'"
+            [class.border-transparent]="activeTab() !== 'environment'">
+            Environment
+          </button>
+          <button
+            type="button"
+            (click)="activeTab.set('compose')"
+            class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+            [class.text-blue-600]="activeTab() === 'compose'"
+            [class.dark:text-blue-500]="activeTab() === 'compose'"
+            [class.border-blue-600]="activeTab() === 'compose'"
+            [class.border-transparent]="activeTab() !== 'compose'">
+            Docker Compose File
           </button>
         }
-      </div>
-      <div class="mt-4">
-        @for (resource of resources(); track resource.id) {
-          @if (activeTab() === 'resource-' + $index) {
-            <div
-              class="markdown p-4 bg-gray-50 dark:bg-gray-600 rounded-lg border border-gray-200 dark:border-gray-500 text-gray-900 dark:text-white"
-              [innerHTML]="resource.content | markdown | async"></div>
-          }
-        }
-      </div>
-    </div>
-  }
-  @if (deployForm.controls.envFileData.enabled && deployForm.controls.applicationVersionId.valid) {
-    <div class="col-span-2 text-gray-500 dark:text-gray-400">
-      <div class="flex flex-wrap border-b border-gray-200 dark:border-gray-600">
-        <button
-          type="button"
-          (click)="activeTab.set('environment')"
-          class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
-          [class.text-blue-600]="activeTab() === 'environment'"
-          [class.dark:text-blue-500]="activeTab() === 'environment'"
-          [class.border-blue-600]="activeTab() === 'environment'"
-          [class.border-transparent]="activeTab() !== 'environment'">
-          Environment
-        </button>
-        <button
-          type="button"
-          (click)="activeTab.set('compose')"
-          class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
-          [class.text-blue-600]="activeTab() === 'compose'"
-          [class.dark:text-blue-500]="activeTab() === 'compose'"
-          [class.border-blue-600]="activeTab() === 'compose'"
-          [class.border-transparent]="activeTab() !== 'compose'">
-          Docker Compose File
-        </button>
         @for (resource of resources(); track resource.id) {
           <button
             type="button"
@@ -190,7 +166,7 @@
         @for (resource of resources(); track resource.id) {
           @if (activeTab() === 'resource-' + $index) {
             <div
-              class="markdown p-4 bg-gray-50 dark:bg-gray-600 rounded-lg border border-gray-200 dark:border-gray-500 text-gray-900 dark:text-white"
+              class="markdown p-4 rounded-lg border border-gray-200 dark:border-gray-500 text-gray-900 dark:text-white"
               [innerHTML]="resource.content | markdown | async"></div>
           }
         }

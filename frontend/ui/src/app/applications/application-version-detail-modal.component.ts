@@ -17,7 +17,7 @@ export interface ApplicationVersionDetail {
     compose: string | null;
     template: string | null;
   };
-  resources?: ApplicationVersionResource[];
+  resources: ApplicationVersionResource[];
 }
 
 @Component({

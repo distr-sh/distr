@@ -19,6 +19,7 @@ export interface ApplicationVersion {
   chartName?: string;
   chartUrl?: string;
   chartVersion?: string;
+  resources?: ApplicationVersionResource[];
 }
 
 export interface ApplicationVersionResource {

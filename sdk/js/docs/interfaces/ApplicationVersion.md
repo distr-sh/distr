@@ -65,3 +65,9 @@
 ### name
 
 > **name**: `string`
+
+---
+
+### resources?
+
+> `optional` **resources**: [`ApplicationVersionResource`](ApplicationVersionResource.md)[]

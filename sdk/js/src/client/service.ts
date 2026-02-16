@@ -123,11 +123,10 @@ export class DistrService {
   ): Promise<ApplicationVersion> {
     return this.client.createApplicationVersion(
       applicationId,
-      {name, linkTemplate: data.linkTemplate ?? ''},
+      {name, linkTemplate: data.linkTemplate ?? '', resources: data.resources},
       {
         composeFile: data.composeFile,
         templateFile: data.templateFile,
-        resources: data.resources,
       }
     );
   }
@@ -161,11 +160,11 @@ export class DistrService {
         chartVersion: data.chartVersion,
         chartType: data.chartType,
         chartUrl: data.chartUrl,
+        resources: data.resources,
       },
       {
         baseValuesFile: data.baseValuesFile,
         templateFile: data.templateFile,
-        resources: data.resources,
       }
     );
   }

@@ -29,6 +29,7 @@ import {
   faTrash,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
+import {MarkdownPipe} from 'ngx-markdown';
 import {
   catchError,
   combineLatestWith,
@@ -79,6 +80,7 @@ import {
     SecureImagePipe,
     FormsModule,
     ApplicationVersionDetailModalComponent,
+    MarkdownPipe,
   ],
   templateUrl: './application-detail.component.html',
   animations: [dropdownAnimation],
@@ -265,27 +267,26 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
           {
             name: this.newVersionForm.controls.versionName.value!,
             linkTemplate: this.newVersionForm.controls.linkTemplate.value!,
+            resources,
           },
           this.newVersionForm.controls.docker.controls.compose.value!,
-          this.newVersionForm.controls.docker.controls.template.value,
-          resources
+          this.newVersionForm.controls.docker.controls.template.value
         );
       } else {
         const versionFormVal = this.newVersionForm.controls.kubernetes.value;
-        const version = {
-          name: this.newVersionForm.controls.versionName.value!,
-          linkTemplate: this.newVersionForm.controls.linkTemplate.value!,
-          chartType: versionFormVal.chartType!,
-          chartName: versionFormVal.chartName ?? undefined,
-          chartUrl: versionFormVal.chartUrl!,
-          chartVersion: versionFormVal.chartVersion!,
-        };
         res = this.applicationService.createApplicationVersionForKubernetes(
           application,
-          version,
+          {
+            name: this.newVersionForm.controls.versionName.value!,
+            linkTemplate: this.newVersionForm.controls.linkTemplate.value!,
+            chartType: versionFormVal.chartType!,
+            chartName: versionFormVal.chartName ?? undefined,
+            chartUrl: versionFormVal.chartUrl!,
+            chartVersion: versionFormVal.chartVersion!,
+            resources,
+          },
           versionFormVal.baseValues,
-          versionFormVal.template,
-          resources
+          versionFormVal.template
         );
       }
 
@@ -520,6 +521,20 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   protected readonly faEye = faEye;
   protected readonly faPlus = faPlus;
   protected readonly faMinus = faMinus;
+
+  protected readonly resourcePreviewIndices = signal(new Set<number>());
+
+  toggleResourcePreview(index: number) {
+    this.resourcePreviewIndices.update((set) => {
+      const next = new Set(set);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  }
 
   addResource() {
     this.newVersionForm.controls.resources.push(

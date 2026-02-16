@@ -12,7 +12,7 @@ export function markedOptionsFactory(): MarkedOptions {
     } catch (e) {
       captureException(e);
     }
-    return `<a href="${href}" target="_blank">${text}</a>`;
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer">${text}</a>`;
   };
 
   return opts;
