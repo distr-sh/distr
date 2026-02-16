@@ -1,3 +1,16 @@
+<ng-template #preflightConfirmTemplate>
+  <p class="text-base leading-relaxed text-gray-500 dark:text-gray-200">
+    Enabling pre-flight checks changes how Docker agents are installed. All customers will receive a shell script
+    instead of a plain docker compose command. The install command will change from
+    <code class="px-1 py-0.5 rounded-sm bg-gray-100 dark:bg-gray-600 text-sm font-mono"
+      >curl ... | docker compose -f - up -d</code
+    >
+    to
+    <code class="px-1 py-0.5 rounded-sm bg-gray-100 dark:bg-gray-600 text-sm font-mono">curl ... | sh</code>, which
+    wraps docker compose with pre- and post-connect scripts.
+  </p>
+</ng-template>
+
 <section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
   <div class="mx-auto max-w-screen-lg px-4">
     <div class="bg-white dark:bg-gray-800 relative shadow-md rounded-lg overflow-hidden p-10 mb-20">
@@ -61,6 +74,24 @@
               <label for="artifactVersionMutable" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
                 Artifact versions are mutable
               </label>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <h2 class="text-xl font-bold dark:text-white">Agents</h2>
+            <div>
+              <input
+                formControlName="prePostScriptsEnabled"
+                id="prePostScriptsEnabled"
+                type="checkbox"
+                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+              <label for="prePostScriptsEnabled" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                Enable Pre- and Post-Connect Scripts (Pre-Flight Checks)
+              </label>
+              <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
+                When enabled, Docker agent install commands will use a shell script that wraps docker compose, allowing
+                pre- and post-connect scripts to run during agent setup.
+              </p>
             </div>
           </div>
 
