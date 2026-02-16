@@ -395,11 +395,12 @@ func createApplicationVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	resources := applicationVersion.Resources
 	if err := db.RunTx(ctx, func(ctx context.Context) error {
 		if err := db.CreateApplicationVersion(ctx, &applicationVersion); err != nil {
 			return err
 		}
-		if err := db.CreateApplicationVersionResources(ctx, applicationVersion.ID, applicationVersion.Resources); err != nil {
+		if err := db.CreateApplicationVersionResources(ctx, applicationVersion.ID, resources); err != nil {
 			return err
 		}
 		return nil

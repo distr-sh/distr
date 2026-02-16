@@ -310,6 +310,10 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
     this.isVersionFormExpanded.set(true);
     const val = await this.loadVersionDetails(application, version);
     if (val) {
+      this.newVersionForm.controls.resources.clear();
+      for (const _ of val.resources ?? []) {
+        this.addResource();
+      }
       this.newVersionForm.patchValue(val);
     }
   }
