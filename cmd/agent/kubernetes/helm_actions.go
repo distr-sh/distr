@@ -173,7 +173,7 @@ func RunHelmUpgrade(
 	agentDeployment.State = StateReady
 	agentDeployment.HelmRevision = &release.Version
 	if err := SaveDeployment(ctx, namespace, agentDeployment); err != nil {
-		logger.Warn("failed to save deployment after install", zap.Error(err))
+		logger.Warn("failed to save deployment after upgrade", zap.Error(err))
 	}
 
 	return &agentDeployment, err
