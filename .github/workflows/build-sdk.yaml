@@ -48,7 +48,7 @@ jobs:
           else
             echo "Repository is not clean:
           $STATUS
-            You might want to run 'npm run docs' and try again"
+            You might want to run 'pnpm i && pnpm run docs' in sdk/js and try again"
             exit 1
           fi
       - name: Publish to npmjs
