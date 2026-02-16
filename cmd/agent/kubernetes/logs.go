@@ -180,7 +180,7 @@ func UpdateLastLogsTimestamp(
 		ctx,
 		applyconfigurationscorev1.Secret(deployment.SecretName(), namespace).
 			WithStringData(map[string]string{
-				"lastLogTimestamp": timestamp.Format(time.RFC3339),
+				"lastLogTimestamp": timestamp.Format(time.RFC3339Nano),
 			}),
 		metav1.ApplyOptions{Force: true, FieldManager: "distr-agent-logs"},
 	)
@@ -193,7 +193,7 @@ func GetLastLogsTimestamp(ctx context.Context, namespace string, deployment Agen
 		return nil, err
 	} else if timeStr, ok := secret.Data["lastLogTimestamp"]; !ok {
 		return nil, nil
-	} else if parsed, err := time.Parse(time.RFC3339, string(timeStr)); err != nil {
+	} else if parsed, err := time.Parse(time.RFC3339Nano, string(timeStr)); err != nil {
 		return nil, err
 	} else {
 		return &parsed, nil
