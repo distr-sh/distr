@@ -65,34 +65,9 @@
       }
     </div>
   }
-  @if (deployForm.controls.valuesYaml.enabled) {
-    <div class="col-span-2">
-      <label for="helm-values" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-        Helm values
-      </label>
-
-      <app-editor
-        language="yaml"
-        class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-        formControlName="valuesYaml">
-      </app-editor>
-      @if (auth.hasAnyRole('read_write', 'admin')) {
-        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          You can
-          <a
-            [routerLink]="secretsUrl()"
-            target="_blank"
-            class="font-medium text-primary-600 hover:underline dark:text-primary-500"
-            >configure and reference secrets</a
-          >
-          in your Helm values.
-        </div>
-      }
-    </div>
-  }
   @if (
     deployForm.controls.applicationVersionId.valid &&
-    (deployForm.controls.envFileData.enabled || resources().length > 0)
+    (deployForm.controls.envFileData.enabled || deployForm.controls.valuesYaml.enabled || resources().length > 0)
   ) {
     <div class="col-span-2 text-gray-500 dark:text-gray-400">
       <div class="flex flex-wrap border-b border-gray-200 dark:border-gray-600">
@@ -116,6 +91,18 @@
             [class.border-blue-600]="activeTab() === 'compose'"
             [class.border-transparent]="activeTab() !== 'compose'">
             Docker Compose File
+          </button>
+        }
+        @if (deployForm.controls.valuesYaml.enabled) {
+          <button
+            type="button"
+            (click)="activeTab.set('values')"
+            class="tab-label text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+            [class.text-blue-600]="activeTab() === 'values'"
+            [class.dark:text-blue-500]="activeTab() === 'values'"
+            [class.border-blue-600]="activeTab() === 'values'"
+            [class.border-transparent]="activeTab() !== 'values'">
+            Helm Values
           </button>
         }
         @for (resource of resources(); track resource.id) {
@@ -165,6 +152,25 @@
           <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
             This Docker Compose file comes from the application version and is read-only.
           </div>
+        }
+        @if (activeTab() === 'values') {
+          <app-editor
+            language="yaml"
+            class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            formControlName="valuesYaml">
+          </app-editor>
+          @if (auth.hasAnyRole('read_write', 'admin')) {
+            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              You can
+              <a
+                [routerLink]="secretsUrl()"
+                target="_blank"
+                class="font-medium text-primary-600 hover:underline dark:text-primary-500"
+                >configure and reference secrets</a
+              >
+              in your Helm values.
+            </div>
+          }
         }
         @for (resource of resources(); track resource.id) {
           @if (activeTab() === 'resource-' + $index) {
