@@ -234,8 +234,13 @@ func verifyLatestHelmRelease(
 	} else if currentDeployment == nil {
 		return fmt.Errorf("helm release %v already exists but was not created by the agent", latestRelease.Name)
 	} else if currentDeployment.HelmRevision != nil && *currentDeployment.HelmRevision != latestRelease.Version {
-		msg := fmt.Sprintf("actual helm revision for %v (%v) is different from latest deployed by agent (%v)",
-			latestRelease.Name, latestRelease.Version, currentDeployment.HelmRevision)
+		msg := fmt.Sprintf("actual helm revision for %v (%v) is different from latest deployed by agent",
+			latestRelease.Name, latestRelease.Version)
+		if currentDeployment.HelmRevision != nil {
+			msg += fmt.Sprintf(" (%v)", *currentDeployment.HelmRevision)
+		} else {
+			msg += " (<nil>)"
+		}
 		if deployment.IgnoreRevisionSkew {
 			logger.Warn(msg)
 			return nil
