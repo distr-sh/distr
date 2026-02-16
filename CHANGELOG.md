@@ -1,5 +1,42 @@
 # Changelog
 
+## [2.11.0](https://github.com/distr-sh/distr/compare/2.10.2...2.11.0) (2026-02-16)
+
+
+### Features
+
+* add setting custom helm options ([#1837](https://github.com/distr-sh/distr/issues/1837)) ([67eeec2](https://github.com/distr-sh/distr/commit/67eeec2898ca5d150c751078404f35ff92f9e640))
+* application version resources ([#1826](https://github.com/distr-sh/distr/issues/1826)) ([bec4478](https://github.com/distr-sh/distr/commit/bec447878eb16d62c0f56047fcd9b17707f40017))
+* artifact pulls filters ([#1808](https://github.com/distr-sh/distr/issues/1808)) ([1fc872f](https://github.com/distr-sh/distr/commit/1fc872fa676fbd4eba8b1ea311882406b2117843))
+* preflight checks ([#1824](https://github.com/distr-sh/distr/issues/1824)) ([98c6fd4](https://github.com/distr-sh/distr/commit/98c6fd442bec634db23745cec578dc7ab3d0a798))
+
+
+### Bug Fixes
+
+* **agent:** start log collection before deployment success and remember last logs timestamp ([#1828](https://github.com/distr-sh/distr/issues/1828)) ([e83bea2](https://github.com/distr-sh/distr/commit/e83bea2d8f664bc8fdf4b664fa87f19b2c547ca8))
+* **backend:** add missing parameter in application license query ([#1836](https://github.com/distr-sh/distr/issues/1836)) ([5526fa7](https://github.com/distr-sh/distr/commit/5526fa7d2a3aff778918521d0a453ce40516563b))
+* **deps:** update module github.com/mark3labs/mcp-go to v0.44.0 ([#1833](https://github.com/distr-sh/distr/issues/1833)) ([ffd7e0a](https://github.com/distr-sh/distr/commit/ffd7e0aa35af87ee9f03228270f6f9d79facf3df))
+* **deps:** update module helm.sh/helm/v3 to v4 ([#1362](https://github.com/distr-sh/distr/issues/1362)) ([7bfd184](https://github.com/distr-sh/distr/commit/7bfd184a0f130dbe8e3e59dc884be43b6a2bafbb))
+
+
+### Other
+
+* **backend:** allow application license version narrowing ([#1823](https://github.com/distr-sh/distr/issues/1823)) ([8fb0c21](https://github.com/distr-sh/distr/commit/8fb0c2105c2b26eef09ba71a0e993f8cc92f1215))
+* **deps:** bump markdown-it from 14.1.0 to 14.1.1 in /sdk/js in the npm_and_yarn group across 1 directory ([#1829](https://github.com/distr-sh/distr/issues/1829)) ([bf635ef](https://github.com/distr-sh/distr/commit/bf635ef31e03eb947f1ac78bb30f5972b9b8d1bf))
+* **deps:** update angular-cli monorepo to v21.1.4 ([#1818](https://github.com/distr-sh/distr/issues/1818)) ([21960fd](https://github.com/distr-sh/distr/commit/21960fd264615c702d95edcf89e1fbe56a2f4157))
+* **deps:** update axllent/mailpit docker tag to v1.29.1 ([#1827](https://github.com/distr-sh/distr/issues/1827)) ([d9da8de](https://github.com/distr-sh/distr/commit/d9da8ded2f1375a84d1f6efbb01d7c1226510902))
+* **deps:** update dependency @angular/cdk to v21.1.4 ([#1819](https://github.com/distr-sh/distr/issues/1819)) ([6914dd1](https://github.com/distr-sh/distr/commit/6914dd147e67089cac6457a4f18e005ab5f308a1))
+* **deps:** update dependency @codemirror/view to v6.39.14 ([#1822](https://github.com/distr-sh/distr/issues/1822)) ([724b5ec](https://github.com/distr-sh/distr/commit/724b5ec989c4759dac88b30b85f1d82c6e0526ab))
+* **deps:** update dependency jsdom to v28.1.0 ([#1832](https://github.com/distr-sh/distr/issues/1832)) ([b2958ce](https://github.com/distr-sh/distr/commit/b2958ce473eb30c96edfb06b871d5d0b68942a5c))
+* **deps:** update dependency marked to v17.0.2 ([#1815](https://github.com/distr-sh/distr/issues/1815)) ([41bb3c5](https://github.com/distr-sh/distr/commit/41bb3c507947a416aa295b666ad77efa0eb06d87))
+* **deps:** update dependency pnpm to v10.29.3 ([#1816](https://github.com/distr-sh/distr/issues/1816)) ([56c69fd](https://github.com/distr-sh/distr/commit/56c69fd1882878829e30dfcca7bf2e7553398c2e))
+* **deps:** update dependency posthog-js to v1.347.2 ([#1835](https://github.com/distr-sh/distr/issues/1835)) ([1dc8623](https://github.com/distr-sh/distr/commit/1dc8623e92a28ed54a12c721b2f5dad4026f686f))
+* **deps:** update dependency rimraf to v6.1.3 ([#1834](https://github.com/distr-sh/distr/issues/1834)) ([a633b1d](https://github.com/distr-sh/distr/commit/a633b1d7c8dbb28eb259953c9a7cc078aea165b2))
+* **deps:** update dependency typedoc to v0.28.17 ([#1830](https://github.com/distr-sh/distr/issues/1830)) ([3b1db28](https://github.com/distr-sh/distr/commit/3b1db288ca12ff342fc93ddbe546e932f26cdeed))
+* **deps:** update docker/build-push-action action to v6.19.2 ([#1820](https://github.com/distr-sh/distr/issues/1820)) ([477a4c7](https://github.com/distr-sh/distr/commit/477a4c71de6804afbe0b187490b0938f9e8e8f74))
+* **deps:** update gcr.io/distroless/static-debian12:nonroot docker digest to a932952 ([#1831](https://github.com/distr-sh/distr/issues/1831)) ([5048374](https://github.com/distr-sh/distr/commit/5048374037876997b1f74837dae2be470dcf3076))
+* **ui:** change namespace placeholder to be less confusing ([#1838](https://github.com/distr-sh/distr/issues/1838)) ([89a4b42](https://github.com/distr-sh/distr/commit/89a4b42a57d7f50c359f2d4a8592071a21f6797e))
+
 ## [2.10.2](https://github.com/distr-sh/distr/compare/2.10.1...2.10.2) (2026-02-11)
 
 
