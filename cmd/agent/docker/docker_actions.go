@@ -19,28 +19,51 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func DockerEngineApply(ctx context.Context, deployment api.AgentDeployment) (*AgentDeployment, string, error) {
-	if *deployment.DockerType == types.DockerTypeSwarm {
-		return ApplyComposeFileSwarm(ctx, deployment)
+func DockerEngineApply(
+	ctx context.Context,
+	deployment api.AgentDeployment,
+) (agentDeployment *AgentDeployment, status string, err error) {
+	agentDeployment, err = NewAgentDeployment(deployment)
+	if err != nil {
+		return agentDeployment, status, err
 	}
-	return ApplyComposeFile(ctx, deployment)
+
+	agentDeployment.State = StateProgressing
+	if err = SaveDeployment(*agentDeployment); err != nil {
+		logger.Warn("failed to save deployment before apply", zap.Error(err))
+	}
+
+	if *deployment.DockerType == types.DockerTypeSwarm {
+		status, err = ApplyComposeFileSwarm(ctx, deployment)
+	} else {
+		status, err = ApplyComposeFile(ctx, deployment)
+	}
+
+	if err == nil {
+		agentDeployment.State = StateReady
+	} else {
+		agentDeployment.State = StateFailed
+	}
+
+	if err1 := SaveDeployment(*agentDeployment); err1 != nil {
+		logger.Warn("failed to save deployment after apply", zap.Error(err1))
+	}
+
+	return agentDeployment, status, err
 }
 
-func ApplyComposeFile(ctx context.Context, deployment api.AgentDeployment) (*AgentDeployment, string, error) {
-	agentDeploymet, err := NewAgentDeployment(deployment)
-	if err != nil {
-		return nil, "", err
-	}
-
+func ApplyComposeFile(ctx context.Context, deployment api.AgentDeployment) (string, error) {
 	var envFile *os.File
+	var err error
+
 	if deployment.EnvFile != nil {
 		if envFile, err = os.CreateTemp("", "distr-env"); err != nil {
 			logger.Error("", zap.Error(err))
-			return nil, "", fmt.Errorf("failed to create env file in tmp directory: %w", err)
+			return "", fmt.Errorf("failed to create env file in tmp directory: %w", err)
 		} else {
 			if _, err = envFile.Write(deployment.EnvFile); err != nil {
 				logger.Error("", zap.Error(err))
-				return nil, "", fmt.Errorf("failed to write env file: %w", err)
+				return "", fmt.Errorf("failed to write env file: %w", err)
 			}
 			_ = envFile.Close()
 			defer func() {
@@ -67,34 +90,34 @@ func ApplyComposeFile(ctx context.Context, deployment api.AgentDeployment) (*Age
 	logger.Debug("docker compose returned", zap.String("output", statusStr), zap.Error(err))
 
 	if err != nil {
-		return nil, "", errors.New(statusStr)
+		return "", errors.New(statusStr)
 	} else {
-		return agentDeploymet, statusStr, nil
+		return statusStr, nil
 	}
 }
 
-func ApplyComposeFileSwarm(ctx context.Context, deployment api.AgentDeployment) (*AgentDeployment, string, error) {
+func ApplyComposeFileSwarm(ctx context.Context, deployment api.AgentDeployment) (string, error) {
 	// Step 1 Ensure Docker Swarm is initialized
 	initCmd := exec.CommandContext(ctx, "docker", "info", "--format", "{{.Swarm.LocalNodeState}}")
 	initOutput, err := initCmd.CombinedOutput()
 	if err != nil {
 		logger.Error("Failed to check Docker Swarm state", zap.Error(err))
-		return nil, "", fmt.Errorf("failed to check Docker Swarm state: %w", err)
+		return "", fmt.Errorf("failed to check Docker Swarm state: %w", err)
 	}
 
 	if !strings.Contains(strings.TrimSpace(string(initOutput)), "active") {
 		logger.Error("Docker Swarm not initialized", zap.String("output", string(initOutput)))
-		return nil, "", fmt.Errorf("docker Swarm not initialized: %s", string(initOutput))
+		return "", fmt.Errorf("docker Swarm not initialized: %s", string(initOutput))
 	}
 
-	agentDeployment, err := NewAgentDeployment(deployment)
+	projectName, err := getProjectName(deployment.ComposeFile)
 	if err != nil {
-		return nil, "", err
+		return "", fmt.Errorf("failed to get project name from compose file: %w", err)
 	}
 
 	cleanedComposeFile, err := cleanComposeFile(deployment.ComposeFile)
 	if err != nil {
-		return nil, "", err
+		return "", err
 	}
 
 	// Construct environment variables
@@ -105,7 +128,7 @@ func ApplyComposeFileSwarm(ctx context.Context, deployment api.AgentDeployment) 
 	if deployment.EnvFile != nil {
 		parsedEnv, err := dotenv.UnmarshalBytesWithLookup(deployment.EnvFile, nil)
 		if err != nil {
-			return nil, "", fmt.Errorf("failed to parse env file: %w", err)
+			return "", fmt.Errorf("failed to parse env file: %w", err)
 		}
 		for key, value := range parsedEnv {
 			envVars = append(envVars, fmt.Sprintf("%s=%s", key, value))
@@ -118,7 +141,7 @@ func ApplyComposeFileSwarm(ctx context.Context, deployment api.AgentDeployment) 
 		"--compose-file", "-",
 		"--with-registry-auth",
 		"--detach=true",
-		agentDeployment.ProjectName,
+		projectName,
 	}
 	cmd := exec.CommandContext(ctx, "docker", composeArgs...)
 	cmd.Stdin = bytes.NewReader(cleanedComposeFile)
@@ -130,12 +153,12 @@ func ApplyComposeFileSwarm(ctx context.Context, deployment api.AgentDeployment) 
 
 	if err != nil {
 		logger.Error("docker stack deploy failed", zap.String("output", statusStr))
-		return nil, "", errors.New(statusStr)
+		return "", errors.New(statusStr)
 	} else {
 		logger.Debug("docker stack deploy returned", zap.String("output", statusStr), zap.Error(err))
 	}
 
-	return agentDeployment, statusStr, nil
+	return statusStr, nil
 }
 
 func DockerEngineUninstall(ctx context.Context, deployment AgentDeployment) error {
