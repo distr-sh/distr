@@ -30,6 +30,13 @@ type ApplicationLicense struct {
 	CustomerOrganization *CustomerOrganization `db:"customer_organization" json:"customerOrganization,omitempty"`
 }
 
+type DeploymentVersionUsage struct {
+	DeploymentID           uuid.UUID `db:"deployment_id"`
+	DeploymentTargetName   string    `db:"deployment_target_name"`
+	ApplicationVersionID   uuid.UUID `db:"application_version_id"`
+	ApplicationVersionName string    `db:"application_version_name"`
+}
+
 func (license *ApplicationLicenseWithVersions) HasVersionWithID(id uuid.UUID) bool {
 	for _, v := range license.Versions {
 		if v.ID == id {

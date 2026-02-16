@@ -7,7 +7,6 @@ import (
 	"math"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/containers/image/v5/manifest"
 	"github.com/distr-sh/distr/internal/apierrors"
@@ -690,37 +689,160 @@ func EnsureArtifactTagLimitForInsert(ctx context.Context, orgID uuid.UUID) (bool
 	}
 }
 
-func GetArtifactVersionPulls(
+func GetArtifactVersionPullFilterOptions(
 	ctx context.Context,
 	orgID uuid.UUID,
-	count int,
-	before time.Time,
+) (*types.ArtifactVersionPullFilterOptions, error) {
+	db := internalctx.GetDb(ctx)
+	result := &types.ArtifactVersionPullFilterOptions{}
+
+	pullBaseJoin := ` FROM ArtifactVersionPull p
+		JOIN ArtifactVersion v ON v.id = p.artifact_version_id
+		JOIN Artifact a ON a.id = v.artifact_id`
+	args := pgx.NamedArgs{"orgId": orgID}
+
+	// Customer organizations
+	rows, err := db.Query(ctx,
+		`SELECT co.id, co.name`+pullBaseJoin+`
+			JOIN CustomerOrganization co ON co.id = p.customer_organization_id
+		WHERE a.organization_id = @orgId
+		GROUP BY co.id, co.name
+		ORDER BY co.name`, args)
+	if err != nil {
+		return nil, fmt.Errorf("could not query customer organizations for filter options: %w", err)
+	}
+	if result.CustomerOrganizations, err = pgx.CollectRows(rows, pgx.RowToStructByPos[types.FilterOption]); err != nil {
+		return nil, fmt.Errorf("could not scan customer organizations for filter options: %w", err)
+	}
+
+	// User accounts
+	rows, err = db.Query(ctx,
+		`SELECT u.id, COALESCE(NULLIF(u.name, ''), u.email) AS name`+pullBaseJoin+`
+			JOIN UserAccount u ON u.id = p.useraccount_id
+		WHERE a.organization_id = @orgId
+		GROUP BY u.id, u.name, u.email
+		ORDER BY name`, args)
+	if err != nil {
+		return nil, fmt.Errorf("could not query user accounts for filter options: %w", err)
+	}
+	if result.UserAccounts, err = pgx.CollectRows(rows, pgx.RowToStructByPos[types.FilterOption]); err != nil {
+		return nil, fmt.Errorf("could not scan user accounts for filter options: %w", err)
+	}
+
+	// Remote addresses
+	rows, err = db.Query(ctx,
+		`SELECT p.remote_address`+pullBaseJoin+`
+		WHERE a.organization_id = @orgId
+			AND p.remote_address IS NOT NULL
+		GROUP BY p.remote_address
+		ORDER BY p.remote_address`, args)
+	if err != nil {
+		return nil, fmt.Errorf("could not query remote addresses for filter options: %w", err)
+	}
+	if result.RemoteAddresses, err = pgx.CollectRows(rows, pgx.RowTo[string]); err != nil {
+		return nil, fmt.Errorf("could not scan remote addresses for filter options: %w", err)
+	}
+
+	// Artifacts
+	rows, err = db.Query(ctx,
+		`SELECT a.id, a.name`+pullBaseJoin+`
+		WHERE a.organization_id = @orgId
+		GROUP BY a.id, a.name
+		ORDER BY a.name`, args)
+	if err != nil {
+		return nil, fmt.Errorf("could not query artifacts for filter options: %w", err)
+	}
+	if result.Artifacts, err = pgx.CollectRows(rows, pgx.RowToStructByPos[types.FilterOption]); err != nil {
+		return nil, fmt.Errorf("could not scan artifacts for filter options: %w", err)
+	}
+
+	return result, nil
+}
+
+func GetArtifactVersionPullVersionOptions(
+	ctx context.Context,
+	orgID uuid.UUID,
+	artifactID uuid.UUID,
+) ([]types.FilterOption, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT v.id, v.name
+		FROM ArtifactVersionPull p
+			JOIN ArtifactVersion v ON v.id = p.artifact_version_id
+			JOIN Artifact a ON a.id = v.artifact_id
+		WHERE a.organization_id = @orgId
+			AND a.id = @artifactId
+		GROUP BY v.id, v.name
+		ORDER BY v.name`,
+		pgx.NamedArgs{"orgId": orgID, "artifactId": artifactID})
+	if err != nil {
+		return nil, fmt.Errorf("could not query artifact version options: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.FilterOption])
+	if err != nil {
+		return nil, fmt.Errorf("could not scan artifact version options: %w", err)
+	}
+	return result, nil
+}
+
+func GetArtifactVersionPulls(
+	ctx context.Context,
+	filter types.ArtifactVersionPullFilter,
 ) ([]types.ArtifactVersionPull, error) {
 	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(
-		ctx,
-		`SELECT
+
+	conditions := []string{
+		"a.organization_id = @orgId",
+		"p.created_at < @before",
+	}
+	args := pgx.NamedArgs{
+		"orgId":  filter.OrgID,
+		"before": filter.Before,
+		"count":  filter.Count,
+	}
+
+	if !filter.After.IsZero() {
+		conditions = append(conditions, "p.created_at > @after")
+		args["after"] = filter.After
+	}
+	if filter.CustomerOrganizationID != nil {
+		conditions = append(conditions, "p.customer_organization_id = @customerOrgId")
+		args["customerOrgId"] = *filter.CustomerOrganizationID
+	}
+	if filter.UserAccountID != nil {
+		conditions = append(conditions, "p.useraccount_id = @userAccountId")
+		args["userAccountId"] = *filter.UserAccountID
+	}
+	if filter.RemoteAddress != nil {
+		conditions = append(conditions, "p.remote_address = @remoteAddress")
+		args["remoteAddress"] = *filter.RemoteAddress
+	}
+	if filter.ArtifactID != nil {
+		conditions = append(conditions, "a.id = @artifactId")
+		args["artifactId"] = *filter.ArtifactID
+	}
+	if filter.ArtifactVersionID != nil {
+		conditions = append(conditions, "v.id = @artifactVersionId")
+		args["artifactVersionId"] = *filter.ArtifactVersionID
+	}
+
+	query := `SELECT
 			p.created_at,
 			p.remote_address,
-			CASE WHEN u.id IS NOT NULL THEN (`+userAccountOutputExpr+`) ELSE NULL END,
-			CASE WHEN co.id IS NOT NULL THEN (`+customerOrganizationOutputExpr+`) ELSE NULL END,
-			(`+artifactOutputExpr+`),
-			(`+artifactVersionOutputExpr+`)
+			CASE WHEN u.id IS NOT NULL THEN (` + userAccountOutputExpr + `) ELSE NULL END,
+			CASE WHEN co.id IS NOT NULL THEN (` + customerOrganizationOutputExpr + `) ELSE NULL END,
+			(` + artifactOutputExpr + `),
+			(` + artifactVersionOutputExpr + `)
 		FROM ArtifactVersionPull p
 			LEFT JOIN UserAccount u ON u.id = p.useraccount_id
 			LEFT JOIN CustomerOrganization co ON co.id = p.customer_organization_id
 			JOIN ArtifactVersion v ON v.id = p.artifact_version_id
-			JOIN Artifact A on a.id = v.artifact_id
-		WHERE a.organization_id = @orgId
-			AND p.created_at < @before
+			JOIN Artifact a ON a.id = v.artifact_id
+		WHERE ` + strings.Join(conditions, " AND ") + `
 		ORDER BY p.created_at DESC
-		LIMIT @count`,
-		pgx.NamedArgs{
-			"orgId":  orgID,
-			"count":  count,
-			"before": before,
-		},
-	)
+		LIMIT @count`
+
+	rows, err := db.Query(ctx, query, args)
 	if err != nil {
 		return nil, fmt.Errorf("could not query ArtifactVersionPulls: %w", err)
 	}

@@ -1,0 +1,1 @@
+-- No-op: port information cannot be restored once stripped
