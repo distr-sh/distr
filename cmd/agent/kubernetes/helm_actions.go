@@ -21,20 +21,13 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-var (
-	helmEnvSettings       = cli.New()
-	helmActionConfigCache = make(map[string]*action.Configuration)
-)
+var helmEnvSettings = cli.New()
 
 func GetHelmActionConfig(
 	ctx context.Context,
 	namespace string,
 	deployment *api.AgentDeployment,
 ) (*action.Configuration, error) {
-	if cfg, ok := helmActionConfigCache[namespace]; ok {
-		return cfg, nil
-	}
-
 	var cfg action.Configuration
 	cfg.SetLogger(slogzap.Option{Logger: logger.With(zap.String("component", "helm"))}.NewZapHandler())
 
@@ -116,7 +109,6 @@ func RunHelmInstall(
 
 	installAction := action.NewInstall(config)
 	installAction.ReleaseName = deployment.ReleaseName
-
 	installAction.Timeout = 5 * time.Minute
 	installAction.WaitStrategy = kube.StatusWatcherStrategy
 	installAction.DryRunStrategy = action.DryRunNone
@@ -164,12 +156,11 @@ func RunHelmUpgrade(
 	}
 
 	upgradeAction := action.NewUpgrade(cfg)
-	upgradeAction.CleanupOnFail = true
-
 	upgradeAction.Timeout = 5 * time.Minute
 	upgradeAction.WaitStrategy = kube.StatusWatcherStrategy
 	upgradeAction.DryRunStrategy = action.DryRunNone
 	upgradeAction.CleanupOnFail = true
+	upgradeAction.RollbackOnFailure = true
 	upgradeAction.Namespace = namespace
 	upgradeAction.PlainHTTP = agentenv.DistrRegistryPlainHTTP
 
