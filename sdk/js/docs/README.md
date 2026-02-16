@@ -16,6 +16,7 @@
 - [AgentVersion](interfaces/AgentVersion.md)
 - [Application](interfaces/Application.md)
 - [ApplicationVersion](interfaces/ApplicationVersion.md)
+- [ApplicationVersionResource](interfaces/ApplicationVersionResource.md)
 - [BaseModel](interfaces/BaseModel.md)
 - [CreateAccessTokenRequest](interfaces/CreateAccessTokenRequest.md)
 - [CreateUpdateCustomerOrganizationRequest](interfaces/CreateUpdateCustomerOrganizationRequest.md)

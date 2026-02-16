@@ -140,6 +140,26 @@ The low-level Distr API client. Each method represents on API endpoint.
 
 ---
 
+### getApplicationVersionResources()
+
+> **getApplicationVersionResources**(`applicationId`, `versionId`): `Promise`\<[`ApplicationVersionResource`](../interfaces/ApplicationVersionResource.md)[]\>
+
+#### Parameters
+
+##### applicationId
+
+`string`
+
+##### versionId
+
+`string`
+
+#### Returns
+
+`Promise`\<[`ApplicationVersionResource`](../interfaces/ApplicationVersionResource.md)[]\>
+
+---
+
 ### getDeploymentTarget()
 
 > **getDeploymentTarget**(`deploymentTargetId`): `Promise`\<[`DeploymentTarget`](../interfaces/DeploymentTarget.md)\>

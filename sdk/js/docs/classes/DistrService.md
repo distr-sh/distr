@@ -14,7 +14,7 @@ Under the hood it uses the low-level [Client](Client.md).
 
 ### Constructor
 
-> **new DistrService**(`config`, `latestVersionStrategy?`): `DistrService`
+> **new DistrService**(`config`, `latestVersionStrategy`): `DistrService`
 
 Creates a new DistrService instance. A client config containing an API key must be provided, optionally the API
 base URL can be set. Optionally, a strategy for determining the latest version of an application can be specified –
@@ -28,7 +28,7 @@ the default is semantic versioning.
 
 ClientConfig containing at least an API key and optionally an API base URL
 
-##### latestVersionStrategy?
+##### latestVersionStrategy
 
 [`LatestVersionStrategy`](../type-aliases/LatestVersionStrategy.md) = `'semver'`
 
@@ -91,6 +91,10 @@ Name of the new version
 
 `string`
 
+###### resources?
+
+[`ApplicationVersionResource`](../interfaces/ApplicationVersionResource.md)[]
+
 ###### templateFile?
 
 `string`
@@ -142,6 +146,10 @@ Creates a new application version for the given Kubernetes application using a H
 ###### linkTemplate?
 
 `string`
+
+###### resources?
+
+[`ApplicationVersionResource`](../interfaces/ApplicationVersionResource.md)[]
 
 ###### templateFile?
 

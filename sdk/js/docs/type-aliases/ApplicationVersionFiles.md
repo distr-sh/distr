@@ -22,6 +22,12 @@
 
 ---
 
+### resources?
+
+> `optional` **resources**: [`ApplicationVersionResource`](../interfaces/ApplicationVersionResource.md)[]
+
+---
+
 ### templateFile?
 
 > `optional` **templateFile**: `string`
