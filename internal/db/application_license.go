@@ -265,6 +265,81 @@ func GetApplicationLicenseByID(ctx context.Context, id uuid.UUID) (*types.Applic
 	}
 }
 
+func SetApplicationLicenseVersions(ctx context.Context, licenseID uuid.UUID, versionIDs []uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	_, err := db.Exec(
+		ctx,
+		`INSERT INTO ApplicationLicense_ApplicationVersion (application_license_id, application_version_id)
+		SELECT @licenseId, id FROM ApplicationVersion WHERE id = any(@versionIds)
+		ON CONFLICT (application_license_id, application_version_id) DO NOTHING`,
+		pgx.NamedArgs{
+			"licenseId":  licenseID,
+			"versionIds": versionIDs,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("could not insert version relations: %w", err)
+	}
+	_, err = db.Exec(
+		ctx,
+		`DELETE FROM ApplicationLicense_ApplicationVersion
+		WHERE application_license_id = @licenseId
+			AND NOT (application_version_id = any(@versionIds))`,
+		pgx.NamedArgs{
+			"licenseId":  licenseID,
+			"versionIds": versionIDs,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("could not delete version relations: %w", err)
+	}
+	return nil
+}
+
+func GetDeploymentsUsingVersionsNotInList(
+	ctx context.Context,
+	licenseID uuid.UUID,
+	allowedVersionIDs []uuid.UUID,
+) ([]types.DeploymentVersionUsage, error) {
+	if len(allowedVersionIDs) == 0 {
+		return nil, nil
+	}
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`SELECT
+			d.id AS deployment_id,
+			dt.name AS deployment_target_name,
+			dr.application_version_id AS application_version_id,
+			av.name AS application_version_name
+		FROM Deployment d
+			JOIN DeploymentTarget dt ON d.deployment_target_id = dt.id
+			JOIN (
+				SELECT deployment_id, max(created_at) AS max_created_at
+				FROM DeploymentRevision
+				GROUP BY deployment_id
+			) dr_max ON d.id = dr_max.deployment_id
+			JOIN DeploymentRevision dr
+				ON d.id = dr.deployment_id
+				AND dr.created_at = dr_max.max_created_at
+			JOIN ApplicationVersion av ON dr.application_version_id = av.id
+		WHERE d.application_license_id = @licenseId
+			AND dr.application_version_id != ALL(@allowedVersionIds)`,
+		pgx.NamedArgs{
+			"licenseId":         licenseID,
+			"allowedVersionIds": allowedVersionIDs,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query deployments using unlicensed versions: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.DeploymentVersionUsage])
+	if err != nil {
+		return nil, fmt.Errorf("could not collect deployment version usage: %w", err)
+	}
+	return result, nil
+}
+
 func DeleteApplicationLicenseWithID(ctx context.Context, id uuid.UUID) error {
 	db := internalctx.GetDb(ctx)
 	cmd, err := db.Exec(ctx, `DELETE FROM ApplicationLicense WHERE id = @id`, pgx.NamedArgs{"id": id})
