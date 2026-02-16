@@ -38,6 +38,7 @@ type AgentDeployment struct {
 	ChartVersion       string         `json:"chartVersion"`
 	Values             map[string]any `json:"values"`
 	IgnoreRevisionSkew bool           `json:"ignoreRevisionSkew"`
+	HelmOptions        *HelmOptions   `json:"helmOptions,omitempty"`
 }
 
 type AgentDeploymentStatus struct {

@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"text/template"
 
 	"github.com/compose-spec/compose-go/v2/dotenv"
@@ -77,6 +78,12 @@ func GetDeploymentsForDeploymentTarget(
 				dr.created_at AS deployment_revision_created_at,
 				dr.force_restart AS force_restart,
 				dr.ignore_revision_skew AS ignore_revision_skew,
+				CASE WHEN dr.helm_options_timeout IS NOT NULL THEN (
+					dr.helm_options_timeout,
+					dr.helm_options_wait_strategy,
+					dr.helm_options_rollback_on_failure,
+					dr.helm_options_cleanup_on_failure
+				) END AS helm_options,
 				a.id AS application_id,
 				a.name AS application_name,
 				(`+applicationOutputExpr+`) AS application,
@@ -328,24 +335,67 @@ func DeleteDeploymentWithID(ctx context.Context, id uuid.UUID) error {
 
 func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentRequest) (*types.DeploymentRevision, error) {
 	db := internalctx.GetDb(ctx)
+	args := pgx.NamedArgs{
+		"deploymentId":         request.DeploymentID,
+		"applicationVersionId": request.ApplicationVersionID,
+		"valuesYaml":           request.ValuesYaml,
+		"envFileData":          request.EnvFileData,
+		"forceRestart":         request.ForceRestart,
+		"ignoreRevisionSkew":   request.IgnoreRevisionSkew,
+	}
+
+	if request.HelmOptions != nil {
+		maps.Copy(args, pgx.NamedArgs{
+			"helmOptionsTimeout":           request.HelmOptions.Timeout,
+			"helmOptionsWaitStrategy":      request.HelmOptions.WaitStrategy,
+			"helmOptionsRollbackOnFailure": request.HelmOptions.RollbackOnFailure,
+			"helmOptionsCleanupOnFailure":  request.HelmOptions.CleanupOnFailure,
+		})
+	}
+
 	rows, err := db.Query(
 		ctx,
-		`INSERT INTO DeploymentRevision AS d
-			(deployment_id, application_version_id, values_yaml, env_file_data, force_restart, ignore_revision_skew)
-			VALUES (@deploymentId, @applicationVersionId, @valuesYaml, @envFileData, @forceRestart, @ignoreRevisionSkew)
-			RETURNING d.id, d.created_at, d.deployment_id, d.application_version_id, d.force_restart, d.ignore_revision_skew`,
-		pgx.NamedArgs{
-			"deploymentId":         request.DeploymentID,
-			"applicationVersionId": request.ApplicationVersionID,
-			"valuesYaml":           request.ValuesYaml,
-			"envFileData":          request.EnvFileData,
-			"forceRestart":         request.ForceRestart,
-			"ignoreRevisionSkew":   request.IgnoreRevisionSkew,
-		},
+		`INSERT INTO DeploymentRevision AS dr (
+			deployment_id,
+			application_version_id,
+			values_yaml,
+			env_file_data,
+			force_restart,
+			ignore_revision_skew,
+			helm_options_timeout,
+			helm_options_wait_strategy,
+			helm_options_rollback_on_failure,
+			helm_options_cleanup_on_failure
+		) VALUES (
+		 	@deploymentId,
+			@applicationVersionId,
+			@valuesYaml,
+			@envFileData,
+			@forceRestart,
+			@ignoreRevisionSkew,
+			@helmOptionsTimeout,
+			@helmOptionsWaitStrategy,
+			@helmOptionsRollbackOnFailure,
+			@helmOptionsCleanupOnFailure
+		) RETURNING
+		 	dr.id,
+			dr.created_at,
+			dr.deployment_id,
+			dr.application_version_id,
+			dr.force_restart,
+			dr.ignore_revision_skew,
+			CASE WHEN dr.helm_options_timeout IS NOT NULL THEN (
+				dr.helm_options_timeout,
+				dr.helm_options_wait_strategy,
+				dr.helm_options_rollback_on_failure,
+				dr.helm_options_cleanup_on_failure
+			) END as helm_options`,
+		args,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query DeploymentRevision: %w", err)
 	}
+
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.DeploymentRevision])
 	if err != nil {
 		return nil, fmt.Errorf("could not save DeploymentRevision: %w", err)
@@ -381,7 +431,7 @@ func GetDeploymentRevisionIDs(ctx context.Context, deploymentID uuid.UUID) ([]uu
 	rows, err := db.Query(
 		ctx,
 		"SELECT id from DeploymentRevision WHERE deployment_id = @deploymentId",
-		pgx.NamedArgs{"deploymentId": deploymentID},
+		pgx.NamedArgs{"de ploymentId": deploymentID},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query DeploymentRevision IDs: %w", err)

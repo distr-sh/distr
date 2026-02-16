@@ -1,4 +1,4 @@
-import {AsyncPipe} from '@angular/common';
+import {AsyncPipe, JsonPipe} from '@angular/common';
 import {
   AfterViewInit,
   Component,
@@ -21,7 +21,7 @@ import {
   Validators,
 } from '@angular/forms';
 import {RouterLink} from '@angular/router';
-import {DeploymentRequest, DeploymentType} from '@distr-sh/distr-sdk';
+import {DeploymentRequest, DeploymentType, HelmOptions} from '@distr-sh/distr-sdk';
 import {
   BehaviorSubject,
   catchError,
@@ -39,7 +39,7 @@ import {
   takeUntil,
 } from 'rxjs';
 import {isArchived} from '../../../util/dates';
-import {HELM_RELEASE_NAME_MAX_LENGTH, HELM_RELEASE_NAME_REGEX} from '../../../util/validation';
+import {DURATION_REGEX, HELM_RELEASE_NAME_MAX_LENGTH, HELM_RELEASE_NAME_REGEX} from '../../../util/validation';
 import {EditorComponent} from '../../components/editor.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {ApplicationsService} from '../../services/applications.service';
@@ -59,6 +59,7 @@ export type DeploymentFormValue = Partial<{
   logsEnabled: boolean;
   forceRestart: boolean;
   ignoreRevisionSkew: boolean;
+  helmOptions: Partial<HelmOptions>;
 }>;
 
 export function mapToDeploymentRequest(value: DeploymentFormValue, deploymentTargetId: string): DeploymentRequest {
@@ -74,6 +75,7 @@ export function mapToDeploymentRequest(value: DeploymentFormValue, deploymentTar
     logsEnabled: value.logsEnabled ?? false,
     forceRestart: value.forceRestart ?? false,
     ignoreRevisionSkew: value.ignoreRevisionSkew ?? false,
+    helmOptions: value.helmOptions as HelmOptions | undefined,
   };
 }
 
@@ -81,7 +83,7 @@ type DeploymentFormValueCallback = (v: DeploymentFormValue | undefined) => void;
 
 @Component({
   selector: 'app-deployment-form',
-  imports: [ReactiveFormsModule, AsyncPipe, EditorComponent, AutotrimDirective, RouterLink],
+  imports: [ReactiveFormsModule, AsyncPipe, EditorComponent, AutotrimDirective, RouterLink, JsonPipe],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -106,27 +108,34 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
   protected readonly auth = inject(AuthService);
   private readonly applications = inject(ApplicationsService);
   private readonly licenses = inject(LicensesService);
-  private readonly fb = inject(FormBuilder);
+  private readonly fb = inject(FormBuilder).nonNullable;
   private readonly injector = inject(Injector);
 
-  protected readonly deployForm = this.fb.nonNullable.group({
-    deploymentId: this.fb.nonNullable.control<string | undefined>(undefined),
-    applicationId: this.fb.nonNullable.control('', Validators.required),
-    applicationVersionId: this.fb.nonNullable.control('', Validators.required),
-    applicationLicenseId: this.fb.nonNullable.control('', Validators.required),
-    releaseName: this.fb.nonNullable.control('', [
+  protected readonly deployForm = this.fb.group({
+    deploymentId: this.fb.control<string | undefined>(undefined),
+    applicationId: this.fb.control('', Validators.required),
+    applicationVersionId: this.fb.control('', Validators.required),
+    applicationLicenseId: this.fb.control('', Validators.required),
+    releaseName: this.fb.control('', [
       Validators.required,
       Validators.maxLength(HELM_RELEASE_NAME_MAX_LENGTH),
       Validators.pattern(HELM_RELEASE_NAME_REGEX),
     ]),
-    valuesYaml: this.fb.nonNullable.control(''),
-    envFileData: this.fb.nonNullable.control(''),
-    swarmMode: this.fb.nonNullable.control<boolean>(false),
-    logsEnabled: this.fb.nonNullable.control<boolean>(true),
-    forceRestart: this.fb.nonNullable.control<boolean>(false),
-    ignoreRevisionSkew: this.fb.nonNullable.control<boolean>(false),
+    valuesYaml: this.fb.control(''),
+    envFileData: this.fb.control(''),
+    swarmMode: this.fb.control(false),
+    logsEnabled: this.fb.control(true),
+    forceRestart: this.fb.control(false),
+    ignoreRevisionSkew: this.fb.control(false),
+    helmOptionsEnabled: this.fb.control(false),
+    helmOptions: this.fb.group({
+      timeout: this.fb.control('15m', [Validators.required, Validators.pattern(DURATION_REGEX)]),
+      waitStrategy: this.fb.control('watcher', [Validators.required]),
+      rollbackOnFailure: this.fb.control(true),
+      cleanupOnFailure: this.fb.control(true),
+    }),
   });
-  protected readonly composeFile = this.fb.nonNullable.control({disabled: true, value: ''});
+  protected readonly composeFile = this.fb.control({disabled: true, value: ''});
 
   private readonly deploymentId$ = this.deployForm.controls.deploymentId.valueChanges.pipe(
     startWith(this.deployForm.controls.deploymentId.value),
@@ -291,7 +300,9 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
         if (type === 'kubernetes') {
           this.deployForm.controls.releaseName.enable();
           this.deployForm.controls.valuesYaml.enable();
+          this.deployForm.controls.helmOptionsEnabled.enable();
           this.deployForm.controls.envFileData.disable();
+
           const targetName = this.deploymentTargetName();
           if (!this.deployForm.value.releaseName && targetName) {
             this.deployForm.patchValue({
@@ -302,6 +313,7 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
           this.deployForm.controls.envFileData.enable();
           this.deployForm.controls.releaseName.disable();
           this.deployForm.controls.valuesYaml.disable();
+          this.deployForm.controls.helmOptionsEnabled.disable();
         }
       }
     });
@@ -389,6 +401,14 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
       }
     });
 
+    this.deployForm.controls.helmOptionsEnabled.valueChanges.pipe(takeUntil(this.destroyed$)).subscribe((enabled) => {
+      if (enabled) {
+        this.deployForm.controls.helmOptions.enable();
+      } else {
+        this.deployForm.controls.helmOptions.disable();
+      }
+    });
+
     // This is needed because the first value could be missed otherwise
     // TODO: Find a better solution for this
     this.applicationLicenseId$.pipe(takeUntil(this.destroyed$)).subscribe();
@@ -431,7 +451,7 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
 
   writeValue(obj: DeploymentFormValue | null | undefined): void {
     if (obj) {
-      this.deployForm.patchValue(obj);
+      this.deployForm.patchValue({...obj, helmOptionsEnabled: !!obj.helmOptions});
     } else {
       this.deployForm.reset();
     }

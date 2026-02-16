@@ -29,6 +29,7 @@
 - [DeploymentTargetResources](interfaces/DeploymentTargetResources.md)
 - [DeploymentTargetStatus](interfaces/DeploymentTargetStatus.md)
 - [DeploymentWithLatestRevision](interfaces/DeploymentWithLatestRevision.md)
+- [HelmOptions](interfaces/HelmOptions.md)
 - [Named](interfaces/Named.md)
 - [OrganizationBranding](interfaces/OrganizationBranding.md)
 - [PatchApplicationRequest](interfaces/PatchApplicationRequest.md)

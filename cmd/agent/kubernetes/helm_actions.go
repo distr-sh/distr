@@ -109,12 +109,19 @@ func RunHelmInstall(
 
 	installAction := action.NewInstall(config)
 	installAction.ReleaseName = deployment.ReleaseName
-	installAction.Timeout = 5 * time.Minute
-	installAction.WaitStrategy = kube.StatusWatcherStrategy
 	installAction.DryRunStrategy = action.DryRunNone
-	installAction.RollbackOnFailure = true
 	installAction.Namespace = namespace
 	installAction.PlainHTTP = agentenv.DistrRegistryPlainHTTP
+
+	if deployment.HelmOptions != nil {
+		installAction.Timeout = time.Duration(deployment.HelmOptions.Timeout)
+		installAction.WaitStrategy = kube.WaitStrategy(deployment.HelmOptions.WaitStrategy)
+		installAction.RollbackOnFailure = deployment.HelmOptions.RollbackOnFailure
+	} else {
+		installAction.Timeout = 5 * time.Minute
+		installAction.WaitStrategy = kube.StatusWatcherStrategy
+		installAction.RollbackOnFailure = true
+	}
 
 	c, err := RunHelmPreflight(&installAction.ChartPathOptions, deployment)
 	if err != nil {
@@ -156,13 +163,21 @@ func RunHelmUpgrade(
 	}
 
 	upgradeAction := action.NewUpgrade(cfg)
-	upgradeAction.Timeout = 5 * time.Minute
-	upgradeAction.WaitStrategy = kube.StatusWatcherStrategy
 	upgradeAction.DryRunStrategy = action.DryRunNone
-	upgradeAction.CleanupOnFail = true
-	upgradeAction.RollbackOnFailure = true
 	upgradeAction.Namespace = namespace
 	upgradeAction.PlainHTTP = agentenv.DistrRegistryPlainHTTP
+
+	if deployment.HelmOptions != nil {
+		upgradeAction.Timeout = time.Duration(deployment.HelmOptions.Timeout)
+		upgradeAction.WaitStrategy = kube.WaitStrategy(deployment.HelmOptions.WaitStrategy)
+		upgradeAction.RollbackOnFailure = deployment.HelmOptions.RollbackOnFailure
+		upgradeAction.CleanupOnFail = deployment.HelmOptions.CleanupOnFailure
+	} else {
+		upgradeAction.Timeout = 5 * time.Minute
+		upgradeAction.WaitStrategy = kube.StatusWatcherStrategy
+		upgradeAction.RollbackOnFailure = true
+		upgradeAction.CleanupOnFail = true
+	}
 
 	chart, err := RunHelmPreflight(&upgradeAction.ChartPathOptions, deployment)
 	if err != nil {

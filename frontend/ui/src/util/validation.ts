@@ -6,6 +6,14 @@ export const HELM_RELEASE_NAME_REGEX = /^[a-z0-9]([-a-z0-9]*)?[a-z0-9]$/;
 export const HELM_RELEASE_NAME_MAX_LENGTH = 53;
 
 /**
+ * Pattern for a valid time.Duration from the Goland standard library
+ *
+ * @see https://pkg.go.dev/time#ParseDuration
+ */
+export const DURATION_REGEX =
+  /^(\d+(\.\d+)?h)?(\d+(\.\d+)?m)?(\d+(\.\d+)?s)?(\d+(\.\d+)?ms)?(\d+(\.\d+)?us)?(\d+(\.\d+)?ns)?$/;
+
+/**
  * The serialization format is:
  *
  * ```
