@@ -24,7 +24,6 @@ import {
   faEdit,
   faEye,
   faMagnifyingGlass,
-  faMinus,
   faPlus,
   faTrash,
   faXmark,
@@ -183,6 +182,10 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   protected readonly faArchive = faArchive;
   protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faBox = faBox;
+  protected readonly faEye = faEye;
+  protected readonly faPlus = faPlus;
+
+  protected readonly resourcePreviewIndices = signal(new Set<number>());
 
   protected readonly isArchived = isArchived;
   readonly breadcrumbDropdown = signal(false);
@@ -521,12 +524,6 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
       versions.every((version) => this.isVersionSelected(version))
     );
   }
-
-  protected readonly faEye = faEye;
-  protected readonly faPlus = faPlus;
-  protected readonly faMinus = faMinus;
-
-  protected readonly resourcePreviewIndices = signal(new Set<number>());
 
   toggleResourcePreview(index: number) {
     this.resourcePreviewIndices.update((set) => {
