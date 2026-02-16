@@ -233,9 +233,14 @@ func verifyLatestHelmRelease(
 		return fmt.Errorf("could not get latest helm revision: %w", err)
 	} else if currentDeployment == nil {
 		return fmt.Errorf("helm release %v already exists but was not created by the agent", latestRelease.Name)
-	} else if currentDeployment.HelmRevision != latestRelease.Version {
-		msg := fmt.Sprintf("actual helm revision for %v (%v) is different from latest deployed by agent (%v)",
-			latestRelease.Name, latestRelease.Version, currentDeployment.HelmRevision)
+	} else if currentDeployment.HelmRevision != nil && *currentDeployment.HelmRevision != latestRelease.Version {
+		msg := fmt.Sprintf("actual helm revision for %v (%v) is different from latest deployed by agent",
+			latestRelease.Name, latestRelease.Version)
+		if currentDeployment.HelmRevision != nil {
+			msg += fmt.Sprintf(" (%v)", *currentDeployment.HelmRevision)
+		} else {
+			msg += " (<nil>)"
+		}
 		if deployment.IgnoreRevisionSkew {
 			logger.Warn(msg)
 			return nil
@@ -263,12 +268,10 @@ func runInstallOrUpgrade(
 		pushErrorStatus(ctx, deployment, fmt.Errorf("failed to ensure image pull secret: %w", err))
 	}
 
-	if currentDeployment == nil {
+	if currentDeployment == nil || currentDeployment.HelmRevision == nil {
 		err := progress.Run(ctx, func() error {
-			if installedDeployment, err := RunHelmInstall(ctx, namespace, deployment); err != nil {
+			if _, err := RunHelmInstall(ctx, namespace, deployment); err != nil {
 				return fmt.Errorf("helm install failed: %w", err)
-			} else if err = SaveDeployment(ctx, namespace, *installedDeployment); err != nil {
-				return fmt.Errorf("could not save latest deployment: %w", err)
 			}
 			return nil
 		})
@@ -284,8 +287,6 @@ func runInstallOrUpgrade(
 		err := progress.Run(ctx, func() error {
 			if updatedDeployment, err := RunHelmUpgrade(ctx, namespace, deployment); err != nil {
 				return fmt.Errorf("helm upgrade failed: %w", err)
-			} else if err := SaveDeployment(ctx, namespace, *updatedDeployment); err != nil {
-				return fmt.Errorf("could not save latest deployment: %w", err)
 			} else if deployment.ForceRestart {
 				if err := ForceRestart(ctx, namespace, *updatedDeployment); err != nil {
 					pushErrorStatus(ctx, deployment, fmt.Errorf("%v; force restart error: %w", successMessage, err))

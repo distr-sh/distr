@@ -8,7 +8,7 @@ import (
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/agentauth"
 	"github.com/distr-sh/distr/internal/agentenv"
-	"github.com/distr-sh/distr/internal/util"
+	"go.uber.org/zap"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
@@ -112,13 +112,32 @@ func RunHelmInstall(
 	installAction.Atomic = true
 	installAction.Namespace = namespace
 	installAction.PlainHTTP = agentenv.DistrRegistryPlainHTTP
-	if chart, err := RunHelmPreflight(&installAction.ChartPathOptions, deployment); err != nil {
+
+	chart, err := RunHelmPreflight(&installAction.ChartPathOptions, deployment)
+	if err != nil {
 		return nil, fmt.Errorf("helm preflight failed: %w", err)
-	} else if release, err := installAction.RunWithContext(ctx, chart, deployment.Values); err != nil {
-		return nil, fmt.Errorf("helm install failed: %w", err)
-	} else {
-		return util.PtrTo(NewAgentDeployment(deployment, release)), nil
 	}
+
+	agentDeployment := NewAgentDeployment(deployment)
+	agentDeployment.State = StateProgressing
+	if err := SaveDeployment(ctx, namespace, agentDeployment); err != nil {
+		logger.Warn("failed to save deployment before install", zap.Error(err))
+	}
+
+	release, err := installAction.RunWithContext(ctx, chart, deployment.Values)
+	if err != nil {
+		err = fmt.Errorf("helm install failed: %w", err)
+		agentDeployment.State = StateFailed
+	} else {
+		agentDeployment.State = StateReady
+		agentDeployment.HelmRevision = &release.Version
+	}
+
+	if err := SaveDeployment(ctx, namespace, agentDeployment); err != nil {
+		logger.Warn("failed to save deployment after install", zap.Error(err))
+	}
+
+	return &agentDeployment, err
 }
 
 func RunHelmUpgrade(
@@ -139,14 +158,25 @@ func RunHelmUpgrade(
 	upgradeAction.Atomic = true
 	upgradeAction.Namespace = namespace
 	upgradeAction.PlainHTTP = agentenv.DistrRegistryPlainHTTP
-	if chart, err := RunHelmPreflight(&upgradeAction.ChartPathOptions, deployment); err != nil {
+
+	chart, err := RunHelmPreflight(&upgradeAction.ChartPathOptions, deployment)
+	if err != nil {
 		return nil, fmt.Errorf("helm preflight failed: %w", err)
-	} else if release, err := upgradeAction.RunWithContext(
-		ctx, deployment.ReleaseName, chart, deployment.Values); err != nil {
-		return nil, fmt.Errorf("helm upgrade failed: %w", err)
-	} else {
-		return util.PtrTo(NewAgentDeployment(deployment, release)), nil
 	}
+
+	release, err := upgradeAction.RunWithContext(ctx, deployment.ReleaseName, chart, deployment.Values)
+	if err != nil {
+		return nil, fmt.Errorf("helm upgrade failed: %w", err)
+	}
+
+	agentDeployment := NewAgentDeployment(deployment)
+	agentDeployment.State = StateReady
+	agentDeployment.HelmRevision = &release.Version
+	if err := SaveDeployment(ctx, namespace, agentDeployment); err != nil {
+		logger.Warn("failed to save deployment after upgrade", zap.Error(err))
+	}
+
+	return &agentDeployment, err
 }
 
 func RunHelmUninstall(ctx context.Context, namespace, releaseName string) error {

@@ -3,8 +3,10 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"slices"
+	"strings"
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
@@ -135,50 +137,45 @@ func updateApplicationLicense(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		for _, version := range license.Versions {
-			alreadyExists := slices.ContainsFunc(existing.Versions, func(v types.ApplicationVersion) bool {
-				return v.ID == version.ID
-			})
-			if !alreadyExists {
-				if len(existing.Versions) == 0 {
-					// we don't allow narrowing down the scope yet. If the existing license allows all versions,
-					// setting some specific ones is not possible anymore
-					err = errors.New("narrowing down license scope is not allowed yet")
-					http.Error(w, err.Error(), http.StatusBadRequest)
-					return err
-				} else {
-					if err := db.AddVersionToApplicationLicense(ctx, &license.ApplicationLicenseBase, version.ID); err != nil {
-						log.Warn("could not add version to license", zap.Error(err))
-						sentry.GetHubFromContext(ctx).CaptureException(err)
-						http.Error(w, err.Error(), http.StatusInternalServerError)
-						return err
+		newVersionIDs := make([]uuid.UUID, len(license.Versions))
+		for i, v := range license.Versions {
+			newVersionIDs[i] = v.ID
+		}
+
+		isNarrowing := false
+		if len(license.Versions) > 0 {
+			if len(existing.Versions) == 0 {
+				isNarrowing = true
+			} else {
+				for _, ev := range existing.Versions {
+					if !slices.ContainsFunc(license.Versions, func(v types.ApplicationVersion) bool {
+						return v.ID == ev.ID
+					}) {
+						isNarrowing = true
+						break
 					}
 				}
 			}
 		}
 
-		for _, existingVersion := range existing.Versions {
-			stillExists := slices.ContainsFunc(license.Versions, func(v types.ApplicationVersion) bool {
-				return v.ID == existingVersion.ID
-			})
-			if !stillExists {
-				if len(license.Versions) > 0 {
-					// for now, removing specific versions from the license is not possible
-					// for removal we also would have to check whether this version is used in some deployment target
-					err = errors.New("narrowing down license scope is not allowed yet")
-					http.Error(w, err.Error(), http.StatusBadRequest)
-					return err
-				} else {
-					// however removing the relations is possible iff the user chose "all versions" by versions = []
-					if err := db.RemoveVersionFromApplicationLicense(
-						ctx, &license.ApplicationLicenseBase, existingVersion.ID); err != nil {
-						log.Warn("could not remove version from license", zap.Error(err))
-						sentry.GetHubFromContext(ctx).CaptureException(err)
-						http.Error(w, err.Error(), http.StatusInternalServerError)
-						return err
-					}
-				}
+		if isNarrowing {
+			if conflicts, err := db.GetDeploymentsUsingVersionsNotInList(ctx, license.ID, newVersionIDs); err != nil {
+				log.Warn("could not check deployment version usage", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return err
+			} else if len(conflicts) > 0 {
+				msg := formatVersionConflictError(conflicts)
+				http.Error(w, msg, http.StatusConflict)
+				return errors.New(msg)
 			}
+		}
+
+		if err := db.SetApplicationLicenseVersions(ctx, license.ID, newVersionIDs); err != nil {
+			log.Warn("could not update license versions", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return err
 		}
 
 		if updatedLicense, err := db.GetApplicationLicenseByID(ctx, license.ID); err != nil {
@@ -191,6 +188,20 @@ func updateApplicationLicense(w http.ResponseWriter, r *http.Request) {
 
 		return nil
 	})
+}
+
+func formatVersionConflictError(conflicts []types.DeploymentVersionUsage) string {
+	details := make([]string, len(conflicts))
+	for i, c := range conflicts {
+		details[i] = fmt.Sprintf(
+			"deployment target %q uses version %q",
+			c.DeploymentTargetName, c.ApplicationVersionName,
+		)
+	}
+	return fmt.Sprintf(
+		"cannot narrow license scope: %s",
+		strings.Join(details, ", "),
+	)
 }
 
 func sanitizeRegistryInput(license types.ApplicationLicenseWithVersions) {

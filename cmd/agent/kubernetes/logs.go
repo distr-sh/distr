@@ -8,26 +8,24 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/internal/deploymentlogs"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	applyconfigurationscorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/kubectl/pkg/polymorphichelpers"
 )
 
 type logsWatcher struct {
 	logsExporter deploymentlogs.Exporter
-	last         map[uuid.UUID]metav1.Time
 	namespace    string
 }
 
 func NewLogsWatcher(namespace string) *logsWatcher {
 	return &logsWatcher{
 		logsExporter: deploymentlogs.ChunkExporter(agentClient, 100),
-		last:         make(map[uuid.UUID]metav1.Time),
 		namespace:    namespace,
 	}
 }
@@ -58,6 +56,12 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 	collector := deploymentlogs.NewCollector()
 
 	for _, d := range existingDeployments {
+		lastTimestamp, err := GetLastLogsTimestamp(ctx, lw.namespace, d)
+		if err != nil {
+			logger.Error("could not get last logs timestamp for deployment", zap.Error(err))
+			continue
+		}
+
 		logger := logger.With(zap.Any("deploymentId", d.ID))
 		if !d.LogsEnabled {
 			logger.Debug("skip deployment with logs disabled")
@@ -73,7 +77,7 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 		}
 
 		deploymentCollector := collector.For(d)
-		now := metav1.Now()
+		now := time.Now()
 		var toplevelErr error
 
 		responseMap := map[corev1.ObjectReference]rest.ResponseWrapper{}
@@ -96,10 +100,8 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 			}
 
 			logOptions := corev1.PodLogOptions{Timestamps: true}
-			if since, ok := lw.last[d.ID]; ok {
-				logOptions.SinceTime = &since
-			} else {
-				logOptions.SinceTime = &now
+			if lastTimestamp != nil {
+				logOptions.SinceTime = &metav1.Time{Time: *lastTimestamp}
 			}
 
 			logger.Sugar().Debugf("get logs since %v", logOptions.SinceTime)
@@ -156,12 +158,44 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 		}
 
 		if toplevelErr == nil {
-			lw.last[d.ID] = now
+			if err := UpdateLastLogsTimestamp(ctx, lw.namespace, d, now); err != nil {
+				logger.Warn("could not update last logs timestamp for deployment", zap.Error(err))
+			}
 		}
 	}
 
 	logger.Sugar().Debugf("exporting %v log records", len(collector.LogRecords()))
 	if err := lw.logsExporter.ExportDeploymentLogs(ctx, collector.LogRecords()); err != nil {
 		logger.Warn("error exporting logs", zap.Error(err))
+	}
+}
+
+func UpdateLastLogsTimestamp(
+	ctx context.Context,
+	namespace string,
+	deployment AgentDeployment,
+	timestamp time.Time,
+) error {
+	_, err := k8sClient.CoreV1().Secrets(namespace).Apply(
+		ctx,
+		applyconfigurationscorev1.Secret(deployment.SecretName(), namespace).
+			WithStringData(map[string]string{
+				"lastLogTimestamp": timestamp.Format(time.RFC3339Nano),
+			}),
+		metav1.ApplyOptions{Force: true, FieldManager: "distr-agent-logs"},
+	)
+	return err
+}
+
+func GetLastLogsTimestamp(ctx context.Context, namespace string, deployment AgentDeployment) (*time.Time, error) {
+	if secret, err := k8sClient.CoreV1().Secrets(namespace).
+		Get(ctx, deployment.SecretName(), metav1.GetOptions{}); err != nil {
+		return nil, err
+	} else if timeStr, ok := secret.Data["lastLogTimestamp"]; !ok {
+		return nil, nil
+	} else if parsed, err := time.Parse(time.RFC3339Nano, string(timeStr)); err != nil {
+		return nil, err
+	} else {
+		return &parsed, nil
 	}
 }
