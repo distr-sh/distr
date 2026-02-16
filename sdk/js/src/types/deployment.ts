@@ -20,6 +20,14 @@ export interface DeploymentRequest {
   logsEnabled?: boolean;
   forceRestart?: boolean;
   ignoreRevisionSkew?: boolean;
+  helmOptions?: HelmOptions;
+}
+
+export interface HelmOptions {
+  timeout: string;
+  waitStrategy: string;
+  rollbackOnFailure: boolean;
+  cleanupOnFailure: boolean;
 }
 
 export interface PatchDeploymentRequest {
@@ -45,6 +53,7 @@ export interface DeploymentWithLatestRevision extends Deployment {
   deploymentRevisionId?: string;
   deploymentRevisionCreatedAt?: string;
   latestStatus?: DeploymentRevisionStatus;
+  helmOptions?: HelmOptions;
 }
 
 export interface DeploymentRevisionStatus extends BaseModel {

@@ -105,6 +105,7 @@ export class DeploymentModalComponent {
         valuesYaml: deployment?.valuesYaml ? atob(deployment.valuesYaml) : undefined,
         swarmMode: deployment?.dockerType === 'swarm',
         envFileData: deployment?.envFileData ? atob(deployment.envFileData) : undefined,
+        helmOptions: deployment?.helmOptions,
       });
     });
   }

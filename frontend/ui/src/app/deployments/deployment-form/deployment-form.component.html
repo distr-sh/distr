@@ -50,7 +50,7 @@
   @if (deployForm.controls.releaseName.enabled) {
     <div class="col-span-2">
       <label for="release-name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-        Helm relase name
+        Helm release name
       </label>
       <input
         type="text"
@@ -79,7 +79,10 @@
       @if (auth.hasAnyRole('read_write', 'admin')) {
         <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
           You can
-          <a [routerLink]="secretsUrl()" target="_blank" class="text-primary-600 underline"
+          <a
+            [routerLink]="secretsUrl()"
+            target="_blank"
+            class="font-medium text-primary-600 hover:underline dark:text-primary-500"
             >configure and reference secrets</a
           >
           in your Helm values.
@@ -222,6 +225,86 @@
           formControlName="logsEnabled" />
         <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Enable logs collection</span>
       </label>
+    </div>
+  }
+
+  @if (deployForm.controls.helmOptionsEnabled.enabled) {
+    <div class="col-span-2 space-y-2">
+      <label class="inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
+        <input
+          type="checkbox"
+          class="size-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+          formControlName="helmOptionsEnabled" />
+        <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Customize Helm options</span>
+      </label>
+
+      @if (deployForm.controls.helmOptions.enabled) {
+        @let fg = deployForm.controls.helmOptions;
+        <fieldset
+          class="py-3 px-4 grid gap-4 grid-cols-1 md:grid-cols-2 rounded-lg border border-gray-300 dark:border-gray-500"
+          formGroupName="helmOptions">
+          <legend class="sr-only">Helm options</legend>
+
+          <div>
+            <label
+              for="helm-options-wait-strategy"
+              class="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+              Wait strategy
+            </label>
+            <select
+              id="helm-options-wait-strategy"
+              formControlName="waitStrategy"
+              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-60">
+              <option value="watcher">Watcher</option>
+              <option value="hookOnly">Hook only</option>
+              <option value="legacy">Legacy</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="helm-options-timeout" class="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+              Timeout
+            </label>
+            <input
+              type="text"
+              id="helm-options-timeout"
+              autotrim
+              formControlName="timeout"
+              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+            @if (fg.controls.timeout.touched && fg.controls.timeout.invalid) {
+              <p class="mt-1 text-sm text-red-600 dark:text-red-500">
+                Please enter a valid duration. Examples: <code>1h30m</code>, <code>5m</code>, <code>1m30s</code>
+              </p>
+            }
+          </div>
+
+          <label class="col-span-2 inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
+            <input
+              type="checkbox"
+              class="size-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+              formControlName="rollbackOnFailure" />
+            <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Rollback on failure</span>
+          </label>
+          <label class="col-span-2 inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
+            <input
+              type="checkbox"
+              class="size-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+              formControlName="cleanupOnFailure" />
+            <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Cleanup on failure</span>
+          </label>
+
+          <div class="col-span-2 text-xs text-gray-500">
+            Please refer to the
+            <a
+              class="font-medium text-primary-600 hover:underline dark:text-primary-500"
+              href="https://helm.sh/docs/helm/helm_upgrade#options"
+              target="_blank"
+              >Helm documentation</a
+            >
+            for details about the above options.
+          </div>
+        </fieldset>
+      }
     </div>
   }
 </div>

@@ -272,6 +272,14 @@ func agentResourcesHandler(w http.ResponseWriter, r *http.Request) {
 				if *appVersion.ChartType == types.HelmChartTypeRepository {
 					agentDeployment.ChartName = *appVersion.ChartName
 				}
+				if deployment.HelmOptions != nil {
+					agentDeployment.HelmOptions = &api.HelmOptions{
+						Timeout:           deployment.HelmOptions.Timeout,
+						WaitStrategy:      deployment.HelmOptions.WaitStrategy,
+						RollbackOnFailure: deployment.HelmOptions.RollbackOnFailure,
+						CleanupOnFailure:  deployment.HelmOptions.CleanupOnFailure,
+					}
+				}
 			}
 			agentResource.Deployments = append(agentResource.Deployments, agentDeployment)
 		}

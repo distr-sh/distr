@@ -24,6 +24,7 @@ type DeploymentRequest struct {
 	LogsEnabled          bool              `json:"logsEnabled"`
 	ForceRestart         bool              `json:"forceRestart"`
 	IgnoreRevisionSkew   bool              `json:"ignoreRevisionSkew"`
+	HelmOptions          *HelmOptions      `json:"helmOptions,omitempty"`
 }
 
 func (d *DeploymentRequest) GetValuesYAML() []byte {
@@ -36,4 +37,11 @@ func (d *DeploymentRequest) GetEnvFileData() []byte {
 
 type PatchDeploymentRequest struct {
 	LogsEnabled *bool `json:"logsEnabled,omitempty"`
+}
+
+type HelmOptions struct {
+	Timeout           types.Duration `json:"timeout"`
+	WaitStrategy      string         `json:"waitStrategy"`
+	RollbackOnFailure bool           `json:"rollbackOnFailure"`
+	CleanupOnFailure  bool           `json:"cleanupOnFailure"`
 }

@@ -110,6 +110,12 @@ Use application.name instead
 
 ---
 
+### helmOptions?
+
+> `optional` **helmOptions**: [`HelmOptions`](HelmOptions.md)
+
+---
+
 ### id?
 
 > `optional` **id**: `string`

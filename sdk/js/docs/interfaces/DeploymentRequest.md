@@ -50,6 +50,12 @@
 
 ---
 
+### helmOptions?
+
+> `optional` **helmOptions**: [`HelmOptions`](HelmOptions.md)
+
+---
+
 ### ignoreRevisionSkew?
 
 > `optional` **ignoreRevisionSkew**: `boolean`

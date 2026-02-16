@@ -177,3 +177,40 @@ func (src Digest) TextValue() (pgtype.Text, error) {
 func (h Digest) MarshalJSON() ([]byte, error) {
 	return json.Marshal(string(h))
 }
+
+type Duration time.Duration
+
+func (d Duration) String() string {
+	return time.Duration(d).String()
+}
+
+func (d Duration) TextValue() (pgtype.Text, error) {
+	return pgtype.Text{String: d.String(), Valid: true}, nil
+}
+
+func (d *Duration) Scan(src any) error {
+	if srcStr, ok := src.(string); !ok {
+		return errors.New("src must be a string")
+	} else if h, err := time.ParseDuration(srcStr); err != nil {
+		return err
+	} else {
+		*d = Duration(h)
+		return nil
+	}
+}
+
+func (d *Duration) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	} else if p, err := time.ParseDuration(s); err != nil {
+		return err
+	} else {
+		*d = Duration(p)
+		return nil
+	}
+}
+
+func (d Duration) MarshalJSON() ([]byte, error) {
+	return json.Marshal(d.String())
+}
