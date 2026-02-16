@@ -13,12 +13,22 @@ import (
 	"github.com/google/uuid"
 )
 
+type State string
+
+const (
+	StateUnspecified State = ""
+	StateProgressing State = "progressing"
+	StateReady       State = "ready"
+	StateFailed      State = "failed"
+)
+
 type AgentDeployment struct {
 	ID          uuid.UUID        `json:"id"`
 	RevisionID  uuid.UUID        `json:"revisionId"`
 	ProjectName string           `json:"projectName"`
 	DockerType  types.DockerType `json:"docker_type,omitempty"`
 	LogsEnabled bool             `json:"logsEnabled"`
+	State       State            `json:"phase"`
 }
 
 func (d AgentDeployment) GetDeploymentID() uuid.UUID {
