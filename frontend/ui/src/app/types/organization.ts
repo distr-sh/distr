@@ -16,6 +16,7 @@ export interface CreateUpdateOrganizationRequest {
   postConnectScript?: string;
   connectScriptIsSudo: boolean;
   artifactVersionMutable: boolean;
+  prePostScriptsEnabled: boolean;
 }
 
 export interface Organization extends BaseModel, Named {
