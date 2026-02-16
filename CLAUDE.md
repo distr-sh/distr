@@ -170,6 +170,21 @@ err := db.BeginFunc(ctx, func(tx pgx.Tx) error {
 })
 ```
 
+### Batch Inserts
+
+Use `pgx.CopyFrom` with `pgx.CopyFromSlice` for inserting multiple rows. Never use individual `INSERT` statements in a loop.
+
+```go
+_, err := db.CopyFrom(
+    ctx,
+    pgx.Identifier{"tablename"},
+    []string{"col1", "col2"},
+    pgx.CopyFromSlice(len(items), func(i int) ([]any, error) {
+        return []any{items[i].Col1, items[i].Col2}, nil
+    }),
+)
+```
+
 ### API Routes
 
 API routes are defined in `internal/routing/`. Routes are grouped by authentication requirements:

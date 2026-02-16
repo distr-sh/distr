@@ -19,20 +19,16 @@ func CreateApplicationVersionResources(
 		return nil
 	}
 	db := internalctx.GetDb(ctx)
-	for i := range resources {
-		resources[i].ApplicationVersionID = versionID
-		_, err := db.Exec(ctx,
-			`INSERT INTO ApplicationVersionResource (application_version_id, name, content, visible_to_customers)
-			VALUES (@applicationVersionId, @name, @content, @visibleToCustomers)`,
-			pgx.NamedArgs{
-				"applicationVersionId": resources[i].ApplicationVersionID,
-				"name":                 resources[i].Name,
-				"content":              resources[i].Content,
-				"visibleToCustomers":   resources[i].VisibleToCustomers,
-			})
-		if err != nil {
-			return fmt.Errorf("could not create ApplicationVersionResource: %w", err)
-		}
+	_, err := db.CopyFrom(
+		ctx,
+		pgx.Identifier{"applicationversionresource"},
+		[]string{"application_version_id", "name", "content", "visible_to_customers"},
+		pgx.CopyFromSlice(len(resources), func(i int) ([]any, error) {
+			return []any{versionID, resources[i].Name, resources[i].Content, resources[i].VisibleToCustomers}, nil
+		}),
+	)
+	if err != nil {
+		return fmt.Errorf("could not create ApplicationVersionResources: %w", err)
 	}
 	return nil
 }
