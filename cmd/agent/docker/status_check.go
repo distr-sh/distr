@@ -7,8 +7,7 @@ import (
 
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/docker/cli/cli/compose/convert"
-	"github.com/docker/compose/v2/pkg/api"
-	"github.com/docker/compose/v2/pkg/compose"
+	"github.com/docker/compose/v5/pkg/api"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
@@ -29,8 +28,7 @@ func CheckDockerComposeStatus(
 	ctx context.Context,
 	deployment AgentDeployment,
 ) (types.DeploymentStatusType, string, error) {
-	compose := compose.NewComposeService(dockerCli)
-	summaries, err := compose.Ps(ctx, deployment.ProjectName, api.PsOptions{All: true})
+	summaries, err := composeService.Ps(ctx, deployment.ProjectName, api.PsOptions{All: true})
 	if err != nil {
 		return types.DeploymentStatusTypeError, "", err
 	}

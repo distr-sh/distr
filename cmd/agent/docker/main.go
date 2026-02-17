@@ -19,6 +19,7 @@ import (
 	"github.com/distr-sh/distr/internal/util"
 	dockercommand "github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/flags"
+	"github.com/docker/compose/v5/pkg/compose"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -38,8 +39,9 @@ var (
 			return zapcore.NewTee(c, platformLoggingCore)
 		}),
 	))
-	client    = util.Require(agentclient.NewFromEnv(logger))
-	dockerCli = util.Require(dockercommand.NewDockerCli())
+	client         = util.Require(agentclient.NewFromEnv(logger))
+	dockerCli      = util.Require(dockercommand.NewDockerCli())
+	composeService = util.Require(compose.NewComposeService(dockerCli))
 )
 
 func init() {

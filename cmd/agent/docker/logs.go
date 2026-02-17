@@ -12,10 +12,8 @@ import (
 
 	"github.com/distr-sh/distr/internal/deploymentlogs"
 	"github.com/distr-sh/distr/internal/types"
-	dockercommand "github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/compose/convert"
-	composeapi "github.com/docker/compose/v2/pkg/api"
-	"github.com/docker/compose/v2/pkg/compose"
+	composeapi "github.com/docker/compose/v5/pkg/api"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
@@ -23,18 +21,10 @@ import (
 	"go.uber.org/zap"
 )
 
-type logsWatcher struct {
-	dockerCli      dockercommand.Cli
-	composeService composeapi.Compose
-	logsExporter   deploymentlogs.Exporter
-}
+type logsWatcher struct{ logsExporter deploymentlogs.Exporter }
 
 func NewLogsWatcher() *logsWatcher {
-	return &logsWatcher{
-		dockerCli:      dockerCli,
-		composeService: compose.NewComposeService(dockerCli),
-		logsExporter:   deploymentlogs.ChunkExporter(client, 100),
-	}
+	return &logsWatcher{logsExporter: deploymentlogs.ChunkExporter(client, 100)}
 }
 
 func (lw *logsWatcher) Watch(ctx context.Context, d time.Duration) {
@@ -79,7 +69,7 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 				logOptions.Since = since.Format(time.RFC3339Nano)
 			}
 
-			toplevelErr = lw.composeService.Logs(ctx, d.ProjectName, &composeCollector{deploymentCollector}, logOptions)
+			toplevelErr = composeService.Logs(ctx, d.ProjectName, &composeCollector{deploymentCollector}, logOptions)
 			if toplevelErr != nil {
 				logger.Warn("could not get compose logs", zap.Error(toplevelErr))
 			}
@@ -88,7 +78,7 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 			// Getting the list of swarm services for the stack and then getting the logs for each service.
 			// Because we are interacting with the API directly, we also have to decode the raw stream into its
 			// stdout and stderr components.
-			apiClient := lw.dockerCli.Client()
+			apiClient := dockerCli.Client()
 			services, err := apiClient.ServiceList(
 				ctx,
 				swarm.ServiceListOptions{

@@ -7,8 +7,7 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/compose/convert"
-	composeapi "github.com/docker/compose/v2/pkg/api"
-	"github.com/docker/compose/v2/pkg/compose"
+	composeapi "github.com/docker/compose/v5/pkg/api"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
 	"go.uber.org/multierr"
@@ -27,8 +26,7 @@ func RunDockerRestart(ctx context.Context, deployment AgentDeployment) error {
 }
 
 func RunDockerComposeRestart(ctx context.Context, deployment AgentDeployment) error {
-	compose := compose.NewComposeService(dockerCli)
-	err := compose.Restart(ctx, deployment.ProjectName, composeapi.RestartOptions{})
+	err := composeService.Restart(ctx, deployment.ProjectName, composeapi.RestartOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to restart deployment %v: %w", deployment.ProjectName, err)
 	}
