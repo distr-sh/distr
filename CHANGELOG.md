@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.2](https://github.com/distr-sh/distr/compare/2.11.1...2.11.2) (2026-02-17)
+
+
+### Other
+
+* rename Distr registry slug ([#1842](https://github.com/distr-sh/distr/issues/1842)) ([0d8288a](https://github.com/distr-sh/distr/commit/0d8288afbe4919b269f083d3bd43a5ad5187528d))
+
 ## [2.11.1](https://github.com/distr-sh/distr/compare/2.11.0...2.11.1) (2026-02-17)
 
 
