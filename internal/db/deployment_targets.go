@@ -323,12 +323,13 @@ func UpdateDeploymentTargetReportedAgentVersionID(
 		pgx.NamedArgs{"id": dt.ID, "agentVersionId": agentVersionID},
 	)
 	if err != nil {
-		return err
-	} else if updated, err := pgx.CollectExactlyOneRow(rows,
-		pgx.RowToAddrOfStructByName[types.DeploymentTargetFull]); err != nil {
-		return err
+		return fmt.Errorf("could not update DeploymentTarget: %w", err)
+	}
+
+	if updated, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByPos[types.DeploymentTargetFull]); err != nil {
+		return fmt.Errorf("could not scan DeploymentTarget: %w", err)
 	} else {
-		*dt = *updated
+		*dt = updated
 		return nil
 	}
 }
