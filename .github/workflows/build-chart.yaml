@@ -53,5 +53,5 @@ jobs:
         run: |
           for chart in distr-*.tgz; do
               helm push "$chart" oci://ghcr.io/distr-sh/charts
-              helm push "$chart" oci://registry.distr.sh/glasskube/charts
+              helm push "$chart" oci://registry.distr.sh/enterprise/charts
           done
