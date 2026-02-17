@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.1](https://github.com/distr-sh/distr/compare/2.11.0...2.11.1) (2026-02-17)
+
+
+### Bug Fixes
+
+* **backend:** change to correct scanning func for DeploymentTarget ([#1840](https://github.com/distr-sh/distr/issues/1840)) ([5d6a490](https://github.com/distr-sh/distr/commit/5d6a4903a8f992a401d2934766bcbc612e287f93))
+
 ## [2.11.0](https://github.com/distr-sh/distr/compare/2.10.2...2.11.0) (2026-02-16)
 
 
