@@ -85,9 +85,10 @@
   "customManagers": [
     {
       "customType": "regex",
-      "managerFilePatterns": ["internal/handlers/tutorials.go"],
+      "managerFilePatterns": ["internal/handlers/tutorials.go", ".github/workflows/build-hub.yaml"],
       "matchStrings": [
-        "\"(?<currentValue>[^\"]+)\",\\s+// renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)"
+        "\"(?<currentValue>[^\"]+)\",\\s+// renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)",
+        "'(?<currentValue>[^\"]+)'\\s+# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)"
       ]
     }
   ]
