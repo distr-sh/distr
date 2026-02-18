@@ -25,10 +25,10 @@ INSERT INTO deployments (
 ) VALUES
   -- Deployment 1: DataStack Platform v2.4.1
   (gen_random_uuid(), '<deployment_target_id>', '<app_version_id_2.4.1>', NOW() - INTERVAL '3 days', NOW()),
-  
+
   -- Deployment 2: Analytics Engine v1.8.3
   (gen_random_uuid(), '<deployment_target_id>', '<app_version_id_1.8.3>', NOW() - INTERVAL '15 minutes', NOW()),
-  
+
   -- Deployment 3: Monitoring Dashboard v3.2.1
   (gen_random_uuid(), '<deployment_target_id>', '<app_version_id_3.2.1>', NOW() - INTERVAL '7 days', NOW());
 ```
@@ -116,7 +116,7 @@ INSERT INTO application_versions (
   (gen_random_uuid(), '<datastack_app_id>', 'v2.4.1', NOW() - INTERVAL '35 days'),
   (gen_random_uuid(), '<datastack_app_id>', 'v2.5.0', NOW() - INTERVAL '5 days');
 
--- Analytics Engine versions  
+-- Analytics Engine versions
 INSERT INTO application_versions (
   id,
   application_id,
@@ -189,7 +189,7 @@ INSERT INTO organizations (
 ) VALUES
   (gen_random_uuid(), 'datastack-vendor', 'DataStack Inc', 'vendor', NOW() - INTERVAL '2 years');
 
--- Customer organization  
+-- Customer organization
 INSERT INTO customer_organizations (
   id,
   organization_id,
@@ -218,6 +218,7 @@ DeploymentTargets (customer agents)
 ## How The UI Consumes This Data
 
 ### Customer Portal Home Page (`/home`)
+
 - Uses `DeploymentTargetsService.list()` to get deployment targets with their deployments
 - The "Version & Deployment" card shows:
   - First deployment's current version
@@ -225,16 +226,19 @@ DeploymentTargets (customer agents)
   - List of all deployments with health indicators (from `mockDeployments()` - **currently using mock data**)
 
 ### Vendor Portal Dashboard (`/dashboard`)
+
 - Uses `DeploymentTargetsService.list()` to show all customer agents
 - Uses `ApplicationsService.list()` to show applications
 - Uses `ArtifactsService.list()` to show artifacts
 
 ### Deployments Page (`/deployments`)
+
 - Uses `DeploymentTargetsService.list()` to get all deployment targets
 - Uses `DeploymentTargetsMetricsService` for metrics
 - Shows deployment cards with status, metrics, and actions
 
 ### Artifacts Page (`/artifacts`)
+
 - Uses `ArtifactsService.list()` to get all artifacts
 - Shows artifact cards with versions, downloads, and metadata
 
@@ -243,6 +247,7 @@ DeploymentTargets (customer agents)
 **Important**: The `MOCK_DEPLOYMENTS` and `MOCK_ARTIFACTS` in `mock-data.ts` are **only used on the customer portal home page** for the "Version & Deployment" card. They do NOT populate the actual `/deployments` or `/artifacts` pages.
 
 To see data on those pages, you must:
+
 1. Seed the database with the SQL above
 2. Push actual OCI artifacts to the registry
 3. The services will fetch this data via API calls
@@ -250,11 +255,13 @@ To see data on those pages, you must:
 ## Recommended Seeding Approach
 
 Create a database migration or seed script:
+
 - `internal/migrations/sql/999_seed_test_data.up.sql`
 - Or use `cmd/hub/cmd/seed.go` if it exists
 - Or create a test data generator in Go that uses the existing DB package
 
 The seed data should create a complete scenario:
+
 - 1 vendor organization (DataStack Inc)
 - 1 customer organization (Acme Corp)
 - 3 applications with multiple versions each

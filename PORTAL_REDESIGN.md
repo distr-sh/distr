@@ -22,6 +22,7 @@ This exploration is mandatory. Do not skip it. The entire goal is to surface exi
 **This is a UI/UX redesign.** The goal is to take data that already exists in the system and present it in a dramatically more useful and polished way. Every piece of information shown must come from an API that already exists.
 
 **This is not:**
+
 - A new feature build
 - New backend logic or new API endpoints
 - CVE/vulnerability scanning (future feature — placeholder UI only, clearly marked)
@@ -29,10 +30,12 @@ This exploration is mandatory. Do not skip it. The entire goal is to surface exi
 - Document upload (future feature — do not build)
 
 The only functional changes permitted outside of UI layout work:
+
 1. Make the customer portal navbar/branding customizable by the vendor (e.g., logo, primary color, portal name) — if this is not already supported, add it as a small config option
 2. Graceful loading and empty states for all data (if not already done well)
 
 **Future features** (mark as placeholder in the UI, do not implement):
+
 - CVE/vulnerability scanning per artifact
 - Infrastructure configuration questionnaire
 - Compliance document upload by vendor
@@ -53,15 +56,15 @@ This is what neither Docker Hub nor Artifact Hub can do — they are stateless d
 
 Examine what nav already exists and extend it. Conditional visibility rules:
 
-| Section | Visible when |
-|---|---|
-| **Home** (Compliance Hub) | Always |
-| **Deployments** | Customer uses deployment agents |
-| **Artifacts** | Customer uses Helm/OCI artifact downloads |
-| **Configuration** | BYOC / hands-off customer |
-| **Security** | Always (placeholder if no scan data exists yet) |
-| **Resources & Docs** | Always (surfaces additional resources on versions) |
-| **Setup & Installation** | Always |
+| Section                   | Visible when                                       |
+| ------------------------- | -------------------------------------------------- |
+| **Home** (Compliance Hub) | Always                                             |
+| **Deployments**           | Customer uses deployment agents                    |
+| **Artifacts**             | Customer uses Helm/OCI artifact downloads          |
+| **Configuration**         | BYOC / hands-off customer                          |
+| **Security**              | Always (placeholder if no scan data exists yet)    |
+| **Resources & Docs**      | Always (surfaces additional resources on versions) |
+| **Setup & Installation**  | Always                                             |
 
 Determine from the existing code whether this conditional logic is already in place or needs to be added.
 
@@ -74,16 +77,19 @@ Determine from the existing code whether this conditional logic is already in pl
 **Layout inspiration:** Think Vercel dashboard meets Linear's activity feed. Not Docker Hub's flat list aesthetic, and not Artifact Hub's README-first layout. Dense information, clear hierarchy, purposeful color.
 
 **The "deployment-aware" status bar at top (the key differentiator):**
+
 ```
 [Your Application] ·  Running: v2.4.1  ·  Latest: v2.5.0 ↑ Update available  ·  Agent: ● Live (2 min ago)  ·  Last deployed: 3 days ago
 ```
+
 This bar should be the first thing a customer sees. It immediately tells them the three things they care most about. Style it as a solid top strip, not a card.
 
 **3-column card grid below:**
 
-*Card 1 — Version & Deployment Health*
+_Card 1 — Version & Deployment Health_
 
 Show this data from existing deployment/version APIs:
+
 - Currently running version (large, prominent)
 - Version release date
 - "X versions behind latest" indicator if applicable
@@ -93,9 +99,10 @@ Show this data from existing deployment/version APIs:
 
 Do not invent data here. If a field doesn't come from an existing API, omit it or leave a `// TODO` comment.
 
-*Card 2 — Available Resources*
+_Card 2 — Available Resources_
 
 This is the existing "additional resources" feature on application versions, surfaced better. Show it as:
+
 - A clean list of files/links the vendor has attached to the current deployed version
 - Each item: file type icon (PDF, ZIP, link), name, type label (e.g., "Release Notes", "Helm Chart"), and a download/open button
 - Group by type if multiple exist
@@ -104,9 +111,10 @@ This is the existing "additional resources" feature on application versions, sur
 
 This replaces the concept of a "compliance document library" — it's just a better rendering of what already exists.
 
-*Card 3 — Security (placeholder)*
+_Card 3 — Security (placeholder)_
 
 Since CVE scanning is a future feature, this card should be:
+
 - A clean, honest placeholder — not a fake data mock
 - Show: "Vulnerability scanning coming soon"
 - If SBOM files are attached as additional resources, surface them here: "SBOM available — Download SPDX / CycloneDX"
@@ -116,6 +124,7 @@ Since CVE scanning is a future feature, this card should be:
 **Activity feed (below cards):**
 
 Pull from whatever event/audit data already exists in the API. Show a chronological feed of:
+
 - Deployment events (version deployed, agent check-ins)
 - New resources added to versions by vendor
 - New application versions released
@@ -130,6 +139,7 @@ Take design inspiration from Linear's activity stream and Vercel's deployment lo
 This page already exists — redesign it, don't rebuild from scratch.
 
 **What to improve:**
+
 - Make the "currently deployed" version visually prominent at the top, separate from the history table
 - Version history table: add a visual "current" badge on the active row
 - Add a version diff link between any two rows if release notes are available on the version
@@ -146,6 +156,7 @@ This page already exists — redesign it, don't rebuild from scratch.
 This page already exists — redesign it.
 
 **What to improve:**
+
 - Version selector at top: a dropdown that filters everything below (take inspiration from Artifact Hub's version selector pattern)
 - For the selected version: show Helm chart download, image digest, pull command (copyable code block)
 - Changelog/release notes section below if attached as a resource to the version
@@ -162,13 +173,15 @@ This replaces a separate "Documents" and "Installation" section with one unified
 
 **Two tabs:**
 
-*Resources tab:*
+_Resources tab:_
+
 - Card grid of all additional resources across all application versions, grouped by version
 - Each card: file icon, name, version it belongs to, type label, upload date if available, download button
 - Categories derived from file type or metadata, not hardcoded
 - Empty state: "Your vendor hasn't attached any resources yet."
 
-*Setup & Installation tab:*
+_Setup & Installation tab:_
+
 - Installation and connection instructions (move here from wherever they currently live)
 - API token display if applicable
 - Links to external documentation
@@ -222,21 +235,25 @@ Create `frontend/ui/src/app/customer-portal/mock-data.ts` (adjust path to match 
 **Mock datasets to include:**
 
 Customer context:
+
 - Name: "Acme Corp", environment: "Production", vendor: "DataStack Inc"
 - `portalMode: 'byoc'` and `accessType: 'agent'` as top-level toggleable consts so you can preview both modes
 
 Deployment state:
+
 - Running version: v2.4.1 (released 2025-11-03)
 - Latest available: v2.5.0 (released 2026-01-15) — so "update available" banner shows
 - Deployment history: 6 entries across 8 months, including one rollback
 - Agent: `prod-agent-us-east-1`, connected, last heartbeat 2 minutes ago
 
 Version resources (additional resources on versions — this is existing functionality):
+
 - On v2.4.1: "Release Notes v2.4.1" (markdown/link), "Helm Chart" (download), "SBOM (SPDX)" (file), "SBOM (CycloneDX)" (file)
 - On v2.5.0: "Release Notes v2.5.0", "Helm Chart", "Upgrade Guide", "SOC2 Summary"
 - On v2.3.0: "Release Notes v2.3.0", "Hardening Guide v2.0"
 
 Activity feed (10–12 realistic entries):
+
 - 2 days ago: Deployment — "v2.4.1 deployed successfully via prod-agent-us-east-1"
 - 8 days ago: Resource — "DataStack Inc added Upgrade Guide to v2.5.0"
 - 15 days ago: Deployment — "v2.4.0 deployed successfully"
@@ -249,6 +266,7 @@ Activity feed (10–12 realistic entries):
 - 75 days ago: Release — "v2.4.0 released by DataStack Inc"
 
 Artifacts (for artifact-mode view):
+
 - 5 versions with Helm chart pull commands, image digests (sha256:...), changelog snippets
 
 ---
