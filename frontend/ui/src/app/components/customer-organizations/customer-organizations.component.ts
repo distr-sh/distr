@@ -13,7 +13,6 @@ import {
   faEdit,
   faMagnifyingGlass,
   faPlus,
-  faRotate,
   faTrash,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
@@ -57,7 +56,6 @@ export class CustomerOrganizationsComponent {
   protected readonly faXmark = faXmark;
   protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faEdit = faEdit;
-  protected readonly faRotate = faRotate;
   protected readonly faChevronDown = faChevronDown;
 
   private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
@@ -211,49 +209,6 @@ export class CustomerOrganizationsComponent {
           }
         },
       });
-  }
-
-  protected async removeFeature(customer: CustomerOrganization, feature: CustomerOrganizationFeature): Promise<void> {
-    const updatedFeatures = customer.features.filter((f) => f !== feature);
-    try {
-      await firstValueFrom(
-        this.customerOrganizationsService.updateCustomerOrganization(customer.id, {
-          name: customer.name,
-          imageId: customer.imageId,
-          features: updatedFeatures,
-        })
-      );
-      this.toast.success(`Feature "${this.getFeatureLabel(feature)}" removed successfully`);
-      this.refresh$.next();
-    } catch (e) {
-      const msg = getFormDisplayedError(e);
-      if (msg) {
-        this.toast.error(msg);
-      }
-    }
-  }
-
-  protected async restoreAllFeatures(customer: CustomerOrganization): Promise<void> {
-    try {
-      await firstValueFrom(
-        this.customerOrganizationsService.updateCustomerOrganization(customer.id, {
-          name: customer.name,
-          imageId: customer.imageId,
-          features: [...this.allCustomerFeatures],
-        })
-      );
-      this.toast.success('All features restored successfully');
-      this.refresh$.next();
-    } catch (e) {
-      const msg = getFormDisplayedError(e);
-      if (msg) {
-        this.toast.error(msg);
-      }
-    }
-  }
-
-  protected hasAllFeatures(customer: CustomerOrganization): boolean {
-    return customer.features.length === this.allCustomerFeatures.length;
   }
 
   protected getFeatureLabel(feature: CustomerOrganizationFeature): string {
