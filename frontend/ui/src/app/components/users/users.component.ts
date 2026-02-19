@@ -31,7 +31,6 @@ import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
 import {QuotaLimitComponent} from '../quota-limit.component';
-import {UuidComponent} from '../uuid';
 
 @Component({
   selector: 'app-users',
@@ -42,7 +41,6 @@ import {UuidComponent} from '../uuid';
     ReactiveFormsModule,
     RequireVendorDirective,
     AutotrimDirective,
-    UuidComponent,
     SecureImagePipe,
     QuotaLimitComponent,
   ],

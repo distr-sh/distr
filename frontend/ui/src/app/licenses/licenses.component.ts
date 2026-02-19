@@ -18,7 +18,6 @@ import {filteredByFormControl} from '../../util/filter';
 import {drawerFlyInOut} from '../animations/drawer';
 import {dropdownAnimation} from '../animations/dropdown';
 import {modalFlyInOut} from '../animations/modal';
-import {UuidComponent} from '../components/uuid';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {ApplicationsService} from '../services/applications.service';
 import {AuthService} from '../services/auth.service';
@@ -31,15 +30,7 @@ import {EditLicenseComponent} from './edit-license.component';
 @Component({
   selector: 'app-licenses',
   templateUrl: './licenses.component.html',
-  imports: [
-    AsyncPipe,
-    AutotrimDirective,
-    ReactiveFormsModule,
-    FaIconComponent,
-    UuidComponent,
-    DatePipe,
-    EditLicenseComponent,
-  ],
+  imports: [AsyncPipe, AutotrimDirective, ReactiveFormsModule, FaIconComponent, DatePipe, EditLicenseComponent],
   animations: [dropdownAnimation, drawerFlyInOut, modalFlyInOut],
 })
 export class LicensesComponent {

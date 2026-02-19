@@ -60,9 +60,6 @@
       <thead
         class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
         <tr>
-          @if (fullVersion) {
-            <th scope="col" class="p-4">Id</th>
-          }
           <th scope="col" class="p-4">Application</th>
           <th scope="col" class="p-4">Type</th>
           <th scope="col" class="p-4">Versions</th>
@@ -75,11 +72,6 @@
       <tbody>
         @for (application of applications$ | async; track application.id) {
           <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
-            @if (fullVersion) {
-              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                <app-uuid [uuid]="application.id!" />
-              </td>
-            }
             <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
               <a [routerLink]="['/', 'applications', application.id]">
                 <div class="flex items-center mr-3">
