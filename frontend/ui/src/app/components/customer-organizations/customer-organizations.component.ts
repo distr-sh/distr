@@ -1,5 +1,6 @@
+import {OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe, DecimalPipe} from '@angular/common';
-import {Component, computed, inject, TemplateRef, viewChild} from '@angular/core';
+import {Component, computed, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
@@ -7,6 +8,7 @@ import {CustomerOrganization, CustomerOrganizationFeature, CustomerOrganizationW
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {
   faBuildingUser,
+  faChevronDown,
   faCircleExclamation,
   faEdit,
   faMagnifyingGlass,
@@ -18,7 +20,6 @@ import {
 import {combineLatest, filter, firstValueFrom, map, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
-import {modalFlyInOut} from '../../animations/modal';
 import {RequireVendorDirective} from '../../directives/required-role.directive';
 import {ArtifactLicensesService} from '../../services/artifact-licenses.service';
 import {AuthService} from '../../services/auth.service';
@@ -31,8 +32,6 @@ import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
 import {QuotaLimitComponent} from '../quota-limit.component';
 import {UuidComponent} from '../uuid';
-
-export const ALL_CUSTOMER_FEATURES: CustomerOrganizationFeature[] = ['deployment_targets', 'artifacts', 'alerts'];
 
 @Component({
   templateUrl: './customer-organizations.component.html',
@@ -47,8 +46,8 @@ export const ALL_CUSTOMER_FEATURES: CustomerOrganizationFeature[] = ['deployment
     RouterLink,
     RequireVendorDirective,
     QuotaLimitComponent,
+    OverlayModule,
   ],
-  animations: [modalFlyInOut],
 })
 export class CustomerOrganizationsComponent {
   protected readonly faMagnifyingGlass = faMagnifyingGlass;
@@ -59,6 +58,7 @@ export class CustomerOrganizationsComponent {
   protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faEdit = faEdit;
   protected readonly faRotate = faRotate;
+  protected readonly faChevronDown = faChevronDown;
 
   private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
   private readonly toast = inject(ToastService);
@@ -105,6 +105,21 @@ export class CustomerOrganizationsComponent {
     imageId: this.fb.control(''),
   });
   protected createFormLoading = false;
+
+  protected readonly allCustomerFeatures: readonly CustomerOrganizationFeature[] = [
+    'deployment_targets',
+    'alerts',
+    'artifacts',
+  ];
+
+  protected readonly openCustomerFeaturesDropdownId = signal<string | void>(undefined);
+  protected readonly openCustomerFeaturesDropdownCustomer = computed(() => {
+    const id = this.openCustomerFeaturesDropdownId();
+    const c = id ? this.customerOrganizations()?.find((it) => it.id === id) : undefined;
+    console.log(c);
+    return c;
+  });
+  protected dropdownWidth = 0;
 
   protected showCreateDialog() {
     this.closeCreateDialog();
@@ -226,7 +241,7 @@ export class CustomerOrganizationsComponent {
         this.customerOrganizationsService.updateCustomerOrganization(customer.id, {
           name: customer.name,
           imageId: customer.imageId,
-          features: ALL_CUSTOMER_FEATURES,
+          features: [...this.allCustomerFeatures],
         })
       );
       this.toast.success('All features restored successfully');
@@ -240,7 +255,7 @@ export class CustomerOrganizationsComponent {
   }
 
   protected hasAllFeatures(customer: CustomerOrganization): boolean {
-    return customer.features.length === ALL_CUSTOMER_FEATURES.length;
+    return customer.features.length === this.allCustomerFeatures.length;
   }
 
   protected getFeatureLabel(feature: CustomerOrganizationFeature): string {
@@ -254,5 +269,49 @@ export class CustomerOrganizationsComponent {
       default:
         return feature;
     }
+  }
+
+  protected isFeatureIndent(feature: CustomerOrganizationFeature): boolean {
+    return feature === 'alerts';
+  }
+
+  protected async toggleFeature(customer: CustomerOrganization, feature: CustomerOrganizationFeature) {
+    const featureSet = new Set(customer.features);
+    if (featureSet.has(feature)) {
+      featureSet.delete(feature);
+      if (feature === 'deployment_targets') {
+        featureSet.delete('alerts');
+      }
+    } else {
+      featureSet.add(feature);
+      if (feature === 'alerts') {
+        featureSet.add('deployment_targets');
+      }
+    }
+
+    try {
+      await firstValueFrom(
+        this.customerOrganizationsService.updateCustomerOrganization(customer.id, {
+          ...customer,
+          features: Array.from(featureSet),
+        })
+      );
+      this.toast.success('Customer features updated');
+      this.refresh$.next();
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    }
+  }
+
+  protected showCustomerFeaturesDropdown(customer: CustomerOrganization, btn: HTMLButtonElement, i: number) {
+    this.dropdownWidth = btn.getBoundingClientRect().width;
+    this.openCustomerFeaturesDropdownId.set(customer.id);
+  }
+
+  protected hideCustomerFeaturesDropdown(): void {
+    this.openCustomerFeaturesDropdownId.set(undefined);
   }
 }
