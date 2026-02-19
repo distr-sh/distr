@@ -1,5 +1,33 @@
 # Changelog
 
+## [2.11.3](https://github.com/distr-sh/distr/compare/2.11.2...2.11.3) (2026-02-19)
+
+
+### Bug Fixes
+
+* **chart:** add imagePullSecrets to CronJob template ([#1869](https://github.com/distr-sh/distr/issues/1869)) ([c5f9864](https://github.com/distr-sh/distr/commit/c5f986433d1c72c5ca6cdba47c31e796f2382e2d))
+* **deps:** update aws-sdk-go-v2 monorepo ([#1849](https://github.com/distr-sh/distr/issues/1849)) ([39c2682](https://github.com/distr-sh/distr/commit/39c26820e1217ce8501f283629a2f3199ea73bf0))
+* **deps:** update aws-sdk-go-v2 monorepo ([#1858](https://github.com/distr-sh/distr/issues/1858)) ([79f2918](https://github.com/distr-sh/distr/commit/79f291812b996567212095a03b93327267b60454))
+* **deps:** update module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver to v0.146.0 ([#1857](https://github.com/distr-sh/distr/issues/1857)) ([085d4df](https://github.com/distr-sh/distr/commit/085d4dfc67b7e8768e396a19f21e6b7391edbe5a))
+
+
+### Other
+
+* **deps:** bump minimatch from 10.1.2 to 10.2.1 in the npm_and_yarn group across 1 directory ([#1862](https://github.com/distr-sh/distr/issues/1862)) ([8d8baa2](https://github.com/distr-sh/distr/commit/8d8baa221592a7a583c1efa941117c845e414f72))
+* **deps:** bump tar from 7.5.7 to 7.5.9 in the npm_and_yarn group across 1 directory ([#1852](https://github.com/distr-sh/distr/issues/1852)) ([72411b9](https://github.com/distr-sh/distr/commit/72411b979c13bb0ffbc85b1783e658f4012ce6e1))
+* **deps:** update angular monorepo to v21.1.5 ([#1817](https://github.com/distr-sh/distr/issues/1817)) ([da1d648](https://github.com/distr-sh/distr/commit/da1d6487fc45181ce3b6da46b3dc8f392646f40c))
+* **deps:** update dependency @angular/cdk to v21.1.5 ([#1853](https://github.com/distr-sh/distr/issues/1853)) ([c63b64e](https://github.com/distr-sh/distr/commit/c63b64ee8b3a78828058bb176cea89edc781901f))
+* **deps:** update dependency marked to v17.0.3 ([#1847](https://github.com/distr-sh/distr/issues/1847)) ([0861869](https://github.com/distr-sh/distr/commit/0861869c31264ca1f3d5398c1456c8f4c1e4cc0b))
+* **deps:** update dependency pnpm to v10.30.0 ([#1850](https://github.com/distr-sh/distr/issues/1850)) ([f4cc921](https://github.com/distr-sh/distr/commit/f4cc921c78ab9f623e115be71d5d3f23e8d4f330))
+* **deps:** update dependency stripe to v1.35.1 ([#1848](https://github.com/distr-sh/distr/issues/1848)) ([9ed1c19](https://github.com/distr-sh/distr/commit/9ed1c19c74db5e4c5b9ff65e15aa12b327d635c9))
+* **deps:** update distr-sh/hello-distr to v0.4.2 ([#1844](https://github.com/distr-sh/distr/issues/1844)) ([8d1cd18](https://github.com/distr-sh/distr/commit/8d1cd18e36e848c7ed07b4396a3efe90a3244f94))
+* **deps:** update golangci-lint to v2.10.1 ([#1865](https://github.com/distr-sh/distr/issues/1865)) ([c69b676](https://github.com/distr-sh/distr/commit/c69b676d954169bcaacb339a5b70301f06730419))
+* **deps:** update module github.com/docker/compose to v5 ([#1839](https://github.com/distr-sh/distr/issues/1839)) ([bea0131](https://github.com/distr-sh/distr/commit/bea01318d91ae305e79db8f190a5d1b0d3e360d9))
+* **deps:** update tailwindcss monorepo to v4.2.0 ([#1856](https://github.com/distr-sh/distr/issues/1856)) ([c84d5a7](https://github.com/distr-sh/distr/commit/c84d5a784aea94f5cbd54557b3a99b6735d4efcf))
+* **frontend:** change title "Vendor Platform" to "Vendor Portal" ([#1864](https://github.com/distr-sh/distr/issues/1864)) ([78625ab](https://github.com/distr-sh/distr/commit/78625abb0c9de8e8fccd4f105c478db82e8a0cfb))
+* **frontend:** improve customer features column ([#1866](https://github.com/distr-sh/distr/issues/1866)) ([b36a11d](https://github.com/distr-sh/distr/commit/b36a11dd62c8787078732e6ac5578ac3e8c819e6))
+* remove id column to give other columns more space ([#1867](https://github.com/distr-sh/distr/issues/1867)) ([363f198](https://github.com/distr-sh/distr/commit/363f1983eb4745e556390128dd89a5a45518de15))
+
 ## [2.11.2](https://github.com/distr-sh/distr/compare/2.11.1...2.11.2) (2026-02-17)
 
 
