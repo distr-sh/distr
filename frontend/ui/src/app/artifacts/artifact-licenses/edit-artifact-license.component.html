@@ -68,7 +68,10 @@
                         : getSelectedItemsCount(artifactCtrl) + ' tags selected'
                     }}
                   </span>
-                  <fa-icon [icon]="faChevronDown"></fa-icon>
+                  <fa-icon
+                    class="transition duration-150 ease-in-out"
+                    [class.rotate-x-180]="openedArtifactIdx() === i"
+                    [icon]="faChevronDown" />
                 </button>
 
                 <ng-template

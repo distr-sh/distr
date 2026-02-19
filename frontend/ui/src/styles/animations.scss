@@ -22,9 +22,22 @@
   }
 }
 
+@keyframes flip-top {
+  from {
+    transform: rotateX(-90deg);
+  }
+
+  to {
+    transform: rotateX(0);
+  }
+}
+
 @theme {
   --animate-fly-in-right: fly-in-right 150ms ease-out;
   --animate-fly-out-right: fly-in-right 150ms ease-in reverse;
+
+  --animate-flip-in-top: flip-top 100ms ease-out;
+  --animate-flip-out-top: flip-top 100ms ease-in reverse;
 }
 
 .modal-fly-in {
