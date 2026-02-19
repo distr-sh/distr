@@ -77,8 +77,9 @@
                     }
                   </span>
                   <fa-icon
-                    class="ml-2 text-gray-900 dark:text-gray-300"
-                    [icon]="organizationsOpened ? faChevronUp : faChevronDown"></fa-icon>
+                    class="ml-2 text-gray-900 dark:text-gray-300 transition duration-150 ease-in-out"
+                    [class.rotate-x-180]="organizationsOpened"
+                    [icon]="faChevronDown" />
                 </button>
               </div>
               <ng-template

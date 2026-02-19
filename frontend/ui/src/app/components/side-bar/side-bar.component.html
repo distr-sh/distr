@@ -54,8 +54,8 @@
             <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Agents</span>
             <fa-icon
               [icon]="faChevronDown"
-              [class.rotate-180]="agentsSubMenuOpen()"
-              class="transition duration-150"></fa-icon>
+              [class.rotate-x-180]="agentsSubMenuOpen()"
+              class="transition duration-150 ease-in-out"></fa-icon>
           </button>
           @if (agentsSubMenuOpen()) {
             <ul class="space-y-1">
@@ -106,8 +106,8 @@
             <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Registry</span>
             <fa-icon
               [icon]="faChevronDown"
-              [class.rotate-180]="registrySubMenuOpen()"
-              class="transition duration-150"></fa-icon>
+              [class.rotate-x-180]="registrySubMenuOpen()"
+              class="transition duration-150 ease-in-out"></fa-icon>
           </button>
           @if (registrySubMenuOpen()) {
             <ul class="space-y-1">
@@ -146,8 +146,8 @@
               <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Licenses</span>
               <fa-icon
                 [icon]="faChevronDown"
-                [class.rotate-180]="licenseSubMenuOpen()"
-                class="transition duration-150"></fa-icon>
+                [class.rotate-x-180]="licenseSubMenuOpen()"
+                class="transition duration-150 ease-in-out"></fa-icon>
             </button>
             @if (licenseSubMenuOpen()) {
               <ul class="space-y-1">
