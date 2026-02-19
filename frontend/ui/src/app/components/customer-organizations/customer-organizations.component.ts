@@ -115,9 +115,7 @@ export class CustomerOrganizationsComponent {
   protected readonly openCustomerFeaturesDropdownId = signal<string | void>(undefined);
   protected readonly openCustomerFeaturesDropdownCustomer = computed(() => {
     const id = this.openCustomerFeaturesDropdownId();
-    const c = id ? this.customerOrganizations()?.find((it) => it.id === id) : undefined;
-    console.log(c);
-    return c;
+    return id ? this.customerOrganizations()?.find((it) => it.id === id) : undefined;
   });
   protected dropdownWidth = 0;
 
