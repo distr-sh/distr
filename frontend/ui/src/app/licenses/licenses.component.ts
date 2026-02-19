@@ -30,14 +30,7 @@ import {EditLicenseComponent} from './edit-license.component';
 @Component({
   selector: 'app-licenses',
   templateUrl: './licenses.component.html',
-  imports: [
-    AsyncPipe,
-    AutotrimDirective,
-    ReactiveFormsModule,
-    FaIconComponent,
-    DatePipe,
-    EditLicenseComponent,
-  ],
+  imports: [AsyncPipe, AutotrimDirective, ReactiveFormsModule, FaIconComponent, DatePipe, EditLicenseComponent],
   animations: [dropdownAnimation, drawerFlyInOut, modalFlyInOut],
 })
 export class LicensesComponent {
