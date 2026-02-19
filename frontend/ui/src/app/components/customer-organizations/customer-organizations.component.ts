@@ -306,7 +306,7 @@ export class CustomerOrganizationsComponent {
     }
   }
 
-  protected showCustomerFeaturesDropdown(customer: CustomerOrganization, btn: HTMLButtonElement, i: number) {
+  protected showCustomerFeaturesDropdown(customer: CustomerOrganization, btn: HTMLButtonElement) {
     this.dropdownWidth = btn.getBoundingClientRect().width;
     this.openCustomerFeaturesDropdownId.set(customer.id);
   }

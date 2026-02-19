@@ -55,7 +55,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (customer of customerOrganizations(); track customer.id; let i = $index) {
+            @for (customer of customerOrganizations(); track customer.id) {
               <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
                 <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                   <app-uuid [uuid]="customer.id" />
@@ -93,7 +93,7 @@
                     cdkOverlayOrigin
                     #dropdownTriggerButton
                     #dropdownTrigger="cdkOverlayOrigin"
-                    (click)="showCustomerFeaturesDropdown(customer, dropdownTriggerButton, i)">
+                    (click)="showCustomerFeaturesDropdown(customer, dropdownTriggerButton)">
                     <span class="flex-grow"> {{ customer.features.length }} features enabled </span>
                     <fa-icon
                       class="transition duration-150 ease-in-out"
