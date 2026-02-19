@@ -21,7 +21,6 @@ import {SecureImagePipe} from '../../util/secureImage';
 import {drawerFlyInOut} from '../animations/drawer';
 import {dropdownAnimation} from '../animations/dropdown';
 import {modalFlyInOut} from '../animations/modal';
-import {UuidComponent} from '../components/uuid';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {
   PermissionsDirective,
@@ -42,7 +41,6 @@ import {ToastService} from '../services/toast.service';
     NgOptimizedImage,
     OverlayModule,
     AutotrimDirective,
-    UuidComponent,
     RequireVendorDirective,
     RequireRoleDirective,
     PermissionsDirective,

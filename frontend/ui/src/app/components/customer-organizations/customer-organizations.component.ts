@@ -30,7 +30,6 @@ import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
 import {QuotaLimitComponent} from '../quota-limit.component';
-import {UuidComponent} from '../uuid';
 
 export const ALL_CUSTOMER_FEATURES: CustomerOrganizationFeature[] = ['deployment_targets', 'artifacts', 'alerts'];
 
@@ -39,7 +38,6 @@ export const ALL_CUSTOMER_FEATURES: CustomerOrganizationFeature[] = ['deployment
   imports: [
     ReactiveFormsModule,
     FontAwesomeModule,
-    UuidComponent,
     DatePipe,
     SecureImagePipe,
     AsyncPipe,

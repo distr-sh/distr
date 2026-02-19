@@ -18,7 +18,6 @@ import {filteredByFormControl} from '../../../util/filter';
 import {drawerFlyInOut} from '../../animations/drawer';
 import {dropdownAnimation} from '../../animations/dropdown';
 import {modalFlyInOut} from '../../animations/modal';
-import {UuidComponent} from '../../components/uuid';
 import {
   ArtifactLicense,
   ArtifactLicenseSelection,
@@ -33,7 +32,7 @@ import {EditArtifactLicenseComponent} from './edit-artifact-license.component';
 
 @Component({
   selector: 'app-artifact-licenses',
-  imports: [ReactiveFormsModule, AsyncPipe, FaIconComponent, UuidComponent, DatePipe, EditArtifactLicenseComponent],
+  imports: [ReactiveFormsModule, AsyncPipe, FaIconComponent, DatePipe, EditArtifactLicenseComponent],
   templateUrl: './artifact-licenses.component.html',
   animations: [dropdownAnimation, drawerFlyInOut, modalFlyInOut],
 })

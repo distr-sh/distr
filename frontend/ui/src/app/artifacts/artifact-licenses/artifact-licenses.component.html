@@ -39,7 +39,6 @@
           <thead
             class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
             <tr>
-              <th scope="col" class="p-4">Id</th>
               <th scope="col" class="p-4">Name</th>
               <th scope="col" class="p-4">Customer</th>
               <th scope="col" class="p-4">Artifact</th>
@@ -51,9 +50,6 @@
           <tbody>
             @for (license of licenses$ | async; track license.id) {
               <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                  <app-uuid [uuid]="license.id!" />
-                </td>
                 <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                   <div class="flex items-center mr-3">
                     <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis">
