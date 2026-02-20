@@ -10,6 +10,7 @@ var (
 	ErrAlreadyExists = errors.New("already exists")
 	ErrConflict      = errors.New("conflict")
 	ErrBadRequest    = errors.New("bad request")
+	ErrUnauthorized  = errors.New("unauthorized")
 	ErrForbidden     = errors.New("forbidden")
 	ErrQuotaExceeded = errors.New("quota exceeded")
 )

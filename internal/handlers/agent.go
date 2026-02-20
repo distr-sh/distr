@@ -139,16 +139,22 @@ func agentLoginHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 
-	if targetId, targetSecret, ok := r.BasicAuth(); !ok {
+	if targetID, targetSecret, ok := r.BasicAuth(); !ok {
 		log.Error("invalid Basic Auth")
 		w.WriteHeader(http.StatusUnauthorized)
-	} else if parsedTargetId, err := uuid.Parse(targetId); err != nil {
+	} else if parsedTargetID, err := uuid.Parse(targetID); err != nil {
 		http.Error(w, "targetId is not a valid UUID", http.StatusBadRequest)
-	} else if agentLoginPerTargetIdRateLimiter.RespondOnLimit(w, r, targetId) {
+	} else if agentLoginPerTargetIdRateLimiter.RespondOnLimit(w, r, targetID) {
 		return
-	} else if deploymentTarget, err := getVerifiedDeploymentTarget(ctx, parsedTargetId, targetSecret); err != nil {
-		log.Error("failed to get deployment target from query auth", zap.Error(err))
-		w.WriteHeader(http.StatusUnauthorized)
+	} else if deploymentTarget, err := getVerifiedDeploymentTarget(ctx, parsedTargetID, targetSecret); err != nil {
+		if errors.Is(err, apierrors.ErrUnauthorized) {
+			log.Info("agent unauthorized", zap.Error(err), zap.String("deploymentTargetId", targetID))
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+		} else {
+			log.Error("failed to get deployment target from basic auth", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+		}
 	} else {
 		// TODO maybe even randomize token valid duration
 		if _, token, err := authjwt.GenerateAgentTokenValidFor(
@@ -481,8 +487,14 @@ func queryAuthDeploymentTargetCtxMiddleware(next http.Handler) http.Handler {
 		if agentConnectPerTargetIdRateLimiter.RespondOnLimit(w, r, targetID.String()) {
 			return
 		} else if deploymentTarget, err := getVerifiedDeploymentTarget(ctx, targetID, targetSecret); err != nil {
-			log.Error("failed to get deployment target from query auth", zap.Error(err))
-			w.WriteHeader(http.StatusUnauthorized)
+			if errors.Is(err, apierrors.ErrUnauthorized) {
+				log.Info("agent unauthorized", zap.Error(err), zap.Stringer("deploymentTargetId", targetID))
+				http.Error(w, err.Error(), http.StatusUnauthorized)
+			} else {
+				log.Error("failed to get deployment target from query auth", zap.Error(err))
+				w.WriteHeader(http.StatusInternalServerError)
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+			}
 		} else {
 			ctx = internalctx.WithDeploymentTarget(ctx, deploymentTarget)
 			next.ServeHTTP(w, r.WithContext(ctx))
@@ -552,12 +564,15 @@ func getVerifiedDeploymentTarget(
 	targetSecret string,
 ) (*types.DeploymentTargetFull, error) {
 	if deploymentTarget, err := db.GetDeploymentTarget(ctx, targetID, nil); err != nil {
+		if errors.Is(err, apierrors.ErrNotFound) {
+			return nil, fmt.Errorf("%w: %w", apierrors.ErrUnauthorized, err)
+		}
 		return nil, fmt.Errorf("failed to get deployment target from DB: %w", err)
 	} else if deploymentTarget.AccessKeySalt == nil || deploymentTarget.AccessKeyHash == nil {
-		return nil, errors.New("deployment target does not have key and salt")
+		return nil, fmt.Errorf("%w: deployment target does not have key and salt", apierrors.ErrUnauthorized)
 	} else if err := security.VerifyAccessKey(
 		*deploymentTarget.AccessKeySalt, *deploymentTarget.AccessKeyHash, targetSecret); err != nil {
-		return nil, fmt.Errorf("failed to verify access: %w", err)
+		return nil, fmt.Errorf("%w: failed to verify access: %w", apierrors.ErrUnauthorized, err)
 	} else {
 		return deploymentTarget, nil
 	}
