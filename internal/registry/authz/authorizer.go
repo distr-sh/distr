@@ -36,18 +36,27 @@ func NewAuthorizer() Authorizer {
 func (a *authorizer) Authorize(ctx context.Context, nameStr string, action Action) error {
 	auth := auth.ArtifactsAuthentication.Require(ctx)
 
-	if action == ActionWrite &&
-		(auth.CurrentCustomerOrgID() != nil ||
-			auth.CurrentUserRole() == nil ||
-			*auth.CurrentUserRole() == types.UserRoleReadOnly) {
-		return ErrAccessDenied
+	if action == ActionWrite {
+		if auth.CurrentCustomerOrgID() != nil {
+			return NewErrAccessDenied("customer user can not perform write action")
+		}
+
+		if auth.CurrentUserRole() == nil {
+			return NewErrAccessDenied("user with no role can not perform write action")
+		}
+
+		if *auth.CurrentUserRole() == types.UserRoleReadOnly {
+			return NewErrAccessDenied("read-only user can not perform write action")
+		}
 	}
 
 	org := auth.CurrentOrg()
 	if name, err := name.Parse(nameStr); err != nil {
 		return err
-	} else if org.Slug == nil || *org.Slug != name.OrgName {
-		return ErrAccessDenied
+	} else if org.Slug == nil {
+		return NewErrAccessDenied("organization has no slug")
+	} else if *org.Slug != name.OrgName {
+		return NewErrAccessDenied("organization slug does not match reference")
 	}
 
 	return nil
@@ -57,18 +66,27 @@ func (a *authorizer) Authorize(ctx context.Context, nameStr string, action Actio
 func (a *authorizer) AuthorizeReference(ctx context.Context, nameStr string, reference string, action Action) error {
 	auth := auth.ArtifactsAuthentication.Require(ctx)
 
-	if action == ActionWrite &&
-		(auth.CurrentCustomerOrgID() != nil ||
-			auth.CurrentUserRole() == nil ||
-			*auth.CurrentUserRole() == types.UserRoleReadOnly) {
-		return ErrAccessDenied
+	if action == ActionWrite {
+		if auth.CurrentCustomerOrgID() != nil {
+			return NewErrAccessDenied("customer user can not perform write action")
+		}
+
+		if auth.CurrentUserRole() == nil {
+			return NewErrAccessDenied("user with no role can not perform write action")
+		}
+
+		if *auth.CurrentUserRole() == types.UserRoleReadOnly {
+			return NewErrAccessDenied("read-only user can not perform write action")
+		}
 	}
 
 	org := auth.CurrentOrg()
 	if name, err := name.Parse(nameStr); err != nil {
 		return err
-	} else if org.Slug == nil || *org.Slug != name.OrgName {
-		return ErrAccessDenied
+	} else if org.Slug == nil {
+		return NewErrAccessDenied("organization has no slug")
+	} else if *org.Slug != name.OrgName {
+		return NewErrAccessDenied("organization slug does not match reference")
 	} else if action != ActionWrite && auth.CurrentCustomerOrgID() != nil {
 		if org.HasFeature(types.FeatureLicensing) {
 			err := db.CheckLicenseForArtifact(ctx,
@@ -79,7 +97,7 @@ func (a *authorizer) AuthorizeReference(ctx context.Context, nameStr string, ref
 				*auth.CurrentOrgID(),
 			)
 			if errors.Is(err, apierrors.ErrForbidden) {
-				return ErrAccessDenied
+				return NewErrAccessDenied("license required")
 			} else if err != nil {
 				return err
 			}
@@ -93,17 +111,24 @@ func (a *authorizer) AuthorizeReference(ctx context.Context, nameStr string, ref
 func (a *authorizer) AuthorizeBlob(ctx context.Context, digest digest.Digest, action Action) error {
 	auth := auth.ArtifactsAuthentication.Require(ctx)
 
-	if action == ActionWrite &&
-		(auth.CurrentCustomerOrgID() != nil ||
-			auth.CurrentUserRole() == nil ||
-			*auth.CurrentUserRole() == types.UserRoleReadOnly) {
-		return ErrAccessDenied
+	if action == ActionWrite {
+		if auth.CurrentCustomerOrgID() != nil {
+			return NewErrAccessDenied("customer user can not perform write action")
+		}
+
+		if auth.CurrentUserRole() == nil {
+			return NewErrAccessDenied("user with no role can not perform write action")
+		}
+
+		if *auth.CurrentUserRole() == types.UserRoleReadOnly {
+			return NewErrAccessDenied("read-only user can not perform write action")
+		}
 	}
 
 	if auth.CurrentCustomerOrgID() != nil && auth.CurrentOrg().HasFeature(types.FeatureLicensing) {
 		err := db.CheckLicenseForArtifactBlob(ctx, digest.String(), *auth.CurrentCustomerOrgID(), *auth.CurrentOrgID())
 		if errors.Is(err, apierrors.ErrForbidden) {
-			return ErrAccessDenied
+			return NewErrAccessDenied("license required")
 		} else if err != nil {
 			return err
 		}
