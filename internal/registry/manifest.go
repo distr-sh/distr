@@ -365,7 +365,7 @@ func (handler *manifests) handleGet(resp http.ResponseWriter, req *http.Request,
 				if err := handler.audit.AuditPull(ctx, repo, target); err != nil {
 					log := internalctx.GetLogger(ctx)
 					log.Warn("failed to audit-log pull", zap.Error(err))
-					sentry.GetHubFromContext(ctx)
+					sentry.GetHubFromContext(ctx).CaptureException(err)
 				}
 				http.Redirect(resp, req, rerr.Location, rerr.Code)
 				return nil
@@ -383,7 +383,7 @@ func (handler *manifests) handleGet(resp http.ResponseWriter, req *http.Request,
 	if err := handler.audit.AuditPull(ctx, repo, target); err != nil {
 		log := internalctx.GetLogger(ctx)
 		log.Warn("failed to audit-log pull", zap.Error(err))
-		sentry.GetHubFromContext(ctx)
+		sentry.GetHubFromContext(ctx).CaptureException(err)
 	}
 
 	resp.Header().Set("Docker-Content-Digest", m.Digest.String())
@@ -410,7 +410,7 @@ func (handler *manifests) handleHead(resp http.ResponseWriter, req *http.Request
 	if err := handler.audit.AuditPull(ctx, repo, target); err != nil {
 		log := internalctx.GetLogger(ctx)
 		log.Warn("failed to audit-log pull", zap.Error(err))
-		sentry.GetHubFromContext(ctx)
+		sentry.GetHubFromContext(ctx).CaptureException(err)
 	}
 
 	resp.Header().Set("Docker-Content-Digest", m.Digest.String())
