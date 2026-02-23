@@ -181,7 +181,6 @@
                         </button>
                       </td>
                     } @else {
-                      <th scope="col" class="px-6 py-3">ID</th>
                       <th scope="col" class="px-6 py-3">Version</th>
                       @if (application.type === 'kubernetes') {
                         <th scope="col" class="px-6 py-3">Chart URL</th>
@@ -212,14 +211,12 @@
                           }
                         </td>
                       }
-                      <td class="px-1 py-4">
-                        <app-uuid [uuid]="version.id!" [small]="true"></app-uuid>
-                      </td>
                       <th
                         scope="row"
                         [class.text-gray-900]="!archived"
                         [class.dark:text-white]="!archived"
-                        class="px-6 py-4 font-medium whitespace-nowrap">
+                        class="px-6 py-4 font-medium whitespace-nowrap max-w-64 overflow-hidden text-ellipsis"
+                        [title]="version.name">
                         {{ version.name }}
                       </th>
                       @if (application.type === 'kubernetes') {
