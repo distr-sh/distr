@@ -140,7 +140,7 @@ func agentLoginHandler(w http.ResponseWriter, r *http.Request) {
 	log := internalctx.GetLogger(ctx)
 
 	if targetID, targetSecret, ok := r.BasicAuth(); !ok {
-		log.Error("invalid Basic Auth")
+		log.Info("invalid Basic Auth")
 		w.WriteHeader(http.StatusUnauthorized)
 	} else if parsedTargetID, err := uuid.Parse(targetID); err != nil {
 		http.Error(w, "targetId is not a valid UUID", http.StatusBadRequest)
