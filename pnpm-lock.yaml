@@ -128,7 +128,7 @@ importers:
         version: 21.1.5(@angular/compiler@21.1.5)(typescript@5.9.3)
       '@sentry/cli':
         specifier: ^3.0.0
-        version: 3.2.0
+        version: 3.2.1
       '@tailwindcss/postcss':
         specifier: ^4.1.4
         version: 4.2.0
@@ -1811,55 +1811,55 @@ packages:
     resolution: {integrity: sha512-3phzp1YX4wcQr9mocGWKbjv0jwtuoDBv7+Y6Yfrys/kwyaL84mDLjjQhRf4gL5SX7JdYkhBp4WaiNlR0UC4kTA==}
     engines: {node: '>=18'}
 
-  '@sentry/cli-darwin@3.2.0':
-    resolution: {integrity: sha512-2If2h0P/X9K0UrwlpZYKnxBmIFfa957lAHGe5VmN64v8nEHk8dxcrX+NS9nX9H75eccLGzGMcYk0Zt0KQgQJ3g==}
+  '@sentry/cli-darwin@3.2.1':
+    resolution: {integrity: sha512-lS7/oQoPX1tFJUUyTboL9kGOT5HqfnWyjRrKNfHJyTM/wZODLOQYT8kdvXsmvE9ybomJxUUqjvisX5K+kGRA7w==}
     engines: {node: '>=18'}
     os: [darwin]
 
-  '@sentry/cli-linux-arm64@3.2.0':
-    resolution: {integrity: sha512-YFpYIfYpXYzpSrIspmPOOPjXbxWp/Ve+F2hSIQb1tSKmcxFgaUm6WfuniYF8EIaLNa8YOLECf0xo78yGXBa+ug==}
+  '@sentry/cli-linux-arm64@3.2.1':
+    resolution: {integrity: sha512-JGZoDjsAA/9y4RRAsj0ZDrvFHWTuuCwnU20JpBbiHspODKiOnyjtsf8lgIWWTAIhK5wKdLHl3cf7dbVK0TwcLw==}
     engines: {node: '>=18'}
     cpu: [arm64]
     os: [linux, freebsd, android]
 
-  '@sentry/cli-linux-arm@3.2.0':
-    resolution: {integrity: sha512-NVcGcS9mceivVhi8W6iEnlcK96OlPMzOdM6xkIm+7+J0uXHgUyMyc+rT6p2QG3j8jI5I7qAl7fTHWluSX2lx3g==}
+  '@sentry/cli-linux-arm@3.2.1':
+    resolution: {integrity: sha512-2Ii8Sgj9k48Buk/M4foYXDajutkp2iX6a28b4/eOZ/NCWHKlfngnP1deFCDslQOG59fZkm2wnc6Y0SbDs/jzQg==}
     engines: {node: '>=18'}
     cpu: [arm]
     os: [linux, freebsd, android]
 
-  '@sentry/cli-linux-i686@3.2.0':
-    resolution: {integrity: sha512-6SOxlF37NqRRKxEuvWryBM7MAgTisq0G6ZQzhI2iuWbcrmlLUDUW2Yssz3gAR01eYJ4jfpqvojSzPRDwqB0K+Q==}
+  '@sentry/cli-linux-i686@3.2.1':
+    resolution: {integrity: sha512-gHGu1jrnfE+3PJAlEY0s/VUqMUVjnbl1TIf4bht04XtusFwFmw4SJWp0v44lXsfHJj5OzIVyQ6IYJgJm51UGew==}
     engines: {node: '>=18'}
     cpu: [x86, ia32]
     os: [linux, freebsd, android]
 
-  '@sentry/cli-linux-x64@3.2.0':
-    resolution: {integrity: sha512-7LRd0A74ma/1ejlTRPOoBiFiJr4LWkoE6CnA2XwAoYd0r62WUjGHtg6gIC+yElOCwtxXP7I9fOiV2BJIAq2DHw==}
+  '@sentry/cli-linux-x64@3.2.1':
+    resolution: {integrity: sha512-zImLdtXUJQ63i7p1qyBIL7wYa5V27GR8k3Nt4t03Wn68sbvZ5aopAyhEkTm+42QgIVBijU2lDYuw4Twc8yhzvA==}
     engines: {node: '>=18'}
     cpu: [x64]
     os: [linux, freebsd, android]
 
-  '@sentry/cli-win32-arm64@3.2.0':
-    resolution: {integrity: sha512-uKRi/++gnGepsaGi4goIcC13YGNEHgOUcROkz4L3H8vAR7QxWv2SHy7SCN+2S6c+Q2mOd0DfY35cMW5MzTpb7g==}
+  '@sentry/cli-win32-arm64@3.2.1':
+    resolution: {integrity: sha512-GmKKVpDp//aISU3qV81n3w4e2INLdOcWiykRJElsgCyo1BWwQ96p/qleH/NVRzDmww0Liw03qhATs0uEQXfWZQ==}
     engines: {node: '>=18'}
     cpu: [arm64]
     os: [win32]
 
-  '@sentry/cli-win32-i686@3.2.0':
-    resolution: {integrity: sha512-/84NEPeFQne2bQWfDZ+3EzioxFR8ojSwExCgVsyTfqa/4PzmaerAGUAxiD+VcJLJTyJEHAjWXTmSZGbYjIgdyQ==}
+  '@sentry/cli-win32-i686@3.2.1':
+    resolution: {integrity: sha512-FtqgtQhzw5PFuFxEVl2PWXwHDMW5I3a7F5WShc69GaaRNyxLeGaK70PdxP93MNVKwmN0a9IzVq0iblB6K2SyYA==}
     engines: {node: '>=18'}
     cpu: [x86, ia32]
     os: [win32]
 
-  '@sentry/cli-win32-x64@3.2.0':
-    resolution: {integrity: sha512-N9qGGT91awsh4IMyXrRHH+qIWmv9MJk9tPPAWPvLMWgdlTHT/40WYwvA4tYj80uZXU0TN8ppBWbd3ebDyOjwxA==}
+  '@sentry/cli-win32-x64@3.2.1':
+    resolution: {integrity: sha512-MQLYALlOlmGEDUbxcwGQQtZC+T8ghQ+JSvTPQaK3GBDOtxTicScRxv6EOEGtIXEyFf+OvKn7UG0H6I8hRyG1hA==}
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
 
-  '@sentry/cli@3.2.0':
-    resolution: {integrity: sha512-YLv/xgttSc8sRhK2xBoxmLS+yQlCW154ey2cXFsFe+yY73lXvQ9nZ7BkHmSc+YUl8y5CKHL+8edQLYV8O8PQMA==}
+  '@sentry/cli@3.2.1':
+    resolution: {integrity: sha512-rUyliVxZOZkZkgm5pO/DtV4sUtejqgRrniCgKKuspexx0G7w8SfuTCJbDhYuvxdKDtFuVPSYVHNjUrNhlSXkZQ==}
     engines: {node: '>= 18'}
     hasBin: true
 
@@ -5547,45 +5547,45 @@ snapshots:
       '@sentry-internal/replay-canvas': 10.38.0
       '@sentry/core': 10.38.0
 
-  '@sentry/cli-darwin@3.2.0':
+  '@sentry/cli-darwin@3.2.1':
     optional: true
 
-  '@sentry/cli-linux-arm64@3.2.0':
+  '@sentry/cli-linux-arm64@3.2.1':
     optional: true
 
-  '@sentry/cli-linux-arm@3.2.0':
+  '@sentry/cli-linux-arm@3.2.1':
     optional: true
 
-  '@sentry/cli-linux-i686@3.2.0':
+  '@sentry/cli-linux-i686@3.2.1':
     optional: true
 
-  '@sentry/cli-linux-x64@3.2.0':
+  '@sentry/cli-linux-x64@3.2.1':
     optional: true
 
-  '@sentry/cli-win32-arm64@3.2.0':
+  '@sentry/cli-win32-arm64@3.2.1':
     optional: true
 
-  '@sentry/cli-win32-i686@3.2.0':
+  '@sentry/cli-win32-i686@3.2.1':
     optional: true
 
-  '@sentry/cli-win32-x64@3.2.0':
+  '@sentry/cli-win32-x64@3.2.1':
     optional: true
 
-  '@sentry/cli@3.2.0':
+  '@sentry/cli@3.2.1':
     dependencies:
       progress: 2.0.3
       proxy-from-env: 1.1.0
       undici: 6.23.0
       which: 2.0.2
     optionalDependencies:
-      '@sentry/cli-darwin': 3.2.0
-      '@sentry/cli-linux-arm': 3.2.0
-      '@sentry/cli-linux-arm64': 3.2.0
-      '@sentry/cli-linux-i686': 3.2.0
-      '@sentry/cli-linux-x64': 3.2.0
-      '@sentry/cli-win32-arm64': 3.2.0
-      '@sentry/cli-win32-i686': 3.2.0
-      '@sentry/cli-win32-x64': 3.2.0
+      '@sentry/cli-darwin': 3.2.1
+      '@sentry/cli-linux-arm': 3.2.1
+      '@sentry/cli-linux-arm64': 3.2.1
+      '@sentry/cli-linux-i686': 3.2.1
+      '@sentry/cli-linux-x64': 3.2.1
+      '@sentry/cli-win32-arm64': 3.2.1
+      '@sentry/cli-win32-i686': 3.2.1
+      '@sentry/cli-win32-x64': 3.2.1
 
   '@sentry/core@10.38.0': {}
 
