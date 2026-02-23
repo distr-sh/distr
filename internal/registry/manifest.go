@@ -109,7 +109,7 @@ func (handler *manifests) handle(resp http.ResponseWriter, req *http.Request) *r
 	case http.MethodGet:
 		if err := handler.authz.AuthorizeReference(req.Context(), repo, target, authz.ActionRead); err != nil {
 			if errors.Is(err, authz.ErrAccessDenied) {
-				return regErrDenied
+				return regErrDenied(err.Error())
 			} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
 				return regErrNameInvalid
 			}
@@ -119,7 +119,7 @@ func (handler *manifests) handle(resp http.ResponseWriter, req *http.Request) *r
 	case http.MethodHead:
 		if err := handler.authz.AuthorizeReference(req.Context(), repo, target, authz.ActionStat); err != nil {
 			if errors.Is(err, authz.ErrAccessDenied) {
-				return regErrDenied
+				return regErrDenied(err.Error())
 			} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
 				return regErrNameInvalid
 			}
@@ -129,7 +129,7 @@ func (handler *manifests) handle(resp http.ResponseWriter, req *http.Request) *r
 	case http.MethodPut:
 		if err := handler.authz.AuthorizeReference(req.Context(), repo, target, authz.ActionWrite); err != nil {
 			if errors.Is(err, authz.ErrAccessDenied) {
-				return regErrDenied
+				return regErrDenied(err.Error())
 			} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
 				return regErrNameInvalid
 			}
@@ -139,7 +139,7 @@ func (handler *manifests) handle(resp http.ResponseWriter, req *http.Request) *r
 	case http.MethodDelete:
 		if err := handler.authz.AuthorizeReference(req.Context(), repo, target, authz.ActionWrite); err != nil {
 			if errors.Is(err, authz.ErrAccessDenied) {
-				return regErrDenied
+				return regErrDenied(err.Error())
 			} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
 				return regErrNameInvalid
 			}
@@ -159,7 +159,7 @@ func (m *manifests) handleTags(resp http.ResponseWriter, req *http.Request) *reg
 	if req.Method == http.MethodGet {
 		if err := m.authz.Authorize(req.Context(), repo, authz.ActionRead); err != nil {
 			if errors.Is(err, authz.ErrAccessDenied) {
-				return regErrDenied
+				return regErrDenied(err.Error())
 			} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
 				return regErrNameInvalid
 			}
@@ -252,7 +252,7 @@ func (m *manifests) handleReferrers(resp http.ResponseWriter, req *http.Request)
 
 	if err := m.authz.AuthorizeReference(req.Context(), repo, target, authz.ActionRead); err != nil {
 		if errors.Is(err, authz.ErrAccessDenied) {
-			return regErrDenied
+			return regErrDenied(err.Error())
 		} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
 			return regErrNameInvalid
 		}
