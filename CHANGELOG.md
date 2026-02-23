@@ -1,5 +1,27 @@
 # Changelog
 
+## [2.11.4](https://github.com/distr-sh/distr/compare/2.11.3...2.11.4) (2026-02-23)
+
+
+### Bug Fixes
+
+* **backend:** fix bad userId in pull log creation for agent ([#1873](https://github.com/distr-sh/distr/issues/1873)) ([8b776a9](https://github.com/distr-sh/distr/commit/8b776a986897c1777de5072accea60b9d1dbdd43))
+* **deps:** update module github.com/aws/smithy-go to v1.24.1 ([#1878](https://github.com/distr-sh/distr/issues/1878)) ([cd15db4](https://github.com/distr-sh/distr/commit/cd15db407ac0806f9b71c066752990537dda85c3))
+
+
+### Other
+
+* **backend:** reduce agent handler error log spam ([#1874](https://github.com/distr-sh/distr/issues/1874)) ([7045712](https://github.com/distr-sh/distr/commit/70457122b8f710c3f401a5fcdf400b11118c2b53))
+* **deps:** bump the npm_and_yarn group across 2 directories with 2 updates ([#1879](https://github.com/distr-sh/distr/issues/1879)) ([e9e4915](https://github.com/distr-sh/distr/commit/e9e4915065be8ff1679a4f6926473f2c972a8676))
+* **deps:** update dependency @codemirror/view to v6.39.15 ([#1872](https://github.com/distr-sh/distr/issues/1872)) ([f0d022b](https://github.com/distr-sh/distr/commit/f0d022b177d91f22eda5d8b9df1dafd080adb855))
+* **deps:** update dependency @sentry/cli to v3.2.1 ([#1882](https://github.com/distr-sh/distr/issues/1882)) ([e1e23d4](https://github.com/distr-sh/distr/commit/e1e23d46bc6535d0fbe996073108ef7b3c4b887d))
+* **deps:** update dependency jasmine-core to ~6.1.0 ([#1880](https://github.com/distr-sh/distr/issues/1880)) ([a69cfb2](https://github.com/distr-sh/distr/commit/a69cfb2459bd964156bf34ac202d36395c876807))
+* **deps:** update dependency pnpm to v10.30.1 ([#1871](https://github.com/distr-sh/distr/issues/1871)) ([144ac09](https://github.com/distr-sh/distr/commit/144ac09ab7828a476bc28755636f02f8cab9fd2f))
+* **deps:** update dependency posthog-js to v1.352.0 ([#1883](https://github.com/distr-sh/distr/issues/1883)) ([e10eeb6](https://github.com/distr-sh/distr/commit/e10eeb6311dfafde1985cdb2393bb802d47cb333))
+* **deps:** update dependency zone.js to v0.16.1 ([#1870](https://github.com/distr-sh/distr/issues/1870)) ([818c623](https://github.com/distr-sh/distr/commit/818c623332185da221f202bea77697013ebe4ada))
+* **deps:** update sentry-javascript monorepo to v10.39.0 ([#1884](https://github.com/distr-sh/distr/issues/1884)) ([bdc5931](https://github.com/distr-sh/distr/commit/bdc593123c38e03d4acd5ae365d1d348fcc686a7))
+* **registry:** more granular "access denied" messages ([#1875](https://github.com/distr-sh/distr/issues/1875)) ([e33ac42](https://github.com/distr-sh/distr/commit/e33ac42da41512d92612d04a49cc4d59226df362))
+
 ## [2.11.3](https://github.com/distr-sh/distr/compare/2.11.2...2.11.3) (2026-02-19)
 
 
