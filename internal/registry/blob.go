@@ -88,7 +88,7 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 			return regErrDigestInvalid
 		} else if err := b.authz.AuthorizeBlob(req.Context(), h, authz.ActionStat); err != nil {
 			if errors.Is(err, authz.ErrAccessDenied) {
-				return regErrDenied
+				return regErrDenied(err.Error())
 			} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
 				return regErrNameInvalid
 			}
@@ -99,7 +99,7 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 		if h, err := digest.Parse(target); err == nil {
 			if err := b.authz.AuthorizeBlob(req.Context(), h, authz.ActionRead); err != nil {
 				if errors.Is(err, authz.ErrAccessDenied) {
-					return regErrDenied
+					return regErrDenied(err.Error())
 				} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
 					return regErrNameInvalid
 				}
@@ -112,7 +112,7 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 	case http.MethodPost:
 		if err := b.authz.Authorize(req.Context(), repo, authz.ActionWrite); err != nil {
 			if errors.Is(err, authz.ErrAccessDenied) {
-				return regErrDenied
+				return regErrDenied(err.Error())
 			} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
 				return regErrNameInvalid
 			}
@@ -122,7 +122,7 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 	case http.MethodPatch:
 		if err := b.authz.Authorize(req.Context(), repo, authz.ActionWrite); err != nil {
 			if errors.Is(err, authz.ErrAccessDenied) {
-				return regErrDenied
+				return regErrDenied(err.Error())
 			} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
 				return regErrNameInvalid
 			}
@@ -134,7 +134,7 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 			return regErrDigestInvalid
 		} else if err := b.authz.AuthorizeBlob(req.Context(), h, authz.ActionWrite); err != nil {
 			if errors.Is(err, authz.ErrAccessDenied) {
-				return regErrDenied
+				return regErrDenied(err.Error())
 			} else if errors.Is(err, registryerror.ErrInvalidArtifactName) {
 				return regErrNameInvalid
 			}

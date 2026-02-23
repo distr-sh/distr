@@ -630,6 +630,19 @@ func CreateArtifactPullLogEntry(
 	if remoteAddress == "" {
 		remoteAddressPtr = nil
 	}
+
+	args := pgx.NamedArgs{
+		"versionId":     versionID,
+		"remoteAddress": remoteAddressPtr,
+		"customerOrgId": customerOrgID,
+	}
+
+	if userID != uuid.Nil {
+		args["userId"] = userID
+	} else {
+		args["userId"] = nil
+	}
+
 	_, err := db.Exec(
 		ctx,
 		`INSERT INTO ArtifactVersionPull (
@@ -644,12 +657,7 @@ func CreateArtifactPullLogEntry(
 			@remoteAddress,
 			@customerOrgId
 		)`,
-		pgx.NamedArgs{
-			"versionId":     versionID,
-			"userId":        userID,
-			"remoteAddress": remoteAddressPtr,
-			"customerOrgId": customerOrgID,
-		},
+		args,
 	)
 	if err != nil {
 		return fmt.Errorf("could not create artifact pull log entry: %w", err)

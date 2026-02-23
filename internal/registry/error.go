@@ -113,10 +113,12 @@ var regErrMethodUnknown = &regError{
 	Message: "We don't understand your method + url",
 }
 
-var regErrDenied = &regError{
-	Status:  http.StatusForbidden,
-	Code:    "DENIED",
-	Message: "Access to the resource has been denied",
+func regErrDenied(message string) *regError {
+	return &regError{
+		Status:  http.StatusForbidden,
+		Code:    "DENIED",
+		Message: message,
+	}
 }
 
 var regErrDeniedQuotaExceeded = &regError{
