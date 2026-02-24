@@ -4,7 +4,9 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "../../out-tsc/app",
-    "types": []
+    "types": [],
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   },
   "files": [
     "src/main.ts"

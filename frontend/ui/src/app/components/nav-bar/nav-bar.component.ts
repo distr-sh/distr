@@ -37,15 +37,9 @@ import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {SidebarService} from '../../services/sidebar.service';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
-import {Organization, OrganizationWithUserRole} from '../../types/organization';
+import {Organization} from '../../types/organization';
 import {ColorSchemeSwitcherComponent} from '../color-scheme-switcher/color-scheme-switcher.component';
 import {NavBarSubscriptionBannerComponent} from './nav-bar-subscription-banner/nav-bar-subscription-banner.component';
-
-type SwitchOptions = {
-  currentOrg: Organization;
-  availableOrgs: OrganizationWithUserRole[];
-  isVendorSomewhere: boolean;
-};
 
 @Component({
   selector: 'app-nav-bar',
