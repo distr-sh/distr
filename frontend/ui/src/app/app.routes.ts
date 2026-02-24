@@ -48,7 +48,7 @@ const jwtParamRedirectGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => 
   }
 };
 
-const jwtAuthGuard: CanActivateFn = (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
+const jwtAuthGuard: CanActivateFn = (_: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
   const auth = inject(AuthService);
   const router = inject(Router);
   const claims = auth.getClaims();

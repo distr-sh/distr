@@ -34,8 +34,6 @@ import {DeploymentModalComponent} from './deployment-modal.component';
 import {DeploymentTargetCardComponent} from './deployment-target-card/deployment-target-card.component';
 import {DeploymentWizardComponent} from './deployment-wizard/deployment-wizard.component';
 
-type DeploymentWithNewerVersion = {dt: DeploymentTarget; d: DeploymentWithLatestRevision; version: ApplicationVersion};
-
 export interface DeploymentTargetViewData extends DeploymentTarget {
   metrics?: DeploymentTargetLatestMetrics;
 }

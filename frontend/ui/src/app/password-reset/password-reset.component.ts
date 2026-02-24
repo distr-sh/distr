@@ -1,6 +1,5 @@
 import {Component, inject} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {Router} from '@angular/router';
 import {firstValueFrom, lastValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {AuthService} from '../services/auth.service';
@@ -14,7 +13,6 @@ import {SettingsService} from '../services/settings.service';
 export class PasswordResetComponent {
   private readonly settings = inject(SettingsService);
   private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
 
   public readonly form = new FormGroup(
     {
