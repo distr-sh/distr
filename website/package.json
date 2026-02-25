@@ -19,9 +19,9 @@
     "@astrojs/starlight-tailwind": "4.0.2",
     "@fontsource/inter": "^5.2.8",
     "@fontsource/poppins": "^5.2.7",
-    "@iconify-json/lucide": "^1.2.91",
-    "@tailwindcss/vite": "^4.1.18",
-    "astro": "5.17.2",
+    "@iconify-json/lucide": "^1.2.94",
+    "@tailwindcss/vite": "^4.2.1",
+    "astro": "5.17.3",
     "astro-icon": "^1.1.5",
     "astrojs-service-worker": "^2.0.0",
     "embla-carousel": "^8.6.0",
@@ -29,15 +29,15 @@
     "github-buttons": "^2.31.0",
     "mermaid": "^11.12.3",
     "playwright": "^1.58.2",
-    "preact": "^10.28.3",
+    "preact": "^10.28.4",
     "rehype-mermaid": "^3.0.0",
     "sharp": "^0.34.5",
     "starlight-links-validator": "^0.19.2",
     "starlight-sidebar-topics": "^0.6.2",
-    "tailwindcss": "^4.1.18"
+    "tailwindcss": "^4.2.1"
   },
   "devDependencies": {
-    "baseline-browser-mapping": "^2.9.19",
+    "baseline-browser-mapping": "^2.10.0",
     "prettier": "^3.8.1",
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-organize-imports": "^4.3.0"
