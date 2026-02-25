@@ -14,11 +14,14 @@ import {
   faChevronDown,
   faCreditCard,
   faDashboard,
+  faFileLines,
   faGear,
   faHome,
   faKey,
   faLightbulb,
   faPalette,
+  faServer,
+  faShieldHalved,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
 import {map} from 'rxjs';
@@ -72,6 +75,9 @@ export class SideBarComponent {
   protected readonly faHome = faHome;
   protected readonly faChevronDown = faChevronDown;
   protected readonly faAsterisk = faAsterisk;
+  protected readonly faShieldHalved = faShieldHalved;
+  protected readonly faFileLines = faFileLines;
+  protected readonly faServer = faServer;
   protected feedbackAlert = true;
   protected readonly agentsSubMenuOpen = signal(true);
   protected readonly licenseSubMenuOpen = signal(false);

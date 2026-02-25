@@ -15,6 +15,9 @@ import {ArtifactsComponent} from './artifacts/artifacts/artifacts.component';
 import {CustomerOrganizationsComponent} from './components/customer-organizations/customer-organizations.component';
 import {DashboardComponent} from './components/dashboard/dashboard.component';
 import {HomeComponent} from './components/home/home.component';
+import {InfrastructurePageComponent} from './components/home/infrastructure-page.component';
+import {ResourcesPageComponent} from './components/home/resources-page.component';
+import {SecurityPageComponent} from './components/home/security-page.component';
 import {CustomerUsersComponent} from './components/users/customers/customer-users.component';
 import {VendorUsersComponent} from './components/users/vendors/vendor-users.component';
 import {DeploymentTargetsComponent} from './deployments/deployment-targets.component';
@@ -120,6 +123,21 @@ export const routes: Routes = [
       {
         path: 'home',
         component: HomeComponent,
+        canActivate: [requireCustomer],
+      },
+      {
+        path: 'security',
+        component: SecurityPageComponent,
+        canActivate: [requireCustomer],
+      },
+      {
+        path: 'resources',
+        component: ResourcesPageComponent,
+        canActivate: [requireCustomer],
+      },
+      {
+        path: 'infrastructure',
+        component: InfrastructurePageComponent,
         canActivate: [requireCustomer],
       },
       {

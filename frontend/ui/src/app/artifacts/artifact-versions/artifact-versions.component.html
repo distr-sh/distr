@@ -121,9 +121,20 @@
                         </li>
                       </ul>
                     </div>
-                    <div class="flex flex-col items-end gap-1" *appRequireVendor>
-                      <app-artifacts-download-count [source]="version"></app-artifacts-download-count>
-                      <app-artifacts-downloaded-by [source]="version"></app-artifacts-downloaded-by>
+                    <div class="flex flex-col items-end gap-1">
+                      <div *appRequireVendor>
+                        <app-artifacts-download-count [source]="version"></app-artifacts-download-count>
+                        <app-artifacts-downloaded-by [source]="version"></app-artifacts-downloaded-by>
+                      </div>
+                      @if (version.inferredType === 'container-image') {
+                        <button
+                          type="button"
+                          (click)="downloadContainerTar(artifact, version)"
+                          class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors">
+                          <fa-icon [icon]="faDownload" size="sm"></fa-icon>
+                          Download .tar
+                        </button>
+                      }
                     </div>
                   </div>
                 </li>

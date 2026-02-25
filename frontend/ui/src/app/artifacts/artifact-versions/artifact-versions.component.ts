@@ -3,7 +3,7 @@ import {AsyncPipe} from '@angular/common';
 import {Component, inject, resource, signal} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faBox, faEllipsisVertical, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faBox, faDownload, faEllipsisVertical, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {catchError, distinctUntilChanged, filter, firstValueFrom, map, NEVER, switchMap, tap} from 'rxjs';
 import {getRemoteEnvironment} from '../../../env/remote';
 import {RelativeDatePipe} from '../../../util/dates';
@@ -62,6 +62,7 @@ export class ArtifactVersionsComponent {
   protected readonly faXmark = faXmark;
   protected readonly faTrash = faTrash;
   protected readonly faEllipsisVertical = faEllipsisVertical;
+  protected readonly faDownload = faDownload;
 
   protected readonly showDropdown = signal(false);
 
@@ -183,5 +184,9 @@ export class ArtifactVersionsComponent {
         tap(() => this.toast.success(`Tag "${tagName}" removed successfully`))
       )
       .subscribe();
+  }
+
+  public downloadContainerTar(artifact: ArtifactWithTags, version: TaggedArtifactVersion): void {
+    this.toast.info('Container tar download will be implemented in the backend');
   }
 }
