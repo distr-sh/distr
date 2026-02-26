@@ -48,11 +48,7 @@ func GenerateToken(license *types.UsageLicense, issuer string) (string, error) {
 
 	privateKey := env.UsageLicensePrivateKey()
 	if privateKey == nil {
-		unsigned, err := jwt.Sign(token, jwt.WithInsecureNoSignature())
-		if err != nil {
-			return "", fmt.Errorf("could not serialize unsigned JWT: %w", err)
-		}
-		return string(unsigned), nil
+		return "", errors.New("no usage license signing key configured")
 	}
 
 	key, err := jwk.FromRaw(privateKey)

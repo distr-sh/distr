@@ -35,11 +35,22 @@ export class ViewUsageLicenseModalComponent {
     });
   }
 
+  private base64UrlDecode(input: string): string {
+    let base64 = input.replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4 !== 0) {
+      base64 += '=';
+    }
+    return atob(base64);
+  }
+
   private decodeToken(token: string): string {
     try {
       const parts = token.split('.');
-      const header = JSON.parse(atob(parts[0]));
-      const payload = JSON.parse(atob(parts[1]));
+      if (parts.length < 2) {
+        return token;
+      }
+      const header = JSON.parse(this.base64UrlDecode(parts[0]));
+      const payload = JSON.parse(this.base64UrlDecode(parts[1]));
       return JSON.stringify({header, payload}, null, 2);
     } catch {
       return token;

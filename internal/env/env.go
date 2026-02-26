@@ -240,7 +240,18 @@ func Initialize() {
 	stripeAPIKey = envutil.GetEnvOrNil("STRIPE_API_KEY")
 
 	if key := envutil.GetEnvParsedOrNil("USAGE_LICENSE_PRIVATE_KEY", base64.StdEncoding.DecodeString); key != nil {
-		usageLicensePrivateKey = ed25519.NewKeyFromSeed(*key)
+		switch len(*key) {
+		case ed25519.SeedSize:
+			usageLicensePrivateKey = ed25519.NewKeyFromSeed(*key)
+		case ed25519.PrivateKeySize:
+			usageLicensePrivateKey = ed25519.PrivateKey(*key)
+		default:
+			panic(fmt.Sprintf(
+				"env: USAGE_LICENSE_PRIVATE_KEY must be a base64-encoded "+
+					"ed25519 seed (%d bytes) or private key (%d bytes), got %d bytes",
+				ed25519.SeedSize, ed25519.PrivateKeySize, len(*key),
+			))
+		}
 	}
 }
 

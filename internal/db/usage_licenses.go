@@ -151,6 +151,20 @@ func UpdateUsageLicenseMetadata(
 	}
 }
 
+func UpdateUsageLicenseToken(ctx context.Context, id uuid.UUID, token string) error {
+	db := internalctx.GetDb(ctx)
+	cmd, err := db.Exec(ctx, `UPDATE UsageLicense SET token = @token WHERE id = @id`,
+		pgx.NamedArgs{"id": id, "token": token},
+	)
+	if err != nil {
+		return fmt.Errorf("could not update UsageLicense token: %w", err)
+	}
+	if cmd.RowsAffected() == 0 {
+		return fmt.Errorf("could not update UsageLicense token: %w", apierrors.ErrNotFound)
+	}
+	return nil
+}
+
 func DeleteUsageLicenseWithID(ctx context.Context, id uuid.UUID) error {
 	db := internalctx.GetDb(ctx)
 	cmd, err := db.Exec(ctx, `DELETE FROM UsageLicense WHERE id = @id`, pgx.NamedArgs{"id": id})
