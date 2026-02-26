@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"slices"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
@@ -144,6 +145,20 @@ func updateCustomerOrganizationHandler() http.HandlerFunc {
 			}
 		} else {
 			features = request.Features
+		}
+
+		if slices.Contains(features, types.CustomerOrganizationFeatureSupport) {
+			exists, err := db.ExistsSupportBundleConfiguration(ctx, *auth.CurrentOrgID())
+			if err != nil {
+				log.Error("failed to check support bundle configuration", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			if !exists {
+				http.Error(w, "support bundle configuration must be set up before enabling support feature", http.StatusBadRequest)
+				return
+			}
 		}
 
 		customerOrganization := types.CustomerOrganization{

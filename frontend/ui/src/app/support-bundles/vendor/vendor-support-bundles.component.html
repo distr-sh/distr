@@ -1,0 +1,94 @@
+<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
+  <div class="mx-auto max-w-screen-lg px-4">
+    <div class="bg-white dark:bg-gray-800 relative shadow-md rounded-lg overflow-hidden p-10">
+      <h1
+        class="pb-4 mb-4 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl dark:text-white border-b border-gray-200 dark:border-gray-700">
+        Support Bundles
+      </h1>
+      <p class="text-gray-500 dark:text-gray-400">
+        Configure the environment variables that should be collected when customers create support bundles. Variables
+        marked as redacted will have their values replaced with [REDACTED] in the collected data.
+      </p>
+
+      @if (!loading()) {
+        <div class="mt-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-bold dark:text-white">Environment Variables</h2>
+            <button
+              type="button"
+              (click)="addEnvVar()"
+              class="inline-flex items-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+              <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
+              Add Variable
+            </button>
+          </div>
+
+          @if (envVarsArray.length > 0) {
+            <div class="space-y-3">
+              @for (group of envVarsArray.controls; track $index) {
+                <div class="flex items-center gap-4">
+                  <div class="flex-1">
+                    <input
+                      type="text"
+                      [formControl]="group.controls.name"
+                      placeholder="Variable name"
+                      class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                  </div>
+                  <label class="inline-flex items-center cursor-pointer">
+                    <input type="checkbox" class="sr-only peer" [formControl]="group.controls.redacted" />
+                    <div
+                      class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+                    <span class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Redacted</span>
+                  </label>
+                  <button
+                    type="button"
+                    (click)="removeEnvVar($index)"
+                    class="py-2 px-3 text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900">
+                    <fa-icon [icon]="faTrash" class="h-4 w-4"></fa-icon>
+                  </button>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              No environment variables configured. Click "Add Variable" to add one.
+            </p>
+          }
+
+          <div class="flex justify-center w-full space-x-4 mt-8 sm:mt-0">
+            <button
+              type="button"
+              (click)="save()"
+              [disabled]="saving()"
+              class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60 disabled:cursor-not-allowed">
+              <fa-icon [icon]="faFloppyDisk" class="mr-2"></fa-icon>
+              Save
+            </button>
+          </div>
+        </div>
+
+        @if (configExists()) {
+          <h2 class="text-xl font-bold dark:text-white mt-8 mb-2">Danger Zone</h2>
+          <div
+            class="flex flex-col rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
+            <div class="p-4 flex items-center justify-between dark:text-white">
+              <div>
+                <div>Delete configuration</div>
+                <div class="text-xs font-normal text-gray-500 dark:text-gray-400">
+                  Permanently delete the support bundle configuration. Customers will no longer be able to create
+                  support bundles.
+                </div>
+              </div>
+              <button
+                type="button"
+                class="text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900"
+                (click)="deleteConfiguration()">
+                Delete
+              </button>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </div>
+</section>

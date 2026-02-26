@@ -17,6 +17,7 @@ import {
   faGear,
   faHome,
   faKey,
+  faLifeRing,
   faLightbulb,
   faPalette,
   faUsers,
@@ -72,6 +73,7 @@ export class SideBarComponent {
   protected readonly faHome = faHome;
   protected readonly faChevronDown = faChevronDown;
   protected readonly faAsterisk = faAsterisk;
+  protected readonly faLifeRing = faLifeRing;
   protected feedbackAlert = true;
   protected readonly agentsSubMenuOpen = signal(true);
   protected readonly licenseSubMenuOpen = signal(false);
