@@ -12,28 +12,35 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import {catchError, EMPTY, filter, firstValueFrom, Observable, switchMap} from 'rxjs';
-import {isExpired} from '../../util/dates';
-import {getFormDisplayedError} from '../../util/errors';
-import {filteredByFormControl} from '../../util/filter';
-import {drawerFlyInOut} from '../animations/drawer';
-import {dropdownAnimation} from '../animations/dropdown';
-import {modalFlyInOut} from '../animations/modal';
-import {AutotrimDirective} from '../directives/autotrim.directive';
-import {ApplicationsService} from '../services/applications.service';
-import {AuthService} from '../services/auth.service';
-import {LicensesService} from '../services/licenses.service';
-import {DialogRef, OverlayService} from '../services/overlay.service';
-import {ToastService} from '../services/toast.service';
-import {ApplicationLicense} from '../types/application-license';
-import {EditLicenseComponent} from './edit-license.component';
+import {isExpired} from '../../../util/dates';
+import {getFormDisplayedError} from '../../../util/errors';
+import {filteredByFormControl} from '../../../util/filter';
+import {drawerFlyInOut} from '../../animations/drawer';
+import {dropdownAnimation} from '../../animations/dropdown';
+import {modalFlyInOut} from '../../animations/modal';
+import {AutotrimDirective} from '../../directives/autotrim.directive';
+import {ApplicationsService} from '../../services/applications.service';
+import {AuthService} from '../../services/auth.service';
+import {LicensesService} from '../../services/licenses.service';
+import {DialogRef, OverlayService} from '../../services/overlay.service';
+import {ToastService} from '../../services/toast.service';
+import {ApplicationLicense} from '../../types/application-license';
+import {EditApplicationLicenseComponent} from './edit-application-license.component';
 
 @Component({
-  selector: 'app-licenses',
-  templateUrl: './licenses.component.html',
-  imports: [AsyncPipe, AutotrimDirective, ReactiveFormsModule, FaIconComponent, DatePipe, EditLicenseComponent],
+  selector: 'app-application-licenses',
+  templateUrl: './application-licenses.component.html',
+  imports: [
+    AsyncPipe,
+    AutotrimDirective,
+    ReactiveFormsModule,
+    FaIconComponent,
+    DatePipe,
+    EditApplicationLicenseComponent,
+  ],
   animations: [dropdownAnimation, drawerFlyInOut, modalFlyInOut],
 })
-export class LicensesComponent {
+export class ApplicationLicensesComponent {
   protected readonly auth = inject(AuthService);
   private readonly licensesService = inject(LicensesService);
   private readonly applicationsService = inject(ApplicationsService);

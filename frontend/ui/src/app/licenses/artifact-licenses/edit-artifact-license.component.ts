@@ -30,11 +30,11 @@ import dayjs from 'dayjs';
 import {distinctUntilChanged, first, firstValueFrom, of, Subject, switchMap, takeUntil} from 'rxjs';
 import {RelativeDatePipe} from '../../../util/dates';
 import {dropdownAnimation} from '../../animations/dropdown';
+import {ArtifactsHashComponent} from '../../artifacts/components';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {ArtifactLicense, ArtifactLicenseSelection} from '../../services/artifact-licenses.service';
 import {ArtifactsService, ArtifactWithTags} from '../../services/artifacts.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
-import {ArtifactsHashComponent} from '../components';
 
 @Component({
   selector: 'app-edit-artifact-license',

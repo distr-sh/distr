@@ -1,6 +1,7 @@
 package env
 
 import (
+	"crypto/ed25519"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -83,6 +84,7 @@ var (
 	wellKnownMicrosoftIdentityAssociation   []byte
 	stripeWebhookSecret                     *string
 	stripeAPIKey                            *string
+	usageLicensePrivateKey                  ed25519.PrivateKey
 )
 
 func Initialize() {
@@ -236,6 +238,10 @@ func Initialize() {
 
 	stripeWebhookSecret = envutil.GetEnvOrNil("STRIPE_WEBHOOK_SECRET")
 	stripeAPIKey = envutil.GetEnvOrNil("STRIPE_API_KEY")
+
+	if key := envutil.GetEnvParsedOrNil("USAGE_LICENSE_PRIVATE_KEY", base64.StdEncoding.DecodeString); key != nil {
+		usageLicensePrivateKey = ed25519.NewKeyFromSeed(*key)
+	}
 }
 
 func DatabaseUrl() string {
@@ -502,4 +508,8 @@ func StripeWebhookSecret() *string {
 
 func StripeAPIKey() *string {
 	return stripeAPIKey
+}
+
+func UsageLicensePrivateKey() ed25519.PrivateKey {
+	return usageLicensePrivateKey
 }

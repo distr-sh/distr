@@ -26,6 +26,7 @@ const (
 	ctxKeyArtifactLicense
 	ctxKeyIPAddress
 	ctxKeyOIDCer
+	ctxKeyUsageLicense
 )
 
 func GetDb(ctx context.Context) queryable.Queryable {

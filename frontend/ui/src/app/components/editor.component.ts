@@ -1,6 +1,7 @@
 import {Component, ElementRef, forwardRef, inject, Input, OnDestroy, OnInit} from '@angular/core';
 import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
 import {defaultKeymap, history, historyKeymap, indentWithTab} from '@codemirror/commands';
+import {json} from '@codemirror/lang-json';
 import {yaml} from '@codemirror/lang-yaml';
 import {HighlightStyle, indentOnInput, syntaxHighlighting} from '@codemirror/language';
 import {EditorState, StateEffect} from '@codemirror/state';
@@ -8,7 +9,7 @@ import {EditorView, highlightSpecialChars, keymap} from '@codemirror/view';
 import {tags} from '@lezer/highlight';
 import {Subject} from 'rxjs';
 
-export type EditorLanguage = 'yaml';
+export type EditorLanguage = 'yaml' | 'json';
 
 @Component({
   selector: 'app-editor',
@@ -49,7 +50,7 @@ export class EditorComponent implements OnInit, OnDestroy, ControlValueAccessor 
             this.onChange(this.view.state.doc.toString());
           }
         }),
-        ...(this.language === 'yaml' ? [yaml()] : []),
+        ...(this.language === 'yaml' ? [yaml()] : this.language === 'json' ? [json()] : []),
       ],
       parent: this.host.nativeElement,
     });

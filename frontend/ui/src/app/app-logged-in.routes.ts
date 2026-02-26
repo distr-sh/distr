@@ -8,7 +8,6 @@ import {AccessTokensComponent} from './access-tokens/access-tokens.component';
 import {AlertConfigurationsComponent} from './alert-configurations/alert-configurations.component';
 import {ApplicationDetailComponent} from './applications/application-detail.component';
 import {ApplicationsPageComponent} from './applications/applications-page.component';
-import {ArtifactLicensesComponent} from './artifacts/artifact-licenses/artifact-licenses.component';
 import {ArtifactPullsComponent} from './artifacts/artifact-pulls/artifact-pulls.component';
 import {ArtifactVersionsComponent} from './artifacts/artifact-versions/artifact-versions.component';
 import {ArtifactsComponent} from './artifacts/artifacts/artifacts.component';
@@ -18,7 +17,9 @@ import {HomeComponent} from './components/home/home.component';
 import {CustomerUsersComponent} from './components/users/customers/customer-users.component';
 import {VendorUsersComponent} from './components/users/vendors/vendor-users.component';
 import {DeploymentTargetsComponent} from './deployments/deployment-targets.component';
-import {LicensesComponent} from './licenses/licenses.component';
+import {ApplicationLicensesComponent} from './licenses/application-licenses/application-licenses.component';
+import {ArtifactLicensesComponent} from './licenses/artifact-licenses/artifact-licenses.component';
+import {UsageLicensesComponent} from './licenses/usage-licenses/usage-licenses.component';
 import {NotificationRecordsComponent} from './notification-records/notification-records.component';
 import {OrganizationBrandingComponent} from './organization-branding/organization-branding.component';
 import {OrganizationSettingsComponent} from './organization-settings/organization-settings.component';
@@ -174,6 +175,11 @@ export const routes: Routes = [
         component: SecretsPage,
       },
       {
+        path: 'usage-licenses',
+        component: UsageLicensesComponent,
+        canActivate: [requireCustomer, licensingEnabledGuard()],
+      },
+      {
         path: 'branding',
         component: OrganizationBrandingComponent,
         data: {userRole: 'vendor'},
@@ -186,11 +192,15 @@ export const routes: Routes = [
         children: [
           {
             path: 'applications',
-            component: LicensesComponent,
+            component: ApplicationLicensesComponent,
           },
           {
             path: 'artifacts',
             component: ArtifactLicensesComponent,
+          },
+          {
+            path: 'usage',
+            component: UsageLicensesComponent,
           },
         ],
       },
