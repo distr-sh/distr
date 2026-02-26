@@ -1,0 +1,138 @@
+<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
+  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
+    @if (bundle(); as bundle) {
+      <!-- Header card -->
+      <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden mb-6 p-6">
+        <div class="flex items-center mb-4">
+          <a
+            [routerLink]="backRoute()"
+            class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mr-3">
+            <fa-icon [icon]="faArrowLeft"></fa-icon>
+          </a>
+          <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
+            {{ bundle.title || 'Support Bundle ' + shortId(bundle.id) }}
+          </h1>
+          <span class="ml-3 text-xs font-medium px-2.5 py-0.5 rounded-full" [ngClass]="statusClass(bundle.status)">
+            {{ bundle.status }}
+          </span>
+        </div>
+        @if (bundle.description) {
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">{{ bundle.description }}</p>
+        }
+        <p class="text-xs text-gray-500 dark:text-gray-500">
+          Created by {{ bundle.createdByUserName }} on {{ bundle.createdAt | date: 'medium' }}
+        </p>
+
+        @if (auth.isVendor() && bundle.status === 'created') {
+          <div class="mt-4">
+            <button
+              type="button"
+              (click)="markAsResolved()"
+              [disabled]="markingResolved()"
+              class="inline-flex items-center py-2 px-4 text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-green-300 rounded-lg dark:bg-green-500 dark:hover:bg-green-600 dark:focus:ring-green-800">
+              <fa-icon [icon]="faCheck" class="mr-2"></fa-icon>
+              Mark as Resolved
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- Resources card -->
+      <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden mb-6 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Resources ({{ bundle.resources.length }})
+        </h2>
+        @if (bundle.resources.length === 0) {
+          <p class="text-sm text-gray-500 dark:text-gray-400">No resources collected yet.</p>
+        } @else {
+          <div class="space-y-3">
+            @for (resource of bundle.resources; track resource.id) {
+              <div class="border border-gray-200 dark:border-gray-700 rounded-lg">
+                <button
+                  type="button"
+                  (click)="toggleResource(resource.id)"
+                  class="flex items-center justify-between w-full p-4 text-left text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg">
+                  <span>{{ resource.name }}</span>
+                  <fa-icon
+                    [icon]="isResourceExpanded(resource.id) ? faChevronDown : faChevronRight"
+                    class="text-gray-500 dark:text-gray-400">
+                  </fa-icon>
+                </button>
+                @if (isResourceExpanded(resource.id)) {
+                  <div class="border-t border-gray-200 dark:border-gray-700 p-4">
+                    <pre
+                      class="text-xs text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-900 p-4 rounded-lg overflow-x-auto whitespace-pre-wrap break-words"
+                      >{{ resource.content }}</pre
+                    >
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Comments card -->
+      <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden p-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <fa-icon [icon]="faComment" class="mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
+          Comments ({{ bundle.comments.length }})
+        </h2>
+
+        @if (bundle.comments.length === 0) {
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">No comments yet.</p>
+        } @else {
+          <div class="space-y-4 mb-6">
+            @for (comment of bundle.comments; track comment.id) {
+              <div class="flex gap-3">
+                @if (comment.userImageUrl) {
+                  <img
+                    [src]="comment.userImageUrl"
+                    [alt]="comment.userName"
+                    class="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                } @else {
+                  <div
+                    class="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 flex items-center justify-center text-xs font-medium flex-shrink-0">
+                    {{ userInitials(comment.userName) }}
+                  </div>
+                }
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="text-sm font-medium text-gray-900 dark:text-white">{{ comment.userName }}</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-500">{{
+                      comment.createdAt | date: 'medium'
+                    }}</span>
+                  </div>
+                  <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ comment.content }}</p>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- New comment form -->
+        <form
+          [formGroup]="commentForm"
+          (ngSubmit)="submitComment()"
+          class="border-t border-gray-200 dark:border-gray-700 pt-4">
+          <div class="flex gap-3">
+            <textarea
+              formControlName="content"
+              rows="3"
+              placeholder="Write a comment..."
+              class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"></textarea>
+          </div>
+          <div class="flex justify-end mt-3">
+            <button
+              type="submit"
+              [disabled]="submittingComment()"
+              class="inline-flex items-center py-2 px-4 text-sm font-medium text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 rounded-lg dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+              <fa-icon [icon]="faPaperPlane" class="mr-2"></fa-icon>
+              Submit
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+  </div>
+</section>

@@ -219,6 +219,20 @@
           </a>
         </li>
 
+        <li>
+          <a
+            class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+            routerLinkActive="bg-gray-100 dark:bg-gray-700"
+            (click)="sidebar.hide()"
+            routerLink="/support-bundles">
+            <fa-icon
+              [icon]="faLifeRing"
+              size="lg"
+              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+            <span class="ms-3">Support Bundles</span>
+          </a>
+        </li>
+
         @if (auth.isSuperAdmin() || auth.hasRole('admin')) {
           <li>
             <a
@@ -341,6 +355,22 @@
                 size="lg"
                 class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
               <span class="ms-3">Artifacts</span>
+            </a>
+          </li>
+        }
+
+        @if (hasCustomerOrganizationFeature('support')) {
+          <li>
+            <a
+              (click)="sidebar.hide()"
+              routerLinkActive="bg-gray-100 dark:bg-gray-700"
+              routerLink="/support"
+              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              <fa-icon
+                [icon]="faLifeRing"
+                size="lg"
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+              <span class="ms-3">Support</span>
             </a>
           </li>
         }

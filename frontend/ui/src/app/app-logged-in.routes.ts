@@ -30,6 +30,9 @@ import {OrganizationService} from './services/organization.service';
 import {ToastService} from './services/toast.service';
 import {SubscriptionCallbackComponent} from './subscription/subscription-callback.component';
 import {SubscriptionComponent} from './subscription/subscription.component';
+import {CustomerSupportBundlesComponent} from './support-bundles/customer/customer-support-bundles.component';
+import {SupportBundleDetailComponent} from './support-bundles/detail/support-bundle-detail.component';
+import {VendorSupportBundlesComponent} from './support-bundles/vendor/vendor-support-bundles.component';
 import {AgentsTutorialComponent} from './tutorials/agents/agents-tutorial.component';
 import {BrandingTutorialComponent} from './tutorials/branding/branding-tutorial.component';
 import {RegistryTutorialComponent} from './tutorials/registry/registry-tutorial.component';
@@ -253,6 +256,37 @@ export const routes: Routes = [
           {
             path: 'history',
             component: NotificationRecordsComponent,
+          },
+        ],
+      },
+      {
+        path: 'support-bundles',
+        canActivate: [requireVendor],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            component: VendorSupportBundlesComponent,
+            canActivate: [requiredRoleGuard('read_write', 'admin')],
+          },
+          {
+            path: ':supportBundleId',
+            component: SupportBundleDetailComponent,
+          },
+        ],
+      },
+      {
+        path: 'support',
+        canActivate: [requireCustomer],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            component: CustomerSupportBundlesComponent,
+          },
+          {
+            path: ':supportBundleId',
+            component: SupportBundleDetailComponent,
           },
         ],
       },
