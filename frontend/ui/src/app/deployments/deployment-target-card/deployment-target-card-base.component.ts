@@ -90,7 +90,10 @@ export abstract class DeploymentTargetCardBaseComponent {
   protected editFormLoading = false;
 
   protected readonly notesForm = new FormGroup({
-    notes: new FormControl<string>({value: '', disabled: this.auth.hasAnyRole('read_only')}, {nonNullable: true}),
+    notes: new FormControl<string>(
+      {value: '', disabled: !this.auth.hasAnyRole('admin', 'read_write')},
+      {nonNullable: true}
+    ),
   });
   protected notesFormLoading = false;
 

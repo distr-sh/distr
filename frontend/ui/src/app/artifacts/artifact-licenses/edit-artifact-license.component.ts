@@ -33,6 +33,7 @@ import {dropdownAnimation} from '../../animations/dropdown';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {ArtifactLicense, ArtifactLicenseSelection} from '../../services/artifact-licenses.service';
 import {ArtifactsService, ArtifactWithTags} from '../../services/artifacts.service';
+import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {ArtifactsHashComponent} from '../components';
 
@@ -59,7 +60,8 @@ import {ArtifactsHashComponent} from '../components';
   animations: [dropdownAnimation],
 })
 export class EditArtifactLicenseComponent implements OnInit, OnDestroy, AfterViewInit, ControlValueAccessor {
-  private injector = inject(Injector);
+  private readonly injector = inject(Injector);
+  protected readonly auth = inject(AuthService);
   private readonly destroyed$ = new Subject<void>();
   private readonly artifactsService = inject(ArtifactsService);
   private readonly customerOrganizationService = inject(CustomerOrganizationsService);
@@ -273,6 +275,10 @@ export class EditArtifactLicenseComponent implements OnInit, OnDestroy, AfterVie
     } else {
       this.editForm.reset();
       this.addArtifactGroup();
+    }
+
+    if (!this.auth.hasAnyRole('admin', 'read_write')) {
+      this.editForm.disable();
     }
   }
 }
