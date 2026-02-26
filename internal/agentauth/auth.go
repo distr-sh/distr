@@ -20,6 +20,7 @@ import (
 
 var (
 	previousAuth     = map[uuid.UUID]map[string]api.AgentRegistryAuth{}
+	previousJWT      = map[uuid.UUID]string{}
 	credentialStores = map[uuid.UUID]credentials.Store{}
 )
 
@@ -54,11 +55,20 @@ func EnsureAuth(
 
 	if reg, err := remote.NewRegistry(agentenv.DistrRegistryHost); err != nil {
 		return nil, err
-	} else {
+	} else if previousJWT[deployment.ID] != jwt {
+		if previousJWT[deployment.ID] != "" {
+			if err := credentials.Logout(ctx, store, agentenv.DistrRegistryHost); err != nil {
+				return nil, fmt.Errorf("docker logout failed for %v: %w", agentenv.DistrRegistryHost, err)
+			}
+			previousJWT[deployment.ID] = ""
+		}
+
 		reg.PlainHTTP = agentenv.DistrRegistryPlainHTTP
 		if err := credentials.Login(ctx, store, reg, auth.Credential{Username: "-", Password: jwt}); err != nil {
 			return nil, fmt.Errorf("docker login failed for %v: %w", agentenv.DistrRegistryHost, err)
 		}
+
+		previousJWT[deployment.ID] = jwt
 	}
 
 	if !maps.Equal(previousAuth[deployment.ID], deployment.RegistryAuth) {
