@@ -1,3 +1,6 @@
+[settings]
+env_shell_expand = false
+
 [tools]
 node = "24"
 go = "1.26.0"
