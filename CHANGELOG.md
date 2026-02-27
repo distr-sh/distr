@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.11.6](https://github.com/distr-sh/distr/compare/2.11.5...2.11.6) (2026-02-27)
+
+
+### Bug Fixes
+
+* **deps:** update kubernetes packages to v0.35.2 ([#1912](https://github.com/distr-sh/distr/issues/1912)) ([48df436](https://github.com/distr-sh/distr/commit/48df4366efa94c5fc1b00f2e1f6ba28ba58b279e))
+* **deps:** update module github.com/aws/aws-sdk-go-v2/service/s3 to v1.96.2 ([#1913](https://github.com/distr-sh/distr/issues/1913)) ([50f13fd](https://github.com/distr-sh/distr/commit/50f13fd1533292311ed44f0687a211d6ab4c8ed0))
+
+
+### Other
+
+* **deps:** bump minimatch from 9.0.6 to 9.0.9 in /sdk/js in the npm_and_yarn group across 1 directory ([#1914](https://github.com/distr-sh/distr/issues/1914)) ([e610ada](https://github.com/distr-sh/distr/commit/e610ada5e9d2dc8a5392188e046f70fe24b73cd7))
+* **deps:** update actions/setup-go action to v6.3.0 ([#1904](https://github.com/distr-sh/distr/issues/1904)) ([45342af](https://github.com/distr-sh/distr/commit/45342afc483046a3fb8e867a9081b627de9da99d))
+* **deps:** update anchore/sbom-action action to v0.23.0 ([#1905](https://github.com/distr-sh/distr/issues/1905)) ([db463d4](https://github.com/distr-sh/distr/commit/db463d4ba826db9f0ffef93223336191c61b170c))
+* **deps:** update angular monorepo to v21.2.0 ([#1908](https://github.com/distr-sh/distr/issues/1908)) ([f639cf2](https://github.com/distr-sh/distr/commit/f639cf247c72acc5a6cb9d2c146fd7ec0f07b9de))
+* **deps:** update dependency @angular/cdk to v21.2.0 ([#1909](https://github.com/distr-sh/distr/issues/1909)) ([0609b45](https://github.com/distr-sh/distr/commit/0609b45bdf3a279745b9363ec0522651ab54bd87))
+* **deps:** update dependency @codemirror/language to v6.12.2 ([#1901](https://github.com/distr-sh/distr/issues/1901)) ([b88aae3](https://github.com/distr-sh/distr/commit/b88aae312dd252686123328f86df03e1858b185e))
+* **deps:** update dependency pnpm to v10.30.3 ([#1892](https://github.com/distr-sh/distr/issues/1892)) ([39a0f79](https://github.com/distr-sh/distr/commit/39a0f79accf4beac4856795307378ca2ab788f91))
+* **deps:** update tailwindcss monorepo to v4.2.1 ([#1889](https://github.com/distr-sh/distr/issues/1889)) ([f353532](https://github.com/distr-sh/distr/commit/f3535323b0ce22dc2c1680aaa46c3622c2624cb8))
+
 ## [2.11.5](https://github.com/distr-sh/distr/compare/2.11.4...2.11.5) (2026-02-26)
 
 
