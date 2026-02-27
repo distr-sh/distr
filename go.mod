@@ -41,7 +41,7 @@ require (
 	github.com/pquerna/otp v1.5.0
 	github.com/samber/slog-zap/v2 v2.6.3
 	github.com/spf13/cobra v1.10.2
-	github.com/stripe/stripe-go/v84 v84.3.0
+	github.com/stripe/stripe-go/v84 v84.4.0
 	github.com/wneessen/go-mail v0.7.2
 	go.opentelemetry.io/collector/component v1.52.0
 	go.opentelemetry.io/collector/confmap v1.52.0
