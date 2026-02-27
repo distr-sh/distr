@@ -171,7 +171,7 @@ func GetOrganizationsForUser(ctx context.Context, userID uuid.UUID) ([]types.Org
 			LEFT JOIN CustomerOrganization cu ON cu.id = j.customer_organization_id
 			WHERE u.id = @id
 				AND o.deleted_at IS NULL
-			ORDER BY o.created_at
+			ORDER BY o.name
 	`, pgx.NamedArgs{"id": userID})
 	if err != nil {
 		return nil, err
@@ -194,7 +194,7 @@ func GetAllOrganizationsForSuperAdmin(ctx context.Context) ([]types.Organization
 			o.created_at as joined_org_at
 			FROM Organization o
 			WHERE o.deleted_at IS NULL
-			ORDER BY o.created_at
+			ORDER BY o.subscription_type::text, o.name
 	`)
 	if err != nil {
 		return nil, err

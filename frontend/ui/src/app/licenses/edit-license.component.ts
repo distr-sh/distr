@@ -41,6 +41,7 @@ import {dropdownAnimation} from '../animations/dropdown';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {ApplicationsService} from '../services/applications.service';
 import {ArtifactLicense} from '../services/artifact-licenses.service';
+import {AuthService} from '../services/auth.service';
 import {CustomerOrganizationsService} from '../services/customer-organizations.service';
 import {ApplicationLicense} from '../types/application-license';
 
@@ -58,10 +59,12 @@ import {ApplicationLicense} from '../types/application-license';
   animations: [dropdownAnimation],
 })
 export class EditLicenseComponent implements OnInit, OnDestroy, AfterViewInit, ControlValueAccessor {
-  private injector = inject(Injector);
+  private readonly injector = inject(Injector);
   private readonly destroyed$ = new Subject<void>();
   private readonly applicationsService = inject(ApplicationsService);
   private readonly customerOrganizationService = inject(CustomerOrganizationsService);
+  protected readonly auth = inject(AuthService);
+
   applications$ = this.applicationsService.list();
   customers$ = this.customerOrganizationService.getCustomerOrganizations().pipe(first());
 
@@ -126,6 +129,10 @@ export class EditLicenseComponent implements OnInit, OnDestroy, AfterViewInit, C
         }
       }
     });
+
+    if (!this.auth.hasAnyRole('admin', 'read_write')) {
+      this.editForm.disable({emitEvent: false});
+    }
   }
 
   ngOnInit() {

@@ -35,11 +35,10 @@
             <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"> Artifact Tags * </label>
           </div>
         </div>
-        <div class="w-10"></div>
       </div>
 
       <ng-container formArrayName="artifacts">
-        @for (artifactCtrl of artifacts.controls; track i; let i = $index) {
+        @for (artifactCtrl of editForm.controls.artifacts.controls; track i; let i = $index) {
           <div class="mb-2 flex" [formGroupName]="i">
             <div class="flex-grow grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
               <div class="w-full">
@@ -60,6 +59,7 @@
                   cdkOverlayOrigin
                   #dropdownTriggerButton
                   #dropdownTrigger="cdkOverlayOrigin"
+                  [disabled]="!auth.hasAnyRole('admin', 'read_write')"
                   (click)="toggleDropdown(i, artifactCtrl)">
                   <span class="flex-grow text-left"
                     >{{
@@ -70,6 +70,7 @@
                   </span>
                   <fa-icon
                     class="transition duration-150 ease-in-out"
+                    [class.opacity-30]="!auth.hasAnyRole('admin', 'read_write')"
                     [class.rotate-x-180]="openedArtifactIdx() === i"
                     [icon]="faChevronDown" />
                 </button>
@@ -159,23 +160,25 @@
               </div>
             </div>
 
-            <button
-              (click)="deleteArtifactGroup(i)"
-              class="p-2.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-              <svg
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                class="w-5 h-5"
-                viewBox="0 0 20 20"
-                fill="currentColor">
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
+            @if (auth.hasAnyRole('admin', 'read_write')) {
+              <button
+                (click)="deleteArtifactGroup(i)"
+                class="p-2.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <svg
                   aria-hidden="true"
-                  d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" />
-              </svg>
-              <span class="sr-only">Delete</span>
-            </button>
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-5 h-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor">
+                  <path
+                    fill-rule="evenodd"
+                    clip-rule="evenodd"
+                    aria-hidden="true"
+                    d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" />
+                </svg>
+                <span class="sr-only">Delete</span>
+              </button>
+            }
           </div>
         }
       </ng-container>
@@ -185,12 +188,14 @@
       <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
     }
 
-    <button
-      (click)="addArtifactGroup()"
-      class="flex items-center pb-2 text-sm font-medium dark:border-gray-600 text-primary-600 dark:text-primary-500 hover:underline">
-      <fa-icon [icon]="faPlus" class="me-1" />
-      Add Artifact
-    </button>
+    @if (auth.hasAnyRole('admin', 'read_write')) {
+      <button
+        (click)="addArtifactGroup()"
+        class="flex items-center pb-2 text-sm font-medium dark:border-gray-600 text-primary-600 dark:text-primary-500 hover:underline">
+        <fa-icon [icon]="faPlus" class="me-1" />
+        Add Artifact
+      </button>
+    }
   </div>
 
   <div>

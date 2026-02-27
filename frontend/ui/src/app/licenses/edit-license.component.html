@@ -51,6 +51,7 @@
           cdkOverlayOrigin
           #dropdownTriggerButton
           #dropdownTrigger="cdkOverlayOrigin"
+          [disabled]="!auth.hasAnyRole('admin', 'read_write')"
           (click)="toggleDropdown()">
           <span class="flex-grow text-left"
             >{{
@@ -61,6 +62,7 @@
           </span>
           <fa-icon
             class="transition duration-150 ease-in-out"
+            [class.opacity-30]="!auth.hasAnyRole('admin', 'read_write')"
             [class.rotate-x-180]="dropdownOpen()"
             [icon]="faChevronDown" />
         </button>
