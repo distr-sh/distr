@@ -278,7 +278,7 @@ export class EditArtifactLicenseComponent implements OnInit, OnDestroy, AfterVie
     }
 
     if (!this.auth.hasAnyRole('admin', 'read_write')) {
-      this.editForm.disable();
+      this.editForm.disable({emitEvent: false});
     }
   }
 }

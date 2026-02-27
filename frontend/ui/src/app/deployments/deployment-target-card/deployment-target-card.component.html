@@ -108,25 +108,25 @@
                   Edit
                 </button>
               </li>
-            }
 
-            @if (agentUpdateAvailable()) {
-              <li>
-                <button
-                  type="button"
-                  (click)="showDeploymentTargetDropdown.set(false); updateDeploymentTargetAgent()"
-                  class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white">
-                  <fa-icon [icon]="faRotate" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
-                  Update Agent
-                </button>
-              </li>
-            } @else if (agentUpdatePending()) {
-              <li>
-                <span class="text-start block w-full px-4 py-2 text-sm text-gray-500 dark:text-gray-400 select-none">
-                  <fa-icon [icon]="faRotate" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
-                  Update pending&hellip;
-                </span>
-              </li>
+              @if (agentUpdateAvailable()) {
+                <li>
+                  <button
+                    type="button"
+                    (click)="showDeploymentTargetDropdown.set(false); updateDeploymentTargetAgent()"
+                    class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white">
+                    <fa-icon [icon]="faRotate" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
+                    Update Agent
+                  </button>
+                </li>
+              } @else if (agentUpdatePending()) {
+                <li>
+                  <span class="text-start block w-full px-4 py-2 text-sm text-gray-500 dark:text-gray-400 select-none">
+                    <fa-icon [icon]="faRotate" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
+                    Update pending&hellip;
+                  </span>
+                </li>
+              }
             }
 
             <li>

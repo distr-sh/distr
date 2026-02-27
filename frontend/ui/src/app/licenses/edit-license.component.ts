@@ -131,7 +131,7 @@ export class EditLicenseComponent implements OnInit, OnDestroy, AfterViewInit, C
     });
 
     if (!this.auth.hasAnyRole('admin', 'read_write')) {
-      this.editForm.disable();
+      this.editForm.disable({emitEvent: false});
     }
   }
 
