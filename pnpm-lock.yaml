@@ -43,7 +43,7 @@ importers:
         version: 6.1.2
       '@codemirror/language':
         specifier: ^6.10.8
-        version: 6.12.1
+        version: 6.12.2
       '@codemirror/state':
         specifier: ^6.5.1
         version: 6.5.4
@@ -513,8 +513,8 @@ packages:
   '@codemirror/lang-yaml@6.1.2':
     resolution: {integrity: sha512-dxrfG8w5Ce/QbT7YID7mWZFKhdhsaTNOYjOkSIMt1qmC4VQnXSDSYVHHHn8k6kJUfIhtLo8t1JJgltlxWdsITw==}
 
-  '@codemirror/language@6.12.1':
-    resolution: {integrity: sha512-Fa6xkSiuGKc8XC8Cn96T+TQHYj4ZZ7RdFmXA3i9xe/3hLHfwPZdM+dqfX0Cp0zQklBKhVD8Yzc8LS45rkqcwpQ==}
+  '@codemirror/language@6.12.2':
+    resolution: {integrity: sha512-jEPmz2nGGDxhRTg3lTpzmIyGKxz3Gp3SJES4b0nAuE5SWQoKdT5GoQ69cwMmFd+wvFUhYirtDTr0/DRHpQAyWg==}
 
   '@codemirror/state@6.5.4':
     resolution: {integrity: sha512-8y7xqG/hpB53l25CIoit9/ngxdfoG+fx+V3SHBrinnhOtLvKHRyAJJuHzkWrR4YXXLX8eXBsejgAAxHUOdW1yw==}
@@ -4366,14 +4366,14 @@ snapshots:
 
   '@codemirror/autocomplete@6.20.0':
     dependencies:
-      '@codemirror/language': 6.12.1
+      '@codemirror/language': 6.12.2
       '@codemirror/state': 6.5.4
       '@codemirror/view': 6.39.15
       '@lezer/common': 1.5.1
 
   '@codemirror/commands@6.10.2':
     dependencies:
-      '@codemirror/language': 6.12.1
+      '@codemirror/language': 6.12.2
       '@codemirror/state': 6.5.4
       '@codemirror/view': 6.39.15
       '@lezer/common': 1.5.1
@@ -4381,14 +4381,14 @@ snapshots:
   '@codemirror/lang-yaml@6.1.2':
     dependencies:
       '@codemirror/autocomplete': 6.20.0
-      '@codemirror/language': 6.12.1
+      '@codemirror/language': 6.12.2
       '@codemirror/state': 6.5.4
       '@lezer/common': 1.5.1
       '@lezer/highlight': 1.2.3
       '@lezer/lr': 1.4.8
       '@lezer/yaml': 1.0.4
 
-  '@codemirror/language@6.12.1':
+  '@codemirror/language@6.12.2':
     dependencies:
       '@codemirror/state': 6.5.4
       '@codemirror/view': 6.39.15
