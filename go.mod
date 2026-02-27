@@ -23,7 +23,7 @@ require (
 	github.com/getsentry/sentry-go/otel v0.43.0
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/go-chi/httprate v0.15.0
-	github.com/go-chi/jwtauth/v5 v5.3.3
+	github.com/go-chi/jwtauth/v5 v5.4.0
 	github.com/go-co-op/gocron/v2 v2.19.1
 	github.com/go-logr/zapr v1.3.0
 	github.com/golang-migrate/migrate/v4 v4.19.1
@@ -88,6 +88,8 @@ require (
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/ianlancetaylor/demangle v0.0.0-20240805132620-81f5be970eca // indirect
 	github.com/invopop/jsonschema v0.13.0 // indirect
+	github.com/lestrrat-go/httprc/v3 v3.0.0-beta2 // indirect
+	github.com/lestrrat-go/jwx/v3 v3.0.2 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/gopsutilenv v0.146.0 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/prometheus/client_golang v1.23.2 // indirect
