@@ -166,6 +166,7 @@ func ApiRouter(
 					r.Route("/secrets", handlers.SecretsRouter)
 					r.Route("/settings", handlers.SettingsRouter)
 					r.Route("/tutorial-progress", handlers.TutorialsRouter)
+					r.Route("/usage-licenses", handlers.UsageLicensesRouter)
 					r.Route("/user-accounts", handlers.UserAccountsRouter)
 				})
 			})

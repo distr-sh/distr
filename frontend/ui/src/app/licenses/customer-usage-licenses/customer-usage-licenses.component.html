@@ -1,0 +1,76 @@
+<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
+  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
+    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+      <div
+        class="flex flex-col md:flex-row items-stretch md:items-center md:space-x-3 space-y-3 md:space-y-0 justify-between mx-4 py-4 dark:border-gray-700">
+        <div class="w-full md:w-1/2">
+          <form class="flex items-center" [formGroup]="filterForm">
+            <label for="simple-search" class="sr-only">Search</label>
+            <div class="relative w-full">
+              <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <fa-icon [icon]="faMagnifyingGlass" class="text-gray-500 dark:text-gray-400"></fa-icon>
+              </div>
+              <input
+                [formControl]="filterForm.controls.search"
+                autotrim
+                type="text"
+                id="simple-search"
+                placeholder="Filter licenses"
+                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+          <thead
+            class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
+            <tr>
+              <th scope="col" class="p-4">Name</th>
+              <th scope="col" class="p-4">Description</th>
+              <th scope="col" class="p-4">Expires</th>
+              <th scope="col" class="p-4">License</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (license of licenses$ | async; track license.id) {
+              <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                  <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis block">
+                    {{ license.name }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-gray-900 dark:text-white">
+                  <span class="max-w-48 overflow-hidden text-ellipsis block">
+                    {{ license.description }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                  {{ license.expiresAt | date }}
+                  @if (isExpired(license)) {
+                    <span class="text-red-600 dark:text-red-400">(expired)</span>
+                  }
+                </td>
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                  <button
+                    type="button"
+                    (click)="viewLicense(license)"
+                    class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                    <fa-icon [icon]="faEye" class="h-4 w-4 mr-2 mb-1 text-gray-500 dark:text-gray-400"></fa-icon>
+                    View License
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<ng-template #viewLicenseModal>
+  @if (selectedLicense(); as license) {
+    <app-view-usage-license-modal [license]="license" (closed)="hideViewLicenseModal()" />
+  }
+</ng-template>

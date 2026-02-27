@@ -36,28 +36,28 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {combineLatestWith, filter, first, firstValueFrom, Subject, switchMap, takeUntil} from 'rxjs';
-import {isArchived} from '../../util/dates';
-import {dropdownAnimation} from '../animations/dropdown';
-import {AutotrimDirective} from '../directives/autotrim.directive';
-import {ApplicationsService} from '../services/applications.service';
-import {ArtifactLicense} from '../services/artifact-licenses.service';
-import {CustomerOrganizationsService} from '../services/customer-organizations.service';
-import {ApplicationLicense} from '../types/application-license';
+import {isArchived} from '../../../util/dates';
+import {dropdownAnimation} from '../../animations/dropdown';
+import {AutotrimDirective} from '../../directives/autotrim.directive';
+import {ApplicationsService} from '../../services/applications.service';
+import {ArtifactLicense} from '../../services/artifact-licenses.service';
+import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
+import {ApplicationLicense} from '../../types/application-license';
 
 @Component({
-  selector: 'app-edit-license',
-  templateUrl: './edit-license.component.html',
+  selector: 'app-edit-application-license',
+  templateUrl: './edit-application-license.component.html',
   imports: [AsyncPipe, AutotrimDirective, ReactiveFormsModule, CdkOverlayOrigin, CdkConnectedOverlay, FaIconComponent],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => EditLicenseComponent),
+      useExisting: forwardRef(() => EditApplicationLicenseComponent),
       multi: true,
     },
   ],
   animations: [dropdownAnimation],
 })
-export class EditLicenseComponent implements OnInit, OnDestroy, AfterViewInit, ControlValueAccessor {
+export class EditApplicationLicenseComponent implements OnInit, OnDestroy, AfterViewInit, ControlValueAccessor {
   private injector = inject(Injector);
   private readonly destroyed$ = new Subject<void>();
   private readonly applicationsService = inject(ApplicationsService);

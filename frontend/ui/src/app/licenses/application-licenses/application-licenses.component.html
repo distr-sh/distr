@@ -1,0 +1,175 @@
+<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
+  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
+    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+      <div
+        class="flex flex-col md:flex-row items-stretch md:items-center md:space-x-3 space-y-3 md:space-y-0 justify-between mx-4 py-4 dark:border-gray-700">
+        <div class="w-full md:w-1/2">
+          <form class="flex items-center" [formGroup]="filterForm">
+            <label for="simple-search" class="sr-only">Search</label>
+            <div class="relative w-full">
+              <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <fa-icon [icon]="faMagnifyingGlass" class="text-gray-500 dark:text-gray-400"></fa-icon>
+              </div>
+              <input
+                [formControl]="filterForm.controls.search"
+                autotrim
+                type="text"
+                id="simple-search"
+                placeholder="Filter application licenses"
+                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+            </div>
+          </form>
+        </div>
+        <div
+          class="w-full md:w-auto flex flex-col md:flex-row space-y-2 md:space-y-0 items-stretch md:items-center justify-end md:space-x-3 flex-shrink-0">
+          @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
+            <button
+              (click)="openDrawer(manageLicenseDrawer)"
+              type="button"
+              id="createApplicationButton"
+              class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+              <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2"></fa-icon>
+              Create Application License
+            </button>
+          }
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+          <thead
+            class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
+            <tr>
+              <th scope="col" class="p-4">Name</th>
+              <th scope="col" class="p-4">Customer</th>
+              <th scope="col" class="p-4">Application</th>
+              <th scope="col" class="p-4">Creation Date</th>
+              <th scope="col" class="p-4">Expires</th>
+              <th scope="col" class="p-4"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (license of licenses$ | async; track license.id) {
+              <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                  <div class="flex items-center mr-3">
+                    <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis">
+                      {{ license.name }}
+                    </span>
+                  </div>
+                </td>
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                  <div class="flex items-center mr-3">
+                    <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis">
+                      {{ license.customerOrganization?.name }}
+                    </span>
+                  </div>
+                </td>
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                  <div class="flex items-center mr-3">
+                    <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis">
+                      {{
+                        license.application?.name +
+                          ((license.versions || []).length === 0
+                            ? ' (unrestricted)'
+                            : ' (' + license.versions!.length + ' versions)')
+                      }}
+                    </span>
+                  </div>
+                </td>
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                  <div class="flex items-center">
+                    {{ license.createdAt | date: 'short' }}
+                  </div>
+                </td>
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                  @if (license.expiresAt; as d) {
+                    {{ d | date }}
+                    @if (isExpired(license)) {
+                      (expired)
+                    }
+                  } @else {
+                    never
+                  }
+                </td>
+                <td
+                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">
+                  @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
+                    <button
+                      type="button"
+                      (click)="openDrawer(manageLicenseDrawer, license)"
+                      class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                      <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Delete"
+                      (click)="deleteLicense(license)"
+                      class="py-2 px-3 text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900">
+                      <fa-icon [icon]="faTrash" class="h-4 w-4"></fa-icon>
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<ng-template #manageLicenseDrawer>
+  <div
+    @drawerFlyInOut
+    id="manage-license-drawer"
+    class="h-screen p-4 overflow-y-auto bg-white w-160 dark:bg-gray-800"
+    tabindex="-1"
+    aria-labelledby="drawer-right-label">
+    <h5
+      id="drawer-label"
+      class="inline-flex items-center mb-6 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
+      Manage Application License
+    </h5>
+    <button
+      type="button"
+      (click)="hideDrawer()"
+      class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 right-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
+      <fa-icon [icon]="faXmark" class="w-5 h-5"></fa-icon>
+      <span class="sr-only">Close menu</span>
+    </button>
+
+    @if ((licenses$ | async)?.length === 0) {
+      <div
+        class="flex items-center p-4 mb-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300 border border-yellow-8000 dark:border-yellow-3000 rounded-lg"
+        role="alert">
+        <fa-icon [icon]="faCircleExclamation" />
+        <span class="sr-only">Info</span>
+        <div class="ms-3 text-sm font-medium">
+          <p>
+            <strong>Creating your first license will restrict what all your customers see.</strong>
+          </p>
+          <p>
+            After you created your first license your customers will only see applications which they have a valid
+            license for. Without any license your customers will see all applications and versions.
+          </p>
+        </div>
+      </div>
+    }
+
+    <form [formGroup]="editForm" (ngSubmit)="saveLicense()">
+      <div class="flex flex-col gap-4">
+        <app-edit-application-license formControlName="license"></app-edit-application-license>
+        <div class="flex justify-center w-full pb-4 space-x-4 sm:mt-0">
+          <button
+            type="submit"
+            [disabled]="editFormLoading"
+            class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+            <fa-icon [icon]="faPen" class="me-2" />
+            Save
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</ng-template>

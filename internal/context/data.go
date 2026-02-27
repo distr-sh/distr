@@ -113,6 +113,20 @@ func WithArtifactLicense(ctx context.Context, license *types.ArtifactLicense) co
 	return ctx
 }
 
+func GetUsageLicense(ctx context.Context) *types.UsageLicense {
+	val := ctx.Value(ctxKeyUsageLicense)
+	if license, ok := val.(*types.UsageLicense); ok {
+		if license != nil {
+			return license
+		}
+	}
+	panic("usage license not contained in context")
+}
+
+func WithUsageLicense(ctx context.Context, license *types.UsageLicense) context.Context {
+	return context.WithValue(ctx, ctxKeyUsageLicense, license)
+}
+
 func GetRequestIPAddress(ctx context.Context) string {
 	if val, ok := ctx.Value(ctxKeyIPAddress).(string); ok {
 		return val

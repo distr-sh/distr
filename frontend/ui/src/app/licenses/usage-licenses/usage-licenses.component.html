@@ -15,7 +15,7 @@
                 autotrim
                 type="text"
                 id="simple-search"
-                placeholder="Filter application licenses"
+                placeholder="Filter usage licenses"
                 class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
             </div>
           </form>
@@ -26,10 +26,9 @@
             <button
               (click)="openDrawer(manageLicenseDrawer)"
               type="button"
-              id="createApplicationButton"
               class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
               <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2"></fa-icon>
-              Create Application License
+              Create Usage License
             </button>
           }
         </div>
@@ -40,9 +39,10 @@
             class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
             <tr>
               <th scope="col" class="p-4">Name</th>
-              <th scope="col" class="p-4">Customer</th>
-              <th scope="col" class="p-4">Application</th>
-              <th scope="col" class="p-4">Creation Date</th>
+              <th scope="col" class="p-4">Description</th>
+              @if (auth.isVendor()) {
+                <th scope="col" class="p-4">Customer</th>
+              }
               <th scope="col" class="p-4">Expires</th>
               <th scope="col" class="p-4"></th>
             </tr>
@@ -51,48 +51,37 @@
             @for (license of licenses$ | async; track license.id) {
               <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
                 <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                  <div class="flex items-center mr-3">
-                    <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis">
-                      {{ license.name }}
-                    </span>
-                  </div>
+                  <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis block">
+                    {{ license.name }}
+                  </span>
                 </td>
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                  <div class="flex items-center mr-3">
-                    <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis">
-                      {{ license.customerOrganization?.name }}
-                    </span>
-                  </div>
+                <td class="px-4 py-3 text-gray-900 dark:text-white">
+                  <span class="max-w-48 overflow-hidden text-ellipsis block">
+                    {{ license.description }}
+                  </span>
                 </td>
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                  <div class="flex items-center mr-3">
-                    <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis">
-                      {{
-                        license.application?.name +
-                          ((license.versions || []).length === 0
-                            ? ' (unrestricted)'
-                            : ' (' + license.versions!.length + ' versions)')
-                      }}
-                    </span>
-                  </div>
-                </td>
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                  <div class="flex items-center">
-                    {{ license.createdAt | date: 'short' }}
-                  </div>
-                </td>
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                  @if (license.expiresAt; as d) {
-                    {{ d | date }}
-                    @if (isExpired(license)) {
-                      (expired)
-                    }
-                  } @else {
-                    never
+                @if (auth.isVendor()) {
+                  <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                    {{ getOwnerColumn(license.customerOrganizationId) | async }}
+                  </td>
+                }
+                <td
+                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+                  [title]="license.expiresAt | date: 'medium'">
+                  {{ license.expiresAt | date }}
+                  @if (isExpired(license)) {
+                    <span class="text-red-600 dark:text-red-400">(expired)</span>
                   }
                 </td>
                 <td
                   class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">
+                  <button
+                    type="button"
+                    (click)="viewLicense(license)"
+                    class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                    <fa-icon [icon]="faEye" class="h-4 w-4 mr-2 mb-1 text-gray-500 dark:text-gray-400"></fa-icon>
+                    View License
+                  </button>
                   @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
                     <button
                       type="button"
@@ -100,6 +89,13 @@
                       class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
                       <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
                       Edit
+                    </button>
+                    <button
+                      type="button"
+                      (click)="duplicateLicense(manageLicenseDrawer, license)"
+                      class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                      <fa-icon [icon]="faCopy" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
+                      Duplicate
                     </button>
                     <button
                       type="button"
@@ -122,14 +118,14 @@
 <ng-template #manageLicenseDrawer>
   <div
     @drawerFlyInOut
-    id="manage-license-drawer"
+    id="manage-usage-license-drawer"
     class="h-screen p-4 overflow-y-auto bg-white w-160 dark:bg-gray-800"
     tabindex="-1"
     aria-labelledby="drawer-right-label">
     <h5
       id="drawer-label"
       class="inline-flex items-center mb-6 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
-      Manage Application License
+      Manage Usage License
     </h5>
     <button
       type="button"
@@ -139,27 +135,9 @@
       <span class="sr-only">Close menu</span>
     </button>
 
-    @if ((licenses$ | async)?.length === 0) {
-      <div
-        class="flex items-center p-4 mb-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300 border border-yellow-8000 dark:border-yellow-3000 rounded-lg"
-        role="alert">
-        <fa-icon [icon]="faCircleExclamation" />
-        <span class="sr-only">Info</span>
-        <div class="ms-3 text-sm font-medium">
-          <p>
-            <strong>Creating your first license will restrict what all your customers see.</strong>
-          </p>
-          <p>
-            After you created your first license your customers will only see applications which they have a valid
-            license for. Without any license your customers will see all applications and versions.
-          </p>
-        </div>
-      </div>
-    }
-
     <form [formGroup]="editForm" (ngSubmit)="saveLicense()">
       <div class="flex flex-col gap-4">
-        <app-edit-license formControlName="license"></app-edit-license>
+        <app-edit-usage-license formControlName="license"></app-edit-usage-license>
         <div class="flex justify-center w-full pb-4 space-x-4 sm:mt-0">
           <button
             type="submit"
@@ -172,4 +150,10 @@
       </div>
     </form>
   </div>
+</ng-template>
+
+<ng-template #viewLicenseModal>
+  @if (selectedLicense(); as license) {
+    <app-view-usage-license-modal [license]="license" (closed)="hideViewLicenseModal()" />
+  }
 </ng-template>

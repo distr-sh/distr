@@ -1,0 +1,90 @@
+<div class="z-50 w-192 max-w-full max-h-full overflow-x-hidden overflow-y-auto">
+  <div class="relative w-full max-h-full">
+    <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
+      <!-- Modal header -->
+      <div class="flex items-center justify-between p-4 border-b border-gray-200 rounded-t dark:border-gray-600">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ license().name }}</h3>
+        <button
+          type="button"
+          class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+          (click)="close()">
+          <fa-icon [icon]="faXmark" class="w-3 h-3"></fa-icon>
+          <span class="sr-only">Close modal</span>
+        </button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="p-4 space-y-4">
+        @if (license().description) {
+          <p class="text-sm text-gray-500 dark:text-gray-400">{{ license().description }}</p>
+        }
+        <div class="text-gray-500 dark:text-gray-400">
+          <div class="flex flex-wrap border-b border-gray-200 dark:border-gray-600">
+            <button
+              type="button"
+              (click)="activeTab.set('token')"
+              class="text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+              [class.text-blue-600]="activeTab() === 'token'"
+              [class.dark:text-blue-500]="activeTab() === 'token'"
+              [class.border-blue-600]="activeTab() === 'token'"
+              [class.border-transparent]="activeTab() !== 'token'">
+              License
+            </button>
+            <button
+              type="button"
+              (click)="activeTab.set('payload')"
+              class="text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+              [class.text-blue-600]="activeTab() === 'payload'"
+              [class.dark:text-blue-500]="activeTab() === 'payload'"
+              [class.border-blue-600]="activeTab() === 'payload'"
+              [class.border-transparent]="activeTab() !== 'payload'">
+              License Data
+            </button>
+            <button
+              type="button"
+              (click)="activeTab.set('decoded')"
+              class="text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+              [class.text-blue-600]="activeTab() === 'decoded'"
+              [class.dark:text-blue-500]="activeTab() === 'decoded'"
+              [class.border-blue-600]="activeTab() === 'decoded'"
+              [class.border-transparent]="activeTab() !== 'decoded'">
+              Decoded License
+            </button>
+          </div>
+
+          <div class="mt-4">
+            @if (activeTab() === 'token') {
+              <pre
+                class="select-all p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-900 dark:text-white whitespace-pre-wrap break-all font-mono max-h-96 overflow-y-auto"
+                >{{ license().token }}</pre
+              >
+              <button
+                type="button"
+                (click)="copyToken()"
+                class="mt-3 inline-flex items-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                <fa-icon [icon]="copied ? faClipboardCheck : faClipboard" class="mr-2"></fa-icon>
+                {{ copied ? 'Copied' : 'Copy to clipboard' }}
+              </button>
+            }
+
+            @if (activeTab() === 'payload') {
+              <app-editor
+                language="json"
+                [formControl]="payloadControl"
+                class="block w-full rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white [&_.cm-editor]:min-h-32 [&_.cm-editor.cm-focused]:outline-none">
+              </app-editor>
+            }
+
+            @if (activeTab() === 'decoded') {
+              <app-editor
+                language="json"
+                [formControl]="decodedControl"
+                class="block w-full rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white [&_.cm-editor]:min-h-32 [&_.cm-editor.cm-focused]:outline-none">
+              </app-editor>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
