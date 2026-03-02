@@ -16,6 +16,10 @@ CREATE TABLE SupportBundleConfigurationEnvVar (
 CREATE INDEX idx_support_bundle_config_env_var_config_id
     ON SupportBundleConfigurationEnvVar (support_bundle_configuration_id);
 
+CREATE UNIQUE INDEX idx_support_bundle_config_env_var_unique_name
+    ON SupportBundleConfigurationEnvVar (support_bundle_configuration_id, lower(name));
+
+
 CREATE TYPE support_bundle_status AS ENUM ('initialized', 'created', 'resolved');
 
 CREATE TABLE SupportBundle (

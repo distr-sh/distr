@@ -1,1 +1,0 @@
-DROP INDEX idx_support_bundle_config_env_var_unique_name;
