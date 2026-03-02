@@ -65,14 +65,9 @@ func GenerateToken(license *types.UsageLicense, issuer string) (string, error) {
 }
 
 func ValidatePayload(payload json.RawMessage) error {
-	var raw any
+	var raw map[string]any
 	if err := json.Unmarshal(payload, &raw); err != nil {
 		return fmt.Errorf("invalid JSON payload: %w", err)
-	}
-
-	obj, ok := raw.(map[string]any)
-	if !ok {
-		return errors.New("payload must be a JSON object")
 	}
 
 	for k := range obj {
