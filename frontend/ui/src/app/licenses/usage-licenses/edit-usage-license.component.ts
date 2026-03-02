@@ -1,5 +1,6 @@
 import {AsyncPipe} from '@angular/common';
-import {AfterViewInit, Component, forwardRef, inject, Injector, OnDestroy, signal} from '@angular/core';
+import {AfterViewInit, Component, DestroyRef, forwardRef, inject, Injector, signal} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {
   ControlValueAccessor,
   FormBuilder,
@@ -12,7 +13,8 @@ import {
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleInfo} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import {first, Subject, takeUntil} from 'rxjs';
+import {first} from 'rxjs';
+import {jsonObjectValidator} from '../../../util/validation';
 import {EditorComponent} from '../../components/editor.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
@@ -30,9 +32,8 @@ import {UsageLicense} from '../../types/usage-license';
     },
   ],
 })
-export class EditUsageLicenseComponent implements AfterViewInit, OnDestroy, ControlValueAccessor {
+export class EditUsageLicenseComponent implements AfterViewInit, ControlValueAccessor {
   private readonly injector = inject(Injector);
-  private readonly destroyed$ = new Subject<void>();
   private readonly customerOrganizationService = inject(CustomerOrganizationsService);
   customers$ = this.customerOrganizationService.getCustomerOrganizations().pipe(first());
 
@@ -49,7 +50,7 @@ export class EditUsageLicenseComponent implements AfterViewInit, OnDestroy, Cont
       description: this.fb.nonNullable.control<string | undefined>(undefined),
       expiresAt: this.fb.nonNullable.control(this.inOneYear, Validators.required),
       notBefore: this.fb.nonNullable.control(this.today, Validators.required),
-      payload: this.fb.nonNullable.control('{}', [Validators.required, this.jsonValidator]),
+      payload: this.fb.nonNullable.control('{}', [Validators.required, jsonObjectValidator]),
       customerOrganizationId: this.fb.nonNullable.control<string | undefined>(undefined),
     },
     {validators: this.dateRangeValidator}
@@ -58,7 +59,7 @@ export class EditUsageLicenseComponent implements AfterViewInit, OnDestroy, Cont
   readonly isEditMode = signal(false);
 
   constructor() {
-    this.editForm.valueChanges.pipe(takeUntil(this.destroyed$)).subscribe(() => {
+    this.editForm.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
       this.onTouched();
       const val = this.editForm.getRawValue();
       if (this.editForm.valid) {
@@ -68,8 +69,8 @@ export class EditUsageLicenseComponent implements AfterViewInit, OnDestroy, Cont
           description: val.description,
           token: '',
           payload: this.isEditMode() ? {} : JSON.parse(val.payload),
-          notBefore: dayjs(val.notBefore).toISOString(),
-          expiresAt: dayjs(val.expiresAt).toISOString(),
+          notBefore: dayjs(val.notBefore).toDate().toISOString(),
+          expiresAt: dayjs(val.expiresAt).toDate().toISOString(),
           customerOrganizationId: val.customerOrganizationId,
         };
         this.onChange(license);
@@ -82,17 +83,12 @@ export class EditUsageLicenseComponent implements AfterViewInit, OnDestroy, Cont
   ngAfterViewInit() {
     this.injector
       .get(NgControl)
-      .control!.events.pipe(takeUntil(this.destroyed$))
+      .control!.events.pipe(takeUntilDestroyed(this.injector.get(DestroyRef)))
       .subscribe((event) => {
         if (event instanceof TouchedChangeEvent && event.touched) {
           this.editForm.markAllAsTouched();
         }
       });
-  }
-
-  ngOnDestroy() {
-    this.destroyed$.next();
-    this.destroyed$.complete();
   }
 
   writeValue(license: UsageLicense | undefined): void {
@@ -142,21 +138,9 @@ export class EditUsageLicenseComponent implements AfterViewInit, OnDestroy, Cont
 
   private dateRangeValidator(group: {value: {notBefore: string; expiresAt: string}}) {
     const {notBefore, expiresAt} = group.value;
-    if (notBefore && expiresAt && !dayjs(expiresAt).isAfter(dayjs(notBefore))) {
+    if (notBefore && expiresAt && !dayjs(expiresAt).isAfter(notBefore)) {
       return {dateRange: 'Expires At must be after Not Before'};
     }
     return null;
-  }
-
-  private jsonValidator(control: {value: string}) {
-    try {
-      const parsed = JSON.parse(control.value);
-      if (typeof parsed !== 'object' || Array.isArray(parsed) || parsed === null) {
-        return {json: 'Payload must be a JSON object'};
-      }
-      return null;
-    } catch {
-      return {json: 'Invalid JSON'};
-    }
   }
 }

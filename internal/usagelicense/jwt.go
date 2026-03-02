@@ -4,20 +4,27 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
+	"sync"
 
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/lestrrat-go/jwx/v2/jwt"
 )
 
 var registeredClaims = map[string]struct{}{
-	"exp": {}, "nbf": {}, "iss": {}, "sub": {}, "aud": {},
-	"iat": {}, "jti": {},
+	jwt.ExpirationKey: {}, jwt.NotBeforeKey: {}, jwt.IssuerKey: {},
+	jwt.SubjectKey: {}, jwt.AudienceKey: {}, jwt.IssuedAtKey: {},
 }
+
+var signingKey = sync.OnceValues(func() (jwk.Key, error) {
+	privateKey := env.UsageLicensePrivateKey()
+	if privateKey == nil {
+		return nil, errors.New("no usage license signing key configured")
+	}
+	return jwk.FromRaw(privateKey)
+})
 
 func GenerateToken(license *types.UsageLicense, issuer string) (string, error) {
 	var customClaims map[string]any
@@ -32,8 +39,7 @@ func GenerateToken(license *types.UsageLicense, issuer string) (string, error) {
 		Issuer(issuer).
 		Subject(license.ID.String()).
 		Audience([]string{"usage-license"}).
-		IssuedAt(time.Now()).
-		JwtID(uuid.New().String()).
+		IssuedAt(license.CreatedAt).
 		NotBefore(license.NotBefore).
 		Expiration(license.ExpiresAt)
 
@@ -46,14 +52,9 @@ func GenerateToken(license *types.UsageLicense, issuer string) (string, error) {
 		return "", fmt.Errorf("could not build JWT: %w", err)
 	}
 
-	privateKey := env.UsageLicensePrivateKey()
-	if privateKey == nil {
-		return "", errors.New("no usage license signing key configured")
-	}
-
-	key, err := jwk.FromRaw(privateKey)
+	key, err := signingKey()
 	if err != nil {
-		return "", fmt.Errorf("could not create JWK from private key: %w", err)
+		return "", err
 	}
 
 	signed, err := jwt.Sign(token, jwt.WithKey(jwa.EdDSA, key))
@@ -70,7 +71,7 @@ func ValidatePayload(payload json.RawMessage) error {
 		return fmt.Errorf("invalid JSON payload: %w", err)
 	}
 
-	for k := range obj {
+	for k := range raw {
 		if _, reserved := registeredClaims[k]; reserved {
 			return fmt.Errorf("payload must not contain registered JWT claim %q", k)
 		}
