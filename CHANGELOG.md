@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.11.5](https://github.com/distr-sh/distr/compare/2.11.4...2.11.5) (2026-02-26)
+
+
+### Bug Fixes
+
+* **agent:** prevent agent 401 by logging out before docker login ([#1903](https://github.com/distr-sh/distr/issues/1903)) ([042d0f4](https://github.com/distr-sh/distr/commit/042d0f4274c22ef85e6f5139f2d06ae8b4754169))
+* **deps:** update aws-sdk-go-v2 monorepo ([#1891](https://github.com/distr-sh/distr/issues/1891)) ([f1cb9bd](https://github.com/distr-sh/distr/commit/f1cb9bd03c1eb668edd6a400738ac990e70efa79))
+* **deps:** update module github.com/getsentry/sentry-go/otel to v0.43.0 ([#1897](https://github.com/distr-sh/distr/issues/1897)) ([a163e89](https://github.com/distr-sh/distr/commit/a163e89913da4f58e5fb52de4ab71a43e80f06ce))
+
+
+### Other
+
+* **deps:** bump github.com/cloudflare/circl from 1.6.1 to 1.6.3 in the go_modules group across 1 directory ([#1899](https://github.com/distr-sh/distr/issues/1899)) ([fd08dee](https://github.com/distr-sh/distr/commit/fd08deed4982112ae5eaeef86bc282baa1a280c2))
+* **deps:** update angular-cli monorepo to v21.2.0 ([#1890](https://github.com/distr-sh/distr/issues/1890)) ([2d4f172](https://github.com/distr-sh/distr/commit/2d4f1725f26bff4d3bf04de4df26a8ef2e1dd2d8))
+* **deps:** update axllent/mailpit docker tag to v1.29.2 ([#1898](https://github.com/distr-sh/distr/issues/1898)) ([7574fb9](https://github.com/distr-sh/distr/commit/7574fb9dde2018c1611c79ca4cce71dc32ab2380))
+* **deps:** update dependency autoprefixer to v10.4.27 ([#1902](https://github.com/distr-sh/distr/issues/1902)) ([bbae55f](https://github.com/distr-sh/distr/commit/bbae55fc3f9b804c37f17954e9b82c41537b5e2d))
+* **deps:** update distr-sh/hello-distr to v0.4.3 ([#1887](https://github.com/distr-sh/distr/issues/1887)) ([345dc35](https://github.com/distr-sh/distr/commit/345dc35916c0cd935152cd986d7e90b7523b5be0))
+* **ui:** remove id column from application detail component ([#1886](https://github.com/distr-sh/distr/issues/1886)) ([c0379c9](https://github.com/distr-sh/distr/commit/c0379c9834ca6a795fab8a3883376c481d4dd426))
+
 ## [2.11.4](https://github.com/distr-sh/distr/compare/2.11.3...2.11.4) (2026-02-23)
 
 
