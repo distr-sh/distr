@@ -371,6 +371,30 @@ func GetSupportBundleComments(ctx context.Context, bundleID uuid.UUID) ([]types.
 	return result, nil
 }
 
+func GetSupportBundleCommentByID(ctx context.Context, id uuid.UUID) (*types.SupportBundleCommentWithUser, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`SELECT c.id, c.created_at, c.support_bundle_id, c.user_account_id, c.content,
+			u.name AS user_name, u.image_id AS user_image_id
+		FROM SupportBundleComment c
+		INNER JOIN UserAccount u ON c.user_account_id = u.id
+		WHERE c.id = @id`,
+		pgx.NamedArgs{"id": id},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query support bundle comment: %w", err)
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.SupportBundleCommentWithUser])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, apierrors.ErrNotFound
+		}
+		return nil, fmt.Errorf("could not get support bundle comment: %w", err)
+	}
+	return &result, nil
+}
+
 func CreateSupportBundleComment(ctx context.Context, comment *types.SupportBundleComment) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(

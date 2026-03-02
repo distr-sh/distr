@@ -2,12 +2,15 @@ package api
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/internal/validation"
 	"github.com/google/uuid"
 )
+
+var envVarNamePattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
 // Configuration
 
@@ -30,7 +33,15 @@ type CreateUpdateSupportBundleConfigurationRequest struct {
 func (r *CreateUpdateSupportBundleConfigurationRequest) Validate() error {
 	seen := make(map[string]struct{}, len(r.EnvVars))
 	for _, ev := range r.EnvVars {
-		key := strings.ToLower(strings.TrimSpace(ev.Name))
+		name := strings.TrimSpace(ev.Name)
+		if name == "" {
+			return validation.NewValidationFailedError("environment variable name must not be empty")
+		}
+		if !envVarNamePattern.MatchString(name) {
+			return validation.NewValidationFailedError(
+				fmt.Sprintf("invalid environment variable name: %v (must match [A-Za-z_][A-Za-z0-9_]*)", ev.Name))
+		}
+		key := strings.ToLower(name)
 		if _, exists := seen[key]; exists {
 			return validation.NewValidationFailedError(
 				fmt.Sprintf("duplicate environment variable name: %v", ev.Name))

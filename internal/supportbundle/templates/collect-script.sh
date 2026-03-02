@@ -87,10 +87,12 @@ else
   echo "Available containers:"
   echo "---"
   IDX=1
-  echo "$CONTAINERS" | while IFS="$(printf '\t')" read -r CID CNAME CSTATUS CIMAGE; do
+  while IFS="$(printf '\t')" read -r CID CNAME CSTATUS CIMAGE; do
     printf "  [%d] %s (%s) - %s\n" "$IDX" "$CNAME" "$CSTATUS" "$CIMAGE"
     IDX=$((IDX + 1))
-  done
+  done <<EOF_CONTAINERS
+$CONTAINERS
+EOF_CONTAINERS
   echo ""
   echo "Enter container numbers to EXCLUDE (comma-separated), or press Enter to include all:"
   read -r EXCLUDE_INPUT
@@ -102,7 +104,7 @@ else
   fi
 
   IDX=1
-  echo "$CONTAINERS" | while IFS="$(printf '\t')" read -r CID CNAME CSTATUS _CIMAGE; do
+  while IFS="$(printf '\t')" read -r CID CNAME CSTATUS _CIMAGE; do
     if [ -n "$EXCLUDE_SET" ] && echo "$EXCLUDE_SET" | grep -q ",$IDX,"; then
       echo "  Skipping $CNAME"
       IDX=$((IDX + 1))
@@ -144,7 +146,9 @@ EOF_ENV
     fi
 
     IDX=$((IDX + 1))
-  done
+  done <<EOF_CONTAINERS
+$CONTAINERS
+EOF_CONTAINERS
 fi
 
 # Finalize support bundle

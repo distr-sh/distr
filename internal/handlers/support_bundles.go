@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -406,18 +407,49 @@ func updateSupportBundleStatusHandler() http.HandlerFunc {
 	}
 }
 
+// requireSupportBundle parses the bundle ID from the path, verifies org ownership
+// and customer org access. Returns nil if an error response was already written.
+func requireSupportBundle(w http.ResponseWriter, r *http.Request) *types.SupportBundleWithDetails {
+	id, err := uuid.Parse(r.PathValue("supportBundleId"))
+	if err != nil {
+		http.NotFound(w, r)
+		return nil
+	}
+
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+	a := auth.Authentication.Require(ctx)
+
+	bundle, err := db.GetSupportBundleByID(ctx, id, *a.CurrentOrgID())
+	if errors.Is(err, apierrors.ErrNotFound) {
+		http.NotFound(w, r)
+		return nil
+	} else if err != nil {
+		log.Error("failed to get support bundle", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil
+	}
+
+	if a.CurrentCustomerOrgID() != nil && bundle.CustomerOrganizationID != *a.CurrentCustomerOrgID() {
+		http.NotFound(w, r)
+		return nil
+	}
+
+	return bundle
+}
+
 func getSupportBundleResourcesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := uuid.Parse(r.PathValue("supportBundleId"))
-		if err != nil {
-			http.NotFound(w, r)
+		bundle := requireSupportBundle(w, r)
+		if bundle == nil {
 			return
 		}
 
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
 
-		resources, err := db.GetSupportBundleResources(ctx, id)
+		resources, err := db.GetSupportBundleResources(ctx, bundle.ID)
 		if err != nil {
 			log.Error("failed to get support bundle resources", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -431,16 +463,15 @@ func getSupportBundleResourcesHandler() http.HandlerFunc {
 
 func getSupportBundleCommentsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := uuid.Parse(r.PathValue("supportBundleId"))
-		if err != nil {
-			http.NotFound(w, r)
+		bundle := requireSupportBundle(w, r)
+		if bundle == nil {
 			return
 		}
 
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
 
-		comments, err := db.GetSupportBundleComments(ctx, id)
+		comments, err := db.GetSupportBundleComments(ctx, bundle.ID)
 		if err != nil {
 			log.Error("failed to get support bundle comments", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -454,15 +485,14 @@ func getSupportBundleCommentsHandler() http.HandlerFunc {
 
 func createSupportBundleCommentHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := uuid.Parse(r.PathValue("supportBundleId"))
-		if err != nil {
-			http.NotFound(w, r)
+		bundle := requireSupportBundle(w, r)
+		if bundle == nil {
 			return
 		}
 
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
+		a := auth.Authentication.Require(ctx)
 
 		request, err := JsonBody[api.CreateSupportBundleCommentRequest](w, r)
 		if err != nil {
@@ -475,8 +505,8 @@ func createSupportBundleCommentHandler() http.HandlerFunc {
 		}
 
 		comment := types.SupportBundleComment{
-			SupportBundleID: id,
-			UserAccountID:   auth.CurrentUserID(),
+			SupportBundleID: bundle.ID,
+			UserAccountID:   a.CurrentUserID(),
 			Content:         request.Content,
 		}
 		if err := db.CreateSupportBundleComment(ctx, &comment); err != nil {
@@ -486,12 +516,15 @@ func createSupportBundleCommentHandler() http.HandlerFunc {
 			return
 		}
 
-		RespondJSON(w, api.SupportBundleComment{
-			ID:            comment.ID,
-			CreatedAt:     comment.CreatedAt,
-			UserAccountID: comment.UserAccountID,
-			Content:       comment.Content,
-		})
+		commentWithUser, err := db.GetSupportBundleCommentByID(ctx, comment.ID)
+		if err != nil {
+			log.Error("failed to get support bundle comment", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		RespondJSON(w, mapping.SupportBundleCommentToAPI(*commentWithUser))
 	}
 }
 
@@ -625,6 +658,17 @@ func uploadSupportBundleResourceHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
+		a := auth.Authentication.Require(ctx)
+
+		if _, err := db.GetSupportBundleByID(ctx, bundleID, *a.CurrentOrgID()); errors.Is(err, apierrors.ErrNotFound) {
+			http.NotFound(w, r)
+			return
+		} else if err != nil {
+			log.Error("failed to get support bundle", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		request, err := JsonBody[api.CreateSupportBundleResourceRequest](w, r)
 		if err != nil {
@@ -633,6 +677,12 @@ func uploadSupportBundleResourceHandler() http.HandlerFunc {
 
 		if request.Name == "" || request.Content == "" {
 			http.Error(w, "name and content are required", http.StatusBadRequest)
+			return
+		}
+
+		const maxContentSize = 5 * 1024 * 1024 // 5MB
+		if len(request.Content) > maxContentSize {
+			http.Error(w, "content exceeds maximum size of 5MB", http.StatusBadRequest)
 			return
 		}
 
@@ -662,9 +712,9 @@ func finalizeSupportBundleHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
+		a := auth.Authentication.Require(ctx)
 
-		bundle, err := db.GetSupportBundleByID(ctx, bundleID, *auth.CurrentOrgID())
+		bundle, err := db.GetSupportBundleByID(ctx, bundleID, *a.CurrentOrgID())
 		if errors.Is(err, apierrors.ErrNotFound) {
 			http.NotFound(w, r)
 			return
@@ -675,23 +725,34 @@ func finalizeSupportBundleHandler() http.HandlerFunc {
 			return
 		}
 
-		err = db.UpdateSupportBundleStatus(
-			ctx, bundleID, bundle.OrganizationID, types.SupportBundleStatusCreated,
-		)
-		if err != nil {
-			log.Error("failed to update support bundle status", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if bundle.Status != types.SupportBundleStatusInitialized {
+			http.Error(w, "support bundle is not in initialized state", http.StatusBadRequest)
 			return
 		}
 
-		if bundle.AccessTokenID != nil {
-			if err := db.DeleteAccessToken(ctx, *bundle.AccessTokenID, bundle.CreatedByUserAccountID); err != nil {
-				log.Warn("failed to delete support bundle PAT", zap.Error(err))
+		err = db.RunTxRR(ctx, func(ctx context.Context) error {
+			if err := db.UpdateSupportBundleStatus(
+				ctx, bundleID, bundle.OrganizationID, types.SupportBundleStatusCreated,
+			); err != nil {
+				return err
 			}
-			if err := db.ClearSupportBundleAccessToken(ctx, bundleID); err != nil {
-				log.Warn("failed to clear support bundle access token reference", zap.Error(err))
+
+			if bundle.AccessTokenID != nil {
+				if err := db.DeleteAccessToken(ctx, *bundle.AccessTokenID, bundle.CreatedByUserAccountID); err != nil {
+					return err
+				}
+				if err := db.ClearSupportBundleAccessToken(ctx, bundleID); err != nil {
+					return err
+				}
 			}
+
+			return nil
+		})
+		if err != nil {
+			log.Error("failed to finalize support bundle", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		w.WriteHeader(http.StatusNoContent)
