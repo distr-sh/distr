@@ -1,12 +1,12 @@
 import {HttpErrorResponse} from '@angular/common/http';
-import {Component, inject, signal} from '@angular/core';
+import {Component, computed, inject, signal, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faFloppyDisk, faPlus, faTrash} from '@fortawesome/free-solid-svg-icons';
+import {faFileImport, faFloppyDisk, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
-import {OverlayService} from '../../services/overlay.service';
+import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
 import {SupportBundleConfigurationEnvVar} from '../../types/support-bundle';
@@ -25,6 +25,8 @@ export class VendorSupportBundlesComponent {
   protected readonly faFloppyDisk = faFloppyDisk;
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;
+  protected readonly faFileImport = faFileImport;
+  protected readonly faXmark = faXmark;
 
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly svc = inject(SupportBundlesService);
@@ -36,8 +38,30 @@ export class VendorSupportBundlesComponent {
   protected readonly configExists = signal(false);
 
   protected readonly envVarsArray = new FormArray<EnvVarFormGroup>([]);
+  private readonly envVarVersion = signal(0);
+  protected readonly duplicateIndices = computed(() => {
+    this.envVarVersion();
+    const seen = new Map<string, number>();
+    const dupes = new Set<number>();
+    for (let i = 0; i < this.envVarsArray.length; i++) {
+      const name = this.envVarsArray.at(i).controls.name.value.trim().toUpperCase();
+      if (!name) continue;
+      const prev = seen.get(name);
+      if (prev !== undefined) {
+        dupes.add(prev);
+        dupes.add(i);
+      } else {
+        seen.set(name, i);
+      }
+    }
+    return dupes;
+  });
 
   constructor() {
+    this.envVarsArray.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
+      this.envVarVersion.update((v) => v + 1);
+    });
+
     this.svc
       .getConfiguration()
       .pipe(takeUntilDestroyed())
@@ -70,10 +94,12 @@ export class VendorSupportBundlesComponent {
         redacted: this.fb.control(envVar?.redacted ?? false),
       })
     );
+    this.envVarVersion.update((v) => v + 1);
   }
 
   protected removeEnvVar(index: number) {
     this.envVarsArray.removeAt(index);
+    this.envVarVersion.update((v) => v + 1);
   }
 
   protected async save() {
@@ -116,5 +142,45 @@ export class VendorSupportBundlesComponent {
         this.toast.error(msg);
       }
     }
+  }
+
+  protected readonly importText = new FormControl('', {nonNullable: true});
+  private importModalRef?: DialogRef;
+
+  protected openImportModal(templateRef: TemplateRef<unknown>) {
+    this.importText.reset();
+    this.importModalRef = this.overlay.showModal(templateRef);
+  }
+
+  protected closeImportModal() {
+    this.importModalRef?.dismiss();
+    this.importModalRef = undefined;
+  }
+
+  protected importEnvVars() {
+    const existingNames = new Set(this.envVarsArray.controls.map((g) => g.controls.name.value.trim().toUpperCase()));
+    const lines = this.importText.value.split('\n');
+    let added = 0;
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) {
+        continue;
+      }
+      const match = trimmed.match(/^([^=:]+)/);
+      if (!match) {
+        continue;
+      }
+      const name = match[1].trim();
+      if (!name || existingNames.has(name.toUpperCase())) {
+        continue;
+      }
+      existingNames.add(name.toUpperCase());
+      this.addEnvVar({name, redacted: false});
+      added++;
+    }
+    if (added > 0) {
+      this.toast.success(`Imported ${added} variable${added > 1 ? 's' : ''}`);
+    }
+    this.closeImportModal();
   }
 }

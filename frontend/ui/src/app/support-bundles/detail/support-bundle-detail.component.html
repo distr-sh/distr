@@ -3,18 +3,30 @@
     @if (bundle(); as bundle) {
       <!-- Header card -->
       <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden mb-6 p-6">
-        <div class="flex items-center mb-4">
-          <a
-            [routerLink]="backRoute()"
-            class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mr-3">
-            <fa-icon [icon]="faArrowLeft"></fa-icon>
-          </a>
-          <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
-            {{ bundle.title || 'Support Bundle ' + shortId(bundle.id) }}
-          </h1>
-          <span class="ml-3 text-xs font-medium px-2.5 py-0.5 rounded-full" [ngClass]="statusClass(bundle.status)">
-            {{ bundle.status }}
-          </span>
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center">
+            <a
+              [routerLink]="backRoute()"
+              class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mr-3">
+              <fa-icon [icon]="faArrowLeft"></fa-icon>
+            </a>
+            <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
+              {{ bundle.title || 'Support Bundle ' + shortId(bundle.id) }}
+            </h1>
+            <span class="ml-3 text-xs font-medium px-2.5 py-0.5 rounded-full" [ngClass]="statusClass(bundle.status)">
+              {{ bundle.status }}
+            </span>
+          </div>
+          @if (auth.isVendor() && bundle.status === 'created') {
+            <button
+              type="button"
+              (click)="markAsResolved()"
+              [disabled]="markingResolved()"
+              class="inline-flex items-center py-2 px-4 text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 focus:ring-4 focus:outline-none focus:ring-green-300 rounded-lg dark:text-green-400 dark:bg-green-900 dark:hover:bg-green-800 dark:focus:ring-green-800">
+              <fa-icon [icon]="faCheck" class="mr-2"></fa-icon>
+              Mark as Resolved
+            </button>
+          }
         </div>
         @if (bundle.description) {
           <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">{{ bundle.description }}</p>
@@ -22,19 +34,6 @@
         <p class="text-xs text-gray-500 dark:text-gray-500">
           Created by {{ bundle.createdByUserName }} on {{ bundle.createdAt | date: 'medium' }}
         </p>
-
-        @if (auth.isVendor() && bundle.status === 'created') {
-          <div class="mt-4">
-            <button
-              type="button"
-              (click)="markAsResolved()"
-              [disabled]="markingResolved()"
-              class="inline-flex items-center py-2 px-4 text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-green-300 rounded-lg dark:bg-green-500 dark:hover:bg-green-600 dark:focus:ring-green-800">
-              <fa-icon [icon]="faCheck" class="mr-2"></fa-icon>
-              Mark as Resolved
-            </button>
-          </div>
-        }
       </div>
 
       <!-- Resources card -->

@@ -3,24 +3,34 @@
     <div class="bg-white dark:bg-gray-800 relative shadow-md rounded-lg overflow-hidden p-10">
       <h1
         class="pb-4 mb-4 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl dark:text-white border-b border-gray-200 dark:border-gray-700">
-        Support Bundles
+        Docker Support Bundles
       </h1>
       <p class="text-gray-500 dark:text-gray-400">
-        Configure the environment variables that should be collected when customers create support bundles. Variables
-        marked as redacted will have their values replaced with [REDACTED] in the collected data.
+        Configure the environment variables that should be collected from Docker containers when customers create
+        support bundles. Variables marked as redacted will have their values replaced with [REDACTED] in the collected
+        data.
       </p>
 
       @if (!loading()) {
         <div class="mt-6 space-y-4">
           <div class="flex items-center justify-between">
             <h2 class="text-xl font-bold dark:text-white">Environment Variables</h2>
-            <button
-              type="button"
-              (click)="addEnvVar()"
-              class="inline-flex items-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-              <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
-              Add Variable
-            </button>
+            <div class="flex gap-2">
+              <button
+                type="button"
+                (click)="openImportModal(importModal)"
+                class="inline-flex items-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                <fa-icon [icon]="faFileImport" class="mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
+                Import
+              </button>
+              <button
+                type="button"
+                (click)="addEnvVar()"
+                class="inline-flex items-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
+                Add Variable
+              </button>
+            </div>
           </div>
 
           @if (envVarsArray.length > 0) {
@@ -32,7 +42,14 @@
                       type="text"
                       [formControl]="group.controls.name"
                       placeholder="Variable name"
-                      class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                      class="bg-gray-50 border text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                      [class.border-gray-300]="!duplicateIndices().has($index)"
+                      [class.dark:border-gray-600]="!duplicateIndices().has($index)"
+                      [class.border-red-500]="duplicateIndices().has($index)"
+                      [class.dark:border-red-500]="duplicateIndices().has($index)" />
+                    @if (duplicateIndices().has($index)) {
+                      <p class="mt-1 text-sm text-red-600 dark:text-red-500">Duplicate variable name</p>
+                    }
                   </div>
                   <label class="inline-flex items-center cursor-pointer">
                     <input type="checkbox" class="sr-only peer" [formControl]="group.controls.redacted" />
@@ -59,7 +76,7 @@
             <button
               type="button"
               (click)="save()"
-              [disabled]="saving()"
+              [disabled]="saving() || duplicateIndices().size > 0"
               class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60 disabled:cursor-not-allowed">
               <fa-icon [icon]="faFloppyDisk" class="mr-2"></fa-icon>
               Save
@@ -92,3 +109,46 @@
     </div>
   </div>
 </section>
+
+<ng-template #importModal>
+  <div class="relative p-4 w-full max-w-2xl max-h-full lg:mt-32">
+    <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+      <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Import Environment Variables</h3>
+        <button
+          type="button"
+          (click)="closeImportModal()"
+          class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+          <fa-icon [icon]="faXmark"></fa-icon>
+          <span class="sr-only">Close modal</span>
+        </button>
+      </div>
+      <div class="p-4 md:p-5 space-y-4">
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          Paste environment variables, one per line. Lines from .env files (KEY=value) or config files (KEY: value) are
+          supported — only the variable name will be imported. Lines starting with # are ignored.
+        </p>
+        <textarea
+          [formControl]="importText"
+          rows="10"
+          placeholder="DB_HOST=localhost&#10;DB_PASSWORD=secret&#10;API_KEY: abc123&#10;# This is a comment"
+          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 font-mono"></textarea>
+      </div>
+      <div class="flex items-center justify-end p-4 md:p-5 border-t border-gray-200 dark:border-gray-600 gap-2">
+        <button
+          type="button"
+          (click)="closeImportModal()"
+          class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+          Cancel
+        </button>
+        <button
+          type="button"
+          (click)="importEnvVars()"
+          class="text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+          <fa-icon [icon]="faFileImport" class="mr-2"></fa-icon>
+          Import
+        </button>
+      </div>
+    </div>
+  </div>
+</ng-template>

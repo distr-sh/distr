@@ -8,11 +8,19 @@ import {DeploymentTargetViewData} from '../../deployments/deployment-targets.com
 import {DashboardService} from '../../services/dashboard.service';
 import {DeploymentTargetsMetricsService} from '../../services/deployment-target-metrics.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
+import {SupportBundlesService} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
+import {SupportBundleDashboardCardComponent} from '../../support-bundles/dashboard-card/support-bundle-dashboard-card.component';
+import {SupportBundle} from '../../types/support-bundle';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [AsyncPipe, ArtifactsByCustomerCardComponent, DeploymentTargetDashboardCardComponent],
+  imports: [
+    AsyncPipe,
+    ArtifactsByCustomerCardComponent,
+    DeploymentTargetDashboardCardComponent,
+    SupportBundleDashboardCardComponent,
+  ],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit, OnDestroy {
@@ -21,7 +29,26 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   private readonly dashboardService = inject(DashboardService);
+  private readonly supportBundlesService = inject(SupportBundlesService);
   protected readonly artifactsByCustomer$ = this.dashboardService.getArtifactsByCustomer().pipe(shareReplay(1));
+  protected readonly supportBundlesByCustomer$ = this.supportBundlesService.list().pipe(
+    map((bundles) => {
+      const grouped = new Map<string, SupportBundle[]>();
+      for (const bundle of bundles) {
+        const existing = grouped.get(bundle.customerOrganizationName);
+        if (existing) {
+          existing.push(bundle);
+        } else {
+          grouped.set(bundle.customerOrganizationName, [bundle]);
+        }
+      }
+      return Array.from(grouped.entries())
+        .map(([customerName, customerBundles]) => ({customerName, bundles: customerBundles}))
+        .sort((a, b) => a.customerName.localeCompare(b.customerName));
+    }),
+    catchError(() => of([])),
+    shareReplay(1)
+  );
   private readonly deploymentTargetsService = inject(DeploymentTargetsService);
   private readonly deploymentTargetMetricsService = inject(DeploymentTargetsMetricsService);
   protected readonly deploymentTargets$ = this.deploymentTargetsService

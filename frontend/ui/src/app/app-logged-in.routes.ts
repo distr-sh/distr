@@ -32,6 +32,7 @@ import {SubscriptionCallbackComponent} from './subscription/subscription-callbac
 import {SubscriptionComponent} from './subscription/subscription.component';
 import {CustomerSupportBundlesComponent} from './support-bundles/customer/customer-support-bundles.component';
 import {SupportBundleDetailComponent} from './support-bundles/detail/support-bundle-detail.component';
+import {VendorSupportBundleListComponent} from './support-bundles/vendor/vendor-support-bundle-list.component';
 import {VendorSupportBundlesComponent} from './support-bundles/vendor/vendor-support-bundles.component';
 import {AgentsTutorialComponent} from './tutorials/agents/agents-tutorial.component';
 import {BrandingTutorialComponent} from './tutorials/branding/branding-tutorial.component';
@@ -266,6 +267,10 @@ export const routes: Routes = [
           {
             path: '',
             pathMatch: 'full',
+            component: VendorSupportBundleListComponent,
+          },
+          {
+            path: 'settings',
             component: VendorSupportBundlesComponent,
             canActivate: [requiredRoleGuard('read_write', 'admin')],
           },

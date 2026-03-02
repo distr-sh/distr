@@ -147,7 +147,7 @@ func updateCustomerOrganizationHandler() http.HandlerFunc {
 			features = request.Features
 		}
 
-		if slices.Contains(features, types.CustomerOrganizationFeatureSupport) {
+		if slices.Contains(features, types.CustomerOrganizationFeatureSupportBundles) {
 			exists, err := db.ExistsSupportBundleConfiguration(ctx, *auth.CurrentOrgID())
 			if err != nil {
 				log.Error("failed to check support bundle configuration", zap.Error(err))

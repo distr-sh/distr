@@ -103,9 +103,6 @@ func SupportBundleScriptRouter(r chiopenapi.Router) {
 		})
 
 		r.With(auth.Authentication.Middleware).Group(func(r chiopenapi.Router) {
-			r.Get("/config", getSupportBundleScriptConfigHandler()).
-				With(option.Description("Get support bundle script configuration"))
-
 			r.Post("/resources", uploadSupportBundleResourceHandler()).
 				With(option.Description("Upload a support bundle resource")).
 				With(option.Request(api.CreateSupportBundleResourceRequest{}))
@@ -155,6 +152,9 @@ func createOrUpdateSupportBundleConfigurationHandler() http.HandlerFunc {
 
 		request, err := JsonBody[api.CreateUpdateSupportBundleConfigurationRequest](w, r)
 		if err != nil {
+			return
+		} else if err := request.Validate(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
@@ -301,7 +301,7 @@ func createSupportBundleHandler() http.HandlerFunc {
 		baseURL := customdomains.AppDomainOrDefault(*org)
 		collectCommand := fmt.Sprintf(
 			"curl -fsSL '%s/api/v1/support-bundle-collect/%s/collect-script?token=%s' | sh",
-			baseURL, bundle.ID.String(), key.String(),
+			baseURL, bundle.ID.String(), key.Serialize(),
 		)
 
 		detailBundle, err := db.GetSupportBundleByID(ctx, bundle.ID, *auth.CurrentOrgID())
@@ -580,49 +580,38 @@ func getCollectScriptHandler() http.HandlerFunc {
 		}
 
 		baseURL := customdomains.AppDomainOrDefault(*org)
-		script := supportbundle.GenerateCollectScript(baseURL, bundleID, tokenStr)
 
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		if _, err := w.Write([]byte(script)); err != nil {
-			log.Warn("failed to write collect script", zap.Error(err))
-		}
-	}
-}
-
-func getSupportBundleScriptConfigHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
-
-		config, err := db.GetSupportBundleConfiguration(ctx, *auth.CurrentOrgID())
-		if errors.Is(err, apierrors.ErrNotFound) {
-			RespondJSON(w, api.SupportBundleScriptConfig{EnvVars: []api.SupportBundleConfigurationEnvVar{}})
-			return
-		} else if err != nil {
+		config, err := db.GetSupportBundleConfiguration(ctx, tokenWithUser.OrganizationID)
+		if err != nil && !errors.Is(err, apierrors.ErrNotFound) {
 			log.Error("failed to get support bundle configuration", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		envVars, err := db.GetSupportBundleConfigurationEnvVars(ctx, config.ID)
+		var envVars []types.SupportBundleConfigurationEnvVar
+		if config != nil {
+			envVars, err = db.GetSupportBundleConfigurationEnvVars(ctx, config.ID)
+			if err != nil {
+				log.Error("failed to get support bundle config env vars", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+
+		script, err := supportbundle.GenerateCollectScript(baseURL, bundleID, tokenStr, envVars)
 		if err != nil {
-			log.Error("failed to get support bundle config env vars", zap.Error(err))
+			log.Error("failed to generate collect script", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		apiEnvVars := make([]api.SupportBundleConfigurationEnvVar, len(envVars))
-		for i, ev := range envVars {
-			apiEnvVars[i] = api.SupportBundleConfigurationEnvVar{
-				Name:     ev.Name,
-				Redacted: ev.Redacted,
-			}
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		if _, err := w.Write([]byte(script)); err != nil {
+			log.Warn("failed to write collect script", zap.Error(err))
 		}
-
-		RespondJSON(w, api.SupportBundleScriptConfig{EnvVars: apiEnvVars})
 	}
 }
 

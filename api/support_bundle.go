@@ -1,8 +1,11 @@
 package api
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
+	"github.com/distr-sh/distr/internal/validation"
 	"github.com/google/uuid"
 )
 
@@ -22,6 +25,19 @@ type SupportBundleConfiguration struct {
 
 type CreateUpdateSupportBundleConfigurationRequest struct {
 	EnvVars []SupportBundleConfigurationEnvVar `json:"envVars"`
+}
+
+func (r *CreateUpdateSupportBundleConfigurationRequest) Validate() error {
+	seen := make(map[string]struct{}, len(r.EnvVars))
+	for _, ev := range r.EnvVars {
+		key := strings.ToLower(strings.TrimSpace(ev.Name))
+		if _, exists := seen[key]; exists {
+			return validation.NewValidationFailedError(
+				fmt.Sprintf("duplicate environment variable name: %v", ev.Name))
+		}
+		seen[key] = struct{}{}
+	}
+	return nil
 }
 
 // Bundle
@@ -87,10 +103,4 @@ type SupportBundleComment struct {
 
 type CreateSupportBundleCommentRequest struct {
 	Content string `json:"content"`
-}
-
-// Script config response (used by collect script)
-
-type SupportBundleScriptConfig struct {
-	EnvVars []SupportBundleConfigurationEnvVar `json:"envVars"`
 }

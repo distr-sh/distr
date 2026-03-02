@@ -1,2 +1,0 @@
--- PostgreSQL does not support removing enum values directly.
--- The 'support' value in CUSTOMER_ORGANIZATION_FEATURE will remain but be unused.
