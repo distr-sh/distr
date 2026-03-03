@@ -5,6 +5,7 @@ import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faCircleExclamation,
+  faEye,
   faMagnifyingGlass,
   faPen,
   faPlus,
@@ -45,6 +46,7 @@ export class ArtifactLicensesComponent {
   private readonly artifactsService = inject(ArtifactsService);
 
   protected readonly faCircleExclamation = faCircleExclamation;
+  protected readonly faEye = faEye;
   protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faPen = faPen;
   protected readonly faPlus = faPlus;

@@ -63,39 +63,41 @@
             Connect
           </button>
         }
-        <button
-          type="button"
-          aria-label="More actions"
-          class="relative p-2 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
-          cdkOverlayOrigin
-          #dropdownTrigger="cdkOverlayOrigin"
-          (click)="showDeploymentTargetDropdown.set(true)">
-          <fa-icon [icon]="faEllipsisVertical" class="h-5 w-5 text-gray-500 dark:text-gray-400"></fa-icon>
-          @if (agentUpdateAvailable() || agentUpdatePending()) {
-            <span class="rounded-full size-2 bg-blue-400 absolute -bottom-0.5 -right-0.5"></span>
-          }
-        </button>
-        <ng-template
-          cdkConnectedOverlay
-          [cdkConnectedOverlayHasBackdrop]="true"
-          (backdropClick)="showDeploymentTargetDropdown.set(false)"
-          (detach)="showDeploymentTargetDropdown.set(false)"
-          [cdkConnectedOverlayBackdropClass]="'transparent'"
-          [cdkConnectedOverlayOrigin]="dropdownTrigger"
-          [cdkConnectedOverlayPositions]="[{originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top'}]"
-          [cdkConnectedOverlayOpen]="showDeploymentTargetDropdown()">
-          <div
-            @dropdown
-            style="transform-origin: top center"
-            class="my-2 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600">
-            <ul class="py-1" role="none">
-              @if (deploymentTarget().id; as id) {
-                <li>
-                  <div class="px-4 py-2">
-                    <app-uuid [uuid]="id" [small]="true"></app-uuid>
-                  </div>
-                </li>
-              }
+      }
+      <button
+        type="button"
+        aria-label="More actions"
+        class="relative p-2 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+        cdkOverlayOrigin
+        #dropdownTrigger="cdkOverlayOrigin"
+        (click)="showDeploymentTargetDropdown.set(true)">
+        <fa-icon [icon]="faEllipsisVertical" class="h-5 w-5 text-gray-500 dark:text-gray-400"></fa-icon>
+        @if (agentUpdateAvailable() || agentUpdatePending()) {
+          <span class="rounded-full size-2 bg-blue-400 absolute -bottom-0.5 -right-0.5"></span>
+        }
+      </button>
+      <ng-template
+        cdkConnectedOverlay
+        [cdkConnectedOverlayHasBackdrop]="true"
+        (backdropClick)="showDeploymentTargetDropdown.set(false)"
+        (detach)="showDeploymentTargetDropdown.set(false)"
+        [cdkConnectedOverlayBackdropClass]="'transparent'"
+        [cdkConnectedOverlayOrigin]="dropdownTrigger"
+        [cdkConnectedOverlayPositions]="[{originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top'}]"
+        [cdkConnectedOverlayOpen]="showDeploymentTargetDropdown()">
+        <div
+          @dropdown
+          style="transform-origin: top center"
+          class="my-2 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600">
+          <ul class="py-1" role="none">
+            @if (deploymentTarget().id; as id) {
+              <li>
+                <div class="px-4 py-2">
+                  <app-uuid [uuid]="id" [small]="true"></app-uuid>
+                </div>
+              </li>
+            }
+            @if (auth.hasAnyRole('read_write', 'admin')) {
               <li>
                 <button
                   type="button"
@@ -125,29 +127,31 @@
                   </span>
                 </li>
               }
+            }
 
-              <li>
-                <button
-                  type="button"
-                  (click)="showDeploymentTargetDropdown.set(false); openNotesDrawer()"
-                  aria-controls="manage-deployment-target-drawer"
-                  class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white">
-                  <fa-icon [icon]="faComment" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
-                  Notes
-                </button>
-              </li>
+            <li>
+              <button
+                type="button"
+                (click)="showDeploymentTargetDropdown.set(false); openNotesDrawer()"
+                aria-controls="manage-deployment-target-drawer"
+                class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white">
+                <fa-icon [icon]="faComment" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
+                Notes
+              </button>
+            </li>
 
-              <li>
-                <button
-                  type="button"
-                  (click)="showDeploymentTargetDropdown.set(false); openDeploymentTargetStatusModal()"
-                  aria-controls="manage-deployment-target-drawer"
-                  class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white">
-                  <fa-icon [icon]="faBinoculars" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
-                  Agent Logs
-                </button>
-              </li>
+            <li>
+              <button
+                type="button"
+                (click)="showDeploymentTargetDropdown.set(false); openDeploymentTargetStatusModal()"
+                aria-controls="manage-deployment-target-drawer"
+                class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white">
+                <fa-icon [icon]="faBinoculars" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
+                Agent Logs
+              </button>
+            </li>
 
+            @if (auth.hasAnyRole('read_write', 'admin')) {
               @let status = deploymentTarget().currentStatus;
               @if (status) {
                 <li
@@ -197,10 +201,10 @@
                   </div>
                 </ng-template>
               </li>
-            </ul>
-          </div>
-        </ng-template>
-      }
+            }
+          </ul>
+        </div>
+      </ng-template>
     </div>
   </div>
   <hr class="border-gray-200 dark:border-gray-600" />

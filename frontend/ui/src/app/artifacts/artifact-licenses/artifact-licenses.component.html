@@ -88,21 +88,28 @@
                 </td>
                 <td
                   class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">
-                  @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
+                  @if (auth.isVendor()) {
                     <button
                       type="button"
                       (click)="openDrawer(manageLicenseDrawer, license)"
                       class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                      <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
-                      Edit
+                      @if (auth.hasAnyRole('read_write', 'admin')) {
+                        <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
+                        Edit
+                      } @else {
+                        <fa-icon [icon]="faEye" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
+                        Details
+                      }
                     </button>
-                    <button
-                      type="button"
-                      aria-label="Delete"
-                      (click)="deleteLicense(license)"
-                      class="py-2 px-3 text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900">
-                      <fa-icon [icon]="faTrash" class="h-4 w-4"></fa-icon>
-                    </button>
+                    @if (auth.hasAnyRole('read_write', 'admin')) {
+                      <button
+                        type="button"
+                        aria-label="Delete"
+                        (click)="deleteLicense(license)"
+                        class="py-2 px-3 text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900">
+                        <fa-icon [icon]="faTrash" class="h-4 w-4" />
+                      </button>
+                    }
                   }
                 </td>
               </tr>
@@ -155,15 +162,17 @@
     <form [formGroup]="editForm" (ngSubmit)="saveLicense()">
       <div class="flex flex-col gap-4">
         <app-edit-artifact-license formControlName="license"></app-edit-artifact-license>
-        <div class="flex justify-center w-full pb-4 space-x-4 sm:mt-0">
-          <button
-            type="submit"
-            [disabled]="editFormLoading"
-            class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
-            <fa-icon [icon]="faPen" class="me-2" />
-            Save
-          </button>
-        </div>
+        @if (auth.hasAnyRole('admin', 'read_write')) {
+          <div class="flex justify-center w-full pb-4 space-x-4 sm:mt-0">
+            <button
+              type="submit"
+              [disabled]="editFormLoading"
+              class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+              <fa-icon [icon]="faPen" class="me-2" />
+              Save
+            </button>
+          </div>
+        }
       </div>
     </form>
   </div>
