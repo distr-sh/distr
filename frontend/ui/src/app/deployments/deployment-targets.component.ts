@@ -1,6 +1,6 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
-import {AfterViewInit, Component, computed, inject, signal, TemplateRef, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, computed, effect, inject, signal, TemplateRef, ViewChild} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
@@ -11,7 +11,7 @@ import {
   DeploymentWithLatestRevision,
 } from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faBullhorn, faLightbulb, faMagnifyingGlass, faPlus} from '@fortawesome/free-solid-svg-icons';
+import {faBullhorn, faChevronDown, faLightbulb, faMagnifyingGlass, faPlus} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatest, combineLatestWith, first, map, Observable, of} from 'rxjs';
 import {compareBy} from '../../util/arrays';
 import {filteredByFormControl} from '../../util/filter';
@@ -42,6 +42,8 @@ export interface CustomerDeploymentTargets {
   customerOrganization?: CustomerOrganization;
   deploymentTargets: DeploymentTargetViewData[];
 }
+
+const localStoragerCollapsedCustomerIds = 'collapsedCustomerIds';
 
 @Component({
   selector: 'app-deployment-targets',
@@ -75,8 +77,23 @@ export class DeploymentTargetsComponent implements AfterViewInit {
 
   protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly plusIcon = faPlus;
+  protected readonly faChevronDown = faChevronDown;
   protected readonly faLightbulb = faLightbulb;
   protected readonly faBullhorn = faBullhorn;
+
+  protected readonly collapsedCustomerIds = signal<string[]>(
+    (() => {
+      const s = localStorage.getItem(localStoragerCollapsedCustomerIds);
+      if (s) {
+        try {
+          return JSON.parse(s);
+        } catch (e) {
+          console.warn(e);
+        }
+      }
+      return [];
+    })()
+  );
 
   protected readonly isAlertsVisible = toSignal(
     this.featureFlags.isNotificationsEnabled$.pipe(
@@ -162,6 +179,10 @@ export class DeploymentTargetsComponent implements AfterViewInit {
 
   private readonly applications$ = this.applications.list();
 
+  constructor() {
+    effect(() => localStorage.setItem(localStoragerCollapsedCustomerIds, JSON.stringify(this.collapsedCustomerIds())));
+  }
+
   ngAfterViewInit() {
     if (this.auth.isCustomer() && this.auth.hasAnyRole('read_write', 'admin')) {
       combineLatest([this.applications$, this.deploymentTargets$])
@@ -199,5 +220,11 @@ export class DeploymentTargetsComponent implements AfterViewInit {
 
   protected hideModal(): void {
     this.modal?.close();
+  }
+
+  protected toggleCustomerCollapsed(customerId: string): void {
+    this.collapsedCustomerIds.update((prev) =>
+      prev.includes(customerId) ? prev.filter((el) => el !== customerId) : prev.concat(customerId)
+    );
   }
 }
