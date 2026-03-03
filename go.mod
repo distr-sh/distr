@@ -43,10 +43,10 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/stripe/stripe-go/v84 v84.4.0
 	github.com/wneessen/go-mail v0.7.2
-	go.opentelemetry.io/collector/component v1.52.0
+	go.opentelemetry.io/collector/component v1.53.0
 	go.opentelemetry.io/collector/confmap v1.52.0
 	go.opentelemetry.io/collector/consumer v1.52.0
-	go.opentelemetry.io/collector/pdata v1.52.0
+	go.opentelemetry.io/collector/pdata v1.53.0
 	go.opentelemetry.io/collector/receiver v1.52.0
 	go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws v0.65.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.65.0
@@ -120,7 +120,7 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.opentelemetry.io/collector/confmap/xconfmap v0.146.1 // indirect
 	go.opentelemetry.io/collector/consumer/consumererror v0.146.1 // indirect
-	go.opentelemetry.io/collector/featuregate v1.52.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.53.0 // indirect
 	go.opentelemetry.io/collector/filter v0.146.1 // indirect
 	go.opentelemetry.io/collector/internal/componentalias v0.146.1 // indirect
 	go.opentelemetry.io/collector/pdata/pprofile v0.146.1 // indirect
@@ -328,7 +328,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.40.0 // indirect
 	go.opentelemetry.io/otel/metric v1.40.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.9.0 // indirect
-	golang.org/x/net v0.49.0 // indirect
+	golang.org/x/net v0.51.0 // indirect
 	golang.org/x/oauth2 v0.35.0
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
