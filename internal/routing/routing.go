@@ -165,7 +165,7 @@ func ApiRouter(
 					r.Route("/organizations", handlers.OrganizationsRouter)
 					r.Route("/secrets", handlers.SecretsRouter)
 					r.Route("/settings", handlers.SettingsRouter)
-					r.Route("/support-bundles", handlers.SupportBundlesRouter)
+					r.With(middleware.ProFeature).Route("/support-bundles", handlers.SupportBundlesRouter)
 					r.Route("/tutorial-progress", handlers.TutorialsRouter)
 					r.Route("/user-accounts", handlers.UserAccountsRouter)
 				})

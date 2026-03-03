@@ -80,10 +80,12 @@ export class SideBarComponent {
   protected readonly registrySubMenuOpen = signal(true);
   protected readonly licenseOverlayOpen = signal(false);
   protected readonly notificationsOverlayOpen = signal(false);
+  protected readonly supportBundlesOverlayOpen = signal(false);
 
   protected readonly isAllTutorialsStarted = toSignal(this.tutorialsService.allStarted$);
   protected readonly isLicensingFeatureEnabled = toSignal(this.featureFlags.isLicensingEnabled$);
   protected readonly isNotificationsFeatureEnabled = toSignal(this.featureFlags.isNotificationsEnabled$);
+  protected readonly isSupportBundlesFeatureEnabled = toSignal(this.featureFlags.isSupportBundlesEnabled$);
 
   public readonly isSubscriptionBannerVisible = input<boolean>();
   public readonly isSidebarVisible = input<boolean>();

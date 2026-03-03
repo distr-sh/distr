@@ -7,9 +7,8 @@ import {
   CreateUpdateSupportBundleConfigurationRequest,
   SupportBundle,
   SupportBundleComment,
-  SupportBundleConfiguration,
+  SupportBundleConfigurationEnvVar,
   SupportBundleDetail,
-  SupportBundleResource,
   UpdateSupportBundleStatusRequest,
 } from '../types/support-bundle';
 
@@ -20,11 +19,11 @@ export class SupportBundlesService {
   private readonly httpClient = inject(HttpClient);
 
   public getConfiguration() {
-    return this.httpClient.get<SupportBundleConfiguration>(`${baseUrl}/configuration`);
+    return this.httpClient.get<SupportBundleConfigurationEnvVar[]>(`${baseUrl}/configuration`);
   }
 
   public updateConfiguration(request: CreateUpdateSupportBundleConfigurationRequest) {
-    return this.httpClient.put<SupportBundleConfiguration>(`${baseUrl}/configuration`, request);
+    return this.httpClient.put<SupportBundleConfigurationEnvVar[]>(`${baseUrl}/configuration`, request);
   }
 
   public deleteConfiguration() {
@@ -45,14 +44,6 @@ export class SupportBundlesService {
 
   public updateStatus(id: string, request: UpdateSupportBundleStatusRequest) {
     return this.httpClient.patch<SupportBundle>(`${baseUrl}/${id}/status`, request);
-  }
-
-  public getResources(bundleId: string) {
-    return this.httpClient.get<SupportBundleResource[]>(`${baseUrl}/${bundleId}/resources`);
-  }
-
-  public getComments(bundleId: string) {
-    return this.httpClient.get<SupportBundleComment[]>(`${baseUrl}/${bundleId}/comments`);
   }
 
   public createComment(bundleId: string, request: CreateSupportBundleCommentRequest) {

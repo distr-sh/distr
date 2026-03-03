@@ -148,7 +148,7 @@ func updateCustomerOrganizationHandler() http.HandlerFunc {
 		}
 
 		if slices.Contains(features, types.CustomerOrganizationFeatureSupportBundles) {
-			exists, err := db.ExistsSupportBundleConfiguration(ctx, *auth.CurrentOrgID())
+			exists, err := db.ExistsSupportBundleConfigurationEnvVars(ctx, *auth.CurrentOrgID())
 			if err != nil {
 				log.Error("failed to check support bundle configuration", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)

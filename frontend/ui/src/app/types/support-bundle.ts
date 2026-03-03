@@ -1,13 +1,6 @@
 export interface SupportBundleConfigurationEnvVar {
-  id?: string;
   name: string;
   redacted: boolean;
-}
-
-export interface SupportBundleConfiguration {
-  id: string;
-  createdAt: string;
-  envVars: SupportBundleConfigurationEnvVar[];
 }
 
 export interface CreateUpdateSupportBundleConfigurationRequest {
@@ -22,14 +15,15 @@ export interface SupportBundle {
   createdByUserAccountId: string;
   createdByUserName: string;
   createdByImageUrl?: string;
-  title?: string;
+  title: string;
   description?: string;
   status: 'initialized' | 'created' | 'resolved';
   resourceCount: number;
+  commentCount: number;
 }
 
 export interface CreateSupportBundleRequest {
-  title?: string;
+  title: string;
   description?: string;
 }
 

@@ -5,21 +5,15 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 )
 
-func SupportBundleConfigurationToAPI(
-	config types.SupportBundleConfiguration,
+func SupportBundleConfigurationEnvVarsToAPI(
 	envVars []types.SupportBundleConfigurationEnvVar,
-) api.SupportBundleConfiguration {
-	return api.SupportBundleConfiguration{
-		ID:        config.ID,
-		CreatedAt: config.CreatedAt,
-		EnvVars: List(envVars, func(ev types.SupportBundleConfigurationEnvVar) api.SupportBundleConfigurationEnvVar {
-			return api.SupportBundleConfigurationEnvVar{
-				ID:       &ev.ID,
-				Name:     ev.Name,
-				Redacted: ev.Redacted,
-			}
-		}),
-	}
+) []api.SupportBundleConfigurationEnvVar {
+	return List(envVars, func(ev types.SupportBundleConfigurationEnvVar) api.SupportBundleConfigurationEnvVar {
+		return api.SupportBundleConfigurationEnvVar{
+			Name:     ev.Name,
+			Redacted: ev.Redacted,
+		}
+	})
 }
 
 func SupportBundleToAPI(bundle types.SupportBundleWithDetails) api.SupportBundle {
@@ -35,6 +29,7 @@ func SupportBundleToAPI(bundle types.SupportBundleWithDetails) api.SupportBundle
 		Description:              bundle.Description,
 		Status:                   string(bundle.Status),
 		ResourceCount:            bundle.ResourceCount,
+		CommentCount:             bundle.CommentCount,
 	}
 }
 
@@ -44,6 +39,14 @@ func SupportBundleResourceToAPI(resource types.SupportBundleResource) api.Suppor
 		CreatedAt: resource.CreatedAt,
 		Name:      resource.Name,
 		Content:   resource.Content,
+	}
+}
+
+func SupportBundleResourceToSummaryAPI(resource types.SupportBundleResource) api.SupportBundleResourceSummary {
+	return api.SupportBundleResourceSummary{
+		ID:        resource.ID,
+		CreatedAt: resource.CreatedAt,
+		Name:      resource.Name,
 	}
 }
 

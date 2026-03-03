@@ -1,7 +1,9 @@
 package handlers
 
 import (
-	"context"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
@@ -10,15 +12,12 @@ import (
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
-	"github.com/distr-sh/distr/internal/authkey"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
-	"github.com/distr-sh/distr/internal/supportbundle"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -33,7 +32,7 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 		r.Get("/", getSupportBundleConfigurationHandler()).
 			With(option.Description("Get support bundle configuration"))
 
-		r.With(middleware.RequireReadWriteOrAdmin).Group(func(r chiopenapi.Router) {
+		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
 			r.Put("/", createOrUpdateSupportBundleConfigurationHandler()).
 				With(option.Description("Create or update support bundle configuration")).
 				With(option.Request(api.CreateUpdateSupportBundleConfigurationRequest{}))
@@ -63,24 +62,16 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 				With(option.Request(SupportBundleIDRequest{})).
 				With(option.Response(http.StatusOK, api.SupportBundleDetail{}))
 
-			r.Patch("/status", updateSupportBundleStatusHandler()).
+			r.With(middleware.RequireVendor, middleware.BlockSuperAdmin).
+				Patch("/status", updateSupportBundleStatusHandler()).
 				With(option.Description("Update support bundle status")).
 				With(option.Request(struct {
 					SupportBundleIDRequest
 					api.UpdateSupportBundleStatusRequest
 				}{}))
 
-			r.Get("/resources", getSupportBundleResourcesHandler()).
-				With(option.Description("List support bundle resources")).
-				With(option.Request(SupportBundleIDRequest{})).
-				With(option.Response(http.StatusOK, []api.SupportBundleResource{}))
-
-			r.Get("/comments", getSupportBundleCommentsHandler()).
-				With(option.Description("List support bundle comments")).
-				With(option.Request(SupportBundleIDRequest{})).
-				With(option.Response(http.StatusOK, []api.SupportBundleComment{}))
-
-			r.Post("/comments", createSupportBundleCommentHandler()).
+			r.With(middleware.BlockSuperAdmin).
+				Post("/comments", createSupportBundleCommentHandler()).
 				With(option.Description("Create a support bundle comment")).
 				With(option.Request(struct {
 					SupportBundleIDRequest
@@ -91,49 +82,15 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 	})
 }
 
-// SupportBundleScriptRouter handles endpoints called by the collect script.
-// The collect-script endpoint uses query-param auth; the other endpoints use PAT header auth.
-func SupportBundleScriptRouter(r chiopenapi.Router) {
-	r.WithOptions(option.GroupTags("Support Bundles"))
-
-	r.Route("/{supportBundleId}", func(r chiopenapi.Router) {
-		r.With(queryAuthSupportBundleMiddleware).Group(func(r chiopenapi.Router) {
-			r.Get("/collect-script", getCollectScriptHandler()).
-				With(option.Description("Get support bundle collect script")).
-				With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
-		})
-
-		r.With(auth.Authentication.Middleware).Group(func(r chiopenapi.Router) {
-			r.Post("/resources", uploadSupportBundleResourceHandler()).
-				With(option.Description("Upload a support bundle resource")).
-				With(option.Request(api.CreateSupportBundleResourceRequest{}))
-
-			r.Post("/finalize", finalizeSupportBundleHandler()).
-				With(option.Description("Finalize a support bundle"))
-		})
-	})
-}
-
 // Configuration handlers
 
 func getSupportBundleConfigurationHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
+		a := auth.Authentication.Require(ctx)
 
-		config, err := db.GetSupportBundleConfiguration(ctx, *auth.CurrentOrgID())
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.Error(w, "not found", http.StatusNotFound)
-			return
-		} else if err != nil {
-			log.Error("failed to get support bundle configuration", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		envVars, err := db.GetSupportBundleConfigurationEnvVars(ctx, config.ID)
+		envVars, err := db.GetSupportBundleConfigurationEnvVars(ctx, *a.CurrentOrgID())
 		if err != nil {
 			log.Error("failed to get support bundle config env vars", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -141,7 +98,7 @@ func getSupportBundleConfigurationHandler() http.HandlerFunc {
 			return
 		}
 
-		RespondJSON(w, mapping.SupportBundleConfigurationToAPI(*config, envVars))
+		RespondJSON(w, mapping.SupportBundleConfigurationEnvVarsToAPI(envVars))
 	}
 }
 
@@ -149,7 +106,7 @@ func createOrUpdateSupportBundleConfigurationHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
+		a := auth.Authentication.Require(ctx)
 
 		request, err := JsonBody[api.CreateUpdateSupportBundleConfigurationRequest](w, r)
 		if err != nil {
@@ -162,20 +119,20 @@ func createOrUpdateSupportBundleConfigurationHandler() http.HandlerFunc {
 		envVars := make([]types.SupportBundleConfigurationEnvVar, len(request.EnvVars))
 		for i, ev := range request.EnvVars {
 			envVars[i] = types.SupportBundleConfigurationEnvVar{
-				Name:     ev.Name,
-				Redacted: ev.Redacted,
+				OrganizationID: *a.CurrentOrgID(),
+				Name:           ev.Name,
+				Redacted:       ev.Redacted,
 			}
 		}
 
-		config, err := db.CreateOrUpdateSupportBundleConfiguration(ctx, *auth.CurrentOrgID(), envVars)
-		if err != nil {
-			log.Error("failed to create/update support bundle configuration", zap.Error(err))
+		if err := db.SaveSupportBundleConfigurationEnvVars(ctx, *a.CurrentOrgID(), envVars); err != nil {
+			log.Error("failed to save support bundle configuration", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		savedEnvVars, err := db.GetSupportBundleConfigurationEnvVars(ctx, config.ID)
+		savedEnvVars, err := db.GetSupportBundleConfigurationEnvVars(ctx, *a.CurrentOrgID())
 		if err != nil {
 			log.Error("failed to get support bundle config env vars", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -183,7 +140,7 @@ func createOrUpdateSupportBundleConfigurationHandler() http.HandlerFunc {
 			return
 		}
 
-		RespondJSON(w, mapping.SupportBundleConfigurationToAPI(*config, savedEnvVars))
+		RespondJSON(w, mapping.SupportBundleConfigurationEnvVarsToAPI(savedEnvVars))
 	}
 }
 
@@ -191,11 +148,9 @@ func deleteSupportBundleConfigurationHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
+		a := auth.Authentication.Require(ctx)
 
-		if err := db.DeleteSupportBundleConfiguration(ctx, *auth.CurrentOrgID()); errors.Is(err, apierrors.ErrNotFound) {
-			http.Error(w, "not found", http.StatusNotFound)
-		} else if err != nil {
+		if err := db.DeleteSupportBundleConfigurationEnvVars(ctx, *a.CurrentOrgID()); err != nil {
 			log.Error("failed to delete support bundle configuration", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -211,9 +166,9 @@ func getSupportBundlesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
+		a := auth.Authentication.Require(ctx)
 
-		bundles, err := db.GetSupportBundles(ctx, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID())
+		bundles, err := db.GetSupportBundles(ctx, *a.CurrentOrgID(), a.CurrentCustomerOrgID())
 		if err != nil {
 			log.Error("failed to get support bundles", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -225,13 +180,23 @@ func getSupportBundlesHandler() http.HandlerFunc {
 	}
 }
 
+func generateCollectToken() (raw string, hash []byte, err error) {
+	tokenBytes := make([]byte, 32)
+	if _, err := rand.Read(tokenBytes); err != nil {
+		return "", nil, fmt.Errorf("could not generate collect token: %w", err)
+	}
+	raw = hex.EncodeToString(tokenBytes)
+	h := sha256.Sum256(tokenBytes)
+	return raw, h[:], nil
+}
+
 func createSupportBundleHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
+		a := auth.Authentication.Require(ctx)
 
-		if auth.CurrentCustomerOrgID() == nil {
+		if a.CurrentCustomerOrgID() == nil {
 			http.Error(w, "only customers can create support bundles", http.StatusForbidden)
 			return
 		}
@@ -241,7 +206,12 @@ func createSupportBundleHandler() http.HandlerFunc {
 			return
 		}
 
-		exists, err := db.ExistsSupportBundleConfiguration(ctx, *auth.CurrentOrgID())
+		if request.Title == "" {
+			http.Error(w, "title is required", http.StatusBadRequest)
+			return
+		}
+
+		exists, err := db.ExistsSupportBundleConfigurationEnvVars(ctx, *a.CurrentOrgID())
 		if err != nil {
 			log.Error("failed to check support bundle configuration", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -253,36 +223,23 @@ func createSupportBundleHandler() http.HandlerFunc {
 			return
 		}
 
-		key, err := authkey.NewKey()
+		rawToken, tokenHash, err := generateCollectToken()
 		if err != nil {
-			log.Error("failed to generate PAT key", zap.Error(err))
+			log.Error("failed to generate collect token", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		expiresAt := time.Now().Add(1 * time.Hour)
-		token := types.AccessToken{
-			ExpiresAt:      &expiresAt,
-			Label:          util.PtrTo("support-bundle"),
-			Key:            key,
-			UserAccountID:  auth.CurrentUserID(),
-			OrganizationID: *auth.CurrentOrgID(),
-		}
-		if err := db.CreateAccessToken(ctx, &token); err != nil {
-			log.Error("failed to create PAT for support bundle", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
+		expiresAt := time.Now().Add(24 * time.Hour)
 		bundle := types.SupportBundle{
-			OrganizationID:         *auth.CurrentOrgID(),
-			CustomerOrganizationID: *auth.CurrentCustomerOrgID(),
-			CreatedByUserAccountID: auth.CurrentUserID(),
+			OrganizationID:         *a.CurrentOrgID(),
+			CustomerOrganizationID: *a.CurrentCustomerOrgID(),
+			CreatedByUserAccountID: a.CurrentUserID(),
 			Title:                  request.Title,
 			Description:            request.Description,
-			AccessTokenID:          &token.ID,
+			CollectTokenHash:       tokenHash,
+			CollectTokenExpiresAt:  &expiresAt,
 		}
 		if err := db.CreateSupportBundle(ctx, &bundle); err != nil {
 			log.Error("failed to create support bundle", zap.Error(err))
@@ -291,7 +248,7 @@ func createSupportBundleHandler() http.HandlerFunc {
 			return
 		}
 
-		org, err := db.GetOrganizationByID(ctx, *auth.CurrentOrgID())
+		org, err := db.GetOrganizationByID(ctx, *a.CurrentOrgID())
 		if err != nil {
 			log.Error("failed to get organization", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -302,10 +259,10 @@ func createSupportBundleHandler() http.HandlerFunc {
 		baseURL := customdomains.AppDomainOrDefault(*org)
 		collectCommand := fmt.Sprintf(
 			"curl -fsSL '%s/api/v1/support-bundle-collect/%s/collect-script?token=%s' | sh",
-			baseURL, bundle.ID.String(), key.Serialize(),
+			baseURL, bundle.ID.String(), rawToken,
 		)
 
-		detailBundle, err := db.GetSupportBundleByID(ctx, bundle.ID, *auth.CurrentOrgID())
+		detailBundle, err := db.GetSupportBundleByID(ctx, bundle.ID, *a.CurrentOrgID())
 		if err != nil {
 			log.Error("failed to get support bundle", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -330,9 +287,9 @@ func getSupportBundleDetailHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
+		a := auth.Authentication.Require(ctx)
 
-		bundle, err := db.GetSupportBundleByID(ctx, id, *auth.CurrentOrgID())
+		bundle, err := db.GetSupportBundleByID(ctx, id, *a.CurrentOrgID())
 		if errors.Is(err, apierrors.ErrNotFound) {
 			http.NotFound(w, r)
 			return
@@ -343,7 +300,7 @@ func getSupportBundleDetailHandler() http.HandlerFunc {
 			return
 		}
 
-		if auth.CurrentCustomerOrgID() != nil && bundle.CustomerOrganizationID != *auth.CurrentCustomerOrgID() {
+		if a.CurrentCustomerOrgID() != nil && bundle.CustomerOrganizationID != *a.CurrentCustomerOrgID() {
 			http.NotFound(w, r)
 			return
 		}
@@ -382,7 +339,7 @@ func updateSupportBundleStatusHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
-		auth := auth.Authentication.Require(ctx)
+		a := auth.Authentication.Require(ctx)
 
 		request, err := JsonBody[api.UpdateSupportBundleStatusRequest](w, r)
 		if err != nil {
@@ -395,7 +352,11 @@ func updateSupportBundleStatusHandler() http.HandlerFunc {
 			return
 		}
 
-		if err := db.UpdateSupportBundleStatus(ctx, id, *auth.CurrentOrgID(), status); errors.Is(err, apierrors.ErrNotFound) {
+		resolvedBy := a.CurrentUserID()
+		err = db.UpdateSupportBundleStatus(
+			ctx, id, *a.CurrentOrgID(), status, &resolvedBy,
+		)
+		if errors.Is(err, apierrors.ErrNotFound) {
 			http.NotFound(w, r)
 		} else if err != nil {
 			log.Error("failed to update support bundle status", zap.Error(err))
@@ -439,50 +400,6 @@ func requireSupportBundle(w http.ResponseWriter, r *http.Request) *types.Support
 	return bundle
 }
 
-func getSupportBundleResourcesHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		bundle := requireSupportBundle(w, r)
-		if bundle == nil {
-			return
-		}
-
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-
-		resources, err := db.GetSupportBundleResources(ctx, bundle.ID)
-		if err != nil {
-			log.Error("failed to get support bundle resources", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		RespondJSON(w, mapping.List(resources, mapping.SupportBundleResourceToAPI))
-	}
-}
-
-func getSupportBundleCommentsHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		bundle := requireSupportBundle(w, r)
-		if bundle == nil {
-			return
-		}
-
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-
-		comments, err := db.GetSupportBundleComments(ctx, bundle.ID)
-		if err != nil {
-			log.Error("failed to get support bundle comments", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		RespondJSON(w, mapping.List(comments, mapping.SupportBundleCommentToAPI))
-	}
-}
-
 func createSupportBundleCommentHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		bundle := requireSupportBundle(w, r)
@@ -504,257 +421,14 @@ func createSupportBundleCommentHandler() http.HandlerFunc {
 			return
 		}
 
-		comment := types.SupportBundleComment{
-			SupportBundleID: bundle.ID,
-			UserAccountID:   a.CurrentUserID(),
-			Content:         request.Content,
-		}
-		if err := db.CreateSupportBundleComment(ctx, &comment); err != nil {
+		comment, err := db.CreateSupportBundleComment(ctx, bundle.ID, a.CurrentUserID(), request.Content)
+		if err != nil {
 			log.Error("failed to create support bundle comment", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		commentWithUser, err := db.GetSupportBundleCommentByID(ctx, comment.ID)
-		if err != nil {
-			log.Error("failed to get support bundle comment", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		RespondJSON(w, mapping.SupportBundleCommentToAPI(*commentWithUser))
-	}
-}
-
-// Script endpoints (called by the collect script)
-
-func queryAuthSupportBundleMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		tokenStr := r.URL.Query().Get("token")
-		if tokenStr == "" {
-			http.Error(w, "token is required", http.StatusUnauthorized)
-			return
-		}
-
-		key, err := authkey.Parse(tokenStr)
-		if err != nil {
-			http.Error(w, "invalid token", http.StatusUnauthorized)
-			return
-		}
-
-		tokenWithUser, err := db.GetAccessTokenByKeyUpdatingLastUsed(ctx, key)
-		if err != nil {
-			if errors.Is(err, apierrors.ErrNotFound) {
-				http.Error(w, "invalid or expired token", http.StatusUnauthorized)
-			} else {
-				log.Error("failed to validate support bundle token", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-			}
-			return
-		}
-
-		bundleID, err := uuid.Parse(r.PathValue("supportBundleId"))
-		if err != nil {
-			http.Error(w, "invalid bundle ID", http.StatusBadRequest)
-			return
-		}
-
-		if _, err := db.GetSupportBundleByIDAndAccessToken(ctx, bundleID, tokenWithUser.ID); err != nil {
-			if errors.Is(err, apierrors.ErrNotFound) {
-				http.Error(w, "token does not match bundle", http.StatusUnauthorized)
-			} else {
-				log.Error("failed to verify support bundle token", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-			}
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-func getCollectScriptHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		bundleID, err := uuid.Parse(r.PathValue("supportBundleId"))
-		if err != nil {
-			http.Error(w, "invalid bundle ID", http.StatusBadRequest)
-			return
-		}
-
-		tokenStr := r.URL.Query().Get("token")
-
-		key, err := authkey.Parse(tokenStr)
-		if err != nil {
-			http.Error(w, "invalid token", http.StatusUnauthorized)
-			return
-		}
-
-		tokenWithUser, err := db.GetAccessTokenByKeyUpdatingLastUsed(ctx, key)
-		if err != nil {
-			log.Error("failed to get access token", zap.Error(err))
-			http.Error(w, "invalid token", http.StatusUnauthorized)
-			return
-		}
-
-		org, err := db.GetOrganizationByID(ctx, tokenWithUser.OrganizationID)
-		if err != nil {
-			log.Error("failed to get organization", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		baseURL := customdomains.AppDomainOrDefault(*org)
-
-		config, err := db.GetSupportBundleConfiguration(ctx, tokenWithUser.OrganizationID)
-		if err != nil && !errors.Is(err, apierrors.ErrNotFound) {
-			log.Error("failed to get support bundle configuration", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		var envVars []types.SupportBundleConfigurationEnvVar
-		if config != nil {
-			envVars, err = db.GetSupportBundleConfigurationEnvVars(ctx, config.ID)
-			if err != nil {
-				log.Error("failed to get support bundle config env vars", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-		}
-
-		script, err := supportbundle.GenerateCollectScript(baseURL, bundleID, tokenStr, envVars)
-		if err != nil {
-			log.Error("failed to generate collect script", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		if _, err := w.Write([]byte(script)); err != nil {
-			log.Warn("failed to write collect script", zap.Error(err))
-		}
-	}
-}
-
-func uploadSupportBundleResourceHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		bundleID, err := uuid.Parse(r.PathValue("supportBundleId"))
-		if err != nil {
-			http.Error(w, "invalid bundle ID", http.StatusBadRequest)
-			return
-		}
-
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		a := auth.Authentication.Require(ctx)
-
-		if _, err := db.GetSupportBundleByID(ctx, bundleID, *a.CurrentOrgID()); errors.Is(err, apierrors.ErrNotFound) {
-			http.NotFound(w, r)
-			return
-		} else if err != nil {
-			log.Error("failed to get support bundle", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		request, err := JsonBody[api.CreateSupportBundleResourceRequest](w, r)
-		if err != nil {
-			return
-		}
-
-		if request.Name == "" || request.Content == "" {
-			http.Error(w, "name and content are required", http.StatusBadRequest)
-			return
-		}
-
-		const maxContentSize = 5 * 1024 * 1024 // 5MB
-		if len(request.Content) > maxContentSize {
-			http.Error(w, "content exceeds maximum size of 5MB", http.StatusBadRequest)
-			return
-		}
-
-		resource := types.SupportBundleResource{
-			SupportBundleID: bundleID,
-			Name:            request.Name,
-			Content:         request.Content,
-		}
-		if err := db.CreateSupportBundleResource(ctx, &resource); err != nil {
-			log.Error("failed to create support bundle resource", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		RespondJSON(w, mapping.SupportBundleResourceToAPI(resource))
-	}
-}
-
-func finalizeSupportBundleHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		bundleID, err := uuid.Parse(r.PathValue("supportBundleId"))
-		if err != nil {
-			http.Error(w, "invalid bundle ID", http.StatusBadRequest)
-			return
-		}
-
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		a := auth.Authentication.Require(ctx)
-
-		bundle, err := db.GetSupportBundleByID(ctx, bundleID, *a.CurrentOrgID())
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.NotFound(w, r)
-			return
-		} else if err != nil {
-			log.Error("failed to get support bundle", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		if bundle.Status != types.SupportBundleStatusInitialized {
-			http.Error(w, "support bundle is not in initialized state", http.StatusBadRequest)
-			return
-		}
-
-		err = db.RunTxRR(ctx, func(ctx context.Context) error {
-			if err := db.UpdateSupportBundleStatus(
-				ctx, bundleID, bundle.OrganizationID, types.SupportBundleStatusCreated,
-			); err != nil {
-				return err
-			}
-
-			if bundle.AccessTokenID != nil {
-				if err := db.DeleteAccessToken(ctx, *bundle.AccessTokenID, bundle.CreatedByUserAccountID); err != nil {
-					return err
-				}
-				if err := db.ClearSupportBundleAccessToken(ctx, bundleID); err != nil {
-					return err
-				}
-			}
-
-			return nil
-		})
-		if err != nil {
-			log.Error("failed to finalize support bundle", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusNoContent)
+		RespondJSON(w, mapping.SupportBundleCommentToAPI(*comment))
 	}
 }

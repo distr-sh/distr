@@ -14,29 +14,24 @@ const (
 	SupportBundleStatusResolved    SupportBundleStatus = "resolved"
 )
 
-type SupportBundleConfiguration struct {
-	ID             uuid.UUID `db:"id"`
-	CreatedAt      time.Time `db:"created_at"`
-	OrganizationID uuid.UUID `db:"organization_id"`
-}
-
 type SupportBundleConfigurationEnvVar struct {
-	ID                           uuid.UUID `db:"id"`
-	SupportBundleConfigurationID uuid.UUID `db:"support_bundle_configuration_id"`
-	Name                         string    `db:"name"`
-	Redacted                     bool      `db:"redacted"`
+	OrganizationID uuid.UUID `db:"organization_id"`
+	Name           string    `db:"name"`
+	Redacted       bool      `db:"redacted"`
 }
 
 type SupportBundle struct {
-	ID                     uuid.UUID           `db:"id"`
-	CreatedAt              time.Time           `db:"created_at"`
-	OrganizationID         uuid.UUID           `db:"organization_id"`
-	CustomerOrganizationID uuid.UUID           `db:"customer_organization_id"`
-	CreatedByUserAccountID uuid.UUID           `db:"created_by_user_account_id"`
-	Title                  *string             `db:"title"`
-	Description            *string             `db:"description"`
-	Status                 SupportBundleStatus `db:"status"`
-	AccessTokenID          *uuid.UUID          `db:"access_token_id"`
+	ID                      uuid.UUID           `db:"id"`
+	CreatedAt               time.Time           `db:"created_at"`
+	OrganizationID          uuid.UUID           `db:"organization_id"`
+	CustomerOrganizationID  uuid.UUID           `db:"customer_organization_id"`
+	CreatedByUserAccountID  uuid.UUID           `db:"created_by_user_account_id"`
+	Title                   string              `db:"title"`
+	Description             *string             `db:"description"`
+	Status                  SupportBundleStatus `db:"status"`
+	CollectTokenHash        []byte              `db:"collect_token_hash"`
+	CollectTokenExpiresAt   *time.Time          `db:"collect_token_expires_at"`
+	ResolvedByUserAccountID *uuid.UUID          `db:"resolved_by_user_account_id"`
 }
 
 type SupportBundleWithDetails struct {
@@ -45,6 +40,7 @@ type SupportBundleWithDetails struct {
 	CreatedByImageID         *uuid.UUID `db:"created_by_image_id"`
 	CustomerOrganizationName string     `db:"customer_organization_name"`
 	ResourceCount            int64      `db:"resource_count"`
+	CommentCount             int64      `db:"comment_count"`
 }
 
 type SupportBundleResource struct {

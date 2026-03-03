@@ -33,18 +33,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
   protected readonly artifactsByCustomer$ = this.dashboardService.getArtifactsByCustomer().pipe(shareReplay(1));
   protected readonly supportBundlesByCustomer$ = this.supportBundlesService.list().pipe(
     map((bundles) => {
-      const grouped = new Map<string, SupportBundle[]>();
+      const grouped = new Map<string, {customerName: string; bundles: SupportBundle[]}>();
       for (const bundle of bundles) {
-        const existing = grouped.get(bundle.customerOrganizationName);
+        const existing = grouped.get(bundle.customerOrganizationId);
         if (existing) {
-          existing.push(bundle);
+          existing.bundles.push(bundle);
         } else {
-          grouped.set(bundle.customerOrganizationName, [bundle]);
+          grouped.set(bundle.customerOrganizationId, {
+            customerName: bundle.customerOrganizationName,
+            bundles: [bundle],
+          });
         }
       }
-      return Array.from(grouped.entries())
-        .map(([customerName, customerBundles]) => ({customerName, bundles: customerBundles}))
-        .sort((a, b) => a.customerName.localeCompare(b.customerName));
+      return Array.from(grouped.values()).sort((a, b) => a.customerName.localeCompare(b.customerName));
     }),
     catchError(() => of([])),
     shareReplay(1)

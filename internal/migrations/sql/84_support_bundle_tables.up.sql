@@ -1,23 +1,11 @@
 ALTER TYPE CUSTOMER_ORGANIZATION_FEATURE ADD VALUE IF NOT EXISTS 'support_bundles';
 
-CREATE TABLE SupportBundleConfiguration (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    organization_id UUID NOT NULL UNIQUE REFERENCES Organization (id) ON DELETE CASCADE
-);
-
 CREATE TABLE SupportBundleConfigurationEnvVar (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    support_bundle_configuration_id UUID NOT NULL REFERENCES SupportBundleConfiguration (id) ON DELETE CASCADE,
+    organization_id UUID NOT NULL REFERENCES Organization (id) ON DELETE CASCADE,
     name TEXT NOT NULL,
-    redacted BOOLEAN NOT NULL DEFAULT false
+    redacted BOOLEAN NOT NULL DEFAULT false,
+    PRIMARY KEY (organization_id, name)
 );
-
-CREATE INDEX idx_support_bundle_config_env_var_config_id
-    ON SupportBundleConfigurationEnvVar (support_bundle_configuration_id);
-
-CREATE UNIQUE INDEX idx_support_bundle_config_env_var_unique_name
-    ON SupportBundleConfigurationEnvVar (support_bundle_configuration_id, lower(name));
 
 
 CREATE TYPE support_bundle_status AS ENUM ('initialized', 'created', 'resolved');
@@ -28,10 +16,12 @@ CREATE TABLE SupportBundle (
     organization_id UUID NOT NULL REFERENCES Organization (id) ON DELETE CASCADE,
     customer_organization_id UUID NOT NULL REFERENCES CustomerOrganization (id) ON DELETE CASCADE,
     created_by_user_account_id UUID NOT NULL REFERENCES UserAccount (id),
-    title TEXT,
+    title TEXT NOT NULL,
     description TEXT,
     status support_bundle_status NOT NULL DEFAULT 'initialized',
-    access_token_id UUID REFERENCES AccessToken (id) ON DELETE SET NULL
+    collect_token_hash BYTEA,
+    collect_token_expires_at TIMESTAMPTZ,
+    resolved_by_user_account_id UUID REFERENCES UserAccount (id)
 );
 
 CREATE INDEX idx_support_bundle_org_id ON SupportBundle (organization_id);

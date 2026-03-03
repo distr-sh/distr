@@ -1,11 +1,21 @@
-import {HttpErrorResponse} from '@angular/common/http';
-import {Component, computed, inject, signal, TemplateRef} from '@angular/core';
+import {Component, inject, signal, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
-import {FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
+import {
+  AbstractControl,
+  FormArray,
+  FormBuilder,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  ValidatorFn,
+} from '@angular/forms';
+import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faFileImport, faFloppyDisk, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faArrowLeft, faFileImport, faFloppyDisk, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
+import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
@@ -16,35 +26,13 @@ type EnvVarFormGroup = FormGroup<{
   redacted: FormControl<boolean>;
 }>;
 
-@Component({
-  selector: 'app-vendor-support-bundles',
-  templateUrl: './vendor-support-bundles.component.html',
-  imports: [ReactiveFormsModule, FaIconComponent],
-})
-export class VendorSupportBundlesComponent {
-  protected readonly faFloppyDisk = faFloppyDisk;
-  protected readonly faPlus = faPlus;
-  protected readonly faTrash = faTrash;
-  protected readonly faFileImport = faFileImport;
-  protected readonly faXmark = faXmark;
-
-  private readonly fb = inject(FormBuilder).nonNullable;
-  private readonly svc = inject(SupportBundlesService);
-  private readonly toast = inject(ToastService);
-  private readonly overlay = inject(OverlayService);
-
-  protected readonly loading = signal(true);
-  protected readonly saving = signal(false);
-  protected readonly configExists = signal(false);
-
-  protected readonly envVarsArray = new FormArray<EnvVarFormGroup>([]);
-  private readonly envVarVersion = signal(0);
-  protected readonly duplicateIndices = computed(() => {
-    this.envVarVersion();
+function uniqueNamesValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const array = control as FormArray<EnvVarFormGroup>;
     const seen = new Map<string, number>();
     const dupes = new Set<number>();
-    for (let i = 0; i < this.envVarsArray.length; i++) {
-      const name = this.envVarsArray.at(i).controls.name.value.trim().toUpperCase();
+    for (let i = 0; i < array.length; i++) {
+      const name = array.at(i).controls.name.value.trim().toUpperCase();
       if (!name) continue;
       const prev = seen.get(name);
       if (prev !== undefined) {
@@ -54,33 +42,57 @@ export class VendorSupportBundlesComponent {
         seen.set(name, i);
       }
     }
-    return dupes;
-  });
+    return dupes.size > 0 ? {duplicateNames: Array.from(dupes)} : null;
+  };
+}
+
+@Component({
+  selector: 'app-support-bundle-settings',
+  templateUrl: './support-bundle-settings.component.html',
+  imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective, RouterLink],
+})
+export class SupportBundleSettingsComponent {
+  protected readonly faFloppyDisk = faFloppyDisk;
+  protected readonly faPlus = faPlus;
+  protected readonly faTrash = faTrash;
+  protected readonly faFileImport = faFileImport;
+  protected readonly faXmark = faXmark;
+  protected readonly faArrowLeft = faArrowLeft;
+
+  private readonly fb = inject(FormBuilder).nonNullable;
+  private readonly svc = inject(SupportBundlesService);
+  private readonly toast = inject(ToastService);
+  private readonly overlay = inject(OverlayService);
+
+  protected readonly loading = signal(true);
+  protected readonly saving = signal(false);
+
+  protected readonly envVarsArray = new FormArray<EnvVarFormGroup>([], {validators: uniqueNamesValidator()});
+
+  protected get duplicateIndices(): Set<number> {
+    const errors = this.envVarsArray.errors;
+    if (errors?.['duplicateNames']) {
+      return new Set(errors['duplicateNames'] as number[]);
+    }
+    return new Set();
+  }
 
   constructor() {
-    this.envVarsArray.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
-      this.envVarVersion.update((v) => v + 1);
-    });
-
     this.svc
       .getConfiguration()
       .pipe(takeUntilDestroyed())
       .subscribe({
-        next: (config) => {
-          this.configExists.set(true);
-          for (const envVar of config.envVars) {
+        next: (envVars) => {
+          for (const envVar of envVars) {
             this.addEnvVar(envVar);
           }
+          this.envVarsArray.markAsPristine();
           this.loading.set(false);
         },
         error: (e) => {
-          if (e instanceof HttpErrorResponse && e.status === 404) {
-            this.configExists.set(false);
-          } else {
-            const msg = getFormDisplayedError(e);
-            if (msg) {
-              this.toast.error(msg);
-            }
+          const msg = getFormDisplayedError(e);
+          if (msg) {
+            this.toast.error(msg);
           }
           this.loading.set(false);
         },
@@ -94,24 +106,22 @@ export class VendorSupportBundlesComponent {
         redacted: this.fb.control(envVar?.redacted ?? false),
       })
     );
-    this.envVarVersion.update((v) => v + 1);
   }
 
   protected removeEnvVar(index: number) {
     this.envVarsArray.removeAt(index);
-    this.envVarVersion.update((v) => v + 1);
   }
 
   protected async save() {
     this.saving.set(true);
     const envVars: SupportBundleConfigurationEnvVar[] = this.envVarsArray.controls.map((group) => ({
-      name: group.controls.name.value,
+      name: group.controls.name.value.trim(),
       redacted: group.controls.redacted.value,
     }));
 
     try {
       await firstValueFrom(this.svc.updateConfiguration({envVars}));
-      this.configExists.set(true);
+      this.envVarsArray.markAsPristine();
       this.toast.success('Support bundle configuration saved');
     } catch (e) {
       const msg = getFormDisplayedError(e);
@@ -133,8 +143,8 @@ export class VendorSupportBundlesComponent {
 
     try {
       await firstValueFrom(this.svc.deleteConfiguration());
-      this.configExists.set(false);
       this.envVarsArray.clear();
+      this.envVarsArray.markAsPristine();
       this.toast.success('Support bundle configuration deleted');
     } catch (e) {
       const msg = getFormDisplayedError(e);

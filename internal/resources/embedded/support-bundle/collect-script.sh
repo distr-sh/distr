@@ -14,22 +14,20 @@ cat > "$_script" << 'DISTR_COLLECT_EOF'
 
 BUNDLE_ID="{{.BundleID}}"
 BASE_URL="{{.BaseURL}}"
-AUTH_HEADER="{{.AuthHeader}}"
+TOKEN="{{.Token}}"
 
 upload_resource() {
   _name="$1"
   _content="$2"
-  _json_content=$(printf '%s' "$_content" | \
-    tr -d '\000-\010\013-\037' | \
-    awk 'BEGIN{ORS=""} {gsub(/\\/,"\\\\"); gsub(/"/,"\\\""); gsub(/\t/,"\\t"); if(NR>1) printf "\\n"; print}')
-  if ! printf '{"name":"%s","content":"%s"}' "$_name" "$_json_content" | \
-    curl -fsSL -X POST \
-      -H "${AUTH_HEADER}" \
-      -H "Content-Type: application/json" \
-      "${BASE_URL}/resources" \
-      -d @- > /dev/null 2>&1; then
+  _tmpfile="${_dir}/upload_content.tmp"
+  printf '%s' "$_content" > "$_tmpfile"
+  if ! curl -fsSL -X POST \
+    -F "name=${_name}" \
+    -F "content=@${_tmpfile}" \
+    "${BASE_URL}/resources?token=${TOKEN}" > /dev/null 2>&1; then
     echo "    Warning: failed to upload ${_name}"
   fi
+  rm -f "$_tmpfile"
 }
 
 is_redacted() {
@@ -37,6 +35,15 @@ is_redacted() {
 {{- range .EnvVars}}{{if .Redacted}}
     "{{.Name}}") return 0 ;;
 {{- end}}{{end}}
+    *) return 1 ;;
+  esac
+}
+
+is_configured() {
+  case "$1" in
+{{- range .EnvVars}}
+    "{{.Name}}") return 0 ;;
+{{- end}}
     *) return 1 ;;
   esac
 }
@@ -113,25 +120,30 @@ EOF_CONTAINERS
 
     echo "  Collecting data for $CNAME..."
 
-    # Collect container environment variables via docker exec
+    # Collect only configured environment variables from container
     CONTAINER_ENV=$(docker exec "$CID" env 2>/dev/null || true)
     if [ -n "$CONTAINER_ENV" ]; then
-      REDACTED_ENV=""
+      FILTERED_ENV=""
       while IFS= read -r env_line; do
         env_var_name=$(echo "$env_line" | cut -d= -f1)
-        env_var_value=$(echo "$env_line" | cut -d= -f2-)
-        if is_redacted "$env_var_name" && [ -n "$env_var_value" ]; then
-          REDACTED_ENV="${REDACTED_ENV}${env_var_name}=[REDACTED]
+        if is_configured "$env_var_name"; then
+          if is_redacted "$env_var_name"; then
+            FILTERED_ENV="${FILTERED_ENV}${env_var_name}=[REDACTED]
 "
-        else
-          REDACTED_ENV="${REDACTED_ENV}${env_line}
+          else
+            FILTERED_ENV="${FILTERED_ENV}${env_line}
 "
+          fi
         fi
       done <<EOF_ENV
 $CONTAINER_ENV
 EOF_ENV
-      upload_resource "container-env-${CNAME}" "$REDACTED_ENV"
-      echo "    Uploaded environment variables"
+      if [ -n "$FILTERED_ENV" ]; then
+        upload_resource "container-env-${CNAME}" "$FILTERED_ENV"
+        echo "    Uploaded environment variables"
+      else
+        echo "    No configured environment variables found"
+      fi
     else
       echo "    Could not collect environment variables (container may be stopped)"
     fi
@@ -154,7 +166,7 @@ fi
 # Finalize support bundle
 echo ""
 echo "Finalizing support bundle..."
-if ! curl -fsSL -X POST -H "${AUTH_HEADER}" "${BASE_URL}/finalize" > /dev/null 2>&1; then
+if ! curl -fsSL -X POST "${BASE_URL}/finalize?token=${TOKEN}" > /dev/null 2>&1; then
   echo "Warning: failed to finalize support bundle"
 fi
 echo ""
