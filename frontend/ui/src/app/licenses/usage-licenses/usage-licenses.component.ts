@@ -13,12 +13,12 @@ import {drawerFlyInOut} from '../../animations/drawer';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
+import {LicenseKeysService} from '../../services/license-keys.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
-import {UsageLicensesService} from '../../services/usage-licenses.service';
-import {UsageLicense} from '../../types/usage-license';
-import {EditUsageLicenseComponent} from './edit-usage-license.component';
-import {ViewUsageLicenseModalComponent} from './view-usage-license-modal.component';
+import {LicenseKey} from '../../types/license-key';
+import {EditLicenseKeyComponent} from './edit-usage-license.component';
+import {ViewLicenseKeyModalComponent} from './view-usage-license-modal.component';
 
 @Component({
   selector: 'app-usage-licenses',
@@ -27,16 +27,16 @@ import {ViewUsageLicenseModalComponent} from './view-usage-license-modal.compone
     AsyncPipe,
     DatePipe,
     FaIconComponent,
-    EditUsageLicenseComponent,
-    ViewUsageLicenseModalComponent,
+    EditLicenseKeyComponent,
+    ViewLicenseKeyModalComponent,
     AutotrimDirective,
   ],
   templateUrl: './usage-licenses.component.html',
   animations: [drawerFlyInOut],
 })
-export class UsageLicensesComponent {
+export class LicenseKeysComponent {
   protected readonly auth = inject(AuthService);
-  private readonly usageLicensesService = inject(UsageLicensesService);
+  private readonly licenseKeysService = inject(LicenseKeysService);
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
   private readonly customerOrganizationService = inject(CustomerOrganizationsService);
@@ -50,7 +50,7 @@ export class UsageLicensesComponent {
   protected readonly faEye = faEye;
   protected readonly isExpired = isExpired;
 
-  protected readonly selectedLicense = signal<UsageLicense | undefined>(undefined);
+  protected readonly selectedLicense = signal<LicenseKey | undefined>(undefined);
   private readonly viewLicenseModalTemplate = viewChild.required<TemplateRef<unknown>>('viewLicenseModal');
   private viewLicenseModalRef?: DialogRef;
 
@@ -58,14 +58,14 @@ export class UsageLicensesComponent {
     search: new FormControl(''),
   });
 
-  licenses$: Observable<UsageLicense[]> = filteredByFormControl(
-    this.usageLicensesService.list(),
+  licenses$: Observable<LicenseKey[]> = filteredByFormControl(
+    this.licenseKeysService.list(),
     this.filterForm.controls.search,
-    (it: UsageLicense, search: string) => !search || (it.name || '').toLowerCase().includes(search.toLowerCase())
+    (it: LicenseKey, search: string) => !search || (it.name || '').toLowerCase().includes(search.toLowerCase())
   ).pipe(takeUntilDestroyed());
 
   editForm = new FormGroup({
-    license: new FormControl<UsageLicense | undefined>(undefined, {
+    license: new FormControl<LicenseKey | undefined>(undefined, {
       nonNullable: true,
       validators: Validators.required,
     }),
@@ -78,7 +78,7 @@ export class UsageLicensesComponent {
     .getCustomerOrganizations()
     .pipe(shareReplay(1));
 
-  openDrawer(templateRef: TemplateRef<unknown>, license?: UsageLicense) {
+  openDrawer(templateRef: TemplateRef<unknown>, license?: LicenseKey) {
     this.hideDrawer();
     if (license) {
       this.loadLicense(license);
@@ -86,7 +86,7 @@ export class UsageLicensesComponent {
     this.manageLicenseDrawerRef = this.overlay.showDrawer(templateRef);
   }
 
-  loadLicense(license: UsageLicense) {
+  loadLicense(license: LicenseKey) {
     this.editForm.patchValue({license});
   }
 
@@ -100,7 +100,7 @@ export class UsageLicensesComponent {
     const {license} = this.editForm.value;
     if (this.editForm.valid && license) {
       this.editFormLoading = true;
-      const action = license.id ? this.usageLicensesService.update(license) : this.usageLicensesService.create(license);
+      const action = license.id ? this.licenseKeysService.update(license) : this.licenseKeysService.create(license);
       try {
         const saved = await firstValueFrom(action);
         this.hideDrawer();
@@ -116,7 +116,7 @@ export class UsageLicensesComponent {
     }
   }
 
-  duplicateLicense(templateRef: TemplateRef<unknown>, license: UsageLicense) {
+  duplicateLicense(templateRef: TemplateRef<unknown>, license: LicenseKey) {
     this.openDrawer(templateRef, {
       ...license,
       id: undefined,
@@ -125,12 +125,12 @@ export class UsageLicensesComponent {
     });
   }
 
-  deleteLicense(license: UsageLicense) {
+  deleteLicense(license: LicenseKey) {
     this.overlay
       .confirm(`Really delete ${license.name}?`)
       .pipe(
         filter((result) => result === true),
-        switchMap(() => this.usageLicensesService.delete(license)),
+        switchMap(() => this.licenseKeysService.delete(license)),
         catchError((e) => {
           const msg = getFormDisplayedError(e);
           if (msg) {
@@ -148,7 +148,7 @@ export class UsageLicensesComponent {
       : EMPTY;
   }
 
-  viewLicense(license: UsageLicense) {
+  viewLicense(license: LicenseKey) {
     this.hideViewLicenseModal();
     this.selectedLicense.set(license);
     this.viewLicenseModalRef = this.overlay.showModal(this.viewLicenseModalTemplate(), {

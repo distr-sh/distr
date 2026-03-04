@@ -1,0 +1,81 @@
+<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
+  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
+    <div
+      class="flex flex-col md:flex-row items-stretch md:items-center md:space-x-3 space-y-3 md:space-y-0 justify-between py-4">
+      <div class="w-full md:w-1/2">
+        <form class="flex items-center" [formGroup]="filterForm">
+          <label for="simple-search" class="sr-only">Search</label>
+          <div class="relative w-full">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <fa-icon [icon]="faMagnifyingGlass" class="text-gray-500 dark:text-gray-400"></fa-icon>
+            </div>
+            <input
+              type="text"
+              id="simple-search"
+              placeholder="Filter by customer..."
+              formControlName="search"
+              autotrim
+              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div
+      class="grid gap-4 items-stretch 5xl:grid-cols-5 4xl:grid-cols-4 3xl:grid-cols-3 xl:grid-cols-3 lg:grid-cols-2 grid-cols-1">
+      @for (license of licenses$ | async; track license.customerOrganization.id) {
+        <div
+          (click)="navigateToCustomer(license)"
+          class="cursor-pointer h-full rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 hover:shadow-md transition-shadow flex flex-col">
+          <div class="p-4 flex items-center gap-3">
+            @if (license.customerOrganization.imageUrl; as imageUrl) {
+              <img class="size-10 rounded-sm" [attr.src]="imageUrl | secureImage | async" alt="" />
+            } @else {
+              <fa-icon
+                [icon]="faBuildingUser"
+                class="size-10 flex items-center justify-center text-2xl text-gray-400"></fa-icon>
+            }
+            <div class="min-w-0 flex-1">
+              <h3 class="font-bold text-gray-900 dark:text-white truncate">
+                {{ license.customerOrganization.name }}
+              </h3>
+            </div>
+            @if (countExpired(license); as expiredCount) {
+              <span
+                class="text-xs font-medium px-2.5 py-0.5 rounded-sm bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
+                {{ expiredCount }} expired
+              </span>
+            }
+          </div>
+
+          <hr class="border-gray-200 dark:border-gray-600" />
+
+          <div class="p-4 flex-1 grid grid-cols-3 gap-2 text-center">
+            <div>
+              <div class="text-2xl font-bold text-gray-900 dark:text-white">
+                {{ license.applicationEntitlements.length }}
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">App Entitlements</div>
+            </div>
+            <div>
+              <div class="text-2xl font-bold text-gray-900 dark:text-white">
+                {{ license.artifactEntitlements.length }}
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">Artifact Entitlements</div>
+            </div>
+            <div>
+              <div class="text-2xl font-bold text-gray-900 dark:text-white">
+                {{ license.licenseKeys.length }}
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">License Keys</div>
+            </div>
+          </div>
+        </div>
+      } @empty {
+        <div class="col-span-full text-center py-8 text-gray-500 dark:text-gray-400">
+          No customers with licenses yet.
+        </div>
+      }
+    </div>
+  </div>
+</section>

@@ -37,12 +37,12 @@ func (m *Manager) AddToolsToServer(mcpServer *server.MCPServer) {
 		m.NewValuesFileTool(),
 		m.NewTemplateFileTool(),
 
-		// Application License tools
-		m.NewListApplicationLicensesTool(),
-		m.NewGetApplicationLicenseTool(),
-		m.NewCreateApplicationLicenseTool(),
-		m.NewUpdateApplicationLicenseTool(),
-		m.NewDeleteApplicationLicenseTool(),
+		// Application Entitlement tools
+		m.NewListApplicationEntitlementsTool(),
+		m.NewGetApplicationEntitlementTool(),
+		m.NewCreateApplicationEntitlementTool(),
+		m.NewUpdateApplicationEntitlementTool(),
+		m.NewDeleteApplicationEntitlementTool(),
 
 		// User tools
 		m.NewListUsersTool(),

@@ -18,7 +18,7 @@ import {jsonObjectValidator} from '../../../util/validation';
 import {EditorComponent} from '../../components/editor.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
-import {UsageLicense} from '../../types/usage-license';
+import {LicenseKey} from '../../types/license-key';
 
 @Component({
   selector: 'app-edit-usage-license',
@@ -27,12 +27,12 @@ import {UsageLicense} from '../../types/usage-license';
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => EditUsageLicenseComponent),
+      useExisting: forwardRef(() => EditLicenseKeyComponent),
       multi: true,
     },
   ],
 })
-export class EditUsageLicenseComponent implements AfterViewInit, ControlValueAccessor {
+export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAccessor {
   private readonly injector = inject(Injector);
   private readonly customerOrganizationService = inject(CustomerOrganizationsService);
   customers$ = this.customerOrganizationService.getCustomerOrganizations().pipe(first());
@@ -63,7 +63,7 @@ export class EditUsageLicenseComponent implements AfterViewInit, ControlValueAcc
       this.onTouched();
       const val = this.editForm.getRawValue();
       if (this.editForm.valid) {
-        const license: UsageLicense = {
+        const license: LicenseKey = {
           id: val.id,
           name: val.name,
           description: val.description,
@@ -91,7 +91,7 @@ export class EditUsageLicenseComponent implements AfterViewInit, ControlValueAcc
       });
   }
 
-  writeValue(license: UsageLicense | undefined): void {
+  writeValue(license: LicenseKey | undefined): void {
     if (license) {
       const isEdit = !!license.id;
       this.isEditMode.set(isEdit);
@@ -125,10 +125,10 @@ export class EditUsageLicenseComponent implements AfterViewInit, ControlValueAcc
     }
   }
 
-  private onChange: (l: UsageLicense | undefined) => void = () => {};
+  private onChange: (l: LicenseKey | undefined) => void = () => {};
   private onTouched: () => void = () => {};
 
-  registerOnChange(fn: (l: UsageLicense | undefined) => void): void {
+  registerOnChange(fn: (l: LicenseKey | undefined) => void): void {
     this.onChange = fn;
   }
 

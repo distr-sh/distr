@@ -17,9 +17,9 @@ import {HomeComponent} from './components/home/home.component';
 import {CustomerUsersComponent} from './components/users/customers/customer-users.component';
 import {VendorUsersComponent} from './components/users/vendors/vendor-users.component';
 import {DeploymentTargetsComponent} from './deployments/deployment-targets.component';
-import {ApplicationLicensesComponent} from './licenses/application-licenses/application-licenses.component';
-import {ArtifactLicensesComponent} from './licenses/artifact-licenses/artifact-licenses.component';
-import {UsageLicensesComponent} from './licenses/usage-licenses/usage-licenses.component';
+import {CustomerLicenseDetailComponent} from './licenses/customer-license-detail.component';
+import {LicensesOverviewComponent} from './licenses/licenses-overview.component';
+import {LicenseKeysComponent} from './licenses/usage-licenses/usage-licenses.component';
 import {NotificationRecordsComponent} from './notification-records/notification-records.component';
 import {OrganizationBrandingComponent} from './organization-branding/organization-branding.component';
 import {OrganizationSettingsComponent} from './organization-settings/organization-settings.component';
@@ -175,8 +175,8 @@ export const routes: Routes = [
         component: SecretsPage,
       },
       {
-        path: 'usage-licenses',
-        component: UsageLicensesComponent,
+        path: 'license-keys',
+        component: LicenseKeysComponent,
         canActivate: [requireCustomer, licensingEnabledGuard()],
       },
       {
@@ -191,16 +191,13 @@ export const routes: Routes = [
         data: {userRole: 'vendor'},
         children: [
           {
-            path: 'applications',
-            component: ApplicationLicensesComponent,
+            path: '',
+            pathMatch: 'full',
+            component: LicensesOverviewComponent,
           },
           {
-            path: 'artifacts',
-            component: ArtifactLicensesComponent,
-          },
-          {
-            path: 'usage',
-            component: UsageLicensesComponent,
+            path: ':customerOrganizationId',
+            component: CustomerLicenseDetailComponent,
           },
         ],
       },

@@ -40,10 +40,10 @@ import {isArchived} from '../../../util/dates';
 import {dropdownAnimation} from '../../animations/dropdown';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {ApplicationsService} from '../../services/applications.service';
-import {ArtifactLicense} from '../../services/artifact-licenses.service';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
-import {ApplicationLicense} from '../../types/application-license';
+import {ApplicationEntitlement} from '../../types/application-entitlement';
+import {ArtifactEntitlement} from '../../types/artifact-entitlement';
 
 @Component({
   selector: 'app-edit-application-license',
@@ -52,13 +52,13 @@ import {ApplicationLicense} from '../../types/application-license';
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => EditApplicationLicenseComponent),
+      useExisting: forwardRef(() => EditApplicationEntitlementComponent),
       multi: true,
     },
   ],
   animations: [dropdownAnimation],
 })
-export class EditApplicationLicenseComponent implements OnInit, OnDestroy, AfterViewInit, ControlValueAccessor {
+export class EditApplicationEntitlementComponent implements OnInit, OnDestroy, AfterViewInit, ControlValueAccessor {
   private readonly injector = inject(Injector);
   private readonly destroyed$ = new Subject<void>();
   private readonly applicationsService = inject(ApplicationsService);
@@ -100,7 +100,7 @@ export class EditApplicationLicenseComponent implements OnInit, OnDestroy, After
     ),
   });
   editFormLoading = false;
-  readonly license = signal<ApplicationLicense | undefined>(undefined);
+  readonly license = signal<ApplicationEntitlement | undefined>(undefined);
   readonly selectedSubject = signal<Application | undefined>(undefined);
   readonly includedArchivedVersions = signal<ApplicationVersion[]>([]);
 
@@ -197,7 +197,7 @@ export class EditApplicationLicenseComponent implements OnInit, OnDestroy, After
         this.activeVersionsArray.clear({emitEvent: activeVersions.length === 0});
         this.archivedVersionsArray.clear({emitEvent: archivedVersions.length === 0});
 
-        const licensedVersions = (this.license() as ApplicationLicense)?.versions;
+        const licensedVersions = (this.license() as ApplicationEntitlement)?.versions;
         let anySelected = false;
         const archivedSelected = [];
 
@@ -293,10 +293,10 @@ export class EditApplicationLicenseComponent implements OnInit, OnDestroy, After
     return this.editForm.controls.archivedVersions as FormArray;
   }
 
-  private onChange: (l: ApplicationLicense | ArtifactLicense | undefined) => void = () => {};
+  private onChange: (l: ApplicationEntitlement | ArtifactEntitlement | undefined) => void = () => {};
   private onTouched: () => void = () => {};
 
-  registerOnChange(fn: (l: ApplicationLicense | ArtifactLicense | undefined) => void): void {
+  registerOnChange(fn: (l: ApplicationEntitlement | ArtifactEntitlement | undefined) => void): void {
     this.onChange = fn;
   }
 
@@ -304,7 +304,7 @@ export class EditApplicationLicenseComponent implements OnInit, OnDestroy, After
     this.onTouched = fn;
   }
 
-  writeValue(license: ApplicationLicense | undefined): void {
+  writeValue(license: ApplicationEntitlement | undefined): void {
     this.license.set(license);
     if (license) {
       this.editForm.patchValue({

@@ -261,17 +261,20 @@
                           </li>
                           <li
                             [class.text-red-600]="
-                              subscriptionInfoData.hasApplicationLicenses || subscriptionInfoData.hasArtifactLicenses
+                              subscriptionInfoData.hasApplicationEntitlements ||
+                              subscriptionInfoData.hasArtifactEntitlements
                             "
                             [class.dark:text-red-300]="
-                              subscriptionInfoData.hasApplicationLicenses || subscriptionInfoData.hasArtifactLicenses
+                              subscriptionInfoData.hasApplicationEntitlements ||
+                              subscriptionInfoData.hasArtifactEntitlements
                             ">
                             <fa-icon [icon]="faXmark" />
                             License Management
                             <span class="text-xs">
                               (Pro feature)
                               @if (
-                                subscriptionInfoData.hasApplicationLicenses || subscriptionInfoData.hasArtifactLicenses
+                                subscriptionInfoData.hasApplicationEntitlements ||
+                                subscriptionInfoData.hasArtifactEntitlements
                               ) {
                                 <span class="font-semibold">- in use</span>
                               }

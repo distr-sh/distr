@@ -55,7 +55,9 @@ func (h *handler) Delete(ctx context.Context, nameStr string, reference string) 
 			return err
 		}
 
-		if err := db.CheckArtifactVersionDeletionForLicenses(ctx, artifact.ID, version, versionsWithSameDigest); err != nil {
+		if err := db.CheckArtifactVersionDeletionForEntitlements(
+			ctx, artifact.ID, version, versionsWithSameDigest,
+		); err != nil {
 			return err
 		}
 
@@ -102,10 +104,10 @@ func (h *handler) List(ctx context.Context, n int) ([]string, error) {
 	var artifacts []types.ArtifactWithDownloads
 	var err error
 	if auth.CurrentOrg().HasFeature(types.FeatureLicensing) && auth.CurrentCustomerOrgID() != nil {
-		if licenses, err1 := db.GetArtifactLicenses(ctx, *auth.CurrentOrgID()); err1 != nil {
+		if entitlements, err1 := db.GetArtifactEntitlements(ctx, *auth.CurrentOrgID()); err1 != nil {
 			err = err1
-		} else if len(licenses) > 0 {
-			artifacts, err = db.GetArtifactsByLicenseOwnerID(ctx, *auth.CurrentOrgID(), *auth.CurrentCustomerOrgID())
+		} else if len(entitlements) > 0 {
+			artifacts, err = db.GetArtifactsByEntitlementOwnerID(ctx, *auth.CurrentOrgID(), *auth.CurrentCustomerOrgID())
 		} else {
 			artifacts, err = db.GetArtifactsByOrgID(ctx, *auth.CurrentOrgID())
 		}
@@ -133,9 +135,9 @@ func (h *handler) ListDigests(ctx context.Context, nameStr string) ([]digest.Dig
 		return nil, fmt.Errorf("%w: %w", manifest.ErrNameUnknown, err)
 	} else {
 		auth := auth.ArtifactsAuthentication.Require(ctx)
-		var licenseCustomerOrgID *uuid.UUID
+		var entitlementCustomerOrgID *uuid.UUID
 		if auth.CurrentOrg().HasFeature(types.FeatureLicensing) && auth.CurrentCustomerOrgID() != nil {
-			licenseCustomerOrgID = auth.CurrentCustomerOrgID()
+			entitlementCustomerOrgID = auth.CurrentCustomerOrgID()
 		}
 		if artifact, err := db.GetArtifactByName(ctx, name.OrgName, name.ArtifactName); err != nil {
 			if errors.Is(err, apierrors.ErrNotFound) {
@@ -145,7 +147,7 @@ func (h *handler) ListDigests(ctx context.Context, nameStr string) ([]digest.Dig
 		} else if versions, err := db.GetVersionsForArtifact(
 			ctx,
 			artifact.ID,
-			licenseCustomerOrgID,
+			entitlementCustomerOrgID,
 		); err != nil {
 			return nil, err
 		} else {
@@ -168,9 +170,9 @@ func (h *handler) ListTags(ctx context.Context, nameStr string, n int, last stri
 		return nil, fmt.Errorf("%w: %w", manifest.ErrNameUnknown, err)
 	} else {
 		auth := auth.ArtifactsAuthentication.Require(ctx)
-		var licenseCustomerOrgID *uuid.UUID
+		var entitlementCustomerOrgID *uuid.UUID
 		if auth.CurrentOrg().HasFeature(types.FeatureLicensing) && auth.CurrentCustomerOrgID() != nil {
-			licenseCustomerOrgID = auth.CurrentCustomerOrgID()
+			entitlementCustomerOrgID = auth.CurrentCustomerOrgID()
 		}
 		if artifact, err := db.GetArtifactByName(ctx, name.OrgName, name.ArtifactName); err != nil {
 			if errors.Is(err, apierrors.ErrNotFound) {
@@ -180,7 +182,7 @@ func (h *handler) ListTags(ctx context.Context, nameStr string, n int, last stri
 		} else if versions, err := db.GetVersionsForArtifact(
 			ctx,
 			artifact.ID,
-			licenseCustomerOrgID,
+			entitlementCustomerOrgID,
 		); err != nil {
 			return nil, err
 		} else {

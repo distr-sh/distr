@@ -22,11 +22,11 @@ const (
 	ctxKeyDeploymentTarget
 	ctxKeyFile
 	ctxKeyUserAccount
-	ctxKeyApplicationLicense
-	ctxKeyArtifactLicense
+	ctxKeyApplicationEntitlement
+	ctxKeyArtifactEntitlement
 	ctxKeyIPAddress
 	ctxKeyOIDCer
-	ctxKeyUsageLicense
+	ctxKeyLicenseKey
 )
 
 func GetDb(ctx context.Context) queryable.Queryable {

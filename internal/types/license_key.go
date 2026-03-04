@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type UsageLicense struct {
+type LicenseKey struct {
 	ID                     uuid.UUID       `db:"id" json:"id"`
 	CreatedAt              time.Time       `db:"created_at" json:"createdAt"`
 	Name                   string          `db:"name" json:"name"`

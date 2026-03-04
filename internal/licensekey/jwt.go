@@ -1,4 +1,4 @@
-package usagelicense
+package licensekey
 
 import (
 	"encoding/json"
@@ -19,16 +19,20 @@ var registeredClaims = map[string]struct{}{
 }
 
 var signingKey = sync.OnceValues(func() (jwk.Key, error) {
-	privateKey := env.UsageLicensePrivateKey()
+	privateKey := env.LicenseKeyPrivateKey()
 	if privateKey == nil {
-		return nil, errors.New("no usage license signing key configured")
+		return nil, errors.New("no license key signing key configured")
 	}
 	return jwk.FromRaw(privateKey)
 })
 
-func GenerateToken(license *types.UsageLicense, issuer string) (string, error) {
+func IsSigningKeyConfigured() bool {
+	return env.LicenseKeyPrivateKey() != nil
+}
+
+func GenerateToken(licenseKey *types.LicenseKey, issuer string) (string, error) {
 	var customClaims map[string]any
-	if err := json.Unmarshal(license.Payload, &customClaims); err != nil {
+	if err := json.Unmarshal(licenseKey.Payload, &customClaims); err != nil {
 		return "", fmt.Errorf("invalid payload JSON: %w", err)
 	}
 	for k := range registeredClaims {
@@ -37,11 +41,11 @@ func GenerateToken(license *types.UsageLicense, issuer string) (string, error) {
 
 	builder := jwt.NewBuilder().
 		Issuer(issuer).
-		Subject(license.ID.String()).
-		Audience([]string{"usage-license"}).
-		IssuedAt(license.CreatedAt).
-		NotBefore(license.NotBefore).
-		Expiration(license.ExpiresAt)
+		Subject(licenseKey.ID.String()).
+		Audience([]string{"license-key"}).
+		IssuedAt(licenseKey.CreatedAt).
+		NotBefore(licenseKey.NotBefore).
+		Expiration(licenseKey.ExpiresAt)
 
 	for k, v := range customClaims {
 		builder = builder.Claim(k, v)

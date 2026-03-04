@@ -100,7 +100,7 @@ export class DeploymentModalComponent {
         deploymentId: deployment?.id,
         applicationId: deployment?.applicationId,
         applicationVersionId: this.versionId() ?? deployment?.applicationVersionId,
-        applicationLicenseId: deployment?.applicationLicenseId,
+        applicationEntitlementId: deployment?.applicationEntitlementId,
         releaseName: deployment?.releaseName,
         valuesYaml: deployment?.valuesYaml ? atob(deployment.valuesYaml) : undefined,
         swarmMode: deployment?.dockerType === 'swarm',

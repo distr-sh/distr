@@ -4,15 +4,15 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faClipboard, faClipboardCheck, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {EditorComponent} from '../../components/editor.component';
 import {ToastService} from '../../services/toast.service';
-import {UsageLicense} from '../../types/usage-license';
+import {LicenseKey} from '../../types/license-key';
 
 @Component({
   selector: 'app-view-usage-license-modal',
   templateUrl: './view-usage-license-modal.component.html',
   imports: [FaIconComponent, ReactiveFormsModule, EditorComponent],
 })
-export class ViewUsageLicenseModalComponent {
-  license = input.required<UsageLicense>();
+export class ViewLicenseKeyModalComponent {
+  license = input.required<LicenseKey>();
   closed = output<void>();
 
   activeTab = signal<'token' | 'payload' | 'decoded'>('token');

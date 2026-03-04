@@ -44,16 +44,16 @@ import {isArchived} from '../../../util/dates';
 import {DURATION_REGEX, HELM_RELEASE_NAME_MAX_LENGTH, HELM_RELEASE_NAME_REGEX} from '../../../util/validation';
 import {EditorComponent} from '../../components/editor.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
+import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ApplicationsService} from '../../services/applications.service';
 import {AuthService} from '../../services/auth.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
-import {LicensesService} from '../../services/licenses.service';
 
 export type DeploymentFormValue = Partial<{
   deploymentId: string;
   applicationId: string;
   applicationVersionId: string;
-  applicationLicenseId: string;
+  applicationEntitlementId: string;
   valuesYaml: string;
   releaseName: string;
   envFileData: string;
@@ -68,7 +68,7 @@ export function mapToDeploymentRequest(value: DeploymentFormValue, deploymentTar
   return {
     deploymentTargetId: deploymentTargetId,
     applicationVersionId: value.applicationVersionId!,
-    applicationLicenseId: value.applicationLicenseId || undefined,
+    applicationEntitlementId: value.applicationEntitlementId || undefined,
     deploymentId: value.deploymentId || undefined,
     releaseName: value.releaseName || undefined,
     valuesYaml: value.valuesYaml ? btoa(value.valuesYaml) : undefined,
@@ -109,7 +109,7 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
   protected readonly featureFlags = inject(FeatureFlagService);
   protected readonly auth = inject(AuthService);
   private readonly applications = inject(ApplicationsService);
-  private readonly licenses = inject(LicensesService);
+  private readonly applicationEntitlements = inject(ApplicationEntitlementsService);
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly injector = inject(Injector);
 
@@ -117,7 +117,7 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
     deploymentId: this.fb.control<string | undefined>(undefined),
     applicationId: this.fb.control('', Validators.required),
     applicationVersionId: this.fb.control('', Validators.required),
-    applicationLicenseId: this.fb.control('', Validators.required),
+    applicationEntitlementId: this.fb.control('', Validators.required),
     releaseName: this.fb.control('', [
       Validators.required,
       Validators.maxLength(HELM_RELEASE_NAME_MAX_LENGTH),
@@ -159,8 +159,8 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
     shareReplay(1)
   );
 
-  private readonly applicationLicenseId$ = this.deployForm.controls.applicationLicenseId.valueChanges.pipe(
-    startWith(this.deployForm.controls.applicationLicenseId.value),
+  private readonly applicationEntitlementId$ = this.deployForm.controls.applicationEntitlementId.valueChanges.pipe(
+    startWith(this.deployForm.controls.applicationEntitlementId.value),
     distinctUntilChanged(),
     shareReplay(1)
   );
@@ -169,7 +169,7 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
   private readonly customerOrganizationId$ = toObservable(this.customerOrganizationId);
 
   protected readonly allLicenses$ = this.featureFlags.isLicensingEnabled$.pipe(
-    switchMap((enabled) => (enabled ? this.licenses.list() : of([])))
+    switchMap((enabled) => (enabled ? this.applicationEntitlements.list() : of([])))
   );
 
   protected readonly licenses$ = combineLatest([
@@ -179,7 +179,7 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
   ]).pipe(
     switchMap(([applicationId, isLicensingEnabled, customerOrgId]) =>
       isLicensingEnabled && applicationId && (this.auth.isCustomer() || customerOrgId)
-        ? this.licenses
+        ? this.applicationEntitlements
             .list(applicationId)
             .pipe(
               map((licenses) =>
@@ -247,7 +247,7 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
     shareReplay(1)
   );
 
-  private readonly selectedLicense$ = combineLatest([this.applicationLicenseId$, this.licenses$]).pipe(
+  private readonly selectedLicense$ = combineLatest([this.applicationEntitlementId$, this.licenses$]).pipe(
     map(([licenseId, licenses]) => licenses.find((license) => license.id === licenseId))
   );
 
@@ -293,9 +293,9 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
 
     this.licenseControlEnabled$.pipe(takeUntil(this.destroyed$)).subscribe((licenseControlEnabled) => {
       if (licenseControlEnabled) {
-        this.deployForm.controls.applicationLicenseId.enable();
+        this.deployForm.controls.applicationEntitlementId.enable();
       } else {
-        this.deployForm.controls.applicationLicenseId.disable();
+        this.deployForm.controls.applicationEntitlementId.disable();
       }
     });
 
@@ -399,10 +399,10 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
       if (
         licenses.length > 0 &&
         licenses[0].id &&
-        licenses.every((l) => l.id !== this.deployForm.controls.applicationLicenseId.value)
+        licenses.every((l) => l.id !== this.deployForm.controls.applicationEntitlementId.value)
       ) {
         this.licenseUpdateRequired$.next(true);
-        this.deployForm.controls.applicationLicenseId.setValue(licenses[0].id);
+        this.deployForm.controls.applicationEntitlementId.setValue(licenses[0].id);
       }
     });
 
@@ -411,7 +411,7 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
         this.deployForm.controls.applicationVersionId.enable();
         const version = versions[versions.length - 1];
         // Only update the form control, if the previously selected version is no longer in the list
-        if (version.id && versions.every((version) => version.id !== this.deployForm.value.applicationVersionId)) {
+        if (version.id && versions.every((v: {id?: string}) => v.id !== this.deployForm.value.applicationVersionId)) {
           this.deployForm.controls.applicationVersionId.setValue(version.id);
         }
       } else {
@@ -430,7 +430,7 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
 
     // This is needed because the first value could be missed otherwise
     // TODO: Find a better solution for this
-    this.applicationLicenseId$.pipe(takeUntil(this.destroyed$)).subscribe();
+    this.applicationEntitlementId$.pipe(takeUntil(this.destroyed$)).subscribe();
 
     // Disable application selector if requested
     if (this.disableApplicationSelect()) {

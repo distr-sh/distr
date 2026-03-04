@@ -135,51 +135,17 @@
 
         <li>
           @if (isLicensingFeatureEnabled()) {
-            <button
-              type="button"
-              (click)="toggle(licenseSubMenuOpen)"
-              class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
+            <a
+              (click)="sidebar.hide()"
+              routerLinkActive="bg-gray-100 dark:bg-gray-700"
+              routerLink="/licenses"
+              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
               <fa-icon
                 [icon]="faKey"
                 size="lg"
                 class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
-              <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Licenses</span>
-              <fa-icon
-                [icon]="faChevronDown"
-                [class.rotate-x-180]="licenseSubMenuOpen()"
-                class="transition duration-150 ease-in-out"></fa-icon>
-            </button>
-            @if (licenseSubMenuOpen()) {
-              <ul class="space-y-1">
-                <li>
-                  <a
-                    (click)="sidebar.hide()"
-                    routerLinkActive="bg-gray-100 dark:bg-gray-700"
-                    routerLink="/licenses/applications"
-                    class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                    <span class="">Application Licenses</span>
-                  </a>
-                </li>
-                <li>
-                  <a
-                    (click)="sidebar.hide()"
-                    routerLinkActive="bg-gray-100 dark:bg-gray-700"
-                    routerLink="/licenses/artifacts"
-                    class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                    <span class="">Artifact Licenses</span>
-                  </a>
-                </li>
-                <li>
-                  <a
-                    (click)="sidebar.hide()"
-                    routerLinkActive="bg-gray-100 dark:bg-gray-700"
-                    routerLink="/licenses/usage"
-                    class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                    <span class="">Usage Licenses</span>
-                  </a>
-                </li>
-              </ul>
-            }
+              <span class="ms-3">Licenses</span>
+            </a>
           } @else {
             <a
               class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group cursor-pointer"
@@ -359,7 +325,7 @@
             <a
               (click)="sidebar.hide()"
               routerLinkActive="bg-gray-100 dark:bg-gray-700"
-              routerLink="/usage-licenses"
+              routerLink="/license-keys"
               class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
               <fa-icon
                 [icon]="faKey"

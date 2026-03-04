@@ -12,9 +12,9 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
+	"github.com/distr-sh/distr/internal/licensekey"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/distr-sh/distr/internal/usagelicense"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -22,7 +22,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type CreateUsageLicenseRequest struct {
+type CreateLicenseKeyRequest struct {
 	Name                   string          `json:"name"`
 	Description            *string         `json:"description,omitempty"`
 	Payload                json.RawMessage `json:"payload"`
@@ -31,77 +31,77 @@ type CreateUsageLicenseRequest struct {
 	CustomerOrganizationID *uuid.UUID      `json:"customerOrganizationId,omitempty"`
 }
 
-type UpdateUsageLicenseRequest struct {
+type UpdateLicenseKeyRequest struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description,omitempty"`
 }
 
-func UsageLicensesRouter(r chiopenapi.Router) {
+func LicenseKeysRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Licensing"))
 	r.Use(middleware.RequireOrgAndRole, middleware.LicensingFeatureFlagEnabledMiddleware)
 
-	r.Get("/", getUsageLicenses).
-		With(option.Description("List all usage licenses")).
-		With(option.Response(http.StatusOK, []types.UsageLicense{}))
+	r.Get("/", getLicenseKeys).
+		With(option.Description("List all license keys")).
+		With(option.Response(http.StatusOK, []types.LicenseKey{}))
 
 	r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 		Group(func(r chiopenapi.Router) {
-			r.Post("/", createUsageLicense).
-				With(option.Description("Create a new usage license")).
-				With(option.Request(CreateUsageLicenseRequest{})).
-				With(option.Response(http.StatusOK, types.UsageLicense{}))
+			r.Post("/", createLicenseKey).
+				With(option.Description("Create a new license key")).
+				With(option.Request(CreateLicenseKeyRequest{})).
+				With(option.Response(http.StatusOK, types.LicenseKey{}))
 
-			r.With(usageLicenseMiddleware).Route("/{usageLicenseId}", func(r chiopenapi.Router) {
-				type UsageLicenseIDRequest struct {
-					UsageLicenseID uuid.UUID `path:"usageLicenseId"`
+			r.With(licenseKeyMiddleware).Route("/{licenseKeyId}", func(r chiopenapi.Router) {
+				type LicenseKeyIDRequest struct {
+					LicenseKeyID uuid.UUID `path:"licenseKeyId"`
 				}
 
-				r.Put("/", updateUsageLicense).
-					With(option.Description("Update usage license name and description")).
+				r.Put("/", updateLicenseKey).
+					With(option.Description("Update license key name and description")).
 					With(option.Request(struct {
-						UsageLicenseIDRequest
-						UpdateUsageLicenseRequest
+						LicenseKeyIDRequest
+						UpdateLicenseKeyRequest
 					}{})).
-					With(option.Response(http.StatusOK, types.UsageLicense{}))
-				r.Delete("/", deleteUsageLicense).
-					With(option.Description("Delete a usage license")).
-					With(option.Request(UsageLicenseIDRequest{}))
+					With(option.Response(http.StatusOK, types.LicenseKey{}))
+				r.Delete("/", deleteLicenseKey).
+					With(option.Description("Delete a license key")).
+					With(option.Request(LicenseKeyIDRequest{}))
 			})
 		})
 }
 
-func getUsageLicenses(w http.ResponseWriter, r *http.Request) {
+func getLicenseKeys(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 
 	if auth.CurrentCustomerOrgID() == nil {
-		if licenses, err := db.GetUsageLicenses(ctx, *auth.CurrentOrgID()); err != nil {
-			log.Error("failed to get usage licenses", zap.Error(err))
+		if licenseKeys, err := db.GetLicenseKeys(ctx, *auth.CurrentOrgID()); err != nil {
+			log.Error("failed to get license keys", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		} else {
-			RespondJSON(w, licenses)
+			RespondJSON(w, licenseKeys)
 		}
 	} else {
-		if licenses, err := db.GetUsageLicensesByCustomerOrgID(
+		if licenseKeys, err := db.GetLicenseKeysByCustomerOrgID(
 			ctx, *auth.CurrentCustomerOrgID(), *auth.CurrentOrgID(),
 		); err != nil {
-			log.Error("failed to get usage licenses", zap.Error(err))
+			log.Error("failed to get license keys", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		} else {
-			RespondJSON(w, licenses)
+			RespondJSON(w, licenseKeys)
 		}
 	}
 }
 
-func createUsageLicense(w http.ResponseWriter, r *http.Request) {
+func createLicenseKey(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 	authCtx := auth.Authentication.Require(ctx)
 
-	body, err := JsonBody[CreateUsageLicenseRequest](w, r)
+	body, err := JsonBody[CreateLicenseKeyRequest](w, r)
 	if err != nil {
 		return
 	}
@@ -119,12 +119,12 @@ func createUsageLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := usagelicense.ValidatePayload(body.Payload); err != nil {
+	if err := licensekey.ValidatePayload(body.Payload); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	license := types.UsageLicense{
+	licenseKey := types.LicenseKey{
 		Name:                   body.Name,
 		Description:            body.Description,
 		Payload:                body.Payload,
@@ -135,52 +135,52 @@ func createUsageLicense(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = db.RunTx(ctx, func(ctx context.Context) error {
-		if err := db.CreateUsageLicense(ctx, &license); errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, "A usage license with this name already exists", http.StatusBadRequest)
+		if err := db.CreateLicenseKey(ctx, &licenseKey); errors.Is(err, apierrors.ErrConflict) {
+			http.Error(w, "A license key with this name already exists", http.StatusBadRequest)
 			return err
 		} else if err != nil {
-			log.Warn("could not create usage license", zap.Error(err))
+			log.Warn("could not create license key", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return err
 		}
 
-		token, err := usagelicense.GenerateToken(&license, env.Host())
+		token, err := licensekey.GenerateToken(&licenseKey, env.Host())
 		if err != nil {
-			log.Error("failed to generate usage license token", zap.Error(err))
+			log.Error("failed to generate license key token", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, "failed to generate license token", http.StatusInternalServerError)
+			http.Error(w, "failed to generate license key token", http.StatusInternalServerError)
 			return err
 		}
 
-		if err := db.UpdateUsageLicenseToken(ctx, license.ID, token); err != nil {
-			log.Error("failed to update usage license token", zap.Error(err))
+		if err := db.UpdateLicenseKeyToken(ctx, licenseKey.ID, token); err != nil {
+			log.Error("failed to update license key token", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return err
 		}
-		license.Token = token
+		licenseKey.Token = token
 
-		RespondJSON(w, license)
+		RespondJSON(w, licenseKey)
 		return nil
 	})
 }
 
-func updateUsageLicense(w http.ResponseWriter, r *http.Request) {
+func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
-	existing := internalctx.GetUsageLicense(ctx)
+	existing := internalctx.GetLicenseKey(ctx)
 
-	body, err := JsonBody[UpdateUsageLicenseRequest](w, r)
+	body, err := JsonBody[UpdateLicenseKeyRequest](w, r)
 	if err != nil {
 		return
 	}
 
-	result, err := db.UpdateUsageLicenseMetadata(ctx, existing.ID, body.Name, body.Description)
+	result, err := db.UpdateLicenseKeyMetadata(ctx, existing.ID, body.Name, body.Description)
 	if errors.Is(err, apierrors.ErrConflict) {
-		http.Error(w, "A usage license with this name already exists", http.StatusBadRequest)
+		http.Error(w, "A license key with this name already exists", http.StatusBadRequest)
 	} else if err != nil {
-		log.Warn("could not update usage license", zap.Error(err))
+		log.Warn("could not update license key", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
@@ -188,35 +188,35 @@ func updateUsageLicense(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func deleteUsageLicense(w http.ResponseWriter, r *http.Request) {
+func deleteLicenseKey(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
-	license := internalctx.GetUsageLicense(ctx)
+	licenseKey := internalctx.GetLicenseKey(ctx)
 
-	if err := db.DeleteUsageLicenseWithID(ctx, license.ID); err != nil {
-		log.Warn("error deleting usage license", zap.Error(err))
+	if err := db.DeleteLicenseKeyWithID(ctx, licenseKey.ID); err != nil {
+		log.Warn("error deleting license key", zap.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
-func usageLicenseMiddleware(next http.Handler) http.Handler {
+func licenseKeyMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		authCtx := auth.Authentication.Require(ctx)
-		if licenseID, err := uuid.Parse(r.PathValue("usageLicenseId")); err != nil {
-			http.Error(w, "usageLicenseId is not a valid UUID", http.StatusBadRequest)
-		} else if license, err := db.GetUsageLicenseByID(ctx, licenseID); errors.Is(err, apierrors.ErrNotFound) {
+		if licenseKeyID, err := uuid.Parse(r.PathValue("licenseKeyId")); err != nil {
+			http.Error(w, "licenseKeyId is not a valid UUID", http.StatusBadRequest)
+		} else if licenseKey, err := db.GetLicenseKeyByID(ctx, licenseKeyID); errors.Is(err, apierrors.ErrNotFound) {
 			w.WriteHeader(http.StatusNotFound)
 		} else if err != nil {
-			internalctx.GetLogger(ctx).Error("failed to get usage license", zap.Error(err))
+			internalctx.GetLogger(ctx).Error("failed to get license key", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			w.WriteHeader(http.StatusInternalServerError)
-		} else if license.OrganizationID != *authCtx.CurrentOrgID() {
+		} else if licenseKey.OrganizationID != *authCtx.CurrentOrgID() {
 			w.WriteHeader(http.StatusNotFound)
 		} else {
-			ctx = internalctx.WithUsageLicense(ctx, license)
+			ctx = internalctx.WithLicenseKey(ctx, licenseKey)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		}
 	})
