@@ -1,11 +1,310 @@
-<div class="p-4 bg-gray-50 dark:bg-gray-900">
-  <div class="mx-auto max-w-screen-lg text-gray-900 dark:text-white">
-    @if (brandingDescription$ | async; as description) {
-      <div class="markdown" [innerHTML]="description | markdown | async"></div>
-    } @else {
-      <div class="text-gray-500 dark:text-gray-400 italic">
-        Homepage not yet configured by vendor in branding settings
+<!-- Customer Portal Compliance Hub — primary home page -->
+<div class="bg-gray-50 dark:bg-gray-900 min-h-screen">
+  <!-- Deployment-aware status bar -->
+  @if (hasDeployments()) {
+    @let deployment = firstDeployment();
+    @let target = firstTarget();
+    <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3">
+      <div class="mx-auto max-w-screen-xl flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+        <span class="font-semibold text-gray-900 dark:text-white">
+          {{ deployment?.application?.name || 'Application' }}
+        </span>
+
+        <span class="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
+          <span class="text-gray-400 dark:text-gray-500">Running:</span>
+          <span
+            class="font-mono font-semibold bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-gray-900 dark:text-white">
+            {{ deployment?.applicationVersionName }}
+          </span>
+        </span>
+
+        <!-- MOCK DATA — replace with real API call for latest version comparison -->
+        <span class="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
+          <span class="text-gray-400 dark:text-gray-500">Latest:</span>
+          <span
+            class="font-mono font-semibold bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-gray-900 dark:text-white">
+            {{ mockState.latestVersion }}
+          </span>
+          <span class="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
+            <fa-icon [icon]="faArrowUp" size="xs"></fa-icon>
+            Update available
+          </span>
+        </span>
+
+        @if (target) {
+          <span class="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
+            <span class="text-gray-400 dark:text-gray-500">Agent:</span>
+            <span
+              class="inline-block size-2 rounded-full"
+              [class.bg-lime-500]="agentStatus() === 'live'"
+              [class.animate-pulse]="agentStatus() === 'live'"
+              [class.bg-yellow-400]="agentStatus() === 'stale'"
+              [class.bg-gray-400]="agentStatus() === 'disconnected'">
+            </span>
+            @switch (agentStatus()) {
+              @case ('live') {
+                <span class="text-lime-600 dark:text-lime-400 font-medium">Live</span>
+              }
+              @case ('stale') {
+                <span class="text-yellow-600 dark:text-yellow-400 font-medium">Stale</span>
+              }
+              @case ('disconnected') {
+                <span class="text-gray-500 dark:text-gray-400 font-medium">Disconnected</span>
+              }
+            }
+            @if (agentHeartbeatAgo()) {
+              <span class="text-gray-400 dark:text-gray-500">({{ agentHeartbeatAgo() }})</span>
+            }
+          </span>
+        }
+
+        @if (deployment?.deploymentRevisionCreatedAt; as lastDeployed) {
+          <span class="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
+            <span class="text-gray-400 dark:text-gray-500">Last deployed:</span>
+            <span [title]="formatDate(lastDeployed)">{{ relativeTime(lastDeployed) }}</span>
+          </span>
+        }
       </div>
-    }
+    </div>
+  }
+
+  <div class="mx-auto max-w-screen-xl px-4 py-6 sm:px-6 lg:px-8">
+    <!-- 3-column card grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <!-- Card 1: Version & Deployment Health -->
+      <div class="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 flex flex-col">
+        <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            Version & Deployment
+          </h2>
+        </div>
+        <div class="px-5 py-4 flex-1 flex flex-col gap-4">
+          <!-- MOCK DATA — Show mock deployments always -->
+          @if (mockDeployments().length > 0) {
+            <!-- Deployments Summary -->
+            <div class="mt-auto">
+              <div class="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">
+                All Deployments ({{ mockDeployments().length }})
+              </div>
+              <!-- MOCK DATA — replace with real deployments from DeploymentsService -->
+              <div class="space-y-1.5">
+                @for (dep of mockDeployments(); track dep.id) {
+                  <div
+                    class="flex items-center justify-between text-xs py-1 px-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                    <div class="flex items-center gap-2 flex-1 min-w-0">
+                      <span
+                        class="size-1.5 rounded-full flex-shrink-0"
+                        [class.bg-green-500]="dep.health === 'healthy'"
+                        [class.bg-yellow-500]="dep.health === 'degraded'"
+                        [class.bg-red-500]="dep.health === 'unhealthy'">
+                      </span>
+                      <span class="font-medium text-gray-900 dark:text-white truncate">{{ dep.applicationName }}</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                      <span class="font-mono text-gray-500 dark:text-gray-400">{{ dep.currentVersion }}</span>
+                      @if (dep.status === 'updating') {
+                        <fa-icon [icon]="faSpinner" class="text-blue-500 animate-spin" size="xs"></fa-icon>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          } @else {
+            <div
+              class="flex-1 flex flex-col items-center justify-center text-center py-8 text-gray-500 dark:text-gray-400">
+              <fa-icon [icon]="faRocket" class="text-3xl text-gray-300 dark:text-gray-600 mb-3"></fa-icon>
+              <p class="text-sm">No deployments yet.</p>
+              <p class="text-xs mt-1">Deploy your first application to see status here.</p>
+            </div>
+          }
+        </div>
+        <div class="px-5 py-3 border-t border-gray-200 dark:border-gray-700">
+          <a
+            routerLink="/deployments"
+            class="text-sm text-primary-600 dark:text-primary-400 hover:underline font-medium flex items-center gap-1">
+            View full deployment history
+            <fa-icon [icon]="faArrowRight" size="xs"></fa-icon>
+          </a>
+        </div>
+      </div>
+
+      <!-- Card 2: Available Resources -->
+      <div class="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 flex flex-col">
+        <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Resources</h2>
+        </div>
+        <div class="px-5 py-4 flex-1">
+          @if (currentVersionResources().length > 0) {
+            <!-- MOCK DATA — replace with ApplicationsService.getResources() -->
+            <div class="text-xs text-gray-500 dark:text-gray-400 mb-3">Attached to {{ mockState.currentVersion }}</div>
+            <ul class="space-y-2">
+              @for (resource of currentVersionResources(); track resource.name) {
+                <li
+                  class="flex items-center justify-between gap-3 py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <fa-icon
+                      [icon]="getResourceIcon(resource)"
+                      class="text-gray-400 dark:text-gray-500 flex-shrink-0"></fa-icon>
+                    <div class="min-w-0">
+                      <div class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ resource.name }}</div>
+                      <div class="text-xs text-gray-500 dark:text-gray-400">{{ getResourceTypeLabel(resource) }}</div>
+                    </div>
+                  </div>
+                  @if (resource.format === 'download') {
+                    <button
+                      class="flex-shrink-0 p-1.5 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                      <fa-icon [icon]="faDownload" size="sm"></fa-icon>
+                    </button>
+                  } @else {
+                    <button
+                      class="flex-shrink-0 p-1.5 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                      <fa-icon [icon]="faExternalLinkAlt" size="sm"></fa-icon>
+                    </button>
+                  }
+                </li>
+              }
+            </ul>
+          } @else {
+            <div class="flex flex-col items-center justify-center text-center py-8 text-gray-500 dark:text-gray-400">
+              <fa-icon [icon]="faBoxOpen" class="text-3xl text-gray-300 dark:text-gray-600 mb-3"></fa-icon>
+              <p class="text-sm">No resources attached to this version.</p>
+              <p class="text-xs mt-1">Resources added by your vendor will appear here.</p>
+            </div>
+          }
+        </div>
+        <div class="px-5 py-3 border-t border-gray-200 dark:border-gray-700">
+          <a
+            routerLink="/resources"
+            class="text-sm text-primary-600 dark:text-primary-400 hover:underline font-medium flex items-center gap-1">
+            See all version resources
+            <fa-icon [icon]="faArrowRight" size="xs"></fa-icon>
+          </a>
+        </div>
+      </div>
+
+      <!-- Card 3: Security -->
+      <div class="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 flex flex-col">
+        <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Security</h2>
+        </div>
+        <div class="px-5 py-4 flex-1 flex flex-col">
+          @if (hasCVEReport(); as hasCVEs) {
+            @if (currentVersionCVEReport(); as cveReport) {
+              <!-- CVE Summary -->
+              <div class="rounded-lg bg-gray-50 dark:bg-gray-700/50 p-4 mb-4">
+                <div class="flex items-center gap-2 mb-2">
+                  <fa-icon [icon]="faShieldHalved" class="text-gray-400 dark:text-gray-500"></fa-icon>
+                  <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Vulnerability Scan Results</span>
+                </div>
+                <div class="flex items-baseline gap-2">
+                  <span class="text-2xl font-bold text-gray-900 dark:text-white">{{ cveReport.totalCVEs }}</span>
+                  <span class="text-xs text-gray-500 dark:text-gray-400">vulnerabilities found</span>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Scanned {{ relativeTime(cveReport.reportDate) }}
+                </p>
+              </div>
+
+              <!-- Severity breakdown -->
+              <div class="mb-4">
+                <div class="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">Severity Breakdown</div>
+                <div class="flex gap-2">
+                  <div class="flex-1 text-center py-2 rounded bg-red-50 dark:bg-red-900/20">
+                    <div class="text-lg font-bold text-red-600 dark:text-red-400">{{ cveReport.critical }}</div>
+                    <div class="text-xs text-red-700 dark:text-red-500">Critical</div>
+                  </div>
+                  <div class="flex-1 text-center py-2 rounded bg-orange-50 dark:bg-orange-900/20">
+                    <div class="text-lg font-bold text-orange-600 dark:text-orange-400">{{ cveReport.high }}</div>
+                    <div class="text-xs text-orange-700 dark:text-orange-500">High</div>
+                  </div>
+                  <div class="flex-1 text-center py-2 rounded bg-yellow-50 dark:bg-yellow-900/20">
+                    <div class="text-lg font-bold text-yellow-600 dark:text-yellow-400">{{ cveReport.medium }}</div>
+                    <div class="text-xs text-yellow-700 dark:text-yellow-500">Medium</div>
+                  </div>
+                  <div class="flex-1 text-center py-2 rounded bg-gray-100 dark:bg-gray-700">
+                    <div class="text-lg font-bold text-gray-600 dark:text-gray-400">{{ cveReport.low }}</div>
+                    <div class="text-xs text-gray-600 dark:text-gray-500">Low</div>
+                  </div>
+                </div>
+              </div>
+            }
+          } @else {
+            <div class="rounded-lg bg-gray-50 dark:bg-gray-700/50 p-4 mb-4">
+              <div class="flex items-center gap-2 mb-2">
+                <fa-icon [icon]="faShieldHalved" class="text-gray-400 dark:text-gray-500"></fa-icon>
+                <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Vulnerability Scanning</span>
+              </div>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                No CVE report available for {{ mockState.currentVersion }}. Vendor will upload scan results when
+                available.
+              </p>
+            </div>
+          }
+
+          @if (hasSbomResources()) {
+            <div class="mt-auto">
+              <div class="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">SBOM Available</div>
+              <div class="space-y-1.5">
+                @for (resource of sbomResources(); track resource.name) {
+                  <button
+                    class="w-full flex items-center gap-2 text-sm text-left py-1.5 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-gray-700 dark:text-gray-300">
+                    <fa-icon [icon]="faDownload" class="text-gray-400" size="sm"></fa-icon>
+                    Download {{ getResourceTypeLabel(resource) }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+        <div class="px-5 py-3 border-t border-gray-200 dark:border-gray-700">
+          <a
+            routerLink="/security"
+            class="text-sm text-primary-600 dark:text-primary-400 hover:underline font-medium flex items-center gap-1">
+            View security details
+            <fa-icon [icon]="faArrowRight" size="xs"></fa-icon>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity feed -->
+    <div class="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+      <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-700">
+        <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Activity</h2>
+      </div>
+      <div class="px-5 py-4">
+        @if (activityFeed().length > 0) {
+          <!-- MOCK DATA — replace with real event/audit API -->
+          <div class="relative">
+            <div class="absolute left-3 top-0 bottom-0 w-px bg-gray-200 dark:bg-gray-700"></div>
+            <ul class="space-y-0">
+              @for (entry of activityFeed(); track $index) {
+                <li class="relative pl-9 py-3 border-b border-gray-100 dark:border-gray-700/50 last:border-0">
+                  <div
+                    class="absolute left-0 top-3.5 flex items-center justify-center size-6 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                    <fa-icon [icon]="getActivityIcon(entry)" size="xs" [class]="getActivityColor(entry)"></fa-icon>
+                  </div>
+                  <div class="flex items-start justify-between gap-4">
+                    <p class="text-sm text-gray-700 dark:text-gray-300">{{ entry.description }}</p>
+                    <span
+                      class="flex-shrink-0 font-mono text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap"
+                      [title]="formatDate(entry.timestamp)">
+                      {{ relativeTime(entry.timestamp) }}
+                    </span>
+                  </div>
+                </li>
+              }
+            </ul>
+          </div>
+        } @else {
+          <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+            <fa-icon [icon]="faClockRotateLeft" class="text-3xl text-gray-300 dark:text-gray-600 mb-3"></fa-icon>
+            <p class="text-sm">No activity recorded yet.</p>
+            <p class="text-xs mt-1">Deployment events, version releases, and resource updates will appear here.</p>
+          </div>
+        }
+      </div>
+    </div>
   </div>
 </div>
