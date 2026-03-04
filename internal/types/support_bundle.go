@@ -31,6 +31,7 @@ type SupportBundle struct {
 	Status                  SupportBundleStatus `db:"status"`
 	CollectTokenHash        []byte              `db:"collect_token_hash"`
 	CollectTokenExpiresAt   *time.Time          `db:"collect_token_expires_at"`
+	CollectCommand          *string             `db:"collect_command"`
 	ResolvedByUserAccountID *uuid.UUID          `db:"resolved_by_user_account_id"`
 }
 

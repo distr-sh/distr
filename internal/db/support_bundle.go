@@ -109,6 +109,7 @@ const supportBundleWithDetailsOutputExpr = `
 	sb.status,
 	sb.collect_token_hash,
 	sb.collect_token_expires_at,
+	sb.collect_command,
 	sb.resolved_by_user_account_id,
 	u.name AS created_by_user_name,
 	u.image_id AS created_by_image_id,
@@ -179,8 +180,10 @@ func GetSupportBundleByCollectToken(
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`SELECT id, created_at, organization_id, customer_organization_id, created_by_user_account_id,
-			title, description, status, collect_token_hash, collect_token_expires_at, resolved_by_user_account_id
+		`SELECT id, created_at, organization_id, customer_organization_id,
+			created_by_user_account_id, title, description, status,
+			collect_token_hash, collect_token_expires_at, collect_command,
+			resolved_by_user_account_id
 		FROM SupportBundle
 		WHERE id = @id
 			AND collect_token_hash = @tokenHash
@@ -206,10 +209,14 @@ func CreateSupportBundle(ctx context.Context, bundle *types.SupportBundle) error
 		ctx,
 		`INSERT INTO SupportBundle
 			(organization_id, customer_organization_id, created_by_user_account_id,
-			title, description, collect_token_hash, collect_token_expires_at)
-		VALUES (@orgId, @customerOrgId, @userId, @title, @description, @tokenHash, @tokenExpiresAt)
-		RETURNING id, created_at, organization_id, customer_organization_id, created_by_user_account_id,
-			title, description, status, collect_token_hash, collect_token_expires_at, resolved_by_user_account_id`,
+			title, description, collect_token_hash, collect_token_expires_at,
+			collect_command)
+		VALUES (@orgId, @customerOrgId, @userId, @title, @description,
+			@tokenHash, @tokenExpiresAt, @collectCommand)
+		RETURNING id, created_at, organization_id, customer_organization_id,
+			created_by_user_account_id, title, description, status,
+			collect_token_hash, collect_token_expires_at, collect_command,
+			resolved_by_user_account_id`,
 		pgx.NamedArgs{
 			"orgId":          bundle.OrganizationID,
 			"customerOrgId":  bundle.CustomerOrganizationID,
@@ -218,6 +225,7 @@ func CreateSupportBundle(ctx context.Context, bundle *types.SupportBundle) error
 			"description":    bundle.Description,
 			"tokenHash":      bundle.CollectTokenHash,
 			"tokenExpiresAt": bundle.CollectTokenExpiresAt,
+			"collectCommand": bundle.CollectCommand,
 		},
 	)
 	if err != nil {
@@ -258,10 +266,27 @@ func ClearSupportBundleCollectToken(ctx context.Context, bundleID uuid.UUID) err
 	db := internalctx.GetDb(ctx)
 	if _, err := db.Exec(
 		ctx,
-		`UPDATE SupportBundle SET collect_token_hash = NULL, collect_token_expires_at = NULL WHERE id = @id`,
+		`UPDATE SupportBundle
+		SET collect_token_hash = NULL, collect_token_expires_at = NULL,
+			collect_command = NULL
+		WHERE id = @id`,
 		pgx.NamedArgs{"id": bundleID},
 	); err != nil {
 		return fmt.Errorf("could not clear support bundle collect token: %w", err)
+	}
+	return nil
+}
+
+func UpdateSupportBundleCollectCommand(
+	ctx context.Context, bundleID uuid.UUID, collectCommand string,
+) error {
+	db := internalctx.GetDb(ctx)
+	if _, err := db.Exec(
+		ctx,
+		`UPDATE SupportBundle SET collect_command = @cmd WHERE id = @id`,
+		pgx.NamedArgs{"id": bundleID, "cmd": collectCommand},
+	); err != nil {
+		return fmt.Errorf("could not update collect command: %w", err)
 	}
 	return nil
 }

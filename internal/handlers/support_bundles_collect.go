@@ -2,14 +2,11 @@ package handlers
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
-	"errors"
 	"io"
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
+	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
@@ -17,7 +14,6 @@ import (
 	"github.com/distr-sh/distr/internal/supportbundle"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
-	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
 	"go.uber.org/zap"
@@ -29,7 +25,7 @@ func SupportBundleScriptRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Support Bundles"))
 
 	r.Route("/{supportBundleId}", func(r chiopenapi.Router) {
-		r.With(collectTokenAuthMiddleware).Group(func(r chiopenapi.Router) {
+		r.With(auth.SupportBundleAuthentication.Middleware).Group(func(r chiopenapi.Router) {
 			r.Get("/collect-script", getCollectScriptHandler()).
 				With(option.Description("Get support bundle collect script")).
 				With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
@@ -44,62 +40,11 @@ func SupportBundleScriptRouter(r chiopenapi.Router) {
 	})
 }
 
-type collectTokenContextKey struct{}
-
-func collectTokenAuthMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-
-		tokenStr := r.URL.Query().Get("token")
-		if tokenStr == "" {
-			http.Error(w, "token is required", http.StatusUnauthorized)
-			return
-		}
-
-		tokenBytes, err := hex.DecodeString(tokenStr)
-		if err != nil {
-			http.Error(w, "invalid token", http.StatusUnauthorized)
-			return
-		}
-
-		h := sha256.Sum256(tokenBytes)
-		tokenHash := h[:]
-
-		bundleID, err := uuid.Parse(r.PathValue("supportBundleId"))
-		if err != nil {
-			http.Error(w, "invalid bundle ID", http.StatusBadRequest)
-			return
-		}
-
-		bundle, err := db.GetSupportBundleByCollectToken(ctx, bundleID, tokenHash)
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.Error(w, "invalid or expired token", http.StatusUnauthorized)
-			return
-		} else if err != nil {
-			log.Error("failed to validate collect token", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		ctx = context.WithValue(ctx, collectTokenContextKey{}, bundle)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
-func bundleFromCollectToken(ctx context.Context) *types.SupportBundle {
-	if bundle, ok := ctx.Value(collectTokenContextKey{}).(*types.SupportBundle); ok {
-		return bundle
-	}
-	return nil
-}
-
 func getCollectScriptHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
-		bundle := bundleFromCollectToken(ctx)
+		bundle := auth.SupportBundleAuthentication.Require(ctx)
 
 		tokenStr := r.URL.Query().Get("token")
 
@@ -140,10 +85,9 @@ func uploadSupportBundleResourceHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
-		bundle := bundleFromCollectToken(ctx)
+		bundle := auth.SupportBundleAuthentication.Require(ctx)
 
-		const maxSize = 5 * 1024 * 1024 // 5MB
-		if err := r.ParseMultipartForm(maxSize); err != nil {
+		if err := r.ParseMultipartForm(1 << 20); err != nil {
 			http.Error(w, "failed to parse multipart form", http.StatusBadRequest)
 			return
 		}
@@ -161,13 +105,9 @@ func uploadSupportBundleResourceHandler() http.HandlerFunc {
 		}
 		defer file.Close()
 
-		contentBytes, err := io.ReadAll(io.LimitReader(file, maxSize+1))
+		contentBytes, err := io.ReadAll(file)
 		if err != nil {
 			http.Error(w, "failed to read content", http.StatusBadRequest)
-			return
-		}
-		if len(contentBytes) > maxSize {
-			http.Error(w, "content exceeds maximum size of 5MB", http.StatusBadRequest)
 			return
 		}
 
@@ -191,7 +131,7 @@ func finalizeSupportBundleHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
-		bundle := bundleFromCollectToken(ctx)
+		bundle := auth.SupportBundleAuthentication.Require(ctx)
 
 		if bundle.Status != types.SupportBundleStatusInitialized {
 			http.Error(w, "support bundle is not in initialized state", http.StatusBadRequest)

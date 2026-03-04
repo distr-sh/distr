@@ -156,7 +156,7 @@ func updateCustomerOrganizationHandler() http.HandlerFunc {
 				return
 			}
 			if !exists {
-				http.Error(w, "support bundle configuration must be set up before enabling support feature", http.StatusBadRequest)
+				http.Error(w, "support bundle configuration must be set up before enabling support bundles", http.StatusBadRequest)
 				return
 			}
 		}

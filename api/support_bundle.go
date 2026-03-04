@@ -64,8 +64,9 @@ type SupportBundle struct {
 
 type SupportBundleDetail struct {
 	SupportBundle
-	Resources []SupportBundleResource `json:"resources"`
-	Comments  []SupportBundleComment  `json:"comments"`
+	Resources      []SupportBundleResource `json:"resources"`
+	Comments       []SupportBundleComment  `json:"comments"`
+	CollectCommand *string                 `json:"collectCommand,omitempty"`
 }
 
 type CreateSupportBundleRequest struct {

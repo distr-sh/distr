@@ -14,6 +14,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
+import {ClipComponent} from '../../components/clip.component';
 import {AuthService} from '../../services/auth.service';
 import {SupportBundlesService} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
@@ -22,7 +23,7 @@ import {SupportBundleDetail} from '../../types/support-bundle';
 @Component({
   selector: 'app-support-bundle-detail',
   templateUrl: './support-bundle-detail.component.html',
-  imports: [DatePipe, NgClass, ReactiveFormsModule, RouterLink, FaIconComponent],
+  imports: [DatePipe, NgClass, ReactiveFormsModule, RouterLink, FaIconComponent, ClipComponent],
 })
 export class SupportBundleDetailComponent {
   private readonly route = inject(ActivatedRoute);

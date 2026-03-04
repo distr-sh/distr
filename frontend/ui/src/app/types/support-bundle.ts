@@ -50,6 +50,7 @@ export interface SupportBundleComment {
 export interface SupportBundleDetail extends SupportBundle {
   resources: SupportBundleResource[];
   comments: SupportBundleComment[];
+  collectCommand?: string;
 }
 
 export interface CreateSupportBundleCommentRequest {

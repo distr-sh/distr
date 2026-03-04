@@ -43,7 +43,7 @@ export class SupportBundlesService {
   }
 
   public updateStatus(id: string, request: UpdateSupportBundleStatusRequest) {
-    return this.httpClient.patch<SupportBundle>(`${baseUrl}/${id}/status`, request);
+    return this.httpClient.patch<void>(`${baseUrl}/${id}/status`, request);
   }
 
   public createComment(bundleId: string, request: CreateSupportBundleCommentRequest) {

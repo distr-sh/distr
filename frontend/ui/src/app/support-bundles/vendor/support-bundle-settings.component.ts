@@ -16,6 +16,7 @@ import {faArrowLeft, faFileImport, faFloppyDisk, faPlus, faTrash, faXmark} from 
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
+import {AuthService} from '../../services/auth.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
@@ -59,6 +60,7 @@ export class SupportBundleSettingsComponent {
   protected readonly faXmark = faXmark;
   protected readonly faArrowLeft = faArrowLeft;
 
+  protected readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly svc = inject(SupportBundlesService);
   private readonly toast = inject(ToastService);

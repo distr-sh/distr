@@ -21,6 +21,7 @@ CREATE TABLE SupportBundle (
     status support_bundle_status NOT NULL DEFAULT 'initialized',
     collect_token_hash BYTEA,
     collect_token_expires_at TIMESTAMPTZ,
+    collect_command TEXT,
     resolved_by_user_account_id UUID REFERENCES UserAccount (id)
 );
 

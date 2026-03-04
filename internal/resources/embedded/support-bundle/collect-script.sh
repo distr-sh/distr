@@ -16,10 +16,13 @@ BUNDLE_ID="{{.BundleID}}"
 BASE_URL="{{.BaseURL}}"
 TOKEN="{{.Token}}"
 
+_tmpdir=$(mktemp -d)
+trap 'rm -rf "$_tmpdir"' EXIT
+
 upload_resource() {
   _name="$1"
   _content="$2"
-  _tmpfile="${_dir}/upload_content.tmp"
+  _tmpfile="${_tmpdir}/upload_content.tmp"
   printf '%s' "$_content" > "$_tmpfile"
   if ! curl -fsSL -X POST \
     -F "name=${_name}" \

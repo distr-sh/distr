@@ -231,6 +231,22 @@ func createSupportBundleHandler() http.HandlerFunc {
 			return
 		}
 
+		org, err := db.GetOrganizationByID(ctx, *a.CurrentOrgID())
+		if err != nil {
+			log.Error("failed to get organization", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		baseURL := customdomains.AppDomainOrDefault(*org)
+		// collectCommand is stored so it can be shown again while
+		// the bundle is still in initialized state.
+		collectCommand := fmt.Sprintf(
+			"curl -fsSL '%s/api/v1/support-bundle-collect/BUNDLE_ID/collect-script?token=%s' | sh",
+			baseURL, rawToken,
+		)
+
 		expiresAt := time.Now().Add(24 * time.Hour)
 		bundle := types.SupportBundle{
 			OrganizationID:         *a.CurrentOrgID(),
@@ -248,19 +264,15 @@ func createSupportBundleHandler() http.HandlerFunc {
 			return
 		}
 
-		org, err := db.GetOrganizationByID(ctx, *a.CurrentOrgID())
-		if err != nil {
-			log.Error("failed to get organization", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		baseURL := customdomains.AppDomainOrDefault(*org)
-		collectCommand := fmt.Sprintf(
+		// Replace placeholder with actual bundle ID now that we have it
+		collectCommand = fmt.Sprintf(
 			"curl -fsSL '%s/api/v1/support-bundle-collect/%s/collect-script?token=%s' | sh",
 			baseURL, bundle.ID.String(), rawToken,
 		)
+		bundle.CollectCommand = &collectCommand
+		if err := db.UpdateSupportBundleCollectCommand(ctx, bundle.ID, collectCommand); err != nil {
+			log.Error("failed to store collect command", zap.Error(err))
+		}
 
 		detailBundle, err := db.GetSupportBundleByID(ctx, bundle.ID, *a.CurrentOrgID())
 		if err != nil {
@@ -321,11 +333,15 @@ func getSupportBundleDetailHandler() http.HandlerFunc {
 			return
 		}
 
-		RespondJSON(w, api.SupportBundleDetail{
+		detail := api.SupportBundleDetail{
 			SupportBundle: mapping.SupportBundleToAPI(*bundle),
 			Resources:     mapping.List(resources, mapping.SupportBundleResourceToAPI),
 			Comments:      mapping.List(comments, mapping.SupportBundleCommentToAPI),
-		})
+		}
+		if bundle.Status == types.SupportBundleStatusInitialized {
+			detail.CollectCommand = bundle.CollectCommand
+		}
+		RespondJSON(w, detail)
 	}
 }
 

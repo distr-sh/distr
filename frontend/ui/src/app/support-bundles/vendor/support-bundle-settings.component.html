@@ -21,22 +21,24 @@
         <div class="mt-6 space-y-4">
           <div class="flex items-center justify-between">
             <h2 class="text-xl font-bold dark:text-white">Environment Variables</h2>
-            <div class="flex gap-2">
-              <button
-                type="button"
-                (click)="openImportModal(importModal)"
-                class="inline-flex items-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                <fa-icon [icon]="faFileImport" class="mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
-                Import
-              </button>
-              <button
-                type="button"
-                (click)="addEnvVar()"
-                class="inline-flex items-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
-                Add Variable
-              </button>
-            </div>
+            @if (auth.hasAnyRole('read_write', 'admin')) {
+              <div class="flex gap-2">
+                <button
+                  type="button"
+                  (click)="openImportModal(importModal)"
+                  class="inline-flex items-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                  <fa-icon [icon]="faFileImport" class="mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
+                  Import
+                </button>
+                <button
+                  type="button"
+                  (click)="addEnvVar()"
+                  class="inline-flex items-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                  <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
+                  Add Variable
+                </button>
+              </div>
+            }
           </div>
 
           @if (envVarsArray.length > 0) {
@@ -64,12 +66,14 @@
                       class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
                     <span class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Redacted</span>
                   </label>
-                  <button
-                    type="button"
-                    (click)="removeEnvVar($index)"
-                    class="py-2 px-3 text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900">
-                    <fa-icon [icon]="faTrash" class="h-4 w-4"></fa-icon>
-                  </button>
+                  @if (auth.hasAnyRole('read_write', 'admin')) {
+                    <button
+                      type="button"
+                      (click)="removeEnvVar($index)"
+                      class="py-2 px-3 text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900">
+                      <fa-icon [icon]="faTrash" class="h-4 w-4"></fa-icon>
+                    </button>
+                  }
                 </div>
               }
             </div>
@@ -79,19 +83,21 @@
             </p>
           }
 
-          <div class="flex justify-center w-full space-x-4 mt-8 sm:mt-0">
-            <button
-              type="button"
-              (click)="save()"
-              [disabled]="saving() || duplicateIndices.size > 0 || envVarsArray.pristine"
-              class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60 disabled:cursor-not-allowed">
-              <fa-icon [icon]="faFloppyDisk" class="mr-2"></fa-icon>
-              Save
-            </button>
-          </div>
+          @if (auth.hasAnyRole('read_write', 'admin')) {
+            <div class="flex justify-center w-full space-x-4 mt-8 sm:mt-0">
+              <button
+                type="button"
+                (click)="save()"
+                [disabled]="saving() || duplicateIndices.size > 0 || envVarsArray.pristine"
+                class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60 disabled:cursor-not-allowed">
+                <fa-icon [icon]="faFloppyDisk" class="mr-2"></fa-icon>
+                Save
+              </button>
+            </div>
+          }
         </div>
 
-        @if (envVarsArray.length > 0) {
+        @if (auth.hasAnyRole('read_write', 'admin') && envVarsArray.length > 0) {
           <h2 class="text-xl font-bold dark:text-white mt-8 mb-2">Danger Zone</h2>
           <div
             class="flex flex-col rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">

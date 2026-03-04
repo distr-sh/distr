@@ -36,6 +36,23 @@
         </p>
       </div>
 
+      <!-- Collect command card (shown for initialized bundles) -->
+      @if (bundle.collectCommand && bundle.status === 'initialized') {
+        <div
+          class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden mb-6 p-6 border-l-4 border-blue-500">
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Collect Command</h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+            Run this command on the target system to collect and upload the support bundle:
+          </p>
+          <div class="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <code class="text-sm text-gray-900 dark:text-white break-all flex-1 select-all">{{
+              bundle.collectCommand
+            }}</code>
+            <app-clip [clip]="bundle.collectCommand" />
+          </div>
+        </div>
+      }
+
       <!-- Resources card -->
       <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden mb-6 p-6">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -50,7 +67,7 @@
                 <button
                   type="button"
                   (click)="toggleResource(resource.id)"
-                  class="flex items-center justify-between w-full p-4 text-left text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg">
+                  class="flex items-center justify-between w-full p-4 text-left text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700">
                   <span>{{ resource.name }}</span>
                   <fa-icon
                     [icon]="isResourceExpanded(resource.id) ? faChevronDown : faChevronRight"
