@@ -27,8 +27,8 @@ import {environment} from '../../../env/env';
 import {RequireCustomerDirective, RequireVendorDirective} from '../../directives/required-role.directive';
 import {AuthService} from '../../services/auth.service';
 import {ContextService} from '../../services/context.service';
-import {OrganizationService} from '../../services/organization.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
+import {OrganizationService} from '../../services/organization.service';
 import {SidebarService} from '../../services/sidebar.service';
 import {TutorialsService} from '../../services/tutorials.service';
 

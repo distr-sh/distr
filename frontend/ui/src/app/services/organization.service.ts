@@ -23,7 +23,11 @@ export class OrganizationService {
     this.organization$.pipe(
       map(
         (org) =>
-          !(org.subscriptionType === 'starter' || org.subscriptionType === 'pro' || org.subscriptionType === 'enterprise')
+          !(
+            org.subscriptionType === 'starter' ||
+            org.subscriptionType === 'pro' ||
+            org.subscriptionType === 'enterprise'
+          )
       )
     ),
     {initialValue: false}
