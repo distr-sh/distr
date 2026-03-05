@@ -44,6 +44,8 @@
                   <th scope="col" class="p-4">Status</th>
                   <th scope="col" class="p-4">Created At</th>
                   <th scope="col" class="p-4">Resources</th>
+                  <th scope="col" class="p-4">Comments</th>
+                  <th scope="col" class="p-4">Last Updated At</th>
                 </tr>
               </thead>
               <tbody>
@@ -64,6 +66,10 @@
                     </td>
                     <td class="px-4 py-3">{{ bundle.createdAt | date: 'medium' }}</td>
                     <td class="px-4 py-3">{{ bundle.resourceCount }}</td>
+                    <td class="px-4 py-3">{{ bundle.commentCount }}</td>
+                    <td class="px-4 py-3">
+                      {{ bundle.lastCommentAt ? (bundle.lastCommentAt | date: 'medium') : '-' }}
+                    </td>
                   </tr>
                 }
               </tbody>

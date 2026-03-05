@@ -17,9 +17,13 @@ export interface SupportBundle {
   createdByImageUrl?: string;
   title: string;
   description?: string;
-  status: 'initialized' | 'created' | 'resolved';
+  status: 'initialized' | 'created' | 'resolved' | 'canceled';
   resourceCount: number;
   commentCount: number;
+  lastCommentAt?: string;
+  statusChangedByUserName?: string;
+  statusChangedByImageUrl?: string;
+  statusChangedAt?: string;
 }
 
 export interface CreateSupportBundleRequest {

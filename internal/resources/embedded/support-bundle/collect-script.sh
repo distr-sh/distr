@@ -42,18 +42,23 @@ is_redacted() {
   esac
 }
 
-is_configured() {
-  case "$1" in
-{{- range .EnvVars}}
-    "{{.Name}}") return 0 ;;
-{{- end}}
-    *) return 1 ;;
-  esac
-}
-
 echo "=== Distr Support Bundle Collector ==="
 echo "Bundle ID: ${BUNDLE_ID}"
 echo ""
+
+# Collect system information
+echo "Collecting system information..."
+SYSTEM_INFO="whoami: $(whoami 2>/dev/null || echo 'unknown')
+uname: $(uname -a 2>/dev/null || echo 'unknown')
+hostname: $(hostname 2>/dev/null || echo 'unknown')
+date: $(date 2>/dev/null || echo 'unknown')
+uptime: $(uptime 2>/dev/null || echo 'unknown')
+df:
+$(df -h 2>/dev/null || echo 'unavailable')
+memory:
+$(free -h 2>/dev/null || echo 'unavailable')"
+upload_resource "system-info" "$SYSTEM_INFO"
+echo "  Uploaded system information"
 
 # Collect host environment variables
 echo "Collecting host environment variables..."
@@ -70,20 +75,6 @@ if [ -n "$HOST_ENV" ]; then
   upload_resource "host-environment-variables" "$HOST_ENV"
   echo "  Uploaded host environment variables"
 fi
-
-# Collect system information
-echo "Collecting system information..."
-SYSTEM_INFO="whoami: $(whoami 2>/dev/null || echo 'unknown')
-uname: $(uname -a 2>/dev/null || echo 'unknown')
-hostname: $(hostname 2>/dev/null || echo 'unknown')
-date: $(date 2>/dev/null || echo 'unknown')
-uptime: $(uptime 2>/dev/null || echo 'unknown')
-df:
-$(df -h 2>/dev/null || echo 'unavailable')
-memory:
-$(free -h 2>/dev/null || echo 'unavailable')"
-upload_resource "system-info" "$SYSTEM_INFO"
-echo "  Uploaded system information"
 
 # List Docker containers
 echo ""
@@ -124,37 +115,31 @@ EOF_CONTAINERS
     echo "  Collecting data for $CNAME..."
 
     # Collect only configured environment variables from container
-    CONTAINER_ENV=$(docker exec "$CID" env 2>/dev/null || true)
-    if [ -n "$CONTAINER_ENV" ]; then
+    CONTAINER_ENV=$(docker exec "$CID" env 2>/dev/null)
+    _exec_rc=$?
+    if [ $_exec_rc -eq 0 ]; then
       FILTERED_ENV=""
-      while IFS= read -r env_line; do
-        env_var_name=$(echo "$env_line" | cut -d= -f1)
-        if is_configured "$env_var_name"; then
-          if is_redacted "$env_var_name"; then
-            FILTERED_ENV="${FILTERED_ENV}${env_var_name}=[REDACTED]
+{{- range .EnvVars}}
+      _val=$(echo "$CONTAINER_ENV" | grep "^{{.Name}}=" | head -1 | cut -d= -f2-)
+{{- if .Redacted}}
+      if [ -n "$_val" ]; then _val="[REDACTED]"; fi
+{{- end}}
+      FILTERED_ENV="${FILTERED_ENV}{{.Name}}=${_val}
 "
-          else
-            FILTERED_ENV="${FILTERED_ENV}${env_line}
-"
-          fi
-        fi
-      done <<EOF_ENV
-$CONTAINER_ENV
-EOF_ENV
+{{- end}}
       if [ -n "$FILTERED_ENV" ]; then
-        upload_resource "container-env-${CNAME}" "$FILTERED_ENV"
+        upload_resource "${CNAME}-container-env" "$FILTERED_ENV"
         echo "    Uploaded environment variables"
-      else
-        echo "    No configured environment variables found"
       fi
     else
+      upload_resource "${CNAME}-container-env" "Error: could not collect environment variables (container may be stopped)"
       echo "    Could not collect environment variables (container may be stopped)"
     fi
 
     # Collect container logs
     CONTAINER_LOGS=$(docker logs --tail 1000 "$CID" 2>&1 || true)
     if [ -n "$CONTAINER_LOGS" ]; then
-      upload_resource "container-logs-${CNAME}" "$CONTAINER_LOGS"
+      upload_resource "${CNAME}-container-logs" "$CONTAINER_LOGS"
       echo "    Uploaded logs (last 1000 lines)"
     else
       echo "    No logs available"

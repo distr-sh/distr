@@ -98,6 +98,8 @@ The database schema is managed through SQL migrations in `internal/migrations/sq
 - `licenses`: License keys for artifact access
 - `deployment_log_records`: Logs from deployments
 
+This database stores timestampes as timestamp withouth timezone (`TIMESTAMP`) and not (`TIMESTAMPTZ`).
+
 ## Common Commands
 
 ### Building

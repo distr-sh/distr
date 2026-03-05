@@ -19,6 +19,10 @@ export class SupportBundleDashboardCardComponent {
         return 'bg-yellow-400';
       case 'resolved':
         return 'bg-green-500';
+      case 'canceled':
+        return 'bg-gray-400';
+      default:
+        return '';
     }
   }
 

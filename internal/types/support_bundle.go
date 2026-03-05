@@ -12,6 +12,7 @@ const (
 	SupportBundleStatusInitialized SupportBundleStatus = "initialized"
 	SupportBundleStatusCreated     SupportBundleStatus = "created"
 	SupportBundleStatusResolved    SupportBundleStatus = "resolved"
+	SupportBundleStatusCanceled    SupportBundleStatus = "canceled"
 )
 
 type SupportBundleConfigurationEnvVar struct {
@@ -21,18 +22,19 @@ type SupportBundleConfigurationEnvVar struct {
 }
 
 type SupportBundle struct {
-	ID                      uuid.UUID           `db:"id"`
-	CreatedAt               time.Time           `db:"created_at"`
-	OrganizationID          uuid.UUID           `db:"organization_id"`
-	CustomerOrganizationID  uuid.UUID           `db:"customer_organization_id"`
-	CreatedByUserAccountID  uuid.UUID           `db:"created_by_user_account_id"`
-	Title                   string              `db:"title"`
-	Description             *string             `db:"description"`
-	Status                  SupportBundleStatus `db:"status"`
-	CollectTokenHash        []byte              `db:"collect_token_hash"`
-	CollectTokenExpiresAt   *time.Time          `db:"collect_token_expires_at"`
-	CollectCommand          *string             `db:"collect_command"`
-	ResolvedByUserAccountID *uuid.UUID          `db:"resolved_by_user_account_id"`
+	ID                           uuid.UUID           `db:"id"`
+	CreatedAt                    time.Time           `db:"created_at"`
+	OrganizationID               uuid.UUID           `db:"organization_id"`
+	CustomerOrganizationID       uuid.UUID           `db:"customer_organization_id"`
+	CreatedByUserAccountID       uuid.UUID           `db:"created_by_user_account_id"`
+	Title                        string              `db:"title"`
+	Description                  *string             `db:"description"`
+	Status                       SupportBundleStatus `db:"status"`
+	CollectTokenHash             []byte              `db:"collect_token_hash"`
+	CollectTokenExpiresAt        *time.Time          `db:"collect_token_expires_at"`
+	CollectCommand               *string             `db:"collect_command"`
+	StatusChangedByUserAccountID *uuid.UUID          `db:"status_changed_by_user_account_id"`
+	StatusChangedAt              *time.Time          `db:"status_changed_at"`
 }
 
 type SupportBundleWithDetails struct {
@@ -42,6 +44,9 @@ type SupportBundleWithDetails struct {
 	CustomerOrganizationName string     `db:"customer_organization_name"`
 	ResourceCount            int64      `db:"resource_count"`
 	CommentCount             int64      `db:"comment_count"`
+	LastCommentAt            *time.Time `db:"last_comment_at"`
+	StatusChangedByUserName  *string    `db:"status_changed_by_user_name"`
+	StatusChangedByImageID   *uuid.UUID `db:"status_changed_by_image_id"`
 }
 
 type SupportBundleResource struct {

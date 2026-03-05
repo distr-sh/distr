@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
@@ -62,7 +63,7 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 				With(option.Request(SupportBundleIDRequest{})).
 				With(option.Response(http.StatusOK, api.SupportBundleDetail{}))
 
-			r.With(middleware.RequireVendor, middleware.BlockSuperAdmin).
+			r.With(middleware.BlockSuperAdmin).
 				Patch("/status", updateSupportBundleStatusHandler()).
 				With(option.Description("Update support bundle status")).
 				With(option.Request(struct {
@@ -211,18 +212,6 @@ func createSupportBundleHandler() http.HandlerFunc {
 			return
 		}
 
-		exists, err := db.ExistsSupportBundleConfigurationEnvVars(ctx, *a.CurrentOrgID())
-		if err != nil {
-			log.Error("failed to check support bundle configuration", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		if !exists {
-			http.Error(w, "support bundle configuration not set up by vendor", http.StatusBadRequest)
-			return
-		}
-
 		rawToken, tokenHash, err := generateCollectToken()
 		if err != nil {
 			log.Error("failed to generate collect token", zap.Error(err))
@@ -363,15 +352,39 @@ func updateSupportBundleStatusHandler() http.HandlerFunc {
 		}
 
 		status := types.SupportBundleStatus(request.Status)
-		if status != types.SupportBundleStatusResolved {
-			http.Error(w, "only 'resolved' status is allowed", http.StatusBadRequest)
+		switch status {
+		case types.SupportBundleStatusResolved:
+			if a.CurrentCustomerOrgID() != nil {
+				http.Error(w, "only vendors can resolve support bundles", http.StatusForbidden)
+				return
+			}
+			changedBy := a.CurrentUserID()
+			err = db.UpdateSupportBundleStatus(
+				ctx, id, *a.CurrentOrgID(), status, &changedBy,
+			)
+		case types.SupportBundleStatusCanceled:
+			bundle := requireSupportBundle(w, r)
+			if bundle == nil {
+				return
+			}
+			if bundle.Status != types.SupportBundleStatusInitialized {
+				http.Error(w, "only initialized bundles can be canceled", http.StatusBadRequest)
+				return
+			}
+			changedBy := a.CurrentUserID()
+			err = db.RunTxRR(ctx, func(ctx context.Context) error {
+				if err := db.UpdateSupportBundleStatus(
+					ctx, bundle.ID, bundle.OrganizationID, status, &changedBy,
+				); err != nil {
+					return err
+				}
+				return db.ClearSupportBundleCollectToken(ctx, bundle.ID)
+			})
+		default:
+			http.Error(w, "only 'resolved' or 'canceled' status is allowed", http.StatusBadRequest)
 			return
 		}
 
-		resolvedBy := a.CurrentUserID()
-		err = db.UpdateSupportBundleStatus(
-			ctx, id, *a.CurrentOrgID(), status, &resolvedBy,
-		)
 		if errors.Is(err, apierrors.ErrNotFound) {
 			http.NotFound(w, r)
 		} else if err != nil {

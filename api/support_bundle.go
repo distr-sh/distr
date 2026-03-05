@@ -48,18 +48,22 @@ func (r *CreateUpdateSupportBundleConfigurationRequest) Validate() error {
 // Bundle
 
 type SupportBundle struct {
-	ID                       uuid.UUID `json:"id"`
-	CreatedAt                time.Time `json:"createdAt"`
-	CustomerOrganizationID   uuid.UUID `json:"customerOrganizationId"`
-	CustomerOrganizationName string    `json:"customerOrganizationName"`
-	CreatedByUserAccountID   uuid.UUID `json:"createdByUserAccountId"`
-	CreatedByUserName        string    `json:"createdByUserName"`
-	CreatedByImageURL        *string   `json:"createdByImageUrl,omitempty"`
-	Title                    string    `json:"title"`
-	Description              *string   `json:"description,omitempty"`
-	Status                   string    `json:"status"`
-	ResourceCount            int64     `json:"resourceCount"`
-	CommentCount             int64     `json:"commentCount"`
+	ID                       uuid.UUID  `json:"id"`
+	CreatedAt                time.Time  `json:"createdAt"`
+	CustomerOrganizationID   uuid.UUID  `json:"customerOrganizationId"`
+	CustomerOrganizationName string     `json:"customerOrganizationName"`
+	CreatedByUserAccountID   uuid.UUID  `json:"createdByUserAccountId"`
+	CreatedByUserName        string     `json:"createdByUserName"`
+	CreatedByImageURL        *string    `json:"createdByImageUrl,omitempty"`
+	Title                    string     `json:"title"`
+	Description              *string    `json:"description,omitempty"`
+	Status                   string     `json:"status"`
+	ResourceCount            int64      `json:"resourceCount"`
+	CommentCount             int64      `json:"commentCount"`
+	LastCommentAt            *time.Time `json:"lastCommentAt,omitempty"`
+	StatusChangedByUserName  *string    `json:"statusChangedByUserName,omitempty"`
+	StatusChangedByImageURL  *string    `json:"statusChangedByImageUrl,omitempty"`
+	StatusChangedAt          *time.Time `json:"statusChangedAt,omitempty"`
 }
 
 type SupportBundleDetail struct {

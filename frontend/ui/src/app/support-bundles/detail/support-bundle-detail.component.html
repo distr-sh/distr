@@ -17,16 +17,28 @@
               {{ bundle.status }}
             </span>
           </div>
-          @if (auth.isVendor() && bundle.status === 'created') {
-            <button
-              type="button"
-              (click)="markAsResolved()"
-              [disabled]="markingResolved()"
-              class="inline-flex items-center py-2 px-4 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg dark:text-gray-300 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700">
-              <fa-icon [icon]="faCheck" class="mr-2 text-green-600 dark:text-green-400"></fa-icon>
-              Mark as Resolved
-            </button>
-          }
+          <div class="flex items-center gap-2">
+            @if (bundle.status === 'initialized') {
+              <button
+                type="button"
+                (click)="cancelBundle()"
+                [disabled]="updatingStatus()"
+                class="inline-flex items-center py-2 px-4 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg dark:text-gray-300 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700">
+                <fa-icon [icon]="faXmark" class="mr-2"></fa-icon>
+                Cancel
+              </button>
+            }
+            @if (auth.isVendor() && bundle.status === 'created') {
+              <button
+                type="button"
+                (click)="markAsResolved()"
+                [disabled]="updatingStatus()"
+                class="inline-flex items-center py-2 px-4 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg dark:text-gray-300 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700">
+                <fa-icon [icon]="faCheck" class="mr-2"></fa-icon>
+                Mark as Resolved
+              </button>
+            }
+          </div>
         </div>
         @if (bundle.description) {
           <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">{{ bundle.description }}</p>
@@ -34,12 +46,17 @@
         <p class="text-xs text-gray-500 dark:text-gray-500">
           Created by {{ bundle.createdByUserName }} on {{ bundle.createdAt | date: 'medium' }}
         </p>
+        @if (bundle.statusChangedByUserName && (bundle.status === 'resolved' || bundle.status === 'canceled')) {
+          <p class="text-xs text-gray-500 dark:text-gray-500">
+            Set to {{ bundle.status }} by {{ bundle.statusChangedByUserName }} on
+            {{ bundle.statusChangedAt | date: 'medium' }}
+          </p>
+        }
       </div>
 
       <!-- Collect command card (shown for initialized bundles) -->
       @if (bundle.collectCommand && bundle.status === 'initialized') {
-        <div
-          class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden mb-6 p-6 border-l-4 border-blue-500">
+        <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden mb-6 p-6">
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Collect Command</h2>
           <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
             Run this command on the target system to collect and upload the support bundle:

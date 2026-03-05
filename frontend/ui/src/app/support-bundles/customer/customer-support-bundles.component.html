@@ -24,6 +24,8 @@
               <th scope="col" class="p-4">Status</th>
               <th scope="col" class="p-4">Created At</th>
               <th scope="col" class="p-4">Resources</th>
+              <th scope="col" class="p-4">Comments</th>
+              <th scope="col" class="p-4">Last Updated At</th>
             </tr>
           </thead>
           <tbody>
@@ -54,10 +56,18 @@
                         Resolved
                       </span>
                     }
+                    @case ('canceled') {
+                      <span
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300">
+                        Canceled
+                      </span>
+                    }
                   }
                 </td>
                 <td class="px-4 py-3">{{ bundle.createdAt | date: 'medium' }}</td>
                 <td class="px-4 py-3">{{ bundle.resourceCount }}</td>
+                <td class="px-4 py-3">{{ bundle.commentCount }}</td>
+                <td class="px-4 py-3">{{ bundle.lastCommentAt ? (bundle.lastCommentAt | date: 'medium') : '-' }}</td>
               </tr>
             }
           </tbody>
@@ -68,7 +78,7 @@
 </section>
 
 <ng-template #createBundleDialog>
-  <div class="relative p-4 w-full max-w-xl max-h-full lg:mt-32">
+  <div class="relative p-4 w-full max-w-2xl max-h-full lg:mt-32">
     <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
       <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">New Support Bundle</h3>
@@ -84,9 +94,9 @@
         @if (collectCommand(); as cmd) {
           <div class="space-y-4">
             <div
-              class="p-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400 border border-green-300 dark:border-green-800"
+              class="p-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400 border border-blue-300 dark:border-blue-800"
               role="alert">
-              <p class="font-medium mb-2">Support bundle created successfully.</p>
+              <p class="font-medium mb-2">Support bundle initialized successfully.</p>
               <p>Run the following command on the target system to collect and upload the support bundle:</p>
             </div>
             <div class="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-600 rounded-lg">

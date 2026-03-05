@@ -110,12 +110,16 @@ const supportBundleWithDetailsOutputExpr = `
 	sb.collect_token_hash,
 	sb.collect_token_expires_at,
 	sb.collect_command,
-	sb.resolved_by_user_account_id,
+	sb.status_changed_by_user_account_id,
+	sb.status_changed_at,
 	u.name AS created_by_user_name,
 	u.image_id AS created_by_image_id,
 	co.name AS customer_organization_name,
 	(SELECT count(*) FROM SupportBundleResource WHERE support_bundle_id = sb.id) AS resource_count,
-	(SELECT count(*) FROM SupportBundleComment WHERE support_bundle_id = sb.id) AS comment_count
+	(SELECT count(*) FROM SupportBundleComment WHERE support_bundle_id = sb.id) AS comment_count,
+	(SELECT max(created_at) FROM SupportBundleComment WHERE support_bundle_id = sb.id) AS last_comment_at,
+	scu.name AS status_changed_by_user_name,
+	scu.image_id AS status_changed_by_image_id
 `
 
 func GetSupportBundles(
@@ -127,6 +131,7 @@ func GetSupportBundles(
 		FROM SupportBundle sb
 		INNER JOIN UserAccount u ON sb.created_by_user_account_id = u.id
 		INNER JOIN CustomerOrganization co ON sb.customer_organization_id = co.id
+		LEFT JOIN UserAccount scu ON sb.status_changed_by_user_account_id = scu.id
 		WHERE sb.organization_id = @orgId`,
 		supportBundleWithDetailsOutputExpr)
 
@@ -157,6 +162,7 @@ func GetSupportBundleByID(ctx context.Context, id, orgID uuid.UUID) (*types.Supp
 			FROM SupportBundle sb
 			INNER JOIN UserAccount u ON sb.created_by_user_account_id = u.id
 			INNER JOIN CustomerOrganization co ON sb.customer_organization_id = co.id
+			LEFT JOIN UserAccount scu ON sb.status_changed_by_user_account_id = scu.id
 			WHERE sb.id = @id AND sb.organization_id = @orgId`,
 			supportBundleWithDetailsOutputExpr),
 		pgx.NamedArgs{"id": id, "orgId": orgID},
@@ -183,7 +189,7 @@ func GetSupportBundleByCollectToken(
 		`SELECT id, created_at, organization_id, customer_organization_id,
 			created_by_user_account_id, title, description, status,
 			collect_token_hash, collect_token_expires_at, collect_command,
-			resolved_by_user_account_id
+			status_changed_by_user_account_id, status_changed_at
 		FROM SupportBundle
 		WHERE id = @id
 			AND collect_token_hash = @tokenHash
@@ -216,7 +222,7 @@ func CreateSupportBundle(ctx context.Context, bundle *types.SupportBundle) error
 		RETURNING id, created_at, organization_id, customer_organization_id,
 			created_by_user_account_id, title, description, status,
 			collect_token_hash, collect_token_expires_at, collect_command,
-			resolved_by_user_account_id`,
+			status_changed_by_user_account_id, status_changed_at`,
 		pgx.NamedArgs{
 			"orgId":          bundle.OrganizationID,
 			"customerOrgId":  bundle.CustomerOrganizationID,
@@ -243,15 +249,17 @@ func UpdateSupportBundleStatus(
 	ctx context.Context,
 	id, orgID uuid.UUID,
 	status types.SupportBundleStatus,
-	resolvedByUserID *uuid.UUID,
+	changedByUserID *uuid.UUID,
 ) error {
 	db := internalctx.GetDb(ctx)
 	result, err := db.Exec(
 		ctx,
 		`UPDATE SupportBundle
-		SET status = @status, resolved_by_user_account_id = @resolvedBy
+		SET status = @status,
+			status_changed_by_user_account_id = @changedBy,
+			status_changed_at = now()
 		WHERE id = @id AND organization_id = @orgId`,
-		pgx.NamedArgs{"id": id, "orgId": orgID, "status": status, "resolvedBy": resolvedByUserID},
+		pgx.NamedArgs{"id": id, "orgId": orgID, "status": status, "changedBy": changedByUserID},
 	)
 	if err != nil {
 		return fmt.Errorf("could not update support bundle status: %w", err)

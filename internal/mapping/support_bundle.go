@@ -30,6 +30,10 @@ func SupportBundleToAPI(bundle types.SupportBundleWithDetails) api.SupportBundle
 		Status:                   string(bundle.Status),
 		ResourceCount:            bundle.ResourceCount,
 		CommentCount:             bundle.CommentCount,
+		LastCommentAt:            bundle.LastCommentAt,
+		StatusChangedByUserName:  bundle.StatusChangedByUserName,
+		StatusChangedByImageURL:  CreateImageURL(bundle.StatusChangedByImageID),
+		StatusChangedAt:          bundle.StatusChangedAt,
 	}
 }
 
