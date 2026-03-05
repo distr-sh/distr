@@ -336,12 +336,6 @@ func getSupportBundleDetailHandler() http.HandlerFunc {
 
 func updateSupportBundleStatusHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := uuid.Parse(r.PathValue("supportBundleId"))
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
 		a := auth.Authentication.Require(ctx)
@@ -358,10 +352,29 @@ func updateSupportBundleStatusHandler() http.HandlerFunc {
 				http.Error(w, "only vendors can resolve support bundles", http.StatusForbidden)
 				return
 			}
+			bundle := requireSupportBundle(w, r)
+			if bundle == nil {
+				return
+			}
+			if bundle.Status == types.SupportBundleStatusResolved || bundle.Status == types.SupportBundleStatusCanceled {
+				http.Error(w, "cannot resolve support bundle in its current state", http.StatusBadRequest)
+				return
+			}
 			changedBy := a.CurrentUserID()
-			err = db.UpdateSupportBundleStatus(
-				ctx, id, *a.CurrentOrgID(), status, &changedBy,
-			)
+			if bundle.Status == types.SupportBundleStatusInitialized {
+				err = db.RunTxRR(ctx, func(ctx context.Context) error {
+					if err := db.UpdateSupportBundleStatus(
+						ctx, bundle.ID, bundle.OrganizationID, status, &changedBy,
+					); err != nil {
+						return err
+					}
+					return db.ClearSupportBundleCollectToken(ctx, bundle.ID)
+				})
+			} else {
+				err = db.UpdateSupportBundleStatus(
+					ctx, bundle.ID, bundle.OrganizationID, status, &changedBy,
+				)
+			}
 		case types.SupportBundleStatusCanceled:
 			bundle := requireSupportBundle(w, r)
 			if bundle == nil {

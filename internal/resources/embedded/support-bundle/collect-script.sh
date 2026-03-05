@@ -33,15 +33,6 @@ upload_resource() {
   rm -f "$_tmpfile"
 }
 
-is_redacted() {
-  case "$1" in
-{{- range .EnvVars}}{{if .Redacted}}
-    "{{.Name}}") return 0 ;;
-{{- end}}{{end}}
-    *) return 1 ;;
-  esac
-}
-
 echo "=== Distr Support Bundle Collector ==="
 echo "Bundle ID: ${BUNDLE_ID}"
 echo ""
