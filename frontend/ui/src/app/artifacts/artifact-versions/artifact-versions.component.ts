@@ -1,9 +1,10 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
 import {Component, inject, resource, signal} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faBox, faEllipsisVertical, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faBox, faEllipsisVertical, faSpinner, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {catchError, distinctUntilChanged, filter, firstValueFrom, map, NEVER, switchMap, tap} from 'rxjs';
 import {getRemoteEnvironment} from '../../../env/remote';
 import {RelativeDatePipe} from '../../../util/dates';
@@ -62,25 +63,28 @@ export class ArtifactVersionsComponent {
   protected readonly faXmark = faXmark;
   protected readonly faTrash = faTrash;
   protected readonly faEllipsisVertical = faEllipsisVertical;
+  protected readonly faSpinner = faSpinner;
 
   protected readonly showDropdown = signal(false);
 
-  protected readonly artifact$ = this.route.params.pipe(
-    map((params) => params['id']?.trim()),
-    distinctUntilChanged(),
-    switchMap((id) => this.artifacts.getByIdAndCache(id)),
-    map((artifact) => {
-      if (artifact) {
-        return {
-          ...artifact,
-          versions: (artifact.versions ?? []).map((v) => ({
-            ...v,
-            ...this.calcVersionDownloads(v),
-          })),
-        };
-      }
-      return undefined;
-    })
+  protected readonly artifact = toSignal(
+    this.route.params.pipe(
+      map((params) => params['id']?.trim()),
+      distinctUntilChanged(),
+      switchMap((id) => this.artifacts.getByIdAndCache(id)),
+      map((artifact) => {
+        if (artifact) {
+          return {
+            ...artifact,
+            versions: (artifact.versions ?? []).map((v) => ({
+              ...v,
+              ...this.calcVersionDownloads(v),
+            })),
+          };
+        }
+        return undefined;
+      })
+    )
   );
 
   protected readonly org = resource({

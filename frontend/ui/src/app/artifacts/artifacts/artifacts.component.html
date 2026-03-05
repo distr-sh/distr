@@ -1,66 +1,68 @@
 <section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
   <div class="mx-auto max-w-screen-lg px-4">
-    <div
-      class="flex p-4 mb-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400"
-      role="alert">
-      <fa-icon [icon]="faLightbulb" class="me-4"></fa-icon>
-      <div>
-        @if (registrySlug$ | async; as slug) {
-          @if (registryHost$ | async; as host) {
-            <div class="font-medium">
-              To use the OCI Registry, make sure to create a
-              <a class="text-gray-600 dark:text-gray-400 underline" routerLink="/settings/access-tokens"
-                >personal access token</a
-              >
-              and log in to the registry from your machine:
-              <code class="mt-1 select-all block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
-                echo "YOUR-ACCESS-TOKEN" | docker login {{ host }} --password-stdin -u -
-              </code>
-            </div>
-            <div class="font-medium mt-1" *appRequireVendor>
-              Then you can start tagging and pushing your images. For example, you can try the following commands to
-              push your own
-              <a
-                href="https://hub.docker.com/_/hello-world"
-                target="_blank"
-                class="text-gray-600 dark:text-gray-400 underline"
-                >hello-world</a
-              >
-              image:
-              <code class="select-all mt-1 block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
-                docker pull hello-world
-              </code>
-              <code class="select-all block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
-                docker tag hello-world {{ host }}/{{ slug }}/hello-world:v1.0.0
-              </code>
-              <code class="select-all block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
-                docker push {{ host }}/{{ slug }}/hello-world:v1.0.0
-              </code>
-            </div>
-            <div *appRequireCustomer>
-              <div class="font-medium mt-1">
-                After the login you can start pulling images from the registry. For example, you can try the following
+    @if (auth.hasAnyRole('admin') && hasNoSubscription()) {
+      <div
+        class="flex p-4 mb-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400"
+        role="alert">
+        <fa-icon [icon]="faLightbulb" class="me-4"></fa-icon>
+        <div>
+          @if (registrySlug$ | async; as slug) {
+            @if (registryHost$ | async; as host) {
+              <div class="font-medium">
+                To use the OCI Registry, make sure to create a
+                <a class="text-gray-600 dark:text-gray-400 underline" routerLink="/settings/access-tokens"
+                  >personal access token</a
+                >
+                and log in to the registry from your machine:
+                <code class="mt-1 select-all block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
+                  echo "YOUR-ACCESS-TOKEN" | docker login {{ host }} --password-stdin -u -
+                </code>
               </div>
-              <code class="mt-1 select-all block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
-                docker pull {{ host }}/{{ slug }}/IMAGE:VERSION
-              </code>
-            </div>
+              <div class="font-medium mt-1" *appRequireVendor>
+                Then you can start tagging and pushing your images. For example, you can try the following commands to
+                push your own
+                <a
+                  href="https://hub.docker.com/_/hello-world"
+                  target="_blank"
+                  class="text-gray-600 dark:text-gray-400 underline"
+                  >hello-world</a
+                >
+                image:
+                <code class="select-all mt-1 block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
+                  docker pull hello-world
+                </code>
+                <code class="select-all block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
+                  docker tag hello-world {{ host }}/{{ slug }}/hello-world:v1.0.0
+                </code>
+                <code class="select-all block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
+                  docker push {{ host }}/{{ slug }}/hello-world:v1.0.0
+                </code>
+              </div>
+              <div *appRequireCustomer>
+                <div class="font-medium mt-1">
+                  After the login you can start pulling images from the registry. For example, you can try the following
+                </div>
+                <code class="mt-1 select-all block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
+                  docker pull {{ host }}/{{ slug }}/IMAGE:VERSION
+                </code>
+              </div>
+            } @else {
+              Your Distr Hub does not have the registry enabled.
+              <ng-container *appRequireVendor
+                >You can enable it by setting the corresponding environment variables of the Distr Hub.
+                <!-- TODO link to docs -->
+              </ng-container>
+            }
           } @else {
-            Your Distr Hub does not have the registry enabled.
+            It seems your organization does not have a slug set yet.
             <ng-container *appRequireVendor
-              >You can enable it by setting the corresponding environment variables of the Distr Hub.
-              <!-- TODO link to docs -->
+              >To use the registry, please set a slug in
+              <a class="text-gray-600 dark:text-gray-400 underline" routerLink="/settings">Settings</a>.
             </ng-container>
           }
-        } @else {
-          It seems your organization does not have a slug set yet.
-          <ng-container *appRequireVendor
-            >To use the registry, please set a slug in
-            <a class="text-gray-600 dark:text-gray-400 underline" routerLink="/settings">Settings</a>.
-          </ng-container>
-        }
+        </div>
       </div>
-    </div>
+    }
 
     <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between dark:border-gray-700 mb-4">
       <div class="w-full md:w-1/2">
@@ -82,40 +84,51 @@
       </div>
     </div>
 
-    <div class="overflow-x-auto">
-      <ul role="list" class="flex flex-col gap-4">
-        @for (artifact of filteredArtifacts$ | async; track artifact.id) {
-          <li class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg py-3 px-6 sm:py-4">
-            <div class="flex items-center">
-              @if (artifact.imageUrl) {
-                <img
-                  [routerLink]="artifact.id"
-                  class="w-8 h-8 rounded-full cursor-pointer"
-                  [attr.src]="artifact.imageUrl | secureImage | async"
-                  alt="" />
-              } @else {
-                <div class="shrink-0 text-gray-900 dark:text-gray-400">
-                  <fa-icon [routerLink]="artifact.id" [icon]="faBox" size="xl" class="text-xl cursor-pointer"></fa-icon>
+    @if (filteredArtifacts(); as artifacts) {
+      <div class="overflow-x-auto">
+        <ul role="list" class="flex flex-col gap-4">
+          @for (artifact of artifacts; track artifact.id) {
+            <li class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg py-3 px-6 sm:py-4">
+              <div class="flex items-center">
+                @if (artifact.imageUrl) {
+                  <img
+                    [routerLink]="artifact.id"
+                    class="w-8 h-8 rounded-full cursor-pointer"
+                    [attr.src]="artifact.imageUrl | secureImage | async"
+                    alt="" />
+                } @else {
+                  <div class="shrink-0 text-gray-900 dark:text-gray-400">
+                    <fa-icon
+                      [routerLink]="artifact.id"
+                      [icon]="faBox"
+                      size="xl"
+                      class="text-xl cursor-pointer"></fa-icon>
+                  </div>
+                }
+                <div class="flex-1 min-w-0 ms-4">
+                  <a
+                    class="font-semibold text-gray-900 truncate dark:text-white hover:underline hover:text-blue-600 dark:hover:text-blue-500"
+                    [routerLink]="artifact.id">
+                    {{ artifact.name }}
+                  </a>
+                  <p class="text-sm text-gray-500 truncate dark:text-gray-400 mt-1">
+                    <app-uuid [uuid]="artifact.id" [small]="true"></app-uuid>
+                  </p>
                 </div>
-              }
-              <div class="flex-1 min-w-0 ms-4">
-                <a
-                  class="font-semibold text-gray-900 truncate dark:text-white hover:underline hover:text-blue-600 dark:hover:text-blue-500"
-                  [routerLink]="artifact.id">
-                  {{ artifact.name }}
-                </a>
-                <p class="text-sm text-gray-500 truncate dark:text-gray-400 mt-1">
-                  <app-uuid [uuid]="artifact.id" [small]="true"></app-uuid>
-                </p>
+                <div class="flex flex-col items-end gap-1" *appRequireVendor>
+                  <app-artifacts-download-count [source]="artifact"></app-artifacts-download-count>
+                  <app-artifacts-downloaded-by [source]="artifact"></app-artifacts-downloaded-by>
+                </div>
               </div>
-              <div class="flex flex-col items-end gap-1" *appRequireVendor>
-                <app-artifacts-download-count [source]="artifact"></app-artifacts-download-count>
-                <app-artifacts-downloaded-by [source]="artifact"></app-artifacts-downloaded-by>
-              </div>
-            </div>
-          </li>
-        }
-      </ul>
-    </div>
+            </li>
+          }
+        </ul>
+      </div>
+    } @else {
+      <div class="flex justify-center items-center py-8 text-gray-500 dark:text-gray-400">
+        <fa-icon [icon]="faSpinner" class="animate-spin me-2" size="lg"></fa-icon>
+        <span>Loading&hellip;</span>
+      </div>
+    }
   </div>
 </section>
