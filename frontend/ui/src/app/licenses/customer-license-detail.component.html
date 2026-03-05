@@ -220,6 +220,6 @@
 
 @if (selectedLicenseKey(); as licenseKey) {
   <ng-template #viewLicenseKeyModal>
-    <app-view-usage-license-modal [license]="licenseKey" (closed)="goBack()"></app-view-usage-license-modal>
+    <app-view-license-key-modal [license]="licenseKey" (closed)="goBack()"></app-view-license-key-modal>
   </ng-template>
 }

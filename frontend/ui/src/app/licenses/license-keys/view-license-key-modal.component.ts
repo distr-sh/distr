@@ -7,8 +7,8 @@ import {ToastService} from '../../services/toast.service';
 import {LicenseKey} from '../../types/license-key';
 
 @Component({
-  selector: 'app-view-usage-license-modal',
-  templateUrl: './view-usage-license-modal.component.html',
+  selector: 'app-view-license-key-modal',
+  templateUrl: './view-license-key-modal.component.html',
   imports: [FaIconComponent, ReactiveFormsModule, EditorComponent],
 })
 export class ViewLicenseKeyModalComponent {

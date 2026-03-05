@@ -15,7 +15,7 @@
                 autotrim
                 type="text"
                 id="simple-search"
-                placeholder="Filter application licenses"
+                placeholder="Filter application entitlements"
                 class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
             </div>
           </form>
@@ -164,7 +164,7 @@
 
     <form [formGroup]="editForm" (ngSubmit)="saveLicense()">
       <div class="flex flex-col gap-4">
-        <app-edit-application-license formControlName="license"></app-edit-application-license>
+        <app-edit-application-entitlement formControlName="license"></app-edit-application-entitlement>
         @if (auth.hasAnyRole('admin', 'read_write')) {
           <div class="flex justify-center w-full pb-4 space-x-4 sm:mt-0">
             <button

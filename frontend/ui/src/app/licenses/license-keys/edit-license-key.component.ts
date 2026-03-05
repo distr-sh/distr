@@ -21,8 +21,8 @@ import {CustomerOrganizationsService} from '../../services/customer-organization
 import {LicenseKey} from '../../types/license-key';
 
 @Component({
-  selector: 'app-edit-usage-license',
-  templateUrl: './edit-usage-license.component.html',
+  selector: 'app-edit-license-key',
+  templateUrl: './edit-license-key.component.html',
   imports: [AsyncPipe, AutotrimDirective, EditorComponent, ReactiveFormsModule, FaIconComponent],
   providers: [
     {

@@ -46,8 +46,8 @@ import {ApplicationEntitlement} from '../../types/application-entitlement';
 import {ArtifactEntitlement} from '../../types/artifact-entitlement';
 
 @Component({
-  selector: 'app-edit-application-license',
-  templateUrl: './edit-application-license.component.html',
+  selector: 'app-edit-application-entitlement',
+  templateUrl: './edit-application-entitlement.component.html',
   imports: [AsyncPipe, AutotrimDirective, ReactiveFormsModule, CdkOverlayOrigin, CdkConnectedOverlay, FaIconComponent],
   providers: [
     {

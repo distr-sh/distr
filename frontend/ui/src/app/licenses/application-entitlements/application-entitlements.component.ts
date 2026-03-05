@@ -26,11 +26,11 @@ import {AuthService} from '../../services/auth.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
 import {ApplicationEntitlement} from '../../types/application-entitlement';
-import {EditApplicationEntitlementComponent} from './edit-application-license.component';
+import {EditApplicationEntitlementComponent} from './edit-application-entitlement.component';
 
 @Component({
-  selector: 'app-application-licenses',
-  templateUrl: './application-licenses.component.html',
+  selector: 'app-application-entitlements',
+  templateUrl: './application-entitlements.component.html',
   imports: [
     AsyncPipe,
     AutotrimDirective,

@@ -38,8 +38,8 @@ import {CustomerOrganizationsService} from '../../services/customer-organization
 import {ArtifactEntitlement, ArtifactEntitlementSelection} from '../../types/artifact-entitlement';
 
 @Component({
-  selector: 'app-edit-artifact-license',
-  templateUrl: './edit-artifact-license.component.html',
+  selector: 'app-edit-artifact-entitlement',
+  templateUrl: './edit-artifact-entitlement.component.html',
   imports: [
     AsyncPipe,
     AutotrimDirective,

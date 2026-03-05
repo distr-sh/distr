@@ -18,8 +18,8 @@ import {CustomerUsersComponent} from './components/users/customers/customer-user
 import {VendorUsersComponent} from './components/users/vendors/vendor-users.component';
 import {DeploymentTargetsComponent} from './deployments/deployment-targets.component';
 import {CustomerLicenseDetailComponent} from './licenses/customer-license-detail.component';
+import {LicenseKeysComponent} from './licenses/license-keys/license-keys.component';
 import {LicensesOverviewComponent} from './licenses/licenses-overview.component';
-import {LicenseKeysComponent} from './licenses/usage-licenses/usage-licenses.component';
 import {NotificationRecordsComponent} from './notification-records/notification-records.component';
 import {OrganizationBrandingComponent} from './organization-branding/organization-branding.component';
 import {OrganizationSettingsComponent} from './organization-settings/organization-settings.component';

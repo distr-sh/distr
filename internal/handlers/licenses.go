@@ -67,7 +67,10 @@ func getLicenses(w http.ResponseWriter, r *http.Request) {
 	licenses := make([]types.License, 0, len(customers))
 	for _, customer := range customers {
 		license := types.License{
-			CustomerOrganization: customer.CustomerOrganization,
+			CustomerOrganization:    customer.CustomerOrganization,
+			ApplicationEntitlements: []types.ApplicationEntitlement{},
+			ArtifactEntitlements:    []types.ArtifactEntitlement{},
+			LicenseKeys:             []types.LicenseKey{},
 		}
 		for _, ae := range appEntitlements {
 			if ae.CustomerOrganizationID != nil &&

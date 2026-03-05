@@ -17,7 +17,7 @@ import {ToastService} from '../services/toast.service';
 import {ApplicationEntitlement} from '../types/application-entitlement';
 import {ArtifactEntitlement} from '../types/artifact-entitlement';
 import {LicenseKey} from '../types/license-key';
-import {ViewLicenseKeyModalComponent} from './usage-licenses/view-usage-license-modal.component';
+import {ViewLicenseKeyModalComponent} from './license-keys/view-license-key-modal.component';
 
 @Component({
   selector: 'app-customer-license-detail',
