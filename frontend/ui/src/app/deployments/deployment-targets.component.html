@@ -49,17 +49,24 @@
       customerDeploymentTargets of filteredDeploymentTargets$ | async;
       track customerDeploymentTargets.customerOrganization?.id
     ) {
+      @let customerOrgId = customerDeploymentTargets.customerOrganization?.id;
+      @let isCollapsed = customerOrgId && collapsedCustomerIds().includes(customerOrgId);
+
       @if (auth.isVendor() && customerDeploymentTargets.customerOrganization; as customer) {
-        <div class="flex flex-row gap-2 items-start mb-3 mt-6">
+        <div class="flex flex-row gap-2 items-start mb-3 mt-6" [class.items-center]="isCollapsed">
           <button
             class="inline-flex items-center text-gray-900 text-xl dark:text-white"
             (click)="toggleCustomerCollapsed(customer.id)">
             <fa-icon
               [icon]="faChevronDown"
-              [class.-rotate-90]="collapsedCustomerIds().includes(customer.id)"
+              [class.-rotate-90]="isCollapsed"
               class="transition duration-150 ease-in-out" />
           </button>
-          <div class="space-y-2">
+          <div
+            class="flex gap-2 items-center"
+            [class.flex-col]="!isCollapsed"
+            [class.items-start]="!isCollapsed"
+            [class.gap-8]="isCollapsed">
             <h2 class="text-xl font-extrabold leading-none tracking-tight text-gray-900 md:text-2xl dark:text-white">
               @if (customer.imageId) {
                 <img class="inline size-8 rounded-sm me-1" [attr.src]="customer.imageId | secureImage | async" alt="" />
@@ -72,8 +79,7 @@
         </div>
       }
 
-      @let customerOrgId = customerDeploymentTargets.customerOrganization?.id;
-      @if (!customerOrgId || !collapsedCustomerIds().includes(customerOrgId)) {
+      @if (!isCollapsed) {
         <div class="grid gap-4 items-stretch grid-cols-1 2xl:grid-cols-2">
           @for (deploymentTarget of customerDeploymentTargets.deploymentTargets; track deploymentTarget.id) {
             <app-deployment-target-card
