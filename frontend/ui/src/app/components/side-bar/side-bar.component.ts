@@ -51,6 +51,7 @@ export class SideBarComponent {
   protected readonly auth = inject(AuthService);
   protected readonly sidebar = inject(SidebarService);
   private readonly organizationService = inject(OrganizationService);
+
   private readonly tutorialsService = inject(TutorialsService);
   private readonly featureFlags = inject(FeatureFlagService);
   private readonly contextService = inject(ContextService);
@@ -85,21 +86,7 @@ export class SideBarComponent {
   public readonly isSubscriptionBannerVisible = input<boolean>();
   public readonly isSidebarVisible = input<boolean>();
 
-  protected readonly hasNoSubscription = toSignal(
-    this.organizationService
-      .get()
-      .pipe(
-        map(
-          (org) =>
-            !(
-              org.subscriptionType === 'starter' ||
-              org.subscriptionType === 'pro' ||
-              org.subscriptionType === 'enterprise'
-            )
-        )
-      ),
-    {initialValue: false}
-  );
+  protected readonly hasNoSubscription = this.organizationService.hasNoSubscription;
 
   protected readonly customerOrgFeatures = toSignal(
     this.contextService.getCustomerOrganization().pipe(

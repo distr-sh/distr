@@ -1,5 +1,6 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {combineLatestWith, map, merge, Observable, shareReplay, Subject, tap} from 'rxjs';
 import {CreateUpdateOrganizationRequest, Organization, OrganizationWithUserRole} from '../types/organization';
 import {ContextService} from './context.service';
@@ -17,6 +18,20 @@ export class OrganizationService {
     this.organizationUpdate.asObservable(),
     this.contextService.getOrganization()
   ).pipe(shareReplay(1));
+
+  public readonly hasNoSubscription = toSignal(
+    this.organization$.pipe(
+      map(
+        (org) =>
+          !(
+            org.subscriptionType === 'starter' ||
+            org.subscriptionType === 'pro' ||
+            org.subscriptionType === 'enterprise'
+          )
+      )
+    ),
+    {initialValue: false}
+  );
 
   get(): Observable<OrganizationWithUserRole> {
     return this.organization$.pipe(shareReplay(1));
