@@ -75,19 +75,5 @@ export class ArtifactsComponent {
   protected readonly faUserCircle = faUserCircle;
 
   protected readonly auth = inject(AuthService);
-  protected readonly hasNoSubscription = toSignal(
-    this.organizationService
-      .get()
-      .pipe(
-        map(
-          (org) =>
-            !(
-              org.subscriptionType === 'starter' ||
-              org.subscriptionType === 'pro' ||
-              org.subscriptionType === 'enterprise'
-            )
-        )
-      ),
-    {initialValue: false}
-  );
+  protected readonly hasNoSubscription = this.organizationService.hasNoSubscription;
 }
