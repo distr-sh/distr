@@ -56,13 +56,6 @@ func EnsureAuth(
 	if reg, err := remote.NewRegistry(agentenv.DistrRegistryHost); err != nil {
 		return nil, err
 	} else if previousJWT[deployment.ID] != jwt {
-		if previousJWT[deployment.ID] != "" {
-			if err := credentials.Logout(ctx, store, agentenv.DistrRegistryHost); err != nil {
-				return nil, fmt.Errorf("docker logout failed for %v: %w", agentenv.DistrRegistryHost, err)
-			}
-			previousJWT[deployment.ID] = ""
-		}
-
 		reg.PlainHTTP = agentenv.DistrRegistryPlainHTTP
 		if err := credentials.Login(ctx, store, reg, auth.Credential{Username: "-", Password: jwt}); err != nil {
 			return nil, fmt.Errorf("docker login failed for %v: %w", agentenv.DistrRegistryHost, err)
@@ -96,7 +89,6 @@ func EnsureAuth(
 
 	return &auth.Client{
 		Client:     retry.DefaultClient,
-		Cache:      auth.DefaultCache,
 		Credential: credentials.Credential(store),
 	}, nil
 }
