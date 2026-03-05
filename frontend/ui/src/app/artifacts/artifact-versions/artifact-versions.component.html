@@ -1,6 +1,6 @@
 <section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased text-gray-900 dark:text-white">
   <div class="mx-auto max-w-screen-lg px-4">
-    @if (artifact$ | async; as artifact) {
+    @if (artifact(); as artifact) {
       <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
         <div class="overflow-x-auto">
           <div class="flex flex-col gap-3 py-3 px-6 sm:py-4">
@@ -131,6 +131,11 @@
             }
           </ul>
         </div>
+      </div>
+    } @else {
+      <div class="flex justify-center items-center py-8 text-gray-500 dark:text-gray-400">
+        <fa-icon [icon]="faSpinner" class="animate-spin me-2" size="lg"></fa-icon>
+        <span>Loading&hellip;</span>
       </div>
     }
   </div>

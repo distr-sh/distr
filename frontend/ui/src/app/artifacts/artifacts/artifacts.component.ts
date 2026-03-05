@@ -1,9 +1,17 @@
 import {AsyncPipe} from '@angular/common';
 import {Component, inject} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faBox, faLightbulb, faMagnifyingGlass, faTrash, faUserCircle} from '@fortawesome/free-solid-svg-icons';
+import {
+  faBox,
+  faLightbulb,
+  faMagnifyingGlass,
+  faSpinner,
+  faTrash,
+  faUserCircle,
+} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, map, startWith} from 'rxjs';
 import {fromPromise} from 'rxjs/internal/observable/innerFrom';
 import {getRemoteEnvironment} from '../../../env/remote';
@@ -12,6 +20,7 @@ import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {RequireCustomerDirective, RequireVendorDirective} from '../../directives/required-role.directive';
 import {ArtifactsService} from '../../services/artifacts.service';
+import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsCache} from '../../services/customer-organizations.service';
 import {OrganizationService} from '../../services/organization.service';
 import {ArtifactsDownloadCountComponent, ArtifactsDownloadedByComponent} from '../components';
@@ -40,6 +49,7 @@ export class ArtifactsComponent {
   protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faBox = faBox;
   protected readonly faTrash = faTrash;
+  protected readonly faSpinner = faSpinner;
 
   protected readonly filterForm = new FormGroup({
     search: new FormControl(''),
@@ -47,12 +57,11 @@ export class ArtifactsComponent {
 
   protected readonly artifacts$ = this.artifacts.list();
 
-  protected readonly filteredArtifacts$ = combineLatest([
-    this.artifacts$,
-    this.filterForm.valueChanges.pipe(startWith(this.filterForm.value)),
-  ]).pipe(
-    map(([artifacts, formValue]) =>
-      artifacts.filter((it) => !formValue.search || it.name.toLowerCase().includes(formValue.search.toLowerCase()))
+  protected readonly filteredArtifacts = toSignal(
+    combineLatest([this.artifacts$, this.filterForm.valueChanges.pipe(startWith(this.filterForm.value))]).pipe(
+      map(([artifacts, formValue]) =>
+        artifacts.filter((it) => !formValue.search || it.name.toLowerCase().includes(formValue.search.toLowerCase()))
+      )
     )
   );
   protected readonly faLightbulb = faLightbulb;
@@ -64,4 +73,7 @@ export class ArtifactsComponent {
     this.organizationService.get(),
   ]).pipe(map(([env, org]) => org.registryDomain ?? env.registryHost));
   protected readonly faUserCircle = faUserCircle;
+
+  protected readonly auth = inject(AuthService);
+  protected readonly hasNoSubscription = this.organizationService.hasNoSubscription;
 }
