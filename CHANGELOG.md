@@ -1,5 +1,38 @@
 # Changelog
 
+## [2.11.6](https://github.com/distr-sh/distr/compare/2.11.5...2.11.6) (2026-03-04)
+
+
+### Bug Fixes
+
+* **agent:** disable credentials cache ([#1933](https://github.com/distr-sh/distr/issues/1933)) ([6a513cd](https://github.com/distr-sh/distr/commit/6a513cde836bb021f20c0ffa9332cc9b90534f5a))
+* **deps:** update kubernetes packages to v0.35.2 ([#1912](https://github.com/distr-sh/distr/issues/1912)) ([48df436](https://github.com/distr-sh/distr/commit/48df4366efa94c5fc1b00f2e1f6ba28ba58b279e))
+* **deps:** update module github.com/aws/aws-sdk-go-v2/service/s3 to v1.96.2 ([#1913](https://github.com/distr-sh/distr/issues/1913)) ([50f13fd](https://github.com/distr-sh/distr/commit/50f13fd1533292311ed44f0687a211d6ab4c8ed0))
+* **deps:** update module github.com/aws/smithy-go to v1.24.2 ([#1920](https://github.com/distr-sh/distr/issues/1920)) ([d5e22af](https://github.com/distr-sh/distr/commit/d5e22af3593b768f64ef845966a6bf5c74d3fbaa))
+* **deps:** update module github.com/mark3labs/mcp-go to v0.44.1 ([#1915](https://github.com/distr-sh/distr/issues/1915)) ([4724947](https://github.com/distr-sh/distr/commit/47249470c4b2968faccb44205a6e7b46ca11914a))
+* **deps:** update module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver to v0.147.0 ([#1923](https://github.com/distr-sh/distr/issues/1923)) ([5740013](https://github.com/distr-sh/distr/commit/57400137f50c02728d4563ae40d011b8766adb0f))
+* **deps:** update module github.com/stripe/stripe-go/v84 to v84.4.0 ([#1918](https://github.com/distr-sh/distr/issues/1918)) ([8a0e40b](https://github.com/distr-sh/distr/commit/8a0e40bba5fa4b65f2c5e934cf948ef53c0a59a2))
+* **deps:** update opentelemetry-go-contrib monorepo to v0.66.0 ([#1930](https://github.com/distr-sh/distr/issues/1930)) ([37e87d4](https://github.com/distr-sh/distr/commit/37e87d43b3245d16e66cb23e0abed0d35530c371))
+
+
+### Other
+
+* **deps:** bump minimatch from 9.0.6 to 9.0.9 in /sdk/js in the npm_and_yarn group across 1 directory ([#1914](https://github.com/distr-sh/distr/issues/1914)) ([e610ada](https://github.com/distr-sh/distr/commit/e610ada5e9d2dc8a5392188e046f70fe24b73cd7))
+* **deps:** update actions/setup-go action to v6.3.0 ([#1904](https://github.com/distr-sh/distr/issues/1904)) ([45342af](https://github.com/distr-sh/distr/commit/45342afc483046a3fb8e867a9081b627de9da99d))
+* **deps:** update anchore/sbom-action action to v0.23.0 ([#1905](https://github.com/distr-sh/distr/issues/1905)) ([db463d4](https://github.com/distr-sh/distr/commit/db463d4ba826db9f0ffef93223336191c61b170c))
+* **deps:** update angular monorepo to v21.2.0 ([#1908](https://github.com/distr-sh/distr/issues/1908)) ([f639cf2](https://github.com/distr-sh/distr/commit/f639cf247c72acc5a6cb9d2c146fd7ec0f07b9de))
+* **deps:** update dependency @angular/cdk to v21.2.0 ([#1909](https://github.com/distr-sh/distr/issues/1909)) ([0609b45](https://github.com/distr-sh/distr/commit/0609b45bdf3a279745b9363ec0522651ab54bd87))
+* **deps:** update dependency @codemirror/language to v6.12.2 ([#1901](https://github.com/distr-sh/distr/issues/1901)) ([b88aae3](https://github.com/distr-sh/distr/commit/b88aae312dd252686123328f86df03e1858b185e))
+* **deps:** update dependency @codemirror/view to v6.39.16 ([#1921](https://github.com/distr-sh/distr/issues/1921)) ([497edce](https://github.com/distr-sh/distr/commit/497edce506e63cc089f69c8ff418c5d49b0b15cd))
+* **deps:** update dependency pnpm to v10.30.3 ([#1892](https://github.com/distr-sh/distr/issues/1892)) ([39a0f79](https://github.com/distr-sh/distr/commit/39a0f79accf4beac4856795307378ca2ab788f91))
+* **deps:** update dependency postcss to v8.5.8 ([#1922](https://github.com/distr-sh/distr/issues/1922)) ([aed770c](https://github.com/distr-sh/distr/commit/aed770cd51263291a6a5606ac7d433c65af24fd8))
+* **deps:** update dependency stripe to v1.37.2 ([#1916](https://github.com/distr-sh/distr/issues/1916)) ([3ac56d6](https://github.com/distr-sh/distr/commit/3ac56d6125fb584e1c2c77301f6cf9c00d8b0afe))
+* **deps:** update github artifact actions (major) ([#1919](https://github.com/distr-sh/distr/issues/1919)) ([eabf6e2](https://github.com/distr-sh/distr/commit/eabf6e2f231ca3923959dee85466da69913b2787))
+* **deps:** update module go:github.com/go-delve/delve/cmd/dlv to v1.26.1 ([#1931](https://github.com/distr-sh/distr/issues/1931)) ([136615d](https://github.com/distr-sh/distr/commit/136615d2cd1edc3ecd17f74d6cc71f1a65715ce5))
+* **deps:** update tailwindcss monorepo to v4.2.1 ([#1889](https://github.com/distr-sh/distr/issues/1889)) ([f353532](https://github.com/distr-sh/distr/commit/f3535323b0ce22dc2c1680aaa46c3622c2624cb8))
+* fix superadmin visibility ([#1907](https://github.com/distr-sh/distr/issues/1907)) ([aace68e](https://github.com/distr-sh/distr/commit/aace68e31001314a75ed45740f158369cba5107b))
+* **ui:** make customer deployments collapsible ([#1928](https://github.com/distr-sh/distr/issues/1928)) ([5250653](https://github.com/distr-sh/distr/commit/5250653219483dfb6cc749047981b8ae51baf7c4))
+
 ## [2.11.5](https://github.com/distr-sh/distr/compare/2.11.4...2.11.5) (2026-02-26)
 
 

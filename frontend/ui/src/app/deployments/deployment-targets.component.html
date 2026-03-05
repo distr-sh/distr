@@ -52,6 +52,13 @@
       @if (auth.isVendor() && customerDeploymentTargets.customerOrganization; as customer) {
         <div class="space-y-2 mb-3 mt-6">
           <h2 class="text-xl font-extrabold leading-none tracking-tight text-gray-900 md:text-2xl dark:text-white">
+            <button class="inline-flex items-center" (click)="toggleCustomerCollapsed(customer.id)">
+              <fa-icon
+                [icon]="faChevronDown"
+                [class.-rotate-90]="collapsedCustomerIds().includes(customer.id)"
+                class="transition duration-150 ease-in-out" />
+            </button>
+
             @if (customer.imageId) {
               <img class="inline size-8 rounded-sm me-1" [attr.src]="customer.imageId | secureImage | async" alt="" />
             }
@@ -62,13 +69,16 @@
         </div>
       }
 
-      <div class="grid gap-4 items-stretch grid-cols-1 2xl:grid-cols-2">
-        @for (deploymentTarget of customerDeploymentTargets.deploymentTargets; track deploymentTarget.id) {
-          <app-deployment-target-card
-            [deploymentTarget]="deploymentTarget"
-            [deploymentTargetMetrics]="deploymentTarget.metrics" />
-        }
-      </div>
+      @let customerOrgId = customerDeploymentTargets.customerOrganization?.id;
+      @if (!customerOrgId || !collapsedCustomerIds().includes(customerOrgId)) {
+        <div class="grid gap-4 items-stretch grid-cols-1 2xl:grid-cols-2">
+          @for (deploymentTarget of customerDeploymentTargets.deploymentTargets; track deploymentTarget.id) {
+            <app-deployment-target-card
+              [deploymentTarget]="deploymentTarget"
+              [deploymentTargetMetrics]="deploymentTarget.metrics" />
+          }
+        </div>
+      }
     } @empty {
       <div class="text-gray-500 dark:text-gray-400">No agents found.</div>
     }
