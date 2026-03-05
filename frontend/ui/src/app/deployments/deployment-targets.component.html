@@ -50,22 +50,25 @@
       track customerDeploymentTargets.customerOrganization?.id
     ) {
       @if (auth.isVendor() && customerDeploymentTargets.customerOrganization; as customer) {
-        <div class="space-y-2 mb-3 mt-6">
-          <h2 class="text-xl font-extrabold leading-none tracking-tight text-gray-900 md:text-2xl dark:text-white">
-            <button class="inline-flex items-center" (click)="toggleCustomerCollapsed(customer.id)">
-              <fa-icon
-                [icon]="faChevronDown"
-                [class.-rotate-90]="collapsedCustomerIds().includes(customer.id)"
-                class="transition duration-150 ease-in-out" />
-            </button>
+        <div class="flex flex-row gap-2 items-start mb-3 mt-6">
+          <button
+            class="inline-flex items-center text-gray-900 text-xl dark:text-white"
+            (click)="toggleCustomerCollapsed(customer.id)">
+            <fa-icon
+              [icon]="faChevronDown"
+              [class.-rotate-90]="collapsedCustomerIds().includes(customer.id)"
+              class="transition duration-150 ease-in-out" />
+          </button>
+          <div class="space-y-2">
+            <h2 class="text-xl font-extrabold leading-none tracking-tight text-gray-900 md:text-2xl dark:text-white">
+              @if (customer.imageId) {
+                <img class="inline size-8 rounded-sm me-1" [attr.src]="customer.imageId | secureImage | async" alt="" />
+              }
 
-            @if (customer.imageId) {
-              <img class="inline size-8 rounded-sm me-1" [attr.src]="customer.imageId | secureImage | async" alt="" />
-            }
-
-            {{ customer.name }}
-          </h2>
-          <app-quota-limit [usage]="customerDeploymentTargets.deploymentTargets.length" [limit]="limit()" />
+              {{ customer.name }}
+            </h2>
+            <app-quota-limit [usage]="customerDeploymentTargets.deploymentTargets.length" [limit]="limit()" />
+          </div>
         </div>
       }
 
