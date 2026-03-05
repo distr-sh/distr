@@ -1,12 +1,12 @@
 import {AsyncPipe} from '@angular/common';
-import {Component, inject} from '@angular/core';
+import {Component, computed, inject} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faBuildingUser, faKey, faMagnifyingGlass} from '@fortawesome/free-solid-svg-icons';
-import {map, Observable, shareReplay} from 'rxjs';
+import {startWith} from 'rxjs';
 import {isExpired} from '../../util/dates';
-import {filteredByFormControl} from '../../util/filter';
 import {SecureImagePipe} from '../../util/secureImage';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {LicensesService} from '../services/licenses.service';
@@ -14,7 +14,7 @@ import {License} from '../types/license';
 
 @Component({
   selector: 'app-licenses-overview',
-  imports: [ReactiveFormsModule, FaIconComponent, AsyncPipe, AutotrimDirective, SecureImagePipe],
+  imports: [AsyncPipe, ReactiveFormsModule, FaIconComponent, AutotrimDirective, SecureImagePipe],
   templateUrl: './licenses-overview.component.html',
 })
 export class LicensesOverviewComponent {
@@ -29,22 +29,17 @@ export class LicensesOverviewComponent {
     search: new FormControl(''),
   });
 
-  private readonly allLicenses$: Observable<License[]> = this.licensesService.list().pipe(shareReplay(1));
+  private readonly allLicenses = toSignal(this.licensesService.list(), {initialValue: []});
 
-  protected readonly licenses$ = filteredByFormControl(
-    this.allLicenses$,
-    this.filterForm.controls.search,
-    (license, search) => license.customerOrganization.name.toLowerCase().includes(search.toLowerCase())
+  private readonly filterValue = toSignal(
+    this.filterForm.controls.search.valueChanges.pipe(startWith(this.filterForm.controls.search.value))
   );
 
-  protected readonly summary$ = this.allLicenses$.pipe(
-    map((licenses) => ({
-      totalCustomers: licenses.length,
-      totalAppEntitlements: licenses.reduce((sum, l) => sum + l.applicationEntitlements.length, 0),
-      totalArtifactEntitlements: licenses.reduce((sum, l) => sum + l.artifactEntitlements.length, 0),
-      totalLicenseKeys: licenses.reduce((sum, l) => sum + l.licenseKeys.length, 0),
-    }))
-  );
+  protected readonly licenses = computed(() => {
+    const search = this.filterValue()?.toLowerCase();
+    const all = this.allLicenses();
+    return !search ? all : all.filter((l) => l.customerOrganization.name.toLowerCase().includes(search));
+  });
 
   protected navigateToCustomer(license: License) {
     this.router.navigate(['/licenses', license.customerOrganization.id]);

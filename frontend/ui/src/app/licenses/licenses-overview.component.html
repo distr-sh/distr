@@ -23,7 +23,7 @@
 
     <div
       class="grid gap-4 items-stretch 5xl:grid-cols-5 4xl:grid-cols-4 3xl:grid-cols-3 xl:grid-cols-3 lg:grid-cols-2 grid-cols-1">
-      @for (license of licenses$ | async; track license.customerOrganization.id) {
+      @for (license of licenses(); track license.customerOrganization.id) {
         <div
           (click)="navigateToCustomer(license)"
           class="cursor-pointer h-full rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 hover:shadow-md transition-shadow flex flex-col">

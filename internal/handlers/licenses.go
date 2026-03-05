@@ -3,9 +3,11 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
@@ -13,6 +15,13 @@ import (
 	"github.com/oaswrap/spec/option"
 	"go.uber.org/zap"
 )
+
+type licenseResponse struct {
+	CustomerOrganization    api.CustomerOrganization       `json:"customerOrganization"`
+	ApplicationEntitlements []types.ApplicationEntitlement `json:"applicationEntitlements"`
+	ArtifactEntitlements    []types.ArtifactEntitlement    `json:"artifactEntitlements"`
+	LicenseKeys             []types.LicenseKey             `json:"licenseKeys"`
+}
 
 func LicensesRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Licensing"))
@@ -23,7 +32,7 @@ func LicensesRouter(r chiopenapi.Router) {
 	)
 	r.Get("/", getLicenses).
 		With(option.Description("List all licenses grouped by customer")).
-		With(option.Response(http.StatusOK, []types.License{}))
+		With(option.Response(http.StatusOK, []licenseResponse{}))
 }
 
 func getLicenses(w http.ResponseWriter, r *http.Request) {
@@ -36,15 +45,23 @@ func getLicenses(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error("failed to get customer organizations", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(
+			w, http.StatusText(http.StatusInternalServerError),
+			http.StatusInternalServerError,
+		)
 		return
 	}
 
-	appEntitlements, err := db.GetApplicationEntitlementsWithOrganizationID(ctx, orgID, nil)
+	appEntitlements, err := db.GetApplicationEntitlementsWithOrganizationID(
+		ctx, orgID, nil,
+	)
 	if err != nil {
 		log.Error("failed to get application entitlements", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(
+			w, http.StatusText(http.StatusInternalServerError),
+			http.StatusInternalServerError,
+		)
 		return
 	}
 
@@ -52,7 +69,10 @@ func getLicenses(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error("failed to get artifact entitlements", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(
+			w, http.StatusText(http.StatusInternalServerError),
+			http.StatusInternalServerError,
+		)
 		return
 	}
 
@@ -60,14 +80,19 @@ func getLicenses(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error("failed to get license keys", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(
+			w, http.StatusText(http.StatusInternalServerError),
+			http.StatusInternalServerError,
+		)
 		return
 	}
 
-	licenses := make([]types.License, 0, len(customers))
+	licenses := make([]licenseResponse, 0, len(customers))
 	for _, customer := range customers {
-		license := types.License{
-			CustomerOrganization:    customer.CustomerOrganization,
+		license := licenseResponse{
+			CustomerOrganization: mapping.CustomerOrganizationToAPI(
+				customer.CustomerOrganization,
+			),
 			ApplicationEntitlements: []types.ApplicationEntitlement{},
 			ArtifactEntitlements:    []types.ArtifactEntitlement{},
 			LicenseKeys:             []types.LicenseKey{},
