@@ -175,18 +175,16 @@
                       Now we use the previously created Personal Access Token as password to log in to the registry with
                       this command:
                     </p>
-                    <code class="mt-2 select-all text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
-                      @let loginCmd =
-                        'echo "' +
-                        (loginFormGroup.controls.tokenDone.value === true && createdToken
-                          ? createdToken!.key
-                          : 'YOUR-ACCESS-TOKEN') +
-                        '" | docker login ' +
-                        host +
-                        ' --password-stdin -u - ';
-                      {{ loginCmd }}
-                    </code>
-                    <app-clip class="mx-2" [clip]="loginCmd"></app-clip>
+
+                    @let token =
+                      loginFormGroup.controls.tokenDone.value === true && createdToken
+                        ? createdToken!.key
+                        : 'YOUR-ACCESS-TOKEN';
+                    @let loginCmd = `echo ${token} | docker login ${host()} --password-stdin -u - `;
+                    <code class="mt-2 select-all text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">{{
+                      loginCmd
+                    }}</code>
+                    <app-clip class="mx-2" [clip]="loginCmd" />
 
                     @if (loginFormGroup.controls.loginDone.touched && loginFormGroup.controls.loginDone.invalid) {
                       <div class="mt-2 text-sm text-red-500">
@@ -242,26 +240,23 @@
                         [formControl]="usageFormGroup.controls.pullDone"
                         class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
                     </span>
-                    <label for="pullDone" class="text-lg font-medium leading-tight"
-                      >Pull hello-distr from GitHub Container Registry</label
+                    <label for="pullDone" class="block text-lg font-medium leading-tight"
+                      >Pull the hello-distr proxy image from GitHub Container Registry</label
                     >
                     <p class="my-1 text-sm">
-                      We have prepared three images for you, that all belong to the
+                      The hello-distr proxy is one of several images that all belong to the
                       <a
                         href="https://github.com/distr-sh/hello-distr"
                         class="text-gray-600 dark:text-gray-400 underline"
                         target="_blank"
                         >hello-distr application</a
-                      >. Pull them from the Github Container Registry to your machine's docker environment, with:
+                      >. Pull it from the Github Container Registry to your machine's docker environment, with:
                     </p>
-                    @let pullCmd =
-                      `docker pull ghcr.io/distr-sh/hello-distr/proxy:${helloDistrTag}
-                      docker pull ghcr.io/distr-sh/hello-distr/frontend:${helloDistrTag}
-                      docker pull ghcr.io/distr-sh/hello-distr/backend:${helloDistrTag}`;
-                    <code class="mt-2 select-all text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
-                      {{ pullCmd }}
-                    </code>
-                    <app-clip class="mx-2 text-end" [clip]="pullCmd"></app-clip>
+                    @let pullCmd = `docker pull ${proxyGhcrUrl}`;
+                    <code class="mt-2 select-all text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">{{
+                      pullCmd
+                    }}</code>
+                    <app-clip class="mx-2 text-end" [clip]="pullCmd" />
                     @if (usageFormGroup.controls.pullDone.touched && usageFormGroup.controls.pullDone.invalid) {
                       <div class="mt-2 text-sm text-red-500">
                         Please mark this as checked when you are done with it.
@@ -277,18 +272,15 @@
                         [formControl]="usageFormGroup.controls.tagDone"
                         class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
                     </span>
-                    <label for="tagDone" class="text-lg font-medium leading-tight"
-                      >Tag images for your organization</label
+                    <label for="tagDone" class="block text-lg font-medium leading-tight"
+                      >Tag the image for your organization</label
                     >
-                    <p class="my-1 text-sm">This step will make the sample images "yours":</p>
-                    @let tagCmd =
-                      `docker tag ghcr.io/distr-sh/hello-distr/proxy:${helloDistrTag} ${host}/${slug}/hello-distr/proxy:${helloDistrTag}
-                      docker tag ghcr.io/distr-sh/hello-distr/frontend:${helloDistrTag} ${host}/${slug}/hello-distr/frontend:${helloDistrTag}
-                      docker tag ghcr.io/distr-sh/hello-distr/backend:${helloDistrTag} ${host}/${slug}/hello-distr/backend:${helloDistrTag}`;
-                    <code class="mt-2 select-all text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
-                      {{ tagCmd }}
-                    </code>
-                    <app-clip class="mx-2" [clip]="tagCmd"></app-clip>
+                    <p class="my-1 text-sm">This step will make the sample image "yours":</p>
+                    @let tagCmd = `docker tag \\\n  ${proxyGhcrUrl} \\\n  ${proxyDistrUrl()}`;
+                    <code class="mt-2 select-all text-sm text-gray-900 dark:text-gray-200 whitespace-pre-wrap">{{
+                      tagCmd
+                    }}</code>
+                    <app-clip class="mx-2" [clip]="tagCmd" />
                     @if (usageFormGroup.controls.tagDone.touched && usageFormGroup.controls.tagDone.invalid) {
                       <div class="mt-2 text-sm text-red-500">
                         Please mark this as checked when you are done with it.
@@ -304,17 +296,14 @@
                         [formControl]="usageFormGroup.controls.pushDone"
                         class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
                     </span>
-                    <label for="pushDone" class="text-lg font-medium leading-tight"
-                      >Push tagged images to the Distr registry</label
+                    <label for="pushDone" class="block text-lg font-medium leading-tight"
+                      >Push the tagged image to the Distr registry</label
                     >
-                    @let pushCmd =
-                      `docker push ${host}/${slug}/hello-distr/proxy:${helloDistrTag}
-                      docker push ${host}/${slug}/hello-distr/frontend:${helloDistrTag}
-                      docker push ${host}/${slug}/hello-distr/backend:${helloDistrTag}`;
-                    <code class="mt-2 select-all text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
-                      {{ pushCmd }}
-                    </code>
-                    <app-clip class="mx-2" [clip]="pushCmd"></app-clip>
+                    @let pushCmd = `docker push ${proxyDistrUrl()}`;
+                    <code class="mt-2 select-all text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">{{
+                      pushCmd
+                    }}</code>
+                    <app-clip class="mx-2" [clip]="pushCmd" />
                     @if (usageFormGroup.controls.pushDone.touched && usageFormGroup.controls.pushDone.invalid) {
                       <div class="mt-2 text-sm text-red-500">
                         Please mark this as checked when you are done with it.
@@ -331,19 +320,26 @@
                         class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
                     </span>
                     <label for="exploreDone" class="text-lg font-medium leading-tight"
-                      >Pull image and view download history</label
+                      >Pull the image and view download history</label
                     >
-                    <p class="mt-1 text-sm">Pull one of the pushed images:</p>
-                    @let exploreCmd = 'docker pull ' + host + '/' + slug + '/hello-distr/proxy:' + helloDistrTag;
-                    <code class="mt-2 select-all text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
-                      {{ exploreCmd }}
-                    </code>
-                    <app-clip class="mx-2" [clip]="exploreCmd"></app-clip>
-                    <p class="mt-2 ml-4 text-sm">
-                      Note: As an additional test, you can delete the previously pulled backend image and tags with
-                      <code class="select-all">docker image rm be5f5124c4ca -f</code>, and then execute the previous
-                      pull again. This time all the image blobs will be downloaded.
-                    </p>
+                    <p class="mt-1 text-sm">Pull the pushed image:</p>
+                    @let exploreCmd = `docker pull ${proxyDistrUrl()}`;
+                    <code class="mt-2 select-all text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">{{
+                      exploreCmd
+                    }}</code>
+                    <app-clip class="mx-2" [clip]="exploreCmd" />
+                    <div class="mt-2 ml-4 text-sm">
+                      <p class="mb-1">
+                        Note: As an additional test, you can force-delete the previously pulled image and tags, and then
+                        execute the previous pull again. This time all the image's layers will be downloaded from the
+                        Distr registry. To delete the image and its tags, run:
+                      </p>
+                      @let deleteCmd = `docker image rm --force \\\n  ${proxyDistrUrl()} \\\n  ${proxyGhcrUrl}`;
+                      <code class="mt-2 select-all text-sm text-gray-900 dark:text-gray-200 whitespace-pre-wrap">{{
+                        deleteCmd
+                      }}</code>
+                      <app-clip class="mx-2" [clip]="deleteCmd" />
+                    </div>
                     <p class="mt-2 text-sm">
                       In the
                       <a
