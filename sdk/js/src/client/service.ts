@@ -3,6 +3,7 @@ import {
   Application,
   ApplicationVersion,
   ApplicationVersionResource,
+  DeploymentRequest,
   DeploymentTarget,
   DeploymentTargetAccessResponse,
   DeploymentTargetScope,
@@ -236,10 +237,12 @@ export class DistrService {
    * Only updates deployments that are not already on the target version.
    * @param applicationId The application ID to update
    * @param applicationVersionId The target version ID to update to
+   * @param reuseConfigFromCurrentRevision If true, the existing deployment configuration (values YAML, env file, helm options, logsEnabled) will be reused for the update. Otherwise, the defaults will be used.
    */
   public async updateAllDeployments(
     applicationId: string,
-    applicationVersionId: string
+    applicationVersionId: string,
+    reuseConfigFromCurrentRevision = false
   ): Promise<UpdateAllDeploymentsResult> {
     const allTargets = await this.client.getDeploymentTargets();
     const updatedTargets: UpdateAllDeploymentsResult['updatedTargets'] = [];
@@ -265,12 +268,21 @@ export class DistrService {
         continue;
       }
 
+      const deploymentRequest: DeploymentRequest = {
+        deploymentTargetId: target.id!,
+        deploymentId: deployment.id,
+        applicationVersionId,
+      };
+
+      if (reuseConfigFromCurrentRevision) {
+        deploymentRequest.valuesYaml = deployment.valuesYaml;
+        deploymentRequest.envFileData = deployment.envFileData;
+        deploymentRequest.logsEnabled = deployment.logsEnabled;
+        deploymentRequest.helmOptions = deployment.helmOptions;
+      }
+
       try {
-        await this.client.createOrUpdateDeployment({
-          deploymentTargetId: target.id!,
-          deploymentId: deployment.id,
-          applicationVersionId,
-        });
+        await this.client.createOrUpdateDeployment(deploymentRequest);
         updatedTargets.push({
           deploymentTargetId: target.id!,
           deploymentTargetName: target.name,
