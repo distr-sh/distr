@@ -8,8 +8,7 @@ import (
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/compose/convert"
 	composeapi "github.com/docker/compose/v5/pkg/api"
-	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/swarm"
+	mobyClient "github.com/moby/moby/client"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -37,19 +36,19 @@ func RunDockerSwarmRestart(ctx context.Context, deployment AgentDeployment) erro
 	apiClient := dockerCli.Client()
 	services, err := apiClient.ServiceList(
 		ctx,
-		swarm.ServiceListOptions{
-			Filters: filters.NewArgs(filters.Arg("label", convert.LabelNamespace+"="+deployment.ProjectName)),
+		mobyClient.ServiceListOptions{
+			Filters: mobyClient.Filters{}.Add("label", convert.LabelNamespace+"="+deployment.ProjectName),
 		},
 	)
 	if err != nil {
 		return err
 	}
 	var aggErr error
-	for _, svc := range services {
-		var options swarm.ServiceUpdateOptions
-		spec := svc.Spec
-		spec.TaskTemplate.ForceUpdate++
-		image := spec.TaskTemplate.ContainerSpec.Image
+	for _, svc := range services.Items {
+		svc.Spec.TaskTemplate.ForceUpdate++
+		options := mobyClient.ServiceUpdateOptions{Spec: svc.Spec, Version: svc.Version}
+
+		image := svc.Spec.TaskTemplate.ContainerSpec.Image
 		if encodedAuth, err := command.RetrieveAuthTokenFromImage(dockerCli.ConfigFile(), image); err != nil {
 			logger.Error("failed to retrieve encoded auth", zap.Error(err))
 			multierr.AppendInto(&aggErr, err)
@@ -57,10 +56,8 @@ func RunDockerSwarmRestart(ctx context.Context, deployment AgentDeployment) erro
 		} else {
 			options.EncodedRegistryAuth = encodedAuth
 		}
-		response, err := apiClient.ServiceUpdate(
-			ctx, svc.ID, svc.Version, spec,
-			options,
-		)
+
+		response, err := apiClient.ServiceUpdate(ctx, svc.ID, options)
 		if err != nil {
 			logger.Error("failed to update service", zap.Error(err))
 			multierr.AppendInto(&aggErr, err)
