@@ -246,7 +246,7 @@ The target version ID to update to
 
 `boolean` = `false`
 
-If true, the existing deployment configuration (values YAML, env file, helm options) will be reused for the update. Otherwise, the defaults will be used.
+If true, the existing deployment configuration (values YAML, env file, helm options, logsEnabled) will be reused for the update. Otherwise, the defaults will be used.
 
 #### Returns
 
