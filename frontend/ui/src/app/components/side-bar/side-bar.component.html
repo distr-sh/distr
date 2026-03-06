@@ -219,6 +219,51 @@
           </a>
         </li>
 
+        <li>
+          @if (isSupportBundlesFeatureEnabled()) {
+            <a
+              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+              routerLinkActive="bg-gray-100 dark:bg-gray-700"
+              (click)="sidebar.hide()"
+              routerLink="/support-bundles">
+              <fa-icon
+                [icon]="faLifeRing"
+                size="lg"
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+              <span class="ms-3">Support Bundles</span>
+            </a>
+          } @else {
+            <a
+              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group cursor-pointer"
+              title="Upgrade to Pro to enable support bundles"
+              (click)="toggle(supportBundlesOverlayOpen)"
+              cdkOverlayOrigin
+              #supportBundlesTooltipTrigger="cdkOverlayOrigin">
+              <fa-icon
+                [icon]="faLifeRing"
+                size="lg"
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+              <span class="ms-3">Support Bundles</span>
+              <span
+                class="ml-2 bg-gray-300 text-gray-900 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-gray-700 dark:text-gray-300"
+                >Pro</span
+              >
+              <ng-template
+                cdkConnectedOverlay
+                [cdkConnectedOverlayHasBackdrop]="true"
+                (backdropClick)="toggle(supportBundlesOverlayOpen)"
+                [cdkConnectedOverlayOrigin]="supportBundlesTooltipTrigger"
+                [cdkConnectedOverlayBackdropClass]="'transparent'"
+                [cdkConnectedOverlayPositions]="[
+                  {originX: 'end', overlayX: 'start', originY: 'center', overlayY: 'center'},
+                ]"
+                [cdkConnectedOverlayOpen]="supportBundlesOverlayOpen()">
+                <ng-container *ngTemplateOutlet="proFeatureOverlayContent"></ng-container>
+              </ng-template>
+            </a>
+          }
+        </li>
+
         @if (auth.isSuperAdmin() || auth.hasRole('admin')) {
           <li>
             <a
@@ -341,6 +386,22 @@
                 size="lg"
                 class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
               <span class="ms-3">Artifacts</span>
+            </a>
+          </li>
+        }
+
+        @if (hasCustomerOrganizationFeature('support_bundles')) {
+          <li>
+            <a
+              (click)="sidebar.hide()"
+              routerLinkActive="bg-gray-100 dark:bg-gray-700"
+              routerLink="/support"
+              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              <fa-icon
+                [icon]="faLifeRing"
+                size="lg"
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+              <span class="ms-3">Support</span>
             </a>
           </li>
         }
