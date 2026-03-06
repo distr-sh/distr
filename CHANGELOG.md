@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.11.8](https://github.com/distr-sh/distr/compare/2.11.7...2.11.8) (2026-03-06)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/moby/moby/client to v0.3.0 ([#1953](https://github.com/distr-sh/distr/issues/1953)) ([ae925a6](https://github.com/distr-sh/distr/commit/ae925a6402a1b0e4705874fb98627d19561ed91e))
+
+
+### Other
+
+* **deps:** bump github.com/sigstore/sigstore from 1.10.0 to 1.10.4 in the go_modules group across 1 directory ([#1954](https://github.com/distr-sh/distr/issues/1954)) ([6f94918](https://github.com/distr-sh/distr/commit/6f949182c35def1d3120d81992c22364db881ead))
+* **deps:** remove direct dependency on docker/docker ([#1961](https://github.com/distr-sh/distr/issues/1961)) ([409b274](https://github.com/distr-sh/distr/commit/409b2743a324517a04a16c25a64421bdd081fa8f))
+* **deps:** update dependency @angular/cdk to v21.2.1 ([#1948](https://github.com/distr-sh/distr/issues/1948)) ([4d6a977](https://github.com/distr-sh/distr/commit/4d6a9778874682beb9a9d935fbc154e41aa543b0))
+* **deps:** update docker/metadata-action action to v6 ([#1957](https://github.com/distr-sh/distr/issues/1957)) ([edf57ea](https://github.com/distr-sh/distr/commit/edf57eae6d46276acd63b34b18395507ae06e756))
+* **deps:** update docker/setup-buildx-action action to v4 ([#1958](https://github.com/distr-sh/distr/issues/1958)) ([18d968b](https://github.com/distr-sh/distr/commit/18d968b55df01b9e4b7fcb1eaf1a18d39926f1f3))
+* **deps:** update golangci-lint ([#1960](https://github.com/distr-sh/distr/issues/1960)) ([11997e3](https://github.com/distr-sh/distr/commit/11997e328a668827a27685da4fa775dbfb8db34b))
+
 ## [2.11.7](https://github.com/distr-sh/distr/compare/2.11.6...2.11.7) (2026-03-06)
 
 
