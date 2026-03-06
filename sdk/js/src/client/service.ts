@@ -10,8 +10,8 @@ import {
   DeploymentType,
   HelmChartType,
 } from '../types';
-import { Client, ClientConfig } from './client';
-import { ConditionalPartial, defaultClientConfig } from './config';
+import {Client, ClientConfig} from './client';
+import {ConditionalPartial, defaultClientConfig} from './config';
 
 /**
  * The strategy for determining the latest version of an application.
@@ -124,7 +124,7 @@ export class DistrService {
   ): Promise<ApplicationVersion> {
     return this.client.createApplicationVersion(
       applicationId,
-      { name, linkTemplate: data.linkTemplate ?? '', resources: data.resources },
+      {name, linkTemplate: data.linkTemplate ?? '', resources: data.resources},
       {
         composeFile: data.composeFile,
         templateFile: data.templateFile,
@@ -178,7 +178,7 @@ export class DistrService {
    * @param params
    */
   public async createDeployment(params: CreateDeploymentParams): Promise<CreateDeploymentResult> {
-    const { target, application, kubernetesDeployment } = params;
+    const {target, application, kubernetesDeployment} = params;
 
     let versionId = application.versionId;
     if (!versionId) {
@@ -217,7 +217,7 @@ export class DistrService {
    * @param params
    */
   public async updateDeployment(params: UpdateDeploymentParams): Promise<void> {
-    const { deploymentTargetId, applicationId, applicationVersionId, kubernetesDeployment } = params;
+    const {deploymentTargetId, applicationId, applicationVersionId, kubernetesDeployment} = params;
 
     const existing = await this.client.getDeploymentTarget(deploymentTargetId);
     const existingDeployment = existing.deployments.find((d) => d.application.id === applicationId);
@@ -298,7 +298,7 @@ export class DistrService {
       }
     }
 
-    return { updatedTargets, skippedTargets };
+    return {updatedTargets, skippedTargets};
   }
 
   /**
@@ -313,7 +313,7 @@ export class DistrService {
     }
     const results: IsOutdatedResultItem[] = [];
     for (const deployment of existing.deployments) {
-      const { app, newerVersions } = await this.getNewerVersions(
+      const {app, newerVersions} = await this.getNewerVersions(
         deployment.application.id!,
         deployment.applicationVersionId
       );
@@ -339,7 +339,7 @@ export class DistrService {
    * @param appId
    */
   public async getLatestVersion(appId: string): Promise<ApplicationVersion | undefined> {
-    const { newerVersions } = await this.getNewerVersions(appId);
+    const {newerVersions} = await this.getNewerVersions(appId);
     return newerVersions.length > 0 ? newerVersions[newerVersions.length - 1] : undefined;
   }
 
@@ -352,7 +352,7 @@ export class DistrService {
   public async getNewerVersions(
     appId: string,
     currentVersionId?: string
-  ): Promise<{ app: Application; newerVersions: ApplicationVersion[] }> {
+  ): Promise<{app: Application; newerVersions: ApplicationVersion[]}> {
     const app = await this.client.getApplication(appId);
     const currentVersion = (app.versions || []).find((it) => it.id === currentVersionId);
     if (!currentVersion && currentVersionId) {
@@ -366,7 +366,7 @@ export class DistrService {
         // surely there are fancier ways to deal with strategies but that's it for now
         switch (this.latestVersionStrategy) {
           case 'semver':
-            return semver.gt(it.name!, currentVersion.name!, { loose: true });
+            return semver.gt(it.name!, currentVersion.name!, {loose: true});
           case 'chronological':
             return it.createdAt! > currentVersion.createdAt!; // TODO proper date handling maybe
         }
@@ -374,11 +374,11 @@ export class DistrService {
       .sort((a, b) => {
         switch (this.latestVersionStrategy) {
           case 'semver':
-            return semver.compare(a.name!, b.name!, { loose: true });
+            return semver.compare(a.name!, b.name!, {loose: true});
           case 'chronological':
             return a.createdAt?.localeCompare(b.createdAt!) ?? 0; // TODO proper date handling maybe
         }
       });
-    return { app, newerVersions };
+    return {app, newerVersions};
   }
 }
