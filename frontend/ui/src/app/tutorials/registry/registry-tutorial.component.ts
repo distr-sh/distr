@@ -228,7 +228,7 @@ export class RegistryTutorialComponent implements OnInit, AfterViewInit, OnDestr
         this.loading.set(true);
         const formVal = this.prepareFormGroup.getRawValue();
         try {
-          this.organization = await lastValueFrom(
+          this.organization = await firstValueFrom(
             this.organizationService.update({
               ...this.organization!,
               artifactVersionMutable: this.organization?.features.includes('artifact_version_mutable') ?? false,
