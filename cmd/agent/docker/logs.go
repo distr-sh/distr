@@ -14,7 +14,7 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/docker/cli/cli/compose/convert"
 	composeapi "github.com/docker/compose/v5/pkg/api"
-	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/moby/moby/api/pkg/stdcopy"
 	mobyClient "github.com/moby/moby/client"
 	"go.uber.org/zap"
 )

@@ -16,7 +16,6 @@ require (
 	github.com/coreos/go-oidc/v3 v3.17.0
 	github.com/docker/cli v29.2.1+incompatible
 	github.com/docker/compose/v5 v5.1.0
-	github.com/docker/docker v28.5.2+incompatible
 	github.com/exaring/otelpgx v0.10.0
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/getsentry/sentry-go v0.43.0
@@ -82,6 +81,7 @@ require (
 	github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cloudflare/circl v1.6.3 // indirect
+	github.com/docker/docker v28.5.2+incompatible // indirect
 	github.com/dylibso/observe-sdk/go v0.0.0-20240819160327-2d926c5d788a // indirect
 	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/extism/go-sdk v1.7.1 // indirect
