@@ -1,11 +1,11 @@
 import {GlobalPositionStrategy} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe} from '@angular/common';
-import {Component, inject, signal, TemplateRef, viewChild} from '@angular/core';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {Component, inject, input, signal, TemplateRef, viewChild} from '@angular/core';
+import {takeUntilDestroyed, toObservable} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCopy, faEye, faMagnifyingGlass, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {catchError, EMPTY, filter, firstValueFrom, map, Observable, shareReplay, switchMap} from 'rxjs';
+import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, shareReplay, switchMap} from 'rxjs';
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
@@ -35,6 +35,8 @@ import {ViewLicenseKeyModalComponent} from './view-license-key-modal.component';
   animations: [drawerFlyInOut],
 })
 export class LicenseKeysComponent {
+  readonly customerOrganizationId = input<string>();
+
   protected readonly auth = inject(AuthService);
   private readonly licenseKeysService = inject(LicenseKeysService);
   private readonly overlay = inject(OverlayService);
@@ -58,11 +60,17 @@ export class LicenseKeysComponent {
     search: new FormControl(''),
   });
 
-  licenses$: Observable<LicenseKey[]> = filteredByFormControl(
-    this.licenseKeysService.list(),
-    this.filterForm.controls.search,
-    (it: LicenseKey, search: string) => !search || (it.name || '').toLowerCase().includes(search.toLowerCase())
-  ).pipe(takeUntilDestroyed());
+  licenses$: Observable<LicenseKey[]> = combineLatest([
+    filteredByFormControl(
+      this.licenseKeysService.list(),
+      this.filterForm.controls.search,
+      (it: LicenseKey, search: string) => !search || (it.name || '').toLowerCase().includes(search.toLowerCase())
+    ),
+    toObservable(this.customerOrganizationId),
+  ]).pipe(
+    map(([keys, id]) => (id ? keys.filter((k) => k.customerOrganizationId === id) : keys)),
+    takeUntilDestroyed()
+  );
 
   editForm = new FormGroup({
     license: new FormControl<LicenseKey | undefined>(undefined, {
@@ -82,6 +90,8 @@ export class LicenseKeysComponent {
     this.hideDrawer();
     if (license) {
       this.loadLicense(license);
+    } else if (this.customerOrganizationId()) {
+      this.editForm.patchValue({license: {customerOrganizationId: this.customerOrganizationId()} as LicenseKey});
     }
     this.manageLicenseDrawerRef = this.overlay.showDrawer(templateRef);
   }

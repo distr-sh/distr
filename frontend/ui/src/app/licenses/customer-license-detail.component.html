@@ -1,366 +1,60 @@
 <section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
-  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
-    <!-- Header -->
-    <div class="flex items-center gap-4 py-4">
-      <button
-        type="button"
-        (click)="goBack()"
-        class="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
-        <fa-icon [icon]="faArrowLeft" size="lg"></fa-icon>
-      </button>
-      @if (customer(); as customer) {
-        @if (customer.imageUrl; as imageUrl) {
-          <img class="size-10 rounded-sm" [attr.src]="imageUrl | secureImage | async" alt="" />
-        } @else {
-          <fa-icon
-            [icon]="faBuildingUser"
-            class="size-10 flex items-center justify-center text-2xl text-gray-400"></fa-icon>
-        }
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ customer.name }}</h1>
-          <p class="text-sm text-gray-500 dark:text-gray-400">Licenses</p>
-        </div>
-      }
-    </div>
-
-    <!-- License Keys Section -->
-    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden mb-6">
-      <div class="flex items-center justify-between mx-4 py-4">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">License Keys</h2>
-        @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
-          <button
-            (click)="openLicenseKeyDrawer(manageLicenseKeyDrawer)"
-            type="button"
-            class="flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-            <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2"></fa-icon>
-            Create License Key
-          </button>
-        }
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-          <thead
-            class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
-            <tr>
-              <th scope="col" class="p-4">Name</th>
-              <th scope="col" class="p-4">Description</th>
-              <th scope="col" class="p-4">Expires</th>
-              <th scope="col" class="p-4"></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (licenseKey of licenseKeys(); track licenseKey.id) {
-              <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                  {{ licenseKey.name }}
-                  @if (isExpired(licenseKey)) {
-                    <span class="text-red-600 dark:text-red-400">(expired)</span>
-                  }
-                </td>
-                <td class="px-4 py-3 text-gray-900 dark:text-white">
-                  <span class="max-w-48 overflow-hidden text-ellipsis block">{{ licenseKey.description }}</span>
-                </td>
-                <td
-                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white"
-                  [title]="licenseKey.expiresAt | date: 'medium'">
-                  {{ licenseKey.expiresAt | date }}
-                </td>
-                <td
-                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">
-                  <button
-                    type="button"
-                    (click)="viewLicenseKey(licenseKey)"
-                    class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                    <fa-icon [icon]="faEye" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
-                    View
-                  </button>
-                  @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
-                    <button
-                      type="button"
-                      (click)="openLicenseKeyDrawer(manageLicenseKeyDrawer, licenseKey)"
-                      class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                      <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      (click)="duplicateLicenseKey(manageLicenseKeyDrawer, licenseKey)"
-                      class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                      <fa-icon [icon]="faCopy" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
-                      Duplicate
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Delete"
-                      (click)="deleteLicenseKey(licenseKey)"
-                      class="py-2 px-3 text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900">
-                      <fa-icon [icon]="faTrash" class="h-4 w-4"></fa-icon>
-                    </button>
-                  }
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="4" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No license keys</td>
-              </tr>
-            }
-          </tbody>
-        </table>
+  @if (customer(); as customer) {
+    <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
+      <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+        <nav class="flex justify-between m-4" aria-label="Breadcrumb">
+          <ol class="inline-flex items-center mb-3 sm:mb-0">
+            <li class="flex items-center">
+              <a
+                [routerLink]="['/', 'licenses']"
+                class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
+                <fa-icon class="mr-2" [icon]="faBoxesStacked"></fa-icon>
+                Licenses
+              </a>
+            </li>
+            <span class="mx-2 text-gray-400">/</span>
+            <li aria-current="page">
+              <div class="flex items-center">
+                <button
+                  cdkOverlayOrigin
+                  #dropdownTrigger="cdkOverlayOrigin"
+                  #dropdownTriggerButton
+                  (click)="toggleBreadcrumbDropdown()"
+                  class="inline-flex items-center px-3 py-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
+                  {{ customer.name }}
+                  <fa-icon class="ml-2" [icon]="faChevronDown"></fa-icon>
+                </button>
+                <ng-template
+                  cdkConnectedOverlay
+                  [cdkConnectedOverlayHasBackdrop]="true"
+                  (backdropClick)="breadcrumbDropdown.set(false)"
+                  [cdkConnectedOverlayBackdropClass]="'transparent'"
+                  [cdkConnectedOverlayOrigin]="dropdownTrigger"
+                  [cdkConnectedOverlayMinWidth]="breadcrumbDropdownWidth + 'px'"
+                  [cdkConnectedOverlayOpen]="breadcrumbDropdown()">
+                  <div
+                    style="transform-origin: top center"
+                    class="z-10 w-full bg-white divide-y divide-gray-100 rounded-lg shadow-xs dark:bg-gray-700">
+                    <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownDefault">
+                      @for (org of customerOrganizations(); track org.id) {
+                        <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                          <a class="px-4 flex items-stretch" [routerLink]="['/', 'licenses', org.id]">
+                            {{ org.name }}
+                          </a>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                </ng-template>
+              </div>
+            </li>
+          </ol>
+        </nav>
       </div>
     </div>
-
-    <!-- Application Entitlements Section -->
-    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden mb-6">
-      <div class="flex items-center justify-between mx-4 py-4">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Application Entitlements</h2>
-        @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
-          <button
-            (click)="openAppEntitlementDrawer(manageAppEntitlementDrawer)"
-            type="button"
-            class="flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-            <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2"></fa-icon>
-            Create Application Entitlement
-          </button>
-        }
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-          <thead
-            class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
-            <tr>
-              <th scope="col" class="p-4">Name</th>
-              <th scope="col" class="p-4">Application</th>
-              <th scope="col" class="p-4">Versions</th>
-              <th scope="col" class="p-4">Expires</th>
-              <th scope="col" class="p-4"></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (entitlement of appEntitlements(); track entitlement.id) {
-              <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                  {{ entitlement.name }}
-                  @if (isExpired(entitlement)) {
-                    <span class="text-red-600 dark:text-red-400">(expired)</span>
-                  }
-                </td>
-                <td class="px-4 py-3">{{ entitlement.application?.name }}</td>
-                <td class="px-4 py-3">
-                  @if (entitlement.versions?.length) {
-                    {{ entitlement.versions!.length }} version(s)
-                  } @else {
-                    All versions
-                  }
-                </td>
-                <td
-                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white"
-                  [title]="entitlement.expiresAt | date: 'medium'">
-                  @if (entitlement.expiresAt) {
-                    {{ entitlement.expiresAt | date }}
-                  } @else {
-                    Never
-                  }
-                </td>
-                <td
-                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">
-                  @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
-                    <button
-                      type="button"
-                      (click)="openAppEntitlementDrawer(manageAppEntitlementDrawer, entitlement)"
-                      class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                      <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Delete"
-                      (click)="deleteAppEntitlement(entitlement)"
-                      class="py-2 px-3 text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900">
-                      <fa-icon [icon]="faTrash" class="h-4 w-4"></fa-icon>
-                    </button>
-                  }
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="5" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
-                  No application entitlements
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Artifact Entitlements Section -->
-    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden mb-6">
-      <div class="flex items-center justify-between mx-4 py-4">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Artifact Entitlements</h2>
-        @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
-          <button
-            (click)="openArtifactEntitlementDrawer(manageArtifactEntitlementDrawer)"
-            type="button"
-            class="flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-            <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2"></fa-icon>
-            Create Artifact Entitlement
-          </button>
-        }
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-          <thead
-            class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
-            <tr>
-              <th scope="col" class="p-4">Name</th>
-              <th scope="col" class="p-4">Artifacts</th>
-              <th scope="col" class="p-4">Expires</th>
-              <th scope="col" class="p-4"></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (entitlement of artifactEntitlements(); track entitlement.id) {
-              <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                  {{ entitlement.name }}
-                  @if (isExpired(entitlement)) {
-                    <span class="text-red-600 dark:text-red-400">(expired)</span>
-                  }
-                </td>
-                <td class="px-4 py-3">
-                  @if (entitlement.artifacts?.length) {
-                    {{ entitlement.artifacts!.length }} artifact(s)
-                  } @else {
-                    None
-                  }
-                </td>
-                <td
-                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white"
-                  [title]="entitlement.expiresAt | date: 'medium'">
-                  @if (entitlement.expiresAt) {
-                    {{ entitlement.expiresAt | date }}
-                  } @else {
-                    Never
-                  }
-                </td>
-                <td
-                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">
-                  @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
-                    <button
-                      type="button"
-                      (click)="openArtifactEntitlementDrawer(manageArtifactEntitlementDrawer, entitlement)"
-                      class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                      <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Delete"
-                      (click)="deleteArtifactEntitlement(entitlement)"
-                      class="py-2 px-3 text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900">
-                      <fa-icon [icon]="faTrash" class="h-4 w-4"></fa-icon>
-                    </button>
-                  }
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="4" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
-                  No artifact entitlements
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- License Key Drawer -->
-<ng-template #manageLicenseKeyDrawer>
-  <div @drawerFlyInOut class="h-screen p-4 overflow-y-auto bg-white w-160 dark:bg-gray-800" tabindex="-1">
-    <h5 class="inline-flex items-center mb-6 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
-      Manage License Key
-    </h5>
-    <button
-      type="button"
-      (click)="hideDrawer()"
-      class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 right-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
-      <fa-icon [icon]="faXmark" class="w-5 h-5"></fa-icon>
-    </button>
-    <form [formGroup]="licenseKeyEditForm" (ngSubmit)="saveLicenseKey()">
-      <div class="flex flex-col gap-4">
-        <app-edit-license-key formControlName="license"></app-edit-license-key>
-        <button
-          type="submit"
-          [disabled]="editFormLoading"
-          class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
-          <fa-icon [icon]="faPen" class="me-2" />
-          Save
-        </button>
-      </div>
-    </form>
-  </div>
-</ng-template>
-
-<!-- Application Entitlement Drawer -->
-<ng-template #manageAppEntitlementDrawer>
-  <div @drawerFlyInOut class="h-screen p-4 overflow-y-auto bg-white w-160 dark:bg-gray-800" tabindex="-1">
-    <h5 class="inline-flex items-center mb-6 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
-      Manage Application Entitlement
-    </h5>
-    <button
-      type="button"
-      (click)="hideDrawer()"
-      class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 right-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
-      <fa-icon [icon]="faXmark" class="w-5 h-5"></fa-icon>
-    </button>
-    <form [formGroup]="appEntitlementEditForm" (ngSubmit)="saveAppEntitlement()">
-      <div class="flex flex-col gap-4">
-        <app-edit-application-entitlement formControlName="license"></app-edit-application-entitlement>
-        <button
-          type="submit"
-          [disabled]="editFormLoading"
-          class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
-          <fa-icon [icon]="faPen" class="me-2" />
-          Save
-        </button>
-      </div>
-    </form>
-  </div>
-</ng-template>
-
-<!-- Artifact Entitlement Drawer -->
-<ng-template #manageArtifactEntitlementDrawer>
-  <div @drawerFlyInOut class="h-screen p-4 overflow-y-auto bg-white w-160 dark:bg-gray-800" tabindex="-1">
-    <h5 class="inline-flex items-center mb-6 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
-      Manage Artifact Entitlement
-    </h5>
-    <button
-      type="button"
-      (click)="hideDrawer()"
-      class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 right-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
-      <fa-icon [icon]="faXmark" class="w-5 h-5"></fa-icon>
-    </button>
-    <form [formGroup]="artifactEntitlementEditForm" (ngSubmit)="saveArtifactEntitlement()">
-      <div class="flex flex-col gap-4">
-        <app-edit-artifact-entitlement formControlName="license"></app-edit-artifact-entitlement>
-        <button
-          type="submit"
-          [disabled]="editFormLoading"
-          class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
-          <fa-icon [icon]="faPen" class="me-2" />
-          Save
-        </button>
-      </div>
-    </form>
-  </div>
-</ng-template>
-
-<!-- View License Key Modal -->
-<ng-template #viewLicenseKeyModal>
-  @if (selectedLicenseKey(); as licenseKey) {
-    <app-view-license-key-modal [license]="licenseKey" (closed)="hideViewLicenseKeyModal()" />
   }
-</ng-template>
+
+  <app-license-keys [customerOrganizationId]="customerOrgId()" />
+  <app-application-entitlements [customerOrganizationId]="customerOrgId()" />
+  <app-artifact-entitlements [customerOrganizationId]="customerOrgId()" />
+</section>

@@ -1,6 +1,6 @@
 import {AsyncPipe, DatePipe} from '@angular/common';
-import {Component, inject, TemplateRef} from '@angular/core';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {Component, inject, input, TemplateRef} from '@angular/core';
+import {takeUntilDestroyed, toObservable} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
@@ -12,7 +12,7 @@ import {
   faTrash,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import {catchError, EMPTY, filter, firstValueFrom, map, Observable, shareReplay, switchMap} from 'rxjs';
+import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, shareReplay, switchMap} from 'rxjs';
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
@@ -35,6 +35,8 @@ import {EditArtifactEntitlementComponent} from './edit-artifact-entitlement.comp
   animations: [dropdownAnimation, drawerFlyInOut, modalFlyInOut],
 })
 export class ArtifactEntitlementsComponent {
+  readonly customerOrganizationId = input<string>();
+
   protected readonly auth = inject(AuthService);
   private readonly artifactEntitlementsService = inject(ArtifactEntitlementsService);
   private readonly overlay = inject(OverlayService);
@@ -55,11 +57,18 @@ export class ArtifactEntitlementsComponent {
     search: new FormControl(''),
   });
 
-  licenses$: Observable<ArtifactEntitlement[]> = filteredByFormControl(
-    this.artifactEntitlementsService.list(),
-    this.filterForm.controls.search,
-    (it: ArtifactEntitlement, search: string) => !search || (it.name || '').toLowerCase().includes(search.toLowerCase())
-  ).pipe(takeUntilDestroyed());
+  licenses$: Observable<ArtifactEntitlement[]> = combineLatest([
+    filteredByFormControl(
+      this.artifactEntitlementsService.list(),
+      this.filterForm.controls.search,
+      (it: ArtifactEntitlement, search: string) =>
+        !search || (it.name || '').toLowerCase().includes(search.toLowerCase())
+    ),
+    toObservable(this.customerOrganizationId),
+  ]).pipe(
+    map(([entitlements, id]) => (id ? entitlements.filter((e) => e.customerOrganizationId === id) : entitlements)),
+    takeUntilDestroyed()
+  );
 
   editForm = new FormGroup({
     license: new FormControl<ArtifactEntitlement | undefined>(undefined, {
@@ -80,6 +89,10 @@ export class ArtifactEntitlementsComponent {
     this.hideDrawer();
     if (license) {
       this.loadLicense(license);
+    } else if (this.customerOrganizationId()) {
+      this.editForm.patchValue({
+        license: {customerOrganizationId: this.customerOrganizationId()} as ArtifactEntitlement,
+      });
     }
     this.manageLicenseDrawerRef = this.overlay.showDrawer(templateRef);
   }

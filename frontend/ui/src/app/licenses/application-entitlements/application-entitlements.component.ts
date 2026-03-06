@@ -1,6 +1,6 @@
 import {AsyncPipe, DatePipe} from '@angular/common';
-import {Component, inject, TemplateRef} from '@angular/core';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {Component, inject, input, TemplateRef} from '@angular/core';
+import {takeUntilDestroyed, toObservable} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
@@ -12,7 +12,7 @@ import {
   faTrash,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import {catchError, EMPTY, filter, firstValueFrom, Observable, switchMap} from 'rxjs';
+import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, switchMap} from 'rxjs';
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
@@ -42,6 +42,8 @@ import {EditApplicationEntitlementComponent} from './edit-application-entitlemen
   animations: [dropdownAnimation, drawerFlyInOut, modalFlyInOut],
 })
 export class ApplicationEntitlementsComponent {
+  readonly customerOrganizationId = input<string>();
+
   protected readonly auth = inject(AuthService);
   private readonly applicationEntitlementsService = inject(ApplicationEntitlementsService);
   private readonly applicationsService = inject(ApplicationsService);
@@ -52,12 +54,18 @@ export class ApplicationEntitlementsComponent {
     search: new FormControl(''),
   });
 
-  licenses$: Observable<ApplicationEntitlement[]> = filteredByFormControl(
-    this.applicationEntitlementsService.list(),
-    this.filterForm.controls.search,
-    (it: ApplicationEntitlement, search: string) =>
-      !search || (it.name || '').toLowerCase().includes(search.toLowerCase())
-  ).pipe(takeUntilDestroyed());
+  licenses$: Observable<ApplicationEntitlement[]> = combineLatest([
+    filteredByFormControl(
+      this.applicationEntitlementsService.list(),
+      this.filterForm.controls.search,
+      (it: ApplicationEntitlement, search: string) =>
+        !search || (it.name || '').toLowerCase().includes(search.toLowerCase())
+    ),
+    toObservable(this.customerOrganizationId),
+  ]).pipe(
+    map(([entitlements, id]) => (id ? entitlements.filter((e) => e.customerOrganizationId === id) : entitlements)),
+    takeUntilDestroyed()
+  );
 
   applications$ = this.applicationsService.list();
 
@@ -85,6 +93,10 @@ export class ApplicationEntitlementsComponent {
     this.hideDrawer();
     if (license) {
       this.loadLicense(license);
+    } else if (this.customerOrganizationId()) {
+      this.editForm.patchValue({
+        license: {customerOrganizationId: this.customerOrganizationId()} as ApplicationEntitlement,
+      });
     }
     this.manageLicenseDrawerRef = this.overlay.showDrawer(templateRef);
   }
