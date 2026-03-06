@@ -43,7 +43,7 @@ The SDK is a standalone subproject in `sdk/js/` with its own package.json, depen
 
 When working with the SDK:
 
-- Always build the SDK with `pnpm build` after making changes
+- Always build the SDK with `mise build:sdk` after making changes
 - Use pnpm (not npm) for all package management
 - Use `DistrService` for high-level operations (preferred)
 - Use `Client` for direct API access when needed

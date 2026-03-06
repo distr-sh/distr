@@ -1,0 +1,93 @@
+<form [formGroup]="editForm" class="space-y-4">
+  @if (isEditMode()) {
+    <div class="flex items-start p-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-700 dark:text-blue-400">
+      <fa-icon [icon]="faCircleInfo" class="mr-2 mt-0.5 shrink-0"></fa-icon>
+      <span
+        >Usage licenses are immutable. Only the name and description can be changed after creation. The license token,
+        payload, expiration, and customer assignment cannot be modified or revoked.</span
+      >
+    </div>
+  }
+
+  <div class="space-y-4 mt-4">
+    <div>
+      <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name *</label>
+      <input
+        formControlName="name"
+        autotrim
+        type="text"
+        id="name"
+        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+        placeholder="License name" />
+      @if (editForm.controls.name.invalid && editForm.controls.name.touched) {
+        <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
+      }
+    </div>
+
+    <div>
+      <label for="description" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Description</label>
+      <textarea
+        formControlName="description"
+        id="description"
+        rows="2"
+        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+        placeholder="License description"></textarea>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label for="notBefore" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Not Before *</label>
+        <input
+          formControlName="notBefore"
+          type="datetime-local"
+          id="notBefore"
+          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-60" />
+        @if (editForm.controls.notBefore.invalid && editForm.controls.notBefore.touched) {
+          <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
+        }
+      </div>
+      <div>
+        <label for="expiresAt" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Expires At *</label>
+        <input
+          formControlName="expiresAt"
+          type="datetime-local"
+          id="expiresAt"
+          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-60" />
+        @if (editForm.controls.expiresAt.invalid && editForm.controls.expiresAt.touched) {
+          <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
+        }
+      </div>
+    </div>
+    @if (
+      editForm.errors?.['dateRange'] && (editForm.controls.notBefore.touched || editForm.controls.expiresAt.touched)
+    ) {
+      <p class="text-sm text-red-600 dark:text-red-500">{{ editForm.errors?.['dateRange'] }}</p>
+    }
+
+    <div>
+      <label for="payload" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Payload (JSON) *</label>
+      <app-editor
+        formControlName="payload"
+        language="json"
+        class="block w-full rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white [&_.cm-editor]:min-h-32 [&_.cm-editor.cm-focused]:outline-none"></app-editor>
+      @if (editForm.controls.payload.errors?.['json'] && editForm.controls.payload.touched) {
+        <p class="mt-1 text-sm text-red-600 dark:text-red-500">{{ editForm.controls.payload.errors?.['json'] }}</p>
+      }
+    </div>
+
+    <div>
+      <label for="customerOrganizationId" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+        >Customer</label
+      >
+      <select
+        formControlName="customerOrganizationId"
+        id="customerOrganizationId"
+        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-60">
+        <option [ngValue]="undefined">No customer</option>
+        @for (customer of customers$ | async; track customer.id) {
+          <option [value]="customer.id">{{ customer.name }}</option>
+        }
+      </select>
+    </div>
+  </div>
+</form>

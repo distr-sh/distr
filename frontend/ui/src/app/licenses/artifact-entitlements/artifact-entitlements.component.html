@@ -15,7 +15,7 @@
                 autotrim
                 type="text"
                 id="simple-search"
-                placeholder="Filter application licenses"
+                placeholder="Filter artifact entitlements"
                 class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
             </div>
           </form>
@@ -29,7 +29,7 @@
               id="createApplicationButton"
               class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
               <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2"></fa-icon>
-              Create Application License
+              Create Artifact License
             </button>
           }
         </div>
@@ -41,7 +41,7 @@
             <tr>
               <th scope="col" class="p-4">Name</th>
               <th scope="col" class="p-4">Customer</th>
-              <th scope="col" class="p-4">Application</th>
+              <th scope="col" class="p-4">Artifact</th>
               <th scope="col" class="p-4">Creation Date</th>
               <th scope="col" class="p-4">Expires</th>
               <th scope="col" class="p-4"></th>
@@ -60,19 +60,14 @@
                 <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                   <div class="flex items-center mr-3">
                     <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis">
-                      {{ license.customerOrganization?.name }}
+                      {{ getOwnerColumn(license.customerOrganizationId) | async }}
                     </span>
                   </div>
                 </td>
                 <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                   <div class="flex items-center mr-3">
                     <span class="max-w-32 sm:max-w-64 lg:max-w-128 overflow-hidden text-ellipsis">
-                      {{
-                        license.application?.name +
-                          ((license.versions || []).length === 0
-                            ? ' (unrestricted)'
-                            : ' (' + license.versions!.length + ' versions)')
-                      }}
+                      {{ getArtifactColumn(license.artifacts) | async }}
                     </span>
                   </div>
                 </td>
@@ -93,26 +88,28 @@
                 </td>
                 <td
                   class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">
-                  <button
-                    type="button"
-                    (click)="openDrawer(manageLicenseDrawer, license)"
-                    class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                    @if (auth.hasAnyRole('read_write', 'admin')) {
-                      <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
-                      Edit
-                    } @else {
-                      <fa-icon [icon]="faEye" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
-                      Details
-                    }
-                  </button>
-                  @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
+                  @if (auth.isVendor()) {
                     <button
                       type="button"
-                      aria-label="Delete"
-                      (click)="deleteLicense(license)"
-                      class="py-2 px-3 text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900">
-                      <fa-icon [icon]="faTrash" class="h-4 w-4" />
+                      (click)="openDrawer(manageLicenseDrawer, license)"
+                      class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                      @if (auth.hasAnyRole('read_write', 'admin')) {
+                        <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
+                        Edit
+                      } @else {
+                        <fa-icon [icon]="faEye" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
+                        Details
+                      }
                     </button>
+                    @if (auth.hasAnyRole('read_write', 'admin')) {
+                      <button
+                        type="button"
+                        aria-label="Delete"
+                        (click)="deleteLicense(license)"
+                        class="py-2 px-3 text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900">
+                        <fa-icon [icon]="faTrash" class="h-4 w-4" />
+                      </button>
+                    }
                   }
                 </td>
               </tr>
@@ -134,7 +131,7 @@
     <h5
       id="drawer-label"
       class="inline-flex items-center mb-6 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
-      Manage Application License
+      Manage Artifact License
     </h5>
     <button
       type="button"
@@ -155,8 +152,8 @@
             <strong>Creating your first license will restrict what all your customers see.</strong>
           </p>
           <p>
-            After you created your first license your customers will only see applications which they have a valid
-            license for. Without any license your customers will see all applications and versions.
+            After you created your first license your customers will only see artifacts which they have a valid license
+            for. Without any license your customers will see all artifacts and tags.
           </p>
         </div>
       </div>
@@ -164,7 +161,7 @@
 
     <form [formGroup]="editForm" (ngSubmit)="saveLicense()">
       <div class="flex flex-col gap-4">
-        <app-edit-license formControlName="license"></app-edit-license>
+        <app-edit-artifact-entitlement formControlName="license"></app-edit-artifact-entitlement>
         @if (auth.hasAnyRole('admin', 'read_write')) {
           <div class="flex justify-center w-full pb-4 space-x-4 sm:mt-0">
             <button

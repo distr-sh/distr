@@ -24,12 +24,12 @@ import {
 import {modalFlyInOut} from '../../animations/modal';
 import {ConnectInstructionsComponent} from '../../components/connect-instructions/connect-instructions.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
+import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ApplicationsService} from '../../services/applications.service';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
-import {LicensesService} from '../../services/licenses.service';
 import {OrganizationBrandingService} from '../../services/organization-branding.service';
 import {OrganizationService} from '../../services/organization.service';
 import {ToastService} from '../../services/toast.service';
@@ -64,7 +64,7 @@ export class DeploymentWizardComponent implements OnInit {
   private readonly applications = inject(ApplicationsService);
   private readonly deploymentTargets = inject(DeploymentTargetsService);
   private readonly customerOrganizations = inject(CustomerOrganizationsService);
-  private readonly licenses = inject(LicensesService);
+  private readonly licenses = inject(ApplicationEntitlementsService);
   private readonly organization = inject(OrganizationService);
   private readonly organizationBranding = inject(OrganizationBrandingService);
   private readonly fb = inject(FormBuilder);

@@ -19,8 +19,8 @@ export interface SubscriptionInfo {
   currentCustomerOrganizationCount: number;
   currentMaxUsersPerCustomer: number;
   currentMaxDeploymentTargetsPerCustomer: number;
-  hasApplicationLicenses: boolean;
-  hasArtifactLicenses: boolean;
+  hasApplicationEntitlements: boolean;
+  hasArtifactEntitlements: boolean;
   hasNonAdminRoles: boolean;
   hasAlertConfigurations: boolean;
   limits: {[key in SubscriptionType]: SubscriptionLimits};

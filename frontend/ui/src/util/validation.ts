@@ -42,6 +42,18 @@ export const DURATION_REGEX =
 export const RESOURCE_QUANTITY_REGEX =
   /^(\d+|\d+\.\d+|\d+\.|\.\d+)(m|k|M|G|T|P|E|Ki|Mi|Gi|Ti|Pi|Ei|((e|E)(\d+|\d+\.\d+|\d+\.|\.\d+)))?$/;
 
+export function jsonObjectValidator(control: AbstractControl): ValidationErrors | null {
+  try {
+    const parsed = JSON.parse(control.value);
+    if (typeof parsed !== 'object' || Array.isArray(parsed) || parsed === null) {
+      return {json: 'Payload must be a JSON object'};
+    }
+    return null;
+  } catch {
+    return {json: 'Invalid JSON'};
+  }
+}
+
 export function validateRecordAtLeast(minRequiredCount: number, evalFunc: (v: any) => unknown = (v) => v): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     if (control instanceof FormRecord) {

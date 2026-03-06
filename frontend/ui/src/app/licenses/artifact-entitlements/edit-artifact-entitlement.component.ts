@@ -30,16 +30,16 @@ import dayjs from 'dayjs';
 import {distinctUntilChanged, first, firstValueFrom, of, Subject, switchMap, takeUntil} from 'rxjs';
 import {RelativeDatePipe} from '../../../util/dates';
 import {dropdownAnimation} from '../../animations/dropdown';
+import {ArtifactsHashComponent} from '../../artifacts/components';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
-import {ArtifactLicense, ArtifactLicenseSelection} from '../../services/artifact-licenses.service';
 import {ArtifactsService, ArtifactWithTags} from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
-import {ArtifactsHashComponent} from '../components';
+import {ArtifactEntitlement, ArtifactEntitlementSelection} from '../../types/artifact-entitlement';
 
 @Component({
-  selector: 'app-edit-artifact-license',
-  templateUrl: './edit-artifact-license.component.html',
+  selector: 'app-edit-artifact-entitlement',
+  templateUrl: './edit-artifact-entitlement.component.html',
   imports: [
     AsyncPipe,
     AutotrimDirective,
@@ -53,13 +53,13 @@ import {ArtifactsHashComponent} from '../components';
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => EditArtifactLicenseComponent),
+      useExisting: forwardRef(() => EditArtifactEntitlementComponent),
       multi: true,
     },
   ],
   animations: [dropdownAnimation],
 })
-export class EditArtifactLicenseComponent implements OnInit, OnDestroy, AfterViewInit, ControlValueAccessor {
+export class EditArtifactEntitlementComponent implements OnInit, OnDestroy, AfterViewInit, ControlValueAccessor {
   private readonly injector = inject(Injector);
   protected readonly auth = inject(AuthService);
   private readonly destroyed$ = new Subject<void>();
@@ -82,7 +82,7 @@ export class EditArtifactLicenseComponent implements OnInit, OnDestroy, AfterVie
     customerOrganizationId: this.fb.nonNullable.control<string | undefined>(undefined),
   });
   editFormLoading = false;
-  readonly license = signal<ArtifactLicense | undefined>(undefined);
+  readonly license = signal<ArtifactEntitlement | undefined>(undefined);
 
   readonly openedArtifactIdx = signal<number | undefined>(undefined);
   dropdownWidth: number = 0;
@@ -189,7 +189,7 @@ export class EditArtifactLicenseComponent implements OnInit, OnDestroy, AfterVie
     return ((control.get('artifactTags')?.value ?? []) as boolean[]).filter((v) => v).length;
   }
 
-  addArtifactGroup(selection?: ArtifactLicenseSelection) {
+  addArtifactGroup(selection?: ArtifactEntitlementSelection) {
     const artifactGroup = this.fb.group({
       artifactId: this.fb.nonNullable.control<string | undefined>('', Validators.required),
       artifact: this.fb.nonNullable.control<ArtifactWithTags | undefined>(undefined, Validators.required),
@@ -248,10 +248,10 @@ export class EditArtifactLicenseComponent implements OnInit, OnDestroy, AfterVie
     this.artifacts.removeAt(i);
   }
 
-  private onChange: (l: ArtifactLicense | undefined) => void = () => {};
+  private onChange: (l: ArtifactEntitlement | undefined) => void = () => {};
   private onTouched: () => void = () => {};
 
-  registerOnChange(fn: (l: ArtifactLicense | undefined) => void): void {
+  registerOnChange(fn: (l: ArtifactEntitlement | undefined) => void): void {
     this.onChange = fn;
   }
 
@@ -259,7 +259,7 @@ export class EditArtifactLicenseComponent implements OnInit, OnDestroy, AfterVie
     this.onTouched = fn;
   }
 
-  writeValue(license: ArtifactLicense | undefined): void {
+  writeValue(license: ArtifactEntitlement | undefined): void {
     this.license.set(license);
     if (license) {
       this.editForm.patchValue({

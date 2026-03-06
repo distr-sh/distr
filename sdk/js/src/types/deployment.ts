@@ -12,7 +12,7 @@ export interface DeploymentRequest {
   deploymentTargetId: string;
   applicationVersionId: string;
   deploymentId?: string;
-  applicationLicenseId?: string;
+  applicationEntitlementId?: string;
   releaseName?: string;
   dockerType?: DockerType;
   valuesYaml?: string;
@@ -47,7 +47,7 @@ export interface DeploymentWithLatestRevision extends Deployment {
   applicationVersionId: string;
   applicationVersionName: string;
   applicationLink: string;
-  applicationLicenseId?: string;
+  applicationEntitlementId?: string;
   valuesYaml?: string;
   envFileData?: string;
   deploymentRevisionId?: string;

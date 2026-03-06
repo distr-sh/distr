@@ -1,6 +1,6 @@
 import {AsyncPipe, DatePipe} from '@angular/common';
-import {Component, inject, TemplateRef} from '@angular/core';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {Component, inject, input, TemplateRef} from '@angular/core';
+import {takeUntilDestroyed, toObservable} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
@@ -12,34 +12,33 @@ import {
   faTrash,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import {catchError, EMPTY, filter, firstValueFrom, map, Observable, shareReplay, switchMap} from 'rxjs';
+import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, shareReplay, switchMap} from 'rxjs';
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
 import {drawerFlyInOut} from '../../animations/drawer';
 import {dropdownAnimation} from '../../animations/dropdown';
 import {modalFlyInOut} from '../../animations/modal';
-import {
-  ArtifactLicense,
-  ArtifactLicenseSelection,
-  ArtifactLicensesService,
-} from '../../services/artifact-licenses.service';
+import {ArtifactEntitlementsService} from '../../services/artifact-entitlements.service';
 import {ArtifactsService} from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
-import {EditArtifactLicenseComponent} from './edit-artifact-license.component';
+import {ArtifactEntitlement, ArtifactEntitlementSelection} from '../../types/artifact-entitlement';
+import {EditArtifactEntitlementComponent} from './edit-artifact-entitlement.component';
 
 @Component({
-  selector: 'app-artifact-licenses',
-  imports: [ReactiveFormsModule, AsyncPipe, FaIconComponent, DatePipe, EditArtifactLicenseComponent],
-  templateUrl: './artifact-licenses.component.html',
+  selector: 'app-artifact-entitlements',
+  imports: [ReactiveFormsModule, AsyncPipe, FaIconComponent, DatePipe, EditArtifactEntitlementComponent],
+  templateUrl: './artifact-entitlements.component.html',
   animations: [dropdownAnimation, drawerFlyInOut, modalFlyInOut],
 })
-export class ArtifactLicensesComponent {
+export class ArtifactEntitlementsComponent {
+  readonly customerOrganizationId = input<string>();
+
   protected readonly auth = inject(AuthService);
-  private readonly artifactLicensesService = inject(ArtifactLicensesService);
+  private readonly artifactEntitlementsService = inject(ArtifactEntitlementsService);
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
   private readonly customerOrganizationService = inject(CustomerOrganizationsService);
@@ -58,14 +57,21 @@ export class ArtifactLicensesComponent {
     search: new FormControl(''),
   });
 
-  licenses$: Observable<ArtifactLicense[]> = filteredByFormControl(
-    this.artifactLicensesService.list(),
-    this.filterForm.controls.search,
-    (it: ArtifactLicense, search: string) => !search || (it.name || '').toLowerCase().includes(search.toLowerCase())
-  ).pipe(takeUntilDestroyed());
+  licenses$: Observable<ArtifactEntitlement[]> = combineLatest([
+    filteredByFormControl(
+      this.artifactEntitlementsService.list(),
+      this.filterForm.controls.search,
+      (it: ArtifactEntitlement, search: string) =>
+        !search || (it.name || '').toLowerCase().includes(search.toLowerCase())
+    ),
+    toObservable(this.customerOrganizationId),
+  ]).pipe(
+    map(([entitlements, id]) => (id ? entitlements.filter((e) => e.customerOrganizationId === id) : entitlements)),
+    takeUntilDestroyed()
+  );
 
   editForm = new FormGroup({
-    license: new FormControl<ArtifactLicense | undefined>(undefined, {
+    license: new FormControl<ArtifactEntitlement | undefined>(undefined, {
       nonNullable: true,
       validators: Validators.required,
     }),
@@ -79,15 +85,19 @@ export class ArtifactLicensesComponent {
     .pipe(shareReplay(1));
   private readonly artifacts$ = this.artifactsService.list();
 
-  openDrawer(templateRef: TemplateRef<unknown>, license?: ArtifactLicense) {
+  openDrawer(templateRef: TemplateRef<unknown>, license?: ArtifactEntitlement) {
     this.hideDrawer();
     if (license) {
       this.loadLicense(license);
+    } else if (this.customerOrganizationId()) {
+      this.editForm.patchValue({
+        license: {customerOrganizationId: this.customerOrganizationId()} as ArtifactEntitlement,
+      });
     }
     this.manageLicenseDrawerRef = this.overlay.showDrawer(templateRef);
   }
 
-  loadLicense(license: ArtifactLicense) {
+  loadLicense(license: ArtifactEntitlement) {
     this.editForm.patchValue({license});
   }
 
@@ -102,8 +112,8 @@ export class ArtifactLicensesComponent {
     if (this.editForm.valid && license) {
       this.editFormLoading = true;
       const action = license.id
-        ? this.artifactLicensesService.update(license)
-        : this.artifactLicensesService.create(license);
+        ? this.artifactEntitlementsService.update(license)
+        : this.artifactEntitlementsService.create(license);
       try {
         const license = await firstValueFrom(action);
         this.hideDrawer();
@@ -119,12 +129,12 @@ export class ArtifactLicensesComponent {
     }
   }
 
-  deleteLicense(license: ArtifactLicense) {
+  deleteLicense(license: ArtifactEntitlement) {
     this.overlay
       .confirm(`Really delete ${license.name}?`)
       .pipe(
         filter((result) => result === true),
-        switchMap(() => this.artifactLicensesService.delete(license)),
+        switchMap(() => this.artifactEntitlementsService.delete(license)),
         catchError((e) => {
           const msg = getFormDisplayedError(e);
           if (msg) {
@@ -136,7 +146,7 @@ export class ArtifactLicensesComponent {
       .subscribe();
   }
 
-  getArtifactColumn(selection?: ArtifactLicenseSelection[]): Observable<string | undefined> {
+  getArtifactColumn(selection?: ArtifactEntitlementSelection[]): Observable<string | undefined> {
     return selection?.[0]?.artifactId
       ? this.artifacts$.pipe(
           map((artifacts) => artifacts.find((a) => a.id === selection?.[0]?.artifactId)),

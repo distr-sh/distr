@@ -28,9 +28,9 @@ import {StatusDotComponent} from '../../components/status-dot';
 import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AgentVersionService} from '../../services/agent-version.service';
+import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ApplicationsService} from '../../services/applications.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
-import {LicensesService} from '../../services/licenses.service';
 import {DeploymentModalComponent} from '../deployment-modal.component';
 import {DeploymentStatusModalComponent} from '../deployment-status-modal/deployment-status-modal.component';
 import {DeploymentTargetStatusModalComponent} from '../deployment-target-status-modal/deployment-target-status-modal.component';
@@ -64,7 +64,7 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
 })
 export class DeploymentTargetCardComponent extends DeploymentTargetCardBaseComponent {
   private readonly agentVersionsSvc = inject(AgentVersionService);
-  private readonly licensesService = inject(LicensesService);
+  private readonly applicationEntitlementsService = inject(ApplicationEntitlementsService);
   private readonly applicationsService = inject(ApplicationsService);
   private readonly featureFlags = inject(FeatureFlagService);
 
@@ -102,7 +102,9 @@ export class DeploymentTargetCardComponent extends DeploymentTargetCardBaseCompo
   });
 
   private readonly licenses = toSignal(
-    this.featureFlags.isLicensingEnabled$.pipe(switchMap((enabled) => (enabled ? this.licensesService.list() : EMPTY))),
+    this.featureFlags.isLicensingEnabled$.pipe(
+      switchMap((enabled) => (enabled ? this.applicationEntitlementsService.list() : EMPTY))
+    ),
     {initialValue: []}
   );
 
@@ -117,8 +119,8 @@ export class DeploymentTargetCardComponent extends DeploymentTargetCardBaseCompo
       deploymentTarget.deployments
         .map((deployment) => {
           const applicationVersions =
-            (deployment.applicationLicenseId
-              ? licenses.find((license) => license.id === deployment.applicationLicenseId)?.application?.versions
+            (deployment.applicationEntitlementId
+              ? licenses.find((license) => license.id === deployment.applicationEntitlementId)?.application?.versions
               : undefined) ?? applications.find((app) => app.id === deployment.applicationId)?.versions;
 
           const maxVersion = this.findMaxVersion(applicationVersions?.filter((version) => !isArchived(version)) ?? []);
@@ -179,7 +181,7 @@ export class DeploymentTargetCardComponent extends DeploymentTargetCardBaseCompo
               deploymentId: deployment.id,
               deploymentTargetId: deployment.deploymentTargetId,
               applicationVersionId: deployment.applicationVersionId,
-              applicationLicenseId: deployment.applicationLicenseId,
+              applicationEntitlementId: deployment.applicationEntitlementId,
               releaseName: deployment.releaseName,
               dockerType: deployment.dockerType,
               valuesYaml: deployment.valuesYaml,

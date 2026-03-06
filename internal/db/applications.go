@@ -28,15 +28,17 @@ const (
 			WHERE av.application_id = a.id
 		), array[]::record[]) AS versions `
 
-	applicationWithLicensedVersionsOutputExpr = applicationOutputExpr + `,
+	applicationWithEntitledVersionsOutputExpr = applicationOutputExpr + `,
 		coalesce((
 			SELECT array_agg(row(av.id, av.created_at, av.archived_at, av.name, av.link_template, av.application_id,
 				av.chart_type, av.chart_name, av.chart_url, av.chart_version) ORDER BY av.created_at ASC)
 			FROM ApplicationVersion av
 			WHERE av.application_id = a.id and
 				((av.id IN
-					(SELECT application_version_id FROM ApplicationLicense_ApplicationVersion WHERE application_license_id = al.id)
-					OR (SELECT NOT EXISTS (SELECT FROM ApplicationLicense_ApplicationVersion WHERE application_license_id = al.id)))
+					(SELECT application_version_id FROM ApplicationEntitlement_ApplicationVersion
+						WHERE application_entitlement_id = al.id)
+					OR (SELECT NOT EXISTS (SELECT FROM ApplicationEntitlement_ApplicationVersion
+						WHERE application_entitlement_id = al.id)))
 		)), array[]::record[]) AS versions `
 )
 
@@ -130,14 +132,14 @@ func mergeApplications(applications []types.Application) []types.Application {
 	return util.GetValues(applicationMap)
 }
 
-func GetApplicationsWithLicenseOwnerID(
+func GetApplicationsWithEntitlementOwnerID(
 	ctx context.Context,
 	customerOrganizationID uuid.UUID,
 ) ([]types.Application, error) {
 	db := internalctx.GetDb(ctx)
 	if rows, err := db.Query(ctx, `
-			SELECT DISTINCT `+applicationWithLicensedVersionsOutputExpr+`
-			FROM ApplicationLicense al
+			SELECT DISTINCT `+applicationWithEntitledVersionsOutputExpr+`
+			FROM ApplicationEntitlement al
 				LEFT JOIN Application a ON al.application_id = a.id
 			WHERE al.customer_organization_id = @id AND (al.expires_at IS NULL OR al.expires_at > now())
 			ORDER BY a.name
@@ -168,15 +170,15 @@ func GetApplication(ctx context.Context, id, orgID uuid.UUID) (*types.Applicatio
 	}
 }
 
-func GetApplicationWithLicenseOwnerID(
+func GetApplicationWithEntitlementOwnerID(
 	ctx context.Context,
 	customerOrganizationID uuid.UUID,
 	id uuid.UUID,
 ) (*types.Application, error) {
 	db := internalctx.GetDb(ctx)
 	if rows, err := db.Query(ctx, `
-			SELECT DISTINCT `+applicationWithLicensedVersionsOutputExpr+`
-			FROM ApplicationLicense al
+			SELECT DISTINCT `+applicationWithEntitledVersionsOutputExpr+`
+			FROM ApplicationEntitlement al
 				LEFT JOIN Application a ON al.application_id = a.id
 			WHERE al.customer_organization_id = @ownerID AND a.id = @id AND (al.expires_at IS NULL OR al.expires_at > now())
 			ORDER BY a.name
