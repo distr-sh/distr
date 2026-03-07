@@ -355,7 +355,8 @@ func createApplicationVersion(w http.ResponseWriter, r *http.Request) {
 	application := internalctx.GetApplication(ctx)
 	applicationVersion.ApplicationID = application.ID
 
-	if application.Type == types.DeploymentTypeDocker {
+	switch application.Type {
+	case types.DeploymentTypeDocker:
 		if data, ok := readMultipartFile(w, r, "composefile"); !ok {
 			return
 		} else {
@@ -370,7 +371,12 @@ func createApplicationVersion(w http.ResponseWriter, r *http.Request) {
 		} else {
 			applicationVersion.TemplateFileData = data
 		}
-	} else {
+	case types.DeploymentTypeOpenTofu:
+		if applicationVersion.TofuConfigURL == nil || *applicationVersion.TofuConfigURL == "" {
+			http.Error(w, "missing tofu config URL", http.StatusBadRequest)
+			return
+		}
+	case types.DeploymentTypeKubernetes:
 		if data, ok := readMultipartFile(w, r, "valuesfile"); !ok {
 			return
 		} else {
@@ -387,6 +393,9 @@ func createApplicationVersion(w http.ResponseWriter, r *http.Request) {
 			// Some uses might use a non-yaml template here.
 			applicationVersion.TemplateFileData = data
 		}
+	default:
+		http.Error(w, "unsupported application type", http.StatusBadRequest)
+		return
 	}
 
 	if err := applicationVersion.Validate(application.Type); err != nil {

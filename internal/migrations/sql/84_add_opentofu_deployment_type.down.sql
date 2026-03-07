@@ -1,0 +1,2 @@
+-- PostgreSQL does not support removing enum values
+-- This is a no-op; the 'opentofu' value will remain

@@ -13,6 +13,10 @@ type DeploymentRevision struct {
 	ForceRestart         bool         `db:"force_restart" json:"forceRestart"`
 	IgnoreRevisionSkew   bool         `db:"ignore_revision_skew" json:"ignoreRevisionSkew"`
 	HelmOptions          *HelmOptions `db:"helm_options" json:"helmOptions,omitempty"`
+
+	TofuVars          *string `db:"tofu_vars" json:"-"`
+	TofuBackendConfig *string `db:"tofu_backend_config" json:"-"`
+	TofuVersion       *string `db:"tofu_version" json:"-"`
 }
 
 type HelmOptions struct {
