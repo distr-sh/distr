@@ -31,6 +31,9 @@ type ApplicationVersion struct {
 	ComposeFileData  []byte `db:"compose_file_data" json:"-"`
 
 	Resources []ApplicationVersionResource `db:"-" json:"resources,omitempty"`
+
+	TofuConfigURL     *string `db:"tofu_config_url" json:"tofuConfigUrl,omitempty"`
+	TofuConfigVersion *string `db:"tofu_config_version" json:"tofuConfigVersion,omitempty"`
 }
 
 func (av ApplicationVersion) ParsedValuesFile() (result map[string]any, err error) {
@@ -78,6 +81,10 @@ func (av ApplicationVersion) Validate(deplType DeploymentType) error {
 			return errors.New("missing chart name")
 		} else if av.ComposeFileData != nil {
 			return errors.New("unexpected docker file in kubernetes application")
+		}
+	case DeploymentTypeOpenTofu:
+		if av.TofuConfigURL == nil || *av.TofuConfigURL == "" {
+			return errors.New("missing tofu config URL")
 		}
 	}
 	return nil
