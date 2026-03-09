@@ -62,9 +62,13 @@ export class ViewLicenseKeyModalComponent {
   }
 
   async copyToken() {
-    await navigator.clipboard.writeText(this.license().token);
-    this.toast.success('Copied to clipboard');
-    this.copied = true;
-    setTimeout(() => (this.copied = false), 2000);
+    try {
+      await navigator.clipboard.writeText(this.license().token);
+      this.toast.success('Copied to clipboard');
+      this.copied = true;
+      setTimeout(() => (this.copied = false), 2000);
+    } catch {
+      this.toast.error('Failed to copy to clipboard');
+    }
   }
 }
