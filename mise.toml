@@ -48,10 +48,6 @@ depends = ["go-tidy", "build:frontend:community"]
 run = 'go build -ldflags="{{vars.ldflags}} -X github.com/distr-sh/distr/internal/buildconfig.edition=enterprise" -o dist/distr ./cmd/hub'
 depends = ["go-tidy", "build:frontend:enterprise"]
 
-[tasks."build:mcp"]
-run = 'go build -ldflags="{{vars.ldflags}}" -o dist/mcp-server ./cmd/mcp'
-depends = ["go-tidy"]
-
 [tasks."build:agent:docker"]
 run = 'go build -ldflags="{{vars.ldflags}}" -o dist/docker-agent ./cmd/agent/docker'
 depends = ["go-tidy"]
@@ -71,7 +67,7 @@ run = 'pnpm lint'
 run = 'hack/validate-migrations.sh'
 
 [tasks.lint]
-run = {tasks=["lint:go", "lint:frontend", "lint:migrations"]}
+run = { tasks = ["lint:go", "lint:frontend", "lint:migrations"] }
 
 [tasks."test:go"]
 run = 'go test ./...'
@@ -79,7 +75,7 @@ depends = ["go-tidy"]
 description = 'Run all Go tests'
 
 [tasks.test]
-run = {tasks=["test:go"]}
+run = { tasks = ["test:go"] }
 
 [tasks."format:go"]
 run = 'golangci-lint run --fix'
@@ -88,7 +84,7 @@ run = 'golangci-lint run --fix'
 run = 'pnpm format'
 
 [tasks.format]
-run = {tasks=["format:go", "format:frontend"]}
+run = { tasks = ["format:go", "format:frontend"] }
 
 [tasks."run:hub:serve"]
 run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/hub/ serve'
