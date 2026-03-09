@@ -1,10 +1,8 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -46,17 +44,23 @@ func LicenseKeysRouter(r chiopenapi.Router) {
 		With(option.Response(http.StatusOK, []types.LicenseKey{}))
 
 	r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
-		Group(func(r chiopenapi.Router) {
-			r.Post("/", createLicenseKey).
-				With(option.Description("Create a new license key")).
-				With(option.Request(CreateLicenseKeyRequest{})).
-				With(option.Response(http.StatusOK, types.LicenseKey{}))
+		Post("/", createLicenseKey).
+		With(option.Description("Create a new license key")).
+		With(option.Request(CreateLicenseKeyRequest{})).
+		With(option.Response(http.StatusOK, types.LicenseKey{}))
 
-			r.With(licenseKeyMiddleware).Route("/{licenseKeyId}", func(r chiopenapi.Router) {
-				type LicenseKeyIDRequest struct {
-					LicenseKeyID uuid.UUID `path:"licenseKeyId"`
-				}
+	r.With(licenseKeyMiddleware).Route("/{licenseKeyId}", func(r chiopenapi.Router) {
+		type LicenseKeyIDRequest struct {
+			LicenseKeyID uuid.UUID `path:"licenseKeyId"`
+		}
 
+		r.Get("/token", getLicenseKeyToken).
+			With(option.Description("Generate and retrieve the license key token")).
+			With(option.Request(LicenseKeyIDRequest{})).
+			With(option.Response(http.StatusOK, map[string]string{}))
+
+		r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
+			Group(func(r chiopenapi.Router) {
 				r.Put("/", updateLicenseKey).
 					With(option.Description("Update license key name and description")).
 					With(option.Request(struct {
@@ -68,7 +72,7 @@ func LicenseKeysRouter(r chiopenapi.Router) {
 					With(option.Description("Delete a license key")).
 					With(option.Request(LicenseKeyIDRequest{}))
 			})
-		})
+	})
 }
 
 func getLicenseKeys(w http.ResponseWriter, r *http.Request) {
@@ -135,36 +139,31 @@ func createLicenseKey(w http.ResponseWriter, r *http.Request) {
 		CustomerOrganizationID: body.CustomerOrganizationID,
 	}
 
-	errTokenGeneration := errors.New("failed to generate license key token")
-
-	if err := db.RunTx(ctx, func(ctx context.Context) error {
-		if err := db.CreateLicenseKey(ctx, &licenseKey); err != nil {
-			return err
-		}
-		token, err := licensekey.GenerateToken(&licenseKey, env.Host())
-		if err != nil {
-			return fmt.Errorf("%w: %w", errTokenGeneration, err)
-		}
-		if err := db.UpdateLicenseKeyToken(ctx, licenseKey.ID, token); err != nil {
-			return err
-		}
-		licenseKey.Token = token
-		return nil
-	}); err != nil {
-		if errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, "A license key with this name already exists", http.StatusBadRequest)
-		} else if errors.Is(err, errTokenGeneration) {
-			log.Error("failed to generate license key token", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, "failed to generate license key token", http.StatusInternalServerError)
-		} else {
-			log.Warn("could not create license key", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+	if err := db.CreateLicenseKey(ctx, &licenseKey); errors.Is(err, apierrors.ErrConflict) {
+		http.Error(w, "A license key with this name already exists", http.StatusBadRequest)
+		return
+	} else if err != nil {
+		log.Warn("could not create license key", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	RespondJSON(w, licenseKey)
+}
+
+func getLicenseKeyToken(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+	lk := internalctx.GetLicenseKey(ctx)
+
+	token, err := licensekey.GenerateToken(lk, env.Host())
+	if err != nil {
+		log.Error("failed to generate license key token", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, "failed to generate license key token", http.StatusInternalServerError)
+		return
+	}
+	RespondJSON(w, map[string]string{"token": token})
 }
 
 func updateLicenseKey(w http.ResponseWriter, r *http.Request) {

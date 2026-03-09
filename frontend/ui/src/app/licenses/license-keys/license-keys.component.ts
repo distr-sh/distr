@@ -53,6 +53,8 @@ export class LicenseKeysComponent {
   protected readonly isExpired = isExpired;
 
   protected readonly selectedLicense = signal<LicenseKey | undefined>(undefined);
+  protected readonly selectedToken = signal<string | undefined>(undefined);
+  protected readonly viewLicenseLoading = signal(false);
   private readonly viewLicenseModalTemplate = viewChild.required<TemplateRef<unknown>>('viewLicenseModal');
   private viewLicenseModalRef?: DialogRef;
 
@@ -131,7 +133,6 @@ export class LicenseKeysComponent {
       ...license,
       id: undefined,
       name: '',
-      token: '',
     });
   }
 
@@ -159,15 +160,30 @@ export class LicenseKeysComponent {
   }
 
   viewLicense(license: LicenseKey) {
-    this.hideViewLicenseModal();
-    this.selectedLicense.set(license);
-    this.viewLicenseModalRef = this.overlay.showModal(this.viewLicenseModalTemplate(), {
-      positionStrategy: new GlobalPositionStrategy().centerHorizontally().centerVertically(),
+    this.viewLicenseLoading.set(true);
+    this.licenseKeysService.getToken(license.id!).subscribe({
+      next: ({token}) => {
+        this.viewLicenseLoading.set(false);
+        this.hideViewLicenseModal();
+        this.selectedLicense.set(license);
+        this.selectedToken.set(token);
+        this.viewLicenseModalRef = this.overlay.showModal(this.viewLicenseModalTemplate(), {
+          positionStrategy: new GlobalPositionStrategy().centerHorizontally().centerVertically(),
+        });
+      },
+      error: (e) => {
+        this.viewLicenseLoading.set(false);
+        const msg = getFormDisplayedError(e);
+        if (msg) {
+          this.toast.error(msg);
+        }
+      },
     });
   }
 
   hideViewLicenseModal() {
     this.viewLicenseModalRef?.close();
     this.selectedLicense.set(undefined);
+    this.selectedToken.set(undefined);
   }
 }

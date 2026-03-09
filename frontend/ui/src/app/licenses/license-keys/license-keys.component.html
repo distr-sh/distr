@@ -78,7 +78,8 @@
                   <button
                     type="button"
                     (click)="viewLicense(license)"
-                    class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                    [disabled]="viewLicenseLoading()"
+                    class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-60">
                     <fa-icon [icon]="faEye" class="h-4 w-4 mr-2 mb-1 text-gray-500 dark:text-gray-400"></fa-icon>
                     View License
                   </button>
@@ -125,7 +126,7 @@
     <h5
       id="drawer-label"
       class="inline-flex items-center mb-6 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
-      Manage Usage License
+      Manage License Key
     </h5>
     <button
       type="button"
@@ -154,6 +155,6 @@
 
 <ng-template #viewLicenseModal>
   @if (selectedLicense(); as license) {
-    <app-view-license-key-modal [license]="license" (closed)="hideViewLicenseModal()" />
+    <app-view-license-key-modal [license]="license" [token]="selectedToken()!" (closed)="hideViewLicenseModal()" />
   }
 </ng-template>

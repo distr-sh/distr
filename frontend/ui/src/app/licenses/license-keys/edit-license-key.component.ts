@@ -67,7 +67,6 @@ export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAcces
           id: val.id,
           name: val.name,
           description: val.description,
-          token: '',
           payload: this.isEditMode() ? {} : JSON.parse(val.payload),
           notBefore: dayjs(val.notBefore).toDate().toISOString(),
           expiresAt: dayjs(val.expiresAt).toDate().toISOString(),

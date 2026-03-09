@@ -42,4 +42,8 @@ export class LicenseKeysService implements CrudService<LicenseKey> {
   delete(request: LicenseKey): Observable<void> {
     return this.http.delete<void>(`${this.licenseKeysUrl}/${request.id}`).pipe(tap(() => this.cache.remove(request)));
   }
+
+  getToken(id: string): Observable<{token: string}> {
+    return this.http.get<{token: string}>(`${this.licenseKeysUrl}/${id}/token`);
+  }
 }

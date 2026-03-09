@@ -134,7 +134,7 @@ export class LicensesOverviewComponent {
           this.applicationEntitlementsService.create({...ae, id: undefined, customerOrganizationId: targetId})
         ),
         ...source.licenseKeys.map((lk) =>
-          this.licenseKeysService.create({...lk, id: undefined, token: '', customerOrganizationId: targetId})
+          this.licenseKeysService.create({...lk, id: undefined, customerOrganizationId: targetId})
         ),
       ];
       if (creates.length > 0) {

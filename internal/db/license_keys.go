@@ -14,16 +14,16 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-const licenseKeyOutExpr = `ul.id, ul.created_at, ul.name, ul.description, ul.payload, ul.token, ` +
-	`ul.not_before, ul.expires_at, ul.organization_id, ul.customer_organization_id `
+const licenseKeyOutExpr = `lk.id, lk.created_at, lk.name, lk.description, lk.payload, ` +
+	`lk.not_before, lk.expires_at, lk.organization_id, lk.customer_organization_id `
 
 func GetLicenseKeys(ctx context.Context, orgID uuid.UUID) ([]types.LicenseKey, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `
 		SELECT `+licenseKeyOutExpr+`
-		FROM LicenseKey ul
-		WHERE ul.organization_id = @orgId
-		ORDER BY ul.name`,
+		FROM LicenseKey lk
+		WHERE lk.organization_id = @orgId
+		ORDER BY lk.name`,
 		pgx.NamedArgs{"orgId": orgID},
 	)
 	if err != nil {
@@ -42,9 +42,9 @@ func GetLicenseKeysByCustomerOrgID(
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `
 		SELECT `+licenseKeyOutExpr+`
-		FROM LicenseKey ul
-		WHERE ul.organization_id = @orgId AND ul.customer_organization_id = @customerOrgId
-		ORDER BY ul.name`,
+		FROM LicenseKey lk
+		WHERE lk.organization_id = @orgId AND lk.customer_organization_id = @customerOrgId
+		ORDER BY lk.name`,
 		pgx.NamedArgs{"orgId": orgID, "customerOrgId": customerOrgID},
 	)
 	if err != nil {
@@ -61,8 +61,8 @@ func GetLicenseKeyByID(ctx context.Context, id uuid.UUID) (*types.LicenseKey, er
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `
 		SELECT `+licenseKeyOutExpr+`
-		FROM LicenseKey ul
-		WHERE ul.id = @id`,
+		FROM LicenseKey lk
+		WHERE lk.id = @id`,
 		pgx.NamedArgs{"id": id},
 	)
 	if err != nil {
@@ -83,20 +83,19 @@ func CreateLicenseKey(ctx context.Context, licenseKey *types.LicenseKey) error {
 	rows, err := db.Query(ctx, `
 		WITH inserted AS (
 			INSERT INTO LicenseKey (
-				name, description, payload, token, not_before, expires_at,
+				name, description, payload, not_before, expires_at,
 				organization_id, customer_organization_id
 			) VALUES (
-				@name, @description, @payload, @token, @notBefore, @expiresAt,
+				@name, @description, @payload, @notBefore, @expiresAt,
 				@organizationId, @customerOrganizationId
 			) RETURNING *
 		)
 		SELECT `+licenseKeyOutExpr+`
-		FROM inserted ul`,
+		FROM inserted lk`,
 		pgx.NamedArgs{
 			"name":                   licenseKey.Name,
 			"description":            licenseKey.Description,
 			"payload":                licenseKey.Payload,
-			"token":                  licenseKey.Token,
 			"notBefore":              licenseKey.NotBefore,
 			"expiresAt":              licenseKey.ExpiresAt,
 			"organizationId":         licenseKey.OrganizationID,
@@ -149,20 +148,6 @@ func UpdateLicenseKeyMetadata(
 	} else {
 		return &result, nil
 	}
-}
-
-func UpdateLicenseKeyToken(ctx context.Context, id uuid.UUID, token string) error {
-	db := internalctx.GetDb(ctx)
-	cmd, err := db.Exec(ctx, `UPDATE LicenseKey SET token = @token WHERE id = @id`,
-		pgx.NamedArgs{"id": id, "token": token},
-	)
-	if err != nil {
-		return fmt.Errorf("could not update LicenseKey token: %w", err)
-	}
-	if cmd.RowsAffected() == 0 {
-		return fmt.Errorf("could not update LicenseKey token: %w", apierrors.ErrNotFound)
-	}
-	return nil
 }
 
 func DeleteLicenseKeyWithID(ctx context.Context, id uuid.UUID) error {

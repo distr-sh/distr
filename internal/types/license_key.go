@@ -13,7 +13,6 @@ type LicenseKey struct {
 	Name                   string          `db:"name" json:"name"`
 	Description            *string         `db:"description" json:"description,omitempty"`
 	Payload                json.RawMessage `db:"payload" json:"payload"`
-	Token                  string          `db:"token" json:"token"`
 	NotBefore              time.Time       `db:"not_before" json:"notBefore"`
 	ExpiresAt              time.Time       `db:"expires_at" json:"expiresAt"`
 	OrganizationID         uuid.UUID       `db:"organization_id" json:"-"`

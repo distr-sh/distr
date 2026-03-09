@@ -13,6 +13,7 @@ import {LicenseKey} from '../../types/license-key';
 })
 export class ViewLicenseKeyModalComponent {
   license = input.required<LicenseKey>();
+  token = input.required<string>();
   closed = output<void>();
 
   activeTab = signal<'token' | 'payload' | 'decoded'>('token');
@@ -29,9 +30,8 @@ export class ViewLicenseKeyModalComponent {
 
   constructor() {
     effect(() => {
-      const license = this.license();
-      this.payloadControl.setValue(JSON.stringify(license.payload, null, 2));
-      this.decodedControl.setValue(this.decodeToken(license.token));
+      this.payloadControl.setValue(JSON.stringify(this.license().payload, null, 2));
+      this.decodedControl.setValue(this.decodeToken(this.token()));
     });
   }
 
@@ -63,7 +63,7 @@ export class ViewLicenseKeyModalComponent {
 
   async copyToken() {
     try {
-      await navigator.clipboard.writeText(this.license().token);
+      await navigator.clipboard.writeText(this.token());
       this.toast.success('Copied to clipboard');
       this.copied = true;
       setTimeout(() => (this.copied = false), 2000);

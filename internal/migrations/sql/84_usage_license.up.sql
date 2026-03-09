@@ -5,7 +5,6 @@ CREATE TABLE LicenseKey (
   name TEXT NOT NULL,
   description TEXT,
   payload JSONB NOT NULL DEFAULT '{}',
-  token TEXT NOT NULL,
   not_before TIMESTAMP NOT NULL,
   expires_at TIMESTAMP NOT NULL,
   organization_id UUID NOT NULL REFERENCES Organization(id) ON DELETE CASCADE,
