@@ -97,7 +97,7 @@ func (a *authorizer) AuthorizeReference(ctx context.Context, nameStr string, ref
 				*auth.CurrentOrgID(),
 			)
 			if errors.Is(err, apierrors.ErrForbidden) {
-				return NewErrAccessDenied("license required")
+				return NewErrAccessDenied("entitlement required")
 			} else if err != nil {
 				return err
 			}
@@ -128,7 +128,7 @@ func (a *authorizer) AuthorizeBlob(ctx context.Context, digest digest.Digest, ac
 	if auth.CurrentCustomerOrgID() != nil && auth.CurrentOrg().HasFeature(types.FeatureLicensing) {
 		err := db.CheckEntitlementForArtifactBlob(ctx, digest.String(), *auth.CurrentCustomerOrgID(), *auth.CurrentOrgID())
 		if errors.Is(err, apierrors.ErrForbidden) {
-			return NewErrAccessDenied("license required")
+			return NewErrAccessDenied("entitlement required")
 		} else if err != nil {
 			return err
 		}

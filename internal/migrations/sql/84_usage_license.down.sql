@@ -11,7 +11,7 @@ ALTER TABLE ArtifactEntitlement_Artifact
 
 -- Revert ArtifactEntitlement indexes
 DROP INDEX IF EXISTS fk_ArtifactEntitlement_Artifact_artifact_version_id;
-CREATE INDEX fk_ArtifactLicense_Artifact_artifact_version_id ON ArtifactEntitlement_Artifact (artifact_entitlement_id);
+CREATE INDEX fk_ArtifactLicense_Artifact_artifact_version_id ON ArtifactEntitlement_Artifact (artifact_version_id);
 
 DROP INDEX IF EXISTS fk_ArtifactEntitlement_Artifact_artifact_id;
 CREATE INDEX fk_ArtifactLicense_Artifact_artifact_id ON ArtifactEntitlement_Artifact (artifact_id);

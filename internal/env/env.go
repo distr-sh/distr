@@ -1,7 +1,6 @@
 package env
 
 import (
-	"crypto/ed25519"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -84,7 +83,7 @@ var (
 	wellKnownMicrosoftIdentityAssociation   []byte
 	stripeWebhookSecret                     *string
 	stripeAPIKey                            *string
-	licenseKeyPrivateKey                    ed25519.PrivateKey
+	licenseKeyPrivateKeyPEM                 []byte
 )
 
 func Initialize() {
@@ -239,19 +238,8 @@ func Initialize() {
 	stripeWebhookSecret = envutil.GetEnvOrNil("STRIPE_WEBHOOK_SECRET")
 	stripeAPIKey = envutil.GetEnvOrNil("STRIPE_API_KEY")
 
-	if key := envutil.GetEnvParsedOrNil("LICENSE_KEY_PRIVATE_KEY", base64.StdEncoding.DecodeString); key != nil {
-		switch len(*key) {
-		case ed25519.SeedSize:
-			licenseKeyPrivateKey = ed25519.NewKeyFromSeed(*key)
-		case ed25519.PrivateKeySize:
-			licenseKeyPrivateKey = ed25519.PrivateKey(*key)
-		default:
-			panic(fmt.Sprintf(
-				"env: LICENSE_KEY_PRIVATE_KEY must be a base64-encoded "+
-					"ed25519 seed (%d bytes) or private key (%d bytes), got %d bytes",
-				ed25519.SeedSize, ed25519.PrivateKeySize, len(*key),
-			))
-		}
+	if pem := envutil.GetEnvParsedOrNil("LICENSE_KEY_PRIVATE_KEY", base64.StdEncoding.DecodeString); pem != nil {
+		licenseKeyPrivateKeyPEM = *pem
 	}
 }
 
@@ -521,6 +509,6 @@ func StripeAPIKey() *string {
 	return stripeAPIKey
 }
 
-func LicenseKeyPrivateKey() ed25519.PrivateKey {
-	return licenseKeyPrivateKey
+func LicenseKeyPrivateKey() []byte {
+	return licenseKeyPrivateKeyPEM
 }

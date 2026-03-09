@@ -159,7 +159,7 @@ func validateEntitlementSelections(entitlement types.ArtifactEntitlement) error 
 		}
 		versionIdSet := make(map[uuid.UUID]struct{})
 		for _, version := range selection.VersionIDs {
-			if _, exists := versionIdSet[selection.ArtifactID]; exists {
+			if _, exists := versionIdSet[version]; exists {
 				return errors.New("cannot select same version of artifact multiple times")
 			}
 			versionIdSet[version] = struct{}{}

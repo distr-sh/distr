@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -134,36 +135,36 @@ func createLicenseKey(w http.ResponseWriter, r *http.Request) {
 		CustomerOrganizationID: body.CustomerOrganizationID,
 	}
 
-	_ = db.RunTx(ctx, func(ctx context.Context) error {
-		if err := db.CreateLicenseKey(ctx, &licenseKey); errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, "A license key with this name already exists", http.StatusBadRequest)
-			return err
-		} else if err != nil {
-			log.Warn("could not create license key", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+	errTokenGeneration := errors.New("failed to generate license key token")
+
+	if err := db.RunTx(ctx, func(ctx context.Context) error {
+		if err := db.CreateLicenseKey(ctx, &licenseKey); err != nil {
 			return err
 		}
-
 		token, err := licensekey.GenerateToken(&licenseKey, env.Host())
 		if err != nil {
-			log.Error("failed to generate license key token", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, "failed to generate license key token", http.StatusInternalServerError)
-			return err
+			return fmt.Errorf("%w: %w", errTokenGeneration, err)
 		}
-
 		if err := db.UpdateLicenseKeyToken(ctx, licenseKey.ID, token); err != nil {
-			log.Error("failed to update license key token", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return err
 		}
 		licenseKey.Token = token
-
-		RespondJSON(w, licenseKey)
 		return nil
-	})
+	}); err != nil {
+		if errors.Is(err, apierrors.ErrConflict) {
+			http.Error(w, "A license key with this name already exists", http.StatusBadRequest)
+		} else if errors.Is(err, errTokenGeneration) {
+			log.Error("failed to generate license key token", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, "failed to generate license key token", http.StatusInternalServerError)
+		} else {
+			log.Warn("could not create license key", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+	RespondJSON(w, licenseKey)
 }
 
 func updateLicenseKey(w http.ResponseWriter, r *http.Request) {

@@ -19,11 +19,11 @@ var registeredClaims = map[string]struct{}{
 }
 
 var signingKey = sync.OnceValues(func() (jwk.Key, error) {
-	privateKey := env.LicenseKeyPrivateKey()
-	if privateKey == nil {
+	pemBytes := env.LicenseKeyPrivateKey()
+	if pemBytes == nil {
 		return nil, errors.New("no license key signing key configured")
 	}
-	return jwk.FromRaw(privateKey)
+	return jwk.ParseKey(pemBytes, jwk.WithPEM(true))
 })
 
 func IsSigningKeyConfigured() bool {
@@ -31,6 +31,14 @@ func IsSigningKeyConfigured() bool {
 }
 
 func GenerateToken(licenseKey *types.LicenseKey, issuer string) (string, error) {
+	key, err := signingKey()
+	if err != nil {
+		return "", err
+	}
+	return generateToken(key, licenseKey, issuer)
+}
+
+func generateToken(key jwk.Key, licenseKey *types.LicenseKey, issuer string) (string, error) {
 	var customClaims map[string]any
 	if err := json.Unmarshal(licenseKey.Payload, &customClaims); err != nil {
 		return "", fmt.Errorf("invalid payload JSON: %w", err)
@@ -54,11 +62,6 @@ func GenerateToken(licenseKey *types.LicenseKey, issuer string) (string, error) 
 	token, err := builder.Build()
 	if err != nil {
 		return "", fmt.Errorf("could not build JWT: %w", err)
-	}
-
-	key, err := signingKey()
-	if err != nil {
-		return "", err
 	}
 
 	signed, err := jwt.Sign(token, jwt.WithKey(jwa.EdDSA, key))
