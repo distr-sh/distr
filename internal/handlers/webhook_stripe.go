@@ -169,8 +169,8 @@ func handleStripeSubscription(ctx context.Context, sub stripe.Subscription) erro
 			zap.Stringer("organizationId", org.ID),
 			zap.String("subscriptionType", string(org.SubscriptionType)),
 			zap.Time("subscriptionEndsAt", org.SubscriptionEndsAt),
-			zap.Int64("userAccountQty", org.SubscriptionUserAccountQty),
-			zap.Int64("customerOrganizationQty", org.SubscriptionCustomerOrganizationQty))
+			zap.Int64("userAccountQty", org.SubscriptionUserAccountQty.Value()),
+			zap.Int64("customerOrganizationQty", org.SubscriptionCustomerOrganizationQty.Value()))
 
 		if err := db.UpdateOrganization(ctx, org); err != nil {
 			return err
