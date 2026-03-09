@@ -322,10 +322,10 @@ export class EditApplicationEntitlementComponent implements OnInit, OnDestroy, A
           password: license.registryPassword || '',
         },
       });
-      if (license.customerOrganizationId) {
+      if (license.id) {
         this.editForm.controls.subjectId.disable({emitEvent: false});
-        this.editForm.controls.customerOrganizationId.disable({emitEvent: false});
       }
+      this.editForm.controls.customerOrganizationId.disable({emitEvent: false});
     } else {
       this.editForm.reset();
     }

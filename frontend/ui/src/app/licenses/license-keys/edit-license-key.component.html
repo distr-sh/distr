@@ -39,7 +39,7 @@
         <label for="notBefore" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Not Before *</label>
         <input
           formControlName="notBefore"
-          type="datetime-local"
+          type="date"
           id="notBefore"
           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-60" />
         @if (editForm.controls.notBefore.invalid && editForm.controls.notBefore.touched) {
@@ -50,7 +50,7 @@
         <label for="expiresAt" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Expires At *</label>
         <input
           formControlName="expiresAt"
-          type="datetime-local"
+          type="date"
           id="expiresAt"
           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-60" />
         @if (editForm.controls.expiresAt.invalid && editForm.controls.expiresAt.touched) {
@@ -75,19 +75,14 @@
       }
     </div>
 
-    <div>
-      <label for="customerOrganizationId" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-        >Customer</label
-      >
-      <select
-        formControlName="customerOrganizationId"
-        id="customerOrganizationId"
-        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-60">
-        <option [ngValue]="undefined">No customer</option>
-        @for (customer of customers$ | async; track customer.id) {
-          <option [value]="customer.id">{{ customer.name }}</option>
-        }
-      </select>
-    </div>
+    @if (editForm.getRawValue().customerOrganizationId) {
+      <div>
+        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Customer</label>
+        @let customers = customers$ | async;
+        <p class="text-sm text-gray-900 dark:text-white">
+          {{ customers?.find(c => c.id === editForm.getRawValue().customerOrganizationId)?.name ?? '—' }}
+        </p>
+      </div>
+    }
   </div>
 </form>

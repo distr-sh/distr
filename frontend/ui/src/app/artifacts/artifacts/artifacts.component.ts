@@ -56,6 +56,7 @@ export class ArtifactsComponent {
   });
 
   protected readonly artifacts$ = this.artifacts.list();
+  protected readonly hasNoArtifact = toSignal(this.artifacts$.pipe(map((artifacts) => artifacts.length === 0)));
 
   protected readonly filteredArtifacts = toSignal(
     combineLatest([this.artifacts$, this.filterForm.valueChanges.pipe(startWith(this.filterForm.value))]).pipe(

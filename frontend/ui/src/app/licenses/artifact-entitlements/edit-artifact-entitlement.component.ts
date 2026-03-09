@@ -272,6 +272,7 @@ export class EditArtifactEntitlementComponent implements OnInit, OnDestroy, Afte
       for (let selection of license.artifacts || []) {
         this.addArtifactGroup(selection);
       }
+      this.editForm.controls.customerOrganizationId.disable({emitEvent: false});
     } else {
       this.editForm.reset();
       this.addArtifactGroup();

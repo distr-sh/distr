@@ -39,8 +39,8 @@ export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAcces
 
   protected readonly faCircleInfo = faCircleInfo;
 
-  private readonly today = dayjs().startOf('day').format('YYYY-MM-DDTHH:mm');
-  private readonly inOneYear = dayjs().add(1, 'year').startOf('day').format('YYYY-MM-DDTHH:mm');
+  private readonly today = dayjs().startOf('day').format('YYYY-MM-DD');
+  private readonly inOneYear = dayjs().add(1, 'year').startOf('day').format('YYYY-MM-DD');
 
   private fb = inject(FormBuilder);
   editForm = this.fb.nonNullable.group(
@@ -99,21 +99,20 @@ export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAcces
         id: license.id,
         name: license.name,
         description: license.description,
-        expiresAt: license.expiresAt ? dayjs(license.expiresAt).format('YYYY-MM-DDTHH:mm') : '',
-        notBefore: license.notBefore ? dayjs(license.notBefore).format('YYYY-MM-DDTHH:mm') : '',
-        payload: JSON.stringify(license.payload, null, 2),
+        expiresAt: license.expiresAt ? dayjs(license.expiresAt).format('YYYY-MM-DD') : this.inOneYear,
+        notBefore: license.notBefore ? dayjs(license.notBefore).format('YYYY-MM-DD') : this.today,
+        payload: license.payload ? JSON.stringify(license.payload, null, 2) : '{}',
         customerOrganizationId: license.customerOrganizationId,
       });
+      this.editForm.controls.customerOrganizationId.disable({emitEvent: false});
       if (isEdit) {
         this.editForm.controls.expiresAt.disable();
         this.editForm.controls.notBefore.disable();
         this.editForm.controls.payload.disable();
-        this.editForm.controls.customerOrganizationId.disable();
       } else {
         this.editForm.controls.expiresAt.enable();
         this.editForm.controls.notBefore.enable();
         this.editForm.controls.payload.enable();
-        this.editForm.controls.customerOrganizationId.enable();
       }
     } else {
       this.isEditMode.set(false);
@@ -121,7 +120,7 @@ export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAcces
       this.editForm.controls.expiresAt.enable();
       this.editForm.controls.notBefore.enable();
       this.editForm.controls.payload.enable();
-      this.editForm.controls.customerOrganizationId.enable();
+      this.editForm.controls.customerOrganizationId.disable({emitEvent: false});
     }
   }
 

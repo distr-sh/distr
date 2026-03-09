@@ -50,26 +50,39 @@
 
           <hr class="border-gray-200 dark:border-gray-600" />
 
-          <div class="p-4 flex-1 grid grid-cols-3 gap-2 text-center">
-            <div>
-              <div class="text-2xl font-bold text-gray-900 dark:text-white">
-                {{ license.applicationEntitlements.length }}
-              </div>
-              <div class="text-xs text-gray-500 dark:text-gray-400">App Entitlements</div>
+          @if (hasNoLicenses(license)) {
+            <div class="p-4 flex-1 flex flex-col items-center justify-center gap-3 text-center">
+              <p class="text-sm text-gray-500 dark:text-gray-400">No licenses yet.</p>
+              <button
+                type="button"
+                (click)="openCopyModal($event, license)"
+                class="inline-flex items-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
+                <fa-icon [icon]="faCopy"></fa-icon>
+                Copy from another customer
+              </button>
             </div>
-            <div>
-              <div class="text-2xl font-bold text-gray-900 dark:text-white">
-                {{ license.artifactEntitlements.length }}
+          } @else {
+            <div class="p-4 flex-1 grid grid-cols-3 gap-2 text-center">
+              <div>
+                <div class="text-2xl font-bold text-gray-900 dark:text-white">
+                  {{ license.licenseKeys.length }}
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">License Keys</div>
               </div>
-              <div class="text-xs text-gray-500 dark:text-gray-400">Artifact Entitlements</div>
-            </div>
-            <div>
-              <div class="text-2xl font-bold text-gray-900 dark:text-white">
-                {{ license.licenseKeys.length }}
+              <div>
+                <div class="text-2xl font-bold text-gray-900 dark:text-white">
+                  {{ license.applicationEntitlements.length }}
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">App Entitlements</div>
               </div>
-              <div class="text-xs text-gray-500 dark:text-gray-400">License Keys</div>
+              <div>
+                <div class="text-2xl font-bold text-gray-900 dark:text-white">
+                  {{ license.artifactEntitlements.length }}
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">Artifact Entitlements</div>
+              </div>
             </div>
-          </div>
+          }
         </div>
       } @empty {
         <div class="col-span-full text-center py-8 text-gray-500 dark:text-gray-400">
@@ -79,3 +92,62 @@
     </div>
   </div>
 </section>
+
+<ng-template #copyLicensesModal>
+  <div class="relative p-4 w-full max-w-md">
+    <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
+      <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Copy licenses from another customer</h3>
+        <button
+          type="button"
+          (click)="closeCopyModal()"
+          class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+          <fa-icon [icon]="faXmark"></fa-icon>
+          <span class="sr-only">Close modal</span>
+        </button>
+      </div>
+      <div class="p-4 md:p-5 space-y-4">
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          Select a customer to copy all their licenses to
+          <span class="font-medium text-gray-900 dark:text-white">{{
+            targetLicense()?.customerOrganization?.name
+          }}</span
+          >. You can edit the licenses afterwards.
+        </p>
+        <form [formGroup]="copyForm">
+          <label for="sourceCustomer" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >Source customer</label
+          >
+          <select
+            formControlName="sourceCustomerOrgId"
+            id="sourceCustomer"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+            <option [ngValue]="null">Select a customer...</option>
+            @for (source of sourcesForCopy(); track source.customerOrganization.id) {
+              <option [value]="source.customerOrganization.id">{{ source.customerOrganization.name }}</option>
+            }
+          </select>
+          @if (copyForm.controls.sourceCustomerOrgId.invalid && copyForm.controls.sourceCustomerOrgId.touched) {
+            <p class="mt-1 text-sm text-red-600 dark:text-red-500">Please select a customer.</p>
+          }
+        </form>
+      </div>
+      <div
+        class="flex items-center justify-end p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600 gap-2">
+        <button
+          type="button"
+          (click)="closeCopyModal()"
+          class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+          Cancel
+        </button>
+        <button
+          type="button"
+          (click)="copyLicenses()"
+          [disabled]="copyLicensesLoading()"
+          class="text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60">
+          Copy licenses
+        </button>
+      </div>
+    </div>
+  </div>
+</ng-template>
