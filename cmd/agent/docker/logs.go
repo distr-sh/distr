@@ -14,10 +14,8 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/docker/cli/cli/compose/convert"
 	composeapi "github.com/docker/compose/v5/pkg/api"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/swarm"
-	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/moby/moby/api/pkg/stdcopy"
+	mobyClient "github.com/moby/moby/client"
 	"go.uber.org/zap"
 )
 
@@ -81,18 +79,18 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 			apiClient := dockerCli.Client()
 			services, err := apiClient.ServiceList(
 				ctx,
-				swarm.ServiceListOptions{
-					Filters: filters.NewArgs(filters.Arg("label", convert.LabelNamespace+"="+d.ProjectName)),
+				mobyClient.ServiceListOptions{
+					Filters: mobyClient.Filters{}.Add("label", convert.LabelNamespace+"="+d.ProjectName),
 				},
 			)
 			if err != nil {
 				logger.Warn("could not get services for docker stack", zap.Error(err))
 				toplevelErr = err
 			} else {
-				for _, svc := range services {
+				for _, svc := range services.Items {
 					// fake closure to close the ReadCloser returned by ServiceLogs after each iteration
 					err := func() error {
-						logOptions := container.LogsOptions{Timestamps: true, ShowStdout: true, ShowStderr: true}
+						logOptions := mobyClient.ServiceLogsOptions{Timestamps: true, ShowStdout: true, ShowStderr: true}
 						if since != nil {
 							logOptions.Since = since.Format(time.RFC3339Nano)
 						}

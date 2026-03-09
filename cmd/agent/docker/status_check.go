@@ -8,9 +8,8 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/docker/cli/cli/compose/convert"
 	"github.com/docker/compose/v5/pkg/api"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/swarm"
+	"github.com/moby/moby/api/types/container"
+	mobyClient "github.com/moby/moby/client"
 )
 
 func CheckStatus(ctx context.Context, deployment AgentDeployment) (types.DeploymentStatusType, string, error) {
@@ -91,15 +90,19 @@ func CheckDockerSwarmStatus(
 	apiClient := dockerCli.Client()
 	services, err := apiClient.ServiceList(
 		ctx,
-		swarm.ServiceListOptions{
-			Filters: filters.NewArgs(filters.Arg("label", convert.LabelNamespace+"="+deployment.ProjectName)),
+		mobyClient.ServiceListOptions{
+			Filters: mobyClient.Filters{}.Add("label", convert.LabelNamespace+"="+deployment.ProjectName),
+			Status:  true,
 		},
 	)
 	if err != nil {
 		return types.DeploymentStatusTypeError, "", err
 	}
-	for _, service := range services {
+	for _, service := range services.Items {
 		if service.Spec.Mode.GlobalJob == nil && service.Spec.Mode.ReplicatedJob == nil {
+			if service.ServiceStatus == nil {
+				return types.DeploymentStatusTypeError, fmt.Sprintf("service %v has nil ServiceStatus", service.Spec.Name), nil
+			}
 			if service.ServiceStatus.RunningTasks < service.ServiceStatus.DesiredTasks {
 				return types.DeploymentStatusTypeError, fmt.Sprintf("service %v is not running: running=%v, desired=%v",
 					service.Spec.Name, service.ServiceStatus.RunningTasks, service.ServiceStatus.DesiredTasks), nil

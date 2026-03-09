@@ -1,5 +1,29 @@
 # Changelog
 
+## [2.11.7](https://github.com/distr-sh/distr/compare/2.11.6...2.11.7) (2026-03-06)
+
+
+### Bug Fixes
+
+* **deps:** update aws-sdk-go-v2 monorepo ([#1932](https://github.com/distr-sh/distr/issues/1932)) ([32f95d1](https://github.com/distr-sh/distr/commit/32f95d1d278f5fa93c3146922b046eef5f4f4cce))
+* **deps:** update module github.com/docker/compose/v5 to v5.1.0 [security] ([#1940](https://github.com/distr-sh/distr/issues/1940)) ([5273053](https://github.com/distr-sh/distr/commit/52730537724cdf471edeff474745df1dcb47ef6b))
+* **deps:** update module go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc to v1.41.0 ([#1929](https://github.com/distr-sh/distr/issues/1929)) ([dcf07e8](https://github.com/distr-sh/distr/commit/dcf07e813842e3c52164fa69a75f2af72ca2e4a4))
+
+
+### Other
+
+* add cache-control header for frontend assets ([#1947](https://github.com/distr-sh/distr/issues/1947)) ([937537d](https://github.com/distr-sh/distr/commit/937537d123c8cb46d4d297e90f5268f78fadf12f))
+* **deps:** update actions/setup-node action to v6.3.0 ([#1934](https://github.com/distr-sh/distr/issues/1934)) ([248faf3](https://github.com/distr-sh/distr/commit/248faf38b4d9f488c3049a78ba81fc6831d046e8))
+* **deps:** update angular monorepo to v21.2.1 ([#1936](https://github.com/distr-sh/distr/issues/1936)) ([1f0f241](https://github.com/distr-sh/distr/commit/1f0f241b660f1058c55acbaf6729815d750d36c3))
+* **deps:** update angular-cli monorepo to v21.2.1 ([#1945](https://github.com/distr-sh/distr/issues/1945)) ([1c4dc21](https://github.com/distr-sh/distr/commit/1c4dc211dc54f7a53159f2715c4c2e6d42a7c03e))
+* **deps:** update dependency go to v1.26.1 ([#1949](https://github.com/distr-sh/distr/issues/1949)) ([59f957e](https://github.com/distr-sh/distr/commit/59f957e3c309ed38ba37176909a5af3aeb8394fd))
+* **deps:** update dependency marked to v17.0.4 ([#1937](https://github.com/distr-sh/distr/issues/1937)) ([1eb517b](https://github.com/distr-sh/distr/commit/1eb517b28bbb48805745e005959a2d97179b410b))
+* **deps:** update docker docker tag to v29.3.0 ([#1950](https://github.com/distr-sh/distr/issues/1950)) ([bf1800e](https://github.com/distr-sh/distr/commit/bf1800e765f9553fb37e4de21c3d7b8f94cf05c2))
+* **deps:** update docker/build-push-action action to v7 ([#1951](https://github.com/distr-sh/distr/issues/1951)) ([ce345f8](https://github.com/distr-sh/distr/commit/ce345f8a2600e1c6f585ce3d10fbb0295bd4a372))
+* **deps:** update docker/login-action action to v4 ([#1935](https://github.com/distr-sh/distr/issues/1935)) ([d36a1e2](https://github.com/distr-sh/distr/commit/d36a1e2f5aafe3f2db1ee291f2789035a0ead053))
+* hide artifact instructions for vendors with subscription ([#1943](https://github.com/distr-sh/distr/issues/1943)) ([f3504c8](https://github.com/distr-sh/distr/commit/f3504c8a2fa9214b1c603bdde78ec701439fb3a1))
+* improve deployments page customer header ([#1942](https://github.com/distr-sh/distr/issues/1942)) ([d13a770](https://github.com/distr-sh/distr/commit/d13a770ebe32ef483eb6d739185580218dd4f546))
+
 ## [2.11.6](https://github.com/distr-sh/distr/compare/2.11.5...2.11.6) (2026-03-04)
 
 

@@ -33,16 +33,6 @@
       "envFile": "${workspaceFolder}/.env.agent.kubernetes"
     },
     {
-      "name": "Launch Distr MCP",
-      "type": "go",
-      "request": "launch",
-      "mode": "auto",
-      "program": "${workspaceFolder}/cmd/mcp",
-      "args": ["serve", "--sse"],
-      "cwd": "${workspaceFolder}",
-      "envFile": "${workspaceFolder}/.env.mcp"
-    },
-    {
       "name": "ng serve",
       "type": "chrome",
       "request": "launch",
