@@ -116,6 +116,9 @@
                         @if (version.size > 0) {
                           <li>{{ version.size | bytes }}</li>
                         }
+                        @if (version.inferredType === 'signature') {
+                          <fa-icon [icon]="faFileSignature" title="This tag appears to be a cosign signature" />
+                        }
                         <li>
                           <app-artifacts-hash [hash]="version.digest"></app-artifacts-hash>
                         </li>
