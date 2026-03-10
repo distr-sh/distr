@@ -1,11 +1,10 @@
 package handlers
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
-	"time"
 
+	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
@@ -21,20 +20,6 @@ import (
 	"go.uber.org/zap"
 )
 
-type CreateLicenseKeyRequest struct {
-	Name                   string          `json:"name"`
-	Description            *string         `json:"description,omitempty"`
-	Payload                json.RawMessage `json:"payload"`
-	NotBefore              time.Time       `json:"notBefore"`
-	ExpiresAt              time.Time       `json:"expiresAt"`
-	CustomerOrganizationID *uuid.UUID      `json:"customerOrganizationId,omitempty"`
-}
-
-type UpdateLicenseKeyRequest struct {
-	Name        string  `json:"name"`
-	Description *string `json:"description,omitempty"`
-}
-
 func LicenseKeysRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Licensing"))
 	r.Use(middleware.RequireOrgAndRole, middleware.LicensingFeatureFlagEnabledMiddleware)
@@ -46,7 +31,7 @@ func LicenseKeysRouter(r chiopenapi.Router) {
 	r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 		Post("/", createLicenseKey).
 		With(option.Description("Create a new license key")).
-		With(option.Request(CreateLicenseKeyRequest{})).
+		With(option.Request(api.CreateLicenseKeyRequest{})).
 		With(option.Response(http.StatusOK, types.LicenseKey{}))
 
 	r.With(licenseKeyMiddleware).Route("/{licenseKeyId}", func(r chiopenapi.Router) {
@@ -65,7 +50,7 @@ func LicenseKeysRouter(r chiopenapi.Router) {
 					With(option.Description("Update license key name and description")).
 					With(option.Request(struct {
 						LicenseKeyIDRequest
-						UpdateLicenseKeyRequest
+						api.UpdateLicenseKeyRequest
 					}{})).
 					With(option.Response(http.StatusOK, types.LicenseKey{}))
 				r.Delete("/", deleteLicenseKey).
@@ -106,7 +91,7 @@ func createLicenseKey(w http.ResponseWriter, r *http.Request) {
 	log := internalctx.GetLogger(ctx)
 	authCtx := auth.Authentication.Require(ctx)
 
-	body, err := JsonBody[CreateLicenseKeyRequest](w, r)
+	body, err := JsonBody[api.CreateLicenseKeyRequest](w, r)
 	if err != nil {
 		return
 	}
@@ -171,7 +156,7 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 	log := internalctx.GetLogger(ctx)
 	existing := internalctx.GetLicenseKey(ctx)
 
-	body, err := JsonBody[UpdateLicenseKeyRequest](w, r)
+	body, err := JsonBody[api.UpdateLicenseKeyRequest](w, r)
 	if err != nil {
 		return
 	}
@@ -214,6 +199,9 @@ func licenseKeyMiddleware(next http.Handler) http.Handler {
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			w.WriteHeader(http.StatusInternalServerError)
 		} else if licenseKey.OrganizationID != *authCtx.CurrentOrgID() {
+			w.WriteHeader(http.StatusNotFound)
+		} else if authCtx.CurrentCustomerOrgID() != nil &&
+			(licenseKey.CustomerOrganizationID == nil || *licenseKey.CustomerOrganizationID != *authCtx.CurrentCustomerOrgID()) {
 			w.WriteHeader(http.StatusNotFound)
 		} else {
 			ctx = internalctx.WithLicenseKey(ctx, licenseKey)

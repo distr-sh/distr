@@ -53,13 +53,15 @@
           @if (hasNoLicenses(license)) {
             <div class="p-4 flex-1 flex flex-col items-center justify-center gap-3 text-center">
               <p class="text-sm text-gray-500 dark:text-gray-400">No licenses yet.</p>
-              <button
-                type="button"
-                (click)="openCopyModal($event, license)"
-                class="inline-flex items-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
-                <fa-icon [icon]="faCopy"></fa-icon>
-                Copy from another customer
-              </button>
+              @if (auth.hasAnyRole('read_write', 'admin')) {
+                <button
+                  type="button"
+                  (click)="openCopyModal($event, license)"
+                  class="inline-flex items-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
+                  <fa-icon [icon]="faCopy"></fa-icon>
+                  Copy from another customer
+                </button>
+              }
             </div>
           } @else {
             <div class="p-4 flex-1 grid grid-cols-3 gap-2 text-center">
@@ -85,9 +87,7 @@
           }
         </div>
       } @empty {
-        <div class="col-span-full text-center py-8 text-gray-500 dark:text-gray-400">
-          No customers with licenses yet.
-        </div>
+        <div class="col-span-full text-center py-8 text-gray-500 dark:text-gray-400">No customers yet.</div>
       }
     </div>
   </div>

@@ -67,6 +67,7 @@ Key internal packages:
 - `internal/middleware/`: HTTP middleware (logging, auth, Sentry, etc.)
 - `internal/svc/`: Business logic services
 - `internal/mapping/`: Mapping logic for data transformations between DTOs and domain models
+- `api/`: All request structs used by HTTP handlers should be in the api package and not in the handler package
 
 ### Frontend Architecture (Angular)
 

@@ -57,7 +57,7 @@ export class ArtifactEntitlementsComponent {
     search: new FormControl(''),
   });
 
-  licenses$: Observable<ArtifactEntitlement[]> = combineLatest([
+  entitlements$: Observable<ArtifactEntitlement[]> = combineLatest([
     filteredByFormControl(
       this.artifactEntitlementsService.list(),
       this.filterForm.controls.search,
@@ -71,53 +71,53 @@ export class ArtifactEntitlementsComponent {
   );
 
   editForm = new FormGroup({
-    license: new FormControl<ArtifactEntitlement | undefined>(undefined, {
+    entitlement: new FormControl<ArtifactEntitlement | undefined>(undefined, {
       nonNullable: true,
       validators: Validators.required,
     }),
   });
   editFormLoading = false;
 
-  private manageLicenseDrawerRef?: DialogRef;
+  private manageEntitlementDrawerRef?: DialogRef;
 
   private readonly customerOrganizations$ = this.customerOrganizationService
     .getCustomerOrganizations()
     .pipe(shareReplay(1));
   private readonly artifacts$ = this.artifactsService.list();
 
-  openDrawer(templateRef: TemplateRef<unknown>, license?: ArtifactEntitlement) {
+  openDrawer(templateRef: TemplateRef<unknown>, entitlement?: ArtifactEntitlement) {
     this.hideDrawer();
-    if (license) {
-      this.loadLicense(license);
+    if (entitlement) {
+      this.loadEntitlement(entitlement);
     } else if (this.customerOrganizationId()) {
       this.editForm.patchValue({
-        license: {customerOrganizationId: this.customerOrganizationId()} as ArtifactEntitlement,
+        entitlement: {customerOrganizationId: this.customerOrganizationId()} as ArtifactEntitlement,
       });
     }
-    this.manageLicenseDrawerRef = this.overlay.showDrawer(templateRef);
+    this.manageEntitlementDrawerRef = this.overlay.showDrawer(templateRef);
   }
 
-  loadLicense(license: ArtifactEntitlement) {
-    this.editForm.patchValue({license});
+  loadEntitlement(entitlement: ArtifactEntitlement) {
+    this.editForm.patchValue({entitlement});
   }
 
   hideDrawer() {
-    this.manageLicenseDrawerRef?.close();
-    this.editForm.reset({license: undefined});
+    this.manageEntitlementDrawerRef?.close();
+    this.editForm.reset({entitlement: undefined});
   }
 
-  async saveLicense() {
+  async saveEntitlement() {
     this.editForm.markAllAsTouched();
-    const {license} = this.editForm.value;
-    if (this.editForm.valid && license) {
+    const {entitlement} = this.editForm.value;
+    if (this.editForm.valid && entitlement) {
       this.editFormLoading = true;
-      const action = license.id
-        ? this.artifactEntitlementsService.update(license)
-        : this.artifactEntitlementsService.create(license);
+      const action = entitlement.id
+        ? this.artifactEntitlementsService.update(entitlement)
+        : this.artifactEntitlementsService.create(entitlement);
       try {
-        const license = await firstValueFrom(action);
+        const saved = await firstValueFrom(action);
         this.hideDrawer();
-        this.toast.success(`${license.name} saved successfully`);
+        this.toast.success(`${saved.name} saved successfully`);
       } catch (e) {
         const msg = getFormDisplayedError(e);
         if (msg) {
@@ -129,12 +129,12 @@ export class ArtifactEntitlementsComponent {
     }
   }
 
-  deleteLicense(license: ArtifactEntitlement) {
+  deleteEntitlement(entitlement: ArtifactEntitlement) {
     this.overlay
-      .confirm(`Really delete ${license.name}?`)
+      .confirm(`Really delete ${entitlement.name}?`)
       .pipe(
         filter((result) => result === true),
-        switchMap(() => this.artifactEntitlementsService.delete(license)),
+        switchMap(() => this.artifactEntitlementsService.delete(entitlement)),
         catchError((e) => {
           const msg = getFormDisplayedError(e);
           if (msg) {

@@ -1,7 +1,7 @@
 import {GlobalPositionStrategy} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe} from '@angular/common';
-import {Component, inject, input, signal, TemplateRef, viewChild} from '@angular/core';
-import {takeUntilDestroyed, toObservable} from '@angular/core/rxjs-interop';
+import {Component, computed, inject, input, signal, TemplateRef, viewChild} from '@angular/core';
+import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCopy, faEye, faMagnifyingGlass, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
@@ -62,17 +62,21 @@ export class LicenseKeysComponent {
     search: new FormControl(''),
   });
 
-  licenses$: Observable<LicenseKey[]> = combineLatest([
-    filteredByFormControl(
-      this.licenseKeysService.list(),
-      this.filterForm.controls.search,
-      (it: LicenseKey, search: string) => !search || (it.name || '').toLowerCase().includes(search.toLowerCase())
+  private readonly filteredLicenses = toSignal(
+    combineLatest([
+      filteredByFormControl(
+        this.licenseKeysService.list(),
+        this.filterForm.controls.search,
+        (it: LicenseKey, search: string) => !search || (it.name || '').toLowerCase().includes(search.toLowerCase())
+      ),
+      toObservable(this.customerOrganizationId),
+    ]).pipe(
+      map(([keys, id]) => (id ? keys.filter((k) => k.customerOrganizationId === id) : keys)),
+      takeUntilDestroyed()
     ),
-    toObservable(this.customerOrganizationId),
-  ]).pipe(
-    map(([keys, id]) => (id ? keys.filter((k) => k.customerOrganizationId === id) : keys)),
-    takeUntilDestroyed()
+    {initialValue: [] as LicenseKey[]}
   );
+  protected readonly licenses = computed(() => this.filteredLicenses());
 
   editForm = new FormGroup({
     license: new FormControl<LicenseKey | undefined>(undefined, {
@@ -138,7 +142,7 @@ export class LicenseKeysComponent {
 
   deleteLicense(license: LicenseKey) {
     this.overlay
-      .confirm(`Really delete ${license.name}?`)
+      .confirm(`Really delete ${license.name}? Note: deleting a license key does not revoke it.`)
       .pipe(
         filter((result) => result === true),
         switchMap(() => this.licenseKeysService.delete(license)),

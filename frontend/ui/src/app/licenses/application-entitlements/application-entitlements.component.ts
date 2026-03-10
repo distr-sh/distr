@@ -54,7 +54,7 @@ export class ApplicationEntitlementsComponent {
     search: new FormControl(''),
   });
 
-  licenses$: Observable<ApplicationEntitlement[]> = combineLatest([
+  entitlements$: Observable<ApplicationEntitlement[]> = combineLatest([
     filteredByFormControl(
       this.applicationEntitlementsService.list(),
       this.filterForm.controls.search,
@@ -70,7 +70,7 @@ export class ApplicationEntitlementsComponent {
   applications$ = this.applicationsService.list();
 
   editForm = new FormGroup({
-    license: new FormControl<ApplicationEntitlement | undefined>(undefined, {
+    entitlement: new FormControl<ApplicationEntitlement | undefined>(undefined, {
       nonNullable: true,
       validators: Validators.required,
     }),
@@ -78,7 +78,7 @@ export class ApplicationEntitlementsComponent {
 
   editFormLoading = false;
 
-  private manageLicenseDrawerRef?: DialogRef;
+  private manageEntitlementDrawerRef?: DialogRef;
 
   protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faEye = faEye;
@@ -89,39 +89,39 @@ export class ApplicationEntitlementsComponent {
   protected readonly faXmark = faXmark;
   protected readonly isExpired = isExpired;
 
-  openDrawer(templateRef: TemplateRef<unknown>, license?: ApplicationEntitlement) {
+  openDrawer(templateRef: TemplateRef<unknown>, entitlement?: ApplicationEntitlement) {
     this.hideDrawer();
-    if (license) {
-      this.loadLicense(license);
+    if (entitlement) {
+      this.loadEntitlement(entitlement);
     } else if (this.customerOrganizationId()) {
       this.editForm.patchValue({
-        license: {customerOrganizationId: this.customerOrganizationId()} as ApplicationEntitlement,
+        entitlement: {customerOrganizationId: this.customerOrganizationId()} as ApplicationEntitlement,
       });
     }
-    this.manageLicenseDrawerRef = this.overlay.showDrawer(templateRef);
+    this.manageEntitlementDrawerRef = this.overlay.showDrawer(templateRef);
   }
 
-  loadLicense(license: ApplicationEntitlement) {
-    this.editForm.patchValue({license});
+  loadEntitlement(entitlement: ApplicationEntitlement) {
+    this.editForm.patchValue({entitlement});
   }
 
   hideDrawer() {
-    this.manageLicenseDrawerRef?.close();
-    this.editForm.reset({license: undefined});
+    this.manageEntitlementDrawerRef?.close();
+    this.editForm.reset({entitlement: undefined});
   }
 
-  async saveLicense() {
+  async saveEntitlement() {
     this.editForm.markAllAsTouched();
-    const {license} = this.editForm.value;
-    if (this.editForm.valid && license) {
+    const {entitlement} = this.editForm.value;
+    if (this.editForm.valid && entitlement) {
       this.editFormLoading = true;
-      const action = license.id
-        ? this.applicationEntitlementsService.update(license)
-        : this.applicationEntitlementsService.create(license);
+      const action = entitlement.id
+        ? this.applicationEntitlementsService.update(entitlement)
+        : this.applicationEntitlementsService.create(entitlement);
       try {
-        const license = await firstValueFrom(action);
+        const saved = await firstValueFrom(action);
         this.hideDrawer();
-        this.toast.success(`${license.name} saved successfully`);
+        this.toast.success(`${saved.name} saved successfully`);
       } catch (e) {
         const msg = getFormDisplayedError(e);
         if (msg) {
@@ -133,12 +133,12 @@ export class ApplicationEntitlementsComponent {
     }
   }
 
-  deleteLicense(license: ApplicationEntitlement) {
+  deleteEntitlement(entitlement: ApplicationEntitlement) {
     this.overlay
-      .confirm(`Really delete ${license.name}?`)
+      .confirm(`Really delete ${entitlement.name}?`)
       .pipe(
         filter((result) => result === true),
-        switchMap(() => this.applicationEntitlementsService.delete(license)),
+        switchMap(() => this.applicationEntitlementsService.delete(entitlement)),
         catchError((e) => {
           const msg = getFormDisplayedError(e);
           if (msg) {

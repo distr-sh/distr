@@ -82,7 +82,7 @@ export class EditArtifactEntitlementComponent implements OnInit, OnDestroy, Afte
     customerOrganizationId: this.fb.nonNullable.control<string | undefined>(undefined),
   });
   editFormLoading = false;
-  readonly license = signal<ArtifactEntitlement | undefined>(undefined);
+  readonly entitlement = signal<ArtifactEntitlement | undefined>(undefined);
 
   readonly openedArtifactIdx = signal<number | undefined>(undefined);
   dropdownWidth: number = 0;
@@ -221,11 +221,13 @@ export class EditArtifactEntitlementComponent implements OnInit, OnDestroy, Afte
         artifactGroup.controls.artifact.patchValue(selectedArtifact);
         artifactGroup.controls.artifactTags.clear({emitEvent: false});
         const allTagsOfArtifact = (selectedArtifact as ArtifactWithTags)?.versions ?? [];
-        const licenseItems = this.license()?.artifacts?.find((a) => a.artifactId === selectedArtifact?.id)?.versionIds;
+        const entitlementItems = this.entitlement()?.artifacts?.find(
+          (a) => a.artifactId === selectedArtifact?.id
+        )?.versionIds;
         let anySelected = false;
         for (let i = 0; i < allTagsOfArtifact.length; i++) {
           const item = allTagsOfArtifact[i];
-          const selected = !!licenseItems?.some((v) => v === item.id);
+          const selected = !!entitlementItems?.some((v) => v === item.id);
           artifactGroup.controls.artifactTags.push(this.fb.control(selected), {
             emitEvent: i === allTagsOfArtifact.length - 1,
           });
@@ -259,17 +261,17 @@ export class EditArtifactEntitlementComponent implements OnInit, OnDestroy, Afte
     this.onTouched = fn;
   }
 
-  writeValue(license: ArtifactEntitlement | undefined): void {
-    this.license.set(license);
-    if (license) {
+  writeValue(entitlement: ArtifactEntitlement | undefined): void {
+    this.entitlement.set(entitlement);
+    if (entitlement) {
       this.editForm.patchValue({
-        id: license.id,
-        name: license.name,
+        id: entitlement.id,
+        name: entitlement.name,
         artifacts: [],
-        expiresAt: license.expiresAt ? dayjs(license.expiresAt).format('YYYY-MM-DD') : '',
-        customerOrganizationId: license.customerOrganizationId,
+        expiresAt: entitlement.expiresAt ? dayjs(entitlement.expiresAt).format('YYYY-MM-DD') : '',
+        customerOrganizationId: entitlement.customerOrganizationId,
       });
-      for (let selection of license.artifacts || []) {
+      for (let selection of entitlement.artifacts || []) {
         this.addArtifactGroup(selection);
       }
       this.editForm.controls.customerOrganizationId.disable({emitEvent: false});

@@ -11,27 +11,25 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/lestrrat-go/jwx/v2/jwt"
+	. "github.com/onsi/gomega"
 )
 
 // Generated with: openssl genpkey -algorithm ed25519 | base64 -w0
 const testPrivateKeyPEMB64 = "LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1DNENBUUF3QlFZREsy" +
-	"VndCQ0lFSUQwa1plWVJYL0ttWUZNWk5mSGx5OEtPRE56OGJES1FmUG4z" +
+	"VndCQ0lFSUQwa1plWVJYL0ttWUZNWk5mSGx5OEtPRE56OGRES1FmUG4z" +
 	"M1cwZ2tvcmkKLS0tLS1FTkQgUFJJVkFURSBLRVktLS0tLQo="
 
 func testKey(t *testing.T) jwk.Key {
 	t.Helper()
 	pemBytes, err := base64.StdEncoding.DecodeString(testPrivateKeyPEMB64)
-	if err != nil {
-		t.Fatal(err)
-	}
+	NewWithT(t).Expect(err).ToNot(HaveOccurred())
 	key, err := jwk.ParseKey(pemBytes, jwk.WithPEM(true))
-	if err != nil {
-		t.Fatal(err)
-	}
+	NewWithT(t).Expect(err).ToNot(HaveOccurred())
 	return key
 }
 
 func TestGenerateToken(t *testing.T) {
+	g := NewWithT(t)
 	key := testKey(t)
 	now := time.Now().Truncate(time.Second)
 	licenseKey := &types.LicenseKey{
@@ -43,31 +41,24 @@ func TestGenerateToken(t *testing.T) {
 	}
 
 	token, err := generateToken(key, licenseKey, "test-issuer")
-	if err != nil {
-		t.Fatalf("generateToken: %v", err)
-	}
+	g.Expect(err).ToNot(HaveOccurred())
 
 	pubKey, err := key.PublicKey()
-	if err != nil {
-		t.Fatalf("key.PublicKey: %v", err)
-	}
-	parsed, err := jwt.Parse([]byte(token), jwt.WithKey(jwa.EdDSA, pubKey))
-	if err != nil {
-		t.Fatalf("jwt.Parse: %v", err)
-	}
+	g.Expect(err).ToNot(HaveOccurred())
 
-	if parsed.Subject() != licenseKey.ID.String() {
-		t.Errorf("subject = %q, want %q", parsed.Subject(), licenseKey.ID.String())
-	}
-	if parsed.Issuer() != "test-issuer" {
-		t.Errorf("issuer = %q, want %q", parsed.Issuer(), "test-issuer")
-	}
-	if v, ok := parsed.Get("plan"); !ok || v != "enterprise" {
-		t.Errorf("claim plan = %v, want %q", v, "enterprise")
-	}
+	parsed, err := jwt.Parse([]byte(token), jwt.WithKey(jwa.EdDSA, pubKey))
+	g.Expect(err).ToNot(HaveOccurred())
+
+	g.Expect(parsed.Subject()).To(Equal(licenseKey.ID.String()))
+	g.Expect(parsed.Issuer()).To(Equal("test-issuer"))
+
+	plan, ok := parsed.Get("plan")
+	g.Expect(ok).To(BeTrue())
+	g.Expect(plan).To(Equal("enterprise"))
 }
 
 func TestGenerateToken_ReservedClaimsStripped(t *testing.T) {
+	g := NewWithT(t)
 	key := testKey(t)
 	now := time.Now().Truncate(time.Second)
 	licenseKey := &types.LicenseKey{
@@ -79,30 +70,19 @@ func TestGenerateToken_ReservedClaimsStripped(t *testing.T) {
 	}
 
 	token, err := generateToken(key, licenseKey, "test-issuer")
-	if err != nil {
-		t.Fatalf("generateToken: %v", err)
-	}
+	g.Expect(err).ToNot(HaveOccurred())
 
 	pubKey, _ := key.PublicKey()
 	parsed, err := jwt.Parse([]byte(token), jwt.WithKey(jwa.EdDSA, pubKey))
-	if err != nil {
-		t.Fatalf("jwt.Parse: %v", err)
-	}
+	g.Expect(err).ToNot(HaveOccurred())
 
 	// exp must be the one from licenseKey.ExpiresAt, not the payload override
-	if !parsed.Expiration().Equal(licenseKey.ExpiresAt) {
-		t.Errorf("expiration = %v, want %v", parsed.Expiration(), licenseKey.ExpiresAt)
-	}
+	g.Expect(parsed.Expiration().UTC()).To(Equal(licenseKey.ExpiresAt.UTC()))
 }
 
 func TestValidatePayload(t *testing.T) {
-	if err := ValidatePayload(json.RawMessage(`{"foo":"bar"}`)); err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	if err := ValidatePayload(json.RawMessage(`{"exp":12345}`)); err == nil {
-		t.Error("expected error for reserved claim 'exp'")
-	}
-	if err := ValidatePayload(json.RawMessage(`not-json`)); err == nil {
-		t.Error("expected error for invalid JSON")
-	}
+	g := NewWithT(t)
+	g.Expect(ValidatePayload(json.RawMessage(`{"foo":"bar"}`))).To(Succeed())
+	g.Expect(ValidatePayload(json.RawMessage(`{"exp":12345}`))).To(HaveOccurred())
+	g.Expect(ValidatePayload(json.RawMessage(`not-json`))).To(HaveOccurred())
 }

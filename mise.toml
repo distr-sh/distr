@@ -21,7 +21,8 @@ CGO_ENABLED = "0"
 ldflags = "-s -w -X github.com/distr-sh/distr/internal/buildconfig.version=$VERSION -X github.com/distr-sh/distr/internal/buildconfig.commit=$COMMIT"
 
 [tasks.sdk-deps]
-run = 'cd sdk/js && pnpm install'
+run = 'pnpm install'
+dir = "sdk/js"
 sources = ["sdk/js/package.json", "sdk/js/pnpm-lock.yaml"]
 
 [tasks.frontend-deps]
@@ -33,7 +34,8 @@ sources = ["package.json", "pnpm-lock.yaml"]
 run = 'go mod tidy'
 
 [tasks."build:sdk"]
-run = 'cd sdk/js && pnpm run build && pnpm run docs'
+run = ['pnpm run build', 'pnpm run docs']
+dir = "sdk/js"
 depends = ["sdk-deps"]
 sources = ["sdk/js/node_modules/**/*", "sdk/js/src/**/*"]
 

@@ -100,7 +100,7 @@ export class EditApplicationEntitlementComponent implements OnInit, OnDestroy, A
     ),
   });
   editFormLoading = false;
-  readonly license = signal<ApplicationEntitlement | undefined>(undefined);
+  readonly entitlement = signal<ApplicationEntitlement | undefined>(undefined);
   readonly selectedSubject = signal<Application | undefined>(undefined);
   readonly includedArchivedVersions = signal<ApplicationVersion[]>([]);
 
@@ -197,20 +197,20 @@ export class EditApplicationEntitlementComponent implements OnInit, OnDestroy, A
         this.activeVersionsArray.clear({emitEvent: activeVersions.length === 0});
         this.archivedVersionsArray.clear({emitEvent: archivedVersions.length === 0});
 
-        const licensedVersions = (this.license() as ApplicationEntitlement)?.versions;
+        const entitledVersions = (this.entitlement() as ApplicationEntitlement)?.versions;
         let anySelected = false;
         const archivedSelected = [];
 
         for (let i = 0; i < activeVersions.length; i++) {
           const version = activeVersions[i];
-          const selected = !!licensedVersions?.some((v) => v.id === version.id);
+          const selected = !!entitledVersions?.some((v) => v.id === version.id);
           this.activeVersionsArray.push(this.fb.control(selected), {emitEvent: i === activeVersions.length - 1});
           anySelected = anySelected || selected;
         }
 
         for (let i = 0; i < archivedVersions.length; i++) {
           const version = archivedVersions[i];
-          const selected = !!licensedVersions?.some((v) => v.id === version.id);
+          const selected = !!entitledVersions?.some((v) => v.id === version.id);
           if (selected) {
             archivedSelected.push(version);
           }
@@ -304,25 +304,25 @@ export class EditApplicationEntitlementComponent implements OnInit, OnDestroy, A
     this.onTouched = fn;
   }
 
-  writeValue(license: ApplicationEntitlement | undefined): void {
-    this.license.set(license);
-    if (license) {
+  writeValue(entitlement: ApplicationEntitlement | undefined): void {
+    this.entitlement.set(entitlement);
+    if (entitlement) {
       this.editForm.patchValue({
-        id: license.id,
-        name: license.name,
-        expiresAt: license.expiresAt ? dayjs(license.expiresAt).format('YYYY-MM-DD') : '',
-        subjectId: license.applicationId,
+        id: entitlement.id,
+        name: entitlement.name,
+        expiresAt: entitlement.expiresAt ? dayjs(entitlement.expiresAt).format('YYYY-MM-DD') : '',
+        subjectId: entitlement.applicationId,
         activeVersions: [], // will be set by on-change,
         archivedVersions: [], // will be set by on-change,
-        includeAllItems: (license.versions ?? []).length === 0,
-        customerOrganizationId: license.customerOrganizationId,
+        includeAllItems: (entitlement.versions ?? []).length === 0,
+        customerOrganizationId: entitlement.customerOrganizationId,
         registry: {
-          url: license.registryUrl || '',
-          username: license.registryUsername || '',
-          password: license.registryPassword || '',
+          url: entitlement.registryUrl || '',
+          username: entitlement.registryUsername || '',
+          password: entitlement.registryPassword || '',
         },
       });
-      if (license.id) {
+      if (entitlement.id) {
         this.editForm.controls.subjectId.disable({emitEvent: false});
       }
       this.editForm.controls.customerOrganizationId.disable({emitEvent: false});

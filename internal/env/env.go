@@ -238,8 +238,8 @@ func Initialize() {
 	stripeWebhookSecret = envutil.GetEnvOrNil("STRIPE_WEBHOOK_SECRET")
 	stripeAPIKey = envutil.GetEnvOrNil("STRIPE_API_KEY")
 
-	if pem := envutil.GetEnvParsedOrNil("LICENSE_KEY_PRIVATE_KEY", base64.StdEncoding.DecodeString); pem != nil {
-		licenseKeyPrivateKeyPEM = *pem
+	if pem := envutil.GetEnvOrNil("LICENSE_KEY_PRIVATE_KEY"); pem != nil {
+		licenseKeyPrivateKeyPEM = []byte(*pem)
 	}
 }
 

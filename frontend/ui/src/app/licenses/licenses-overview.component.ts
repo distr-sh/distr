@@ -13,6 +13,7 @@ import {SecureImagePipe} from '../../util/secureImage';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {ApplicationEntitlementsService} from '../services/application-entitlements.service';
 import {ArtifactEntitlementsService} from '../services/artifact-entitlements.service';
+import {AuthService} from '../services/auth.service';
 import {LicenseKeysService} from '../services/license-keys.service';
 import {LicensesService} from '../services/licenses.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
@@ -32,6 +33,7 @@ export class LicensesOverviewComponent {
   private readonly applicationEntitlementsService = inject(ApplicationEntitlementsService);
   private readonly licenseKeysService = inject(LicenseKeysService);
   private readonly toast = inject(ToastService);
+  protected readonly auth = inject(AuthService);
 
   protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faBuildingUser = faBuildingUser;
@@ -128,13 +130,28 @@ export class LicensesOverviewComponent {
     try {
       const creates = [
         ...source.artifactEntitlements.map((ae) =>
-          this.artifactEntitlementsService.create({...ae, id: undefined, customerOrganizationId: targetId})
+          this.artifactEntitlementsService.create({
+            ...ae,
+            id: undefined,
+            name: `${ae.name} (copy)`,
+            customerOrganizationId: targetId,
+          })
         ),
         ...source.applicationEntitlements.map((ae) =>
-          this.applicationEntitlementsService.create({...ae, id: undefined, customerOrganizationId: targetId})
+          this.applicationEntitlementsService.create({
+            ...ae,
+            id: undefined,
+            name: `${ae.name} (copy)`,
+            customerOrganizationId: targetId,
+          })
         ),
         ...source.licenseKeys.map((lk) =>
-          this.licenseKeysService.create({...lk, id: undefined, customerOrganizationId: targetId})
+          this.licenseKeysService.create({
+            ...lk,
+            id: undefined,
+            name: `${lk.name} (copy)`,
+            customerOrganizationId: targetId,
+          })
         ),
       ];
       if (creates.length > 0) {
