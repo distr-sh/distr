@@ -51,6 +51,7 @@ Thumbs.db
 
 # dev variables that are sensitive
 .env.development.local.secret
+*.pem
 
 # agents & mcp servers
 .claude/agents
