@@ -26,11 +26,11 @@ CREATE INDEX IF NOT EXISTS idx_opentofu_state_organization_id ON opentofu_state(
 ALTER TABLE DeploymentTarget
     DROP CONSTRAINT IF EXISTS namespace_required,
     ADD CONSTRAINT namespace_required CHECK (
-        (type IN ('docker', 'opentofu')) = (namespace IS NULL)
+        (type::text IN ('docker', 'opentofu')) = (namespace IS NULL)
     );
 
 ALTER TABLE DeploymentTarget
     DROP CONSTRAINT IF EXISTS scope_required,
     ADD CONSTRAINT scope_required CHECK (
-        (type IN ('docker', 'opentofu')) = (scope IS NULL)
+        (type::text IN ('docker', 'opentofu')) = (scope IS NULL)
     );
