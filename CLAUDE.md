@@ -94,8 +94,9 @@ The database schema is managed through SQL migrations in `internal/migrations/sq
 - `deployment_targets`: Customer environments (agents)
 - `artifacts`: Software artifacts (Docker images, Helm charts)
 - `applications`: Artifact collections
-- `licenses`: License keys for artifact access
 - `deployment_log_records`: Logs from deployments
+- `licensekey`: License keys that vendors can generate for its customers
+- `application_entitlements` & `artifact_entitlements`: Access entitlements for applications and artifacts
 
 ## Common Commands
 

@@ -168,11 +168,11 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
   private readonly deploymentType$ = toObservable(this.deploymentType);
   private readonly customerOrganizationId$ = toObservable(this.customerOrganizationId);
 
-  protected readonly allLicenses$ = this.featureFlags.isLicensingEnabled$.pipe(
+  protected readonly allApplicationEntitlements$ = this.featureFlags.isLicensingEnabled$.pipe(
     switchMap((enabled) => (enabled ? this.applicationEntitlements.list() : of([])))
   );
 
-  protected readonly licenses$ = combineLatest([
+  protected readonly applicationEntitlements$ = combineLatest([
     this.applicationId$,
     this.featureFlags.isLicensingEnabled$,
     this.customerOrganizationId$,
@@ -182,8 +182,10 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
         ? this.applicationEntitlements
             .list(applicationId)
             .pipe(
-              map((licenses) =>
-                this.auth.isVendor() ? licenses.filter((l) => l.customerOrganizationId === customerOrgId) : licenses
+              map((entitlements) =>
+                this.auth.isVendor()
+                  ? entitlements.filter((l) => l.customerOrganizationId === customerOrgId)
+                  : entitlements
               )
             )
         : of([])
@@ -197,8 +199,11 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
   /**
    * The license control is VISIBLE for users editing a customer managed deployment.
    */
-  protected readonly licenseControlVisible$ = combineLatest([this.allLicenses$, this.customerOrganizationId$]).pipe(
-    map(([licenses, customerOrgId]) => (this.auth.isCustomer() || !!customerOrgId) && licenses.length > 0),
+  protected readonly licenseControlVisible$ = combineLatest([
+    this.allApplicationEntitlements$,
+    this.customerOrganizationId$,
+  ]).pipe(
+    map(([entitlements, customerOrgId]) => (this.auth.isCustomer() || !!customerOrgId) && entitlements.length > 0),
     distinctUntilChanged(),
     shareReplay(1)
   );
@@ -225,15 +230,15 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
     this.applications.list(),
     this.deploymentType$,
     this.customerOrganizationId$,
-    this.allLicenses$,
+    this.allApplicationEntitlements$,
   ]).pipe(
-    map(([applications, applicationType, customerOrganizationId, licenses]) =>
+    map(([applications, applicationType, customerOrganizationId, entitlements]) =>
       applications.filter(
         (application) =>
           application.type === applicationType &&
           (!customerOrganizationId ||
-            licenses.length === 0 ||
-            licenses.some(
+            entitlements.length === 0 ||
+            entitlements.some(
               (license) =>
                 license.applicationId === application.id && license.customerOrganizationId === customerOrganizationId
             ))
@@ -247,9 +252,10 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
     shareReplay(1)
   );
 
-  private readonly selectedLicense$ = combineLatest([this.applicationEntitlementId$, this.licenses$]).pipe(
-    map(([licenseId, licenses]) => licenses.find((license) => license.id === licenseId))
-  );
+  private readonly selectedLicense$ = combineLatest([
+    this.applicationEntitlementId$,
+    this.applicationEntitlements$,
+  ]).pipe(map(([entitlementId, entitlements]) => entitlements.find((entitlement) => entitlement.id === entitlementId)));
 
   protected availableApplicationVersions$ = combineLatest([
     this.licenseControlVisible$,
@@ -394,15 +400,15 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
         this.activeTab.set(this.deploymentType() === 'docker' ? 'environment' : 'values');
       });
 
-    this.licenses$.pipe(takeUntil(this.destroyed$)).subscribe((licenses) => {
+    this.applicationEntitlements$.pipe(takeUntil(this.destroyed$)).subscribe((entitlements) => {
       // Only update the form control, if the previously selected license is no longer in the list
       if (
-        licenses.length > 0 &&
-        licenses[0].id &&
-        licenses.every((l) => l.id !== this.deployForm.controls.applicationEntitlementId.value)
+        entitlements.length > 0 &&
+        entitlements[0].id &&
+        entitlements.every((l) => l.id !== this.deployForm.controls.applicationEntitlementId.value)
       ) {
         this.licenseUpdateRequired$.next(true);
-        this.deployForm.controls.applicationEntitlementId.setValue(licenses[0].id);
+        this.deployForm.controls.applicationEntitlementId.setValue(entitlements[0].id);
       }
     });
 

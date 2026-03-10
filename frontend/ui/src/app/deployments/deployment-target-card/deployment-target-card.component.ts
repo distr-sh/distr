@@ -101,7 +101,7 @@ export class DeploymentTargetCardComponent extends DeploymentTargetCardBaseCompo
     );
   });
 
-  private readonly licenses = toSignal(
+  private readonly entitlements = toSignal(
     this.featureFlags.isLicensingEnabled$.pipe(
       switchMap((enabled) => (enabled ? this.applicationEntitlementsService.list() : EMPTY))
     ),
@@ -113,15 +113,16 @@ export class DeploymentTargetCardComponent extends DeploymentTargetCardBaseCompo
   protected readonly deploymentIdsWithUpdate = computed(() => {
     const deploymentTarget = this.deploymentTarget();
     const applications = this.applications();
-    const licenses = this.licenses();
+    const entitlements = this.entitlements();
 
     return new Set(
       deploymentTarget.deployments
         .map((deployment) => {
           const applicationVersions =
             (deployment.applicationEntitlementId
-              ? licenses.find((license) => license.id === deployment.applicationEntitlementId)?.application?.versions
-              : undefined) ?? applications.find((app) => app.id === deployment.applicationId)?.versions;
+              ? entitlements.find((entitlement) => entitlement.id === deployment.applicationEntitlementId)?.application
+                  ?.versions
+              : undefined) ?? applications.find((app) => app.id === deployment.application.id)?.versions;
 
           const maxVersion = this.findMaxVersion(applicationVersions?.filter((version) => !isArchived(version)) ?? []);
 

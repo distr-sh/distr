@@ -64,7 +64,7 @@ export class DeploymentWizardComponent implements OnInit {
   private readonly applications = inject(ApplicationsService);
   private readonly deploymentTargets = inject(DeploymentTargetsService);
   private readonly customerOrganizations = inject(CustomerOrganizationsService);
-  private readonly licenses = inject(ApplicationEntitlementsService);
+  private readonly applicationEntitlements = inject(ApplicationEntitlementsService);
   private readonly organization = inject(OrganizationService);
   private readonly organizationBranding = inject(OrganizationBrandingService);
   private readonly fb = inject(FormBuilder);
@@ -132,8 +132,8 @@ export class DeploymentWizardComponent implements OnInit {
     : of([]);
 
   protected readonly applications$ = this.applications.list();
-  protected readonly allLicenses$ = this.featureFlags.isLicensingEnabled$.pipe(
-    switchMap((enabled) => (enabled ? this.licenses.list() : of([])))
+  protected readonly allApplicationEntitlements$ = this.featureFlags.isLicensingEnabled$.pipe(
+    switchMap((enabled) => (enabled ? this.applicationEntitlements.list() : of([])))
   );
   protected readonly currentOrganization$ = this.organization.get();
   protected readonly vendorBranding$ = this.organizationBranding.get();
@@ -149,23 +149,23 @@ export class DeploymentWizardComponent implements OnInit {
     {initialValue: 0}
   );
 
-  // Filter applications based on customer licenses
+  // Filter applications based on customer entitlements
   protected readonly filteredApplications$ = combineLatest([
     this.applications$,
-    this.allLicenses$,
+    this.allApplicationEntitlements$,
     toObservable(this.selectedCustomerOrganizationId),
   ]).pipe(
-    map(([applications, licenses, customerOrgId]) => {
-      // If no customer is selected or no licenses, show all applications
-      if (!customerOrgId || licenses.length === 0) {
+    map(([applications, entitlements, customerOrgId]) => {
+      // If no customer is selected or no entitlement, show all applications
+      if (!customerOrgId || entitlements.length === 0) {
         return applications;
       }
 
       // Filter applications to only show those with licenses for the selected customer
-      const customerLicenses = licenses.filter((l) => l.customerOrganizationId === customerOrgId);
-      const licensedApplicationIds = new Set(customerLicenses.map((l) => l.applicationId));
+      const customerEntitlements = entitlements.filter((l) => l.customerOrganizationId === customerOrgId);
+      const entitledApplicationIds = new Set(customerEntitlements.map((l) => l.applicationId));
 
-      return applications.filter((app) => licensedApplicationIds.has(app.id));
+      return applications.filter((app) => entitledApplicationIds.has(app.id));
     })
   );
 
@@ -190,18 +190,18 @@ export class DeploymentWizardComponent implements OnInit {
     };
   });
 
-  private readonly licenseControlVisible$ = combineLatest([
-    this.allLicenses$.pipe(
-      map((licenses) => licenses.length > 0),
+  private readonly entitlementControlVisible$ = combineLatest([
+    this.allApplicationEntitlements$.pipe(
+      map((entitlements) => entitlements.length > 0),
       distinctUntilChanged()
     ),
     toObservable(this.selectedCustomerOrganizationId).pipe(
       map((id) => id !== ''),
       distinctUntilChanged()
     ),
-  ]).pipe(map(([hasLicenses, isCustomerOrganizationIdSet]) => hasLicenses && isCustomerOrganizationIdSet));
+  ]).pipe(map(([hasEntitlement, isCustomerOrganizationIdSet]) => hasEntitlement && isCustomerOrganizationIdSet));
 
-  protected readonly licenseControlVisible = toSignal(this.licenseControlVisible$, {initialValue: false});
+  protected readonly entitlementControlVisible = toSignal(this.entitlementControlVisible$, {initialValue: false});
 
   protected readonly isApplicationConfigStep = computed(() => {
     const stepIndex = this.stepper()?.selectedIndex ?? 0;
