@@ -203,24 +203,40 @@ func main() {
 }
 
 func runSelfUpdateIfNeeded(ctx context.Context, namespace string, targetVersion types.AgentVersion) bool {
-	if agentenv.AgentVersionID != "" {
-		if agentenv.AgentVersionID != targetVersion.ID.String() {
-			logger.Info("agent version has changed. starting self-update")
-			if manifest, err := agentClient.Manifest(ctx); err != nil {
-				logger.Error("error fetching agent manifest", zap.Error(err))
-			} else if parsedManifest, err := DecodeResourceYaml(manifest); err != nil {
-				logger.Error("error parsing agent manifest", zap.Error(err))
-			} else if err := ApplyResources(ctx, namespace, parsedManifest); err != nil {
-				logger.Error("error applying agent manifest", zap.Error(err))
-			} else {
-				logger.Info("self-update has been applied")
-			}
-			return true
-		} else {
-			logger.Debug("agent version is up to date")
-		}
+	if agentenv.AgentVersionID == "" {
+		logger.Debug("agent version is not set")
+		return false
 	}
-	return false
+
+	if agentenv.AgentVersionID == targetVersion.ID.String() {
+		logger.Debug("agent version is up to date")
+		return false
+	}
+
+	logger.Info("agent version has changed. starting self-update")
+
+	manifest, err := agentClient.Manifest(ctx)
+	if err != nil {
+		logger.Error("error fetching agent manifest", zap.Error(err))
+		return false
+	}
+
+	parsedManifest, err := DecodeResourceYaml(manifest)
+	if err != nil {
+		logger.Error("error parsing agent manifest", zap.Error(err))
+		return false
+	}
+
+	// add a pretty generous timeout just to prevent waiting forever in worst case
+	applyCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Minute)
+	defer cancel()
+	if err := ApplyResources(applyCtx, namespace, parsedManifest); err != nil {
+		logger.Error("error applying agent manifest", zap.Error(err))
+		return false
+	}
+
+	logger.Info("self-update has been applied")
+	return true
 }
 
 func verifyLatestHelmRelease(
