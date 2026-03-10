@@ -96,6 +96,10 @@ func createLicenseKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if body.Name == "" {
+		http.Error(w, "name is required", http.StatusBadRequest)
+		return
+	}
 	if body.NotBefore.IsZero() {
 		http.Error(w, "notBefore is required", http.StatusBadRequest)
 		return
@@ -158,6 +162,11 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 
 	body, err := JsonBody[api.UpdateLicenseKeyRequest](w, r)
 	if err != nil {
+		return
+	}
+
+	if body.Name == "" {
+		http.Error(w, "name is required", http.StatusBadRequest)
 		return
 	}
 

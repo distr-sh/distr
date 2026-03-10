@@ -129,7 +129,7 @@ func UpdateLicenseKeyMetadata(
 			WHERE id = @id RETURNING *
 		)
 		SELECT `+licenseKeyOutExpr+`
-		FROM updated ul`,
+		FROM updated lk`,
 		pgx.NamedArgs{
 			"id":          id,
 			"name":        name,
