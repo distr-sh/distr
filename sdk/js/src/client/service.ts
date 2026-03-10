@@ -53,18 +53,29 @@ export type UpdateDeploymentParams = {
   };
 };
 
-export type UpdateAllDeploymentsResult = {
-  updatedTargets: Array<{
-    deploymentTargetId: string;
-    deploymentTargetName: string;
+export type UpdateAllDeploymentsUpdatedTarget = {
+  deploymentTargetId: string;
+  deploymentTargetName: string;
+  updatedDeployments: {
+    deploymentId: string;
     previousVersionId: string;
     newVersionId: string;
-  }>;
-  skippedTargets: Array<{
-    deploymentTargetId: string;
-    deploymentTargetName: string;
+  }[];
+  skippedDeployments: {
+    deploymentId: string;
     reason: string;
-  }>;
+  }[];
+};
+
+export type UpdateAllDeploymentsSkippedTarget = {
+  deploymentTargetId: string;
+  deploymentTargetName: string;
+  reason: string;
+};
+
+export type UpdateAllDeploymentsResult = {
+  updatedTargets: UpdateAllDeploymentsUpdatedTarget[];
+  skippedTargets: UpdateAllDeploymentsSkippedTarget[];
 };
 
 export type IsOutdatedResultItem = {
@@ -245,57 +256,76 @@ export class DistrService {
     reuseConfigFromCurrentRevision = false
   ): Promise<UpdateAllDeploymentsResult> {
     const allTargets = await this.client.getDeploymentTargets();
-    const updatedTargets: UpdateAllDeploymentsResult['updatedTargets'] = [];
-    const skippedTargets: UpdateAllDeploymentsResult['skippedTargets'] = [];
+    const updatedTargets: UpdateAllDeploymentsUpdatedTarget[] = [];
+    const skippedTargets: UpdateAllDeploymentsSkippedTarget[] = [];
 
     for (const target of allTargets) {
-      const deployment = target.deployments?.find((d) => d.application.id === applicationId);
-      if (!deployment) {
+      const deployments = target.deployments.filter((d) => d.application.id === applicationId);
+      if (deployments.length === 0) {
         skippedTargets.push({
           deploymentTargetId: target.id!,
           deploymentTargetName: target.name,
           reason: 'Application not deployed on this target',
         });
+
         continue;
       }
 
-      if (deployment.applicationVersionId === applicationVersionId) {
+      if (deployments.every((deployment) => deployment.applicationVersionId === applicationVersionId)) {
         skippedTargets.push({
           deploymentTargetId: target.id!,
           deploymentTargetName: target.name,
-          reason: 'Already on target version',
+          reason: 'All deployments already on target version',
         });
+
         continue;
       }
 
-      const deploymentRequest: DeploymentRequest = {
+      const updatedTarget: UpdateAllDeploymentsUpdatedTarget = {
         deploymentTargetId: target.id!,
-        deploymentId: deployment.id,
-        applicationVersionId,
+        deploymentTargetName: target.name,
+        updatedDeployments: [],
+        skippedDeployments: [],
       };
 
-      if (reuseConfigFromCurrentRevision) {
-        deploymentRequest.valuesYaml = deployment.valuesYaml;
-        deploymentRequest.envFileData = deployment.envFileData;
-        deploymentRequest.logsEnabled = deployment.logsEnabled;
-        deploymentRequest.helmOptions = deployment.helmOptions;
+      for (const deployment of deployments) {
+        if (deployment.applicationVersionId === applicationVersionId) {
+          updatedTarget.skippedDeployments.push({
+            deploymentId: deployment.id!,
+            reason: 'Already on target version',
+          });
+          continue;
+        }
+
+        const deploymentRequest: DeploymentRequest = {
+          deploymentTargetId: target.id!,
+          deploymentId: deployment.id,
+          applicationVersionId,
+        };
+
+        if (reuseConfigFromCurrentRevision) {
+          deploymentRequest.valuesYaml = deployment.valuesYaml;
+          deploymentRequest.envFileData = deployment.envFileData;
+          deploymentRequest.logsEnabled = deployment.logsEnabled;
+          deploymentRequest.helmOptions = deployment.helmOptions;
+        }
+
+        try {
+          await this.client.createOrUpdateDeployment(deploymentRequest);
+          updatedTarget.updatedDeployments.push({
+            deploymentId: deployment.id!,
+            previousVersionId: deployment.applicationVersionId!,
+            newVersionId: applicationVersionId,
+          });
+        } catch (error) {
+          updatedTarget.skippedDeployments.push({
+            deploymentId: deployment.id!,
+            reason: `Update failed: ${error instanceof Error ? error.message : String(error)}`,
+          });
+        }
       }
 
-      try {
-        await this.client.createOrUpdateDeployment(deploymentRequest);
-        updatedTargets.push({
-          deploymentTargetId: target.id!,
-          deploymentTargetName: target.name,
-          previousVersionId: deployment.applicationVersionId!,
-          newVersionId: applicationVersionId,
-        });
-      } catch (error) {
-        skippedTargets.push({
-          deploymentTargetId: target.id!,
-          deploymentTargetName: target.name,
-          reason: `Update failed: ${error instanceof Error ? error.message : String(error)}`,
-        });
-      }
+      updatedTargets.push(updatedTarget);
     }
 
     return {updatedTargets, skippedTargets};

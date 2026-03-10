@@ -12,38 +12,10 @@
 
 ### skippedTargets
 
-> **skippedTargets**: `object`[]
-
-#### deploymentTargetId
-
-> **deploymentTargetId**: `string`
-
-#### deploymentTargetName
-
-> **deploymentTargetName**: `string`
-
-#### reason
-
-> **reason**: `string`
+> **skippedTargets**: [`UpdateAllDeploymentsSkippedTarget`](UpdateAllDeploymentsSkippedTarget.md)[]
 
 ---
 
 ### updatedTargets
 
-> **updatedTargets**: `object`[]
-
-#### deploymentTargetId
-
-> **deploymentTargetId**: `string`
-
-#### deploymentTargetName
-
-> **deploymentTargetName**: `string`
-
-#### newVersionId
-
-> **newVersionId**: `string`
-
-#### previousVersionId
-
-> **previousVersionId**: `string`
+> **updatedTargets**: [`UpdateAllDeploymentsUpdatedTarget`](UpdateAllDeploymentsUpdatedTarget.md)[]
