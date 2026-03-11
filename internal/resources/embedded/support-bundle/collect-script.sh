@@ -51,27 +51,12 @@ $(free -h 2>/dev/null || echo 'unavailable')"
 upload_resource "system-info" "$SYSTEM_INFO"
 echo "  Uploaded system information"
 
-# Collect host environment variables
-echo "Collecting host environment variables..."
-HOST_ENV=""
-{{- range .EnvVars}}
-_val=$(printenv "{{.Name}}" 2>/dev/null || true)
-{{- if .Redacted}}
-if [ -n "$_val" ]; then _val="[REDACTED]"; fi
-{{- end}}
-HOST_ENV="${HOST_ENV}{{.Name}}=${_val}
-"
-{{- end}}
-if [ -n "$HOST_ENV" ]; then
-  upload_resource "host-environment-variables" "$HOST_ENV"
-  echo "  Uploaded host environment variables"
-fi
-
 # List Docker containers
 echo ""
 echo "Detecting Docker containers..."
 CONTAINERS=$(docker ps -a --format "{{`{{.ID}}`}}	{{`{{.Names}}`}}	{{`{{.Status}}`}}	{{`{{.Image}}`}}" 2>/dev/null || true)
 
+EXCLUDE_SET=""
 if [ -z "$CONTAINERS" ]; then
   echo "  No Docker containers found (docker may not be available)"
 else
@@ -89,23 +74,41 @@ EOF_CONTAINERS
   echo "Enter container numbers to EXCLUDE (comma-separated), or press Enter to include all:"
   read -r EXCLUDE_INPUT
 
-  # Build exclusion set
-  EXCLUDE_SET=""
   if [ -n "$EXCLUDE_INPUT" ]; then
     EXCLUDE_SET=",$EXCLUDE_INPUT,"
   fi
+fi
 
+# Collect environment variables from host and containers
+echo ""
+echo "Collecting environment variables..."
+ENV_GROUP_COUNT=0
+
+# Collect host environment variables
+ENV_GROUP_COUNT=$((ENV_GROUP_COUNT + 1))
+HOST_ENV=""
+{{- range .EnvVars}}
+_val=$(printenv "{{.Name}}" 2>/dev/null || true)
+{{- if .Redacted}}
+if [ -n "$_val" ]; then _val="[REDACTED]"; fi
+{{- end}}
+HOST_ENV="${HOST_ENV}{{.Name}}=${_val}
+"
+{{- end}}
+printf '%s' "$HOST_ENV" > "${_tmpdir}/envgroup_${ENV_GROUP_COUNT}.txt"
+printf '%s' "Host" > "${_tmpdir}/envgroup_${ENV_GROUP_COUNT}.name"
+printf '%s' "host-environment-variables" > "${_tmpdir}/envgroup_${ENV_GROUP_COUNT}.resource"
+
+# Collect container environment variables
+if [ -n "$CONTAINERS" ]; then
   IDX=1
   while IFS="$(printf '\t')" read -r CID CNAME CSTATUS _CIMAGE; do
     if [ -n "$EXCLUDE_SET" ] && echo "$EXCLUDE_SET" | grep -q ",$IDX,"; then
-      echo "  Skipping $CNAME"
       IDX=$((IDX + 1))
       continue
     fi
 
-    echo "  Collecting data for $CNAME..."
-
-    # Collect only configured environment variables from container
+    ENV_GROUP_COUNT=$((ENV_GROUP_COUNT + 1))
     CONTAINER_ENV=$(docker exec "$CID" env 2>/dev/null)
     _exec_rc=$?
     if [ $_exec_rc -eq 0 ]; then
@@ -118,22 +121,78 @@ EOF_CONTAINERS
       FILTERED_ENV="${FILTERED_ENV}{{.Name}}=${_val}
 "
 {{- end}}
-      if [ -n "$FILTERED_ENV" ]; then
-        upload_resource "${CNAME}-container-env" "$FILTERED_ENV"
-        echo "    Uploaded environment variables"
-      fi
+      printf '%s' "$FILTERED_ENV" > "${_tmpdir}/envgroup_${ENV_GROUP_COUNT}.txt"
     else
-      upload_resource "${CNAME}-container-env" "Error: could not collect environment variables (container may be stopped)"
-      echo "    Could not collect environment variables (container may be stopped)"
+      printf '%s' "Error: could not collect environment variables (container may be stopped)" > "${_tmpdir}/envgroup_${ENV_GROUP_COUNT}.txt"
+    fi
+    printf '%s' "$CNAME" > "${_tmpdir}/envgroup_${ENV_GROUP_COUNT}.name"
+    printf '%s' "${CNAME}-container-env" > "${_tmpdir}/envgroup_${ENV_GROUP_COUNT}.resource"
+
+    IDX=$((IDX + 1))
+  done <<EOF_CONTAINERS
+$CONTAINERS
+EOF_CONTAINERS
+fi
+
+# Display environment variable groups and let user select
+if [ "$ENV_GROUP_COUNT" -gt 0 ]; then
+  echo ""
+  echo "Environment variables to upload:"
+  echo "---"
+  _g=1
+  while [ "$_g" -le "$ENV_GROUP_COUNT" ]; do
+    _gname=$(cat "${_tmpdir}/envgroup_${_g}.name")
+    printf "  [%d] %s\n" "$_g" "$_gname"
+    while IFS= read -r _line; do
+      printf "      %s\n" "$_line"
+    done < "${_tmpdir}/envgroup_${_g}.txt"
+    echo ""
+    _g=$((_g + 1))
+  done
+
+  echo "Enter group numbers to EXCLUDE from upload (comma-separated), or press Enter to include all:"
+  read -r ENV_EXCLUDE_INPUT
+
+  ENV_EXCLUDE_SET=""
+  if [ -n "$ENV_EXCLUDE_INPUT" ]; then
+    ENV_EXCLUDE_SET=",${ENV_EXCLUDE_INPUT},"
+  fi
+
+  # Upload non-excluded environment variable groups
+  _g=1
+  while [ "$_g" -le "$ENV_GROUP_COUNT" ]; do
+    _gname=$(cat "${_tmpdir}/envgroup_${_g}.name")
+    if [ -n "$ENV_EXCLUDE_SET" ] && echo "$ENV_EXCLUDE_SET" | grep -q ",$_g,"; then
+      echo "  Skipping env vars for $_gname"
+    else
+      _gresource=$(cat "${_tmpdir}/envgroup_${_g}.resource")
+      _gcontent=$(cat "${_tmpdir}/envgroup_${_g}.txt")
+      if [ -n "$_gcontent" ]; then
+        upload_resource "$_gresource" "$_gcontent"
+        echo "  Uploaded env vars for $_gname"
+      fi
+    fi
+    _g=$((_g + 1))
+  done
+fi
+
+# Collect container logs
+if [ -n "$CONTAINERS" ]; then
+  echo ""
+  echo "Collecting container logs..."
+  IDX=1
+  while IFS="$(printf '\t')" read -r CID CNAME CSTATUS _CIMAGE; do
+    if [ -n "$EXCLUDE_SET" ] && echo "$EXCLUDE_SET" | grep -q ",$IDX,"; then
+      IDX=$((IDX + 1))
+      continue
     fi
 
-    # Collect container logs
     CONTAINER_LOGS=$(docker logs --tail 1000 "$CID" 2>&1 || true)
     if [ -n "$CONTAINER_LOGS" ]; then
       upload_resource "${CNAME}-container-logs" "$CONTAINER_LOGS"
-      echo "    Uploaded logs (last 1000 lines)"
+      echo "  Uploaded logs for $CNAME (last 1000 lines)"
     else
-      echo "    No logs available"
+      echo "  No logs available for $CNAME"
     fi
 
     IDX=$((IDX + 1))
