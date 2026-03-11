@@ -26,10 +26,6 @@ export class SupportBundlesService {
     return this.httpClient.put<SupportBundleConfigurationEnvVar[]>(`${baseUrl}/configuration`, request);
   }
 
-  public deleteConfiguration() {
-    return this.httpClient.delete<void>(`${baseUrl}/configuration`);
-  }
-
   public list() {
     return this.httpClient.get<SupportBundle[]>(baseUrl);
   }

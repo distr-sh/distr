@@ -70,18 +70,6 @@ func SaveSupportBundleConfigurationEnvVars(
 	})
 }
 
-func DeleteSupportBundleConfigurationEnvVars(ctx context.Context, orgID uuid.UUID) error {
-	db := internalctx.GetDb(ctx)
-	if _, err := db.Exec(
-		ctx,
-		`DELETE FROM SupportBundleConfigurationEnvVar WHERE organization_id = @orgId`,
-		pgx.NamedArgs{"orgId": orgID},
-	); err != nil {
-		return fmt.Errorf("could not delete support bundle config env vars: %w", err)
-	}
-	return nil
-}
-
 func ExistsSupportBundleConfigurationEnvVars(ctx context.Context, orgID uuid.UUID) (bool, error) {
 	db := internalctx.GetDb(ctx)
 	var exists bool

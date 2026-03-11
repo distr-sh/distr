@@ -25,18 +25,18 @@ func SupportBundleScriptRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Support Bundles"))
 
 	r.Route("/{supportBundleId}", func(r chiopenapi.Router) {
-		r.With(auth.SupportBundleAuthentication.Middleware).Group(func(r chiopenapi.Router) {
-			r.Get("/collect-script", getCollectScriptHandler()).
-				With(option.Description("Get support bundle collect script")).
-				With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
+		r.Use(auth.SupportBundleAuthentication.Middleware)
 
-			r.Post("/resources", uploadSupportBundleResourceHandler()).
-				With(option.Description("Upload a support bundle resource")).
-				With(option.Response(http.StatusOK, api.SupportBundleResourceSummary{}))
+		r.Get("/collect-script", getCollectScriptHandler()).
+			With(option.Description("Get support bundle collect script")).
+			With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
 
-			r.Post("/finalize", finalizeSupportBundleHandler()).
-				With(option.Description("Finalize a support bundle"))
-		})
+		r.Post("/resources", uploadSupportBundleResourceHandler()).
+			With(option.Description("Upload a support bundle resource")).
+			With(option.Response(http.StatusOK, api.SupportBundleResourceSummary{}))
+
+		r.Post("/finalize", finalizeSupportBundleHandler()).
+			With(option.Description("Finalize a support bundle"))
 	})
 }
 

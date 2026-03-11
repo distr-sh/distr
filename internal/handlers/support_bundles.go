@@ -38,8 +38,6 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 				With(option.Description("Create or update support bundle configuration")).
 				With(option.Request(api.CreateUpdateSupportBundleConfigurationRequest{}))
 
-			r.Delete("/", deleteSupportBundleConfigurationHandler()).
-				With(option.Description("Delete support bundle configuration"))
 		})
 	})
 
@@ -63,7 +61,7 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 				With(option.Request(SupportBundleIDRequest{})).
 				With(option.Response(http.StatusOK, api.SupportBundleDetail{}))
 
-			r.With(middleware.BlockSuperAdmin).
+			r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 				Patch("/status", updateSupportBundleStatusHandler()).
 				With(option.Description("Update support bundle status")).
 				With(option.Request(struct {
@@ -71,7 +69,7 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 					api.UpdateSupportBundleStatusRequest
 				}{}))
 
-			r.With(middleware.BlockSuperAdmin).
+			r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 				Post("/comments", createSupportBundleCommentHandler()).
 				With(option.Description("Create a support bundle comment")).
 				With(option.Request(struct {
@@ -142,22 +140,6 @@ func createOrUpdateSupportBundleConfigurationHandler() http.HandlerFunc {
 		}
 
 		RespondJSON(w, mapping.SupportBundleConfigurationEnvVarsToAPI(savedEnvVars))
-	}
-}
-
-func deleteSupportBundleConfigurationHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		a := auth.Authentication.Require(ctx)
-
-		if err := db.DeleteSupportBundleConfigurationEnvVars(ctx, *a.CurrentOrgID()); err != nil {
-			log.Error("failed to delete support bundle configuration", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
-			w.WriteHeader(http.StatusNoContent)
-		}
 	}
 }
 
@@ -236,7 +218,7 @@ func createSupportBundleHandler() http.HandlerFunc {
 			baseURL, rawToken,
 		)
 
-		expiresAt := time.Now().Add(24 * time.Hour)
+		expiresAt := time.Now().UTC().Add(24 * time.Hour)
 		bundle := types.SupportBundle{
 			OrganizationID:         *a.CurrentOrgID(),
 			CustomerOrganizationID: *a.CurrentCustomerOrgID(),

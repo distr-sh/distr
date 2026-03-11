@@ -73,6 +73,7 @@ EOF_CONTAINERS
   echo ""
   echo "Enter container numbers to EXCLUDE (comma-separated), or press Enter to include all:"
   read -r EXCLUDE_INPUT
+  EXCLUDE_INPUT=$(printf '%s' "$EXCLUDE_INPUT" | tr -d ' ')
 
   if [ -n "$EXCLUDE_INPUT" ]; then
     EXCLUDE_SET=",$EXCLUDE_INPUT,"
@@ -152,6 +153,7 @@ if [ "$ENV_GROUP_COUNT" -gt 0 ]; then
 
   echo "Enter group numbers to EXCLUDE from upload (comma-separated), or press Enter to include all:"
   read -r ENV_EXCLUDE_INPUT
+  ENV_EXCLUDE_INPUT=$(printf '%s' "$ENV_EXCLUDE_INPUT" | tr -d ' ')
 
   ENV_EXCLUDE_SET=""
   if [ -n "$ENV_EXCLUDE_INPUT" ]; then

@@ -112,6 +112,7 @@ export class SupportBundleSettingsComponent {
 
   protected removeEnvVar(index: number) {
     this.envVarsArray.removeAt(index);
+    this.envVarsArray.markAsDirty();
   }
 
   protected async save() {
@@ -132,27 +133,6 @@ export class SupportBundleSettingsComponent {
       }
     } finally {
       this.saving.set(false);
-    }
-  }
-
-  protected async deleteConfiguration() {
-    const confirmed = await firstValueFrom(
-      this.overlay.confirm('Are you sure you want to delete the support bundle configuration?')
-    );
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      await firstValueFrom(this.svc.deleteConfiguration());
-      this.envVarsArray.clear();
-      this.envVarsArray.markAsPristine();
-      this.toast.success('Support bundle configuration deleted');
-    } catch (e) {
-      const msg = getFormDisplayedError(e);
-      if (msg) {
-        this.toast.error(msg);
-      }
     }
   }
 

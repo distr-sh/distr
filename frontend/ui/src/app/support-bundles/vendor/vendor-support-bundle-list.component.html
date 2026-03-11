@@ -22,8 +22,8 @@
             role="alert">
             <p class="font-medium mb-1">Support bundle configuration has not been set up yet.</p>
             <p class="mb-3">
-              Configure the environment variables that should be collected from Docker containers when customers create
-              support bundles.
+              Configure the environment variables that should be collected from the host and Docker containers when
+              customers create support bundles.
             </p>
             <a
               routerLink="/support-bundles/settings"
@@ -59,9 +59,9 @@
                     <td class="px-4 py-3">{{ bundle.customerOrganizationName }}</td>
                     <td class="px-4 py-3">
                       <span
-                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                        [class]="statusBadgeClass(bundle.status)">
-                        {{ statusLabel(bundle.status) }}
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
+                        [ngClass]="statusBadgeClass(bundle.status)">
+                        {{ bundle.status }}
                       </span>
                     </td>
                     <td class="px-4 py-3">{{ bundle.createdAt | date: 'medium' }}</td>
