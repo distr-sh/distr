@@ -43,7 +43,8 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 			With(option.Description("List support bundles")).
 			With(option.Response(http.StatusOK, []api.SupportBundle{}))
 
-		r.Post("/", createSupportBundleHandler()).
+		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
+			Post("/", createSupportBundleHandler()).
 			With(option.Description("Create a new support bundle")).
 			With(option.Request(api.CreateSupportBundleRequest{})).
 			With(option.Response(http.StatusOK, api.CreateSupportBundleResponse{}))

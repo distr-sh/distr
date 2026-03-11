@@ -9,6 +9,7 @@ import {firstValueFrom, startWith, Subject, switchMap, take} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {ClipComponent} from '../../components/clip.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
+import {AuthService} from '../../services/auth.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
@@ -22,6 +23,7 @@ export class CustomerSupportBundlesComponent {
   private readonly supportBundlesService = inject(SupportBundlesService);
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
+  protected readonly auth = inject(AuthService);
 
   protected readonly faPlus = faPlus;
   protected readonly faXmark = faXmark;

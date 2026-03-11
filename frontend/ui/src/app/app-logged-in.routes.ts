@@ -79,6 +79,13 @@ function notificationsEnabledGuard(): CanActivateFn {
   };
 }
 
+function supportBundlesEnabledGuard(): CanActivateFn {
+  return async () => {
+    const featureFlags = inject(FeatureFlagService);
+    return await firstValueFrom(featureFlags.isSupportBundlesEnabled$);
+  };
+}
+
 function registryHostSetOrRedirectGuard(redirectTo: string): CanActivateFn {
   return async () => {
     const router = inject(Router);
@@ -269,7 +276,7 @@ export const routes: Routes = [
       },
       {
         path: 'support-bundles',
-        canActivate: [requireVendor],
+        canActivate: [requireVendor, supportBundlesEnabledGuard()],
         children: [
           {
             path: '',

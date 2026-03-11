@@ -264,7 +264,7 @@ func ClearSupportBundleBundleSecret(ctx context.Context, bundleID uuid.UUID) err
 		WHERE id = @id`,
 		pgx.NamedArgs{"id": bundleID},
 	); err != nil {
-		return fmt.Errorf("could not clear support bundle collect token: %w", err)
+		return fmt.Errorf("could not clear support bundle secret: %w", err)
 	}
 	return nil
 }
