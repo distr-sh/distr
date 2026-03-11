@@ -4,34 +4,48 @@
       <h2 class="text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl dark:text-white">
         Agents
       </h2>
-      <div class="grid grid-flow-col gap-4 mb-4">
-        <div
-          class="grid gap-4 items-stretch 5xl:grid-cols-6 4xl:grid-cols-5 3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-2 grid-cols-1">
-          @for (deploymentTarget of deploymentTargetWithMetrics$ | async; track deploymentTarget.id) {
-            <app-deployment-target-dashboard-card
-              [deploymentTarget]="deploymentTarget"
-              [deploymentTargetMetrics]="deploymentTarget.metrics" />
-          } @empty {
-            <div class="text-gray-500 dark:text-gray-400">Nothing to show yet.</div>
-          }
+      @if (deploymentTargetWithMetrics(); as deploymentTargets) {
+        <div class="grid grid-flow-col gap-4 mb-4">
+          <div
+            class="grid gap-4 items-stretch 5xl:grid-cols-6 4xl:grid-cols-5 3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-2 grid-cols-1">
+            @for (deploymentTarget of deploymentTargets; track deploymentTarget.id) {
+              <app-deployment-target-dashboard-card
+                [deploymentTarget]="deploymentTarget"
+                [deploymentTargetMetrics]="deploymentTarget.metrics" />
+            } @empty {
+              <div class="text-gray-500 dark:text-gray-400">Nothing to show yet.</div>
+            }
+          </div>
         </div>
-      </div>
+      } @else {
+        <div class="flex items-center py-8 text-gray-500 dark:text-gray-400">
+          <fa-icon [icon]="faSpinner" class="animate-spin me-2" size="lg"></fa-icon>
+          <span>Loading&hellip;</span>
+        </div>
+      }
     </div>
 
     <div class="pt-4 flex flex-col gap-4">
       <h2 class="text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl dark:text-white">
         Artifacts
       </h2>
-      <div class="grid grid-flow-col gap-4 mb-4">
-        <div
-          class="grid gap-4 items-stretch 5xl:grid-cols-6 4xl:grid-cols-5 3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-2 grid-cols-1">
-          @for (item of artifactsByCustomer$ | async; track item.customer.id) {
-            <app-artifacts-by-customer-card [customer]="item.customer" [artifacts]="item.artifacts ?? []" />
-          } @empty {
-            <div class="text-gray-500 dark:text-gray-400">Nothing to show yet.</div>
-          }
+      @if (artifactsByCustomer(); as items) {
+        <div class="grid grid-flow-col gap-4 mb-4">
+          <div
+            class="grid gap-4 items-stretch 5xl:grid-cols-6 4xl:grid-cols-5 3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-2 grid-cols-1">
+            @for (item of items; track item.customer.id) {
+              <app-artifacts-by-customer-card [customer]="item.customer" [artifacts]="item.artifacts ?? []" />
+            } @empty {
+              <div class="text-gray-500 dark:text-gray-400">Nothing to show yet.</div>
+            }
+          </div>
         </div>
-      </div>
+      } @else {
+        <div class="flex items-center py-8 text-gray-500 dark:text-gray-400">
+          <fa-icon [icon]="faSpinner" class="animate-spin me-2" size="lg"></fa-icon>
+          <span>Loading&hellip;</span>
+        </div>
+      }
     </div>
   </div>
 </div>
