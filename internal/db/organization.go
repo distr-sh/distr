@@ -177,7 +177,7 @@ func UpdateOrganizationEnterpriseLimits(ctx context.Context, maxCustomerOrgs, ma
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("could no update Organization: %w", err)
+		return fmt.Errorf("could not update Organization: %w", err)
 	}
 	return nil
 }
@@ -230,7 +230,7 @@ func GetAllOrganizationsForSuperAdmin(ctx context.Context) ([]types.Organization
 
 func CountAllOrganizations(ctx context.Context) (res int64, err error) {
 	db := internalctx.GetDb(ctx)
-	err = db.QueryRow(ctx, "SELECT count(id) FROM Organization WHERE deleted_at IS NOT NULL").Scan(&res)
+	err = db.QueryRow(ctx, "SELECT count(id) FROM Organization WHERE deleted_at IS NULL").Scan(&res)
 	if err != nil {
 		err = fmt.Errorf("failed to get organizations count: %w", err)
 	}
