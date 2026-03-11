@@ -13,18 +13,18 @@ type DeploymentTargetAccessTokenResponse struct {
 }
 
 type DeploymentRequest struct {
-	DeploymentID         *uuid.UUID        `json:"deploymentId"`
-	DeploymentTargetID   uuid.UUID         `json:"deploymentTargetId"`
-	ApplicationVersionID uuid.UUID         `json:"applicationVersionId"`
-	ApplicationLicenseID *uuid.UUID        `json:"applicationLicenseId"`
-	ReleaseName          *string           `json:"releaseName"`
-	ValuesYaml           []byte            `json:"valuesYaml"`
-	DockerType           *types.DockerType `json:"dockerType"`
-	EnvFileData          []byte            `json:"envFileData"`
-	LogsEnabled          bool              `json:"logsEnabled"`
-	ForceRestart         bool              `json:"forceRestart"`
-	IgnoreRevisionSkew   bool              `json:"ignoreRevisionSkew"`
-	HelmOptions          *HelmOptions      `json:"helmOptions,omitempty"`
+	DeploymentID             *uuid.UUID        `json:"deploymentId"`
+	DeploymentTargetID       uuid.UUID         `json:"deploymentTargetId"`
+	ApplicationVersionID     uuid.UUID         `json:"applicationVersionId"`
+	ApplicationEntitlementID *uuid.UUID        `json:"applicationEntitlementId"`
+	ReleaseName              *string           `json:"releaseName"`
+	ValuesYaml               []byte            `json:"valuesYaml"`
+	DockerType               *types.DockerType `json:"dockerType"`
+	EnvFileData              []byte            `json:"envFileData"`
+	LogsEnabled              bool              `json:"logsEnabled"`
+	ForceRestart             bool              `json:"forceRestart"`
+	IgnoreRevisionSkew       bool              `json:"ignoreRevisionSkew"`
+	HelmOptions              *HelmOptions      `json:"helmOptions,omitempty"`
 }
 
 func (d *DeploymentRequest) GetValuesYAML() []byte {

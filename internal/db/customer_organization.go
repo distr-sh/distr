@@ -176,7 +176,7 @@ func UpdateCustomerOrganization(ctx context.Context, customerOrg *types.Customer
 func DeleteCustomerOrganizationWithID(ctx context.Context, id uuid.UUID, organizationID uuid.UUID) error {
 	err := RunTx(ctx, func(ctx context.Context) error {
 		db := internalctx.GetDb(ctx)
-		if _, err := db.Exec(ctx, "SET CONSTRAINTS deployment_application_license_id_fkey DEFERRED"); err != nil {
+		if _, err := db.Exec(ctx, "SET CONSTRAINTS deployment_application_entitlement_id_fkey DEFERRED"); err != nil {
 			return err
 		}
 

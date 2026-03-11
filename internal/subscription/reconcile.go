@@ -19,11 +19,11 @@ func ReconcileStarterFeaturesForOrganizationID(ctx context.Context, orgID uuid.U
 			types.UserRoleAdmin,
 		); err != nil {
 			return err
-		} else if err := db.UpdateDeploymentUnsetLicenseIDWithOrganizationID(ctx, orgID); err != nil {
+		} else if err := db.UpdateDeploymentUnsetEntitlementIDWithOrganizationID(ctx, orgID); err != nil {
 			return err
-		} else if _, err := db.DeleteApplicationLicensesWithOrganizationID(ctx, orgID); err != nil {
+		} else if _, err := db.DeleteApplicationEntitlementsWithOrganizationID(ctx, orgID); err != nil {
 			return err
-		} else if _, err := db.DeleteArtifactLicensesWithOrganizationID(ctx, orgID); err != nil {
+		} else if _, err := db.DeleteArtifactEntitlementsWithOrganizationID(ctx, orgID); err != nil {
 			return err
 		} else if _, err := db.DeleteAlertConfigurationsWithOrganizationID(ctx, orgID); err != nil {
 			return err
@@ -49,17 +49,17 @@ func ReconcileStarterFeatures(ctx context.Context) error {
 			types.UserRoleAdmin,
 		); err != nil {
 			return err
-		} else if err := db.UpdateDeploymentUnsetLicenseIDWithOrganizationSubscriptionType(
+		} else if err := db.UpdateDeploymentUnsetEntitlementIDWithOrganizationSubscriptionType(
 			ctx,
 			types.NonProSubscriptionTypes,
 		); err != nil {
 			return err
-		} else if _, err := db.DeleteApplicationLicensesWithOrganizationSubscriptionType(
+		} else if _, err := db.DeleteApplicationEntitlementsWithOrganizationSubscriptionType(
 			ctx,
 			types.NonProSubscriptionTypes,
 		); err != nil {
 			return err
-		} else if _, err := db.DeleteArtifactLicensesWithOrganizationSubscriptionType(
+		} else if _, err := db.DeleteArtifactEntitlementsWithOrganizationSubscriptionType(
 			ctx,
 			types.NonProSubscriptionTypes,
 		); err != nil {

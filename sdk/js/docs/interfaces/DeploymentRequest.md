@@ -8,9 +8,9 @@
 
 ## Properties
 
-### applicationLicenseId?
+### applicationEntitlementId?
 
-> `optional` **applicationLicenseId**: `string`
+> `optional` **applicationEntitlementId**: `string`
 
 ---
 

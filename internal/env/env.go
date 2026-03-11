@@ -83,6 +83,7 @@ var (
 	wellKnownMicrosoftIdentityAssociation   []byte
 	stripeWebhookSecret                     *string
 	stripeAPIKey                            *string
+	licenseKeyPrivateKeyPEM                 []byte
 	licenseKey                              string
 )
 
@@ -237,6 +238,10 @@ func Initialize() {
 
 	stripeWebhookSecret = envutil.GetEnvOrNil("STRIPE_WEBHOOK_SECRET")
 	stripeAPIKey = envutil.GetEnvOrNil("STRIPE_API_KEY")
+
+	if pem := envutil.GetEnvOrNil("LICENSE_KEY_PRIVATE_KEY"); pem != nil {
+		licenseKeyPrivateKeyPEM = []byte(*pem)
+	}
 
 	licenseKey = envutil.GetEnv("LICENSE_KEY")
 }
@@ -505,6 +510,10 @@ func StripeWebhookSecret() *string {
 
 func StripeAPIKey() *string {
 	return stripeAPIKey
+}
+
+func LicenseKeyPrivateKey() []byte {
+	return licenseKeyPrivateKeyPEM
 }
 
 func LicenseKey() string {

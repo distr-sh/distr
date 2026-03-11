@@ -194,9 +194,9 @@
                   } @empty {
                     <div class="col-span-2 md:col-span-3 lg:col-span-4 text-center py-8">
                       <div class="text-gray-500 dark:text-gray-400">
-                        @if (licenseControlVisible()) {
-                          <p class="text-sm font-medium mb-1">No application licenses found</p>
-                          <p class="text-xs">This customer has no licenses for any applications.</p>
+                        @if (entitlementControlVisible()) {
+                          <p class="text-sm font-medium mb-1">No application entitlements found</p>
+                          <p class="text-xs">This customer has no entitlement for any applications.</p>
                         } @else {
                           <p class="text-sm font-medium mb-1">No applications found</p>
                           <p class="text-xs">There are no applications available to deploy.</p>

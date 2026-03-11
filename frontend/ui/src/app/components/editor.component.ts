@@ -1,14 +1,15 @@
-import {Component, ElementRef, forwardRef, inject, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, computed, ElementRef, forwardRef, inject, input, OnDestroy, OnInit} from '@angular/core';
 import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
 import {defaultKeymap, history, historyKeymap, indentWithTab} from '@codemirror/commands';
+import {json} from '@codemirror/lang-json';
 import {yaml} from '@codemirror/lang-yaml';
 import {HighlightStyle, indentOnInput, syntaxHighlighting} from '@codemirror/language';
-import {EditorState, StateEffect} from '@codemirror/state';
+import {EditorState, Extension, StateEffect} from '@codemirror/state';
 import {EditorView, highlightSpecialChars, keymap} from '@codemirror/view';
 import {tags} from '@lezer/highlight';
-import {Subject} from 'rxjs';
+import {never} from '../../util/exhaust';
 
-export type EditorLanguage = 'yaml';
+export type EditorLanguage = 'yaml' | 'json';
 
 @Component({
   selector: 'app-editor',
@@ -22,12 +23,23 @@ export type EditorLanguage = 'yaml';
   ],
 })
 export class EditorComponent implements OnInit, OnDestroy, ControlValueAccessor {
-  @Input() language: EditorLanguage | undefined;
+  language = input<EditorLanguage>();
   private readonly host = inject(ElementRef);
   private view!: EditorView;
-  private readonly destroyed$ = new Subject<void>();
 
-  disabled = false;
+  private readonly languageExtension = computed((): Extension => {
+    const lang = this.language();
+    switch (lang) {
+      case 'yaml':
+        return yaml();
+      case 'json':
+        return json();
+      case undefined:
+        return [];
+      default:
+        return never(lang);
+    }
+  });
 
   public ngOnInit(): void {
     this.view = new EditorView({
@@ -49,15 +61,13 @@ export class EditorComponent implements OnInit, OnDestroy, ControlValueAccessor 
             this.onChange(this.view.state.doc.toString());
           }
         }),
-        ...(this.language === 'yaml' ? [yaml()] : []),
+        this.languageExtension(),
       ],
       parent: this.host.nativeElement,
     });
   }
 
   ngOnDestroy() {
-    this.destroyed$.next();
-    this.destroyed$.complete();
     this.view.destroy();
   }
 

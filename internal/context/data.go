@@ -83,34 +83,48 @@ func GetArtifact(ctx context.Context) *types.ArtifactWithTaggedVersion {
 	panic("no Artifact found in context")
 }
 
-func GetApplicationLicense(ctx context.Context) *types.ApplicationLicense {
-	val := ctx.Value(ctxKeyApplicationLicense)
-	if license, ok := val.(*types.ApplicationLicense); ok {
-		if license != nil {
-			return license
+func GetApplicationEntitlement(ctx context.Context) *types.ApplicationEntitlement {
+	val := ctx.Value(ctxKeyApplicationEntitlement)
+	if entitlement, ok := val.(*types.ApplicationEntitlement); ok {
+		if entitlement != nil {
+			return entitlement
 		}
 	}
-	panic("license not contained in context")
+	panic("entitlement not contained in context")
 }
 
-func WithApplicationLicense(ctx context.Context, license *types.ApplicationLicense) context.Context {
-	ctx = context.WithValue(ctx, ctxKeyApplicationLicense, license)
+func WithApplicationEntitlement(ctx context.Context, entitlement *types.ApplicationEntitlement) context.Context {
+	ctx = context.WithValue(ctx, ctxKeyApplicationEntitlement, entitlement)
 	return ctx
 }
 
-func GetArtifactLicense(ctx context.Context) *types.ArtifactLicense {
-	val := ctx.Value(ctxKeyArtifactLicense)
-	if license, ok := val.(*types.ArtifactLicense); ok {
-		if license != nil {
-			return license
+func GetArtifactEntitlement(ctx context.Context) *types.ArtifactEntitlement {
+	val := ctx.Value(ctxKeyArtifactEntitlement)
+	if entitlement, ok := val.(*types.ArtifactEntitlement); ok {
+		if entitlement != nil {
+			return entitlement
 		}
 	}
-	panic("license not contained in context")
+	panic("entitlement not contained in context")
 }
 
-func WithArtifactLicense(ctx context.Context, license *types.ArtifactLicense) context.Context {
-	ctx = context.WithValue(ctx, ctxKeyArtifactLicense, license)
+func WithArtifactEntitlement(ctx context.Context, entitlement *types.ArtifactEntitlement) context.Context {
+	ctx = context.WithValue(ctx, ctxKeyArtifactEntitlement, entitlement)
 	return ctx
+}
+
+func GetLicenseKey(ctx context.Context) *types.LicenseKey {
+	val := ctx.Value(ctxKeyLicenseKey)
+	if licenseKey, ok := val.(*types.LicenseKey); ok {
+		if licenseKey != nil {
+			return licenseKey
+		}
+	}
+	panic("license key not contained in context")
+}
+
+func WithLicenseKey(ctx context.Context, licenseKey *types.LicenseKey) context.Context {
+	return context.WithValue(ctx, ctxKeyLicenseKey, licenseKey)
 }
 
 func GetRequestIPAddress(ctx context.Context) string {
