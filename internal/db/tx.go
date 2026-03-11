@@ -52,9 +52,33 @@ func runTxFunc(ctx context.Context, tx pgx.Tx, f func(ctx context.Context) error
 			multierr.AppendInto(&finalErr, err)
 		}
 	}()
-	if err := f(internalctx.WithDb(ctx, tx)); err != nil {
+	txa := WithAfterFunc{Queryable: tx}
+	if err := f(internalctx.WithDb(ctx, &txa)); err != nil {
 		return err
 	} else {
-		return tx.Commit(ctx)
+		if err := tx.Commit(ctx); err != nil {
+			return err
+		} else {
+			for _, f := range txa.AfterFunc {
+				f(ctx)
+			}
+		}
+		return nil
+	}
+}
+
+type WithAfterFunc struct {
+	queryable.Queryable
+	AfterFunc []func(context.Context)
+}
+
+// RunAfterTx runs a function after the transaction is committed.
+// If the Queryable is not a [WithAfterFunc], the function is run immediately.
+func RunAfterTx(ctx context.Context, f func(context.Context)) {
+	db := internalctx.GetDb(ctx)
+	if tx, ok := db.(*WithAfterFunc); ok {
+		tx.AfterFunc = append(tx.AfterFunc, f)
+	} else {
+		f(ctx)
 	}
 }

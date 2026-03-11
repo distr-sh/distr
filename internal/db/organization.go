@@ -70,10 +70,19 @@ func CreateOrganization(ctx context.Context, org *types.Organization) error {
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByName[types.Organization])
 	if err != nil {
 		return err
-	} else {
-		*org = *result
-		return nil
 	}
+
+	RunAfterTx(ctx, func(ctx context.Context) {
+		log := internalctx.GetLogger(ctx)
+		if c := internalctx.GetPrometheusCollector(ctx); c != nil {
+			c.IncOrganizationsTotal()
+		} else {
+			log.Warn("could not update organizations total metric because collector is nil")
+		}
+	})
+
+	*org = *result
+	return nil
 }
 
 func UpdateOrganization(ctx context.Context, org *types.Organization) error {
@@ -207,6 +216,15 @@ func GetAllOrganizationsForSuperAdmin(ctx context.Context) ([]types.Organization
 	}
 }
 
+func CountAllOrganizations(ctx context.Context) (res int64, err error) {
+	db := internalctx.GetDb(ctx)
+	err = db.QueryRow(ctx, "SELECT count(id) FROM Organization WHERE deleted_at IS NULL").Scan(&res)
+	if err != nil {
+		err = fmt.Errorf("failed to get organizations count: %w", err)
+	}
+	return
+}
+
 func GetOrganizationByID(ctx context.Context, orgID uuid.UUID) (*types.Organization, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
@@ -264,5 +282,15 @@ func SetOrganizationDeletedAtNow(ctx context.Context, orgID uuid.UUID) error {
 	if err != nil {
 		return fmt.Errorf("could not update Organization: %w", err)
 	}
+
+	RunAfterTx(ctx, func(ctx context.Context) {
+		log := internalctx.GetLogger(ctx)
+		if c := internalctx.GetPrometheusCollector(ctx); c != nil {
+			c.DecOrganizationsTotal()
+		} else {
+			log.Warn("could not update organizations total metric because collector is nil")
+		}
+	})
+
 	return nil
 }

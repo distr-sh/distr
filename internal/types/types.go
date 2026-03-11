@@ -78,6 +78,13 @@ const (
 	DeploymentStatusTypeError       DeploymentStatusType = "error"
 )
 
+var AllDeploymentStatusTypes = []DeploymentStatusType{
+	DeploymentStatusTypeHealthy,
+	DeploymentStatusTypeRunning,
+	DeploymentStatusTypeProgressing,
+	DeploymentStatusTypeError,
+}
+
 var ErrInvalidDeploymentStatusType = errors.New("invalid deployment status type")
 
 func ParseDeploymentStatusType(status string) (DeploymentStatusType, error) {
