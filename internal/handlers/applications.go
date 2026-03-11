@@ -267,14 +267,15 @@ func getApplications(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var applications []types.Application
 	if org.HasFeature(types.FeatureLicensing) && auth.CurrentCustomerOrgID() != nil {
-		// Get applications based on license owner ID only if there is at least one license in the parent organization
-		if licenses, err1 := db.GetApplicationLicensesWithOrganizationID(ctx, *auth.CurrentOrgID(), nil); err1 != nil {
-			log.Error("failed to get application licenses", zap.Error(err1))
+		// Get applications based on entitlement owner ID only if there is at least one entitlement in the parent organization
+		entitlements, err1 := db.GetApplicationEntitlementsWithOrganizationID(ctx, *auth.CurrentOrgID(), nil)
+		if err1 != nil {
+			log.Error("failed to get application entitlements", zap.Error(err1))
 			sentry.GetHubFromContext(ctx).CaptureException(err1)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
-		} else if len(licenses) > 0 {
-			applications, err = db.GetApplicationsWithLicenseOwnerID(ctx, *auth.CurrentCustomerOrgID())
+		} else if len(entitlements) > 0 {
+			applications, err = db.GetApplicationsWithEntitlementOwnerID(ctx, *auth.CurrentCustomerOrgID())
 		} else {
 			applications, err = db.GetApplicationsByOrgID(ctx, *auth.CurrentOrgID())
 		}
@@ -301,13 +302,15 @@ func getApplication(w http.ResponseWriter, r *http.Request) {
 		if applicationID, err := uuid.Parse(r.PathValue("applicationId")); err != nil {
 			http.NotFound(w, r)
 			return
-		} else if licenses, err := db.GetApplicationLicensesWithOrganizationID(ctx, *auth.CurrentOrgID(), nil); err != nil {
-			log.Error("failed to get application licenses", zap.Error(err))
+		} else if entitlements, err := db.GetApplicationEntitlementsWithOrganizationID(
+			ctx, *auth.CurrentOrgID(), nil,
+		); err != nil {
+			log.Error("failed to get application entitlements", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
-		} else if len(licenses) > 0 {
-			application, err := db.GetApplicationWithLicenseOwnerID(ctx, *auth.CurrentCustomerOrgID(), applicationID)
+		} else if len(entitlements) > 0 {
+			application, err := db.GetApplicationWithEntitlementOwnerID(ctx, *auth.CurrentCustomerOrgID(), applicationID)
 			if errors.Is(err, apierrors.ErrNotFound) {
 				http.NotFound(w, r)
 			} else if err != nil {

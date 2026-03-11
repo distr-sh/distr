@@ -128,10 +128,10 @@ func putDeployment(w http.ResponseWriter, r *http.Request) {
 				return err
 			}
 
-			if deployment.ApplicationLicenseID == nil && deploymentRequest.ApplicationLicenseID != nil {
-				deployment.ApplicationLicenseID = deploymentRequest.ApplicationLicenseID
-				if err := db.UpdateDeploymentLicense(ctx, deployment); err != nil {
-					log.Warn("could not set license for deployment", zap.Error(err))
+			if deployment.ApplicationEntitlementID == nil && deploymentRequest.ApplicationEntitlementID != nil {
+				deployment.ApplicationEntitlementID = deploymentRequest.ApplicationEntitlementID
+				if err := db.UpdateDeploymentEntitlement(ctx, deployment); err != nil {
+					log.Warn("could not set entitlement for deployment", zap.Error(err))
 					sentry.GetHubFromContext(ctx).CaptureException(err)
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return err
@@ -223,7 +223,7 @@ func validateDeploymentRequest(
 	auth := auth.Authentication.Require(ctx)
 	orgId := *auth.CurrentOrgID()
 
-	var license *types.ApplicationLicense
+	var entitlement *types.ApplicationEntitlement
 	var app *types.Application
 	var version *types.ApplicationVersion
 	var target *types.DeploymentTargetFull
@@ -282,14 +282,14 @@ func validateDeploymentRequest(
 	}
 
 	if existingDeployment != nil {
-		if request.ApplicationLicenseID == nil {
-			if existingDeployment.ApplicationLicenseID != nil {
-				request.ApplicationLicenseID = existingDeployment.ApplicationLicenseID
+		if request.ApplicationEntitlementID == nil {
+			if existingDeployment.ApplicationEntitlementID != nil {
+				request.ApplicationEntitlementID = existingDeployment.ApplicationEntitlementID
 			}
-		} else if existingDeployment.ApplicationLicenseID == nil {
-			// Allow setting a license once when the existing deployment has no license but the request provides one.
-		} else if *request.ApplicationLicenseID != *existingDeployment.ApplicationLicenseID {
-			return badRequestError(w, "can not update license")
+		} else if existingDeployment.ApplicationEntitlementID == nil {
+			// Allow setting an entitlement once when the existing deployment has no entitlement but the request provides one.
+		} else if *request.ApplicationEntitlementID != *existingDeployment.ApplicationEntitlementID {
+			return badRequestError(w, "can not update entitlement")
 		}
 
 		if existingDeployment.Application.ID != app.ID {
@@ -298,33 +298,35 @@ func validateDeploymentRequest(
 	}
 
 	if org.HasFeature(types.FeatureLicensing) {
-		if request.ApplicationLicenseID != nil {
-			if license, err = db.GetApplicationLicenseByID(ctx, *request.ApplicationLicenseID); err != nil {
+		if request.ApplicationEntitlementID != nil {
+			if entitlement, err = db.GetApplicationEntitlementByID(ctx, *request.ApplicationEntitlementID); err != nil {
 				if errors.Is(err, apierrors.ErrNotFound) {
-					return licenseNotFoundError(w)
+					return entitlementNotFoundError(w)
 				} else {
-					log.Error("could not get ApplicationLicense", zap.Error(err))
+					log.Error("could not get ApplicationEntitlement", zap.Error(err))
 					sentry.GetHubFromContext(ctx).CaptureException(err)
 					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 					return err
 				}
 			}
 		} else if auth.CurrentCustomerOrgID() != nil {
-			if licenses, err := db.GetApplicationLicensesWithOrganizationID(ctx, orgId, nil); err != nil {
-				log.Error("could not get ApplicationLicense", zap.Error(err))
+			if entitlements, err := db.GetApplicationEntitlementsWithOrganizationID(ctx, orgId, nil); err != nil {
+				log.Error("could not get ApplicationEntitlement", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return err
-			} else if len(licenses) > 0 {
-				// license ID is required for customer but optional for vendor
-				return badRequestError(w, "applicationLicenseId is required")
+			} else if len(entitlements) > 0 {
+				// entitlement ID is required for customer but optional for vendor
+				return badRequestError(w, "applicationEntitlementId is required")
 			}
 		}
-	} else if request.ApplicationLicenseID != nil {
-		return badRequestError(w, "unexpected applicationLicenseId")
+	} else if request.ApplicationEntitlementID != nil {
+		return badRequestError(w, "unexpected applicationEntitlementId")
 	}
 
-	if err = validateDeploymentRequestLicense(ctx, w, request, license, app, target, existingDeployment); err != nil {
+	if err = validateDeploymentRequestEntitlement(
+		ctx, w, request, entitlement, app, target, existingDeployment,
+	); err != nil {
 		return err
 	} else if err = validateDeploymentRequestDeploymentType(w, target, app); err != nil {
 		return err
@@ -342,46 +344,46 @@ func badRequestError(w http.ResponseWriter, msg string) error {
 	return errors.New(msg)
 }
 
-func licenseNotFoundError(w http.ResponseWriter) error {
-	return badRequestError(w, "license does not exist")
+func entitlementNotFoundError(w http.ResponseWriter) error {
+	return badRequestError(w, "entitlement does not exist")
 }
 
-func invalidLicenseError(w http.ResponseWriter) error {
-	return badRequestError(w, "invalid license")
+func invalidEntitlementError(w http.ResponseWriter) error {
+	return badRequestError(w, "invalid entitlement")
 }
 
-func validateDeploymentRequestLicense(
+func validateDeploymentRequestEntitlement(
 	ctx context.Context,
 	w http.ResponseWriter,
 	request api.DeploymentRequest,
-	license *types.ApplicationLicense,
+	entitlement *types.ApplicationEntitlement,
 	app *types.Application,
 	target *types.DeploymentTargetFull,
 	deployment *types.DeploymentWithLatestRevision,
 ) error {
-	if license != nil {
+	if entitlement != nil {
 		auth := auth.Authentication.Require(ctx)
 
-		if license.OrganizationID != *auth.CurrentOrgID() {
-			return licenseNotFoundError(w)
+		if entitlement.OrganizationID != *auth.CurrentOrgID() {
+			return entitlementNotFoundError(w)
 		}
-		if license.CustomerOrganizationID == nil {
-			return invalidLicenseError(w)
+		if entitlement.CustomerOrganizationID == nil {
+			return invalidEntitlementError(w)
 		}
-		if auth.CurrentCustomerOrgID() != nil && *license.CustomerOrganizationID != *auth.CurrentCustomerOrgID() {
-			return licenseNotFoundError(w)
+		if auth.CurrentCustomerOrgID() != nil && *entitlement.CustomerOrganizationID != *auth.CurrentCustomerOrgID() {
+			return entitlementNotFoundError(w)
 		}
-		if target.CustomerOrganizationID == nil || *target.CustomerOrganizationID != *license.CustomerOrganizationID {
-			return invalidLicenseError(w)
+		if target.CustomerOrganizationID == nil || *target.CustomerOrganizationID != *entitlement.CustomerOrganizationID {
+			return invalidEntitlementError(w)
 		}
-		if len(license.Versions) > 0 && !license.HasVersionWithID(request.ApplicationVersionID) {
-			return invalidLicenseError(w)
+		if len(entitlement.Versions) > 0 && !entitlement.HasVersionWithID(request.ApplicationVersionID) {
+			return invalidEntitlementError(w)
 		}
-		if app.ID != license.ApplicationID {
-			return invalidLicenseError(w)
+		if app.ID != entitlement.ApplicationID {
+			return invalidEntitlementError(w)
 		}
-		if deployment != nil && deployment.Application.ID != license.ApplicationID {
-			return badRequestError(w, "license and deployment have applicationId mismatch")
+		if deployment != nil && deployment.Application.ID != entitlement.ApplicationID {
+			return badRequestError(w, "entitlement and deployment have applicationId mismatch")
 		}
 	}
 	return nil

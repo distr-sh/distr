@@ -22,7 +22,7 @@ import (
 
 const (
 	deploymentOutputExpr = `
-		d.id, d.created_at, d.deployment_target_id, d.release_name, d.application_license_id, d.docker_type,
+		d.id, d.created_at, d.deployment_target_id, d.release_name, d.application_entitlement_id, d.docker_type,
 		d.logs_enabled
 	`
 )
@@ -201,15 +201,15 @@ func CreateDeployment(ctx context.Context, request *api.DeploymentRequest) error
 	rows, err := db.Query(
 		ctx,
 		`INSERT INTO Deployment AS d
-			(deployment_target_id, release_name, application_license_id, docker_type, logs_enabled)
-			VALUES (@deploymentTargetId, @releaseName, @applicationLicenseId, @dockerType, @logsEnabled)
+			(deployment_target_id, release_name, application_entitlement_id, docker_type, logs_enabled)
+			VALUES (@deploymentTargetId, @releaseName, @applicationEntitlementId, @dockerType, @logsEnabled)
 			RETURNING`+deploymentOutputExpr,
 		pgx.NamedArgs{
-			"deploymentTargetId":   request.DeploymentTargetID,
-			"releaseName":          request.ReleaseName,
-			"applicationLicenseId": request.ApplicationLicenseID,
-			"dockerType":           request.DockerType,
-			"logsEnabled":          request.LogsEnabled,
+			"deploymentTargetId":       request.DeploymentTargetID,
+			"releaseName":              request.ReleaseName,
+			"applicationEntitlementId": request.ApplicationEntitlementID,
+			"dockerType":               request.DockerType,
+			"logsEnabled":              request.LogsEnabled,
 		},
 	)
 	if err != nil {
@@ -255,17 +255,17 @@ func UpdateDeployment(ctx context.Context, deployment *types.Deployment) error {
 	}
 }
 
-func UpdateDeploymentLicense(ctx context.Context, deployment *types.Deployment) error {
+func UpdateDeploymentEntitlement(ctx context.Context, deployment *types.Deployment) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
 		`UPDATE Deployment AS d
-		SET application_license_id = @applicationLicenseID
+		SET application_entitlement_id = @applicationEntitlementID
 		WHERE id = @id
 		RETURNING`+deploymentOutputExpr,
 		pgx.NamedArgs{
-			"id":                   deployment.ID,
-			"applicationLicenseID": deployment.ApplicationLicenseID,
+			"id":                       deployment.ID,
+			"applicationEntitlementID": deployment.ApplicationEntitlementID,
 		},
 	)
 	if err != nil {
@@ -282,12 +282,12 @@ func UpdateDeploymentLicense(ctx context.Context, deployment *types.Deployment) 
 	}
 }
 
-func UpdateDeploymentUnsetLicenseIDWithOrganizationID(ctx context.Context, organizationID uuid.UUID) error {
+func UpdateDeploymentUnsetEntitlementIDWithOrganizationID(ctx context.Context, organizationID uuid.UUID) error {
 	db := internalctx.GetDb(ctx)
 	_, err := db.Exec(
 		ctx,
 		`UPDATE Deployment
-		SET application_license_id = NULL
+		SET application_entitlement_id = NULL
 		WHERE deployment_target_id IN (
 			SELECT id FROM DeploymentTarget WHERE organization_id = @organizationID
 		)`,
@@ -299,7 +299,7 @@ func UpdateDeploymentUnsetLicenseIDWithOrganizationID(ctx context.Context, organ
 	return nil
 }
 
-func UpdateDeploymentUnsetLicenseIDWithOrganizationSubscriptionType(
+func UpdateDeploymentUnsetEntitlementIDWithOrganizationSubscriptionType(
 	ctx context.Context,
 	subscriptionType []types.SubscriptionType,
 ) error {
@@ -307,7 +307,7 @@ func UpdateDeploymentUnsetLicenseIDWithOrganizationSubscriptionType(
 	_, err := db.Exec(
 		ctx,
 		`UPDATE Deployment
-		SET application_license_id = NULL
+		SET application_entitlement_id = NULL
 		WHERE deployment_target_id IN (
 			SELECT dt.id FROM DeploymentTarget dt
 				JOIN Organization o ON dt.organization_id = o.id

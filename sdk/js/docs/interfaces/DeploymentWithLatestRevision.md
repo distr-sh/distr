@@ -18,6 +18,12 @@
 
 ---
 
+### applicationEntitlementId?
+
+> `optional` **applicationEntitlementId**: `string`
+
+---
+
 ### ~~applicationId~~
 
 > **applicationId**: `string`
@@ -25,12 +31,6 @@
 #### Deprecated
 
 Use application.id instead
-
----
-
-### applicationLicenseId?
-
-> `optional` **applicationLicenseId**: `string`
 
 ---
 

@@ -20,12 +20,12 @@ import {combineLatest, filter, firstValueFrom, map, startWith, Subject, switchMa
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {RequireVendorDirective} from '../../directives/required-role.directive';
-import {ArtifactLicensesService} from '../../services/artifact-licenses.service';
+import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
+import {ArtifactEntitlementsService} from '../../services/artifact-entitlements.service';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
 import {ImageUploadService} from '../../services/image-upload.service';
-import {LicensesService} from '../../services/licenses.service';
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
@@ -62,8 +62,8 @@ export class CustomerOrganizationsComponent {
   private readonly overlay = inject(OverlayService);
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly organizationService = inject(OrganizationService);
-  private readonly artifactLicensesService = inject(ArtifactLicensesService);
-  private readonly licensesService = inject(LicensesService);
+  private readonly artifactEntitlementsService = inject(ArtifactEntitlementsService);
+  private readonly applicationEntitlementsService = inject(ApplicationEntitlementsService);
   protected readonly featureFlags = inject(FeatureFlagService);
   protected readonly auth = inject(AuthService);
 
@@ -198,8 +198,8 @@ export class CustomerOrganizationsComponent {
       .subscribe({
         next: () => {
           this.refresh$.next();
-          this.artifactLicensesService.refresh();
-          this.licensesService.refresh();
+          this.artifactEntitlementsService.refresh();
+          this.applicationEntitlementsService.refresh();
         },
         error: (e) => {
           const msg = getFormDisplayedError(e);

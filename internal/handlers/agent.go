@@ -209,18 +209,18 @@ func agentResourcesHandler(w http.ResponseWriter, r *http.Request) {
 				IgnoreRevisionSkew: deployment.IgnoreRevisionSkew,
 			}
 
-			if deployment.ApplicationLicenseID != nil {
-				if license, err := db.GetApplicationLicenseByID(ctx, *deployment.ApplicationLicenseID); err != nil {
-					msg := "failed to get ApplicationLicense from DB"
+			if deployment.ApplicationEntitlementID != nil {
+				if entitlement, err := db.GetApplicationEntitlementByID(ctx, *deployment.ApplicationEntitlementID); err != nil {
+					msg := "failed to get ApplicationEntitlement from DB"
 					log.Error(msg, zap.Error(err))
 					statusMessage = fmt.Sprintf("%v: %v", msg, err)
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					break
-				} else if license.RegistryURL != nil {
+				} else if entitlement.RegistryURL != nil {
 					agentDeployment.RegistryAuth = map[string]api.AgentRegistryAuth{
-						*license.RegistryURL: {
-							Username: *license.RegistryUsername,
-							Password: *license.RegistryPassword,
+						*entitlement.RegistryURL: {
+							Username: *entitlement.RegistryUsername,
+							Password: *entitlement.RegistryPassword,
 						},
 					}
 				}

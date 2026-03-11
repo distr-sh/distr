@@ -37,7 +37,6 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 			r.Put("/", createOrUpdateSupportBundleConfigurationHandler()).
 				With(option.Description("Create or update support bundle configuration")).
 				With(option.Request(api.CreateUpdateSupportBundleConfigurationRequest{}))
-
 		})
 	})
 

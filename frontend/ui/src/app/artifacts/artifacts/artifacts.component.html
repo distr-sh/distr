@@ -1,6 +1,6 @@
 <section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
   <div class="mx-auto max-w-screen-lg px-4">
-    @if (auth.hasAnyRole('admin') && hasNoSubscription()) {
+    @if (auth.hasAnyRole('admin') && (hasNoSubscription() || hasNoArtifact())) {
       <div
         class="flex p-4 mb-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400"
         role="alert">
