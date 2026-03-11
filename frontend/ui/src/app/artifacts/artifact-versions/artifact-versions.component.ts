@@ -1,6 +1,6 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
-import {Component, inject, resource, signal} from '@angular/core';
+import {Component, computed, inject, resource, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -74,6 +74,7 @@ export class ArtifactVersionsComponent {
   protected readonly faFileSignature = faFileSignature;
 
   protected readonly showDropdown = signal(false);
+  protected readonly signatureOverlayDigest = signal<string | void>(undefined);
 
   protected readonly artifact = toSignal(
     this.route.params.pipe(
@@ -94,6 +95,24 @@ export class ArtifactVersionsComponent {
       })
     )
   );
+
+  protected readonly filteredVersions = computed(() => {
+    const versions = this.artifact()?.versions;
+    if (!versions) {
+      return [];
+    }
+
+    return versions
+      .filter((version) => version.inferredType !== 'signature')
+      .map((version) => {
+        const signatureVersionTag = `sha256-${version.digest.substring(7)}`;
+        const signatureVersion = versions.find(
+          (version1) =>
+            version1.inferredType === 'signature' && version1.tags.some((tag) => tag.name === signatureVersionTag)
+        );
+        return {...version, signatureVersion};
+      });
+  });
 
   protected readonly org = resource({
     loader: () => firstValueFrom(this.organization.get()),
@@ -195,5 +214,13 @@ export class ArtifactVersionsComponent {
         tap(() => this.toast.success(`Tag "${tagName}" removed successfully`))
       )
       .subscribe();
+  }
+
+  protected showSignatureOverlay(version: TaggedArtifactVersion) {
+    this.signatureOverlayDigest.set(version.digest);
+  }
+
+  protected hideSignatureOverlay() {
+    this.signatureOverlayDigest.set(undefined);
   }
 }
