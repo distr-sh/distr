@@ -67,5 +67,7 @@
 - [LoginResponse](type-aliases/LoginResponse.md)
 - [SupportBundleStatus](type-aliases/SupportBundleStatus.md)
 - [UpdateAllDeploymentsResult](type-aliases/UpdateAllDeploymentsResult.md)
+- [UpdateAllDeploymentsSkippedTarget](type-aliases/UpdateAllDeploymentsSkippedTarget.md)
+- [UpdateAllDeploymentsUpdatedTarget](type-aliases/UpdateAllDeploymentsUpdatedTarget.md)
 - [UpdateDeploymentParams](type-aliases/UpdateDeploymentParams.md)
 - [UserRole](type-aliases/UserRole.md)

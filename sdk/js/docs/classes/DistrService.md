@@ -223,7 +223,7 @@ Returns results for all deployments on the target. Each result contains versions
 
 ### updateAllDeployments()
 
-> **updateAllDeployments**(`applicationId`, `applicationVersionId`): `Promise`\<[`UpdateAllDeploymentsResult`](../type-aliases/UpdateAllDeploymentsResult.md)\>
+> **updateAllDeployments**(`applicationId`, `applicationVersionId`, `reuseConfigFromCurrentRevision?`): `Promise`\<[`UpdateAllDeploymentsResult`](../type-aliases/UpdateAllDeploymentsResult.md)\>
 
 Updates all deployment targets that have the specified application deployed to the specified version.
 Only updates deployments that are not already on the target version.
@@ -241,6 +241,12 @@ The application ID to update
 `string`
 
 The target version ID to update to
+
+##### reuseConfigFromCurrentRevision?
+
+`boolean` = `false`
+
+If true, the existing deployment configuration (values YAML, env file, helm options, logsEnabled) will be reused for the update. Otherwise, the defaults will be used.
 
 #### Returns
 

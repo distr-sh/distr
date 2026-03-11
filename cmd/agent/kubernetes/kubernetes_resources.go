@@ -60,6 +60,11 @@ func FromUnstructured(src *unstructured.Unstructured) (runtime.Object, error) {
 func ApplyResources(ctx context.Context, namespace string, objects []*unstructured.Unstructured) error {
 	for _, obj := range objects {
 		gvk := obj.GroupVersionKind()
+		logger := logger.With(
+			zap.String("resourceNamespace", namespace),
+			zap.String("resourceKind", gvk.Kind),
+			zap.String("resourceName", obj.GetName()),
+		)
 		if mapping, err := k8sRestMapper.RESTMapping(gvk.GroupKind(), gvk.Version); err != nil {
 			return err
 		} else {
@@ -70,14 +75,12 @@ func ApplyResources(ctx context.Context, namespace string, objects []*unstructur
 				resource = k8sDynamicClient.Resource(mapping.Resource)
 			}
 			if _, err := resource.Get(ctx, obj.GetName(), v1.GetOptions{}); k8serrors.IsNotFound(err) {
-				logger.Debug("creating resource",
-					zap.String("resourceNamespace", namespace), zap.String("resourceName", obj.GetName()))
+				logger.Debug("creating resource")
 				if _, err := resource.Create(ctx, obj, v1.CreateOptions{}); err != nil {
 					return err
 				}
 			} else if err == nil {
-				logger.Debug("updating resource",
-					zap.String("resourceNamespace", namespace), zap.String("resourceName", obj.GetName()))
+				logger.Debug("updating resource")
 				if _, err := resource.Update(ctx, obj, v1.UpdateOptions{}); err != nil {
 					return err
 				}

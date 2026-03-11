@@ -220,6 +220,8 @@ func FrontendRouter() http.Handler {
 	router := chi.NewRouter()
 	router.Use(
 		chimiddleware.Compress(5, "text/html", "text/css", "text/javascript"),
+		middleware.CacheControlBundleAssets,
+		middleware.CacheControlMediaAssets,
 	)
 
 	router.Handle("/*", handlers.StaticFileHandler(frontend.BrowserFS()))

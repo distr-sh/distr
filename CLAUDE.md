@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Distr is an open-source software distribution platform that enables companies to distribute applications to self-managed customers.
 It provides centralized management of deployments, artifacts, agents, licenses, and includes an OCI-compatible container registry.
-The platform consists of a control plane (Hub) running in the cloud, agents that run in customer environments, and an MCP server for AI integrations.
+The platform consists of a control plane (Hub) running in the cloud and agents that run in customer environments.
 
 ## Architecture
 
@@ -23,9 +23,7 @@ The platform consists of a control plane (Hub) running in the cloud, agents that
    - `kubernetes/`: Kubernetes agent for managing Helm deployments
    - Agents connect to Hub, collect logs/metrics, execute deployments
 
-3. **MCP Server** (`cmd/mcp/`): Model Context Protocol server for AI integrations
-
-4. **SDK** (`sdk/js/`): JavaScript/TypeScript SDK for interacting with Distr API
+3. **SDK** (`sdk/js/`): JavaScript/TypeScript SDK for interacting with Distr API
 
 ### SDK Architecture (TypeScript)
 
@@ -104,17 +102,13 @@ This database stores timestamps as `TIMESTAMP` (without time zone), not `TIMESTA
 
 ### Building
 
-```bash
+````bash
 # Build hub (includes frontend build)
 mise run build:hub:community        # Community edition
 
 # Build agents
 mise run build:agent:docker
 mise run build:agent:kubernetes
-
-# Build MCP server
-mise run build:mcp
-```
 
 Binaries are output to `dist/`.
 
@@ -125,7 +119,7 @@ Binaries are output to `dist/`.
 mise run format              # All
 mise run format:go           # Go only
 mise run format:frontend     # Frontend only
-```
+````
 
 Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Prettier with config in `.prettierrc.mjs`.
 

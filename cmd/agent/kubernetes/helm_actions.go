@@ -166,6 +166,7 @@ func RunHelmUpgrade(
 	upgradeAction.DryRunStrategy = action.DryRunNone
 	upgradeAction.Namespace = namespace
 	upgradeAction.PlainHTTP = agentenv.DistrRegistryPlainHTTP
+	upgradeAction.MaxHistory = 10
 
 	if deployment.HelmOptions != nil {
 		upgradeAction.Timeout = time.Duration(deployment.HelmOptions.Timeout)

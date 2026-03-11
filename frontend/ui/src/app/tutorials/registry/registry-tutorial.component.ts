@@ -1,6 +1,7 @@
 import {CdkStep, CdkStepper, CdkStepperPrevious} from '@angular/cdk/stepper';
 import {HttpErrorResponse} from '@angular/common/http';
-import {AfterViewInit, Component, inject, OnDestroy, OnInit, signal, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, computed, inject, OnDestroy, OnInit, signal, ViewChild} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {AccessTokenWithKey} from '@distr-sh/distr-sdk';
@@ -17,7 +18,7 @@ import {
   faPalette,
   faRightToBracket,
 } from '@fortawesome/free-solid-svg-icons';
-import {combineLatest, firstValueFrom, lastValueFrom, Subject, switchMap, takeUntil, tap} from 'rxjs';
+import {combineLatest, firstValueFrom, lastValueFrom, map, Subject, switchMap, takeUntil, tap} from 'rxjs';
 import {fromPromise} from 'rxjs/internal/observable/innerFrom';
 import {getRemoteEnvironment} from '../../../env/remote';
 import {getFormDisplayedError} from '../../../util/errors';
@@ -46,6 +47,12 @@ const usageStepTaskPull = 'pull';
 const usageStepTaskTag = 'tag';
 const usageStepTaskPush = 'push';
 const usageStepTaskExplore = 'explore';
+
+const helloDistrTag = '0.4.3'; // renovate: datasource=github-releases depName=distr-sh/hello-distr
+
+function helloDistrProxyUrl(base: string): string {
+  return `${base}/hello-distr/proxy:${helloDistrTag}`;
+}
 
 @Component({
   selector: 'app-registry-tutorial',
@@ -97,20 +104,19 @@ export class RegistryTutorialComponent implements OnInit, AfterViewInit, OnDestr
     pushDone: new FormControl<boolean>(false, Validators.requiredTrue),
     exploreDone: new FormControl<boolean>(false, Validators.requiredTrue),
   });
-  protected slug?: string;
-  protected host?: string;
-  protected helloDistrTag = '0.1.10';
+
+  private readonly slug = toSignal(this.organizationService.get().pipe(map((o) => o.slug)));
+  protected readonly host = toSignal(
+    combineLatest([fromPromise(getRemoteEnvironment()), this.organizationService.get()]).pipe(
+      map(([env, org]) => org.registryDomain ?? env.registryHost)
+    )
+  );
+  protected readonly proxyGhcrUrl = helloDistrProxyUrl('ghcr.io/distr-sh');
+  protected readonly proxyDistrUrl = computed(() => helloDistrProxyUrl(this.host() + '/' + this.slug()));
+
   protected readonly route = inject(ActivatedRoute);
 
   ngOnInit() {
-    this.organizationService
-      .get()
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe((o) => (this.slug = o.slug));
-    combineLatest([fromPromise(getRemoteEnvironment()), this.organizationService.get()])
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe(([env, org]) => (this.host = org.registryDomain ?? env.registryHost));
-
     this.usageFormGroup.controls.pullDone.valueChanges
       .pipe(
         takeUntil(this.destroyed$),
@@ -228,7 +234,7 @@ export class RegistryTutorialComponent implements OnInit, AfterViewInit, OnDestr
         this.loading.set(true);
         const formVal = this.prepareFormGroup.getRawValue();
         try {
-          this.organization = await lastValueFrom(
+          this.organization = await firstValueFrom(
             this.organizationService.update({
               ...this.organization!,
               artifactVersionMutable: this.organization?.features.includes('artifact_version_mutable') ?? false,
