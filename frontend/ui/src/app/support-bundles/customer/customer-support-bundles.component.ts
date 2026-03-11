@@ -5,7 +5,7 @@ import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faPlus, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
+import {firstValueFrom, startWith, Subject, switchMap, take} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {ClipComponent} from '../../components/clip.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
@@ -51,6 +51,10 @@ export class CustomerSupportBundlesComponent {
     this.createForm.reset();
     this.collectCommand.set(null);
     this.dialogRef = this.overlay.showModal(templateRef);
+    this.dialogRef
+      .result()
+      .pipe(take(1))
+      .subscribe(() => this.refresh$.next());
   }
 
   closeDialog() {

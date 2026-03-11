@@ -13,7 +13,7 @@ import (
 func GenerateCollectScript(
 	baseURL string,
 	bundleID uuid.UUID,
-	token string,
+	bundleSecret string,
 	envVars []types.SupportBundleConfigurationEnvVar,
 ) (string, error) {
 	apiBase := fmt.Sprintf("%s/api/v1/support-bundle-collect/%s", baseURL, bundleID.String())
@@ -21,7 +21,7 @@ func GenerateCollectScript(
 	data := map[string]any{
 		"BundleID": bundleID.String(),
 		"BaseURL":  apiBase,
-		"Token":    token,
+		"Token":    bundleSecret,
 		"EnvVars":  envVars,
 	}
 

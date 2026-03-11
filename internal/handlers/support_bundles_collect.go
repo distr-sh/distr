@@ -24,7 +24,7 @@ import (
 func SupportBundleScriptRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Support Bundles"))
 
-	r.Route("/{supportBundleId}", func(r chiopenapi.Router) {
+	r.Route("/{bundleId}", func(r chiopenapi.Router) {
 		r.Use(auth.SupportBundleAuthentication.Middleware)
 
 		r.Get("/collect-script", getCollectScriptHandler()).
@@ -46,7 +46,7 @@ func getCollectScriptHandler() http.HandlerFunc {
 		log := internalctx.GetLogger(ctx)
 		bundle := auth.SupportBundleAuthentication.Require(ctx)
 
-		tokenStr := r.URL.Query().Get("token")
+		bundleSecret := r.URL.Query().Get("bundleSecret")
 
 		org, err := db.GetOrganizationByID(ctx, bundle.OrganizationID)
 		if err != nil {
@@ -66,7 +66,7 @@ func getCollectScriptHandler() http.HandlerFunc {
 			return
 		}
 
-		script, err := supportbundle.GenerateCollectScript(baseURL, bundle.ID, tokenStr, envVars)
+		script, err := supportbundle.GenerateCollectScript(baseURL, bundle.ID, bundleSecret, envVars)
 		if err != nil {
 			log.Error("failed to generate collect script", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -86,6 +86,11 @@ func uploadSupportBundleResourceHandler() http.HandlerFunc {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
 		bundle := auth.SupportBundleAuthentication.Require(ctx)
+
+		if bundle.Status != types.SupportBundleStatusInitialized {
+			http.Error(w, "support bundle is not accepting data", http.StatusBadRequest)
+			return
+		}
 
 		if err := r.ParseMultipartForm(1 << 20); err != nil {
 			http.Error(w, "failed to parse multipart form", http.StatusBadRequest)
@@ -145,7 +150,7 @@ func finalizeSupportBundleHandler() http.HandlerFunc {
 				return err
 			}
 
-			return db.ClearSupportBundleCollectToken(ctx, bundle.ID)
+			return db.ClearSupportBundleBundleSecret(ctx, bundle.ID)
 		})
 		if err != nil {
 			log.Error("failed to finalize support bundle", zap.Error(err))

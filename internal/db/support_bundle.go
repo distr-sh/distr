@@ -95,9 +95,8 @@ const supportBundleWithDetailsOutputExpr = `
 	sb.title,
 	sb.description,
 	sb.status,
-	sb.collect_token_hash,
-	sb.collect_token_expires_at,
-	sb.collect_command,
+	sb.bundle_secret,
+	sb.bundle_secret_expires_at,
 	sb.status_changed_by_user_account_id,
 	sb.status_changed_at,
 	u.name AS created_by_user_name,
@@ -168,21 +167,21 @@ func GetSupportBundleByID(ctx context.Context, id, orgID uuid.UUID) (*types.Supp
 	return &result, nil
 }
 
-func GetSupportBundleByCollectToken(
-	ctx context.Context, id uuid.UUID, tokenHash []byte,
+func GetSupportBundleByBundleSecret(
+	ctx context.Context, id uuid.UUID, bundleSecret string,
 ) (*types.SupportBundle, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
 		`SELECT id, created_at, organization_id, customer_organization_id,
 			created_by_user_account_id, title, description, status,
-			collect_token_hash, collect_token_expires_at, collect_command,
+			bundle_secret, bundle_secret_expires_at,
 			status_changed_by_user_account_id, status_changed_at
 		FROM SupportBundle
 		WHERE id = @id
-			AND collect_token_hash = @tokenHash
-			AND collect_token_expires_at > now()`,
-		pgx.NamedArgs{"id": id, "tokenHash": tokenHash},
+			AND bundle_secret = @bundleSecret
+			AND bundle_secret_expires_at > now()`,
+		pgx.NamedArgs{"id": id, "bundleSecret": bundleSecret},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not query support bundle: %w", err)
@@ -203,23 +202,21 @@ func CreateSupportBundle(ctx context.Context, bundle *types.SupportBundle) error
 		ctx,
 		`INSERT INTO SupportBundle
 			(organization_id, customer_organization_id, created_by_user_account_id,
-			title, description, collect_token_hash, collect_token_expires_at,
-			collect_command)
+			title, description, bundle_secret, bundle_secret_expires_at)
 		VALUES (@orgId, @customerOrgId, @userId, @title, @description,
-			@tokenHash, @tokenExpiresAt, @collectCommand)
+			@bundleSecret, @bundleSecretExpiresAt)
 		RETURNING id, created_at, organization_id, customer_organization_id,
 			created_by_user_account_id, title, description, status,
-			collect_token_hash, collect_token_expires_at, collect_command,
+			bundle_secret, bundle_secret_expires_at,
 			status_changed_by_user_account_id, status_changed_at`,
 		pgx.NamedArgs{
-			"orgId":          bundle.OrganizationID,
-			"customerOrgId":  bundle.CustomerOrganizationID,
-			"userId":         bundle.CreatedByUserAccountID,
-			"title":          bundle.Title,
-			"description":    bundle.Description,
-			"tokenHash":      bundle.CollectTokenHash,
-			"tokenExpiresAt": bundle.CollectTokenExpiresAt,
-			"collectCommand": bundle.CollectCommand,
+			"orgId":                 bundle.OrganizationID,
+			"customerOrgId":         bundle.CustomerOrganizationID,
+			"userId":                bundle.CreatedByUserAccountID,
+			"title":                 bundle.Title,
+			"description":           bundle.Description,
+			"bundleSecret":          bundle.BundleSecret,
+			"bundleSecretExpiresAt": bundle.BundleSecretExpiresAt,
 		},
 	)
 	if err != nil {
@@ -258,31 +255,16 @@ func UpdateSupportBundleStatus(
 	return nil
 }
 
-func ClearSupportBundleCollectToken(ctx context.Context, bundleID uuid.UUID) error {
+func ClearSupportBundleBundleSecret(ctx context.Context, bundleID uuid.UUID) error {
 	db := internalctx.GetDb(ctx)
 	if _, err := db.Exec(
 		ctx,
 		`UPDATE SupportBundle
-		SET collect_token_hash = NULL, collect_token_expires_at = NULL,
-			collect_command = NULL
+		SET bundle_secret_expires_at = NULL
 		WHERE id = @id`,
 		pgx.NamedArgs{"id": bundleID},
 	); err != nil {
 		return fmt.Errorf("could not clear support bundle collect token: %w", err)
-	}
-	return nil
-}
-
-func UpdateSupportBundleCollectCommand(
-	ctx context.Context, bundleID uuid.UUID, collectCommand string,
-) error {
-	db := internalctx.GetDb(ctx)
-	if _, err := db.Exec(
-		ctx,
-		`UPDATE SupportBundle SET collect_command = @cmd WHERE id = @id`,
-		pgx.NamedArgs{"id": bundleID, "cmd": collectCommand},
-	); err != nil {
-		return fmt.Errorf("could not update collect command: %w", err)
 	}
 	return nil
 }

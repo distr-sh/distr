@@ -2,9 +2,6 @@ package handlers
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
@@ -18,6 +15,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
@@ -50,21 +48,21 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 			With(option.Request(api.CreateSupportBundleRequest{})).
 			With(option.Response(http.StatusOK, api.CreateSupportBundleResponse{}))
 
-		r.Route("/{supportBundleId}", func(r chiopenapi.Router) {
-			type SupportBundleIDRequest struct {
-				SupportBundleID uuid.UUID `path:"supportBundleId"`
+		r.Route("/{bundleId}", func(r chiopenapi.Router) {
+			type BundleIDRequest struct {
+				BundleID uuid.UUID `path:"bundleId"`
 			}
 
 			r.Get("/", getSupportBundleDetailHandler()).
 				With(option.Description("Get support bundle detail")).
-				With(option.Request(SupportBundleIDRequest{})).
+				With(option.Request(BundleIDRequest{})).
 				With(option.Response(http.StatusOK, api.SupportBundleDetail{}))
 
 			r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 				Patch("/status", updateSupportBundleStatusHandler()).
 				With(option.Description("Update support bundle status")).
 				With(option.Request(struct {
-					SupportBundleIDRequest
+					BundleIDRequest
 					api.UpdateSupportBundleStatusRequest
 				}{}))
 
@@ -72,7 +70,7 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 				Post("/comments", createSupportBundleCommentHandler()).
 				With(option.Description("Create a support bundle comment")).
 				With(option.Request(struct {
-					SupportBundleIDRequest
+					BundleIDRequest
 					api.CreateSupportBundleCommentRequest
 				}{})).
 				With(option.Response(http.StatusOK, api.SupportBundleComment{}))
@@ -162,16 +160,6 @@ func getSupportBundlesHandler() http.HandlerFunc {
 	}
 }
 
-func generateCollectToken() (raw string, hash []byte, err error) {
-	tokenBytes := make([]byte, 32)
-	if _, err := rand.Read(tokenBytes); err != nil {
-		return "", nil, fmt.Errorf("could not generate collect token: %w", err)
-	}
-	raw = hex.EncodeToString(tokenBytes)
-	h := sha256.Sum256(tokenBytes)
-	return raw, h[:], nil
-}
-
 func createSupportBundleHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -193,7 +181,7 @@ func createSupportBundleHandler() http.HandlerFunc {
 			return
 		}
 
-		rawToken, tokenHash, err := generateCollectToken()
+		bundleSecret, err := security.GenerateAccessKey()
 		if err != nil {
 			log.Error("failed to generate collect token", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -210,12 +198,6 @@ func createSupportBundleHandler() http.HandlerFunc {
 		}
 
 		baseURL := customdomains.AppDomainOrDefault(*org)
-		// collectCommand is stored so it can be shown again while
-		// the bundle is still in initialized state.
-		collectCommand := fmt.Sprintf(
-			"curl -fsSL '%s/api/v1/support-bundle-collect/BUNDLE_ID/collect-script?token=%s' | sh",
-			baseURL, rawToken,
-		)
 
 		expiresAt := time.Now().UTC().Add(24 * time.Hour)
 		bundle := types.SupportBundle{
@@ -224,8 +206,8 @@ func createSupportBundleHandler() http.HandlerFunc {
 			CreatedByUserAccountID: a.CurrentUserID(),
 			Title:                  request.Title,
 			Description:            request.Description,
-			CollectTokenHash:       tokenHash,
-			CollectTokenExpiresAt:  &expiresAt,
+			BundleSecret:           bundleSecret,
+			BundleSecretExpiresAt:  &expiresAt,
 		}
 		if err := db.CreateSupportBundle(ctx, &bundle); err != nil {
 			log.Error("failed to create support bundle", zap.Error(err))
@@ -234,15 +216,10 @@ func createSupportBundleHandler() http.HandlerFunc {
 			return
 		}
 
-		// Replace placeholder with actual bundle ID now that we have it
-		collectCommand = fmt.Sprintf(
-			"curl -fsSL '%s/api/v1/support-bundle-collect/%s/collect-script?token=%s' | sh",
-			baseURL, bundle.ID.String(), rawToken,
+		collectCommand := fmt.Sprintf(
+			"curl -fsSL '%s/api/v1/support-bundle-collect/%s/collect-script?bundleSecret=%s' | sh",
+			baseURL, bundle.ID.String(), bundleSecret,
 		)
-		bundle.CollectCommand = &collectCommand
-		if err := db.UpdateSupportBundleCollectCommand(ctx, bundle.ID, collectCommand); err != nil {
-			log.Error("failed to store collect command", zap.Error(err))
-		}
 
 		detailBundle, err := db.GetSupportBundleByID(ctx, bundle.ID, *a.CurrentOrgID())
 		if err != nil {
@@ -261,7 +238,7 @@ func createSupportBundleHandler() http.HandlerFunc {
 
 func getSupportBundleDetailHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := uuid.Parse(r.PathValue("supportBundleId"))
+		id, err := uuid.Parse(r.PathValue("bundleId"))
 		if err != nil {
 			http.NotFound(w, r)
 			return
@@ -308,8 +285,20 @@ func getSupportBundleDetailHandler() http.HandlerFunc {
 			Resources:     mapping.List(resources, mapping.SupportBundleResourceToAPI),
 			Comments:      mapping.List(comments, mapping.SupportBundleCommentToAPI),
 		}
-		if bundle.Status == types.SupportBundleStatusInitialized {
-			detail.CollectCommand = bundle.CollectCommand
+		if bundle.Status == types.SupportBundleStatusInitialized && bundle.BundleSecretExpiresAt != nil {
+			org, err := db.GetOrganizationByID(ctx, bundle.OrganizationID)
+			if err != nil {
+				log.Error("failed to get organization", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			baseURL := customdomains.AppDomainOrDefault(*org)
+			cmd := fmt.Sprintf(
+				"curl -fsSL '%s/api/v1/support-bundle-collect/%s/collect-script?bundleSecret=%s' | sh",
+				baseURL, bundle.ID.String(), bundle.BundleSecret,
+			)
+			detail.CollectCommand = &cmd
 		}
 		RespondJSON(w, detail)
 	}
@@ -349,7 +338,7 @@ func updateSupportBundleStatusHandler() http.HandlerFunc {
 					); err != nil {
 						return err
 					}
-					return db.ClearSupportBundleCollectToken(ctx, bundle.ID)
+					return db.ClearSupportBundleBundleSecret(ctx, bundle.ID)
 				})
 			} else {
 				err = db.UpdateSupportBundleStatus(
@@ -372,7 +361,7 @@ func updateSupportBundleStatusHandler() http.HandlerFunc {
 				); err != nil {
 					return err
 				}
-				return db.ClearSupportBundleCollectToken(ctx, bundle.ID)
+				return db.ClearSupportBundleBundleSecret(ctx, bundle.ID)
 			})
 		default:
 			http.Error(w, "only 'resolved' or 'canceled' status is allowed", http.StatusBadRequest)
@@ -394,7 +383,7 @@ func updateSupportBundleStatusHandler() http.HandlerFunc {
 // requireSupportBundle parses the bundle ID from the path, verifies org ownership
 // and customer org access. Returns nil if an error response was already written.
 func requireSupportBundle(w http.ResponseWriter, r *http.Request) *types.SupportBundleWithDetails {
-	id, err := uuid.Parse(r.PathValue("supportBundleId"))
+	id, err := uuid.Parse(r.PathValue("bundleId"))
 	if err != nil {
 		http.NotFound(w, r)
 		return nil

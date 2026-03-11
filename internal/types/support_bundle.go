@@ -30,9 +30,8 @@ type SupportBundle struct {
 	Title                        string              `db:"title"`
 	Description                  *string             `db:"description"`
 	Status                       SupportBundleStatus `db:"status"`
-	CollectTokenHash             []byte              `db:"collect_token_hash"`
-	CollectTokenExpiresAt        *time.Time          `db:"collect_token_expires_at"`
-	CollectCommand               *string             `db:"collect_command"`
+	BundleSecret                 string              `db:"bundle_secret"`
+	BundleSecretExpiresAt        *time.Time          `db:"bundle_secret_expires_at"`
 	StatusChangedByUserAccountID *uuid.UUID          `db:"status_changed_by_user_account_id"`
 	StatusChangedAt              *time.Time          `db:"status_changed_at"`
 }

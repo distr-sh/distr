@@ -14,7 +14,7 @@ cat > "$_script" << 'DISTR_COLLECT_EOF'
 
 BUNDLE_ID="{{.BundleID}}"
 BASE_URL="{{.BaseURL}}"
-TOKEN="{{.Token}}"
+BUNDLE_SECRET="{{.Token}}"
 
 _tmpdir=$(mktemp -d)
 trap 'rm -rf "$_tmpdir"' EXIT
@@ -27,7 +27,7 @@ upload_resource() {
   if ! curl -fsSL -X POST \
     -F "name=${_name}" \
     -F "content=@${_tmpfile}" \
-    "${BASE_URL}/resources?token=${TOKEN}" > /dev/null 2>&1; then
+    "${BASE_URL}/resources?bundleSecret=${BUNDLE_SECRET}" > /dev/null 2>&1; then
     echo "    Warning: failed to upload ${_name}"
   fi
   rm -f "$_tmpfile"
@@ -206,7 +206,7 @@ fi
 # Finalize support bundle
 echo ""
 echo "Finalizing support bundle..."
-if ! curl -fsSL -X POST "${BASE_URL}/finalize?token=${TOKEN}" > /dev/null 2>&1; then
+if ! curl -fsSL -X POST "${BASE_URL}/finalize?bundleSecret=${BUNDLE_SECRET}" > /dev/null 2>&1; then
   echo "Warning: failed to finalize support bundle"
 fi
 echo ""

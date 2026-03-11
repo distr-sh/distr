@@ -19,9 +19,8 @@ CREATE TABLE SupportBundle (
     title TEXT NOT NULL,
     description TEXT,
     status support_bundle_status NOT NULL DEFAULT 'initialized',
-    collect_token_hash BYTEA,
-    collect_token_expires_at TIMESTAMP,
-    collect_command TEXT,
+    bundle_secret TEXT NOT NULL,
+    bundle_secret_expires_at TIMESTAMP,
     status_changed_by_user_account_id UUID REFERENCES UserAccount (id),
     status_changed_at TIMESTAMP
 );
