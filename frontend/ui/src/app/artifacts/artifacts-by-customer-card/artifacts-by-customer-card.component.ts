@@ -38,7 +38,7 @@ export class ArtifactsByCustomerCardComponent {
   public readonly artifacts = input.required<DashboardArtifact[]>();
 
   protected isOnLatest(artifact: DashboardArtifact): boolean {
-    const max = this.findMaxVersion(artifact.artifact.versions ?? []);
+    const max = this.findMaxVersion(artifact.artifact.versions?.filter((it) => it.inferredType !== 'signature') ?? []);
     const includesPulled = max?.tags.map((t) => t.name).includes(artifact.latestPulledVersion) ?? false;
     if (includesPulled) {
       return true;

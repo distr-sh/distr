@@ -12,6 +12,7 @@ const (
 	ManifestTypeGeneric        ManifestType = "generic"
 	ManifestTypeContainerImage ManifestType = "container-image"
 	ManifestTypeHelmChart      ManifestType = "helm-chart"
+	ManifestTypeSignature      ManifestType = "signature"
 )
 
 type Artifact struct {
@@ -48,7 +49,8 @@ type TaggedArtifactVersion struct {
 
 	DownloadMetrics
 
-	InferredType ManifestType `db:"-" json:"inferredType"`
+	ReferrerArtifactTypes []string     `db:"referrer_artifact_types" json:"-"`
+	InferredType          ManifestType `db:"-" json:"inferredType"`
 }
 
 type ArtifactWithDownloads struct {
