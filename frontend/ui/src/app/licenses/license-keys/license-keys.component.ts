@@ -1,6 +1,6 @@
 import {GlobalPositionStrategy} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe} from '@angular/common';
-import {Component, computed, inject, input, signal, TemplateRef, viewChild} from '@angular/core';
+import {Component, inject, input, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -62,7 +62,7 @@ export class LicenseKeysComponent {
     search: new FormControl(''),
   });
 
-  private readonly filteredLicenses = toSignal(
+  protected readonly filteredLicenses = toSignal(
     combineLatest([
       filteredByFormControl(
         this.licenseKeysService.list(),
@@ -76,7 +76,6 @@ export class LicenseKeysComponent {
     ),
     {initialValue: [] as LicenseKey[]}
   );
-  protected readonly licenses = computed(() => this.filteredLicenses());
 
   editForm = new FormGroup({
     license: new FormControl<LicenseKey | undefined>(undefined, {
