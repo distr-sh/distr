@@ -1,6 +1,6 @@
 import {Application, ApplicationVersion, BaseModel, CustomerOrganization, Named} from '@distr-sh/distr-sdk';
 
-export interface ApplicationLicense extends BaseModel, Named {
+export interface ApplicationEntitlement extends BaseModel, Named {
   expiresAt?: Date;
   applicationId?: string;
   application?: Application;

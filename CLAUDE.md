@@ -41,7 +41,7 @@ The SDK is a standalone subproject in `sdk/js/` with its own package.json, depen
 
 When working with the SDK:
 
-- Always build the SDK with `pnpm build` after making changes
+- Always build the SDK with `mise build:sdk` after making changes
 - Use pnpm (not npm) for all package management
 - Use `DistrService` for high-level operations (preferred)
 - Use `Client` for direct API access when needed
@@ -67,6 +67,7 @@ Key internal packages:
 - `internal/middleware/`: HTTP middleware (logging, auth, Sentry, etc.)
 - `internal/svc/`: Business logic services
 - `internal/mapping/`: Mapping logic for data transformations between DTOs and domain models
+- `api/`: All request structs used by HTTP handlers should be in the api package and not in the handler package
 
 ### Frontend Architecture (Angular)
 
@@ -93,8 +94,9 @@ The database schema is managed through SQL migrations in `internal/migrations/sq
 - `deployment_targets`: Customer environments (agents)
 - `artifacts`: Software artifacts (Docker images, Helm charts)
 - `applications`: Artifact collections
-- `licenses`: License keys for artifact access
 - `deployment_log_records`: Logs from deployments
+- `licensekey`: License keys that vendors can generate for its customers
+- `application_entitlements` & `artifact_entitlements`: Access entitlements for applications and artifacts
 
 ## Common Commands
 

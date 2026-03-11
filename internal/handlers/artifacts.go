@@ -65,13 +65,13 @@ func getArtifacts(w http.ResponseWriter, r *http.Request) {
 	var artifacts []types.ArtifactWithDownloads
 	var err error
 	if auth.CurrentOrg().HasFeature(types.FeatureLicensing) && auth.CurrentCustomerOrgID() != nil {
-		if licenses, err1 := db.GetArtifactLicenses(ctx, *auth.CurrentOrgID()); err1 != nil {
-			log.Error("failed to get artifact licenses", zap.Error(err1))
+		if entitlements, err1 := db.GetArtifactEntitlements(ctx, *auth.CurrentOrgID()); err1 != nil {
+			log.Error("failed to get artifact entitlements", zap.Error(err1))
 			sentry.GetHubFromContext(ctx).CaptureException(err1)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
-		} else if len(licenses) > 0 {
-			artifacts, err = db.GetArtifactsByLicenseOwnerID(ctx, *auth.CurrentOrgID(), *auth.CurrentCustomerOrgID())
+		} else if len(entitlements) > 0 {
+			artifacts, err = db.GetArtifactsByEntitlementOwnerID(ctx, *auth.CurrentOrgID(), *auth.CurrentCustomerOrgID())
 		} else {
 			artifacts, err = db.GetArtifactsByOrgID(ctx, *auth.CurrentOrgID())
 		}
@@ -108,12 +108,12 @@ func deleteArtifactHandler(w http.ResponseWriter, r *http.Request) {
 	artifact := internalctx.GetArtifact(ctx)
 
 	err := db.RunTx(ctx, func(ctx context.Context) error {
-		isReferenced, err := db.ArtifactIsReferencedInLicenses(ctx, artifact.ID)
+		isReferenced, err := db.ArtifactIsReferencedInEntitlements(ctx, artifact.ID)
 		if err != nil {
 			return err
 		}
 		if isReferenced {
-			return apierrors.NewBadRequest("Cannot delete artifact: it is referenced in one or more licenses.")
+			return apierrors.NewBadRequest("Cannot delete artifact: it is referenced in one or more entitlements.")
 		}
 
 		if err := db.DeleteArtifactWithID(ctx, artifact.ID); err != nil {
@@ -164,7 +164,9 @@ func deleteArtifactTagHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Step 3: Enhanced license check
-		if err := db.CheckArtifactVersionDeletionForLicenses(ctx, artifact.ID, version, versionsWithSameDigest); err != nil {
+		if err := db.CheckArtifactVersionDeletionForEntitlements(
+			ctx, artifact.ID, version, versionsWithSameDigest,
+		); err != nil {
 			return err
 		}
 

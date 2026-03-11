@@ -7,7 +7,7 @@ go = "1.26.1"
 golangci-lint = "2.11.3"
 helm-docs = "1.14.2"
 watchexec = "2.3.2"
-pnpm = "10.32.0"
+pnpm = "10.32.1"
 stripe = "1.37.2"
 "go:github.com/go-delve/delve/cmd/dlv" = "1.26.1"
 
@@ -20,12 +20,24 @@ CGO_ENABLED = "0"
 [vars]
 ldflags = "-s -w -X github.com/distr-sh/distr/internal/buildconfig.version=$VERSION -X github.com/distr-sh/distr/internal/buildconfig.commit=$COMMIT"
 
+[tasks.sdk-deps]
+run = 'pnpm install'
+dir = "sdk/js"
+sources = ["sdk/js/package.json", "sdk/js/pnpm-lock.yaml"]
+
 [tasks.frontend-deps]
 run = 'pnpm install'
+depends = ["build:sdk"]
 sources = ["package.json", "pnpm-lock.yaml"]
 
 [tasks.go-tidy]
 run = 'go mod tidy'
+
+[tasks."build:sdk"]
+run = ['pnpm run build', 'pnpm run docs']
+dir = "sdk/js"
+depends = ["sdk-deps"]
+sources = ["sdk/js/node_modules/**/*", "sdk/js/src/**/*"]
 
 [tasks."build:frontend:dev"]
 run = 'pnpm build:dev'

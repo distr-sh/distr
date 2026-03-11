@@ -1,0 +1,62 @@
+<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
+  @if (customer(); as customer) {
+    <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
+      <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+        <nav class="flex justify-between m-4" aria-label="Breadcrumb">
+          <ol class="inline-flex items-center mb-3 sm:mb-0">
+            <li class="flex items-center">
+              <a
+                [routerLink]="['/', 'licenses']"
+                class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
+                <fa-icon class="mr-2" [icon]="faBoxesStacked"></fa-icon>
+                Licenses
+              </a>
+            </li>
+            <span class="mx-2 text-gray-400">/</span>
+            <li aria-current="page">
+              <div class="flex items-center">
+                <button
+                  cdkOverlayOrigin
+                  #dropdownTrigger="cdkOverlayOrigin"
+                  #dropdownTriggerButton
+                  (click)="toggleBreadcrumbDropdown()"
+                  class="inline-flex items-center px-3 py-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
+                  {{ customer.name }}
+                  <fa-icon class="ml-2" [icon]="faChevronDown"></fa-icon>
+                </button>
+                <ng-template
+                  cdkConnectedOverlay
+                  [cdkConnectedOverlayHasBackdrop]="true"
+                  (backdropClick)="breadcrumbDropdown.set(false)"
+                  [cdkConnectedOverlayBackdropClass]="'transparent'"
+                  [cdkConnectedOverlayOrigin]="dropdownTrigger"
+                  [cdkConnectedOverlayMinWidth]="breadcrumbDropdownWidth + 'px'"
+                  [cdkConnectedOverlayOpen]="breadcrumbDropdown()">
+                  <div
+                    style="transform-origin: top center"
+                    class="z-10 w-full bg-white divide-y divide-gray-100 rounded-lg shadow-xs dark:bg-gray-700">
+                    <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownDefault">
+                      @for (org of customerOrganizations(); track org.id) {
+                        <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                          <a
+                            class="px-4 flex items-stretch"
+                            [routerLink]="['/', 'licenses', org.id]"
+                            (click)="breadcrumbDropdown.set(false)">
+                            {{ org.name }}
+                          </a>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                </ng-template>
+              </div>
+            </li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+  }
+  <app-license-keys [customerOrganizationId]="customerOrgId()" />
+  <app-application-entitlements [customerOrganizationId]="customerOrgId()" />
+  <app-artifact-entitlements [customerOrganizationId]="customerOrgId()" />
+</section>

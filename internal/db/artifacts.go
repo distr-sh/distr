@@ -81,7 +81,7 @@ func GetArtifactsByOrgID(ctx context.Context, orgID uuid.UUID) ([]types.Artifact
 	}
 }
 
-func GetArtifactsByLicenseOwnerID(ctx context.Context, orgID uuid.UUID, ownerID uuid.UUID) (
+func GetArtifactsByEntitlementOwnerID(ctx context.Context, orgID uuid.UUID, ownerID uuid.UUID) (
 	[]types.ArtifactWithDownloads, error,
 ) {
 	db := internalctx.GetDb(ctx)
@@ -99,8 +99,8 @@ func GetArtifactsByLicenseOwnerID(ctx context.Context, orgID uuid.UUID, ownerID 
 			WHERE a.organization_id = @orgId
 			AND EXISTS(
 				SELECT ala.id
-				FROM ArtifactLicense_Artifact ala
-				INNER JOIN ArtifactLicense al ON ala.artifact_license_id = al.id
+				FROM ArtifactEntitlement_Artifact ala
+				INNER JOIN ArtifactEntitlement al ON ala.artifact_entitlement_id = al.id
 				WHERE al.customer_organization_id = @ownerId AND (al.expires_at IS NULL OR al.expires_at > now())
 				AND ala.artifact_id = a.id
 			)
@@ -276,24 +276,24 @@ func GetVersionsForArtifact(ctx context.Context, artifactID uuid.UUID, customerO
 			AND av.name LIKE '%:%'
 			AND (
 				@isVendorUser
-				-- only check license if there is at least one license in this organization
+				-- only check entitlement if there is at least one entitlement in this organization
 				OR NOT EXISTS (
 					SELECT al.id
 					FROM artifact a
-					JOIN ArtifactLicense al ON a.organization_id = al.organization_id
+					JOIN ArtifactEntitlement al ON a.organization_id = al.organization_id
 					WHERE a.id = @artifactId
 				)
-				-- license check
+				-- entitlement check
 				OR EXISTS (
-					-- license for all versions of the artifact
+					-- entitlement for all versions of the artifact
 					SELECT *
-					FROM ArtifactLicense_Artifact ala
-					INNER JOIN ArtifactLicense al ON ala.artifact_license_id = al.id
+					FROM ArtifactEntitlement_Artifact ala
+					INNER JOIN ArtifactEntitlement al ON ala.artifact_entitlement_id = al.id
 					WHERE ala.artifact_id = @artifactId AND ala.artifact_version_id IS NULL
 					AND al.customer_organization_id = @customerOrgId AND (al.expires_at IS NULL OR al.expires_at > now())
 				)
 				OR EXISTS (
-					-- or license only for specific versions or their parent versions
+					-- or entitlement only for specific versions or their parent versions
 					WITH RECURSIVE ArtifactVersionAggregate (id, manifest_blob_digest) AS (
 						SELECT avx.id, avx.manifest_blob_digest
 						FROM ArtifactVersion avx
@@ -308,8 +308,8 @@ func GetVersionsForArtifact(ctx context.Context, artifactID uuid.UUID, customerO
 					)
 					SELECT *
 					FROM ArtifactVersionAggregate avagg
-					INNER JOIN ArtifactLicense_Artifact ala ON ala.artifact_version_id = avagg.id
-					INNER JOIN ArtifactLicense al ON ala.artifact_license_id = al.id
+					INNER JOIN ArtifactEntitlement_Artifact ala ON ala.artifact_version_id = avagg.id
+					INNER JOIN ArtifactEntitlement al ON ala.artifact_entitlement_id = al.id
 					WHERE al.customer_organization_id = @customerOrgId AND (al.expires_at IS NULL OR al.expires_at > now())
 					AND ala.artifact_id = @artifactId
 				)
@@ -411,33 +411,33 @@ func CreateArtifact(ctx context.Context, artifact *types.Artifact) error {
 	}
 }
 
-func HasAnyArtifactLicense(ctx context.Context, orgID uuid.UUID) (bool, error) {
+func HasAnyArtifactEntitlement(ctx context.Context, orgID uuid.UUID) (bool, error) {
 	db := internalctx.GetDb(ctx)
-	var hasLicenses bool
+	var hasEntitlements bool
 	err := db.QueryRow(ctx, `
 		SELECT EXISTS(
 			SELECT 1
-			FROM ArtifactLicense al
+			FROM ArtifactEntitlement al
 			WHERE al.organization_id = @orgId
 		)`,
 		pgx.NamedArgs{"orgId": orgID},
-	).Scan(&hasLicenses)
+	).Scan(&hasEntitlements)
 	if err != nil {
-		return false, fmt.Errorf("could not check for licenses: %w", err)
+		return false, fmt.Errorf("could not check for entitlements: %w", err)
 	}
-	return hasLicenses, nil
+	return hasEntitlements, nil
 }
 
-func CheckLicenseForArtifact(
+func CheckEntitlementForArtifact(
 	ctx context.Context,
 	orgName, name, reference string,
 	customerOrganizationID uuid.UUID,
 	orgID uuid.UUID,
 ) error {
-	hasLicenses, err := HasAnyArtifactLicense(ctx, orgID)
+	hasEntitlements, err := HasAnyArtifactEntitlement(ctx, orgID)
 	if err != nil {
 		return err
-	} else if !hasLicenses {
+	} else if !hasEntitlements {
 		return nil
 	}
 
@@ -462,10 +462,10 @@ func CheckLicenseForArtifact(
 		SELECT exists(
 			SELECT *
 				FROM ArtifactVersionAggregate av
-				JOIN ArtifactLicense_Artifact ala
+				JOIN ArtifactEntitlement_Artifact ala
 					ON av.artifact_id = ala.artifact_id
 						AND (ala.artifact_version_id IS NULL OR ala.artifact_version_id = av.id)
-				JOIN ArtifactLicense al ON ala.artifact_license_id = al.id
+				JOIN ArtifactEntitlement al ON ala.artifact_entitlement_id = al.id
 				WHERE al.customer_organization_id = @customerOrganizationId
 					AND (al.expires_at IS NULL OR al.expires_at > now())
 		)`,
@@ -488,14 +488,14 @@ func CheckLicenseForArtifact(
 	return nil
 }
 
-func CheckLicenseForArtifactBlob(ctx context.Context, digest string,
+func CheckEntitlementForArtifactBlob(ctx context.Context, digest string,
 	customerOrganizationID uuid.UUID,
 	orgID uuid.UUID,
 ) error {
-	hasLicenses, err := HasAnyArtifactLicense(ctx, orgID)
+	hasEntitlements, err := HasAnyArtifactEntitlement(ctx, orgID)
 	if err != nil {
 		return err
-	} else if !hasLicenses {
+	} else if !hasEntitlements {
 		return nil
 	}
 
@@ -517,10 +517,10 @@ func CheckLicenseForArtifactBlob(ctx context.Context, digest string,
 		SELECT exists(
 			SELECT *
 				FROM ArtifactVersionAggregate av
-				JOIN ArtifactLicense_Artifact ala
+				JOIN ArtifactEntitlement_Artifact ala
 					ON av.artifact_id = ala.artifact_id
 						AND (ala.artifact_version_id IS NULL OR ala.artifact_version_id = av.id)
-				JOIN ArtifactLicense al ON ala.artifact_license_id = al.id
+				JOIN ArtifactEntitlement al ON ala.artifact_entitlement_id = al.id
 				WHERE al.customer_organization_id = @customerOrganizationId
 					AND (al.expires_at IS NULL OR al.expires_at > now())
 		)`,
@@ -888,11 +888,11 @@ func UpdateArtifactImage(ctx context.Context, artifact *types.ArtifactWithTagged
 	return nil
 }
 
-func ArtifactIsReferencedInLicenses(ctx context.Context, artifactID uuid.UUID) (bool, error) {
+func ArtifactIsReferencedInEntitlements(ctx context.Context, artifactID uuid.UUID) (bool, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `
 		SELECT count(ala.id) > 0
-		FROM ArtifactLicense_Artifact ala
+		FROM ArtifactEntitlement_Artifact ala
 		WHERE ala.artifact_id = @artifactId`,
 		pgx.NamedArgs{"artifactId": artifactID},
 	)
@@ -964,13 +964,13 @@ func GetArtifactVersionsByDigest(
 	return results, nil
 }
 
-// CheckArtifactVersionDeletionForLicenses performs comprehensive license validation before deleting a tag
-// It checks if the deletion would break license access by verifying:
-// 1. If the SHA version is referenced in licenses
+// CheckArtifactVersionDeletionForEntitlements performs comprehensive entitlement validation before deleting a tag
+// It checks if the deletion would break entitlement access by verifying:
+// 1. If the SHA version is referenced in entitlements
 // 2. If there are other non-SHA tags pointing to the same digest
-// 3. If there are all-versions licenses (without artifact_version_id)
-// Returns error if deletion should be prevented due to license references
-func CheckArtifactVersionDeletionForLicenses(
+// 3. If there are all-versions entitlements (without artifact_version_id)
+// Returns error if deletion should be prevented due to entitlement references
+func CheckArtifactVersionDeletionForEntitlements(
 	ctx context.Context,
 	artifactID uuid.UUID,
 	version *types.ArtifactVersion,
@@ -987,27 +987,27 @@ func CheckArtifactVersionDeletionForLicenses(
 		}
 	}
 
-	// If there's no SHA version, we can't have license references to it
+	// If there's no SHA version, we can't have entitlement references to it
 	if shaVersion == nil {
-		// Still check for all-versions licenses
-		return checkAllVersionsLicense(ctx, artifactID)
+		// Still check for all-versions entitlements
+		return checkAllVersionsEntitlement(ctx, artifactID)
 	}
 
-	// Check if the SHA version is referenced in any license
+	// Check if the SHA version is referenced in any entitlement
 	var isReferencedCount int64
 	err := db.QueryRow(ctx, `
 		SELECT count(*)
-		FROM ArtifactLicense_Artifact ala
+		FROM ArtifactEntitlement_Artifact ala
 		WHERE ala.artifact_version_id = @shaVersionId`,
 		pgx.NamedArgs{
 			"shaVersionId": shaVersion.ID,
 		},
 	).Scan(&isReferencedCount)
 	if err != nil {
-		return fmt.Errorf("could not check license references: %w", err)
+		return fmt.Errorf("could not check entitlement references: %w", err)
 	}
 
-	// If SHA version is referenced in licenses
+	// If SHA version is referenced in entitlements
 	if isReferencedCount > 0 {
 		// Count other non-SHA tags pointing to the same digest (excluding the tag being deleted)
 		otherNonSHATags := 0
@@ -1021,35 +1021,35 @@ func CheckArtifactVersionDeletionForLicenses(
 		// If there are no other non-SHA tags, deletion should fail
 		if otherNonSHATags == 0 {
 			return apierrors.NewBadRequest(
-				"cannot delete tag: the manifest digest is referenced in one or more licenses " +
+				"cannot delete tag: the manifest digest is referenced in one or more entitlements " +
 					"and this is the last non-SHA tag pointing to it",
 			)
 		}
 	}
 
-	// Check for all-versions licenses
-	return checkAllVersionsLicense(ctx, artifactID)
+	// Check for all-versions entitlements
+	return checkAllVersionsEntitlement(ctx, artifactID)
 }
 
-// checkAllVersionsLicense checks if there's a license referencing the artifact without any artifact_version_id
-func checkAllVersionsLicense(ctx context.Context, artifactID uuid.UUID) error {
+// checkAllVersionsEntitlement checks if there's an entitlement referencing the artifact without any artifact_version_id
+func checkAllVersionsEntitlement(ctx context.Context, artifactID uuid.UUID) error {
 	db := internalctx.GetDb(ctx)
-	var hasAllVersionsLicense bool
+	var hasAllVersionsEntitlement bool
 	err := db.QueryRow(ctx, `
 		SELECT count(*) > 0
-		FROM ArtifactLicense_Artifact ala
+		FROM ArtifactEntitlement_Artifact ala
 		WHERE ala.artifact_id = @artifactId
 		AND ala.artifact_version_id IS NULL`,
 		pgx.NamedArgs{
 			"artifactId": artifactID,
 		},
-	).Scan(&hasAllVersionsLicense)
+	).Scan(&hasAllVersionsEntitlement)
 	if err != nil {
-		return fmt.Errorf("could not check all-versions license: %w", err)
+		return fmt.Errorf("could not check all-versions entitlement: %w", err)
 	}
 
-	if hasAllVersionsLicense {
-		return apierrors.NewBadRequest("cannot delete tag: there is an all-versions license for this artifact")
+	if hasAllVersionsEntitlement {
+		return apierrors.NewBadRequest("cannot delete tag: there is an all-versions entitlement for this artifact")
 	}
 
 	return nil

@@ -284,8 +284,8 @@ export class SubscriptionComponent implements OnInit {
       info.currentCustomerOrganizationCount <= info.limits.starter.maxCustomerOrganizations &&
       info.currentMaxUsersPerCustomer <= info.limits.starter.maxUsersPerCustomerOrganization &&
       info.currentMaxDeploymentTargetsPerCustomer <= info.limits.starter.maxDeploymentsPerCustomerOrganization &&
-      !info.hasApplicationLicenses &&
-      !info.hasArtifactLicenses &&
+      !info.hasApplicationEntitlements &&
+      !info.hasArtifactEntitlements &&
       !info.hasNonAdminRoles
     );
   }

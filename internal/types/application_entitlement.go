@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type ApplicationLicenseBase struct {
+type ApplicationEntitlementBase struct {
 	ID                     uuid.UUID  `db:"id" json:"id"`
 	CreatedAt              time.Time  `db:"created_at" json:"createdAt"`
 	Name                   string     `db:"name" json:"name"`
@@ -19,13 +19,13 @@ type ApplicationLicenseBase struct {
 	RegistryPassword       *string    `db:"registry_password" json:"registryPassword,omitempty"`
 }
 
-type ApplicationLicenseWithVersions struct {
-	ApplicationLicenseBase
+type ApplicationEntitlementWithVersions struct {
+	ApplicationEntitlementBase
 	Versions []ApplicationVersion `db:"versions" json:"versions"`
 }
 
-type ApplicationLicense struct {
-	ApplicationLicenseWithVersions
+type ApplicationEntitlement struct {
+	ApplicationEntitlementWithVersions
 	Application          Application           `db:"application" json:"application"`
 	CustomerOrganization *CustomerOrganization `db:"customer_organization" json:"customerOrganization,omitempty"`
 }
@@ -37,8 +37,8 @@ type DeploymentVersionUsage struct {
 	ApplicationVersionName string    `db:"application_version_name"`
 }
 
-func (license *ApplicationLicenseWithVersions) HasVersionWithID(id uuid.UUID) bool {
-	for _, v := range license.Versions {
+func (entitlement *ApplicationEntitlementWithVersions) HasVersionWithID(id uuid.UUID) bool {
+	for _, v := range entitlement.Versions {
 		if v.ID == id {
 			return true
 		}

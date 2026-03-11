@@ -89,7 +89,7 @@ func (a *authorizer) AuthorizeReference(ctx context.Context, nameStr string, ref
 		return NewErrAccessDenied("organization slug does not match reference")
 	} else if action != ActionWrite && auth.CurrentCustomerOrgID() != nil {
 		if org.HasFeature(types.FeatureLicensing) {
-			err := db.CheckLicenseForArtifact(ctx,
+			err := db.CheckEntitlementForArtifact(ctx,
 				name.OrgName,
 				name.ArtifactName,
 				reference,
@@ -97,7 +97,7 @@ func (a *authorizer) AuthorizeReference(ctx context.Context, nameStr string, ref
 				*auth.CurrentOrgID(),
 			)
 			if errors.Is(err, apierrors.ErrForbidden) {
-				return NewErrAccessDenied("license required")
+				return NewErrAccessDenied("entitlement required")
 			} else if err != nil {
 				return err
 			}
@@ -126,9 +126,9 @@ func (a *authorizer) AuthorizeBlob(ctx context.Context, digest digest.Digest, ac
 	}
 
 	if auth.CurrentCustomerOrgID() != nil && auth.CurrentOrg().HasFeature(types.FeatureLicensing) {
-		err := db.CheckLicenseForArtifactBlob(ctx, digest.String(), *auth.CurrentCustomerOrgID(), *auth.CurrentOrgID())
+		err := db.CheckEntitlementForArtifactBlob(ctx, digest.String(), *auth.CurrentCustomerOrgID(), *auth.CurrentOrgID())
 		if errors.Is(err, apierrors.ErrForbidden) {
-			return NewErrAccessDenied("license required")
+			return NewErrAccessDenied("entitlement required")
 		} else if err != nil {
 			return err
 		}

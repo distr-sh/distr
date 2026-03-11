@@ -1,5 +1,46 @@
 # Changelog
 
+## [2.11.8](https://github.com/distr-sh/distr/compare/2.11.7...2.11.8) (2026-03-11)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/moby/moby/client to v0.3.0 ([#1953](https://github.com/distr-sh/distr/issues/1953)) ([ae925a6](https://github.com/distr-sh/distr/commit/ae925a6402a1b0e4705874fb98627d19561ed91e))
+* **deps:** update module github.com/stripe/stripe-go/v84 to v84.4.1 ([#1967](https://github.com/distr-sh/distr/issues/1967)) ([f058b76](https://github.com/distr-sh/distr/commit/f058b76ed2d3649a8b2af8fc8ce4d1a6a7cb6856))
+* **deps:** update module go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc to v1.42.0 ([#1965](https://github.com/distr-sh/distr/issues/1965)) ([9f96313](https://github.com/distr-sh/distr/commit/9f96313c5dba6f7b2ccb8efbad5e36249727e1e4))
+* **deps:** update module golang.org/x/oauth2 to v0.36.0 ([#1970](https://github.com/distr-sh/distr/issues/1970)) ([48bd877](https://github.com/distr-sh/distr/commit/48bd877b0e510ab56013cedbb10b89a9178e696f))
+* **deps:** update opentelemetry-go-contrib monorepo to v0.67.0 ([#1968](https://github.com/distr-sh/distr/issues/1968)) ([7956243](https://github.com/distr-sh/distr/commit/795624399561c3c14c17ae3da9bf64a7cc945b70))
+* **frontend:** update registry tutorial and fix stuck after first step ([#1955](https://github.com/distr-sh/distr/issues/1955)) ([18227d5](https://github.com/distr-sh/distr/commit/18227d50b2f59fdc4e62ce913b700a82c42631fe))
+* **kubernetes-agent:** prevent partial self-update caused by "context cancelled" error ([#1982](https://github.com/distr-sh/distr/issues/1982)) ([e735b89](https://github.com/distr-sh/distr/commit/e735b897cb6bc3c20f46ad70744d7a5d3640a8b4))
+* **sdk/js:** update all updates all deployments ([#1984](https://github.com/distr-sh/distr/issues/1984)) ([5ea9a2d](https://github.com/distr-sh/distr/commit/5ea9a2dd978e2d9f66d910d07d21dc90d7551483))
+
+
+### Other
+
+* **deps:** bump github.com/sigstore/sigstore from 1.10.0 to 1.10.4 in the go_modules group across 1 directory ([#1954](https://github.com/distr-sh/distr/issues/1954)) ([6f94918](https://github.com/distr-sh/distr/commit/6f949182c35def1d3120d81992c22364db881ead))
+* **deps:** bump hono from 4.12.5 to 4.12.7 in the npm_and_yarn group across 1 directory ([#1985](https://github.com/distr-sh/distr/issues/1985)) ([c582a21](https://github.com/distr-sh/distr/commit/c582a213b5f1a52a36ef9bda82266bc29e642e9f))
+* **deps:** bump tar from 7.5.10 to 7.5.11 in the npm_and_yarn group across 1 directory ([#1987](https://github.com/distr-sh/distr/issues/1987)) ([ef2dc0c](https://github.com/distr-sh/distr/commit/ef2dc0c8431e2fdb3072a4a7a8e980ce6cee7015))
+* **deps:** bump the npm_and_yarn group across 1 directory with 2 updates ([#1963](https://github.com/distr-sh/distr/issues/1963)) ([416618d](https://github.com/distr-sh/distr/commit/416618db707e82cf6d41afaaa9cb288c56e9bfe7))
+* **deps:** remove direct dependency on docker/docker ([#1961](https://github.com/distr-sh/distr/issues/1961)) ([409b274](https://github.com/distr-sh/distr/commit/409b2743a324517a04a16c25a64421bdd081fa8f))
+* **deps:** update anchore/sbom-action action to v0.23.1 ([#1974](https://github.com/distr-sh/distr/issues/1974)) ([ee07b3d](https://github.com/distr-sh/distr/commit/ee07b3d781379855ec20319088a64e8dae1c9ff1))
+* **deps:** update angular monorepo to v21.2.2 ([#1972](https://github.com/distr-sh/distr/issues/1972)) ([a0894e2](https://github.com/distr-sh/distr/commit/a0894e26f638873d9acfcf1763a5de2fa43b4409))
+* **deps:** update axllent/mailpit docker tag to v1.29.3 ([#1976](https://github.com/distr-sh/distr/issues/1976)) ([b6a8d2c](https://github.com/distr-sh/distr/commit/b6a8d2c0838cb7db140d3c3812de265d593fe974))
+* **deps:** update dependency @angular/cdk to v21.2.1 ([#1948](https://github.com/distr-sh/distr/issues/1948)) ([4d6a977](https://github.com/distr-sh/distr/commit/4d6a9778874682beb9a9d935fbc154e41aa543b0))
+* **deps:** update dependency @codemirror/view to v6.39.17 ([#1978](https://github.com/distr-sh/distr/issues/1978)) ([6e13e4b](https://github.com/distr-sh/distr/commit/6e13e4b0ededd4204c7f11cb1fcedc5da3f67a64))
+* **deps:** update dependency golangci-lint to v2.11.3 ([#1979](https://github.com/distr-sh/distr/issues/1979)) ([52c52c3](https://github.com/distr-sh/distr/commit/52c52c3f6ca6414b8f01f53ad8ccefd5e436b5a1))
+* **deps:** update dependency golangci/golangci-lint to v2.11.3 ([#1981](https://github.com/distr-sh/distr/issues/1981)) ([ba33c32](https://github.com/distr-sh/distr/commit/ba33c32573623c44cbcc0a18ab688d002b59f814))
+* **deps:** update dependency pnpm to v10.31.0 ([#1969](https://github.com/distr-sh/distr/issues/1969)) ([daec906](https://github.com/distr-sh/distr/commit/daec906f3ac5fe115c2441c8fd55f5d0f261ddd9))
+* **deps:** update dependency pnpm to v10.32.0 ([#1975](https://github.com/distr-sh/distr/issues/1975)) ([2cd2502](https://github.com/distr-sh/distr/commit/2cd2502ecaa0073a9f194173107746fc61233327))
+* **deps:** update dependency pnpm to v10.32.1 ([#1986](https://github.com/distr-sh/distr/issues/1986)) ([1b9539d](https://github.com/distr-sh/distr/commit/1b9539d91bebb6683b8eb40270684bdc93c25f05))
+* **deps:** update docker/metadata-action action to v6 ([#1957](https://github.com/distr-sh/distr/issues/1957)) ([edf57ea](https://github.com/distr-sh/distr/commit/edf57eae6d46276acd63b34b18395507ae06e756))
+* **deps:** update docker/setup-buildx-action action to v4 ([#1958](https://github.com/distr-sh/distr/issues/1958)) ([18d968b](https://github.com/distr-sh/distr/commit/18d968b55df01b9e4b7fcb1eaf1a18d39926f1f3))
+* **deps:** update golangci-lint ([#1960](https://github.com/distr-sh/distr/issues/1960)) ([11997e3](https://github.com/distr-sh/distr/commit/11997e328a668827a27685da4fa775dbfb8db34b))
+* **deps:** update golangci-lint to v2.11.2 ([#1962](https://github.com/distr-sh/distr/issues/1962)) ([fff2288](https://github.com/distr-sh/distr/commit/fff22887329c3bb0831765cde7469059d195866f))
+* **deps:** update sigstore/cosign-installer action to v4.1.0 ([#1973](https://github.com/distr-sh/distr/issues/1973)) ([181102e](https://github.com/distr-sh/distr/commit/181102e39f95af90890af6c103ce98fc5f2abbf4))
+* discontinue the Distr MCP server ([#1971](https://github.com/distr-sh/distr/issues/1971)) ([bc2b6ec](https://github.com/distr-sh/distr/commit/bc2b6ec23b9854bcb000f5590c73608a361f93a2))
+* **kubernetes-agent:** set helm MaxHistory to 10 ([#1980](https://github.com/distr-sh/distr/issues/1980)) ([a4cd99d](https://github.com/distr-sh/distr/commit/a4cd99d1163bedea23a3b5428ba498f7c5fe5c9b))
+* **sdk/js:** add updateAllDeployments option to reuse config from current deployment revision ([#1959](https://github.com/distr-sh/distr/issues/1959)) ([e4faf5e](https://github.com/distr-sh/distr/commit/e4faf5e63f584f0bf0165aef854a6fb654d50fd3))
+
 ## [2.11.7](https://github.com/distr-sh/distr/compare/2.11.6...2.11.7) (2026-03-06)
 
 
