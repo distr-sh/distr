@@ -19,10 +19,10 @@ import (
 var (
 	// Using embed.FS allows to handle a missing file at runtime.
 	// Should be changed to []byte if we decide that this is a required value.
-	//go:embed pubkey.pem
+	//go:embed all:embedded
 	efs          embed.FS
 	cachedPubKey = sync.OnceValues(func() (jwk.Key, error) {
-		f, err := efs.Open("pubkey.pem")
+		f, err := efs.Open("embedded/pubkey.pem")
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) {
 				return nil, nil
@@ -84,7 +84,7 @@ var (
 
 func Initialize() error {
 	if licenseData, err := parseAndValidate(env.LicenseKey()); err != nil {
-		return fmt.Errorf("invalid license key: %w", err)
+		return fmt.Errorf("license key initialization: %w", err)
 	} else {
 		cachedLicenseData = licenseData
 	}
@@ -105,7 +105,7 @@ func GetLicenseData() LicenseData {
 func parseAndValidate(licenseKey string) (*LicenseData, error) {
 	key, err := cachedPubKey()
 	if err != nil {
-		return nil, fmt.Errorf("validate license key: %w", err)
+		return nil, fmt.Errorf("read validation key: %w", err)
 	} else if key == nil {
 		return &defaultLicenseData, nil
 	} else if licenseKey == "" {
