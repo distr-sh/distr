@@ -1,0 +1,32 @@
+FROM golang:1.26 AS builder
+ARG TARGETOS
+ARG TARGETARCH
+ARG VERSION
+ARG COMMIT
+
+WORKDIR /workspace
+COPY go.mod go.mod
+COPY go.sum go.sum
+RUN go mod download
+
+COPY api/ api/
+COPY cmd/agent/opentofu/ cmd/agent/opentofu/
+# doesn't exist (yet?)
+# COPY pkg/ pkg/
+COPY internal/ internal/
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} \
+  go build -a -o agent \
+  -ldflags="-s -w -X github.com/distr-sh/distr/internal/buildconfig.version=${VERSION:-snapshot} -X github.com/distr-sh/distr/internal/buildconfig.commit=${COMMIT}" \
+  ./cmd/agent/opentofu/
+
+FROM alpine:3.21
+COPY --from=ghcr.io/opentofu/opentofu:1.9 /usr/local/bin/tofu /usr/local/bin/tofu
+WORKDIR /
+COPY --from=builder /workspace/agent .
+RUN addgroup -S agent && adduser -S agent -G agent && \
+    mkdir -p /scratch && chown agent:agent /scratch
+USER agent
+ENV TF_IN_AUTOMATION=1
+ENV TF_INPUT=0
+ENV TF_PLUGIN_CACHE_DIR=/scratch/plugin-cache
+ENTRYPOINT ["/agent"]

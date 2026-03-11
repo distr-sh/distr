@@ -14,6 +14,7 @@ jobs:
         agent:
           - docker
           - kubernetes
+          - opentofu
     permissions:
       contents: read
     steps:

@@ -105,6 +105,8 @@ func GenerateConnectCommand(
 			return "", fmt.Errorf("kubernetes deployment target must have a namespace")
 		}
 		return generateKubernetesConnectCommand(*deploymentTarget.Namespace, connectURL), nil
+	case types.DeploymentTypeOpenTofu:
+		return generateDockerConnectCommand(connectURL), nil
 	default:
 		return "", fmt.Errorf("unsupported deployment type: %s", deploymentTarget.Type)
 	}
