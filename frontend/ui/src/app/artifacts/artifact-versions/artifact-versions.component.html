@@ -16,11 +16,7 @@
                     alt="" />
                 } @else {
                   <div class="shrink-0 text-gray-900 dark:text-gray-400">
-                    <fa-icon
-                      (click)="uploadImage(artifact)"
-                      [icon]="faBox"
-                      size="xl"
-                      class="text-xl cursor-pointer"></fa-icon>
+                    <fa-icon (click)="uploadImage(artifact)" [icon]="faBox" size="xl" class="text-xl cursor-pointer" />
                   </div>
                 }
               </div>
@@ -29,7 +25,7 @@
                   {{ artifact.name }}
                 </h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400 truncate mt-1">
-                  <app-uuid [uuid]="artifact.id" [small]="true"></app-uuid>
+                  <app-uuid [uuid]="artifact.id" [small]="true" />
                 </p>
               </div>
 
@@ -78,7 +74,7 @@
                 <div class="text-gray-500 dark:text-gray-400">Use this artifact with:</div>
                 <div class="font-mono mt-1">
                   {{ usage }}
-                  <app-clip [clip]="usage"></app-clip>
+                  <app-clip [clip]="usage" />
                 </div>
               </div>
             }
@@ -89,12 +85,12 @@
       <div class="mt-4 bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
         <div class="overflow-x-auto">
           <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
-            @for (version of artifact.versions; track version.digest) {
+            @for (version of filteredVersions(); track version.digest) {
               @if (version.tags.length) {
                 <li class="py-3 px-6 sm:py-4">
                   <div class="flex items-center gap-2">
                     <div class="flex-1 min-w-0">
-                      <div class="flex flex-row gap-1 flex-wrap">
+                      <div class="flex flex-row gap-1 flex-wrap items-center">
                         @for (label of version.tags; track label.name) {
                           <span
                             class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-md dark:bg-gray-700 dark:text-blue-400 border border-blue-400 flex items-center gap-1">
@@ -105,7 +101,7 @@
                                 [attr.aria-label]="'Delete tag ' + label.name"
                                 (click)="deleteArtifactTag(artifact, version, label.name)"
                                 class="-mr-1 text-red-400 hover:text-red-600 transition-colors">
-                                <fa-icon [icon]="faXmark"></fa-icon>
+                                <fa-icon [icon]="faXmark" />
                               </button>
                             }
                           </span>
@@ -116,14 +112,49 @@
                         @if (version.size > 0) {
                           <li>{{ version.size | bytes }}</li>
                         }
+                        @if (version.signatureVersion) {
+                          <li>
+                            <button
+                              class="hover:dark:text-gray-300"
+                              aria-label="Signed artifact"
+                              #signatureBtn
+                              (click)="showSignatureOverlay(version)">
+                              <fa-icon [icon]="faFileSignature" />
+                            </button>
+
+                            <ng-template
+                              cdkConnectedOverlay
+                              [cdkConnectedOverlayHasBackdrop]="true"
+                              (backdropClick)="hideSignatureOverlay()"
+                              [cdkConnectedOverlayOrigin]="signatureBtn"
+                              [cdkConnectedOverlayBackdropClass]="'transparent'"
+                              [cdkConnectedOverlayPositions]="[
+                                {originX: 'start', overlayX: 'start', originY: 'bottom', overlayY: 'top'},
+                              ]"
+                              [cdkConnectedOverlayOpen]="signatureOverlayDigest() === version.digest">
+                              <div
+                                role="tooltip"
+                                class="p-3 text-sm font-medium text-gray-900 bg-white border border-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-w-64">
+                                This artifact has been signed with Cosign. Learn how to verify the signature at the
+                                <a
+                                  class="font-medium text-primary-600 hover:underline dark:text-primary-500"
+                                  href="https://docs.sigstore.dev/cosign/verifying/verify/"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  >Cosign docs</a
+                                >.
+                              </div>
+                            </ng-template>
+                          </li>
+                        }
                         <li>
-                          <app-artifacts-hash [hash]="version.digest"></app-artifacts-hash>
+                          <app-artifacts-hash [hash]="version.digest" />
                         </li>
                       </ul>
                     </div>
                     <div class="flex flex-col items-end gap-1" *appRequireVendor>
-                      <app-artifacts-download-count [source]="version"></app-artifacts-download-count>
-                      <app-artifacts-downloaded-by [source]="version"></app-artifacts-downloaded-by>
+                      <app-artifacts-download-count [source]="version" />
+                      <app-artifacts-downloaded-by [source]="version" />
                     </div>
                   </div>
                 </li>
@@ -134,7 +165,7 @@
       </div>
     } @else {
       <div class="flex justify-center items-center py-8 text-gray-500 dark:text-gray-400">
-        <fa-icon [icon]="faSpinner" class="animate-spin me-2" size="lg"></fa-icon>
+        <fa-icon [icon]="faSpinner" class="animate-spin me-2" size="lg" />
         <span>Loading&hellip;</span>
       </div>
     }

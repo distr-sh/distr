@@ -54,7 +54,7 @@ export interface TaggedArtifactVersion extends HasDownloads {
   vulnerabilities: Vulnerability[];
   lastScannedAt?: string;
   imageUrl?: string;
-  inferredType: 'generic' | 'container-image' | 'helm-chart';
+  inferredType: 'generic' | 'container-image' | 'helm-chart' | 'signature';
 }
 
 export interface ArtifactWithTags extends Artifact {

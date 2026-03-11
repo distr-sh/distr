@@ -1,6 +1,8 @@
-import {Component, inject} from '@angular/core';
+import {Component, inject, OnInit} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router} from '@angular/router';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
+import {faSpinner} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatestWith, first, map, of, shareReplay, switchMap} from 'rxjs';
 import {ArtifactsByCustomerCardComponent} from '../../artifacts/artifacts-by-customer-card/artifacts-by-customer-card.component';
 import {DeploymentTargetDashboardCardComponent} from '../../deployments/deployment-target-card/deployment-target-dashboard-card.component';
@@ -18,11 +20,12 @@ import {SupportBundle} from '../../types/support-bundle';
   imports: [
     ArtifactsByCustomerCardComponent,
     DeploymentTargetDashboardCardComponent,
+    FaIconComponent,
     SupportBundleDashboardCardComponent,
   ],
   templateUrl: './dashboard.component.html',
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
@@ -32,8 +35,7 @@ export class DashboardComponent {
   private readonly deploymentTargetMetricsService = inject(DeploymentTargetsMetricsService);
 
   private readonly artifactsByCustomer$ = this.dashboardService.getArtifactsByCustomer().pipe(shareReplay(1));
-
-  protected readonly artifactsByCustomer = toSignal(this.artifactsByCustomer$, {initialValue: []});
+  protected readonly artifactsByCustomer = toSignal(this.artifactsByCustomer$);
 
   protected readonly supportBundlesByCustomer = toSignal(
     this.supportBundlesService.list().pipe(
@@ -75,15 +77,15 @@ export class DashboardComponent {
             }) as DeploymentTargetViewData
         )
       )
-    ),
-    {initialValue: []}
+    )
   );
 
-  constructor() {
+  protected readonly faSpinner = faSpinner;
+
+  ngOnInit() {
     if (this.route.snapshot.queryParams?.['from'] === 'login') {
       this.artifactsByCustomer$
         .pipe(
-          takeUntilDestroyed(),
           combineLatestWith(this.deploymentTargetsService.list()),
           first(),
           switchMap(([artifacts, dts]) => {
