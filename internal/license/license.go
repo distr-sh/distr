@@ -83,7 +83,7 @@ var (
 )
 
 func Initialize() error {
-	if licenseData, err := parseAndValidate(env.LicenseKey()); err != nil {
+	if licenseData, err := parseAndValidate(cachedPubKey, env.LicenseKey()); err != nil {
 		return fmt.Errorf("license key initialization: %w", err)
 	} else {
 		cachedLicenseData = licenseData
@@ -102,8 +102,8 @@ func GetLicenseData() LicenseData {
 	return *cachedLicenseData
 }
 
-func parseAndValidate(licenseKey string) (*LicenseData, error) {
-	key, err := cachedPubKey()
+func parseAndValidate(pubKeyFunc func() (jwk.Key, error), licenseKey string) (*LicenseData, error) {
+	key, err := pubKeyFunc()
 	if err != nil {
 		return nil, fmt.Errorf("read validation key: %w", err)
 	} else if key == nil {
