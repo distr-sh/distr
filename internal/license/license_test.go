@@ -137,7 +137,7 @@ func TestParseAndValidate_AllFields(t *testing.T) {
 	}))
 }
 
-func TestParseAndValidate_EnforceLimits_False(t *testing.T) {
+func TestParseAndValidate_PartialClaims_DefaultsForUnspecifiedFields(t *testing.T) {
 	g := NewWithT(t)
 	pub, priv := testKeyPair(t)
 	token := signToken(t, priv, map[string]any{
@@ -147,8 +147,15 @@ func TestParseAndValidate_EnforceLimits_False(t *testing.T) {
 
 	got, err := parseAndValidate(pubKeyFunc(pub), token)
 	g.Expect(err).ToNot(HaveOccurred())
-	g.Expect(got.EnforceLimitsOnStartup).To(BeFalse())
-	g.Expect(got.MaxOrganizations).To(Equal(limit.New(5)))
+	g.Expect(*got).To(Equal(LicenseData{
+		EnforceLimitsOnStartup:                      false,
+		MaxOrganizations:                            limit.New(5),
+		MaxUsersPerOrganization:                     defaultLicenseData.MaxUsersPerOrganization,
+		MaxCustomersPerOrganization:                 defaultLicenseData.MaxCustomersPerOrganization,
+		MaxUsersPerCustomerOrganization:             defaultLicenseData.MaxUsersPerCustomerOrganization,
+		MaxDeploymentTargetsPerCustomerOrganization: defaultLicenseData.MaxDeploymentTargetsPerCustomerOrganization,
+		MaxLogExportRows:                            defaultLicenseData.MaxLogExportRows,
+	}))
 }
 
 func TestParseAndValidate_ZeroLimits(t *testing.T) {

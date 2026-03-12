@@ -102,8 +102,8 @@ func GetLicenseData() LicenseData {
 	return *cachedLicenseData
 }
 
-func parseAndValidate(pubKeyFunc func() (jwk.Key, error), licenseKey string) (*LicenseData, error) {
-	key, err := pubKeyFunc()
+func parseAndValidate(pubKeySrc func() (jwk.Key, error), licenseKey string) (*LicenseData, error) {
+	key, err := pubKeySrc()
 	if err != nil {
 		return nil, fmt.Errorf("read validation key: %w", err)
 	} else if key == nil {
@@ -117,7 +117,7 @@ func parseAndValidate(pubKeyFunc func() (jwk.Key, error), licenseKey string) (*L
 		return nil, fmt.Errorf("invalid license key: %w", err)
 	}
 
-	var licenseData LicenseData
+	licenseData := defaultLicenseData
 	if err := mapstructure.Decode(jwt.PrivateClaims(), &licenseData); err != nil {
 		return nil, fmt.Errorf("invalid license key: %w", err)
 	}
