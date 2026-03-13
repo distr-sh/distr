@@ -22,7 +22,7 @@ require (
 	github.com/getsentry/sentry-go/otel v0.43.0
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/go-chi/httprate v0.15.0
-	github.com/go-chi/jwtauth/v5 v5.3.3
+	github.com/go-chi/jwtauth/v5 v5.4.0
 	github.com/go-co-op/gocron/v2 v2.19.1
 	github.com/go-logr/zapr v1.3.0
 	github.com/golang-migrate/migrate/v4 v4.19.1
@@ -95,6 +95,11 @@ require (
 	github.com/go-openapi/swag/typeutils v0.25.3 // indirect
 	github.com/go-openapi/swag/yamlutils v0.25.3 // indirect
 	github.com/ianlancetaylor/demangle v0.0.0-20240805132620-81f5be970eca // indirect
+	github.com/lestrrat-go/dsig v1.0.0 // indirect
+	github.com/lestrrat-go/dsig-secp256k1 v1.0.0 // indirect
+	github.com/lestrrat-go/httprc/v3 v3.0.1 // indirect
+	github.com/lestrrat-go/jwx/v3 v3.0.11 // indirect
+	github.com/lestrrat-go/option/v2 v2.0.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/gopsutilenv v0.147.0 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/samber/lo v1.52.0 // indirect
@@ -120,6 +125,7 @@ require (
 	github.com/tonistiigi/go-csvvalue v0.0.0-20240814133006-030d3b2625d0 // indirect
 	github.com/tonistiigi/units v0.0.0-20180711220420-6950e57a87ea // indirect
 	github.com/tonistiigi/vt100 v0.0.0-20240514184818-90bafcd6abab // indirect
+	github.com/valyala/fastjson v1.6.4 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.opentelemetry.io/collector/confmap/xconfmap v0.147.0 // indirect
 	go.opentelemetry.io/collector/consumer/consumererror v0.147.0 // indirect
