@@ -6,7 +6,7 @@ import (
 
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/go-chi/jwtauth/v5"
-	"github.com/lestrrat-go/jwx/v2/jwt"
+	"github.com/lestrrat-go/jwx/v3/jwt"
 )
 
 func Authenticator(jwtAuthGetter func() *jwtauth.JWTAuth) authn.Authenticator[string, jwt.Token] {
