@@ -84,6 +84,7 @@ var (
 	stripeWebhookSecret                     *string
 	stripeAPIKey                            *string
 	licenseKeyPrivateKeyPEM                 []byte
+	licenseKey                              string
 )
 
 func Initialize() {
@@ -241,6 +242,8 @@ func Initialize() {
 	if pem := envutil.GetEnvOrNil("LICENSE_KEY_PRIVATE_KEY"); pem != nil {
 		licenseKeyPrivateKeyPEM = []byte(*pem)
 	}
+
+	licenseKey = envutil.GetEnv("LICENSE_KEY")
 }
 
 func DatabaseUrl() string {
@@ -511,4 +514,8 @@ func StripeAPIKey() *string {
 
 func LicenseKeyPrivateKey() []byte {
 	return licenseKeyPrivateKeyPEM
+}
+
+func LicenseKey() string {
+	return licenseKey
 }

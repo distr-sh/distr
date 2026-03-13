@@ -6,6 +6,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 )
@@ -24,8 +25,8 @@ type Organization struct {
 	SubscriptionEndsAt                  time.Time          `db:"subscription_ends_at" json:"subscriptionEndsAt"`
 	StripeCustomerID                    *string            `db:"stripe_customer_id" json:"stripeCustomerId"`
 	StripeSubscriptionID                *string            `db:"stripe_subscription_id" json:"stripeSubscriptionId"`
-	SubscriptionCustomerOrganizationQty int64              `db:"subscription_customer_organization_quantity" json:"subscriptionCustomerOrganizationQuantity"` //nolint:lll
-	SubscriptionUserAccountQty          int64              `db:"subscription_user_account_quantity" json:"subscriptionUserAccountQuantity"`                   //nolint:lll
+	SubscriptionCustomerOrganizationQty limit.Limit        `db:"subscription_customer_organization_quantity" json:"subscriptionCustomerOrganizationQuantity"` //nolint:lll
+	SubscriptionUserAccountQty          limit.Limit        `db:"subscription_user_account_quantity" json:"subscriptionUserAccountQuantity"`                   //nolint:lll
 	PreConnectScript                    *string            `db:"pre_connect_script" json:"preConnectScript"`
 	PostConnectScript                   *string            `db:"post_connect_script" json:"postConnectScript"`
 	ConnectScriptIsSudo                 bool               `db:"connect_script_is_sudo" json:"connectScriptIsSudo"`
