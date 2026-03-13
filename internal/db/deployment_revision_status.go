@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"go.uber.org/zap"
 )
 
 func CreateDeploymentRevisionStatus(ctx context.Context, status *types.DeploymentRevisionStatus) error {
@@ -45,6 +46,19 @@ func CreateDeploymentRevisionStatus(ctx context.Context, status *types.Deploymen
 	} else {
 		*status = res
 	}
+
+	RunAfterTx(ctx, func(ctx context.Context) {
+		log := internalctx.GetLogger(ctx)
+		if c := internalctx.GetPrometheusCollector(ctx); c != nil {
+			if m, err := GetDeploymentForMetricsByRevisionID(ctx, status.DeploymentRevisionID); err != nil {
+				log.Error("could not update deployment target status metrics", zap.Error(err))
+			} else {
+				c.HandleDeploymentStatus(*m)
+			}
+		} else {
+			log.Warn("could not update deployment status metrics because collector is nil")
+		}
+	})
 
 	return nil
 }
