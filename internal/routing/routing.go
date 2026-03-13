@@ -165,6 +165,7 @@ func ApiRouter(
 					r.Route("/organizations", handlers.OrganizationsRouter)
 					r.Route("/secrets", handlers.SecretsRouter)
 					r.Route("/settings", handlers.SettingsRouter)
+					r.With(middleware.ProFeature).Route("/support-bundles", handlers.SupportBundlesRouter)
 					r.Route("/tutorial-progress", handlers.TutorialsRouter)
 					r.Route("/license-keys", handlers.LicenseKeysRouter)
 					r.Route("/licenses", handlers.LicensesRouter)
@@ -179,6 +180,7 @@ func ApiRouter(
 				)
 
 				r.Route("/", handlers.AgentRouter)
+				r.Route("/support-bundle-collect", handlers.SupportBundleScriptRouter)
 			})
 		})
 	}

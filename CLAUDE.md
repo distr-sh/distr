@@ -98,6 +98,8 @@ The database schema is managed through SQL migrations in `internal/migrations/sq
 - `licensekey`: License keys that vendors can generate for its customers
 - `application_entitlements` & `artifact_entitlements`: Access entitlements for applications and artifacts
 
+This database stores timestamps as `TIMESTAMP` (without time zone), not `TIMESTAMPTZ`.
+
 ## Common Commands
 
 ### Building
@@ -152,6 +154,7 @@ Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Pret
   If you find usages of non signal usages for inputs, child views etc. change them to signals in the files you would edit anyway.
 - Don't use any responsive design classes in modals. They should always be optimized for the none mobile use case.
 - Use Angular's `takeUntilDestroyed` instead of a manual `destroyed$` subject.
+- Use [Angular Signal Based Animations](https://angular.dev/guide/animations) instead of legacy animations defined in the component.
 
 ### Database Access
 

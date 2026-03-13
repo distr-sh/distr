@@ -1,0 +1,161 @@
+<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
+  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
+    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+      <div
+        class="flex flex-col md:flex-row items-stretch md:items-center md:space-x-3 space-y-3 md:space-y-0 justify-between mx-4 py-4 dark:border-gray-700">
+        <div></div>
+        @if (auth.hasAnyRole('read_write', 'admin')) {
+          <div
+            class="w-full md:w-auto flex flex-col md:flex-row space-y-2 md:space-y-0 items-stretch md:items-center justify-end md:space-x-3 flex-shrink-0">
+            <button
+              (click)="openDialog(createBundleDialog)"
+              type="button"
+              class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+              <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2"></fa-icon>
+              New Support Bundle
+            </button>
+          </div>
+        }
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+          <thead
+            class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
+            <tr>
+              <th scope="col" class="p-4">Title</th>
+              <th scope="col" class="p-4">Status</th>
+              <th scope="col" class="p-4">Created At</th>
+              <th scope="col" class="p-4">Resources</th>
+              <th scope="col" class="p-4">Comments</th>
+              <th scope="col" class="p-4">Last Updated At</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (bundle of bundles(); track bundle.id) {
+              <tr
+                [routerLink]="'/support/' + bundle.id"
+                class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                  {{ bundle.title || bundle.id }}
+                </td>
+                <td class="px-4 py-3">
+                  @switch (bundle.status) {
+                    @case ('initialized') {
+                      <span
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                        Initialized
+                      </span>
+                    }
+                    @case ('created') {
+                      <span
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
+                        Created
+                      </span>
+                    }
+                    @case ('resolved') {
+                      <span
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                        Resolved
+                      </span>
+                    }
+                    @case ('canceled') {
+                      <span
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300">
+                        Canceled
+                      </span>
+                    }
+                  }
+                </td>
+                <td class="px-4 py-3">{{ bundle.createdAt | date: 'medium' }}</td>
+                <td class="px-4 py-3">{{ bundle.resourceCount }}</td>
+                <td class="px-4 py-3">{{ bundle.commentCount }}</td>
+                <td class="px-4 py-3">{{ bundle.lastCommentAt ? (bundle.lastCommentAt | date: 'medium') : '-' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<ng-template #createBundleDialog>
+  <div class="relative p-4 w-full max-w-2xl max-h-full lg:mt-32">
+    <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+      <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">New Support Bundle</h3>
+        <button
+          type="button"
+          (click)="closeDialog()"
+          class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+          <fa-icon [icon]="faXmark"></fa-icon>
+          <span class="sr-only">Close dialog</span>
+        </button>
+      </div>
+      <div class="p-4 md:p-5">
+        @if (collectCommand(); as cmd) {
+          <div class="space-y-4">
+            <div
+              class="p-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400 border border-blue-300 dark:border-blue-800"
+              role="alert">
+              <p class="font-medium mb-2">Support bundle initialized successfully.</p>
+              <p class="mb-2">
+                The script will collect vendor defined environment variables and all docker container logs. You will
+                have the choice to select your the containers you want to collect data from. No data will be sent to the
+                server, without your permission.
+              </p>
+              <p>Run the following command on the target system to collect and upload the support bundle:</p>
+            </div>
+            <div class="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-600 rounded-lg">
+              <code class="text-sm text-gray-900 dark:text-white break-all flex-1 select-all">{{ cmd }}</code>
+              <app-clip [clip]="cmd" />
+            </div>
+          </div>
+        } @else {
+          <form [formGroup]="createForm" (ngSubmit)="createBundle()">
+            <div class="space-y-4">
+              <div>
+                <label for="title" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                  Title <span class="text-red-500">*</span>
+                </label>
+                <input
+                  formControlName="title"
+                  autotrim
+                  type="text"
+                  id="title"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  placeholder="Title for this support bundle" />
+              </div>
+              <div>
+                <label for="description" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                  Description
+                </label>
+                <textarea
+                  formControlName="description"
+                  id="description"
+                  rows="4"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  placeholder="Optional description of the issue"></textarea>
+              </div>
+            </div>
+            <div class="flex items-center justify-end pt-4 border-t border-gray-200 dark:border-gray-600 mt-4 gap-2">
+              <button
+                type="button"
+                (click)="closeDialog()"
+                class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                Cancel
+              </button>
+              <button
+                type="submit"
+                [disabled]="createFormLoading || createForm.invalid"
+                class="text-white inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60 disabled:cursor-not-allowed">
+                <fa-icon [icon]="faPlus" class="me-2" />
+                Create
+              </button>
+            </div>
+          </form>
+        }
+      </div>
+    </div>
+  </div>
+</ng-template>
