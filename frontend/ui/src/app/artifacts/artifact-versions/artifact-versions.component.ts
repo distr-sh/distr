@@ -1,10 +1,17 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
-import {Component, inject, resource, signal} from '@angular/core';
+import {Component, computed, inject, resource, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faBox, faEllipsisVertical, faSpinner, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {
+  faBox,
+  faEllipsisVertical,
+  faFileSignature,
+  faSpinner,
+  faTrash,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons';
 import {catchError, distinctUntilChanged, filter, firstValueFrom, map, NEVER, switchMap, tap} from 'rxjs';
 import {getRemoteEnvironment} from '../../../env/remote';
 import {RelativeDatePipe} from '../../../util/dates';
@@ -64,8 +71,10 @@ export class ArtifactVersionsComponent {
   protected readonly faTrash = faTrash;
   protected readonly faEllipsisVertical = faEllipsisVertical;
   protected readonly faSpinner = faSpinner;
+  protected readonly faFileSignature = faFileSignature;
 
   protected readonly showDropdown = signal(false);
+  protected readonly signatureOverlayDigest = signal<string | void>(undefined);
 
   protected readonly artifact = toSignal(
     this.route.params.pipe(
@@ -87,6 +96,24 @@ export class ArtifactVersionsComponent {
     )
   );
 
+  protected readonly filteredVersions = computed(() => {
+    const versions = this.artifact()?.versions;
+    if (!versions) {
+      return [];
+    }
+
+    return versions
+      .filter((version) => version.inferredType !== 'signature')
+      .map((version) => {
+        const signatureVersionTag = `sha256-${version.digest.substring(7)}`;
+        const signatureVersion = versions.find(
+          (version1) =>
+            version1.inferredType === 'signature' && version1.tags.some((tag) => tag.name === signatureVersionTag)
+        );
+        return {...version, signatureVersion};
+      });
+  });
+
   protected readonly org = resource({
     loader: () => firstValueFrom(this.organization.get()),
   });
@@ -102,7 +129,7 @@ export class ArtifactVersionsComponent {
     const org = this.org.value();
     const env = this.remoteEnv.value();
     let url = `${org?.registryDomain ?? env?.registryHost ?? 'REGISTRY_DOMAIN'}/${org?.slug ?? 'ORG_SLUG'}/${artifact.name}`;
-    const version = artifact.versions.find((it) => it.tags && it.tags.length > 0);
+    const version = artifact.versions.find((it) => it.inferredType !== 'signature' && it.tags && it.tags.length > 0);
     if (!version) return;
     switch (version.inferredType) {
       case 'helm-chart':
@@ -187,5 +214,13 @@ export class ArtifactVersionsComponent {
         tap(() => this.toast.success(`Tag "${tagName}" removed successfully`))
       )
       .subscribe();
+  }
+
+  protected showSignatureOverlay(version: TaggedArtifactVersion) {
+    this.signatureOverlayDigest.set(version.digest);
+  }
+
+  protected hideSignatureOverlay() {
+    this.signatureOverlayDigest.set(undefined);
   }
 }

@@ -236,7 +236,20 @@ func GetVersionsForArtifact(ctx context.Context, artifactID uuid.UUID, customerO
 					AND avt.name NOT LIKE '%:%'
 				), ARRAY []::RECORD[]) AS tags,
 				av.manifest_blob_size + coalesce(sum(avp.artifact_blob_size), 0) AS size,
-				`+artifactDownloadsOutExpr+`
+				`+artifactDownloadsOutExpr+`,
+				(
+					SELECT array_agg(artifact_type)
+					FROM (
+						SELECT DISTINCT
+							array_to_json(array[jsonb_path_query(
+								convert_from(av1.manifest_data ,'UTF8')::jsonb,
+								'$.artifactType'
+							)])->>0 artifact_type
+						FROM ArtifactVersionPart avp
+							JOIN ArtifactVersion av1 ON av1.manifest_blob_digest = avp.artifact_blob_digest
+						WHERE avp.artifact_version_id = av.id
+					)
+				) AS referrer_artifact_types
 			FROM ArtifactVersion av
 			LEFT JOIN LATERAL (
 				WITH RECURSIVE aggregate AS (
@@ -323,7 +336,9 @@ func GetVersionsForArtifact(ctx context.Context, artifactID uuid.UUID, customerO
 	} else {
 		for i, version := range versions {
 			version.InferredType = types.ManifestTypeGeneric
-			if strings.HasPrefix(version.ManifestContentType, "application/vnd.docker") {
+			if slices.Contains(version.ReferrerArtifactTypes, "application/vnd.dev.sigstore.bundle.v0.3+json") {
+				version.InferredType = types.ManifestTypeSignature
+			} else if strings.HasPrefix(version.ManifestContentType, "application/vnd.docker") {
 				version.InferredType = types.ManifestTypeContainerImage
 			} else if !manifest.MIMETypeIsMultiImage(version.ManifestContentType) && len(version.ManifestData) > 0 {
 				parsedManifest, err := manifest.FromBlob(version.ManifestData, version.ManifestContentType)
