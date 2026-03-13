@@ -10,7 +10,7 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/google/uuid"
-	"github.com/lestrrat-go/jwx/v2/jwt"
+	"github.com/lestrrat-go/jwx/v3/jwt"
 )
 
 const (
