@@ -143,7 +143,7 @@ func (d *DistrCollector) RecordDeploymentStatus(l DeploymentStatusLabels, t *tim
 	}
 	d.deploymentStatusTimestamp.WithLabelValues(l.Values()...).Set(v)
 
-	for _, s1 := range types.AllDeploymentStatusTypes {
+	for _, s1 := range types.AllDeploymentStatusTypes() {
 		var v float64
 		if s != nil && *s == s1 {
 			v = 1

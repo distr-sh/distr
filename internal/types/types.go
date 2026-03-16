@@ -53,12 +53,14 @@ var NonProSubscriptionTypes = []SubscriptionType{
 	SubscriptionTypeStarter,
 }
 
-var AllSubscriptionTypes = []SubscriptionType{
-	SubscriptionTypeCommunity,
-	SubscriptionTypeStarter,
-	SubscriptionTypePro,
-	SubscriptionTypeEnterprise,
-	SubscriptionTypeTrial,
+func AllSubscriptionTypes() []SubscriptionType {
+	return []SubscriptionType{
+		SubscriptionTypeCommunity,
+		SubscriptionTypeStarter,
+		SubscriptionTypePro,
+		SubscriptionTypeEnterprise,
+		SubscriptionTypeTrial,
+	}
 }
 
 type Feature string
@@ -78,11 +80,13 @@ const (
 	DeploymentStatusTypeError       DeploymentStatusType = "error"
 )
 
-var AllDeploymentStatusTypes = []DeploymentStatusType{
-	DeploymentStatusTypeHealthy,
-	DeploymentStatusTypeRunning,
-	DeploymentStatusTypeProgressing,
-	DeploymentStatusTypeError,
+func AllDeploymentStatusTypes() []DeploymentStatusType {
+	return []DeploymentStatusType{
+		DeploymentStatusTypeHealthy,
+		DeploymentStatusTypeRunning,
+		DeploymentStatusTypeProgressing,
+		DeploymentStatusTypeError,
+	}
 }
 
 var ErrInvalidDeploymentStatusType = errors.New("invalid deployment status type")
