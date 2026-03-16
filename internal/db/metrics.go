@@ -70,7 +70,7 @@ func GetDeploymentsForMetrics(ctx context.Context) ([]types.DeploymentStatusMetr
 
 	result, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.DeploymentStatusMetricsItem])
 	if err != nil {
-		return nil, fmt.Errorf("failed to collec5 Deployments: %w", err)
+		return nil, fmt.Errorf("failed to collect Deployments: %w", err)
 	}
 
 	return result, nil
