@@ -68,7 +68,9 @@ func runServe(ctx context.Context, opts ServeOptions) {
 	util.Must(db.CreateAgentVersion(dbCtx))
 	util.Must(subscription.ReconcileStarterFeatures(dbCtx))
 
-	util.Must(registry.GetPrometheusCollector().Initialize(dbCtx, db.QueryableInitDataSource{}))
+	if env.MetricsEnabled() {
+		util.Must(registry.GetPrometheusCollector().Initialize(dbCtx, db.QueryableInitDataSource{}))
+	}
 
 	server := registry.GetServer()
 	artifactsServer := registry.GetArtifactsServer()
