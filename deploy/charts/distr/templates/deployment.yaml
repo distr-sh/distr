@@ -47,6 +47,9 @@ spec:
             - name: artifacts
               containerPort: {{ .Values.service.artifactsPort }}
               protocol: TCP
+            - name: metrics
+              containerPort: {{ .Values.service.metricsPort }}
+              protocol: TCP
           {{- with .Values.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}

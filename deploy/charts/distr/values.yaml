@@ -123,16 +123,22 @@ hub:
     #   value:
     # - name: OIDC_MICROSOFT_TENANT_ID # required if OIDC_MICROSOFT_ENABLED
     #   value:
-  #    - name: OIDC_GENERIC_ENABLED
-  #      value: 'true'
-  #    - name: OIDC_GENERIC_ISSUER
-  #      value: 'http://distr-oidc-dex:5556/dex'
-  #    - name: OIDC_GENERIC_CLIENT_ID
-  #      value: 'example-app'
-  #    - name: OIDC_GENERIC_CLIENT_SECRET
-  #      value: 'example-app-secret'
-  #    - name: OIDC_GENERIC_SCOPES
-  #      value: 'foo,bar,baz'
+    # - name: OIDC_GENERIC_ENABLED
+    #   value: 'true'
+    # - name: OIDC_GENERIC_ISSUER
+    #   value: 'http://distr-oidc-dex:5556/dex'
+    # - name: OIDC_GENERIC_CLIENT_ID
+    #   value: 'example-app'
+    # - name: OIDC_GENERIC_CLIENT_SECRET
+    #   value: 'example-app-secret'
+    # - name: OIDC_GENERIC_SCOPES
+    #   value: 'foo,bar,baz'
+    - name: METRICS_ENABLED
+      value: 'true'
+    # - name: METRICS_ADDR
+    #   value: '...'
+    # - name: METRICS_BEARER_TOKEN
+    #   value: '...'
   envFrom: []
 
 # This is for setting Kubernetes Annotations to a Pod.
@@ -160,6 +166,7 @@ service:
   # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
   port: 8080
   artifactsPort: 8585
+  metricsPort: 3000
 
 # This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
 ingress:

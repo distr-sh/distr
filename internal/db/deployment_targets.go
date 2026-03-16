@@ -11,6 +11,7 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"go.uber.org/zap"
 )
 
 const (
@@ -86,10 +87,7 @@ func GetDeploymentTargets(
 		pgx.NamedArgs{"orgId": orgID, "customerOrgId": customerOrgID, "isVendor": isVendor},
 	); err != nil {
 		return nil, fmt.Errorf("failed to query DeploymentTargets: %w", err)
-	} else if result, err := pgx.CollectRows(
-		rows,
-		pgx.RowToStructByPos[types.DeploymentTargetFull],
-	); err != nil {
+	} else if result, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.DeploymentTargetFull]); err != nil {
 		return nil, fmt.Errorf("failed to get DeploymentTargets: %w", err)
 	} else {
 		for i := range result {
@@ -336,15 +334,28 @@ func UpdateDeploymentTargetReportedAgentVersionID(
 
 func CreateDeploymentTargetStatus(ctx context.Context, dt *types.DeploymentTarget, message string) error {
 	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(ctx,
+	_, err := db.Exec(ctx,
 		"INSERT INTO DeploymentTargetStatus (deployment_target_id, message) VALUES (@deploymentTargetId, @message)",
 		pgx.NamedArgs{"deploymentTargetId": dt.ID, "message": message})
 	if err != nil {
 		return err
-	} else {
-		rows.Close()
-		return rows.Err()
 	}
+
+	RunAfterTx(ctx, func(ctx context.Context) {
+		log := internalctx.GetLogger(ctx)
+		if c := internalctx.GetPrometheusCollector(ctx); c != nil {
+			m, err := GetDeploymentTargetForMetricsByID(ctx, dt.ID)
+			if err != nil {
+				log.Warn("could not update deployment target status metrics", zap.Error(err))
+				return
+			}
+			c.HandleDeploymentTargetStatus(*m)
+		} else {
+			log.Warn("could not update deployment target status metrics because collector is nil")
+		}
+	})
+
+	return nil
 }
 
 func CleanupDeploymentTargetStatus(ctx context.Context) (int64, error) {

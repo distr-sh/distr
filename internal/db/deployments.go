@@ -25,6 +25,41 @@ const (
 		d.id, d.created_at, d.deployment_target_id, d.release_name, d.application_entitlement_id, d.docker_type,
 		d.logs_enabled
 	`
+	deploymentWithLatestRevisionFromExpr = `
+		Deployment d
+			LEFT JOIN (
+				SELECT deployment_id, max(created_at) AS max_created_at
+				FROM DeploymentRevision
+				GROUP BY deployment_id
+			) dr_max ON d.id = dr_max.deployment_id
+			JOIN DeploymentRevision dr
+				ON d.id = dr.deployment_id
+				AND dr.created_at = dr_max.max_created_at
+			JOIN ApplicationVersion av ON dr.application_version_id = av.id
+			JOIN Application a ON av.application_id = a.id
+			-- Join the DeploymentRevision table again because we ALSO need the latest deployment revision for
+			-- which exists a status. Otherwise, the deployment is shown as "no status" after an update
+			LEFT JOIN LATERAL (
+				SELECT deployment_id, max(created_at) AS max_created_at
+				FROM DeploymentRevision dr1
+				WHERE dr1.deployment_id = d.id
+					AND exists(SELECT id FROM DeploymentRevisionStatus WHERE deployment_revision_id = dr1.id)
+				GROUP BY deployment_id
+			) dr_max_status ON d.id = dr_max_status.deployment_id
+			LEFT JOIN DeploymentRevision dr_status
+				ON d.id = dr_status.deployment_id
+				AND dr_status.created_at = dr_max_status.max_created_at
+			LEFT JOIN LATERAL (
+				SELECT
+					dr1.id AS deployment_revision_id,
+					(SELECT max(created_at) FROM DeploymentRevisionStatus WHERE deployment_revision_id = dr1.id) AS max_created_at
+				FROM DeploymentRevision dr1
+				WHERE dr1.deployment_id = d.id
+			) status_max ON dr_status.id = status_max.deployment_revision_id
+			LEFT JOIN DeploymentRevisionStatus drs
+				ON dr_status.id = drs.deployment_revision_id
+				AND drs.created_at = status_max.max_created_at
+	`
 )
 
 func GetDeployment(
@@ -95,39 +130,7 @@ func GetDeploymentsForDeploymentTarget(
 					drs.deployment_revision_id,
 					drs.type, drs.message
 				) END AS latest_status
-			FROM Deployment d
-				LEFT JOIN (
-					SELECT deployment_id, max(created_at) AS max_created_at
-					FROM DeploymentRevision
-					GROUP BY deployment_id
-				) dr_max ON d.id = dr_max.deployment_id
-				JOIN DeploymentRevision dr
-					ON d.id = dr.deployment_id
-					AND dr.created_at = dr_max.max_created_at
-				JOIN ApplicationVersion av ON dr.application_version_id = av.id
-				JOIN Application a ON av.application_id = a.id
-				-- Join the DeploymentRevision table again because we ALSO need the latest deployment revision for
-				-- which exists a status. Otherwise, the deployment is shown as "no status" after an update
-				LEFT JOIN LATERAL (
-					SELECT deployment_id, max(created_at) AS max_created_at
-					FROM DeploymentRevision dr1
-					WHERE dr1.deployment_id = d.id
-						AND exists(SELECT id FROM DeploymentRevisionStatus WHERE deployment_revision_id = dr1.id)
-					GROUP BY deployment_id
-				) dr_max_status ON d.id = dr_max_status.deployment_id
-				LEFT JOIN DeploymentRevision dr_status
-					ON d.id = dr_status.deployment_id
-					AND dr_status.created_at = dr_max_status.max_created_at
-				LEFT JOIN LATERAL (
-					SELECT
-						dr1.id AS deployment_revision_id,
-						(SELECT max(created_at) FROM DeploymentRevisionStatus WHERE deployment_revision_id = dr1.id) AS max_created_at
-					FROM DeploymentRevision dr1
-					WHERE dr1.deployment_id = d.id
-				) status_max ON dr_status.id = status_max.deployment_revision_id
-				LEFT JOIN DeploymentRevisionStatus drs
-					ON dr_status.id = drs.deployment_revision_id
-					AND drs.created_at = status_max.max_created_at
+			FROM `+deploymentWithLatestRevisionFromExpr+`
 			WHERE d.deployment_target_id = @deploymentTargetId
 			ORDER BY d.created_at`,
 		pgx.NamedArgs{"deploymentTargetId": deploymentTargetID})

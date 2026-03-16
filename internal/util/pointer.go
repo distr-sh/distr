@@ -16,3 +16,10 @@ func PtrCopy[T any](ptr *T) *T {
 func PtrEq[T comparable](a, b *T) bool {
 	return (a == nil && b == nil) || (a != nil && b != nil && *a == *b)
 }
+
+func PtrDerefOrDefault[T any](p *T) (v T) {
+	if p != nil {
+		v = *p
+	}
+	return
+}
