@@ -2,6 +2,7 @@ package svc
 
 import (
 	"context"
+	"crypto/subtle"
 	"errors"
 	"fmt"
 	"net/http"
@@ -154,14 +155,20 @@ func (r *Registry) GetMetricsRouter() http.Handler {
 	m := chi.NewMux()
 
 	if metricsToken := env.MetricsBearerToken(); metricsToken != nil {
+		expectedToken := []byte(*metricsToken)
 		m.Use(func(h http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				a := r.Header.Get("Authorization")
-				if strings.HasPrefix(a, "Bearer ") && a[7:] == *metricsToken {
-					h.ServeHTTP(w, r)
-				} else {
-					http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				authorization := r.Header.Get("Authorization")
+				if strings.HasPrefix(authorization, "Bearer ") {
+					providedToken := []byte(authorization[len("Bearer "):])
+					if subtle.ConstantTimeCompare(expectedToken, providedToken) == 1 {
+						h.ServeHTTP(w, r)
+						return
+					}
 				}
+
+				w.Header().Set("WWW-Authenticate", "Bearer")
+				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			})
 		})
 	}
