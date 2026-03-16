@@ -245,7 +245,7 @@ func Initialize() {
 		licenseKeyPrivateKeyPEM = []byte(*pem)
 	}
 
-	metricsEnabled = envutil.GetEnvParsedOrDefault("METRICS_ENABLED", strconv.ParseBool, true)
+	metricsEnabled = envutil.GetEnvParsedOrDefault("METRICS_ENABLED", strconv.ParseBool, false)
 	metricsAddr = envutil.GetEnvOrDefault("METRICS_ADDR", ":3000", envutil.GetEnvOpts{})
 	metricsBearerToken = envutil.GetEnvOrNil("METRICS_BEARER_TOKEN")
 }
