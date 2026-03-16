@@ -51,7 +51,7 @@ func CreateDeploymentRevisionStatus(ctx context.Context, status *types.Deploymen
 		log := internalctx.GetLogger(ctx)
 		if c := internalctx.GetPrometheusCollector(ctx); c != nil {
 			if m, err := GetDeploymentForMetricsByRevisionID(ctx, status.DeploymentRevisionID); err != nil {
-				log.Error("could not update deployment target status metrics", zap.Error(err))
+				log.Error("could not update deployment status metrics", zap.Error(err))
 			} else {
 				c.HandleDeploymentStatus(*m)
 			}
