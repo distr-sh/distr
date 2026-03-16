@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.12.0](https://github.com/distr-sh/distr/compare/2.11.8...2.12.0) (2026-03-11)
+
+
+### Features
+
+* license keys ([#1906](https://github.com/distr-sh/distr/issues/1906)) ([f012e87](https://github.com/distr-sh/distr/commit/f012e878c8e24f613dcbd3160fc65b497ec2d9a5))
+
+
+### Other
+
+* add inferring artifact type for cosign signature ([#1983](https://github.com/distr-sh/distr/issues/1983)) ([c6f5e66](https://github.com/distr-sh/distr/commit/c6f5e663dd41ebcd4e558f5229f7ab6d743a18f6))
+
 ## [2.11.8](https://github.com/distr-sh/distr/compare/2.11.7...2.11.8) (2026-03-11)
 
 
