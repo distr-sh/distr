@@ -141,7 +141,7 @@ func (d *DistrCollector) RecordDeploymentStatus(l DeploymentStatusLabels, t *tim
 	if t != nil {
 		v = float64(t.Unix())
 	}
-	d.deploymenStatusTimestamp.WithLabelValues(l.Values()...).Set(v)
+	d.deploymentStatusTimestamp.WithLabelValues(l.Values()...).Set(v)
 
 	for _, s1 := range types.AllDeploymentStatusTypes {
 		var v float64
@@ -188,7 +188,7 @@ func NewDistrCollector() *DistrCollector {
 		"applicationversion",
 	}
 
-	c.deploymenStatusTimestamp = prometheus.NewGaugeVec(
+	c.deploymentStatusTimestamp = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "deployment_status_timestamp_seconds",
