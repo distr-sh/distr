@@ -84,6 +84,13 @@ func DeploymentsRouter(r chiopenapi.Router) {
 			r.Delete("/", deleteDeploymentHandler()).
 				With(option.Description("Delete a deployment")).
 				With(option.Request(DeploymentIDRequest{}))
+			r.Delete("/logs", deleteDeploymentLogsHandler()).
+				With(option.Description("Delete deployment logs")).
+				With(option.Request(struct {
+					DeploymentIDRequest
+					Resources []string `query:"resource"`
+				}{})).
+				With(option.Response(http.StatusNoContent, nil))
 		})
 	})
 }

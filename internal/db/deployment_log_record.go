@@ -228,6 +228,21 @@ func BulkCreateDeploymentLogRecordWithCreatedAt(
 	return err
 }
 
+func DeleteDeploymentLogRecords(ctx context.Context, deploymentID uuid.UUID, resources []string) (int64, error) {
+	db := internalctx.GetDb(ctx)
+
+	cmd, err := db.Exec(
+		ctx,
+		`DELETE FROM DeploymentLogRecord WHERE deployment_id = @deploymentId AND resource = any(@resources)`,
+		pgx.NamedArgs{"deploymentId": deploymentID, "resources": resources},
+	)
+	if err != nil {
+		return 0, fmt.Errorf("failed to delete DeploymentLogRecord")
+	}
+
+	return cmd.RowsAffected(), nil
+}
+
 // CleanupDeploymentLogRecords deletes logrecords for all deployments but keeps the
 // last [env.LogRecordEntriesMaxCount] records for each (deployment_id, resource) group.
 //

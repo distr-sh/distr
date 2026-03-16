@@ -149,6 +149,25 @@ func getDeploymentLogsHandler() http.HandlerFunc {
 	}
 }
 
+func deleteDeploymentLogsHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		deployment := internalctx.GetDeployment(ctx)
+		resources := r.URL.Query()["resource"]
+		if len(resources) == 0 {
+			http.Error(w, "query parameter resources is required", http.StatusBadRequest)
+			return
+		}
+		if _, err := db.DeleteDeploymentLogRecords(ctx, deployment.ID, resources); err != nil {
+			internalctx.GetLogger(ctx).Error("failed to delete log records", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
 func secretReplacer(secrets []types.SecretWithUpdatedBy) *strings.Replacer {
 	pairs := make([]string, 0, 2*len(secrets))
 	for _, secret := range secrets {

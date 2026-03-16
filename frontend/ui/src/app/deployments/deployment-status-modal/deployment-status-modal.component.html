@@ -28,27 +28,36 @@
           (change)="selectedResource.set(null)" />
         <label
           for="tab-default"
-          class="tab-label peer-checked:text-blue-600 dark:peer-checked:text-blue-500 peer-checked:border-blue-600 dark:peer-checked:border-blue-500 text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300">
+          class="peer-checked:text-blue-600 dark:peer-checked:text-blue-500 peer-checked:border-blue-600 dark:peer-checked:border-blue-500 text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300">
           Agent Status
         </label>
       </div>
-      @for (resource of resources | async; track resource) {
+
+      @for (resource of resources(); track resource) {
+        @let inputId = 'tab-' + resource;
         <div>
           <input
             type="radio"
-            [id]="'tab-' + resource"
+            [id]="inputId"
             name="logs-tabs"
             class="hidden peer"
             [checked]="selectedResource() === resource"
             (change)="selectedResource.set(resource)" />
           <label
-            [for]="'tab-' + resource"
-            class="tab-label peer-checked:text-blue-600 dark:peer-checked:text-blue-500 peer-checked:border-blue-600 dark:peer-checked:border-blue-500 text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300">
+            [for]="inputId"
+            class="peer-checked:text-blue-600 dark:peer-checked:text-blue-500 peer-checked:border-blue-600 dark:peer-checked:border-blue-500 text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300">
             {{ resource }}
+            <button
+              type="button"
+              class="ms-1 text-xs text-gray-900 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              (click)="deleteLogRecords(deployment().id!, resource)">
+              <fa-icon [icon]="faXmark" />
+            </button>
           </label>
         </div>
       }
     </div>
+
     @if (selectedResource(); as resource) {
       <app-deployment-logs-table [deploymentId]="deployment().id!" [resource]="resource" />
     } @else {

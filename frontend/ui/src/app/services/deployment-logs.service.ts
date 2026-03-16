@@ -21,4 +21,8 @@ export class DeploymentLogsService {
     const params = {resource};
     return this.httpClient.get(`/api/v1/deployments/${deploymentId}/logs/export`, {params, responseType: 'blob'});
   }
+
+  public delete(deploymentId: string, resource: string[]): Observable<void> {
+    return this.httpClient.delete<void>(`/api/v1/deployments/${deploymentId}/logs`, {params: {resource}});
+  }
 }
