@@ -67,6 +67,7 @@ export abstract class DeploymentTargetCardBaseComponent {
     namespace: new FormControl<string | undefined>({value: undefined, disabled: true}),
     scope: new FormControl<DeploymentTargetScope>({value: 'namespace', disabled: true}),
     metricsEnabled: new FormControl<boolean>(true),
+    imageCleanupEnabled: new FormControl<boolean>(false, {nonNullable: true}),
     customResources: new FormControl<boolean>(false, {nonNullable: true}),
     resources: new FormGroup({
       cpuRequest: new FormControl<string>('100m', {
@@ -127,6 +128,7 @@ export abstract class DeploymentTargetCardBaseComponent {
         type: val.type!,
         deployments: [],
         metricsEnabled: val.metricsEnabled ?? false,
+        imageCleanupEnabled: this.editForm.controls.imageCleanupEnabled.value,
         resources: val.resources && {
           cpuRequest: val.resources.cpuRequest!,
           cpuLimit: val.resources.cpuLimit!,
@@ -184,8 +186,10 @@ export abstract class DeploymentTargetCardBaseComponent {
       this.editForm.controls.metricsEnabled.enable();
     }
     if (dt.type === 'kubernetes') {
+      this.editForm.controls.imageCleanupEnabled.disable();
       this.editForm.controls.customResources.enable();
     } else {
+      this.editForm.controls.imageCleanupEnabled.enable();
       this.editForm.controls.customResources.setValue(false);
       this.editForm.controls.customResources.disable();
     }
