@@ -349,7 +349,7 @@ func buildSubscriptionInfo(ctx context.Context, org *types.Organization) (*api.S
 		Limits:                                 map[types.SubscriptionType]api.SubscriptionLimits{},
 	}
 
-	for _, st := range types.AllSubscriptionTypes {
+	for _, st := range types.AllSubscriptionTypes() {
 		info.Limits[st] = subscription.GetSubscriptionLimits(st)
 	}
 

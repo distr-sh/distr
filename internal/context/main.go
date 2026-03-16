@@ -6,6 +6,7 @@ import (
 	"github.com/distr-sh/distr/internal/db/queryable"
 	"github.com/distr-sh/distr/internal/mail"
 	"github.com/distr-sh/distr/internal/oidc"
+	"github.com/distr-sh/distr/internal/prometheus"
 	"go.uber.org/zap"
 )
 
@@ -27,6 +28,7 @@ const (
 	ctxKeyIPAddress
 	ctxKeyOIDCer
 	ctxKeyLicenseKey
+	ctxKeyPrometheusCollector
 )
 
 func GetDb(ctx context.Context) queryable.Queryable {
@@ -83,4 +85,23 @@ func GetOIDCer(ctx context.Context) *oidc.OIDCer {
 
 func WithOIDCer(ctx context.Context, oidcer *oidc.OIDCer) context.Context {
 	return context.WithValue(ctx, ctxKeyOIDCer, oidcer)
+}
+
+// GetPrometheusCollector returns the Prometheus collector from the context.
+//
+// Important: In contrast to other context accessors, GetPrometheusCollector does not panic if the collector is not
+// found. Instead, it returns nil.
+func GetPrometheusCollector(ctx context.Context) *prometheus.DistrCollector {
+	if collector, ok := ctx.Value(ctxKeyPrometheusCollector).(*prometheus.DistrCollector); ok {
+		return collector
+	}
+	return nil
+}
+
+func WithPrometheusCollector(ctx context.Context, collector *prometheus.DistrCollector) context.Context {
+	if collector == nil {
+		return ctx
+	}
+
+	return context.WithValue(ctx, ctxKeyPrometheusCollector, collector)
 }

@@ -71,10 +71,19 @@ func CreateOrganization(ctx context.Context, org *types.Organization) error {
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByName[types.Organization])
 	if err != nil {
 		return err
-	} else {
-		*org = *result
-		return nil
 	}
+
+	RunAfterTx(ctx, func(ctx context.Context) {
+		log := internalctx.GetLogger(ctx)
+		if c := internalctx.GetPrometheusCollector(ctx); c != nil {
+			c.IncOrganizationsTotal()
+		} else {
+			log.Warn("could not update organizations total metric because collector is nil")
+		}
+	})
+
+	*org = *result
+	return nil
 }
 
 func UpdateOrganization(ctx context.Context, org *types.Organization) error {
@@ -294,5 +303,15 @@ func SetOrganizationDeletedAtNow(ctx context.Context, orgID uuid.UUID) error {
 	if err != nil {
 		return fmt.Errorf("could not update Organization: %w", err)
 	}
+
+	RunAfterTx(ctx, func(ctx context.Context) {
+		log := internalctx.GetLogger(ctx)
+		if c := internalctx.GetPrometheusCollector(ctx); c != nil {
+			c.DecOrganizationsTotal()
+		} else {
+			log.Warn("could not update organizations total metric because collector is nil")
+		}
+	})
+
 	return nil
 }

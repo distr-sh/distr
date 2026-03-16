@@ -85,6 +85,9 @@ var (
 	stripeAPIKey                            *string
 	licenseKeyPrivateKeyPEM                 []byte
 	licenseKey                              string
+	metricsEnabled                          bool
+	metricsAddr                             string
+	metricsBearerToken                      *string
 )
 
 func Initialize() {
@@ -244,6 +247,9 @@ func Initialize() {
 	}
 
 	licenseKey = envutil.GetEnv("LICENSE_KEY")
+	metricsEnabled = envutil.GetEnvParsedOrDefault("METRICS_ENABLED", strconv.ParseBool, false)
+	metricsAddr = envutil.GetEnvOrDefault("METRICS_ADDR", ":3000", envutil.GetEnvOpts{})
+	metricsBearerToken = envutil.GetEnvOrNil("METRICS_BEARER_TOKEN")
 }
 
 func DatabaseUrl() string {
@@ -518,4 +524,15 @@ func LicenseKeyPrivateKey() []byte {
 
 func LicenseKey() string {
 	return licenseKey
+
+func MetricsEnabled() bool {
+	return metricsEnabled
+}
+
+func MetricsAddr() string {
+	return metricsAddr
+}
+
+func MetricsBearerToken() *string {
+	return metricsBearerToken
 }

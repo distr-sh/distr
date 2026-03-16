@@ -72,20 +72,28 @@ func runServe(ctx context.Context, opts ServeOptions) {
 	util.Must(db.CreateAgentVersion(dbCtx))
 	util.Must(subscription.ReconcileStarterFeatures(dbCtx))
 
+	if env.MetricsEnabled() {
+		util.Must(registry.GetPrometheusCollector().Initialize(dbCtx, db.QueryableInitDataSource{}))
+	}
+
 	server := registry.GetServer()
 	artifactsServer := registry.GetArtifactsServer()
+	metricsServer := registry.GetMetricsServer()
 
 	sigCtx, _ := signal.NotifyContext(ctx, syscall.SIGTERM, syscall.SIGINT)
 	context.AfterFunc(sigCtx, func() {
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		server.Shutdown(ctx)
 		artifactsServer.Shutdown(ctx)
+		metricsServer.Shutdown(ctx)
 		cancel()
 	})
 
 	go func() { util.Must(server.Start(":8080")) }()
 	go func() { util.Must(artifactsServer.Start(":8585")) }()
+	go func() { util.Must(metricsServer.Start(env.MetricsAddr())) }()
 	registry.GetJobsScheduler().Start()
 	server.WaitForShutdown()
 	artifactsServer.WaitForShutdown()
+	metricsServer.WaitForShutdown()
 }
