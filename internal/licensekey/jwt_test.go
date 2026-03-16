@@ -49,8 +49,13 @@ func TestGenerateToken(t *testing.T) {
 	parsed, err := jwt.Parse([]byte(token), jwt.WithKey(jwa.EdDSA(), pubKey))
 	g.Expect(err).ToNot(HaveOccurred())
 
-	g.Expect(parsed.Subject()).To(Equal(licenseKey.ID.String()))
-	g.Expect(parsed.Issuer()).To(Equal("test-issuer"))
+	subject, ok := parsed.Subject()
+	g.Expect(ok).To(BeTrue())
+	g.Expect(subject).To(Equal(licenseKey.ID.String()))
+
+	issuer, ok := parsed.Issuer()
+	g.Expect(ok).To(BeTrue())
+	g.Expect(issuer).To(Equal("test-issuer"))
 
 	var plan string
 	err = parsed.Get("plan", &plan)
