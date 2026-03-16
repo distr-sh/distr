@@ -18,7 +18,7 @@ type DistrCollector struct {
 	organizationsTotal              prometheus.Gauge
 	deploymentTargetStatusTimestamp *prometheus.GaugeVec
 	deploymentStatus                *prometheus.GaugeVec
-	deploymenStatusTimestamp        *prometheus.GaugeVec
+	deploymentStatusTimestamp       *prometheus.GaugeVec
 }
 
 var _ prometheus.Collector = (*DistrCollector)(nil)
@@ -28,7 +28,7 @@ func (d *DistrCollector) Collect(c chan<- prometheus.Metric) {
 	d.organizationsTotal.Collect(c)
 	d.deploymentTargetStatusTimestamp.Collect(c)
 	d.deploymentStatus.Collect(c)
-	d.deploymenStatusTimestamp.Collect(c)
+	d.deploymentStatusTimestamp.Collect(c)
 }
 
 // Describe implements [prometheus.Collector].
@@ -36,7 +36,7 @@ func (d *DistrCollector) Describe(c chan<- *prometheus.Desc) {
 	d.organizationsTotal.Describe(c)
 	d.deploymentTargetStatusTimestamp.Describe(c)
 	d.deploymentStatus.Describe(c)
-	d.deploymenStatusTimestamp.Describe(c)
+	d.deploymentStatusTimestamp.Describe(c)
 }
 
 type InitDataSource interface {
