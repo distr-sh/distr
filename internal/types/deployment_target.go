@@ -46,7 +46,8 @@ func (dt *DeploymentTarget) Validate() error {
 			return validation.NewValidationFailedError("DeploymentTarget with type \"kubernetes\" must not have empty scope")
 		}
 		if dt.ImageCleanupEnabled {
-			return validation.NewValidationFailedError("image cleanup is not supported on DeploymentTarget with type \"kubernetes\"")
+			return validation.NewValidationFailedError(
+				"image cleanup is not supported on DeploymentTarget with type \"kubernetes\"")
 		}
 		if dt.Resources != nil {
 			if _, err := resource.ParseQuantity(dt.Resources.CPULimit); err != nil {

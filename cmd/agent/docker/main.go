@@ -134,10 +134,22 @@ loop:
 					)
 					if !resourceHasExistingDeployment {
 						logger.Info("uninstalling old deployment", zap.String("id", deployment.ID.String()))
+
+						deploymentImages, err := GetDeploymentImages(ctx, deployment)
+						if err != nil {
+							logger.Error("could not get images for old deployment", zap.Error(err))
+						}
+
 						if err := DockerEngineUninstall(ctx, deployment); err != nil {
 							logger.Error("could not uninstall deployment", zap.Error(err))
-						} else if err := DeleteDeployment(deployment); err != nil {
-							logger.Error("could not delete deployment", zap.Error(err))
+						} else {
+							if err := DeleteDeployment(deployment); err != nil {
+								logger.Error("could not delete deployment", zap.Error(err))
+							}
+
+							if err := DeleteImages(ctx, deploymentImages); err != nil {
+								logger.Error("could not delete images for old deployment", zap.Error(err))
+							}
 						}
 						CleanupLogsTimestamps(deployment)
 					}
@@ -172,12 +184,27 @@ loop:
 						agentDeployment.State == StateFailed ||
 						agentDeployment.State == StateProgressing {
 						func() {
+							var previousDeploymentImages []string
+							if agentDeployment != nil {
+								if images, err := GetDeploymentImages(ctx, *agentDeployment); err != nil {
+									logger.Error("failed to get old images", zap.Error(err))
+								} else {
+									previousDeploymentImages = images
+								}
+							}
+
 							progressCtx, progressCancel := context.WithCancel(ctx)
 							defer progressCancel()
 							go sendProgressInterval(progressCtx, deployment.RevisionID)
 							agentDeployment, status, err = DockerEngineApply(ctx, deployment)
-							if err == nil && deployment.ForceRestart {
-								err = errors.Join(err, RunDockerRestart(ctx, *agentDeployment))
+							if err == nil {
+								if deployment.ImageCleanupEnabled {
+									err = errors.Join(err, DeleteImages(ctx, previousDeploymentImages))
+								}
+
+								if deployment.ForceRestart {
+									err = errors.Join(err, RunDockerRestart(ctx, *agentDeployment))
+								}
 							}
 						}()
 					} else {

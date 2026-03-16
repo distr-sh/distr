@@ -56,6 +56,12 @@
 
 ---
 
+### imageCleanupEnabled
+
+> **imageCleanupEnabled**: `boolean`
+
+---
+
 ### metricsEnabled
 
 > **metricsEnabled**: `boolean`

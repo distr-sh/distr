@@ -252,6 +252,7 @@ func agentResourcesHandler(w http.ResponseWriter, r *http.Request) {
 					agentDeployment.ComposeFile = patchedComposeFile
 					agentDeployment.EnvFile = envFile
 					agentDeployment.DockerType = util.PtrCopy(deployment.DockerType)
+					agentDeployment.ImageCleanupEnabled = deploymentTarget.ImageCleanupEnabled
 				}
 			} else {
 				agentDeployment.ReleaseName = *deployment.ReleaseName
