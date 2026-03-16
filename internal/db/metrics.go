@@ -99,7 +99,7 @@ func GetDeploymentForMetricsByRevisionID(
 
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByPos[types.DeploymentStatusMetricsItem])
 	if err != nil {
-		return nil, fmt.Errorf("failed to collec5 Deployments: %w", err)
+		return nil, fmt.Errorf("failed to collect Deployments: %w", err)
 	}
 
 	return result, nil
