@@ -31,10 +31,9 @@ import {OrganizationService} from './services/organization.service';
 import {ToastService} from './services/toast.service';
 import {SubscriptionCallbackComponent} from './subscription/subscription-callback.component';
 import {SubscriptionComponent} from './subscription/subscription.component';
-import {CustomerSupportBundlesComponent} from './support-bundles/customer/customer-support-bundles.component';
 import {SupportBundleDetailComponent} from './support-bundles/detail/support-bundle-detail.component';
+import {SupportBundleListComponent} from './support-bundles/list/support-bundle-list.component';
 import {SupportBundleSettingsComponent} from './support-bundles/vendor/support-bundle-settings.component';
-import {VendorSupportBundleListComponent} from './support-bundles/vendor/vendor-support-bundle-list.component';
 import {AgentsTutorialComponent} from './tutorials/agents/agents-tutorial.component';
 import {BrandingTutorialComponent} from './tutorials/branding/branding-tutorial.component';
 import {RegistryTutorialComponent} from './tutorials/registry/registry-tutorial.component';
@@ -281,7 +280,7 @@ export const routes: Routes = [
           {
             path: '',
             pathMatch: 'full',
-            component: VendorSupportBundleListComponent,
+            component: SupportBundleListComponent,
           },
           {
             path: 'settings',
@@ -301,7 +300,7 @@ export const routes: Routes = [
           {
             path: '',
             pathMatch: 'full',
-            component: CustomerSupportBundlesComponent,
+            component: SupportBundleListComponent,
           },
           {
             path: ':supportBundleId',

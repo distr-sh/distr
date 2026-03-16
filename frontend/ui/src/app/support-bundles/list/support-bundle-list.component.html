@@ -3,10 +3,34 @@
     <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
       <div
         class="flex flex-col md:flex-row items-stretch md:items-center md:space-x-3 space-y-3 md:space-y-0 justify-between mx-4 py-4 dark:border-gray-700">
-        <div></div>
-        @if (auth.hasAnyRole('read_write', 'admin')) {
-          <div
-            class="w-full md:w-auto flex flex-col md:flex-row space-y-2 md:space-y-0 items-stretch md:items-center justify-end md:space-x-3 flex-shrink-0">
+        <div class="w-full md:w-1/2">
+          <form class="flex items-center" [formGroup]="filterForm">
+            <label for="simple-search" class="sr-only">Search</label>
+            <div class="relative w-full">
+              <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <fa-icon [icon]="faMagnifyingGlass" class="text-gray-500 dark:text-gray-400"></fa-icon>
+              </div>
+              <input
+                [formControl]="filterForm.controls.search"
+                autotrim
+                type="text"
+                id="simple-search"
+                placeholder="Filter support bundles"
+                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+            </div>
+          </form>
+        </div>
+        <div
+          class="w-full md:w-auto flex flex-col md:flex-row space-y-2 md:space-y-0 items-stretch md:items-center justify-end md:space-x-3 flex-shrink-0">
+          @if (auth.isVendor()) {
+            <a
+              routerLink="/support-bundles/settings"
+              class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+              <fa-icon [icon]="faGear" class="text-gray-500 dark:text-gray-400 mr-2"></fa-icon>
+              Settings
+            </a>
+          }
+          @if (auth.isCustomer() && auth.hasAnyRole('read_write', 'admin')) {
             <button
               (click)="openDialog(createBundleDialog)"
               type="button"
@@ -14,67 +38,89 @@
               <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2"></fa-icon>
               New Support Bundle
             </button>
+          }
+        </div>
+      </div>
+
+      @if (auth.isVendor() && !loading() && !configExists()) {
+        <div
+          class="mx-4 mb-4 p-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400 border border-blue-200 dark:border-blue-800"
+          role="alert">
+          <p class="font-medium mb-1">Support bundle configuration has not been set up yet.</p>
+          <p class="mb-3">
+            Configure the environment variables that should be collected from the host and Docker containers when
+            customers create support bundles.
+          </p>
+          <a
+            routerLink="/support-bundles/settings"
+            class="inline-flex items-center py-1.5 px-3 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+            Configure
+          </a>
+        </div>
+      }
+
+      @if (!loading()) {
+        @if (filteredBundles().length > 0) {
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+              <thead
+                class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
+                <tr>
+                  <th scope="col" class="p-4">Title</th>
+                  @if (auth.isVendor()) {
+                    <th scope="col" class="p-4">Customer</th>
+                  }
+                  <th scope="col" class="p-4">Status</th>
+                  <th scope="col" class="p-4">Created At</th>
+                  <th scope="col" class="p-4">Resources</th>
+                  <th scope="col" class="p-4">Comments</th>
+                  <th scope="col" class="p-4">Last Updated At</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (bundle of filteredBundles(); track bundle.id) {
+                  <tr
+                    [routerLink]="routePrefix + '/' + bundle.id"
+                    class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                    <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                      {{ bundle.title || bundle.id.substring(0, 8) }}
+                    </td>
+                    @if (auth.isVendor()) {
+                      <td class="px-4 py-3">{{ bundle.customerOrganizationName }}</td>
+                    }
+                    <td class="px-4 py-3">
+                      <span
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
+                        [ngClass]="statusBadgeClass(bundle.status)">
+                        {{ bundle.status }}
+                      </span>
+                    </td>
+                    <td class="px-4 py-3">{{ bundle.createdAt | date: 'medium' }}</td>
+                    <td class="px-4 py-3">{{ bundle.resourceCount }}</td>
+                    <td class="px-4 py-3">{{ bundle.commentCount }}</td>
+                    <td class="px-4 py-3">
+                      {{ bundle.lastCommentAt ? (bundle.lastCommentAt | date: 'medium') : '-' }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else if (bundles().length > 0) {
+          <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+            <p>No matching support bundles.</p>
+          </div>
+        } @else if (auth.isVendor() && configExists()) {
+          <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+            <p>No support bundles have been created yet.</p>
+            <p class="text-sm mt-1">Customers with the support bundles feature enabled can create support bundles.</p>
+          </div>
+        } @else if (auth.isCustomer()) {
+          <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+            <p>No support bundles yet.</p>
           </div>
         }
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-          <thead
-            class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
-            <tr>
-              <th scope="col" class="p-4">Title</th>
-              <th scope="col" class="p-4">Status</th>
-              <th scope="col" class="p-4">Created At</th>
-              <th scope="col" class="p-4">Resources</th>
-              <th scope="col" class="p-4">Comments</th>
-              <th scope="col" class="p-4">Last Updated At</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (bundle of bundles(); track bundle.id) {
-              <tr
-                [routerLink]="'/support/' + bundle.id"
-                class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                  {{ bundle.title || bundle.id }}
-                </td>
-                <td class="px-4 py-3">
-                  @switch (bundle.status) {
-                    @case ('initialized') {
-                      <span
-                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
-                        Initialized
-                      </span>
-                    }
-                    @case ('created') {
-                      <span
-                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
-                        Created
-                      </span>
-                    }
-                    @case ('resolved') {
-                      <span
-                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
-                        Resolved
-                      </span>
-                    }
-                    @case ('canceled') {
-                      <span
-                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300">
-                        Canceled
-                      </span>
-                    }
-                  }
-                </td>
-                <td class="px-4 py-3">{{ bundle.createdAt | date: 'medium' }}</td>
-                <td class="px-4 py-3">{{ bundle.resourceCount }}</td>
-                <td class="px-4 py-3">{{ bundle.commentCount }}</td>
-                <td class="px-4 py-3">{{ bundle.lastCommentAt ? (bundle.lastCommentAt | date: 'medium') : '-' }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+      }
     </div>
   </div>
 </section>
