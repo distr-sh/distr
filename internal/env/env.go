@@ -524,6 +524,7 @@ func LicenseKeyPrivateKey() []byte {
 
 func LicenseKey() string {
 	return licenseKey
+}
 
 func MetricsEnabled() bool {
 	return metricsEnabled
