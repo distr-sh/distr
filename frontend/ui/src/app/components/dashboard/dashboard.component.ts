@@ -10,6 +10,7 @@ import {DeploymentTargetViewData} from '../../deployments/deployment-targets.com
 import {DashboardService} from '../../services/dashboard.service';
 import {DeploymentTargetsMetricsService} from '../../services/deployment-target-metrics.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
+import {FeatureFlagService} from '../../services/feature-flag.service';
 import {SupportBundlesService} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
 import {SupportBundleDashboardCardComponent} from '../../support-bundles/dashboard-card/support-bundle-dashboard-card.component';
@@ -30,6 +31,7 @@ export class DashboardComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   private readonly dashboardService = inject(DashboardService);
+  private readonly featureFlags = inject(FeatureFlagService);
   private readonly supportBundlesService = inject(SupportBundlesService);
   private readonly deploymentTargetsService = inject(DeploymentTargetsService);
   private readonly deploymentTargetMetricsService = inject(DeploymentTargetsMetricsService);
@@ -38,7 +40,8 @@ export class DashboardComponent implements OnInit {
   protected readonly artifactsByCustomer = toSignal(this.artifactsByCustomer$);
 
   protected readonly supportBundlesByCustomer = toSignal(
-    this.supportBundlesService.list().pipe(
+    this.featureFlags.isSupportBundlesEnabled$.pipe(
+      switchMap((enabled) => (enabled ? this.supportBundlesService.list() : of([]))),
       map((bundles) => {
         const grouped = new Map<string, {customerName: string; bundles: SupportBundle[]}>();
         for (const bundle of bundles) {

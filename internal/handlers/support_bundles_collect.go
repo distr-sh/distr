@@ -92,8 +92,9 @@ func uploadSupportBundleResourceHandler() http.HandlerFunc {
 			return
 		}
 
+		r.Body = http.MaxBytesReader(w, r.Body, 1<<20) // 1 MiB
 		if err := r.ParseMultipartForm(1 << 20); err != nil {
-			http.Error(w, "failed to parse multipart form", http.StatusBadRequest)
+			http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
 			return
 		}
 

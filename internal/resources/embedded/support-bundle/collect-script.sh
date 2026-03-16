@@ -48,8 +48,24 @@ df:
 $(df -h 2>/dev/null || echo 'unavailable')
 memory:
 $(free -h 2>/dev/null || echo 'unavailable')"
-upload_resource "system-info" "$SYSTEM_INFO"
-echo "  Uploaded system information"
+
+echo ""
+echo "System information to upload:"
+echo "---"
+echo "$SYSTEM_INFO"
+echo "---"
+echo ""
+printf "Upload system information? [Y/n]: "
+read -r SYSINFO_CONFIRM
+case "$SYSINFO_CONFIRM" in
+  [nN]*)
+    echo "  Skipping system information upload"
+    ;;
+  *)
+    upload_resource "system-info" "$SYSTEM_INFO"
+    echo "  Uploaded system information"
+    ;;
+esac
 
 # List Docker containers
 echo ""
@@ -110,9 +126,10 @@ if [ -n "$CONTAINERS" ]; then
     fi
 
     ENV_GROUP_COUNT=$((ENV_GROUP_COUNT + 1))
-    CONTAINER_ENV=$(docker exec "$CID" env 2>/dev/null)
-    _exec_rc=$?
-    if [ $_exec_rc -eq 0 ]; then
+    CONTAINER_ENV=$(docker exec "$CID" env 2>/dev/null) || \
+      CONTAINER_ENV=$(docker inspect --format '{{`{{range .Config.Env}}{{println .}}{{end}}`}}' "$CID" 2>/dev/null)
+    _env_rc=$?
+    if [ $_env_rc -eq 0 ]; then
       FILTERED_ENV=""
 {{- range .EnvVars}}
       _val=$(echo "$CONTAINER_ENV" | grep "^{{.Name}}=" | head -1 | cut -d= -f2-)
@@ -124,7 +141,7 @@ if [ -n "$CONTAINERS" ]; then
 {{- end}}
       printf '%s' "$FILTERED_ENV" > "${_tmpdir}/envgroup_${ENV_GROUP_COUNT}.txt"
     else
-      printf '%s' "Error: could not collect environment variables (container may be stopped)" > "${_tmpdir}/envgroup_${ENV_GROUP_COUNT}.txt"
+      printf '%s' "Error: could not collect container environment variables" > "${_tmpdir}/envgroup_${ENV_GROUP_COUNT}.txt"
     fi
     printf '%s' "$CNAME" > "${_tmpdir}/envgroup_${ENV_GROUP_COUNT}.name"
     printf '%s' "${CNAME}-container-env" > "${_tmpdir}/envgroup_${ENV_GROUP_COUNT}.resource"
@@ -178,10 +195,10 @@ if [ "$ENV_GROUP_COUNT" -gt 0 ]; then
   done
 fi
 
-# Collect container logs
+# Collect and upload container logs
 if [ -n "$CONTAINERS" ]; then
   echo ""
-  echo "Collecting container logs..."
+  echo "Collecting and uploading container logs..."
   IDX=1
   while IFS="$(printf '\t')" read -r CID CNAME CSTATUS _CIMAGE; do
     if [ -n "$EXCLUDE_SET" ] && echo "$EXCLUDE_SET" | grep -q ",$IDX,"; then

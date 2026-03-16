@@ -29,12 +29,14 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 
 	r.With(middleware.RequireVendor, middleware.RequireOrgAndRole).Route("/configuration", func(r chiopenapi.Router) {
 		r.Get("/", getSupportBundleConfigurationHandler()).
-			With(option.Description("Get support bundle configuration"))
+			With(option.Description("Get support bundle configuration")).
+			With(option.Response(http.StatusOK, []api.SupportBundleConfigurationEnvVar{}))
 
 		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
 			r.Put("/", createOrUpdateSupportBundleConfigurationHandler()).
 				With(option.Description("Create or update support bundle configuration")).
-				With(option.Request(api.CreateUpdateSupportBundleConfigurationRequest{}))
+				With(option.Request(api.CreateUpdateSupportBundleConfigurationRequest{})).
+				With(option.Response(http.StatusOK, []api.SupportBundleConfigurationEnvVar{}))
 		})
 	})
 

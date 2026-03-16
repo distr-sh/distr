@@ -28,7 +28,7 @@
                 Cancel
               </button>
             }
-            @if (auth.isVendor() && bundle.status === 'created') {
+            @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin') && bundle.status === 'created') {
               <button
                 type="button"
                 (click)="markAsResolved()"
@@ -54,8 +54,13 @@
         }
       </div>
 
-      <!-- Collect command card (shown for initialized bundles) -->
-      @if (bundle.collectCommand && bundle.status === 'initialized') {
+      <!-- Collect command card (shown for initialized bundles, customer admin/read_write only) -->
+      @if (
+        bundle.collectCommand &&
+        bundle.status === 'initialized' &&
+        auth.isCustomer() &&
+        auth.hasAnyRole('read_write', 'admin')
+      ) {
         <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden mb-6 p-6">
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Collect Command</h2>
           <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
