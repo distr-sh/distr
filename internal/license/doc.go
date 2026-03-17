@@ -20,5 +20,6 @@ A compatible Distr license key can be generated using the following JSON as a te
 	}
 
 After error-free initialization, a [LicenseData] object can be obtained via [GetLicenseData].
+If no public key is set at compile time, [GetLicenseData] always returns the default values for all limits.
 */
 package license
