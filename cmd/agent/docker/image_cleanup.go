@@ -44,10 +44,11 @@ func DeleteImages(ctx context.Context, images []string) (aggErr error) {
 
 		result, err := apiClinet.ImageRemove(ctx, image, mobyClient.ImageRemoveOptions{PruneChildren: true})
 		if err != nil {
+			logger.Warn("failed to delete old image", zap.Error(err))
 			aggErr = errors.Join(aggErr, err)
+		} else {
+			logger.Info("deleted old image", zap.Any("result", result))
 		}
-
-		logger.Info("deleted old image", zap.Any("result", result))
 	}
 
 	return
