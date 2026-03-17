@@ -2,9 +2,11 @@ package subscription
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/distr-sh/distr/internal/buildconfig"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/license"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 )
@@ -33,11 +35,14 @@ func ReconcileStarterFeaturesForOrganizationID(ctx context.Context, orgID uuid.U
 
 func ReconcileStarterFeatures(ctx context.Context) error {
 	return db.RunTx(ctx, func(ctx context.Context) error {
+		licenseData := license.GetLicenseData()
+
 		if buildconfig.IsCommunityEdition() {
 			if err := db.UpdateOrganizationSubscriptionType(ctx, types.SubscriptionTypeCommunity); err != nil {
 				return err
 			}
 		}
+
 		if err := db.UpdateAllUserAccountOrganizationAssignmentsWithOrganizationSuscriptionType(
 			ctx,
 			types.NonProSubscriptionTypes,
@@ -65,8 +70,28 @@ func ReconcileStarterFeatures(ctx context.Context) error {
 			[]types.Feature{},
 		); err != nil {
 			return err
-		} else {
-			return nil
 		}
+
+		if licenseData.EnforceLimitsOnStartup {
+			if err := db.UpdateOrganizationEnterpriseLimits(
+				ctx,
+				licenseData.MaxCustomersPerOrganization,
+				licenseData.MaxUsersPerOrganization,
+			); err != nil {
+				return err
+			}
+
+			if limit := licenseData.MaxOrganizations; !limit.IsUnlimited() {
+				if count, err := db.CountAllOrganizations(ctx); err != nil {
+					return err
+				} else if limit.IsExceeded(count) {
+					return fmt.Errorf("global organizations count is exceeded (limit: %v, got %v)", limit, count)
+				} else {
+					return nil
+				}
+			}
+		}
+
+		return nil
 	})
 }

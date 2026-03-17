@@ -137,6 +137,7 @@ Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Pret
 - Use structured logging with zap: `logger.Info("message", zap.String("key", value))`
 - Send exceptions to sentry with: `sentry.GetHubFromContext(ctx).CaptureException(err)`
 - When performing data transformations between DTOs and domain models, use `mapping.List(...)` inside the `internal/mapping` package
+- Always use [Gomega](https://onsi.github.io/gomega/) for test assertions in Go tests
 
 ### Frontend Code
 

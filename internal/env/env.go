@@ -84,6 +84,7 @@ var (
 	stripeWebhookSecret                     *string
 	stripeAPIKey                            *string
 	licenseKeyPrivateKeyPEM                 []byte
+	licenseKey                              string
 	metricsEnabled                          bool
 	metricsAddr                             string
 	metricsBearerToken                      *string
@@ -245,6 +246,7 @@ func Initialize() {
 		licenseKeyPrivateKeyPEM = []byte(*pem)
 	}
 
+	licenseKey = envutil.GetEnv("LICENSE_KEY")
 	metricsEnabled = envutil.GetEnvParsedOrDefault("METRICS_ENABLED", strconv.ParseBool, false)
 	metricsAddr = envutil.GetEnvOrDefault("METRICS_ADDR", ":3000", envutil.GetEnvOpts{})
 	metricsBearerToken = envutil.GetEnvOrNil("METRICS_BEARER_TOKEN")
@@ -518,6 +520,10 @@ func StripeAPIKey() *string {
 
 func LicenseKeyPrivateKey() []byte {
 	return licenseKeyPrivateKeyPEM
+}
+
+func LicenseKey() string {
+	return licenseKey
 }
 
 func MetricsEnabled() bool {

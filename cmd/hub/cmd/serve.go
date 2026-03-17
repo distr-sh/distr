@@ -10,6 +10,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
+	"github.com/distr-sh/distr/internal/license"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/svc"
 	"github.com/distr-sh/distr/internal/util"
@@ -23,10 +24,13 @@ type ServeOptions struct{ Migrate bool }
 var serveOpts = ServeOptions{Migrate: true}
 
 var ServeCommand = &cobra.Command{
-	Use:    "serve",
-	Short:  "run the Distr Hub server",
-	Args:   cobra.NoArgs,
-	PreRun: func(cmd *cobra.Command, args []string) { env.Initialize() },
+	Use:   "serve",
+	Short: "run the Distr Hub server",
+	Args:  cobra.NoArgs,
+	PreRun: func(cmd *cobra.Command, args []string) {
+		env.Initialize()
+		util.Must(license.Initialize())
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		runServe(cmd.Context(), serveOpts)
 	},

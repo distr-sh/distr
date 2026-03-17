@@ -12,12 +12,12 @@ import (
 func IsVendorUserAccountLimitReached(ctx context.Context, org types.Organization) (bool, error) {
 	if !org.HasActiveSubscription() {
 		return true, nil
-	} else if org.SubscriptionUserAccountQty == int64(Unlimited) {
+	} else if org.SubscriptionUserAccountQty.IsUnlimited() {
 		return false, nil
 	} else if vendorCount, err := db.CountVendorUserAccountsByOrgID(ctx, org.ID); err != nil {
 		return true, err
 	} else {
-		return vendorCount >= org.SubscriptionUserAccountQty, nil
+		return org.SubscriptionUserAccountQty.IsReached(vendorCount), nil
 	}
 }
 
@@ -28,20 +28,21 @@ func IsCustomerUserAccountLimitReached(
 	if !org.HasActiveSubscription() {
 		return true, nil
 	} else {
-		return GetUsersPerCustomerOrganizationLimit(org.SubscriptionType).IsReached(customerOrganization.UserCount), nil
+		return GetUsersPerCustomerOrganizationLimit(org.SubscriptionType).IsReached(customerOrganization.UserCount),
+			nil
 	}
 }
 
 func IsCustomerOrganizationLimitReached(ctx context.Context, org types.Organization) (bool, error) {
 	if !org.HasActiveSubscription() {
 		return true, nil
-	} else if org.SubscriptionCustomerOrganizationQty == int64(Unlimited) {
+	} else if org.SubscriptionCustomerOrganizationQty.IsUnlimited() {
 		return false, nil
 	} else {
 		if customerOrgCount, err := db.CountCustomerOrganizationsByOrganizationID(ctx, org.ID); err != nil {
 			return true, fmt.Errorf("could not query CustomerOrganization: %w", err)
 		} else {
-			return customerOrgCount >= org.SubscriptionCustomerOrganizationQty, nil
+			return org.SubscriptionCustomerOrganizationQty.IsReached(customerOrgCount), nil
 		}
 	}
 }
