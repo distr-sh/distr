@@ -13,7 +13,9 @@
             <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
               {{ bundle.title || 'Support Bundle ' + shortId(bundle.id) }}
             </h1>
-            <span class="ml-3 text-xs font-medium px-2.5 py-0.5 rounded-full" [ngClass]="statusClass(bundle.status)">
+            <span
+              class="ml-3 text-xs font-medium px-2.5 py-0.5 rounded-full capitalize"
+              [ngClass]="statusClass(bundle.status)">
               {{ bundle.status }}
             </span>
           </div>

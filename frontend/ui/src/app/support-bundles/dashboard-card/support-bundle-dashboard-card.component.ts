@@ -2,7 +2,7 @@ import {Component, input} from '@angular/core';
 
 import {NgClass} from '@angular/common';
 import {RouterLink} from '@angular/router';
-import {SupportBundle} from '../../types/support-bundle';
+import {SupportBundle, SupportBundleStatus} from '../../types/support-bundle';
 
 @Component({
   selector: 'app-support-bundle-dashboard-card',

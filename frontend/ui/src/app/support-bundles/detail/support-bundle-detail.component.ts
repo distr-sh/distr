@@ -20,7 +20,7 @@ import {AuthService} from '../../services/auth.service';
 import {OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
-import {SupportBundleDetail} from '../../types/support-bundle';
+import {SupportBundleDetail, SupportBundleStatus} from '../../types/support-bundle';
 
 @Component({
   selector: 'app-support-bundle-detail',
