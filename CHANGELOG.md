@@ -1,5 +1,46 @@
 # Changelog
 
+## [2.13.0](https://github.com/distr-sh/distr/compare/2.12.0...2.13.0) (2026-03-17)
+
+
+### Features
+
+* add prometheus metrics endpoint ([#1990](https://github.com/distr-sh/distr/issues/1990)) ([a83dfa7](https://github.com/distr-sh/distr/commit/a83dfa7979ff63bc16e0aa840f00394472746f45))
+
+
+### Bug Fixes
+
+* **deps:** update aws-sdk-go-v2 monorepo ([#2006](https://github.com/distr-sh/distr/issues/2006)) ([aa31888](https://github.com/distr-sh/distr/commit/aa31888467cc87db2721147fcdc2e520ab5bda89))
+* **deps:** update module github.com/aws/aws-sdk-go-v2/service/s3 to v1.97.0 ([#2003](https://github.com/distr-sh/distr/issues/2003)) ([7d1e8bc](https://github.com/distr-sh/distr/commit/7d1e8bcad81ed94a24e779963088b1bc4bc6cb31))
+* **deps:** update module github.com/lestrrat-go/jwx/v3 to v3.0.13 ([#2020](https://github.com/distr-sh/distr/issues/2020)) ([f8ab382](https://github.com/distr-sh/distr/commit/f8ab382d837c2b3eed094a3c695bd1ea5f617793))
+* **deps:** update module golang.org/x/crypto to v0.49.0 ([#1996](https://github.com/distr-sh/distr/issues/1996)) ([d674b56](https://github.com/distr-sh/distr/commit/d674b56d52fd34bbc11d078db4b772f4377d17e5))
+* **deps:** update module helm.sh/helm/v4 to v4.1.3 ([#1995](https://github.com/distr-sh/distr/issues/1995)) ([c656e08](https://github.com/distr-sh/distr/commit/c656e08761f3c7a41243d47b4b7516e6c00f7ebe))
+* streamline license UI wording in licenses section ([#2015](https://github.com/distr-sh/distr/issues/2015)) ([166733c](https://github.com/distr-sh/distr/commit/166733cf685a581bf3d38a2cc95c8b15d7aaf8ed))
+
+
+### Other
+
+* add reading limits from license key ([#1977](https://github.com/distr-sh/distr/issues/1977)) ([662359e](https://github.com/distr-sh/distr/commit/662359e4d274cdf2f07471f27724608466540f88))
+* **deps:** bump undici from 6.23.0 to 6.24.0 in the npm_and_yarn group across 1 directory ([#2007](https://github.com/distr-sh/distr/issues/2007)) ([59377c6](https://github.com/distr-sh/distr/commit/59377c608dd2be5d18fd9476215d6d36608b8467))
+* **deps:** update actions/download-artifact action to v8.0.1 ([#1991](https://github.com/distr-sh/distr/issues/1991)) ([05c434b](https://github.com/distr-sh/distr/commit/05c434bc570098040467f748770fd7d01cec972d))
+* **deps:** update angular monorepo to v21.2.3 ([#1994](https://github.com/distr-sh/distr/issues/1994)) ([b9ee29f](https://github.com/distr-sh/distr/commit/b9ee29f42b27017cd705970bd9e384510e29949b))
+* **deps:** update angular monorepo to v21.2.4 ([#2001](https://github.com/distr-sh/distr/issues/2001)) ([bde0bbc](https://github.com/distr-sh/distr/commit/bde0bbc09d1ac1582adcc7941185386e04ce40bd))
+* **deps:** update angular-cli monorepo to v21.2.2 ([#1989](https://github.com/distr-sh/distr/issues/1989)) ([f66f718](https://github.com/distr-sh/distr/commit/f66f718b65215e372158cd5d7205a049b2a13ee2))
+* **deps:** update codemirror ([#1998](https://github.com/distr-sh/distr/issues/1998)) ([6908ea1](https://github.com/distr-sh/distr/commit/6908ea1a8078314c61d869da100b07161fe345cc))
+* **deps:** update dependency @angular/cdk to v21.2.2 ([#1993](https://github.com/distr-sh/distr/issues/1993)) ([078fd03](https://github.com/distr-sh/distr/commit/078fd033c1990729994a1ac5ce3d07905c6dc4ce))
+* **deps:** update dependency @sentry/cli to v3.3.3 ([#2009](https://github.com/distr-sh/distr/issues/2009)) ([9884ee2](https://github.com/distr-sh/distr/commit/9884ee28ce6a387d178f7915f0cf50f9cda184aa))
+* **deps:** update dependency dayjs to v1.11.20 ([#1999](https://github.com/distr-sh/distr/issues/1999)) ([6adfe74](https://github.com/distr-sh/distr/commit/6adfe74d6c24ec29de48ec0410268af8601be778))
+* **deps:** update dependency jsdom to v29 ([#2008](https://github.com/distr-sh/distr/issues/2008)) ([9c4d5e0](https://github.com/distr-sh/distr/commit/9c4d5e0ba2e9ae8129fece8d57f18f4fa04bdcfa))
+* **deps:** update dependency posthog-js to v1.360.2 ([#2010](https://github.com/distr-sh/distr/issues/2010)) ([13a160a](https://github.com/distr-sh/distr/commit/13a160ab9762959159fc3d9b7595ac7bb0d2e121))
+* **deps:** update dependency stripe to v1.37.3 ([#2002](https://github.com/distr-sh/distr/issues/2002)) ([8a582c7](https://github.com/distr-sh/distr/commit/8a582c78679b0c16a7cc9d0a8c5ef587dc94635d))
+* **deps:** update dependency stripe to v1.37.4 ([#2014](https://github.com/distr-sh/distr/issues/2014)) ([37188c2](https://github.com/distr-sh/distr/commit/37188c213c9b728527be7d2e696bf2126a574e55))
+* **deps:** update dependency vitest to v4.1.0 ([#2000](https://github.com/distr-sh/distr/issues/2000)) ([a4c911a](https://github.com/distr-sh/distr/commit/a4c911a48f80f1b7da94517c4f0024ad6b012466))
+* **deps:** update pnpm/action-setup action to v4.3.0 ([#1992](https://github.com/distr-sh/distr/issues/1992)) ([5df675b](https://github.com/distr-sh/distr/commit/5df675b5d8eca410c6aa05e0199af8550473afba))
+* **deps:** update pnpm/action-setup action to v4.4.0 ([#2004](https://github.com/distr-sh/distr/issues/2004)) ([3c92c01](https://github.com/distr-sh/distr/commit/3c92c0175b928219c606cb72553b91a156bda214))
+* **deps:** update pnpm/action-setup action to v5 ([#2017](https://github.com/distr-sh/distr/issues/2017)) ([024c90a](https://github.com/distr-sh/distr/commit/024c90a08187b10bc1aff18da0608a2140644a1b))
+* **deps:** upgrate github.com/lestrrat-go/jwx to v3 ([#2005](https://github.com/distr-sh/distr/issues/2005)) ([c8ae490](https://github.com/distr-sh/distr/commit/c8ae490b7d61ab92ac155ce3ec16d83ee913dae2))
+* unique ids on license overview page ([#2022](https://github.com/distr-sh/distr/issues/2022)) ([84feee9](https://github.com/distr-sh/distr/commit/84feee93e5af1e2cb0612a3933b95984babeeeff))
+
 ## [2.12.0](https://github.com/distr-sh/distr/compare/2.11.8...2.12.0) (2026-03-11)
 
 
