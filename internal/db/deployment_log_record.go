@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"slices"
 	"time"
 
 	"github.com/distr-sh/distr/api"
@@ -96,22 +95,55 @@ func ValidateDeploymentLogRecords(
 
 func GetDeploymentLogRecordResources(ctx context.Context,
 	deploymentID uuid.UUID,
-) ([]string, error) {
+) (active []string, archived []string, err error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`SELECT DISTINCT resource FROM DeploymentLogRecord WHERE deployment_id = @deploymentId`,
+		`WITH latest_revisions AS (
+			SELECT id FROM DeploymentRevision
+			WHERE deployment_id = @deploymentId
+			ORDER BY created_at DESC
+			LIMIT 5
+		),
+		active_resources AS (
+			SELECT DISTINCT resource
+			FROM DeploymentLogRecord
+			WHERE deployment_id = @deploymentId
+				AND deployment_revision_id IN (SELECT id FROM latest_revisions)
+		),
+		all_resources AS (
+			SELECT DISTINCT resource
+			FROM DeploymentLogRecord
+			WHERE deployment_id = @deploymentId
+		)
+		SELECT resource,
+			CASE WHEN ar.resource IS NOT NULL THEN false ELSE true END AS is_archived
+		FROM all_resources all_r
+		LEFT JOIN active_resources ar USING (resource)
+		ORDER BY resource`,
 		pgx.NamedArgs{"deploymentId": deploymentID},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("could not query DeploymentLogRecord: %w", err)
+		return nil, nil, fmt.Errorf("could not query DeploymentLogRecord: %w", err)
 	}
-	result, err := pgx.CollectRows(rows, pgx.RowTo[string])
+
+	type resourceRow struct {
+		Resource   string
+		IsArchived bool
+	}
+	results, err := pgx.CollectRows(rows, pgx.RowToStructByPos[resourceRow])
 	if err != nil {
-		return nil, fmt.Errorf("could not collect DeploymentLogRecord: %w", err)
+		return nil, nil, fmt.Errorf("could not collect DeploymentLogRecord: %w", err)
 	}
-	slices.Sort(result)
-	return result, nil
+
+	for _, r := range results {
+		if r.IsArchived {
+			archived = append(archived, r.Resource)
+		} else {
+			active = append(active, r.Resource)
+		}
+	}
+	return active, archived, nil
 }
 
 func GetDeploymentLogRecords(

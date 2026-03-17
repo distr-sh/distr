@@ -1,6 +1,5 @@
-import {AsyncPipe} from '@angular/common';
 import {Component, inject, input, output, signal} from '@angular/core';
-import {toObservable} from '@angular/core/rxjs-interop';
+import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {DeploymentTarget, DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faXmark} from '@fortawesome/free-solid-svg-icons';
@@ -14,7 +13,7 @@ const resourceRefreshInterval = 15_000;
 @Component({
   selector: 'app-deployment-status-modal',
   templateUrl: './deployment-status-modal.component.html',
-  imports: [AsyncPipe, DeploymentLogsTableComponent, DeploymentStatusTableComponent, FaIconComponent],
+  imports: [DeploymentLogsTableComponent, DeploymentStatusTableComponent, FaIconComponent],
 })
 export class DeploymentStatusModalComponent {
   public readonly deploymentTarget = input.required<DeploymentTarget>();
@@ -31,13 +30,17 @@ export class DeploymentStatusModalComponent {
     distinctUntilChanged()
   );
 
-  protected readonly resources = this.deploymentId$.pipe(
-    switchMap((id) =>
-      timer(0, resourceRefreshInterval).pipe(
-        switchMap(() => this.deploymentLogs.getResources(id).pipe(catchError(() => EMPTY)))
+  protected readonly resources = toSignal(
+    this.deploymentId$.pipe(
+      switchMap((id) =>
+        timer(0, resourceRefreshInterval).pipe(
+          switchMap(() => this.deploymentLogs.getResources(id).pipe(catchError(() => EMPTY)))
+        )
       )
     )
   );
+
+  protected readonly showArchivedResources = signal(false);
 
   /**
    * `null` means agent status
@@ -46,5 +49,17 @@ export class DeploymentStatusModalComponent {
 
   protected hideModal() {
     this.closed.emit();
+  }
+
+  protected toggleShowArchived() {
+    this.showArchivedResources.update((v) => !v);
+
+    // unset selected resource if it is hidden from the tab list now
+    if (!this.showArchivedResources()) {
+      const selected = this.selectedResource();
+      if (selected !== null && this.resources()?.archived.includes(selected)) {
+        this.selectedResource.set(null);
+      }
+    }
   }
 }
