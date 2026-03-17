@@ -8,7 +8,7 @@ for validation is present. The public key must be set at compile time and is emb
 A compatible Distr license key can be generated using the following JSON as a template:
 
 	{
-		"ld: {
+		"ld": {
 			"enf": true,
 			"mo": 123,
 			"mou": 123,
