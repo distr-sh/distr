@@ -92,7 +92,7 @@ export class SupportBundleDetailComponent {
     return this.expandedResources().has(resourceId);
   }
 
-  protected statusClass(status: SupportBundleDetail['status']): string {
+  protected statusClass(status: SupportBundleStatus): string {
     switch (status) {
       case 'initialized':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';

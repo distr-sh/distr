@@ -13,7 +13,7 @@ export class SupportBundleDashboardCardComponent {
   public readonly customerName = input.required<string>();
   public readonly bundles = input.required<SupportBundle[]>();
 
-  protected statusDotClass(status: SupportBundle['status']): string {
+  protected statusDotClass(status: SupportBundleStatus): string {
     switch (status) {
       case 'initialized':
         return 'bg-blue-500';
