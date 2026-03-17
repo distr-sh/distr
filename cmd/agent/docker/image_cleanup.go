@@ -36,13 +36,13 @@ func getDeploymentImagesCompose(ctx context.Context, deployment AgentDeployment)
 }
 
 func DeleteImages(ctx context.Context, images []string) (aggErr error) {
-	apiClinet := dockerCli.Client()
+	apiClient := dockerCli.Client()
 
 	for _, image := range images {
 		logger := logger.With(zap.String("image", image))
 		logger.Debug("trying to delete old image")
 
-		result, err := apiClinet.ImageRemove(ctx, image, mobyClient.ImageRemoveOptions{PruneChildren: true})
+		result, err := apiClient.ImageRemove(ctx, image, mobyClient.ImageRemoveOptions{PruneChildren: true})
 		if err != nil {
 			logger.Warn("failed to delete old image", zap.Error(err))
 			aggErr = errors.Join(aggErr, err)
