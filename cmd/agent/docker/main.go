@@ -174,7 +174,9 @@ loop:
 							agentDeployment, status, err = DockerEngineApply(ctx, deployment)
 							if err == nil {
 								if deployment.ImageCleanupEnabled {
-									err = errors.Join(err, DeleteImages(ctx, previousDeploymentImages))
+									if delErr := DeleteImages(ctx, previousDeploymentImages); delErr != nil {
+										logger.Warn("failed to delete old images", zap.Error(delErr))
+									}
 								}
 
 								if deployment.ForceRestart {
