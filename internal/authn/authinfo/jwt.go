@@ -16,9 +16,9 @@ func FromUserJWT(token jwt.Token) (*SimpleAuthInfo, error) {
 	result.rawToken = token
 
 	if subjectStr, ok := token.Subject(); !ok {
-		return nil, fmt.Errorf("JWT subject missing")
+		return nil, fmt.Errorf("%w: JWT subject missing", authn.ErrBadAuthentication)
 	} else if userID, err := uuid.Parse(subjectStr); err != nil {
-		return nil, fmt.Errorf("JWT subject is invalid: %w", err)
+		return nil, fmt.Errorf("%w: JWT subject is invalid: %w", authn.ErrBadAuthentication, err)
 	} else {
 		result.userID = userID
 	}
