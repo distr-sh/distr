@@ -111,9 +111,7 @@ export class SupportBundleDetailComponent {
     return id.substring(0, 8);
   }
 
-  protected backRoute(): string {
-    return this.auth.isVendor() ? '/support-bundles' : '/support';
-  }
+  protected readonly backRoute = this.auth.isVendor() ? '/support-bundles' : '/support';
 
   protected userInitials(name: string): string {
     return name
