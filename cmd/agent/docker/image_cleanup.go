@@ -6,12 +6,22 @@ import (
 	"maps"
 	"slices"
 
+	"github.com/distr-sh/distr/internal/types"
 	"github.com/docker/compose/v5/pkg/api"
 	mobyClient "github.com/moby/moby/client"
 	"go.uber.org/zap"
 )
 
 func GetDeploymentImages(ctx context.Context, deployment AgentDeployment) ([]string, error) {
+	switch deployment.DockerType {
+	case types.DockerTypeCompose:
+		return getDeploymentImagesCompose(ctx, deployment)
+	default:
+		return nil, nil
+	}
+}
+
+func getDeploymentImagesCompose(ctx context.Context, deployment AgentDeployment) ([]string, error) {
 	summaries, err := composeService.Ps(ctx, deployment.ProjectName, api.PsOptions{All: true})
 	if err != nil {
 		return nil, err
