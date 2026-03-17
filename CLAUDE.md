@@ -156,6 +156,7 @@ Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Pret
 - Don't use any responsive design classes in modals. They should always be optimized for the none mobile use case.
 - Use Angular's `takeUntilDestroyed` instead of a manual `destroyed$` subject.
 - Use [Angular Signal Based Animations](https://angular.dev/guide/animations) instead of legacy animations defined in the component.
+- Use Tailwind CSS utility classes for text transformations (e.g. `capitalize`, `uppercase`, `lowercase`) instead of TypeScript string manipulation when possible.
 
 ### Database Access
 

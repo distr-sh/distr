@@ -27,8 +27,4 @@ export class SupportBundleDashboardCardComponent {
         return '';
     }
   }
-
-  protected statusLabel(status: SupportBundle['status']): string {
-    return status.charAt(0).toUpperCase() + status.slice(1);
-  }
 }
