@@ -1,7 +1,7 @@
 import {CdkConnectedOverlay, CdkOverlayOrigin} from '@angular/cdk/overlay';
 import {NgTemplateOutlet} from '@angular/common';
 import {Component, inject, input, signal, WritableSignal} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {RouterLink, RouterLinkActive} from '@angular/router';
 import {CustomerOrganization} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -22,7 +22,7 @@ import {
   faPalette,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
-import {map} from 'rxjs';
+import {map, of, switchMap} from 'rxjs';
 import {buildConfig} from '../../../buildconfig';
 import {environment} from '../../../env/env';
 import {RequireCustomerDirective, RequireVendorDirective} from '../../directives/required-role.directive';
@@ -82,7 +82,15 @@ export class SideBarComponent {
   protected readonly notificationsOverlayOpen = signal(false);
   protected readonly supportBundlesOverlayOpen = signal(false);
 
-  protected readonly isAllTutorialsStarted = toSignal(this.tutorialsService.allStarted$);
+  protected readonly isAllTutorialsStarted =
+    this.auth.isVendor() && this.auth.hasAnyRole('admin')
+      ? toSignal(
+          toObservable(this.organizationService.hasNoSubscription).pipe(
+            switchMap((hasNoSub) => (hasNoSub ? this.tutorialsService.allStarted$ : of(true)))
+          ),
+          {initialValue: true}
+        )
+      : signal(true);
   protected readonly isLicensingFeatureEnabled = toSignal(this.featureFlags.isLicensingEnabled$);
   protected readonly isNotificationsFeatureEnabled = toSignal(this.featureFlags.isNotificationsEnabled$);
   protected readonly isSupportBundlesFeatureEnabled = toSignal(this.featureFlags.isSupportBundlesEnabled$);
