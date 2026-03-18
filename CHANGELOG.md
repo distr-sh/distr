@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.14.0](https://github.com/distr-sh/distr/compare/2.13.0...2.14.0) (2026-03-18)
+
+
+### Features
+
+* support bundels ([#1910](https://github.com/distr-sh/distr/issues/1910)) ([50e2928](https://github.com/distr-sh/distr/commit/50e29282f0a87174417fd08494213dee7efb238f))
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver to v0.148.0 ([#2027](https://github.com/distr-sh/distr/issues/2027)) ([eb6ecdd](https://github.com/distr-sh/distr/commit/eb6ecdd72ffcf761fd9b809cfef6615cfc89fff7))
+
+
+### Other
+
+* **deps:** update dependency stripe to v1.37.8 ([#2026](https://github.com/distr-sh/distr/issues/2026)) ([2652039](https://github.com/distr-sh/distr/commit/26520394878c06df6c7414e89abd31b38cbe38ec))
+* **frontend:** improve syntax highlighting ([#2030](https://github.com/distr-sh/distr/issues/2030)) ([5478914](https://github.com/distr-sh/distr/commit/547891456e2311d9f7456123f8f99f652fd4ad0e))
+
 ## [2.13.0](https://github.com/distr-sh/distr/compare/2.12.0...2.13.0) (2026-03-17)
 
 
