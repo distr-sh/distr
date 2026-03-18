@@ -129,7 +129,7 @@
               <div class="flex gap-3">
                 @if (comment.userImageUrl) {
                   <img
-                    [src]="comment.userImageUrl"
+                    [attr.src]="comment.userImageUrl | secureImage | async"
                     [alt]="comment.userName"
                     class="w-8 h-8 rounded-full object-cover flex-shrink-0" />
                 } @else {

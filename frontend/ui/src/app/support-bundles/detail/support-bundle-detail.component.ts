@@ -1,4 +1,4 @@
-import {DatePipe, NgClass} from '@angular/common';
+import {AsyncPipe, DatePipe, NgClass} from '@angular/common';
 import {Component, inject, signal} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
@@ -15,6 +15,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
+import {SecureImagePipe} from '../../../util/secureImage';
 import {ClipComponent} from '../../components/clip.component';
 import {AuthService} from '../../services/auth.service';
 import {OverlayService} from '../../services/overlay.service';
@@ -25,7 +26,16 @@ import {SupportBundleDetail, SupportBundleStatus} from '../../types/support-bund
 @Component({
   selector: 'app-support-bundle-detail',
   templateUrl: './support-bundle-detail.component.html',
-  imports: [DatePipe, NgClass, ReactiveFormsModule, RouterLink, FaIconComponent, ClipComponent],
+  imports: [
+    AsyncPipe,
+    DatePipe,
+    NgClass,
+    ReactiveFormsModule,
+    RouterLink,
+    FaIconComponent,
+    ClipComponent,
+    SecureImagePipe,
+  ],
 })
 export class SupportBundleDetailComponent {
   private readonly route = inject(ActivatedRoute);
