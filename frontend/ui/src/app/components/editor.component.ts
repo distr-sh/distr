@@ -1,13 +1,13 @@
-import { Component, computed, ElementRef, forwardRef, inject, input, OnDestroy, OnInit } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
-import { json } from '@codemirror/lang-json';
-import { yaml } from '@codemirror/lang-yaml';
-import { HighlightStyle, indentOnInput, syntaxHighlighting } from '@codemirror/language';
-import { EditorState, Extension, StateEffect } from '@codemirror/state';
-import { EditorView, highlightSpecialChars, keymap } from '@codemirror/view';
-import { tags } from '@lezer/highlight';
-import { never } from '../../util/exhaust';
+import {Component, computed, ElementRef, forwardRef, inject, input, OnDestroy, OnInit} from '@angular/core';
+import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
+import {defaultKeymap, history, historyKeymap, indentWithTab} from '@codemirror/commands';
+import {json} from '@codemirror/lang-json';
+import {yaml} from '@codemirror/lang-yaml';
+import {HighlightStyle, indentOnInput, syntaxHighlighting} from '@codemirror/language';
+import {EditorState, Extension, StateEffect} from '@codemirror/state';
+import {EditorView, highlightSpecialChars, keymap} from '@codemirror/view';
+import {tags} from '@lezer/highlight';
+import {never} from '../../util/exhaust';
 
 export type EditorLanguage = 'yaml' | 'json';
 
@@ -48,13 +48,13 @@ export class EditorComponent implements OnInit, OnDestroy, ControlValueAccessor 
         history(),
         syntaxHighlighting(
           HighlightStyle.define([
-            { tag: tags.comment, class: 'italic text-gray-400' },
-            { tag: tags.propertyName, class: 'text-blue-500 dark:text-blue-300' },
-            { tag: tags.literal, class: 'text-orange-500 dark:text-orange-300' },
-            { tag: tags.string, class: 'text-green-600 dark:text-green-300' },
-            { tag: tags.bool, class: 'text-purple-400 dark:text-purple-300' },
-            { tag: tags.punctuation, class: 'text-gray-400' },
-            { tag: tags.bracket, class: 'text-orange-600 dark:text-orange-300' },
+            {tag: tags.comment, class: 'italic text-gray-400'},
+            {tag: tags.propertyName, class: 'text-blue-500 dark:text-blue-300'},
+            {tag: tags.literal, class: 'text-orange-500 dark:text-orange-300'},
+            {tag: tags.string, class: 'text-green-600 dark:text-green-300'},
+            {tag: tags.bool, class: 'text-purple-400 dark:text-purple-300'},
+            {tag: tags.punctuation, class: 'text-gray-400'},
+            {tag: tags.bracket, class: 'text-orange-600 dark:text-orange-300'},
           ])
         ),
         highlightSpecialChars(),
@@ -76,7 +76,7 @@ export class EditorComponent implements OnInit, OnDestroy, ControlValueAccessor 
   }
 
   writeValue(value: string) {
-    const tr = this.view.state.update({ changes: { from: 0, to: this.view.state.doc.length, insert: value ?? '' } });
+    const tr = this.view.state.update({changes: {from: 0, to: this.view.state.doc.length, insert: value ?? ''}});
     this.view.dispatch(tr);
   }
 
@@ -98,7 +98,7 @@ export class EditorComponent implements OnInit, OnDestroy, ControlValueAccessor 
     this.view.dispatch(tr);
   }
 
-  private onChange = (_: any) => { };
+  private onChange = (_: any) => {};
 
-  private onTouched = () => { };
+  private onTouched = () => {};
 }
