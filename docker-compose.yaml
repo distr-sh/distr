@@ -2,13 +2,13 @@ name: distr-dev
 
 services:
   postgres:
-    image: 'postgres:17.5-alpine3.20'
+    image: 'postgres:18.3-alpine3.23'
     environment:
       POSTGRES_USER: local
       POSTGRES_PASSWORD: local
       POSTGRES_DB: distr
     volumes:
-      - 'postgres:/var/lib/postgresql/data/'
+      - 'postgres:/var/lib/postgresql/'
     ports:
       - '5432:5432'
   mailpit:

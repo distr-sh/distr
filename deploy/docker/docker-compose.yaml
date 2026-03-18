@@ -2,13 +2,13 @@ name: distr
 
 services:
   postgres:
-    image: 'postgres:17-alpine'
+    image: 'postgres:18.3-alpine3.23'
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - 'postgres:/var/lib/postgresql/data/'
+      - 'postgres:/var/lib/postgresql/'
     restart: always
     healthcheck:
       test: pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}
