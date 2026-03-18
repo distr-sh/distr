@@ -16,21 +16,17 @@ services:
     ports:
       - '1025:1025'
       - '8025:8025'
-  minio:
-    image: 'minio/minio:RELEASE.2025-02-28T09-55-16Z'
-    entrypoint: sh
-    command:
-      - -c
-      - mkdir -p /data/distr && minio server /data --console-address :9001
+  storage:
+    image: 'rustfs/rustfs:1.0.0-alpha.83'
     ports:
-      - 9000:9000
-      - 9001:9001
-    environment:
-      - 'MINIO_ROOT_USER=distr'
-      - 'MINIO_ROOT_PASSWORD=distr123'
+      - '127.0.0.1:9000:9000'
+      - '127.0.0.1:9001:9001'
     volumes:
-      - minio:/data/
+      - 'rustfs:/data/'
+    environment:
+      RUSTFS_ACCESS_KEY: distr
+      RUSTFS_SECRET_KEY: distr123
 
 volumes:
   postgres:
-  minio:
+  rustfs:

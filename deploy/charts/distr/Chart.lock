@@ -2,8 +2,8 @@ dependencies:
 - name: postgresql
   repository: oci://registry-1.docker.io/bitnamicharts
   version: 18.5.7
-- name: minio
-  repository: https://charts.min.io
-  version: 5.4.0
-digest: sha256:2a450eeadd9e7e7fbf7e75f9a42f97b9457f521b81e43350fd30441f3b224a81
-generated: "2026-03-18T14:01:33.749869791+01:00"
+- name: rustfs
+  repository: https://charts.rustfs.com
+  version: 0.0.86
+digest: sha256:0fdcdd9ca2d26b9f782d744c52699bdc9ab1632c783203d56b0235fddce4e671
+generated: "2026-03-18T15:11:02.325202838+01:00"

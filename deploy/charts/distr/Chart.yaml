@@ -21,7 +21,7 @@ dependencies:
     repository: oci://registry-1.docker.io/bitnamicharts
     version: 18.x.x
     condition: postgresql.enabled
-  - name: minio
-    repository: https://charts.min.io
-    version: 5.x.x
-    condition: minio.enabled
+  - name: rustfs
+    repository: https://charts.rustfs.com
+    version: 0.0.x
+    condition: rustfs.enabled
