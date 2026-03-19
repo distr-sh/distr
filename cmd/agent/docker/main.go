@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"net/http"
 	"os/signal"
 	"slices"
@@ -137,21 +138,7 @@ loop:
 			if err != nil {
 				logger.Error("could not get existing deployments", zap.Error(err))
 			} else {
-				for _, deployment := range deployments {
-					resourceHasExistingDeployment := slices.ContainsFunc(
-						resource.Deployments,
-						func(d api.AgentDeployment) bool { return d.ID == deployment.ID },
-					)
-					if !resourceHasExistingDeployment {
-						logger.Info("uninstalling old deployment", zap.String("id", deployment.ID.String()))
-						if err := DockerEngineUninstall(ctx, deployment); err != nil {
-							logger.Error("could not uninstall deployment", zap.Error(err))
-						} else if err := DeleteDeployment(deployment); err != nil {
-							logger.Error("could not delete deployment", zap.Error(err))
-						}
-						CleanupLogsTimestamps(deployment)
-					}
-				}
+				cleanupOldDeployments(ctx, *resource, slices.Collect(maps.Values(deployments)))
 			}
 
 			if len(resource.Deployments) == 0 {
@@ -182,12 +169,29 @@ loop:
 						agentDeployment.State == StateFailed ||
 						agentDeployment.State == StateProgressing {
 						func() {
+							var previousDeploymentImages []string
+							if agentDeployment != nil {
+								if images, err := GetDeploymentImages(ctx, *agentDeployment); err != nil {
+									logger.Error("failed to get old images", zap.Error(err))
+								} else {
+									previousDeploymentImages = images
+								}
+							}
+
 							progressCtx, progressCancel := context.WithCancel(ctx)
 							defer progressCancel()
 							go sendProgressInterval(progressCtx, deployment.RevisionID)
 							agentDeployment, status, err = DockerEngineApply(ctx, deployment)
-							if err == nil && deployment.ForceRestart {
-								err = errors.Join(err, RunDockerRestart(ctx, *agentDeployment))
+							if err == nil {
+								if deployment.ImageCleanupEnabled {
+									if delErr := DeleteImages(ctx, previousDeploymentImages); delErr != nil {
+										logger.Warn("failed to delete old images", zap.Error(delErr))
+									}
+								}
+
+								if deployment.ForceRestart {
+									err = errors.Join(err, RunDockerRestart(ctx, *agentDeployment))
+								}
 							}
 						}()
 					} else {
@@ -243,4 +247,34 @@ func startHealthServer() error {
 	}
 
 	return nil
+}
+
+func cleanupOldDeployments(ctx context.Context, resource api.AgentResource, deployments []AgentDeployment) {
+	for _, deployment := range deployments {
+		resourceHasExistingDeployment := slices.ContainsFunc(
+			resource.Deployments,
+			func(d api.AgentDeployment) bool { return d.ID == deployment.ID },
+		)
+		if !resourceHasExistingDeployment {
+			logger.Info("uninstalling old deployment", zap.String("id", deployment.ID.String()))
+
+			deploymentImages, err := GetDeploymentImages(ctx, deployment)
+			if err != nil {
+				logger.Error("could not get images for old deployment", zap.Error(err))
+			}
+
+			if err := DockerEngineUninstall(ctx, deployment); err != nil {
+				logger.Error("could not uninstall deployment", zap.Error(err))
+			} else {
+				if err := DeleteDeployment(deployment); err != nil {
+					logger.Error("could not delete deployment", zap.Error(err))
+				}
+
+				if err := DeleteImages(ctx, deploymentImages); err != nil {
+					logger.Error("could not delete images for old deployment", zap.Error(err))
+				}
+			}
+			CleanupLogsTimestamps(deployment)
+		}
+	}
 }

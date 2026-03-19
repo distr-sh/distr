@@ -210,6 +210,7 @@ export class DistrService {
       scope: target.kubernetes?.scope,
       deployments: [],
       metricsEnabled: false,
+      imageCleanupEnabled: false,
       autohealEnabled: false,
     });
     await this.client.createOrUpdateDeployment({

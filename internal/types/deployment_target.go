@@ -23,6 +23,7 @@ type DeploymentTarget struct {
 	AgentVersionID         *uuid.UUID                 `db:"agent_version_id" json:"-"`
 	ReportedAgentVersionID *uuid.UUID                 `db:"reported_agent_version_id" json:"reportedAgentVersionId,omitempty"` //nolint:lll
 	MetricsEnabled         bool                       `db:"metrics_enabled" json:"metricsEnabled"`
+	ImageCleanupEnabled    bool                       `db:"image_cleanup_enabled" json:"imageCleanupEnabled"`
 	AutohealEnabled        bool                       `db:"autoheal_enabled" json:"autohealEnabled"`
 	Resources              *DeploymentTargetResources `db:"resources" json:"resources,omitempty"`
 }
@@ -38,7 +39,9 @@ func (dt *DeploymentTarget) Validate() error {
 	switch dt.Type {
 	case DeploymentTypeKubernetes:
 		if dt.AutohealEnabled {
-			return validation.NewValidationFailedError("DeploymentTarget with type \"kubernetes\" must not have autoheal enabled")
+			return validation.NewValidationFailedError(
+				"DeploymentTarget with type \"kubernetes\" must not have autoheal enabled",
+			)
 		}
 		if dt.Namespace == nil || *dt.Namespace == "" {
 			return validation.NewValidationFailedError(
@@ -47,6 +50,10 @@ func (dt *DeploymentTarget) Validate() error {
 		}
 		if dt.Scope == nil {
 			return validation.NewValidationFailedError("DeploymentTarget with type \"kubernetes\" must not have empty scope")
+		}
+		if dt.ImageCleanupEnabled {
+			return validation.NewValidationFailedError(
+				"image cleanup is not supported on DeploymentTarget with type \"kubernetes\"")
 		}
 		if dt.Resources != nil {
 			if _, err := resource.ParseQuantity(dt.Resources.CPULimit); err != nil {

@@ -97,6 +97,7 @@ export class DeploymentWizardComponent implements OnInit {
     ]),
     autohealEnabled: new FormControl<boolean>(true, {nonNullable: true}),
     clusterScope: new FormControl<boolean>(true, {nonNullable: true}),
+    imageCleanupEnabled: new FormControl<boolean>(true, {nonNullable: true}),
     customResources: new FormControl<boolean>(false, {nonNullable: true}),
     resources: new FormGroup({
       cpuRequest: new FormControl<string>('100m', {
@@ -286,6 +287,7 @@ export class DeploymentWizardComponent implements OnInit {
       this.deploymentTargetForm.controls.namespace.enable();
       this.deploymentTargetForm.controls.clusterScope.enable();
       this.deploymentTargetForm.controls.scope.enable();
+      this.deploymentTargetForm.controls.imageCleanupEnabled.disable();
       this.deploymentTargetForm.controls.customResources.enable();
       if (this.deploymentTargetForm.controls.customResources.value) {
         this.deploymentTargetForm.controls.resources.enable();
@@ -297,6 +299,7 @@ export class DeploymentWizardComponent implements OnInit {
       this.deploymentTargetForm.controls.namespace.disable();
       this.deploymentTargetForm.controls.clusterScope.disable();
       this.deploymentTargetForm.controls.scope.disable();
+      this.deploymentTargetForm.controls.imageCleanupEnabled.enable();
       this.deploymentTargetForm.controls.customResources.disable();
       this.deploymentTargetForm.controls.resources.disable();
     }
@@ -388,11 +391,12 @@ export class DeploymentWizardComponent implements OnInit {
         createdDeploymentTarget = (await firstValueFrom(
           this.deploymentTargets.create({
             name: this.deploymentTargetForm.value.name!,
-            type: app.type!,
+            type: app.type,
             namespace: this.deploymentTargetForm.value.namespace || undefined,
             scope: this.deploymentTargetForm.value.scope,
             deployments: [],
             metricsEnabled: this.deploymentTargetForm.value.scope !== 'namespace',
+            imageCleanupEnabled: app.type === 'docker' && this.deploymentTargetForm.controls.imageCleanupEnabled.value,
             autohealEnabled: app.type === 'docker' ? (this.deploymentTargetForm.value.autohealEnabled ?? true) : false,
             customerOrganization: customerOrgId ? ({id: customerOrgId} as CustomerOrganization) : undefined,
             resources: this.deploymentTargetForm.value.customResources

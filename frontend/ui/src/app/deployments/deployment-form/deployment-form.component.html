@@ -194,6 +194,11 @@
           formControlName="swarmMode" />
         <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Swarm mode</span>
       </label>
+      @if (deployForm.controls.swarmMode.value) {
+        <p class="mt-1 text-xs text-yellow-600 dark:text-yellow-400">
+          Note: Container image cleanup is not supported in swarm mode.
+        </p>
+      }
     </div>
   }
 
