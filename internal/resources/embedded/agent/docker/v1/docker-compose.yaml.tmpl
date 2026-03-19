@@ -2,7 +2,7 @@ name: distr
 services:
   agent:
     network_mode: host
-    restart: unless-stopped
+    restart: always
     image: 'ghcr.io/distr-sh/distr/docker-agent:{{ .agentVersion }}'
     environment:
       DISTR_TARGET_ID: '{{ .targetId }}'

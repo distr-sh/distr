@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os/signal"
 	"slices"
 	"syscall"
@@ -43,6 +44,7 @@ var (
 	client         = util.Require(agentclient.NewFromEnv(logger))
 	dockerCli      = util.Require(dockercommand.NewDockerCli())
 	composeService composeapi.Compose
+	health         = NewHealthcheckServer(5 * time.Minute)
 )
 
 func init() {
@@ -78,6 +80,12 @@ func main() {
 
 	go NewLogsWatcher().Watch(ctx, 30*time.Second)
 
+	go func() {
+		if err := startHealthServer(); err != nil {
+			logger.Warn("health server error", zap.Error(err))
+		}
+	}()
+
 	mainLoop(ctx)
 
 	logger.Info("shutting down")
@@ -93,6 +101,8 @@ loop:
 		case <-ctx.Done():
 			break loop
 		}
+
+		health.HeartbeatNow()
 
 		if resource, err := client.Resource(ctx); err != nil {
 			logger.Error("failed to get resource", zap.Error(err))
@@ -224,4 +234,13 @@ func sendProgressInterval(ctx context.Context, revisionID uuid.UUID) {
 			}
 		}
 	}
+}
+
+func startHealthServer() error {
+	err := http.ListenAndServe("localhost:8765", health)
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+
+	return nil
 }
