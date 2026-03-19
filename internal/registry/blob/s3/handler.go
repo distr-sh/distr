@@ -364,6 +364,7 @@ func (handler *blobHandler) Delete(ctx context.Context, repo string, h digest.Di
 func (handler *blobHandler) getUploadID(ctx context.Context, uploadKey string) (string, error) {
 	if uploads, err := handler.s3Client.ListMultipartUploads(ctx, &s3.ListMultipartUploadsInput{
 		Bucket: &handler.bucket,
+		Prefix: &uploadKey,
 	}); err != nil {
 		return "", err
 	} else {
