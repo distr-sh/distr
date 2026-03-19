@@ -34,7 +34,7 @@
 
 ### userImageUrl?
 
-> `optional` **userImageUrl**: `string`
+> `optional` **userImageUrl?**: `string`
 
 ---
 

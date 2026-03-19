@@ -10,13 +10,13 @@
 
 ### features?
 
-> `optional` **features**: [`CustomerOrganizationFeature`](../type-aliases/CustomerOrganizationFeature.md)[]
+> `optional` **features?**: [`CustomerOrganizationFeature`](../type-aliases/CustomerOrganizationFeature.md)[]
 
 ---
 
 ### imageId?
 
-> `optional` **imageId**: `string`
+> `optional` **imageId?**: `string`
 
 ---
 

@@ -27,7 +27,7 @@
 
 ### createdByImageUrl?
 
-> `optional` **createdByImageUrl**: `string`
+> `optional` **createdByImageUrl?**: `string`
 
 ---
 
@@ -57,7 +57,7 @@
 
 ### description?
 
-> `optional` **description**: `string`
+> `optional` **description?**: `string`
 
 ---
 
@@ -69,7 +69,7 @@
 
 ### lastCommentAt?
 
-> `optional` **lastCommentAt**: `string`
+> `optional` **lastCommentAt?**: `string`
 
 ---
 
@@ -87,19 +87,19 @@
 
 ### statusChangedAt?
 
-> `optional` **statusChangedAt**: `string`
+> `optional` **statusChangedAt?**: `string`
 
 ---
 
 ### statusChangedByImageUrl?
 
-> `optional` **statusChangedByImageUrl**: `string`
+> `optional` **statusChangedByImageUrl?**: `string`
 
 ---
 
 ### statusChangedByUserName?
 
-> `optional` **statusChangedByUserName**: `string`
+> `optional` **statusChangedByUserName?**: `string`
 
 ---
 
