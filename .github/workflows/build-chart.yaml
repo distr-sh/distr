@@ -30,7 +30,7 @@ jobs:
         uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
       - name: Build helm chart
         run: |
-          helm repo add minio https://charts.min.io/
+          helm repo add rustfs https://charts.rustfs.com/
           helm dependency build deploy/charts/distr
           helm lint --strict deploy/charts/distr
           helm package deploy/charts/distr

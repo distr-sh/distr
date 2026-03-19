@@ -10,6 +10,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
+	"github.com/distr-sh/distr/internal/license"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/svc"
 	"github.com/distr-sh/distr/internal/util"
@@ -23,10 +24,13 @@ type ServeOptions struct{ Migrate bool }
 var serveOpts = ServeOptions{Migrate: true}
 
 var ServeCommand = &cobra.Command{
-	Use:    "serve",
-	Short:  "run the Distr Hub server",
-	Args:   cobra.NoArgs,
-	PreRun: func(cmd *cobra.Command, args []string) { env.Initialize() },
+	Use:   "serve",
+	Short: "run the Distr Hub server",
+	Args:  cobra.NoArgs,
+	PreRun: func(cmd *cobra.Command, args []string) {
+		env.Initialize()
+		util.Must(license.Initialize())
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		runServe(cmd.Context(), serveOpts)
 	},
@@ -68,20 +72,28 @@ func runServe(ctx context.Context, opts ServeOptions) {
 	util.Must(db.CreateAgentVersion(dbCtx))
 	util.Must(subscription.ReconcileStarterFeatures(dbCtx))
 
+	if env.MetricsEnabled() {
+		util.Must(registry.GetPrometheusCollector().Initialize(dbCtx, db.QueryableInitDataSource{}))
+	}
+
 	server := registry.GetServer()
 	artifactsServer := registry.GetArtifactsServer()
+	metricsServer := registry.GetMetricsServer()
 
 	sigCtx, _ := signal.NotifyContext(ctx, syscall.SIGTERM, syscall.SIGINT)
 	context.AfterFunc(sigCtx, func() {
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		server.Shutdown(ctx)
 		artifactsServer.Shutdown(ctx)
+		metricsServer.Shutdown(ctx)
 		cancel()
 	})
 
 	go func() { util.Must(server.Start(":8080")) }()
 	go func() { util.Must(artifactsServer.Start(":8585")) }()
+	go func() { util.Must(metricsServer.Start(env.MetricsAddr())) }()
 	registry.GetJobsScheduler().Start()
 	server.WaitForShutdown()
 	artifactsServer.WaitForShutdown()
+	metricsServer.WaitForShutdown()
 }

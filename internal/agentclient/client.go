@@ -19,7 +19,7 @@ import (
 	"github.com/distr-sh/distr/internal/httpstatus"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
-	"github.com/lestrrat-go/jwx/v2/jwt"
+	"github.com/lestrrat-go/jwx/v3/jwt"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -177,7 +177,12 @@ func (c *Client) HasTokenExpired() bool {
 }
 
 func (c *Client) HasTokenExpiredAfter(t time.Time) bool {
-	return c.token == nil || c.token.Expiration().Before(t)
+	if c.token == nil {
+		return true
+	}
+
+	exp, ok := c.token.Expiration()
+	return !ok || exp.Before(t)
 }
 
 func (c *Client) ClearToken() {

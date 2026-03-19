@@ -14,6 +14,7 @@ import (
 	"github.com/distr-sh/distr/internal/buildconfig"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/license"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/subscription"
@@ -102,6 +103,18 @@ func createOrganization(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if ok := validateOrganizationRequest(w, body); !ok {
 		return
+	}
+
+	if limit := license.GetLicenseData().MaxOrganizations; !limit.IsUnlimited() {
+		if count, err := db.CountAllOrganizations(ctx); err != nil {
+			log.Error("could not get organization count", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		} else if limit.IsReached(count) {
+			http.Error(w, "global organization limit has been reached", http.StatusBadRequest)
+			return
+		}
 	}
 
 	organization := types.Organization{

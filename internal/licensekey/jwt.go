@@ -8,9 +8,9 @@ import (
 
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/lestrrat-go/jwx/v2/jwa"
-	"github.com/lestrrat-go/jwx/v2/jwk"
-	"github.com/lestrrat-go/jwx/v2/jwt"
+	"github.com/lestrrat-go/jwx/v3/jwa"
+	"github.com/lestrrat-go/jwx/v3/jwk"
+	"github.com/lestrrat-go/jwx/v3/jwt"
 )
 
 var registeredClaims = map[string]struct{}{
@@ -64,7 +64,7 @@ func generateToken(key jwk.Key, licenseKey *types.LicenseKey, issuer string) (st
 		return "", fmt.Errorf("could not build JWT: %w", err)
 	}
 
-	signed, err := jwt.Sign(token, jwt.WithKey(jwa.EdDSA, key))
+	signed, err := jwt.Sign(token, jwt.WithKey(jwa.EdDSA(), key))
 	if err != nil {
 		return "", fmt.Errorf("could not sign JWT: %w", err)
 	}

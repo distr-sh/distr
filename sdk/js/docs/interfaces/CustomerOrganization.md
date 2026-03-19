@@ -44,13 +44,13 @@
 
 ### imageId?
 
-> `optional` **imageId**: `string`
+> `optional` **imageId?**: `string`
 
 ---
 
 ### imageUrl?
 
-> `optional` **imageUrl**: `string`
+> `optional` **imageUrl?**: `string`
 
 ---
 

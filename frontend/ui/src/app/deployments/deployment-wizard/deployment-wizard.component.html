@@ -154,7 +154,10 @@
                       [class.dark:bg-gray-800]="applicationForm.value.applicationId !== app.id">
                       <!-- Application Image -->
                       @if (app.imageUrl) {
-                        <img [src]="app.imageUrl" [alt]="app.name" class="w-12 h-12 mb-2 rounded-lg" />
+                        <img
+                          [attr.src]="app.imageUrl | secureImage | async"
+                          [alt]="app.name"
+                          class="w-12 h-12 mb-2 rounded-lg" />
                       } @else {
                         <div
                           class="w-12 h-12 mb-2 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center">

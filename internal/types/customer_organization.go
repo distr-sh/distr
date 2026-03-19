@@ -16,6 +16,7 @@ const (
 	CustomerOrganizationFeatureDeploymentTargets CustomerOrganizationFeature = "deployment_targets"
 	CustomerOrganizationFeatureArtifacts         CustomerOrganizationFeature = "artifacts"
 	CustomerOrganizationFeatureAlerts            CustomerOrganizationFeature = "alerts"
+	CustomerOrganizationFeatureSupportBundles    CustomerOrganizationFeature = "support_bundles"
 )
 
 func ParseCustomerOrganizationFeature(value string) (CustomerOrganizationFeature, error) {
@@ -26,6 +27,8 @@ func ParseCustomerOrganizationFeature(value string) (CustomerOrganizationFeature
 		return CustomerOrganizationFeatureArtifacts, nil
 	case string(CustomerOrganizationFeatureAlerts):
 		return CustomerOrganizationFeatureAlerts, nil
+	case string(CustomerOrganizationFeatureSupportBundles):
+		return CustomerOrganizationFeatureSupportBundles, nil
 	default:
 		return "", fmt.Errorf("%w: %v", ErrInvalidCustomerOrganizationFeature, value)
 	}

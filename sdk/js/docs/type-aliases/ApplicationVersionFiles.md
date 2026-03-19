@@ -12,16 +12,16 @@
 
 ### baseValuesFile?
 
-> `optional` **baseValuesFile**: `string`
+> `optional` **baseValuesFile?**: `string`
 
 ---
 
 ### composeFile?
 
-> `optional` **composeFile**: `string`
+> `optional` **composeFile?**: `string`
 
 ---
 
 ### templateFile?
 
-> `optional` **templateFile**: `string`
+> `optional` **templateFile?**: `string`

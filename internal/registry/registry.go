@@ -131,10 +131,15 @@ func NewDefault(
 	pool *pgxpool.Pool,
 	mailer mail.Mailer,
 	tracer trace.TracerProvider,
-) http.Handler {
-	return New(
+) (http.Handler, error) {
+	blobHandler, err := s3.NewBlobHandler(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	reg := New(
 		WithLogger(logger),
-		WithBlobHandler(s3.NewBlobHandler(ctx)),
+		WithBlobHandler(blobHandler),
 		WithManifestHandler(db.NewManifestHandler()),
 		WithAuthorizer(authz.NewAuthorizer()),
 		WithAuditor(audit.NewAuditor()),
@@ -146,7 +151,7 @@ func NewDefault(
 			middleware.Sentry,
 			middleware.LoggerCtxMiddleware(logger),
 			middleware.LoggingMiddleware,
-			middleware.ContextInjectorMiddleware(pool, mailer, nil),
+			middleware.ContextInjectorMiddleware(pool, mailer, nil, nil),
 			auth.ArtifactsAuthentication.Middleware,
 			auth.ArtifactsAuthentication.ValidatorMiddleware(func(value authinfo.AuthInfoWithOrganization) error {
 				if value.CurrentOrg() == nil {
@@ -156,6 +161,8 @@ func NewDefault(
 			}),
 		),
 	)
+
+	return reg, nil
 }
 
 // Option describes the available options

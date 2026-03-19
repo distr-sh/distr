@@ -5,7 +5,7 @@
         class="flex flex-col md:flex-row items-stretch md:items-center md:space-x-3 space-y-3 md:space-y-0 justify-between mx-4 py-4 dark:border-gray-700">
         <div class="w-full md:w-1/2">
           <form class="flex items-center" [formGroup]="filterForm">
-            <label for="simple-search" class="sr-only">Search</label>
+            <label for="application-entitlement-search" class="sr-only">Search</label>
             <div class="relative w-full">
               <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 <fa-icon [icon]="faMagnifyingGlass" class="text-gray-500 dark:text-gray-400"></fa-icon>
@@ -14,7 +14,7 @@
                 [formControl]="filterForm.controls.search"
                 autotrim
                 type="text"
-                id="simple-search"
+                id="application-entitlement-search"
                 placeholder="Filter application entitlements"
                 class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
             </div>
@@ -26,10 +26,10 @@
             <button
               (click)="openDrawer(manageEntitlementDrawer)"
               type="button"
-              id="createApplicationButton"
+              id="createApplicationEntitlementButton"
               class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
               <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2"></fa-icon>
-              Add Application Entitlement
+              Create Application Entitlement
             </button>
           }
         </div>
@@ -127,12 +127,12 @@
 <ng-template #manageEntitlementDrawer>
   <div
     @drawerFlyInOut
-    id="manage-license-drawer"
+    id="manage-application-entitlement-drawer"
     class="h-screen p-4 overflow-y-auto bg-white w-160 dark:bg-gray-800"
     tabindex="-1"
-    aria-labelledby="drawer-right-label">
+    aria-labelledby="application-entitlement-drawer-label">
     <h5
-      id="drawer-label"
+      id="application-entitlement-drawer-label"
       class="inline-flex items-center mb-6 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
       Manage Application Entitlement
     </h5>

@@ -16,6 +16,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/mail"
 	"github.com/distr-sh/distr/internal/oidc"
+	"github.com/distr-sh/distr/internal/prometheus"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	sentryhttp "github.com/getsentry/sentry-go/http"
@@ -23,20 +24,24 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/lestrrat-go/jwx/v2/jwt"
+	"github.com/lestrrat-go/jwx/v3/jwt"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
 func ContextInjectorMiddleware(
-	db *pgxpool.Pool, mailer mail.Mailer, oidcer *oidc.OIDCer,
+	db *pgxpool.Pool,
+	mailer mail.Mailer,
+	oidcer *oidc.OIDCer,
+	prometheusCollector *prometheus.DistrCollector,
 ) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 			ctx = internalctx.WithDb(ctx, db)
 			ctx = internalctx.WithMailer(ctx, mailer)
+			ctx = internalctx.WithPrometheusCollector(ctx, prometheusCollector)
 			host, _, err := net.SplitHostPort(r.RemoteAddr)
 			if err != nil {
 				host = r.RemoteAddr

@@ -10,7 +10,7 @@
 
 ### applicationEntitlementId?
 
-> `optional` **applicationEntitlementId**: `string`
+> `optional` **applicationEntitlementId?**: `string`
 
 ---
 
@@ -22,7 +22,7 @@
 
 ### deploymentId?
 
-> `optional` **deploymentId**: `string`
+> `optional` **deploymentId?**: `string`
 
 ---
 
@@ -34,46 +34,46 @@
 
 ### dockerType?
 
-> `optional` **dockerType**: [`DockerType`](../type-aliases/DockerType.md)
+> `optional` **dockerType?**: [`DockerType`](../type-aliases/DockerType.md)
 
 ---
 
 ### envFileData?
 
-> `optional` **envFileData**: `string`
+> `optional` **envFileData?**: `string`
 
 ---
 
 ### forceRestart?
 
-> `optional` **forceRestart**: `boolean`
+> `optional` **forceRestart?**: `boolean`
 
 ---
 
 ### helmOptions?
 
-> `optional` **helmOptions**: [`HelmOptions`](HelmOptions.md)
+> `optional` **helmOptions?**: [`HelmOptions`](HelmOptions.md)
 
 ---
 
 ### ignoreRevisionSkew?
 
-> `optional` **ignoreRevisionSkew**: `boolean`
+> `optional` **ignoreRevisionSkew?**: `boolean`
 
 ---
 
 ### logsEnabled?
 
-> `optional` **logsEnabled**: `boolean`
+> `optional` **logsEnabled?**: `boolean`
 
 ---
 
 ### releaseName?
 
-> `optional` **releaseName**: `string`
+> `optional` **releaseName?**: `string`
 
 ---
 
 ### valuesYaml?
 
-> `optional` **valuesYaml**: `string`
+> `optional` **valuesYaml?**: `string`

@@ -6,6 +6,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/stripe/stripe-go/v84"
@@ -58,19 +59,19 @@ func GetCurrentPeriodEnd(subscription stripe.Subscription) (*time.Time, error) {
 	return result, nil
 }
 
-func GetUserAccountQty(subscription stripe.Subscription) (int64, error) {
+func GetUserAccountQty(subscription stripe.Subscription) (limit.Limit, error) {
 	for _, item := range subscription.Items.Data {
 		if item.Price != nil && slices.Contains(UserPriceKeys, item.Price.LookupKey) {
-			return item.Quantity, nil
+			return limit.Limit(item.Quantity), nil
 		}
 	}
 	return 0, fmt.Errorf("no unit price for UserAccount found")
 }
 
-func GetCustomerOrganizationQty(subscription stripe.Subscription) (int64, error) {
+func GetCustomerOrganizationQty(subscription stripe.Subscription) (limit.Limit, error) {
 	for _, item := range subscription.Items.Data {
 		if item.Price != nil && slices.Contains(CustomerPriceKeys, item.Price.LookupKey) {
-			return item.Quantity, nil
+			return limit.Limit(item.Quantity), nil
 		}
 	}
 	return 0, fmt.Errorf("no unit price for CustomerOrganization found")

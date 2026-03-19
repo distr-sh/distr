@@ -10,8 +10,10 @@ import (
 	"github.com/distr-sh/distr/internal/authn/authinfo"
 	"github.com/distr-sh/distr/internal/authn/authkey"
 	"github.com/distr-sh/distr/internal/authn/jwt"
+	authnSupportBundle "github.com/distr-sh/distr/internal/authn/supportbundle"
 	"github.com/distr-sh/distr/internal/authn/token"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	"go.uber.org/zap"
 )
@@ -69,6 +71,12 @@ var ArtifactsAuthentication = authn.New(
 	),
 )
 
+// SupportBundleAuthentication authenticates collect script requests using
+// a query-param token tied to a specific support bundle.
+var SupportBundleAuthentication = authn.New[*types.SupportBundle](
+	authnSupportBundle.Authenticator(),
+)
+
 func handleUnknownError(w http.ResponseWriter, r *http.Request, err error) {
 	if !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
 		internalctx.GetLogger(r.Context()).Error("error authenticating request", zap.Error(err))
@@ -81,4 +89,5 @@ func init() {
 	Authentication.SetUnknownErrorHandler(handleUnknownError)
 	AgentAuthentication.SetUnknownErrorHandler(handleUnknownError)
 	ArtifactsAuthentication.SetUnknownErrorHandler(handleUnknownError)
+	SupportBundleAuthentication.SetUnknownErrorHandler(handleUnknownError)
 }
