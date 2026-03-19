@@ -5,11 +5,19 @@ import (
 	"errors"
 	"maps"
 	"slices"
+	"time"
 
+	retry "github.com/avast/retry-go/v5"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/docker/compose/v5/pkg/api"
 	mobyClient "github.com/moby/moby/client"
 	"go.uber.org/zap"
+)
+
+var deleteImageRetrier = retry.New(
+	retry.Attempts(3),
+	retry.Delay(time.Second),
+	retry.DelayType(retry.BackOffDelay),
 )
 
 func GetDeploymentImages(ctx context.Context, deployment AgentDeployment) ([]string, error) {
@@ -42,13 +50,18 @@ func DeleteImages(ctx context.Context, images []string) (aggErr error) {
 		logger := logger.With(zap.String("image", image))
 		logger.Debug("trying to delete old image")
 
-		result, err := apiClient.ImageRemove(ctx, image, mobyClient.ImageRemoveOptions{PruneChildren: true})
-		if err != nil {
-			logger.Warn("failed to delete old image", zap.Error(err))
-			aggErr = errors.Join(aggErr, err)
-		} else {
-			logger.Info("deleted old image", zap.Any("result", result))
-		}
+		aggErr = errors.Join(
+			aggErr,
+			deleteImageRetrier.Do(func() error {
+				result, err := apiClient.ImageRemove(ctx, image, mobyClient.ImageRemoveOptions{PruneChildren: true})
+				if err != nil {
+					logger.Warn("failed to delete old image", zap.Error(err))
+				} else {
+					logger.Info("deleted old image", zap.Any("result", result))
+				}
+				return err
+			}),
+		)
 	}
 
 	return
