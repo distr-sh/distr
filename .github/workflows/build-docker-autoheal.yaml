@@ -2,9 +2,9 @@ name: Build Docker Autoheal
 on:
   push:
     branches:
-      - "main"
+      - 'main'
     tags:
-      - "*"
+      - '*'
   pull_request:
 jobs:
   build:
@@ -42,7 +42,7 @@ jobs:
         uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
         id: build-push
         with:
-          context: "{{defaultContext}}:docker-autoheal"
+          context: '{{defaultContext}}:docker-autoheal'
           push: ${{ startsWith(github.ref, 'refs/tags/') }}
           sbom: true
           provenance: true
