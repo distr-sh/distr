@@ -18,9 +18,9 @@
 
 ---
 
-### autohealEnabled
+### autohealEnabled?
 
-> **autohealEnabled**: `boolean`
+> `optional` **autohealEnabled?**: `boolean`
 
 ---
 
