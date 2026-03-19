@@ -62,7 +62,6 @@ func NewBlobHandler(ctx context.Context) (blob.BlobHandler, error) {
 	if s3Config.CreateBucket {
 		if err := ensureBucketExists(ctx, s3Client, s3Config.Bucket, s3Config.Region); err != nil {
 			return nil, err
-
 		}
 	}
 
