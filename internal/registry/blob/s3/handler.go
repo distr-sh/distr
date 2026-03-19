@@ -12,7 +12,7 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/registry/blob"
@@ -42,8 +42,9 @@ var (
 	_ blob.BlobDeleteHandler = &blobHandler{}
 )
 
-func NewBlobHandler(ctx context.Context) blob.BlobHandler {
+func NewBlobHandler(ctx context.Context) (blob.BlobHandler, error) {
 	s3Config := env.RegistryS3Config()
+
 	var s3Client *s3.Client
 	if config, err := awsconfig.LoadDefaultConfig(ctx); err != nil {
 		s3Client = s3.New(s3.Options{}, clientOpts(s3Config))
@@ -57,12 +58,43 @@ func NewBlobHandler(ctx context.Context) blob.BlobHandler {
 			s3Client = s3.NewFromConfig(config, clientOpts(s3Config), ResignForGCP)
 		}
 	}
+
+	if s3Config.CreateBucket {
+		if err := ensureBucketExists(ctx, s3Client, s3Config.Bucket, s3Config.Region); err != nil {
+			return nil, err
+
+		}
+	}
+
 	return &blobHandler{
 		s3Client:        s3Client,
 		s3PresignClient: s3.NewPresignClient(s3Client),
 		allowRedirect:   s3Config.AllowRedirect,
 		bucket:          s3Config.Bucket,
+	}, nil
+}
+
+func ensureBucketExists(ctx context.Context, client *s3.Client, bucket string, region string) error {
+	log := internalctx.GetLogger(ctx).With(zap.String("bucket", bucket))
+	log.Debug("initializing object store bucket")
+
+	_, err := client.CreateBucket(ctx, &s3.CreateBucketInput{
+		Bucket: &bucket,
+		CreateBucketConfiguration: &s3types.CreateBucketConfiguration{
+			LocationConstraint: s3types.BucketLocationConstraint(region),
+		},
+	})
+	if err != nil {
+		if _, ok := errors.AsType[*s3types.BucketAlreadyOwnedByYou](err); ok {
+			log.Debug("bucket already exists")
+			return nil
+		}
+
+		return err
 	}
+
+	log.Info("bucket created")
+	return nil
 }
 
 func clientOpts(s3Config env.S3Config) func(o *s3.Options) {
@@ -285,9 +317,9 @@ func (handler *blobHandler) CompleteSession(ctx context.Context, repo, id string
 	} else if uploadedParts, err := handler.getExistingParts(ctx, uploadKey, uploadID); err != nil {
 		return err
 	} else {
-		completionParts := make([]types.CompletedPart, len(uploadedParts))
+		completionParts := make([]s3types.CompletedPart, len(uploadedParts))
 		for i, part := range uploadedParts {
-			completionParts[i] = types.CompletedPart{PartNumber: part.PartNumber, ETag: part.ETag}
+			completionParts[i] = s3types.CompletedPart{PartNumber: part.PartNumber, ETag: part.ETag}
 		}
 
 		// TODO:
@@ -299,13 +331,13 @@ func (handler *blobHandler) CompleteSession(ctx context.Context, repo, id string
 			Bucket:          &handler.bucket,
 			Key:             &uploadKey,
 			UploadId:        &uploadID,
-			MultipartUpload: &types.CompletedMultipartUpload{Parts: completionParts},
+			MultipartUpload: &s3types.CompletedMultipartUpload{Parts: completionParts},
 		}); err != nil {
 			return err
 		} else if _, err := handler.s3Client.CopyObject(ctx, &s3.CopyObjectInput{
 			Bucket:     &handler.bucket,
-			Key:        util.PtrTo(digest.String()),
-			CopySource: util.PtrTo(path.Join(handler.bucket, uploadKey)),
+			Key:        new(digest.String()),
+			CopySource: new(path.Join(handler.bucket, uploadKey)),
 		}); err != nil {
 			return err
 		} else if _, err := handler.s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
@@ -354,7 +386,7 @@ func (handler *blobHandler) getExistingParts(
 	ctx context.Context,
 	uploadKey string,
 	uploadID string,
-) ([]types.Part, error) {
+) ([]s3types.Part, error) {
 	if result, err := handler.s3Client.ListParts(ctx, &s3.ListPartsInput{
 		Bucket:   &handler.bucket,
 		Key:      &uploadKey,
@@ -371,8 +403,8 @@ func (handler *blobHandler) getExistingParts(
 }
 
 func convertErrNotFound(err error) error {
-	var nf *types.NotFound
-	var nsk *types.NoSuchKey
+	var nf *s3types.NotFound
+	var nsk *s3types.NoSuchKey
 	if errors.As(err, &nf) || errors.As(err, &nsk) {
 		err = fmt.Errorf("%w: %w", blob.ErrNotFound, err)
 	}

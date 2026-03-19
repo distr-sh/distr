@@ -61,6 +61,7 @@ type S3Config struct {
 	SecretAccessKey                        *string
 	UsePathStyle                           bool
 	AllowRedirect                          bool
+	CreateBucket                           bool
 	RequestChecksumCalculationWhenRequired bool
 	ResponseChecksumValidationWhenRequired bool
 	ResignForGCP                           bool

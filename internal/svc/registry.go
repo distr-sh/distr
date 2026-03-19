@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/distr-sh/distr/internal/buildconfig"
+	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/jobs"
 	"github.com/distr-sh/distr/internal/mail"
@@ -56,6 +57,8 @@ func NewDefault(ctx context.Context) (*Registry, error) {
 func newRegistry(ctx context.Context, reg *Registry) (*Registry, error) {
 	reg.logger = createLogger()
 
+	ctx = internalctx.WithLogger(ctx, reg.logger)
+
 	reg.logger.Info("initializing service registry",
 		zap.String("version", buildconfig.Version()),
 		zap.String("commit", buildconfig.Commit()),
@@ -95,7 +98,11 @@ func newRegistry(ctx context.Context, reg *Registry) (*Registry, error) {
 		reg.jobsScheduler = scheduler
 	}
 
-	reg.artifactsRegistry = reg.createArtifactsRegistry(ctx)
+	if artifactRegistry, err := reg.createArtifactsRegistry(ctx); err != nil {
+		return nil, err
+	} else {
+		reg.artifactsRegistry = artifactRegistry
+	}
 
 	if oidcer, err := reg.createOIDCer(ctx, reg.logger); err != nil {
 		return nil, err
@@ -126,7 +133,7 @@ func (r *Registry) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (reg *Registry) createArtifactsRegistry(ctx context.Context) http.Handler {
+func (reg *Registry) createArtifactsRegistry(ctx context.Context) (http.Handler, error) {
 	return registry.NewDefault(
 		ctx,
 		reg.GetLogger().With(zap.String("component", "registry")),
