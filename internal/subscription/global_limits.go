@@ -4,102 +4,96 @@ import (
 	"fmt"
 
 	"github.com/distr-sh/distr/api"
+	"github.com/distr-sh/distr/internal/license"
+	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/types"
 )
 
-type Limit int64
-
 const (
-	Unlimited Limit = -1
+	MaxCustomersPerOrganizationCommunity             = limit.Unlimited
+	MaxCustomersPerOrganizationStarter   limit.Limit = 3
+	MaxCustomersPerOrganizationPro       limit.Limit = 100
+	MaxCustomersPerOrganizationTrial                 = limit.Unlimited
 
-	MaxCustomersPerOrganizationStarter   Limit = 3
-	MaxCustomersPerOrganizationPro       Limit = 100
-	MaxCustomersPerOrganizationUnlimited Limit = Unlimited
+	MaxUsersPerCustomerOrganizationCommunity limit.Limit = 1
+	MaxUsersPerCustomerOrganizationStarter   limit.Limit = 1
+	MaxUsersPerCustomerOrganizationPro       limit.Limit = 10
+	MaxUsersPerCustomerOrganizationTrial     limit.Limit = limit.Unlimited
 
-	MaxUsersPerCustomerOrganizationStarter   Limit = 1
-	MaxUsersPerCustomerOrganizationPro       Limit = 10
-	MaxUsersPerCustomerOrganizationUnlimited Limit = Unlimited
+	MaxDeploymentTargetsPerCustomerOrganizationCommunity limit.Limit = 1
+	MaxDeploymentTargetsPerCustomerOrganizationStarter   limit.Limit = 1
+	MaxDeploymentTargetsPerCustomerOrganizationPro       limit.Limit = 8
+	MaxDeploymentTargetsPerCustomerOrganizationTrial                 = limit.Unlimited
 
-	MaxDeploymentTargetsPerCustomerOrganizationStarter   Limit = 1
-	MaxDeploymentTargetsPerCustomerOrganizationPro       Limit = 8
-	MaxDeploymentTargetsPerCustomerOrganizationUnlimited Limit = Unlimited
-
-	MaxLogExportRowsStarter    Limit = 100
-	MaxLogExportRowsPro        Limit = 10_000
-	MaxLogExportRowsEnterprise Limit = 1_000_000
+	MaxLogExportRowsCommunity limit.Limit = 100
+	MaxLogExportRowsStarter   limit.Limit = 100
+	MaxLogExportRowsPro       limit.Limit = 10_000
+	MaxLogExportRowsTrial     limit.Limit = 10_000
 )
 
-func (l Limit) IsReached(other int64) bool {
-	return l != Unlimited && int64(l) <= other
-}
-
-func (l Limit) IsExceeded(other int64) bool {
-	return l != Unlimited && int64(l) < other
-}
-
-func GetCustomersPerOrganizationLimit(st types.SubscriptionType) Limit {
+func GetCustomersPerOrganizationLimit(st types.SubscriptionType) limit.Limit {
 	switch st {
 	case types.SubscriptionTypeCommunity:
-		return MaxCustomersPerOrganizationUnlimited
+		return MaxCustomersPerOrganizationCommunity
 	case types.SubscriptionTypeTrial:
-		return MaxCustomersPerOrganizationUnlimited
+		return MaxCustomersPerOrganizationTrial
 	case types.SubscriptionTypeStarter:
 		return MaxCustomersPerOrganizationStarter
 	case types.SubscriptionTypePro:
 		return MaxCustomersPerOrganizationPro
 	case types.SubscriptionTypeEnterprise:
-		return MaxCustomersPerOrganizationUnlimited
+		return license.GetLicenseData().MaxCustomersPerOrganization
 	default:
 		panic(fmt.Sprintf("invalid subscription type: %v", st))
 	}
 }
 
-func GetUsersPerCustomerOrganizationLimit(st types.SubscriptionType) Limit {
+func GetUsersPerCustomerOrganizationLimit(st types.SubscriptionType) limit.Limit {
 	switch st {
 	case types.SubscriptionTypeCommunity:
-		return MaxUsersPerCustomerOrganizationStarter
+		return MaxUsersPerCustomerOrganizationCommunity
 	case types.SubscriptionTypeTrial:
-		return MaxUsersPerCustomerOrganizationUnlimited
+		return MaxUsersPerCustomerOrganizationTrial
 	case types.SubscriptionTypeStarter:
 		return MaxUsersPerCustomerOrganizationStarter
 	case types.SubscriptionTypePro:
 		return MaxUsersPerCustomerOrganizationPro
 	case types.SubscriptionTypeEnterprise:
-		return MaxUsersPerCustomerOrganizationUnlimited
+		return license.GetLicenseData().MaxUsersPerCustomerOrganization
 	default:
 		panic(fmt.Sprintf("invalid subscription type: %v", st))
 	}
 }
 
-func GetDeploymentTargetsPerCustomerOrganizationLimit(st types.SubscriptionType) Limit {
+func GetDeploymentTargetsPerCustomerOrganizationLimit(st types.SubscriptionType) limit.Limit {
 	switch st {
 	case types.SubscriptionTypeCommunity:
-		return MaxDeploymentTargetsPerCustomerOrganizationStarter
+		return MaxDeploymentTargetsPerCustomerOrganizationCommunity
 	case types.SubscriptionTypeTrial:
-		return MaxDeploymentTargetsPerCustomerOrganizationUnlimited
+		return MaxDeploymentTargetsPerCustomerOrganizationTrial
 	case types.SubscriptionTypeStarter:
 		return MaxDeploymentTargetsPerCustomerOrganizationStarter
 	case types.SubscriptionTypePro:
 		return MaxDeploymentTargetsPerCustomerOrganizationPro
 	case types.SubscriptionTypeEnterprise:
-		return MaxDeploymentTargetsPerCustomerOrganizationUnlimited
+		return license.GetLicenseData().MaxDeploymentTargetsPerCustomerOrganization
 	default:
 		panic(fmt.Sprintf("invalid subscription type: %v", st))
 	}
 }
 
-func GetLogExportRowsLimit(st types.SubscriptionType) Limit {
+func GetLogExportRowsLimit(st types.SubscriptionType) limit.Limit {
 	switch st {
 	case types.SubscriptionTypeCommunity:
-		return MaxLogExportRowsStarter
+		return MaxLogExportRowsCommunity
 	case types.SubscriptionTypeTrial:
-		return MaxLogExportRowsPro
+		return MaxLogExportRowsTrial
 	case types.SubscriptionTypeStarter:
 		return MaxLogExportRowsStarter
 	case types.SubscriptionTypePro:
 		return MaxLogExportRowsPro
 	case types.SubscriptionTypeEnterprise:
-		return MaxLogExportRowsEnterprise
+		return license.GetLicenseData().MaxLogExportRows
 	default:
 		panic(fmt.Sprintf("invalid subscription type: %v", st))
 	}
@@ -107,8 +101,8 @@ func GetLogExportRowsLimit(st types.SubscriptionType) Limit {
 
 func GetSubscriptionLimits(st types.SubscriptionType) api.SubscriptionLimits {
 	return api.SubscriptionLimits{
-		MaxCustomerOrganizations:        int64(GetCustomersPerOrganizationLimit(st)),
-		MaxUsersPerCustomerOrganization: int64(GetUsersPerCustomerOrganizationLimit(st)),
-		MaxDeploymentsPerCustomerOrg:    int64(GetDeploymentTargetsPerCustomerOrganizationLimit(st)),
+		MaxCustomerOrganizations:        GetCustomersPerOrganizationLimit(st).Value(),
+		MaxUsersPerCustomerOrganization: GetUsersPerCustomerOrganizationLimit(st).Value(),
+		MaxDeploymentsPerCustomerOrg:    GetDeploymentTargetsPerCustomerOrganizationLimit(st).Value(),
 	}
 }

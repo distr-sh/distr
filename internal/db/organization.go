@@ -8,6 +8,7 @@ import (
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/buildconfig"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -70,10 +71,19 @@ func CreateOrganization(ctx context.Context, org *types.Organization) error {
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByName[types.Organization])
 	if err != nil {
 		return err
-	} else {
-		*org = *result
-		return nil
 	}
+
+	RunAfterTx(ctx, func(ctx context.Context) {
+		log := internalctx.GetLogger(ctx)
+		if c := internalctx.GetPrometheusCollector(ctx); c != nil {
+			c.IncOrganizationsTotal()
+		} else {
+			log.Warn("could not update organizations total metric because collector is nil")
+		}
+	})
+
+	*org = *result
+	return nil
 }
 
 func UpdateOrganization(ctx context.Context, org *types.Organization) error {
@@ -161,6 +171,26 @@ func UpdateOrganizationFeaturesWithSubscriptionType(
 	return nil
 }
 
+func UpdateOrganizationEnterpriseLimits(ctx context.Context, maxCustomerOrgs, maxUserAccounts limit.Limit) error {
+	db := internalctx.GetDb(ctx)
+	_, err := db.Exec(
+		ctx,
+		`UPDATE Organization
+		SET subscription_customer_organization_quantity = @max_customer_orgs,
+			subscription_user_account_quantity = @max_user_accounts
+		WHERE subscription_type = @subscription_type`,
+		pgx.NamedArgs{
+			"max_customer_orgs": maxCustomerOrgs,
+			"max_user_accounts": maxUserAccounts,
+			"subscription_type": types.SubscriptionTypeEnterprise,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("could not update Organization: %w", err)
+	}
+	return nil
+}
+
 func GetOrganizationsForUser(ctx context.Context, userID uuid.UUID) ([]types.OrganizationWithUserRole, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `
@@ -205,6 +235,15 @@ func GetAllOrganizationsForSuperAdmin(ctx context.Context) ([]types.Organization
 	} else {
 		return result, nil
 	}
+}
+
+func CountAllOrganizations(ctx context.Context) (res int64, err error) {
+	db := internalctx.GetDb(ctx)
+	err = db.QueryRow(ctx, "SELECT count(id) FROM Organization WHERE deleted_at IS NULL").Scan(&res)
+	if err != nil {
+		err = fmt.Errorf("failed to get organizations count: %w", err)
+	}
+	return
 }
 
 func GetOrganizationByID(ctx context.Context, orgID uuid.UUID) (*types.Organization, error) {
@@ -264,5 +303,15 @@ func SetOrganizationDeletedAtNow(ctx context.Context, orgID uuid.UUID) error {
 	if err != nil {
 		return fmt.Errorf("could not update Organization: %w", err)
 	}
+
+	RunAfterTx(ctx, func(ctx context.Context) {
+		log := internalctx.GetLogger(ctx)
+		if c := internalctx.GetPrometheusCollector(ctx); c != nil {
+			c.DecOrganizationsTotal()
+		} else {
+			log.Warn("could not update organizations total metric because collector is nil")
+		}
+	})
+
 	return nil
 }

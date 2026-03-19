@@ -48,9 +48,13 @@ export class EditorComponent implements OnInit, OnDestroy, ControlValueAccessor 
         history(),
         syntaxHighlighting(
           HighlightStyle.define([
-            // TODO: Improve highlight style
             {tag: tags.comment, class: 'italic text-gray-400'},
-            {tag: tags.propertyName, class: 'text-blue-800 dark:text-blue-300'},
+            {tag: tags.propertyName, class: 'text-blue-500 dark:text-blue-300'},
+            {tag: tags.literal, class: 'text-orange-500 dark:text-orange-300'},
+            {tag: tags.string, class: 'text-green-600 dark:text-green-300'},
+            {tag: tags.bool, class: 'text-purple-400 dark:text-purple-300'},
+            {tag: tags.punctuation, class: 'text-gray-400'},
+            {tag: tags.bracket, class: 'text-orange-600 dark:text-orange-300'},
           ])
         ),
         highlightSpecialChars(),

@@ -12,6 +12,7 @@ import (
 	"github.com/distr-sh/distr/internal/mail"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/oidc"
+	"github.com/distr-sh/distr/internal/prometheus"
 	"github.com/distr-sh/distr/internal/tracers"
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
@@ -57,7 +58,12 @@ Read more about Distr and our use cases at https://distr.sh/docs/
 `
 
 func NewRouter(
-	logger *zap.Logger, db *pgxpool.Pool, mailer mail.Mailer, tracers *tracers.Tracers, oidcer *oidc.OIDCer,
+	logger *zap.Logger,
+	db *pgxpool.Pool,
+	mailer mail.Mailer,
+	tracers *tracers.Tracers,
+	oidcer *oidc.OIDCer,
+	prometheusCollector *prometheus.DistrCollector,
 ) http.Handler {
 	baseRouter := chi.NewRouter()
 	baseRouter.Use(
@@ -87,7 +93,7 @@ func NewRouter(
 			Layout:      "responsive",
 		}),
 	)
-	openapiRouter.Route("/api", ApiRouter(logger, db, mailer, tracers, oidcer))
+	openapiRouter.Route("/api", ApiRouter(logger, db, mailer, tracers, oidcer, prometheusCollector))
 
 	baseRouter.Mount("/internal", InternalRouter())
 	baseRouter.Mount("/status", StatusRouter())
@@ -104,6 +110,7 @@ func ApiRouter(
 	mailer mail.Mailer,
 	tracers *tracers.Tracers,
 	oidcer *oidc.OIDCer,
+	prometheusCollector *prometheus.DistrCollector,
 ) func(r chiopenapi.Router) {
 	return func(r chiopenapi.Router) {
 		r.Use(
@@ -112,7 +119,7 @@ func ApiRouter(
 			middleware.Sentry,
 			middleware.LoggerCtxMiddleware(logger),
 			middleware.LoggingMiddleware,
-			middleware.ContextInjectorMiddleware(db, mailer, oidcer),
+			middleware.ContextInjectorMiddleware(db, mailer, oidcer, prometheusCollector),
 		)
 
 		r.Route("/v1", func(r chiopenapi.Router) {
@@ -165,6 +172,7 @@ func ApiRouter(
 					r.Route("/organizations", handlers.OrganizationsRouter)
 					r.Route("/secrets", handlers.SecretsRouter)
 					r.Route("/settings", handlers.SettingsRouter)
+					r.With(middleware.ProFeature).Route("/support-bundles", handlers.SupportBundlesRouter)
 					r.Route("/tutorial-progress", handlers.TutorialsRouter)
 					r.Route("/license-keys", handlers.LicenseKeysRouter)
 					r.Route("/licenses", handlers.LicensesRouter)
@@ -179,6 +187,7 @@ func ApiRouter(
 				)
 
 				r.Route("/", handlers.AgentRouter)
+				r.Route("/support-bundle-collect", handlers.SupportBundleScriptRouter)
 			})
 		})
 	}

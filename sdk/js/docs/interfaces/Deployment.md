@@ -18,7 +18,7 @@
 
 ### createdAt?
 
-> `optional` **createdAt**: `string`
+> `optional` **createdAt?**: `string`
 
 #### Inherited from
 
@@ -34,13 +34,13 @@
 
 ### dockerType?
 
-> `optional` **dockerType**: [`DockerType`](../type-aliases/DockerType.md)
+> `optional` **dockerType?**: [`DockerType`](../type-aliases/DockerType.md)
 
 ---
 
 ### id?
 
-> `optional` **id**: `string`
+> `optional` **id?**: `string`
 
 #### Inherited from
 
@@ -56,4 +56,4 @@
 
 ### releaseName?
 
-> `optional` **releaseName**: `string`
+> `optional` **releaseName?**: `string`

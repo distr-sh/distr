@@ -2,22 +2,29 @@ package svc
 
 import (
 	"context"
+	"crypto/subtle"
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"syscall"
 
 	"github.com/distr-sh/distr/internal/buildconfig"
+	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/jobs"
 	"github.com/distr-sh/distr/internal/mail"
 	"github.com/distr-sh/distr/internal/migrations"
 	"github.com/distr-sh/distr/internal/oidc"
+	distrprometheus "github.com/distr-sh/distr/internal/prometheus"
 	"github.com/distr-sh/distr/internal/registry"
 	"github.com/distr-sh/distr/internal/routing"
 	"github.com/distr-sh/distr/internal/server"
 	"github.com/distr-sh/distr/internal/tracers"
+	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 )
 
@@ -30,6 +37,8 @@ type Registry struct {
 	tracers           *tracers.Tracers
 	jobsScheduler     *jobs.Scheduler
 	oidcer            *oidc.OIDCer
+	promRegistry      *prometheus.Registry
+	promCollector     *distrprometheus.DistrCollector
 }
 
 func New(ctx context.Context, options ...RegistryOption) (*Registry, error) {
@@ -48,11 +57,16 @@ func NewDefault(ctx context.Context) (*Registry, error) {
 func newRegistry(ctx context.Context, reg *Registry) (*Registry, error) {
 	reg.logger = createLogger()
 
+	ctx = internalctx.WithLogger(ctx, reg.logger)
+
 	reg.logger.Info("initializing service registry",
 		zap.String("version", buildconfig.Version()),
 		zap.String("commit", buildconfig.Commit()),
 		zap.String("edition", buildconfig.Edition()),
 		zap.Bool("release", buildconfig.IsRelease()))
+
+	reg.promCollector = distrprometheus.NewDistrCollector()
+	reg.promRegistry = createPrometheusRegistry(reg.promCollector)
 
 	if tracers, err := reg.createTracer(ctx); err != nil {
 		return nil, err
@@ -84,7 +98,11 @@ func newRegistry(ctx context.Context, reg *Registry) (*Registry, error) {
 		reg.jobsScheduler = scheduler
 	}
 
-	reg.artifactsRegistry = reg.createArtifactsRegistry(ctx)
+	if artifactRegistry, err := reg.createArtifactsRegistry(ctx); err != nil {
+		return nil, err
+	} else {
+		reg.artifactsRegistry = artifactRegistry
+	}
 
 	if oidcer, err := reg.createOIDCer(ctx, reg.logger); err != nil {
 		return nil, err
@@ -115,7 +133,7 @@ func (r *Registry) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (reg *Registry) createArtifactsRegistry(ctx context.Context) http.Handler {
+func (reg *Registry) createArtifactsRegistry(ctx context.Context) (http.Handler, error) {
 	return registry.NewDefault(
 		ctx,
 		reg.GetLogger().With(zap.String("component", "registry")),
@@ -132,11 +150,39 @@ func (r *Registry) GetRouter() http.Handler {
 		r.GetMailer(),
 		r.GetTracers(),
 		r.GetOIDCer(),
+		r.GetPrometheusCollector(),
 	)
 }
 
 func (r *Registry) GetArtifactsRouter() http.Handler {
 	return r.artifactsRegistry
+}
+
+func (r *Registry) GetMetricsRouter() http.Handler {
+	m := chi.NewMux()
+
+	if metricsToken := env.MetricsBearerToken(); metricsToken != nil {
+		expectedToken := []byte(*metricsToken)
+		m.Use(func(h http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				authorization := r.Header.Get("Authorization")
+				if strings.HasPrefix(authorization, "Bearer ") {
+					providedToken := []byte(authorization[len("Bearer "):])
+					if subtle.ConstantTimeCompare(expectedToken, providedToken) == 1 {
+						h.ServeHTTP(w, r)
+						return
+					}
+				}
+
+				w.Header().Set("WWW-Authenticate", "Bearer")
+				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			})
+		})
+	}
+
+	h := promhttp.HandlerFor(r.promRegistry, promhttp.HandlerOpts{})
+	m.Get("/metrics", h.ServeHTTP)
+	return m
 }
 
 func (r *Registry) GetServer() server.Server {
@@ -149,4 +195,16 @@ func (r *Registry) GetArtifactsServer() server.Server {
 	} else {
 		return server.NewNoop()
 	}
+}
+
+func (r *Registry) GetMetricsServer() server.Server {
+	if env.MetricsEnabled() {
+		return server.NewServer(r.GetMetricsRouter(), r.logger.With(zap.String("server", "metrics")))
+	} else {
+		return server.NewNoop()
+	}
+}
+
+func (r *Registry) GetPrometheusCollector() *distrprometheus.DistrCollector {
+	return r.promCollector
 }

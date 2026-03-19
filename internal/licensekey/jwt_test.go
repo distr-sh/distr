@@ -8,9 +8,9 @@ import (
 
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
-	"github.com/lestrrat-go/jwx/v2/jwa"
-	"github.com/lestrrat-go/jwx/v2/jwk"
-	"github.com/lestrrat-go/jwx/v2/jwt"
+	"github.com/lestrrat-go/jwx/v3/jwa"
+	"github.com/lestrrat-go/jwx/v3/jwk"
+	"github.com/lestrrat-go/jwx/v3/jwt"
 	. "github.com/onsi/gomega"
 )
 
@@ -46,14 +46,20 @@ func TestGenerateToken(t *testing.T) {
 	pubKey, err := key.PublicKey()
 	g.Expect(err).ToNot(HaveOccurred())
 
-	parsed, err := jwt.Parse([]byte(token), jwt.WithKey(jwa.EdDSA, pubKey))
+	parsed, err := jwt.Parse([]byte(token), jwt.WithKey(jwa.EdDSA(), pubKey))
 	g.Expect(err).ToNot(HaveOccurred())
 
-	g.Expect(parsed.Subject()).To(Equal(licenseKey.ID.String()))
-	g.Expect(parsed.Issuer()).To(Equal("test-issuer"))
-
-	plan, ok := parsed.Get("plan")
+	subject, ok := parsed.Subject()
 	g.Expect(ok).To(BeTrue())
+	g.Expect(subject).To(Equal(licenseKey.ID.String()))
+
+	issuer, ok := parsed.Issuer()
+	g.Expect(ok).To(BeTrue())
+	g.Expect(issuer).To(Equal("test-issuer"))
+
+	var plan string
+	err = parsed.Get("plan", &plan)
+	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(plan).To(Equal("enterprise"))
 }
 
@@ -73,11 +79,13 @@ func TestGenerateToken_ReservedClaimsStripped(t *testing.T) {
 	g.Expect(err).ToNot(HaveOccurred())
 
 	pubKey, _ := key.PublicKey()
-	parsed, err := jwt.Parse([]byte(token), jwt.WithKey(jwa.EdDSA, pubKey))
+	parsed, err := jwt.Parse([]byte(token), jwt.WithKey(jwa.EdDSA(), pubKey))
 	g.Expect(err).ToNot(HaveOccurred())
 
 	// exp must be the one from licenseKey.ExpiresAt, not the payload override
-	g.Expect(parsed.Expiration().UTC()).To(Equal(licenseKey.ExpiresAt.UTC()))
+	exp, ok := parsed.Expiration()
+	g.Expect(ok).To(BeTrue())
+	g.Expect(exp.UTC()).To(Equal(licenseKey.ExpiresAt.UTC()))
 }
 
 func TestValidatePayload(t *testing.T) {

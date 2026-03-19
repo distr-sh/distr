@@ -50,7 +50,7 @@
 
 ### imageId?
 
-> `optional` **imageId**: `string`
+> `optional` **imageId?**: `string`
 
 #### Inherited from
 
@@ -60,7 +60,7 @@
 
 ### imageUrl?
 
-> `optional` **imageUrl**: `string`
+> `optional` **imageUrl?**: `string`
 
 #### Inherited from
 

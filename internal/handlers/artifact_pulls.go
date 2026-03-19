@@ -16,6 +16,7 @@ import (
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -232,10 +233,10 @@ func exportArtifactPullsHandler() http.HandlerFunc {
 			apiPull := mapping.ArtifactVersionPullToAPI(pull)
 			if err := csvWriter.Write([]string{
 				apiPull.CreatedAt.Format(time.RFC3339),
-				derefOrDefault(apiPull.CustomerOrganizationName),
-				derefOrDefault(apiPull.UserAccountName),
-				derefOrDefault(apiPull.UserAccountEmail),
-				derefOrDefault(apiPull.RemoteAddress),
+				util.PtrDerefOrDefault(apiPull.CustomerOrganizationName),
+				util.PtrDerefOrDefault(apiPull.UserAccountName),
+				util.PtrDerefOrDefault(apiPull.UserAccountEmail),
+				util.PtrDerefOrDefault(apiPull.RemoteAddress),
 				apiPull.Artifact.Name,
 				apiPull.ArtifactVersion.Name,
 			}); err != nil {
@@ -249,11 +250,4 @@ func exportArtifactPullsHandler() http.HandlerFunc {
 			log.Warn("CSV flush error", zap.Error(err))
 		}
 	}
-}
-
-func derefOrDefault(s *string) string {
-	if s != nil {
-		return *s
-	}
-	return ""
 }

@@ -336,8 +336,8 @@ func buildSubscriptionInfo(ctx context.Context, org *types.Organization) (*api.S
 		SubscriptionType:                       org.SubscriptionType,
 		SubscriptionEndsAt:                     org.SubscriptionEndsAt,
 		SubscriptionPeriod:                     org.SubscriptionPeriod,
-		SubscriptionCustomerOrganizationQty:    org.SubscriptionCustomerOrganizationQty,
-		SubscriptionUserAccountQty:             org.SubscriptionUserAccountQty,
+		SubscriptionCustomerOrganizationQty:    org.SubscriptionCustomerOrganizationQty.Value(),
+		SubscriptionUserAccountQty:             org.SubscriptionUserAccountQty.Value(),
 		CurrentUserAccountCount:                usage.userAccountCount,
 		CurrentCustomerOrganizationCount:       usage.customerOrganizationCount,
 		CurrentMaxUsersPerCustomer:             usage.maxUsersPerCustomer,
@@ -349,7 +349,7 @@ func buildSubscriptionInfo(ctx context.Context, org *types.Organization) (*api.S
 		Limits:                                 map[types.SubscriptionType]api.SubscriptionLimits{},
 	}
 
-	for _, st := range types.AllSubscriptionTypes {
+	for _, st := range types.AllSubscriptionTypes() {
 		info.Limits[st] = subscription.GetSubscriptionLimits(st)
 	}
 

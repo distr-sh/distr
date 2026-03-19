@@ -49,7 +49,7 @@ hub:
     - name: REGISTRY_S3_REGION
       value: local
     - name: REGISTRY_S3_ENDPOINT
-      value: http://distr-registry-minio:9000
+      value: http://distr-registry-rustfs-svc:9000
     - name: REGISTRY_S3_ACCESS_KEY_ID
       value: distr
     - name: REGISTRY_S3_SECRET_ACCESS_KEY
@@ -123,16 +123,22 @@ hub:
     #   value:
     # - name: OIDC_MICROSOFT_TENANT_ID # required if OIDC_MICROSOFT_ENABLED
     #   value:
-  #    - name: OIDC_GENERIC_ENABLED
-  #      value: 'true'
-  #    - name: OIDC_GENERIC_ISSUER
-  #      value: 'http://distr-oidc-dex:5556/dex'
-  #    - name: OIDC_GENERIC_CLIENT_ID
-  #      value: 'example-app'
-  #    - name: OIDC_GENERIC_CLIENT_SECRET
-  #      value: 'example-app-secret'
-  #    - name: OIDC_GENERIC_SCOPES
-  #      value: 'foo,bar,baz'
+    # - name: OIDC_GENERIC_ENABLED
+    #   value: 'true'
+    # - name: OIDC_GENERIC_ISSUER
+    #   value: 'http://distr-oidc-dex:5556/dex'
+    # - name: OIDC_GENERIC_CLIENT_ID
+    #   value: 'example-app'
+    # - name: OIDC_GENERIC_CLIENT_SECRET
+    #   value: 'example-app-secret'
+    # - name: OIDC_GENERIC_SCOPES
+    #   value: 'foo,bar,baz'
+    - name: METRICS_ENABLED
+      value: 'true'
+    # - name: METRICS_ADDR
+    #   value: '...'
+    # - name: METRICS_BEARER_TOKEN
+    #   value: '...'
   envFrom: []
 
 # This is for setting Kubernetes Annotations to a Pod.
@@ -160,6 +166,7 @@ service:
   # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
   port: 8080
   artifactsPort: 8585
+  metricsPort: 3000
 
 # This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
 ingress:
@@ -274,21 +281,28 @@ postgresql:
       postgresql: 5432
   image:
     repository: bitnamilegacy/postgresql
+    tag: 17.6.0
 
-minio:
+rustfs:
   enabled: false
-  fullnameOverride: distr-registry-minio
-  rootUser: distr
-  rootPassword: 'distr123' # please change this
-  deploymentUpdate:
-    type: Recreate
-  mode: standalone
-  persistence:
-    size: 20Gi
-  replicas: 1
-  buckets:
-    - name: distr
-      purge: false
+  fullnameOverride: distr-registry-rustfs
+  secret:
+    rustfs:
+      access_key: 'distr'
+      secret_key: 'distr 123' # please change this
+  mode:
+    standalone:
+      enabled: true
+      strategy:
+        type: Recreate
+    distributed:
+      enabled: false
+  storageclass:
+    name: ''
+    dataStorageSize: 20Gi
+    logStorageSize: 10Gi
+  ingress:
+    enabled: false
 
 externalDatabase:
   uri: ''
