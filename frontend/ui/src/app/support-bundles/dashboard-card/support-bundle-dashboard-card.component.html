@@ -1,0 +1,41 @@
+<div
+  class="h-full rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 font-medium text-gray-900 dark:text-white flex flex-col">
+  <div class="mx-4 my-3 flex items-center min-w-0">
+    <div class="min-w-0">
+      <a routerLink="/support-bundles" class="hover:underline">
+        <h3 class="font-bold leading-none truncate" [title]="customerName()">
+          {{ customerName() }}
+        </h3>
+      </a>
+    </div>
+  </div>
+
+  @if (bundles().length > 0) {
+    <hr class="border-gray-200 dark:border-gray-600" />
+    <ul class="overflow-hidden">
+      @for (bundle of bundles(); track bundle.id) {
+        <li
+          class="hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-200 dark:border-gray-600 cursor-pointer">
+          <a [routerLink]="'/support-bundles/' + bundle.id" class="block px-4 py-2">
+            <div class="flex items-center gap-3 text-sm">
+              <div class="flex-1 min-w-0 truncate">
+                {{ bundle.title || bundle.id.substring(0, 8) }}
+              </div>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <span class="text-xs text-gray-500 dark:text-gray-400">{{ bundle.resourceCount }} resources</span>
+                <div class="flex items-center gap-1">
+                  <div class="size-2.5 rounded-full" [ngClass]="statusDotClass(bundle.status)"></div>
+                  <span class="text-xs text-gray-600 dark:text-gray-300 capitalize">{{ bundle.status }}</span>
+                </div>
+              </div>
+            </div>
+          </a>
+        </li>
+      }
+    </ul>
+  } @else {
+    <div class="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm p-4">
+      No support bundles.
+    </div>
+  }
+</div>

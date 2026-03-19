@@ -6,4 +6,5 @@ export * from './customer-organization';
 export * from './deployment';
 export * from './deployment-target';
 export * from './organization-branding';
+export * from './support-bundle';
 export * from './user-account';

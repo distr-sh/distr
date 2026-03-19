@@ -1,5 +1,43 @@
 # Changelog
 
+## [2.14.1](https://github.com/distr-sh/distr/compare/2.14.0...2.14.1) (2026-03-19)
+
+
+### Bug Fixes
+
+* **backend:** prevent startup crash caused by bad database join ([#2042](https://github.com/distr-sh/distr/issues/2042)) ([01321d5](https://github.com/distr-sh/distr/commit/01321d5686faf1174984a42d6cfd779a5d053d04))
+* **deps:** update kubernetes monorepo to v0.35.3 ([#2041](https://github.com/distr-sh/distr/issues/2041)) ([17a10d9](https://github.com/distr-sh/distr/commit/17a10d99722fd11aadd4f4ad7462e8ca88f97d4b))
+* **frontend:** add missing secureImage pipe ([#2033](https://github.com/distr-sh/distr/issues/2033)) ([d029b94](https://github.com/distr-sh/distr/commit/d029b94e53091b7876d30049451f1acb0cb1eca1))
+* **frontend:** don't fetch the tutorial progress if not needed ([#2032](https://github.com/distr-sh/distr/issues/2032)) ([4e8bff2](https://github.com/distr-sh/distr/commit/4e8bff275809e500110709b14a16ecbcd94fad31))
+
+
+### Other
+
+* **deps:** bump google.golang.org/grpc from 1.79.2 to 1.79.3 in the go_modules group across 1 directory ([#2039](https://github.com/distr-sh/distr/issues/2039)) ([4170b91](https://github.com/distr-sh/distr/commit/4170b91c78d1276b07d5d492b405d76fc3975c56))
+* **deps:** update angular monorepo to v21.2.5 ([#2037](https://github.com/distr-sh/distr/issues/2037)) ([8d3aae5](https://github.com/distr-sh/distr/commit/8d3aae55c19832802b9fdeae907574d54f11a1d7))
+* **deps:** update angular-cli monorepo to v21.2.3 ([#2036](https://github.com/distr-sh/distr/issues/2036)) ([29fbc28](https://github.com/distr-sh/distr/commit/29fbc28c74c193a0b13b949b63da4156ba9918cd))
+* **deps:** update dependency @angular/cdk to v21.2.3 ([#2038](https://github.com/distr-sh/distr/issues/2038)) ([f40da74](https://github.com/distr-sh/distr/commit/f40da743ee19064ad7d6364b053fa9dafe2055fe))
+* **deps:** update dependency typedoc-plugin-markdown to v4.11.0 ([#2040](https://github.com/distr-sh/distr/issues/2040)) ([c5178b3](https://github.com/distr-sh/distr/commit/c5178b30fe95807e50ce87bcc5a90e866e0f1646))
+* **deps:** update tailwindcss monorepo to v4.2.2 ([#2034](https://github.com/distr-sh/distr/issues/2034)) ([8953738](https://github.com/distr-sh/distr/commit/89537383c2da7740e857a47b6d64e3cc6c968c58))
+
+## [2.14.0](https://github.com/distr-sh/distr/compare/2.13.0...2.14.0) (2026-03-18)
+
+
+### Features
+
+* support bundels ([#1910](https://github.com/distr-sh/distr/issues/1910)) ([50e2928](https://github.com/distr-sh/distr/commit/50e29282f0a87174417fd08494213dee7efb238f))
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver to v0.148.0 ([#2027](https://github.com/distr-sh/distr/issues/2027)) ([eb6ecdd](https://github.com/distr-sh/distr/commit/eb6ecdd72ffcf761fd9b809cfef6615cfc89fff7))
+
+
+### Other
+
+* **deps:** update dependency stripe to v1.37.8 ([#2026](https://github.com/distr-sh/distr/issues/2026)) ([2652039](https://github.com/distr-sh/distr/commit/26520394878c06df6c7414e89abd31b38cbe38ec))
+* **frontend:** improve syntax highlighting ([#2030](https://github.com/distr-sh/distr/issues/2030)) ([5478914](https://github.com/distr-sh/distr/commit/547891456e2311d9f7456123f8f99f652fd4ad0e))
+
 ## [2.13.0](https://github.com/distr-sh/distr/compare/2.12.0...2.13.0) (2026-03-17)
 
 

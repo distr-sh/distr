@@ -17,6 +17,8 @@ export class FeatureFlagService {
 
   public readonly isNotificationsEnabled$ = this.requireSubscriptionType('trial', 'pro', 'enterprise');
 
+  public readonly isSupportBundlesEnabled$ = this.requireSubscriptionType('trial', 'pro', 'enterprise');
+
   private requireSubscriptionType(...type: SubscriptionType[]) {
     return this.organizationService.get().pipe(map((org) => type.includes(org.subscriptionType)));
   }

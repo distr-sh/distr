@@ -22,10 +22,10 @@
 
 ### createdAt?
 
-> `optional` **createdAt**: `string`
+> `optional` **createdAt?**: `string`
 
 ---
 
 ### id?
 
-> `optional` **id**: `string`
+> `optional` **id?**: `string`

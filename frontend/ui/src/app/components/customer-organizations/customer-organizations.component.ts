@@ -106,6 +106,7 @@ export class CustomerOrganizationsComponent {
     'deployment_targets',
     'alerts',
     'artifacts',
+    'support_bundles',
   ];
 
   protected readonly openCustomerFeaturesDropdownId = signal<string | void>(undefined);
@@ -217,6 +218,8 @@ export class CustomerOrganizationsComponent {
         return 'Artifacts';
       case 'alerts':
         return 'Alerts';
+      case 'support_bundles':
+        return 'Support Bundles';
       default:
         return feature;
     }
