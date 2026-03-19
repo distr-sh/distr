@@ -29,6 +29,7 @@ const (
 		dt.agent_version_id,
 		dt.reported_agent_version_id,
 		dt.metrics_enabled,
+		dt.autoheal_enabled,
 		CASE WHEN dt.resources_cpu_request IS NOT NULL THEN (
 			dt.resources_cpu_request,
 			dt.resources_memory_request,
@@ -186,14 +187,15 @@ func CreateDeploymentTarget(
 
 	db := internalctx.GetDb(ctx)
 	args := pgx.NamedArgs{
-		"name":           dt.Name,
-		"type":           dt.Type,
-		"orgId":          dt.OrganizationID,
-		"namespace":      dt.Namespace,
-		"scope":          dt.Scope,
-		"agentVersionId": dt.AgentVersionID,
-		"metricsEnabled": dt.MetricsEnabled,
-		"customerOrgId":  customerOrgID,
+		"name":            dt.Name,
+		"type":            dt.Type,
+		"orgId":           dt.OrganizationID,
+		"namespace":       dt.Namespace,
+		"scope":           dt.Scope,
+		"agentVersionId":  dt.AgentVersionID,
+		"metricsEnabled":  dt.MetricsEnabled,
+		"autohealEnabled": dt.AutohealEnabled,
+		"customerOrgId":   customerOrgID,
 	}
 
 	if dt.Resources != nil {
@@ -207,11 +209,11 @@ func CreateDeploymentTarget(
 		ctx,
 		`WITH inserted AS (
 			INSERT INTO DeploymentTarget
-			(name, type, organization_id, namespace, scope, agent_version_id, metrics_enabled,
+			(name, type, organization_id, namespace, scope, agent_version_id, metrics_enabled, autoheal_enabled,
 				customer_organization_id, resources_cpu_request, resources_memory_request, resources_cpu_limit,
 				resources_memory_limit)
-			VALUES (@name, @type, @orgId, @namespace, @scope, @agentVersionId, @metricsEnabled, @customerOrgId,
-				@resourcesCpuRequest, @resourcesMemoryRequest, @resourcesCpuLimit, @resourcesMemoryLimit)
+			VALUES (@name, @type, @orgId, @namespace, @scope, @agentVersionId, @metricsEnabled, @autohealEnabled,
+				@customerOrgId, @resourcesCpuRequest, @resourcesMemoryRequest, @resourcesCpuLimit, @resourcesMemoryLimit)
 			RETURNING *
 		)
 		SELECT `+deploymentTargetFullOutputExpr+` FROM inserted dt`+deploymentTargetJoinExpr,

@@ -7,33 +7,33 @@ import (
 	"time"
 )
 
-type helathcheckServer struct {
+type healthcheckServer struct {
 	heartbeatTimestamp       *time.Time
 	heartbeatHealthyDuration time.Duration
 	mut                      sync.RWMutex
 }
 
-func NewHealthcheckServer(d time.Duration) *helathcheckServer {
-	return &helathcheckServer{heartbeatHealthyDuration: d}
+func NewHealthcheckServer(d time.Duration) *healthcheckServer {
+	return &healthcheckServer{heartbeatHealthyDuration: d}
 }
 
-func (h *helathcheckServer) HeartbeatNow() {
+func (h *healthcheckServer) Heartbeat() {
 	h.HeartbeatAt(time.Now())
 }
 
-func (h *helathcheckServer) HeartbeatAt(t time.Time) {
+func (h *healthcheckServer) HeartbeatAt(t time.Time) {
 	h.mut.Lock()
 	defer h.mut.Unlock()
 
 	h.heartbeatTimestamp = &t
 }
 
-func (h *helathcheckServer) IsStale() bool {
+func (h *healthcheckServer) IsStale() bool {
 	return h.heartbeatTimestamp == nil || h.heartbeatTimestamp.Add(h.heartbeatHealthyDuration).Before(time.Now())
 }
 
 // ServeHTTP implements [http.Handler].
-func (h *helathcheckServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *healthcheckServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.mut.RLock()
 	defer h.mut.RUnlock()
 

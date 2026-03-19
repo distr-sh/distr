@@ -102,7 +102,7 @@ loop:
 			break loop
 		}
 
-		health.HeartbeatNow()
+		health.Heartbeat()
 
 		if resource, err := client.Resource(ctx); err != nil {
 			logger.Error("failed to get resource", zap.Error(err))
