@@ -39,8 +39,8 @@ services:
     volumes:
       - 'rustfs:/data/'
     environment:
-      RUSTFS_ACCESS_KEY: distr
-      RUSTFS_SECRET_KEY: distr123
+      RUSTFS_ACCESS_KEY: local
+      RUSTFS_SECRET_KEY: local
 
 volumes:
   postgres:
