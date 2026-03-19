@@ -78,7 +78,7 @@ func ApplyComposeFile(ctx context.Context, deployment api.AgentDeployment) (stri
 	if envFile != nil {
 		composeArgs = append(composeArgs, fmt.Sprintf("--env-file=%v", envFile.Name()))
 	}
-	composeArgs = append(composeArgs, "-f", "-", "up", "-d", "--quiet-pull")
+	composeArgs = append(composeArgs, "-f", "-", "up", "-d", "--quiet-pull", "--remove-orphans")
 
 	cmd := exec.CommandContext(ctx, "docker", composeArgs...)
 	cmd.Stdin = bytes.NewReader(deployment.ComposeFile)
