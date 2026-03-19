@@ -8,3 +8,8 @@ export interface DeploymentLogRecord extends BaseModel {
   severity: string;
   body: string;
 }
+
+export interface DeploymentLogRecordResources {
+  active: string[];
+  archived: string[];
+}

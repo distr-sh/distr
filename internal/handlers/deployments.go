@@ -65,7 +65,7 @@ func DeploymentsRouter(r chiopenapi.Router) {
 		r.Get("/logs/resources", getDeploymentLogsResourcesHandler()).
 			With(option.Description("Get deployment log resources")).
 			With(option.Request(DeploymentIDRequest{})).
-			With(option.Response(http.StatusOK, []string{}))
+			With(option.Response(http.StatusOK, api.DeploymentLogRecordResourcesResponse{}))
 		r.Get("/logs/export", exportDeploymentLogsHandler()).
 			With(option.Description("Export deployment logs")).
 			With(option.Request(struct {

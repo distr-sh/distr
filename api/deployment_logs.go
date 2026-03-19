@@ -14,3 +14,8 @@ type DeploymentLogRecord struct {
 	Severity             string    `json:"severity"`
 	Body                 string    `json:"body"`
 }
+
+type DeploymentLogRecordResourcesResponse struct {
+	Active   []string `json:"active"`
+	Archived []string `json:"archived"`
+}
