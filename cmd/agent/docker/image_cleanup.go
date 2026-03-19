@@ -7,7 +7,7 @@ import (
 	"slices"
 	"time"
 
-	retry "github.com/avast/retry-go/v5"
+	"github.com/avast/retry-go/v5"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/docker/compose/v5/pkg/api"
 	mobyClient "github.com/moby/moby/client"
