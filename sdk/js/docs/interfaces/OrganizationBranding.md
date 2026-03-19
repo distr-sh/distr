@@ -14,7 +14,7 @@
 
 ### createdAt?
 
-> `optional` **createdAt**: `string`
+> `optional` **createdAt?**: `string`
 
 #### Inherited from
 
@@ -24,13 +24,13 @@
 
 ### description?
 
-> `optional` **description**: `string`
+> `optional` **description?**: `string`
 
 ---
 
 ### id?
 
-> `optional` **id**: `string`
+> `optional` **id?**: `string`
 
 #### Inherited from
 
@@ -40,22 +40,22 @@
 
 ### logo?
 
-> `optional` **logo**: `string`
+> `optional` **logo?**: `string`
 
 ---
 
 ### logoContentType?
 
-> `optional` **logoContentType**: `string`
+> `optional` **logoContentType?**: `string`
 
 ---
 
 ### logoFileName?
 
-> `optional` **logoFileName**: `string`
+> `optional` **logoFileName?**: `string`
 
 ---
 
 ### title?
 
-> `optional` **title**: `string`
+> `optional` **title?**: `string`

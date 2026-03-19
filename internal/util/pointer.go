@@ -1,7 +1,8 @@
 package util
 
+// PtrTo creates a pointer to the given value
 func PtrTo[T any](value T) *T {
-	return &value
+	return new(value)
 }
 
 func PtrCopy[T any](ptr *T) *T {

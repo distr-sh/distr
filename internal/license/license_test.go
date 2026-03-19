@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/internal/limit"
-	"github.com/lestrrat-go/jwx/v2/jwa"
-	"github.com/lestrrat-go/jwx/v2/jwk"
-	"github.com/lestrrat-go/jwx/v2/jwt"
+	"github.com/lestrrat-go/jwx/v3/jwa"
+	"github.com/lestrrat-go/jwx/v3/jwk"
+	"github.com/lestrrat-go/jwx/v3/jwt"
 	. "github.com/onsi/gomega"
 )
 
@@ -52,12 +52,12 @@ func signToken(t *testing.T, privKey ed25519.PrivateKey, claims map[string]any) 
 		t.Fatal(err)
 	}
 
-	privJWK, err := jwk.FromRaw(privKey)
+	privJWK, err := jwk.Import(privKey)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	signed, err := jwt.Sign(tok, jwt.WithKey(jwa.EdDSA, privJWK))
+	signed, err := jwt.Sign(tok, jwt.WithKey(jwa.EdDSA(), privJWK))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,13 +115,15 @@ func TestParseAndValidate_AllFields(t *testing.T) {
 	g := NewWithT(t)
 	pub, priv := testKeyPair(t)
 	token := signToken(t, priv, map[string]any{
-		"enf": true,
-		"mo":  10,
-		"mou": 20,
-		"moc": 30,
-		"mcu": 40,
-		"mcd": 50,
-		"mlr": 60,
+		"ld": map[string]any{
+			"enf": true,
+			"mo":  10,
+			"mou": 20,
+			"moc": 30,
+			"mcu": 40,
+			"mcd": 50,
+			"mlr": 60,
+		},
 	})
 
 	got, err := parseAndValidate(pubKeyFunc(pub), token)
@@ -141,8 +143,10 @@ func TestParseAndValidate_PartialClaims_DefaultsForUnspecifiedFields(t *testing.
 	g := NewWithT(t)
 	pub, priv := testKeyPair(t)
 	token := signToken(t, priv, map[string]any{
-		"enf": false,
-		"mo":  5,
+		"ld": map[string]any{
+			"enf": false,
+			"mo":  5,
+		},
 	})
 
 	got, err := parseAndValidate(pubKeyFunc(pub), token)
@@ -162,13 +166,15 @@ func TestParseAndValidate_ZeroLimits(t *testing.T) {
 	g := NewWithT(t)
 	pub, priv := testKeyPair(t)
 	token := signToken(t, priv, map[string]any{
-		"enf": false,
-		"mo":  0,
-		"mou": 0,
-		"moc": 0,
-		"mcu": 0,
-		"mcd": 0,
-		"mlr": 0,
+		"ld": map[string]any{
+			"enf": false,
+			"mo":  0,
+			"mou": 0,
+			"moc": 0,
+			"mcu": 0,
+			"mcd": 0,
+			"mlr": 0,
+		},
 	})
 
 	got, err := parseAndValidate(pubKeyFunc(pub), token)

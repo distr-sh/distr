@@ -11,9 +11,9 @@ import (
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/limit"
 	"github.com/go-viper/mapstructure/v2"
-	"github.com/lestrrat-go/jwx/v2/jwa"
-	"github.com/lestrrat-go/jwx/v2/jwk"
-	"github.com/lestrrat-go/jwx/v2/jwt"
+	"github.com/lestrrat-go/jwx/v3/jwa"
+	"github.com/lestrrat-go/jwx/v3/jwk"
+	"github.com/lestrrat-go/jwx/v3/jwt"
 )
 
 var (
@@ -41,18 +41,9 @@ var (
 	})
 )
 
+const licenseDataClaimName = "ld"
+
 // LicenseData is the parsed private claims from the license key JWT.
-// A JSON encoded license key object looks something like this:
-//
-//	{
-//	  "enf": true,
-//	  "mo": 123,
-//	  "mou": 123,
-//	  "moc": 123,
-//	  "mcu": 123,
-//	  "mcd": 123,
-//	  "mlr": 123
-//	}
 type LicenseData struct {
 	EnforceLimitsOnStartup bool `mapstructure:"enf"`
 
@@ -112,14 +103,20 @@ func parseAndValidate(pubKeySrc func() (jwk.Key, error), licenseKey string) (*Li
 		return nil, errors.New("license key is required")
 	}
 
-	jwt, err := jwt.ParseString(licenseKey, jwt.WithKey(jwa.EdDSA, key))
+	token, err := jwt.ParseString(licenseKey, jwt.WithKey(jwa.EdDSA(), key))
 	if err != nil {
 		return nil, fmt.Errorf("invalid license key: %w", err)
 	}
 
-	licenseData := defaultLicenseData
-	if err := mapstructure.Decode(jwt.PrivateClaims(), &licenseData); err != nil {
+	var licenseDataMap map[string]any
+	if err := token.Get(licenseDataClaimName, &licenseDataMap); err != nil {
 		return nil, fmt.Errorf("invalid license key: %w", err)
 	}
+
+	licenseData := defaultLicenseData
+	if err := mapstructure.Decode(licenseDataMap, &licenseData); err != nil {
+		return nil, fmt.Errorf("invalid license key: %w", err)
+	}
+
 	return &licenseData, nil
 }

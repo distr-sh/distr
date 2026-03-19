@@ -14,7 +14,7 @@
 
 ### createdAt?
 
-> `optional` **createdAt**: `string`
+> `optional` **createdAt?**: `string`
 
 #### Inherited from
 
@@ -24,7 +24,7 @@
 
 ### id?
 
-> `optional` **id**: `string`
+> `optional` **id?**: `string`
 
 #### Inherited from
 
