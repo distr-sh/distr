@@ -12,6 +12,7 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
@@ -22,12 +23,12 @@ func getDeploymentLogsResourcesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		deployment := internalctx.GetDeployment(ctx)
-		if resources, err := db.GetDeploymentLogRecordResources(ctx, deployment.ID); err != nil {
+		if active, archived, err := db.GetDeploymentLogRecordResources(ctx, deployment.ID); err != nil {
 			internalctx.GetLogger(ctx).Error("failed to get log records", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		} else {
-			RespondJSON(w, resources)
+			RespondJSON(w, mapping.DeploymentLogRecordResourcesToAPI(active, archived))
 		}
 	}
 }
