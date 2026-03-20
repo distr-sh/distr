@@ -1,0 +1,28 @@
+---
+import StarlightLayout from '~/layouts/StarlightLayout.astro';
+import CaseStudyCard from '~/components/case-studies/CaseStudyCard.astro';
+import SignUpCta from '~/components/cta/standalone/SignUpCta.astro';
+import NewsletterSection from '~/components/home/NewsletterSection.astro';
+import {caseStudies} from '~/data/caseStudies';
+
+export async function getStaticPaths() {
+  return caseStudies.map(caseStudy => ({
+    params: {slug: caseStudy.slug},
+    props: {caseStudy},
+  }));
+}
+
+const {caseStudy} = Astro.props;
+const {pageTitle, pageDescription} = caseStudy;
+---
+
+<StarlightLayout title={pageTitle} description={pageDescription}>
+  <section class="py-8 md:py-16 lg:py-24 bg-gray-50 dark:bg-gray-800">
+    <div class="container mx-auto px-4">
+      <CaseStudyCard {...caseStudy} />
+    </div>
+  </section>
+  <SignUpCta />
+
+  <NewsletterSection />
+</StarlightLayout>

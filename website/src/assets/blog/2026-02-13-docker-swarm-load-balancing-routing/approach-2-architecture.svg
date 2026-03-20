@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 340" style="max-width: 100%; height: auto;">
+  <defs>
+    <style>
+      .box-blue { fill: #0073aa; stroke: #003653; stroke-width: 2; rx: 6; }
+      .box-accent { fill: #003653; stroke: #00273d; stroke-width: 2; rx: 6; }
+      .box-gray { fill: #6f6f7e; stroke: #5a5a67; stroke-width: 2; rx: 6; }
+      .box-orange { fill: #e65100; stroke: #bf360c; stroke-width: 2; rx: 6; }
+      .box-green { fill: #2e7d32; stroke: #1b5e20; stroke-width: 2; rx: 6; }
+      .text { fill: white; font-family: system-ui, sans-serif; font-size: 13px; font-weight: 600; }
+      .subtitle { fill: #92d1fe; font-family: system-ui, sans-serif; font-size: 10px; }
+      .subtitle-orange { fill: #ffcc80; font-family: system-ui, sans-serif; font-size: 10px; }
+      .subtitle-green { fill: #a5d6a7; font-family: system-ui, sans-serif; font-size: 10px; }
+      .arrow { stroke: #6f6f7e; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .arrow-orange { stroke: #e65100; stroke-width: 2; fill: none; marker-end: url(#arrowhead-orange); }
+      .label { fill: #424249; font-family: system-ui, sans-serif; font-size: 11px; }
+      .network-label { fill: #0073aa; font-family: system-ui, sans-serif; font-size: 10px; font-style: italic; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#6f6f7e" />
+    </marker>
+    <marker id="arrowhead-orange" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#e65100" />
+    </marker>
+  </defs>
+
+  <!-- External Traffic -->
+  <rect class="box-gray" x="40" y="15" width="140" height="40" />
+  <text x="110" y="40" text-anchor="middle" class="text">HTTPS Traffic</text>
+
+  <!-- Let's Encrypt -->
+  <rect class="box-orange" x="480" y="15" width="160" height="40" />
+  <text x="560" y="33" text-anchor="middle" class="text">Let's Encrypt</text>
+  <text x="560" y="47" text-anchor="middle" class="subtitle-orange">ACME HTTP Challenge</text>
+
+  <!-- Traefik -->
+  <rect class="box-accent" x="40" y="90" width="280" height="55" />
+  <text x="180" y="113" text-anchor="middle" class="text">traefik</text>
+  <text x="180" y="130" text-anchor="middle" class="subtitle">Reverse Proxy &amp; SSL Termination</text>
+
+  <!-- Arrow from traffic to Traefik -->
+  <path class="arrow" d="M 110 55 L 110 85"/>
+  <text x="122" y="75" class="label">:443</text>
+
+  <!-- Arrow from Let's Encrypt to Traefik -->
+  <path class="arrow-orange" d="M 480 35 L 325 100"/>
+  <text x="380" y="58" class="label">Auto certificate</text>
+
+  <!-- webapp replicas -->
+  <rect class="box-blue" x="40" y="195" width="130" height="55" />
+  <text x="105" y="218" text-anchor="middle" class="text">webapp</text>
+  <text x="105" y="235" text-anchor="middle" class="subtitle">3 replicas</text>
+
+  <!-- api replicas -->
+  <rect class="box-green" x="200" y="195" width="130" height="55" />
+  <text x="265" y="218" text-anchor="middle" class="text">api</text>
+  <text x="265" y="235" text-anchor="middle" class="subtitle-green">2 replicas</text>
+
+  <!-- postgres -->
+  <rect class="box-gray" x="480" y="195" width="160" height="55" />
+  <text x="560" y="218" text-anchor="middle" class="text">postgres</text>
+  <text x="560" y="235" text-anchor="middle" class="subtitle">Database</text>
+
+  <!-- Arrow Traefik to webapp -->
+  <path class="arrow" d="M 120 145 L 105 190"/>
+  <text x="60" y="170" class="label">Host(`app.example.com`)</text>
+
+  <!-- Arrow Traefik to api -->
+  <path class="arrow" d="M 240 145 L 265 190"/>
+  <text x="265" y="175" class="label">PathPrefix(`/api`)</text>
+
+  <!-- Arrow webapp to postgres -->
+  <path class="arrow" d="M 170 225 L 475 225"/>
+
+  <!-- Arrow api to postgres -->
+  <path class="arrow" d="M 330 225 L 475 225"/>
+
+  <!-- Network labels -->
+  <text x="180" y="290" text-anchor="middle" class="network-label">traefik-public (overlay)</text>
+  <rect x="40" y="280" width="290" height="1" fill="#0073aa" opacity="0.4" />
+  <text x="460" y="290" text-anchor="middle" class="network-label">app-internal (overlay)</text>
+  <rect x="330" y="280" width="310" height="1" fill="#0073aa" opacity="0.4" />
+</svg>

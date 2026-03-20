@@ -1,0 +1,8 @@
+services:
+  web:
+    image: '${WEB_IMAGE:?error}'
+    container_name: '${WEB_NAME:?error}'
+    ports:
+      - '${WEB_PORT:?error}:80'
+    environment:
+      - APP_ENV=${APP_ENV:?error}

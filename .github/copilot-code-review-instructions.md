@@ -2,6 +2,11 @@
 
 This file provides additional context to the code review instructions.
 
+## Keep the website and documentation in sync
+
+- When changes Distr are made, make sure the website (website/) which contains the documentation in (website/docs/)
+  doesn't get out-of-sync
+
 ## Stay focused on the pull request diff
 
 - Only comment on lines and logic that are part of the pull request changes.

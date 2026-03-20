@@ -1,0 +1,64 @@
+---
+title: 'Distr Now Alerts You When Deployments Go Wrong'
+description: 'Distr alerts close the visibility gap for self-hosted customer deployments. Get notified when updates fail, deployments go dark, or apps crash—before your customers tell you.'
+publishDate: 2026-02-16
+lastUpdated: 2026-02-16
+slug: 'distr-alerts'
+authors:
+  - name: 'Louis Weston'
+    role: 'Co-Founder'
+    image: '/src/assets/blog/authors/louis.jpg'
+    linkedIn: https://www.linkedin.com/in/louisnweston/
+    gitHub: https://github.com/thekubernaut
+image: '/src/assets/blog/2026-02-17-distr-alerts/alerts-thumb.png'
+tags:
+  - Features
+  - Releases
+---
+
+import EmbeddedWhitePaperCta from '~/components/cta/embedded/EmbeddedWhitePaperCta.astro';
+
+## The Visibility Gap
+
+For your own application, you've got this figured out. Grafana alerts, PagerDuty, whatever. Something breaks in production, you know about it in minutes.
+
+For [self-hosted customer deployments](/glossary/self-managed-software/)? Nothing. Radio silence unless they open a ticket.
+
+You have all this sophisticated monitoring for your own infrastructure, but the moment your software crosses over to customer-controlled environments, you're flying blind. You find out things are broken when your customer tells you they're broken. Sometimes days later.
+
+You can't SSH into every customer deployment and tail logs. That doesn't scale, and frankly, your customers probably wouldn't let you even if you wanted to.
+
+## What We Built
+
+Alerts in Distr work for both sides:
+
+Distr lets you configure alerts in the [Vendor portal](/docs/product/vendor-portal/). Set them once, they apply everywhere. Or get granular if you want.
+
+For customers that manage and update the [deployments](/docs/product/agents/) themselves, you can enable alerts for them as well so they can configure their own alerts in the [Customer portal](/docs/product/customer-portal/).
+
+This dual approach matters because not all customer relationships look the same. Some of your customers want you monitoring their deployments—they'd rather you catch issues first and fix them proactively. Others prefer to run their own ops and want full control over who gets notified when.
+
+For example, you'll get alerted if an update fails or gets stuck looping, if we lose contact with a deployment (network issues, dead instance, whatever), or if your app's in a crash loop. We filter out normal restarts from successful updates though—no point spamming you about routine operations.
+
+The details on setting this up are in the [alerts documentation](/docs/product/alerts/).
+
+## How It Helps
+
+The main thing is you catch issues before your customer does. That's worth a lot.
+
+We had one customer who didn't realize their deployments were in a crash loop for two days because the app was restarting fast enough that it looked "up" when they checked. With alerts, that would've been caught in the first 10 minutes.
+
+<EmbeddedWhitePaperCta />
+
+## Getting Started
+
+If you're already using Distr, alerts are available now. Vendor settings for your side, customer portal for theirs. Takes about 30 seconds to configure.
+
+If you're not using Distr yet and you're dealing with [software distribution](/glossary/software-distribution-platform/) to [on-prem](/glossary/on-premises-definition/) or customer-controlled infrastructure... well, we should probably talk. [Try it here](https://distr.sh/onboarding).
+
+## Join the Conversation
+
+We'd love to hear your thoughts on this feature! Share your feedback, ideas, or questions:
+
+- Join the [Discord server](https://discord.gg/6qqBSAWZfW)
+- [Book a demo call](https://cal.glasskube.com/team/gk/demo?duration=30)

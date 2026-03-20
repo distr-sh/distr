@@ -1,0 +1,45 @@
+---
+import Layout from '~/layouts/StarlightLayout.astro';
+import {getSortedGlossaryEntries} from '~/utils/glossary';
+
+const entries = await getSortedGlossaryEntries();
+const title = 'Glossary';
+const description =
+  'Comprehensive glossary of cloud-native, Kubernetes, and software distribution terminology';
+---
+
+<Layout title={title} description={description}>
+  <div
+    class="relative overflow-hidden bg-gray-50 dark:bg-slate-900 py-12 sm:py-20">
+    <div class="absolute inset-0 bg-gray-50/80 dark:bg-slate-900/80"></div>
+    <div class="relative mx-auto max-w-7xl px-1 sm:px-8 lg:px-10">
+      <div class="mb-12 text-center">
+        <h1
+          class="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl md:text-6xl mb-4">
+          {title}
+        </h1>
+        <p
+          class="text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+          {description}
+        </p>
+      </div>
+
+      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {
+          entries.map(entry => (
+            <a
+              href={`/glossary/${entry.data.slug}/`}
+              class="group block p-6 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 transition-all duration-200 hover:shadow-lg">
+              <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                {entry.data.title}
+              </h2>
+              <p class="text-gray-600 dark:text-gray-400 text-sm line-clamp-3">
+                {entry.data.description}
+              </p>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</Layout>

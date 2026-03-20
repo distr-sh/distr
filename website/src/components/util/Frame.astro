@@ -1,0 +1,26 @@
+---
+interface Props {
+  title?: string;
+}
+
+const {title = ''} = Astro.props;
+---
+
+<div class="relative group">
+  <div
+    class="absolute -inset-0.5 bg-gradient-to-r from-accent-600 to-accent-900 rounded-lg blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200">
+  </div>
+  <div class="relative bg-gray-100 dark:bg-gray-900 rounded-lg pt-2">
+    <div class="flex items-center justify-between mb-2 px-6">
+      <span class="text-sm font-medium text-gray-600 dark:text-gray-400"
+        >{title}</span
+      >
+      <div class="flex space-x-2">
+        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+        <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+      </div>
+    </div>
+    <slot />
+  </div>
+</div>

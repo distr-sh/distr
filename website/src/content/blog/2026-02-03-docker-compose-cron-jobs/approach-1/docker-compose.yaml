@@ -1,0 +1,23 @@
+services:
+  backend:
+    build: .
+    environment:
+      - MODE=backend
+    ports:
+      - '5000:5000'
+    networks:
+      - app-network
+
+  jobs:
+    build: .
+    environment:
+      - MODE=jobs
+    command: ['busybox', 'crond', '-f', '-L', '/dev/stdout']
+    networks:
+      - app-network
+    depends_on:
+      - backend
+
+networks:
+  app-network:
+    driver: bridge

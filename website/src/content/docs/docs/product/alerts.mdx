@@ -1,0 +1,61 @@
+---
+title: Alerts
+description: Monitor deployments and receive email notifications when they become unhealthy.
+slug: docs/product/alerts
+sidebar:
+  order: 5
+---
+
+import {Aside} from '@astrojs/starlight/components';
+
+Alerts notify selected users by email when a monitored deployment becomes unhealthy.
+This covers scenarios like failed updates, lost agent connectivity, container crashes, or status transitions to **Stale** or **Error**.
+
+<Aside type="note">
+  Alerts apply only to [agent-based deployments](/docs/product/agents/) and are
+  not available for [registry-only usage](/docs/product/registry/). Alerts are a
+  **Pro feature** and require a [Pro subscription](/pricing/).
+</Aside>
+
+## Vendor Alerts and Customer Alerts
+
+By default, alerts are vendor-managed: you configure alert rules and choose who gets notified.
+
+Under **Customers** in the [Vendor Portal](/docs/product/vendor-portal/), you can enable alert management per customer organization (see [Customer Management](/docs/guides/customer-management/)). This supports two scenarios:
+
+**Vendor-managed deployments** — You monitor deployments and receive alerts directly, potentially before the customer notices an issue.
+
+**Customer-managed deployments** — Customers configure their own alerts and choose who in their organization gets notified.
+
+![Alerts configuration in the Vendor Portal](../../../../assets/docs/product/alerts/alerts-dark.png)
+
+## How to Configure Alerts
+
+In the sidebar, navigate to **Agents** > **Alerts**.
+
+1. Click **Create alert configuration**.
+2. Enter a name for the configuration.
+3. Select one or more deployments to monitor.
+4. Select the users who should receive email notifications.
+
+The **Notification history** tab shows previously triggered alerts.
+
+<Aside type="tip">
+  If alert management is enabled for a customer organization (under
+  [**Customers**](/docs/guides/customer-management/)), users in that
+  organization follow the same steps from the [Customer
+  Portal](/docs/product/customer-portal/).
+</Aside>
+
+## When Notifications Are Sent
+
+An email notification is sent when a monitored deployment transitions from a healthy to a degraded state:
+
+| From                       | To                     |
+| -------------------------- | ---------------------- |
+| **Running** or **Healthy** | **Stale** or **Error** |
+
+A recovery notification is also sent when a deployment returns to a healthy state (**Running** or **Healthy**) after being degraded.
+
+For the full list of deployment statuses, see [Deployment Health](/docs/product/agents/#deployment-health).
+For details on how **Running** vs. **Healthy** is determined, see [Healthchecks](/docs/product/agents/#healthchecks).

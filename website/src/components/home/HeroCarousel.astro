@@ -1,0 +1,151 @@
+---
+import ThemedImage from '../util/ThemedImage.astro';
+import {images} from '~/assets';
+import '~/styles/embla.css';
+
+const slides = [
+  {
+    alt: 'Distr Deployment Overview Status Dashboard incl. Logs',
+    caption: 'Deployment Overview Status Dashboard incl. Logs',
+    lightImage: images.distr.deployments.light,
+    darkImage: images.distr.deployments.dark,
+  },
+  {
+    alt: 'Distr OCI registry for self-managed artifact distribution',
+    caption: 'OCI registry for self-managed artifact distribution',
+    lightImage: images.distr.artifacts.light,
+    darkImage: images.distr.artifacts.dark,
+  },
+  {
+    alt: 'Distr Artifact Entitlements allow software vendors to restrict specific tags per customer',
+    caption:
+      'Artifact Entitlements allow software vendors to restrict specific tags per customer',
+    lightImage: images.distr.artifactLicenses.light,
+    darkImage: images.distr.artifactLicenses.dark,
+  },
+  {
+    alt: 'Distr White-labeled Customer Portal for Artifact Downloads',
+    caption: 'White-labeled Customer Portal for Artifact Downloads',
+    lightImage: images.distr.customerPortalArtifacts.light,
+    darkImage: images.distr.customerPortalArtifacts.dark,
+  },
+];
+---
+
+<div class="embla" id="heroCarousel">
+  <div class="embla__viewport overflow-hidden">
+    <div class="embla__container flex">
+      {
+        slides.map(slide => (
+          <div class="embla__slide flex-[0_0_100%] min-w-0">
+            <figure class="m-0">
+              <ThemedImage
+                lightSrc={slide.lightImage}
+                darkSrc={slide.darkImage}
+                alt={slide.alt}
+              />
+              <figcaption class="text-center mt-4 text-sm md:text-base opacity-90">
+                {slide.caption}
+              </figcaption>
+            </figure>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="embla__controls flex flex-col items-center gap-4 mt-6">
+    <div class="embla__buttons flex gap-2">
+      <button
+        class="embla__button embla__button--prev w-12 h-12 rounded-full bg-white/10 border border-white/20 text-white flex items-center justify-center cursor-pointer transition-all duration-300 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed"
+        type="button"
+        aria-label="Previous slide">
+        <svg class="w-6 h-6" viewBox="0 0 24 24">
+          <path
+            d="M15 18l-6-6 6-6"
+            stroke="currentColor"
+            stroke-width="2"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"></path>
+        </svg>
+      </button>
+      <button
+        class="embla__button embla__button--next w-12 h-12 rounded-full bg-white/10 border border-white/20 text-white flex items-center justify-center cursor-pointer transition-all duration-300 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed"
+        type="button"
+        aria-label="Next slide">
+        <svg class="w-6 h-6" viewBox="0 0 24 24">
+          <path
+            d="M9 18l6-6-6-6"
+            stroke="currentColor"
+            stroke-width="2"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"></path>
+        </svg>
+      </button>
+    </div>
+
+    <div class="embla__dots flex gap-2"></div>
+  </div>
+</div>
+
+<script>
+  import EmblaCarousel from 'embla-carousel';
+  import Autoplay from 'embla-carousel-autoplay';
+
+  const emblaNode = document.querySelector(
+    '#heroCarousel .embla__viewport',
+  ) as HTMLElement;
+  if (emblaNode) {
+    const emblaApi = EmblaCarousel(emblaNode, {loop: true}, [
+      Autoplay({delay: 5000}),
+    ]);
+
+    const dotsNode = document.querySelector('.embla__dots') as HTMLElement;
+    const prevBtn = document.querySelector(
+      '.embla__button--prev',
+    ) as HTMLButtonElement;
+    const nextBtn = document.querySelector(
+      '.embla__button--next',
+    ) as HTMLButtonElement;
+
+    // Create dots
+    const slides = emblaApi.slideNodes();
+    slides.forEach((_, index) => {
+      const dot = document.createElement('button');
+      dot.className =
+        'w-3 h-3 rounded-full bg-white/30 border-none cursor-pointer transition-all duration-300 hover:bg-white/50';
+      dot.type = 'button';
+      dot.setAttribute('aria-label', `Go to slide ${index + 1}`);
+      dot.addEventListener('click', () => emblaApi.scrollTo(index));
+      dotsNode.appendChild(dot);
+    });
+
+    const updateDots = () => {
+      const dots = dotsNode.querySelectorAll('button');
+      dots.forEach((dot, index) => {
+        if (index === emblaApi.selectedScrollSnap()) {
+          dot.className =
+            'w-4 h-4 rounded-full bg-white border-none cursor-pointer transition-all duration-300';
+        } else {
+          dot.className =
+            'w-3 h-3 rounded-full bg-white/30 border-none cursor-pointer transition-all duration-300 hover:bg-white/50';
+        }
+      });
+    };
+
+    const updateButtons = () => {
+      prevBtn.disabled = !emblaApi.canScrollPrev();
+      nextBtn.disabled = !emblaApi.canScrollNext();
+    };
+
+    emblaApi.on('select', updateDots);
+    emblaApi.on('select', updateButtons);
+    emblaApi.on('init', updateDots);
+    emblaApi.on('init', updateButtons);
+
+    prevBtn.addEventListener('click', () => emblaApi.scrollPrev());
+    nextBtn.addEventListener('click', () => emblaApi.scrollNext());
+  }
+</script>

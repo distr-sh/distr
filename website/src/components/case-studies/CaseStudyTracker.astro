@@ -1,0 +1,138 @@
+---
+export interface CaseStudy {
+  company: string;
+  slug: string;
+}
+
+export interface Props {
+  caseStudies: CaseStudy[];
+}
+
+const {caseStudies} = Astro.props;
+
+// Don't render if only one or no case studies
+if (caseStudies.length <= 1) {
+  return null;
+}
+---
+
+<aside class="hidden lg:block lg:w-64 flex-shrink-0">
+  <div class="sticky top-24">
+    <div
+      class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-md">
+      <h4
+        class="text-base font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-4">
+        Case Studies
+      </h4>
+      <nav class="space-y-2">
+        {
+          caseStudies.map(caseStudy => (
+            <button
+              data-slug={caseStudy.slug}
+              class="tracker-item w-full text-left px-4 py-3 rounded-lg border border-transparent hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-[#00b5eb] transition-all text-sm text-gray-700 dark:text-gray-300">
+              {caseStudy.company}
+            </button>
+          ))
+        }
+      </nav>
+    </div>
+  </div>
+</aside>
+
+<!-- Mobile version: horizontal scroll at top -->
+<div class="lg:hidden mb-8">
+  <div
+    class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-md">
+    <h4
+      class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-3">
+      Case Studies
+    </h4>
+    <nav class="flex gap-2 overflow-x-auto pb-2">
+      {
+        caseStudies.map(caseStudy => (
+          <button
+            data-slug={caseStudy.slug}
+            class="tracker-item flex-shrink-0 px-4 py-2 rounded-lg border border-transparent hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-[#00b5eb] transition-all text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+            {caseStudy.company}
+          </button>
+        ))
+      }
+    </nav>
+  </div>
+</div>
+
+<script>
+  // Handle smooth scrolling to case studies
+  function setupTrackerNavigation() {
+    const trackerItems = document.querySelectorAll('.tracker-item');
+
+    trackerItems.forEach(item => {
+      item.addEventListener('click', () => {
+        const slug = item.getAttribute('data-slug');
+        if (slug) {
+          const caseStudyCard = document.querySelector(
+            `[data-slug="${slug}"]`,
+          ) as HTMLElement;
+          if (caseStudyCard) {
+            caseStudyCard.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start',
+            });
+          }
+        }
+      });
+    });
+
+    // Track which case study is currently visible
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const slug = entry.target.getAttribute('data-slug');
+            if (slug) {
+              // Remove active class from all items
+              trackerItems.forEach(item => {
+                item.classList.remove(
+                  'bg-[#e6f7fc]',
+                  'dark:bg-[#174c76]',
+                  'border-[#00b5eb]',
+                  'text-[#00b5eb]',
+                  'font-medium',
+                );
+              });
+
+              // Add active class to current item
+              const activeItem = document.querySelector(
+                `.tracker-item[data-slug="${slug}"]`,
+              );
+              if (activeItem) {
+                activeItem.classList.add(
+                  'bg-[#e6f7fc]',
+                  'dark:bg-[#174c76]',
+                  'border-[#00b5eb]',
+                  'text-[#00b5eb]',
+                  'font-medium',
+                );
+              }
+            }
+          }
+        });
+      },
+      {rootMargin: '-20% 0px -60% 0px'},
+    );
+
+    // Observe all case study cards
+    const caseStudyCards = document.querySelectorAll('[data-slug]');
+    caseStudyCards.forEach(card => {
+      if (card.classList.contains('tracker-item')) return; // Skip tracker items themselves
+      observer.observe(card);
+    });
+  }
+
+  // Initialize on page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupTrackerNavigation);
+  } else {
+    setupTrackerNavigation();
+  }
+</script>

@@ -1,0 +1,37 @@
+---
+/**
+ * GitHub Star Button Component
+ *
+ * Displays a GitHub star button with live star count from the GitHub API.
+ * The button uses the official github-buttons library which handles:
+ * - Fetching the current star count
+ * - Theme adaptation (light/dark mode)
+ * - Responsive sizing
+ * - Accessibility
+ *
+ * @see https://github.com/ntkme/github-buttons
+ */
+
+interface Props {
+  repo: string; // Format: "owner/repo"
+  size?: 'large' | 'default';
+}
+
+const {repo, size = 'large'} = Astro.props;
+---
+
+<script>
+  import 'github-buttons/dist/buttons';
+</script>
+
+<a
+  class="github-button"
+  href={`https://github.com/${repo}`}
+  target="_blank"
+  data-color-scheme="no-preference: light; light: light; dark: dark;"
+  data-icon="octicon-star"
+  data-size={size}
+  data-show-count="true"
+  aria-label={`Star ${repo} on GitHub`}>
+  Star
+</a>

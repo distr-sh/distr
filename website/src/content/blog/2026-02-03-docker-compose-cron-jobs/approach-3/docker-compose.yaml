@@ -1,0 +1,29 @@
+services:
+  ofelia:
+    image: mcuadros/ofelia:latest
+    depends_on:
+      - backend
+    command: daemon --docker
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      ofelia.enabled: 'true'
+
+  backend:
+    image: myapp/backend:latest
+    labels:
+      ofelia.enabled: 'true'
+      # job-exec runs command inside the existing backend container
+      ofelia.job-exec.cleanup.schedule: '0 2 * * *'
+      ofelia.job-exec.cleanup.command: 'python /app/jobs/cleanup.py'
+      # job-run spawns a new container for each execution
+      ofelia.job-run.reports.schedule: '0 8 * * *'
+      ofelia.job-run.reports.image: 'myapp/backend:latest'
+      ofelia.job-run.reports.command: 'python /app/jobs/reports.py'
+      ofelia.job-run.reports.network: 'app_network'
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge

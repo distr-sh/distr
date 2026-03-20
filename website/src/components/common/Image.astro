@@ -1,0 +1,75 @@
+---
+import {Image} from 'astro:assets';
+import type {ImageMetadata} from 'astro';
+
+export interface Props {
+  src: ImageMetadata | string;
+  alt: string;
+  class?: string;
+  width?: number;
+  height?: number;
+  widths?: number[];
+  sizes?: string;
+  aspectRatio?: string;
+  layout?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
+  loading?: 'lazy' | 'eager';
+  decoding?: 'async' | 'sync' | 'auto';
+}
+
+const {
+  src,
+  alt,
+  class: className = '',
+  width,
+  height,
+  widths,
+  sizes,
+  aspectRatio,
+  layout = 'cover',
+  loading = 'lazy',
+  decoding = 'async',
+  ...rest
+} = Astro.props;
+
+const aspectRatioStyles = aspectRatio ? {aspectRatio} : {};
+const layoutStyles =
+  layout === 'cover'
+    ? {objectFit: 'cover'}
+    : layout === 'contain'
+      ? {objectFit: 'contain'}
+      : layout === 'fill'
+        ? {objectFit: 'fill'}
+        : layout === 'scale-down'
+          ? {objectFit: 'scale-down'}
+          : {objectFit: 'none'};
+---
+
+{
+  typeof src === 'string' ? (
+    <img
+      src={src}
+      alt={alt}
+      class={className}
+      width={width}
+      height={height}
+      loading={loading}
+      decoding={decoding}
+      style={{...aspectRatioStyles, ...layoutStyles}}
+      {...rest}
+    />
+  ) : (
+    <Image
+      src={src}
+      alt={alt}
+      class={className}
+      width={width || src.width}
+      height={height || src.height}
+      widths={widths}
+      sizes={sizes}
+      loading={loading}
+      decoding={decoding}
+      style={{...aspectRatioStyles, ...layoutStyles}}
+      {...rest}
+    />
+  )
+}

@@ -1,0 +1,238 @@
+---
+import {Icon} from '@astrojs/starlight/components';
+import distr from '~/assets/distr-brand.svg';
+import {Image} from 'astro:assets';
+
+const currentYear = new Date().getFullYear();
+---
+
+<footer
+  class="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+  <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+    {/* Main footer content */}
+    <div class="grid grid-cols-2 gap-8 lg:grid-cols-7">
+      {/* Logo and description */}
+      <div class="col-span-2 lg:col-span-2">
+        <div class="flex flex-col items-start mb-4">
+          <Image src={distr} alt="Distr Logo" class="w-48 mb-2" />
+        </div>
+        <p
+          class="text-sm text-gray-500 dark:text-gray-400 max-w-xs leading-relaxed">
+          The Open Source platform for distributing<br />
+          self-managed software to your customers.<br />
+        </p>
+      </div>
+
+      {/* Product */}
+      <div>
+        <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-4">
+          Product
+        </h3>
+        <ul class="space-y-3 text-sm list-none pl-0">
+          <li>
+            <a
+              href="/docs/product/vendor-portal/"
+              class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors no-underline">
+              Vendor Portal
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/product/customer-portal/"
+              class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors no-underline">
+              Customer Portal
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/product/registry/"
+              class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors no-underline">
+              Registry
+            </a>
+          </li>
+          <li>
+            <a
+              href="/pricing/"
+              class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors no-underline">
+              Pricing
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      {/* Resources */}
+      <div>
+        <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-4">
+          Resources
+        </h3>
+        <ul class="space-y-3 text-sm list-none pl-0">
+          <li>
+            <a
+              href="/blog/"
+              class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors no-underline">
+              Blog
+            </a>
+          </li>
+          <li>
+            <a
+              href="/case-studies/"
+              class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors no-underline">
+              Case Studies
+            </a>
+          </li>
+          <li>
+            <a
+              href="/white-paper/building-blocks/"
+              class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors no-underline">
+              White Paper
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      {/* Compare */}
+      <div>
+        <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-4">
+          Compare
+        </h3>
+        <ul class="space-y-3 text-sm list-none pl-0">
+          <li>
+            <a
+              href="/compare/replicated/"
+              class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors no-underline">
+              Distr vs Replicated
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      {/* Company */}
+      <div>
+        <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-4">
+          Company
+        </h3>
+        <ul class="space-y-3 text-sm list-none pl-0">
+          <li>
+            <a
+              href="/about/"
+              class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors no-underline">
+              About
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://www.workatastartup.com/companies/glasskube"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors no-underline">
+              Careers
+            </a>
+          </li>
+          <li>
+            <a
+              href="/contact/"
+              class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors no-underline">
+              Contact
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://discord.gg/6qqBSAWZfW"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors no-underline">
+              Discord
+            </a>
+          </li>
+          <li>
+            <a
+              href="/privacy-policy/"
+              rel="noopener noreferrer"
+              class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors no-underline">
+              Privacy Policy
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      {/* Legal & Status */}
+      <div>
+        <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-4">
+          Partner
+        </h3>
+        <ul class="space-y-3 text-sm list-none pl-0">
+          <li>
+            <a
+              href="https://www.ycombinator.com/companies/glasskube"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors no-underline">
+              Y Combinator
+            </a>
+          </li>
+        </ul>
+
+        <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-4 mt-8">
+          Distr Status page
+        </h3>
+        <ul class="space-y-3 text-sm list-none pl-0">
+          <li>
+            <a
+              href="https://distrstatus.com/"
+              target="_blank"
+              class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors no-underline">
+              distrstatus.com
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    {/* Bottom section */}
+    <div class="mt-16 pt-8">
+      <div
+        class="flex flex-col-reverse sm:flex-row justify-between items-center">
+        {/* Copyright */}
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-4 sm:mt-0">
+          © {currentYear} Glasskube, Inc.
+        </p>
+
+        {/* Social Links */}
+        <div class="flex space-x-6">
+          <a
+            href="https://x.com/glasskube"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+            <span class="sr-only">X (Twitter)</span>
+            <Icon name="x.com" class="w-5 h-5" />
+          </a>
+          <a
+            href="https://github.com/distr-sh/distr"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+            <span class="sr-only">GitHub</span>
+            <Icon name="github" class="w-5 h-5" />
+          </a>
+          <a
+            href="https://discord.gg/6qqBSAWZfW"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+            <span class="sr-only">Discord</span>
+            <Icon name="discord" class="w-5 h-5" />
+          </a>
+          <a
+            href="https://linkedin.com/company/glasskube"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+            <span class="sr-only">LinkedIn</span>
+            <Icon name="linkedin" class="w-5 h-5" />
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>

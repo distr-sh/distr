@@ -1,0 +1,55 @@
+---
+title: Software License Management
+slug: software-license-management
+description: 'Find out what Software License Management is, why it is important, and how to track software licenses effectively.'
+---
+
+## What is Software License Management?
+
+Software License Management (SLM) refers to the processes, tooling, and systems used by software vendors to control, track, and manage access to software through licenses.
+In practice, this means enabling or disabling access to specific versions, features, or software artifacts based on a customer's entitlement.
+
+It's a key part of how software is packaged and distributed not just an operational requirement, but a mechanism for delivering differentiated value and reducing adoption friction in on-premises or self-hosted environments.
+
+## Why is Software License Management Important?
+
+- **Control Access to Artifacts or full Applications:** Define which customers can access specific artifacts and artifact versions in a registry or fully packaged applications.
+- **Enforce Business Subscription Models:** Support subscription, perpetual, or usage-based models with license enforcement tied to entitlement logic and feature flags.
+- **Protect Intellectual Property:** Ensure software is only used according to the license it gets distributed.
+
+## Software License Management in Modern On-Premises Deployments
+
+As more vendors offer software for on-premises, hybrid, and air-gapped environments, license management systems must adapt.
+Modern license enforcement goes beyond serial keys or cloud checks, it integrates with how software is packaged and distributed.
+
+In platforms like [Distr](/docs/product/license-management/), licensing is embedded directly into the distribution flow, which not only secures access but also improves transparency and control for both vendor and customer.
+
+## Types of Software License Enforcement
+
+Distr's license management is designed for three different distribution needs:
+
+- **Application Entitlement Enforcement:** Control which customers can access specific application versions or receive deployments via agents.
+- **Artifact-Based Entitlement Enforcement:** Restrict access to software artifacts in registries or repositories based on per-customer entitlements.
+- **License Key Enforcement:** Issue signed JWT tokens that your application verifies at runtime to enforce usage limits, seat counts, and feature access.
+
+Further types include:
+
+- **Feature-Based License Enforcement:** Control access to specific features or capabilities within an application.
+
+## Features of Effective License Management Software
+
+Modern license management systems typically include:
+
+- **Granular Access Control:** Gate access to containers, binaries, Helm charts, release versions, patches, based on entitlements.
+- **Enablement Tracking:** Manage and audit what each customer is entitled to and verify if the entitlements are correctly adjudicated.
+- **License Expiration:** Automate and control license expiration and renewal processes.
+- **Offline License Verification:** Ensure that license checks still work in air-gapped or disconnected environments.
+
+## How to Track Software Licenses Effectively
+
+Effective license tracking involves:
+
+- Using a centralized system to manage license data across customers and deployments
+- Automating license assignment and expiration
+- Performing regular internal audits
+- Ensuring license updates are enforced in real-time

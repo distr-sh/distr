@@ -1,0 +1,120 @@
+@layer base, starlight, theme, components, utilities;
+
+@import '@astrojs/starlight-tailwind';
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+@import 'tailwindcss';
+
+@theme {
+  /*Configure your Tailwind theme that will be used by Starlight.*/
+  /*https://starlight.astro.build/guides/css-and-tailwind/#styling-starlight-with-tailwind*/
+  --spacing-108: 27rem;
+  --spacing-128: 32rem;
+  --spacing-144: 36rem;
+  --spacing-160: 40rem;
+  --spacing-180: 45rem;
+  --spacing-200: 50rem;
+  --spacing-256: 64rem;
+
+  --font-sans: var(--font-inter), 'system-ui', 'sans-serif';
+  --font-display:
+    var(--font-poppins), var(--font-inter), 'system-ui', 'sans-serif';
+  --font-mono: 'monospace';
+
+  /* Distr.sh color palette - Accent colors */
+  --color-accent-200: #92d1fe;
+  --color-accent-600: #0073aa;
+  --color-accent-700: #005580;
+  --color-accent-900: #003653;
+  --color-accent-950: #00273d;
+
+  /* Distr.sh color palette - Gray colors */
+  --color-gray-100: oklch(96.7% 0.003 264.542);
+  --color-gray-200: oklch(92.8% 0.006 264.531);
+  --color-gray-300: oklch(87.2% 0.01 258.338);
+  --color-gray-400: oklch(70.7% 0.022 261.325);
+  --color-gray-500: oklch(55.1% 0.027 264.364);
+  --color-gray-600: oklch(44.6% 0.03 256.802);
+  --color-gray-700: oklch(37.3% 0.034 259.733);
+  --color-gray-800: oklch(27.8% 0.033 256.848);
+  --color-gray-900: oklch(21% 0.034 264.665);
+}
+
+/*Add additional Tailwind styles to this file:*/
+/*https://tailwindcss.com/docs/adding-custom-styles#using-custom-css*/
+
+@layer distr {
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+  }
+
+  .distr-content {
+    --sl-content-gap-y: 0 !important;
+  }
+
+  .sl-markdown-content {
+    ul,
+    ol {
+      @apply space-y-1;
+      @apply ml-3;
+      @apply list-inside;
+    }
+
+    ul {
+      @apply list-disc;
+    }
+
+    ol {
+      @apply list-decimal;
+    }
+  }
+
+  /* Remove default list styling for custom lists outside markdown content */
+  ul.list-none li {
+    list-style-type: none;
+  }
+
+  /* Blog post inline code styling */
+  .prose code:not(pre code) {
+    background-color: var(--color-gray-100);
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+  }
+
+  .prose :not(a) > code:not(pre code) {
+    color: var(--color-gray-900);
+  }
+
+  :root[data-theme='dark'] .prose code:not(pre code) {
+    background-color: var(--color-gray-800);
+    border: 1px solid var(--color-gray-700);
+  }
+
+  :root[data-theme='dark'] .prose :not(a) > code:not(pre code) {
+    color: var(--color-gray-100);
+  }
+
+  /* Architecture diagram styling */
+  .architecture-diagram {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin: 2rem 0;
+  }
+
+  .architecture-diagram img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  @media (min-width: 768px) {
+    .architecture-diagram img {
+      width: 75%;
+      max-width: 75%;
+    }
+  }
+}

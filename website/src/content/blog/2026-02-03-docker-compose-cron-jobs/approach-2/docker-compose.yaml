@@ -1,0 +1,16 @@
+x-shared-env: &shared-env
+  ENVIRONMENT: production
+  DATABASE_URL: postgresql://user:password@postgres:5432/myapp
+
+services:
+  backend:
+    image: backend-aio
+    entrypoint: ['/app/app']
+    environment:
+      <<: *shared-env
+
+  jobs:
+    image: backend-aio
+    entrypoint: ['busybox', 'crond', '-f', '-L', '/dev/stdout']
+    environment:
+      <<: *shared-env

@@ -1,0 +1,13 @@
+---
+interface Props {
+  class?: string;
+}
+
+const {class: className = ''} = Astro.props;
+---
+
+<a
+  href="/onboarding/"
+  class={`inline-flex items-center justify-center px-6 py-3 text-base font-medium text-white bg-accent-600 hover:bg-accent-700 border-2 border-accent-600 rounded-lg transition-colors ${className}`}>
+  Start free trial
+</a>

@@ -1,0 +1,21 @@
+---
+import StandaloneLayout from '../layouts/StandaloneLayout.astro';
+import MultiStepForm from '../components/signup/MultiStepForm.astro';
+
+const pageTitle = 'Get Started with Distr - Sign Up for Free';
+const pageDescription =
+  'Sign up for Distr and start distributing your software to self-managed customers. No credit card required. Get instant access to the platform.';
+---
+
+<StandaloneLayout title={pageTitle} description={pageDescription}>
+  <MultiStepForm
+    flowType="get-started"
+    heading="The easiest way to distribute software"
+    subheading="You will gain automatic access to our platform upon completing the form."
+    ctaNote="(No credit card required.)"
+    requirePassword={true}
+    successTitle="Thank you!"
+    successMessage="Please check your mailbox to confirm your email and log into Distr. You can also directly schedule a personal onboarding with a Distr team member."
+    submitButtonText="Complete Sign Up"
+  />
+</StandaloneLayout>

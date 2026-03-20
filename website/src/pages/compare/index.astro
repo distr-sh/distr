@@ -1,0 +1,39 @@
+---
+import Layout from '~/layouts/StarlightLayout.astro';
+import SignUpCta from '~/components/cta/standalone/SignUpCta.astro';
+---
+
+<Layout
+  title="Compare Distr"
+  description="Compare Distr with other software distribution platforms">
+  <div class="mx-auto max-w-7xl px-1 sm:px-8 lg:px-10">
+    <section class="py-12 sm:py-20">
+      <div class="max-w-4xl mx-auto text-center">
+        <h1
+          class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 dark:text-white mb-6">
+          Compare Distr
+        </h1>
+        <p
+          class="text-lg sm:text-xl text-gray-600 dark:text-gray-400 mb-12 leading-relaxed">
+          See how Distr compares to other software distribution platforms
+        </p>
+
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <a
+            href="/compare/replicated/"
+            class="block p-6 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-400 transition-colors no-underline">
+            <h2
+              class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              Distr vs Replicated
+            </h2>
+            <p class="text-gray-600 dark:text-gray-400">
+              Compare Distr with Replicated, a mature software distribution
+              platform
+            </p>
+          </a>
+        </div>
+      </div>
+    </section>
+  </div>
+  <SignUpCta />
+</Layout>

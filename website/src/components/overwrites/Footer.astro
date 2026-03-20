@@ -1,0 +1,67 @@
+---
+import EditLink from '@astrojs/starlight/components/EditLink.astro';
+import LastUpdated from '@astrojs/starlight/components/LastUpdated.astro';
+import Pagination from '@astrojs/starlight/components/Pagination.astro';
+import DistrFooter from '../DistrFooter.astro';
+
+const {entry} = Astro.locals.starlightRoute;
+const isSplashTemplate = entry.data.template === 'splash';
+const currentYear = new Date().getFullYear();
+---
+
+<footer class="sl-flex">
+  {
+    !isSplashTemplate && (
+      <>
+        <div class="meta sl-flex">
+          <EditLink />
+          <LastUpdated />
+        </div>
+        <Pagination />
+        <div class="kudos sl-flex">© {currentYear} Glasskube, Inc.</div>
+      </>
+    )
+  }
+  {isSplashTemplate && <DistrFooter />}
+</footer>
+
+<style>
+  @layer starlight.core {
+    footer {
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .meta {
+      gap: 0.75rem 3rem;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-top: 3rem;
+      font-size: var(--sl-text-sm);
+      color: var(--sl-color-gray-3);
+    }
+
+    .meta > :global(p:only-child) {
+      margin-inline-start: auto;
+    }
+
+    .kudos {
+      align-items: center;
+      gap: 0.5em;
+      margin: 1.5rem auto;
+      font-size: var(--sl-text-xs);
+      text-decoration: none;
+      color: var(--sl-color-gray-3);
+    }
+
+    .kudos:hover {
+      color: var(--sl-color-white);
+    }
+  }
+
+  @layer starlight.components {
+    .kudos :global(svg) {
+      color: var(--sl-color-orange);
+    }
+  }
+</style>

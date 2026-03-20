@@ -1,0 +1,24 @@
+---
+import HeroSection from '~/components/home/HeroSection.astro';
+import MetricsSection from '../components/home/MetricsSection.astro';
+import FeaturesSection from '../components/home/FeaturesSection.astro';
+import ProductsSection from '../components/home/ProductsSection.astro';
+import VideoSection from '../components/home/VideoSection.astro';
+import TestimonialsSection from '../components/home/TestimonialsSection.astro';
+import SignUpCta from '~/components/cta/standalone/SignUpCta.astro';
+import NewsletterSection from '../components/home/NewsletterSection.astro';
+import StarlightLayout from '../layouts/StarlightLayout.astro';
+---
+
+<StarlightLayout
+  title="Distribute your application to self-managed customers - Distr"
+  description="Distr is an open-source software distribution platform that helps DevOps teams deploy PoCs quickly and securely into customer-controlled environments.">
+  <HeroSection />
+  <MetricsSection />
+  <FeaturesSection />
+  <ProductsSection />
+  <VideoSection />
+  <TestimonialsSection />
+  <SignUpCta />
+  <NewsletterSection />
+</StarlightLayout>

@@ -1,0 +1,21 @@
+# Set environment variables at the top of crontab
+# These are available to all cron jobs
+ENVIRONMENT=$ENVIRONMENT
+DATABASE_URL=$DATABASE_URL
+
+# ┌───────────── minute (0-59)
+# │ ┌───────────── hour (0-23)
+# │ │ ┌───────────── day of month (1-31)
+# │ │ │ ┌───────────── month (1-12)
+# │ │ │ │ ┌───────────── day of week (0-6) (Sunday to Saturday)
+# │ │ │ │ │
+# * * * * * command
+
+# Method 1: Use environment variables set at the top
+*/5 * * * * /usr/local/bin/job >> /proc/1/fd/1 2>&1
+
+# Method 2: Set environment variable inline before the command
+*/10 * * * * ENVIRONMENT=staging /usr/local/bin/job >> /proc/1/fd/1 2>&1
+
+# Method 3: Load environment from a file and execute
+# */15 * * * * . /app/.env && /usr/local/bin/job >> /proc/1/fd/1 2>&1
