@@ -9,6 +9,8 @@ on:
     tags:
       - '*'
   pull_request:
+    paths:
+      - sdk/**
 
 jobs:
   build:

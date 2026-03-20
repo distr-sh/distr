@@ -8,7 +8,11 @@ on:
       - 'main'
     tags:
       - '*'
+    paths-ignore:
+      - 'website/**'
   pull_request:
+    paths-ignore:
+      - 'website/**'
 
 jobs:
   build-agent:

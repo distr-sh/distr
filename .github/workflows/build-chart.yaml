@@ -9,6 +9,8 @@ on:
     tags:
       - '*'
   pull_request:
+    paths:
+      - deploy/charts/**
   workflow_dispatch:
     inputs:
       publish:
