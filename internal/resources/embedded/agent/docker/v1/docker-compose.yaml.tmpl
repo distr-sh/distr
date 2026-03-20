@@ -22,9 +22,11 @@ services:
       DISTR_REGISTRY_PLAIN_HTTP: '{{ .registryPlainHttp }}'
       {{- end }}
       HOST_DOCKER_CONFIG_DIR: ${HOST_DOCKER_CONFIG_DIR-${HOME}/.docker}
+      HOST_ROOT_DIR: /hostfs
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - scratch:/scratch
       - ${HOST_DOCKER_CONFIG_DIR-${HOME}/.docker}:/root/.docker:ro
+      - /:/hostfs:ro,rslave
 volumes:
   scratch:

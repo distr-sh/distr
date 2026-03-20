@@ -1,10 +1,17 @@
 package main
 
 import (
+	"bufio"
 	"context"
+	"maps"
+	"os"
+	"path"
+	"slices"
+	"strings"
 
 	"github.com/distr-sh/distr/api"
 	hmr "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver"
+	"github.com/shirou/gopsutil/v4/disk"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/consumer"
@@ -143,6 +150,73 @@ func startMetrics(ctx context.Context) {
 	if err != nil {
 		logger.Error("failed to start metrics", zap.Error(err))
 	}
+
+	if dm, err := diskMetrics(ctx); err != nil {
+		logger.Error("disk metrics error", zap.Error(err))
+	} else {
+		logger.Info("got disk metrics", zap.Any("dm", dm))
+	}
+}
+
+type diskMetric struct {
+	Device     string
+	Path       string
+	FsType     string
+	BytesTotal uint64
+	BytesUsed  uint64
+}
+
+func diskMetrics(ctx context.Context) ([]diskMetric, error) {
+	hostRoot := os.Getenv("HOST_ROOT_DIR")
+	procMountsPath := path.Join(hostRoot, "/proc/mounts")
+	procMountsFile, err := os.Open(procMountsPath)
+	if err != nil {
+		return nil, err
+	}
+	defer procMountsFile.Close()
+
+	procMounts := bufio.NewScanner(procMountsFile)
+
+	result := make(map[string]diskMetric)
+	for procMounts.Scan() {
+		line := procMounts.Text()
+		if !strings.HasPrefix(line, "/dev/") {
+			continue
+		}
+
+		parts := strings.SplitN(line, " ", 3)
+		if len(parts) < 2 {
+			continue
+		}
+
+		device := parts[0]
+		mountPath := parts[1]
+
+		if !strings.HasPrefix(mountPath, hostRoot) {
+			continue
+		}
+
+		usage, err := disk.UsageWithContext(ctx, mountPath)
+		if err != nil {
+			logger.Warn("failed to get usage", zap.String("path", mountPath), zap.Error(err))
+			continue
+		}
+
+		trimmedPath := path.Join("/", strings.TrimPrefix(mountPath, hostRoot))
+		metric, ok := result[device]
+		if !ok {
+			metric = diskMetric{Device: device, Path: trimmedPath, FsType: usage.Fstype, BytesTotal: usage.Total, BytesUsed: usage.Used}
+		} else if len(metric.Path) > len(trimmedPath) {
+			metric.Path = trimmedPath
+		}
+		result[device] = metric
+	}
+
+	if err := procMounts.Err(); err != nil {
+		return nil, err
+	}
+
+	return slices.Collect(maps.Values(result)), nil
 }
 
 func stopMetrics(ctx context.Context) {
