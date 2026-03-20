@@ -1,0 +1,133 @@
+---
+title: Logs & Metrics
+description: Monitor deployment health with agent logs, container logs, deployment status indicators, and host metrics collection in Distr.
+slug: docs/platform/logs-and-metrics
+sidebar:
+  order: 3
+---
+
+import {Aside} from '@astrojs/starlight/components';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import agentContLogsDark from '~/assets/docs/product/deployment-agents/container-logs-dark.png';
+import agentContLogsLight from '~/assets/docs/product/deployment-agents/container-logs-light.png';
+import agentContLogsEnableLight from '~/assets/docs/product/deployment-agents/enable-cont-logs-light.png';
+import agentContLogsEnableDark from '~/assets/docs/product/deployment-agents/enable-cont-logs-dark.png';
+
+Distr gives you three layers of observability for every deployment target: **status indicators** that show health at a glance, **logs** that let you dig into what happened, and **metrics** that track resource usage over time.
+
+## Deployment Target Status
+
+Every deployment target shows a colored dot to the left of its name in the Deployments view. This status is always on — there is nothing to enable.
+
+The Distr agent reports its health every 5 seconds, so the status reflects near-real-time connectivity:
+
+- ⚫ **Not connected** — The agent has never connected, or credentials have been invalidated.
+- 🟢 **Connected** — The agent is actively reporting.
+- 🟡 **Stale** — The agent was connected before but has not reported in the last 60 seconds. Your deployments may still be running; Distr has simply lost contact with the agent. Only in this state can you reconnect by generating new credentials from the **⋮** menu.
+
+## Deployment Status
+
+Each deployment within a target also has its own status indicator. This tells you whether the application itself is healthy, not just whether the agent is reachable:
+
+- ⚫ **No status** — The agent has not reported anything for this deployment yet.
+- 🔴 **Error** — Something is wrong. Healthchecks are failing or the deployment encountered an error. Check the status logs for details.
+- 🟡 **Stale** — The agent has not reported this deployment's health in the last 60 seconds.
+- 🔵 **Progressing** — The agent is installing or upgrading the deployment, or containers are still starting up.
+- <strong class="text-green-500 text-xl leading-none ml-0.5">O</strong>
+  **Running** — The deployment is running but no healthchecks are configured.
+- 🟢 **Healthy** — The deployment is running and all healthchecks are passing.
+
+### Healthchecks
+
+<Aside type="caution" title="Docker Agent Update Required">
+  Docker healthcheck reporting requires the Distr platform and Docker Agent
+  version 2.7.0 or higher.
+</Aside>
+
+Configure healthchecks so Distr can distinguish between **Running** (no checks configured) and **Healthy** (checks passing). Without them, a deployment that starts but serves errors will still show as Running.
+
+- **Docker deployments**: Add a [healthcheck](https://docs.docker.com/reference/compose-file/services/#healthcheck) to your service definition in the Compose file.
+- **Kubernetes deployments**: Configure [container probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/) (liveness, readiness, or startup probes).
+
+## Agent Logs
+
+Agent logs show the raw output from the Distr agent process itself — connection events, deployment reconciliation cycles, errors, and status reports. These logs belong to the **deployment target**, not to any individual deployment.
+
+To view them:
+
+1. Find the deployment target in the Deployments view.
+2. Click the **⋮** (vertical ellipsis) menu in the top-right of the deployment target card.
+3. Select **Agent Logs**.
+
+The log viewer shows a timestamped stream of agent activity. This is the first place to look when a deployment target shows an unexpected status or stops reporting.
+
+<Aside type="tip">
+  Agent logs are always available — they do not need to be enabled. As long as
+  the agent has connected at least once, you can view its logs.
+</Aside>
+
+## Container Logs
+
+Container logs show the output from your application containers. Unlike agent logs, container logs are **not enabled by default** — you activate them per deployment.
+
+### Enabling Container Logs
+
+1. In the Deployments view, find the deployment you want to monitor.
+2. Click the **⋮** menu on the deployment.
+3. Select **Enable log collection**.
+
+<ThemedImage
+  lightSrc={agentContLogsEnableLight}
+  darkSrc={agentContLogsEnableDark}
+  alt="Enable container log collection"
+/>
+
+The first logs should appear within 30 seconds. Once enabled, logs are collected and updated every 30 seconds, providing near-real-time visibility into your application's output.
+
+<ThemedImage
+  lightSrc={agentContLogsLight}
+  darkSrc={agentContLogsDark}
+  alt="Container log viewer"
+/>
+
+<Aside type="note">
+  Your application must actually produce logs to stdout/stderr. If it doesn't,
+  the container logs tab won't appear even when collection is enabled.
+</Aside>
+
+To disable log collection, open the same **⋮** menu and select **Disable log collection**.
+
+## Metrics
+
+Metrics give you visibility into the resource usage of the host or cluster running your deployments. Metrics collection can be toggled per deployment target.
+
+### Enabling Metrics
+
+1. Navigate to the deployment target in the Deployments view.
+2. Click the **⋮** menu and select **Edit**.
+3. Enable the metrics toggle.
+
+Once enabled, the agent scrapes and reports metrics every 30 seconds.
+
+### Collected Metrics
+
+The following metrics are collected for both Docker and Kubernetes deployment targets:
+
+| Metric           | Description                                                                             |
+| ---------------- | --------------------------------------------------------------------------------------- |
+| **CPU cores**    | Total number of CPU cores on the host (Docker) or across all cluster nodes (Kubernetes) |
+| **CPU usage**    | Current overall CPU usage as a percentage                                               |
+| **Memory**       | Total memory on the host or across all cluster nodes                                    |
+| **Memory usage** | Current overall memory usage as a percentage                                            |
+
+<Aside type="note" title="Kubernetes Requirements">
+  Kubernetes metrics require
+  [`metrics-server`](https://github.com/kubernetes-sigs/metrics-server) to be
+  installed in the cluster, and the agent must be cluster-scoped since it needs
+  access to node metrics resources.
+</Aside>
+
+<Aside type="tip" title="Coming Soon: Disk Space">
+  Disk space monitoring is on the roadmap and will be added to the metrics
+  collection in a future release.
+</Aside>

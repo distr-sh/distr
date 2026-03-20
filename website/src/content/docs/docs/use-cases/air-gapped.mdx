@@ -1,7 +1,7 @@
 ---
 title: Air-Gapped Deployments
 description: Deploy your software to highly secure environments with no internet access using physical media transfers or IP whitelisting.
-slug: docs/use-cases/air-gapped-deployments
+slug: docs/use-cases/air-gapped
 sidebar:
   order: 4
 ---
@@ -38,13 +38,13 @@ Distr offers two approaches to support these environments:
       and the Distr's IP addresses can be whitelisted for secure access.
     </Aside>
     <Steps>
-    1. Set Up Your [Registry](/docs/guides/container-registry/)
-    2. Create Your [Application](/docs/guides/application/)
-    3. White-label the [Customer portal](/docs/product/branding/)
-    4. Onboard your first [customer](/docs/product/rbac/#inviting-customer-organization-users)
+    1. Set Up Your [Registry](/docs/guides/push-to-registry/)
+    2. Create Your [Application](/docs/guides/create-application/)
+    3. White-label the [Customer portal](/docs/platform/branding/)
+    4. Onboard your first [customer](/docs/platform/rbac/#inviting-customer-organization-users)
     5. Request IP Allowlist for Customer Access
-    6. Customer creates a [Personal Access token](/docs/integrations/personal-access-token/)
-    7. Customer can [access and pull](/docs/guides/container-registry-for-end-customers/#registry-quickstart-from-the-customer-portal) your private artifacts
+    6. Customer creates a [Personal Access token](/docs/integrations/access-tokens/)
+    7. Customer can [access and pull](/docs/guides/customer-registry-access/#registry-quickstart-from-the-customer-portal) your private artifacts
     </Steps>
   </TabItem>
 
@@ -54,7 +54,7 @@ Distr offers two approaches to support these environments:
       connectivity, using cryptographically verified physical transfers instead.
     </Aside>
     <Steps>
-    1. End-customer [self hosts Distr](/docs/self-hosting/getting-started/) in their internal environment
+    1. End-customer [self hosts Distr](/docs/self-hosting/overview/) in their internal environment
     2. Vendors deliver media to customer environment to be deployed internally via Distr
     3. Reach out to support@disr.sh for more detailed information of how Distr can enable this end-customer use case
     </Steps>
