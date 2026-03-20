@@ -118,12 +118,20 @@ func startMetrics(ctx context.Context) {
 		logger.Debug("cpu usage", zap.Any("usage", usage), zap.Any("cores", cores))
 		logger.Debug("memory usage", zap.Any("usage", memoryUsed), zap.Any("total", memoryTotal))
 
-		if err := client.ReportMetrics(ctx, api.AgentDeploymentTargetMetrics{
+		reportMetrics := api.AgentDeploymentTargetMetrics{
 			CPUCoresMillis: cores * 1000,
 			CPUUsage:       usage,
 			MemoryBytes:    memoryTotal,
 			MemoryUsage:    memoryUsed,
-		}); err != nil {
+		}
+
+		if dm, err := diskMetrics(ctx); err != nil {
+			logger.Warn("failed to collect disk metrics", zap.Error(err))
+		} else {
+			reportMetrics.DiskMetrics = dm
+		}
+
+		if err := client.ReportMetrics(ctx, reportMetrics); err != nil {
 			logger.Error("failed to report metrics", zap.Error(err))
 			return err
 		}
@@ -150,23 +158,9 @@ func startMetrics(ctx context.Context) {
 	if err != nil {
 		logger.Error("failed to start metrics", zap.Error(err))
 	}
-
-	if dm, err := diskMetrics(ctx); err != nil {
-		logger.Error("disk metrics error", zap.Error(err))
-	} else {
-		logger.Info("got disk metrics", zap.Any("dm", dm))
-	}
 }
 
-type diskMetric struct {
-	Device     string
-	Path       string
-	FsType     string
-	BytesTotal uint64
-	BytesUsed  uint64
-}
-
-func diskMetrics(ctx context.Context) ([]diskMetric, error) {
+func diskMetrics(ctx context.Context) ([]api.AgentDiskMetric, error) {
 	hostRoot := os.Getenv("HOST_ROOT_DIR")
 	procMountsPath := path.Join(hostRoot, "/proc/mounts")
 	procMountsFile, err := os.Open(procMountsPath)
@@ -177,7 +171,7 @@ func diskMetrics(ctx context.Context) ([]diskMetric, error) {
 
 	procMounts := bufio.NewScanner(procMountsFile)
 
-	result := make(map[string]diskMetric)
+	result := make(map[string]api.AgentDiskMetric)
 	for procMounts.Scan() {
 		line := procMounts.Text()
 		if !strings.HasPrefix(line, "/dev/") {
@@ -205,7 +199,7 @@ func diskMetrics(ctx context.Context) ([]diskMetric, error) {
 		trimmedPath := path.Join("/", strings.TrimPrefix(mountPath, hostRoot))
 		metric, ok := result[device]
 		if !ok {
-			metric = diskMetric{Device: device, Path: trimmedPath, FsType: usage.Fstype, BytesTotal: usage.Total, BytesUsed: usage.Used}
+			metric = api.AgentDiskMetric{Device: device, Path: trimmedPath, FsType: usage.Fstype, BytesTotal: int64(usage.Total), BytesUsed: int64(usage.Used)}
 		} else if len(metric.Path) > len(trimmedPath) {
 			metric.Path = trimmedPath
 		}
