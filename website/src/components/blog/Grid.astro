@@ -1,0 +1,14 @@
+---
+import Item from './GridItem.astro';
+import type {Post} from '~/types';
+
+export interface Props {
+  posts: Post[];
+}
+
+const {posts} = Astro.props;
+---
+
+<div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+  {posts.map(post => <Item post={post.data} />)}
+</div>

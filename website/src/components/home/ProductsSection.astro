@@ -1,0 +1,61 @@
+---
+import ThemedImage from '../util/ThemedImage.astro';
+import SignupButton from '~/components/buttons/SignupButton.astro';
+import {images} from '~/assets/index';
+
+const products = [
+  {
+    title: 'Software Distributor Platform',
+    description:
+      'Onboard customers faster, distribute artifacts and update deployments easily and troubleshoot issues with confidence.',
+    lightImage: images.distr.dashboard.light,
+    darkImage: images.distr.dashboard.dark,
+    alt: 'Software distribution platform',
+  },
+  {
+    title: 'Customer Portal',
+    description:
+      'Give your customers a simple, but powerful portal to simplify their installations and artifact download and stay on top of their deployments and potential security vulnerability in used images.',
+    lightImage: images.distr.customerPortal.light,
+    darkImage: images.distr.customerPortal.dark,
+    alt: 'Glasskube overview page',
+  },
+];
+---
+
+<section class="py-8 md:py-16 lg:py-24 bg-gray-50 dark:bg-gray-800">
+  <div class="container mx-auto px-4 max-w-7xl">
+    <div class="text-center mb-12 md:mb-16 max-w-4xl mx-auto">
+      <h2 class="text-2xl md:text-3xl lg:text-4xl font-bold leading-tight">
+        From onboarding to update distribution, and support—all in one platform.
+      </h2>
+    </div>
+
+    {
+      products.map((product, index) => (
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 lg:gap-12 mb-12 md:mb-16 lg:mb-20 items-start">
+          <div class="lg:col-span-4 lg:sticky lg:top-24">
+            <h3 class="text-xl md:text-2xl lg:text-3xl font-bold mb-3 md:mb-4 border-l-4 border-accent-600 pl-3 md:pl-4">
+              {product.title}
+            </h3>
+            <p class="text-base md:text-lg text-gray-600 dark:text-gray-300 mb-4 md:mb-6 pl-3 md:pl-4 leading-relaxed">
+              {product.description}
+            </p>
+            <div class="pl-3 md:pl-4">
+              <SignupButton />
+            </div>
+          </div>
+          <div class="lg:col-span-8">
+            <div class="rounded-xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.15)] bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+              <ThemedImage
+                lightSrc={product.lightImage}
+                darkSrc={product.darkImage}
+                alt={product.alt}
+              />
+            </div>
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</section>

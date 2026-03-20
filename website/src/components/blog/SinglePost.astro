@@ -1,0 +1,206 @@
+---
+import {Icon} from '@astrojs/starlight/components';
+import Image from '../common/Image.astro';
+import type {Post} from '~/types.ts';
+
+export interface Props {
+  post: Post;
+  url: string | URL;
+}
+
+const {post} = Astro.props;
+
+const {Content, headings, remarkPluginFrontmatter} = await post.rendered;
+
+// const readingTime = renderPost.metadata.frontmatter.minutesRead;
+const readingTime = 5;
+
+// Format date
+const formatDate = (date: Date) => {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date(date));
+};
+---
+
+<style>
+  .prose {
+    p {
+      @apply hyphens-auto text-justify;
+      margin-top: 1rem;
+      margin-bottom: 1rem;
+    }
+  }
+</style>
+
+<section class="py-8 sm:py-12 mx-auto">
+  <article class="max-w-4xl mx-auto px-6 sm:px-8">
+    <!-- Back to blog button -->
+    <div class="mb-8 text-center">
+      <a
+        href="/blog/"
+        class="inline-flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors no-underline">
+        <Icon name="left-arrow" class="w-4 h-4 mr-1" />
+        Blog
+      </a>
+    </div>
+
+    <header class="mb-12 text-center">
+      <!-- Title -->
+      <h1
+        class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 dark:text-white mb-3 leading-tight">
+        {post.data.title}
+      </h1>
+
+      <!-- Authors -->
+      <div
+        class="flex flex-col justify-center items-center gap-2 mt-8 sm:mb-16 mb-8">
+        {
+          post.data.authors.map(author => (
+            <div class="flex items-center gap-3 mt-0">
+              <Image
+                src={author.image}
+                alt={author.name}
+                width={28}
+                height={28}
+                class="w-6 h-6 rounded-full object-cover flex-shrink-0"
+              />
+              <div class="flex items-center gap-2 text-sm h-6 leading-6 mt-0">
+                <span class="font-medium text-gray-900 dark:text-gray-100 h-max">
+                  {author.name}
+                </span>
+                <span class="text-gray-600 dark:text-gray-400">
+                  • {author.role}
+                </span>
+              </div>
+              <div class="flex items-center gap-1.5 h-6 mt-0">
+                <a
+                  href={author.gitHub}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                  aria-label={`${author.name}'s GitHub`}>
+                  <Icon name="github" class="w-4 h-4" />
+                </a>
+                <a
+                  href={author.linkedIn}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                  aria-label={`${author.name}'s LinkedIn`}>
+                  <Icon name="linkedin" class="w-4 h-4" />
+                </a>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+
+      <!-- Description -->
+      <p
+        class="text-lg sm:text-xl text-gray-600 dark:text-gray-400 sm:mb-16 mb-8 leading-relaxed max-w-3xl mx-auto">
+        {post.data.description}
+      </p>
+
+      <!-- Meta information row -->
+      <div
+        class="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm text-gray-600 dark:text-gray-400 pb-8 border-b border-gray-200 dark:border-gray-800 max-w-3xl mx-auto">
+        <!-- Reading time and copy button -->
+        <div class="flex items-center gap-3">
+          <span class="flex items-center gap-1">
+            <Icon name="seti:clock" class="w-4 h-4 mr-1" />
+            {readingTime} minute read
+          </span>
+          <a
+            id="copy-button"
+            onclick="copyToClipboard()"
+            class="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors cursor-pointer bg-none">
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+              ></path>
+            </svg>
+            <span>Copy URL</span>
+          </a>
+        </div>
+
+        <!-- Date -->
+        <time
+          datetime={post.data.publishDate.toISOString()}
+          class="mt-2 sm:mt-0 self-start">
+          {formatDate(post.data.publishDate)}
+        </time>
+      </div>
+
+      <!-- Hero image -->
+      {
+        post.data.image && (
+          <div class="mt-8 -mx-6 sm:-mx-8 lg:-mx-16">
+            <Image
+              src={post.data.image}
+              class="w-full rounded-xl bg-gray-100 dark:bg-gray-800"
+              widths={[400, 800, 1200]}
+              sizes="(max-width: 640px) 400px, (max-width: 1024px) 800px, 1200px"
+              alt={post.data.title}
+              loading="eager"
+              decoding="sync"
+              width={1200}
+              height={675}
+              layout="cover"
+            />
+          </div>
+        )
+      }
+    </header>
+
+    <!-- Article content -->
+    <div
+      class="prose prose-lg dark:prose-invert max-w-none
+             prose-headings:font-bold prose-headings:tracking-tight
+             prose-h2:text-xl prose-h2:mt-12 prose-h2:mb-4
+             prose-h3:text-lg prose-h3:mt-8 prose-h3:mb-3
+             prose-h4:text-base prose-h4:mt-6 prose-h4:mb-2
+             prose-p:leading-relaxed prose-p:mb-6
+             prose-a:text-blue-600 dark:prose-a:text-blue-400
+             prose-a:no-underline hover:prose-a:underline
+             prose-code:text-sm prose-code:bg-gray-100 dark:prose-code:bg-gray-800
+             prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
+             prose-pre:bg-gray-100 dark:prose-pre:bg-slate-900
+             prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-slate-700
+             prose-ul:mt-8 prose-ul:mb-6 prose-ol:mt-8 prose-ol:mb-6 prose-li:my-2
+             prose-img:rounded-lg prose-img:my-8">
+      <Content />
+    </div>
+  </article>
+</section>
+
+<script set:inline>
+  function copyToClipboard() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      const button = document.getElementById('copy-button');
+      const icon = button.querySelector('svg');
+      const span = button.querySelector('span');
+      const originalPath = icon.innerHTML;
+
+      // Change to checkmark
+      icon.innerHTML =
+        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>';
+      span.textContent = 'Copied to clipboard!';
+
+      // Revert after 2 seconds
+      setTimeout(() => {
+        icon.innerHTML = originalPath;
+        span.textContent = 'Copy URL';
+      }, 2000);
+    });
+  }
+</script>

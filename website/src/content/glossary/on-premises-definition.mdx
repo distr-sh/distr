@@ -1,0 +1,266 @@
+---
+title: On-Premises Definition
+slug: on-premises-definition
+description: 'Understanding on-premises (on-prem) deployment for software vendors and enterprises in 2025'
+---
+
+## What Does On-Premises Mean?
+
+**On-premises** (often shortened to **on-prem**) refers to software and IT infrastructure that organizations deploy, operate, and maintain within their own controlled environments. This means the organization—not a third-party vendor—owns, manages, and takes responsibility for the hardware, software, security, and data.
+
+In practice, on-premises deployment today includes two distinct models: **Traditional On-Premises** (physical servers and infrastructure in the organization's own data centers or facilities) and **Modern On-Premises** (self-managed infrastructure in the organization's own cloud accounts like AWS VPCs, Azure subscriptions, or GCP projects). The key distinction is **control**: On-premises means the customer controls the deployment environment, versus SaaS where the vendor operates everything in their multi-tenant cloud.
+
+---
+
+## On-Premise vs On-Premises: What's the Correct Term?
+
+There's ongoing debate about which term is grammatically correct:
+
+- **On-Premises** (with an "s") is technically correct—"premises" refers to a property or location ("the software runs on the customer's premises")
+- **On-Premise** (without an "s") is widely used but grammatically questionable
+
+**Search volume data shows both are heavily searched:**
+
+**Recommendation**: Use "on-premises" in formal writing, but recognize that engineers, buyers, and IT teams use all variants interchangeably. The meaning is identical across all spelling variations.
+
+---
+
+## What is On-Prem? Understanding the Abbreviation
+
+**On-prem** is the informal, shortened version of "on-premises" commonly used in DevOps, engineering, and B2B software conversations. When someone says "we deploy on-prem," they mean their software runs in customer-controlled infrastructure rather than a vendor's SaaS platform.
+
+For software vendors, supporting on-prem deployment creates specific requirements:
+
+- **Distribution**: Container registries, download portals, or artifact repositories
+- **Installation**: Docker Compose files, Helm charts, installers, or Kubernetes operators
+- **Updates**: Version management across thousands of independent customer environments
+- **Licensing**: Offline-capable license keys or entitlement systems
+- **Support**: Remote diagnostics, documentation, and troubleshooting without direct environment access
+
+Modern software distribution platforms like **Distr** help vendors manage these complexities, enabling profitable on-prem offerings without doubling engineering costs.
+
+---
+
+## On-Premises vs Cloud: Key Differences
+
+Understanding the distinction is essential for both software vendors and customers choosing deployment models:
+
+| **Aspect**                   | **On-Premises**                                   | **Cloud (SaaS)**                              |
+| ---------------------------- | ------------------------------------------------- | --------------------------------------------- |
+| **Infrastructure Ownership** | Customer owns/manages                             | Vendor manages multi-tenant environment       |
+| **Deployment Location**      | Customer's data center or cloud account           | Vendor's cloud platform                       |
+| **Control**                  | Full control over configuration and access        | Limited to vendor-provided options            |
+| **Data Location**            | Customer chooses exactly where data resides       | Data stored in vendor's chosen regions        |
+| **Updates**                  | Customer usually controls timing and rollout      | Vendor updates automatically                  |
+| **Internet Requirement**     | Can run fully offline (air-gapped)                | Requires internet connectivity                |
+| **Customization**            | Deep customization and integration possible       | Limited to platform capabilities              |
+| **Security**                 | Customer implements policies                      | Vendor handles security (with certifications) |
+| **Compliance**               | Easier for industry-specific regulations          | Depends on vendor compliance certifications   |
+| **Scalability**              | More Manual, often requires planning and hardware | Automatic, on-demand resources                |
+| **Maintenance**              | Customer IT / Platform team responsibility        | Vendor handles all maintenance                |
+| **Vendor Access**            | No access without explicit customer permission    | Vendor has backend infrastructure access      |
+
+**The key insight for vendors**: On-premises deployment isn't legacy technology—it's evolving. Enterprises in regulated industries (healthcare, finance, government), security-conscious organizations, and companies with data sovereignty requirements continue demanding on-prem options. Modern distribution platforms enable vendors to serve these customers profitably.
+
+---
+
+## Real-World On-Premises Software Examples
+
+On-premises software spans every category of enterprise applications:
+
+### **Enterprise Business Applications**
+
+- **ERP Systems**: SAP on-prem, Oracle E-Business Suite, Microsoft Dynamics GP
+- **CRM Platforms**: Salesforce Shield, Microsoft Dynamics 365 on-premises
+- **Databases**: Oracle Database, Microsoft SQL Server, PostgreSQL (self-hosted), MongoDB Enterprise
+- **Collaboration**: Microsoft Exchange Server, SharePoint Server (pre-Office 365 versions)
+
+### **Modern Cloud-Native Applications (in Customer Environments)**
+
+- **Container Platforms**: Red Hat OpenShift, Rancher, VMware Tanzu in customer Kubernetes
+- **Data Platforms**: Databricks in customer clouds, Confluent Platform, Elastic Stack
+- **CI/CD Tools**: GitLab self-managed, Jenkins, JFrog Artifactory, Harbor registries
+- **Security Tools**: Palo Alto Prisma Cloud (on-prem mode), CrowdStrike Falcon sensors
+
+### **AI and Machine Learning Infrastructure**
+
+- **Model Serving**: TensorFlow Serving, NVIDIA Triton Inference Server, vLLM
+- **Vector Databases**: Pinecone self-hosted, Weaviate, Milvus
+- **LLM Deployments**: Ollama, Hugging Face models in customer Kubernetes, private OpenAI-compatible APIs
+
+### **Industry-Specific Systems**
+
+- **Healthcare**: Epic EHR systems, Cerner Millennium (on-prem instances)
+- **Financial Services**: Core banking platforms, algorithmic trading systems, payment processors
+- **Manufacturing**: MES (Manufacturing Execution Systems), SCADA systems, ERP with shop floor integration
+- **Government**: Classified systems, citizen service portals, secure communication platforms
+  For B2B software vendors, supporting on-premises deployment opens markets that SaaS-only competitors cannot access—particularly in enterprise, government, and regulated industry segments.
+
+---
+
+## Why Organizations Choose On-Premises Deployment
+
+Despite cloud's popularity, on-premises deployment offers compelling advantages:
+
+### **1. Data Sovereignty and Compliance**
+
+Organizations keep sensitive data within their jurisdiction, meeting requirements for GDPR (EU data residency), CCPA (California), data localization laws, and industry regulations like HIPAA (healthcare) and PCI-DSS (payments). Physical control simplifies compliance audits.
+
+### **2. Complete Security Control**
+
+Customers implement their own security policies, conduct penetration testing without vendor permission, integrate with existing SIEM systems, and maintain full audit logs. For classified or highly sensitive data, on-prem is often the only acceptable option.
+
+### **3. Air-Gapped and Restricted Networks**
+
+Government agencies, defense contractors, financial institutions, and critical infrastructure operators often run air-gapped networks with limited or no internet connectivity.
+
+### **4. Performance and Latency Optimization**
+
+Local deployments eliminate internet round-trip time, critical for:
+
+- Real-time financial trading (microsecond latency requirements)
+- Industrial control systems (safety-critical timing)
+- AI inference at edge locations (autonomous vehicles, robotics)
+- High-throughput data processing (scientific computing, analytics)
+
+### **5. Deep Customization and Integration**
+
+On-prem customers can modify configurations extensively, develop custom plugins, integrate deeply with existing enterprise systems, and adapt workflows to exact business requirements—customizations often impossible in multi-tenant SaaS.
+
+---
+
+## Challenges of On-Premises Deployment
+
+On-premises deployment presents specific challenges both vendors and customers must address:
+
+### **For Software Vendors**
+
+**1. Complex Distribution and Updates**
+
+Unlike SaaS where you push updates to one environment, on-prem requires distributing artifacts (Docker images, Helm charts, installers) to thousands of customer environments with different versions and configurations simultaneously.
+
+**2. Limited Visibility and Telemetry**
+
+Without the right tooling, you can't access customer environments to debug issues or monitor health without explicit permission and tooling. Troubleshooting becomes significantly harder across diverse customer infrastructure.
+
+**3. Version Fragmentation**
+
+Most customers control update timing, so you may support dozens of old versions simultaneously. Each version requires security patches, bug fixes, and compatibility testing.
+
+**4. License Management Complexity**
+
+Tracking usage, enforcing entitlements, and preventing unauthorized distribution is challenging when software runs in customer environments you can't access.
+
+**5. Higher Customer Acquisition Costs**
+
+On-prem sales involve longer cycles, proof-of-concepts in customer infrastructure, and more hands-on support than self-service SaaS sign-ups.
+
+Modern software distribution platforms like **Distr** address these challenges by providing:
+
+- Centralized OCI artifact registriy
+- Automated distribution and version tracking
+- Optional deployment agents for health monitoring and remote troubleshooting
+- License management and enforcement
+- Customer self-service portals
+
+### **For Organizations Using On-Premises Software**
+
+**1. Ongoing Maintenance Burden**
+
+IT teams must handle hardware maintenance, software updates, security patches, backup management, and disaster recovery—requiring skilled personnel and ongoing investment.
+
+**2. Scalability Constraints**
+
+For Traditional On-Premises scaling requires purchasing additional hardware, which takes time to procure, install, and configure. You can't instantly scale like cloud—over-provisioning wastes money, under-provisioning causes performance problems.
+
+**4. Storage Limitations**
+
+Traditional On-Premises local storage is limited to physical capacity. Expanding requires buying additional storage arrays, which is expensive and time-consuming compared to cloud's virtually unlimited storage.
+
+**5. Disaster Recovery Complexity**
+
+Organizations must maintain redundant infrastructure, implement backup systems, and test recovery procedures—significantly more complex than cloud provider's built-in disaster recovery.
+
+---
+
+## On-Premises in Modern Software Distribution
+
+The rise of **Kubernetes** and **containerization** transformed on-premises from legacy infrastructure to modern deployment model:
+
+### **Kubernetes as Universal Deployment Target**
+
+Kubernetes provides consistent deployment across customer data centers, AWS VPCs, Azure private clusters, or Google GKE. Software vendors package applications as Helm charts and deploy anywhere Kubernetes runs—the underlying infrastructure becomes abstraction.
+
+### **Self-Managed Cloud (The New On-Premises)**
+
+Many "on-premises" deployments today run in customer-managed AWS/Azure/GCP accounts rather than physical data centers. From the vendor's perspective, these are operationally identical to traditional on-prem: customer controls infrastructure, vendor provides software.
+
+This model is sometimes called **BYOC (Bring Your Own Cloud)**—a hybrid between SaaS convenience and on-prem control.
+
+### **The Software Distribution Platform Approach**
+
+Platforms like **Distr** enable vendors to profitably support on-premises deployment at scale by:
+
+- **Specialized container registry** for on-premises Distribution with version tracking and access management
+- **Automating distribution** to customer environments via secure channels
+- **Tracking deployments** across thousands of installations with version visibility
+- **Managing licenses** and entitlements with offline-capable enforcement
+- **Collecting telemetry** (with customer consent) through optional deployment agents
+- **Enabling remote troubleshooting** when customers grant access
+
+This makes on-premises deployment as operationally manageable as SaaS for vendors, while giving customers the control and security they require.
+
+---
+
+## Frequently Asked Questions (FAQ)
+
+### **What does on-premise deployment mean?**
+
+On-premise deployment means software runs in infrastructure controlled by the customer—either their physical data centers or their own cloud accounts. The customer manages infrastructure, security, and maintenance rather than relying on a vendor's SaaS platform.
+
+### **Is on-premise the same as on-premises?**
+
+Yes—in IT contexts, they're used interchangeably. "On-premises" (with an "s") is grammatically correct, but "on-premise" is widely accepted. Both describe software deployed in customer-controlled infrastructure.
+
+### **What is on-prem short for?**
+
+On-prem is the abbreviated form of "on-premises." It's commonly used in technical discussions, DevOps contexts, and B2B software conversations.
+
+### **What is the difference between on-premise and cloud?**
+
+On-premise means the customer owns/manages the infrastructure. Cloud (SaaS) means the vendor operates software in their multi-tenant environment. The key difference is control: on-premise customers control their deployment; cloud customers access a shared service.
+
+### **Why do companies still use on-premises software?**
+
+Companies choose on-premises for data sovereignty (keeping data in specific locations), regulatory compliance (HIPAA, GDPR, PCI-DSS), security requirements (air-gapped networks), performance needs (low latency), deep customization, or long-term cost optimization.
+
+### **Is on-premises deployment dying?**
+
+No—on-premises deployment has evolved but remains essential. Regulated industries, government agencies, enterprises with data sovereignty requirements, and organizations needing air-gapped deployments continue demanding on-prem options. Modern on-prem often means Kubernetes in customer cloud accounts rather than physical data centers.
+
+### **Can on-premises software work without internet?**
+
+Yes—this is a key advantage. Often, on-premises software can operate fully offline (air-gapped) after initial installation, making it suitable for classified networks, remote locations, or critical infrastructure requiring internet independence.
+
+### **What is the difference between on-premises and self-hosted?**
+
+These terms are often synonymous. "On-premises" emphasizes location (customer's infrastructure), while "self-hosted" emphasizes operation (customer manages everything). Both contrast with SaaS where vendors operate software.
+
+### **How do software vendors distribute on-premises software?**
+
+Vendors use software distribution platforms (like Distr) to Distribute Containers, automate artifact deistribution, track versions across customer installations, enforce licenses, and optionally collect telemetry. This enables vendors to support both SaaS and [self-managed deployment](/glossary/self-managed-software/) efficiently.
+
+---
+
+## Distribute to On-Premises Customers with Distr
+
+**Distr** is a modern software distribution platform built for vendors serving on-premises, BYOC, air-gapped, and edge deployments. Stop treating on-prem as an afterthought—make it a first-class offering:
+
+- **Centralized artifact registry**: OCI-compliant container registry for Docker images, Helm charts, and other artifacts
+- **Automated distribution**: Push updates to thousands of customer environments with version tracking
+- **License management**: Enforce entitlements, expiration dates, and feature flags that work offline
+- **Deployment agents**: Optional Docker Compose and Helm agents for automated deployment and health monitoring
+- **Customer portal**: White-labeled self-service portal for downloads, deployments, and documentation
+- **Telemetry and support**: Collect metrics and logs (with customer permission) for troubleshooting
+
+Scale from your first self-managed customer to thousands without exponentially increasing engineering overhead.

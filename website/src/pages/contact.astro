@@ -1,0 +1,116 @@
+---
+import {Icon} from 'astro-icon/components';
+import StarlightLayout from '../layouts/StarlightLayout.astro';
+import DemoButton from '~/components/buttons/DemoButton.astro';
+import ContactForm from '../components/ContactForm';
+
+const formsServerBaseUrl = import.meta.env.FORMS_SERVER;
+const reCaptchaKeyV2 = import.meta.env.RE_CAPTCHA_KEY_v2;
+
+const TITLE = 'Get in touch';
+const DESCRIPTION =
+  "Want to get in touch? We'd love to hear from you. Here's how you can reach us.";
+---
+
+<StarlightLayout title={TITLE} description={DESCRIPTION}>
+  <div class="not-content">
+    <!-- Header -->
+    <section class="text-center mt-8 mb-12">
+      <h1 class="text-4xl font-bold mb-4">{TITLE}</h1>
+      <p class="text-xl font-semibold text-gray-600 dark:text-gray-300">
+        {DESCRIPTION}
+      </p>
+    </section>
+
+    <!-- Contact Options -->
+    <section class="container mx-auto px-4 mb-16">
+      <div class="grid md:grid-cols-2 gap-8">
+        <!-- Talk to Founders -->
+        <div class="flex flex-col">
+          <div
+            class="rounded-t-2xl p-8 border-2 border-b-0 border-gray-200 dark:border-gray-700 h-64">
+            <div class="text-center">
+              <Icon
+                name="lucide:phone"
+                class="w-16 h-16 mx-auto mb-6 text-accent-600 dark:text-accent-400"
+              />
+              <h3 class="text-2xl font-bold mb-4">Talk to Founders</h3>
+              <p class="text-gray-600 dark:text-gray-300">
+                Interested in Distr? Talk to the founders directly.
+              </p>
+            </div>
+          </div>
+          <div>
+            <div class="grid md:grid-cols-2 gap-6 text-center">
+              <div>
+                <p class="font-bold mb-1">Glasskube, Inc.</p>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mb-1">
+                  Chicago / United States
+                </p>
+                <a
+                  href="tel:+18723092840"
+                  class="text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300">
+                  +1 (872) 309-2840
+                </a>
+              </div>
+              <div>
+                <p class="font-bold mb-1">Glasskube Labs GmbH</p>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mb-1">
+                  Vienna / Austria
+                </p>
+                <a
+                  href="tel:+4367761038250"
+                  class="text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300">
+                  +43 677 610 382 50
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Book a Demo -->
+        <div class="flex flex-col">
+          <div
+            class="rounded-t-2xl p-8 border-2 border-b-0 border-gray-200 dark:border-gray-700 h-64">
+            <div class="text-center">
+              <Icon
+                name="lucide:presentation"
+                class="w-16 h-16 mx-auto mb-6 text-accent-600 dark:text-accent-400"
+              />
+              <h3 class="text-2xl font-bold mb-4">Book a demo</h3>
+              <p class="text-gray-600 dark:text-gray-300">
+                Directly schedule a demo of Distr.
+              </p>
+            </div>
+          </div>
+          <div class="p-6 text-center">
+            <DemoButton class="text-lg py-4 px-8" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact Form -->
+    <section class="container mx-auto px-4 mb-16">
+      <div class="max-w-2xl mx-auto">
+        <div class="text-center mb-8">
+          <h2 class="text-3xl font-bold mb-4">Contact form</h2>
+          <p class="text-gray-600 dark:text-gray-300">
+            We will follow up as soon as possible.
+          </p>
+        </div>
+        <ContactForm
+          client:load
+          formsServerBaseUrl={formsServerBaseUrl}
+          reCaptchaKeyV2={reCaptchaKeyV2}
+        />
+      </div>
+    </section>
+  </div>
+</StarlightLayout>
+
+<style>
+  .not-content {
+    max-width: none;
+  }
+</style>

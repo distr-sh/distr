@@ -1,0 +1,46 @@
+{
+  "name": "distr.sh",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "lint": "prettier --check .",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^5.0.2",
+    "@astrojs/preact": "^5.0.2",
+    "@astrojs/sitemap": "3.7.1",
+    "@astrojs/starlight": "0.38.1",
+    "@astrojs/starlight-tailwind": "5.0.0",
+    "@iconify-json/lucide": "^1.2.98",
+    "@tailwindcss/vite": "^4.2.2",
+    "astro": "6.0.7",
+    "astro-icon": "^1.1.5",
+    "astrojs-service-worker": "^2.0.0",
+    "embla-carousel": "^8.6.0",
+    "embla-carousel-autoplay": "^8.6.0",
+    "github-buttons": "^2.31.1",
+    "mermaid": "^11.13.0",
+    "playwright": "^1.58.2",
+    "preact": "^10.29.0",
+    "rehype-mermaid": "^3.0.0",
+    "sharp": "^0.34.5",
+    "starlight-links-validator": "^0.20.1",
+    "starlight-sidebar-topics": "^0.7.1",
+    "tailwindcss": "^4.2.2"
+  },
+  "devDependencies": {
+    "baseline-browser-mapping": "^2.10.9",
+    "prettier": "^3.8.1",
+    "prettier-plugin-astro": "^0.14.1",
+    "prettier-plugin-organize-imports": "^4.3.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

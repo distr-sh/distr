@@ -1,0 +1,45 @@
+---
+import {Image} from 'astro:assets';
+
+export interface Props {
+  lightSrc: ImageMetadata;
+  darkSrc: ImageMetadata;
+  alt: string;
+  class?: string;
+  width?: number;
+  height?: number;
+  dropShadow?: boolean;
+}
+const {
+  lightSrc,
+  darkSrc,
+  alt,
+  class: className = '',
+  width,
+  height,
+  dropShadow = true,
+} = Astro.props;
+
+const shadowClasses = dropShadow
+  ? 'rounded-xl overflow-hidden shadow-[0_20px_20px_rgba(0,0,0,0.3)] bg-[#1a1a1a] border border-white/10 not-content'
+  : '';
+---
+
+<div class:list={[shadowClasses, className]}>
+  <Image
+    src={lightSrc}
+    alt={alt}
+    class="dark:hidden max-w-full h-auto"
+    width={width}
+    height={height}
+    loading="eager"
+  />
+  <Image
+    src={darkSrc}
+    alt={alt}
+    class="hidden dark:block max-w-full h-auto"
+    width={width}
+    height={height}
+    loading="eager"
+  />
+</div>

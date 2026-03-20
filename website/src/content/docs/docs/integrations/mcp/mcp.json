@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "distr": {
+      "command": "dist/mcp-server",
+      "args": ["serve"],
+      "tools": ["*"],
+      "env": {
+        "DISTR_TOKEN": "distr-..."
+      }
+    }
+  }
+}

@@ -1,0 +1,331 @@
+---
+title: 'BYOC (Bring Your Own Cloud): Complete Guide'
+slug: byoc-definition
+description: 'Complete guide to BYOC (Bring Your Own Cloud): what it means, how it works, BYOC vs SaaS vs self-managed, architecture, benefits, challenges, and when to use BYOC for software distribution and data services.'
+---
+
+import EmbeddedWhitePaperCta from '~/components/cta/embedded/EmbeddedWhitePaperCta.astro';
+
+## What is BYOC (Bring Your Own Cloud)?
+
+:::note
+BYOC (Bring Your Own Cloud) is a deployment model where software vendors provision and manage their applications in a customer's own cloud infrastructure, rather than in the vendor's cloud environment. In a BYOC deployment, the customer's data and workloads run in their own AWS, Azure, or Google Cloud account while the vendor handles operational tasks like updates, monitoring, and maintenance remotely.
+
+BYOC offers a middle ground between fully-managed [SaaS](/glossary/saas-definition/) (where everything runs in the vendor's infrastructure) and [self-managed deployments](/glossary/self-managed-software/) (where customers install and operate software themselves). With BYOC, customers maintain control over their cloud infrastructure, data location, and security policies while vendors handle the complexity of managing the software.
+:::
+
+## What Does BYOC Stand For?
+
+BYOC stands for "Bring Your Own Cloud," a term that describes the practice of running vendor-managed software within a customer's own cloud account. The name reflects the fundamental principle: customers "bring" their existing cloud infrastructure (AWS, Azure, GCP) and the vendor deploys their software into that environment.
+
+The BYOC model emerged as organizations increasingly demanded more control over their data and infrastructure while still wanting the operational simplicity of managed services. Rather than choosing between giving up control ([SaaS](/glossary/saas-definition/)) or taking on full operational burden ([self-managed](/glossary/self-managed-software/)), BYOC provides a third option that balances these concerns.
+
+## How BYOC Works
+
+BYOC deployments typically involve a separation between the control plane and data plane:
+
+**Data Plane (Customer Environment):**
+
+- Runs in the customer's cloud account (AWS, Azure, or GCP)
+- Hosts the actual application workloads and data
+- Operates within the customer's Virtual Private Cloud (VPC)
+- Subject to customer's network policies and security controls
+- All data remains within customer's security boundary
+
+**Control Plane (Vendor Environment):**
+
+- Runs in the vendor's infrastructure
+- Manages deployment, configuration, and monitoring
+- Handles updates, patches, and system maintenance
+- Collects telemetry and health metrics (no raw data)
+- Coordinates operations across customer deployments
+
+**Connection Between Planes:**
+
+The control plane connects to the data plane through secure channels, typically using:
+
+- PrivateLink (AWS), Private Service Connect (GCP), or Private Endpoint (Azure)
+- IAM roles with specific, limited permissions
+- Encrypted connections for all communications
+- Network policies that restrict vendor access to specific management functions
+
+This architecture ensures that customer data never leaves their environment while allowing vendors to manage the software remotely. Vendors can deploy updates, monitor system health, and troubleshoot issues without direct access to customer data.
+
+## BYOC vs SaaS vs Self-Managed
+
+Understanding the differences between BYOC, SaaS, and self-managed deployments helps organizations choose the right model for their needs. For a detailed comparison, see our guide on [choosing between self-managed, cloud (SaaS), and BYOC deployment models](/blog/self-managed-vs-cloud-vs-byoc/).
+
+**[SaaS (Software as a Service)](/glossary/saas-definition/):**
+
+- Software runs in vendor's cloud infrastructure
+- Vendor manages everything: infrastructure, operations, security, updates
+- Easiest for customers: no infrastructure management required
+- Lower control: data resides in vendor's environment
+- Typically the most cost-effective option
+- Best for: Organizations prioritizing ease of use over data control
+
+**BYOC (Bring Your Own Cloud):**
+
+- Software runs in customer's cloud infrastructure
+- Vendor manages software operations, customer manages infrastructure
+- Shared responsibility model: vendor handles application, customer handles cloud resources
+- Moderate control: data stays in customer environment, vendor manages software
+- Cost varies: customer pays cloud provider directly plus vendor management fee
+- Best for: Organizations needing data sovereignty with managed operations
+
+**[Self-Managed](/glossary/self-managed-software/):**
+
+- Software runs in customer's infrastructure (cloud or [on-premises](/glossary/on-premises-definition/))
+- Customer manages everything: installation, configuration, updates, monitoring
+- Highest control: complete ownership of software and data
+- Highest operational burden: requires dedicated internal expertise
+- Cost transparency: infrastructure costs plus optional vendor support
+- Best for: Organizations with strict requirements and technical expertise
+
+**Key Tradeoffs:**
+
+| Aspect                 | SaaS      | BYOC           | Self-Managed   |
+| ---------------------- | --------- | -------------- | -------------- |
+| Operational Burden     | Vendor    | Shared         | Customer       |
+| Data Control           | Low       | High           | Complete       |
+| Update Management      | Automatic | Vendor-managed | Usually Manual |
+| Compliance Flexibility | Limited   | High           | Complete       |
+| Time to Deploy         | Minutes   | Days           | Weeks          |
+
+<EmbeddedWhitePaperCta />
+
+## BYOC Architecture and Implementation
+
+Implementing a BYOC deployment requires careful architectural planning and coordination between vendor and customer.
+
+**Infrastructure Requirements:**
+
+Most BYOC implementations require customers to provide:
+
+- Cloud account (AWS, Azure, or GCP) with appropriate permissions
+- [Kubernetes](/glossary/kubernetes/) cluster (EKS, AKS, or GKE) for orchestration
+- Virtual Private Cloud (VPC) with defined network policies
+- IAM roles and policies for vendor access
+- Storage resources (S3, Azure Blob, GCS) for data persistence
+- Monitoring and logging infrastructure integration
+
+**Deployment Process:**
+
+A typical BYOC deployment follows these steps:
+
+1. **Initial Setup:** Customer creates dedicated VPC and configures network policies
+2. **IAM Configuration:** Customer grants vendor specific IAM permissions via roles
+3. **Connection Establishment:** Vendor control plane establishes secure connection to customer VPC
+4. **Resource Provisioning:** Vendor provisions application resources in customer environment
+5. **Integration Testing:** Validate connectivity, monitoring, and security controls
+6. **Operational Handoff:** Transition to normal operations with vendor managing software
+
+**Security Considerations:**
+
+BYOC deployments require careful attention to security boundaries:
+
+- Network policies should restrict vendor access to specific IP ranges
+- All communications between control and data planes must be encrypted
+- Audit logging should track all vendor actions in customer environment
+- Customer should retain ability to revoke vendor access if needed
+
+## BYOC for Software Distribution
+
+While BYOC is commonly associated with data services like databases and message brokers, it also serves as a software distribution model for [ISVs (Independent Software Vendors)](/glossary/isv-meaning/) delivering applications to their customers.
+
+**BYOC as a Distribution Strategy:**
+
+For software vendors, BYOC offers a way to distribute commercial software that runs in customers' environments while maintaining vendor control over updates, licensing, and support. This model is particularly valuable for:
+
+- Enterprise software requiring customer data isolation
+- Applications with intensive compute or storage requirements
+- Software handling sensitive or regulated data
+- Multi-tenant platforms where customers demand dedicated infrastructure
+- Developer tools and platforms needing customer-specific configurations
+
+For software vendors, offering BYOC expands market reach to customers who cannot adopt SaaS due to compliance, security, or cost considerations. It provides a competitive advantage in enterprise sales where deployment flexibility is a key evaluation criterion.
+
+**Implementation for Software Vendors:**
+
+Software vendors implementing BYOC distribution need to build:
+
+1. **Customer Portal:** Self-service interface for customers to provision deployments, manage licenses, and access support
+2. **Deployment Automation:** Infrastructure-as-code templates (Terraform, CloudFormation) for consistent provisioning
+3. **Update System:** Automated update distribution with customer approval workflows and rollback capabilities
+4. **Health Monitoring:** Remote telemetry collection that respects customer privacy and security requirements
+5. **[License Management](/glossary/software-license-management/):** Entitlement checking that runs in customer environment and reports to vendor control plane
+6. **Support Tools:** Diagnostic capabilities that work within customer security boundaries
+
+**BYOC and Software Distribution Platforms:**
+
+Building BYOC infrastructure from scratch requires significant engineering investment. [Software distribution platforms](/glossary/software-distribution-platform/) like Distr provide everything out-of-the-box that software vendors need to offer BYOC:
+
+- **Cloud account connectors:** Simple setup to connect customer AWS, Azure, or GCP accounts.
+- **Infrastructure provisioning:** Automatic spin-up of resources using Terraform and CloudFormation scripts in customer VPCs
+- **Application deployment:** Automated installation and configuration of software in customer [Kubernetes](/glossary/kubernetes/) clusters or VMs
+- **Update management:** Push updates to customer environments with approval workflows and automated rollback on failure
+- **Health monitoring:** Continuous healthchecks and telemetry collection without accessing customer data
+- **Alerting integration:** Automatic downtime alerts and incident notifications
+
+Software vendors can launch BYOC offerings in days rather than months, focusing on their application while Distr handles the complex control plane infrastructure.
+
+<EmbeddedWhitePaperCta />
+
+## Benefits of BYOC
+
+**For Customers:**
+
+Organizations choosing BYOC deployments gain several advantages:
+
+- **Data Sovereignty:** Complete control over data location, storage, and access policies ensures compliance with data residency requirements and internal governance standards.
+- **Security Control:** Ability to implement custom security policies, integrate with existing security tooling, and maintain visibility into all system activities within their environment.
+- **Cost Efficiency:** Direct cloud provider relationship enables use of existing commitments, volume discounts, and cost optimization strategies without vendor markup on infrastructure.
+- **Operational Consistency:** Integration with existing monitoring, alerting, logging, and deployment systems provides unified observability across all applications.
+- **Network Performance:** Reduced latency and eliminated egress charges through direct connectivity to other services within the same cloud environment.
+  **For Software Vendors:**
+
+Vendors offering BYOC deployments also realize benefits:
+
+- **Simplified Compliance:** Customer-owned infrastructure means some compliance responsibilities remain with customer, reducing vendor certification burden.
+- **Premium Positioning:** BYOC offerings often command higher prices due to enhanced control and customization capabilities.
+- **Expanded Market:** Access to customers with compliance, security, or data sovereignty requirements who cannot adopt SaaS offerings.
+- **Customer Infrastructure Leverage:** Ability to offer enterprise-grade software without massive infrastructure investment for multi-tenant operations.
+
+## Challenges and Considerations
+
+While BYOC offers significant benefits, organizations should understand the challenges:
+
+**Deployment Complexity:**
+
+BYOC implementations take longer than SaaS provisioning. Initial setup requires IAM configuration, network policy definition, and integration with existing systems. Each deployment is somewhat unique based on customer requirements, making standardization difficult.
+
+**Limited Multi-Tenancy:**
+
+BYOC typically provides dedicated infrastructure per customer, eliminating cost and efficiency benefits of multi-tenant SaaS architectures. This results in higher per-customer costs for customers.
+
+**Vendor Access Requirements:**
+
+Most BYOC deployments require vendors to have some level of access to customer environments for management and troubleshooting. Organizations must balance vendor access needs against security requirements, carefully defining and auditing what vendors can access.
+
+**Update Coordination:**
+
+While vendors control update timing, they might have to coordinate with customer change management processes. Organizations may delay critical updates due to internal policies, creating support challenges and security risks from running outdated versions.
+
+<EmbeddedWhitePaperCta />
+
+## When to Choose BYOC
+
+BYOC makes sense for organizations that:
+
+- **Face strict data sovereignty requirements** mandating specific data locations or preventing data from leaving their control
+- **Have existing cloud commitments** with unused capacity, reserved instances, or enterprise discount agreements they want to leverage
+- **Operate in highly regulated industries** like healthcare, finance, or government where compliance requirements are stringent
+- **Need advanced network control** for performance, security, or integration with on-premises systems
+
+BYOC may not be appropriate for organizations that:
+
+- Lack cloud infrastructure expertise or dedicated DevOps staff
+- Prioritize simplicity and ease of use over infrastructure control
+- Have limited budgets and cannot absorb infrastructure costs and overhead
+- Need rapid deployment without lengthy setup processes
+- Operate in regions or use cloud providers not supported by the vendor
+
+## BYOC Use Cases
+
+**Database and Data Services:**
+
+Companies like Confluent, CockroachDB, MongoDB, and ClickHouse offer BYOC deployments for organizations that need data services in their environments while benefiting from vendor expertise in database operations.
+
+**Analytics and Data Platforms:**
+
+Data analytics tools and platforms use BYOC to process customer data within their security boundaries while vendors manage complex analytics infrastructure.
+
+**Development Tools and Platforms:**
+
+DevOps platforms, CI/CD systems, and developer tools deploy via BYOC to integrate with customer code repositories and infrastructure while maintaining managed operations.
+
+**AI and Machine Learning:**
+
+ML platforms and vector databases like Zilliz Cloud offer BYOC to process sensitive training data within customer environments while vendors handle model serving and scaling.
+
+**Enterprise Software:**
+
+Business applications dealing with sensitive customer, financial, or employee data increasingly offer BYOC options to meet enterprise security and compliance requirements.
+
+**Industry-Specific Software:**
+
+Regulated industries like healthcare (EHR systems), finance (trading platforms), and government (defense applications) commonly require BYOC for their specialized software needs.
+
+## BYOC Security Best Practices
+
+Organizations deploying BYOC should follow these security practices:
+
+**Principle of Least Privilege:** Grant vendors minimum permissions required for management, regularly reviewing and auditing access rights to ensure appropriate scope.
+
+**Network Segmentation:** Deploy BYOC applications in isolated VPCs with strict network policies controlling ingress and egress traffic, preventing lateral movement.
+
+**Audit Logging:** Enable comprehensive logging of all vendor actions within customer environment, with logs retained in customer-controlled storage for compliance.
+
+**Encryption Standards:** Enforce encryption for data at rest and in transit using customer-managed keys where possible, preventing vendor decryption of sensitive data.
+
+**Security Monitoring:** Integrate BYOC deployments with existing security information and event management (SIEM) systems for consistent threat detection.
+
+**[Vulnerability Management](/glossary/vulnerability-scanning/):** Maintain patching processes that balance vendor updates with customer change management, prioritizing security patches.
+
+**Incident Response:** Develop joint incident response procedures with vendors, defining escalation paths and communication channels for security events.
+
+## The Future of BYOC
+
+BYOC continues evolving as a deployment model, with several trends emerging:
+
+**Improved Automation:** Vendors are investing in infrastructure-as-code templates and deployment automation to reduce BYOC setup complexity and standardize implementations.
+
+**Zero-Access Models:** Next-generation BYOC offerings separate control and data planes more completely, eliminating vendor data access even for troubleshooting.
+
+**Kubernetes-Native:** Most new BYOC implementations use [Kubernetes](/glossary/kubernetes/) as the common orchestration layer, enabling portability across cloud providers and [on-premises](/glossary/on-premises-definition/) environments.
+
+**Hybrid Architectures:** Some vendors offer hybrid models where control plane and some services run in vendor SaaS while data-intensive workloads run BYOC, optimizing for both convenience and data control.
+
+**Platform Consolidation:** Software distribution platforms emerge to help vendors offer BYOC without building custom control planes.
+
+<EmbeddedWhitePaperCta />
+
+## Frequently Asked Questions (FAQ)
+
+### **What is the difference between BYOC and private cloud?**
+
+BYOC runs vendor-managed software in your public cloud account (AWS, Azure, GCP), while private cloud refers to cloud infrastructure dedicated to a single organization. BYOC can use private cloud infrastructure but typically leverages public cloud providers with isolated customer accounts.
+
+### **Is BYOC more expensive than SaaS?**
+
+BYOC is typically more expensive than SaaS for most organizations. Vendors charge premium prices for BYOC because it requires more complex infrastructure, dedicated per-customer deployments, and operational overhead compared to SaaS.
+
+However, BYOC can be cost-effective for organizations with large existing cloud commitments.
+
+### **Can I use BYOC with on-premises infrastructure?**
+
+Traditional BYOC targets public cloud environments, but similar models exist for [on-premises](/glossary/on-premises-definition/) deployments often called "customer data center" or "[self-managed](/glossary/self-managed-software/)" offerings. Some vendors support hybrid models bridging cloud and on-premises.
+
+### **Who is responsible for security in BYOC?**
+
+Security responsibility is shared: vendors secure the application layer (software vulnerabilities, updates, access controls) while customers secure infrastructure layer (network policies, IAM, cloud resources, data encryption). Clear responsibility matrices are essential.
+
+### **How long does BYOC deployment take?**
+
+Initial BYOC setup typically takes 1-4 weeks depending on complexity, customer security requirements, and integration needs.
+
+### **Can I migrate from BYOC to SaaS or vice versa?**
+
+Migration is possible but requires planning. BYOC to SaaS involves data migration to vendor infrastructure. SaaS to BYOC requires establishing customer infrastructure and data transfer. Vendors with both offerings typically provide migration support.
+
+### **Does BYOC work with air-gapped environments?**
+
+Standard BYOC requires internet connectivity for vendor control plane access. [Air-gapped](/glossary/air-gapped-meaning/) deployments need [self-managed](/glossary/self-managed-software/) or specialized deployment models with offline update mechanisms and local support tooling.
+
+### **How does BYOC handle software updates?**
+
+Vendors manage updates through the control plane, typically offering automated updates with customer approval workflows. Update strategies vary from vendor-scheduled maintenance windows to customer-controlled update timing with security patches prioritized.
+
+### **What cloud providers support BYOC?**
+
+Most BYOC offerings support AWS, with Azure and Google Cloud support growing. Vendor BYOC availability depends on their platform capabilities. Always verify your preferred cloud provider is supported before committing.

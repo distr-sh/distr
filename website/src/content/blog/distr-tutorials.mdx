@@ -1,0 +1,95 @@
+---
+title: 'Distr Launch Week: Easy Onboarding with Distr Tutorials'
+description: 'We are happy to introduce the new Distr Tutorials which improves your onboarding experience.'
+publishDate: 2025-05-19
+lastUpdated: 2025-05-19
+slug: 'distr-tutorials'
+authors:
+  - name: 'Christoph Enne'
+    role: 'Software Engineer'
+    image: '/src/assets/blog/authors/christophenne.jpg'
+    linkedIn: https://github.com/christophenne/
+    gitHub: https://github.com/christophenne
+image: '/src/assets/blog/2025-05-19-tutorials/tutorials-thumbnail.png'
+tags:
+  - distr-launch-week
+  - onboarding
+---
+
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import tutorialsLight from '../../assets/blog/2025-05-19-tutorials/tutorials-light.png';
+import tutorialsDark from '../../assets/blog/2025-05-19-tutorials/tutorials-dark.png';
+
+# Easy Onboarding with Distr Tutorials
+
+Today is international onboarding day! It's not an official holiday (yet), but we are declaring it so.
+In fact, we are declaring every day to be international onboarding day, because we are just super excited about onboarding in general.
+Since the early days of Distr we have been strongly opinionated about onboarding.
+And now we improve our onboarding experience even further with the release of Distr Tutorials. We just love onboarding!
+
+## What is changing?
+
+So far we had an onboarding wizard popping up on the dashboard of new users.
+As Distr has grown both in features and users, we decided to revisit this approach and create a more flexible and powerful onboarding experience.
+We are now releasing Distr Tutorials, a way for you to quickly get started with the exact features that matter most to you.
+
+We learned from looking over the shoulders of our users and analyzing the data that a vast majority of users aborted the previous tutorial,
+when it was time to install the Distr agent via a Docker CLI command.
+This is totally understandable as it is quite scary to execute a third party docker compose manifest—even if it is completely safe to do and every component is open source.
+
+This is why we introduced more non-intrusive tutorial steps, like white labeling your customer portal, or interacting with the Distr container registry.
+
+## Why care about onboarding?
+
+Because as a new user you want to see what we've got, and we are happy to show you.
+But to that end, sometimes a few minimal one-time setup steps are required – and this is what we want to guide you through.
+The goal is to get you up and running with the features you want to use, as quickly as possible.
+In addition we also don't want to force you to talk to a human.
+Although we are always happy to jump on a call and personally onboard you, we know that many users prefer to do it themselves—often by building Distr from source themselves and running it locally.
+
+## Show me what you got – What are these Distr Tutorials?
+
+We split up the onboarding process into smaller, more manageable steps, based on the features you want to use. There are three tutorials:
+
+- Setting up your Customer Portal
+- Getting started with Distr Agents and Release Automation
+- Getting started with the Registry
+
+<ThemedImage
+  alt="Distr Onboarding Tutorials"
+  lightSrc={tutorialsLight}
+  darkSrc={tutorialsDark}
+/>
+
+Find more information about the tutorials in the [Distr quickstart](/docs/quickstart/).
+
+## Introducing the `hello-distr` sample application
+
+There are valid reasons to try Distr with a little sample application before onboarding your entire stack.
+Our own [`hello-distr`](https://github.com/distr-sh/hello-distr) is made for exactly that.
+
+When you start the Agents tutorial, this application will be automatically created in your organization, along with a few other resources.
+
+When stepping through the Registry tutorial, you will also work with the artifacts of this sample application, in order to have your very own registry filled with real artifacts.
+
+:::tip
+If your application is still on the earlier side, the [`hello-distr`](https://github.com/distr-sh/hello-distr)
+is also a great example using a Python backend and Next.js frontend if you seek inspiration on how to make your application production ready,
+build Docker images and automatically deploy images and applications to Distr.
+:::
+
+### Release Automation is easy
+
+For the full end to end release automation experience, we recommend to use the hello-distr application.
+It is set up to use GitHub Actions and our [`distr-create-version-action`](https://github.com/marketplace/actions/distr-create-version) for integrating with Distr.
+You can fork it and set up your own GitHub Actions workflow, that pushes new releases to your Distr organization.
+
+## Your Feedback matters
+
+**Did you get curious?**
+You can try out the tutorials yourself by signing up for a free Distr account at [Get Started with Distr](/get-started/).
+
+We are very excited about this new onboarding experience and we hope you are too.
+If you think there is something missing in the tutorials, or if you have any other feedback, please let us know!
+
+Thanks and happy onboarding!

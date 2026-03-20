@@ -1,0 +1,19 @@
+services:
+  webapp:
+    image: myapp:latest
+    networks:
+      - app-network
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+    ports:
+      - target: 8080
+        published: 80
+        protocol: tcp
+        mode: ingress
+
+networks:
+  app-network:
+    driver: overlay

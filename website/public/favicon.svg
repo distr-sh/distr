@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" id="Distr" data-name="Distr" viewBox="11.26 3.5 30.14 34.79">
+  <defs>
+    <style>.cls-1 { fill: #0f498f; } .cls-2 { fill: #42e8e0; } .cls-3 { fill: #63c5e3; } .cls-4 { fill: #4d92cf; }
+    </style>
+  </defs>
+  <polygon class="cls-2" points="26.33 20.89 11.26 12.2 11.26 29.59 26.33 38.29 41.4 29.59 41.4 12.2 26.33 20.89"></polygon>
+  <polygon class="cls-3" points="26.33 38.29 11.26 29.59 11.26 12.2 26.33 20.89 26.33 38.29"></polygon>
+  <polygon class="cls-4" points="41.4 29.59 26.33 38.29 26.33 20.89 41.4 12.2 41.4 29.59"></polygon>
+  <polygon class="cls-3" points="26.33 20.89 11.26 12.2 26.33 3.5 41.4 12.2 26.33 20.89"></polygon>
+  <polygon class="cls-1" points="26.33 20.89 11.26 12.2 11.26 12.95 26.33 21.65 41.4 12.95 41.4 12.2 26.33 20.89"></polygon>
+</svg>

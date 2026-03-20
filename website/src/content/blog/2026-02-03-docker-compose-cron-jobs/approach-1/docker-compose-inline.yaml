@@ -1,0 +1,21 @@
+services:
+  backend:
+    image: backend
+    ports:
+      - '5000:5000'
+    networks:
+      - app-network
+
+  jobs:
+    image: alpine:3.23
+    command: crond -f -L /dev/stdout
+    volumes:
+      - ./crontab:/etc/crontabs/root:ro
+    networks:
+      - app-network
+    depends_on:
+      - backend
+
+networks:
+  app-network:
+    driver: bridge

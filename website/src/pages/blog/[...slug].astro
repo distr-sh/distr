@@ -1,0 +1,37 @@
+---
+import Layout from '~/layouts/StarlightLayout.astro';
+import SinglePost from '~/components/blog/SinglePost.astro';
+import WhitePaperCta from '~/components/cta/standalone/WhitePaperCta.astro';
+import {getSortedPosts} from '~/utils/blog';
+import type {Post} from '~/types';
+
+export async function getStaticPaths() {
+  let posts = await getSortedPosts();
+
+  return posts.map(post => {
+    return {
+      params: {
+        slug: post.data.slug + '/',
+      },
+      props: {
+        post: post,
+      },
+    };
+  });
+}
+
+export interface Props {
+  allPosts: Post[];
+  post: Post;
+}
+
+const {slug} = Astro.params;
+const {post} = Astro.props;
+---
+
+<Layout title={post.data.title} description={post.data.description}>
+  <div class="mx-auto max-w-7xl px-1 sm:px-8 lg:px-10">
+    <SinglePost post={post} url={slug} />
+  </div>
+  <WhitePaperCta />
+</Layout>

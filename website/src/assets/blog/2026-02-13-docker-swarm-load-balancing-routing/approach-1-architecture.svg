@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 320" style="max-width: 100%; height: auto;">
+  <defs>
+    <style>
+      .box-blue { fill: #0073aa; stroke: #003653; stroke-width: 2; rx: 6; }
+      .box-accent { fill: #003653; stroke: #00273d; stroke-width: 2; rx: 6; }
+      .box-gray { fill: #6f6f7e; stroke: #5a5a67; stroke-width: 2; rx: 6; }
+      .box-green { fill: #2e7d32; stroke: #1b5e20; stroke-width: 2; rx: 6; }
+      .text { fill: white; font-family: system-ui, sans-serif; font-size: 13px; font-weight: 600; }
+      .subtitle { fill: #92d1fe; font-family: system-ui, sans-serif; font-size: 10px; }
+      .subtitle-green { fill: #a5d6a7; font-family: system-ui, sans-serif; font-size: 10px; }
+      .arrow { stroke: #6f6f7e; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .label { fill: #424249; font-family: system-ui, sans-serif; font-size: 11px; }
+      .node-border { fill: none; stroke: #424249; stroke-width: 1; stroke-dasharray: 6 3; rx: 8; }
+      .node-label { fill: #424249; font-family: system-ui, sans-serif; font-size: 11px; font-weight: 600; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#6f6f7e" />
+    </marker>
+  </defs>
+
+  <!-- External Traffic -->
+  <rect class="box-gray" x="270" y="10" width="160" height="40" />
+  <text x="350" y="35" text-anchor="middle" class="text">External Traffic</text>
+
+  <!-- Routing Mesh -->
+  <rect class="box-accent" x="200" y="80" width="300" height="40" />
+  <text x="350" y="100" text-anchor="middle" class="text">Swarm Routing Mesh (Layer 4 / IPVS)</text>
+  <text x="350" y="113" text-anchor="middle" class="subtitle">Round-robin load balancing across all nodes</text>
+
+  <!-- Arrow from traffic to mesh -->
+  <path class="arrow" d="M 350 50 L 350 75"/>
+  <text x="368" y="67" class="label">:80</text>
+
+  <!-- Node 1 -->
+  <rect class="node-border" x="20" y="150" width="200" height="155" />
+  <text x="120" y="168" text-anchor="middle" class="node-label">Node 1 (Manager)</text>
+  <rect class="box-blue" x="40" y="178" width="160" height="40" />
+  <text x="120" y="195" text-anchor="middle" class="text">webapp</text>
+  <text x="120" y="210" text-anchor="middle" class="subtitle">replica 1</text>
+  <rect class="box-green" x="40" y="228" width="160" height="40" />
+  <text x="120" y="245" text-anchor="middle" class="text">api</text>
+  <text x="120" y="260" text-anchor="middle" class="subtitle-green">replica 1</text>
+  <rect class="box-gray" x="40" y="275" width="160" height="22" />
+  <text x="120" y="291" text-anchor="middle" class="text" style="font-size: 11px">postgres</text>
+
+  <!-- Node 2 -->
+  <rect class="node-border" x="250" y="150" width="200" height="155" />
+  <text x="350" y="168" text-anchor="middle" class="node-label">Node 2 (Worker)</text>
+  <rect class="box-blue" x="270" y="178" width="160" height="40" />
+  <text x="350" y="195" text-anchor="middle" class="text">webapp</text>
+  <text x="350" y="210" text-anchor="middle" class="subtitle">replica 2</text>
+  <rect class="box-green" x="270" y="228" width="160" height="40" />
+  <text x="350" y="245" text-anchor="middle" class="text">api</text>
+  <text x="350" y="260" text-anchor="middle" class="subtitle-green">replica 2</text>
+
+  <!-- Node 3 -->
+  <rect class="node-border" x="480" y="150" width="200" height="155" />
+  <text x="580" y="168" text-anchor="middle" class="node-label">Node 3 (Worker)</text>
+  <rect class="box-blue" x="500" y="178" width="160" height="40" />
+  <text x="580" y="195" text-anchor="middle" class="text">webapp</text>
+  <text x="580" y="210" text-anchor="middle" class="subtitle">replica 3</text>
+
+  <!-- Arrows from mesh to nodes -->
+  <path class="arrow" d="M 280 120 L 120 148"/>
+  <path class="arrow" d="M 350 120 L 350 148"/>
+  <path class="arrow" d="M 420 120 L 580 148"/>
+</svg>

@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 320" style="max-width: 100%; height: auto;">
+  <defs>
+    <style>
+      .box-accent { fill: #003653; stroke: #00273d; stroke-width: 2; rx: 6; }
+      .box-blue { fill: #0073aa; stroke: #003653; stroke-width: 2; rx: 6; }
+      .box-spawned { fill: #92d1fe; stroke: #0073aa; stroke-width: 2; rx: 6; }
+      .box-dark { fill: #424249; stroke: #313138; stroke-width: 2; rx: 6; }
+      .box-gray { fill: #6f6f7e; stroke: #5a5a67; stroke-width: 2; rx: 6; }
+      .text { fill: white; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 600; }
+      .text-dark { fill: #003653; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 600; }
+      .subtitle { fill: #92d1fe; font-family: system-ui, sans-serif; font-size: 11px; }
+      .arrow { stroke: #6f6f7e; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .arrow-dash { stroke: #0073aa; stroke-width: 2; fill: none; marker-end: url(#arrowhead-blue); stroke-dasharray: 5,5; }
+      .label { fill: #0073aa; font-family: system-ui, sans-serif; font-size: 12px; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#6f6f7e" />
+    </marker>
+    <marker id="arrowhead-blue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#0073aa" />
+    </marker>
+  </defs>
+
+  <!-- Ofelia Container -->
+  <rect class="box-accent" x="40" y="25" width="140" height="55" />
+  <text x="110" y="48" text-anchor="middle" class="text">ofelia</text>
+  <text x="110" y="65" text-anchor="middle" class="subtitle">Job Scheduler</text>
+
+  <!-- Docker Socket -->
+  <rect class="box-dark" x="40" y="110" width="140" height="40" />
+  <text x="110" y="135" text-anchor="middle" class="text">Docker Socket</text>
+
+  <!-- Job Containers (below docker socket) -->
+  <rect class="box-spawned" x="40" y="180" width="140" height="45" />
+  <text x="110" y="207" text-anchor="middle" class="text-dark">job-cleanup</text>
+
+  <rect class="box-spawned" x="40" y="235" width="140" height="45" />
+  <text x="110" y="262" text-anchor="middle" class="text-dark">job-reports</text>
+
+  <!-- Backend Container -->
+  <rect class="box-blue" x="280" y="110" width="140" height="55" />
+  <text x="350" y="133" text-anchor="middle" class="text">backend</text>
+  <text x="350" y="150" text-anchor="middle" class="subtitle">Application</text>
+
+  <!-- Database Container -->
+  <rect class="box-gray" x="280" y="195" width="140" height="55" />
+  <text x="350" y="218" text-anchor="middle" class="text">postgres</text>
+  <text x="350" y="235" text-anchor="middle" class="subtitle">Database</text>
+
+  <!-- Arrows -->
+  <!-- Ofelia to Docker Socket -->
+  <path class="arrow" d="M 110 80 L 110 105"/>
+
+  <!-- Docker Socket to spawned jobs -->
+  <path class="arrow-dash" d="M 110 150 L 110 175"/>
+  <text x="125" y="165" class="label">spawns</text>
+
+  <!-- Backend to Database -->
+  <path class="arrow" d="M 350 165 L 350 190"/>
+
+  <!-- Spawned jobs to Database -->
+  <path class="arrow" d="M 180 202 L 275 210"/>
+  <path class="arrow" d="M 180 257 L 275 235"/>
+</svg>

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 200" style="max-width: 100%; height: auto;">
+  <defs>
+    <style>
+      .box-blue { fill: #0073aa; stroke: #003653; stroke-width: 2; rx: 6; }
+      .box-accent { fill: #003653; stroke: #00273d; stroke-width: 2; rx: 6; }
+      .box-gray { fill: #6f6f7e; stroke: #5a5a67; stroke-width: 2; rx: 6; }
+      .text { fill: white; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 600; }
+      .subtitle { fill: #92d1fe; font-family: system-ui, sans-serif; font-size: 11px; }
+      .arrow { stroke: #6f6f7e; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .label { fill: #424249; font-family: system-ui, sans-serif; font-size: 11px; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#6f6f7e" />
+    </marker>
+  </defs>
+
+  <!-- Jobs Container (top) -->
+  <rect class="box-accent" x="40" y="30" width="160" height="55" />
+  <text x="120" y="53" text-anchor="middle" class="text">jobs</text>
+  <text x="120" y="70" text-anchor="middle" class="subtitle">Lightweight Cron Scheduler</text>
+
+  <!-- Backend Container (bottom left) -->
+  <rect class="box-blue" x="40" y="115" width="160" height="55" />
+  <text x="120" y="138" text-anchor="middle" class="text">backend</text>
+  <text x="120" y="155" text-anchor="middle" class="subtitle">Application</text>
+
+  <!-- Database Container (bottom right) -->
+  <rect class="box-gray" x="300" y="115" width="160" height="55" />
+  <text x="380" y="138" text-anchor="middle" class="text">postgres</text>
+  <text x="380" y="155" text-anchor="middle" class="subtitle">Database</text>
+
+  <!-- Arrows -->
+  <path class="arrow" d="M 120 85 L 120 110"/>
+  <text x="145" y="100" class="label">Trigger job via HTTP call</text>
+
+  <path class="arrow" d="M 200 143 L 295 143"/>
+</svg>

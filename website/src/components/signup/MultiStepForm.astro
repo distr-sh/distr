@@ -1,0 +1,1370 @@
+---
+import {Icon} from 'astro-icon/components';
+import distrBrandLogo from '~/assets/distr-brand.svg';
+import CalComIFrame from '~/components/booking/CalComIFrame.astro';
+
+const formsServerBaseUrl = import.meta.env.FORMS_SERVER;
+const reCaptchaKey = import.meta.env.RE_CAPTCHA_KEY;
+const reCaptchaKeyV2 = import.meta.env.RE_CAPTCHA_KEY_v2;
+
+interface Props {
+  flowType: string;
+  heading: string;
+  subheading: string;
+  ctaNote: string;
+  requirePassword: boolean;
+  successTitle: string;
+  successMessage: string;
+  submitButtonText: string;
+}
+
+const {
+  flowType,
+  heading,
+  subheading,
+  ctaNote,
+  requirePassword,
+  successTitle,
+  successMessage,
+  submitButtonText,
+} = Astro.props;
+
+// Inline all form data
+const signupSteps = [
+  {step: 1, label: 'Basic'},
+  {step: 2, label: 'Details'},
+  {step: 3, label: 'Experience'},
+  {step: 4, label: 'Discovery'},
+  {step: 5, label: 'Timeline'},
+];
+---
+
+<style>
+  @reference 'tailwindcss';
+
+  .step-indicator {
+    @apply flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-all duration-300;
+  }
+
+  .step-indicator.active {
+    @apply bg-blue-600 text-white;
+  }
+
+  .step-indicator.completed {
+    @apply bg-green-600 text-white;
+  }
+
+  .step-indicator.inactive {
+    @apply bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400;
+  }
+
+  .step-line {
+    @apply h-0.5 flex-1 transition-all duration-300;
+  }
+
+  .step-line.completed {
+    @apply bg-green-600;
+  }
+
+  .step-line.inactive {
+    @apply bg-gray-200 dark:bg-gray-700;
+  }
+
+  .step-content {
+    animation: fadeIn 0.3s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
+
+<div
+  class="relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-16 sm:py-24">
+  <div class="container mx-auto px-4 max-w-[1200px]">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <!-- Left Column: Features -->
+      <div id="leftColumn" class="lg:col-span-1">
+        <div class="flex flex-col items-start mb-8">
+          <img src={distrBrandLogo.src} alt="Distr" class="h-12 w-auto" />
+        </div>
+        <ul class="list-none space-y-5">
+          <li class="flex gap-3">
+            <Icon
+              name="lucide:check-circle"
+              class="w-6 h-6 text-green-600 flex-shrink-0 mt-1"
+            />
+            <div class="flex flex-col">
+              <h6 class="font-semibold text-gray-900 dark:text-white m-0">
+                Centralized Management
+              </h6>
+              <p class="text-gray-600 dark:text-gray-400 text-sm m-0">
+                View & manage all deployments, artifacts, connected agents,
+                self-managed & BYOC customers.
+              </p>
+            </div>
+          </li>
+          <li class="flex gap-3">
+            <Icon
+              name="lucide:check-circle"
+              class="w-6 h-6 text-green-600 flex-shrink-0 mt-1"
+            />
+            <div class="flex flex-col">
+              <h6 class="font-semibold text-gray-900 dark:text-white m-0">
+                Deployment Automation
+              </h6>
+              <p class="text-gray-600 dark:text-gray-400 text-sm m-0">
+                Helm and Docker agents manage deployments, collect logs and
+                metrics, and remote troubleshooting.
+              </p>
+            </div>
+          </li>
+          <li class="flex gap-3">
+            <Icon
+              name="lucide:check-circle"
+              class="w-6 h-6 text-green-600 flex-shrink-0 mt-1"
+            />
+            <div class="flex flex-col">
+              <h6 class="font-semibold text-gray-900 dark:text-white m-0">
+                White-label customer portal
+              </h6>
+              <p class="text-gray-600 dark:text-gray-400 text-sm m-0">
+                Let your customers control their deployments or download your
+                artifacts.
+              </p>
+            </div>
+          </li>
+          <li class="flex gap-3">
+            <Icon
+              name="lucide:check-circle"
+              class="w-6 h-6 text-green-600 flex-shrink-0 mt-1"
+            />
+            <div class="flex flex-col">
+              <h6 class="font-semibold text-gray-900 dark:text-white m-0">
+                Container registry
+              </h6>
+              <p class="text-gray-600 dark:text-gray-400 text-sm m-0">
+                Distribute OCI-compatible artifacts (Docker images, Helm charts,
+                Terraform modules) with built-in granular access control and
+                analytics.
+              </p>
+            </div>
+          </li>
+          <li class="flex gap-3">
+            <Icon
+              name="lucide:check-circle"
+              class="w-6 h-6 text-green-600 flex-shrink-0 mt-1"
+            />
+            <div class="flex flex-col">
+              <h6 class="font-semibold text-gray-900 dark:text-white m-0">
+                License Management
+              </h6>
+              <p class="text-gray-600 dark:text-gray-400 text-sm m-0">
+                Distribute specific versions of your application to specific
+                customers.
+              </p>
+            </div>
+          </li>
+          <li class="flex gap-3">
+            <Icon
+              name="lucide:check-circle"
+              class="w-6 h-6 text-green-600 flex-shrink-0 mt-1"
+            />
+            <div class="flex flex-col">
+              <h6 class="font-semibold text-gray-900 dark:text-white m-0">
+                API & SDK
+              </h6>
+              <p class="text-gray-600 dark:text-gray-400 text-sm m-0">
+                Programmatically integrate external systems or embed Distr into
+                your own application.
+              </p>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Right Column: Form -->
+      <div id="rightColumn" class="lg:col-span-1">
+        <div
+          class="bg-white dark:bg-gray-900 border border-accent-600 rounded-xl p-6 lg:p-10 shadow-2xl">
+          <!-- Step Indicators -->
+          <div id="stepIndicators" class="mb-8 hidden">
+            <div class="flex items-center">
+              {
+                signupSteps.map((s, index) => (
+                  <>
+                    <div
+                      class={`step-indicator ${index === 0 ? 'active' : 'inactive'}`}
+                      data-step={s.step}>
+                      {s.step}
+                    </div>
+                    {index < signupSteps.length - 1 && (
+                      <div class="step-line inactive" />
+                    )}
+                  </>
+                ))
+              }
+            </div>
+            <div
+              class="flex justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
+              {
+                signupSteps.map(s => (
+                  <span class="flex-1 text-center">{s.label}</span>
+                ))
+              }
+            </div>
+          </div>
+
+          <!-- Step 1: Basic Info (Initial Signup) -->
+          <div id="step1" class="step-content">
+            <div>
+              <h3 class="mb-4 text-gray-900 dark:text-white">
+                {heading}
+              </h3>
+              <div class="text-gray-600 dark:text-gray-400 mb-2">
+                {subheading}
+              </div>
+              <div
+                class="text-center text-sm italic text-gray-500 dark:text-gray-500 mb-6">
+                {ctaNote}
+              </div>
+            </div>
+            <form id="signup" class="space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    for="firstName"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    First Name*
+                  </label>
+                  <input
+                    type="text"
+                    id="firstName"
+                    name="firstName"
+                    placeholder="First name"
+                    autocomplete="given-name"
+                    required
+                    class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"
+                  />
+                </div>
+                <div>
+                  <label
+                    for="lastName"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Last Name*
+                  </label>
+                  <input
+                    type="text"
+                    id="lastName"
+                    name="lastName"
+                    placeholder="Last name"
+                    autocomplete="family-name"
+                    required
+                    class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"
+                  />
+                </div>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    for="jobTitle"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Job Title*
+                  </label>
+                  <input
+                    type="text"
+                    id="jobTitle"
+                    name="jobTitle"
+                    placeholder="Job Title"
+                    autocomplete="organization-title"
+                    required
+                    class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"
+                  />
+                </div>
+                <div>
+                  <label
+                    for="companyName"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Company Name*
+                  </label>
+                  <input
+                    type="text"
+                    id="companyName"
+                    name="companyName"
+                    placeholder="Company Name"
+                    autocomplete="organization"
+                    required
+                    class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"
+                  />
+                </div>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    for="email"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Work Email*
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="Work Email"
+                    autocomplete="email"
+                    required
+                    class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"
+                  />
+                </div>
+                <div>
+                  <label
+                    for="phone"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Work Phone
+                  </label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    placeholder="Work Phone"
+                    autocomplete="mobile tel"
+                    class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"
+                  />
+                </div>
+              </div>
+              {
+                requirePassword && (
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label
+                        for="password"
+                        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Password*
+                      </label>
+                      <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Password"
+                        autocomplete="new-password"
+                        minlength="8"
+                        required
+                        class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        for="confirmPassword"
+                        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Confirm Password*
+                      </label>
+                      <input
+                        type="password"
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        placeholder="Confirm Password"
+                        autocomplete="new-password"
+                        minlength="8"
+                        required
+                        class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"
+                      />
+                    </div>
+                  </div>
+                )
+              }
+              <div
+                class="g-recaptcha"
+                data-sitekey={reCaptchaKeyV2}
+                data-action={flowType}
+                data-callback="reCaptchaSubmit">
+              </div>
+
+              <button
+                type="submit"
+                id="submit-signup"
+                disabled
+                class="w-full mt-4 py-3 px-6 bg-accent-600 hover:bg-accent-900 disabled:bg-gray-400 text-white font-semibold rounded-md transition-colors cursor-pointer">
+                <span id="signup-text">Continue</span>
+                <span id="signup-loading" class="hidden">Submitting...</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Step 2: Details -->
+          <div id="step2" class="step-content hidden">
+            <div class="mb-6">
+              <h3 class="mb-2 text-gray-900 dark:text-white">Tell us more</h3>
+              <div class="text-gray-600 dark:text-gray-400">
+                Help us understand your deployment needs
+              </div>
+            </div>
+            <form id="details" class="space-y-4">
+              <div>
+                <label
+                  for="installations"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Number of self-managed installations*
+                </label>
+                <select
+                  id="installations"
+                  name="installations"
+                  required
+                  class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600">
+                  <option value="">Select...</option>
+                  <option value="0">0</option>
+                  <option value="1-4">1-4</option>
+                  <option value="5-10">5-10</option>
+                  <option value="11-50">11-50</option>
+                  <option value="51-100">51-100</option>
+                  <option value="100+">100+</option>
+                </select>
+              </div>
+              <div>
+                <div
+                  class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Deployment Types:
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <label class="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="target"
+                      value="docker"
+                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                    />
+                    <span class="text-sm text-gray-700 dark:text-gray-300">
+                      Docker
+                    </span>
+                  </label>
+                  <label class="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="target"
+                      value="kubernetes"
+                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                    />
+                    <span class="text-sm text-gray-700 dark:text-gray-300">
+                      Kubernetes
+                    </span>
+                  </label>
+                  <label class="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="target"
+                      value="airGapped"
+                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                    />
+                    <span class="text-sm text-gray-700 dark:text-gray-300">
+                      Air-gapped
+                    </span>
+                  </label>
+                  <label class="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="target"
+                      value="onPremise"
+                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                    />
+                    <span class="text-sm text-gray-700 dark:text-gray-300">
+                      On-Premises
+                    </span>
+                  </label>
+                </div>
+              </div>
+              <div>
+                <label
+                  for="use-case"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Use case
+                </label>
+                <textarea
+                  id="use-case"
+                  name="use-case"
+                  rows="4"
+                  class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"
+                ></textarea>
+              </div>
+              <button
+                type="submit"
+                id="submit-details"
+                class="w-full py-3 px-6 bg-accent-600 hover:bg-accent-900 disabled:bg-gray-400 text-white font-semibold rounded-md transition-colors cursor-pointer">
+                <span id="details-text">Continue</span>
+                <span id="details-loading" class="hidden">Saving...</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Step 3: Experience -->
+          <div id="step3" class="step-content hidden">
+            <div class="mb-6 text-center">
+              <h3 class="mb-2 text-gray-900 dark:text-white">
+                Tell us about yourself
+              </h3>
+              <div class="text-gray-600 dark:text-gray-400">
+                Help us understand your background
+              </div>
+            </div>
+            <form id="experience" class="space-y-4">
+              <div>
+                <label
+                  for="role"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  What describes you best? *
+                </label>
+                <select
+                  id="role"
+                  name="role"
+                  required
+                  class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600">
+                  <option value="">Select your role...</option>
+                  <option value="founder">Founder / Co-Founder</option>
+                  <option value="executive">Executive (C-Level / VP)</option>
+                  <option value="director">Director / Head of Department</option
+                  >
+                  <option value="senior">Senior (5+ years experience)</option>
+                  <option value="mid">Mid-Level (2-5 years experience)</option>
+                  <option value="junior">Junior / Entry Level</option>
+                  <option value="intern">Intern / Student</option>
+                </select>
+              </div>
+              <div>
+                <div
+                  class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Area of expertise *
+                </div>
+                <div class="space-y-2">
+                  <label class="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="expertise"
+                      value="software-engineer"
+                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                    />
+                    <span class="text-sm text-gray-700 dark:text-gray-300">
+                      Software Engineer / Developer
+                    </span>
+                  </label>
+                  <label class="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="expertise"
+                      value="product-manager"
+                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                    />
+                    <span class="text-sm text-gray-700 dark:text-gray-300">
+                      Product Manager
+                    </span>
+                  </label>
+                  <label class="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="expertise"
+                      value="marketing-growth"
+                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                    />
+                    <span class="text-sm text-gray-700 dark:text-gray-300">
+                      Marketing / Growth
+                    </span>
+                  </label>
+                  <label class="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="expertise"
+                      value="sales-bd"
+                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                    />
+                    <span class="text-sm text-gray-700 dark:text-gray-300">
+                      Sales / Business Development
+                    </span>
+                  </label>
+                  <label class="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="expertise"
+                      value="data-scientist"
+                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                    />
+                    <span class="text-sm text-gray-700 dark:text-gray-300">
+                      Data Scientist / Analyst
+                    </span>
+                  </label>
+                  <label class="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="expertise"
+                      value="operations-admin"
+                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                    />
+                    <span class="text-sm text-gray-700 dark:text-gray-300">
+                      Operations / Admin
+                    </span>
+                  </label>
+                </div>
+              </div>
+              <div>
+                <label
+                  for="companySize"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Company Size *
+                </label>
+                <select
+                  id="companySize"
+                  name="companySize"
+                  required
+                  class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600">
+                  <option value="">Select company size...</option>
+                  <option value="2000+">2,000+ employees</option>
+                  <option value="501-2000">501-2,000 employees</option>
+                  <option value="201-500">201-500 employees</option>
+                  <option value="51-200">51-200 employees</option>
+                  <option value="11-50">11-50 employees</option>
+                  <option value="2-10">2-10 employees</option>
+                  <option value="solo">Just me / Solo</option>
+                </select>
+              </div>
+              <button
+                type="submit"
+                id="submit-experience"
+                class="w-full py-3 px-6 bg-accent-600 hover:bg-accent-900 disabled:bg-gray-400 text-white font-semibold rounded-md transition-colors cursor-pointer">
+                <span id="experience-text">Continue</span>
+                <span id="experience-loading" class="hidden">Saving...</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Step 4: Discovery -->
+          <div id="step4" class="step-content hidden">
+            <div class="mb-6 text-center">
+              <h3 class="mb-2 text-gray-900 dark:text-white">
+                How did you discover us?
+              </h3>
+              <div class="text-gray-600 dark:text-gray-400">
+                Select all that apply
+              </div>
+            </div>
+            <form id="discovery" class="space-y-4">
+              <div class="space-y-2">
+                <label
+                  class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="discovery"
+                    value="google"
+                    class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                  />
+                  <span class="text-sm text-gray-700 dark:text-gray-300">
+                    Google
+                  </span>
+                </label>
+                <label
+                  class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="discovery"
+                    value="reddit"
+                    class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                  />
+                  <span class="text-sm text-gray-700 dark:text-gray-300">
+                    Reddit
+                  </span>
+                </label>
+                <label
+                  class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="discovery"
+                    value="hackernews"
+                    class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                  />
+                  <span class="text-sm text-gray-700 dark:text-gray-300">
+                    Hacker News
+                  </span>
+                </label>
+                <label
+                  class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="discovery"
+                    value="linkedin"
+                    class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                  />
+                  <span class="text-sm text-gray-700 dark:text-gray-300">
+                    LinkedIn
+                  </span>
+                </label>
+                <label
+                  class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="discovery"
+                    value="twitter"
+                    class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                  />
+                  <span class="text-sm text-gray-700 dark:text-gray-300">
+                    Twitter
+                  </span>
+                </label>
+                <label
+                  class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="discovery"
+                    value="recommendation"
+                    class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                  />
+                  <span class="text-sm text-gray-700 dark:text-gray-300">
+                    Recommendation (friend, co-worker, community)
+                  </span>
+                </label>
+                <label
+                  class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="discovery"
+                    value="llms"
+                    class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                  />
+                  <span class="text-sm text-gray-700 dark:text-gray-300">
+                    LLMs (ChatGPT, Claude, etc.)
+                  </span>
+                </label>
+                <label
+                  class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="discovery"
+                    value="offline-events"
+                    class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                  />
+                  <span class="text-sm text-gray-700 dark:text-gray-300">
+                    Offline Events / Meetups
+                  </span>
+                </label>
+                <label
+                  class="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="discovery"
+                    value="other"
+                    class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                  />
+                  <span class="text-sm text-gray-700 dark:text-gray-300">
+                    Other
+                  </span>
+                </label>
+                <div id="discovery-other-input" class="hidden">
+                  <input
+                    type="text"
+                    name="discoveryOtherText"
+                    placeholder="Please specify..."
+                    class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                id="submit-discovery"
+                class="w-full py-3 px-6 bg-accent-600 hover:bg-accent-900 disabled:bg-gray-400 text-white font-semibold rounded-md transition-colors cursor-pointer">
+                <span id="discovery-text">Continue</span>
+                <span id="discovery-loading" class="hidden">Saving...</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Step 5: Timeline -->
+          <div id="step5" class="step-content hidden">
+            <div class="mb-6 text-center">
+              <h3 class="mb-2 text-gray-900 dark:text-white">
+                When do you want to get started?
+              </h3>
+              <div class="text-gray-600 dark:text-gray-400">
+                Help us prioritize your onboarding
+              </div>
+            </div>
+            <form id="timeline" class="space-y-4">
+              <div class="space-y-3">
+                <label
+                  class="flex items-start p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent-600 dark:hover:border-accent-600 cursor-pointer transition-colors">
+                  <input
+                    type="radio"
+                    name="timeline"
+                    value="asap"
+                    required
+                    class="w-4 h-4 mt-1 text-accent-600 border-gray-300 focus:ring-accent-600"
+                  />
+                  <div class="ml-3">
+                    <div class="font-semibold text-gray-900 dark:text-white">
+                      ASAP
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                      Ready to start immediately
+                    </div>
+                  </div>
+                </label>
+                <label
+                  class="flex items-start p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent-600 dark:hover:border-accent-600 cursor-pointer transition-colors">
+                  <input
+                    type="radio"
+                    name="timeline"
+                    value="next-weeks"
+                    required
+                    class="w-4 h-4 mt-1 text-accent-600 border-gray-300 focus:ring-accent-600"
+                  />
+                  <div class="ml-3">
+                    <div class="font-semibold text-gray-900 dark:text-white">
+                      In the next weeks
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                      Planning to start soon
+                    </div>
+                  </div>
+                </label>
+                <label
+                  class="flex items-start p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent-600 dark:hover:border-accent-600 cursor-pointer transition-colors">
+                  <input
+                    type="radio"
+                    name="timeline"
+                    value="1-3-months"
+                    required
+                    class="w-4 h-4 mt-1 text-accent-600 border-gray-300 focus:ring-accent-600"
+                  />
+                  <div class="ml-3">
+                    <div class="font-semibold text-gray-900 dark:text-white">
+                      In 1-3 months
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                      Getting ready for implementation
+                    </div>
+                  </div>
+                </label>
+                <label
+                  class="flex items-start p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent-600 dark:hover:border-accent-600 cursor-pointer transition-colors">
+                  <input
+                    type="radio"
+                    name="timeline"
+                    value="exploring"
+                    required
+                    class="w-4 h-4 mt-1 text-accent-600 border-gray-300 focus:ring-accent-600"
+                  />
+                  <div class="ml-3">
+                    <div class="font-semibold text-gray-900 dark:text-white">
+                      Not sure yet, just exploring
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                      Learning about Distr
+                    </div>
+                  </div>
+                </label>
+              </div>
+              <button
+                type="submit"
+                id="submit-timeline"
+                class="w-full py-3 px-6 bg-accent-600 hover:bg-accent-900 disabled:bg-gray-400 text-white font-semibold rounded-md transition-colors cursor-pointer">
+                <span id="timeline-text">{submitButtonText}</span>
+                <span id="timeline-loading" class="hidden">Completing...</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Success Message -->
+          <div id="successMessage" class="hidden py-12">
+            <div class="text-center mb-8">
+              <div
+                class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 mb-6">
+                <Icon
+                  name="lucide:check-circle"
+                  class="h-6 w-6 text-green-600"
+                />
+              </div>
+              <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                {successTitle}
+              </h3>
+              <p class="text-gray-600 dark:text-gray-400 mb-8">
+                {successMessage}
+              </p>
+            </div>
+            <CalComIFrame />
+          </div>
+
+          <!-- Error Message -->
+          <div
+            id="errorMessage"
+            class="hidden mt-6 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-md">
+            <div class="flex items-center">
+              <Icon
+                name="lucide:alert-circle"
+                class="h-5 w-5 text-red-600 mr-2"
+              />
+              <p
+                class="text-sm font-medium text-red-800 dark:text-red-200"
+                id="errorMessageText">
+                Something went wrong. Please try again later.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script
+  define:vars={{flowType, requirePassword, formsServerBaseUrl, reCaptchaKey}}
+>
+  // Store user data across steps
+  let userData = {};
+  let currentStep = 1;
+  let reCaptchaToken = '';
+
+  // Determine API endpoints based on flowType
+  const apiPath = `/distr/${flowType}`;
+  const initEndpoint = `${formsServerBaseUrl}${apiPath}/init`;
+  const submitEndpoint = `${formsServerBaseUrl}${apiPath}/submit`;
+  const telemetryEndpoint = `${formsServerBaseUrl}${apiPath}/telemetry`;
+
+  // Declare global variables for analytics
+  const dataLayer = window.dataLayer || [];
+  window.dataLayer = dataLayer;
+
+  // Track events for analytics
+  function trackEvent(eventName, properties = {}) {
+    // Send to Google Tag Manager
+    if (window.dataLayer) {
+      window.dataLayer.push({
+        event: eventName,
+        ...properties,
+      });
+    }
+  }
+
+  // Update URL with step parameter
+  function updateURL(step) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('step', step.toString());
+    window.history.pushState({step}, '', url);
+
+    // Track page view for analytics
+    trackEvent('page_view', {
+      page_title: `Signup - Step ${step}`,
+      page_location: url.href,
+    });
+  }
+
+  // Show specific step
+  function showStep(step) {
+    document.querySelectorAll('.step-content').forEach(el => {
+      el.classList.add('hidden');
+    });
+
+    const stepEl = document.getElementById(`step${step}`);
+    if (stepEl) {
+      stepEl.classList.remove('hidden');
+    }
+
+    updateStepIndicators(step);
+    currentStep = step;
+    updateURL(step);
+  }
+
+  // Update step indicators
+  function updateStepIndicators(step) {
+    const indicators = document.querySelectorAll('.step-indicator');
+    const lines = document.querySelectorAll('.step-line');
+
+    indicators.forEach((indicator, index) => {
+      const stepNum = index + 1;
+      indicator.classList.remove('active', 'completed', 'inactive');
+
+      if (stepNum < step) {
+        indicator.classList.add('completed');
+        indicator.innerHTML =
+          '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>';
+      } else if (stepNum === step) {
+        indicator.classList.add('active');
+        indicator.textContent = stepNum.toString();
+      } else {
+        indicator.classList.add('inactive');
+        indicator.textContent = stepNum.toString();
+      }
+    });
+
+    lines.forEach((line, index) => {
+      line.classList.remove('completed', 'inactive');
+      if (index < step - 1) {
+        line.classList.add('completed');
+      } else {
+        line.classList.add('inactive');
+      }
+    });
+  }
+
+  // Initialize form from URL parameter
+  function initializeFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const stepParam = urlParams.get('step');
+
+    if (stepParam) {
+      const step = parseInt(stepParam, 10);
+      if (step >= 1 && step <= 5) {
+        currentStep = step;
+      }
+    }
+  }
+
+  // Loading state management
+  function setLoadingState(buttonId, loading) {
+    const button = document.getElementById(`submit-${buttonId}`);
+    const text = document.getElementById(`${buttonId}-text`);
+    const loadingText = document.getElementById(`${buttonId}-loading`);
+
+    if (button && text && loadingText) {
+      button.disabled = loading;
+      if (loading) {
+        text.classList.add('hidden');
+        loadingText.classList.remove('hidden');
+      } else {
+        text.classList.remove('hidden');
+        loadingText.classList.add('hidden');
+      }
+    }
+  }
+
+  // Error handling
+  function showError(message) {
+    const errorMessage = document.getElementById('errorMessage');
+    const errorMessageText = document.getElementById('errorMessageText');
+
+    if (errorMessage && errorMessageText) {
+      errorMessageText.textContent = message;
+      errorMessage.classList.remove('hidden');
+      setTimeout(() => {
+        errorMessage.classList.add('hidden');
+      }, 5000);
+    }
+  }
+
+  function hideMessages() {
+    const successMessage = document.getElementById('successMessage');
+    const errorMessage = document.getElementById('errorMessage');
+    successMessage?.classList.add('hidden');
+    errorMessage?.classList.add('hidden');
+  }
+
+  // Send telemetry for steps 2-5
+  async function sendTelemetry(stepData) {
+    try {
+      await fetch(telemetryEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...userData,
+          notes: JSON.stringify(stepData),
+        }),
+      });
+    } catch (error) {
+      console.error('Telemetry error:', error);
+    }
+  }
+
+  // Handle browser back/forward
+  window.addEventListener('popstate', event => {
+    if (event.state && event.state.step) {
+      showStep(event.state.step);
+    }
+  });
+
+  /**
+   * Creates a ReCAPTCHA Token
+   *
+   * @param action should be one of the following: init, submit, telemetry
+   * @returns {Promise<String>}
+   */
+  async function recaptchaToken(action) {
+    if (typeof grecaptcha === 'undefined') {
+      return '';
+    }
+
+    return new Promise(resolve => {
+      grecaptcha.enterprise.ready(() => {
+        grecaptcha.enterprise.execute(reCaptchaKey, {action}).then(token => {
+          resolve(token);
+        });
+      });
+    });
+  }
+
+  // Global callback for reCAPTCHA v2
+  window.reCaptchaSubmit = token => {
+    reCaptchaToken = token;
+    // Enable the submit button once reCAPTCHA is completed
+    const submitButton = document.getElementById('submit-signup');
+    if (submitButton) {
+      submitButton.disabled = false;
+    }
+  };
+
+  // Initialize tracking when page loads
+  async function initTracking() {
+    // let token = await recaptchaToken('init');
+
+    try {
+      const url = new URL(initEndpoint);
+      if (token) {
+        url.searchParams.set('token', token);
+      }
+      await fetch(url.toString());
+    } catch (error) {
+      console.error('Init tracking error:', error);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initializeFromURL();
+    // initTracking();
+
+    // Step 1: Basic signup
+    const signupForm = document.getElementById('signup');
+    signupForm?.addEventListener('submit', async e => {
+      e.preventDefault();
+
+      const formData = new FormData(signupForm);
+
+      if (requirePassword) {
+        const password = formData.get('password');
+        const confirmPassword = formData.get('confirmPassword');
+
+        if (password !== confirmPassword) {
+          showError('Passwords do not match');
+          return;
+        }
+      }
+
+      if (!reCaptchaToken) {
+        showError('reCaptchaToken token invalid');
+        return;
+      }
+
+      const data = {
+        firstName: formData.get('firstName'),
+        lastName: formData.get('lastName'),
+        jobTitle: formData.get('jobTitle'),
+        companyName: formData.get('companyName'),
+        email: formData.get('email'),
+        phone: formData.get('phone'),
+        ...(requirePassword && {password: formData.get('password')}),
+        type: formData.get('type'),
+        // reCaptchaToken: reCaptchaToken,
+      };
+
+      userData = {...userData, ...data};
+
+      trackEvent('signup_step_1_completed', {
+        email: data.email,
+      });
+
+      // Show loading state
+      setLoadingState('signup', true);
+      hideMessages();
+
+      try {
+        const response = await fetch(submitEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          const errorMessage =
+            errorData.message || `Server error: ${response.status}`;
+          showError(errorMessage);
+          return;
+        }
+
+        // Success - move to step 2
+        showStep(2);
+      } catch (error) {
+        console.error('Network error:', error);
+        showError('Network error. Please check your connection and try again.');
+      } finally {
+        setLoadingState('signup', false);
+      }
+    });
+
+    // Step 2: Details
+    const detailsForm = document.getElementById('details');
+    detailsForm?.addEventListener('submit', async e => {
+      e.preventDefault();
+
+      const formData = new FormData(detailsForm);
+      const targetBoxes = detailsForm.querySelectorAll(
+        'input[name="target"]:checked',
+      );
+      const targets = Array.from(targetBoxes).map(cb => cb.value);
+
+      const data = {
+        installations: formData.get('installations'),
+        target: targets,
+        useCase: formData.get('use-case'),
+        type: formData.get('type'),
+      };
+
+      userData = {...userData, ...data};
+
+      trackEvent('signup_step_2_completed');
+
+      setLoadingState('details', true);
+
+      // Send telemetry
+      await sendTelemetry(data);
+
+      setLoadingState('details', false);
+      showStep(3);
+    });
+
+    // Step 3: Experience
+    const experienceForm = document.getElementById('experience');
+    experienceForm?.addEventListener('submit', async e => {
+      e.preventDefault();
+
+      const formData = new FormData(experienceForm);
+      const expertiseBoxes = experienceForm.querySelectorAll(
+        'input[name="expertise"]:checked',
+      );
+      const expertise = Array.from(expertiseBoxes).map(cb => cb.value);
+
+      if (expertise.length === 0) {
+        showError('Please select at least one area of expertise');
+        return;
+      }
+
+      const data = {
+        role: formData.get('role'),
+        expertise: expertise,
+        companySize: formData.get('companySize'),
+      };
+
+      userData = {...userData, ...data};
+
+      trackEvent('signup_step_3_completed');
+
+      setLoadingState('experience', true);
+
+      // Send telemetry
+      await sendTelemetry(data);
+
+      setLoadingState('experience', false);
+      showStep(4);
+    });
+
+    // Handle "Other" checkbox for discovery
+    const discoveryForm = document.getElementById('discovery');
+    const discoveryCheckboxes = discoveryForm?.querySelectorAll(
+      'input[name="discovery"]',
+    );
+    discoveryCheckboxes?.forEach(checkbox => {
+      if (checkbox.value === 'other') {
+        checkbox.addEventListener('change', () => {
+          const otherInput = document.getElementById('discovery-other-input');
+          if (checkbox.checked) {
+            otherInput.classList.remove('hidden');
+          } else {
+            otherInput.classList.add('hidden');
+          }
+        });
+      }
+    });
+
+    // Step 4: Discovery
+    discoveryForm?.addEventListener('submit', async e => {
+      e.preventDefault();
+
+      const discoveryBoxes = discoveryForm.querySelectorAll(
+        'input[name="discovery"]:checked',
+      );
+      const discovery = Array.from(discoveryBoxes).map(cb => cb.value);
+
+      if (discovery.length === 0) {
+        showError('Please select at least one option');
+        return;
+      }
+
+      const otherText =
+        discoveryForm.querySelector('input[name="discoveryOtherText"]')
+          ?.value || '';
+
+      if (discovery.includes('other') && !otherText.trim()) {
+        showError('Please specify what "Other" refers to');
+        return;
+      }
+
+      const data = {
+        discovery: discovery,
+        discoveryOtherText: otherText,
+      };
+
+      userData = {...userData, ...data};
+
+      trackEvent('signup_step_4_completed');
+
+      setLoadingState('discovery', true);
+
+      // Send telemetry
+      await sendTelemetry(data);
+
+      setLoadingState('discovery', false);
+      showStep(5);
+    });
+
+    // Step 5: Timeline
+    const timelineForm = document.getElementById('timeline');
+    timelineForm?.addEventListener('submit', async e => {
+      e.preventDefault();
+
+      const formData = new FormData(timelineForm);
+      const data = {
+        timeline: formData.get('timeline'),
+      };
+
+      userData = {...userData, ...data};
+
+      trackEvent('signup_step_5_completed', {
+        flow_type: flowType,
+      });
+
+      setLoadingState('timeline', true);
+
+      // Send telemetry
+      await sendTelemetry(data);
+
+      setLoadingState('timeline', false);
+
+      console.log('Final signup data:', userData);
+
+      // Show success message
+      document.querySelectorAll('.step-content').forEach(el => {
+        el.classList.add('hidden');
+      });
+      document.getElementById('successMessage').classList.remove('hidden');
+      document.getElementById('stepIndicators').classList.add('hidden');
+
+      // Hide left column on step 5 for onboarding flow
+      const leftColumn = document.getElementById('leftColumn');
+      const rightColumn = document.getElementById('rightColumn');
+
+      leftColumn?.classList.add('hidden');
+      rightColumn?.classList.remove('lg:col-span-1');
+      rightColumn?.classList.add('lg:col-span-2');
+    });
+  });
+</script>

@@ -1,0 +1,29 @@
+---
+import DemoButton from '~/components/buttons/DemoButton.astro';
+import SignupButton from '~/components/buttons/SignupButton.astro';
+---
+
+<section class="py-8 md:py-16 lg:py-24 bg-white dark:bg-gray-900">
+  <div class="container mx-auto px-4 max-w-5xl">
+    <div
+      class="bg-gradient-to-br from-accent-600 to-accent-950 rounded-2xl p-8 md:p-12 lg:p-16 shadow-[0_20px_60px_rgba(0,0,0,0.15)] text-center"
+      style="color: white;">
+      <h2
+        class="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 md:mb-6"
+        style="color: white;">
+        Sign up and explore Distr
+      </h2>
+      <p
+        class="text-base md:text-lg lg:text-xl mb-6 md:mb-8 opacity-90 leading-relaxed max-w-3xl mx-auto"
+        style="color: white;">
+        Distr is a battle tested software distribution platform that helps you
+        scale from your first self-managed customers to dozens and even
+        thousands.
+      </p>
+      <div class="flex flex-col md:flex-row gap-4 justify-center items-center">
+        <DemoButton class="w-full md:w-auto" />
+        <SignupButton class="w-full md:w-auto" />
+      </div>
+    </div>
+  </div>
+</section>

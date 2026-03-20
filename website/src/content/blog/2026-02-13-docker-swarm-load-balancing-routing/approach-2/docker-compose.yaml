@@ -1,0 +1,54 @@
+networks:
+  traefik-public:
+    driver: overlay
+    attachable: true
+
+volumes:
+  letsencrypt:
+
+services:
+  traefik:
+    image: traefik:v3.6
+    command:
+      - '--providers.swarm=true'
+      - '--providers.swarm.exposedbydefault=false'
+      - '--providers.swarm.network=traefik-public'
+      - '--entrypoints.web.address=:80'
+      - '--entrypoints.websecure.address=:443'
+      - '--entrypoints.web.http.redirections.entrypoint.to=websecure'
+      - '--entrypoints.web.http.redirections.entrypoint.scheme=https'
+      - '--certificatesresolvers.letsencrypt.acme.email=admin@example.com'
+      - '--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json'
+      - '--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web'
+      - '--accesslog=true'
+      - '--log.level=INFO'
+    ports:
+      - target: 80
+        published: 80
+        mode: host
+      - target: 443
+        published: 443
+        mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt:/letsencrypt
+    networks:
+      - traefik-public
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+  webapp:
+    image: myapp:latest
+    networks:
+      - traefik-public
+    deploy:
+      replicas: 3
+      labels:
+        - 'traefik.enable=true'
+        - 'traefik.http.routers.webapp.rule=Host(`app.example.com`)'
+        - 'traefik.http.routers.webapp.entrypoints=websecure'
+        - 'traefik.http.routers.webapp.tls.certresolver=letsencrypt'
+        - 'traefik.http.services.webapp.loadbalancer.server.port=8080'

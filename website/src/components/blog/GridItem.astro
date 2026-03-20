@@ -1,0 +1,56 @@
+---
+import type {Post, PostData} from '~/types';
+import Image from '../common/Image.astro';
+
+export interface Props {
+  post: PostData;
+}
+
+const {post} = Astro.props;
+---
+
+<article
+  class="relative rounded-2xl bg-white dark:bg-gray-900 p-6 shadow-lg ring-1 ring-gray-200 dark:ring-gray-800 hover:ring-2 hover:ring-blue-600 transition-all duration-200 mt-0">
+  {
+    post.image && (
+      <div class="relative h-48 object-cover -mx-6 -mt-6 mb-6">
+        <a href={'/blog/' + post.slug + '/'}>
+          <Image
+            src={post.image}
+            class="w-full h-full rounded-t-2xl bg-gray-400 dark:bg-slate-700"
+            alt={post.title}
+            aspectRatio="16:9"
+            loading="lazy"
+            decoding="async"
+          />
+        </a>
+      </div>
+    )
+  }
+
+  <h3
+    class="text-xl font-bold leading-tight mb-3 text-gray-900 dark:text-white">
+    {
+      post.slug ? (
+        <a
+          class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          href={'/blog/' + post.slug + '/'}>
+          {post.title}
+        </a>
+      ) : (
+        post.title
+      )
+    }
+  </h3>
+
+  <p class="text-gray-600 dark:text-gray-400 text-base leading-relaxed mb-4">
+    {post.description}
+  </p>
+
+  <a
+    href={'/blog/' + post.slug + '/'}
+    class="inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
+    Read more
+    <span aria-hidden="true" class="ml-1">→</span>
+  </a>
+</article>

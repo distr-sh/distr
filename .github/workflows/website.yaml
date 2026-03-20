@@ -1,0 +1,76 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: Build Website
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'website/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'website/**'
+
+permissions:
+  id-token: write
+  contents: read
+
+defaults:
+  run:
+    working-directory: website
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          sparse-checkout: website
+          lfs: true
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+        with:
+          version: 10
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: website/pnpm-lock.yaml
+      - uses: actions/cache@v5
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('website/pnpm-lock.yaml') }}
+      - name: Install dependencies
+        run: pnpm i
+      - name: Lint with prettier
+        run: pnpm run lint
+      - name: Install playwright browser
+        run: pnpm exec playwright install --only-shell
+      - name: Build website
+        run: pnpm run build
+      - uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6
+        if: github.ref == 'refs/heads/main'
+        with:
+          aws-region: eu-central-1
+          role-to-assume: arn:aws:iam::639130800065:role/github-actions-distr.sh
+      - name: Deploy hashed assets
+        if: github.ref == 'refs/heads/main'
+        run: >-
+          aws s3 sync dist/_astro s3://distr.sh/_astro/
+          --cache-control "max-age=31536000, public, immutable"
+          --acl=public-read
+      - name: Deploy dynamic content
+        if: github.ref == 'refs/heads/main'
+        run: >-
+          aws s3 sync dist s3://distr.sh/
+          --cache-control "max-age=60, public, must-revalidate"
+          --acl=public-read
+      - name: Invalidate cache
+        if: github.ref == 'refs/heads/main'
+        run: >-
+          aws cloudfront create-invalidation
+          --distribution-id E1PG5UM7ZE1H97
+          --invalidation-batch "Paths={Quantity='1' ,Items=['/*']},CallerReference=WEBSITE_$GITHUB_RUN_ID"

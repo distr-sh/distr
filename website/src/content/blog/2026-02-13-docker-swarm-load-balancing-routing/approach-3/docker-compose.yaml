@@ -1,0 +1,138 @@
+networks:
+  traefik-public:
+    driver: overlay
+    attachable: true
+  monitoring:
+    driver: overlay
+
+volumes:
+  letsencrypt:
+  prometheus-data:
+  grafana-data:
+
+services:
+  traefik:
+    image: traefik:v3.6
+    command:
+      - '--providers.swarm=true'
+      - '--providers.swarm.exposedbydefault=false'
+      - '--providers.swarm.network=traefik-public'
+      - '--entrypoints.web.address=:80'
+      - '--entrypoints.websecure.address=:443'
+      - '--entrypoints.web.http.redirections.entrypoint.to=websecure'
+      - '--entrypoints.web.http.redirections.entrypoint.scheme=https'
+      - '--certificatesresolvers.letsencrypt.acme.email=admin@example.com'
+      - '--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json'
+      - '--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare'
+      - '--certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53'
+      - '--metrics.prometheus=true'
+      - '--metrics.prometheus.buckets=0.1,0.3,1.2,5.0'
+      - '--accesslog=true'
+      - '--log.level=INFO'
+      - '--api.dashboard=true'
+    environment:
+      - CF_API_EMAIL=admin@example.com
+      - CF_DNS_API_TOKEN_FILE=/run/secrets/cf_api_token
+    ports:
+      - target: 80
+        published: 80
+        mode: host
+      - target: 443
+        published: 443
+        mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt:/letsencrypt
+    networks:
+      - traefik-public
+      - monitoring
+    secrets:
+      - cf_api_token
+      - dashboard_users
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        - 'traefik.enable=true'
+        - 'traefik.http.routers.dashboard.rule=Host(`traefik.example.com`)'
+        - 'traefik.http.routers.dashboard.entrypoints=websecure'
+        - 'traefik.http.routers.dashboard.tls.certresolver=letsencrypt'
+        - 'traefik.http.routers.dashboard.service=api@internal'
+        - 'traefik.http.routers.dashboard.middlewares=dashboard-auth'
+        - 'traefik.http.middlewares.dashboard-auth.basicauth.usersfile=/run/secrets/dashboard_users'
+        - 'traefik.http.services.dashboard.loadbalancer.server.port=8080'
+
+  webapp:
+    image: myapp:latest
+    networks:
+      - traefik-public
+    deploy:
+      replicas: 3
+      labels:
+        - 'traefik.enable=true'
+        - 'traefik.http.routers.webapp.rule=Host(`app.example.com`)'
+        - 'traefik.http.routers.webapp.entrypoints=websecure'
+        - 'traefik.http.routers.webapp.tls.certresolver=letsencrypt'
+        - 'traefik.http.routers.webapp.middlewares=webapp-ratelimit,webapp-circuitbreaker'
+        - 'traefik.http.middlewares.webapp-ratelimit.ratelimit.average=100'
+        - 'traefik.http.middlewares.webapp-ratelimit.ratelimit.burst=200'
+        - 'traefik.http.middlewares.webapp-circuitbreaker.circuitbreaker.expression=ResponseCodeRatio(500, 600, 0, 600) > 0.25'
+        - 'traefik.http.services.webapp.loadbalancer.server.port=8080'
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - prometheus-data:/prometheus
+    configs:
+      - source: prometheus-config
+        target: /etc/prometheus/prometheus.yml
+    networks:
+      - monitoring
+      - traefik-public
+    secrets:
+      - dashboard_users
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        - 'traefik.enable=true'
+        - 'traefik.http.routers.prometheus.rule=Host(`prometheus.example.com`)'
+        - 'traefik.http.routers.prometheus.entrypoints=websecure'
+        - 'traefik.http.routers.prometheus.tls.certresolver=letsencrypt'
+        - 'traefik.http.routers.prometheus.middlewares=prometheus-auth'
+        - 'traefik.http.middlewares.prometheus-auth.basicauth.usersfile=/run/secrets/dashboard_users'
+        - 'traefik.http.services.prometheus.loadbalancer.server.port=9090'
+
+  grafana:
+    image: grafana/grafana:latest
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - monitoring
+      - traefik-public
+    secrets:
+      - dashboard_users
+    deploy:
+      replicas: 1
+      labels:
+        - 'traefik.enable=true'
+        - 'traefik.http.routers.grafana.rule=Host(`grafana.example.com`)'
+        - 'traefik.http.routers.grafana.entrypoints=websecure'
+        - 'traefik.http.routers.grafana.tls.certresolver=letsencrypt'
+        - 'traefik.http.routers.grafana.middlewares=grafana-auth'
+        - 'traefik.http.middlewares.grafana-auth.basicauth.usersfile=/run/secrets/dashboard_users'
+        - 'traefik.http.services.grafana.loadbalancer.server.port=3000'
+
+configs:
+  prometheus-config:
+    file: ./prometheus.yml
+
+secrets:
+  cf_api_token:
+    external: true
+  dashboard_users:
+    external: true

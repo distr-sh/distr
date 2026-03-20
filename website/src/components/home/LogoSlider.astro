@@ -1,0 +1,56 @@
+---
+const logos = [
+  '/src/assets/logos/logo-placeholder.png',
+  '/src/assets/logos/logo-placeholder.png',
+  '/src/assets/logos/logo-placeholder.png',
+  '/src/assets/logos/logo-placeholder.png',
+  '/src/assets/logos/logo-placeholder.png',
+];
+---
+
+<div class="bg-gray-900 dark:bg-[#174c76] py-8 md:py-12">
+  <div class="overflow-hidden max-w-screen-2xl mx-auto mb-8 md:mb-12">
+    <div
+      class="inline-flex overflow-hidden whitespace-nowrap relative hover:[&>*]:pause">
+      <div class="flex animate-[slide_50s_linear_infinite]">
+        {
+          logos.map(logo => (
+            <img
+              src={logo}
+              width={200}
+              alt="Company logo"
+              class="h-auto max-w-none object-contain ml-12 md:ml-[50px]"
+            />
+          ))
+        }
+      </div>
+      <div class="flex animate-[slide_50s_linear_infinite]" aria-hidden="true">
+        {
+          logos.map(logo => (
+            <img
+              src={logo}
+              width={200}
+              alt="Company logo"
+              class="h-auto max-w-none object-contain ml-12 md:ml-[50px]"
+            />
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes slide {
+    from {
+      transform: translateX(0%);
+    }
+    to {
+      transform: translateX(-100%);
+    }
+  }
+
+  .pause {
+    animation-play-state: paused !important;
+  }
+</style>

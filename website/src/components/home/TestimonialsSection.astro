@@ -1,0 +1,85 @@
+---
+import {Icon} from 'astro-icon/components';
+import jeffersonImage from '~/assets/testimonials/testimonial-7.jpg';
+import anshGuptaImage from '~/assets/case-studies/sophris/ansh-gupta.jpeg';
+import corbinKlettImage from '~/assets/testimonials/testimonial-8.jpeg';
+import derekReynoldsImage from '~/assets/case-studies/basedash/reynolds.jpeg';
+
+const testimonials = [
+  {
+    name: 'Jefferson Rodrigues',
+    role: 'Co-Founder & CTO',
+    company: 'Lerian',
+    image: jeffersonImage,
+    text: 'Our main goal is to simplify the daily operations. No more manual installations, updates, or rollbacks — everything can now be handled with a single click with Distr.',
+    caseStudyUrl: '/case-studies/lerian/',
+  },
+  {
+    name: 'Ansh Gupta',
+    role: 'CTO',
+    company: 'Sophris.ai',
+    image: anshGuptaImage,
+    text: 'Distr eliminated nearly all deployment headaches. Updates that used to take days now take minutes.',
+    caseStudyUrl: '/case-studies/sophris/',
+  },
+  {
+    name: 'Corbin Klett',
+    role: 'Co-Founder',
+    company: 'Artifact',
+    image: corbinKlettImage,
+    text: 'Distr gives us a clean way to deploy and update our software in GovCloud without breaking security or adding operational overhead.',
+  },
+  {
+    name: 'Derek Reynolds',
+    role: 'Product Engineer',
+    company: 'Basedash',
+    image: derekReynoldsImage,
+    text: 'Having a dedicated space for all our self-hosted customers that can manage authenticated registry access is great.',
+    caseStudyUrl: '/case-studies/basedash/',
+  },
+];
+---
+
+<section class="py-8 md:py-16 lg:py-24 bg-gray-50 dark:bg-gray-800">
+  <div class="container mx-auto px-4 max-w-7xl">
+    <h2
+      class="text-2xl md:text-3xl lg:text-4xl font-bold text-center mb-8 md:mb-12 lg:mb-16">
+      What our users say
+    </h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+      {
+        testimonials.map(testimonial => (
+          <div class="bg-white dark:bg-gray-900 rounded-xl p-6 md:p-8 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col h-full border border-gray-200 dark:border-gray-700">
+            <p class="text-base md:text-lg mb-6 italic leading-relaxed text-gray-700 dark:text-gray-300 flex-grow">
+              "{testimonial.text}"
+            </p>
+            <div class="flex items-center gap-4 mt-auto">
+              <img
+                src={testimonial.image.src}
+                alt={testimonial.name}
+                class="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover flex-shrink-0"
+              />
+              <div class="flex-grow">
+                <p class="font-bold text-gray-900 dark:text-white">
+                  {testimonial.name}
+                </p>
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                  {testimonial.role}, {testimonial.company}
+                </p>
+              </div>
+              {testimonial.caseStudyUrl && (
+                <a
+                  href={testimonial.caseStudyUrl}
+                  class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-br from-[#00b5eb] to-[#63c5e3] text-white font-medium text-sm hover:shadow-lg transition-all duration-300 hover:scale-105 whitespace-nowrap">
+                  Read case study
+                  <Icon name="lucide:arrow-right" class="w-4 h-4" />
+                </a>
+              )}
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>

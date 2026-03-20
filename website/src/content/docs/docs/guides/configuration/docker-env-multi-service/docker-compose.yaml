@@ -1,0 +1,33 @@
+x-shared-env: &shared-env
+  SHARED_ENV_PRODUCT: ${SHARED_ENV_PRODUCT:?error}
+  SHARED_ENV_DOCS_URL: ${SHARED_ENV_DOCS_URL:?error}
+
+# Our partly shared env needs to extend the shared env
+x-partly-shared-env: &partly-shared-env
+  <<: *shared-env
+  PARTLY_SHARED_ENV: ${PARTLY_SHARED_ENV:?error}
+
+services:
+  one:
+    image: 'stefanprodan/podinfo'
+    ports:
+      - '3001:9898'
+    environment:
+      <<: *partly-shared-env
+      SERVER_NAME: ${SERVER_NAME_ONE:?error}
+
+  two:
+    image: 'stefanprodan/podinfo'
+    ports:
+      - '3002:9898'
+    environment:
+      <<: *partly-shared-env
+      SERVER_NAME: ${SERVER_NAME_TWO:?error}
+
+  three:
+    image: 'stefanprodan/podinfo'
+    ports:
+      - '3003:9898'
+    environment:
+      <<: *shared-env
+      SERVER_NAME: ${SERVER_NAME_THREE:?error}

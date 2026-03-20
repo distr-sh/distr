@@ -1,0 +1,576 @@
+---
+import Layout from '~/layouts/StarlightLayout.astro';
+import SignUpCta from '~/components/cta/standalone/SignUpCta.astro';
+import {Icon} from '@astrojs/starlight/components';
+import Image from '~/components/common/Image.astro';
+import comparisonThumbnail from '~/assets/blog/2025-02-26-replicated-comparison/comparison-thumbnail.png';
+
+export async function getStaticPaths() {
+  return [
+    {
+      params: {slug: 'replicated'},
+      props: {
+        title:
+          'Distr vs Replicated: A Comprehensive Comparison for Software Distribution (2026)',
+        description:
+          'A comprehensive comparison of Distr and Replicated for software distribution. Compare deployment models, pricing, features, and architecture to make an informed decision.',
+        competitor: 'Replicated',
+        heroImage: comparisonThumbnail,
+      },
+    },
+  ];
+}
+
+const {slug} = Astro.params;
+const {title, description, competitor, heroImage} = Astro.props;
+---
+
+<style>
+  .prose {
+    p {
+      @apply hyphens-auto text-justify;
+      margin-top: 1rem;
+      margin-bottom: 1rem;
+    }
+    pre {
+      margin-top: 2rem;
+    }
+    ul,
+    ol {
+      margin-top: 2rem;
+    }
+    table {
+      margin-top: 2rem;
+    }
+  }
+</style>
+
+<Layout title={title} description={description}>
+  <div class="mx-auto max-w-7xl px-1 sm:px-8 lg:px-10">
+    <section class="pt-8 sm:y-12 mx-auto">
+      <article class="max-w-4xl mx-auto px-6 sm:px-8">
+        <!-- Back to compare button -->
+        <div class="mb-8 text-center">
+          <a
+            href="/compare/"
+            class="inline-flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors no-underline">
+            <Icon name="left-arrow" class="w-4 h-4 mr-1" />
+            Compare
+          </a>
+        </div>
+
+        <header class="mb-12 text-center">
+          <!-- Title -->
+          <h1
+            class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 dark:text-white mb-3 leading-tight">
+            {title}
+          </h1>
+
+          <!-- Description -->
+          <p
+            class="text-lg sm:text-xl text-gray-600 dark:text-gray-400 sm:mb-16 mb-8 leading-relaxed max-w-3xl mx-auto">
+            {description}
+          </p>
+
+          <!-- Hero image -->
+          {
+            heroImage && (
+              <div class="mt-8 -mx-6 sm:-mx-8 lg:-mx-16">
+                <Image
+                  src={heroImage}
+                  class="w-full rounded-xl bg-gray-100 dark:bg-gray-800"
+                  widths={[400, 800, 1200]}
+                  sizes="(max-width: 640px) 400px, (max-width: 1024px) 800px, 1200px"
+                  alt={title}
+                  loading="eager"
+                  decoding="sync"
+                  width={1200}
+                  height={675}
+                  layout="cover"
+                />
+              </div>
+            )
+          }
+        </header>
+
+        <!-- Comparison content -->
+        <div
+          class="prose prose-lg dark:prose-invert max-w-none
+                 prose-headings:font-bold prose-headings:tracking-tight
+                 prose-h2:text-xl prose-h2:mt-12 prose-h2:mb-4
+                 prose-h3:text-lg prose-h3:mt-8 prose-h3:mb-3
+                 prose-h4:text-base prose-h4:mt-6 prose-h4:mb-2
+                 prose-p:leading-relaxed prose-p:mb-6
+                 prose-a:text-blue-600 dark:prose-a:text-blue-400
+                 prose-a:no-underline hover:prose-a:underline
+                 prose-code:text-sm prose-code:bg-gray-100 dark:prose-code:bg-gray-800
+                 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
+                 prose-pre:bg-gray-100 dark:prose-pre:bg-slate-900
+                 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-slate-700
+                 prose-ul:mt-8 prose-ul:mb-6 prose-ol:mt-8 prose-ol:mb-6 prose-li:my-2
+                 prose-img:rounded-lg prose-img:my-8">
+          <h2>Introduction: Two Approaches to Modern Software Distribution</h2>
+          <p>
+            Software distribution has evolved beyond simple downloads and
+            installation scripts. Today's enterprises demand sophisticated
+            deployment options, from air-gapped environments to cloud-native
+            architectures, while maintaining security, compliance, and control.
+          </p>
+          <p>
+            Distr and Replicated represent two distinct philosophies in solving
+            these distribution challenges. While both platforms enable vendors
+            to deliver applications to customer-controlled environments, they
+            differ significantly in their architectural approach, flexibility,
+            and target markets.
+          </p>
+          <p>
+            This comparison examines both platforms objectively to help software
+            vendors make informed decisions based on their specific
+            requirements, technical stack, and customer needs.
+          </p>
+
+          <h2>Executive Summary</h2>
+          <p>
+            Distr is an open-source software distribution platform that
+            emphasizes flexibility and gradual adoption. It supports both Docker
+            Compose and Kubernetes deployments, offers a built-in OCI registry,
+            and provides multiple distribution models (registry-only, pull, and
+            push).
+          </p>
+          <p>
+            Replicated is an enterprise-grade distribution platform focused on
+            Kubernetes-native deployments with comprehensive enterprise features
+            including embedded clusters, compatibility matrices, and extensive
+            pre-flight checks.
+          </p>
+          <p>
+            Both platforms serve the growing need for self-managed software
+            deployment, but target different segments of the market with
+            distinct architectural philosophies.
+          </p>
+
+          <h2>Platform Philosophy and Architecture</h2>
+
+          <h3>Distr: Flexibility-First Architecture</h3>
+          <p>
+            Distr embraces a dual-runtime approach that meets teams where they
+            are technically. The platform natively supports both Docker Compose
+            and Kubernetes, recognizing that the path from proof-of-concept to
+            production rarely follows a straight line.
+          </p>
+
+          <h4>Start with Docker Compose, Scale to Kubernetes</h4>
+          <p>
+            The Docker Compose support enables vendors to validate their
+            distribution strategy in hours rather than weeks. A single VM
+            running Docker Compose can demonstrate the entire distribution
+            workflow—from artifact delivery to license management to deployment
+            updates. This approach particularly resonates with teams who need to
+            show value quickly to their first enterprise customers before
+            investing in Kubernetes infrastructure.
+          </p>
+          <p>
+            As deployments mature, the same distribution platform seamlessly
+            handles Kubernetes deployments without requiring architectural
+            changes. Vendors can serve customers across the technical spectrum:
+            startups running Docker Compose on single VMs, mid-market companies
+            with Docker Swarm clusters, and enterprises with sophisticated
+            Kubernetes environments.
+          </p>
+
+          <h4>Progressive Deployment Models</h4>
+          <p>
+            The architecture supports three deployment models that vendors can
+            adopt based on their customer relationships:
+          </p>
+          <ul>
+            <li>
+              <strong>Registry Mode:</strong> Start by using Distr purely as an artifact
+              registry with built-in licensing. Perfect for vendors whose customers
+              have established deployment processes but need secure artifact access.
+            </li>
+            <li>
+              <strong>Pull Mode:</strong> Enable customers to control their update
+              cadence while providing vendors with deployment visibility and metrics.
+              Ideal for security-conscious enterprises who mandate control over their
+              environments.
+            </li>
+            <li>
+              <strong>Push Mode:</strong> Take active control of deployments in shared-responsibility
+              scenarios such as BYOC (Bring Your Own Cloud) or managed private cloud
+              offerings. Essential for vendors who need to ensure consistent deployments
+              across their customer base.
+            </li>
+          </ul>
+          <p>
+            This flexibility proves valuable in practice. Teams distributing
+            legacy system modernization tools can start with simple Docker
+            Compose deployments for proof-of-concepts, then gradually introduce
+            Kubernetes as customers scale. Similarly, AI and data analytics
+            companies can quickly deploy single-container solutions for
+            evaluation while maintaining the option to scale to distributed
+            architectures as data volumes grow.
+          </p>
+          <p>
+            The open-source foundation ensures that vendors and their customers
+            can inspect, audit, and if necessary, modify the distribution
+            platform to meet specific requirements—from compliance needs in
+            regulated industries to custom integration requirements in complex
+            enterprise environments.
+          </p>
+
+          <h3>Replicated: Enterprise-First Architecture</h3>
+          <p>
+            Replicated takes a comprehensive, opinionated approach to software
+            distribution. The platform assumes Kubernetes as the deployment
+            target and builds extensive enterprise capabilities around this
+            foundation. This includes embedded Kubernetes clusters for
+            non-native environments and sophisticated compatibility testing
+            frameworks.
+          </p>
+          <p>The architecture emphasizes:</p>
+          <ul>
+            <li>Standardized Kubernetes deployments</li>
+            <li>Comprehensive pre-flight validation</li>
+            <li>Enterprise-grade security and compliance features</li>
+            <li>Mature ecosystem integrations</li>
+          </ul>
+
+          <h2>Core Capabilities Comparison</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Capability</th>
+                <th>Distr</th>
+                <th>Replicated</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Deployment Targets</strong></td>
+                <td>Docker Compose, Kubernetes, VMs</td>
+                <td>Kubernetes (with embedded option)</td>
+              </tr>
+              <tr>
+                <td><strong>Open Source</strong></td>
+                <td>Full platform</td>
+                <td>Closed source</td>
+              </tr>
+              <tr>
+                <td><strong>Self-Hosting</strong></td>
+                <td>Native support</td>
+                <td>SaaS only</td>
+              </tr>
+              <tr>
+                <td><strong>Minimum Viable Deployment</strong></td>
+                <td>Single container</td>
+                <td>Kubernetes cluster</td>
+              </tr>
+              <tr>
+                <td><strong>API Access</strong></td>
+                <td>Full API on all tiers</td>
+                <td>Limited by tier</td>
+              </tr>
+              <tr>
+                <td><strong>White Labeling</strong></td>
+                <td>Available on Pro tier</td>
+                <td>Enterprise tier</td>
+              </tr>
+              <tr>
+                <td><strong>Air-Gapped Support</strong></td>
+                <td>Native</td>
+                <td>Native</td>
+              </tr>
+              <tr>
+                <td><strong>Pricing (Starts at)</strong></td>
+                <td>$40/month</td>
+                <td>$2000/month</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h2>Technical Deep Dive</h2>
+
+          <h3>Container Runtime Support</h3>
+          <p>
+            Distr provides native support for both Docker Compose and Helm-based
+            deployments. This dual approach serves organizations across the
+            technical maturity spectrum—from startups running simple Docker
+            Compose files to enterprises with complex Kubernetes architectures.
+          </p>
+          <p>
+            Replicated focuses exclusively on Kubernetes, providing embedded
+            single-node clusters for environments without native Kubernetes
+            support. This standardization simplifies support but requires all
+            applications to be packaged as Helm charts.
+          </p>
+
+          <h3>Registry and Artifact Management</h3>
+          <p>
+            Both platforms include OCI-compliant registries, but with different
+            emphases:
+          </p>
+          <p>
+            <strong>Distr's Registry:</strong>
+          </p>
+          <ul>
+            <li>Granular tag-level access control</li>
+            <li>
+              Support for multiple artifact types (images, Helm charts,
+              arbitrary files)
+            </li>
+            <li>SBOM storage and security scanning</li>
+            <li>Flexible licensing tied to specific versions or tags</li>
+          </ul>
+          <p>
+            <strong>Replicated's Registry:</strong>
+          </p>
+          <ul>
+            <li>Proxy registry capabilities</li>
+            <li>Focus on Helm chart distribution</li>
+            <li>Integration with existing registries</li>
+            <li>Channel-based release management</li>
+          </ul>
+
+          <h3>License Management</h3>
+          <p>
+            Distr implements license management at the artifact level, allowing
+            vendors to control access to specific versions or features. Licenses
+            can be managed programmatically via API or through the vendor
+            portal.
+          </p>
+          <p>
+            Replicated provides more sophisticated license enforcement,
+            including seat-based licensing, feature flags, and expiration
+            handling. The platform includes SDKs for runtime license validation
+            within applications.
+          </p>
+
+          <h2>Deployment Scenarios</h2>
+
+          <h3>Multi-Product, Multi-Version Deployments</h3>
+          <p>
+            Organizations managing multiple products across various customer
+            versions face unique challenges. Distr's tag-based access control
+            and flexible licensing model accommodate complex version matrices
+            without duplicating artifacts. Replicated's channel-based approach
+            provides clear release tracks but may require more structured
+            release management.
+          </p>
+
+          <h3>Bring Your Own Image (BYOI) Requirements</h3>
+          <p>
+            Some enterprises mandate using their hardened base images. Distr's
+            architecture naturally accommodates this through override mechanisms
+            in both Docker Compose and Helm deployments. Replicated's
+            Kubernetes-centric approach requires packaging applications as Helm
+            charts with configurable image sources.
+          </p>
+
+          <h3>Air-Gapped and Regulated Environments</h3>
+          <p>
+            Both platforms support air-gapped deployments, but implementation
+            differs:
+          </p>
+          <p>
+            <strong>Distr:</strong> Provides artifact entitlements for offline distribution,
+            with optional self-hosted deployment for complete control. Open-source
+            agents can be rebuilt and signed by vendors for compliance requirements.
+          </p>
+          <p>
+            <strong>Replicated:</strong> Offers comprehensive air-gap bundles with
+            embedded Kubernetes if needed. The platform includes extensive pre-flight
+            checks to validate environment compatibility before deployment.
+          </p>
+
+          <h2>Integration and Automation</h2>
+
+          <h3>CI/CD Integration</h3>
+          <p>
+            Distr provides GitHub Actions and a comprehensive API for
+            automation. Vendors can programmatically manage artifacts, licenses,
+            and deployments. The platform's simplicity enables quick integration
+            with existing pipelines.
+          </p>
+          <p>
+            Replicated offers mature CI/CD integrations with extensive
+            documentation. The platform includes tools for automated testing
+            across different Kubernetes distributions and versions.
+          </p>
+
+          <h3>Customer Portal Experience</h3>
+          <p>
+            Both platforms provide white-labeled customer portals, but with
+            different focal points:
+          </p>
+          <p>
+            <strong>Distr's Portal:</strong> Emphasizes simplicity and self-service
+            artifact access. Customers can generate personal access tokens and download
+            specific versions based on their licenses.
+          </p>
+          <p>
+            <strong>Replicated's Portal:</strong> Provides comprehensive deployment
+            management, including update scheduling, configuration management, and
+            support bundle generation.
+          </p>
+
+          <h2>Pricing and Business Model</h2>
+
+          <h3>Distr's Approach</h3>
+          <p>
+            Distr employs usage-based pricing that scales with your distribution
+            needs:
+          </p>
+          <ul>
+            <li>Open-source self-hosted option (free forever)</li>
+            <li>Cloud starter tier for initial deployments</li>
+            <li>Pro tier with advanced features like artifact entitlements</li>
+            <li>Enterprise tier with custom pricing and SLAs</li>
+          </ul>
+          <p>
+            The model allows vendors to start small and scale gradually without
+            large upfront commitments.
+          </p>
+
+          <h3>Replicated's Approach</h3>
+          <p>
+            Replicated follows a traditional enterprise software pricing model:
+          </p>
+          <ul>
+            <li>Substantial minimum commitments</li>
+            <li>Tier-based feature access</li>
+            <li>Annual contracts typical</li>
+            <li>Enterprise-focused pricing structure</li>
+          </ul>
+          <p>
+            This model provides predictability for established vendors but may
+            present barriers for emerging companies.
+          </p>
+
+          <h2>Operational Considerations</h2>
+
+          <h3>Time to First Deployment</h3>
+          <p>
+            <strong>Distr:</strong> Most teams achieve their first successful deployment
+            within hours. The platform's self-service nature and included onboarding
+            support accelerate adoption.
+          </p>
+          <p>
+            <strong>Replicated:</strong> Initial setup typically requires days to
+            weeks, including sales discussions, environment setup, and Kubernetes
+            preparation. However, the comprehensive setup process ensures enterprise
+            readiness.
+          </p>
+
+          <h3>Support and Documentation</h3>
+          <p>
+            <strong>Distr:</strong> Includes personalized onboarding for all tiers,
+            with direct access to the engineering team. Documentation focuses on practical
+            implementation with extensive examples.
+          </p>
+          <p>
+            <strong>Replicated:</strong> Provides comprehensive documentation and
+            enterprise support options. The mature ecosystem includes community resources
+            and partner integrations.
+          </p>
+
+          <h2>Decision Framework</h2>
+
+          <h3>Choose Distr When:</h3>
+          <ul class="!list-none pl-0">
+            <li class="!list-none">
+              ✓ Flexibility is paramount - You need to support diverse
+              deployment scenarios from Docker Compose to Kubernetes
+            </li>
+            <li class="!list-none">
+              ✓ Gradual adoption matters - You want to start simple and add
+              sophistication over time
+            </li>
+            <li class="!list-none">
+              ✓ Open source is required - Your organization mandates source code
+              access or self-hosting
+            </li>
+            <li class="!list-none">
+              ✓ Flexible pricing - You need pricing that scales with your needs
+              without large upfront commitments
+            </li>
+            <li class="!list-none">
+              ✓ Speed is critical - You need to start distributing software
+              immediately
+            </li>
+          </ul>
+
+          <h3>Choose Replicated When:</h3>
+          <ul class="!list-none pl-0">
+            <li class="!list-none">
+              ✓ Kubernetes standardization - Your entire customer base runs or
+              will run Kubernetes
+            </li>
+            <li class="!list-none">
+              ✓ Enterprise validation - You need the market-recognized
+              enterprise standard
+            </li>
+            <li class="!list-none">
+              ✓ Compatibility testing - Validating across multiple Kubernetes
+              distributions is critical
+            </li>
+            <li class="!list-none">
+              ✓ Embedded Kubernetes - You need to provide Kubernetes to
+              non-native environments
+            </li>
+            <li class="!list-none">
+              ✓ Mature ecosystem - You value extensive third-party integrations
+              and partnerships
+            </li>
+          </ul>
+
+          <h2>Migration Considerations</h2>
+
+          <h3>Moving from Manual Processes</h3>
+          <p>
+            Teams currently using FTP servers, email distribution, or manual
+            processes can adopt either platform. Distr's gradual adoption model
+            allows starting with simple registry features, while Replicated
+            requires full platform commitment but provides comprehensive
+            capabilities immediately.
+          </p>
+
+          <h3>Platform Switching</h3>
+          <p>
+            While both platforms use standard formats (OCI images, Helm charts),
+            switching between them requires consideration:
+          </p>
+          <ul>
+            <li>License model differences</li>
+            <li>Customer portal migration</li>
+            <li>Deployment agent changes</li>
+            <li>Integration updates</li>
+          </ul>
+          <p>
+            Organizations should evaluate long-term needs before committing to
+            ensure alignment with their distribution strategy.
+          </p>
+
+          <h2>Conclusion: Context Determines Choice</h2>
+          <p>
+            Both Distr and Replicated solve critical software distribution
+            challenges, but serve different needs:
+          </p>
+          <p>
+            Distr excels when flexibility, rapid deployment, and gradual
+            sophistication matter. Its open-source nature, support for multiple
+            deployment models, and accessible pricing make it ideal for modern
+            software companies serving diverse customer bases.
+          </p>
+          <p>
+            Replicated shines in pure enterprise scenarios where Kubernetes
+            standardization, extensive validation, and market recognition
+            justify the investment. Its mature platform provides comprehensive
+            capabilities for vendors serving traditional enterprise customers.
+          </p>
+        </div>
+      </article>
+    </section>
+  </div>
+  <SignUpCta />
+</Layout>

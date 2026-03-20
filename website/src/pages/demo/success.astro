@@ -1,0 +1,37 @@
+---
+import StandaloneLayout from '~/layouts/StandaloneLayout.astro';
+import {Icon} from 'astro-icon/components';
+
+const pageTitle = 'Demo - Success';
+const pageDescription = 'Thanks for booking a demo call';
+---
+
+<StandaloneLayout title={pageTitle} description={pageDescription}>
+  <div
+    class="relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-16 sm:py-24">
+    <div class="container mx-auto px-4 max-w-[1200px]">
+      <div class="flex justify-center">
+        <div
+          class="bg-white dark:bg-gray-900 border border-accent-600 rounded-xl p-6 lg:p-10 shadow-2xl w-full lg:w-2/3">
+          <div class="py-12">
+            <div class="text-center mb-8">
+              <div
+                class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 mb-6">
+                <Icon
+                  name="lucide:check-circle"
+                  class="h-6 w-6 text-green-600"
+                />
+              </div>
+              <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                Booking confirmed
+              </h3>
+              <p class="text-gray-600 dark:text-gray-400 mb-8">
+                We are looking forward talking to you.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</StandaloneLayout>

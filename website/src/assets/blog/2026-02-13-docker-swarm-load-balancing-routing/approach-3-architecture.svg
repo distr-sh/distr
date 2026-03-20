@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420" style="max-width: 100%; height: auto;">
+  <defs>
+    <style>
+      .box-blue { fill: #0073aa; stroke: #003653; stroke-width: 2; rx: 6; }
+      .box-accent { fill: #003653; stroke: #00273d; stroke-width: 2; rx: 6; }
+      .box-gray { fill: #6f6f7e; stroke: #5a5a67; stroke-width: 2; rx: 6; }
+      .box-orange { fill: #e65100; stroke: #bf360c; stroke-width: 2; rx: 6; }
+      .box-green { fill: #2e7d32; stroke: #1b5e20; stroke-width: 2; rx: 6; }
+      .box-purple { fill: #6a1b9a; stroke: #4a148c; stroke-width: 2; rx: 6; }
+      .box-yellow { fill: #f57f17; stroke: #e65100; stroke-width: 2; rx: 6; }
+      .text { fill: white; font-family: system-ui, sans-serif; font-size: 13px; font-weight: 600; }
+      .text-sm { fill: white; font-family: system-ui, sans-serif; font-size: 11px; font-weight: 600; }
+      .subtitle { fill: #92d1fe; font-family: system-ui, sans-serif; font-size: 10px; }
+      .subtitle-orange { fill: #ffcc80; font-family: system-ui, sans-serif; font-size: 10px; }
+      .subtitle-green { fill: #a5d6a7; font-family: system-ui, sans-serif; font-size: 10px; }
+      .subtitle-purple { fill: #ce93d8; font-family: system-ui, sans-serif; font-size: 10px; }
+      .arrow { stroke: #6f6f7e; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .arrow-purple { stroke: #6a1b9a; stroke-width: 2; fill: none; marker-end: url(#arrowhead-purple); stroke-dasharray: 6 3; }
+      .label { fill: #424249; font-family: system-ui, sans-serif; font-size: 11px; }
+      .middleware { fill: none; stroke: #e65100; stroke-width: 1.5; stroke-dasharray: 4 2; rx: 4; }
+      .middleware-label { fill: #e65100; font-family: system-ui, sans-serif; font-size: 9px; font-weight: 600; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#6f6f7e" />
+    </marker>
+    <marker id="arrowhead-purple" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#6a1b9a" />
+    </marker>
+  </defs>
+
+  <!-- External Traffic -->
+  <rect class="box-gray" x="40" y="10" width="140" height="40" />
+  <text x="110" y="35" text-anchor="middle" class="text">HTTPS Traffic</text>
+
+  <!-- Let's Encrypt -->
+  <rect class="box-orange" x="300" y="10" width="160" height="40" />
+  <text x="380" y="28" text-anchor="middle" class="text">Let's Encrypt</text>
+  <text x="380" y="42" text-anchor="middle" class="subtitle-orange">DNS Challenge (wildcard)</text>
+
+  <!-- Cloudflare -->
+  <rect class="box-yellow" x="500" y="10" width="120" height="40" />
+  <text x="560" y="35" text-anchor="middle" class="text">Cloudflare</text>
+
+  <!-- Arrow LE to CF -->
+  <path class="arrow" d="M 460 30 L 495 30"/>
+
+  <!-- Traefik -->
+  <rect class="box-accent" x="40" y="80" width="280" height="55" />
+  <text x="180" y="100" text-anchor="middle" class="text">traefik (global mode)</text>
+  <text x="180" y="118" text-anchor="middle" class="subtitle">Reverse Proxy + SSL + Metrics + Dashboard</text>
+
+  <!-- Arrow from traffic to Traefik -->
+  <path class="arrow" d="M 110 50 L 110 75"/>
+
+  <!-- Arrow from LE to Traefik -->
+  <path class="arrow" d="M 300 35 L 325 80"/>
+
+  <!-- Middleware boxes -->
+  <rect class="middleware" x="40" y="155" width="130" height="25" />
+  <text x="105" y="172" text-anchor="middle" class="middleware-label">Rate Limiting</text>
+  <rect class="middleware" x="190" y="155" width="130" height="25" />
+  <text x="255" y="172" text-anchor="middle" class="middleware-label">Circuit Breaker</text>
+
+  <!-- Arrow Traefik to middleware -->
+  <path class="arrow" d="M 180 135 L 180 150"/>
+
+  <!-- webapp -->
+  <rect class="box-blue" x="40" y="210" width="130" height="50" />
+  <text x="105" y="232" text-anchor="middle" class="text">webapp</text>
+  <text x="105" y="248" text-anchor="middle" class="subtitle">3 replicas</text>
+
+  <!-- api -->
+  <rect class="box-green" x="200" y="210" width="130" height="50" />
+  <text x="265" y="232" text-anchor="middle" class="text">api</text>
+  <text x="265" y="248" text-anchor="middle" class="subtitle-green">2 replicas</text>
+
+  <!-- postgres -->
+  <rect class="box-gray" x="370" y="210" width="130" height="50" />
+  <text x="435" y="232" text-anchor="middle" class="text">postgres</text>
+  <text x="435" y="248" text-anchor="middle" class="subtitle">Database</text>
+
+  <!-- Arrows middleware to services -->
+  <path class="arrow" d="M 105 180 L 105 205"/>
+  <path class="arrow" d="M 255 180 L 265 205"/>
+
+  <!-- Arrow services to postgres -->
+  <path class="arrow" d="M 170 235 L 365 235"/>
+
+  <!-- Monitoring Stack -->
+  <rect class="box-purple" x="40" y="310" width="160" height="50" />
+  <text x="120" y="332" text-anchor="middle" class="text">prometheus</text>
+  <text x="120" y="348" text-anchor="middle" class="subtitle-purple">Metrics Collection</text>
+
+  <rect class="box-purple" x="230" y="310" width="160" height="50" />
+  <text x="310" y="332" text-anchor="middle" class="text">grafana</text>
+  <text x="310" y="348" text-anchor="middle" class="subtitle-purple">Dashboards</text>
+
+  <!-- Arrows Prometheus scraping -->
+  <path class="arrow-purple" d="M 80 310 L 80 265"/>
+  <text x="18" y="290" class="label" style="fill: #6a1b9a; font-size: 9px">scrape metrics</text>
+
+  <path class="arrow-purple" d="M 150 310 L 260 265"/>
+
+  <!-- Arrow Prometheus to Traefik -->
+  <path class="arrow-purple" d="M 120 310 L 220 140"/>
+  <text x="145" y="285" class="label" style="fill: #6a1b9a; font-size: 9px">scrape /metrics</text>
+
+  <!-- Arrow Grafana to Prometheus -->
+  <path class="arrow" d="M 230 335 L 205 335"/>
+  <text x="210" y="400" text-anchor="middle" class="label">query</text>
+</svg>

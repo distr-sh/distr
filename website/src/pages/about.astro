@@ -1,0 +1,115 @@
+---
+import StarlightLayout from '../layouts/StarlightLayout.astro';
+
+const TITLE = 'About Distr';
+const DESCRIPTION =
+  'Distr is built by a team with years of hands-on experience in software distribution, Kubernetes operations, and production-grade infrastructure.';
+---
+
+<StarlightLayout title={TITLE} description={DESCRIPTION}>
+  <div class="not-content about-page">
+    <article class="max-w-3xl mx-auto">
+      <h1 class="text-4xl font-bold my-8">{TITLE}</h1>
+
+      <p class="text-lg text-gray-600 dark:text-gray-300 mb-6">
+        Distr is built by a team with years of hands-on experience in software
+        distribution, Kubernetes operations, and production-grade
+        infrastructure.
+      </p>
+
+      <p class="text-gray-600 dark:text-gray-300 mb-6">
+        We have worked extensively with modern deployment architectures across
+        cloud, hybrid, and on-premise environments. From Kubernetes-based
+        platforms to Docker Compose setups and regulated enterprise
+        environments, our background is rooted in solving real-world deployment
+        challenges at scale.
+      </p>
+
+      <p class="text-gray-600 dark:text-gray-300 mb-6">
+        Over the years, we have helped organizations design, deploy, and operate
+        secure, highly available software delivery systems. Our experience
+        spans:
+      </p>
+
+      <ul
+        class="list-disc pl-6 mb-6 space-y-2 text-gray-600 dark:text-gray-300">
+        <li>Kubernetes-native deployments</li>
+        <li>High-availability, multi-cluster enterprise architectures</li>
+        <li>OCI container registries and artifact management</li>
+        <li>Secure on-premise and air-gapped installations</li>
+        <li>BYOC (Bring Your Own Cloud) environments</li>
+        <li>Enterprise-grade authentication and access control</li>
+        <li>Deployment observability and operational monitoring</li>
+        <li>Data privacy and information security best practices</li>
+      </ul>
+
+      <p class="text-gray-600 dark:text-gray-300 mb-6">
+        Security and reliability are foundational to how we build. We understand
+        the requirements of organizations operating in regulated industries,
+        including strict data privacy policies, internal security reviews, and
+        compliance-driven infrastructure constraints. Our experience includes
+        designing systems with:
+      </p>
+
+      <ul
+        class="list-disc pl-6 mb-6 space-y-2 text-gray-600 dark:text-gray-300">
+        <li>Strong isolation between customer environments</li>
+        <li>Role-based access control and auditability</li>
+        <li>Secure artifact distribution</li>
+        <li>Version traceability and rollback guarantees</li>
+        <li>
+          Redundancy and failover strategies for business-critical systems
+        </li>
+      </ul>
+
+      <p class="text-gray-600 dark:text-gray-300 mb-6">
+        Distr reflects this operational background. It is designed with
+        production realities in mind: compliance considerations, secure
+        defaults, operational resilience, and long-term maintainability.
+      </p>
+
+      <p class="text-gray-600 dark:text-gray-300 mb-6">
+        Our team has been building and operating infrastructure platforms for
+        years, working with fast-growing startups as well as large enterprises
+        across multiple industries. Organizations trust our tooling to manage
+        critical software distribution workflows in environments where uptime,
+        security, and control are non-negotiable.
+      </p>
+
+      <h2 class="text-2xl font-bold mt-10 mb-4">Our focus is pragmatic:</h2>
+      <ul
+        class="list-disc pl-6 mb-6 space-y-2 text-gray-600 dark:text-gray-300">
+        <li>Make deployments predictable</li>
+        <li>Make distribution secure</li>
+        <li>Make infrastructure resilient</li>
+        <li>Make operations observable</li>
+        <li>Make customer environments manageable</li>
+      </ul>
+
+      <p class="text-gray-600 dark:text-gray-300 mb-6">
+        Distr is developed and maintained by engineers who have lived through
+        real-world operational edge cases — failed rollouts, scaling
+        bottlenecks, compliance audits, cluster outages, registry failures, and
+        complex multi-tenant enterprise environments. The platform is shaped by
+        that experience.
+      </p>
+
+      <p class="text-gray-600 dark:text-gray-300 mb-6">
+        We continue to invest in long-term stability, security, and enterprise
+        readiness. Our goal is to provide infrastructure teams with a dependable
+        foundation for distributing and managing software across cloud, hybrid,
+        and on-premise environments — with data protection, availability, and
+        operational control built in from the start.
+      </p>
+    </article>
+  </div>
+</StarlightLayout>
+
+<style>
+  .not-content {
+    max-width: none;
+  }
+  .about-page article {
+    padding-bottom: 3rem;
+  }
+</style>

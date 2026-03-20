@@ -1,0 +1,92 @@
+---
+import {getCollection, render} from 'astro:content';
+import Layout from '~/layouts/StarlightLayout.astro';
+import WhitePaperCta from '~/components/cta/standalone/WhitePaperCta.astro';
+import type {GlossaryEntryConfig} from '~/content.config';
+
+export async function getStaticPaths() {
+  const glossaryEntries = await getCollection('glossary');
+  return glossaryEntries.map(entry => ({
+    params: {slug: entry.data.slug},
+    props: {entry},
+  }));
+}
+
+const {entry} = Astro.props;
+const {Content} = await render(entry);
+const {title, description} = entry.data as GlossaryEntryConfig;
+---
+
+<style>
+  .prose {
+    p {
+      @apply hyphens-auto text-justify;
+      margin-top: 1rem;
+      margin-bottom: 1rem;
+    }
+    pre {
+      margin-top: 2rem;
+    }
+    ul,
+    ol {
+      margin-top: 2rem;
+    }
+    table {
+      margin-top: 2rem;
+    }
+  }
+</style>
+
+<Layout title={title} description={description}>
+  <div
+    class="relative overflow-hidden bg-gray-50 dark:bg-slate-900 py-12 sm:py-20">
+    <div class="absolute inset-0 bg-gray-50/80 dark:bg-slate-900/80"></div>
+    <div class="relative mx-auto max-w-4xl px-6 sm:px-8 lg:px-10">
+      <article
+        class="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-8 sm:p-12">
+        <header class="mb-8">
+          <a
+            href="/glossary/"
+            class="inline-flex items-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-4">
+            ← Back to Glossary
+          </a>
+          <h1
+            class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+            {title}
+          </h1>
+          <p class="text-lg text-gray-600 dark:text-gray-400">
+            {description}
+          </p>
+        </header>
+
+        <div
+          class="prose prose-lg dark:prose-invert max-w-none
+                 prose-headings:font-bold prose-headings:tracking-tight
+                 prose-h2:text-xl prose-h2:mt-12 prose-h2:mb-4
+                 prose-h3:text-lg prose-h3:mt-8 prose-h3:mb-3
+                 prose-h4:text-base prose-h4:mt-6 prose-h4:mb-2
+                 prose-p:leading-relaxed prose-p:mb-6
+                 prose-a:text-blue-600 dark:prose-a:text-blue-400
+                 prose-a:no-underline hover:prose-a:underline
+                 prose-code:text-sm prose-code:bg-gray-100 dark:prose-code:bg-gray-800
+                 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
+                 prose-pre:bg-gray-100 dark:prose-pre:bg-slate-900
+                 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-slate-700
+                 prose-ul:mt-8 prose-ul:mb-6 prose-ol:mt-8 prose-ol:mb-6 prose-li:my-2
+                 prose-img:rounded-lg prose-img:my-8">
+          <Content />
+        </div>
+
+        <footer
+          class="mt-12 pt-8 border-t border-gray-200 dark:border-slate-700">
+          <a
+            href="/glossary/"
+            class="inline-flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
+            ← Back to Glossary
+          </a>
+        </footer>
+      </article>
+    </div>
+  </div>
+  <WhitePaperCta />
+</Layout>
