@@ -26,7 +26,7 @@ func GetLatestDeploymentTargetMetrics(
 			dtm.cpu_usage,
 			dtm.memory_bytes,
 			dtm.memory_usage,
-			array_agg(row(dtdm.device, dtdm.path, dtdm.fs_type, dtdm.bytes_total, dtdm.bytes_used))
+			array_agg(row(dtdm.device, dtdm.path, dtdm.fs_type, dtdm.bytes_total, dtdm.bytes_used) ORDER BY dtdm.device)
 				FILTER (WHERE dtdm.id IS NOT NULL)
 				AS disk_metrics
 		FROM DeploymentTarget dt

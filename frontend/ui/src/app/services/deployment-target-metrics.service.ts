@@ -1,8 +1,9 @@
-import {HttpClient} from '@angular/common/http';
-import {inject, Injectable} from '@angular/core';
-import {Observable, shareReplay, switchMap, timer} from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { Observable, shareReplay, switchMap, timer } from 'rxjs';
 
-interface AgentDeploymentTargetMetrics {
+export interface DeploymentTargetLatestMetrics {
+  deploymentTargetId: string;
   cpuCoresMillis: number;
   cpuUsage: number;
   memoryBytes: number;
@@ -16,10 +17,6 @@ interface DeploymentTargetDiskMetric {
   fsType: string;
   bytesTotal: number;
   bytesUsed: number;
-}
-
-export interface DeploymentTargetLatestMetrics extends AgentDeploymentTargetMetrics {
-  deploymentTargetId: string;
 }
 
 @Injectable({

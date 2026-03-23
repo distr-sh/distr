@@ -52,6 +52,12 @@
         <span class="font-semibold">RAM:</span>
         {{ metrics().memoryUsage | percent: '1.1-1' }} of {{ metrics().memoryBytes | bytes: '1.0-0' }}
       </div>
+      @for (disk of metrics().diskMetrics; track disk.path) {
+        <div>
+          <span class="font-semibold">{{ disk.device }}:</span>
+          {{ disk.bytesUsed / disk.bytesTotal | percent: '1.1-1' }} of {{ disk.bytesTotal | bytes: '1.0-0' }}
+        </div>
+      }
     </div>
   </div>
 </ng-template>
