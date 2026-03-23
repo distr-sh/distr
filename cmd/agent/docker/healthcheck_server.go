@@ -41,7 +41,9 @@ func (h *healthcheckServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "timestamp not available", http.StatusInternalServerError)
 	} else if h.IsStale() {
 		http.Error(w,
-			fmt.Sprintf("timestamp %v is older than %v", h.heartbeatTimestamp.Format(time.RFC3339Nano), h.heartbeatHealthyDuration),
+			fmt.Sprintf("timestamp %v is older than %v",
+				h.heartbeatTimestamp.Format(time.RFC3339Nano),
+				h.heartbeatHealthyDuration),
 			http.StatusServiceUnavailable)
 	} else {
 		w.WriteHeader(http.StatusNoContent)
