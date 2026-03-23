@@ -199,9 +199,19 @@ API routes are defined in `internal/routing/`. Routes are grouped by authenticat
 ## General rules
 
 - Always ensure this file is up-to-date.
+- Never add Claude as a co-author in git commits.
 - Don't write any unnecessary comments that just explain the functionality below, if there is nothing special about it.
 - If a user requests you to do something differently, add the difference to a new rule / convention in this file
 - If you read code that doesn't follow these rules, please fix it.
 - If you see any typos, or spelling mistakes, please fix them.
 - If you fetch data from GitHub always use the GitHub cli (`gh`) instead of the web interface.
 - When you resolve merge conflicts (whether during a merge or rebase), always ensure that the conflict resolutions are committed before continuing, or at least prompt the user to commit them, so that unrelated new changes are not unintentionally included in that commit.
+
+## PR Workflow
+
+Before creating or finalizing a pull request, always run:
+
+1. **Format**: `pnpm run format` — ensures code is formatted with Prettier
+2. **Build**: `pnpm run build` — verifies the project builds successfully
+
+Do not create or push a PR until both commands complete successfully. If either fails, fix the issues before opening or updating the PR.
