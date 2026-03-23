@@ -1,6 +1,6 @@
-import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
-import { Observable, shareReplay, switchMap, timer } from 'rxjs';
+import {HttpClient} from '@angular/common/http';
+import {inject, Injectable} from '@angular/core';
+import {Observable, shareReplay, switchMap, timer} from 'rxjs';
 
 export interface DeploymentTargetLatestMetrics {
   deploymentTargetId: string;
