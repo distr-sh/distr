@@ -241,7 +241,7 @@ func sendProgressInterval(ctx context.Context, revisionID uuid.UUID) {
 }
 
 func startHealthServer() error {
-	err := http.ListenAndServe("localhost:8765", health)
+	err := http.ListenAndServe("127.0.0.1:8765", health)
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}

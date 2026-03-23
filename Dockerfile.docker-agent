@@ -27,6 +27,6 @@ RUN apk add --no-cache curl
 
 HEALTHCHECK --interval=10s --timeout=5s \
   --start-period=1m --start-interval=10s \
-  CMD curl -fsS --max-time 4 http://localhost:8765 > /dev/null
+  CMD curl -fsS --max-time 4 http://127.0.0.1:8765 > /dev/null
 
 ENTRYPOINT ["/agent"]
