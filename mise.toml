@@ -4,7 +4,7 @@ env_shell_expand = false
 [tools]
 node = "24"
 go = "1.26.1"
-golangci-lint = "2.11.3"
+golangci-lint = "2.11.4"
 helm-docs = "1.14.2"
 watchexec = "2.3.2"
 pnpm = "10.32.1"
