@@ -30,8 +30,6 @@ services:
       - ${HOST_DOCKER_CONFIG_DIR-${HOME}/.docker}:/root/.docker:ro
 
   autoheal:
-    deploy:
-      replicas: 1
     environment:
       {{- if .autohealAll }}
       AUTOHEAL_CONTAINER_LABEL: all
