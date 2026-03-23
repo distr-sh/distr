@@ -2,10 +2,8 @@ package db
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
-	"github.com/distr-sh/distr/api"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
@@ -13,28 +11,24 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type DeploymentTargetLatestMetrics struct {
-	ID uuid.UUID `db:"id" json:"id"`
-	api.AgentDeploymentTargetMetrics
-}
-
 func GetLatestDeploymentTargetMetrics(
 	ctx context.Context,
 	orgID uuid.UUID,
 	customerOrganizationID *uuid.UUID,
-) ([]DeploymentTargetLatestMetrics, error) {
+) ([]types.DeploymentTargetMetrics, error) {
 	db := internalctx.GetDb(ctx)
 	isVendorUser := customerOrganizationID == nil
 
 	rows, err := db.Query(ctx,
-		`SELECT dt.id, dtm.cpu_cores_millis, dtm.cpu_usage, dtm.memory_bytes, dtm.memory_usage,
-			json_agg(json_build_object(
-				'device', dtdm.device,
-				'path', dtdm.path,
-				'fsType', dtdm.fs_type,
-				'bytesTotal', dtdm.bytes_total,
-				'bytesUsed', dtdm.bytes_used
-			)) FILTER (WHERE dtdm.id IS NOT NULL) AS disk_metrics
+		`SELECT
+			dt.id AS deployment_target_id,
+			dtm.cpu_cores_millis,
+			dtm.cpu_usage,
+			dtm.memory_bytes,
+			dtm.memory_usage,
+			array_agg(row(dtdm.device, dtdm.path, dtdm.fs_type, dtdm.bytes_total, dtdm.bytes_used))
+				FILTER (WHERE dtdm.id IS NOT NULL)
+				AS disk_metrics
 		FROM DeploymentTarget dt
 		LEFT JOIN CustomerOrganization co
 			ON dt.customer_organization_id = co.id
@@ -64,32 +58,18 @@ func GetLatestDeploymentTargetMetrics(
 	if err != nil {
 		return nil, fmt.Errorf("failed to query DeploymentTargets: %w", err)
 	}
-	defer rows.Close()
 
-	var result []DeploymentTargetLatestMetrics
-	for rows.Next() {
-		var m DeploymentTargetLatestMetrics
-		var diskJSON []byte
-		if err := rows.Scan(&m.ID, &m.CPUCoresMillis, &m.CPUUsage, &m.MemoryBytes, &m.MemoryUsage, &diskJSON); err != nil {
-			return nil, fmt.Errorf("failed to scan DeploymentTargetMetrics row: %w", err)
-		}
-		if diskJSON != nil {
-			if err := json.Unmarshal(diskJSON, &m.DiskMetrics); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal disk metrics: %w", err)
-			}
-		}
-		result = append(result, m)
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.DeploymentTargetMetrics])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect DeploymentTargetMetrics: %w", err)
 	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("failed to get DeploymentTargets: %w", err)
-	}
+
 	return result, nil
 }
 
 func CreateDeploymentTargetMetrics(
 	ctx context.Context,
-	dt *types.DeploymentTarget,
-	metrics *api.AgentDeploymentTargetMetrics,
+	metrics types.DeploymentTargetMetrics,
 ) error {
 	db := internalctx.GetDb(ctx)
 
@@ -100,7 +80,7 @@ func CreateDeploymentTargetMetrics(
 			"VALUES (@deploymentTargetId, @cpuCoresMillis, @cpuUsage, @memoryBytes, @memoryUsage) "+
 			"RETURNING id",
 		pgx.NamedArgs{
-			"deploymentTargetId": dt.ID,
+			"deploymentTargetId": metrics.DeploymentTargetID,
 			"cpuCoresMillis":     metrics.CPUCoresMillis,
 			"cpuUsage":           metrics.CPUUsage,
 			"memoryBytes":        metrics.MemoryBytes,

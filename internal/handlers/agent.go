@@ -23,6 +23,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/deploymentvalues"
 	"github.com/distr-sh/distr/internal/env"
+	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/notification"
 	"github.com/distr-sh/distr/internal/security"
@@ -456,18 +457,19 @@ func agentPostMetricsHander(w http.ResponseWriter, r *http.Request) {
 
 	dt := internalctx.GetDeploymentTarget(ctx)
 
-	metrics, err := JsonBody[api.AgentDeploymentTargetMetrics](w, r)
+	body, err := JsonBody[api.AgentDeploymentTargetMetricsRequest](w, r)
 	if err != nil {
 		return
 	}
-	if err := db.CreateDeploymentTargetMetrics(ctx, &dt.DeploymentTarget, &metrics); err != nil {
+
+	metrics := mapping.DeploymentTargetMetricsRequestToInternal(dt.ID, body)
+	if err := db.CreateDeploymentTargetMetrics(ctx, metrics); err != nil {
 		if errors.Is(err, apierrors.ErrConflict) {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		} else {
 			log.Error("failed to create deployment target metrics – skipping cleanup of old metrics", zap.Error(err),
-				zap.Reflect("metrics", metrics))
+				zap.Reflect("metrics", body))
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
 		}
 	} else {
 		w.WriteHeader(http.StatusOK)

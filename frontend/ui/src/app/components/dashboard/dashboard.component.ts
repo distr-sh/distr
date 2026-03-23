@@ -76,7 +76,7 @@ export class DashboardComponent implements OnInit {
           (dt) =>
             ({
               ...dt,
-              metrics: deploymentTargetMetrics.find((x) => x.id === dt.id),
+              metrics: deploymentTargetMetrics.find((x) => x.deploymentTargetId === dt.id),
             }) as DeploymentTargetViewData
         )
       )

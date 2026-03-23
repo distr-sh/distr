@@ -118,7 +118,7 @@ func startMetrics(ctx context.Context) {
 		logger.Debug("cpu usage", zap.Any("usage", usage), zap.Any("cores", cores))
 		logger.Debug("memory usage", zap.Any("usage", memoryUsed), zap.Any("total", memoryTotal))
 
-		reportMetrics := api.AgentDeploymentTargetMetrics{
+		reportMetrics := api.AgentDeploymentTargetMetricsRequest{
 			CPUCoresMillis: cores * 1000,
 			CPUUsage:       usage,
 			MemoryBytes:    memoryTotal,
@@ -160,7 +160,7 @@ func startMetrics(ctx context.Context) {
 	}
 }
 
-func diskMetrics(ctx context.Context) ([]api.AgentDiskMetric, error) {
+func diskMetrics(ctx context.Context) ([]api.DeploymentTargetDiskMetric, error) {
 	hostRoot := os.Getenv("HOST_ROOT_DIR")
 	procMountsPath := path.Join(hostRoot, "/proc/mounts")
 	procMountsFile, err := os.Open(procMountsPath)
@@ -171,7 +171,7 @@ func diskMetrics(ctx context.Context) ([]api.AgentDiskMetric, error) {
 
 	procMounts := bufio.NewScanner(procMountsFile)
 
-	result := make(map[string]api.AgentDiskMetric)
+	result := make(map[string]api.DeploymentTargetDiskMetric)
 	for procMounts.Scan() {
 		line := procMounts.Text()
 		if !strings.HasPrefix(line, "/dev/") {
@@ -199,7 +199,13 @@ func diskMetrics(ctx context.Context) ([]api.AgentDiskMetric, error) {
 		trimmedPath := path.Join("/", strings.TrimPrefix(mountPath, hostRoot))
 		metric, ok := result[device]
 		if !ok {
-			metric = api.AgentDiskMetric{Device: device, Path: trimmedPath, FsType: usage.Fstype, BytesTotal: int64(usage.Total), BytesUsed: int64(usage.Used)}
+			metric = api.DeploymentTargetDiskMetric{
+				Device:     device,
+				Path:       trimmedPath,
+				FsType:     usage.Fstype,
+				BytesTotal: int64(usage.Total),
+				BytesUsed:  int64(usage.Used),
+			}
 		} else if len(metric.Path) > len(trimmedPath) {
 			metric.Path = trimmedPath
 		}

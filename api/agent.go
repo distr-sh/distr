@@ -48,18 +48,10 @@ type AgentDeploymentStatus struct {
 	Message    string                     `json:"message"`
 }
 
-type AgentDiskMetric struct {
-	Device     string `json:"device"`
-	Path       string `json:"path"`
-	FsType     string `json:"fsType"`
-	BytesTotal int64  `json:"bytesTotal"`
-	BytesUsed  int64  `json:"bytesUsed"`
-}
-
-type AgentDeploymentTargetMetrics struct {
-	CPUCoresMillis int64             `json:"cpuCoresMillis" db:"cpu_cores_millis"`
-	CPUUsage       float64           `json:"cpuUsage" db:"cpu_usage"`
-	MemoryBytes    int64             `json:"memoryBytes" db:"memory_bytes"`
-	MemoryUsage    float64           `json:"memoryUsage" db:"memory_usage"`
-	DiskMetrics    []AgentDiskMetric `json:"diskMetrics,omitempty"`
+type AgentDeploymentTargetMetricsRequest struct {
+	CPUCoresMillis int64                        `json:"cpuCoresMillis"`
+	CPUUsage       float64                      `json:"cpuUsage"`
+	MemoryBytes    int64                        `json:"memoryBytes"`
+	MemoryUsage    float64                      `json:"memoryUsage"`
+	DiskMetrics    []DeploymentTargetDiskMetric `json:"diskMetrics,omitempty"`
 }

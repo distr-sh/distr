@@ -3,9 +3,11 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/getsentry/sentry-go"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -18,7 +20,7 @@ func DeploymentTargetMetricsRouter(r chiopenapi.Router) {
 	r.Use(middleware.RequireOrgAndRole)
 	r.Get("/", getLatestDeploymentTargetMetrics).
 		With(option.Description("Get latest deployment target metrics")).
-		With(option.Response(http.StatusOK, db.DeploymentTargetLatestMetrics{}))
+		With(option.Response(http.StatusOK, []api.DeploymentTargetMetrics{}))
 }
 
 func getLatestDeploymentTargetMetrics(w http.ResponseWriter, r *http.Request) {
@@ -34,6 +36,6 @@ func getLatestDeploymentTargetMetrics(w http.ResponseWriter, r *http.Request) {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		w.WriteHeader(http.StatusInternalServerError)
 	} else {
-		RespondJSON(w, deploymentTargetMetrics)
+		RespondJSON(w, mapping.List(deploymentTargetMetrics, mapping.DeploymentTargetMetricsToAPI))
 	}
 }
