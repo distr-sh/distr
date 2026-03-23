@@ -11,49 +11,49 @@ export const products: Product[] = [
     description:
       'Standardize your Docker or Helm deployments embedded with agents in Kubernetes, Docker Compose, VM or Bare Metal environments',
     value: 'rocket',
-    href: '/docs/product/agents/',
+    href: '/docs/platform/agents/',
   },
   {
     title: 'Customer Portal',
     description:
       'Where customers can download Artifacts and manage their Applications',
     value: 'circle-user',
-    href: '/docs/product/customer-portal/',
+    href: '/docs/platform/customer-portal/',
   },
   {
     title: 'Container Registry',
     description:
       'Distribute Docker Images, Helm Charts, or every OCI compatible artifact like large LLM Models with our high performance OCI registry',
     value: 'package',
-    href: '/docs/product/registry/',
+    href: '/docs/platform/registry/',
   },
   {
     title: 'License Management',
     description:
       'Time based access control and entitlements for Applications and Artifacts - managed in a central place',
     value: 'key',
-    href: '/docs/product/license-management/',
+    href: '/docs/platform/license-management/',
   },
   {
     title: 'Alerts',
     description:
       'Receive notification in realtime when deployments report an error or go stale',
     value: 'bell',
-    href: '/docs/product/alerts/',
+    href: '/docs/platform/alerts/',
   },
   {
     title: 'Logs and Metrics',
     description:
       'Collect Logs and Metrics in realtime and directly download them as bundle for better Customer support',
     value: 'chart-line',
-    href: '/docs/product/agents/#container-logs',
+    href: '/docs/platform/logs-and-metrics/',
   },
   {
     title: 'Compatibility Matrix',
     description:
       'New - Automatically test if your application is compatible across a matrix of deployment environments',
     value: 'check-circle',
-    href: '/docs/guides/kubernetes-compatibility-matrix/',
+    href: '/docs/guides/k8s-compatibility/',
   },
   {
     title: 'Pre-flight Checks',
@@ -81,7 +81,7 @@ export const products: Product[] = [
     description:
       'Extend your pull based deployment model with push based approaches with our API Integrations and GitHub Action',
     value: 'workflow',
-    href: '/docs/guides/automatic-deployments-from-github/',
+    href: '/docs/use-cases/byoc/',
   },
   {
     title: 'Air-gapped',

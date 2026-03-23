@@ -17,21 +17,21 @@ export const docsMenu: MenuItem[] = [
     title: 'Guides',
     description: 'Step-by-step guides for common tasks and workflows in Distr',
     value: 'map',
-    href: '/docs/guides/',
+    href: '/docs/quickstart/',
   },
   {
     title: 'Integrations',
     description:
       'Connect Distr with your existing tools and workflows through our API, SDK, and integrations',
     value: 'plug',
-    href: '/docs/integrations/',
+    href: '/docs/integrations/rest-api/',
   },
   {
     title: 'Self-Hosting',
     description:
       'Deploy and manage your own Distr instance on Kubernetes or Docker',
     value: 'server',
-    href: '/docs/self-hosting/',
+    href: '/docs/self-hosting/overview/',
   },
 ];
 

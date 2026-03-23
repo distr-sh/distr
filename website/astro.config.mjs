@@ -209,7 +209,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             {
               label: 'Container Registry',
               link: '/docs/platform/registry/',
-              icon: 'seti:docker',
+              icon: 'download',
               items: [
                 {
                   label: 'Artifact Registry',
@@ -224,7 +224,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             {
               label: 'Customer Management',
               link: '/docs/platform/customer-portal/',
-              icon: 'person',
+              icon: 'approve-check-circle',
               items: [
                 {
                   label: 'Customer Portal',
