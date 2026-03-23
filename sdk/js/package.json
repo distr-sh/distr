@@ -30,6 +30,6 @@
     "rimraf": "^6.0.1",
     "typedoc": "^0.28.0",
     "typedoc-plugin-markdown": "^4.5.0",
-    "typescript": "^5.7.3"
+    "typescript": "^6.0.0"
   }
 }
