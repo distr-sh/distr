@@ -14,6 +14,7 @@ import (
 	"github.com/distr-sh/distr/internal/supportbundle"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
+	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
 	"go.uber.org/zap"
@@ -27,16 +28,27 @@ func SupportBundleScriptRouter(r chiopenapi.Router) {
 	r.Route("/{bundleId}", func(r chiopenapi.Router) {
 		r.Use(auth.SupportBundleAuthentication.Middleware)
 
+		type BundleIDRequest struct {
+			BundleID uuid.UUID `path:"bundleId"`
+		}
+
 		r.Get("/collect-script", getCollectScriptHandler()).
 			With(option.Description("Get support bundle collect script")).
+			With(option.Request(BundleIDRequest{})).
 			With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
 
 		r.Post("/resources", uploadSupportBundleResourceHandler()).
 			With(option.Description("Upload a support bundle resource")).
+			With(option.Request(struct {
+				BundleIDRequest
+				Name    string `formData:"name"`
+				Content string `formData:"content"`
+			}{}, option.ContentType("multipart/form-data"))).
 			With(option.Response(http.StatusOK, api.SupportBundleResourceSummary{}))
 
 		r.Post("/finalize", finalizeSupportBundleHandler()).
-			With(option.Description("Finalize a support bundle"))
+			With(option.Description("Finalize a support bundle")).
+			With(option.Request(BundleIDRequest{}))
 	})
 }
 
