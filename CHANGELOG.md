@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.14.2](https://github.com/distr-sh/distr/compare/2.14.1...2.14.2) (2026-03-23)
+
+
+### Bug Fixes
+
+* **backend:** add missing OpenAPI spec options ([#2066](https://github.com/distr-sh/distr/issues/2066)) ([ecc350f](https://github.com/distr-sh/distr/commit/ecc350f25306b4e5b4922cf64a14f52dd022ce4c))
+
 ## [2.14.1](https://github.com/distr-sh/distr/compare/2.14.0...2.14.1) (2026-03-19)
 
 
