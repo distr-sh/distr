@@ -1,11 +1,11 @@
-import { GlobalPositionStrategy, OverlayModule } from '@angular/cdk/overlay';
-import { TextFieldModule } from '@angular/cdk/text-field';
-import { DatePipe, NgOptimizedImage } from '@angular/common';
-import { Component, computed, inject, resource, signal, TemplateRef, viewChild, WritableSignal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { ReactiveFormsModule } from '@angular/forms';
-import { ApplicationVersion, DeploymentWithLatestRevision } from '@distr-sh/distr-sdk';
-import { FaIconComponent } from '@fortawesome/angular-fontawesome';
+import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
+import {TextFieldModule} from '@angular/cdk/text-field';
+import {DatePipe, NgOptimizedImage} from '@angular/common';
+import {Component, computed, inject, resource, signal, TemplateRef, viewChild, WritableSignal} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
+import {ReactiveFormsModule} from '@angular/forms';
+import {ApplicationVersion, DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faBinoculars,
   faEllipsisVertical,
@@ -15,29 +15,29 @@ import {
   faTrash,
   faTriangleExclamation,
 } from '@fortawesome/free-solid-svg-icons';
-import { EMPTY, filter, firstValueFrom, switchMap } from 'rxjs';
-import { SemVer } from 'semver';
-import { maxBy } from '../../../util/arrays';
-import { isArchived } from '../../../util/dates';
-import { getFormDisplayedError } from '../../../util/errors';
-import { drawerFlyInOut } from '../../animations/drawer';
-import { dropdownAnimation } from '../../animations/dropdown';
-import { modalFlyInOut } from '../../animations/modal';
-import { ConnectInstructionsComponent } from '../../components/connect-instructions/connect-instructions.component';
-import { DeploymentTargetStatusDotComponent } from '../../components/status-dot';
-import { UuidComponent } from '../../components/uuid';
-import { AutotrimDirective } from '../../directives/autotrim.directive';
-import { AgentVersionService } from '../../services/agent-version.service';
-import { ApplicationEntitlementsService } from '../../services/application-entitlements.service';
-import { ApplicationsService } from '../../services/applications.service';
-import { FeatureFlagService } from '../../services/feature-flag.service';
-import { DeploymentModalComponent } from '../deployment-modal.component';
-import { DeploymentStatusModalComponent } from '../deployment-status-modal/deployment-status-modal.component';
-import { DeploymentTargetStatusModalComponent } from '../deployment-target-status-modal/deployment-target-status-modal.component';
-import { DeploymentAppNameComponent } from './deployment-app-name.component';
-import { DeploymentStatusTextComponent } from './deployment-status-text.component';
-import { DeploymentTargetCardBaseComponent } from './deployment-target-card-base.component';
-import { DeploymentTargetMetricsComponent } from './deployment-target-metrics.component';
+import {EMPTY, filter, firstValueFrom, switchMap} from 'rxjs';
+import {SemVer} from 'semver';
+import {maxBy} from '../../../util/arrays';
+import {isArchived} from '../../../util/dates';
+import {getFormDisplayedError} from '../../../util/errors';
+import {drawerFlyInOut} from '../../animations/drawer';
+import {dropdownAnimation} from '../../animations/dropdown';
+import {modalFlyInOut} from '../../animations/modal';
+import {ConnectInstructionsComponent} from '../../components/connect-instructions/connect-instructions.component';
+import {DeploymentTargetStatusDotComponent} from '../../components/status-dot';
+import {UuidComponent} from '../../components/uuid';
+import {AutotrimDirective} from '../../directives/autotrim.directive';
+import {AgentVersionService} from '../../services/agent-version.service';
+import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
+import {ApplicationsService} from '../../services/applications.service';
+import {FeatureFlagService} from '../../services/feature-flag.service';
+import {DeploymentModalComponent} from '../deployment-modal.component';
+import {DeploymentStatusModalComponent} from '../deployment-status-modal/deployment-status-modal.component';
+import {DeploymentTargetStatusModalComponent} from '../deployment-target-status-modal/deployment-target-status-modal.component';
+import {DeploymentAppNameComponent} from './deployment-app-name.component';
+import {DeploymentStatusTextComponent} from './deployment-status-text.component';
+import {DeploymentTargetCardBaseComponent} from './deployment-target-card-base.component';
+import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.component';
 
 @Component({
   selector: 'app-deployment-target-card',
@@ -105,10 +105,10 @@ export class DeploymentTargetCardComponent extends DeploymentTargetCardBaseCompo
     this.featureFlags.isLicensingEnabled$.pipe(
       switchMap((enabled) => (enabled ? this.applicationEntitlementsService.list() : EMPTY))
     ),
-    { initialValue: [] }
+    {initialValue: []}
   );
 
-  private readonly applications = toSignal(this.applicationsService.list(), { initialValue: [] });
+  private readonly applications = toSignal(this.applicationsService.list(), {initialValue: []});
 
   protected readonly deploymentIdsWithUpdate = computed(() => {
     const deploymentTarget = this.deploymentTarget();
@@ -121,7 +121,7 @@ export class DeploymentTargetCardComponent extends DeploymentTargetCardBaseCompo
           const applicationVersions =
             (deployment.applicationEntitlementId
               ? entitlements.find((entitlement) => entitlement.id === deployment.applicationEntitlementId)?.application
-                ?.versions
+                  ?.versions
               : undefined) ?? applications.find((app) => app.id === deployment.application.id)?.versions;
 
           const maxVersion = this.findMaxVersion(applicationVersions?.filter((version) => !isArchived(version)) ?? []);
@@ -151,7 +151,7 @@ export class DeploymentTargetCardComponent extends DeploymentTargetCardBaseCompo
 
   protected setLogsEnabled(deployment: DeploymentWithLatestRevision, logsEnabled: boolean) {
     if (deployment.id) {
-      this.deploymentTargets.patchDeployment(deployment.id, { logsEnabled }).subscribe({
+      this.deploymentTargets.patchDeployment(deployment.id, {logsEnabled}).subscribe({
         next: () => this.toast.success('Deployment has been updated.'),
         error: (e) => {
           const msg = getFormDisplayedError(e);
@@ -207,7 +207,7 @@ export class DeploymentTargetCardComponent extends DeploymentTargetCardBaseCompo
     const dt = this.deploymentTarget();
     const alert =
       dt.customerOrganization !== undefined && this.auth.isVendor()
-        ? ({ type: 'warning', message: this.customerManagedWarning } as const)
+        ? ({type: 'warning', message: this.customerManagedWarning} as const)
         : undefined;
     this.overlay
       .confirm({
@@ -236,7 +236,7 @@ export class DeploymentTargetCardComponent extends DeploymentTargetCardBaseCompo
     const dt = this.deploymentTarget();
     const alert =
       dt.customerOrganization !== undefined && this.auth.isVendor()
-        ? ({ type: 'warning', message: this.customerManagedWarning } as const)
+        ? ({type: 'warning', message: this.customerManagedWarning} as const)
         : undefined;
     if (d.id) {
       if (

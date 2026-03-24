@@ -1,8 +1,8 @@
-import { Component, computed, Directive, input, Signal } from '@angular/core';
-import { DeploymentTarget } from '@distr-sh/distr-sdk';
-import { isStale } from '../../util/model';
+import {Component, computed, Directive, input, Signal} from '@angular/core';
+import {DeploymentTarget} from '@distr-sh/distr-sdk';
+import {isStale} from '../../util/model';
 
-type StatusDotStyle = 'unknown' | 'danger' | 'warning' | 'info' | 'ok' | 'ok-circle'
+type StatusDotStyle = 'unknown' | 'danger' | 'warning' | 'info' | 'ok' | 'ok-circle';
 
 @Directive({
   host: {
@@ -15,15 +15,15 @@ type StatusDotStyle = 'unknown' | 'danger' | 'warning' | 'info' | 'ok' | 'ok-cir
     '[class.border]': 'style() === "ok-circle"',
     '[class.border-3]': 'style() === "ok-circle"',
     '[class.border-lime-600]': 'style() === "ok-circle"',
-  }
+  },
 })
 export abstract class AbstractStatusDotDirective {
   protected abstract readonly style: Signal<StatusDotStyle>;
 }
 
-@Directive({ selector: '[appStatusDot]' })
+@Directive({selector: '[appStatusDot]'})
 export class StatusDotDirective extends AbstractStatusDotDirective {
-  public override style = input.required<StatusDotStyle>({ alias: 'appStatusDot' })
+  public override style = input.required<StatusDotStyle>({alias: 'appStatusDot'});
 }
 
 @Component({
@@ -37,11 +37,11 @@ export class DeploymentTargetStatusDotComponent {
   protected readonly statusStyle = computed(() => {
     const s = this.deploymentTarget().currentStatus;
     if (s === undefined) {
-      return 'unknown'
+      return 'unknown';
     } else if (isStale(s)) {
-      return 'warning'
+      return 'warning';
     } else {
-      return 'ok'
+      return 'ok';
     }
-  })
+  });
 }
