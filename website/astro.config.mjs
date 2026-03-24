@@ -509,15 +509,20 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/guides/helm-registry-auth/': '/docs/agents/helm-registry-auth/',
     '/docs/guides/preflight-checks/': '/docs/agents/preflight-checks/',
     '/docs/guides/push-to-registry/': '/docs/registry/push-to-registry/',
-    '/docs/guides/application-entitlements/': '/docs/platform/application-entitlements/',
-    '/docs/guides/artifact-entitlements/': '/docs/platform/artifact-entitlements/',
+    '/docs/guides/application-entitlements/':
+      '/docs/platform/application-entitlements/',
+    '/docs/guides/artifact-entitlements/':
+      '/docs/platform/artifact-entitlements/',
     '/docs/guides/license-keys/': '/docs/platform/license-keys/',
     '/docs/guides/k8s-compatibility/': '/docs/platform/k8s-compatibility/',
-    '/docs/guides/vulnerability-scanning/': '/docs/platform/vulnerability-scanning/',
+    '/docs/guides/vulnerability-scanning/':
+      '/docs/platform/vulnerability-scanning/',
     '/docs/guides/manage-customers/': '/docs/customers/manage-customers/',
-    '/docs/guides/customer-registry-access/': '/docs/customers/customer-registry-access/',
+    '/docs/guides/customer-registry-access/':
+      '/docs/customers/customer-registry-access/',
     '/docs/guides/github-actions/': '/docs/integrations/github-actions/',
-    '/docs/guides/configuration/docker-secrets/': '/docs/agents/docker-compose-secrets/',
+    '/docs/guides/configuration/docker-secrets/':
+      '/docs/agents/docker-compose-secrets/',
     '/docs/customers/subscription/': '/docs/account/subscription/',
     '/docs/platform/subscription/': '/docs/account/subscription/',
   },

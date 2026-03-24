@@ -149,10 +149,11 @@ Reconnecting does not affect your running deployments. If your application was r
   agent will lose its ability to authenticate until the new command is run on
   the host.
 
-  If you use an automated bootstrap script — for example, a cloud-init script,
-  an EC2 Auto Scaling launch template, or any script that runs the agent install
-  command on startup — you must update that script with the new command before
-  new instances launch. Instances using the old command will fail to connect.
+If you use an automated bootstrap script — for example, a cloud-init script,
+an EC2 Auto Scaling launch template, or any script that runs the agent install
+command on startup — you must update that script with the new command before
+new instances launch. Instances using the old command will fail to connect.
+
 </Aside>
 
 ## Troubleshooting: Stale Status
@@ -175,8 +176,8 @@ If you do not have direct access to the deployment host, ask the customer to rec
 
 <Aside type="caution">
   **If you use an automated bootstrap script** (e.g. a cloud-init script, an EC2
-  Auto Scaling launch template, or any script that installs the agent on startup),
-  make sure to update it with the new command after reconnecting. The old command
-  contains the previous `targetSecret`, which is now invalid. New instances
-  launched with the old command will fail to connect.
+  Auto Scaling launch template, or any script that installs the agent on
+  startup), make sure to update it with the new command after reconnecting. The
+  old command contains the previous `targetSecret`, which is now invalid. New
+  instances launched with the old command will fail to connect.
 </Aside>

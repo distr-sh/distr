@@ -24,19 +24,20 @@ The **Downloads** page in the vendor portal gives you a chronological log of eve
 
 Each pull event records:
 
-| Field        | Description                                                                 |
-|--------------|-----------------------------------------------------------------------------|
-| **Date**     | Timestamp of the pull                                                       |
-| **Customer** | The customer organization that performed the pull (if associated)           |
-| **User**     | The name or email of the authenticated user                                 |
-| **Address**  | The IP address the pull originated from                                     |
-| **Artifact** | The artifact name (e.g. `myapp`, `backend`)                                 |
-| **Version**  | The tag or digest that was pulled (e.g. `v1.2.0`, `sha256:d2b712d...`)      |
+| Field        | Description                                                            |
+| ------------ | ---------------------------------------------------------------------- |
+| **Date**     | Timestamp of the pull                                                  |
+| **Customer** | The customer organization that performed the pull (if associated)      |
+| **User**     | The name or email of the authenticated user                            |
+| **Address**  | The IP address the pull originated from                                |
+| **Artifact** | The artifact name (e.g. `myapp`, `backend`)                            |
+| **Version**  | The tag or digest that was pulled (e.g. `v1.2.0`, `sha256:d2b712d...`) |
 
 <Aside type="note">
-  Pulls are recorded for all authenticated users — both vendor team members and end customers.
-  If a pull is performed by a customer user, the customer organization name is shown.
-  Vendor-internal pulls show the user name without a customer organization.
+  Pulls are recorded for all authenticated users — both vendor team members and
+  end customers. If a pull is performed by a customer user, the customer
+  organization name is shown. Vendor-internal pulls show the user name without a
+  customer organization.
 </Aside>
 
 ## Filtering pull data
@@ -53,8 +54,8 @@ The filter bar at the top of the Downloads page lets you narrow results by any c
 All filters are combined and applied in real time. Click **Reset** to clear all filters at once.
 
 <Aside type="tip">
-  Filter selections are synced to the URL query parameters.
-  You can bookmark or share a filtered view by copying the URL.
+  Filter selections are synced to the URL query parameters. You can bookmark or
+  share a filtered view by copying the URL.
 </Aside>
 
 ### Cascading version filter
@@ -67,23 +68,22 @@ Click the **Export CSV** button to download the current filtered view as a CSV f
 
 The CSV file contains these columns:
 
-| Column       | Format                            |
-|--------------|-----------------------------------|
-| Date         | ISO 8601 timestamp (RFC 3339)     |
-| Customer     | Customer organization name        |
-| User         | User display name                 |
-| Email        | User email address                |
-| Address      | IP address                        |
-| Artifact     | Artifact name                     |
-| Version      | Tag or digest                     |
+| Column   | Format                        |
+| -------- | ----------------------------- |
+| Date     | ISO 8601 timestamp (RFC 3339) |
+| Customer | Customer organization name    |
+| User     | User display name             |
+| Email    | User email address            |
+| Address  | IP address                    |
+| Artifact | Artifact name                 |
+| Version  | Tag or digest                 |
 
 The file is named `YYYY-MM-DD_artifact_pulls.csv` using the current date.
 
 <Aside type="note">
   The number of rows included in a CSV export depends on your subscription plan.
-  Community and Starter plans include up to 100 rows per export.
-  Pro and Trial plans include up to 10,000 rows.
-  Enterprise limits are configured per license.
+  Community and Starter plans include up to 100 rows per export. Pro and Trial
+  plans include up to 10,000 rows. Enterprise limits are configured per license.
 </Aside>
 
 ## Pagination
