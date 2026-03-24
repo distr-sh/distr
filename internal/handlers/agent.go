@@ -475,7 +475,6 @@ func agentPostMetricsHander(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
 	} else {
-
 		// TODO: move to goroutine
 		if err := notification.SendDeploymentTargetMetricsNotifications(ctx, dt.DeploymentTarget, nil, metrics); err != nil {
 			sentry.GetHubFromContext(ctx).CaptureException(err)
