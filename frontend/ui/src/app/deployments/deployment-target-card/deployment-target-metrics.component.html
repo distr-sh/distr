@@ -11,28 +11,26 @@
   (click)="hovered.set(!hovered())"
   cdkOverlayOrigin
   #metricsOverlayOrigin="cdkOverlayOrigin">
-  <div class="flex flex-col justify-center items-center">
-    <div class="relative">
-      <div
-        class="gauge relative size-10 rounded-full bg-conic from-red-600 via-yellow-300 to-green-700"
-        [ngStyle]="{'--deg': getUsageDegrees(metrics().cpuUsage)}">
-        <div class="rounded-full absolute inset-1 bg-white dark:bg-gray-800"></div>
-      </div>
-      <div class="absolute inset-0 flex items-center justify-center text-xs font-thin text-black dark:text-white">
-        {{ metrics().cpuUsage | percent }}
-      </div>
+  <div class="text-red-600 dark:text-red-300">
+    <fa-icon [icon]="faHardDrive" />
+    <fa-icon class="-ms-2" [icon]="faExclamation" />
+  </div>
+  <div class="relative">
+    <div
+      class="gauge relative size-10 rounded-full bg-conic from-red-600 via-yellow-300 to-green-700"
+      [ngStyle]="{'--deg': getUsageDegrees(metrics().cpuUsage)}"></div>
+    <div class="absolute inset-1 rounded-full bg-white dark:bg-gray-800"></div>
+    <div class="absolute inset-0 flex items-center justify-center text-xs font-thin text-black dark:text-white">
+      {{ metrics().cpuUsage | percent }}
     </div>
   </div>
-  <div class="flex flex-col justify-center items-center">
-    <div class="relative">
-      <div
-        class="gauge relative size-10 rounded-full bg-conic from-red-600 via-yellow-300 to-green-700"
-        [ngStyle]="{'--deg': getUsageDegrees(metrics().memoryUsage)}">
-        <div class="rounded-full absolute inset-1 bg-white dark:bg-gray-800"></div>
-      </div>
-      <div class="absolute inset-0 flex items-center justify-center text-xs font-thin text-black dark:text-white">
-        {{ metrics().memoryUsage | percent }}
-      </div>
+  <div class="relative">
+    <div
+      class="gauge relative size-10 rounded-full bg-conic from-red-600 via-yellow-300 to-green-700"
+      [ngStyle]="{'--deg': getUsageDegrees(metrics().memoryUsage)}"></div>
+    <div class="absolute inset-1 rounded-full bg-white dark:bg-gray-800"></div>
+    <div class="absolute inset-0 flex items-center justify-center text-xs font-thin text-black dark:text-white">
+      {{ metrics().memoryUsage | percent }}
     </div>
   </div>
 </div>
