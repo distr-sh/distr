@@ -13,8 +13,10 @@
   #metricsOverlayOrigin="cdkOverlayOrigin">
   <div class="flex flex-col justify-center items-center">
     <div class="relative">
-      <div class="gauge z-0 percent-{{ getPercentClass(metrics().cpuUsage) }} relative">
-        <div class="gauge-center bg-white dark:bg-gray-800"></div>
+      <div
+        class="gauge relative size-10 rounded-full bg-conic from-red-600 via-yellow-300 to-green-700"
+        [ngStyle]="{'--deg': getUsageDegrees(metrics().cpuUsage)}">
+        <div class="rounded-full absolute inset-1 bg-white dark:bg-gray-800"></div>
       </div>
       <div class="absolute inset-0 flex items-center justify-center text-xs font-thin text-black dark:text-white">
         {{ metrics().cpuUsage | percent }}
@@ -23,8 +25,10 @@
   </div>
   <div class="flex flex-col justify-center items-center">
     <div class="relative">
-      <div class="gauge percent-{{ getPercentClass(metrics().memoryUsage) }} relative">
-        <div class="gauge-center bg-white dark:bg-gray-800"></div>
+      <div
+        class="gauge relative size-10 rounded-full bg-conic from-red-600 via-yellow-300 to-green-700"
+        [ngStyle]="{'--deg': getUsageDegrees(metrics().memoryUsage)}">
+        <div class="rounded-full absolute inset-1 bg-white dark:bg-gray-800"></div>
       </div>
       <div class="absolute inset-0 flex items-center justify-center text-xs font-thin text-black dark:text-white">
         {{ metrics().memoryUsage | percent }}
