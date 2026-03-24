@@ -10,7 +10,7 @@
 
 ### applicationVersionId?
 
-> `optional` **applicationVersionId?**: `string`
+> `optional` **applicationVersionId**: `string`
 
 ---
 
@@ -22,7 +22,7 @@
 
 ### id?
 
-> `optional` **id?**: `string`
+> `optional` **id**: `string`
 
 ---
 

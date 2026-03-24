@@ -319,6 +319,11 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
               releaseName: targetName.trim().toLowerCase().replaceAll(/\W+/g, '-'),
             });
           }
+        } else if (type === 'opentofu') {
+          this.deployForm.controls.envFileData.disable();
+          this.deployForm.controls.releaseName.disable();
+          this.deployForm.controls.valuesYaml.disable();
+          this.deployForm.controls.helmOptionsEnabled.disable();
         } else {
           this.deployForm.controls.envFileData.enable();
           this.deployForm.controls.releaseName.disable();

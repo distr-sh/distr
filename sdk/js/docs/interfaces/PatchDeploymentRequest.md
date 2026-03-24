@@ -10,4 +10,4 @@
 
 ### logsEnabled?
 
-> `optional` **logsEnabled?**: `boolean`
+> `optional` **logsEnabled**: `boolean`

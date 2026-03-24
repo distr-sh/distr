@@ -292,7 +292,7 @@ export class DeploymentWizardComponent implements OnInit {
       } else {
         this.deploymentTargetForm.controls.resources.disable();
       }
-    } else if (type === 'docker') {
+    } else if (type === 'docker' || type === 'opentofu') {
       this.deploymentTargetForm.controls.namespace.disable();
       this.deploymentTargetForm.controls.clusterScope.disable();
       this.deploymentTargetForm.controls.scope.disable();
