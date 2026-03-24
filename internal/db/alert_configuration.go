@@ -20,6 +20,10 @@ const (
 	c.customer_organization_id,
 	c.name,
 	c.enabled,
+	c.status_trigger_enabled,
+	c.cpu_trigger_threshold_percent,
+	c.memory_trigger_threshold_percent,
+	c.disk_trigger_threshold_percent,
 	(
 		SELECT array_agg(dt.id)
 		FROM DeploymentTarget dt
@@ -166,12 +170,20 @@ func CreateAlertConfiguration(ctx context.Context, config *types.AlertConfigurat
 				organization_id,
 				customer_organization_id,
 				name,
-				enabled
+				enabled,
+				status_trigger_enabled,
+				cpu_trigger_threshold_percent,
+				memory_trigger_threshold_percent,
+				disk_trigger_threshold_percent
 			) VALUES (
 				@organizationID,
 				@customerOrganizationID,
 				@name,
-				@enabled
+				@enabled,
+				@statusTriggerEnabled,
+				@cpuTriggerThreshold,
+				@memoryTriggerThreshold,
+				@diskTriggerThreshold
 			)
 			RETURNING id
 		)
@@ -181,6 +193,10 @@ func CreateAlertConfiguration(ctx context.Context, config *types.AlertConfigurat
 				"customerOrganizationID": config.CustomerOrganizationID,
 				"name":                   config.Name,
 				"enabled":                config.Enabled,
+				"statusTriggerEnabled":   config.StatusTriggerEnabled,
+				"cpuTriggerThreshold":    config.CpuTriggerThreshold,
+				"memoryTriggerThreshold": config.MemoryTriggerThreshold,
+				"diskTriggerThreshold":   config.DiskTriggerThreshold,
 			},
 		)
 		if err != nil {
@@ -213,17 +229,25 @@ func UpdateAlertConfiguration(ctx context.Context, config *types.AlertConfigurat
 			ctx,
 			`UPDATE AlertConfiguration SET
 				name = @name,
-				enabled = @enabled
+				enabled = @enabled,
+				status_trigger_enabled = @statusTriggerEnabled,
+				cpu_trigger_threshold_percent = @cpuTriggerThreshold,
+				memory_trigger_threshold_percent = @memoryTriggerThreshold,
+				disk_trigger_threshold_percent = @diskTriggerThreshold
 			WHERE id = @id
 				AND organization_id = @orgID
 				AND ((@customerOrgIsNull AND customer_organization_id IS NULL) OR (customer_organization_id = @customerOrgID))`,
 			pgx.NamedArgs{
-				"id":                config.ID,
-				"name":              config.Name,
-				"enabled":           config.Enabled,
-				"orgID":             config.OrganizationID,
-				"customerOrgID":     config.CustomerOrganizationID,
-				"customerOrgIsNull": config.CustomerOrganizationID == nil,
+				"id":                     config.ID,
+				"name":                   config.Name,
+				"enabled":                config.Enabled,
+				"statusTriggerEnabled":   config.StatusTriggerEnabled,
+				"cpuTriggerThreshold":    config.CpuTriggerThreshold,
+				"memoryTriggerThreshold": config.MemoryTriggerThreshold,
+				"diskTriggerThreshold":   config.DiskTriggerThreshold,
+				"orgID":                  config.OrganizationID,
+				"customerOrgID":          config.CustomerOrganizationID,
+				"customerOrgIsNull":      config.CustomerOrganizationID == nil,
 			},
 		)
 		if err != nil {

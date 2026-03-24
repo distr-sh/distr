@@ -1,10 +1,10 @@
-import {DatePipe} from '@angular/common';
-import {Component, computed, inject, Signal, signal, TemplateRef, viewChild} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
-import {FormBuilder, ReactiveFormsModule} from '@angular/forms';
-import {RouterLink} from '@angular/router';
-import {CustomerOrganization, DeploymentTarget, Named} from '@distr-sh/distr-sdk';
-import {FaIconComponent} from '@fortawesome/angular-fontawesome';
+import { DatePipe } from '@angular/common';
+import { Component, computed, inject, Signal, signal, TemplateRef, viewChild } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { CustomerOrganization, DeploymentTarget, Named } from '@distr-sh/distr-sdk';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import {
   faCheck,
   faClockRotateLeft,
@@ -14,17 +14,17 @@ import {
   faTrash,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import {firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
-import {getFormDisplayedError} from '../../util/errors';
-import {validateRecordAtLeast} from '../../util/validation';
-import {AlertConfigurationsService} from '../services/alert-configurations.service';
-import {AuthService} from '../services/auth.service';
-import {CustomerOrganizationsService} from '../services/customer-organizations.service';
-import {DeploymentTargetsService} from '../services/deployment-targets.service';
-import {DialogRef, OverlayService} from '../services/overlay.service';
-import {ToastService} from '../services/toast.service';
-import {UsersService} from '../services/users.service';
-import {AlertConfiguration, CreateUpdateAlertConfigurationRequest} from '../types/alert-configuration';
+import { firstValueFrom, startWith, Subject, switchMap } from 'rxjs';
+import { getFormDisplayedError } from '../../util/errors';
+import { validateRecordAtLeast } from '../../util/validation';
+import { AlertConfigurationsService } from '../services/alert-configurations.service';
+import { AuthService } from '../services/auth.service';
+import { CustomerOrganizationsService } from '../services/customer-organizations.service';
+import { DeploymentTargetsService } from '../services/deployment-targets.service';
+import { DialogRef, OverlayService } from '../services/overlay.service';
+import { ToastService } from '../services/toast.service';
+import { UsersService } from '../services/users.service';
+import { AlertConfiguration, CreateUpdateAlertConfigurationRequest } from '../types/alert-configuration';
 
 @Component({
   templateUrl: './alert-configurations.component.html',
@@ -41,13 +41,52 @@ export class AlertConfigurationsComponent {
   private readonly toast = inject(ToastService);
 
   protected readonly editConfigRef = signal<AlertConfiguration | undefined>(undefined);
-  protected readonly editConfigForm = this.fb.group({
-    id: this.fb.control(''),
-    name: this.fb.control(''),
-    enabled: this.fb.control(true),
-    userAccountIds: this.fb.record<boolean>({}, {validators: [validateRecordAtLeast(1)]}),
-    deploymentTargetIds: this.fb.record<boolean>({}, {validators: [validateRecordAtLeast(1)]}),
-  });
+  protected readonly editConfigForm = this.fb.group(
+    {
+      id: this.fb.control(''),
+      name: this.fb.control(''),
+      enabled: this.fb.control(true),
+      statusTriggerEnabled: this.fb.control(true),
+      cpuTriggerEnabled: this.fb.control(false),
+      cpuTriggerThresholdPercent: this.fb.control(75, [Validators.min(1), Validators.max(100), Validators.required]),
+      memoryTriggerEnabled: this.fb.control(false),
+      memoryTriggerThresholdPercent: this.fb.control(75, [Validators.min(1), Validators.max(100), Validators.required]),
+      diskTriggerEnabled: this.fb.control(false),
+      diskTriggerThresholdPercent: this.fb.control(75, [Validators.min(1), Validators.max(100), Validators.required]),
+      userAccountIds: this.fb.record<boolean>({}, { validators: [validateRecordAtLeast(1)] }),
+      deploymentTargetIds: this.fb.record<boolean>({}, { validators: [validateRecordAtLeast(1)] }),
+    },
+    {
+      validators: [
+        (ctrl) => {
+          const v = ctrl.value;
+          return v.statusTriggerEnabled || v.cpuTriggerEnabled || v.memoryTriggerEnabled || v.diskTriggerEnabled
+            ? null
+            : { anyTrigger: 1 };
+        },
+      ],
+    }
+  );
+
+  constructor() {
+    const thresholdPairs: [FormControl<boolean>, FormControl<number | null>][] = [
+      [this.editConfigForm.controls.cpuTriggerEnabled, this.editConfigForm.controls.cpuTriggerThresholdPercent],
+      [this.editConfigForm.controls.memoryTriggerEnabled, this.editConfigForm.controls.memoryTriggerThresholdPercent],
+      [this.editConfigForm.controls.diskTriggerEnabled, this.editConfigForm.controls.diskTriggerThresholdPercent],
+    ];
+    for (const [enabledCtrl, thresholdCtrl] of thresholdPairs) {
+      enabledCtrl.valueChanges.pipe(takeUntilDestroyed()).subscribe((enabled) => {
+        if (enabled) {
+          thresholdCtrl.enable();
+          if (!thresholdCtrl.value) {
+            thresholdCtrl.setValue(75);
+          }
+        } else {
+          thresholdCtrl.disable();
+        }
+      });
+    }
+  }
   protected readonly editFormLoading = signal(false);
   private readonly editConfigDrawerTpl = viewChild.required<TemplateRef<unknown>>('editConfigDrawer');
   private editConfigDrawerRef?: DialogRef;
@@ -70,19 +109,19 @@ export class AlertConfigurationsComponent {
     ? toSignal(this.customersService.getCustomerOrganizations())
     : signal([]).asReadonly();
   protected readonly deploymentTargetCustomers: Signal<
-    {customer?: CustomerOrganization; deploymentTargets: DeploymentTarget[]}[]
+    { customer?: CustomerOrganization; deploymentTargets: DeploymentTarget[] }[]
   > = computed(() => {
     const deploymentTargets = this.deploymentTargets() ?? [];
     const customers = this.customers();
     return customers?.length
       ? [
-          {deploymentTargets: deploymentTargets.filter((it) => it.customerOrganization === undefined)},
-          ...customers.map((customer) => ({
-            customer,
-            deploymentTargets: deploymentTargets.filter((it) => it.customerOrganization?.id === customer.id),
-          })),
-        ].filter((entry) => entry.deploymentTargets.length > 0)
-      : [{deploymentTargets}];
+        { deploymentTargets: deploymentTargets.filter((it) => it.customerOrganization === undefined) },
+        ...customers.map((customer) => ({
+          customer,
+          deploymentTargets: deploymentTargets.filter((it) => it.customerOrganization?.id === customer.id),
+        })),
+      ].filter((entry) => entry.deploymentTargets.length > 0)
+      : [{ deploymentTargets }];
   });
 
   protected readonly filterForm = this.fb.group({
@@ -121,13 +160,21 @@ export class AlertConfigurationsComponent {
       .filter((id) => id !== undefined)
       .forEach((id) => this.editConfigForm.controls.deploymentTargetIds.addControl(id, this.fb.control(false)));
 
+    console.log(config);
     if (config) {
       this.editConfigForm.patchValue({
         id: config.id,
         name: config.name,
         enabled: config.enabled,
-        deploymentTargetIds: config.deploymentTargetIds?.reduce((acc, id) => ({...acc, [id]: true}), {}),
-        userAccountIds: config.userAccountIds?.reduce((acc, id) => ({...acc, [id]: true}), {}),
+        statusTriggerEnabled: config.statusTriggerEnabled,
+        cpuTriggerEnabled: config.cpuTriggerThresholdPercent !== undefined,
+        cpuTriggerThresholdPercent: config.cpuTriggerThresholdPercent,
+        memoryTriggerEnabled: config.memoryTriggerThresholdPercent !== undefined,
+        memoryTriggerThresholdPercent: config.memoryTriggerThresholdPercent,
+        diskTriggerEnabled: config.diskTriggerThresholdPercent !== undefined,
+        diskTriggerThresholdPercent: config.diskTriggerThresholdPercent,
+        deploymentTargetIds: config.deploymentTargetIds?.reduce((acc, id) => ({ ...acc, [id]: true }), {}),
+        userAccountIds: config.userAccountIds?.reduce((acc, id) => ({ ...acc, [id]: true }), {}),
       });
     }
 
@@ -148,6 +195,10 @@ export class AlertConfigurationsComponent {
     const requestValue: CreateUpdateAlertConfigurationRequest = {
       name: formValue.name ?? '',
       enabled: formValue.enabled ?? true,
+      statusTriggerEnabled: formValue.statusTriggerEnabled ?? false,
+      cpuTriggerThresholdPercent: formValue.cpuTriggerThresholdPercent,
+      memoryTriggerThresholdPercent: formValue.memoryTriggerThresholdPercent,
+      diskTriggerThresholdPercent: formValue.diskTriggerThresholdPercent,
       deploymentTargetIds: Object.entries(formValue.deploymentTargetIds ?? {})
         .filter(([_, checked]) => checked)
         .map(([id]) => id),
@@ -180,7 +231,7 @@ export class AlertConfigurationsComponent {
 
   protected async toggleConfigEnabled(config: AlertConfiguration) {
     try {
-      const request = {...config, enabled: !config.enabled};
+      const request = { ...config, enabled: !config.enabled };
       this.enabledToggleLoading.set(true);
       await firstValueFrom(this.svc.update(config.id, request));
       this.toast.success(`Alert configuration ${request.enabled ? 'enabled' : 'disabled'}`);
@@ -203,6 +254,15 @@ export class AlertConfigurationsComponent {
       },
       error: (e) => this.toast.error(e),
     });
+  }
+
+  protected getTriggersCount(config: AlertConfiguration): number {
+    return [
+      config.statusTriggerEnabled,
+      config.cpuTriggerThresholdPercent !== undefined,
+      config.memoryTriggerThresholdPercent !== undefined,
+      config.diskTriggerThresholdPercent !== undefined,
+    ].filter(v => v).length
   }
 
   protected getNames(named: Named[] | undefined) {
