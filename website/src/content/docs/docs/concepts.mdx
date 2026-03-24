@@ -15,7 +15,7 @@ Distr is built around several key concepts that work together to enable flexible
 Distr supports five distinct deployment models to meet different customer requirements:
 
 - **[Fully Self-Managed](/docs/use-cases/fully-self-managed/)**: For customers who maintain complete control over their infrastructure, the Distr [Artifact Registry](/glossary/oci-container-artifact-registry/) for artifact distribution is the main feature used.
-- **[Assisted Self-Managed](/docs/use-cases/assisted-self-managed/)**: End customers retain full control over their environment access but delegate application deployment to [Distr agents](/docs/platform/agents/), which simplify initial installation, updates, and ongoing maintenance.
+- **[Assisted Self-Managed](/docs/use-cases/assisted-self-managed/)**: End customers retain full control over their environment access but delegate application deployment to [Distr agents](/docs/agents/), which simplify initial installation, updates, and ongoing maintenance.
 - **[Bring Your Own Cloud (BYOC)](/glossary/byoc-definition/)**: Fully vendor-managed deployments within customer-owned environments. Ideal for end customers who want to offload infrastructure and software maintenance to the vendor while keeping deployments within their own environment, for compliance, cost management, or use of pre-contracted cloud resources.
 - **[Air-Gapped Environments](/glossary/air-gapped-meaning/)**: For high-security scenarios with physical or logical network isolation, offering secure artifact delivery through whitelisted connections, jump servers or physical media.
 - **[Edge Deployments](/docs/use-cases/edge/)**: For vendor-managed deployments to edge locations, IoT devices, or remote hardware.
@@ -30,18 +30,18 @@ The portal includes monitoring and observability features, integrates with your 
 
 ### Customer Portal
 
-The [Customer Portal](/docs/platform/customer-portal/) is a simplified, white-labeled UI built for end customers.
+The [Customer Portal](/docs/customers/) is a simplified, white-labeled UI built for end customers.
 It gives them control over deployments and access to the registry UI.
 
 ### Distr Registry
 
-[Distr Registry](/docs/platform/registry/) is an [OCI-compliant artifact registry](/glossary/oci-container-artifact-registry/) that stores Docker images, [Helm charts](/glossary/helm-chart/), and other OCI artifacts.
+[Distr Registry](/docs/registry/) is an [OCI-compliant artifact registry](/glossary/oci-container-artifact-registry/) that stores Docker images, [Helm charts](/glossary/helm-chart/), and other OCI artifacts.
 It tracks artifact usage across customer environments and provides end customers with a private registry containing only the artifacts they're licensed to use.
-Unlike other artifact registries, Distr's includes a [UI](/docs/platform/registry/) available in both the vendor and customer portals, making it easy to browse artifacts and inspect versions.
+Unlike other artifact registries, Distr's includes a [UI](/docs/registry/) available in both the vendor and customer portals, making it easy to browse artifacts and inspect versions.
 
 ### Distr Agents
 
-[Distr Agents](/docs/platform/agents/) are lightweight deployment agents that run in the customer’s target environment.
+[Distr Agents](/docs/agents/) are lightweight deployment agents that run in the customer’s target environment.
 They pull configurations from Distr's control plane (Distr Hub), execute deployment operations locally, and report status back to the vendor and customer portal.
 
 ### Distr License Management

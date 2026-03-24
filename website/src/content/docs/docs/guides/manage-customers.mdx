@@ -1,7 +1,7 @@
 ---
 title: Customer Management
 description: Deep dive into the Customers section of the Vendor Portal—create customers, invite users, manage secrets, and control features per customer.
-slug: docs/guides/manage-customers
+slug: docs/customers/manage-customers
 sidebar:
   order: 4
 ---
@@ -20,9 +20,9 @@ The **Customers** section in the [Vendor Portal](/docs/platform/vendor-portal/) 
 From the Customers page you can:
 
 - **Create customers** and give them a name
-- **Invite customer users** (name, email, and [role](/docs/platform/rbac/)) and manage access per customer
-- **Manage secrets** for a specific customer—see [Manage Secrets](/docs/guides/secrets/) for how secrets work
-- **Enable or disable features** per customer: Deployments, [Alerts](/docs/platform/alerts/), Artifacts, and [Support Bundles](/docs/platform/support-bundles/)
+- **Invite customer users** (name, email, and [role](/docs/customers/rbac/)) and manage access per customer
+- **Manage secrets** for a specific customer—see [Manage Secrets](/docs/agents/secrets/) for how secrets work
+- **Enable or disable features** per customer: Deployments, [Alerts](/docs/agents/alerts/), Artifacts, and [Support Bundles](/docs/platform/support-bundles/)
 
 Use the **Filter customers** search bar to find customers, and **+ Create Customer** to add a new one.
 
@@ -40,15 +40,15 @@ The new customer appears in the list. You can then invite users, manage secrets,
 1. In the **Customers** list, open the customer you want to add users to.
 2. Click **Manage users** for that customer.
 3. Click **Add user** (or **Invite User**).
-4. Enter **name**, **email**, and **role** (see [RBAC](/docs/platform/rbac/) for Administrator, User, and Viewer).
+4. Enter **name**, **email**, and **role** (see [RBAC](/docs/customers/rbac/) for Administrator, User, and Viewer).
 5. Submit the invitation.
 
-The invited user receives an email to set up their account. The **first user** for a customer is always an **Administrator**. After that, customer admins can add or remove users themselves from the [Customer Portal](/docs/platform/customer-portal/).
+The invited user receives an email to set up their account. The **first user** for a customer is always an **Administrator**. After that, customer admins can add or remove users themselves from the [Customer Portal](/docs/customers/).
 
 <Aside type="tip">
   The full steps and role options for inviting customer users are described in
   [Inviting Customer Organization
-  Users](/docs/platform/rbac/#inviting-customer-organization-users).
+  Users](/docs/customers/rbac/#inviting-customer-organization-users).
 </Aside>
 
 ## Managing secrets per customer
@@ -58,7 +58,7 @@ For each customer you can manage secrets that are only available to that custome
 1. In the **Customers** list, find the customer.
 2. Click **Manage secrets** for that customer.
 
-For how to create, edit, and use secrets (including customer-specific secrets), see [Manage Secrets](/docs/guides/secrets/).
+For how to create, edit, and use secrets (including customer-specific secrets), see [Manage Secrets](/docs/agents/secrets/).
 
 ## Enabling and disabling features per customer
 
@@ -86,4 +86,4 @@ A few things to note:
 
 ---
 
-Next steps: assign access with [Application Entitlements](/docs/guides/application-entitlements/) or [Artifact Entitlements](/docs/guides/artifact-entitlements/), or learn the [End-customer view of Distr](/docs/guides/customer-registry-access/).
+Next steps: assign access with [Application Entitlements](/docs/platform/application-entitlements/) or [Artifact Entitlements](/docs/platform/artifact-entitlements/), or learn the [End-customer view of Distr](/docs/customers/customer-registry-access/).

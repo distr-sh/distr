@@ -1,7 +1,7 @@
 ---
 title: Kubernetes Compatibility Matrix
 description: Validate your Helm charts against multiple Kubernetes versions in CI/CD, generate compatibility reports, and share them with customers as version resources using the Distr GitHub Action.
-slug: docs/guides/k8s-compatibility
+slug: docs/platform/k8s-compatibility
 sidebar:
   order: 8
 ---
@@ -43,9 +43,9 @@ By the end of this guide, you'll have:
 Before starting, ensure you have:
 
 1. A Distr account with an organization set up
-2. A Helm application configured in Distr (see [Create Application](/docs/guides/create-application/))
+2. A Helm application configured in Distr (see [Create Application](/docs/agents/create-application/))
 3. A GitHub repository containing your Helm chart
-4. The [Automatic Deployments from GitHub](/docs/guides/github-actions/) workflow already configured — this guide extends that pipeline with a compatibility validation stage
+4. The [Automatic Deployments from GitHub](/docs/integrations/github-actions/) workflow already configured — this guide extends that pipeline with a compatibility validation stage
 5. Familiarity with [GitHub Actions matrix strategies](https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs)
 
 ## How It Works
@@ -164,9 +164,9 @@ You can fork or copy from the hello-distr repository to get started quickly, the
 
 ## Next Steps After Setting Up Kubernetes Compatibility Testing
 
-- **[Automatic Deployments from GitHub](/docs/guides/github-actions/)** — If you haven't already, set up automatic version creation and deployment updates
-- **[Application Entitlements](/docs/guides/application-entitlements/)** — Control which customers can access specific application versions and their compatibility reports
-- **[Configuring Helm Charts for Distr](/docs/guides/helm-registry-auth/)** — Set up authenticated image pulls with imagePullSecrets
+- **[Automatic Deployments from GitHub](/docs/integrations/github-actions/)** — If you haven't already, set up automatic version creation and deployment updates
+- **[Application Entitlements](/docs/platform/application-entitlements/)** — Control which customers can access specific application versions and their compatibility reports
+- **[Configuring Helm Charts for Distr](/docs/agents/helm-registry-auth/)** — Set up authenticated image pulls with imagePullSecrets
 - **[Distr SDK](/docs/integrations/sdk/)** — Build custom automation for generating and attaching compatibility reports programmatically
 
 ## Additional Resources for Kubernetes Compatibility Testing

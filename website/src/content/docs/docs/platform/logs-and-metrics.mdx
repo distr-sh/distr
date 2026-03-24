@@ -1,7 +1,7 @@
 ---
 title: Logs & Metrics
 description: Monitor deployment health with agent logs, container logs, deployment status indicators, and host metrics collection in Distr.
-slug: docs/platform/logs-and-metrics
+slug: docs/agents/logs-and-metrics
 sidebar:
   order: 3
 ---
@@ -130,4 +130,53 @@ The following metrics are collected for both Docker and Kubernetes deployment ta
 <Aside type="tip" title="Coming Soon: Disk Space">
   Disk space monitoring is on the roadmap and will be added to the metrics
   collection in a future release.
+</Aside>
+
+## Reconnect
+
+Reconnect generates a new connection command for a deployment target. Use it when the agent has lost its connection and cannot recover on its own.
+
+To reconnect:
+
+1. Click the **⋮** menu on the deployment target and select **Reconnect**.
+2. Review the warning and confirm. **The previous credentials are invalidated the moment you confirm** — there is no undo.
+3. Copy the new command and run it on the deployment host.
+
+Reconnecting does not affect your running deployments. If your application was running before the reconnect, it continues running. The agent only manages the connection back to Distr, not the application lifecycle.
+
+<Aside type="caution">
+  **The new secret replaces the old one immediately on confirm.** The existing
+  agent will lose its ability to authenticate until the new command is run on
+  the host.
+
+  If you use an automated bootstrap script — for example, a cloud-init script,
+  an EC2 Auto Scaling launch template, or any script that runs the agent install
+  command on startup — you must update that script with the new command before
+  new instances launch. Instances using the old command will fail to connect.
+</Aside>
+
+## Troubleshooting: Stale Status
+
+A **Stale** deployment target means the agent was previously connected but has not reported its health in the last 60 seconds. It does **not** mean your deployment is broken — your application may still be running normally. Distr has simply lost contact with the agent.
+
+**Step 1: Check the Agent Logs**
+
+Open the **⋮** menu on the deployment target and select **Agent Logs**. Look for the last timestamp in the log to see when the agent stopped reporting, and check for any error messages that indicate why it disconnected.
+
+**Step 2: Reconnect**
+
+If you have access to the deployment host:
+
+1. Click **Reconnect** in the **⋮** menu.
+2. Confirm. A new `targetSecret` is generated and the old one is invalidated immediately.
+3. Run the new install command on the deployment host to re-establish the connection.
+
+If you do not have direct access to the deployment host, ask the customer to reconnect from the Customer Portal. They will find the same **⋮** menu and **Reconnect** option in their deployment target view.
+
+<Aside type="caution">
+  **If you use an automated bootstrap script** (e.g. a cloud-init script, an EC2
+  Auto Scaling launch template, or any script that installs the agent on startup),
+  make sure to update it with the new command after reconnecting. The old command
+  contains the previous `targetSecret`, which is now invalid. New instances
+  launched with the old command will fail to connect.
 </Aside>

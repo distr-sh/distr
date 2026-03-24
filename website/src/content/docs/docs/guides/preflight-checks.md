@@ -1,7 +1,7 @@
 ---
 title: Pre-Flight Checks
 description: Validate target environments before deployment by checking Docker version, CPU, RAM, disk space and more with custom pre-flight check scripts.
-slug: docs/guides/preflight-checks
+slug: docs/agents/preflight-checks
 sidebar:
   order: 8
 ---
@@ -227,5 +227,5 @@ When writing custom pre-flight check scripts, follow these conventions:
 
 ## Next Steps
 
-- **[Deployment Agents](/docs/platform/agents/)** — Learn how Distr agents manage deployments on customer infrastructure
-- **[Automatic Deployments from GitHub](/docs/guides/github-actions/)** — Automate your CI/CD pipeline with the Distr GitHub Action
+- **[Deployment Agents](/docs/agents/)** — Learn how Distr agents manage deployments on customer infrastructure
+- **[Automatic Deployments from GitHub](/docs/integrations/github-actions/)** — Automate your CI/CD pipeline with the Distr GitHub Action

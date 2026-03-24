@@ -1,7 +1,7 @@
 ---
 title: License Keys
 description: Create and manage License Keys to issue signed JWT tokens your application can verify to enforce usage limits, seat counts, and feature access.
-slug: docs/guides/license-keys
+slug: docs/platform/license-keys
 sidebar:
   order: 7
 ---
@@ -17,12 +17,12 @@ This guide walks you through how to use License Keys to issue cryptographically 
   License Keys are a Pro feature available in Pro, Enterprise, and Pro Trial
   plans. Learn more about [License
   Management](/docs/platform/license-management/) and [subscription
-  plans](/docs/platform/subscription/).
+  plans](/docs/account/subscription/).
 </Aside>
 
 ## What license keys are for
 
-License Keys are different from [Application Entitlements](/docs/guides/application-entitlements/) and [Artifact Entitlements](/docs/guides/artifact-entitlements/). Entitlements control what a customer can access within Distr. License keys carry arbitrary data — seat counts, plan tier, feature flags — that your _application_ reads and enforces independently of Distr.
+License Keys are different from [Application Entitlements](/docs/platform/application-entitlements/) and [Artifact Entitlements](/docs/platform/artifact-entitlements/). Entitlements control what a customer can access within Distr. License keys carry arbitrary data — seat counts, plan tier, feature flags — that your _application_ reads and enforces independently of Distr.
 
 When you request a token for a license key, Distr generates a signed JWT. Your application verifies it using the public key you generate and distribute. No call back to Distr is needed at verification time, which means license key validation works in air-gapped and offline environments.
 
@@ -143,7 +143,7 @@ services:
       LICENSE_KEY: '${LICENSE_KEY}'
 ```
 
-The customer sets `LICENSE_KEY` as a [secret](/docs/guides/secrets/) in their Distr deployment target, or the vendor injects it via the deployment configuration. The application reads `process.env.LICENSE_KEY` (or the equivalent in your language) at startup and verifies it.
+The customer sets `LICENSE_KEY` as a [secret](/docs/agents/secrets/) in their Distr deployment target, or the vendor injects it via the deployment configuration. The application reads `process.env.LICENSE_KEY` (or the equivalent in your language) at startup and verifies it.
 
 ### Helm (via Distr deployment agents)
 

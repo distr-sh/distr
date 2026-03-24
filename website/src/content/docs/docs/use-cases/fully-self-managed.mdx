@@ -13,7 +13,7 @@ import fullySelfManagedDark from '~/assets/docs/use-cases/fully-self-managed/ful
 The Fully [Self-Managed](/glossary/self-managed-software/) deployment model is designed for environments where third-party access is not an option.
 It is best suited for customers wanting to have full control over their infrastructure and don't want to use external agents.
 For this deployment model, Distr provides a private [artifact registry](/glossary/oci-container-artifact-registry/).
-It comes with an [optimized UI](/docs/platform/registry/#artifact-registry-ui) that enables customers
+It comes with an [optimized UI](/docs/registry/#artifact-registry-ui) that enables customers
 to create access tokens, fetch the latest images and build custom automations on top of the registry.
 
 ## Solution Architecture
@@ -37,11 +37,11 @@ to create access tokens, fetch the latest images and build custom automations on
 
 {/* steps can't be indented due to prettier */}
 
-1. Set Up Your [Registry](/docs/guides/push-to-registry/)
-2. Create Your [Application](/docs/guides/create-application/)
-3. White-label the [Customer portal](/docs/platform/branding/)
-4. Onboard your first [customer](/docs/platform/rbac/#inviting-customer-organization-users)
+1. Set Up Your [Registry](/docs/registry/push-to-registry/)
+2. Create Your [Application](/docs/agents/create-application/)
+3. White-label the [Customer portal](/docs/customers/branding/)
+4. Onboard your first [customer](/docs/customers/rbac/#inviting-customer-organization-users)
 5. Customer creates a [Personal Access token](/docs/integrations/access-tokens/)
-6. Customer can [access and pull](/docs/guides/customer-registry-access/#registry-quickstart-from-the-customer-portal) your private artifacts
+6. Customer can [access and pull](/docs/customers/customer-registry-access/#registry-quickstart-from-the-customer-portal) your private artifacts
 
 </Steps>

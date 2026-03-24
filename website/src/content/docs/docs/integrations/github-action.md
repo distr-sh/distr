@@ -54,7 +54,7 @@ For a comprehensive step-by-step guide including:
 - Setting up automatic deployment updates
 - Troubleshooting and advanced scenarios
 
-See the **[Automatic Deployments from GitHub](/docs/guides/github-actions/)** guide.
+See the **[Automatic Deployments from GitHub](/docs/integrations/github-actions/)** guide.
 
 ### Additional Resources
 

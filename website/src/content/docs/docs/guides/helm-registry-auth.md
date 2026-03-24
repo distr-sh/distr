@@ -1,7 +1,7 @@
 ---
 title: Configuring a Helm Chart to Support Distr Artifacts
 description: Configure your Helm charts to support authenticated image pulls from the Distr registry by correctly using imagePullSecrets which enables agent-based credential injection.
-slug: docs/guides/helm-registry-auth
+slug: docs/agents/helm-registry-auth
 sidebar:
   order: 6
 ---

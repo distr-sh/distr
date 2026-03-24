@@ -13,9 +13,9 @@ import assistedSelfManagedDark from '~/assets/docs/use-cases/assisted-self-manag
 The Assisted Self-Managed deployment model offers a balance between customer infrastructure control and vendor assistance.
 Applications run in customer-owned environments such as virtual machines or Kubernetes clusters, with no direct vendor access to the infrastructure.
 
-The lightweight and open source [Distr agents](/docs/platform/agents/), installed by the customer in the target environment, handle deployments and updates.
+The lightweight and open source [Distr agents](/docs/agents/), installed by the customer in the target environment, handle deployments and updates.
 They pull application definitions and artifacts from the Distr Hub, apply customer-defined configurations,
-and report deployment status, logs, and health to both the [vendor](/docs/platform/vendor-portal/) and [customer](/docs/platform/customer-portal/) portals,
+and report deployment status, logs, and health to both the [vendor](/docs/platform/vendor-portal/) and [customer](/docs/customers/) portals,
 without exposing internal infrastructure.
 
 The Customer Portal also allows end users, who may not be involved in initial deployment, to configure applications, monitor status, access logs, and trigger updates.
@@ -43,11 +43,11 @@ This is especially useful in setups where a platform team deploys the applicatio
 
 {/* steps can't be indented due to prettier */}
 
-1. Create Your [Application](/docs/guides/create-application/)
-2. (Optional) Set Up Your [Registry](/docs/guides/push-to-registry/)
-3. White-label the [Customer portal](/docs/platform/branding/)
-4. Onboard your first [customer](/docs/platform/rbac/#inviting-customer-organization-users)
+1. Create Your [Application](/docs/agents/create-application/)
+2. (Optional) Set Up Your [Registry](/docs/registry/push-to-registry/)
+3. White-label the [Customer portal](/docs/customers/branding/)
+4. Onboard your first [customer](/docs/customers/rbac/#inviting-customer-organization-users)
 5. Customer creates a [Personal Access token](/docs/integrations/access-tokens/)
-6. Customer deploys your application via the Dist [agents](/docs/guides/customer-registry-access/#deployment-agent-quickstart-from-the-customer-portal)
+6. Customer deploys your application via the Dist [agents](/docs/customers/customer-registry-access/#deployment-agent-quickstart-from-the-customer-portal)
 
 </Steps>

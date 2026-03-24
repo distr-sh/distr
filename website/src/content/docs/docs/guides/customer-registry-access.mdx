@@ -1,7 +1,7 @@
 ---
 title: End-customer view of Distr
 description: Guide for end customers on using the Customer Portal to access artifacts and deploy applications with Distr agents.
-slug: docs/guides/customer-registry-access
+slug: docs/customers/customer-registry-access
 sidebar:
   order: 7
 ---
@@ -27,7 +27,7 @@ import logsDark from '~/assets/docs/guides/customer-view/logs-dark.png';
 import updateDeployLight from '~/assets/docs/guides/customer-view/update-deploy-light.png';
 import updateDeployDark from '~/assets/docs/guides/customer-view/update-deploy-dark.png';
 
-As an end customer, you will be given access to a [Customer Portal](/docs/platform/customer-portal/) by the software vendor.
+As an end customer, you will be given access to a [Customer Portal](/docs/customers/) by the software vendor.
 The portal you will have access to two key features:
 
 - The artifact registry for downloading software distributed by your vendor
@@ -96,7 +96,7 @@ helm pull registry.distr.sh/slug/vendor-helm-chart:1.0.0
 
 ### 6. Deploy the Artifacts
 
-Refer to the deployment instructions in your [Customer Portal](/docs/platform/customer-portal/) dashboard or coordinate directly with your vendor for specific deployment guidance.
+Refer to the deployment instructions in your [Customer Portal](/docs/customers/) dashboard or coordinate directly with your vendor for specific deployment guidance.
 
 ## Deployment Agent quickstart from the customer portal
 
@@ -120,7 +120,7 @@ For Helm applications, you'll also need to specify the Kubernetes namespace wher
   You can also enable cluster-scoped permissions for Helm deployments. When
   enabled, the agent will have cluster-wide access; otherwise, it will be
   limited to a specific namespace. See [Helm
-  Agent](/docs/platform/agents/#helm-agent) for more details.
+  Agent](/docs/agents/helm-agent/) for more details.
 </Aside>
 
 ### Step 3: Application Configuration
@@ -128,9 +128,9 @@ For Helm applications, you'll also need to specify the Kubernetes namespace wher
 Configure the environment variables for your Docker Compose application. These variables will be passed to the `docker compose` process via the `--env-file` argument.
 
 The entered environment variables will be passed unmodified to the `docker compose` process via the `--env-file` argument.
-For more information on how to use them, please refer to [our guide on working with environment variables](/docs/guides/docker-env/).
+For more information on how to use them, please refer to [our guide on working with environment variables](/docs/agents/docker-env/).
 
-You can also enable Docker Swarm mode for deployments that should run in swarm mode. See [Docker Swarm](/docs/platform/agents/#docker-swarm) for more details. Additionally, you can enable container log collection to view application logs directly in the portal. Learn more about [Container Logs](/docs/platform/logs-and-metrics/#container-logs).
+You can also enable Docker Swarm mode for deployments that should run in swarm mode. See [Docker Swarm](/docs/agents/docker-agent/#docker-swarm) for more details. Additionally, you can enable container log collection to view application logs directly in the portal. Learn more about [Container Logs](/docs/agents/logs-and-metrics/#container-logs).
 
 <Aside type="note">
   For Helm applications, you'll configure the Helm values instead. You can

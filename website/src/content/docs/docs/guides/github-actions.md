@@ -1,7 +1,7 @@
 ---
 title: Automatic Deployments from GitHub
 description: Automatically create new versions and update customer deployments whenever you push a release to GitHub using the Distr GitHub Action.
-slug: docs/guides/github-actions
+slug: docs/integrations/github-actions
 sidebar:
   order: 7
 ---
@@ -385,7 +385,7 @@ jobs:
 - **`api-token`** - Your Personal Access Token (from GitHub Secrets)
 - **`application-id`** - Your Application ID (from GitHub Variables)
 - **`version-name`** - The version name (here we use the git tag name)
-- **`link-template`** - Template for generating links to deployments (e.g., `http://{{ .Env.APP_HOST }}`). See [Application Links](/docs/guides/application-links/) for details
+- **`link-template`** - Template for generating links to deployments (e.g., `http://{{ .Env.APP_HOST }}`). See [Application Links](/docs/agents/application-links/) for details
 - **`update-deployments: true`** - **This is the key setting that enables automatic deployment updates**
 
 When `update-deployments` is set to `true`, the action will:
@@ -601,8 +601,8 @@ This is a critical sequencing issue. In summary:
 
 Now that you have automatic deployments set up, consider:
 
-- **[Application Entitlements](/docs/guides/application-entitlements/)** - Control which customers receive automatic updates
-- **[Application Links](/docs/guides/application-links/)** - Create dynamic links for customers to access their deployments
+- **[Application Entitlements](/docs/platform/application-entitlements/)** - Control which customers receive automatic updates
+- **[Application Links](/docs/agents/application-links/)** - Create dynamic links for customers to access their deployments
 - **[Distr SDK](/docs/integrations/sdk/)** - Build custom automation and integrations
 - **[Distr API](/docs/integrations/rest-api/)** - Explore advanced API capabilities
 
