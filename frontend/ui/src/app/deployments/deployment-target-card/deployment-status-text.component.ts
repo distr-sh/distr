@@ -1,7 +1,31 @@
-import {Component, input} from '@angular/core';
-import {DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
-import {IsStalePipe} from '../../../util/model';
-import {DeploymentStatusDotDirective} from '../../components/status-dot';
+import { Component, computed, Directive, input } from '@angular/core';
+import { DeploymentWithLatestRevision } from '@distr-sh/distr-sdk';
+import { isStale, IsStalePipe } from '../../../util/model';
+import { AbstractStatusDotDirective } from '../../components/status-dot';
+import { never } from '../../../util/exhaust';
+
+@Directive({ selector: '[appDeploymentStatusDot]', })
+export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
+  public readonly deployment = input.required<DeploymentWithLatestRevision>();
+  protected override style = computed(() => {
+    const s = this.deployment().latestStatus;
+    if (s === undefined) {
+      return 'unknown'
+    } else if (s.type === 'error') {
+      return 'danger'
+    } else if (isStale(s)) {
+      return 'warning'
+    } else if (s.type === 'progressing') {
+      return 'info'
+    } else if (s.type === 'running') {
+      return 'ok-circle';
+    } else if (s.type === 'healthy') {
+      return 'ok'
+    } else {
+      return never(s.type)
+    }
+  })
+}
 
 @Component({
   selector: 'app-deployment-status-text',

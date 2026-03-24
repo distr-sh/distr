@@ -3,15 +3,17 @@
   <div class="mx-4 my-3 md:flex justify-between items-center min-w-0">
     <div class="sm:flex justify-between items-center min-w-0">
       <div class="flex gap-3 items-center mb-2 md:mb-0 min-w-0">
-        <div class="relative flex-shrink-0">
+        <div class="relative shrink-0">
           <img
             [ngSrc]="'/' + deploymentTarget().type + '.png'"
             [alt]="deploymentTarget().type"
             class="size-10 rounded-sm max-w-none"
             height="199"
             width="199" />
-          <app-status-dot class="absolute size-2.5 -bottom-0.5 -end-0.5" [deploymentTarget]="deploymentTarget()">
-          </app-status-dot>
+          <deployment-target-status-dot
+            class="absolute size-2.5 -bottom-0.5 -inset-e-0.5"
+            [deploymentTarget]="deploymentTarget()">
+          </deployment-target-status-dot>
         </div>
         <div class="min-w-0">
           <div class="flex gap-2">

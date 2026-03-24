@@ -3,7 +3,7 @@
   <div class="mx-4 my-3 flex justify-between items-center min-w-0">
     <div class="flex justify-between items-center min-w-0">
       <div class="flex items-center gap-3 min-w-0">
-        <div class="relative self-start flex-shrink-0">
+        <div class="relative self-start shrink-0">
           @if (deploymentTarget().customerOrganization?.imageId; as imageId) {
             <img class="size-10 rounded-sm" [attr.src]="imageId | secureImage | async" alt="" />
           } @else {
@@ -14,7 +14,9 @@
               height="199"
               width="199" />
           }
-          <app-status-dot class="absolute size-2.5 -bottom-0.5 -end-0.5" [deploymentTarget]="deploymentTarget()" />
+          <deployment-target-status-dot
+            class="absolute size-2.5 -bottom-0.5 -inset-e-0.5"
+            [deploymentTarget]="deploymentTarget()" />
         </div>
         <div class="min-w-0">
           <a routerLink="/deployments" class="hover:underline" [queryParams]="{search: deploymentTarget().name}">
