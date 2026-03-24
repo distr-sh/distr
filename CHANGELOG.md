@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.14.3](https://github.com/distr-sh/distr/compare/2.14.2...2.14.3) (2026-03-24)
+
+
+### Other
+
+* **deps:** update axllent/mailpit docker tag to v1.29.4 ([#2061](https://github.com/distr-sh/distr/issues/2061)) ([aca6e61](https://github.com/distr-sh/distr/commit/aca6e61f24969f1ae5426320081f87c6ab7ff428))
+
 ## [2.14.2](https://github.com/distr-sh/distr/compare/2.14.1...2.14.2) (2026-03-23)
 
 
