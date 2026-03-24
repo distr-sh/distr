@@ -114,11 +114,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               icon: 'open-book',
               items: [
                 {label: 'What is Distr?', link: '/docs/'},
-                {label: 'Vendor Portal', link: '/docs/platform/vendor-portal/'},
                 {label: 'Core Concepts', link: '/docs/concepts/'},
+                {label: 'Vendor Portal', link: '/docs/platform/vendor-portal/'},
                 {label: 'Quickstart', link: '/docs/quickstart/'},
                 {label: 'Free Trial', link: '/docs/account/trial/'},
                 {label: 'Choosing a Plan', link: '/docs/account/plans/'},
+                {
+                  label: 'Subscription Management',
+                  link: '/docs/account/subscription/',
+                },
                 {label: 'FAQs', link: '/docs/faqs/'},
               ],
             },
@@ -145,27 +149,35 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             },
             {
               label: 'Deployment Agents',
-              link: '/docs/platform/agents/',
-              icon: 'setting',
+              link: '/docs/agents/',
+              icon: 'random',
               items: [
                 {
                   label: 'Overview & Setup',
                   items: [
                     {
                       label: 'Deployment Agents',
-                      link: '/docs/platform/agents/',
+                      link: '/docs/agents/',
+                    },
+                    {
+                      label: 'Docker Agent',
+                      link: '/docs/agents/docker-agent/',
+                    },
+                    {
+                      label: 'Helm Agent',
+                      link: '/docs/agents/helm-agent/',
                     },
                     {
                       label: 'Create an Application',
-                      link: '/docs/guides/create-application/',
+                      link: '/docs/agents/create-application/',
                     },
                     {
                       label: 'Create a Deployment',
-                      link: '/docs/guides/create-deployment/',
+                      link: '/docs/agents/create-deployment/',
                     },
                     {
                       label: 'Run on macOS',
-                      link: '/docs/guides/setup-on-macos/',
+                      link: '/docs/agents/setup-on-macos/',
                     },
                   ],
                 },
@@ -174,33 +186,37 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   items: [
                     {
                       label: 'Configure Docker Env Variables',
-                      link: '/docs/guides/docker-env/',
+                      link: '/docs/agents/docker-env/',
                     },
                     {
                       label: 'Secrets Management',
-                      link: '/docs/guides/secrets/',
+                      link: '/docs/agents/secrets/',
+                    },
+                    {
+                      label: 'Docker Compose Secrets',
+                      link: '/docs/agents/docker-compose-secrets/',
                     },
                     {
                       label: 'Configure Application Links',
-                      link: '/docs/guides/application-links/',
+                      link: '/docs/agents/application-links/',
                     },
                     {
                       label: 'Configuring Helm Charts for Distr Artifacts',
-                      link: '/docs/guides/helm-registry-auth/',
+                      link: '/docs/agents/helm-registry-auth/',
                     },
                   ],
                 },
                 {
-                  label: 'Operations',
+                  label: 'Monitoring',
                   items: [
-                    {label: 'Alerts', link: '/docs/platform/alerts/'},
+                    {label: 'Alerts', link: '/docs/agents/alerts/'},
                     {
                       label: 'Logs & Metrics',
-                      link: '/docs/platform/logs-and-metrics/',
+                      link: '/docs/agents/logs-and-metrics/',
                     },
                     {
                       label: 'Pre-flight Checks',
-                      link: '/docs/guides/preflight-checks/',
+                      link: '/docs/agents/preflight-checks/',
                     },
                   ],
                 },
@@ -208,28 +224,28 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             },
             {
               label: 'Container Registry',
-              link: '/docs/platform/registry/',
+              link: '/docs/registry/',
               icon: 'download',
               items: [
                 {
                   label: 'Artifact Registry',
-                  link: '/docs/platform/registry/',
+                  link: '/docs/registry/',
                 },
                 {
                   label: 'Set Up Your Registry',
-                  link: '/docs/guides/push-to-registry/',
+                  link: '/docs/registry/push-to-registry/',
+                },
+                {
+                  label: 'Download Analytics',
+                  link: '/docs/registry/download-analytics/',
                 },
               ],
             },
             {
-              label: 'Customer Management',
-              link: '/docs/platform/customer-portal/',
-              icon: 'approve-check-circle',
+              label: 'Platform Features',
+              link: '/docs/platform/license-management/',
+              icon: 'list-format',
               items: [
-                {
-                  label: 'Customer Portal',
-                  link: '/docs/platform/customer-portal/',
-                },
                 {
                   label: 'License Management',
                   items: [
@@ -239,47 +255,67 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                     },
                     {
                       label: 'Application Entitlements',
-                      link: '/docs/guides/application-entitlements/',
+                      link: '/docs/platform/application-entitlements/',
                     },
                     {
                       label: 'Artifact Entitlements',
-                      link: '/docs/guides/artifact-entitlements/',
+                      link: '/docs/platform/artifact-entitlements/',
                     },
                     {
                       label: 'License Keys',
-                      link: '/docs/guides/license-keys/',
+                      link: '/docs/platform/license-keys/',
                     },
                   ],
                 },
                 {
-                  label: 'Manage Customers',
-                  link: '/docs/guides/manage-customers/',
-                },
-                {
-                  label: 'Branding & White-Labeling',
-                  link: '/docs/platform/branding/',
-                },
-                {
-                  label: 'End-Customer View of Distr',
-                  link: '/docs/guides/customer-registry-access/',
-                },
-                {
-                  label: 'Role-Based Access Control (RBAC)',
-                  link: '/docs/platform/rbac/',
-                },
-                {
-                  label: 'Subscription Management',
-                  link: '/docs/platform/subscription/',
-                },
-                {
-                  label: 'Support Bundles',
-                  link: '/docs/platform/support-bundles/',
+                  label: 'Quality & Compliance',
+                  items: [
+                    {
+                      label: 'Support Bundles',
+                      link: '/docs/platform/support-bundles/',
+                    },
+                    {
+                      label: 'Kubernetes Compatibility Matrix',
+                      link: '/docs/platform/k8s-compatibility/',
+                    },
+                    {
+                      label: 'Vulnerability Scanning',
+                      link: '/docs/platform/vulnerability-scanning/',
+                    },
+                  ],
                 },
               ],
             },
             {
-              label: 'Automation & Developer Tools',
-              link: '/docs/guides/github-actions/',
+              label: 'Customer Management',
+              link: '/docs/customers/',
+              icon: 'setting',
+              items: [
+                {
+                  label: 'Customer Portal',
+                  link: '/docs/customers/',
+                },
+                {
+                  label: 'Manage Customers',
+                  link: '/docs/customers/manage-customers/',
+                },
+                {
+                  label: 'Branding & White-Labeling',
+                  link: '/docs/customers/branding/',
+                },
+                {
+                  label: 'End-Customer View of Distr',
+                  link: '/docs/customers/customer-registry-access/',
+                },
+                {
+                  label: 'Role-Based Access Control (RBAC)',
+                  link: '/docs/customers/rbac/',
+                },
+              ],
+            },
+            {
+              label: 'Integrations & API',
+              link: '/docs/integrations/github-actions/',
               icon: 'rocket',
               items: [
                 {
@@ -287,7 +323,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   items: [
                     {
                       label: 'Automatic Deployments from GitHub',
-                      link: '/docs/guides/github-actions/',
+                      link: '/docs/integrations/github-actions/',
                     },
                     {
                       label: 'GitHub Action Reference',
@@ -295,24 +331,21 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                     },
                   ],
                 },
-                {label: 'Distr API', link: '/docs/integrations/rest-api/'},
                 {
-                  label: 'API Reference',
-                  link: 'https://app.distr.sh/docs',
-                  attrs: {target: '_blank'},
-                },
-                {label: 'Distr SDK', link: '/docs/integrations/sdk/'},
-                {
-                  label: 'Personal Access Tokens',
-                  link: '/docs/integrations/access-tokens/',
-                },
-                {
-                  label: 'Kubernetes Compatibility Matrix',
-                  link: '/docs/guides/k8s-compatibility/',
-                },
-                {
-                  label: 'Vulnerability Scanning',
-                  link: '/docs/guides/vulnerability-scanning/',
+                  label: 'API & SDK',
+                  items: [
+                    {label: 'Distr API', link: '/docs/integrations/rest-api/'},
+                    {
+                      label: 'API Reference',
+                      link: 'https://app.distr.sh/docs',
+                      attrs: {target: '_blank'},
+                    },
+                    {label: 'Distr SDK', link: '/docs/integrations/sdk/'},
+                    {
+                      label: 'Personal Access Tokens',
+                      link: '/docs/integrations/access-tokens/',
+                    },
+                  ],
                 },
               ],
             },
@@ -457,5 +490,35 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/integrations/': '/docs/integrations/rest-api/',
     '/docs/self-hosting/': '/docs/self-hosting/overview/',
     '/docs/guides/': '/docs/quickstart/',
+
+    // New URL restructure redirects
+    '/docs/platform/agents/': '/docs/agents/',
+    '/docs/platform/registry/': '/docs/registry/',
+    '/docs/platform/customer-portal/': '/docs/customers/',
+    '/docs/platform/alerts/': '/docs/agents/alerts/',
+    '/docs/platform/logs-and-metrics/': '/docs/agents/logs-and-metrics/',
+    '/docs/platform/branding/': '/docs/customers/branding/',
+    '/docs/platform/rbac/': '/docs/customers/rbac/',
+    '/docs/platform/subscription/': '/docs/customers/subscription/',
+    '/docs/guides/create-application/': '/docs/agents/create-application/',
+    '/docs/guides/create-deployment/': '/docs/agents/create-deployment/',
+    '/docs/guides/setup-on-macos/': '/docs/agents/setup-on-macos/',
+    '/docs/guides/docker-env/': '/docs/agents/docker-env/',
+    '/docs/guides/secrets/': '/docs/agents/secrets/',
+    '/docs/guides/application-links/': '/docs/agents/application-links/',
+    '/docs/guides/helm-registry-auth/': '/docs/agents/helm-registry-auth/',
+    '/docs/guides/preflight-checks/': '/docs/agents/preflight-checks/',
+    '/docs/guides/push-to-registry/': '/docs/registry/push-to-registry/',
+    '/docs/guides/application-entitlements/': '/docs/platform/application-entitlements/',
+    '/docs/guides/artifact-entitlements/': '/docs/platform/artifact-entitlements/',
+    '/docs/guides/license-keys/': '/docs/platform/license-keys/',
+    '/docs/guides/k8s-compatibility/': '/docs/platform/k8s-compatibility/',
+    '/docs/guides/vulnerability-scanning/': '/docs/platform/vulnerability-scanning/',
+    '/docs/guides/manage-customers/': '/docs/customers/manage-customers/',
+    '/docs/guides/customer-registry-access/': '/docs/customers/customer-registry-access/',
+    '/docs/guides/github-actions/': '/docs/integrations/github-actions/',
+    '/docs/guides/configuration/docker-secrets/': '/docs/agents/docker-compose-secrets/',
+    '/docs/customers/subscription/': '/docs/account/subscription/',
+    '/docs/platform/subscription/': '/docs/account/subscription/',
   },
 });

@@ -1,7 +1,7 @@
 ---
 title: Artifact Registry
 description: The Artifact Registry is a private, OCI-compliant registry built into Distr for publishing container images, Helm charts, and other artifacts to self-managed environments. It offers tag-based access control, a registry UI and detailed usage insights per customer.
-slug: docs/platform/registry
+slug: docs/registry
 sidebar:
   order: 3
 ---
@@ -14,8 +14,6 @@ import artifactsListLight from '~/assets/docs/product/registry/artifacts-list-li
 import artifactsListDark from '~/assets/docs/product/registry/artifacts-list-dark.png';
 import artifactDetailsLight from '~/assets/docs/product/registry/artifact-details-light.png';
 import artifactDetailsDark from '~/assets/docs/product/registry/artifact-details-dark.png';
-import downloadLight from '~/assets/docs/product/registry/download-light.png';
-import downloadDark from '~/assets/docs/product/registry/download-dark.png';
 import dashboardArtifactViewLight from '~/assets/docs/product/registry/dashboard-artifact-view-light.png';
 import dashboardArtifactViewDark from '~/assets/docs/product/registry/dashboard-artifact-view-dark.png';
 
@@ -28,7 +26,7 @@ Use it to publish versioned artifacts, enforce entitlement rules, and track cons
 
 <Aside type="note">
   The Distr Artifact registry is a private registry, meaning that only
-  [authenticated](/docs/guides/push-to-registry/#2-authenticate-with-a-personal-access-token)
+  [authenticated](/docs/registry/push-to-registry/#2-authenticate-with-a-personal-access-token)
   users via PAT can push and pull artifacts. Unauthenticated users will not be
   able to access your artifacts.
 </Aside>
@@ -53,7 +51,7 @@ Use it to publish versioned artifacts, enforce entitlement rules, and track cons
 <Aside type="note">
   If you haven’t set up your registry yet, start with the [in-platform
   tutorials](/docs/quickstart/#getting-started-with-platform-tutorials) or
-  follow the [Quickstart Guide](/docs/guides/push-to-registry/).
+  follow the [Quickstart Guide](/docs/registry/push-to-registry/).
 </Aside>
 
 Want a quick overview of how it works? Watch this short walkthrough:
@@ -96,16 +94,6 @@ The artifact details page gives you a complete view of all tags associated with 
   a tag is pushed to the registry it can't be associated with another digest.
 </Aside>
 
-### Artifact Downloads
-
-The Downloads section shows a chronological list of all downloaded artifacts, including which user downloaded them and from which IP address.
-
-<ThemedImage
-  lightSrc={downloadLight}
-  darkSrc={downloadDark}
-  alt="Registry artifacts view"
-/>
-
 ## Global Dashboard Artifact View
 
 The main Distr dashboard also provides a global view of which artifacts each end customer has consumed, including version details and a health status.
@@ -128,7 +116,7 @@ You can delete individual tags from an artifact through the API and UI. However,
 
 Tag deletion succeeds when all of these conditions are met:
 
-- The tag exists and is not referenced in any [artifact entitlement](/docs/guides/artifact-entitlements/)
+- The tag exists and is not referenced in any [artifact entitlement](/docs/platform/artifact-entitlements/)
 - If the underlying manifest digest is referenced in entitlements, other non-SHA tags must exist for that digest
 
 <Aside type="tip">
