@@ -26,3 +26,7 @@ type AlertConfiguration struct {
 	// DeploymentTargets is only populated from the database. It is never used by insert or update operations.
 	DeploymentTargets []DeploymentTarget `db:"deployment_targets" json:"deploymentTargets"`
 }
+
+func (c AlertConfiguration) AnyThresholdEnabled() bool {
+	return c.CpuTriggerThreshold != nil || c.MemoryTriggerThreshold != nil || c.DiskTriggerThreshold != nil
+}

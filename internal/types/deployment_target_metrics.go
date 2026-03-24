@@ -20,3 +20,7 @@ type DeploymentTargetDiskMetric struct {
 	BytesTotal int64
 	BytesUsed  int64
 }
+
+func (m DeploymentTargetDiskMetric) Usage() float64 {
+	return float64(m.BytesUsed) / float64(m.BytesTotal)
+}

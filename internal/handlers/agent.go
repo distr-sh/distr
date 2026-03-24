@@ -463,15 +463,25 @@ func agentPostMetricsHander(w http.ResponseWriter, r *http.Request) {
 	}
 
 	metrics := mapping.DeploymentTargetMetricsRequestToInternal(dt.ID, body)
+
+	// TODO: get previous metrics
+
 	if err := db.CreateDeploymentTargetMetrics(ctx, metrics); err != nil {
 		if errors.Is(err, apierrors.ErrConflict) {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		} else {
-			log.Error("failed to create deployment target metrics – skipping cleanup of old metrics", zap.Error(err),
-				zap.Reflect("metrics", body))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			log.Error("failed to create deployment target metrics", zap.Error(err), zap.Any("metrics", body))
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
 	} else {
+
+		// TODO: move to goroutine
+		if err := notification.SendDeploymentTargetMetricsNotifications(ctx, dt.DeploymentTarget, nil, metrics); err != nil {
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			log.Error("send metrics alerts failed", zap.Error(err))
+		}
+
 		w.WriteHeader(http.StatusOK)
 	}
 }

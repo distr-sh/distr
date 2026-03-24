@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
@@ -9,6 +10,19 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+)
+
+const (
+	deploymentTargetMetricsOutputExpr = `
+		dtm.deployment_target_id AS deployment_target_id,
+		dtm.cpu_cores_millis,
+		dtm.cpu_usage,
+		dtm.memory_bytes,
+		dtm.memory_usage,
+		array_agg(row(dtdm.device, dtdm.path, dtdm.fs_type, dtdm.bytes_total, dtdm.bytes_used) ORDER BY dtdm.device)
+			FILTER (WHERE dtdm.id IS NOT NULL)
+			AS disk_metrics
+	`
 )
 
 func GetLatestDeploymentTargetMetrics(
@@ -20,16 +34,7 @@ func GetLatestDeploymentTargetMetrics(
 	isVendorUser := customerOrganizationID == nil
 
 	rows, err := db.Query(ctx,
-		`SELECT
-			dt.id AS deployment_target_id,
-			dtm.cpu_cores_millis,
-			dtm.cpu_usage,
-			dtm.memory_bytes,
-			dtm.memory_usage,
-			array_agg(row(dtdm.device, dtdm.path, dtdm.fs_type, dtdm.bytes_total, dtdm.bytes_used) ORDER BY dtdm.device)
-				FILTER (WHERE dtdm.id IS NOT NULL)
-				AS disk_metrics
-		FROM DeploymentTarget dt
+		`SELECT `+deploymentTargetMetricsOutputExpr+` FROM DeploymentTarget dt
 		LEFT JOIN CustomerOrganization co
 			ON dt.customer_organization_id = co.id
 		LEFT JOIN (
@@ -51,7 +56,7 @@ func GetLatestDeploymentTargetMetrics(
 		WHERE dt.organization_id = @orgId
 		AND (@isVendorUser OR dt.customer_organization_id = @customerOrganizationId)
 		AND dt.metrics_enabled = true
-		GROUP BY dt.id, dtm.id, co.name, dt.name
+		GROUP BY dtm.deployment_target_id, dtm.id, co.name, dt.name
 		ORDER BY co.name, dt.name`,
 		pgx.NamedArgs{"orgId": orgID, "customerOrganizationId": customerOrganizationID, "isVendorUser": isVendorUser},
 	)
@@ -65,6 +70,37 @@ func GetLatestDeploymentTargetMetrics(
 	}
 
 	return result, nil
+}
+
+func GetLatestDeploymentTargetMetricsForID(ctx context.Context, id uuid.UUID) (*types.DeploymentTargetMetrics, error) {
+	db := internalctx.GetDb(ctx)
+
+	rows, err := db.Query(ctx,
+		`SELECT`+deploymentTargetMetricsOutputExpr+`FROM DeploymentTarget dt
+		INNER JOIN DeploymentTargetMetrics dtm
+			ON dt.id = dtm.deployment_target_id
+		LEFT JOIN DeploymentTargetDiskMetrics dtdm
+			ON dtm.id = dtdm.deployment_target_metrics_id
+		WHERE dt.id = @id
+			AND created_at = (SELECT max(created_at) FROM DeploymentTargetMetrics WHERE deployment_target_id = @deploymentTargetId)
+			AND dt.metrics_enabled = true
+		GROUP BY dtm.deployment_target_id, dtm.id`,
+		pgx.NamedArgs{"deploymentTargetId": id},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query DeploymentTargets: %w", err)
+	}
+
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.DeploymentTargetMetrics])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+
+		return nil, fmt.Errorf("failed to collect DeploymentTargetMetrics: %w", err)
+	}
+
+	return &result, nil
 }
 
 func CreateDeploymentTargetMetrics(

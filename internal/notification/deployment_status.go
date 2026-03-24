@@ -111,7 +111,7 @@ func sendDeploymentStatusNotificationsWithConfig(
 	currentStatus *types.DeploymentRevisionStatus,
 	config types.AlertConfiguration,
 ) error {
-	if !config.Enabled {
+	if !config.Enabled || !config.StatusTriggerEnabled {
 		return nil
 	}
 
