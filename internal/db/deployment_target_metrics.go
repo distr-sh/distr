@@ -14,6 +14,7 @@ import (
 
 const (
 	deploymentTargetMetricsOutputExpr = `
+		dtm.id,
 		dtm.deployment_target_id AS deployment_target_id,
 		dtm.cpu_cores_millis,
 		dtm.cpu_usage,
@@ -81,8 +82,8 @@ func GetLatestDeploymentTargetMetricsForID(ctx context.Context, id uuid.UUID) (*
 			ON dt.id = dtm.deployment_target_id
 		LEFT JOIN DeploymentTargetDiskMetrics dtdm
 			ON dtm.id = dtdm.deployment_target_metrics_id
-		WHERE dt.id = @id
-			AND created_at = (SELECT max(created_at) FROM DeploymentTargetMetrics WHERE deployment_target_id = @deploymentTargetId)
+		WHERE dt.id = @deploymentTargetId
+			AND dtm.created_at = (SELECT max(created_at) FROM DeploymentTargetMetrics WHERE deployment_target_id = @deploymentTargetId)
 			AND dt.metrics_enabled = true
 		GROUP BY dtm.deployment_target_id, dtm.id`,
 		pgx.NamedArgs{"deploymentTargetId": id},
@@ -105,11 +106,10 @@ func GetLatestDeploymentTargetMetricsForID(ctx context.Context, id uuid.UUID) (*
 
 func CreateDeploymentTargetMetrics(
 	ctx context.Context,
-	metrics types.DeploymentTargetMetrics,
+	metrics *types.DeploymentTargetMetrics,
 ) error {
 	db := internalctx.GetDb(ctx)
 
-	var metricsID uuid.UUID
 	err := db.QueryRow(ctx,
 		"INSERT INTO DeploymentTargetMetrics "+
 			"(deployment_target_id, cpu_cores_millis, cpu_usage, memory_bytes, memory_usage) "+
@@ -121,7 +121,7 @@ func CreateDeploymentTargetMetrics(
 			"cpuUsage":           metrics.CPUUsage,
 			"memoryBytes":        metrics.MemoryBytes,
 			"memoryUsage":        metrics.MemoryUsage,
-		}).Scan(&metricsID)
+		}).Scan(&metrics.ID)
 	if err != nil {
 		return err
 	}
@@ -136,7 +136,7 @@ func CreateDeploymentTargetMetrics(
 		[]string{"deployment_target_metrics_id", "device", "path", "fs_type", "bytes_total", "bytes_used"},
 		pgx.CopyFromSlice(len(metrics.DiskMetrics), func(i int) ([]any, error) {
 			d := metrics.DiskMetrics[i]
-			return []any{metricsID, d.Device, d.Path, d.FsType, d.BytesTotal, d.BytesUsed}, nil
+			return []any{metrics.ID, d.Device, d.Path, d.FsType, d.BytesTotal, d.BytesUsed}, nil
 		}),
 	)
 	return err

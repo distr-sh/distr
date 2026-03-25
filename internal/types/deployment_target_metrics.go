@@ -5,6 +5,7 @@ import (
 )
 
 type DeploymentTargetMetrics struct {
+	ID                 uuid.UUID                    `db:"id"`
 	DeploymentTargetID uuid.UUID                    `db:"deployment_target_id"`
 	CPUCoresMillis     int64                        `db:"cpu_cores_millis"`
 	CPUUsage           float64                      `db:"cpu_usage"`

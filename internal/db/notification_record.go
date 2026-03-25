@@ -21,6 +21,11 @@ const notificationRecordOutputExpr = `
 	r.alert_configuration_id,
 	r.previous_deployment_revision_status_id,
 	r.current_deployment_revision_status_id,
+	r.metric_type,
+	r.disk_device,
+	r.disk_path,
+	r.previous_deployment_target_metrics_id,
+	r.current_deployment_target_metrics_id,
 	r.message `
 
 func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecord) error {
@@ -35,6 +40,11 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 				alert_configuration_id,
 				previous_deployment_revision_status_id,
 				current_deployment_revision_status_id,
+				metric_type,
+				disk_device,
+				disk_path,
+				previous_deployment_target_metrics_id,
+				current_deployment_target_metrics_id,
 				message
 			)
 			VALUES (
@@ -44,6 +54,11 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 				@alertConfigurationID,
 				@previousDeploymentStatusID,
 				@currentDeploymentStatusID,
+				@metricType,
+				@diskDevice,
+				@diskPath,
+				@previousMetricsID,
+				@currentMetricsID,
 				@message
 			)
 			RETURNING *
@@ -56,6 +71,11 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 			"alertConfigurationID":       record.AlertConfigurationID,
 			"previousDeploymentStatusID": record.PreviousDeploymentRevisionStatusID,
 			"currentDeploymentStatusID":  record.CurrentDeploymentRevisionStatusID,
+			"metricType":                 record.MetricType,
+			"diskDevice":                 record.DiskDevice,
+			"diskPath":                   record.DiskPath,
+			"previousMetricsID":          record.PreviousDeploymentTargetMetricsID,
+			"currentMetricsID":           record.CurrentDeploymentTargetMetricsID,
 			"message":                    record.Message,
 		},
 	)

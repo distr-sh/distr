@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    {{ template "fragments/style.html" }}
+  </head>
+  <body>
+    <div class="message-container">
+      {{ template "fragments/header.html" . }}
+      <main>
+        <p>Hi,</p>
+
+        <p>We observed the following metric event affecting your deployment target:</p>
+
+        <ul>
+          <li>
+            <strong>Event type:</strong>
+            {{ if .Resolved }}
+            <span class="text-success">RESOLVED</span>
+            {{ else }}
+            <span class="text-danger">ALERT</span>
+            {{ end }}
+          </li>
+          <li>
+            <strong>Metric:</strong>
+            {{ if eq .MetricType "cpu" }}CPU
+            {{ else if eq .MetricType "memory" }}Memory
+            {{ else if eq .MetricType "disk" }}Disk ({{ .DiskDevice }} {{ .DiskPath }})
+            {{ else }}{{ .MetricType }}{{ end }}
+          </li>
+          {{ with .DeploymentTarget.CustomerOrganization }}
+          <li>
+            <strong>Affected customer:</strong>
+            {{ .Name }}
+          </li>
+          {{ end }}
+          <li>
+            <strong>Deployment target:</strong>
+            {{ .DeploymentTarget.Name }}
+          </li>
+          <li>
+            <strong>Threshold:</strong>
+            {{ .Threshold }}%
+          </li>
+          <li>
+            <strong>Current usage:</strong>
+            {{ .UsagePercent }}%
+          </li>
+        </ul>
+
+        <p>This is an automated alert.</p>
+
+        <p>{{template "fragments/signature.html" . }}</p>
+      </main>
+      {{template "fragments/footer.html" . }}
+    </div>
+  </body>
+</html>

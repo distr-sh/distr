@@ -113,6 +113,48 @@ func UpdateEmail(
 	}
 }
 
+func DeploymentTargetMetricsNotificationAlert(
+	deploymentTarget types.DeploymentTargetFull,
+	metricType string,
+	diskDevice string,
+	diskPath string,
+	threshold int,
+	usagePercent int,
+) (*template.Template, any) {
+	return deploymentTargetMetricsNotification(false, deploymentTarget, metricType, diskDevice, diskPath, threshold, usagePercent)
+}
+
+func DeploymentTargetMetricsNotificationResolved(
+	deploymentTarget types.DeploymentTargetFull,
+	metricType string,
+	diskDevice string,
+	diskPath string,
+	threshold int,
+	usagePercent int,
+) (*template.Template, any) {
+	return deploymentTargetMetricsNotification(true, deploymentTarget, metricType, diskDevice, diskPath, threshold, usagePercent)
+}
+
+func deploymentTargetMetricsNotification(
+	resolved bool,
+	deploymentTarget types.DeploymentTargetFull,
+	metricType string,
+	diskDevice string,
+	diskPath string,
+	threshold int,
+	usagePercent int,
+) (*template.Template, any) {
+	return templates.Lookup("deployment-target-metrics-notification.html"), map[string]any{
+		"Resolved":         resolved,
+		"DeploymentTarget": deploymentTarget,
+		"MetricType":       metricType,
+		"DiskDevice":       diskDevice,
+		"DiskPath":         diskPath,
+		"Threshold":        threshold,
+		"UsagePercent":     usagePercent,
+	}
+}
+
 func DeploymentStatusNotificationError(
 	deploymentTarget types.DeploymentTargetFull,
 	deployment types.DeploymentWithLatestRevision,
