@@ -11,7 +11,7 @@ import {
   OnDestroy,
   OnInit,
   signal,
-  ViewChild,
+  viewChild,
 } from '@angular/core';
 import {
   ControlValueAccessor,
@@ -115,7 +115,7 @@ export class EditApplicationEntitlementComponent implements OnInit, OnDestroy, A
   protected readonly faXmark = faXmark;
   protected readonly faPen = faPen;
 
-  @ViewChild('dropdownTriggerButton') dropdownTriggerButton!: ElementRef<HTMLElement>;
+  protected readonly dropdownTriggerButton = viewChild.required<ElementRef<HTMLElement>>('dropdownTriggerButton');
 
   constructor() {
     effect(() => {
@@ -276,7 +276,7 @@ export class EditApplicationEntitlementComponent implements OnInit, OnDestroy, A
   toggleDropdown() {
     this.dropdownOpen.update((v) => !v);
     if (this.dropdownOpen()) {
-      this.dropdownWidth = this.dropdownTriggerButton.nativeElement.getBoundingClientRect().width;
+      this.dropdownWidth = this.dropdownTriggerButton().nativeElement.getBoundingClientRect().width;
     }
   }
 
