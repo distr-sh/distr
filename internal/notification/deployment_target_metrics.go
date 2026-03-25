@@ -163,11 +163,17 @@ func sendMetricNotification(
 		}
 	}
 
+	recordType := types.NotificationRecordTypeAlert
+	if resolved {
+		recordType = types.NotificationRecordTypeResolved
+	}
+
 	record := types.NotificationRecord{
 		OrganizationID:                   config.OrganizationID,
 		CustomerOrganizationID:           config.CustomerOrganizationID,
 		DeploymentTargetID:               &deploymentTarget.ID,
 		AlertConfigurationID:             &config.ID,
+		Type:                             recordType,
 		MetricType:                       &metricType,
 		CurrentDeploymentTargetMetricsID: &currentMetrics.ID,
 	}

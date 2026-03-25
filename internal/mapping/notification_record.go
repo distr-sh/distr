@@ -14,6 +14,7 @@ func NotificationRecordWithCurrentStatusToAPI(
 			CreatedAt:                          record.CreatedAt,
 			DeploymentTargetID:                 record.DeploymentTargetID,
 			AlertConfigurationID:               record.AlertConfigurationID,
+			Type:                               string(record.Type),
 			PreviousDeploymentRevisionStatusID: record.PreviousDeploymentRevisionStatusID,
 			CurrentDeploymentRevisionStatusID:  record.CurrentDeploymentRevisionStatusID,
 			MetricType:                         record.MetricType,

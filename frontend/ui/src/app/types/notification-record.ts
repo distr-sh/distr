@@ -1,6 +1,9 @@
 import {DeploymentRevisionStatus} from '@distr-sh/distr-sdk';
 import {DeploymentTargetLatestMetrics} from './deployment-target-metrics';
 
+export type NotificationRecordType = 'alert' | 'warning' | 'resolved';
+export type NotificationRecordMetricType = 'cpu' | 'memory' | 'disk';
+
 export interface NotificationRecord {
   id: string;
   createdAt: string;
@@ -9,10 +12,11 @@ export interface NotificationRecord {
   customerOrganizationName?: string;
   applicationName?: string;
   applicationVersionName?: string;
+  type: NotificationRecordType;
+  metricType?: NotificationRecordMetricType;
+  diskDevice?: string;
+  diskPath?: string;
   message: string;
   currentDeploymentRevisionStatus?: DeploymentRevisionStatus;
   currentDeploymentTargetMetrics?: DeploymentTargetLatestMetrics;
-  metricType?: string;
-  diskDevice?: string;
-  diskPath?: string;
 }

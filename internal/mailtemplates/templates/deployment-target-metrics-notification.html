@@ -23,10 +23,8 @@
           </li>
           <li>
             <strong>Metric:</strong>
-            {{ if eq .MetricType "cpu" }}CPU
-            {{ else if eq .MetricType "memory" }}Memory
-            {{ else if eq .MetricType "disk" }}Disk ({{ .DiskDevice }} {{ .DiskPath }})
-            {{ else }}{{ .MetricType }}{{ end }}
+            {{ if eq .MetricType "cpu" }}CPU {{ else if eq .MetricType "memory" }}Memory {{ else if eq .MetricType
+            "disk" }}Disk ({{ .DiskDevice }} {{ .DiskPath }}) {{ else }}{{ .MetricType }}{{ end }}
           </li>
           {{ with .DeploymentTarget.CustomerOrganization }}
           <li>

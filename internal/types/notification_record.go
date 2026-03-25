@@ -6,21 +6,30 @@ import (
 	"github.com/google/uuid"
 )
 
+type NotificationRecordType string
+
+const (
+	NotificationRecordTypeAlert    NotificationRecordType = "alert"
+	NotificationRecordTypeWarning  NotificationRecordType = "warning"
+	NotificationRecordTypeResolved NotificationRecordType = "resolved"
+)
+
 type NotificationRecord struct {
-	ID                                 uuid.UUID  `db:"id"`
-	CreatedAt                          time.Time  `db:"created_at"`
-	OrganizationID                     uuid.UUID  `db:"organization_id"`
-	CustomerOrganizationID             *uuid.UUID `db:"customer_organization_id"`
-	DeploymentTargetID                 *uuid.UUID `db:"deployment_target_id"`
-	AlertConfigurationID               *uuid.UUID `db:"alert_configuration_id"`
-	PreviousDeploymentRevisionStatusID *uuid.UUID `db:"previous_deployment_revision_status_id"`
-	CurrentDeploymentRevisionStatusID  *uuid.UUID `db:"current_deployment_revision_status_id"`
-	MetricType                         *string    `db:"metric_type"`
-	DiskDevice                         *string    `db:"disk_device"`
-	DiskPath                           *string    `db:"disk_path"`
-	PreviousDeploymentTargetMetricsID  *uuid.UUID `db:"previous_deployment_target_metrics_id"`
-	CurrentDeploymentTargetMetricsID   *uuid.UUID `db:"current_deployment_target_metrics_id"`
-	Message                            string     `db:"message" json:"message"`
+	ID                                 uuid.UUID              `db:"id"`
+	CreatedAt                          time.Time              `db:"created_at"`
+	OrganizationID                     uuid.UUID              `db:"organization_id"`
+	CustomerOrganizationID             *uuid.UUID             `db:"customer_organization_id"`
+	DeploymentTargetID                 *uuid.UUID             `db:"deployment_target_id"`
+	AlertConfigurationID               *uuid.UUID             `db:"alert_configuration_id"`
+	Type                               NotificationRecordType `db:"type"`
+	PreviousDeploymentRevisionStatusID *uuid.UUID             `db:"previous_deployment_revision_status_id"`
+	CurrentDeploymentRevisionStatusID  *uuid.UUID             `db:"current_deployment_revision_status_id"`
+	MetricType                         *string                `db:"metric_type"`
+	DiskDevice                         *string                `db:"disk_device"`
+	DiskPath                           *string                `db:"disk_path"`
+	PreviousDeploymentTargetMetricsID  *uuid.UUID             `db:"previous_deployment_target_metrics_id"`
+	CurrentDeploymentTargetMetricsID   *uuid.UUID             `db:"current_deployment_target_metrics_id"`
+	Message                            string                 `db:"message" json:"message"`
 }
 
 type NotificationRecordWithCurrentStatus struct {
