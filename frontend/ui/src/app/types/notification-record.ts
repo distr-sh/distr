@@ -1,5 +1,5 @@
 import {DeploymentRevisionStatus} from '@distr-sh/distr-sdk';
-import {DeploymentTargetLatestMetrics} from '../services/deployment-target-metrics.service';
+import {DeploymentTargetLatestMetrics} from './deployment-target-metrics';
 
 export interface NotificationRecord {
   id: string;

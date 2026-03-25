@@ -8,7 +8,7 @@ import {drawerFlyInOut} from '../../animations/drawer';
 import {dropdownAnimation} from '../../animations/dropdown';
 import {modalFlyInOut} from '../../animations/modal';
 import {StatusDotDirective} from '../../components/status-dot';
-import {DeploymentTargetLatestMetrics} from '../../services/deployment-target-metrics.service';
+import {DeploymentTargetLatestMetrics} from '../../types/deployment-target-metrics';
 
 @Component({
   selector: 'app-deployment-target-metrics',
