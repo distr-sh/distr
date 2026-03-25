@@ -83,7 +83,11 @@ func GetLatestDeploymentTargetMetricsForID(ctx context.Context, id uuid.UUID) (*
 		LEFT JOIN DeploymentTargetDiskMetrics dtdm
 			ON dtm.id = dtdm.deployment_target_metrics_id
 		WHERE dt.id = @deploymentTargetId
-			AND dtm.created_at = (SELECT max(created_at) FROM DeploymentTargetMetrics WHERE deployment_target_id = @deploymentTargetId)
+			AND dtm.created_at = (
+				SELECT max(created_at)
+				FROM DeploymentTargetMetrics
+				WHERE deployment_target_id = @deploymentTargetId
+			)
 			AND dt.metrics_enabled = true
 		GROUP BY dtm.deployment_target_id, dtm.id`,
 		pgx.NamedArgs{"deploymentTargetId": id},

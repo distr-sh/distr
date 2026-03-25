@@ -15,7 +15,7 @@ type AlertConfiguration struct {
 	Enabled                bool        `db:"enabled" json:"enabled"`
 	StatusTriggerEnabled   bool        `db:"status_trigger_enabled" json:"statusTriggerEnabled"`
 	CpuTriggerThreshold    *int        `db:"cpu_trigger_threshold_percent" json:"cpuTriggerThresholdPercent,omitempty"`
-	MemoryTriggerThreshold *int        `db:"memory_trigger_threshold_percent" json:"memoryTriggerThresholdPercent,omitempty"`
+	MemoryTriggerThreshold *int        `db:"memory_trigger_threshold_percent" json:"memoryTriggerThresholdPercent,omitempty"` //nolint:lll
 	DiskTriggerThreshold   *int        `db:"disk_trigger_threshold_percent" json:"diskTriggerThresholdPercent,omitempty"`
 	DeploymentTargetIDs    []uuid.UUID `db:"deployment_target_ids" json:"deploymentTargetIds"`
 	UserAccountIDs         []uuid.UUID `db:"user_account_ids" json:"userAccountIds"`

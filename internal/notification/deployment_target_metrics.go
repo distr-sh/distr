@@ -103,8 +103,10 @@ func sendDeploymentTargetMetricsNotificationsWithConfig(
 			}
 		}
 
+		log := log.With(zap.String("device", diskMetric.Device), zap.String("path", diskMetric.Path))
+
 		if shouldNotifyResource(config.DiskTriggerThreshold, previousDiskMetric, diskMetric, diskUsage) {
-			log.Info("sending disk alert notification", zap.String("device", diskMetric.Device), zap.String("path", diskMetric.Path))
+			log.Info("sending disk alert notification")
 			if err := sendMetricNotification(
 				ctx, false, deploymentTarget, *organization, config, previousMetrics, currentMetrics,
 				"disk", diskMetric.Device, diskMetric.Path, *config.DiskTriggerThreshold, int(diskMetric.Usage()*100),
@@ -112,7 +114,7 @@ func sendDeploymentTargetMetricsNotificationsWithConfig(
 				return err
 			}
 		} else if shouldNotifyResourceResolved(config.DiskTriggerThreshold, previousDiskMetric, diskMetric, diskUsage) {
-			log.Info("sending disk alert resolved notification", zap.String("device", diskMetric.Device), zap.String("path", diskMetric.Path))
+			log.Info("sending disk alert resolved notification")
 			if err := sendMetricNotification(
 				ctx, true, deploymentTarget, *organization, config, previousMetrics, currentMetrics,
 				"disk", diskMetric.Device, diskMetric.Path, *config.DiskTriggerThreshold, int(diskMetric.Usage()*100),
