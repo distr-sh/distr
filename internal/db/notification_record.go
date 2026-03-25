@@ -138,7 +138,17 @@ func GetNotificationRecords(
 			av.name AS application_version_name,
 			CASE WHEN s.id IS NOT NULL THEN (
 				s.id, s.created_at, s.deployment_revision_id, s.type, s.message
-			) END current_deployment_revision_status
+			) END current_deployment_revision_status,
+			CASE WHEN dtm.id IS NOT NULL THEN (
+				dtm.id,
+				dtm.deployment_target_id,
+				dtm.cpu_cores_millis,
+				dtm.cpu_usage,
+				dtm.memory_bytes,
+				dtm.memory_usage,
+				array_agg(row(dtdm.device, dtdm.path, dtdm.fs_type, dtdm.bytes_total, dtdm.bytes_used) ORDER BY dtdm.device)
+					FILTER (WHERE dtdm.id IS NOT NULL)
+			) END AS current_deployment_target_metrics
 		FROM NotificationRecord r
 		LEFT JOIN DeploymentTarget dt
 			ON r.deployment_target_id = dt.id
@@ -155,9 +165,14 @@ func GetNotificationRecords(
 			ON dr.application_version_id = av.id
 		LEFT JOIN Application a
 			ON av.application_id = a.id
+		LEFT JOIN DeploymentTargetMetrics dtm
+			ON r.current_deployment_target_metrics_id = dtm.id
+		LEFT JOIN DeploymentTargetDiskMetrics dtdm
+			ON dtdm.deployment_target_metrics_id = dtm.id
 		WHERE r.organization_id = @organizationID
 			AND ((@isVendor AND r.customer_organization_id IS NULL)
 				OR r.customer_organization_id = @customerOrganizationID)
+		GROUP BY r.id, dt.id, co.id, a.id, av.id, s.id, dtm.id
 		ORDER BY r.created_at DESC`,
 		pgx.NamedArgs{
 			"organizationID":         organizationID,
@@ -166,7 +181,7 @@ func GetNotificationRecords(
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query NotificationRecord exists: %w", err)
+		return nil, fmt.Errorf("failed to query NotificationRecord: %w", err)
 	}
 
 	records, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.NotificationRecordWithCurrentStatus])

@@ -1,4 +1,5 @@
 import {DeploymentRevisionStatus} from '@distr-sh/distr-sdk';
+import {DeploymentTargetLatestMetrics} from '../services/deployment-target-metrics.service';
 
 export interface NotificationRecord {
   id: string;
@@ -10,4 +11,8 @@ export interface NotificationRecord {
   applicationVersionName?: string;
   message: string;
   currentDeploymentRevisionStatus?: DeploymentRevisionStatus;
+  currentDeploymentTargetMetrics?: DeploymentTargetLatestMetrics;
+  metricType?: string;
+  diskDevice?: string;
+  diskPath?: string;
 }
