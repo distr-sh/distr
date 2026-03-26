@@ -9,7 +9,6 @@ import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observabl
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
-import {drawerFlyInOut} from '../../animations/drawer';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
@@ -32,7 +31,6 @@ import {ViewLicenseKeyModalComponent} from './view-license-key-modal.component';
     AutotrimDirective,
   ],
   templateUrl: './license-keys.component.html',
-  animations: [drawerFlyInOut],
 })
 export class LicenseKeysComponent {
   readonly customerOrganizationId = input<string>();

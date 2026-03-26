@@ -16,8 +16,6 @@ import {catchError, combineLatest, combineLatestWith, first, map, Observable, of
 import {compareBy} from '../../util/arrays';
 import {filteredByFormControl} from '../../util/filter';
 import {SecureImagePipe} from '../../util/secureImage';
-import {drawerFlyInOut} from '../animations/drawer';
-import {modalFlyInOut} from '../animations/modal';
 import {QuotaLimitComponent} from '../components/quota-limit.component';
 import {ApplicationsService} from '../services/applications.service';
 import {AuthService} from '../services/auth.service';
@@ -62,7 +60,6 @@ const localStoragerCollapsedCustomerIds = 'collapsedCustomerIds';
   ],
   templateUrl: './deployment-targets.component.html',
   standalone: true,
-  animations: [modalFlyInOut, drawerFlyInOut],
 })
 export class DeploymentTargetsComponent implements AfterViewInit {
   public readonly auth = inject(AuthService);

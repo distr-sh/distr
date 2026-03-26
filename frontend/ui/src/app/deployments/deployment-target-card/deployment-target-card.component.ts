@@ -20,9 +20,6 @@ import {SemVer} from 'semver';
 import {maxBy} from '../../../util/arrays';
 import {isArchived} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
-import {drawerFlyInOut} from '../../animations/drawer';
-import {dropdownAnimation} from '../../animations/dropdown';
-import {modalFlyInOut} from '../../animations/modal';
 import {ConnectInstructionsComponent} from '../../components/connect-instructions/connect-instructions.component';
 import {StatusDotComponent} from '../../components/status-dot';
 import {UuidComponent} from '../../components/uuid';
@@ -60,7 +57,6 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
     DeploymentStatusTextComponent,
     AutotrimDirective,
   ],
-  animations: [modalFlyInOut, drawerFlyInOut, dropdownAnimation],
 })
 export class DeploymentTargetCardComponent extends DeploymentTargetCardBaseComponent {
   private readonly agentVersionsSvc = inject(AgentVersionService);

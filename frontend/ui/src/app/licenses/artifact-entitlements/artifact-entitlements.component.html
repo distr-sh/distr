@@ -123,9 +123,10 @@
 
 <ng-template #manageEntitlementDrawer>
   <div
-    @drawerFlyInOut
     id="manage-artifact-entitlement-drawer"
     class="h-screen p-4 overflow-y-auto bg-white w-160 dark:bg-gray-800"
+    animate.enter="animate-fly-in-right"
+    animate.leave="animate-fly-out-right"
     tabindex="-1"
     aria-labelledby="artifact-entitlement-drawer-label">
     <h5

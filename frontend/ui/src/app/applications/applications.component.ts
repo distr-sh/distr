@@ -18,9 +18,6 @@ import {lastValueFrom, Observable, Subject, takeUntil} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {filteredByFormControl} from '../../util/filter';
 import {SecureImagePipe} from '../../util/secureImage';
-import {drawerFlyInOut} from '../animations/drawer';
-import {dropdownAnimation} from '../animations/dropdown';
-import {modalFlyInOut} from '../animations/modal';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {
   PermissionsDirective,
@@ -48,7 +45,6 @@ import {ToastService} from '../services/toast.service';
     SecureImagePipe,
   ],
   templateUrl: './applications.component.html',
-  animations: [dropdownAnimation, drawerFlyInOut, modalFlyInOut],
 })
 export class ApplicationsComponent implements OnDestroy {
   @Input('fullVersion') fullVersion: boolean = false;
@@ -59,7 +55,6 @@ export class ApplicationsComponent implements OnDestroy {
   protected readonly faXmark = faXmark;
   protected readonly faBoxArchive = faBoxArchive;
   protected readonly faTrash = faTrash;
-  showDropdown = false;
 
   private readonly destroyed$ = new Subject<void>();
   private readonly applications = inject(ApplicationsService);

@@ -90,9 +90,9 @@
                 [cdkConnectedOverlayOrigin]="organizationsDropdownTrigger"
                 [cdkConnectedOverlayOpen]="organizationsOpened">
                 <div
-                  @dropdown
-                  style="transform-origin: top center"
-                  class="my-2 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600">
+                  class="my-2 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600 origin-top"
+                  animate.enter="animate-flip-in-top"
+                  animate.leave="animate-flip-out-top">
                   @if (availableOrgs().length > 0) {
                     <ul class="py-1 overflow-y-auto max-h-[90vh]" role="none">
                       @for (org of availableOrgs(); track org.id) {
@@ -190,9 +190,9 @@
               [cdkConnectedOverlayOrigin]="dropdownTrigger"
               [cdkConnectedOverlayOpen]="userOpened">
               <div
-                @dropdown
-                style="transform-origin: top center"
-                class="my-2 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600">
+                class="my-2 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600 origin-top"
+                animate.enter="animate-flip-in-top"
+                animate.leave="animate-flip-out-top">
                 <div class="px-4 py-3" role="none">
                   <p class="text-sm text-gray-900 dark:text-white" role="none">{{ user.name }}</p>
                   <p class="text-sm font-medium text-gray-900 truncate dark:text-gray-300" role="none">
@@ -243,9 +243,9 @@
 
 <ng-template #createOrgModal>
   <div
-    @modalFlyInOut
-    style="transform-origin: top center"
-    class="p-4 w-full mt-12 max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-900">
+    class="p-4 w-full mt-12 max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-900"
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top">
     <!-- Modal header -->
     <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
       <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Create Organization</h2>
@@ -260,7 +260,7 @@
     <!-- Modal body -->
     <div class="p-4 md:p-5 space-y-4">
       <section class="antialiased">
-        <div class="mx-auto max-w-screen-xl px-4 2xl:px-0">
+        <div class="mx-auto max-w-7xl px-4 2xl:px-0">
           <form class="mx-auto" (ngSubmit)="submitCreateOrgForm()" [formGroup]="createOrgForm">
             <div class="flex flex-col space-y-5">
               <div class="space-y-2">

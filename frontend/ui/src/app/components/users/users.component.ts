@@ -21,7 +21,6 @@ import {catchError, filter, firstValueFrom, NEVER, switchMap, tap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
 import {SecureImagePipe} from '../../../util/secureImage';
-import {modalFlyInOut} from '../../animations/modal';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {RequireVendorDirective} from '../../directives/required-role.directive';
 import {AuthService} from '../../services/auth.service';
@@ -45,7 +44,6 @@ import {QuotaLimitComponent} from '../quota-limit.component';
     QuotaLimitComponent,
   ],
   templateUrl: './users.component.html',
-  animations: [modalFlyInOut],
 })
 export class UsersComponent {
   public readonly users = input.required<UserAccountWithRole[]>();

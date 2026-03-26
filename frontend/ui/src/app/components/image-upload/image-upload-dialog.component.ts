@@ -1,15 +1,14 @@
-import {AnimationEvent} from '@angular/animations';
 import {AsyncPipe} from '@angular/common';
-import {Component, HostBinding, HostListener, inject, OnDestroy, OnInit, signal} from '@angular/core';
+import {Component, inject, OnDestroy, signal} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faXmark} from '@fortawesome/free-solid-svg-icons';
-import {firstValueFrom, lastValueFrom, map, Observable, Subject, takeUntil} from 'rxjs';
+import {lastValueFrom, map, Observable, Subject, takeUntil} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
-import {modalFlyInOut} from '../../animations/modal';
 import {FileScope, FilesService} from '../../services/files.service';
-import {DialogRef, OverlayData} from '../../services/overlay.service';
+import {OverlayData} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
+import {ClosableDialog} from '../confirm-dialog/closable-dialog';
 
 export interface ImageUploadContext {
   scope?: FileScope;
@@ -20,13 +19,10 @@ export interface ImageUploadContext {
 @Component({
   imports: [FaIconComponent, ReactiveFormsModule, AsyncPipe],
   templateUrl: './image-upload-dialog.component.html',
-  animations: [modalFlyInOut],
 })
-export class ImageUploadDialogComponent implements OnInit, OnDestroy {
+export class ImageUploadDialogComponent extends ClosableDialog<string> implements OnDestroy {
   public readonly faXmark = faXmark;
-  public readonly dialogRef = inject(DialogRef) as DialogRef<string>;
   public readonly data = inject(OverlayData) as ImageUploadContext;
-  private readonly animationComplete$ = new Subject<void>();
   private readonly destroyed$ = new Subject<void>();
   private toast = inject(ToastService);
 
@@ -41,20 +37,6 @@ export class ImageUploadDialogComponent implements OnInit, OnDestroy {
     takeUntil(this.destroyed$),
     map((image) => (image ? URL.createObjectURL(image) : null))
   );
-  @HostBinding('@modalFlyInOut') public animationState = 'visible';
-
-  @HostListener('@modalFlyInOut.done', ['$event']) onAnimationComplete(event: AnimationEvent) {
-    if (event.toState === 'hidden') {
-      this.animationComplete$.next();
-    }
-  }
-
-  ngOnInit(): void {
-    this.dialogRef.addOnClosedHook(async () => {
-      this.animationState = 'hidden';
-      await firstValueFrom(this.animationComplete$);
-    });
-  }
 
   onImageChange(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];

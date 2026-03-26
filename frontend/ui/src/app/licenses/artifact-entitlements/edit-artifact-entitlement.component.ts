@@ -29,7 +29,6 @@ import {faChevronDown, faMagnifyingGlass, faPen, faPlus, faXmark} from '@fortawe
 import dayjs from 'dayjs';
 import {distinctUntilChanged, first, firstValueFrom, of, Subject, switchMap, takeUntil} from 'rxjs';
 import {RelativeDatePipe} from '../../../util/dates';
-import {dropdownAnimation} from '../../animations/dropdown';
 import {ArtifactsHashComponent} from '../../artifacts/components';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {ArtifactsService, ArtifactWithTags} from '../../services/artifacts.service';
@@ -57,7 +56,6 @@ import {ArtifactEntitlement, ArtifactEntitlementSelection} from '../../types/art
       multi: true,
     },
   ],
-  animations: [dropdownAnimation],
 })
 export class EditArtifactEntitlementComponent implements OnInit, OnDestroy, AfterViewInit, ControlValueAccessor {
   private readonly injector = inject(Injector);

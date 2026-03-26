@@ -16,9 +16,6 @@ import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observabl
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
-import {drawerFlyInOut} from '../../animations/drawer';
-import {dropdownAnimation} from '../../animations/dropdown';
-import {modalFlyInOut} from '../../animations/modal';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ApplicationsService} from '../../services/applications.service';
@@ -39,7 +36,6 @@ import {EditApplicationEntitlementComponent} from './edit-application-entitlemen
     DatePipe,
     EditApplicationEntitlementComponent,
   ],
-  animations: [dropdownAnimation, drawerFlyInOut, modalFlyInOut],
 })
 export class ApplicationEntitlementsComponent {
   readonly customerOrganizationId = input<string>();

@@ -32,22 +32,37 @@
   }
 }
 
+@keyframes fly-skew-right {
+  from {
+    transform: translateX(100%) skewX(-30deg);
+    opacity: 0;
+  }
+
+  33% {
+    opacity: 1;
+    transform: skewX(20deg);
+  }
+
+  66% {
+    opacity: 1;
+    transform: skewX(-5deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @theme {
   --animate-fly-in-right: fly-in-right 150ms ease-out;
   --animate-fly-out-right: fly-in-right 150ms ease-in reverse;
 
+  --animate-fly-in-top: fly-fade-top 150ms ease-out;
+  --animate-fly-out-top: fly-fade-top 150ms ease-in reverse;
+
   --animate-flip-in-top: flip-top 100ms ease-out;
   --animate-flip-out-top: flip-top 100ms ease-in reverse;
-}
 
-.modal-fly-in {
-  animation: fly-fade-top 150ms ease-out;
-}
-
-.modal-fly-out {
-  opacity: 0;
-  transform: translateY(-100%);
-  transition:
-    opacity 150ms ease-in,
-    transform 150ms ease-in;
+  --animate-fly-skew-in-right: fly-skew-right 400ms ease-out;
 }

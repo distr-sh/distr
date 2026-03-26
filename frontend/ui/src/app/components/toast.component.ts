@@ -1,11 +1,9 @@
-import {animate, keyframes, state, style, transition, trigger} from '@angular/animations';
 import {Component} from '@angular/core';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faCircleExclamation, faCircleInfo, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {Toast} from 'ngx-toastr';
+import {ToastNoAnimation} from 'ngx-toastr';
 
 @Component({
-  selector: '[toast-component]',
   styles: [
     `
       :host {
@@ -24,34 +22,33 @@ import {Toast} from 'ngx-toastr';
       [class.border-blue-300]="options.payload === 'info'"
       [class.dark:border-blue-800]="options.payload === 'info'"
       class="flex items-center w-full max-w-xs p-4 mb-4 text-gray-500 bg-white rounded-lg shadow-sm dark:text-gray-400 dark:bg-gray-800 border border-gray-200 dark:border-gray-600"
-      role="alert">
+      role="alert"
+      animate.enter="animate-fly-skew-in-right">
       @switch (options.payload) {
         @case ('error') {
           <fa-icon
             [icon]="faCircleExclamation"
             size="lg"
-            class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg text-red-500 dark:bg-red-800 bg-red-100 dark:text-red-200">
-          </fa-icon>
+            class="inline-flex items-center justify-center shrink-0 w-8 h-8 rounded-lg text-red-500 dark:bg-red-800 bg-red-100 dark:text-red-200" />
         }
         @case ('success') {
           <fa-icon
             [icon]="faCheck"
             size="lg"
-            class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg text-green-500 dark:text-green-800">
-          </fa-icon>
+            class="inline-flex items-center justify-center shrink-0 w-8 h-8 rounded-lg text-green-500 dark:text-green-800" />
         }
         @case ('info') {
           <fa-icon
             [icon]="faCircleInfo"
             size="lg"
-            class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg text-blue-500 dark:bg-blue-800 bg-blue-100 dark:text-blue-200">
-          </fa-icon>
+            class="inline-flex items-center justify-center shrink-0 w-8 h-8 rounded-lg text-blue-500 dark:bg-blue-800 bg-blue-100 dark:text-blue-200" />
         }
       }
       <div class="ms-3 text-sm font-normal overflow-hidden">
-        {{ title }}
         @if (message) {
-          :{{ message }}
+          {{ title }}: {{ message }}
+        } @else {
+          {{ title }}
         }
       </div>
       <button
@@ -61,63 +58,13 @@ import {Toast} from 'ngx-toastr';
         data-dismiss-target="#toast-danger"
         aria-label="Close">
         <span class="sr-only">Close</span>
-        <fa-icon [icon]="faXmark"></fa-icon>
+        <fa-icon [icon]="faXmark" />
       </button>
     </div>
   `,
-  animations: [
-    trigger('flyInOut', [
-      state(
-        'inactive',
-        style({
-          opacity: 0,
-        })
-      ),
-      transition(
-        'inactive => active',
-        animate(
-          '400ms ease-out',
-          keyframes([
-            style({
-              transform: 'translate3d(100%, 0, 0) skewX(-30deg)',
-              opacity: 0,
-            }),
-            style({
-              transform: 'skewX(20deg)',
-              opacity: 1,
-            }),
-            style({
-              transform: 'skewX(-5deg)',
-              opacity: 1,
-            }),
-            style({
-              transform: 'none',
-              opacity: 1,
-            }),
-          ])
-        )
-      ),
-      transition(
-        'active => removed',
-        animate(
-          '400ms ease-out',
-          keyframes([
-            style({
-              opacity: 1,
-            }),
-            style({
-              transform: 'translate3d(100%, 0, 0) skewX(30deg)',
-              opacity: 0,
-            }),
-          ])
-        )
-      ),
-    ]),
-  ],
-  preserveWhitespaces: false,
   imports: [FaIconComponent],
 })
-export class ToastComponent extends Toast {
+export class ToastComponent extends ToastNoAnimation {
   protected readonly faCheck = faCheck;
   protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faCircleInfo = faCircleInfo;

@@ -19,7 +19,7 @@
         </form>
 
         <div
-          class="w-full md:w-auto flex flex-col md:flex-row items-stretch md:items-center justify-end gap-2 flex-shrink-0 flex-grow">
+          class="w-full md:w-auto flex flex-col md:flex-row items-stretch md:items-center justify-end gap-2 shrink-0 grow">
           @if (isAlertsVisible()) {
             <a
               routerLink="/notifications/alert-configurations"
@@ -94,16 +94,19 @@
 
     <ng-template #deploymentModal>
       <app-deployment-modal
-        @modalFlyInOut
+        animate.enter="animate-fly-in-top"
+        animate.leave="animate-fly-out-top"
         [deploymentTarget]="selectedDeploymentTarget()!"
         [deployment]="selectedDeployment()"
         [versionId]="selectedApplicationVersionId()"
-        (closed)="hideModal()">
-      </app-deployment-modal>
+        (closed)="hideModal()" />
     </ng-template>
 
     <ng-template #deploymentWizard>
-      <app-deployment-wizard (closed)="hideModal()"></app-deployment-wizard>
+      <app-deployment-wizard
+        animate.enter="animate-fly-in-top"
+        animate.leave="animate-fly-out-top"
+        (closed)="hideModal()" />
     </ng-template>
   </div>
 </section>

@@ -10,7 +10,7 @@ import {SecureImagePipe} from '../../../util/secureImage';
   imports: [FaIconComponent, SecureImagePipe, AsyncPipe],
   template: `
     <div class="flex items-center gap-3">
-      <div class="flex-shrink-0">
+      <div class="shrink-0">
         @if (application().imageId; as imageId) {
           <img class="size-8 rounded-sm" [attr.src]="imageId | secureImage | async" alt="" />
         } @else {

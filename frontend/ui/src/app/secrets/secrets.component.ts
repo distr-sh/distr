@@ -7,7 +7,6 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faMagnifyingGlass, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
-import {modalFlyInOut} from '../animations/modal';
 import {ClipComponent} from '../components/clip.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AuthService} from '../services/auth.service';
@@ -19,7 +18,6 @@ import {Secret} from '../types/secret';
 @Component({
   selector: 'app-secrets',
   imports: [FaIconComponent, ReactiveFormsModule, DatePipe, AutotrimDirective, ClipComponent],
-  animations: [modalFlyInOut],
   templateUrl: './secrets.component.html',
 })
 export class SecretsComponent {

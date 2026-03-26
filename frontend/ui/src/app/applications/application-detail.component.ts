@@ -49,7 +49,6 @@ import {isArchived} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
 import {disableControlsWithoutEvent, enableControlsWithoutEvent} from '../../util/forms';
 import {SecureImagePipe} from '../../util/secureImage';
-import {dropdownAnimation} from '../animations/dropdown';
 import {EditorComponent} from '../components/editor.component';
 import {UuidComponent} from '../components/uuid';
 import {AutotrimDirective} from '../directives/autotrim.directive';
@@ -82,7 +81,6 @@ import {
     MarkdownPipe,
   ],
   templateUrl: './application-detail.component.html',
-  animations: [dropdownAnimation],
 })
 export class ApplicationDetailComponent implements OnInit, OnDestroy {
   private readonly destroyed$ = new Subject<void>();

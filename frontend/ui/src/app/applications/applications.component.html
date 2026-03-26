@@ -20,7 +20,7 @@
         </form>
       </div>
       <div
-        class="w-full md:w-auto flex flex-col md:flex-row space-y-2 md:space-y-0 items-stretch md:items-center justify-end md:space-x-3 flex-shrink-0">
+        class="w-full md:w-auto flex flex-col md:flex-row space-y-2 md:space-y-0 items-stretch md:items-center justify-end md:space-x-3 shrink-0">
         <button
           *appPermissions="{vendor: true, role: ['read_write', 'admin']}"
           (click)="openCreateModal(newApplicationModal)"
@@ -30,28 +30,6 @@
           <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2"></fa-icon>
           Add application
         </button>
-        <div class="flex items-center space-x-3 w-full md:w-auto">
-          <ng-template
-            cdkConnectedOverlay
-            [cdkConnectedOverlayHasBackdrop]="true"
-            (backdropClick)="showDropdown = false"
-            [cdkConnectedOverlayPositions]="[{originX: 'end', overlayX: 'end', originY: 'bottom', overlayY: 'top'}]"
-            [cdkConnectedOverlayBackdropClass]="'transparent'"
-            [cdkConnectedOverlayOpen]="showDropdown">
-            <div
-              @dropdown
-              style="transform-origin: top center"
-              class="my-2 w-44 bg-white rounded-sm divide-y divide-gray-100 shadow-sm dark:bg-gray-700 dark:divide-gray-600">
-              <ul class="py-1 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="actionsDropdownButton">
-                <li>
-                  <a href="#" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                    >Mass Edit</a
-                  >
-                </li>
-              </ul>
-            </div>
-          </ng-template>
-        </div>
       </div>
     </div>
   }
@@ -132,8 +110,8 @@
 
 <ng-template #newApplicationModal>
   <div
-    @modalFlyInOut
-    style="transform-origin: top center"
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top"
     class="p-4 w-128 my-auto max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900">
     <div class="relative w-full max-h-full">
       <div class="relative rounded-lg">
@@ -144,14 +122,7 @@
             type="button"
             class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
             (click)="hideCreateModal()">
-            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-              <path
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
-            </svg>
+            <fa-icon [icon]="faXmark" />
             <span class="sr-only">Close modal</span>
           </button>
         </div>

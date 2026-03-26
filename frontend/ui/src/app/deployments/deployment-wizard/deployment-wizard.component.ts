@@ -21,7 +21,6 @@ import {
   KUBERNETES_RESOURCE_NAME_REGEX,
   RESOURCE_QUANTITY_REGEX,
 } from '../../../util/validation';
-import {modalFlyInOut} from '../../animations/modal';
 import {ConnectInstructionsComponent} from '../../components/connect-instructions/connect-instructions.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
@@ -50,7 +49,6 @@ import {DeploymentWizardStepperComponent} from './deployment-wizard-stepper.comp
     SecureImagePipe,
     DeploymentFormComponent,
   ],
-  animations: [modalFlyInOut],
 })
 export class DeploymentWizardComponent implements OnInit {
   protected readonly faXmark = faXmark;

@@ -104,7 +104,7 @@
                   <div class="space-y-4">
                     <h2 class="text-xl font-bold dark:text-white">Manage Subscription</h2>
                     <div
-                      class="p-6 bg-gradient-to-r from-primary-50 to-blue-50 dark:from-gray-700 dark:to-gray-800 rounded-lg">
+                      class="p-6 bg-linear-to-r from-primary-50 to-blue-50 dark:from-gray-700 dark:to-gray-800 rounded-lg">
                       <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
                         Access the Stripe Customer Portal to manage your subscription, download invoices, and update
                         your payment method.
@@ -434,7 +434,7 @@
 
                   <!-- Price Preview -->
                   <div
-                    class="p-6 bg-gradient-to-r from-primary-50 to-blue-50 dark:from-gray-700 dark:to-gray-800 rounded-lg">
+                    class="p-6 bg-linear-to-r from-primary-50 to-blue-50 dark:from-gray-700 dark:to-gray-800 rounded-lg">
                     <div class="flex justify-between items-center">
                       <div>
                         <p class="text-sm text-gray-600 dark:text-gray-400">Estimated Cost</p>
@@ -476,9 +476,11 @@
   <ng-template #updateModal>
     @if (pendingUpdate(); as update) {
       <app-subscription-update-modal
+        animate.enter="animate-fly-in-top"
+        animate.leave="animate-fly-out-top"
         [pendingUpdate]="update"
         (closed)="hideModal()"
-        (confirmed)="onModalConfirmed($event)"></app-subscription-update-modal>
+        (confirmed)="onModalConfirmed($event)" />
     }
   </ng-template>
 </section>
