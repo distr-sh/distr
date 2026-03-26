@@ -44,6 +44,7 @@ require (
 	github.com/samber/slog-zap/v2 v2.6.3
 	github.com/spf13/cobra v1.10.2
 	github.com/stripe/stripe-go/v84 v84.4.1
+	github.com/stripe/stripe-go/v85 v85.0.0
 	github.com/wneessen/go-mail v0.7.2
 	go.opentelemetry.io/collector/component v1.54.0
 	go.opentelemetry.io/collector/confmap v1.54.0
