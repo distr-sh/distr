@@ -122,6 +122,8 @@ func ApiRouter(
 			middleware.ContextInjectorMiddleware(db, mailer, oidcer, prometheusCollector),
 		)
 
+		r.Route("/public/v1", PublicRouter())
+
 		r.Route("/v1", func(r chiopenapi.Router) {
 			r.Group(func(r chiopenapi.Router) {
 				r.Use(
@@ -189,6 +191,7 @@ func ApiRouter(
 				r.Route("/", handlers.AgentRouter)
 				r.Route("/support-bundle-collect", handlers.SupportBundleScriptRouter)
 			})
+
 		})
 	}
 }
@@ -223,6 +226,12 @@ func ReadyRouter(db *pgxpool.Pool) http.Handler {
 		_, _ = w.Write([]byte(`{"ready":true}`))
 	})
 	return router
+}
+
+func PublicRouter() func(r chiopenapi.Router) {
+	return func(r chiopenapi.Router) {
+		r.Route("/license-keys", handlers.PublicLicenseKeysRouter)
+	}
 }
 
 func FrontendRouter() http.Handler {

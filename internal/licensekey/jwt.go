@@ -18,13 +18,23 @@ var registeredClaims = map[string]struct{}{
 	jwt.SubjectKey: {}, jwt.AudienceKey: {}, jwt.IssuedAtKey: {},
 }
 
+var ErrNoSigningKey = errors.New("no license key signing key configured")
+
 var signingKey = sync.OnceValues(func() (jwk.Key, error) {
 	pemBytes := env.LicenseKeyPrivateKey()
 	if pemBytes == nil {
-		return nil, errors.New("no license key signing key configured")
+		return nil, ErrNoSigningKey
 	}
 	return jwk.ParseKey(pemBytes, jwk.WithPEM(true))
 })
+
+func PublicKey() (jwk.Key, error) {
+	if k, err := signingKey(); err != nil {
+		return nil, err
+	} else {
+		return k.PublicKey()
+	}
+}
 
 func IsSigningKeyConfigured() bool {
 	return env.LicenseKeyPrivateKey() != nil

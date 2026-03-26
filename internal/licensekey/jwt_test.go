@@ -1,7 +1,6 @@
 package licensekey
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"testing"
 	"time"
@@ -15,15 +14,15 @@ import (
 )
 
 // Generated with: openssl genpkey -algorithm ed25519 | base64 -w0
-const testPrivateKeyPEMB64 = "LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1DNENBUUF3QlFZREsy" +
-	"VndCQ0lFSUQwa1plWVJYL0ttWUZNWk5mSGx5OEtPRE56OGRES1FmUG4z" +
-	"M1cwZ2tvcmkKLS0tLS1FTkQgUFJJVkFURSBLRVktLS0tLQo="
+const testPrivateKeyPEM = `
+-----BEGIN PRIVATE KEY-----
+MC4CAQAwBQYDK2VwBCIEID0kZeYRX/KmYFMZNfHly8KODNz8dDKQfPn33W0gkori
+-----END PRIVATE KEY-----
+`
 
 func testKey(t *testing.T) jwk.Key {
 	t.Helper()
-	pemBytes, err := base64.StdEncoding.DecodeString(testPrivateKeyPEMB64)
-	NewWithT(t).Expect(err).ToNot(HaveOccurred())
-	key, err := jwk.ParseKey(pemBytes, jwk.WithPEM(true))
+	key, err := jwk.ParseKey([]byte(testPrivateKeyPEM), jwk.WithPEM(true))
 	NewWithT(t).Expect(err).ToNot(HaveOccurred())
 	return key
 }
