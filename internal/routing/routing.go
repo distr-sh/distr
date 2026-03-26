@@ -191,7 +191,6 @@ func ApiRouter(
 				r.Route("/", handlers.AgentRouter)
 				r.Route("/support-bundle-collect", handlers.SupportBundleScriptRouter)
 			})
-
 		})
 	}
 }
