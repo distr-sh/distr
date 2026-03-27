@@ -15,4 +15,4 @@
 
 ### name?
 
-> `optional` **name?**: `string`
+> `optional` **name**: `string`

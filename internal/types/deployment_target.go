@@ -67,6 +67,10 @@ func (dt *DeploymentTarget) Validate() error {
 		if dt.Resources != nil {
 			return validation.NewValidationFailedError("DeploymentTarget with type \"docker\" must not have resources")
 		}
+	case DeploymentTypeOpenTofu:
+		if dt.Resources != nil {
+			return validation.NewValidationFailedError("DeploymentTarget with type \"opentofu\" must not have resources")
+		}
 	default:
 		return validation.NewValidationFailedError("invalid deployment target type")
 	}

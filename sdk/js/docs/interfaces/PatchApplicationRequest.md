@@ -10,17 +10,17 @@
 
 ### name?
 
-> `optional` **name?**: `string`
+> `optional` **name**: `string`
 
 ---
 
 ### versions?
 
-> `optional` **versions?**: `object`[]
+> `optional` **versions**: `object`[]
 
 #### archivedAt?
 
-> `optional` **archivedAt?**: `string`
+> `optional` **archivedAt**: `string`
 
 #### id
 

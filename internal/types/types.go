@@ -131,6 +131,7 @@ type (
 const (
 	DeploymentTypeDocker     DeploymentType = "docker"
 	DeploymentTypeKubernetes DeploymentType = "kubernetes"
+	DeploymentTypeOpenTofu   DeploymentType = "opentofu"
 
 	HelmChartTypeRepository HelmChartType = "repository"
 	HelmChartTypeOCI        HelmChartType = "oci"

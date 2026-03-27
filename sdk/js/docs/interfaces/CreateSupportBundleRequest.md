@@ -10,7 +10,7 @@
 
 ### description?
 
-> `optional` **description?**: `string`
+> `optional` **description**: `string`
 
 ---
 

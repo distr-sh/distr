@@ -28,6 +28,7 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/google/uuid v1.6.0
+	github.com/hashicorp/terraform-exec v0.23.0
 	github.com/jackc/pgerrcode v0.0.0-20250907135507-afb5586c32a6
 	github.com/jackc/pgx/v5 v5.9.1
 	github.com/joho/godotenv v1.5.1
@@ -39,6 +40,7 @@ require (
 	github.com/oaswrap/spec/adapter/chiopenapi v0.3.6
 	github.com/onsi/gomega v1.39.1
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.148.0
+	github.com/opentofu/tofudl v0.0.1
 	github.com/pquerna/otp v1.5.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/samber/slog-zap/v2 v2.6.4
@@ -68,6 +70,14 @@ require (
 	k8s.io/kubectl v0.35.3
 	k8s.io/metrics v0.35.3
 	oras.land/oras-go/v2 v2.6.0
+)
+
+require (
+	github.com/ProtonMail/go-mime v0.0.0-20230322103455-7d82a3887f2f // indirect
+	github.com/ProtonMail/gopenpgp/v2 v2.7.5 // indirect
+	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
+	github.com/hashicorp/terraform-json v0.24.0 // indirect
+	github.com/zclconf/go-cty v1.17.0 // indirect
 )
 
 require (

@@ -14,7 +14,7 @@
 
 ### collectCommand?
 
-> `optional` **collectCommand?**: `string`
+> `optional` **collectCommand**: `string`
 
 ---
 
@@ -46,7 +46,7 @@
 
 ### createdByImageUrl?
 
-> `optional` **createdByImageUrl?**: `string`
+> `optional` **createdByImageUrl**: `string`
 
 #### Inherited from
 
@@ -96,7 +96,7 @@
 
 ### description?
 
-> `optional` **description?**: `string`
+> `optional` **description**: `string`
 
 #### Inherited from
 
@@ -116,7 +116,7 @@
 
 ### lastCommentAt?
 
-> `optional` **lastCommentAt?**: `string`
+> `optional` **lastCommentAt**: `string`
 
 #### Inherited from
 
@@ -152,7 +152,7 @@
 
 ### statusChangedAt?
 
-> `optional` **statusChangedAt?**: `string`
+> `optional` **statusChangedAt**: `string`
 
 #### Inherited from
 
@@ -162,7 +162,7 @@
 
 ### statusChangedByImageUrl?
 
-> `optional` **statusChangedByImageUrl?**: `string`
+> `optional` **statusChangedByImageUrl**: `string`
 
 #### Inherited from
 
@@ -172,7 +172,7 @@
 
 ### statusChangedByUserName?
 
-> `optional` **statusChangedByUserName?**: `string`
+> `optional` **statusChangedByUserName**: `string`
 
 #### Inherited from
 

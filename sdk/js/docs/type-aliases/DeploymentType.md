@@ -6,4 +6,4 @@
 
 # Type Alias: DeploymentType
 
-> **DeploymentType** = `"docker"` \| `"kubernetes"`
+> **DeploymentType** = `"docker"` \| `"kubernetes"` \| `"opentofu"`
