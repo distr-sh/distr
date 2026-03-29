@@ -1,16 +1,6 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe, NgOptimizedImage} from '@angular/common';
-import {
-  Component,
-  ElementRef,
-  inject,
-  OnDestroy,
-  OnInit,
-  signal,
-  TemplateRef,
-  viewChild,
-  ViewChild,
-} from '@angular/core';
+import {Component, ElementRef, inject, OnDestroy, OnInit, signal, TemplateRef, viewChild} from '@angular/core';
 import {FormArray, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {Application, ApplicationVersion, ApplicationVersionResource, HelmChartType} from '@distr-sh/distr-sdk';
@@ -191,8 +181,8 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   readonly breadcrumbDropdown = signal(false);
   readonly isVersionFormExpanded = signal(false);
   breadcrumbDropdownWidth: number = 0;
-  @ViewChild('dropdownTriggerButton') dropdownTriggerButton!: ElementRef<HTMLElement>;
-  @ViewChild('nameInput') nameInputElem?: ElementRef<HTMLInputElement>;
+  protected readonly dropdownTriggerButton = viewChild.required<ElementRef<HTMLElement>>('dropdownTriggerButton');
+  protected readonly nameInputElem = viewChild<ElementRef<HTMLInputElement>>('nameInput');
 
   ngOnInit() {
     this.route.url.subscribe(() => this.breadcrumbDropdown.set(false));
@@ -216,14 +206,14 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   toggleBreadcrumbDropdown() {
     this.breadcrumbDropdown.update((v) => !v);
     if (this.breadcrumbDropdown()) {
-      this.breadcrumbDropdownWidth = this.dropdownTriggerButton.nativeElement.getBoundingClientRect().width;
+      this.breadcrumbDropdownWidth = this.dropdownTriggerButton().nativeElement.getBoundingClientRect().width;
     }
   }
 
   enableApplicationEdit(application: Application) {
     this.editForm.enable();
     this.editForm.patchValue({name: application.name});
-    setTimeout(() => this.nameInputElem?.nativeElement.focus(), 10);
+    setTimeout(() => this.nameInputElem()?.nativeElement.focus(), 10);
   }
 
   cancelApplicationEdit() {

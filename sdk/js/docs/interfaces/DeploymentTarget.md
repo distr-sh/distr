@@ -18,6 +18,12 @@
 
 ---
 
+### autohealEnabled?
+
+> `optional` **autohealEnabled?**: `boolean`
+
+---
+
 ### createdAt?
 
 > `optional` **createdAt?**: `string`
