@@ -5,6 +5,7 @@
   "license": "Apache-2.0",
   "description": "Distr SDK",
   "homepage": "https://distr.sh",
+  "packageManager": "pnpm@10.33.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/distr-sh/distr.git",

@@ -3,7 +3,7 @@
     <ol
       class="flex flex-col sm:flex-row gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 px-8 dark:border-gray-700 dark:bg-gray-800 justify-center items-center">
       <!-- Step 1: Customer (Conditional) -->
-      @if (showCustomerStep) {
+      @if (showCustomerStep()) {
         <li
           class="flex items-center gap-2 flex-1 flex-col"
           [class.text-gray-500]="!isCustomerStep()"

@@ -14,12 +14,12 @@
   "dependencies": {
     "@astrojs/mdx": "^5.0.2",
     "@astrojs/preact": "^5.0.2",
-    "@astrojs/sitemap": "3.7.1",
+    "@astrojs/sitemap": "3.7.2",
     "@astrojs/starlight": "0.38.2",
     "@astrojs/starlight-tailwind": "5.0.0",
     "@iconify-json/lucide": "^1.2.98",
     "@tailwindcss/vite": "^4.2.2",
-    "astro": "6.0.8",
+    "astro": "6.1.1",
     "astro-icon": "^1.1.5",
     "astrojs-service-worker": "^2.0.0",
     "embla-carousel": "^8.6.0",
@@ -40,6 +40,7 @@
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-organize-imports": "^4.3.0"
   },
+  "packageManager": "pnpm@10.33.0",
   "engines": {
     "node": ">=22"
   }

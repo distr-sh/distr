@@ -1,7 +1,7 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe, TitleCasePipe} from '@angular/common';
 import {HttpErrorResponse} from '@angular/common/http';
-import {Component, computed, inject, input, OnInit, TemplateRef, ViewChild} from '@angular/core';
+import {Component, computed, inject, input, OnInit, TemplateRef, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
@@ -43,7 +43,6 @@ import {NavBarSubscriptionBannerComponent} from './nav-bar-subscription-banner/n
 
 @Component({
   selector: 'app-nav-bar',
-  standalone: true,
   templateUrl: './nav-bar.component.html',
   imports: [
     ColorSchemeSwitcherComponent,
@@ -118,7 +117,7 @@ export class NavBarComponent implements OnInit {
   public readonly isSubscriptionBannerVisible = input<boolean>();
   public readonly isSidebarVisible = input<boolean>();
 
-  @ViewChild('createOrgModal') private createOrgModal!: TemplateRef<unknown>;
+  private readonly createOrgModal = viewChild.required<TemplateRef<unknown>>('createOrgModal');
   private modalRef?: DialogRef;
   protected readonly createOrgForm = new FormGroup({
     name: new FormControl<string>('', Validators.required),
@@ -168,7 +167,7 @@ export class NavBarComponent implements OnInit {
 
   showCreateOrgModal(): void {
     this.closeCreateOrgModal();
-    this.modalRef = this.overlay.showModal(this.createOrgModal);
+    this.modalRef = this.overlay.showModal(this.createOrgModal());
     this.modalRef.addOnClosedHook((_) => {
       this.organizationsOpened = false;
     });
