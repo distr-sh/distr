@@ -10,7 +10,7 @@ import {drawerFlyInOut} from '../../animations/drawer';
 import {dropdownAnimation} from '../../animations/dropdown';
 import {modalFlyInOut} from '../../animations/modal';
 import {ConnectInstructionsComponent} from '../../components/connect-instructions/connect-instructions.component';
-import {StatusDotComponent} from '../../components/status-dot';
+import {DeploymentTargetStatusDotComponent} from '../../components/status-dot';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {DeploymentModalComponent} from '../deployment-modal.component';
 import {DeploymentAppNameComponent} from './deployment-app-name.component';
@@ -23,7 +23,7 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
   templateUrl: './deployment-target-dashboard-card.component.html',
   imports: [
     NgOptimizedImage,
-    StatusDotComponent,
+    DeploymentTargetStatusDotComponent,
     FaIconComponent,
     OverlayModule,
     ConnectInstructionsComponent,

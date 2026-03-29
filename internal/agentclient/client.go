@@ -194,7 +194,7 @@ func (c *Client) RawToken() string {
 	return c.rawToken
 }
 
-func (c *Client) ReportMetrics(ctx context.Context, metrics api.AgentDeploymentTargetMetrics) error {
+func (c *Client) ReportMetrics(ctx context.Context, metrics api.AgentDeploymentTargetMetricsRequest) error {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(metrics); err != nil {
 		return err

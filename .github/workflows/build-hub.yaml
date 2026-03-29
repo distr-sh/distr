@@ -8,7 +8,11 @@ on:
       - 'main'
     tags:
       - '*'
+    paths-ignore:
+      - 'website/**'
   pull_request:
+    paths-ignore:
+      - 'website/**'
 
 jobs:
   validate-migrations:
@@ -39,7 +43,7 @@ jobs:
       - name: Lint with golangci-lint
         uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 # v9.2.0
         with:
-          version: 'v2.11.3' # renovate: datasource=github-releases depName=golangci/golangci-lint
+          version: 'v2.11.4' # renovate: datasource=github-releases depName=golangci/golangci-lint
 
   lint-and-test-node:
     name: Lint and test (Node)
@@ -50,8 +54,6 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Install pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
-        with:
-          version: 10
       - name: Setup node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
@@ -113,8 +115,6 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
-        with:
-          version: 10
 
       - name: Setup node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -145,10 +145,24 @@ jobs:
           VERSION: ${{ github.ref_name }}
           SENTRY_VERSION: ${{ github.ref_name }}${{ matrix.edition.suffix }}
 
-      - name: Build application
-        run: go build -ldflags="$LDFLAGS" -o dist/distr ./cmd/hub/
+      - name: Build application (amd64)
+        run: go build -ldflags="$LDFLAGS" -o dist/distr-amd64 ./cmd/hub/
         env:
           CGO_ENABLED: '0'
+          GOOS: linux
+          GOARCH: amd64
+          LDFLAGS: >-
+            -X github.com/distr-sh/distr/internal/buildconfig.version=${{ github.ref_name }}
+            -X github.com/distr-sh/distr/internal/buildconfig.commit=${{ steps.hash.outputs.sha_short }}
+            -X github.com/distr-sh/distr/internal/buildconfig.edition=${{ matrix.edition.name }}
+
+      - name: Build application (arm64)
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        run: go build -ldflags="$LDFLAGS" -o dist/distr-arm64 ./cmd/hub/
+        env:
+          CGO_ENABLED: '0'
+          GOOS: linux
+          GOARCH: arm64
           LDFLAGS: >-
             -X github.com/distr-sh/distr/internal/buildconfig.version=${{ github.ref_name }}
             -X github.com/distr-sh/distr/internal/buildconfig.commit=${{ steps.hash.outputs.sha_short }}
@@ -156,19 +170,19 @@ jobs:
 
       - name: Start Hub and verify migrations
         shell: bash
-        run: dist/distr serve &
+        run: dist/distr-amd64 serve &
           sleep 5 &&
           curl $DISTR_HOST/internal/environment -f &&
           psql $DATABASE_URL -c "select version > 0, dirty from schema_migrations" --csv -t | grep "t,f" &&
-          pkill -SIGTERM distr &&
-          dist/distr migrate --down
+          pkill -SIGTERM distr-amd64 &&
+          dist/distr-amd64 migrate --down
         env:
           DATABASE_URL: postgres://test-user:test-password@localhost:5432/distr
           JWT_SECRET: H4V7z6mEpe8/k5H/KyogT/iATJhNpEIUMd5cHF6mqF8=
           DISTR_HOST: http://localhost:8080
 
       - name: Generate SBOM for frontend project
-        uses: anchore/sbom-action@57aae528053a48a3f6235f2d9461b05fbcb7366d # v0.23.1
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
           file: pnpm-lock.yaml
           output-file: dist/frontend.spdx.json
@@ -224,7 +238,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22 # v4.1.0
+      - uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
 
       - name: Sign the images with GitHub OIDC Token
