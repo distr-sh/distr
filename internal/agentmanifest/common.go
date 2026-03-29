@@ -65,6 +65,7 @@ func getTemplateData(
 		"agentInterval":     env.AgentInterval(),
 		"agentVersion":      deploymentTarget.AgentVersion.Name,
 		"agentVersionId":    deploymentTarget.AgentVersion.ID,
+		"autohealAll":       deploymentTarget.AutohealEnabled,
 		"loginEndpoint":     loginEndpoint,
 		"manifestEndpoint":  manifestEndpoint,
 		"metricsEndpoint":   metricsEndpoint,

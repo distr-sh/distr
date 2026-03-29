@@ -277,8 +277,10 @@ func (c *Client) ReloadFromEnv() (changed bool, err error) {
 
 func NewFromEnv(logger *zap.Logger) (*Client, error) {
 	client := Client{
-		httpClient: &http.Client{},
-		logger:     logger,
+		httpClient: &http.Client{
+			Timeout: 2 * time.Minute,
+		},
+		logger: logger,
 	}
 	if _, err := client.ReloadFromEnv(); err != nil {
 		return nil, err

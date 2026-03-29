@@ -2,8 +2,10 @@ name: distr
 services:
   agent:
     network_mode: host
-    restart: unless-stopped
+    restart: always
     image: 'ghcr.io/distr-sh/distr/docker-agent:{{ .agentVersion }}'
+    labels:
+      - sh.distr.autoheal=true
     environment:
       DISTR_TARGET_ID: '{{ .targetId }}'
       DISTR_TARGET_SECRET: '{{ .targetSecret }}'
@@ -28,5 +30,19 @@ services:
       - scratch:/scratch
       - ${HOST_DOCKER_CONFIG_DIR-${HOME}/.docker}:/root/.docker:ro
       - /:/hostfs:ro,rslave
+
+  autoheal:
+    environment:
+      {{- if .autohealAll }}
+      AUTOHEAL_CONTAINER_LABEL: all
+      {{- else }}
+      AUTOHEAL_CONTAINER_LABEL: sh.distr.autoheal
+      {{- end }}
+    image: 'ghcr.io/distr-sh/distr/docker-autoheal:{{ .agentVersion }}'
+    network_mode: none
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
 volumes:
   scratch:
