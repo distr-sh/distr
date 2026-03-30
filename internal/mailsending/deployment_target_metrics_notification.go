@@ -19,7 +19,7 @@ func DeploymentTargetMetricsNotificationAlert(
 	diskDevice string,
 	diskPath string,
 	threshold int,
-	usagePercent int,
+	usagePercent int64,
 ) error {
 	mailer := internalctx.GetMailer(ctx)
 	m := mail.New(
@@ -41,7 +41,7 @@ func DeploymentTargetMetricsNotificationResolved(
 	diskDevice string,
 	diskPath string,
 	threshold int,
-	usagePercent int,
+	usagePercent int64,
 ) error {
 	mailer := internalctx.GetMailer(ctx)
 	m := mail.New(

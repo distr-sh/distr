@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
@@ -60,7 +61,7 @@ func sendDeploymentTargetMetricsNotificationsWithConfig(
 		log.Info("sending CPU alert notification")
 		if err := sendMetricNotification(
 			ctx, false, deploymentTarget, *organization, config, previousMetrics, currentMetrics,
-			"cpu", "", "", *config.CpuTriggerThreshold, int(currentMetrics.CPUUsage*100),
+			"cpu", "", "", *config.CpuTriggerThreshold, usagePercent(currentMetrics.CPUUsage),
 		); err != nil {
 			return err
 		}
@@ -68,7 +69,7 @@ func sendDeploymentTargetMetricsNotificationsWithConfig(
 		log.Info("sending CPU alert resolved notification")
 		if err := sendMetricNotification(
 			ctx, true, deploymentTarget, *organization, config, previousMetrics, currentMetrics,
-			"cpu", "", "", *config.CpuTriggerThreshold, int(currentMetrics.CPUUsage*100),
+			"cpu", "", "", *config.CpuTriggerThreshold, usagePercent(currentMetrics.CPUUsage),
 		); err != nil {
 			return err
 		}
@@ -78,7 +79,7 @@ func sendDeploymentTargetMetricsNotificationsWithConfig(
 		log.Info("sending memory alert notification")
 		if err := sendMetricNotification(
 			ctx, false, deploymentTarget, *organization, config, previousMetrics, currentMetrics,
-			"memory", "", "", *config.MemoryTriggerThreshold, int(currentMetrics.MemoryUsage*100),
+			"memory", "", "", *config.MemoryTriggerThreshold, usagePercent(currentMetrics.MemoryUsage),
 		); err != nil {
 			return err
 		}
@@ -86,7 +87,7 @@ func sendDeploymentTargetMetricsNotificationsWithConfig(
 		log.Info("sending memory alert resolved notification")
 		if err := sendMetricNotification(
 			ctx, true, deploymentTarget, *organization, config, previousMetrics, currentMetrics,
-			"memory", "", "", *config.MemoryTriggerThreshold, int(currentMetrics.MemoryUsage*100),
+			"memory", "", "", *config.MemoryTriggerThreshold, usagePercent(currentMetrics.MemoryUsage),
 		); err != nil {
 			return err
 		}
@@ -109,7 +110,8 @@ func sendDeploymentTargetMetricsNotificationsWithConfig(
 			log.Info("sending disk alert notification")
 			if err := sendMetricNotification(
 				ctx, false, deploymentTarget, *organization, config, previousMetrics, currentMetrics,
-				"disk", diskMetric.Device, diskMetric.Path, *config.DiskTriggerThreshold, int(diskMetric.Usage()*100),
+				"disk", diskMetric.Device, diskMetric.Path, *config.DiskTriggerThreshold,
+				usagePercent(diskMetric.Usage()),
 			); err != nil {
 				return err
 			}
@@ -117,7 +119,8 @@ func sendDeploymentTargetMetricsNotificationsWithConfig(
 			log.Info("sending disk alert resolved notification")
 			if err := sendMetricNotification(
 				ctx, true, deploymentTarget, *organization, config, previousMetrics, currentMetrics,
-				"disk", diskMetric.Device, diskMetric.Path, *config.DiskTriggerThreshold, int(diskMetric.Usage()*100),
+				"disk", diskMetric.Device, diskMetric.Path, *config.DiskTriggerThreshold,
+				usagePercent(diskMetric.Usage()),
 			); err != nil {
 				return err
 			}
@@ -139,7 +142,7 @@ func sendMetricNotification(
 	diskDevice string,
 	diskPath string,
 	threshold int,
-	usagePercent int,
+	usagePercent int64,
 ) error {
 	var aggErr error
 	for _, user := range config.UserAccounts {
@@ -235,4 +238,8 @@ func usageFunc[T any](p *T, c T, f func(T) float64) (*float64, float64) {
 		return new(f(*p)), f(c)
 	}
 	return nil, f(c)
+}
+
+func usagePercent(usage float64) int64 {
+	return int64(math.Round(usage * 100))
 }

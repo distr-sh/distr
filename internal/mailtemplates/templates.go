@@ -119,7 +119,7 @@ func DeploymentTargetMetricsNotificationAlert(
 	diskDevice string,
 	diskPath string,
 	threshold int,
-	usagePercent int,
+	usagePercent int64,
 ) (*template.Template, any) {
 	return deploymentTargetMetricsNotification(
 		false, deploymentTarget, metricType, diskDevice, diskPath, threshold, usagePercent,
@@ -132,7 +132,7 @@ func DeploymentTargetMetricsNotificationResolved(
 	diskDevice string,
 	diskPath string,
 	threshold int,
-	usagePercent int,
+	usagePercent int64,
 ) (*template.Template, any) {
 	return deploymentTargetMetricsNotification(
 		true, deploymentTarget, metricType, diskDevice, diskPath, threshold, usagePercent,
@@ -146,7 +146,7 @@ func deploymentTargetMetricsNotification(
 	diskDevice string,
 	diskPath string,
 	threshold int,
-	usagePercent int,
+	usagePercent int64,
 ) (*template.Template, any) {
 	return templates.Lookup("deployment-target-metrics-notification.html"), map[string]any{
 		"Resolved":         resolved,
