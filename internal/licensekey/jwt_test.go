@@ -13,7 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// Generated with: openssl genpkey -algorithm ed25519 | base64 -w0
+// Test key in raw PEM format, generated with: openssl genpkey -algorithm ed25519
 const testPrivateKeyPEM = `
 -----BEGIN PRIVATE KEY-----
 MC4CAQAwBQYDK2VwBCIEID0kZeYRX/KmYFMZNfHly8KODNz8dDKQfPn33W0gkori
