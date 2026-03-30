@@ -1,6 +1,6 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
-import {AfterViewInit, Component, computed, effect, inject, signal, TemplateRef, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, computed, effect, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
@@ -61,7 +61,6 @@ const localStoragerCollapsedCustomerIds = 'collapsedCustomerIds';
     RouterLink,
   ],
   templateUrl: './deployment-targets.component.html',
-  standalone: true,
   animations: [modalFlyInOut, drawerFlyInOut],
 })
 export class DeploymentTargetsComponent implements AfterViewInit {
@@ -108,8 +107,8 @@ export class DeploymentTargetsComponent implements AfterViewInit {
 
   private modal?: DialogRef;
 
-  @ViewChild('deploymentWizard') protected readonly deploymentWizard!: TemplateRef<unknown>;
-  @ViewChild('deploymentModal') protected readonly deploymentModal!: TemplateRef<unknown>;
+  protected readonly deploymentWizard = viewChild.required<TemplateRef<unknown>>('deploymentWizard');
+  protected readonly deploymentModal = viewChild.required<TemplateRef<unknown>>('deploymentModal');
 
   selectedDeploymentTarget = signal<DeploymentTarget | undefined>(undefined);
   selectedDeployment = signal<DeploymentWithLatestRevision | undefined>(undefined);
@@ -150,7 +149,7 @@ export class DeploymentTargetsComponent implements AfterViewInit {
     map(([deploymentTargets, deploymentTargetMetrics]) =>
       deploymentTargets.map((dt) => ({
         ...dt,
-        metrics: deploymentTargetMetrics.find((x) => x.id === dt.id),
+        metrics: deploymentTargetMetrics.find((x) => x.deploymentTargetId === dt.id),
       }))
     ),
     map((deploymentTargets) =>
@@ -204,14 +203,14 @@ export class DeploymentTargetsComponent implements AfterViewInit {
     this.selectedDeployment.set(deployment);
     this.selectedApplicationVersionId.set(version?.id);
     this.hideModal();
-    this.modal = this.overlay.showModal(this.deploymentModal, {
+    this.modal = this.overlay.showModal(this.deploymentModal(), {
       positionStrategy: new GlobalPositionStrategy().centerHorizontally().centerVertically(),
     });
   }
 
   protected openWizard() {
     this.hideModal();
-    this.modal = this.overlay.showModal(this.deploymentWizard, {
+    this.modal = this.overlay.showModal(this.deploymentWizard(), {
       hasBackdrop: true,
       backdropStyleOnly: true,
       positionStrategy: new GlobalPositionStrategy().centerHorizontally().centerVertically(),

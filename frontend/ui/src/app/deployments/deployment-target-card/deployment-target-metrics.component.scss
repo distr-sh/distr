@@ -1,25 +1,3 @@
 .gauge {
-  position: relative;
-  width: 40px;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: conic-gradient(green 0%, yellow 50%, red 100%);
-
-  @for $i from 0 through 100 {
-    @if ($i % 5 == 0) {
-      &.percent-#{$i} {
-        $deg: ($i * 3.6);
-        mask: conic-gradient(white 0deg #{$deg}deg, #00000036 #{$deg}deg 360deg);
-      }
-    }
-  }
-}
-
-.gauge-center {
-  position: absolute;
-  top: 10%;
-  left: 10%;
-  width: 80%;
-  height: 80%;
-  border-radius: 50%;
+  mask: conic-gradient(white 0deg var(--deg, 0deg), #00000036 var(--deg, 360deg) 360deg);
 }

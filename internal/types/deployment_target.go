@@ -24,6 +24,7 @@ type DeploymentTarget struct {
 	ReportedAgentVersionID *uuid.UUID                 `db:"reported_agent_version_id" json:"reportedAgentVersionId,omitempty"` //nolint:lll
 	MetricsEnabled         bool                       `db:"metrics_enabled" json:"metricsEnabled"`
 	ImageCleanupEnabled    bool                       `db:"image_cleanup_enabled" json:"imageCleanupEnabled"`
+	AutohealEnabled        bool                       `db:"autoheal_enabled" json:"autohealEnabled"`
 	Resources              *DeploymentTargetResources `db:"resources" json:"resources,omitempty"`
 }
 
@@ -37,6 +38,11 @@ type DeploymentTargetResources struct {
 func (dt *DeploymentTarget) Validate() error {
 	switch dt.Type {
 	case DeploymentTypeKubernetes:
+		if dt.AutohealEnabled {
+			return validation.NewValidationFailedError(
+				"DeploymentTarget with type \"kubernetes\" must not have autoheal enabled",
+			)
+		}
 		if dt.Namespace == nil || *dt.Namespace == "" {
 			return validation.NewValidationFailedError(
 				"DeploymentTarget with type \"kubernetes\" must not have empty namespace",

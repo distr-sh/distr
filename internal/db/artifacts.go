@@ -235,7 +235,7 @@ func GetVersionsForArtifact(ctx context.Context, artifactID uuid.UUID, customerO
 					AND avt.artifact_id = av.artifact_id
 					AND avt.name NOT LIKE '%:%'
 				), ARRAY []::RECORD[]) AS tags,
-				av.manifest_blob_size + coalesce(sum(avp.artifact_blob_size), 0) AS size,
+				av.manifest_blob_size + coalesce(max(avp.total_parts_size), 0) AS size,
 				`+artifactDownloadsOutExpr+`,
 				(
 					SELECT array_agg(artifact_type)
@@ -265,7 +265,10 @@ func GetVersionsForArtifact(ctx context.Context, artifactID uuid.UUID, customerO
 					JOIN ArtifactVersion av1 ON av1.manifest_blob_digest = aggregate.artifact_blob_digest
 					JOIN ArtifactVersionPart avp ON av1.id = avp.artifact_version_id
 				)
-				SELECT DISTINCT * FROM aggregate
+				-- window function (not aggregate) so each row is preserved for the avpl join below;
+				-- max(avp.total_parts_size) in the outer query then recovers the correct total
+				SELECT *, sum(artifact_blob_size) OVER () AS total_parts_size
+				FROM (SELECT DISTINCT * FROM aggregate) d
 			) avp ON av.id = avp.base_av_id
 			LEFT JOIN ArtifactVersionPull avpl ON @isVendorUser AND avpl.artifact_version_id = avp.related_av_id
 			LEFT JOIN Artifact a ON a.id = av.artifact_id

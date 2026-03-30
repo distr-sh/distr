@@ -56,7 +56,7 @@ func doReportMetrics(ctx context.Context) {
 		zap.Any("memUsageSum", memoryUsageBytes))
 
 	if cpuCapacityM > 0 && memoryCapacityBytes > 0 {
-		if err := agentClient.ReportMetrics(ctx, api.AgentDeploymentTargetMetrics{
+		if err := agentClient.ReportMetrics(ctx, api.AgentDeploymentTargetMetricsRequest{
 			CPUCoresMillis: cpuCapacityM,
 			CPUUsage:       float64(cpuUsageM) / float64(cpuCapacityM),
 			MemoryBytes:    memoryCapacityBytes,

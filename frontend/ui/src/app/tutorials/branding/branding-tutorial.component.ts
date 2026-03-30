@@ -1,6 +1,6 @@
 import {CdkStep, CdkStepper, CdkStepperPrevious} from '@angular/cdk/stepper';
 import {HttpErrorResponse} from '@angular/common/http';
-import {Component, inject, OnDestroy, OnInit, signal, ViewChild} from '@angular/core';
+import {Component, inject, OnDestroy, OnInit, signal, viewChild} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router} from '@angular/router';
 import {CustomerOrganization, OrganizationBranding} from '@distr-sh/distr-sdk';
@@ -67,7 +67,7 @@ export class BrandingTutorialComponent implements OnInit, OnDestroy {
   protected readonly faB = faB;
   protected readonly faLightbulb = faLightbulb;
 
-  @ViewChild('stepper') private stepper!: CdkStepper;
+  private readonly stepper = viewChild.required<CdkStepper>('stepper');
 
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
@@ -112,7 +112,7 @@ export class BrandingTutorialComponent implements OnInit, OnDestroy {
           await this.continueFromWelcome();
           await this.continueFromBranding();
         } else {
-          this.stepper.steps.forEach((s) => (s.completed = true));
+          this.stepper().steps.forEach((s) => (s.completed = true));
         }
       }
     } catch (e) {
@@ -154,7 +154,7 @@ export class BrandingTutorialComponent implements OnInit, OnDestroy {
             taskId: welcomeTaskStart,
           })
         );
-        this.stepper.next();
+        this.stepper().next();
       } catch (e) {
         const msg = getFormDisplayedError(e);
         if (msg) {
@@ -164,7 +164,7 @@ export class BrandingTutorialComponent implements OnInit, OnDestroy {
         this.loading.set(false);
       }
     } else {
-      this.stepper.next();
+      this.stepper().next();
     }
   }
 
@@ -210,7 +210,7 @@ export class BrandingTutorialComponent implements OnInit, OnDestroy {
       this.brandingFormGroup.controls.titleDone.patchValue(true);
       this.brandingFormGroup.controls.descriptionDone.patchValue(true);
       this.prepareCustomerStep();
-      this.stepper.next();
+      this.stepper().next();
     }
   }
 
@@ -319,7 +319,7 @@ export class BrandingTutorialComponent implements OnInit, OnDestroy {
           markCompleted: true,
         })
       );
-      this.stepper.selected!.completed = true;
+      this.stepper().selected!.completed = true;
       this.loading.set(false);
       this.toast.success('Congrats on finishing the tutorial! Good Job!');
       this.navigateToOverviewPage();

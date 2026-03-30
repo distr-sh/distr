@@ -140,7 +140,7 @@ jobs:
         run: |
           DIGEST=$(docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }} --format "{{ print .Manifest.Digest }}")
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
-      - uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22 # v4.1.0
+      - uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
       - name: Sign the images with GitHub OIDC Token
         env:
           DIGEST: ${{ steps.digest.outputs.digest }}

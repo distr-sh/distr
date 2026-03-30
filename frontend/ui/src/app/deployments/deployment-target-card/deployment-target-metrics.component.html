@@ -11,24 +11,26 @@
   (click)="hovered.set(!hovered())"
   cdkOverlayOrigin
   #metricsOverlayOrigin="cdkOverlayOrigin">
-  <div class="flex flex-col justify-center items-center">
-    <div class="relative">
-      <div class="gauge z-0 percent-{{ getPercentClass(metrics().cpuUsage) }} relative">
-        <div class="gauge-center bg-white dark:bg-gray-800"></div>
-      </div>
-      <div class="absolute inset-0 flex items-center justify-center text-xs font-thin text-black dark:text-white">
-        {{ metrics().cpuUsage | percent }}
-      </div>
+  <div class="text-red-400">
+    <fa-icon [icon]="faHardDrive" />
+    <fa-icon class="-ms-2" [icon]="faExclamation" />
+  </div>
+  <div class="relative">
+    <div
+      class="gauge relative size-10 rounded-full bg-conic from-green-700 via-yellow-300 to-red-600"
+      [ngStyle]="{'--deg': getUsageDegrees(metrics().cpuUsage)}"></div>
+    <div class="absolute inset-1 rounded-full bg-white dark:bg-gray-800"></div>
+    <div class="absolute inset-0 flex items-center justify-center text-xs font-thin text-black dark:text-white">
+      {{ metrics().cpuUsage | percent }}
     </div>
   </div>
-  <div class="flex flex-col justify-center items-center">
-    <div class="relative">
-      <div class="gauge percent-{{ getPercentClass(metrics().memoryUsage) }} relative">
-        <div class="gauge-center bg-white dark:bg-gray-800"></div>
-      </div>
-      <div class="absolute inset-0 flex items-center justify-center text-xs font-thin text-black dark:text-white">
-        {{ metrics().memoryUsage | percent }}
-      </div>
+  <div class="relative">
+    <div
+      class="gauge relative size-10 rounded-full bg-conic from-green-700 via-yellow-300 to-red-600"
+      [ngStyle]="{'--deg': getUsageDegrees(metrics().memoryUsage)}"></div>
+    <div class="absolute inset-1 rounded-full bg-white dark:bg-gray-800"></div>
+    <div class="absolute inset-0 flex items-center justify-center text-xs font-thin text-black dark:text-white">
+      {{ metrics().memoryUsage | percent }}
     </div>
   </div>
 </div>
@@ -45,13 +47,23 @@
   <div class="mt-1 px-3 py-2 text-xs rounded-lg shadow-lg bg-gray-800 dark:bg-gray-700 text-white whitespace-nowrap">
     <div class="flex flex-col gap-2">
       <div>
+        <span class="inline-block size-2 me-1" [appStatusDot]="metrics().cpuUsage > 0.75 ? 'danger' : 'ok'"></span>
         <span class="font-semibold">CPU:</span>
         {{ metrics().cpuUsage | percent: '1.1-1' }} of {{ metrics().cpuCoresMillis / 1000 }} Cores
       </div>
       <div>
+        <span class="inline-block size-2 me-1" [appStatusDot]="metrics().memoryUsage > 0.75 ? 'danger' : 'ok'"></span>
         <span class="font-semibold">RAM:</span>
         {{ metrics().memoryUsage | percent: '1.1-1' }} of {{ metrics().memoryBytes | bytes: '1.0-0' }}
       </div>
+      @for (disk of metrics().diskMetrics; track disk.path) {
+        @let diskUsage = disk.bytesUsed / disk.bytesTotal;
+        <div>
+          <span class="inline-block size-2 me-1" [appStatusDot]="diskUsage > 0.75 ? 'danger' : 'ok'"></span>
+          <span class="font-semibold">{{ disk.device }}:</span>
+          {{ diskUsage | percent: '1.1-1' }} of {{ disk.bytesTotal | bytes: '1.0-0' }}
+        </div>
+      }
     </div>
   </div>
 </ng-template>

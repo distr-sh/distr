@@ -1,7 +1,7 @@
 import {Platform} from '@angular/cdk/platform';
 import {CdkStep, CdkStepper, CdkStepperPrevious} from '@angular/cdk/stepper';
 import {HttpErrorResponse} from '@angular/common/http';
-import {AfterViewInit, Component, inject, OnDestroy, OnInit, signal, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, inject, OnDestroy, OnInit, signal, viewChild} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -61,7 +61,7 @@ export class AgentsTutorialComponent implements OnInit, AfterViewInit, OnDestroy
   protected readonly faPalette = faPalette;
   protected readonly faBoxesStacked = faBoxesStacked;
   protected readonly faLightbulb = faLightbulb;
-  @ViewChild('stepper', {static: false}) private stepper?: CdkStepper;
+  private readonly stepper = viewChild.required<CdkStepper>('stepper');
   private readonly router = inject(Router);
   protected readonly toast = inject(ToastService);
   protected readonly applicationsService = inject(ApplicationsService);
@@ -116,7 +116,7 @@ export class AgentsTutorialComponent implements OnInit, AfterViewInit, OnDestroy
           await this.continueFromWelcome();
           await this.continueFromDeploy();
         } else {
-          this.stepper?.steps.forEach((s) => (s.completed = true));
+          this.stepper().steps.forEach((s) => (s.completed = true));
         }
       }
     } catch (e) {
@@ -135,7 +135,7 @@ export class AgentsTutorialComponent implements OnInit, AfterViewInit, OnDestroy
       this.loading.set(true);
       try {
         await this.saveWelcomeStep();
-        this.stepper?.next();
+        this.stepper().next();
       } catch (e) {
         const msg = getFormDisplayedError(e);
         if (msg) {
@@ -146,7 +146,7 @@ export class AgentsTutorialComponent implements OnInit, AfterViewInit, OnDestroy
         this.loading.set(false);
       }
     } else {
-      this.stepper?.next();
+      this.stepper().next();
     }
 
     this.prepareDeployStep();
@@ -211,7 +211,7 @@ export class AgentsTutorialComponent implements OnInit, AfterViewInit, OnDestroy
     this.deployFormGroup.markAllAsTouched();
     if (this.deployFormGroup.valid) {
       this.prepareReleaseStep();
-      this.stepper?.next();
+      this.stepper().next();
     }
   }
 
@@ -237,7 +237,7 @@ export class AgentsTutorialComponent implements OnInit, AfterViewInit, OnDestroy
           markCompleted: true,
         })
       );
-      this.stepper!.selected!.completed = true;
+      this.stepper().selected!.completed = true;
       this.loading.set(false);
       this.toast.success('Congrats on finishing the tutorial! Good Job!');
       this.navigateToOverviewPage();

@@ -1,10 +1,17 @@
 package main
 
 import (
+	"bufio"
 	"context"
+	"maps"
+	"os"
+	"path"
+	"slices"
+	"strings"
 
 	"github.com/distr-sh/distr/api"
 	hmr "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver"
+	"github.com/shirou/gopsutil/v4/disk"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/consumer"
@@ -111,12 +118,20 @@ func startMetrics(ctx context.Context) {
 		logger.Debug("cpu usage", zap.Any("usage", usage), zap.Any("cores", cores))
 		logger.Debug("memory usage", zap.Any("usage", memoryUsed), zap.Any("total", memoryTotal))
 
-		if err := client.ReportMetrics(ctx, api.AgentDeploymentTargetMetrics{
+		reportMetrics := api.AgentDeploymentTargetMetricsRequest{
 			CPUCoresMillis: cores * 1000,
 			CPUUsage:       usage,
 			MemoryBytes:    memoryTotal,
 			MemoryUsage:    memoryUsed,
-		}); err != nil {
+		}
+
+		if dm, err := diskMetrics(ctx); err != nil {
+			logger.Warn("failed to collect disk metrics", zap.Error(err))
+		} else {
+			reportMetrics.DiskMetrics = dm
+		}
+
+		if err := client.ReportMetrics(ctx, reportMetrics); err != nil {
 			logger.Error("failed to report metrics", zap.Error(err))
 			return err
 		}
@@ -143,6 +158,65 @@ func startMetrics(ctx context.Context) {
 	if err != nil {
 		logger.Error("failed to start metrics", zap.Error(err))
 	}
+}
+
+func diskMetrics(ctx context.Context) ([]api.DeploymentTargetDiskMetric, error) {
+	hostRoot := os.Getenv("HOST_ROOT_DIR")
+	procMountsPath := path.Join(hostRoot, "/proc/mounts")
+	procMountsFile, err := os.Open(procMountsPath)
+	if err != nil {
+		return nil, err
+	}
+	defer procMountsFile.Close()
+
+	procMounts := bufio.NewScanner(procMountsFile)
+
+	result := make(map[string]api.DeploymentTargetDiskMetric)
+	for procMounts.Scan() {
+		line := procMounts.Text()
+		if !strings.HasPrefix(line, "/dev/") {
+			continue
+		}
+
+		parts := strings.SplitN(line, " ", 3)
+		if len(parts) < 2 {
+			continue
+		}
+
+		device := parts[0]
+		mountPath := parts[1]
+
+		if !strings.HasPrefix(mountPath, hostRoot) {
+			continue
+		}
+
+		usage, err := disk.UsageWithContext(ctx, mountPath)
+		if err != nil {
+			logger.Warn("failed to get usage", zap.String("path", mountPath), zap.Error(err))
+			continue
+		}
+
+		trimmedPath := path.Join("/", strings.TrimPrefix(mountPath, hostRoot))
+		metric, ok := result[device]
+		if !ok {
+			metric = api.DeploymentTargetDiskMetric{
+				Device:     device,
+				Path:       trimmedPath,
+				FsType:     usage.Fstype,
+				BytesTotal: int64(usage.Total),
+				BytesUsed:  int64(usage.Used),
+			}
+		} else if len(metric.Path) > len(trimmedPath) {
+			metric.Path = trimmedPath
+		}
+		result[device] = metric
+	}
+
+	if err := procMounts.Err(); err != nil {
+		return nil, err
+	}
+
+	return slices.Collect(maps.Values(result)), nil
 }
 
 func stopMetrics(ctx context.Context) {

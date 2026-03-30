@@ -1,6 +1,6 @@
 import {CdkStepper, CdkStepperModule} from '@angular/cdk/stepper';
 import {NgTemplateOutlet} from '@angular/common';
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Component, input, output} from '@angular/core';
 import {FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faDocker} from '@fortawesome/free-brands-svg-icons';
@@ -21,6 +21,10 @@ import {
   imports: [CdkStepperModule, ReactiveFormsModule, FaIconComponent, NgTemplateOutlet],
 })
 export class DeploymentWizardStepperComponent extends CdkStepper {
+  public readonly showCustomerStep = input(false);
+  public readonly attemptContinueOutput = output<void>({alias: 'attemptContinue'});
+  public readonly attemptGoBackOutput = output<void>({alias: 'attemptGoBack'});
+
   protected readonly faDocker = faDocker;
   protected readonly faDharmachakra = faDharmachakra;
   protected readonly faShip = faShip;
@@ -30,21 +34,17 @@ export class DeploymentWizardStepperComponent extends CdkStepper {
   protected readonly faCog = faCog;
   protected readonly faCheckCircle = faCheckCircle;
 
-  @Input() showCustomerStep = false;
-  @Output('attemptContinue') attemptContinueOutput: EventEmitter<void> = new EventEmitter();
-  @Output('attemptGoBack') attemptGoBackOutput: EventEmitter<void> = new EventEmitter();
-
   currentFormGroup() {
     return this.selected!.stepControl as FormGroup;
   }
 
   // Adjusted for conditional customer step
   getAdjustedIndex(): number {
-    return this.showCustomerStep ? this.selectedIndex : this.selectedIndex + 1;
+    return this.showCustomerStep() ? this.selectedIndex : this.selectedIndex + 1;
   }
 
   isCustomerStep(): boolean {
-    return this.showCustomerStep && this.selectedIndex === 0;
+    return this.showCustomerStep() && this.selectedIndex === 0;
   }
 
   isApplicationStep(): boolean {
