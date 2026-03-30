@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -39,8 +40,15 @@ func getDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+		filter := r.FormValue("filter")
+		if filter != "" {
+			if _, err := regexp.Compile(filter); err != nil {
+				http.Error(w, "invalid filter regex: "+err.Error(), http.StatusBadRequest)
+				return
+			}
+		}
 
-		records, err := db.GetDeploymentTargetLogRecords(ctx, deploymentTarget.ID, limit, before, after)
+		records, err := db.GetDeploymentTargetLogRecords(ctx, deploymentTarget.ID, limit, before, after, filter)
 		if err != nil {
 			internalctx.GetLogger(ctx).Error("failed to get deployment target log records", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)

@@ -22,6 +22,7 @@ func GetDeploymentTargetLogRecords(
 	deploymentTargetID uuid.UUID,
 	limit int,
 	before, after time.Time,
+	filter string,
 ) ([]types.DeploymentTargetLogRecord, error) {
 	if before.IsZero() {
 		before = time.Now()
@@ -29,12 +30,17 @@ func GetDeploymentTargetLogRecords(
 
 	db := internalctx.GetDb(ctx)
 
+	filterExpr := ""
+	if filter != "" {
+		filterExpr = "AND body ~ @filter"
+	}
 	rows, err := db.Query(
 		ctx,
 		`SELECT `+deploymentTargetLogRecordOutputExpr+`
 		FROM DeploymentTargetLogRecord
 		WHERE deployment_target_id = @deployment_target_id
 			AND timestamp BETWEEN @after AND @before
+			`+filterExpr+`
 		ORDER BY timestamp DESC
 		LIMIT @limit`,
 		pgx.NamedArgs{
@@ -42,6 +48,7 @@ func GetDeploymentTargetLogRecords(
 			"after":                after,
 			"before":               before,
 			"limit":                limit,
+			"filter":               filter,
 		},
 	)
 	if err != nil {
