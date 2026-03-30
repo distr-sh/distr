@@ -23,5 +23,8 @@ type DeploymentTargetDiskMetric struct {
 }
 
 func (m DeploymentTargetDiskMetric) Usage() float64 {
+	if m.BytesTotal <= 0 {
+		return 0
+	}
 	return float64(m.BytesUsed) / float64(m.BytesTotal)
 }
