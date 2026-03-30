@@ -160,7 +160,6 @@ export class AlertConfigurationsComponent {
       .filter((id) => id !== undefined)
       .forEach((id) => this.editConfigForm.controls.deploymentTargetIds.addControl(id, this.fb.control(false)));
 
-    console.log(config);
     if (config) {
       this.editConfigForm.patchValue({
         id: config.id,
