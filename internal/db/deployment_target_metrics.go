@@ -77,7 +77,7 @@ func GetLatestDeploymentTargetMetricsForID(ctx context.Context, id uuid.UUID) (*
 	db := internalctx.GetDb(ctx)
 
 	rows, err := db.Query(ctx,
-		`SELECT`+deploymentTargetMetricsOutputExpr+`FROM DeploymentTarget dt
+		`SELECT `+deploymentTargetMetricsOutputExpr+` FROM DeploymentTarget dt
 		INNER JOIN DeploymentTargetMetrics dtm
 			ON dt.id = dtm.deployment_target_id
 		LEFT JOIN DeploymentTargetDiskMetrics dtdm
