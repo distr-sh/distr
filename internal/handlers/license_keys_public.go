@@ -38,6 +38,7 @@ func getLicenseKeyPublicKeyHandler() http.HandlerFunc {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 		} else {
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			_, _ = w.Write(encodedKey)
 		}
 	}
