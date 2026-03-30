@@ -15,7 +15,7 @@ import (
 
 func PublicLicenseKeysRouter(r chiopenapi.Router) {
 	r.Get("/public-key", getLicenseKeyPublicKeyHandler()).With(
-		option.Description("Get the x509/PEM encoded public key for verifying a license key"),
+		option.Description("Get the X.509/PEM encoded public key for verifying a license key"),
 		option.Tags("Licensing"),
 		option.Response(http.StatusOK, nil, option.ContentType("text/plain")),
 	)
