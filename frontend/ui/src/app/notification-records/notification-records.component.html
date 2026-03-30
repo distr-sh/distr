@@ -65,9 +65,13 @@
                         Memory utilization is {{ m.memoryUsage | percent }}
                       }
                       @case ('disk') {
-                        @for (d of m.diskMetrics; track d.device) {
-                          @if (d.device === record.diskDevice) {
-                            Disk utilization is {{ d.bytesUsed / d.bytesTotal | percent }}
+                        @for (d of m.diskMetrics; track d.device + ':' + d.path) {
+                          @if (d.device === record.diskDevice && d.path === record.diskPath) {
+                            @if (d.bytesTotal > 0) {
+                              Disk utilization is {{ d.bytesUsed / d.bytesTotal | percent }}
+                            } @else {
+                              Disk utilization is N/A
+                            }
                           }
                         }
                       }
