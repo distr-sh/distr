@@ -211,6 +211,7 @@ export class DistrService {
       deployments: [],
       metricsEnabled: false,
       imageCleanupEnabled: false,
+      autohealEnabled: false,
     });
     await this.client.createOrUpdateDeployment({
       deploymentTargetId: deploymentTarget.id!,

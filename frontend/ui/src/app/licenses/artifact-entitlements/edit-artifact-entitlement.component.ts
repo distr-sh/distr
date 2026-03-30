@@ -10,7 +10,7 @@ import {
   OnDestroy,
   OnInit,
   signal,
-  ViewChild,
+  viewChild,
 } from '@angular/core';
 import {
   AbstractControl,
@@ -84,7 +84,7 @@ export class EditArtifactEntitlementComponent implements OnInit, OnDestroy, Afte
 
   readonly openedArtifactIdx = signal<number | undefined>(undefined);
   dropdownWidth: number = 0;
-  @ViewChild('dropdownTriggerButton') dropdownTriggerButton!: ElementRef<HTMLElement>;
+  protected readonly dropdownTriggerButton = viewChild.required<ElementRef<HTMLElement>>('dropdownTriggerButton');
 
   protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faChevronDown = faChevronDown;
@@ -159,7 +159,7 @@ export class EditArtifactEntitlementComponent implements OnInit, OnDestroy, Afte
     this.openedArtifactIdx.update((idx) => {
       return idx === i ? undefined : i;
     });
-    this.dropdownWidth = this.dropdownTriggerButton.nativeElement.getBoundingClientRect().width;
+    this.dropdownWidth = this.dropdownTriggerButton().nativeElement.getBoundingClientRect().width;
   }
 
   ngOnDestroy() {

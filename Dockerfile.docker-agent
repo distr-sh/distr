@@ -23,4 +23,10 @@ FROM docker:29.3.1-alpine3.23
 WORKDIR /
 COPY --from=builder /workspace/agent .
 
+RUN apk add --no-cache curl
+
+HEALTHCHECK --interval=10s --timeout=5s \
+  --start-period=1m --start-interval=10s \
+  CMD curl -fsS --max-time 4 http://127.0.0.1:8765 > /dev/null
+
 ENTRYPOINT ["/agent"]

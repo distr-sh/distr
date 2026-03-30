@@ -1,6 +1,6 @@
 import {CdkStep, CdkStepper, CdkStepperPrevious} from '@angular/cdk/stepper';
 import {HttpErrorResponse} from '@angular/common/http';
-import {AfterViewInit, Component, computed, inject, OnDestroy, OnInit, signal, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, computed, inject, OnDestroy, OnInit, signal, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
@@ -77,7 +77,7 @@ export class RegistryTutorialComponent implements OnInit, AfterViewInit, OnDestr
   protected readonly faBoxesStacked = faBoxesStacked;
   protected readonly faB = faB;
   protected readonly faLightbulb = faLightbulb;
-  @ViewChild('stepper', {static: false}) private stepper?: CdkStepper;
+  private readonly stepper = viewChild.required<CdkStepper>('stepper');
   private readonly router = inject(Router);
   protected readonly toast = inject(ToastService);
   protected readonly organizationService = inject(OrganizationService);
@@ -173,7 +173,7 @@ export class RegistryTutorialComponent implements OnInit, AfterViewInit, OnDestr
           await this.continueFromPrepare();
           await this.continueFromLogin();
         } else {
-          this.stepper?.steps.forEach((s) => (s.completed = true));
+          this.stepper().steps.forEach((s) => (s.completed = true));
         }
       }
     } catch (e) {
@@ -213,7 +213,7 @@ export class RegistryTutorialComponent implements OnInit, AfterViewInit, OnDestr
             taskId: welcomeTaskStart,
           })
         );
-        this.stepper?.next();
+        this.stepper().next();
       } catch (e) {
         const msg = getFormDisplayedError(e);
         if (msg) {
@@ -223,7 +223,7 @@ export class RegistryTutorialComponent implements OnInit, AfterViewInit, OnDestr
         this.loading.set(false);
       }
     } else {
-      this.stepper?.next();
+      this.stepper().next();
     }
   }
 
@@ -263,7 +263,7 @@ export class RegistryTutorialComponent implements OnInit, AfterViewInit, OnDestr
 
       this.prepareFormGroup.controls.slugDone.patchValue(true);
       this.prepareLoginStep();
-      this.stepper?.next();
+      this.stepper().next();
     }
   }
 
@@ -329,7 +329,7 @@ export class RegistryTutorialComponent implements OnInit, AfterViewInit, OnDestr
       }
 
       this.prepareUsageStep();
-      this.stepper?.next();
+      this.stepper().next();
     }
   }
 
@@ -359,7 +359,7 @@ export class RegistryTutorialComponent implements OnInit, AfterViewInit, OnDestr
           markCompleted: true,
         })
       );
-      this.stepper!.selected!.completed = true;
+      this.stepper().selected!.completed = true;
       this.loading.set(false);
       this.toast.success('Congrats on finishing the tutorial! Good Job!');
       this.navigateToOverviewPage();

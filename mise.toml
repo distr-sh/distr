@@ -134,3 +134,6 @@ run = 'docker build -f Dockerfile.docker-agent --tag ghcr.io/distr-sh/distr/dock
 
 [tasks."docker-build:agent:kubernetes"]
 run = 'docker build -f Dockerfile.kubernetes-agent --tag ghcr.io/distr-sh/distr/kubernetes-agent:$VERSION --build-arg VERSION=$VERSION --build-arg COMMIT=$COMMIT --network host .'
+
+[tasks."docker-build:docker-autoheal"]
+run = 'docker build --tag ghcr.io/distr-sh/distr/docker-autoheal:$VERSION --network host docker-autoheal'

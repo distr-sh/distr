@@ -21,7 +21,7 @@ import {maxBy} from '../../../util/arrays';
 import {isArchived} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {ConnectInstructionsComponent} from '../../components/connect-instructions/connect-instructions.component';
-import {StatusDotComponent} from '../../components/status-dot';
+import {DeploymentTargetStatusDotComponent} from '../../components/status-dot';
 import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AgentVersionService} from '../../services/agent-version.service';
@@ -41,7 +41,7 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
   templateUrl: './deployment-target-card.component.html',
   imports: [
     NgOptimizedImage,
-    StatusDotComponent,
+    DeploymentTargetStatusDotComponent,
     UuidComponent,
     DatePipe,
     FaIconComponent,

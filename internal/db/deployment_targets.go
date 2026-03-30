@@ -30,6 +30,7 @@ const (
 		dt.reported_agent_version_id,
 		dt.metrics_enabled,
 		dt.image_cleanup_enabled,
+		dt.autoheal_enabled,
 		CASE WHEN dt.resources_cpu_request IS NOT NULL THEN (
 			dt.resources_cpu_request,
 			dt.resources_memory_request,
@@ -195,6 +196,7 @@ func CreateDeploymentTarget(
 		"agentVersionId":      dt.AgentVersionID,
 		"metricsEnabled":      dt.MetricsEnabled,
 		"imageCleanupEnabled": dt.ImageCleanupEnabled,
+		"autohealEnabled":     dt.AutohealEnabled,
 		"customerOrgId":       customerOrgID,
 	}
 
@@ -210,10 +212,11 @@ func CreateDeploymentTarget(
 		`WITH inserted AS (
 			INSERT INTO DeploymentTarget
 			(name, type, organization_id, namespace, scope, agent_version_id, metrics_enabled, image_cleanup_enabled,
-				customer_organization_id, resources_cpu_request, resources_memory_request, resources_cpu_limit,
-				resources_memory_limit)
+				autoheal_enabled, customer_organization_id, resources_cpu_request, resources_memory_request,
+				resources_cpu_limit, resources_memory_limit)
 			VALUES (@name, @type, @orgId, @namespace, @scope, @agentVersionId, @metricsEnabled, @imageCleanupEnabled,
-				@customerOrgId, @resourcesCpuRequest, @resourcesMemoryRequest, @resourcesCpuLimit, @resourcesMemoryLimit)
+				@autohealEnabled, @customerOrgId, @resourcesCpuRequest, @resourcesMemoryRequest, @resourcesCpuLimit,
+				@resourcesMemoryLimit)
 			RETURNING *
 		)
 		SELECT `+deploymentTargetFullOutputExpr+` FROM inserted dt`+deploymentTargetJoinExpr,
