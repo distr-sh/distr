@@ -93,7 +93,7 @@ func GetLatestDeploymentTargetMetricsForID(ctx context.Context, id uuid.UUID) (*
 		pgx.NamedArgs{"deploymentTargetId": id},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query DeploymentTargets: %w", err)
+		return nil, fmt.Errorf("failed to query DeploymentTargetMetrics: %w", err)
 	}
 
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.DeploymentTargetMetrics])
