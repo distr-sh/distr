@@ -1,8 +1,8 @@
 <section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
   <div class="mx-auto max-h-screen max-w-screen-2xl px-4 lg:px-12">
     <div class="lg:p-8 p-4 bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
-      <nav>
-        <ol class="flex items-center mb-4" aria-label="Breadcrumb">
+      <nav class="mb-1">
+        <ol class="flex items-center gap-1" aria-label="Breadcrumb">
           <li>
             <a
               [routerLink]="['/', 'deployments']"
@@ -12,7 +12,7 @@
             </a>
           </li>
 
-          <span class="mx-1 text-gray-400">/</span>
+          <span class="text-gray-400">/</span>
 
           <li>
             <button
@@ -20,9 +20,12 @@
               #targetDropdownOrigin="cdkOverlayOrigin"
               #targetDropdownTrigger
               (click)="toggleTargetDropdown()"
-              class="inline-flex items-center p-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
+              class="inline-flex items-center gap-1 p-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
               {{ deploymentTarget()?.name ?? deploymentTargetId() }}
-              <fa-icon class="ml-2" [icon]="faChevronDown"></fa-icon>
+              <fa-icon
+                class="transition duration-150 ease-in-out"
+                [class.rotate-x-180]="targetDropdown()"
+                [icon]="faChevronDown" />
             </button>
             <ng-template
               cdkConnectedOverlay
@@ -49,7 +52,7 @@
             </ng-template>
           </li>
 
-          <span class="mx-1 text-gray-400">/</span>
+          <span class="text-gray-400">/</span>
 
           <li [attr.aria-current]="deploymentId() ? null : 'page'">
             <button
@@ -57,13 +60,16 @@
               #deploymentDropdownOrigin="cdkOverlayOrigin"
               #deploymentDropdownTrigger
               (click)="toggleDeploymentDropdown()"
-              class="inline-flex items-center p-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
+              class="inline-flex items-center gap-1 p-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
               @if (selectedDeployment(); as deployment) {
                 {{ deployment.application.name }}@{{ deployment.applicationVersionName }}
               } @else {
                 Agent Logs
               }
-              <fa-icon class="ml-2" [icon]="faChevronDown"></fa-icon>
+              <fa-icon
+                class="transition duration-150 ease-in-out"
+                [class.rotate-x-180]="deploymentDropdown()"
+                [icon]="faChevronDown" />
             </button>
             <ng-template
               cdkConnectedOverlay
@@ -96,7 +102,7 @@
           </li>
 
           @if (deploymentId()) {
-            <span class="mx-1 text-gray-400">/</span>
+            <span class="text-gray-400">/</span>
 
             <li aria-current="page">
               <button
@@ -104,9 +110,12 @@
                 #resourceDropdownOrigin="cdkOverlayOrigin"
                 #resourceDropdownTrigger
                 (click)="toggleResourceDropdown()"
-                class="inline-flex items-center p-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
+                class="inline-flex items-center gap-1 p-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
                 {{ resource() ?? 'Deployment Status' }}
-                <fa-icon class="ml-2" [icon]="faChevronDown"></fa-icon>
+                <fa-icon
+                  class="transition duration-150 ease-in-out"
+                  [class.rotate-x-180]="resourceDropdown()"
+                  [icon]="faChevronDown" />
               </button>
               <ng-template
                 cdkConnectedOverlay
@@ -136,6 +145,54 @@
           }
         </ol>
       </nav>
+
+      <form [formGroup]="form" class="flex items-center gap-4 mb-4">
+        <div>
+          <label for="range-start" class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">
+            From
+          </label>
+          <input
+            type="datetime-local"
+            id="range-start"
+            formControlName="from"
+            class="bg-gray-50 border leading-none border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+        </div>
+
+        <div>
+          <label for="range-end" class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400"> To </label>
+          <input
+            type="datetime-local"
+            id="range-end"
+            formControlName="to"
+            class="bg-gray-50 border leading-none border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+        </div>
+
+        <div>
+          <label for="filter" class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">Filter</label>
+          <input
+            type="text"
+            id="filter"
+            formControlName="filter"
+            placeholder="Text or regexp"
+            class="bg-gray-50 border leading-none border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+        </div>
+
+        <div class="ml-auto flex items-center gap-2 self-center">
+          <button
+            type="button"
+            (click)="form.reset()"
+            class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+            <fa-icon [icon]="faFilterCircleXmark" class="mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
+            Reset
+          </button>
+          <button
+            type="button"
+            class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+            <fa-icon [icon]="faDownload" class="mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
+            Export
+          </button>
+        </div>
+      </form>
 
       @if (resource(); as resource) {
         <app-deployment-logs-table [deploymentId]="deploymentId()!" [resource]="resource" />
