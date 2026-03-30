@@ -1,0 +1,149 @@
+<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
+  <div class="mx-auto max-h-screen max-w-screen-2xl px-4 lg:px-12">
+    <div class="lg:p-8 p-4 bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+      <nav>
+        <ol class="flex items-center mb-4" aria-label="Breadcrumb">
+          <li>
+            <a
+              [routerLink]="['/', 'deployments']"
+              class="inline-flex items-center p-2 text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
+              <fa-icon class="mr-2" [icon]="faServer"></fa-icon>
+              Deployment Targets
+            </a>
+          </li>
+
+          <span class="mx-1 text-gray-400">/</span>
+
+          <li>
+            <button
+              cdkOverlayOrigin
+              #targetDropdownOrigin="cdkOverlayOrigin"
+              #targetDropdownTrigger
+              (click)="toggleTargetDropdown()"
+              class="inline-flex items-center p-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
+              {{ deploymentTarget()?.name ?? deploymentTargetId() }}
+              <fa-icon class="ml-2" [icon]="faChevronDown"></fa-icon>
+            </button>
+            <ng-template
+              cdkConnectedOverlay
+              [cdkConnectedOverlayHasBackdrop]="true"
+              (backdropClick)="targetDropdown.set(false)"
+              [cdkConnectedOverlayBackdropClass]="'transparent'"
+              [cdkConnectedOverlayOrigin]="targetDropdownOrigin"
+              [cdkConnectedOverlayMinWidth]="targetDropdownWidth + 'px'"
+              [cdkConnectedOverlayOpen]="targetDropdown()">
+              <div
+                class="z-10 w-full bg-white divide-y divide-gray-100 rounded-lg shadow-xs dark:bg-gray-700 origin-top"
+                animate.enter="animate-flip-in-top"
+                animate.leave="animate-flip-out-top">
+                <ul class="py-2 text-sm text-gray-700 dark:text-gray-200">
+                  @for (target of deploymentTargets(); track target.id) {
+                    <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                      <a class="px-4 flex items-stretch" [routerLink]="['/', 'deployments', target.id]">
+                        {{ target.name }}
+                      </a>
+                    </li>
+                  }
+                </ul>
+              </div>
+            </ng-template>
+          </li>
+
+          <span class="mx-1 text-gray-400">/</span>
+
+          <li [attr.aria-current]="deploymentId() ? null : 'page'">
+            <button
+              cdkOverlayOrigin
+              #deploymentDropdownOrigin="cdkOverlayOrigin"
+              #deploymentDropdownTrigger
+              (click)="toggleDeploymentDropdown()"
+              class="inline-flex items-center p-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
+              @if (selectedDeployment(); as deployment) {
+                {{ deployment.application.name }}@{{ deployment.applicationVersionName }}
+              } @else {
+                Agent Logs
+              }
+              <fa-icon class="ml-2" [icon]="faChevronDown"></fa-icon>
+            </button>
+            <ng-template
+              cdkConnectedOverlay
+              [cdkConnectedOverlayHasBackdrop]="true"
+              (backdropClick)="deploymentDropdown.set(false)"
+              [cdkConnectedOverlayBackdropClass]="'transparent'"
+              [cdkConnectedOverlayOrigin]="deploymentDropdownOrigin"
+              [cdkConnectedOverlayMinWidth]="deploymentDropdownWidth + 'px'"
+              [cdkConnectedOverlayOpen]="deploymentDropdown()">
+              <div
+                class="z-10 w-full bg-white divide-y divide-gray-100 rounded-lg shadow-xs dark:bg-gray-700 origin-top"
+                animate.enter="animate-flip-in-top"
+                animate.leave="animate-flip-out-top">
+                <ul class="py-2 text-sm text-gray-700 dark:text-gray-200">
+                  <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                    <button class="px-4 w-full text-left" (click)="selectDeployment(undefined)">Agent Logs</button>
+                  </li>
+                  @for (deployment of deploymentTarget()?.deployments; track deployment.id) {
+                    <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                      <button class="px-4 w-full text-left" (click)="selectDeployment(deployment)">
+                        <app-deployment-app-name
+                          [application]="deployment.application"
+                          [applicationVersionName]="deployment.applicationVersionName" />
+                      </button>
+                    </li>
+                  }
+                </ul>
+              </div>
+            </ng-template>
+          </li>
+
+          @if (deploymentId()) {
+            <span class="mx-1 text-gray-400">/</span>
+
+            <li aria-current="page">
+              <button
+                cdkOverlayOrigin
+                #resourceDropdownOrigin="cdkOverlayOrigin"
+                #resourceDropdownTrigger
+                (click)="toggleResourceDropdown()"
+                class="inline-flex items-center p-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
+                {{ resource() ?? 'Deployment Status' }}
+                <fa-icon class="ml-2" [icon]="faChevronDown"></fa-icon>
+              </button>
+              <ng-template
+                cdkConnectedOverlay
+                [cdkConnectedOverlayHasBackdrop]="true"
+                (backdropClick)="resourceDropdown.set(false)"
+                [cdkConnectedOverlayBackdropClass]="'transparent'"
+                [cdkConnectedOverlayOrigin]="resourceDropdownOrigin"
+                [cdkConnectedOverlayMinWidth]="resourceDropdownWidth + 'px'"
+                [cdkConnectedOverlayOpen]="resourceDropdown()">
+                <div
+                  class="z-10 w-full bg-white divide-y divide-gray-100 rounded-lg shadow-xs dark:bg-gray-700 origin-top"
+                  animate.enter="animate-flip-in-top"
+                  animate.leave="animate-flip-out-top">
+                  <ul class="py-2 text-sm text-gray-700 dark:text-gray-200">
+                    <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                      <button class="px-4 w-full text-left" (click)="selectResource(null)">Deployment Status</button>
+                    </li>
+                    @for (r of resources()?.active; track r) {
+                      <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                        <button class="px-4 w-full text-left" (click)="selectResource(r)">{{ r }}</button>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              </ng-template>
+            </li>
+          }
+        </ol>
+      </nav>
+
+      @if (resource(); as resource) {
+        <app-deployment-logs-table [deploymentId]="deploymentId()!" [resource]="resource" />
+      } @else if (deploymentId(); as deploymentId) {
+        <app-deployment-status-table [deploymentId]="deploymentId" />
+      } @else if (deploymentTargetId(); as targetId) {
+        <app-deployment-target-logs-table [deploymentTargetId]="targetId" />
+      }
+    </div>
+  </div>
+</section>

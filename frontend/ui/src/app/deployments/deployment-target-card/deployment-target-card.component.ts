@@ -4,6 +4,7 @@ import {DatePipe, NgOptimizedImage} from '@angular/common';
 import {Component, computed, inject, resource, signal, TemplateRef, viewChild, WritableSignal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {ReactiveFormsModule} from '@angular/forms';
+import {RouterLink} from '@angular/router';
 import {ApplicationVersion, DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
@@ -56,6 +57,7 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
     DeploymentAppNameComponent,
     DeploymentStatusTextComponent,
     AutotrimDirective,
+    RouterLink,
   ],
 })
 export class DeploymentTargetCardComponent extends DeploymentTargetCardBaseComponent {

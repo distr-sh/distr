@@ -16,6 +16,7 @@ import {DashboardComponent} from './components/dashboard/dashboard.component';
 import {HomeComponent} from './components/home/home.component';
 import {CustomerUsersComponent} from './components/users/customers/customer-users.component';
 import {VendorUsersComponent} from './components/users/vendors/vendor-users.component';
+import {DeploymentTargetDetailComponent} from './deployments/deployment-target-details/deployment-target-detail.component';
 import {DeploymentTargetsComponent} from './deployments/deployment-targets.component';
 import {CustomerLicenseDetailComponent} from './licenses/customer-license-detail.component';
 import {LicenseKeysComponent} from './licenses/license-keys/license-keys.component';
@@ -148,7 +149,13 @@ export const routes: Routes = [
           },
         ],
       },
-      {path: 'deployments', component: DeploymentTargetsComponent},
+      {
+        path: 'deployments',
+        children: [
+          {path: '', pathMatch: 'full', component: DeploymentTargetsComponent},
+          {path: ':deploymentTargetId', component: DeploymentTargetDetailComponent},
+        ],
+      },
       {
         path: 'artifacts',
         children: [

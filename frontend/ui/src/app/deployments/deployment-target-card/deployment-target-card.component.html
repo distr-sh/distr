@@ -17,7 +17,9 @@
         <div class="min-w-0">
           <div class="flex gap-2">
             <h3 class="font-bold truncate break-all" [title]="deploymentTarget().name">
-              {{ deploymentTarget().name }}
+              <a [routerLink]="['/deployments', deploymentTarget().id]" class="hover:underline">
+                {{ deploymentTarget().name }}
+              </a>
             </h3>
           </div>
           <div class="flex flex-col items-start lg:flex-row lg:items-center lg:gap-2">
