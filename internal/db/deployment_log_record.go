@@ -153,11 +153,16 @@ func GetDeploymentLogRecords(
 	limit int,
 	before time.Time,
 	after time.Time,
+	filter string,
 ) ([]types.DeploymentLogRecord, error) {
 	if before.IsZero() {
 		before = time.Now()
 	}
 	db := internalctx.GetDb(ctx)
+	filterExpr := ""
+	if filter != "" {
+		filterExpr = "AND lr.body ~ @filter"
+	}
 	rows, err := db.Query(
 		ctx,
 		`SELECT `+deploymentLogRecordOutputExpr+`
@@ -165,6 +170,7 @@ func GetDeploymentLogRecords(
 		WHERE lr.deployment_id = @deploymentId
 			AND lr.resource = @resource
 			AND lr.timestamp BETWEEN @after AND @before
+			`+filterExpr+`
 		ORDER BY lr.timestamp DESC
 		LIMIT @limit`,
 		pgx.NamedArgs{
@@ -173,6 +179,7 @@ func GetDeploymentLogRecords(
 			"limit":        limit,
 			"before":       before,
 			"after":        after,
+			"filter":       filter,
 		},
 	)
 	if err != nil {

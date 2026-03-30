@@ -1,4 +1,4 @@
-export type TimeseriesOptions = {limit?: number; before?: Date; after?: Date};
+export type TimeseriesOptions = {limit?: number; before?: Date; after?: Date; filter?: string};
 
 export function timeseriesOptionsAsParams(options?: TimeseriesOptions): Record<string, string> {
   const params: Record<string, string> = {};
@@ -10,6 +10,9 @@ export function timeseriesOptionsAsParams(options?: TimeseriesOptions): Record<s
   }
   if (options?.after !== undefined) {
     params['after'] = options.after.toISOString();
+  }
+  if (options?.filter !== undefined && options.filter !== '') {
+    params['filter'] = options.filter;
   }
   return params;
 }

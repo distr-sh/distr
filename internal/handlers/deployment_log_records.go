@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -114,6 +115,13 @@ func getDeploymentLogsHandler() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+		filter := r.FormValue("filter")
+		if filter != "" {
+			if _, err := regexp.Compile(filter); err != nil {
+				http.Error(w, "invalid filter regex: "+err.Error(), http.StatusBadRequest)
+				return
+			}
+		}
 
 		var secrets []types.SecretWithUpdatedBy
 		if dt, err := db.GetDeploymentTargetForDeploymentID(ctx, deployment.ID); err != nil {
@@ -128,7 +136,9 @@ func getDeploymentLogsHandler() http.HandlerFunc {
 			return
 		}
 
-		if records, err := db.GetDeploymentLogRecords(ctx, deployment.ID, resource, limit, before, after); err != nil {
+		if records, err := db.GetDeploymentLogRecords(
+			ctx, deployment.ID, resource, limit, before, after, filter,
+		); err != nil {
 			internalctx.GetLogger(ctx).Error("failed to get log records", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
