@@ -161,7 +161,7 @@ export class TimeseriesTableComponent {
     this.showMore$.next();
   }
 
-  protected exportData() {
+  public exportData() {
     const exporter = this.exporter();
     if (!exporter) {
       return;

@@ -21,7 +21,7 @@
               #targetDropdownTrigger
               (click)="toggleTargetDropdown()"
               class="inline-flex items-center gap-1 p-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
-              {{ deploymentTarget()?.name ?? deploymentTargetId() }}
+              {{ selectedDeploymentTarget()?.name ?? deploymentTargetId() }}
               <fa-icon
                 class="transition duration-150 ease-in-out"
                 [class.rotate-x-180]="targetDropdown()"
@@ -87,7 +87,7 @@
                   <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
                     <button class="px-4 w-full text-left" (click)="selectDeployment(undefined)">Agent Logs</button>
                   </li>
-                  @for (deployment of deploymentTarget()?.deployments; track deployment.id) {
+                  @for (deployment of selectedDeploymentTarget()?.deployments; track deployment.id) {
                     <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
                       <button class="px-4 w-full text-left" (click)="selectDeployment(deployment)">
                         <app-deployment-app-name
@@ -131,7 +131,9 @@
                   animate.leave="animate-flip-out-top">
                   <ul class="py-2 text-sm text-gray-700 dark:text-gray-200">
                     <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
-                      <button class="px-4 w-full text-left" (click)="selectResource(null)">Deployment Status</button>
+                      <button class="px-4 w-full text-left" (click)="selectResource(undefined)">
+                        Deployment Status
+                      </button>
                     </li>
                     @for (r of resources()?.active; track r) {
                       <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
@@ -148,9 +150,7 @@
 
       <form [formGroup]="form" class="flex items-center gap-4 mb-4">
         <div>
-          <label for="range-start" class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">
-            From
-          </label>
+          <label for="range-start" class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">From</label>
           <input
             type="datetime-local"
             id="range-start"
@@ -159,7 +159,7 @@
         </div>
 
         <div>
-          <label for="range-end" class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400"> To </label>
+          <label for="range-end" class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">To</label>
           <input
             type="datetime-local"
             id="range-end"
@@ -182,24 +182,40 @@
             type="button"
             (click)="form.reset()"
             class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-            <fa-icon [icon]="faFilterCircleXmark" class="mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
+            <fa-icon [icon]="faFilterCircleXmark" class="mr-2 text-gray-500 dark:text-gray-400" />
             Reset
           </button>
           <button
             type="button"
+            (click)="export()"
             class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
-            <fa-icon [icon]="faDownload" class="mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
-            Export
+            <fa-icon [icon]="faDownload" class="mr-2 text-gray-500 dark:text-gray-400" />
+            Export all
           </button>
         </div>
       </form>
 
-      @if (resource(); as resource) {
-        <app-deployment-logs-table [deploymentId]="deploymentId()!" [resource]="resource" />
-      } @else if (deploymentId(); as deploymentId) {
-        <app-deployment-status-table [deploymentId]="deploymentId" />
+      @if (deploymentId(); as deploymentId) {
+        @if (resource(); as resource) {
+          <app-deployment-logs-table
+            [deploymentId]="deploymentId"
+            [resource]="resource"
+            [after]="after()"
+            [before]="before()"
+            [filter]="filter()" />
+        } @else {
+          <app-deployment-status-table
+            [deploymentId]="deploymentId"
+            [after]="after()"
+            [before]="before()"
+            [filter]="filter()" />
+        }
       } @else if (deploymentTargetId(); as targetId) {
-        <app-deployment-target-logs-table [deploymentTargetId]="targetId" />
+        <app-deployment-target-logs-table
+          [deploymentTargetId]="targetId"
+          [after]="after()"
+          [before]="before()"
+          [filter]="filter()" />
       }
     </div>
   </div>

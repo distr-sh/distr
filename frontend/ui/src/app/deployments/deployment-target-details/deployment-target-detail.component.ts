@@ -42,27 +42,36 @@ export class DeploymentTargetDetailComponent {
 
   protected readonly targetDropdown = signal(false);
   protected targetDropdownWidth = 0;
-  protected readonly targetDropdownTrigger = viewChild.required<ElementRef<HTMLElement>>('targetDropdownTrigger');
+  private readonly targetDropdownTrigger = viewChild.required<ElementRef<HTMLElement>>('targetDropdownTrigger');
 
   protected readonly deploymentDropdown = signal(false);
   protected deploymentDropdownWidth = 0;
-  protected readonly deploymentDropdownTrigger =
-    viewChild.required<ElementRef<HTMLElement>>('deploymentDropdownTrigger');
+  private readonly deploymentDropdownTrigger = viewChild.required<ElementRef<HTMLElement>>('deploymentDropdownTrigger');
 
   protected readonly resourceDropdown = signal(false);
   protected resourceDropdownWidth = 0;
-  protected readonly resourceDropdownTrigger = viewChild<ElementRef<HTMLElement>>('resourceDropdownTrigger');
+  private readonly resourceDropdownTrigger = viewChild<ElementRef<HTMLElement>>('resourceDropdownTrigger');
 
   private readonly deploymentTargetId$ = this.route.paramMap.pipe(map((p) => p.get('deploymentTargetId')!));
   protected readonly deploymentTargetId = toSignal(this.deploymentTargetId$);
-  private readonly deploymentId$ = this.route.queryParamMap.pipe(map((p) => p.get('deploymentId')))
+  private readonly deploymentId$ = this.route.queryParamMap.pipe(map((p) => p.get('deploymentId')));
   protected readonly deploymentId = toSignal(this.deploymentId$);
-  private readonly resource$ = this.route.queryParamMap.pipe(map((p) => p.get('resource')))
+  private readonly resource$ = this.route.queryParamMap.pipe(map((p) => p.get('resource')));
   protected readonly resource = toSignal(this.resource$);
+  private readonly after$ = this.route.queryParamMap.pipe(
+    map((p) => (p.has('from') ? new Date(p.get('from')!) : undefined))
+  );
+  protected readonly after = toSignal(this.after$);
+  private readonly before$ = this.route.queryParamMap.pipe(
+    map((p) => (p.has('to') ? new Date(p.get('to')!) : undefined))
+  );
+  protected readonly before = toSignal(this.before$);
+  private readonly filter$ = this.route.queryParamMap.pipe(map((p) => p.get('filter') || undefined));
+  protected readonly filter = toSignal(this.filter$);
 
   private readonly deploymentTargets$ = this.deploymentTargetsService.list();
   protected readonly deploymentTargets = toSignal(this.deploymentTargets$, { initialValue: [] });
-  protected readonly deploymentTarget = toSignal(
+  protected readonly selectedDeploymentTarget = toSignal(
     combineLatest([this.deploymentTargets$, this.deploymentTargetId$]).pipe(
       map(([targets, id]) => targets.find((t) => t.id === id))
     )
@@ -70,7 +79,7 @@ export class DeploymentTargetDetailComponent {
 
   protected readonly selectedDeployment = computed(() => {
     const id = this.deploymentId();
-    return id ? this.deploymentTarget()?.deployments?.find((d) => d.id === id) : undefined;
+    return id ? this.selectedDeploymentTarget()?.deployments?.find((d) => d.id === id) : undefined;
   });
 
   protected readonly resources = toSignal(
@@ -80,15 +89,14 @@ export class DeploymentTargetDetailComponent {
     )
   );
 
-  protected readonly form = this.fb.group({
-    from: '',
-    to: '',
-    filter: '',
-  });
+  protected readonly form = this.fb.group({ from: '', to: '', filter: '' });
+
+  private readonly deploymentTargetLogsTable = viewChild(DeploymentTargetLogsTableComponent);
+  private readonly deploymentStatusTable = viewChild(DeploymentStatusTableComponent);
+  private readonly deploymentLogsTable = viewChild(DeploymentLogsTableComponent);
 
   constructor() {
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
-      console.log('queryParamMap', params);
       this.form.patchValue(
         {
           from: params.get('from') ?? '',
@@ -100,7 +108,6 @@ export class DeploymentTargetDetailComponent {
     });
 
     this.form.valueChanges.pipe(takeUntilDestroyed(), debounceTime(300)).subscribe((values) => {
-      console.log('valueChanges', values);
       this.router.navigate([], {
         relativeTo: this.route,
         queryParams: {
@@ -147,13 +154,20 @@ export class DeploymentTargetDetailComponent {
     });
   }
 
-  protected selectResource(resource: string | null) {
+  protected selectResource(resource: string | undefined) {
     this.form.patchValue({ filter: '' });
     this.resourceDropdown.set(false);
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { resource },
+      queryParams: { resource: resource ?? null },
       queryParamsHandling: 'merge',
     });
+  }
+
+  protected export() {
+    // Only one of the tables is shown at any given time, so it's fine to call export on all of them
+    this.deploymentTargetLogsTable()?.export();
+    this.deploymentStatusTable()?.export();
+    this.deploymentLogsTable()?.export();
   }
 }
