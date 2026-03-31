@@ -368,10 +368,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             },
             {
               label: 'Self-Hosting',
-              link: '/docs/self-hosting/overview/',
+              link: '/docs/self-hosting/',
               icon: 'laptop',
               items: [
-                {label: 'Overview', link: '/docs/self-hosting/overview/'},
+                {label: 'Overview', link: '/docs/self-hosting/'},
                 {label: 'Docker Compose', link: '/docs/self-hosting/docker/'},
                 {label: 'Kubernetes', link: '/docs/self-hosting/kubernetes/'},
                 {
@@ -502,11 +502,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
       '/docs/integrations/access-tokens/',
 
     // Self-hosting rename
-    '/docs/self-hosting/getting-started/': '/docs/self-hosting/overview/',
+    '/docs/self-hosting/getting-started/': '/docs/self-hosting/',
+    '/docs/self-hosting/overview/': '/docs/self-hosting/',
 
     // Deleted index pages
     '/docs/integrations/': '/docs/integrations/rest-api/',
-    '/docs/self-hosting/': '/docs/self-hosting/overview/',
     '/docs/guides/': '/docs/quickstart/',
 
     // New URL restructure redirects

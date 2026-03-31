@@ -31,7 +31,7 @@ export const docsMenu: MenuItem[] = [
     description:
       'Deploy and manage your own Distr instance on Kubernetes or Docker',
     value: 'server',
-    href: '/docs/self-hosting/overview/',
+    href: '/docs/self-hosting/',
   },
 ];
 

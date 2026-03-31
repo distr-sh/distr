@@ -54,7 +54,7 @@ export const PricingFAQs: PricingFAQ[] = [
     id: 'self-hosting',
     question: 'Can I self-host Distr?',
     answer:
-      'Yes, Distr is fully Open Source and you can self-host it. We offer a Community Edition that you can self-host for free, and an Enterprise Edition with advanced features. For details on self-hosting options, deployment methods, and getting started, see our <a href="/docs/self-hosting/overview/" class="text-[#00b5eb] hover:underline">self-hosting documentation</a>.',
+      'Yes, Distr is fully Open Source and you can self-host it. We offer a Community Edition that you can self-host for free, and an Enterprise Edition with advanced features. For details on self-hosting options, deployment methods, and getting started, see our <a href="/docs/self-hosting/" class="text-[#00b5eb] hover:underline">self-hosting documentation</a>.',
   },
   {
     id: 'support',
