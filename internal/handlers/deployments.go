@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -467,7 +468,16 @@ func getDeploymentStatus(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if deploymentStatus, err := db.GetDeploymentRevisionStatus(ctx, deployment.ID, limit, before, after); err != nil {
+	filter := r.FormValue("filter")
+	if filter != "" {
+		if _, err := regexp.Compile(filter); err != nil {
+			http.Error(w, "invalid filter regex: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+	if deploymentStatus, err := db.GetDeploymentRevisionStatus(
+		ctx, deployment.ID, limit, before, after, filter,
+	); err != nil {
 		internalctx.GetLogger(ctx).Error("failed to get deploymentstatus", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

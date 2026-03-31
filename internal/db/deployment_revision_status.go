@@ -91,6 +91,7 @@ func GetDeploymentRevisionStatus(
 	maxRows int,
 	before time.Time,
 	after time.Time,
+	filter string,
 ) ([]types.DeploymentRevisionStatus, error) {
 	if before.IsZero() {
 		before = time.Now()
@@ -110,12 +111,18 @@ func GetDeploymentRevisionStatus(
 		return nil, fmt.Errorf("failed to scan DeploymentRevision for status: %w", err)
 	}
 
+	filterExpr := ""
+	if filter != "" {
+		filterExpr = "AND message ~ @filter"
+	}
+
 	rows, err = db.Query(
 		ctx,
 		`SELECT id, created_at, deployment_revision_id, type, message
 		FROM DeploymentRevisionStatus
 		WHERE deployment_revision_id = ANY (@deploymentRevisionIds)
 			AND created_at BETWEEN @after AND @before
+			`+filterExpr+`
 		ORDER BY created_at DESC
 		LIMIT @maxRows`,
 		pgx.NamedArgs{
@@ -123,6 +130,7 @@ func GetDeploymentRevisionStatus(
 			"maxRows":               maxRows,
 			"before":                before,
 			"after":                 after,
+			"filter":                filter,
 		},
 	)
 	if err != nil {
