@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.15.1](https://github.com/distr-sh/distr/compare/2.15.0...2.15.1) (2026-03-31)
+
+
+### Bug Fixes
+
+* **docker-agent:** do not report disk metrics for SquashFS mounts ([#2123](https://github.com/distr-sh/distr/issues/2123)) ([36ff0bf](https://github.com/distr-sh/distr/commit/36ff0bf83d8c69b86e7b3451b2b8f2090223cf28))
+
 ## [2.15.0](https://github.com/distr-sh/distr/compare/2.14.1...2.15.0) (2026-03-31)
 
 
