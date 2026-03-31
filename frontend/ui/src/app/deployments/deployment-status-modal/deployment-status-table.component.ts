@@ -1,16 +1,16 @@
-import {Component, computed, inject, input, viewChild} from '@angular/core';
-import {DeploymentRevisionStatus} from '@distr-sh/distr-sdk';
-import {map, Observable} from 'rxjs';
+import { Component, computed, inject, input, viewChild } from '@angular/core';
+import { DeploymentRevisionStatus } from '@distr-sh/distr-sdk';
+import { map, Observable } from 'rxjs';
 import {
   TimeseriesEntry,
   TimeseriesExporter,
   TimeseriesSource,
   TimeseriesTableComponent,
 } from '../../components/timeseries-table.component';
-import {DeploymentStatusService} from '../../services/deployment-status.service';
+import { DeploymentStatusService } from '../../services/deployment-status.service';
 
 function statusToTimeseriesEntry(record: DeploymentRevisionStatus): TimeseriesEntry {
-  return {id: record.id, date: record.createdAt!, status: record.type, detail: record.message};
+  return { id: record.id, date: record.createdAt!, status: record.type, detail: record.message };
 }
 
 class LogsTimeseriesSource implements TimeseriesSource {
@@ -22,7 +22,7 @@ class LogsTimeseriesSource implements TimeseriesSource {
     private readonly after?: Date,
     private readonly before?: Date,
     private readonly filter?: string
-  ) {}
+  ) { }
 
   load(): Observable<TimeseriesEntry[]> {
     return this.svc
@@ -37,20 +37,20 @@ class LogsTimeseriesSource implements TimeseriesSource {
 
   loadAfter(after: Date): Observable<TimeseriesEntry[]> {
     return this.svc
-      .getStatuses(this.deploymentId, {limit: this.batchSize, after, filter: this.filter})
+      .getStatuses(this.deploymentId, { limit: this.batchSize, after, filter: this.filter })
       .pipe(map((logs) => logs.map(statusToTimeseriesEntry)));
   }
 
   loadBefore(before: Date): Observable<TimeseriesEntry[]> {
     return this.svc
-      .getStatuses(this.deploymentId, {limit: this.batchSize, before, filter: this.filter})
+      .getStatuses(this.deploymentId, { limit: this.batchSize, before, filter: this.filter })
       .pipe(map((logs) => logs.map(statusToTimeseriesEntry)));
   }
 }
 
 @Component({
   selector: 'app-deployment-status-table',
-  template: `<app-timeseries-table [source]="source()" [exporter]="exporter" />`,
+  template: `<app-timeseries-table [source]="source()" [exporter]="exporter" [live]="live()"/>`,
   imports: [TimeseriesTableComponent],
 })
 export class DeploymentStatusTableComponent {
@@ -60,6 +60,8 @@ export class DeploymentStatusTableComponent {
   public readonly after = input<Date>();
   public readonly before = input<Date>();
   public readonly filter = input<string>();
+
+  protected readonly live = computed(() => !this.after() && !this.before());
 
   protected readonly source = computed(
     () => new LogsTimeseriesSource(this.svc, this.deploymentId(), this.after(), this.before(), this.filter())

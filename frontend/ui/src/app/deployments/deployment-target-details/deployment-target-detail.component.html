@@ -178,9 +178,18 @@
         </div>
 
         <div class="ml-auto flex items-center gap-2 self-center">
+          @if (!live()) {
+            <button
+              type="button"
+              (click)="resetDateFilters()"
+              class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+              <fa-icon [icon]="faPlay" class="mr-2 text-gray-500 dark:text-gray-400" />
+              Live
+            </button>
+          }
           <button
             type="button"
-            (click)="form.reset()"
+            (click)="resetAllFilters()"
             class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
             <fa-icon [icon]="faFilterCircleXmark" class="mr-2 text-gray-500 dark:text-gray-400" />
             Reset

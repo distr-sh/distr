@@ -1,18 +1,18 @@
-import {Component, computed, inject, input, viewChild} from '@angular/core';
-import {map, Observable} from 'rxjs';
+import { Component, computed, inject, input, viewChild } from '@angular/core';
+import { map, Observable } from 'rxjs';
 import {
   TimeseriesEntry,
   TimeseriesExporter,
   TimeseriesSource,
   TimeseriesTableComponent,
 } from '../../components/timeseries-table.component';
-import {DeploymentLogsService} from '../../services/deployment-logs.service';
-import {DeploymentLogRecord} from '../../types/deployment-log-record';
+import { DeploymentLogsService } from '../../services/deployment-logs.service';
+import { DeploymentLogRecord } from '../../types/deployment-log-record';
 
 const ansiEscapePattern = /\u001b[^m]*m/g;
 
 function logRecordToTimeseriesEntry(record: DeploymentLogRecord): TimeseriesEntry {
-  return {date: record.timestamp, status: record.severity, detail: record.body.trim().replace(ansiEscapePattern, '')};
+  return { date: record.timestamp, status: record.severity, detail: record.body.trim().replace(ansiEscapePattern, '') };
 }
 
 class LogsTimeseriesSource implements TimeseriesSource {
@@ -25,7 +25,7 @@ class LogsTimeseriesSource implements TimeseriesSource {
     private readonly after?: Date,
     private readonly before?: Date,
     private readonly filter?: string
-  ) {}
+  ) { }
 
   load(): Observable<TimeseriesEntry[]> {
     return this.svc
@@ -40,20 +40,20 @@ class LogsTimeseriesSource implements TimeseriesSource {
 
   loadAfter(after: Date): Observable<TimeseriesEntry[]> {
     return this.svc
-      .get(this.deploymentId, this.resource, {limit: this.batchSize, after, filter: this.filter})
+      .get(this.deploymentId, this.resource, { limit: this.batchSize, after, filter: this.filter })
       .pipe(map((logs) => logs.map(logRecordToTimeseriesEntry)));
   }
 
   loadBefore(before: Date): Observable<TimeseriesEntry[]> {
     return this.svc
-      .get(this.deploymentId, this.resource, {limit: this.batchSize, before, filter: this.filter})
+      .get(this.deploymentId, this.resource, { limit: this.batchSize, before, filter: this.filter })
       .pipe(map((logs) => logs.map(logRecordToTimeseriesEntry)));
   }
 }
 
 @Component({
   selector: 'app-deployment-logs-table',
-  template: `<app-timeseries-table [source]="source()" [exporter]="exporter" />`,
+  template: `<app-timeseries-table [source]="source()" [exporter]="exporter"[live]="live()" />`,
   imports: [TimeseriesTableComponent],
 })
 export class DeploymentLogsTableComponent {
@@ -64,6 +64,8 @@ export class DeploymentLogsTableComponent {
   public readonly after = input<Date>();
   public readonly before = input<Date>();
   public readonly filter = input<string>();
+
+  protected readonly live = computed(() => !this.after() && !this.before());
 
   protected readonly source = computed(
     () =>
