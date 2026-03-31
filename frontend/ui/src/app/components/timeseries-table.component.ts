@@ -29,7 +29,7 @@ export interface TimeseriesExporter {
   selector: 'app-timeseries-table',
   template: `
     @if (entries$ | async; as entries) {
-      <div class="relative overflow-x-auto">
+      <div class="relative">
         <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
           <thead
             class="dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-800 dark:text-gray-400 sr-only">
@@ -46,7 +46,12 @@ export interface TimeseriesExporter {
                 <th class="px-4 md:px-5 font-medium whitespace-nowrap">
                   {{ entry.date | date: 'medium' }}
                 </th>
-                <td class="uppercase">
+                <td
+                  class="uppercase"
+                  [class.text-red-500]="entry.status.toLowerCase().includes('err')"
+                  [class.dark:text-red-400]="entry.status.toLowerCase().includes('err')"
+                  [class.text-yellow-600]="entry.status.toLowerCase().includes('warn')"
+                  [class.dark:text-yellow-500]="entry.status.toLowerCase().includes('warn')">
                   {{ entry.status }}
                 </td>
                 <td
@@ -60,7 +65,7 @@ export interface TimeseriesExporter {
         </table>
       </div>
 
-      @if (hasMore || exporter()) {
+      @if (hasMore) {
         <div class="flex items-center justify-center gap-2 mt-2">
           @if (hasMore) {
             <button
@@ -68,19 +73,6 @@ export interface TimeseriesExporter {
               class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
               (click)="showMore()">
               Load more
-            </button>
-          }
-          @if (exporter()) {
-            <button
-              type="button"
-              class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
-              (click)="exportData()"
-              [disabled]="isExporting">
-              @if (isExporting) {
-                Exporting...
-              } @else {
-                Export all
-              }
             </button>
           }
         </div>

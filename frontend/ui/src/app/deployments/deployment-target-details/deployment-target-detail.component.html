@@ -1,13 +1,13 @@
 <section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
-  <div class="mx-auto max-h-screen max-w-screen-2xl px-4 lg:px-12">
-    <div class="lg:p-8 p-4 bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
+    <div class="lg:p-8 p-4 bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg">
       <nav class="mb-1">
         <ol class="flex items-center gap-1" aria-label="Breadcrumb">
           <li>
             <a
               [routerLink]="['/', 'deployments']"
               class="inline-flex items-center p-2 text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
-              <fa-icon class="mr-2" [icon]="faServer"></fa-icon>
+              <fa-icon class="mr-2" [icon]="faServer" />
               Deployment Targets
             </a>
           </li>

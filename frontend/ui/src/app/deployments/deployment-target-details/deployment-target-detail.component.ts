@@ -1,18 +1,18 @@
-import { OverlayModule } from '@angular/cdk/overlay';
-import { Component, computed, ElementRef, inject, signal, viewChild } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { DeploymentWithLatestRevision } from '@distr-sh/distr-sdk';
-import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faChevronDown, faDownload, faFilterCircleXmark, faServer } from '@fortawesome/free-solid-svg-icons';
-import { combineLatest, debounceTime, map, of, switchMap } from 'rxjs';
-import { DeploymentLogsService } from '../../services/deployment-logs.service';
-import { DeploymentTargetsService } from '../../services/deployment-targets.service';
-import { DeploymentLogsTableComponent } from '../deployment-status-modal/deployment-logs-table.component';
-import { DeploymentStatusTableComponent } from '../deployment-status-modal/deployment-status-table.component';
-import { DeploymentAppNameComponent } from '../deployment-target-card/deployment-app-name.component';
-import { DeploymentTargetLogsTableComponent } from '../deployment-target-status-modal/deployment-target-logs-table.component';
+import {OverlayModule} from '@angular/cdk/overlay';
+import {Component, computed, ElementRef, inject, signal, viewChild} from '@angular/core';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
+import {FormBuilder, ReactiveFormsModule} from '@angular/forms';
+import {ActivatedRoute, Router, RouterLink} from '@angular/router';
+import {DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
+import {faChevronDown, faDownload, faFilterCircleXmark, faServer} from '@fortawesome/free-solid-svg-icons';
+import {combineLatest, debounceTime, map, of, switchMap} from 'rxjs';
+import {DeploymentLogsService} from '../../services/deployment-logs.service';
+import {DeploymentTargetsService} from '../../services/deployment-targets.service';
+import {DeploymentLogsTableComponent} from '../deployment-status-modal/deployment-logs-table.component';
+import {DeploymentStatusTableComponent} from '../deployment-status-modal/deployment-status-table.component';
+import {DeploymentAppNameComponent} from '../deployment-target-card/deployment-app-name.component';
+import {DeploymentTargetLogsTableComponent} from '../deployment-target-status-modal/deployment-target-logs-table.component';
 
 @Component({
   selector: 'app-deployment-target-detail',
@@ -70,7 +70,7 @@ export class DeploymentTargetDetailComponent {
   protected readonly filter = toSignal(this.filter$);
 
   private readonly deploymentTargets$ = this.deploymentTargetsService.list();
-  protected readonly deploymentTargets = toSignal(this.deploymentTargets$, { initialValue: [] });
+  protected readonly deploymentTargets = toSignal(this.deploymentTargets$, {initialValue: []});
   protected readonly selectedDeploymentTarget = toSignal(
     combineLatest([this.deploymentTargets$, this.deploymentTargetId$]).pipe(
       map(([targets, id]) => targets.find((t) => t.id === id))
@@ -89,7 +89,7 @@ export class DeploymentTargetDetailComponent {
     )
   );
 
-  protected readonly form = this.fb.group({ from: '', to: '', filter: '' });
+  protected readonly form = this.fb.group({from: '', to: '', filter: ''});
 
   private readonly deploymentTargetLogsTable = viewChild(DeploymentTargetLogsTableComponent);
   private readonly deploymentStatusTable = viewChild(DeploymentStatusTableComponent);
@@ -103,7 +103,7 @@ export class DeploymentTargetDetailComponent {
           to: params.get('to') ?? '',
           filter: params.get('filter') ?? '',
         },
-        { emitEvent: false }
+        {emitEvent: false}
       );
     });
 
@@ -145,21 +145,21 @@ export class DeploymentTargetDetailComponent {
   }
 
   protected selectDeployment(deployment: DeploymentWithLatestRevision | undefined) {
-    this.form.patchValue({ filter: '' });
+    this.form.patchValue({filter: ''});
     this.deploymentDropdown.set(false);
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { deploymentId: deployment?.id ?? null, resource: null },
+      queryParams: {deploymentId: deployment?.id ?? null, resource: null},
       queryParamsHandling: 'merge',
     });
   }
 
   protected selectResource(resource: string | undefined) {
-    this.form.patchValue({ filter: '' });
+    this.form.patchValue({filter: ''});
     this.resourceDropdown.set(false);
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { resource: resource ?? null },
+      queryParams: {resource: resource ?? null},
       queryParamsHandling: 'merge',
     });
   }
