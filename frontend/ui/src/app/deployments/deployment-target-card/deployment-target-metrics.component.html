@@ -11,10 +11,13 @@
   (click)="hovered.set(!hovered())"
   cdkOverlayOrigin
   #metricsOverlayOrigin="cdkOverlayOrigin">
-  <div class="text-red-400">
-    <fa-icon [icon]="faHardDrive" />
-    <fa-icon class="-ms-2" [icon]="faExclamation" />
-  </div>
+  @if (anyDiskWarning()) {
+    <div class="text-red-400">
+      <fa-icon [icon]="faHardDrive" />
+      <fa-icon class="-ms-2" [icon]="faExclamation" />
+    </div>
+  }
+
   <div class="relative">
     <div
       class="gauge relative size-10 rounded-full bg-conic from-green-700 via-yellow-300 to-red-600"
@@ -24,6 +27,7 @@
       {{ metrics().cpuUsage | percent }}
     </div>
   </div>
+
   <div class="relative">
     <div
       class="gauge relative size-10 rounded-full bg-conic from-green-700 via-yellow-300 to-red-600"

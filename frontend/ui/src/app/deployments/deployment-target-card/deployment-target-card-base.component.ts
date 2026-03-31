@@ -20,10 +20,10 @@ import {firstValueFrom, lastValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {RESOURCE_QUANTITY_REGEX} from '../../../util/validation';
 import {AuthService} from '../../services/auth.service';
-import {DeploymentTargetLatestMetrics} from '../../services/deployment-target-metrics.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
+import {DeploymentTargetLatestMetrics} from '../../types/deployment-target-metrics';
 
 @Directive()
 export abstract class DeploymentTargetCardBaseComponent {

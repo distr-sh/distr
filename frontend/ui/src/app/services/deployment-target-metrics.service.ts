@@ -1,23 +1,7 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {Observable, shareReplay, switchMap, timer} from 'rxjs';
-
-export interface DeploymentTargetLatestMetrics {
-  deploymentTargetId: string;
-  cpuCoresMillis: number;
-  cpuUsage: number;
-  memoryBytes: number;
-  memoryUsage: number;
-  diskMetrics?: DeploymentTargetDiskMetric[];
-}
-
-interface DeploymentTargetDiskMetric {
-  device: string;
-  path: string;
-  fsType: string;
-  bytesTotal: number;
-  bytesUsed: number;
-}
+import {DeploymentTargetLatestMetrics} from '../types/deployment-target-metrics';
 
 @Injectable({
   providedIn: 'root',

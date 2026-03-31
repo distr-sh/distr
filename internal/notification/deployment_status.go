@@ -111,7 +111,7 @@ func sendDeploymentStatusNotificationsWithConfig(
 	currentStatus *types.DeploymentRevisionStatus,
 	config types.AlertConfiguration,
 ) error {
-	if !config.Enabled {
+	if !config.Enabled || !config.StatusTriggerEnabled {
 		return nil
 	}
 
@@ -188,11 +188,19 @@ func sendDeploymentStatusNotificationsWithConfig(
 		}
 	}
 
+	recordType := types.NotificationRecordTypeResolved
+	if currentStatus == nil {
+		recordType = types.NotificationRecordTypeWarning
+	} else if currentStatus.Type == types.DeploymentStatusTypeError {
+		recordType = types.NotificationRecordTypeAlert
+	}
+
 	record := types.NotificationRecord{
 		OrganizationID:         config.OrganizationID,
 		CustomerOrganizationID: config.CustomerOrganizationID,
 		DeploymentTargetID:     &deploymentTarget.ID,
 		AlertConfigurationID:   &config.ID,
+		Type:                   recordType,
 	}
 
 	if currentStatus != nil {

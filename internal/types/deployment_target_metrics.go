@@ -5,6 +5,7 @@ import (
 )
 
 type DeploymentTargetMetrics struct {
+	ID                 uuid.UUID                    `db:"id"`
 	DeploymentTargetID uuid.UUID                    `db:"deployment_target_id"`
 	CPUCoresMillis     int64                        `db:"cpu_cores_millis"`
 	CPUUsage           float64                      `db:"cpu_usage"`
@@ -19,4 +20,11 @@ type DeploymentTargetDiskMetric struct {
 	FsType     string
 	BytesTotal int64
 	BytesUsed  int64
+}
+
+func (m DeploymentTargetDiskMetric) Usage() float64 {
+	if m.BytesTotal <= 0 {
+		return 0
+	}
+	return float64(m.BytesUsed) / float64(m.BytesTotal)
 }
