@@ -1,6 +1,8 @@
 import {AsyncPipe, DatePipe} from '@angular/common';
-import {Component, inject, input} from '@angular/core';
+import {Component, inject, input, signal} from '@angular/core';
 import {toObservable} from '@angular/core/rxjs-interop';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
+import {faThumbtack, faThumbtackSlash} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, EMPTY, filter, interval, map, merge, Observable, scan, Subject, switchMap, tap} from 'rxjs';
 import {distinctBy} from '../../util/arrays';
 import {downloadBlob} from '../../util/blob';
@@ -34,6 +36,7 @@ export interface TimeseriesExporter {
           <thead
             class="dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-800 dark:text-gray-400 sr-only">
             <tr>
+              <th scope="col"></th>
               <th scope="col">Date</th>
               <th scope="col">Status</th>
               <th scope="col">Details</th>
@@ -41,22 +44,37 @@ export interface TimeseriesExporter {
           </thead>
           <tbody>
             @for (entry of entries; track entry.id ?? entry.date) {
+              @let pinned = pinnedEntryId() === entry.id;
               <tr
-                class="not-last:border-b border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600">
-                <th class="px-4 md:px-5 font-medium whitespace-nowrap">
-                  {{ entry.date | date: 'medium' }}
-                </th>
+                [class.bg-yellow-100]="pinned"
+                [class.dark:bg-yellow-950]="pinned"
+                [class.sticky]="pinned"
+                [class.top-16]="pinned"
+                [class.bottom-0]="pinned"
+                [class.hover:bg-gray-50]="!pinned"
+                [class.dark:hover:bg-gray-600]="!pinned"
+                [class.hover:bg-yellow-200]="pinned"
+                [class.dark:hover:bg-yellow-900]="pinned"
+                class="not-last:border-b border-gray-200 dark:border-gray-600  group">
+                <td class="w-0">
+                  <button
+                    type="button"
+                    (click)="pin(entry)"
+                    [class.invisible]="!pinned"
+                    class="group-hover:visible px-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-xs">
+                    <fa-icon [icon]="pinned ? faThumbtackSlash : faThumbtack" />
+                  </button>
+                </td>
+                <th class="px-1 font-medium whitespace-nowrap">{{ entry.date | date: 'medium' }}</th>
                 <td
-                  class="uppercase"
+                  class="uppercase px-1"
                   [class.text-red-500]="entry.status.toLowerCase().includes('err')"
                   [class.dark:text-red-400]="entry.status.toLowerCase().includes('err')"
                   [class.text-yellow-600]="entry.status.toLowerCase().includes('warn')"
                   [class.dark:text-yellow-500]="entry.status.toLowerCase().includes('warn')">
                   {{ entry.status }}
                 </td>
-                <td
-                  class="px-4 md:px-5 whitespace-pre-wrap font-mono text-gray-900 dark:text-white"
-                  data-ph-mask-text="true">
+                <td class="px-1 whitespace-pre-wrap font-mono text-gray-900 dark:text-white" data-ph-mask-text="true">
                   {{ entry.detail }}
                 </td>
               </tr>
@@ -96,7 +114,7 @@ export interface TimeseriesExporter {
       </output>
     }
   `,
-  imports: [DatePipe, AsyncPipe],
+  imports: [DatePipe, AsyncPipe, FaIconComponent],
 })
 export class TimeseriesTableComponent {
   public readonly source = input.required<TimeseriesSource>();
@@ -106,8 +124,12 @@ export class TimeseriesTableComponent {
 
   private readonly toastService = inject(ToastService);
 
+  protected readonly faThumbtack = faThumbtack;
+  protected readonly faThumbtackSlash = faThumbtackSlash;
+
   protected hasOlder = true;
   protected isExporting = false;
+  protected readonly pinnedEntryId = signal<string | null>(null);
 
   private readonly accumulatedEntries$: Observable<TimeseriesEntry[]> = combineLatest([
     toObservable(this.source),
@@ -162,6 +184,10 @@ export class TimeseriesTableComponent {
 
   protected showOlder() {
     this.showOlder$.next();
+  }
+
+  protected pin(entry: TimeseriesEntry) {
+    this.pinnedEntryId.update((current) => (current === entry.id ? null : entry.id) ?? null);
   }
 
   public exportData() {
