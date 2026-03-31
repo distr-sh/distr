@@ -65,6 +65,7 @@ export class DeploymentTargetDetailComponent {
   protected readonly resourceDropdown = signal(false);
   protected resourceDropdownWidth = 0;
   private readonly resourceDropdownTrigger = viewChild<ElementRef<HTMLElement>>('resourceDropdownTrigger');
+  protected readonly showArchivedResources = signal(false);
 
   private readonly deploymentTargetId$ = this.route.paramMap.pipe(map((p) => p.get('deploymentTargetId')!));
   protected readonly deploymentTargetId = toSignal(this.deploymentTargetId$);
