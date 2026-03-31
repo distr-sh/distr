@@ -2,7 +2,7 @@ import {Component, signal} from '@angular/core';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faCircleExclamation, faCircleInfo, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {ToastNoAnimation} from 'ngx-toastr';
-import {firstValueFrom, Subject} from 'rxjs';
+import {firstValueFrom, race, Subject, timer} from 'rxjs';
 
 export type ToastType = 'success' | 'error' | 'info';
 
@@ -77,11 +77,12 @@ export class ToastComponent extends ToastNoAnimation<ToastType> {
   protected readonly faXmark = faXmark;
 
   protected readonly isDismissed = signal(false);
+  private readonly animationTimeout = 1000;
   private readonly animationComplete$ = new Subject<void>();
 
   override async remove() {
     this.isDismissed.set(true);
-    await firstValueFrom(this.animationComplete$);
+    await firstValueFrom(race(this.animationComplete$, timer(this.animationTimeout)));
     super.remove();
   }
 
