@@ -196,6 +196,10 @@ func diskMetrics(ctx context.Context) ([]api.DeploymentTargetDiskMetric, error) 
 			continue
 		}
 
+		if usage.Fstype == "squashfs" {
+			continue
+		}
+
 		trimmedPath := path.Join("/", strings.TrimPrefix(mountPath, hostRoot))
 		metric, ok := result[device]
 		if !ok {

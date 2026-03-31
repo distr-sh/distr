@@ -206,13 +206,13 @@ export class TimeseriesTableComponent {
       next: (blob) => {
         downloadBlob(blob, filename);
         this.isExporting = false;
-        toastRef.toastRef.close();
+        toastRef?.toastRef.close();
         this.toastService.success('Download completed successfully');
       },
       error: (err) => {
         console.error('Export failed:', err);
         this.isExporting = false;
-        toastRef.toastRef.close();
+        toastRef?.toastRef.close();
         this.toastService.error('Export failed');
       },
     });
