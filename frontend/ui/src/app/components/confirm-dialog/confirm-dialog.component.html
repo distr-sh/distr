@@ -1,75 +1,82 @@
-<div class="relative p-4 w-full max-w-2xl max-h-full lg:mt-32">
-  <!-- Modal content -->
-  <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
-    <!-- Modal header -->
-    <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
-      <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Confirm</h3>
-      <button
-        type="button"
-        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
-        (click)="dialogRef.dismiss()">
-        <fa-icon [icon]="faXmark"></fa-icon>
-        <span class="sr-only">Close modal</span>
-      </button>
-    </div>
-    <!-- Modal body -->
-    <div class="p-4 md:p-5 space-y-4">
-      @if (data.message?.alert; as alert) {
-        <div [class]="alertClass" role="alert">
-          <span class="font-semibold me-1">
-            @switch (alert.type) {
-              @case ('warning') {
-                WARNING!
+@if (!isClosing()) {
+  <div
+    class="relative p-4 w-full max-w-2xl max-h-full lg:mt-32"
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top"
+    (animationend)="animationComplete()">
+    <!-- Modal content -->
+    <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
+      <!-- Modal header -->
+      <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Confirm</h3>
+        <button
+          type="button"
+          class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+          (click)="dialogRef.dismiss()">
+          <fa-icon [icon]="faXmark"></fa-icon>
+          <span class="sr-only">Close modal</span>
+        </button>
+      </div>
+      <!-- Modal body -->
+      <div class="p-4 md:p-5 space-y-4">
+        @if (data.message?.alert; as alert) {
+          <div [class]="alertClass" role="alert">
+            <span class="font-semibold me-1">
+              @switch (alert.type) {
+                @case ('warning') {
+                  WARNING!
+                }
+                @case ('danger') {
+                  DANGER!
+                }
               }
-              @case ('danger') {
-                DANGER!
-              }
-            }
-          </span>
-          {{ alert.message }}
-        </div>
-      }
+            </span>
+            {{ alert.message }}
+          </div>
+        }
 
-      @if (data.customTemplate) {
-        <ng-container *ngTemplateOutlet="data.customTemplate"></ng-container>
-      } @else {
-        <p class="text-base leading-relaxed text-gray-500 dark:text-gray-200">
-          {{ data.message?.message }}
-        </p>
-      }
-
-      @if (data.requiredConfirmInputText) {
-        <div>
-          <input
-            autotrim
-            type="text"
-            [formControl]="confirmInput"
-            name="title"
-            id="deleteConfirm"
-            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-            value="" />
-          <p class="mt-1 text-sm text-red-600 dark:text-red-500">
-            Type "<span class="whitespace-pre-wrap">{{ data.requiredConfirmInputText }}</span
-            >" to confirm this action.
+        @if (data.customTemplate) {
+          <ng-container *ngTemplateOutlet="data.customTemplate"></ng-container>
+        } @else {
+          <p class="text-base leading-relaxed text-gray-500 dark:text-gray-200">
+            {{ data.message?.message }}
           </p>
-        </div>
-      }
-    </div>
-    <!-- Modal footer -->
-    <div class="flex items-center justify-end p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600 gap-2">
-      <button
-        (click)="dialogRef.close(false)"
-        type="button"
-        class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-        Cancel
-      </button>
-      <button
-        (click)="dialogRef.close(true)"
-        type="button"
-        [disabled]="data.requiredConfirmInputText && data.requiredConfirmInputText !== confirmInput.value"
-        class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-        Confirm
-      </button>
+        }
+
+        @if (data.requiredConfirmInputText) {
+          <div>
+            <input
+              autotrim
+              type="text"
+              [formControl]="confirmInput"
+              name="title"
+              id="deleteConfirm"
+              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+              value="" />
+            <p class="mt-1 text-sm text-red-600 dark:text-red-500">
+              Type "<span class="whitespace-pre-wrap">{{ data.requiredConfirmInputText }}</span
+              >" to confirm this action.
+            </p>
+          </div>
+        }
+      </div>
+      <!-- Modal footer -->
+      <div
+        class="flex items-center justify-end p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600 gap-2">
+        <button
+          (click)="dialogRef.close(false)"
+          type="button"
+          class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+          Cancel
+        </button>
+        <button
+          (click)="dialogRef.close(true)"
+          type="button"
+          [disabled]="data.requiredConfirmInputText && data.requiredConfirmInputText !== confirmInput.value"
+          class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+          Confirm
+        </button>
+      </div>
     </div>
   </div>
-</div>
+}

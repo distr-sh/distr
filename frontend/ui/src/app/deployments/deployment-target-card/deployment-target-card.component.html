@@ -12,8 +12,7 @@
             width="199" />
           <deployment-target-status-dot
             class="absolute size-2.5 -bottom-0.5 -inset-e-0.5"
-            [deploymentTarget]="deploymentTarget()">
-          </deployment-target-status-dot>
+            [deploymentTarget]="deploymentTarget()" />
         </div>
         <div class="min-w-0">
           <div class="flex gap-2">
@@ -88,7 +87,8 @@
         [cdkConnectedOverlayPositions]="[{originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top'}]"
         [cdkConnectedOverlayOpen]="showDeploymentTargetDropdown()">
         <div
-          @dropdown
+          animate.enter="animate-flip-in-top"
+          animate.leave="animate-flip-out-top"
           style="transform-origin: top center"
           class="my-2 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600">
           <ul class="py-1" role="none">
@@ -285,7 +285,8 @@
                         ]"
                         [cdkConnectedOverlayOpen]="showDeploymentDropdownForId() === deployment.id">
                         <div
-                          @dropdown
+                          animate.enter="animate-flip-in-top"
+                          animate.leave="animate-flip-out-top"
                           style="transform-origin: top center"
                           class="my-2 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600">
                           <ul class="py-1" role="none">
@@ -396,7 +397,8 @@
 
 <ng-template #instructionsModal>
   <div
-    @modalFlyInOut
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top"
     style="transform-origin: top center"
     class="p-4 w-full mt-12 max-w-4xl max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-700">
     <!-- Modal header -->
@@ -423,7 +425,8 @@
 
 <ng-template #deploymentModal>
   <app-deployment-modal
-    @modalFlyInOut
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top"
     [deploymentTarget]="selectedDeploymentTarget()!"
     [deployment]="selectedDeployment()"
     (closed)="hideModal()">
@@ -432,7 +435,8 @@
 
 <ng-template #deploymentTargetStatusModal>
   <app-deployment-target-status-modal
-    @modalFlyInOut
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top"
     class="w-full m-4"
     [deploymentTarget]="deploymentTarget()"
     (closed)="hideModal()" />
@@ -440,7 +444,8 @@
 
 <ng-template #deploymentStatusModal>
   <app-deployment-status-modal
-    @modalFlyInOut
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top"
     class="w-full m-4"
     [deploymentTarget]="deploymentTarget()"
     [deployment]="selectedDeployment()!"
@@ -449,7 +454,8 @@
 
 <ng-template #deleteDeploymentProgressModal>
   <div
-    @modalFlyInOut
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top"
     style="transform-origin: top center"
     class="p-4 w-full mt-12 max-w-4xl max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-700">
     <!-- Modal body -->
@@ -481,7 +487,8 @@
 
 <ng-template #manageDeploymentTargetDrawer>
   <div
-    @drawerFlyInOut
+    animate.enter="animate-fly-in-right"
+    animate.leave="animate-fly-out-right"
     id="manage-deployment-target-drawer"
     class="h-screen p-4 overflow-y-auto bg-white w-80 dark:bg-gray-800"
     tabindex="-1"
@@ -699,7 +706,8 @@
 
 <ng-template #deploymentTargetNotesDrawer>
   <div
-    @drawerFlyInOut
+    animate.enter="animate-fly-in-right"
+    animate.leave="animate-fly-out-right"
     id="manage-deployment-target-drawer"
     class="h-screen p-4 overflow-y-auto bg-white w-120 dark:bg-gray-800"
     tabindex="-1"

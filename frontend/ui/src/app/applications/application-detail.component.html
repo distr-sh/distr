@@ -34,8 +34,9 @@
                   [cdkConnectedOverlayMinWidth]="breadcrumbDropdownWidth + 'px'"
                   [cdkConnectedOverlayOpen]="breadcrumbDropdown()">
                   <div
-                    style="transform-origin: top center"
-                    class="z-10 w-full bg-white divide-y divide-gray-100 rounded-lg shadow-xs dark:bg-gray-700">
+                    animate.enter="animate-flip-in-top"
+                    animate.leave="animate-flip-out-top"
+                    class="z-10 w-full bg-white divide-y divide-gray-100 rounded-lg shadow-xs dark:bg-gray-700 origin-top">
                     <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownDefault">
                       @for (app of applications$ | async; track app.id) {
                         <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
@@ -583,7 +584,7 @@
                         </div>
                         @if (resourcePreviewIndices().has($index)) {
                           <div
-                            class="markdown p-2.5 min-h-[9.5rem] rounded-lg border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white"
+                            class="markdown p-2.5 min-h-38 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white"
                             [innerHTML]="resource.controls.content.value | markdown | async"></div>
                         } @else {
                           <textarea
@@ -638,6 +639,8 @@
   @if (versionDetail(); as detail) {
     <app-application-version-detail-modal
       [versionDetail]="detail"
-      (closed)="hideVersionDetails()"></app-application-version-detail-modal>
+      (closed)="hideVersionDetails()"
+      animate.enter="animate-fly-in-top"
+      animate.leave="animate-fly-out-top" />
   }
 </ng-template>

@@ -142,7 +142,7 @@
               <div class="mt-4">
                 <div class="grid grid-cols-2 gap-2 font-mono text-sm">
                   @for (code of codes; track code) {
-                    <div class="p-2 rounded border border-gray-200 dark:border-gray-700 rounded-md dark:text-white">
+                    <div class="p-2 border border-gray-200 dark:border-gray-700 rounded-md dark:text-white">
                       {{ code }}
                     </div>
                   }
@@ -172,7 +172,7 @@
             </div>
           } @else {
             <div class="mt-4 bg-gray-50 dark:bg-gray-800 rounded-lg flex items-center">
-              <div class="flex-grow">
+              <div class="grow">
                 <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Recovery Codes</h3>
                 <div class="text-sm text-gray-700 dark:text-gray-300 mb-4">
                   @if (recoveryCodesCount() === 0) {
@@ -250,9 +250,9 @@
 
 <ng-template #disableMfaDialog>
   <div
-    style="transform-origin: top center"
-    class="p-4 max-w-lg mt-12 max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-900 modal-fly-in"
-    animate.leave="modal-fly-out">
+    class="p-4 max-w-lg mt-12 max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-900"
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top">
     <!-- Modal header -->
     <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
       <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Disable Multi-Factor Authentication</h2>
@@ -267,7 +267,7 @@
     <!-- Modal body -->
     <div class="p-4 md:p-5 space-y-4">
       <section class="antialiased">
-        <div class="mx-auto max-w-screen-xl px-4 2xl:px-0">
+        <div class="mx-auto max-w-7xl px-4 2xl:px-0">
           <div
             class="flex items-center p-4 mb-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
             role="alert">
@@ -313,9 +313,9 @@
 
 <ng-template #regenerateRecoveryCodesDialog>
   <div
-    style="transform-origin: top center"
-    class="p-4 max-w-lg mt-12 max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-900 modal-fly-in"
-    animate.leave="modal-fly-out">
+    class="p-4 max-w-lg mt-12 max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-900"
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top">
     <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
       <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Regenerate Recovery Codes</h2>
       <button

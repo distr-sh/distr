@@ -16,20 +16,16 @@ import {catchError, combineLatest, combineLatestWith, first, map, Observable, of
 import {compareBy} from '../../util/arrays';
 import {filteredByFormControl} from '../../util/filter';
 import {SecureImagePipe} from '../../util/secureImage';
-import {drawerFlyInOut} from '../animations/drawer';
-import {modalFlyInOut} from '../animations/modal';
 import {QuotaLimitComponent} from '../components/quota-limit.component';
 import {ApplicationsService} from '../services/applications.service';
 import {AuthService} from '../services/auth.service';
 import {ContextService} from '../services/context.service';
-import {
-  DeploymentTargetLatestMetrics,
-  DeploymentTargetsMetricsService,
-} from '../services/deployment-target-metrics.service';
+import {DeploymentTargetsMetricsService} from '../services/deployment-target-metrics.service';
 import {DeploymentTargetsService} from '../services/deployment-targets.service';
 import {FeatureFlagService} from '../services/feature-flag.service';
 import {OrganizationService} from '../services/organization.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
+import {DeploymentTargetLatestMetrics} from '../types/deployment-target-metrics';
 import {DeploymentModalComponent} from './deployment-modal.component';
 import {DeploymentTargetCardComponent} from './deployment-target-card/deployment-target-card.component';
 import {DeploymentWizardComponent} from './deployment-wizard/deployment-wizard.component';
@@ -61,7 +57,6 @@ const localStoragerCollapsedCustomerIds = 'collapsedCustomerIds';
     RouterLink,
   ],
   templateUrl: './deployment-targets.component.html',
-  animations: [modalFlyInOut, drawerFlyInOut],
 })
 export class DeploymentTargetsComponent implements AfterViewInit {
   public readonly auth = inject(AuthService);

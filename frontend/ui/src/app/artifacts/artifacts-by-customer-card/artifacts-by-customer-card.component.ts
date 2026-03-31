@@ -18,9 +18,6 @@ import {
 import {SemVer} from 'semver';
 import {maxBy} from '../../../util/arrays';
 import {SecureImagePipe} from '../../../util/secureImage';
-import {drawerFlyInOut} from '../../animations/drawer';
-import {dropdownAnimation} from '../../animations/dropdown';
-import {modalFlyInOut} from '../../animations/modal';
 import {TaggedArtifactVersion} from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
 import {DashboardArtifact} from '../../services/dashboard.service';
@@ -29,7 +26,6 @@ import {DashboardArtifact} from '../../services/dashboard.service';
   selector: 'app-artifacts-by-customer-card',
   templateUrl: './artifacts-by-customer-card.component.html',
   imports: [FaIconComponent, OverlayModule, ReactiveFormsModule, AsyncPipe, SecureImagePipe, RouterLink],
-  animations: [modalFlyInOut, drawerFlyInOut, dropdownAnimation],
 })
 export class ArtifactsByCustomerCardComponent {
   protected readonly auth = inject(AuthService);

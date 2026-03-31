@@ -6,13 +6,7 @@ import {ReactiveFormsModule} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {SecureImagePipe} from '../../../util/secureImage';
-import {drawerFlyInOut} from '../../animations/drawer';
-import {dropdownAnimation} from '../../animations/dropdown';
-import {modalFlyInOut} from '../../animations/modal';
-import {ConnectInstructionsComponent} from '../../components/connect-instructions/connect-instructions.component';
 import {DeploymentTargetStatusDotComponent} from '../../components/status-dot';
-import {AutotrimDirective} from '../../directives/autotrim.directive';
-import {DeploymentModalComponent} from '../deployment-modal.component';
 import {DeploymentAppNameComponent} from './deployment-app-name.component';
 import {DeploymentStatusTextComponent} from './deployment-status-text.component';
 import {DeploymentTargetCardBaseComponent} from './deployment-target-card-base.component';
@@ -26,18 +20,14 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
     DeploymentTargetStatusDotComponent,
     FaIconComponent,
     OverlayModule,
-    ConnectInstructionsComponent,
     ReactiveFormsModule,
-    DeploymentModalComponent,
     DeploymentTargetMetricsComponent,
     TextFieldModule,
     DeploymentAppNameComponent,
     DeploymentStatusTextComponent,
-    AutotrimDirective,
     SecureImagePipe,
     AsyncPipe,
     RouterLink,
   ],
-  animations: [modalFlyInOut, drawerFlyInOut, dropdownAnimation],
 })
 export class DeploymentTargetDashboardCardComponent extends DeploymentTargetCardBaseComponent {}

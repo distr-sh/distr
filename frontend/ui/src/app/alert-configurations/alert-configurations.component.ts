@@ -1,7 +1,7 @@
 import {DatePipe} from '@angular/common';
 import {Component, computed, inject, Signal, signal, TemplateRef, viewChild} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
-import {FormBuilder, ReactiveFormsModule} from '@angular/forms';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
+import {FormBuilder, FormControl, ReactiveFormsModule, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {CustomerOrganization, DeploymentTarget, Named} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -41,13 +41,52 @@ export class AlertConfigurationsComponent {
   private readonly toast = inject(ToastService);
 
   protected readonly editConfigRef = signal<AlertConfiguration | undefined>(undefined);
-  protected readonly editConfigForm = this.fb.group({
-    id: this.fb.control(''),
-    name: this.fb.control(''),
-    enabled: this.fb.control(true),
-    userAccountIds: this.fb.record<boolean>({}, {validators: [validateRecordAtLeast(1)]}),
-    deploymentTargetIds: this.fb.record<boolean>({}, {validators: [validateRecordAtLeast(1)]}),
-  });
+  protected readonly editConfigForm = this.fb.group(
+    {
+      id: this.fb.control(''),
+      name: this.fb.control(''),
+      enabled: this.fb.control(true),
+      statusTriggerEnabled: this.fb.control(true),
+      cpuTriggerEnabled: this.fb.control(false),
+      cpuTriggerThresholdPercent: this.fb.control(75, [Validators.min(1), Validators.max(100), Validators.required]),
+      memoryTriggerEnabled: this.fb.control(false),
+      memoryTriggerThresholdPercent: this.fb.control(75, [Validators.min(1), Validators.max(100), Validators.required]),
+      diskTriggerEnabled: this.fb.control(false),
+      diskTriggerThresholdPercent: this.fb.control(75, [Validators.min(1), Validators.max(100), Validators.required]),
+      userAccountIds: this.fb.record<boolean>({}, {validators: [validateRecordAtLeast(1)]}),
+      deploymentTargetIds: this.fb.record<boolean>({}, {validators: [validateRecordAtLeast(1)]}),
+    },
+    {
+      validators: [
+        (ctrl) => {
+          const v = ctrl.value;
+          return v.statusTriggerEnabled || v.cpuTriggerEnabled || v.memoryTriggerEnabled || v.diskTriggerEnabled
+            ? null
+            : {anyTrigger: 1};
+        },
+      ],
+    }
+  );
+
+  constructor() {
+    const thresholdPairs: [FormControl<boolean>, FormControl<number | null>][] = [
+      [this.editConfigForm.controls.cpuTriggerEnabled, this.editConfigForm.controls.cpuTriggerThresholdPercent],
+      [this.editConfigForm.controls.memoryTriggerEnabled, this.editConfigForm.controls.memoryTriggerThresholdPercent],
+      [this.editConfigForm.controls.diskTriggerEnabled, this.editConfigForm.controls.diskTriggerThresholdPercent],
+    ];
+    for (const [enabledCtrl, thresholdCtrl] of thresholdPairs) {
+      enabledCtrl.valueChanges.pipe(takeUntilDestroyed()).subscribe((enabled) => {
+        if (enabled) {
+          thresholdCtrl.enable();
+          if (!thresholdCtrl.value) {
+            thresholdCtrl.setValue(75);
+          }
+        } else {
+          thresholdCtrl.disable();
+        }
+      });
+    }
+  }
   protected readonly editFormLoading = signal(false);
   private readonly editConfigDrawerTpl = viewChild.required<TemplateRef<unknown>>('editConfigDrawer');
   private editConfigDrawerRef?: DialogRef;
@@ -126,6 +165,13 @@ export class AlertConfigurationsComponent {
         id: config.id,
         name: config.name,
         enabled: config.enabled,
+        statusTriggerEnabled: config.statusTriggerEnabled,
+        cpuTriggerEnabled: config.cpuTriggerThresholdPercent !== undefined,
+        cpuTriggerThresholdPercent: config.cpuTriggerThresholdPercent,
+        memoryTriggerEnabled: config.memoryTriggerThresholdPercent !== undefined,
+        memoryTriggerThresholdPercent: config.memoryTriggerThresholdPercent,
+        diskTriggerEnabled: config.diskTriggerThresholdPercent !== undefined,
+        diskTriggerThresholdPercent: config.diskTriggerThresholdPercent,
         deploymentTargetIds: config.deploymentTargetIds?.reduce((acc, id) => ({...acc, [id]: true}), {}),
         userAccountIds: config.userAccountIds?.reduce((acc, id) => ({...acc, [id]: true}), {}),
       });
@@ -148,6 +194,10 @@ export class AlertConfigurationsComponent {
     const requestValue: CreateUpdateAlertConfigurationRequest = {
       name: formValue.name ?? '',
       enabled: formValue.enabled ?? true,
+      statusTriggerEnabled: formValue.statusTriggerEnabled ?? false,
+      cpuTriggerThresholdPercent: formValue.cpuTriggerThresholdPercent,
+      memoryTriggerThresholdPercent: formValue.memoryTriggerThresholdPercent,
+      diskTriggerThresholdPercent: formValue.diskTriggerThresholdPercent,
       deploymentTargetIds: Object.entries(formValue.deploymentTargetIds ?? {})
         .filter(([_, checked]) => checked)
         .map(([id]) => id),
@@ -203,6 +253,15 @@ export class AlertConfigurationsComponent {
       },
       error: (e) => this.toast.error(e),
     });
+  }
+
+  protected getTriggersCount(config: AlertConfiguration): number {
+    return [
+      config.statusTriggerEnabled,
+      config.cpuTriggerThresholdPercent !== undefined,
+      config.memoryTriggerThresholdPercent !== undefined,
+      config.diskTriggerThresholdPercent !== undefined,
+    ].filter((v) => v).length;
   }
 
   protected getNames(named: Named[] | undefined) {

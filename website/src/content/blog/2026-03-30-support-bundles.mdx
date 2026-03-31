@@ -1,0 +1,87 @@
+---
+title: 'Support Bundles: Structured Diagnostics Without Giving Up SSH'
+description: 'When your software runs in a customer environment, debugging means asking them to paste logs in Slack. Support Bundles replace that with a single command that collects exactly what you need.'
+publishDate: 2026-03-30
+lastUpdated: 2026-03-30
+slug: 'support-bundles'
+authors:
+  - name: 'Louis Weston'
+    role: 'Co-Founder'
+    image: '/src/assets/blog/authors/louis.jpg'
+    linkedIn: https://www.linkedin.com/in/louisnweston/
+    gitHub: https://github.com/thekubernaut
+image: src/assets/blog/2026-03-30-support-bundles/thumb.png
+tags:
+  - Features
+---
+
+import EmbeddedWhitePaperCta from '~/components/cta/embedded/EmbeddedWhitePaperCta.astro';
+
+"Can you run `docker logs` on the main container and paste the output?"
+
+If you ship software to customer environments, you've typed that sentence — or something like it — more times than you can count. And what comes back is usually wrong. Wrong container. Truncated output. Half the env vars redacted by someone who didn't know which ones mattered. A screenshot of a terminal instead of actual text.
+
+You built the software. You know exactly which logs, which env vars, which system details would tell you what's happening. But you can't get to them. The customer controls the environment. You don't have SSH. And even if they offered it, your security team would have opinions.
+
+So you play 20 questions over Slack. It takes a day. Sometimes two.
+
+## The last mile of observability
+
+You have dashboards for your own infrastructure. Log aggregation. Alerts when something looks off. All the things you'd expect from a modern ops setup.
+
+But the moment your software crosses into a customer environment? Nothing. You're relying on someone else to be your eyes and ears, and they don't know what to look for.
+
+We've talked to enough vendors to know this isn't a tooling problem you can solve by asking customers to install your monitoring stack. They won't. They have their own stack. They have policies about what runs on their machines and what data leaves their network.
+
+The gap isn't access. It's structure.
+
+<EmbeddedWhitePaperCta />
+
+## What Support Bundles actually do
+
+Support Bundles give your customers a way to collect and share diagnostic data without either side giving up control.
+
+Here's the flow:
+
+1. Customer hits an issue and creates a support bundle from their [Customer Portal](/docs/product/customer-portal/). They give it a title and describe what went wrong.
+2. Distr generates a one-time `curl` command, valid for 24 hours.
+3. Customer runs the command on the affected host. An interactive script starts and shows them exactly what will be collected — which containers, which environment variables. Values you've marked as sensitive are already replaced with `[REDACTED]`. The customer can exclude anything before a single byte leaves their machine.
+4. The bundle appears in your [Vendor Portal](/docs/product/vendor-portal/) with all collected resources attached.
+5. Both sides can leave comments directly on the bundle. When the issue is resolved, you mark it as done.
+
+No SSH. No screen share. No "can you try running this other command." The customer stays in control of what they share. You get structured data you can actually use.
+
+## What gets collected
+
+Three categories of data:
+
+- **System information** — hostname, uptime, disk usage, memory. The basics that tell you whether you're looking at a resource problem or an application problem.
+- **Container logs** — the last 1,000 lines from each selected Docker container. The same output you'd get from `docker logs`, without asking the customer to figure out which container is which.
+- **Environment variables** — only the ones you've configured in advance. Variables marked as redacted show `[REDACTED]` instead of their actual value, and the customer sees that before they confirm.
+
+The script only collects what you've asked for. Nothing else.
+
+## Setting it up
+
+Two steps on the vendor side — configure which env vars to collect, then enable the feature per customer. Full walkthrough in the [Support Bundles documentation](/docs/product/support-bundles/).
+
+## Why this matters
+
+The real cost of debugging [on-prem](/glossary/on-premises-definition/) issues isn't the bug itself. It's the back-and-forth. Every round trip between "can you check X" and "here's what I see" adds hours. Multiply that across every customer running your software on their own infrastructure, and support becomes the bottleneck for your entire engineering team.
+
+Support Bundles compress that loop into a single interaction. Customer reports the issue, runs one command, and you have everything you need to start investigating. The data is structured, consistent, and complete — not a Slack wall of text that's different every time.
+
+And because the customer explicitly approves everything before it's sent, you're not having the "what data are you collecting from our servers" conversation with their security team.
+
+## Getting started
+
+Support Bundles are available on Trial, Pro, and Enterprise plans for Docker-based deployments.
+
+If you're not using Distr yet and you're tired of playing telephone with customer deployments — [try it out](https://distr.sh/onboarding).
+
+## Join the conversation
+
+Questions, feedback, or war stories about debugging customer environments? We're around.
+
+- [Discord](https://discord.gg/6qqBSAWZfW)
+- [Book a demo](https://cal.glasskube.com/team/gk/demo?duration=30)

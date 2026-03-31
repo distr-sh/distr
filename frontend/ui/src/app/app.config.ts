@@ -7,7 +7,6 @@ import {
   provideAppInitializer,
   provideZoneChangeDetection,
 } from '@angular/core';
-import {provideAnimationsAsync} from '@angular/platform-browser/animations/async';
 import {provideRouter} from '@angular/router';
 import * as Sentry from '@sentry/angular';
 import {MARKED_OPTIONS, provideMarkdown} from 'ngx-markdown';
@@ -26,7 +25,6 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({eventCoalescing: true}),
     provideRouter(routes),
     provideHttpClient(withInterceptors([tokenInterceptor, errorToastInterceptor])),
-    provideAnimationsAsync(),
     provideToastr(),
     provideMarkdown({
       markedOptions: {

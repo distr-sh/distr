@@ -25,8 +25,6 @@ import dayjs from 'dayjs';
 import {catchError, EMPTY, lastValueFrom, map, of} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
-import {dropdownAnimation} from '../../animations/dropdown';
-import {modalFlyInOut} from '../../animations/modal';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {RequireCustomerDirective, RequireVendorDirective} from '../../directives/required-role.directive';
 import {AuthService} from '../../services/auth.service';
@@ -58,7 +56,6 @@ import {NavBarSubscriptionBannerComponent} from './nav-bar-subscription-banner/n
     RequireVendorDirective,
     RequireCustomerDirective,
   ],
-  animations: [dropdownAnimation, modalFlyInOut],
 })
 export class NavBarComponent implements OnInit {
   protected readonly auth = inject(AuthService);

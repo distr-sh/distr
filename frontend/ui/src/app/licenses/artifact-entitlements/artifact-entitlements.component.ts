@@ -16,9 +16,6 @@ import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observabl
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
-import {drawerFlyInOut} from '../../animations/drawer';
-import {dropdownAnimation} from '../../animations/dropdown';
-import {modalFlyInOut} from '../../animations/modal';
 import {ArtifactEntitlementsService} from '../../services/artifact-entitlements.service';
 import {ArtifactsService} from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
@@ -32,7 +29,6 @@ import {EditArtifactEntitlementComponent} from './edit-artifact-entitlement.comp
   selector: 'app-artifact-entitlements',
   imports: [ReactiveFormsModule, AsyncPipe, FaIconComponent, DatePipe, EditArtifactEntitlementComponent],
   templateUrl: './artifact-entitlements.component.html',
-  animations: [dropdownAnimation, drawerFlyInOut, modalFlyInOut],
 })
 export class ArtifactEntitlementsComponent {
   readonly customerOrganizationId = input<string>();

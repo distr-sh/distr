@@ -34,19 +34,50 @@
                 </td>
                 <td
                   class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
-                  {{ record.applicationName }}@{{ record.applicationVersionName }}
+                  @if (record.applicationName) {
+                    {{ record.applicationName }}@{{ record.applicationVersionName }}
+                  } @else {
+                    <span class="text-gray-500">-</span>
+                  }
                 </td>
                 <td
                   class="px-4 py-3 font-medium text-gray-900 whitespace-pre-wrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
-                  @if (record.currentDeploymentRevisionStatus; as s) {
-                    @if (s.type === 'error') {
-                      <span class="text-red-500">Error:</span>
-                    } @else {
-                      <span class="text-green-500">Recovered:</span>
+                  @switch (record.type) {
+                    @case ('alert') {
+                      <span class="text-red-500">Alert:</span>
                     }
+                    @case ('warning') {
+                      <span class="text-yellow-500 dark:text-yellow-300">Warning:</span>
+                    }
+                    @case ('resolved') {
+                      <span class="text-green-500">Resolved:</span>
+                    }
+                  }
+
+                  @if (record.currentDeploymentRevisionStatus; as s) {
                     {{ s.message }}
+                  } @else if (record.currentDeploymentTargetMetrics; as m) {
+                    @switch (record.metricType) {
+                      @case ('cpu') {
+                        CPU utilization is {{ m.cpuUsage | percent }}
+                      }
+                      @case ('memory') {
+                        Memory utilization is {{ m.memoryUsage | percent }}
+                      }
+                      @case ('disk') {
+                        @for (d of m.diskMetrics; track d.device + ':' + d.path) {
+                          @if (d.device === record.diskDevice && d.path === record.diskPath) {
+                            @if (d.bytesTotal > 0) {
+                              Disk utilization is {{ d.bytesUsed / d.bytesTotal | percent }}
+                            } @else {
+                              Disk utilization is N/A
+                            }
+                          }
+                        }
+                      }
+                    }
                   } @else {
-                    <span class="text-yellow-500 dark:text-yellow-300">Stale</span>
+                    Stale
                   }
                 </td>
                 <td class="px-4 py-3 font-medium text-gray-900 whitespace-pre-wrap dark:text-white">

@@ -37,7 +37,6 @@ import {
 import dayjs from 'dayjs';
 import {combineLatestWith, filter, first, firstValueFrom, Subject, switchMap, takeUntil} from 'rxjs';
 import {isArchived} from '../../../util/dates';
-import {dropdownAnimation} from '../../animations/dropdown';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {ApplicationsService} from '../../services/applications.service';
 import {AuthService} from '../../services/auth.service';
@@ -56,7 +55,6 @@ import {ArtifactEntitlement} from '../../types/artifact-entitlement';
       multi: true,
     },
   ],
-  animations: [dropdownAnimation],
 })
 export class EditApplicationEntitlementComponent implements OnInit, OnDestroy, AfterViewInit, ControlValueAccessor {
   private readonly injector = inject(Injector);

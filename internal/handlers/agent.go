@@ -462,18 +462,38 @@ func agentPostMetricsHander(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	previousMetrics, err := db.GetLatestDeploymentTargetMetricsForID(ctx, dt.ID)
+	if err != nil {
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		log.Error("failed to get previous deployment target metrics", zap.Error(err))
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
 	metrics := mapping.DeploymentTargetMetricsRequestToInternal(dt.ID, body)
-	if err := db.CreateDeploymentTargetMetrics(ctx, metrics); err != nil {
+
+	if err := db.CreateDeploymentTargetMetrics(ctx, &metrics); err != nil {
 		if errors.Is(err, apierrors.ErrConflict) {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		} else {
-			log.Error("failed to create deployment target metrics – skipping cleanup of old metrics", zap.Error(err),
-				zap.Reflect("metrics", body))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			log.Error("failed to create deployment target metrics", zap.Error(err), zap.Any("metrics", body))
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
-	} else {
-		w.WriteHeader(http.StatusOK)
+		return
 	}
+
+	go func(ctx context.Context) {
+		asyncCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+
+		if err := notification.SendDeploymentTargetMetricsNotifications(asyncCtx, *dt, previousMetrics, metrics); err != nil {
+			sentry.GetHubFromContext(asyncCtx).CaptureException(err)
+			log.Error("send metrics alerts failed", zap.Error(err))
+		}
+	}(context.WithoutCancel(ctx))
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func queryAuthDeploymentTargetCtxMiddleware(next http.Handler) http.Handler {

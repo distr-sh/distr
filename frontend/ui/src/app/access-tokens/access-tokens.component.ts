@@ -8,7 +8,6 @@ import {faClipboard, faMagnifyingGlass, faPlus, faTrash, faXmark} from '@fortawe
 import dayjs from 'dayjs';
 import {firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
 import {isExpired, RelativeDatePipe} from '../../util/dates';
-import {drawerFlyInOut} from '../animations/drawer';
 import {ClipComponent} from '../components/clip.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AccessTokensService} from '../services/access-tokens.service';
@@ -28,7 +27,6 @@ import {ToastService} from '../services/toast.service';
     ClipComponent,
   ],
   templateUrl: './access-tokens.component.html',
-  animations: [drawerFlyInOut],
 })
 export class AccessTokensComponent {
   protected readonly faMagnifyingGlass = faMagnifyingGlass;

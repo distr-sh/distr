@@ -1,6 +1,6 @@
 {
   "name": "@distr-sh/distr",
-  "version": "2.14.1",
+  "version": "2.15.1",
   "type": "module",
   "license": "Apache-2.0",
   "description": "Distr",
@@ -20,7 +20,6 @@
   "private": true,
   "packageManager": "pnpm@10.33.0",
   "dependencies": {
-    "@angular/animations": "^21.1.0",
     "@angular/cdk": "^21.1.0",
     "@angular/common": "^21.1.0",
     "@angular/compiler": "^21.1.0",
@@ -51,7 +50,7 @@
     "jwt-decode": "^4.0.0",
     "marked": "^17.0.0",
     "ngx-markdown": "^21.0.1",
-    "ngx-toastr": "^19.0.0",
+    "ngx-toastr": "^20.0.5",
     "posthog-js": "^1.187.0",
     "rxjs": "~7.8.0",
     "semver": "^7.7.1",

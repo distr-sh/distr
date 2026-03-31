@@ -3,7 +3,6 @@ import {Component, inject, input, output} from '@angular/core';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {getFormDisplayedError} from '../../util/errors';
-import {modalFlyInOut} from '../animations/modal';
 import {SubscriptionService} from '../services/subscription.service';
 import {ToastService} from '../services/toast.service';
 import {SubscriptionInfo, SubscriptionPeriod} from '../types/subscription';
@@ -20,7 +19,6 @@ export interface PendingSubscriptionUpdate {
   selector: 'app-subscription-update-modal',
   templateUrl: './subscription-update-modal.component.html',
   imports: [FaIconComponent, CurrencyPipe],
-  animations: [modalFlyInOut],
 })
 export class SubscriptionUpdateModalComponent {
   protected readonly xmarkIcon = faXmark;

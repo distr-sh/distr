@@ -18,7 +18,6 @@ import {RelativeDatePipe} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {BytesPipe} from '../../../util/units';
-import {dropdownAnimation} from '../../animations/dropdown';
 import {ClipComponent} from '../../components/clip.component';
 import {UuidComponent} from '../../components/uuid';
 import {RequireVendorDirective} from '../../directives/required-role.directive';
@@ -52,7 +51,6 @@ import {ArtifactsDownloadCountComponent, ArtifactsDownloadedByComponent, Artifac
     RequireVendorDirective,
     OverlayModule,
   ],
-  animations: [dropdownAnimation],
   templateUrl: './artifact-versions.component.html',
   providers: [CustomerOrganizationsCache],
 })

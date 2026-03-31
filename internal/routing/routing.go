@@ -122,6 +122,8 @@ func ApiRouter(
 			middleware.ContextInjectorMiddleware(db, mailer, oidcer, prometheusCollector),
 		)
 
+		r.Route("/public/v1", PublicRouter(tracers))
+
 		r.Route("/v1", func(r chiopenapi.Router) {
 			r.Group(func(r chiopenapi.Router) {
 				r.Use(
@@ -182,12 +184,15 @@ func ApiRouter(
 
 			// agent connect and download routes go here (authenticated but with accessKeyId and accessKeySecret)
 			r.Group(func(r chiopenapi.Router) {
-				r.Use(
-					middleware.OTEL(tracers.Agent()),
-				)
+				r.Group(func(r chiopenapi.Router) {
+					r.Use(middleware.OTEL(tracers.Agent()))
+					r.Route("/", handlers.AgentRouter)
+				})
 
-				r.Route("/", handlers.AgentRouter)
-				r.Route("/support-bundle-collect", handlers.SupportBundleScriptRouter)
+				r.Group(func(r chiopenapi.Router) {
+					r.Use(middleware.OTEL(tracers.Default()))
+					r.Route("/support-bundle-collect", handlers.SupportBundleScriptRouter)
+				})
 			})
 		})
 	}
@@ -223,6 +228,14 @@ func ReadyRouter(db *pgxpool.Pool) http.Handler {
 		_, _ = w.Write([]byte(`{"ready":true}`))
 	})
 	return router
+}
+
+func PublicRouter(tracers *tracers.Tracers) func(r chiopenapi.Router) {
+	return func(r chiopenapi.Router) {
+		r.Use(middleware.OTEL(tracers.Default()))
+
+		r.Route("/license-keys", handlers.PublicLicenseKeysRouter)
+	}
 }
 
 func FrontendRouter() http.Handler {
