@@ -21,7 +21,7 @@
           </form>
         </div>
         <div
-          class="w-full md:w-auto flex flex-col md:flex-row items-stretch md:items-center justify-end gap-4 flex-shrink-0 flex-grow">
+          class="w-full md:w-auto flex flex-col md:flex-row items-stretch md:items-center justify-end gap-4 shrink-0 grow">
           <button
             type="button"
             routerLink="/notifications/history"
@@ -48,6 +48,7 @@
               <th scope="col" class="p-4">Name</th>
               <th scope="col" class="p-4">Enabled</th>
               <th scope="col" class="p-4">Created at</th>
+              <th scope="col" class="p-4">Triggers</th>
               <th scope="col" class="p-4">Deployment Targets</th>
               <th scope="col" class="p-4">Users</th>
               <th scope="col" class="p-4"></th>
@@ -67,11 +68,14 @@
                       [checked]="config.enabled"
                       (change)="toggleConfigEnabled(config)" />
                     <div
-                      class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+                      class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
                   </label>
                 </td>
                 <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
                   {{ config.createdAt | date }}
+                </td>
+                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
+                  {{ getTriggersCount(config) }} enabled
                 </td>
                 <td
                   class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis"
@@ -145,8 +149,7 @@
       }
     </h2>
     <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
-      You will receive notifications when a deployment changes to an error or stale status, and as soon as the
-      deployment has recovered.
+      Receive notifications when deployments change status or when resource usage exceeds configured thresholds.
     </p>
     <button
       type="button"
@@ -172,12 +175,121 @@
             placeholder="Name" />
         </div>
 
-        <label class="inline-flex items-center cursor-pointer">
+        <label class="flex items-center cursor-pointer">
           <input type="checkbox" class="sr-only peer" formControlName="enabled" />
           <div
-            class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+            class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
           <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Enabled</span>
         </label>
+
+        <div class="space-y-1">
+          <h3 class="text-sm font-medium text-gray-900 dark:text-white">Triggers</h3>
+          <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 space-y-3">
+            <label class="inline-flex items-center cursor-pointer">
+              <input type="checkbox" class="sr-only peer" formControlName="statusTriggerEnabled" />
+              <div
+                class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+              <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Deployment status changes</span>
+            </label>
+
+            <div class="space-y-1">
+              <label class="flex items-center cursor-pointer">
+                <input type="checkbox" class="sr-only peer" formControlName="cpuTriggerEnabled" />
+                <div
+                  class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+                <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">CPU usage threshold</span>
+              </label>
+              @if (editConfigForm.controls.cpuTriggerThresholdPercent.enabled) {
+                <div class="flex pl-14">
+                  <input
+                    type="number"
+                    formControlName="cpuTriggerThresholdPercent"
+                    aria-label="CPU usage threshold value"
+                    min="1"
+                    max="100"
+                    placeholder="e.g. 80"
+                    class="rounded-none rounded-s-lg bg-gray-50 border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 block min-w-0 w-20 text-sm p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+                  <span
+                    class="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 border border-e-0 border-gray-300 rounded-e-md dark:bg-gray-600 dark:text-gray-400 dark:border-gray-600"
+                    >%
+                  </span>
+                </div>
+                @if (
+                  editConfigForm.controls.cpuTriggerThresholdPercent.touched &&
+                  editConfigForm.controls.cpuTriggerThresholdPercent.errors
+                ) {
+                  <div class="text-sm text-red-500 pl-14">Enter a value between 1 and 100.</div>
+                }
+              }
+            </div>
+
+            <div class="space-y-1">
+              <label class="flex items-center cursor-pointer">
+                <input type="checkbox" class="sr-only peer" formControlName="memoryTriggerEnabled" />
+                <div
+                  class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+                <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Memory usage threshold</span>
+              </label>
+              @if (editConfigForm.controls.memoryTriggerThresholdPercent.enabled) {
+                <div class="flex pl-14">
+                  <input
+                    type="number"
+                    formControlName="memoryTriggerThresholdPercent"
+                    aria-label="Memory usage threshold value"
+                    min="1"
+                    max="100"
+                    placeholder="e.g. 80"
+                    class="rounded-none rounded-s-lg bg-gray-50 border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 block min-w-0 w-20 text-sm p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+                  <span
+                    class="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 border border-e-0 border-gray-300 rounded-e-md dark:bg-gray-600 dark:text-gray-400 dark:border-gray-600"
+                    >%
+                  </span>
+                </div>
+                @if (
+                  editConfigForm.controls.memoryTriggerThresholdPercent.touched &&
+                  editConfigForm.controls.memoryTriggerThresholdPercent.errors
+                ) {
+                  <div class="text-sm text-red-500 pl-14">Enter a value between 1 and 100.</div>
+                }
+              }
+            </div>
+
+            <div class="space-y-1">
+              <label class="flex items-center cursor-pointer">
+                <input type="checkbox" class="sr-only peer" formControlName="diskTriggerEnabled" />
+                <div
+                  class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+                <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Disk usage threshold</span>
+              </label>
+              @if (editConfigForm.controls.diskTriggerThresholdPercent.enabled) {
+                <div class="flex pl-14">
+                  <input
+                    type="number"
+                    formControlName="diskTriggerThresholdPercent"
+                    aria-label="Disk usage threshold value"
+                    min="1"
+                    max="100"
+                    placeholder="e.g. 80"
+                    class="rounded-none rounded-s-lg bg-gray-50 border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 block min-w-0 w-20 text-sm p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+                  <span
+                    class="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 border border-e-0 border-gray-300 rounded-e-md dark:bg-gray-600 dark:text-gray-400 dark:border-gray-600"
+                    >%
+                  </span>
+                </div>
+                @if (
+                  editConfigForm.controls.diskTriggerThresholdPercent.touched &&
+                  editConfigForm.controls.diskTriggerThresholdPercent.errors
+                ) {
+                  <div class="text-sm text-red-500 pl-14">Enter a value between 1 and 100.</div>
+                }
+              }
+            </div>
+
+            @if (editConfigForm.errors?.['anyTrigger']) {
+              <div class="text-sm text-red-500">Enable at least one trigger.</div>
+            }
+          </div>
+        </div>
 
         <div class="space-y-1">
           <h3 class="text-sm font-medium text-gray-900 dark:text-white">Deployments</h3>
@@ -232,8 +344,8 @@
       <div class="mt-8 flex justify-center w-full pb-4 space-x-4 sm:mt-0">
         <button
           type="submit"
-          [disabled]="editFormLoading()"
-          class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+          [disabled]="editFormLoading() || editConfigForm.invalid"
+          class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-50">
           <fa-icon [icon]="faPen" class="mr-2"></fa-icon>
           Save
         </button>

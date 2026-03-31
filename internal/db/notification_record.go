@@ -19,8 +19,14 @@ const notificationRecordOutputExpr = `
 	r.customer_organization_id,
 	r.deployment_target_id,
 	r.alert_configuration_id,
+	r.type,
 	r.previous_deployment_revision_status_id,
 	r.current_deployment_revision_status_id,
+	r.metric_type,
+	r.disk_device,
+	r.disk_path,
+	r.previous_deployment_target_metrics_id,
+	r.current_deployment_target_metrics_id,
 	r.message `
 
 func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecord) error {
@@ -33,8 +39,14 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 				customer_organization_id,
 				deployment_target_id,
 				alert_configuration_id,
+				type,
 				previous_deployment_revision_status_id,
 				current_deployment_revision_status_id,
+				metric_type,
+				disk_device,
+				disk_path,
+				previous_deployment_target_metrics_id,
+				current_deployment_target_metrics_id,
 				message
 			)
 			VALUES (
@@ -42,8 +54,14 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 				@customerOrganizationID,
 				@deploymentTargetID,
 				@alertConfigurationID,
+				@type,
 				@previousDeploymentStatusID,
 				@currentDeploymentStatusID,
+				@metricType,
+				@diskDevice,
+				@diskPath,
+				@previousMetricsID,
+				@currentMetricsID,
 				@message
 			)
 			RETURNING *
@@ -54,8 +72,14 @@ func SaveNotificationRecord(ctx context.Context, record *types.NotificationRecor
 			"customerOrganizationID":     record.CustomerOrganizationID,
 			"deploymentTargetID":         record.DeploymentTargetID,
 			"alertConfigurationID":       record.AlertConfigurationID,
+			"type":                       record.Type,
 			"previousDeploymentStatusID": record.PreviousDeploymentRevisionStatusID,
 			"currentDeploymentStatusID":  record.CurrentDeploymentRevisionStatusID,
+			"metricType":                 record.MetricType,
+			"diskDevice":                 record.DiskDevice,
+			"diskPath":                   record.DiskPath,
+			"previousMetricsID":          record.PreviousDeploymentTargetMetricsID,
+			"currentMetricsID":           record.CurrentDeploymentTargetMetricsID,
 			"message":                    record.Message,
 		},
 	)
@@ -118,7 +142,17 @@ func GetNotificationRecords(
 			av.name AS application_version_name,
 			CASE WHEN s.id IS NOT NULL THEN (
 				s.id, s.created_at, s.deployment_revision_id, s.type, s.message
-			) END current_deployment_revision_status
+			) END current_deployment_revision_status,
+			CASE WHEN dtm.id IS NOT NULL THEN (
+				dtm.id,
+				dtm.deployment_target_id,
+				dtm.cpu_cores_millis,
+				dtm.cpu_usage,
+				dtm.memory_bytes,
+				dtm.memory_usage,
+				array_agg(row(dtdm.device, dtdm.path, dtdm.fs_type, dtdm.bytes_total, dtdm.bytes_used) ORDER BY dtdm.device)
+					FILTER (WHERE dtdm.id IS NOT NULL)
+			) END AS current_deployment_target_metrics
 		FROM NotificationRecord r
 		LEFT JOIN DeploymentTarget dt
 			ON r.deployment_target_id = dt.id
@@ -135,9 +169,14 @@ func GetNotificationRecords(
 			ON dr.application_version_id = av.id
 		LEFT JOIN Application a
 			ON av.application_id = a.id
+		LEFT JOIN DeploymentTargetMetrics dtm
+			ON r.current_deployment_target_metrics_id = dtm.id
+		LEFT JOIN DeploymentTargetDiskMetrics dtdm
+			ON dtdm.deployment_target_metrics_id = dtm.id
 		WHERE r.organization_id = @organizationID
 			AND ((@isVendor AND r.customer_organization_id IS NULL)
 				OR r.customer_organization_id = @customerOrganizationID)
+		GROUP BY r.id, dt.id, co.id, a.id, av.id, s.id, dtm.id
 		ORDER BY r.created_at DESC`,
 		pgx.NamedArgs{
 			"organizationID":         organizationID,
@@ -146,7 +185,7 @@ func GetNotificationRecords(
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query NotificationRecord exists: %w", err)
+		return nil, fmt.Errorf("failed to query NotificationRecord: %w", err)
 	}
 
 	records, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.NotificationRecordWithCurrentStatus])

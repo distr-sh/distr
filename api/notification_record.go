@@ -11,8 +11,14 @@ type NotificationRecord struct {
 	CreatedAt                          time.Time  `json:"createdAt"`
 	DeploymentTargetID                 *uuid.UUID `json:"deploymentTargetId"`
 	AlertConfigurationID               *uuid.UUID `json:"alertConfigurationId,omitempty"`
+	Type                               string     `json:"type"`
 	PreviousDeploymentRevisionStatusID *uuid.UUID `json:"previousDeploymentStatusId,omitempty"`
 	CurrentDeploymentRevisionStatusID  *uuid.UUID `json:"currentDeploymentStatusId,omitempty"`
+	MetricType                         *string    `json:"metricType,omitempty"`
+	DiskDevice                         *string    `json:"diskDevice,omitempty"`
+	DiskPath                           *string    `json:"diskPath,omitempty"`
+	PreviousDeploymentTargetMetricsID  *uuid.UUID `json:"previousDeploymentTargetMetricsId,omitempty"`
+	CurrentDeploymentTargetMetricsID   *uuid.UUID `json:"currentDeploymentTargetMetricsId,omitempty"`
 	Message                            string     `json:"message"`
 }
 
@@ -23,4 +29,5 @@ type NotificationRecordWithCurrentStatus struct {
 	ApplicationName                 *string                   `json:"applicationName,omitempty"`
 	ApplicationVersionName          *string                   `json:"applicationVersionName,omitempty"`
 	CurrentDeploymentRevisionStatus *DeploymentRevisionStatus `json:"currentDeploymentRevisionStatus,omitempty"`
+	CurrentDeploymentTargetMetrics  *DeploymentTargetMetrics  `json:"currentDeploymentTargetMetrics,omitempty"`
 }

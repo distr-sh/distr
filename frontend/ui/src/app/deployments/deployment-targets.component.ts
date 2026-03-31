@@ -20,14 +20,12 @@ import {QuotaLimitComponent} from '../components/quota-limit.component';
 import {ApplicationsService} from '../services/applications.service';
 import {AuthService} from '../services/auth.service';
 import {ContextService} from '../services/context.service';
-import {
-  DeploymentTargetLatestMetrics,
-  DeploymentTargetsMetricsService,
-} from '../services/deployment-target-metrics.service';
+import {DeploymentTargetsMetricsService} from '../services/deployment-target-metrics.service';
 import {DeploymentTargetsService} from '../services/deployment-targets.service';
 import {FeatureFlagService} from '../services/feature-flag.service';
 import {OrganizationService} from '../services/organization.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
+import {DeploymentTargetLatestMetrics} from '../types/deployment-target-metrics';
 import {DeploymentModalComponent} from './deployment-modal.component';
 import {DeploymentTargetCardComponent} from './deployment-target-card/deployment-target-card.component';
 import {DeploymentWizardComponent} from './deployment-wizard/deployment-wizard.component';

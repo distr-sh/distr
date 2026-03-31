@@ -5,7 +5,7 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faExclamation, faHardDrive} from '@fortawesome/free-solid-svg-icons';
 import {BytesPipe} from '../../../util/units';
 import {StatusDotDirective} from '../../components/status-dot';
-import {DeploymentTargetLatestMetrics} from '../../services/deployment-target-metrics.service';
+import {DeploymentTargetLatestMetrics} from '../../types/deployment-target-metrics';
 
 @Component({
   selector: 'app-deployment-target-metrics',
