@@ -113,38 +113,52 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               link: '/docs/',
               icon: 'open-book',
               items: [
-                {label: 'What is Distr?', link: '/docs/'},
-                {label: 'Core Concepts', link: '/docs/concepts/'},
-                {label: 'Vendor Portal', link: '/docs/platform/vendor-portal/'},
-                {label: 'Quickstart', link: '/docs/quickstart/'},
-                {label: 'Free Trial', link: '/docs/account/trial/'},
-                {label: 'Choosing a Plan', link: '/docs/account/plans/'},
                 {
-                  label: 'Subscription Management',
-                  link: '/docs/account/subscription/',
-                },
-                {label: 'FAQs', link: '/docs/faqs/'},
-              ],
-            },
-            {
-              label: 'Distribution Scenarios',
-              link: '/docs/use-cases/fully-self-managed/',
-              icon: 'puzzle',
-              items: [
-                {
-                  label: 'Fully Self-Managed',
-                  link: '/docs/use-cases/fully-self-managed/',
+                  label: 'Introduction',
+                  items: [
+                    {label: 'What is Distr?', link: '/docs/'},
+                    {label: 'Core Concepts', link: '/docs/concepts/'},
+                    {
+                      label: 'Vendor Portal',
+                      link: '/docs/platform/vendor-portal/',
+                    },
+                    {label: 'Quickstart', link: '/docs/quickstart/'},
+                    {label: 'FAQs', link: '/docs/faqs/'},
+                  ],
                 },
                 {
-                  label: 'Assisted Self-Managed',
-                  link: '/docs/use-cases/assisted-self-managed/',
+                  label: 'Distribution Scenarios',
+                  items: [
+                    {
+                      label: 'Fully Self-Managed',
+                      link: '/docs/use-cases/fully-self-managed/',
+                    },
+                    {
+                      label: 'Assisted Self-Managed',
+                      link: '/docs/use-cases/assisted-self-managed/',
+                    },
+                    {label: 'BYOC', link: '/docs/use-cases/byoc/'},
+                    {
+                      label: 'Air-Gapped Deployments',
+                      link: '/docs/use-cases/air-gapped/',
+                    },
+                    {
+                      label: 'Edge Deployments',
+                      link: '/docs/use-cases/edge/',
+                    },
+                  ],
                 },
-                {label: 'BYOC', link: '/docs/use-cases/byoc/'},
                 {
-                  label: 'Air-Gapped Deployments',
-                  link: '/docs/use-cases/air-gapped/',
+                  label: 'Account',
+                  items: [
+                    {label: 'Free Trial', link: '/docs/account/trial/'},
+                    {label: 'Choosing a Plan', link: '/docs/account/plans/'},
+                    {
+                      label: 'Subscription Management',
+                      link: '/docs/account/subscription/',
+                    },
+                  ],
                 },
-                {label: 'Edge Deployments', link: '/docs/use-cases/edge/'},
               ],
             },
             {
@@ -242,7 +256,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               ],
             },
             {
-              label: 'Platform Features',
+              label: 'Distribution Platform',
               link: '/docs/platform/license-management/',
               icon: 'list-format',
               items: [
@@ -284,32 +298,35 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                     },
                   ],
                 },
-              ],
-            },
-            {
-              label: 'Customer Management',
-              link: '/docs/customers/',
-              icon: 'setting',
-              items: [
                 {
                   label: 'Customer Portal',
-                  link: '/docs/customers/',
+                  items: [
+                    {
+                      label: 'Customer Portal',
+                      link: '/docs/customers/',
+                    },
+                    {
+                      label: 'End-Customer View of Distr',
+                      link: '/docs/customers/customer-registry-access/',
+                    },
+                  ],
                 },
                 {
-                  label: 'Manage Customers',
-                  link: '/docs/customers/manage-customers/',
-                },
-                {
-                  label: 'Branding & White-Labeling',
-                  link: '/docs/customers/branding/',
-                },
-                {
-                  label: 'End-Customer View of Distr',
-                  link: '/docs/customers/customer-registry-access/',
-                },
-                {
-                  label: 'Role-Based Access Control (RBAC)',
-                  link: '/docs/customers/rbac/',
+                  label: 'Customer Management',
+                  items: [
+                    {
+                      label: 'Branding & White-Labeling',
+                      link: '/docs/customers/branding/',
+                    },
+                    {
+                      label: 'Role-Based Access Control (RBAC)',
+                      link: '/docs/customers/rbac/',
+                    },
+                    {
+                      label: 'Manage Customers',
+                      link: '/docs/customers/manage-customers/',
+                    },
+                  ],
                 },
               ],
             },
@@ -414,15 +431,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
     // product/ → platform/
     '/docs/product/vendor-portal/': '/docs/platform/vendor-portal/',
-    '/docs/product/agents/': '/docs/platform/agents/',
-    '/docs/product/alerts/': '/docs/platform/alerts/',
-    '/docs/product/registry/': '/docs/platform/registry/',
+    '/docs/product/agents/': '/docs/agents/',
+    '/docs/product/alerts/': '/docs/agents/alerts/',
+    '/docs/product/registry/': '/docs/registry/',
     '/docs/product/support-bundles/': '/docs/platform/support-bundles/',
-    '/docs/product/customer-portal/': '/docs/platform/customer-portal/',
-    '/docs/product/branding/': '/docs/platform/branding/',
-    '/docs/product/rbac/': '/docs/platform/rbac/',
+    '/docs/product/customer-portal/': '/docs/customers/',
+    '/docs/product/branding/': '/docs/customers/branding/',
+    '/docs/product/rbac/': '/docs/customers/rbac/',
     '/docs/product/license-management/': '/docs/platform/license-management/',
-    '/docs/product/subscription-management/': '/docs/platform/subscription/',
+    '/docs/product/subscription-management/': '/docs/account/subscription/',
     '/docs/product/distr-hub/': '/docs/platform/vendor-portal/',
     '/docs/product/faqs/': '/docs/faqs/',
 
@@ -434,47 +451,48 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
     // Guide renames
     '/docs/guides/getting-started/application/':
-      '/docs/guides/create-application/',
+      '/docs/agents/create-application/',
     '/docs/guides/getting-started/deployment/':
-      '/docs/guides/create-deployment/',
+      '/docs/agents/create-deployment/',
     '/docs/guides/getting-started/distr-on-macos/':
-      '/docs/guides/setup-on-macos/',
+      '/docs/agents/setup-on-macos/',
     '/docs/guides/getting-started/how-to-registry/':
-      '/docs/guides/push-to-registry/',
-    '/docs/guides/configuration/docker-env/': '/docs/guides/docker-env/',
-    '/docs/guides/configuration/docker-secrets/': '/docs/guides/secrets/',
-    '/docs/guides/advanced/secrets/': '/docs/guides/secrets/',
+      '/docs/registry/push-to-registry/',
+    '/docs/guides/configuration/docker-env/': '/docs/agents/docker-env/',
+    '/docs/guides/configuration/docker-secrets/':
+      '/docs/agents/docker-compose-secrets/',
+    '/docs/guides/advanced/secrets/': '/docs/agents/secrets/',
     '/docs/guides/configuration/application-links/':
-      '/docs/guides/application-links/',
+      '/docs/agents/application-links/',
     '/docs/guides/configuration/helm-chart-registry-auth/':
-      '/docs/guides/helm-registry-auth/',
+      '/docs/agents/helm-registry-auth/',
     '/docs/guides/automation/automatic-deployments-from-github/':
-      '/docs/guides/github-actions/',
+      '/docs/integrations/github-actions/',
     '/docs/guides/automation/preflight-checks/':
-      '/docs/guides/preflight-checks/',
+      '/docs/agents/preflight-checks/',
     '/docs/guides/automation/kubernetes-compatibility-matrix/':
-      '/docs/guides/k8s-compatibility/',
+      '/docs/platform/k8s-compatibility/',
     '/docs/guides/automation/vulnerability-scanning/':
-      '/docs/guides/vulnerability-scanning/',
+      '/docs/platform/vulnerability-scanning/',
     '/docs/guides/customer-management/customer-management/':
-      '/docs/guides/manage-customers/',
+      '/docs/customers/manage-customers/',
     '/docs/guides/customer-management/end-customer-registry-view/':
-      '/docs/guides/customer-registry-access/',
+      '/docs/customers/customer-registry-access/',
     '/docs/guides/customer-management/application-entitlements/':
-      '/docs/guides/application-entitlements/',
+      '/docs/platform/application-entitlements/',
     '/docs/guides/customer-management/artifact-entitlements/':
-      '/docs/guides/artifact-entitlements/',
+      '/docs/platform/artifact-entitlements/',
     '/docs/guides/customer-management/license-keys/':
-      '/docs/guides/license-keys/',
+      '/docs/platform/license-keys/',
 
     // Legacy guide slugs
-    '/docs/guides/license-mgmt/': '/docs/guides/application-entitlements/',
+    '/docs/guides/license-mgmt/': '/docs/platform/application-entitlements/',
     '/docs/guides/application-licenses/':
-      '/docs/guides/application-entitlements/',
-    '/docs/guides/artifact-licenses/': '/docs/guides/artifact-entitlements/',
-    '/docs/guides/onboarding-a-new-customer/': '/docs/platform/rbac/',
-    '/docs/guides/onboarding-a-docker-app/': '/docs/guides/create-application/',
-    '/docs/guides/onboarding-a-helm-app/': '/docs/guides/create-application/',
+      '/docs/platform/application-entitlements/',
+    '/docs/guides/artifact-licenses/': '/docs/platform/artifact-entitlements/',
+    '/docs/guides/onboarding-a-new-customer/': '/docs/customers/rbac/',
+    '/docs/guides/onboarding-a-docker-app/': '/docs/agents/create-application/',
+    '/docs/guides/onboarding-a-helm-app/': '/docs/agents/create-application/',
 
     // Integration renames
     '/docs/integrations/mcp/': '/docs/',
@@ -499,7 +517,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/platform/logs-and-metrics/': '/docs/agents/logs-and-metrics/',
     '/docs/platform/branding/': '/docs/customers/branding/',
     '/docs/platform/rbac/': '/docs/customers/rbac/',
-    '/docs/platform/subscription/': '/docs/customers/subscription/',
     '/docs/guides/create-application/': '/docs/agents/create-application/',
     '/docs/guides/create-deployment/': '/docs/agents/create-deployment/',
     '/docs/guides/setup-on-macos/': '/docs/agents/setup-on-macos/',
@@ -521,8 +538,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/guides/customer-registry-access/':
       '/docs/customers/customer-registry-access/',
     '/docs/guides/github-actions/': '/docs/integrations/github-actions/',
-    '/docs/guides/configuration/docker-secrets/':
-      '/docs/agents/docker-compose-secrets/',
     '/docs/customers/subscription/': '/docs/account/subscription/',
     '/docs/platform/subscription/': '/docs/account/subscription/',
   },
