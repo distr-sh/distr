@@ -1,10 +1,10 @@
-import { AsyncPipe, DatePipe } from '@angular/common';
-import { Component, inject, input } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { combineLatest, EMPTY, filter, interval, map, merge, Observable, scan, Subject, switchMap, tap } from 'rxjs';
-import { distinctBy } from '../../util/arrays';
-import { downloadBlob } from '../../util/blob';
-import { ToastService } from '../services/toast.service';
+import {AsyncPipe, DatePipe} from '@angular/common';
+import {Component, inject, input} from '@angular/core';
+import {toObservable} from '@angular/core/rxjs-interop';
+import {combineLatest, EMPTY, filter, interval, map, merge, Observable, scan, Subject, switchMap, tap} from 'rxjs';
+import {distinctBy} from '../../util/arrays';
+import {downloadBlob} from '../../util/blob';
+import {ToastService} from '../services/toast.service';
 
 export interface TimeseriesEntry {
   id?: string;
@@ -108,7 +108,10 @@ export class TimeseriesTableComponent {
   protected hasMore = true;
   protected isExporting = false;
 
-  protected readonly entries$: Observable<TimeseriesEntry[]> = combineLatest([toObservable(this.source), toObservable(this.live)]).pipe(
+  protected readonly entries$: Observable<TimeseriesEntry[]> = combineLatest([
+    toObservable(this.source),
+    toObservable(this.live),
+  ]).pipe(
     switchMap(([source, live]) => {
       let nextBefore: Date | null = null;
       let nextAfter: Date | null = null;
@@ -121,11 +124,13 @@ export class TimeseriesTableComponent {
             switchMap((before) => source.loadBefore(before))
           )
         ).pipe(tap((entries) => (this.hasMore = entries.length >= source.batchSize))),
-        live ? interval(10_000).pipe(
-          map(() => nextAfter),
-          filter((after) => after !== null),
-          switchMap((after) => source.loadAfter(after))
-        ) : EMPTY
+        live
+          ? interval(10_000).pipe(
+              map(() => nextAfter),
+              filter((after) => after !== null),
+              switchMap((after) => source.loadAfter(after))
+            )
+          : EMPTY
       ).pipe(
         tap((entries) =>
           entries
