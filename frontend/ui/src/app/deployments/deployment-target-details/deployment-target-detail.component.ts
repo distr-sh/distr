@@ -13,6 +13,7 @@ import { DeploymentLogsTableComponent } from '../deployment-status-modal/deploym
 import { DeploymentStatusTableComponent } from '../deployment-status-modal/deployment-status-table.component';
 import { DeploymentAppNameComponent } from '../deployment-target-card/deployment-app-name.component';
 import { DeploymentTargetLogsTableComponent } from '../deployment-target-status-modal/deployment-target-logs-table.component';
+import dayjs from 'dayjs';
 
 @Component({
   selector: 'app-deployment-target-detail',
@@ -102,8 +103,8 @@ export class DeploymentTargetDetailComponent {
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       this.form.patchValue(
         {
-          from: params.get('from') ?? '',
-          to: params.get('to') ?? '',
+          from: isoToDateTimeLocal(params.get('from')),
+          to: isoToDateTimeLocal(params.get('to')),
           filter: params.get('filter') ?? '',
         },
         { emitEvent: false }
@@ -114,8 +115,8 @@ export class DeploymentTargetDetailComponent {
       this.router.navigate([], {
         relativeTo: this.route,
         queryParams: {
-          from: values.from || null,
-          to: values.to || null,
+          from: dateTimeLocalToISO(values.from),
+          to: dateTimeLocalToISO(values.to),
           filter: values.filter || null,
         },
         queryParamsHandling: 'merge',
@@ -181,4 +182,12 @@ export class DeploymentTargetDetailComponent {
     this.deploymentStatusTable()?.export();
     this.deploymentLogsTable()?.export();
   }
+}
+
+function dateTimeLocalToISO(dateTimeLocal: string | null | undefined): string | null {
+  return dateTimeLocal ? dayjs(dateTimeLocal).toISOString() : null;
+}
+
+function isoToDateTimeLocal(iso: string | null | undefined): string {
+  return iso ? dayjs(iso).local().format('YYYY-MM-DDTHH:mm') : '';
 }
