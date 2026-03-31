@@ -50,7 +50,11 @@ class LogsTimeseriesSource implements TimeseriesSource {
 
 @Component({
   selector: 'app-deployment-target-logs-table',
-  template: `<app-timeseries-table [source]="source()" [exporter]="exporter" [live]="live()" />`,
+  template: `<app-timeseries-table
+    [source]="source()"
+    [exporter]="exporter"
+    [live]="live()"
+    [newestFirst]="newestFirst()" />`,
   imports: [TimeseriesTableComponent],
 })
 export class DeploymentTargetLogsTableComponent {
@@ -60,6 +64,7 @@ export class DeploymentTargetLogsTableComponent {
   public readonly after = input<Date>();
   public readonly before = input<Date>();
   public readonly filter = input<string>();
+  public readonly newestFirst = input(true);
 
   protected readonly live = computed(() => !this.after() && !this.before());
 

@@ -196,6 +196,15 @@
           </button>
           <button
             type="button"
+            (click)="newestFirst.set(!newestFirst())"
+            class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+            <fa-icon
+              [icon]="newestFirst() ? faArrowDownWideShort : faArrowUpShortWide"
+              class="mr-2 text-gray-500 dark:text-gray-400" />
+            {{ newestFirst() ? 'Newest first' : 'Oldest first' }}
+          </button>
+          <button
+            type="button"
             (click)="export()"
             class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
             <fa-icon [icon]="faDownload" class="mr-2 text-gray-500 dark:text-gray-400" />
@@ -211,20 +220,23 @@
             [resource]="resource"
             [after]="after()"
             [before]="before()"
-            [filter]="filter()" />
+            [filter]="filter()"
+            [newestFirst]="newestFirst()" />
         } @else {
           <app-deployment-status-table
             [deploymentId]="deploymentId"
             [after]="after()"
             [before]="before()"
-            [filter]="filter()" />
+            [filter]="filter()"
+            [newestFirst]="newestFirst()" />
         }
       } @else if (deploymentTargetId(); as targetId) {
         <app-deployment-target-logs-table
           [deploymentTargetId]="targetId"
           [after]="after()"
           [before]="before()"
-          [filter]="filter()" />
+          [filter]="filter()"
+          [newestFirst]="newestFirst()" />
       }
     </div>
   </div>

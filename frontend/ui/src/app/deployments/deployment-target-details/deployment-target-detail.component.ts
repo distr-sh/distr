@@ -5,7 +5,15 @@ import {FormBuilder, ReactiveFormsModule} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faChevronDown, faDownload, faFilterCircleXmark, faPlay, faServer} from '@fortawesome/free-solid-svg-icons';
+import {
+  faArrowDownWideShort,
+  faArrowUpShortWide,
+  faChevronDown,
+  faDownload,
+  faFilterCircleXmark,
+  faPlay,
+  faServer,
+} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {combineLatest, debounceTime, map, of, switchMap} from 'rxjs';
 import {DeploymentLogsService} from '../../services/deployment-logs.service';
@@ -41,6 +49,10 @@ export class DeploymentTargetDetailComponent {
   protected readonly faDownload = faDownload;
   protected readonly faFilterCircleXmark = faFilterCircleXmark;
   protected readonly faPlay = faPlay;
+  protected readonly faArrowDownWideShort = faArrowDownWideShort;
+  protected readonly faArrowUpShortWide = faArrowUpShortWide;
+
+  protected readonly newestFirst = signal(true);
 
   protected readonly targetDropdown = signal(false);
   protected targetDropdownWidth = 0;

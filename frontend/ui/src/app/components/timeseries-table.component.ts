@@ -29,7 +29,7 @@ export interface TimeseriesExporter {
   selector: 'app-timeseries-table',
   template: `
     @if (entries$ | async; as entries) {
-      <div class="relative">
+      <div class="flex flex-col gap-4" [class.flex-col-reverse]="!newestFirst()">
         <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
           <thead
             class="dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-800 dark:text-gray-400 sr-only">
@@ -63,20 +63,20 @@ export interface TimeseriesExporter {
             }
           </tbody>
         </table>
-      </div>
 
-      @if (hasMore) {
-        <div class="flex items-center justify-center gap-2 mt-2">
-          @if (hasMore) {
-            <button
-              type="button"
-              class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
-              (click)="showMore()">
-              Load more
-            </button>
-          }
-        </div>
-      }
+        @if (hasOlder) {
+          <div class="flex items-center justify-center gap-2">
+            @if (hasOlder) {
+              <button
+                type="button"
+                class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+                (click)="showOlder()">
+                Load older
+              </button>
+            }
+          </div>
+        }
+      </div>
     } @else {
       <output class="flex justify-center items-center gap-2 text-gray-700 dark:text-gray-400">
         <svg
@@ -102,13 +102,14 @@ export class TimeseriesTableComponent {
   public readonly source = input.required<TimeseriesSource>();
   public readonly exporter = input<TimeseriesExporter>();
   public readonly live = input<boolean>(true);
+  public readonly newestFirst = input<boolean>(true);
 
   private readonly toastService = inject(ToastService);
 
-  protected hasMore = true;
+  protected hasOlder = true;
   protected isExporting = false;
 
-  protected readonly entries$: Observable<TimeseriesEntry[]> = combineLatest([
+  private readonly accumulatedEntries$: Observable<TimeseriesEntry[]> = combineLatest([
     toObservable(this.source),
     toObservable(this.live),
   ]).pipe(
@@ -118,12 +119,12 @@ export class TimeseriesTableComponent {
       return merge(
         merge(
           source.load(),
-          this.showMore$.pipe(
+          this.showOlder$.pipe(
             map(() => nextBefore),
             filter((before) => before !== null),
             switchMap((before) => source.loadBefore(before))
           )
-        ).pipe(tap((entries) => (this.hasMore = entries.length >= source.batchSize))),
+        ).pipe(tap((entries) => (this.hasOlder = entries.length >= source.batchSize))),
         live
           ? interval(10_000).pipe(
               map(() => nextAfter),
@@ -145,18 +146,22 @@ export class TimeseriesTableComponent {
             })
         ),
         scan(
-          (acc, entries) =>
-            distinctBy((it: TimeseriesEntry) => it.id ?? it.date)(acc.concat(entries)).sort(compareByDate),
+          (acc, entries) => distinctBy((it: TimeseriesEntry) => it.id ?? it.date)(acc.concat(entries)),
           [] as TimeseriesEntry[]
         )
       );
     })
   );
 
-  private readonly showMore$ = new Subject<void>();
+  protected readonly entries$: Observable<TimeseriesEntry[]> = combineLatest([
+    this.accumulatedEntries$,
+    toObservable(this.newestFirst),
+  ]).pipe(map(([entries, newestFirst]) => entries.sort(compareByDate(newestFirst))));
 
-  protected showMore() {
-    this.showMore$.next();
+  private readonly showOlder$ = new Subject<void>();
+
+  protected showOlder() {
+    this.showOlder$.next();
   }
 
   public exportData() {
@@ -188,6 +193,7 @@ export class TimeseriesTableComponent {
   }
 }
 
-function compareByDate(a: TimeseriesEntry, b: TimeseriesEntry): number {
-  return new Date(b.date).getTime() - new Date(a.date).getTime();
+function compareByDate(reverse: boolean): (a: TimeseriesEntry, b: TimeseriesEntry) => number {
+  const mod = reverse ? -1 : 1;
+  return (a, b) => mod * (new Date(a.date).getTime() - new Date(b.date).getTime());
 }
