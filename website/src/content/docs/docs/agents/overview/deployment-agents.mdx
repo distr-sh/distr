@@ -3,15 +3,15 @@ title: Deployment Agents
 description: Overview of Distr deployment agents — what they are, how they work, and how to manage them from the Vendor Portal.
 slug: docs/agents
 sidebar:
-  order: 2
+  order: 1
 ---
 
 import {Aside} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
-import agentApplicationsLight from '~/assets/docs/product/deployment-agents/agent-applications-light.png';
-import agentApplicationsDark from '~/assets/docs/product/deployment-agents/agent-applications-dark.png';
-import agentDeploymentLight from '~/assets/docs/product/deployment-agents/agent-deployment-light.png';
-import agentDeploymentDark from '~/assets/docs/product/deployment-agents/agent-deployment-dark.png';
+import agentApplicationsLight from '~/assets/docs/agents/overview/deployment-agents/agent-applications-light.png';
+import agentApplicationsDark from '~/assets/docs/agents/overview/deployment-agents/agent-applications-dark.png';
+import agentDeploymentLight from '~/assets/docs/agents/overview/deployment-agents/agent-deployment-light.png';
+import agentDeploymentDark from '~/assets/docs/agents/overview/deployment-agents/agent-deployment-dark.png';
 
 Deployment Agents are a core component of the Distr platform, designed to run within customer environments alongside vendor applications. These lightweight agents bridge the gap between the Distr Hub and deployment targets, enabling comprehensive lifecycle management while requiring minimal access to customer infrastructure.
 
@@ -24,7 +24,7 @@ Deployment Agents are a core component of the Distr platform, designed to run wi
 Distr provides two production-ready agents and one in development:
 
 - **[Docker Agent](/docs/agents/docker-agent/)** — manages Docker Compose deployments on any Linux host. Handles updates, environment variables, container health, and supports Docker Swarm mode.
-- **[Helm Agent](/docs/agents/helm-agent/)** — manages Helm chart deployments in Kubernetes clusters. Supports cluster- and namespace-scoped permissions, value overrides, and migration of existing releases.
+- **[Kubernetes Agent](/docs/agents/kubernetes-agent/)** — manages Helm chart deployments in Kubernetes clusters. Supports cluster- and namespace-scoped permissions, value overrides, and migration of existing releases.
 - **Terraform Agent** _(coming soon)_ — designed for [BYOC](/glossary/byoc-definition/) deployments.
 
 <Aside>
@@ -47,8 +47,8 @@ The Agents section of the Vendor Portal has two parts.
 
 The Applications section is where you define your software offerings — Docker Compose files or Helm charts, environment variable templates, and application versions. This is the foundation for all deployments.
 
-- [Create an Application](/docs/agents/create-application/) — set up Docker and Helm applications
-- [Create a Deployment](/docs/agents/create-deployment/) — deploy applications to customer environments
+- [Create an Application](/docs/agents/application/) — set up Docker and Helm applications
+- [Create a Deployment](/docs/agents/deployment/) — deploy applications to customer environments
 
 ### Deployments
 

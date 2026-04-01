@@ -1,14 +1,14 @@
 ---
-title: Helm Agent
-description: How the Distr Helm agent works — installation, core loop, OCI registry authentication, self-updates, migrating existing releases, and uninstallation.
-slug: docs/agents/helm-agent
+title: Kubernetes Agent
+description: How the Distr Kubernetes agent works — installation, core loop, OCI registry authentication, self-updates, migrating existing releases, and uninstallation.
+slug: docs/agents/kubernetes-agent
 sidebar:
-  order: 4
+  order: 3
 ---
 
 import {Aside} from '@astrojs/starlight/components';
 
-The Helm agent manages Kubernetes deployments, handling the complete lifecycle of Helm charts in customer environments. It installs and upgrades charts, monitors Kubernetes resource health, supports customer-specific value overrides, and provides rollback capabilities for failed deployments.
+The Kubernetes agent manages Kubernetes deployments, handling the complete lifecycle of Helm charts in customer environments. It installs and upgrades charts, monitors Kubernetes resource health, supports customer-specific value overrides, and provides rollback capabilities for failed deployments.
 
 ## Installation and Environment
 
@@ -101,7 +101,7 @@ All requests are authenticated with a JWT token obtained from `DISTR_LOGIN_ENDPO
 
 ## Altering the Helm Release
 
-The Helm agent uses the Helm API to manage releases, similar to how the [Flux Helm Controller](https://fluxcd.io/flux/components/helm/) works. You can inspect releases with `helm ls -a -n <namespace>`.
+The Kubernetes agent uses the Helm API to manage releases, similar to how the [Flux Helm Controller](https://fluxcd.io/flux/components/helm/) works. You can inspect releases with `helm ls -a -n <namespace>`.
 
 <Aside type="danger">
   Manually running `helm upgrade` or `helm rollback` will stop the Distr agent
@@ -123,7 +123,7 @@ When the agent version for a deployment target is updated in the Distr Hub, the 
 
 ## Migrating an Existing Helm Release
 
-The Helm agent only manages releases it knows about. If you already have a Helm release running and want Distr to take it over, you need to create a tracking secret that tells the agent the release exists and which revision it is on.
+The Kubernetes agent only manages releases it knows about. If you already have a Helm release running and want Distr to take it over, you need to create a tracking secret that tells the agent the release exists and which revision it is on.
 
 <Aside type="caution">
   After migration, the Distr agent will manage the release. Do not run `helm

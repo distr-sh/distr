@@ -181,20 +181,20 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                       link: '/docs/agents/docker-agent/',
                     },
                     {
-                      label: 'Helm Agent',
-                      link: '/docs/agents/helm-agent/',
+                      label: 'Kubernetes Agent',
+                      link: '/docs/agents/kubernetes-agent/',
                     },
                     {
-                      label: 'Create an Application',
-                      link: '/docs/agents/create-application/',
+                      label: 'Application',
+                      link: '/docs/agents/application/',
                     },
                     {
-                      label: 'Create a Deployment',
-                      link: '/docs/agents/create-deployment/',
+                      label: 'Deployment',
+                      link: '/docs/agents/deployment/',
                     },
                     {
                       label: 'Run on macOS',
-                      link: '/docs/agents/setup-on-macos/',
+                      link: '/docs/agents/distr-on-macos/',
                     },
                   ],
                 },
@@ -202,7 +202,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   label: 'Configuration',
                   items: [
                     {
-                      label: 'Configure Docker Env Variables',
+                      label: 'Docker Environment Variables',
                       link: '/docs/agents/docker-env/',
                     },
                     {
@@ -214,11 +214,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                       link: '/docs/agents/docker-compose-secrets/',
                     },
                     {
-                      label: 'Configure Application Links',
+                      label: 'Application Links',
                       link: '/docs/agents/application-links/',
                     },
                     {
-                      label: 'Configuring Helm Charts for Distr Artifacts',
+                      label: 'Helm Chart Registry Authentication',
                       link: '/docs/agents/helm-registry-auth/',
                     },
                   ],
@@ -442,12 +442,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/use-cases/self-managed/': '/docs/use-cases/fully-self-managed/',
 
     // Guide renames
-    '/docs/guides/getting-started/application/':
-      '/docs/agents/create-application/',
-    '/docs/guides/getting-started/deployment/':
-      '/docs/agents/create-deployment/',
+    '/docs/guides/getting-started/application/': '/docs/agents/application/',
+    '/docs/guides/getting-started/deployment/': '/docs/agents/deployment/',
     '/docs/guides/getting-started/distr-on-macos/':
-      '/docs/agents/setup-on-macos/',
+      '/docs/agents/distr-on-macos/',
     '/docs/guides/getting-started/how-to-registry/':
       '/docs/registry/push-to-registry/',
     '/docs/guides/configuration/docker-env/': '/docs/agents/docker-env/',
@@ -483,8 +481,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
       '/docs/platform/application-entitlements/',
     '/docs/guides/artifact-licenses/': '/docs/platform/artifact-entitlements/',
     '/docs/guides/onboarding-a-new-customer/': '/docs/customers/rbac/',
-    '/docs/guides/onboarding-a-docker-app/': '/docs/agents/create-application/',
-    '/docs/guides/onboarding-a-helm-app/': '/docs/agents/create-application/',
+    '/docs/guides/onboarding-a-docker-app/': '/docs/agents/application/',
+    '/docs/guides/onboarding-a-helm-app/': '/docs/agents/application/',
 
     // Integration renames
     '/docs/integrations/mcp/': '/docs/integrations/',
@@ -500,9 +498,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/platform/logs-and-metrics/': '/docs/agents/logs-and-metrics/',
     '/docs/platform/branding/': '/docs/customers/branding/',
     '/docs/platform/rbac/': '/docs/customers/rbac/',
-    '/docs/guides/create-application/': '/docs/agents/create-application/',
-    '/docs/guides/create-deployment/': '/docs/agents/create-deployment/',
-    '/docs/guides/setup-on-macos/': '/docs/agents/setup-on-macos/',
+    '/docs/guides/create-application/': '/docs/agents/application/',
+    '/docs/guides/create-deployment/': '/docs/agents/deployment/',
+    '/docs/guides/setup-on-macos/': '/docs/agents/distr-on-macos/',
     '/docs/guides/docker-env/': '/docs/agents/docker-env/',
     '/docs/guides/secrets/': '/docs/agents/secrets/',
     '/docs/guides/application-links/': '/docs/agents/application-links/',

@@ -1,9 +1,9 @@
 ---
-title: Configuring a Helm Chart to Support Distr Artifacts
+title: Helm Chart Registry Authentication
 description: Configure your Helm charts to support authenticated image pulls from the Distr registry by correctly using imagePullSecrets which enables agent-based credential injection.
 slug: docs/agents/helm-registry-auth
 sidebar:
-  order: 6
+  order: 5
 ---
 
 Distr is an [OCI artifact registry](/glossary/oci-container-artifact-registry/) that is compliant with the OCI distribution specification.
