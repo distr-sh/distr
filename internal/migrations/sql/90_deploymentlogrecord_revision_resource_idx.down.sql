@@ -1,0 +1,1 @@
+DROP INDEX deploymentlogrecord_deployment_revision_id_resource;

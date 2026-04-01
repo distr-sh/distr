@@ -99,28 +99,43 @@ func GetDeploymentLogRecordResources(ctx context.Context,
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`WITH latest_revisions AS (
+		// Recursive CTE simulates an index skip scan on (deployment_id, resource, timestamp DESC),
+		// avoiding a full seq scan to enumerate distinct resources.
+		// EXISTS with LIMIT 1 uses the (deployment_revision_id, resource) index to cheaply
+		// check activity without scanning all rows per resource.
+		`WITH RECURSIVE
+		latest_revisions AS (
 			SELECT id FROM DeploymentRevision
 			WHERE deployment_id = @deploymentId
 			ORDER BY created_at DESC
 			LIMIT 5
 		),
-		active_resources AS (
-			SELECT DISTINCT resource
+		resources(resource) AS (
+			SELECT MIN(resource)
 			FROM DeploymentLogRecord
 			WHERE deployment_id = @deploymentId
-				AND deployment_revision_id IN (SELECT id FROM latest_revisions)
-		),
-		all_resources AS (
-			SELECT DISTINCT resource
-			FROM DeploymentLogRecord
-			WHERE deployment_id = @deploymentId
+			UNION ALL
+			SELECT (
+				SELECT MIN(resource)
+				FROM DeploymentLogRecord
+				WHERE deployment_id = @deploymentId
+				  AND resource > resources.resource
+			)
+			FROM resources
+			WHERE resources.resource IS NOT NULL
 		)
-		SELECT resource,
-			CASE WHEN ar.resource IS NOT NULL THEN false ELSE true END AS is_archived
-		FROM all_resources all_r
-		LEFT JOIN active_resources ar USING (resource)
-		ORDER BY resource`,
+		SELECT
+			resources.resource,
+			NOT EXISTS (
+				SELECT 1
+				FROM DeploymentLogRecord
+				WHERE deployment_revision_id IN (SELECT id FROM latest_revisions)
+				  AND resource = resources.resource
+				LIMIT 1
+			) AS is_archived
+		FROM resources
+		WHERE resources.resource IS NOT NULL
+		ORDER BY resources.resource`,
 		pgx.NamedArgs{"deploymentId": deploymentID},
 	)
 	if err != nil {
