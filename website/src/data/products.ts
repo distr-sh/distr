@@ -81,13 +81,13 @@ export const products: Product[] = [
     description:
       'Extend your pull based deployment model with push based approaches with our API Integrations and GitHub Action',
     value: 'workflow',
-    href: '/docs/use-cases/byoc/',
+    href: '/docs/use-cases/byoc-bring-your-own-cloud/',
   },
   {
     title: 'Air-gapped',
     description:
       'Enterprise - Distribute your application with air-gapped bundles into the most isolated environments',
     value: 'server-off',
-    href: '/docs/use-cases/air-gapped/',
+    href: '/docs/use-cases/air-gapped-deployments/',
   },
 ];

@@ -46,7 +46,7 @@ Here's the flow:
 1. Customer hits an issue and creates a support bundle from their [Customer Portal](/docs/customers/). They give it a title and describe what went wrong.
 2. Distr generates a one-time `curl` command, valid for 24 hours.
 3. Customer runs the command on the affected host. An interactive script starts and shows them exactly what will be collected — which containers, which environment variables. Values you've marked as sensitive are already replaced with `[REDACTED]`. The customer can exclude anything before a single byte leaves their machine.
-4. The bundle appears in your [Vendor Portal](/docs/platform/vendor-portal/) with all collected resources attached.
+4. The bundle appears in your [Vendor Portal](/docs/vendor-portal/) with all collected resources attached.
 5. Both sides can leave comments directly on the bundle. When the issue is resolved, you mark it as done.
 
 No SSH. No screen share. No "can you try running this other command." The customer stays in control of what they share. You get structured data you can actually use.

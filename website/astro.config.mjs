@@ -117,10 +117,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   label: 'Introduction',
                   items: [
                     {label: 'What is Distr?', link: '/docs/'},
-                    {label: 'Core Concepts', link: '/docs/concepts/'},
+                    {label: 'Core Concepts', link: '/docs/core-concepts/'},
                     {
                       label: 'Vendor Portal',
-                      link: '/docs/platform/vendor-portal/',
+                      link: '/docs/vendor-portal/',
                     },
                     {label: 'Quickstart', link: '/docs/quickstart/'},
                     {label: 'FAQs', link: '/docs/faqs/'},
@@ -137,25 +137,28 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                       label: 'Assisted Self-Managed',
                       link: '/docs/use-cases/assisted-self-managed/',
                     },
-                    {label: 'BYOC', link: '/docs/use-cases/byoc/'},
+                    {
+                      label: 'BYOC',
+                      link: '/docs/use-cases/byoc-bring-your-own-cloud/',
+                    },
                     {
                       label: 'Air-Gapped Deployments',
-                      link: '/docs/use-cases/air-gapped/',
+                      link: '/docs/use-cases/air-gapped-deployments/',
                     },
                     {
                       label: 'Edge Deployments',
-                      link: '/docs/use-cases/edge/',
+                      link: '/docs/use-cases/edge-deployments/',
                     },
                   ],
                 },
                 {
                   label: 'Account',
                   items: [
-                    {label: 'Free Trial', link: '/docs/account/trial/'},
-                    {label: 'Choosing a Plan', link: '/docs/account/plans/'},
+                    {label: 'Free Trial', link: '/docs/free-trial/'},
+                    {label: 'Choosing a Plan', link: '/docs/subscription/'},
                     {
                       label: 'Subscription Management',
-                      link: '/docs/account/subscription/',
+                      link: '/docs/subscription-management/',
                     },
                   ],
                 },
@@ -409,21 +412,21 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/getting-started/': '/docs/',
     '/docs/getting-started/about/': '/docs/',
     '/docs/getting-started/what-is-distr/': '/docs/',
-    '/docs/getting-started/how-it-works/': '/docs/concepts/',
-    '/docs/getting-started/core-concepts/': '/docs/concepts/',
+    '/docs/getting-started/how-it-works/': '/docs/core-concepts/',
+    '/docs/getting-started/core-concepts/': '/docs/core-concepts/',
     '/docs/getting-started/quickstart/': '/docs/quickstart/',
-    '/docs/getting-started/deployment-methods/': '/docs/account/plans/',
+    '/docs/getting-started/deployment-methods/': '/docs/subscription/',
     '/docs/privacy-policy/': '/privacy-policy/',
 
     // intro/ paths
     '/docs/intro/about/': '/docs/',
-    '/docs/intro/core-concepts/': '/docs/concepts/',
+    '/docs/intro/core-concepts/': '/docs/core-concepts/',
     '/docs/intro/quickstart/': '/docs/quickstart/',
-    '/docs/intro/free-trial/': '/docs/account/trial/',
-    '/docs/intro/subscription/': '/docs/account/plans/',
+    '/docs/intro/free-trial/': '/docs/free-trial/',
+    '/docs/intro/subscription/': '/docs/subscription/',
 
     // product/ → platform/
-    '/docs/product/vendor-portal/': '/docs/platform/vendor-portal/',
+    '/docs/product/vendor-portal/': '/docs/vendor-portal/',
     '/docs/product/agents/': '/docs/agents/',
     '/docs/product/alerts/': '/docs/agents/alerts/',
     '/docs/product/registry/': '/docs/registry/',
@@ -432,15 +435,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/product/branding/': '/docs/customers/branding/',
     '/docs/product/rbac/': '/docs/customers/rbac/',
     '/docs/product/license-management/': '/docs/platform/license-management/',
-    '/docs/product/subscription-management/': '/docs/account/subscription/',
-    '/docs/product/distr-hub/': '/docs/platform/vendor-portal/',
+    '/docs/product/distr-hub/': '/docs/vendor-portal/',
     '/docs/product/faqs/': '/docs/faqs/',
 
     // use-cases
     '/docs/use-cases/self-managed/': '/docs/use-cases/fully-self-managed/',
-    '/docs/use-cases/edge-deployments/': '/docs/use-cases/edge/',
-    '/docs/use-cases/air-gapped-deployments/': '/docs/use-cases/air-gapped/',
-    '/docs/use-cases/byoc-bring-your-own-cloud/': '/docs/use-cases/byoc/',
 
     // Guide renames
     '/docs/guides/getting-started/application/':
@@ -522,7 +521,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/guides/customer-registry-access/':
       '/docs/customers/customer-registry-access/',
     '/docs/guides/github-actions/': '/docs/integrations/github-actions/',
-    '/docs/customers/subscription/': '/docs/account/subscription/',
-    '/docs/platform/subscription/': '/docs/account/subscription/',
+    '/docs/product/subscription-management/': '/docs/subscription-management/',
   },
 });

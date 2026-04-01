@@ -1,7 +1,7 @@
 ---
 title: Core Concepts
 description: Explore Distr’s core concepts, like the distribution models it caters to, vendor and customer portals, the artifact registry, deployment agents and extensibility via the Distr Rest API and SDK.
-slug: docs/concepts
+slug: docs/core-concepts
 sidebar:
   order: 2
 ---
@@ -10,7 +10,7 @@ import {Aside} from '@astrojs/starlight/components';
 
 Distr is built around several key concepts that work together to enable flexible software distribution. Understanding these concepts will help you get the most out of the platform.
 
-## Distribution Models
+## Distribution Scenarios
 
 Distr supports five distinct deployment models to meet different customer requirements:
 
@@ -18,13 +18,13 @@ Distr supports five distinct deployment models to meet different customer requir
 - **[Assisted Self-Managed](/docs/use-cases/assisted-self-managed/)**: End customers retain full control over their environment access but delegate application deployment to [Distr agents](/docs/agents/), which simplify initial installation, updates, and ongoing maintenance.
 - **[Bring Your Own Cloud (BYOC)](/glossary/byoc-definition/)**: Fully vendor-managed deployments within customer-owned environments. Ideal for end customers who want to offload infrastructure and software maintenance to the vendor while keeping deployments within their own environment, for compliance, cost management, or use of pre-contracted cloud resources.
 - **[Air-Gapped Environments](/glossary/air-gapped-meaning/)**: For high-security scenarios with physical or logical network isolation, offering secure artifact delivery through whitelisted connections, jump servers or physical media.
-- **[Edge Deployments](/docs/use-cases/edge/)**: For vendor-managed deployments to edge locations, IoT devices, or remote hardware.
+- **[Edge Deployments](/docs/use-cases/edge-deployments/)**: For vendor-managed deployments to edge locations, IoT devices, or remote hardware.
 
 ## Key Components
 
 ### Vendor Portal
 
-The [Vendor Portal](/docs/platform/vendor-portal/) is the central UI for the Distr control plane.
+The [Vendor Portal](/docs/vendor-portal/) is the central UI for the Distr control plane.
 It's where vendors manage customers, users, applications, and where you'll find the Artifacts Registry UI.
 The portal includes monitoring and observability features, integrates with your CI/CD pipelines, and lets you customize the customer portal.
 

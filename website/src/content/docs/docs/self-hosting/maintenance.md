@@ -46,7 +46,7 @@ If these variables are not set, no cleanup jobs are scheduled.
 For high-availability deployments with multiple instances of Distr (e.g., using Kubernetes), the built-in job scheduling
 is not suitable, as it would lead to multiple instances trying to perform the same cleanup tasks concurrently.
 
-Therefore, we recommend using [CronJobs](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/) in Kubernetes to handle the cleanup tasks.
+Therefore, we recommend using [CronJobs](https://kubernetes.io/docs/core-concepts/workloads/controllers/cron-jobs/) in Kubernetes to handle the cleanup tasks.
 But the concept can apply to any HA setup where the cleanup jobs are triggered by
 
 These jobs can also be configured via our Helm Chart.
