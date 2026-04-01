@@ -10,6 +10,8 @@ import {Aside} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
 import supportLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-support-light.png';
 import supportDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-support-dark.png';
+import detailLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-support-detail-light.png';
+import detailDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-support-detail-dark.png';
 
 As an end customer, you can create support bundles to share diagnostic data with your vendor when reporting an issue. Support bundles give your vendor the information they need to troubleshoot problems without requiring direct access to your infrastructure.
 
@@ -48,6 +50,12 @@ After the collection script runs, the bundle status changes from **Initialized**
 - View all collected resources (container logs, environment variables)
 - Exchange comments with your vendor's support team
 - Track the bundle status (Initialized, Created, Resolved, Canceled)
+
+<ThemedImage
+  lightSrc={detailLight}
+  darkSrc={detailDark}
+  alt="Support bundle detail view showing resources and comments"
+/>
 
 ## Bundle status lifecycle
 
