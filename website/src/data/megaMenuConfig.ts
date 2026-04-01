@@ -19,8 +19,8 @@ export const megaMenuConfigs: Record<MegaMenuType, MegaMenuConfig> = {
   },
   docs: {
     items: docsMenu,
-    columns: 4,
-    itemWidth: '160px',
+    columns: 6,
+    itemWidth: '140px',
   },
   pricing: {
     items: pricingMenu,

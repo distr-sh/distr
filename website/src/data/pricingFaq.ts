@@ -66,13 +66,13 @@ export const PricingFAQs: PricingFAQ[] = [
     id: 'change-plan',
     question: 'How do I upgrade or downgrade my plan?',
     answer:
-      'You can add customers and internal users within your current plan limits directly through the Vendor Portal. However, to upgrade or downgrade your subscription plan (e.g., from Starter to Pro, or Pro to Enterprise), please contact us via email at support@disr.sh. Our team will help you change your plan.',
+      'You can add customers and internal users within your current plan limits directly through the Vendor Portal. However, to upgrade or downgrade your subscription plan (e.g., from Starter to Pro, or Pro to Enterprise), please contact us via email at support@distr.sh. Our team will help you change your plan.',
   },
   {
     id: 'change-billing-cycle',
     question:
       'Can I change my billing cycle from monthly to yearly (or vice versa)?',
     answer:
-      'To change your billing cycle (e.g., from monthly to yearly or yearly to monthly), please contact us via email at support@disr.sh. Our team will help you switch between billing cycles.',
+      'To change your billing cycle (e.g., from monthly to yearly or yearly to monthly), please contact us via email at support@distr.sh. Our team will help you switch between billing cycles.',
   },
 ];

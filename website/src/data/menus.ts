@@ -7,24 +7,39 @@ export type MenuItem = {
 
 export const docsMenu: MenuItem[] = [
   {
-    title: 'Docs',
+    title: 'Getting Started',
     description:
-      'Complete documentation for getting started with Distr and understanding core concepts',
+      'Introduction, core concepts, quickstart, and distribution scenarios',
     value: 'book-open',
     href: '/docs/',
   },
   {
-    title: 'Guides',
-    description: 'Step-by-step guides for common tasks and workflows in Distr',
-    value: 'map',
-    href: '/docs/quickstart/',
+    title: 'Deployment Agents',
+    description:
+      'Set up and configure Docker and Helm agents for your deployments',
+    value: 'rocket',
+    href: '/docs/agents/',
   },
   {
-    title: 'Integrations',
+    title: 'Container Registry',
     description:
-      'Connect Distr with your existing tools and workflows through our API, SDK, and integrations',
+      'Distribute Docker images, Helm charts, and OCI artifacts with the built-in registry',
+    value: 'package',
+    href: '/docs/registry/',
+  },
+  {
+    title: 'Distribution Platform',
+    description:
+      'License management, entitlements, customer portal, and compliance tools',
+    value: 'layout-grid',
+    href: '/docs/platform/license-management/',
+  },
+  {
+    title: 'Integrations & API',
+    description:
+      'Connect Distr with GitHub Actions, the REST API, and the TypeScript SDK',
     value: 'plug',
-    href: '/docs/integrations/rest-api/',
+    href: '/docs/integrations/github-actions/',
   },
   {
     title: 'Self-Hosting',
