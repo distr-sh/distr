@@ -46,11 +46,11 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/stripe/stripe-go/v84 v84.4.1
 	github.com/wneessen/go-mail v0.7.2
-	go.opentelemetry.io/collector/component v1.54.0
+	go.opentelemetry.io/collector/component v1.55.0
 	go.opentelemetry.io/collector/confmap v1.54.0
-	go.opentelemetry.io/collector/consumer v1.54.0
-	go.opentelemetry.io/collector/pdata v1.54.0
-	go.opentelemetry.io/collector/receiver v1.54.0
+	go.opentelemetry.io/collector/consumer v1.55.0
+	go.opentelemetry.io/collector/pdata v1.55.0
+	go.opentelemetry.io/collector/receiver v1.55.0
 	go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws v0.67.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.67.0
 	go.opentelemetry.io/otel v1.42.0
@@ -298,11 +298,11 @@ require (
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/collector/confmap/xconfmap v0.148.0 // indirect
 	go.opentelemetry.io/collector/consumer/consumererror v0.148.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.54.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.55.0 // indirect
 	go.opentelemetry.io/collector/filter v0.148.0 // indirect
-	go.opentelemetry.io/collector/internal/componentalias v0.148.0 // indirect
-	go.opentelemetry.io/collector/pdata/pprofile v0.148.0 // indirect
-	go.opentelemetry.io/collector/pipeline v1.54.0 // indirect
+	go.opentelemetry.io/collector/internal/componentalias v0.149.0 // indirect
+	go.opentelemetry.io/collector/pdata/pprofile v0.149.0 // indirect
+	go.opentelemetry.io/collector/pipeline v1.55.0 // indirect
 	go.opentelemetry.io/collector/pipeline/xpipeline v0.148.0 // indirect
 	go.opentelemetry.io/collector/receiver/receiverhelper v0.148.0 // indirect
 	go.opentelemetry.io/collector/scraper v0.148.0 // indirect
