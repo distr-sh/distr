@@ -253,11 +253,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                     },
                     {
                       label: 'Registry Configuration',
-                      link: '/docs/registry/push-to-registry/',
+                      link: '/docs/registry/configuration/',
                     },
                     {
                       label: 'Artifact Download Analytics',
-                      link: '/docs/registry/download-analytics/',
+                      link: '/docs/registry/analytics/',
                     },
                   ],
                 },
@@ -272,7 +272,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   label: 'License Management',
                   items: [
                     {
-                      label: 'License Management Overview',
+                      label: 'Overview',
                       link: '/docs/platform/license-management/',
                     },
                     {
@@ -452,7 +452,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/guides/getting-started/distr-on-macos/':
       '/docs/agents/distr-on-macos/',
     '/docs/guides/getting-started/how-to-registry/':
-      '/docs/registry/push-to-registry/',
+      '/docs/registry/configuration/',
     '/docs/guides/configuration/docker-env/': '/docs/agents/docker-env/',
     '/docs/guides/configuration/docker-secrets/':
       '/docs/agents/docker-compose-secrets/',
@@ -508,13 +508,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/guides/application-links/': '/docs/agents/application-links/',
     '/docs/guides/helm-registry-auth/': '/docs/agents/helm-registry-auth/',
     '/docs/guides/preflight-checks/': '/docs/agents/preflight-checks/',
-    '/docs/guides/push-to-registry/': '/docs/registry/push-to-registry/',
+    '/docs/guides/push-to-registry/': '/docs/registry/configuration/',
     '/docs/guides/application-entitlements/':
       '/docs/platform/application-entitlements/',
     '/docs/guides/artifact-entitlements/':
       '/docs/platform/artifact-entitlements/',
     '/docs/guides/license-keys/': '/docs/platform/license-keys/',
-    '/docs/guides/k8s-compatibility/': '/docs/platform/kubernetes-compatibility-matrix/',
+    '/docs/guides/k8s-compatibility/':
+      '/docs/platform/kubernetes-compatibility-matrix/',
     '/docs/guides/vulnerability-scanning/':
       '/docs/platform/vulnerability-scanning/',
     '/docs/guides/manage-customers/': '/docs/platform/customer-management/',

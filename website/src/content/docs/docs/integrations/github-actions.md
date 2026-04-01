@@ -3,7 +3,7 @@ title: Automatic Deployments from GitHub
 description: Automatically create new versions and update customer deployments whenever you push a release to GitHub using the Distr GitHub Action.
 slug: docs/integrations/github-actions
 sidebar:
-  order: 7
+  order: 1
 ---
 
 In this guide, you'll learn how to set up a fully automated deployment pipeline that creates new application versions in Distr and automatically updates all your customer deployments whenever you push a new release to GitHub.
