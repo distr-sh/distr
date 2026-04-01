@@ -70,20 +70,25 @@ For details on how **Running** vs. **Healthy** is determined, see [Healthchecks]
 
 Triggers when a host metric exceeds a percentage threshold you define. Three resource metrics are available:
 
-| Trigger              | What it monitors                                          |
-| -------------------- | --------------------------------------------------------- |
-| **CPU usage**        | Overall CPU utilization on the host or cluster            |
-| **Memory usage**     | Overall memory utilization on the host or cluster         |
-| **Disk usage**       | Disk utilization per mount point (Docker agent only)      |
+| Trigger          | What it monitors                                     |
+| ---------------- | ---------------------------------------------------- |
+| **CPU usage**    | Overall CPU utilization on the host or cluster       |
+| **Memory usage** | Overall memory utilization on the host or cluster    |
+| **Disk usage**   | Disk utilization per mount point (Docker agent only) |
 
 For each trigger, set a threshold between 1% and 100%. When usage crosses above the threshold, an alert email is sent. A recovery email is sent when usage drops back below the threshold.
 
 <Aside type="note">
-  Resource usage alerts require [metrics collection](/docs/agents/logs-and-metrics/#metrics) to be enabled on the deployment target. If metrics are not enabled, resource triggers will not fire.
+  Resource usage alerts require [metrics
+  collection](/docs/agents/logs-and-metrics/#metrics) to be enabled on the
+  deployment target. If metrics are not enabled, resource triggers will not
+  fire.
 </Aside>
 
 <Aside type="note">
-  Disk usage alerts are only available for Docker agent deployment targets. The alert email includes the device name and mount path that exceeded the threshold.
+  Disk usage alerts are only available for Docker agent deployment targets. The
+  alert email includes the device name and mount path that exceeded the
+  threshold.
 </Aside>
 
 ## Notification Emails
