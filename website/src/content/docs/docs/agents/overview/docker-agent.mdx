@@ -92,6 +92,36 @@ You can also provide credentials via an [application entitlement](/docs/platform
 
 When the agent version for a deployment target is updated in the Distr Hub, the agent updates itself on the next cycle. It fetches the new manifest from `DISTR_MANIFEST_ENDPOINT` and restarts. The `DISTR_AGENT_SCRATCH_DIR` environment variable and `scratch` volume mount are required for this to work.
 
+## Autoheal
+
+Distr deploys an autoheal service alongside every Docker agent. This service monitors container health and automatically restarts containers that become unhealthy.
+
+By default, autoheal covers **all containers** managed by the deployment, not just the agent. This means your application containers are automatically restarted if they fail their healthchecks. For this to work, your application must define [Docker healthchecks](https://docs.docker.com/reference/compose-file/services/#healthcheck) in its Compose file. Containers without healthchecks are not monitored.
+
+The autoheal setting is configured when creating a deployment target. In the deployment wizard, the **Enable autoheal for all containers** checkbox is enabled by default for Docker deployments. When disabled, the autoheal service still runs but only monitors the Distr agent itself.
+
+<Aside type="note">
+  Autoheal is only available for Docker deployments. This setting can only be configured during deployment target creation and cannot be changed afterward. To change it, delete the deployment target and create a new one.
+</Aside>
+
+## Image Cleanup
+
+By default, when the agent updates a deployment to a new version, the previous container images remain on the host. Over time this can consume significant disk space.
+
+When **Enable container image cleanup** is checked, the agent automatically removes the previous version's container images after a successful deployment update. This setting is enabled by default for new Docker deployment targets.
+
+To toggle image cleanup on an existing deployment target:
+
+1. Navigate to the deployment target in the Deployments view.
+2. Click the **⋮** menu and select **Edit**.
+3. Toggle **Enable container image cleanup**.
+
+Image cleanup only runs after a successful update. If a deployment fails, the previous images are kept so a rollback remains possible.
+
+<Aside type="note">
+  Image cleanup is only available for Docker deployments.
+</Aside>
+
 ## Docker Swarm
 
 A deployment can run in Swarm mode. The host must have Docker Swarm enabled and initialized. Instead of `docker compose up`, the agent uses `docker stack deploy`. Unlike regular Compose mode, `docker stack deploy` is only called when the deployment has changed, not on every cycle.

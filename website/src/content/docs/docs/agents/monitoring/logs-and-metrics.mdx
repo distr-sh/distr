@@ -97,6 +97,15 @@ The first logs should appear within 30 seconds. Once enabled, logs are collected
 
 To disable log collection, open the same **⋮** menu and select **Disable log collection**.
 
+### Active and Archived Log Resources
+
+The log viewer groups logs by **resource** (typically a container or pod name). Resources are split into two categories:
+
+- **Active** -- The resource has produced logs in one of the five most recent deployment revisions. Active resources are shown as tabs by default.
+- **Archived** -- The resource only has logs from older deployment revisions. This happens when a container was renamed, removed, or replaced during a deployment update.
+
+To view archived resources, check the **Show archived** checkbox above the resource tabs. Archived tabs appear with reduced opacity. This is useful for reviewing logs from a previous version of your deployment, for example after a rollback or a configuration change that renamed a service.
+
 ## Metrics
 
 Metrics give you visibility into the resource usage of the host or cluster running your deployments. Metrics collection can be toggled per deployment target.
@@ -120,16 +129,23 @@ The following metrics are collected for both Docker and Kubernetes deployment ta
 | **Memory**       | Total memory on the host or across all cluster nodes                                    |
 | **Memory usage** | Current overall memory usage as a percentage                                            |
 
+The Docker agent also collects **disk metrics** for each mounted filesystem on the host:
+
+| Metric             | Description                                              |
+| ------------------ | -------------------------------------------------------- |
+| **Device**         | The block device (e.g. `/dev/sda1`)                      |
+| **Mount path**     | Where the device is mounted (e.g. `/`)                   |
+| **Filesystem type**| The filesystem type (e.g. `ext4`, `xfs`)                 |
+| **Total bytes**    | Total disk capacity                                      |
+| **Used bytes**     | Current disk usage                                       |
+
+Disk metrics are reported per mount point. Read-only and virtual filesystems (such as SquashFS mounts) are excluded. You can configure [alerts](/docs/agents/alerts/#resource-usage-thresholds) to notify you when disk usage exceeds a threshold.
+
 <Aside type="note" title="Kubernetes Requirements">
   Kubernetes metrics require
   [`metrics-server`](https://github.com/kubernetes-sigs/metrics-server) to be
   installed in the cluster, and the agent must be cluster-scoped since it needs
   access to node metrics resources.
-</Aside>
-
-<Aside type="tip" title="Coming Soon: Disk Space">
-  Disk space monitoring is on the roadmap and will be added to the metrics
-  collection in a future release.
 </Aside>
 
 ## Reconnect

@@ -1,6 +1,6 @@
 ---
 title: Alerts
-description: Monitor deployments and receive email notifications when they become unhealthy.
+description: Monitor deployments and receive email notifications when status changes or resource usage exceeds thresholds.
 slug: docs/agents/alerts
 sidebar:
   order: 1
@@ -8,8 +8,7 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 
-Alerts notify selected users by email when a monitored deployment becomes unhealthy.
-This covers scenarios like failed updates, lost agent connectivity, container crashes, or status transitions to **Stale** or **Error**.
+Alerts notify selected users by email when a monitored deployment becomes unhealthy or when host resource usage exceeds a configured threshold.
 
 <Aside type="note">
   Alerts apply only to [agent-based deployments](/docs/agents/) and are not
@@ -23,9 +22,9 @@ By default, alerts are vendor-managed: you configure alert rules and choose who 
 
 Under **Customers** in the [Vendor Portal](/docs/vendor-portal/), you can enable alert management per customer organization (see [Customer Management](/docs/platform/customer-management/)). This supports two scenarios:
 
-**Vendor-managed deployments** — You monitor deployments and receive alerts directly, potentially before the customer notices an issue.
+**Vendor-managed deployments** -- You monitor deployments and receive alerts directly, potentially before the customer notices an issue.
 
-**Customer-managed deployments** — Customers configure their own alerts and choose who in their organization gets notified.
+**Customer-managed deployments** -- Customers configure their own alerts and choose who in their organization gets notified.
 
 ![Alerts configuration in the Vendor Portal](../../../../../assets/docs/agents/monitoring/alerts/alerts-dark.png)
 
@@ -35,8 +34,11 @@ In the sidebar, navigate to **Agents** > **Alerts**.
 
 1. Click **Create alert configuration**.
 2. Enter a name for the configuration.
-3. Select one or more deployments to monitor.
-4. Select the users who should receive email notifications.
+3. Enable one or more **triggers** (see [Trigger Types](#trigger-types) below).
+4. Select one or more deployments to monitor.
+5. Select the users who should receive email notifications.
+
+Each configuration can be toggled on or off without deleting it.
 
 The **Notification history** tab shows previously triggered alerts.
 
@@ -47,9 +49,13 @@ The **Notification history** tab shows previously triggered alerts.
   Portal](/docs/platform/customer-portal/).
 </Aside>
 
-## When Notifications Are Sent
+## Trigger Types
 
-An email notification is sent when a monitored deployment transitions from a healthy to a degraded state:
+Each alert configuration requires at least one trigger. You can combine multiple triggers in a single configuration.
+
+### Deployment status changes
+
+Triggers when a monitored deployment transitions between health states:
 
 | From                       | To                     |
 | -------------------------- | ---------------------- |
@@ -59,3 +65,32 @@ A recovery notification is also sent when a deployment returns to a healthy stat
 
 For the full list of deployment statuses, see [Deployment Status](/docs/agents/logs-and-metrics/#deployment-status).
 For details on how **Running** vs. **Healthy** is determined, see [Healthchecks](/docs/agents/logs-and-metrics/#healthchecks).
+
+### Resource usage thresholds
+
+Triggers when a host metric exceeds a percentage threshold you define. Three resource metrics are available:
+
+| Trigger              | What it monitors                                          |
+| -------------------- | --------------------------------------------------------- |
+| **CPU usage**        | Overall CPU utilization on the host or cluster            |
+| **Memory usage**     | Overall memory utilization on the host or cluster         |
+| **Disk usage**       | Disk utilization per mount point (Docker agent only)      |
+
+For each trigger, set a threshold between 1% and 100%. When usage crosses above the threshold, an alert email is sent. A recovery email is sent when usage drops back below the threshold.
+
+<Aside type="note">
+  Resource usage alerts require [metrics collection](/docs/agents/logs-and-metrics/#metrics) to be enabled on the deployment target. If metrics are not enabled, resource triggers will not fire.
+</Aside>
+
+<Aside type="note">
+  Disk usage alerts are only available for Docker agent deployment targets. The alert email includes the device name and mount path that exceeded the threshold.
+</Aside>
+
+## Notification Emails
+
+All alert notifications are sent by email to the users selected in the configuration. Each email includes:
+
+- The affected deployment target and customer organization
+- The trigger type (status change, CPU, memory, or disk)
+- For resource alerts: the configured threshold and the current usage percentage
+- Whether it is an alert or a recovery notification

@@ -85,15 +85,33 @@ The token is a standard JWT signed with EdDSA (Ed25519). Use any JWT library tha
 
 The token contains:
 
-- `iss` — your Distr host URL
-- `sub` — the license key UUID
-- `aud` — `["license-key"]`
-- `iat` — issued at (when the key was created in Distr)
-- `nbf` — not before
-- `exp` — expiration
+- `iss` -- your Distr host URL
+- `sub` -- the license key UUID
+- `aud` -- `["license-key"]`
+- `iat` -- issued at (when the key was created in Distr)
+- `nbf` -- not before
+- `exp` -- expiration
 - All fields from your payload as top-level claims
 
-Example verification (Node.js with `jose`):
+### Retrieving the public key
+
+Your application needs the public key to verify license tokens. Distr exposes it via a public API endpoint that requires no authentication:
+
+```
+GET /api/public/v1/license-keys/public-key
+```
+
+The response is the PEM-encoded Ed25519 public key as plain text. This endpoint is available to anyone, so your application can fetch it at startup or embed it at build time.
+
+Example (curl):
+
+```shell
+curl https://your-distr-hub.example.com/api/public/v1/license-keys/public-key
+```
+
+### Example verification
+
+Node.js with `jose`:
 
 ```js
 import {importSPKI, jwtVerify} from 'jose';
