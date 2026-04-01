@@ -265,7 +265,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             },
             {
               label: 'Distribution Platform',
-              link: '/docs/platform/license-management/',
+              link: '/docs/platform/',
               icon: 'list-format',
               items: [
                 {
@@ -310,12 +310,16 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   label: 'Customer Portal',
                   items: [
                     {
-                      label: 'Customer Portal',
+                      label: 'Overview',
                       link: '/docs/platform/customer-portal/',
                     },
                     {
-                      label: 'End-Customer View of Distr',
-                      link: '/docs/platform/container-registry-for-end-customers/',
+                      label: 'Registry',
+                      link: '/docs/platform/customer-portal/registry/',
+                    },
+                    {
+                      label: 'Deployments',
+                      link: '/docs/platform/customer-portal/deployments/',
                     },
                   ],
                 },
@@ -323,16 +327,21 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   label: 'Customer Management',
                   items: [
                     {
+                      label: 'Overview',
+                      link: '/docs/platform/customer-management/',
+                    },
+                    {
                       label: 'Branding & White-Labeling',
                       link: '/docs/platform/branding/',
                     },
+                  ],
+                },
+                {
+                  label: 'User Management',
+                  items: [
                     {
                       label: 'Role-Based Access Control (RBAC)',
                       link: '/docs/platform/rbac/',
-                    },
-                    {
-                      label: 'Customer Management',
-                      link: '/docs/platform/customer-management/',
                     },
                   ],
                 },
@@ -472,7 +481,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/guides/customer-management/customer-management/':
       '/docs/platform/customer-management/',
     '/docs/guides/customer-management/end-customer-registry-view/':
-      '/docs/platform/container-registry-for-end-customers/',
+      '/docs/platform/customer-portal/registry/',
     '/docs/guides/customer-management/application-entitlements/':
       '/docs/platform/application-entitlements/',
     '/docs/guides/customer-management/artifact-entitlements/':
@@ -520,7 +529,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
       '/docs/platform/vulnerability-scanning/',
     '/docs/guides/manage-customers/': '/docs/platform/customer-management/',
     '/docs/guides/customer-registry-access/':
-      '/docs/platform/container-registry-for-end-customers/',
+      '/docs/platform/customer-portal/registry/',
     '/docs/guides/github-actions/': '/docs/integrations/github-actions/',
     '/docs/product/subscription-management/': '/docs/subscription-management/',
   },

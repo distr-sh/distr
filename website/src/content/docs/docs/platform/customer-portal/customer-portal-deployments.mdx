@@ -1,0 +1,110 @@
+---
+title: Customer Portal Deployments
+description: Guide for end customers on deploying and managing applications with Distr agents from the Customer Portal.
+slug: docs/platform/customer-portal/deployments
+sidebar:
+  order: 3
+---
+
+import {Aside} from '@astrojs/starlight/components';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import statusLight from '~/assets/docs/platform/customer-portal/customer-view/status-light.png';
+import statusDark from '~/assets/docs/platform/customer-portal/customer-view/status-dark.png';
+import logsLight from '~/assets/docs/platform/customer-portal/customer-view/logs-light.png';
+import logsDark from '~/assets/docs/platform/customer-portal/customer-view/logs-dark.png';
+import updateDeployLight from '~/assets/docs/platform/customer-portal/customer-view/update-deploy-light.png';
+import updateDeployDark from '~/assets/docs/platform/customer-portal/customer-view/update-deploy-dark.png';
+
+As an end customer, you can deploy and manage applications with Distr agents directly from the [Customer Portal](/docs/platform/customer-portal/).
+
+This guide walks you through the deployment agent quickstart from the customer portal.
+
+## Deployment Agent quickstart from the customer portal
+
+### Step 1: Select Application
+
+Navigate to **Deployments** in the sidebar and click on the **+ New Deployment** button.
+
+Choose the application you want to deploy.
+
+![Select Application step](../../../../../assets/screenshots/distr/distr-customer-select-application.png)
+
+### Step 2: Deployment Configuration
+
+Give your deployment a descriptive name. This name will help you identify and manage the deployment later.
+
+For Helm applications, you'll also need to specify the Kubernetes namespace where it should be deployed. Make sure the namespace exists in your cluster before proceeding.
+
+![Deployment Configuration step](../../../../../assets/screenshots/distr/customer-create-deployment.png)
+
+<Aside type="tip">
+  You can also enable cluster-scoped permissions for Helm deployments. When
+  enabled, the agent will have cluster-wide access; otherwise, it will be
+  limited to a specific namespace. See [Kubernetes
+  Agent](/docs/agents/kubernetes-agent/) for more details.
+</Aside>
+
+### Step 3: Application Configuration
+
+Configure the environment variables for your Docker Compose application. These variables will be passed to the `docker compose` process via the `--env-file` argument.
+
+The entered environment variables will be passed unmodified to the `docker compose` process via the `--env-file` argument.
+For more information on how to use them, please refer to [our guide on working with environment variables](/docs/agents/docker-env/).
+
+You can also enable Docker Swarm mode for deployments that should run in swarm mode. See [Docker Swarm](/docs/agents/docker-agent/#docker-swarm) for more details. Additionally, you can enable container log collection to view application logs directly in the portal. Learn more about [Container Logs](/docs/agents/logs-and-metrics/#container-logs).
+
+<Aside type="note">
+  For Helm applications, you'll configure the Helm values instead. You can
+  adjust the values from the base values file provided by the vendor when
+  creating the application version.
+</Aside>
+
+![Application Configuration step](../../../../../assets/screenshots/distr/customer-deployment-configuration.png)
+
+### Step 4: Deploy
+
+Review your configuration and click **Create Deployment** to proceed to the deployment page.
+
+![Deployment success page](../../../../../assets/screenshots/distr/customer-success.png)
+
+<Aside type="caution">
+  **Important**: This command will automatically install the Distr agent, which
+  will then automatically installs the application. The agent runs in the
+  customer environment and manages the full lifecycle of your application
+  deployment.
+</Aside>
+
+### 5. Monitor Deployment Status
+
+View real-time updates as your deployment initializes.
+
+<ThemedImage
+  lightSrc={statusLight}
+  darkSrc={statusDark}
+  alt="Deployment status view"
+/>
+
+### 6. Access Environment Logs
+
+Click on the status button to view application logs directly from the portal.
+
+<ThemedImage
+  lightSrc={logsLight}
+  darkSrc={logsDark}
+  alt="Environment logs view"
+/>
+
+### 7. Update Deployments
+
+Modify configuration values and update running deployments as needed.
+
+<ThemedImage
+  lightSrc={updateDeployLight}
+  darkSrc={updateDeployDark}
+  alt="Update deployment view"
+/>
+
+## Important Notes
+
+- A single agent can manage multiple deployments in the same target environment
+- To remove a deployment, first **undeploy** it before **deletion**
