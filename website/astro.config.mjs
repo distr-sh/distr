@@ -290,7 +290,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   ],
                 },
                 {
-                  label: 'Quality & Compliance',
+                  label: 'Support',
                   items: [
                     {
                       label: 'Support Bundles',
