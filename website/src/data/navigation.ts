@@ -11,7 +11,7 @@ export type NavigationLink = {
 export const links: NavigationLink[] = [
   {
     title: 'Product',
-    value: '/docs/product/agents/',
+    value: '/docs/agents/',
     isMegaMenu: true,
     megaMenuType: 'products',
   },
