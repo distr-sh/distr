@@ -18,10 +18,10 @@ import dayjs from 'dayjs';
 import {combineLatest, debounceTime, map, of, switchMap} from 'rxjs';
 import {DeploymentLogsService} from '../../services/deployment-logs.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
-import {DeploymentLogsTableComponent} from '../deployment-status-modal/deployment-logs-table.component';
-import {DeploymentStatusTableComponent} from '../deployment-status-modal/deployment-status-table.component';
 import {DeploymentAppNameComponent} from '../deployment-target-card/deployment-app-name.component';
-import {DeploymentTargetLogsTableComponent} from '../deployment-target-status-modal/deployment-target-logs-table.component';
+import {DeploymentLogsTableComponent} from './deployment-logs-table.component';
+import {DeploymentStatusTableComponent} from './deployment-status-table.component';
+import {DeploymentTargetLogsTableComponent} from './deployment-target-logs-table.component';
 
 @Component({
   selector: 'app-deployment-target-detail',

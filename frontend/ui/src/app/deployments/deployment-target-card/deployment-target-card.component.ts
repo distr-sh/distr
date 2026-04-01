@@ -30,8 +30,6 @@ import {ApplicationEntitlementsService} from '../../services/application-entitle
 import {ApplicationsService} from '../../services/applications.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
 import {DeploymentModalComponent} from '../deployment-modal.component';
-import {DeploymentStatusModalComponent} from '../deployment-status-modal/deployment-status-modal.component';
-import {DeploymentTargetStatusModalComponent} from '../deployment-target-status-modal/deployment-target-status-modal.component';
 import {DeploymentAppNameComponent} from './deployment-app-name.component';
 import {DeploymentStatusTextComponent} from './deployment-status-text.component';
 import {DeploymentTargetCardBaseComponent} from './deployment-target-card-base.component';
@@ -51,9 +49,7 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
     ReactiveFormsModule,
     DeploymentModalComponent,
     DeploymentTargetMetricsComponent,
-    DeploymentStatusModalComponent,
     TextFieldModule,
-    DeploymentTargetStatusModalComponent,
     DeploymentAppNameComponent,
     DeploymentStatusTextComponent,
     AutotrimDirective,
@@ -135,17 +131,6 @@ export class DeploymentTargetCardComponent extends DeploymentTargetCardBaseCompo
       this.deploymentTarget().currentStatus !== undefined &&
       this.deploymentTarget().agentVersion?.id !== this.deploymentTarget().reportedAgentVersionId
   );
-
-  protected openStatusModal(deployment: DeploymentWithLatestRevision) {
-    if (deployment?.id) {
-      this.selectedDeployment.set(deployment);
-      this.showModal(this.deploymentStatusModal());
-    }
-  }
-
-  protected openDeploymentTargetStatusModal() {
-    this.showModal(this.deploymentTargetStatusModal());
-  }
 
   protected setLogsEnabled(deployment: DeploymentWithLatestRevision, logsEnabled: boolean) {
     if (deployment.id) {

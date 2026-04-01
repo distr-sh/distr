@@ -145,14 +145,12 @@
             </li>
 
             <li>
-              <button
-                type="button"
-                (click)="showDeploymentTargetDropdown.set(false); openDeploymentTargetStatusModal()"
-                aria-controls="manage-deployment-target-drawer"
-                class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white">
+              <a
+                class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                [routerLink]="[deploymentTarget().id]">
                 <fa-icon [icon]="faBinoculars" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
                 Agent Logs
-              </button>
+              </a>
             </li>
 
             @if (auth.hasAnyRole('read_write', 'admin')) {
@@ -240,16 +238,13 @@
                       </a>
                     }
                     @if (deployment.latestStatus) {
-                      <button
-                        type="button"
-                        (click)="openStatusModal(deployment)"
-                        aria-controls="manage-deployment-target-drawer"
-                        class="px-2 py-1 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                        <fa-icon
-                          [icon]="faHeartPulse"
-                          class="h-5 w-5 mr-1 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
+                      <a
+                        class="px-2 py-1 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+                        [routerLink]="[deploymentTarget().id]"
+                        [queryParams]="{deploymentId: deployment.id}">
+                        <fa-icon [icon]="faHeartPulse" class="h-5 w-5 mr-1 -ml-0.5 text-gray-500 dark:text-gray-400" />
                         Inspect
-                      </button>
+                      </a>
                     }
                     @if (auth.hasAnyRole('read_write', 'admin')) {
                       <button
@@ -373,9 +368,12 @@
                   </div>
                 </div>
                 <div class="flex items-center justify-between gap-3">
-                  <button (click)="openStatusModal(deployment)" class="flex items-center">
+                  <a
+                    class="flex items-center"
+                    [routerLink]="[deploymentTarget().id]"
+                    [queryParams]="{deploymentId: deployment.id}">
                     <app-deployment-status-text [deployment]="deployment" />
-                  </button>
+                  </a>
                   <div class="text-xs text-end whitespace-nowrap">
                     <div class="text-gray-500 dark:text-gray-400 wrap-break-word">Last modified</div>
                     <div class="text-gray-900 dark:text-white">
@@ -433,25 +431,6 @@
     [deployment]="selectedDeployment()"
     (closed)="hideModal()">
   </app-deployment-modal>
-</ng-template>
-
-<ng-template #deploymentTargetStatusModal>
-  <app-deployment-target-status-modal
-    animate.enter="animate-fly-in-top"
-    animate.leave="animate-fly-out-top"
-    class="w-full m-4"
-    [deploymentTarget]="deploymentTarget()"
-    (closed)="hideModal()" />
-</ng-template>
-
-<ng-template #deploymentStatusModal>
-  <app-deployment-status-modal
-    animate.enter="animate-fly-in-top"
-    animate.leave="animate-fly-out-top"
-    class="w-full m-4"
-    [deploymentTarget]="deploymentTarget()"
-    [deployment]="selectedDeployment()!"
-    (closed)="hideModal()" />
 </ng-template>
 
 <ng-template #deleteDeploymentProgressModal>
