@@ -1,52 +1,38 @@
 ---
-title: Customer Portal Registry
+title: Customer Portal Artifact Registry
 description: Guide for end customers on using the Customer Portal to access and pull artifacts from the Distr registry.
 slug: docs/platform/customer-portal/registry
 sidebar:
   order: 2
 ---
 
-import {Aside, Code} from '@astrojs/starlight/components';
+import {Aside} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
-import customerPortalLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-no-num-light.png';
-import customerPortalDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-no-num-dark.png';
-import artifactUICustomerLight from '~/assets/docs/platform/customer-portal/customer-view/artifact-ui-customer-light.png';
-import artifactUICustomerDark from '~/assets/docs/platform/customer-portal/customer-view/artifact-ui-customer-dark.png';
+import artifactsLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-artifacts-light.png';
+import artifactsDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-artifacts-dark.png';
 import artifactUIDetailsLight from '~/assets/docs/platform/customer-portal/customer-view/artifact-ui-details-light.png';
 import artifactUIDetailsDark from '~/assets/docs/platform/customer-portal/customer-view/artifact-ui-details-dark.png';
 
 As an end customer, you will be given access to a [Customer Portal](/docs/platform/customer-portal/) by the software vendor.
 The portal provides access to the artifact registry for downloading software distributed by your vendor.
 
-This guide walks you through using the registry from the customer portal.
+This guide walks you through using the registry from the Customer Portal.
 
-## Registry quickstart from the customer portal
+## Registry quickstart from the Customer Portal
 
 A typical onboarding journey looks like this:
 
-### 1. Access the Customer Portal Dashboard
+### 1. View available artifacts
 
-Here you will view release notes and vendor-specific software information in your dashboard.
-
-<ThemedImage
-  lightSrc={customerPortalLight}
-  darkSrc={customerPortalDark}
-  alt="Deployments interface"
-/>
-
-### 2. View Available Artifacts
-
-Browse the artifacts your vendor has made available to you in the artifacts section:
+Navigate to **Artifacts** in the sidebar to browse the artifacts your vendor has made available to you:
 
 <ThemedImage
-  lightSrc={artifactUICustomerLight}
-  darkSrc={artifactUICustomerDark}
-  alt="Registry artifacts view"
+  lightSrc={artifactsLight}
+  darkSrc={artifactsDark}
+  alt="Customer Portal artifacts page"
 />
 
-In this example, the vendor made a single artifact called hello-world available to the end-customer.
-
-### 3. Explore Artifact Details
+### 2. Explore artifact details
 
 Click on the artifact name to see details like available versions, creation date, and a download counter:
 
@@ -56,7 +42,7 @@ Click on the artifact name to see details like available versions, creation date
   alt="Artifact details view"
 />
 
-### 4. Authenticate with a Personal Access Token
+### 3. Authenticate with a Personal Access Token
 
 Generate a [Personal Access Token (PAT)](/docs/integrations/personal-access-token/) in your Distr account and use it to log in:
 
@@ -64,7 +50,7 @@ Generate a [Personal Access Token (PAT)](/docs/integrations/personal-access-toke
 echo "YOUR-ACCESS-TOKEN" | docker login registry.distr.sh:8585 --password-stdin -u -
 ```
 
-### 5. Pull Vendor Artifacts
+### 4. Pull vendor artifacts
 
 Once authenticated, you can pull the artifacts using Docker, [ORAS](https://oras.land/docs/installation) or Helm for example:
 
@@ -78,6 +64,6 @@ oras pull registry.distr.sh/slug/vendor-artifact:1.0.0
 helm pull registry.distr.sh/slug/vendor-helm-chart:1.0.0
 ```
 
-### 6. Deploy the Artifacts
+### 5. Deploy the artifacts
 
 Refer to the deployment instructions in your [Customer Portal](/docs/platform/customer-portal/) dashboard or coordinate directly with your vendor for specific deployment guidance.

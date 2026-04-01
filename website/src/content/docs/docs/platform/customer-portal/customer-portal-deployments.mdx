@@ -8,34 +8,32 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
-import statusLight from '~/assets/docs/platform/customer-portal/customer-view/status-light.png';
-import statusDark from '~/assets/docs/platform/customer-portal/customer-view/status-dark.png';
-import logsLight from '~/assets/docs/platform/customer-portal/customer-view/logs-light.png';
-import logsDark from '~/assets/docs/platform/customer-portal/customer-view/logs-dark.png';
-import updateDeployLight from '~/assets/docs/platform/customer-portal/customer-view/update-deploy-light.png';
-import updateDeployDark from '~/assets/docs/platform/customer-portal/customer-view/update-deploy-dark.png';
+import deploymentsLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-deployments-light.png';
+import deploymentsDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-deployments-dark.png';
 
 As an end customer, you can deploy and manage applications with Distr agents directly from the [Customer Portal](/docs/platform/customer-portal/).
 
-This guide walks you through the deployment agent quickstart from the customer portal.
+This guide walks you through the deployment agent quickstart from the Customer Portal.
 
-## Deployment Agent quickstart from the customer portal
+<ThemedImage
+  lightSrc={deploymentsLight}
+  darkSrc={deploymentsDark}
+  alt="Customer Portal deployments page showing a running deployment"
+/>
 
-### Step 1: Select Application
+## Deployment agent quickstart from the Customer Portal
+
+### Step 1: Select application
 
 Navigate to **Deployments** in the sidebar and click on the **+ New Deployment** button.
 
 Choose the application you want to deploy.
 
-![Select Application step](../../../../../assets/screenshots/distr/distr-customer-select-application.png)
-
-### Step 2: Deployment Configuration
+### Step 2: Deployment configuration
 
 Give your deployment a descriptive name. This name will help you identify and manage the deployment later.
 
 For Helm applications, you'll also need to specify the Kubernetes namespace where it should be deployed. Make sure the namespace exists in your cluster before proceeding.
-
-![Deployment Configuration step](../../../../../assets/screenshots/distr/customer-create-deployment.png)
 
 <Aside type="tip">
   You can also enable cluster-scoped permissions for Helm deployments. When
@@ -44,12 +42,11 @@ For Helm applications, you'll also need to specify the Kubernetes namespace wher
   Agent](/docs/agents/kubernetes-agent/) for more details.
 </Aside>
 
-### Step 3: Application Configuration
+### Step 3: Application configuration
 
 Configure the environment variables for your Docker Compose application. These variables will be passed to the `docker compose` process via the `--env-file` argument.
 
-The entered environment variables will be passed unmodified to the `docker compose` process via the `--env-file` argument.
-For more information on how to use them, please refer to [our guide on working with environment variables](/docs/agents/docker-env/).
+For more information on how to use them, refer to [our guide on working with environment variables](/docs/agents/docker-env/).
 
 You can also enable Docker Swarm mode for deployments that should run in swarm mode. See [Docker Swarm](/docs/agents/docker-agent/#docker-swarm) for more details. Additionally, you can enable container log collection to view application logs directly in the portal. Learn more about [Container Logs](/docs/agents/logs-and-metrics/#container-logs).
 
@@ -59,13 +56,9 @@ You can also enable Docker Swarm mode for deployments that should run in swarm m
   creating the application version.
 </Aside>
 
-![Application Configuration step](../../../../../assets/screenshots/distr/customer-deployment-configuration.png)
-
 ### Step 4: Deploy
 
 Review your configuration and click **Create Deployment** to proceed to the deployment page.
-
-![Deployment success page](../../../../../assets/screenshots/distr/customer-success.png)
 
 <Aside type="caution">
   **Important**: This command will automatically install the Distr agent, which
@@ -74,37 +67,33 @@ Review your configuration and click **Create Deployment** to proceed to the depl
   deployment.
 </Aside>
 
-### 5. Monitor Deployment Status
+### Step 5: Monitor deployment status
 
-View real-time updates as your deployment initializes.
+View real-time updates as your deployment initializes. The status indicator shows the current health:
 
-<ThemedImage
-  lightSrc={statusLight}
-  darkSrc={statusDark}
-  alt="Deployment status view"
-/>
+- **Running** — The deployment is running (no healthchecks configured)
+- **Healthy** — The deployment is running and all healthchecks are passing
+- **Error** — Something is wrong, check the logs for details
+- **Stale** — The agent has not reported in the last 60 seconds
 
-### 6. Access Environment Logs
+For the full list of statuses, see [Deployment Status](/docs/agents/logs-and-metrics/#deployment-status).
 
-Click on the status button to view application logs directly from the portal.
+### Step 6: Access environment logs
 
-<ThemedImage
-  lightSrc={logsLight}
-  darkSrc={logsDark}
-  alt="Environment logs view"
-/>
+Click the **Inspect** button on a deployment to view application logs directly from the portal. Container logs must be enabled per deployment — use the **⋮** menu to toggle log collection on or off.
 
-### 7. Update Deployments
+### Step 7: Update deployments
 
-Modify configuration values and update running deployments as needed.
+Click the **Update** button to modify configuration values and update running deployments as needed. You can change environment variables, switch application versions, or adjust other settings.
 
-<ThemedImage
-  lightSrc={updateDeployLight}
-  darkSrc={updateDeployDark}
-  alt="Update deployment view"
-/>
+## Alerts
 
-## Important Notes
+If your vendor has enabled alerts for your organization, you can configure deployment health notifications from the **Alerts** button in the Deployments view. Set up alert rules for deployment status changes and resource usage thresholds, and choose which users in your organization should receive email notifications.
+
+For details on alert types and configuration, see [Alerts](/docs/agents/alerts/).
+
+## Important notes
 
 - A single agent can manage multiple deployments in the same target environment
 - To remove a deployment, first **undeploy** it before **deletion**
+- If a deployment target shows **Stale** status, you can reconnect by generating new credentials from the **⋮** menu
