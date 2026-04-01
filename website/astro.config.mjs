@@ -371,16 +371,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               link: '/docs/self-hosting/',
               icon: 'laptop',
               items: [
-                {label: 'Overview', link: '/docs/self-hosting/'},
-                {label: 'Docker Compose', link: '/docs/self-hosting/docker/'},
-                {label: 'Kubernetes', link: '/docs/self-hosting/kubernetes/'},
                 {
-                  label: 'Feature Flags',
-                  link: '/docs/self-hosting/feature-flags/',
-                },
-                {
-                  label: 'Maintenance Jobs',
-                  link: '/docs/self-hosting/maintenance/',
+                  label: 'Self-Hosting',
+                  autogenerate: {directory: 'docs/self-hosting'},
                 },
               ],
             },
@@ -500,10 +493,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/integrations/gh-action/': '/docs/integrations/github-action/',
     '/docs/integrations/personal-access-token/':
       '/docs/integrations/access-tokens/',
-
-    // Self-hosting rename
-    '/docs/self-hosting/getting-started/': '/docs/self-hosting/',
-    '/docs/self-hosting/overview/': '/docs/self-hosting/',
 
     // Deleted index pages
     '/docs/integrations/': '/docs/integrations/rest-api/',
