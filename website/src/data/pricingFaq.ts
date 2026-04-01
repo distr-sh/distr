@@ -35,13 +35,13 @@ export const PricingFAQs: PricingFAQ[] = [
     id: 'internal-user',
     question: 'What is an internal user?',
     answer:
-      'An internal user is a member of your team who operates Distr. Internal users can manage applications, deployments, licenses, customer organizations, and other platform settings. In Pro, Enterprise, and Pro Trial plans, internal users can be assigned different roles (Administrator, User, or Viewer) with role-based access control (RBAC) to control what they can access and modify. In the Starter plan, all internal users automatically have Administrator privileges. Learn more about <a href="/docs/customers/rbac/" class="text-[#00b5eb] hover:underline">roles and user management</a>.',
+      'An internal user is a member of your team who operates Distr. Internal users can manage applications, deployments, licenses, customer organizations, and other platform settings. In Pro, Enterprise, and Pro Trial plans, internal users can be assigned different roles (Administrator, User, or Viewer) with role-based access control (RBAC) to control what they can access and modify. In the Starter plan, all internal users automatically have Administrator privileges. Learn more about <a href="/docs/platform/rbac/" class="text-[#00b5eb] hover:underline">roles and user management</a>.',
   },
   {
     id: 'customer-organization',
     question: 'What is a customer?',
     answer:
-      'A customer represents one of your end customers organizations who will install and use your software in their own environment. Each customer organization gets access to their own Customer Portal where they can view deployments, download artifacts, and manage their installation. Customer users (multiple users per customer organization with role-based access control) are only available in Pro, Enterprise, and Pro Trial plans. In the Starter plan, each customer organization is limited to one user. Learn more about <a href="/docs/customers/rbac/" class="text-[#00b5eb] hover:underline">customer roles and user management</a>.',
+      'A customer represents one of your end customers organizations who will install and use your software in their own environment. Each customer organization gets access to their own Customer Portal where they can view deployments, download artifacts, and manage their installation. Customer users (multiple users per customer organization with role-based access control) are only available in Pro, Enterprise, and Pro Trial plans. In the Starter plan, each customer organization is limited to one user. Learn more about <a href="/docs/platform/rbac/" class="text-[#00b5eb] hover:underline">customer roles and user management</a>.',
   },
 
   {

@@ -43,7 +43,7 @@ Support Bundles give your customers a way to collect and share diagnostic data w
 
 Here's the flow:
 
-1. Customer hits an issue and creates a support bundle from their [Customer Portal](/docs/customers/). They give it a title and describe what went wrong.
+1. Customer hits an issue and creates a support bundle from their [Customer Portal](/docs/platform/customer-portal/). They give it a title and describe what went wrong.
 2. Distr generates a one-time `curl` command, valid for 24 hours.
 3. Customer runs the command on the affected host. An interactive script starts and shows them exactly what will be collected — which containers, which environment variables. Values you've marked as sensitive are already replaced with `[REDACTED]`. The customer can exclude anything before a single byte leaves their machine.
 4. The bundle appears in your [Vendor Portal](/docs/vendor-portal/) with all collected resources attached.

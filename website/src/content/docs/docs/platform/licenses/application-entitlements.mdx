@@ -3,13 +3,13 @@ title: Application Entitlements
 description: Learn how to create and manage Application Entitlements to control which application versions your customers can access and deploy.
 slug: docs/platform/application-entitlements
 sidebar:
-  order: 5
+  order: 2
 ---
 
 import {Aside} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
-import entitlementFormDark from '~/assets/docs/guides/entitlements/application-entitlement-form-dark.png';
-import entitlementFormLight from '~/assets/docs/guides/entitlements/application-entitlement-form-light.png';
+import entitlementFormDark from '~/assets/docs/platform/licenses/entitlements/application-entitlement-form-dark.png';
+import entitlementFormLight from '~/assets/docs/platform/licenses/entitlements/application-entitlement-form-light.png';
 
 This guide walks you through how to use Application Entitlements to control which application versions your end-customers can access and deploy through Distr agents.
 
@@ -24,7 +24,7 @@ With Application Entitlements, you can link an entitlement to a customer, allowi
 
 ## Entitlement flow diagram
 
-![license-diagram](../../../../assets/docs/guides/license-diagram.png)
+![license-diagram](../../../../../assets/docs/guides/license-diagram.png)
 
 <Aside type="note">
   The diagram above illustrates how an entitlement links an end-customer account
@@ -49,7 +49,7 @@ Many vendors offer tiered pricing plans with different features and functionalit
 
 If you don't see the feature yet, make sure you're on a Pro plan or Pro Trial. Once you're in, here's how it works:
 
-1. **Create a customer:** If none exist, [create a customer](/docs/customers/manage-customers/#creating-a-customer) first
+1. **Create a customer:** If none exist, [create a customer](/docs/platform/customer-management/#creating-a-customer) first
 2. **Navigate to Licenses** in the sidebar
 3. **Click the customer** you want to create an entitlement for
 4. **Select the Application Entitlements tab** and click **"Create Entitlement"**
@@ -59,7 +59,7 @@ If you don't see the feature yet, make sure you're on a Pro plan or Pro Trial. O
 8. **Choose the version/s** you want to grant the customer access to
 9. **Save** — hit "Save" and you're done
 
-The customer can now access and deploy the assigned application version/s directly from their [customer portal](/docs/customers/).
+The customer can now access and deploy the assigned application version/s directly from their [customer portal](/docs/platform/customer-portal/).
 
 <ThemedImage
   lightSrc={entitlementFormLight}
@@ -71,4 +71,4 @@ The customer can now access and deploy the assigned application version/s direct
 
 If your images are stored in a private [OCI registry](/glossary/oci-container-artifact-registry/), you'll need to provide access credentials. You can configure these credentials in the lower section of the entitlement configuration panel. Once set, the application versions will be available at the deployment target for as long as the entitlement is valid.
 
-![OCI-registry-auth](../../../../assets/docs/guides/OCI-Registry-auth.png)
+![OCI-registry-auth](../../../../../assets/docs/guides/OCI-Registry-auth.png)

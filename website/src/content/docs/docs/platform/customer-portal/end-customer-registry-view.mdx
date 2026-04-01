@@ -1,33 +1,33 @@
 ---
 title: End-customer view of Distr
 description: Guide for end customers on using the Customer Portal to access artifacts and deploy applications with Distr agents.
-slug: docs/customers/customer-registry-access
+slug: docs/platform/container-registry-for-end-customers
 sidebar:
-  order: 7
+  order: 2
 ---
 
 import {Aside, Code} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
-import customerPortalLight from '~/assets/docs/guides/customer-view/customer-portal-no-num-light.png';
-import customerPortalDark from '~/assets/docs/guides/customer-view/customer-portal-no-num-dark.png';
-import artifactUICustomerLight from '~/assets/docs/guides/customer-view/artifact-ui-customer-light.png';
-import artifactUICustomerDark from '~/assets/docs/guides/customer-view/artifact-ui-customer-dark.png';
-import artifactUIDetailsLight from '~/assets/docs/guides/customer-view/artifact-ui-details-light.png';
-import artifactUIDetailsDark from '~/assets/docs/guides/customer-view/artifact-ui-details-dark.png';
-import customerAgentNameLight from '~/assets/docs/guides/customer-view/customer-agent-name-light.png';
-import customerAgentNameDark from '~/assets/docs/guides/customer-view/customer-agent-name-dark.png';
-import helmNSLight from '~/assets/docs/guides/customer-view/helm-ns-light.png';
-import helmNSDark from '~/assets/docs/guides/customer-view/helm-ns-dark.png';
-import configLight from '~/assets/docs/guides/customer-view/config-light.png';
-import configDark from '~/assets/docs/guides/customer-view/config-dark.png';
-import statusLight from '~/assets/docs/guides/customer-view/status-light.png';
-import statusDark from '~/assets/docs/guides/customer-view/status-dark.png';
-import logsLight from '~/assets/docs/guides/customer-view/logs-light.png';
-import logsDark from '~/assets/docs/guides/customer-view/logs-dark.png';
-import updateDeployLight from '~/assets/docs/guides/customer-view/update-deploy-light.png';
-import updateDeployDark from '~/assets/docs/guides/customer-view/update-deploy-dark.png';
+import customerPortalLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-no-num-light.png';
+import customerPortalDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-no-num-dark.png';
+import artifactUICustomerLight from '~/assets/docs/platform/customer-portal/customer-view/artifact-ui-customer-light.png';
+import artifactUICustomerDark from '~/assets/docs/platform/customer-portal/customer-view/artifact-ui-customer-dark.png';
+import artifactUIDetailsLight from '~/assets/docs/platform/customer-portal/customer-view/artifact-ui-details-light.png';
+import artifactUIDetailsDark from '~/assets/docs/platform/customer-portal/customer-view/artifact-ui-details-dark.png';
+import customerAgentNameLight from '~/assets/docs/platform/customer-portal/customer-view/customer-agent-name-light.png';
+import customerAgentNameDark from '~/assets/docs/platform/customer-portal/customer-view/customer-agent-name-dark.png';
+import helmNSLight from '~/assets/docs/platform/customer-portal/customer-view/helm-ns-light.png';
+import helmNSDark from '~/assets/docs/platform/customer-portal/customer-view/helm-ns-dark.png';
+import configLight from '~/assets/docs/platform/customer-portal/customer-view/config-light.png';
+import configDark from '~/assets/docs/platform/customer-portal/customer-view/config-dark.png';
+import statusLight from '~/assets/docs/platform/customer-portal/customer-view/status-light.png';
+import statusDark from '~/assets/docs/platform/customer-portal/customer-view/status-dark.png';
+import logsLight from '~/assets/docs/platform/customer-portal/customer-view/logs-light.png';
+import logsDark from '~/assets/docs/platform/customer-portal/customer-view/logs-dark.png';
+import updateDeployLight from '~/assets/docs/platform/customer-portal/customer-view/update-deploy-light.png';
+import updateDeployDark from '~/assets/docs/platform/customer-portal/customer-view/update-deploy-dark.png';
 
-As an end customer, you will be given access to a [Customer Portal](/docs/customers/) by the software vendor.
+As an end customer, you will be given access to a [Customer Portal](/docs/platform/customer-portal/) by the software vendor.
 The portal you will have access to two key features:
 
 - The artifact registry for downloading software distributed by your vendor
@@ -96,7 +96,7 @@ helm pull registry.distr.sh/slug/vendor-helm-chart:1.0.0
 
 ### 6. Deploy the Artifacts
 
-Refer to the deployment instructions in your [Customer Portal](/docs/customers/) dashboard or coordinate directly with your vendor for specific deployment guidance.
+Refer to the deployment instructions in your [Customer Portal](/docs/platform/customer-portal/) dashboard or coordinate directly with your vendor for specific deployment guidance.
 
 ## Deployment Agent quickstart from the customer portal
 
@@ -106,7 +106,7 @@ Navigate to **Deployments** in the sidebar and click on the **+ New Deployment**
 
 Choose the application you want to deploy.
 
-![Select Application step](../../../../assets/screenshots/distr/distr-customer-select-application.png)
+![Select Application step](../../../../../assets/screenshots/distr/distr-customer-select-application.png)
 
 ### Step 2: Deployment Configuration
 
@@ -114,7 +114,7 @@ Give your deployment a descriptive name. This name will help you identify and ma
 
 For Helm applications, you'll also need to specify the Kubernetes namespace where it should be deployed. Make sure the namespace exists in your cluster before proceeding.
 
-![Deployment Configuration step](../../../../assets/screenshots/distr/customer-create-deployment.png)
+![Deployment Configuration step](../../../../../assets/screenshots/distr/customer-create-deployment.png)
 
 <Aside type="tip">
   You can also enable cluster-scoped permissions for Helm deployments. When
@@ -138,13 +138,13 @@ You can also enable Docker Swarm mode for deployments that should run in swarm m
   creating the application version.
 </Aside>
 
-![Application Configuration step](../../../../assets/screenshots/distr/customer-deployment-configuration.png)
+![Application Configuration step](../../../../../assets/screenshots/distr/customer-deployment-configuration.png)
 
 ### Step 4: Deploy
 
 Review your configuration and click **Create Deployment** to proceed to the deployment page.
 
-![Deployment success page](../../../../assets/screenshots/distr/customer-success.png)
+![Deployment success page](../../../../../assets/screenshots/distr/customer-success.png)
 
 <Aside type="caution">
   **Important**: This command will automatically install the Distr agent, which

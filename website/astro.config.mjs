@@ -221,6 +221,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                       label: 'Helm Chart Registry Authentication',
                       link: '/docs/agents/helm-registry-auth/',
                     },
+                    {
+                      label: 'Pre-Flight Checks',
+                      link: '/docs/agents/preflight-checks/',
+                    },
                   ],
                 },
                 {
@@ -230,10 +234,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                     {
                       label: 'Logs & Metrics',
                       link: '/docs/agents/logs-and-metrics/',
-                    },
-                    {
-                      label: 'Pre-flight Checks',
-                      link: '/docs/agents/preflight-checks/',
                     },
                   ],
                 },
@@ -298,7 +298,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                     },
                     {
                       label: 'Kubernetes Compatibility Matrix',
-                      link: '/docs/platform/k8s-compatibility/',
+                      link: '/docs/platform/kubernetes-compatibility-matrix/',
                     },
                     {
                       label: 'Vulnerability Scanning',
@@ -311,11 +311,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   items: [
                     {
                       label: 'Customer Portal',
-                      link: '/docs/customers/',
+                      link: '/docs/platform/customer-portal/',
                     },
                     {
                       label: 'End-Customer View of Distr',
-                      link: '/docs/customers/customer-registry-access/',
+                      link: '/docs/platform/container-registry-for-end-customers/',
                     },
                   ],
                 },
@@ -324,15 +324,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   items: [
                     {
                       label: 'Branding & White-Labeling',
-                      link: '/docs/customers/branding/',
+                      link: '/docs/platform/branding/',
                     },
                     {
                       label: 'Role-Based Access Control (RBAC)',
-                      link: '/docs/customers/rbac/',
+                      link: '/docs/platform/rbac/',
                     },
                     {
-                      label: 'Manage Customers',
-                      link: '/docs/customers/manage-customers/',
+                      label: 'Customer Management',
+                      link: '/docs/platform/customer-management/',
                     },
                   ],
                 },
@@ -436,9 +436,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/product/alerts/': '/docs/agents/alerts/',
     '/docs/product/registry/': '/docs/registry/',
     '/docs/product/support-bundles/': '/docs/platform/support-bundles/',
-    '/docs/product/customer-portal/': '/docs/customers/',
-    '/docs/product/branding/': '/docs/customers/branding/',
-    '/docs/product/rbac/': '/docs/customers/rbac/',
+    '/docs/product/customer-portal/': '/docs/platform/customer-portal/',
+    '/docs/product/branding/': '/docs/platform/branding/',
+    '/docs/product/rbac/': '/docs/platform/rbac/',
     '/docs/product/license-management/': '/docs/platform/license-management/',
     '/docs/product/distr-hub/': '/docs/vendor-portal/',
     '/docs/product/faqs/': '/docs/faqs/',
@@ -466,13 +466,13 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/guides/automation/preflight-checks/':
       '/docs/agents/preflight-checks/',
     '/docs/guides/automation/kubernetes-compatibility-matrix/':
-      '/docs/platform/k8s-compatibility/',
+      '/docs/platform/kubernetes-compatibility-matrix/',
     '/docs/guides/automation/vulnerability-scanning/':
       '/docs/platform/vulnerability-scanning/',
     '/docs/guides/customer-management/customer-management/':
-      '/docs/customers/manage-customers/',
+      '/docs/platform/customer-management/',
     '/docs/guides/customer-management/end-customer-registry-view/':
-      '/docs/customers/customer-registry-access/',
+      '/docs/platform/container-registry-for-end-customers/',
     '/docs/guides/customer-management/application-entitlements/':
       '/docs/platform/application-entitlements/',
     '/docs/guides/customer-management/artifact-entitlements/':
@@ -485,7 +485,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/guides/application-licenses/':
       '/docs/platform/application-entitlements/',
     '/docs/guides/artifact-licenses/': '/docs/platform/artifact-entitlements/',
-    '/docs/guides/onboarding-a-new-customer/': '/docs/customers/rbac/',
+    '/docs/guides/onboarding-a-new-customer/': '/docs/platform/rbac/',
     '/docs/guides/onboarding-a-docker-app/': '/docs/agents/application/',
     '/docs/guides/onboarding-a-helm-app/': '/docs/agents/application/',
 
@@ -498,11 +498,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     // New URL restructure redirects
     '/docs/platform/agents/': '/docs/agents/',
     '/docs/platform/registry/': '/docs/registry/',
-    '/docs/platform/customer-portal/': '/docs/customers/',
     '/docs/platform/alerts/': '/docs/agents/alerts/',
     '/docs/platform/logs-and-metrics/': '/docs/agents/logs-and-metrics/',
-    '/docs/platform/branding/': '/docs/customers/branding/',
-    '/docs/platform/rbac/': '/docs/customers/rbac/',
     '/docs/guides/create-application/': '/docs/agents/application/',
     '/docs/guides/create-deployment/': '/docs/agents/deployment/',
     '/docs/guides/setup-on-macos/': '/docs/agents/distr-on-macos/',
@@ -517,12 +514,12 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/guides/artifact-entitlements/':
       '/docs/platform/artifact-entitlements/',
     '/docs/guides/license-keys/': '/docs/platform/license-keys/',
-    '/docs/guides/k8s-compatibility/': '/docs/platform/k8s-compatibility/',
+    '/docs/guides/k8s-compatibility/': '/docs/platform/kubernetes-compatibility-matrix/',
     '/docs/guides/vulnerability-scanning/':
       '/docs/platform/vulnerability-scanning/',
-    '/docs/guides/manage-customers/': '/docs/customers/manage-customers/',
+    '/docs/guides/manage-customers/': '/docs/platform/customer-management/',
     '/docs/guides/customer-registry-access/':
-      '/docs/customers/customer-registry-access/',
+      '/docs/platform/container-registry-for-end-customers/',
     '/docs/guides/github-actions/': '/docs/integrations/github-actions/',
     '/docs/product/subscription-management/': '/docs/subscription-management/',
   },

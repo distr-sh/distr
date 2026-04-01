@@ -18,7 +18,7 @@ export const products: Product[] = [
     description:
       'Where customers can download Artifacts and manage their Applications',
     value: 'circle-user',
-    href: '/docs/customers/',
+    href: '/docs/platform/customer-portal/',
   },
   {
     title: 'Container Registry',
@@ -53,7 +53,7 @@ export const products: Product[] = [
     description:
       'New - Automatically test if your application is compatible across a matrix of deployment environments',
     value: 'check-circle',
-    href: '/docs/platform/k8s-compatibility/',
+    href: '/docs/platform/kubernetes-compatibility-matrix/',
   },
   {
     title: 'Pre-flight Checks',
