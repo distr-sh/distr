@@ -432,14 +432,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/getting-started/deployment-methods/': '/docs/subscription/',
     '/docs/privacy-policy/': '/privacy-policy/',
 
-    // intro/ paths
-    '/docs/intro/about/': '/docs/',
-    '/docs/intro/core-concepts/': '/docs/core-concepts/',
-    '/docs/intro/quickstart/': '/docs/quickstart/',
-    '/docs/intro/free-trial/': '/docs/free-trial/',
-    '/docs/intro/subscription/': '/docs/subscription/',
-
-    // product/ → platform/
+    // product/ redirects
     '/docs/product/vendor-portal/': '/docs/vendor-portal/',
     '/docs/product/agents/': '/docs/agents/',
     '/docs/product/alerts/': '/docs/agents/alerts/',
@@ -449,47 +442,27 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/product/branding/': '/docs/platform/branding/',
     '/docs/product/rbac/': '/docs/platform/rbac/',
     '/docs/product/license-management/': '/docs/platform/license-management/',
+    '/docs/product/subscription-management/': '/docs/subscription-management/',
     '/docs/product/distr-hub/': '/docs/vendor-portal/',
     '/docs/product/faqs/': '/docs/faqs/',
 
     // use-cases
     '/docs/use-cases/self-managed/': '/docs/use-cases/fully-self-managed/',
+    '/docs/use-cases/byoc/': '/docs/use-cases/byoc-bring-your-own-cloud/',
+    '/docs/use-cases/air-gapped/': '/docs/use-cases/air-gapped-deployments/',
 
-    // Guide renames
-    '/docs/guides/getting-started/application/': '/docs/agents/application/',
-    '/docs/guides/getting-started/deployment/': '/docs/agents/deployment/',
-    '/docs/guides/getting-started/distr-on-macos/':
-      '/docs/agents/distr-on-macos/',
-    '/docs/guides/getting-started/how-to-registry/':
-      '/docs/registry/configuration/',
-    '/docs/guides/configuration/docker-env/': '/docs/agents/docker-env/',
-    '/docs/guides/configuration/docker-secrets/':
-      '/docs/agents/docker-compose-secrets/',
-    '/docs/guides/advanced/secrets/': '/docs/agents/secrets/',
-    '/docs/guides/configuration/application-links/':
-      '/docs/agents/application-links/',
-    '/docs/guides/configuration/helm-chart-registry-auth/':
-      '/docs/agents/helm-registry-auth/',
-    '/docs/guides/automation/automatic-deployments-from-github/':
-      '/docs/integrations/github-actions/',
-    '/docs/guides/automation/preflight-checks/':
-      '/docs/agents/preflight-checks/',
-    '/docs/guides/automation/kubernetes-compatibility-matrix/':
-      '/docs/platform/kubernetes-compatibility-matrix/',
-    '/docs/guides/automation/vulnerability-scanning/':
-      '/docs/platform/vulnerability-scanning/',
-    '/docs/guides/customer-management/customer-management/':
-      '/docs/platform/customer-management/',
-    '/docs/guides/customer-management/end-customer-registry-view/':
-      '/docs/platform/customer-portal/registry/',
-    '/docs/guides/customer-management/application-entitlements/':
+    // guides/ redirects (slugs that existed on main)
+    '/docs/guides/': '/docs/quickstart/',
+    '/docs/guides/secrets/': '/docs/agents/secrets/',
+    '/docs/guides/application-links/': '/docs/agents/application-links/',
+    '/docs/guides/preflight-checks/': '/docs/agents/preflight-checks/',
+    '/docs/guides/application-entitlements/':
       '/docs/platform/application-entitlements/',
-    '/docs/guides/customer-management/artifact-entitlements/':
+    '/docs/guides/artifact-entitlements/':
       '/docs/platform/artifact-entitlements/',
-    '/docs/guides/customer-management/license-keys/':
-      '/docs/platform/license-keys/',
-
-    // Legacy guide slugs
+    '/docs/guides/license-keys/': '/docs/platform/license-keys/',
+    '/docs/guides/vulnerability-scanning/':
+      '/docs/platform/vulnerability-scanning/',
     '/docs/guides/license-mgmt/': '/docs/platform/application-entitlements/',
     '/docs/guides/application-licenses/':
       '/docs/platform/application-entitlements/',
@@ -498,39 +471,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/guides/onboarding-a-docker-app/': '/docs/agents/application/',
     '/docs/guides/onboarding-a-helm-app/': '/docs/agents/application/',
 
-    // Integration renames
+    // Integration redirects
     '/docs/integrations/mcp/': '/docs/integrations/',
-
-    // Deleted index pages
-    '/docs/guides/': '/docs/quickstart/',
-
-    // New URL restructure redirects
-    '/docs/platform/agents/': '/docs/agents/',
-    '/docs/platform/registry/': '/docs/registry/',
-    '/docs/platform/alerts/': '/docs/agents/alerts/',
-    '/docs/platform/logs-and-metrics/': '/docs/agents/logs-and-metrics/',
-    '/docs/guides/create-application/': '/docs/agents/application/',
-    '/docs/guides/create-deployment/': '/docs/agents/deployment/',
-    '/docs/guides/setup-on-macos/': '/docs/agents/distr-on-macos/',
-    '/docs/guides/docker-env/': '/docs/agents/docker-env/',
-    '/docs/guides/secrets/': '/docs/agents/secrets/',
-    '/docs/guides/application-links/': '/docs/agents/application-links/',
-    '/docs/guides/helm-registry-auth/': '/docs/agents/helm-registry-auth/',
-    '/docs/guides/preflight-checks/': '/docs/agents/preflight-checks/',
-    '/docs/guides/push-to-registry/': '/docs/registry/configuration/',
-    '/docs/guides/application-entitlements/':
-      '/docs/platform/application-entitlements/',
-    '/docs/guides/artifact-entitlements/':
-      '/docs/platform/artifact-entitlements/',
-    '/docs/guides/license-keys/': '/docs/platform/license-keys/',
-    '/docs/guides/k8s-compatibility/':
-      '/docs/platform/kubernetes-compatibility-matrix/',
-    '/docs/guides/vulnerability-scanning/':
-      '/docs/platform/vulnerability-scanning/',
-    '/docs/guides/manage-customers/': '/docs/platform/customer-management/',
-    '/docs/guides/customer-registry-access/':
-      '/docs/platform/customer-portal/registry/',
-    '/docs/guides/github-actions/': '/docs/integrations/github-actions/',
-    '/docs/product/subscription-management/': '/docs/subscription-management/',
   },
 });
