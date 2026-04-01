@@ -147,6 +147,7 @@ func getDeploymentLogsHandler() http.HandlerFunc {
 			response := make([]api.DeploymentLogRecord, len(records))
 			for i, record := range records {
 				response[i] = api.DeploymentLogRecord{
+					ID:                   record.ID,
 					DeploymentID:         record.DeploymentID,
 					DeploymentRevisionID: record.DeploymentRevisionID,
 					Resource:             record.Resource,

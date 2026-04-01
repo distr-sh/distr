@@ -12,7 +12,12 @@ import {DeploymentLogRecord} from '../../types/deployment-log-record';
 const ansiEscapePattern = /\u001b[^m]*m/g;
 
 function logRecordToTimeseriesEntry(record: DeploymentLogRecord): TimeseriesEntry {
-  return {date: record.timestamp, status: record.severity, detail: record.body.trim().replace(ansiEscapePattern, '')};
+  return {
+    id: record.id,
+    date: record.timestamp,
+    status: record.severity,
+    detail: record.body.trim().replace(ansiEscapePattern, ''),
+  };
 }
 
 class LogsTimeseriesSource implements TimeseriesSource {
