@@ -21,7 +21,7 @@ export const docsMenu: MenuItem[] = [
     href: '/docs/agents/',
   },
   {
-    title: 'Container Registry',
+    title: 'Artifact Registry',
     description:
       'Distribute Docker images, Helm charts, and OCI artifacts with the built-in registry',
     value: 'package',

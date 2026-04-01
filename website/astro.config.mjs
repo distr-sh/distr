@@ -240,21 +240,26 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               ],
             },
             {
-              label: 'Container Registry',
+              label: 'Artifact Registry',
               link: '/docs/registry/',
               icon: 'download',
               items: [
                 {
-                  label: 'Artifact Registry',
-                  link: '/docs/registry/',
-                },
-                {
-                  label: 'Set Up Your Registry',
-                  link: '/docs/registry/push-to-registry/',
-                },
-                {
-                  label: 'Download Analytics',
-                  link: '/docs/registry/download-analytics/',
+                  label: 'Overview',
+                  items: [
+                    {
+                      label: 'Artifact Registry',
+                      link: '/docs/registry/',
+                    },
+                    {
+                      label: 'Registry Configuration',
+                      link: '/docs/registry/push-to-registry/',
+                    },
+                    {
+                      label: 'Artifact Download Analytics',
+                      link: '/docs/registry/download-analytics/',
+                    },
+                  ],
                 },
               ],
             },
