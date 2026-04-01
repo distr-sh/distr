@@ -1,7 +1,7 @@
 ---
 title: Distr API
 description: Using the Distr REST API, you can programmatically manage every aspect of your software distribution, from publishing artifacts and creating customers to triggering deployment updates. Using the same API that's behind the Vendor and Customer Portals.
-slug: docs/integrations/rest-api
+slug: docs/integrations/api
 sidebar:
   order: 1
 ---
@@ -19,7 +19,7 @@ Every Distr instance, no matter if self-managed or the SaaS version, exposes thi
 ## Authentication
 
 To authenticate with the Distr API, you need to use a Personal Access Token.
-To create a Personal Access Token, follow the steps outlined in the [Creating a Personal Access Token](/docs/integrations/access-tokens/) guide.
+To create a Personal Access Token, follow the steps outlined in the [Creating a Personal Access Token](/docs/integrations/personal-access-token/) guide.
 
 For each HTTP request to the API, you need to include the Personal Access Token in the `Authorization` header, like shown here:
 

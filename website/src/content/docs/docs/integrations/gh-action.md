@@ -1,7 +1,7 @@
 ---
 title: GitHub Actions
 description: Automatically create new application versions in Distr whenever you push a release to GitHub, supporting both Docker and Helm applications.
-slug: docs/integrations/github-action
+slug: docs/integrations/gh-action
 sidebar:
   order: 5
 ---
@@ -60,4 +60,4 @@ See the **[Automatic Deployments from GitHub](/docs/integrations/github-actions/
 
 - [GitHub Action README](https://github.com/distr-sh/distr-create-version-action/blob/main/README.md) - Complete action documentation
 - [hello-distr Example](https://github.com/distr-sh/hello-distr) - Real-world implementation example
-- [Personal Access Tokens](/docs/integrations/access-tokens/) - How to create API tokens
+- [Personal Access Tokens](/docs/integrations/personal-access-token/) - How to create API tokens

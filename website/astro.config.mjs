@@ -332,7 +332,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             },
             {
               label: 'Integrations & API',
-              link: '/docs/integrations/github-actions/',
+              link: '/docs/integrations/',
               icon: 'rocket',
               items: [
                 {
@@ -344,14 +344,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                     },
                     {
                       label: 'GitHub Action Reference',
-                      link: '/docs/integrations/github-action/',
+                      link: '/docs/integrations/gh-action/',
                     },
                   ],
                 },
                 {
                   label: 'API & SDK',
                   items: [
-                    {label: 'Distr API', link: '/docs/integrations/rest-api/'},
+                    {label: 'Distr API', link: '/docs/integrations/api/'},
                     {
                       label: 'API Reference',
                       link: 'https://app.distr.sh/docs',
@@ -360,7 +360,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                     {label: 'Distr SDK', link: '/docs/integrations/sdk/'},
                     {
                       label: 'Personal Access Tokens',
-                      link: '/docs/integrations/access-tokens/',
+                      link: '/docs/integrations/personal-access-token/',
                     },
                   ],
                 },
@@ -488,14 +488,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/guides/onboarding-a-helm-app/': '/docs/agents/create-application/',
 
     // Integration renames
-    '/docs/integrations/mcp/': '/docs/',
-    '/docs/integrations/api/': '/docs/integrations/rest-api/',
-    '/docs/integrations/gh-action/': '/docs/integrations/github-action/',
-    '/docs/integrations/personal-access-token/':
-      '/docs/integrations/access-tokens/',
+    '/docs/integrations/mcp/': '/docs/integrations/',
 
     // Deleted index pages
-    '/docs/integrations/': '/docs/integrations/rest-api/',
     '/docs/guides/': '/docs/quickstart/',
 
     // New URL restructure redirects

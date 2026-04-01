@@ -39,7 +39,7 @@ export const docsMenu: MenuItem[] = [
     description:
       'Connect Distr with GitHub Actions, the REST API, and the TypeScript SDK',
     value: 'plug',
-    href: '/docs/integrations/github-actions/',
+    href: '/docs/integrations/',
   },
   {
     title: 'Self-Hosting',

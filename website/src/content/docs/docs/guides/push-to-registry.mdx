@@ -36,7 +36,7 @@ Before you can push or pull artifacts, you must configure a registry slug at the
 
 ## 2. Authenticate with a Personal Access Token
 
-Generate a [Personal Access Token (PAT)](/docs/integrations/access-tokens/) in your Distr account. Use this token to log in to the registry:
+Generate a [Personal Access Token (PAT)](/docs/integrations/personal-access-token/) in your Distr account. Use this token to log in to the registry:
 
 ```shell
 echo "YOUR-ACCESS-TOKEN" | docker login registry.distr.sh:8585 --password-stdin -u -
@@ -82,7 +82,7 @@ Replace slug with your configured registry slug, and 1.0.0 with your desired ver
 
 ## 5. Customer Access
 
-- Customers should authenticate with their own [PAT](/docs/integrations/access-tokens/) and can only pull artifacts they are licensed for.
+- Customers should authenticate with their own [PAT](/docs/integrations/personal-access-token/) and can only pull artifacts they are licensed for.
 - The [customer portal](/docs/customers/customer-registry-access/#registry-quickstart-from-the-customer-portal) provides a simplified view, the registry UI only shows the artifacts and versions that are accessible to the user.
 
 <ThemedImage

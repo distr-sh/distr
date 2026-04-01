@@ -64,7 +64,7 @@ The GitHub Action needs to authenticate with Distr to create new versions and up
 6. Click **Create**
 7. **Copy the token immediately** - this is the only time you'll see it
 
-For detailed instructions with screenshots, see the [Creating a Personal Access Token](/docs/integrations/access-tokens/) guide.
+For detailed instructions with screenshots, see the [Creating a Personal Access Token](/docs/integrations/personal-access-token/) guide.
 
 ## Step 3: Configure GitHub Secrets and Variables
 
@@ -604,7 +604,7 @@ Now that you have automatic deployments set up, consider:
 - **[Application Entitlements](/docs/platform/application-entitlements/)** - Control which customers receive automatic updates
 - **[Application Links](/docs/agents/application-links/)** - Create dynamic links for customers to access their deployments
 - **[Distr SDK](/docs/integrations/sdk/)** - Build custom automation and integrations
-- **[Distr API](/docs/integrations/rest-api/)** - Explore advanced API capabilities
+- **[Distr API](/docs/integrations/api/)** - Explore advanced API capabilities
 
 ## Additional Resources
 
