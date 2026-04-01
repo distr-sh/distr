@@ -463,6 +463,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/guides/license-keys/': '/docs/platform/license-keys/',
     '/docs/guides/vulnerability-scanning/':
       '/docs/platform/vulnerability-scanning/',
+    '/docs/guides/container-registry/': '/docs/registry/configuration/',
+    '/docs/guides/docker-secrets/': '/docs/agents/docker-compose-secrets/',
+    '/docs/guides/container-registry-for-end-customers/':
+      '/docs/platform/customer-portal/registry/',
     '/docs/guides/license-mgmt/': '/docs/platform/application-entitlements/',
     '/docs/guides/application-licenses/':
       '/docs/platform/application-entitlements/',
