@@ -131,13 +131,13 @@ The following metrics are collected for both Docker and Kubernetes deployment ta
 
 The Docker agent also collects **disk metrics** for device-backed filesystems on the host, reported as one entry per block device:
 
-| Metric              | Description                              |
-| ------------------- | ---------------------------------------- |
-| **Device**          | The block device (e.g. `/dev/sda1`)      |
+| Metric              | Description                                           |
+| ------------------- | ----------------------------------------------------- |
+| **Device**          | The block device (e.g. `/dev/sda1`)                   |
 | **Mount path**      | A representative mount path for the device (e.g. `/`) |
-| **Filesystem type** | The filesystem type (e.g. `ext4`, `xfs`) |
-| **Total bytes**     | Total disk capacity                      |
-| **Used bytes**      | Current disk usage                       |
+| **Filesystem type** | The filesystem type (e.g. `ext4`, `xfs`)              |
+| **Total bytes**     | Total disk capacity                                   |
+| **Used bytes**      | Current disk usage                                    |
 
 Disk metrics are reported per device, not per mount point; multiple mount points for the same block device are deduplicated into a single metric. Read-only and virtual filesystems (such as SquashFS mounts) are excluded. You can configure [alerts](/docs/agents/alerts/#resource-usage-thresholds) to notify you when disk usage exceeds a threshold.
 
