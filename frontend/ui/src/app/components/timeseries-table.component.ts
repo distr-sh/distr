@@ -74,8 +74,10 @@ export interface TimeseriesExporter {
                   [class.dark:text-yellow-500]="entry.status.toLowerCase().includes('warn')">
                   {{ entry.status }}
                 </td>
-                <td class="px-1 whitespace-pre-wrap font-mono text-gray-900 dark:text-white" data-ph-mask-text="true">
-                  {{ entry.detail }}
+                <td class="px-1 max-w-0 w-full" data-ph-mask-text="true">
+                  <div class="overflow-x-auto whitespace-pre-wrap font-mono text-gray-900 dark:text-white">
+                    {{ entry.detail }}
+                  </div>
                 </td>
               </tr>
             }

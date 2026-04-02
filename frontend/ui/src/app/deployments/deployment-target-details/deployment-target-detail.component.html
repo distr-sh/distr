@@ -2,7 +2,7 @@
   <div class="mx-auto px-4 lg:px-12">
     <div class="lg:p-8 p-4 bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg">
       <nav class="mb-1">
-        <ol class="flex items-center gap-1" aria-label="Breadcrumb">
+        <ol class="flex flex-wrap items-center gap-1" aria-label="Breadcrumb">
           <li>
             <a
               [routerLink]="['/', 'deployments']"
@@ -170,7 +170,7 @@
         </ol>
       </nav>
 
-      <form [formGroup]="form" class="flex items-center gap-4 mb-4">
+      <form [formGroup]="form" class="flex flex-wrap items-center gap-4 mb-4">
         <div>
           <label for="range-start" class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">From</label>
           <input
