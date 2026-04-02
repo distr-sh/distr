@@ -19,7 +19,7 @@
     "@astrojs/starlight-tailwind": "5.0.0",
     "@iconify-json/lucide": "^1.2.98",
     "@tailwindcss/vite": "^4.2.2",
-    "astro": "6.1.2",
+    "astro": "6.1.3",
     "astro-icon": "^1.1.5",
     "astrojs-service-worker": "^2.0.0",
     "embla-carousel": "^8.6.0",
