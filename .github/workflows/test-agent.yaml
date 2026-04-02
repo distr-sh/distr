@@ -4,7 +4,17 @@ on:
   push:
     branches:
       - 'main'
+    paths-ignore:
+      - 'website/**'
+      - 'docker-autoheal/**'
+      - 'sdk/**'
+      - 'deploy/charts/**'
   pull_request:
+    paths-ignore:
+      - 'website/**'
+      - 'docker-autoheal/**'
+      - 'sdk/**'
+      - 'deploy/charts/**'
 
 jobs:
   test:
