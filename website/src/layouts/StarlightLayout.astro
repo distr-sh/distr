@@ -11,7 +11,8 @@ export interface Props {
 const {title, description, head} = Astro.props;
 ---
 
-<StarlightPage frontmatter={{title, description, template: 'splash', head: head ?? []}}>
+<StarlightPage
+  frontmatter={{title, description, template: 'splash', head: head ?? []}}>
   <div class="distr-content">
     <slot />
   </div>

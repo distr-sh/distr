@@ -28,15 +28,18 @@ export interface Props {
 
 const {slug} = Astro.params;
 const {post} = Astro.props;
-const optimizedImage = await getImage({src: post.data.image, width: 1200, height: 675});
+const optimizedImage = await getImage({
+  src: post.data.image,
+  width: 1200,
+  height: 675,
+});
 const ogImageUrl = new URL(optimizedImage.src, Astro.site).href;
 ---
 
 <Layout
   title={post.data.title}
   description={post.data.description}
-  head={[{tag: 'meta', attrs: {property: 'og:image', content: ogImageUrl}}]}
->
+  head={[{tag: 'meta', attrs: {property: 'og:image', content: ogImageUrl}}]}>
   <div class="mx-auto max-w-7xl px-1 sm:px-8 lg:px-10">
     <SinglePost post={post} url={slug} />
   </div>
