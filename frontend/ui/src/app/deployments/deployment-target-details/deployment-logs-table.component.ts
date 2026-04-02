@@ -5,7 +5,7 @@ import {
   TimeseriesExporter,
   TimeseriesSource,
   TimeseriesTableComponent,
-} from '../../components/timeseries-table.component';
+} from '../../components/timeseries-table/timeseries-table.component';
 import {DeploymentLogsService} from '../../services/deployment-logs.service';
 import {DeploymentLogRecord} from '../../types/deployment-log-record';
 

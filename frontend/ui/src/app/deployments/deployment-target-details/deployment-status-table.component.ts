@@ -6,7 +6,7 @@ import {
   TimeseriesExporter,
   TimeseriesSource,
   TimeseriesTableComponent,
-} from '../../components/timeseries-table.component';
+} from '../../components/timeseries-table/timeseries-table.component';
 import {DeploymentStatusService} from '../../services/deployment-status.service';
 
 function statusToTimeseriesEntry(record: DeploymentRevisionStatus): TimeseriesEntry {

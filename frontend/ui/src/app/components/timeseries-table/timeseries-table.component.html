@@ -1,0 +1,80 @@
+@if (entries$ | async; as entries) {
+  <div class="relative flex flex-col gap-4" [class.flex-col-reverse]="!newestFirst()">
+    @if (sourceWithStatus().loading()) {
+      <div class="absolute top-0 inset-e-0 rounded-xl bg-white dark:bg-gray-900 z-10 p-2">
+        <output class="flex justify-center items-center gap-2 text-gray-700 dark:text-gray-400 text-xs">
+          <app-spinner class="size-5" />
+          <span>Loading&hellip;</span>
+        </output>
+      </div>
+    }
+
+    <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+      <thead
+        class="dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-800 dark:text-gray-400 sr-only">
+        <tr>
+          <th scope="col"></th>
+          <th scope="col">Date</th>
+          <th scope="col">Status</th>
+          <th scope="col">Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (entry of entries; track entry.id ?? entry.date) {
+          @let pinned = pinnedEntryId() === entry.id;
+          <tr
+            [class.bg-yellow-100]="pinned"
+            [class.dark:bg-yellow-950]="pinned"
+            [class.sticky]="pinned"
+            [class.top-16]="pinned"
+            [class.bottom-0]="pinned"
+            [class.hover:bg-gray-50]="!pinned"
+            [class.dark:hover:bg-gray-600]="!pinned"
+            [class.hover:bg-yellow-200]="pinned"
+            [class.dark:hover:bg-yellow-900]="pinned"
+            class="not-last:border-b border-gray-200 dark:border-gray-600 group">
+            <td class="w-0">
+              <button
+                type="button"
+                (click)="pin(entry)"
+                [class.invisible]="!pinned"
+                class="group-hover:visible px-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-xs">
+                <fa-icon [icon]="pinned ? faThumbtackSlash : faThumbtack" />
+              </button>
+            </td>
+            <th class="px-1 font-medium whitespace-nowrap">{{ entry.date | date: 'medium' }}</th>
+            <td
+              class="uppercase px-1"
+              [class.text-red-500]="entry.status.toLowerCase().includes('err')"
+              [class.dark:text-red-400]="entry.status.toLowerCase().includes('err')"
+              [class.text-yellow-600]="entry.status.toLowerCase().includes('warn')"
+              [class.dark:text-yellow-500]="entry.status.toLowerCase().includes('warn')">
+              {{ entry.status }}
+            </td>
+            <td class="px-1 max-w-0 w-full" data-ph-mask-text="true">
+              <div class="overflow-x-auto whitespace-pre-wrap font-mono text-gray-900 dark:text-white">
+                {{ entry.detail }}
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    @if (hasOlder) {
+      <div class="flex items-center justify-center gap-2">
+        <button
+          type="button"
+          class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+          (click)="showOlder()">
+          Load older
+        </button>
+      </div>
+    }
+  </div>
+} @else {
+  <output class="flex justify-center items-center gap-2 text-gray-700 dark:text-gray-400">
+    <app-spinner class="size-8" />
+    <span>Loading&hellip;</span>
+  </output>
+}
