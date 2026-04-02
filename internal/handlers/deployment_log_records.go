@@ -4,15 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/api"
+	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/handlerutil"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
@@ -117,8 +118,8 @@ func getDeploymentLogsHandler() http.HandlerFunc {
 		}
 		filter := r.FormValue("filter")
 		if filter != "" {
-			if _, err := regexp.Compile(filter); err != nil {
-				http.Error(w, "invalid filter regex: "+err.Error(), http.StatusBadRequest)
+			if err := handlerutil.ValidateFilterRegex(filter); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
 		}
@@ -139,6 +140,10 @@ func getDeploymentLogsHandler() http.HandlerFunc {
 		if records, err := db.GetDeploymentLogRecords(
 			ctx, deployment.ID, resource, limit, before, after, filter,
 		); err != nil {
+			if errors.Is(err, apierrors.ErrBadRequest) {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 			internalctx.GetLogger(ctx).Error("failed to get log records", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

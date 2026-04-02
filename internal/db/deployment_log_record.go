@@ -198,6 +198,9 @@ func GetDeploymentLogRecords(
 		},
 	)
 	if err != nil {
+		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.InvalidRegularExpression {
+			return nil, apierrors.NewBadRequest("invalid filter regex")
+		}
 		return nil, fmt.Errorf("could not query DeploymentLogRecord: %w", err)
 	}
 	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.DeploymentLogRecord])

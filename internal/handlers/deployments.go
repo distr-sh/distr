@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strconv"
 	"time"
 
@@ -15,6 +14,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/deploymentvalues"
+	"github.com/distr-sh/distr/internal/handlerutil"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/subscription"
@@ -470,14 +470,18 @@ func getDeploymentStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	filter := r.FormValue("filter")
 	if filter != "" {
-		if _, err := regexp.Compile(filter); err != nil {
-			http.Error(w, "invalid filter regex: "+err.Error(), http.StatusBadRequest)
+		if err := handlerutil.ValidateFilterRegex(filter); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 	}
 	if deploymentStatus, err := db.GetDeploymentRevisionStatus(
 		ctx, deployment.ID, limit, before, after, filter,
 	); err != nil {
+		if errors.Is(err, apierrors.ErrBadRequest) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		internalctx.GetLogger(ctx).Error("failed to get deploymentstatus", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

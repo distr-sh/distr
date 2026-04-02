@@ -7,11 +7,14 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/api"
+	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"go.uber.org/zap"
 )
 
@@ -52,6 +55,9 @@ func GetDeploymentTargetLogRecords(
 		},
 	)
 	if err != nil {
+		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.InvalidRegularExpression {
+			return nil, apierrors.NewBadRequest("invalid filter regex")
+		}
 		return nil, fmt.Errorf("could not query DeploymentTargetLogRecord: %w", err)
 	}
 

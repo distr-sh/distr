@@ -134,6 +134,9 @@ func GetDeploymentRevisionStatus(
 		},
 	)
 	if err != nil {
+		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.InvalidRegularExpression {
+			return nil, apierrors.NewBadRequest("invalid filter regex")
+		}
 		return nil, fmt.Errorf("failed to query DeploymentRevisionStatus: %w", err)
 	} else if result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.DeploymentRevisionStatus]); err != nil {
 		return nil, fmt.Errorf("failed to get DeploymentRevisionStatus: %w", err)
