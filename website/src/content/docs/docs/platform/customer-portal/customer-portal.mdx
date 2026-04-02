@@ -1,6 +1,6 @@
 ---
 title: Customer Portal
-description: A simplified customer-facing UI for deploying Distr agents, pulling artifacts, managing tokens, and managing vendor applications.
+description: A white-labeled customer-facing UI for managing deployments, pulling artifacts, viewing licenses, creating support bundles, and managing secrets.
 slug: docs/platform/customer-portal
 sidebar:
   order: 1
@@ -8,28 +8,42 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
-import customerPortalLight from '~/assets/docs/product/vendor-portal/customer-portal-light.png';
-import customerPortalDark from '~/assets/docs/product/vendor-portal/customer-portal-dark.png';
+import homeLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-home-light.png';
+import homeDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-home-dark.png';
 
-The customer portal is a simplified, white-labeled control plane UI built for end customers.
+The Customer Portal is a simplified, white-labeled control plane UI built for end customers. Vendors control which sections each customer can access through [Customer Management](/docs/platform/customer-management/#enabling-and-disabling-features-per-customer).
 
 <ThemedImage
-  lightSrc={customerPortalLight}
-  darkSrc={customerPortalDark}
-  alt="Deployments interface"
+  lightSrc={homeLight}
+  darkSrc={homeDark}
+  alt="Customer Portal home page"
 />
 
-The Customer Portal enables end customer to:
+## Portal sections
 
-1. **Explore vendor-provided documentation**: The homepage serves as the end-customer's landing pad, offering release notes, agent and registry instructions, helpful links, and support information.
-   It's the go-to place for understanding how to install and maintain the vendor's software.
-2. **Deploy and manage agents**: In the _Deployments_ section, customers can deploy [agents](/docs/agents/) to their internal infrastructure.
-   These agents can then be used to manage one or multiple deployments.
-3. **Access and consume artifacts**: The _Artifacts_ section displays the software artifacts that have been enabled for the customer, along with instructions on how to pull and use them.
-4. **Generate access tokens**: In the top-right corner, the _Customer Settings_ area allows users to generate [Personal Access Tokens (PATs)](/docs/integrations/personal-access-token/), which are required for authenticating with the registry.
+The sidebar shows the sections that are enabled for your organization. A fully configured portal includes:
+
+| Section                                                          | Description                                                    | Visibility               |
+| ---------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------ |
+| **Home**                                                         | Vendor-provided documentation, release notes, and instructions | Always visible           |
+| **[Deployments](/docs/platform/customer-portal/deployments/)**   | Deploy and manage agents and applications                      | On by default            |
+| **[Artifacts](/docs/platform/customer-portal/registry/)**        | Browse and pull software artifacts from the registry           | On by default            |
+| **[Licenses](/docs/platform/customer-portal/licenses/)**         | View license keys and tokens issued by your vendor             | Requires Pro (or higher) |
+| **[Support](/docs/platform/customer-portal/support/)**           | Create and manage support bundles for troubleshooting          | Off by default           |
+| **[Alerts](/docs/platform/customer-portal/deployments/#alerts)** | Configure deployment health and resource usage notifications   | Off by default           |
+| **Users**                                                        | Manage users in your organization (admin only)                 | Always visible           |
+| **[Secrets](/docs/platform/customer-portal/secrets/)**           | Store and manage deployment secrets                            | On by default            |
+| **Access Tokens**                                                | Generate Personal Access Tokens for registry authentication    | Always visible           |
+
+**Deployments** and **Artifacts** are enabled by default for new customers. **Alerts** and **Support Bundles** must be explicitly enabled by the vendor. Disabled sections are hidden entirely from the Customer Portal — customers only see what has been enabled for them.
+
+Vendors manage these settings under **Customers** in the Vendor Portal. See [Enabling and disabling features per customer](/docs/platform/customer-management/#enabling-and-disabling-features-per-customer) for details.
 
 <Aside type="note">
-  Understand what a typical user journey looks like in this
-  [guide](/docs/platform/customer-portal/registry/) on using Distr from the
-  customer perspective.
+  If a section is missing from your portal, contact your vendor to request
+  access.
 </Aside>
+
+## Access Tokens
+
+In the top-right user menu, navigate to **Settings > Access Tokens** to generate [Personal Access Tokens (PATs)](/docs/integrations/personal-access-token/). PATs are required for authenticating with the artifact registry.

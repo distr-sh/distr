@@ -1,0 +1,71 @@
+---
+title: Customer Portal Support Bundles
+description: Create and manage support bundles to share diagnostic data with your vendor from the Customer Portal.
+slug: docs/platform/customer-portal/support
+sidebar:
+  order: 5
+---
+
+import {Aside} from '@astrojs/starlight/components';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import supportLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-support-light.png';
+import supportDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-support-dark.png';
+import detailLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-support-detail-light.png';
+import detailDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-support-detail-dark.png';
+
+As an end customer, you can create support bundles to share diagnostic data with your vendor when reporting an issue. Support bundles give your vendor the information they need to troubleshoot problems without requiring direct access to your infrastructure.
+
+<ThemedImage
+  lightSrc={supportLight}
+  darkSrc={supportDark}
+  alt="Customer Portal support bundles page"
+/>
+
+<Aside type="note">
+  The **Support** section only appears if your vendor has enabled the Support
+  Bundles feature for your organization.
+</Aside>
+
+## Creating a support bundle
+
+1. Navigate to **Support** in the sidebar and click **New Support Bundle**.
+2. Enter a **Title** (required) and an optional **Description** of the issue.
+3. Click **Create**. Distr generates a one-time `curl` command valid for 24 hours.
+4. Run the command on the affected deployment host. The interactive script will:
+   - List available Docker containers and prompt for which ones to exclude
+   - Show environment variable groups that will be collected, with redacted values already masked, and prompt for which groups to exclude
+   - Upload the remaining data to Distr
+5. Nothing is sent until you confirm each section.
+
+<Aside type="tip">
+  The collect command is shown in the Customer Portal after creating the bundle
+  and remains visible in the bundle detail view for as long as the bundle is in
+  the **Initialized** state.
+</Aside>
+
+## Viewing and commenting on bundles
+
+After the collection script runs, the bundle status changes from **Initialized** to **Created**. Click on any bundle to open the detail view where you can:
+
+- View all collected resources (container logs, environment variables)
+- Exchange comments with your vendor's support team
+- Track the bundle status (Initialized, Created, Resolved, Canceled)
+
+<ThemedImage
+  lightSrc={detailLight}
+  darkSrc={detailDark}
+  alt="Support bundle detail view showing resources and comments"
+/>
+
+## Bundle status lifecycle
+
+| Status          | Meaning                                                                         |
+| --------------- | ------------------------------------------------------------------------------- |
+| **Initialized** | Bundle created, collection script not yet run. Secret valid for 24 hours.       |
+| **Created**     | Collection script ran successfully. Resources are attached and ready to review. |
+| **Resolved**    | Vendor has marked the bundle as resolved.                                       |
+| **Canceled**    | Bundle was canceled before data was collected.                                  |
+
+You can cancel an **Initialized** bundle if you no longer need it. Once resolved or canceled, a bundle cannot be reopened.
+
+For the vendor-side setup and configuration, see [Support Bundles](/docs/platform/support-bundles/).

@@ -21,7 +21,7 @@ export const products: Product[] = [
     href: '/docs/platform/customer-portal/',
   },
   {
-    title: 'Container Registry',
+    title: 'Artifact Registry',
     description:
       'Distribute Docker Images, Helm Charts, or every OCI compatible artifact like large LLM Models with our high performance OCI registry',
     value: 'package',

@@ -290,7 +290,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   ],
                 },
                 {
-                  label: 'Quality & Compliance',
+                  label: 'Support',
                   items: [
                     {
                       label: 'Support Bundles',
@@ -314,12 +314,24 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                       link: '/docs/platform/customer-portal/',
                     },
                     {
-                      label: 'Registry',
+                      label: 'Artifact Registry',
                       link: '/docs/platform/customer-portal/registry/',
                     },
                     {
                       label: 'Deployments',
                       link: '/docs/platform/customer-portal/deployments/',
+                    },
+                    {
+                      label: 'Licenses',
+                      link: '/docs/platform/customer-portal/licenses/',
+                    },
+                    {
+                      label: 'Support Bundles',
+                      link: '/docs/platform/customer-portal/support/',
+                    },
+                    {
+                      label: 'Secrets',
+                      link: '/docs/platform/customer-portal/secrets/',
                     },
                   ],
                 },

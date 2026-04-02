@@ -78,24 +78,7 @@ In the detail view:
 
 ## Customer flow
 
-When Support Bundles is enabled for a customer organization, customers see **Support Bundles** in their Customer Portal sidebar.
-
-To create a bundle:
-
-1. Navigate to **Support** and click **New Support Bundle**.
-2. Enter a **Title** (required) and an optional **Description** of the issue.
-3. Click **Create**. Distr generates a `curl` command valid for 24 hours.
-4. Run the command on the affected host. The script will:
-   - List available Docker containers and prompt for which ones to exclude
-   - Show all environment variable groups that will be collected, with redacted values already masked, and prompt for which groups to exclude
-   - Upload the remaining data to Distr
-5. Nothing is sent until the customer confirms each section.
-
-<Aside type="tip">
-  The collect command is shown in the Customer Portal after creating the bundle
-  and remains visible in the bundle detail view for as long as the bundle is in
-  the **Initialized** state.
-</Aside>
+When Support Bundles is enabled for a customer organization, customers see **Support** in their Customer Portal sidebar. For the full customer-side guide, see [Customer Portal Support Bundles](/docs/platform/customer-portal/support/).
 
 ## Bundle status lifecycle
 

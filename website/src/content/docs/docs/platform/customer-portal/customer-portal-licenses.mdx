@@ -1,0 +1,44 @@
+---
+title: Customer Portal Licenses
+description: View and use license keys issued by your vendor directly from the Customer Portal.
+slug: docs/platform/customer-portal/licenses
+sidebar:
+  order: 4
+---
+
+import {Aside} from '@astrojs/starlight/components';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import licensesLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-licenses-light.png';
+import licensesDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-licenses-dark.png';
+
+As an end customer, you can view the license keys your vendor has issued to your organization directly from the [Customer Portal](/docs/platform/customer-portal/).
+
+<ThemedImage
+  lightSrc={licensesLight}
+  darkSrc={licensesDark}
+  alt="Customer Portal licenses page showing license keys"
+/>
+
+## Viewing license keys
+
+Navigate to **Licenses** in the sidebar to see all license keys assigned to your organization. The list shows each key's name, description, and expiration date. Expired keys are marked with an **(expired)** label.
+
+## Getting the token
+
+Click **View License** on any key to view its signed JWT token. Copy the token and use it in your application environment. The token works offline — no callback to Distr is required at verification time.
+
+For details on how to inject the token into your application (via environment variables, Helm values, or secrets), see [How customers use the token](/docs/platform/license-keys/#how-customers-use-the-token-in-their-application).
+
+<Aside type="note">
+  Customers can view and copy license tokens but cannot create, edit, or delete
+  keys. License keys are managed by your vendor.
+</Aside>
+
+## What is in the token
+
+Each license token is a signed JWT containing:
+
+- Validity period (not before / expiration dates)
+- Custom claims defined by your vendor (plan tier, seat count, feature flags, etc.)
+
+Your application verifies the token using the vendor's public key. See [Verifying tokens](/docs/platform/license-keys/#verifying-tokens-in-your-application) for implementation details.
