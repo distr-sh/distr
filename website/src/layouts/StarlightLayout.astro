@@ -1,15 +1,17 @@
 ---
 import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import type {StarlightPageFrontmatter} from '@astrojs/starlight/types';
 
 export interface Props {
   title: string;
   description: string;
+  head?: StarlightPageFrontmatter['head'];
 }
 
-const {title, description} = Astro.props;
+const {title, description, head} = Astro.props;
 ---
 
-<StarlightPage frontmatter={{title, description, template: 'splash'}}>
+<StarlightPage frontmatter={{title, description, template: 'splash', head: head ?? []}}>
   <div class="distr-content">
     <slot />
   </div>
