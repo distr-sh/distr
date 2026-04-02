@@ -96,9 +96,9 @@ When the agent version for a deployment target is updated in the Distr Hub, the 
 
 Distr deploys an autoheal service alongside every Docker agent. This service monitors container health and automatically restarts containers that become unhealthy.
 
-By default, autoheal covers **all containers** managed by the deployment, not just the agent. This means your application containers are automatically restarted if they fail their healthchecks. For this to work, your application must define [Docker healthchecks](https://docs.docker.com/reference/compose-file/services/#healthcheck) in its Compose file. Containers without healthchecks are not monitored.
+When autoheal is enabled for **all containers**, the underlying `docker-autoheal` service targets every unhealthy container visible to the Docker engine on that host, not just containers from a specific Distr deployment. This means your application containers are automatically restarted if they fail their healthchecks. For this to work, your application must define [Docker healthchecks](https://docs.docker.com/reference/compose-file/services/#healthcheck) in its Compose file. Containers without healthchecks are not monitored.
 
-The autoheal setting is configured when creating a deployment target. In the deployment wizard, the **Enable autoheal for all containers** checkbox is enabled by default for Docker deployments. When disabled, the autoheal service still runs but only monitors the Distr agent itself.
+The autoheal setting is configured when creating a deployment target. In the deployment wizard, the **Enable autoheal for all containers** checkbox is enabled by default for Docker deployments. When disabled, the autoheal service still runs but only monitors the Distr agent itself. To prevent unrelated containers on the same host from being auto-healed, label those containers with `autoheal=False`.
 
 <Aside type="note">
   Autoheal is only available for Docker deployments. This setting can only be
