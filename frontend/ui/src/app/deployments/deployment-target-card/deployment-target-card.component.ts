@@ -22,6 +22,7 @@ import {maxBy} from '../../../util/arrays';
 import {isArchived} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {ConnectInstructionsComponent} from '../../components/connect-instructions/connect-instructions.component';
+import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {DeploymentTargetStatusDotComponent} from '../../components/status-dot';
 import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
@@ -54,6 +55,7 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
     DeploymentStatusTextComponent,
     AutotrimDirective,
     RouterLink,
+    SpinnerComponent,
   ],
 })
 export class DeploymentTargetCardComponent extends DeploymentTargetCardBaseComponent {
