@@ -86,6 +86,11 @@
         "https://github.com/golangci/golangci-lint"
       ],
       "groupName": "golangci-lint"
+    },
+    {
+      "matchFileNames": ["website/**"],
+      "groupName": "website dependencies",
+      "matchUpdateTypes": ["digest", "patch", "minor", "major"]
     }
   ],
   "customManagers": [
