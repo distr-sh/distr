@@ -1,5 +1,44 @@
 # Changelog
 
+## [2.16.0](https://github.com/distr-sh/distr/compare/2.15.1...2.16.0) (2026-04-02)
+
+
+### Features
+
+* log viewer v2 ([#2117](https://github.com/distr-sh/distr/issues/2117)) ([06c6e64](https://github.com/distr-sh/distr/commit/06c6e641b2e93d9a51df6567df848e9e90d38f6c))
+
+
+### Bug Fixes
+
+* **deps:** update astro monorepo ([#2145](https://github.com/distr-sh/distr/issues/2145)) ([f9b234a](https://github.com/distr-sh/distr/commit/f9b234ad4811c9bbf1f8cc6d60bb9e9d317e77a7))
+* **deps:** update module github.com/aws/aws-sdk-go-v2/service/s3 to v1.98.0 ([#2130](https://github.com/distr-sh/distr/issues/2130)) ([65606f0](https://github.com/distr-sh/distr/commit/65606f00a77ee534657493486e93f620f903b8ba))
+* **deps:** update module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver to v0.149.0 ([#2132](https://github.com/distr-sh/distr/issues/2132)) ([cf0924e](https://github.com/distr-sh/distr/commit/cf0924ee3b814f884ad2e1d85e722f3212b644f6))
+* **deps:** update module github.com/shirou/gopsutil/v4 to v4.26.3 ([#2133](https://github.com/distr-sh/distr/issues/2133)) ([41b1713](https://github.com/distr-sh/distr/commit/41b17139ebadcf60e04f4e27d2d603d4baf9ed37))
+
+
+### Other
+
+* **deps:** update angular monorepo to v21.2.7 ([#2141](https://github.com/distr-sh/distr/issues/2141)) ([89a5821](https://github.com/distr-sh/distr/commit/89a582129418f020cf496da759f843a6c1c457a1))
+* **deps:** update angular-cli monorepo to v21.2.6 ([#2139](https://github.com/distr-sh/distr/issues/2139)) ([1c48937](https://github.com/distr-sh/distr/commit/1c489370cc5213ec6ed5d7790582f7cf29058168))
+* **deps:** update dependency @angular/cdk to v21.2.5 ([#2142](https://github.com/distr-sh/distr/issues/2142)) ([0bf44d9](https://github.com/distr-sh/distr/commit/0bf44d914a80b5182b4dec2cdb95decea94c70ba))
+* **deps:** update dependency @codemirror/view to v6.41.0 ([#2136](https://github.com/distr-sh/distr/issues/2136)) ([e7c0a8f](https://github.com/distr-sh/distr/commit/e7c0a8fd2c13ff5b55f3431d497a1cf100fe914d))
+* **deps:** update dependency baseline-browser-mapping to v2.10.13 ([#2129](https://github.com/distr-sh/distr/issues/2129)) ([64fdccd](https://github.com/distr-sh/distr/commit/64fdccda5ce9d7fd2e0b71b24d02c1be68da63c7))
+* **deps:** update dependency mermaid to v11.14.0 ([#2137](https://github.com/distr-sh/distr/issues/2137)) ([9a2f0f2](https://github.com/distr-sh/distr/commit/9a2f0f2b41ef97e56052180d2dfe0bb59a5c9bf2))
+* **deps:** update dependency playwright to v1.59.0 ([#2131](https://github.com/distr-sh/distr/issues/2131)) ([ddc6f76](https://github.com/distr-sh/distr/commit/ddc6f76d772aeed96934ea490f993179ae1a74c1))
+* **deps:** update dependency playwright to v1.59.1 ([#2144](https://github.com/distr-sh/distr/issues/2144)) ([ece7d0a](https://github.com/distr-sh/distr/commit/ece7d0af3b9319f7f9a2bffed4f7686c8bfdfd8b))
+
+
+### Docs
+
+* restructure docs ([#2073](https://github.com/distr-sh/distr/issues/2073)) ([f67e74b](https://github.com/distr-sh/distr/commit/f67e74b8371982a2ae2410b9faa78aba7d4e973f))
+* **website:** add og:image support ([#2149](https://github.com/distr-sh/distr/issues/2149)) ([0c1da66](https://github.com/distr-sh/distr/commit/0c1da66d201aaf1b2506eb0ea6a2d8e2bd7a6ad4))
+* **website:** overhaul customer portal documentation ([#2146](https://github.com/distr-sh/distr/issues/2146)) ([efa5273](https://github.com/distr-sh/distr/commit/efa5273df5e9abca0317156bf842b74b086fa96e))
+
+
+### Performance
+
+* **backend:** optimize GetDeploymentLogRecordResources query and add index ([#2138](https://github.com/distr-sh/distr/issues/2138)) ([81d9e3d](https://github.com/distr-sh/distr/commit/81d9e3d1bfef40af2809c29e50d476665dd2d750))
+
 ## [2.15.1](https://github.com/distr-sh/distr/compare/2.15.0...2.15.1) (2026-03-31)
 
 
