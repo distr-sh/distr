@@ -10,9 +10,15 @@ on:
       - '*'
     paths-ignore:
       - 'website/**'
+      - 'docker-autoheal/**'
+      - 'sdk/**'
+      - 'deploy/charts/**'
   pull_request:
     paths-ignore:
       - 'website/**'
+      - 'docker-autoheal/**'
+      - 'sdk/**'
+      - 'deploy/charts/**'
 
 jobs:
   build-agent:

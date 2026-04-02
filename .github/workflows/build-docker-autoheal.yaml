@@ -1,11 +1,20 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
 name: Build Docker Autoheal
+
 on:
   push:
     branches:
       - 'main'
     tags:
       - '*'
+    paths:
+      - 'docker-autoheal/**'
+      - '.github/workflows/build-docker-autoheal.yaml'
   pull_request:
+    paths:
+      - 'docker-autoheal/**'
+      - '.github/workflows/build-docker-autoheal.yaml'
 jobs:
   build:
     name: Build
