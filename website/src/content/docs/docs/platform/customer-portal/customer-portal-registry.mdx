@@ -1,0 +1,69 @@
+---
+title: Customer Portal Artifact Registry
+description: Guide for end customers on using the Customer Portal to access and pull artifacts from the Distr registry.
+slug: docs/platform/customer-portal/registry
+sidebar:
+  order: 2
+---
+
+import {Aside} from '@astrojs/starlight/components';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import artifactsLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-artifacts-light.png';
+import artifactsDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-artifacts-dark.png';
+import artifactUIDetailsLight from '~/assets/docs/platform/customer-portal/customer-view/artifact-ui-details-light.png';
+import artifactUIDetailsDark from '~/assets/docs/platform/customer-portal/customer-view/artifact-ui-details-dark.png';
+
+As an end customer, you will be given access to a [Customer Portal](/docs/platform/customer-portal/) by the software vendor.
+The portal provides access to the artifact registry for downloading software distributed by your vendor.
+
+This guide walks you through using the registry from the Customer Portal.
+
+## Registry quickstart from the Customer Portal
+
+A typical onboarding journey looks like this:
+
+### 1. View available artifacts
+
+Navigate to **Artifacts** in the sidebar to browse the artifacts your vendor has made available to you:
+
+<ThemedImage
+  lightSrc={artifactsLight}
+  darkSrc={artifactsDark}
+  alt="Customer Portal artifacts page"
+/>
+
+### 2. Explore artifact details
+
+Click on the artifact name to see details like available versions, creation date, and a download counter:
+
+<ThemedImage
+  lightSrc={artifactUIDetailsLight}
+  darkSrc={artifactUIDetailsDark}
+  alt="Artifact details view"
+/>
+
+### 3. Authenticate with a Personal Access Token
+
+Generate a [Personal Access Token (PAT)](/docs/integrations/personal-access-token/) in your Distr account and use it to log in:
+
+```shell
+echo "YOUR-ACCESS-TOKEN" | docker login registry.distr.sh:8585 --password-stdin -u -
+```
+
+### 4. Pull vendor artifacts
+
+Once authenticated, you can pull the artifacts using Docker, [ORAS](https://oras.land/docs/installation) or Helm for example:
+
+<Aside type="tip">
+  You will find the exact commands in the Customer Portal.
+</Aside>
+
+```shell
+docker pull registry.distr.sh/slug/hello-world:1.0.0
+oras pull registry.distr.sh/slug/vendor-artifact:1.0.0
+helm pull registry.distr.sh/slug/vendor-helm-chart:1.0.0
+```
+
+### 5. Deploy the artifacts
+
+Refer to the deployment instructions in your [Customer Portal](/docs/platform/customer-portal/) dashboard or coordinate directly with your vendor for specific deployment guidance.

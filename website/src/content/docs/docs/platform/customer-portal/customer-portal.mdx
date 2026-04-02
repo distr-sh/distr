@@ -1,0 +1,49 @@
+---
+title: Customer Portal
+description: A white-labeled customer-facing UI for managing deployments, pulling artifacts, viewing licenses, creating support bundles, and managing secrets.
+slug: docs/platform/customer-portal
+sidebar:
+  order: 1
+---
+
+import {Aside} from '@astrojs/starlight/components';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import homeLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-home-light.png';
+import homeDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-home-dark.png';
+
+The Customer Portal is a simplified, white-labeled control plane UI built for end customers. Vendors control which sections each customer can access through [Customer Management](/docs/platform/customer-management/#enabling-and-disabling-features-per-customer).
+
+<ThemedImage
+  lightSrc={homeLight}
+  darkSrc={homeDark}
+  alt="Customer Portal home page"
+/>
+
+## Portal sections
+
+The sidebar shows the sections that are enabled for your organization. A fully configured portal includes:
+
+| Section                                                          | Description                                                    | Visibility               |
+| ---------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------ |
+| **Home**                                                         | Vendor-provided documentation, release notes, and instructions | Always visible           |
+| **[Deployments](/docs/platform/customer-portal/deployments/)**   | Deploy and manage agents and applications                      | On by default            |
+| **[Artifacts](/docs/platform/customer-portal/registry/)**        | Browse and pull software artifacts from the registry           | On by default            |
+| **[Licenses](/docs/platform/customer-portal/licenses/)**         | View license keys and tokens issued by your vendor             | Requires Pro (or higher) |
+| **[Support](/docs/platform/customer-portal/support/)**           | Create and manage support bundles for troubleshooting          | Off by default           |
+| **[Alerts](/docs/platform/customer-portal/deployments/#alerts)** | Configure deployment health and resource usage notifications   | Off by default           |
+| **Users**                                                        | Manage users in your organization (admin only)                 | Always visible           |
+| **[Secrets](/docs/platform/customer-portal/secrets/)**           | Store and manage deployment secrets                            | On by default            |
+| **Access Tokens**                                                | Generate Personal Access Tokens for registry authentication    | Always visible           |
+
+**Deployments** and **Artifacts** are enabled by default for new customers. **Alerts** and **Support Bundles** must be explicitly enabled by the vendor. Disabled sections are hidden entirely from the Customer Portal — customers only see what has been enabled for them.
+
+Vendors manage these settings under **Customers** in the Vendor Portal. See [Enabling and disabling features per customer](/docs/platform/customer-management/#enabling-and-disabling-features-per-customer) for details.
+
+<Aside type="note">
+  If a section is missing from your portal, contact your vendor to request
+  access.
+</Aside>
+
+## Access Tokens
+
+In the top-right user menu, navigate to **Settings > Access Tokens** to generate [Personal Access Tokens (PATs)](/docs/integrations/personal-access-token/). PATs are required for authenticating with the artifact registry.

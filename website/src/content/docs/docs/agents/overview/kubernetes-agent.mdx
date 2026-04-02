@@ -1,0 +1,202 @@
+---
+title: Kubernetes Agent
+description: How the Distr Kubernetes agent works — installation, core loop, OCI registry authentication, self-updates, migrating existing releases, and uninstallation.
+slug: docs/agents/kubernetes-agent
+sidebar:
+  order: 3
+---
+
+import {Aside} from '@astrojs/starlight/components';
+
+The Kubernetes agent manages Kubernetes deployments, handling the complete lifecycle of Helm charts in customer environments. It installs and upgrades charts, monitors Kubernetes resource health, supports customer-specific value overrides, and provides rollback capabilities for failed deployments.
+
+## Installation and Environment
+
+The agent is installed by applying manifests fetched directly from the Distr Hub:
+
+```
+kubectl apply -n <namespace> -f "https://<distr-hub>/api/v1/connect?targetId=<targetId>&targetSecret=<targetSecret>"
+```
+
+The namespace must already exist. The `targetId` and `targetSecret` ensure the agent can only fetch deployments for one specific deployment target. The secret is shown once and never stored by the Hub — it can only be verified.
+
+The fetched manifests contain the `distr-agent` Deployment:
+
+<Aside type="danger">
+  Scaling the agent to more than one replica leads to undefined behavior. Do not
+  alter the deployment manifests.
+</Aside>
+
+```yaml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: distr-agent
+spec:
+  selector:
+    matchLabels:
+      app: distr-agent
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: distr-agent
+    spec:
+      serviceAccountName: distr-agent
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: distr-agent
+          image: 'ghcr.io/distr-sh/distr/kubernetes-agent'
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DOCKER_CONFIG
+              value: /opt/config/.docker/
+            - name: DISTR_AGENT_CONFIG_DIRS
+              value: |
+                /opt/config/.agent/env
+                /opt/config/.agent/auth
+          envFrom:
+            - secretRef:
+                name: distr-agent-auth
+            - configMapRef:
+                name: distr-agent-env
+          volumeMounts:
+            - name: dockerconfig
+              mountPath: /opt/config/.docker/
+            - name: env
+              mountPath: /opt/config/.agent/env
+            - name: auth
+              mountPath: /opt/config/.agent/auth
+            - name: cache
+              mountPath: /.cache/
+      volumes:
+        - name: env
+          configMap:
+            name: distr-agent-env
+        - name: auth
+          secret:
+            secretName: distr-agent-auth
+        - name: cache
+          emptyDir: {}
+```
+
+The agent can be cluster-scoped or namespace-scoped — this cannot be changed after creation. Cluster-scoped agents get a `ClusterRoleBinding` to the built-in [`cluster-admin`](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#user-facing-roles) role. Namespace-scoped agents get a `RoleBinding` to a `namespace-admin` role limited to that namespace.
+
+The `distr-agent-env` ConfigMap contains all agent environment variables (same as the Docker agent). The `distr-agent-auth` Secret contains `targetId` and `targetSecret`.
+
+## Core Logic
+
+The agent runs the following loop at the interval defined by `DISTR_INTERVAL` (default 5 seconds):
+
+1. Fetch the deployments from `DISTR_RESOURCE_ENDPOINT`
+2. Uninstall Helm releases that are no longer in the list (undeployed)
+3. Install or upgrade Helm releases that are in the list. If images need pulling, the agent reports status `PROGRESSING`.
+4. Send the Helm output to `DISTR_STATUS_ENDPOINT`, reporting the deployment's status.
+
+All requests are authenticated with a JWT token obtained from `DISTR_LOGIN_ENDPOINT`.
+
+## Altering the Helm Release
+
+The Kubernetes agent uses the Helm API to manage releases, similar to how the [Flux Helm Controller](https://fluxcd.io/flux/components/helm/) works. You can inspect releases with `helm ls -a -n <namespace>`.
+
+<Aside type="danger">
+  Manually running `helm upgrade` or `helm rollback` will stop the Distr agent
+  from making any future changes. It is currently not easily possible to resync
+  the revision ID to let the agent pick up the release again.
+</Aside>
+
+## Authentication with OCI Registries
+
+If a deployment uses images from the Distr registry, the agent authenticates automatically — no extra steps needed for the customer.
+
+To reference Distr registry images in your Helm chart, see [Configuring Helm Charts for Distr Artifacts](/docs/agents/helm-registry-auth/).
+
+You can also provide credentials via an [application entitlement](/docs/platform/application-entitlements/#oci-registry-authentication) (Pro feature). When a deployment is created with that entitlement, the agent logs in to the specified registry using the provided credentials.
+
+## Agent Self Updates
+
+When the agent version for a deployment target is updated in the Distr Hub, the agent updates itself on the next cycle. It fetches the new manifest from `DISTR_MANIFEST_ENDPOINT` and restarts.
+
+## Migrating an Existing Helm Release
+
+The Kubernetes agent only manages releases it knows about. If you already have a Helm release running and want Distr to take it over, you need to create a tracking secret that tells the agent the release exists and which revision it is on.
+
+<Aside type="caution">
+  After migration, the Distr agent will manage the release. Do not run `helm
+  upgrade` or `helm rollback` manually — this will cause the agent to stop
+  reconciling. See [Altering the Helm Release](#altering-the-helm-release) for
+  details.
+</Aside>
+
+### Step 1: Get the Current Revision Number
+
+```bash
+helm history <release-name> -n <namespace> --max 1
+```
+
+Note the **REVISION** number from the output.
+
+### Step 2: Create the Tracking Secret
+
+```bash
+kubectl create secret generic "sh.distr.agent.v1.<release-name>" \
+  --namespace=<namespace> \
+  --from-literal=release='{"id":"00000000-0000-0000-0000-000000000000","revisionId":"00000000-0000-0000-0000-000000000000","releaseName":"<release-name>","helmRevision":<REVISION>,"logsEnabled":false,"phase":"ready"}'
+```
+
+Then label it so the agent can discover it:
+
+```bash
+kubectl label secret "sh.distr.agent.v1.<release-name>" \
+  --namespace=<namespace> \
+  "agent.distr.sh/deployment=<release-name>"
+```
+
+<Aside type="tip">
+  The placeholder UUIDs (`00000000-...`) are fine — the agent matches by
+  `releaseName` and updates the IDs on the next reconciliation.
+</Aside>
+
+### Step 3: Install the Agent
+
+```bash
+kubectl apply -n <namespace> -f "<distr-connect-url>"
+```
+
+The agent discovers the tracking secret, adopts the release, and performs an upgrade on the next reconciliation cycle.
+
+### Fixing Revision Skew
+
+If the agent reports `actual helm revision is different from latest deployed by agent`, the revision number in the tracking secret does not match the actual Helm release revision.
+
+**Option A: From the Distr UI**
+
+Open the deployment in the vendor portal, click **Update**, and use the reset button to sync the agent's Helm revision to the current release revision.
+
+**Option B: Patch the Secret**
+
+```bash
+kubectl patch secret "sh.distr.agent.v1.<release-name>" \
+  --namespace=<namespace> --type='strategic' \
+  -p '{"stringData":{"release":"{\"id\":\"00000000-0000-0000-0000-000000000000\",\"revisionId\":\"00000000-0000-0000-0000-000000000000\",\"releaseName\":\"<release-name>\",\"helmRevision\":<CURRENT_REVISION>,\"logsEnabled\":false,\"phase\":\"ready\"}"}}'
+```
+
+## Uninstalling
+
+Before removing the agent, undeploy all managed deployments via the UI or API.
+
+Set your context to the agent's namespace:
+
+```shell
+kubectl config set-context --current --namespace={{deployment-namespace}}
+```
+
+Then remove the agent and its associated resources:
+
+```shell
+kubectl delete deployment/distr-agent secrets/distr-agent-auth configmaps/distr-agent-env serviceaccounts/distr-agent clusterrolebindings/distr-agent-default
+```

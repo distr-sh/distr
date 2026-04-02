@@ -32,15 +32,15 @@ You can't SSH into every customer deployment and tail logs. That doesn't scale, 
 
 Alerts in Distr work for both sides:
 
-Distr lets you configure alerts in the [Vendor portal](/docs/product/vendor-portal/). Set them once, they apply everywhere. Or get granular if you want.
+Distr lets you configure alerts in the [Vendor portal](/docs/vendor-portal/). Set them once, they apply everywhere. Or get granular if you want.
 
-For customers that manage and update the [deployments](/docs/product/agents/) themselves, you can enable alerts for them as well so they can configure their own alerts in the [Customer portal](/docs/product/customer-portal/).
+For customers that manage and update the [deployments](/docs/agents/) themselves, you can enable alerts for them as well so they can configure their own alerts in the [Customer portal](/docs/platform/customer-portal/).
 
 This dual approach matters because not all customer relationships look the same. Some of your customers want you monitoring their deployments—they'd rather you catch issues first and fix them proactively. Others prefer to run their own ops and want full control over who gets notified when.
 
 For example, you'll get alerted if an update fails or gets stuck looping, if we lose contact with a deployment (network issues, dead instance, whatever), or if your app's in a crash loop. We filter out normal restarts from successful updates though—no point spamming you about routine operations.
 
-The details on setting this up are in the [alerts documentation](/docs/product/alerts/).
+The details on setting this up are in the [alerts documentation](/docs/agents/alerts/).
 
 ## How It Helps
 

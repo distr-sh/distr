@@ -1,6 +1,13 @@
 ---
 import {Font} from 'astro:assets';
 const {head} = Astro.locals.starlightRoute;
+
+const hasOgImage = head.some(
+  ({tag, attrs}) => tag === 'meta' && attrs?.property === 'og:image',
+);
+const ogImageUrl = hasOgImage
+  ? undefined
+  : new URL('/og-distr.webp', Astro.site).href;
 ---
 
 <Font cssVariable="--font-inter" preload />
@@ -14,3 +21,4 @@ const {head} = Astro.locals.starlightRoute;
     ),
   )
 }
+{ogImageUrl && <meta property="og:image" content={ogImageUrl} />}

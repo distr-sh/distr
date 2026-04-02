@@ -1,7 +1,7 @@
 ---
 title: Distr API
 description: Using the Distr REST API, you can programmatically manage every aspect of your software distribution, from publishing artifacts and creating customers to triggering deployment updates. Using the same API that's behind the Vendor and Customer Portals.
-
+slug: docs/integrations/api
 sidebar:
   order: 1
 ---

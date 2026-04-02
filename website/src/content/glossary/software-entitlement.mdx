@@ -1,0 +1,53 @@
+---
+title: Software Entitlement
+slug: software-entitlement
+description: 'A software entitlement defines what a customer is permitted to access. Learn how entitlements work for ISVs shipping on-prem, VPC, and air-gapped software.'
+---
+
+## What Is a Software Entitlement?
+
+A software entitlement is the definition of what a customer is permitted to access — which software versions, features, or artifacts they are allowed to use based on their contract, subscription tier, or purchase.
+
+Entitlements answer the question: _what is this customer allowed to have?_
+
+A [license key](/glossary/software-license-management/) answers a different question: _how do we enforce it?_
+
+The two concepts are related but distinct. An entitlement is the business rule. A license key is one mechanism for enforcing it.
+
+## Entitlements vs. License Keys
+
+The terms are often used interchangeably, but they describe different things:
+
+**Entitlement** — the right to access something. A customer on your Pro tier is entitled to version 2.x, module A, and module B. A customer on Basic is entitled to version 2.x and module A only. These rules live in your system of record.
+
+**License key** — a cryptographic token that encodes and enforces those rights inside the running software. When your application reads `{"plan": "pro", "modules": ["a", "b"], "seats": 25}` from a signed JWT, it is reading the customer's entitlement, packaged into an enforceable form.
+
+You can have entitlements without license keys (enforced at the distribution layer instead), and you can issue license keys without a formal entitlement system behind them. Most mature ISVs end up needing both.
+
+## Where Entitlements Are Enforced
+
+For software running in customer-controlled environments — on-prem data centers, self-managed VPCs, BYOC deployments, or air-gapped clusters — entitlements are typically enforced at two layers:
+
+**Distribution layer** — controls which artifacts a customer can access. A customer with a Base tier entitlement can pull certain container images and Helm chart versions from your registry. A customer on Enterprise can access additional images, pre-release channels, or restricted modules. This enforcement happens before the software is ever deployed.
+
+**Runtime layer** — controls what the running software does. A signed JWT license key embedded in a Kubernetes secret or environment variable lets your application verify entitlements at startup without any network call. It reads the payload, checks the signature against your public key, and enforces seat limits, feature flags, or expiry — even in a fully air-gapped environment.
+
+Both layers matter. Distribution-layer enforcement stops unauthorized access to your artifacts. Runtime enforcement ensures the software behaves correctly once deployed, regardless of network connectivity.
+
+## Why Entitlements Are Different in On-Prem Software
+
+In SaaS, entitlements are easy — you control the environment. You can block a UI element, gate an API route, or revoke a session. The enforcement lives in your infrastructure.
+
+In on-prem, self-managed, VPC, or air-gapped deployments, you do not control the runtime. Your customer does. Enforcement has to be portable — it has to work inside their cluster, with no connection back to your servers, and no assumption that anything external is reachable.
+
+This is why on-prem entitlement enforcement typically relies on cryptographic license keys: the entitlement data travels with the software, signed by you, verifiable offline.
+
+## How Distr Handles Entitlements
+
+Distr manages entitlements at both layers for ISVs shipping to on-prem, VPC, BYOC, and air-gapped customers:
+
+- **Application entitlements** — control which customers can access specific application versions or receive deployments via Distr's agents
+- **Artifact entitlements** — restrict access to container images, Helm charts, and other artifacts in your registry based on per-customer entitlements
+- **License keys** — signed JWT tokens you issue per customer, containing whatever your application needs to enforce at runtime
+
+See [License Management](/docs/platform/license-management/) for how it works in practice.

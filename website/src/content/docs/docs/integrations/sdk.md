@@ -6,8 +6,8 @@ sidebar:
 ---
 
 Distr SDKs are first-party libraries that allow you to interact with the Distr platform programmatically.
-In the simplest case, you can use them as an API wrapper that performs executing HTTP requests to the [Distr API](/docs/integrations/api/).
-For mor high level use cases, they offer services that help you to interact with the Distr platform in a more convenient way, e.g. by providing methods for checking if a deployment is outdated.
+In the simplest case, you can use them as an API wrapper that executes HTTP requests to the [Distr API](/docs/integrations/api/).
+For more high level use cases, they offer services that help you to interact with the Distr platform in a more convenient way, e.g. by providing methods for checking if a deployment is outdated.
 
 Currently, we offer an SDK for TS/JS, which is available on [npm](https://www.npmjs.com/package/@distr-sh/distr-sdk).
 More languages are planned to be supported in the future.
