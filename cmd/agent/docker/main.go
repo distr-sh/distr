@@ -264,16 +264,15 @@ func cleanupOldDeployments(ctx context.Context, resource api.AgentResource, depl
 			}
 
 			if err := DockerEngineUninstall(ctx, deployment); err != nil {
-				logger.Error("could not uninstall deployment", zap.Error(err))
-			} else {
-				if err := DeleteDeployment(deployment); err != nil {
-					logger.Error("could not delete deployment", zap.Error(err))
-				}
-
-				if err := DeleteImages(ctx, deploymentImages); err != nil {
-					logger.Error("could not delete images for old deployment", zap.Error(err))
-				}
+				logger.Warn("could not uninstall deployment", zap.Error(err))
+			} else if err := DeleteImages(ctx, deploymentImages); err != nil {
+				logger.Warn("could not delete images for old deployment", zap.Error(err))
 			}
+
+			if err := DeleteDeployment(deployment); err != nil {
+				logger.Warn("could not delete deployment", zap.Error(err))
+			}
+
 			CleanupLogsTimestamps(deployment)
 		}
 	}
