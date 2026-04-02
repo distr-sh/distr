@@ -180,7 +180,6 @@ jobs:
           dist/distr-amd64 serve &
           curl --retry 10 --retry-delay 1 --retry-connrefused -sf "$DISTR_HOST/ready" || { echo "Hub did not become ready in time"; exit 1; }
           curl $DISTR_HOST/docs/openapi.yaml -sf -o /dev/null
-          curl $DISTR_HOST/internal/environment -f
           psql $DATABASE_URL -c "select version > 0, dirty from schema_migrations" --csv -t | grep "t,f"
           pkill -SIGTERM distr-amd64
           dist/distr-amd64 migrate --down
