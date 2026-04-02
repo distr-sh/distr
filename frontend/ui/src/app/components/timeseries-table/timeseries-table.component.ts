@@ -3,9 +3,23 @@ import {Component, computed, inject, input, signal} from '@angular/core';
 import {toObservable} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faThumbtack, faThumbtackSlash} from '@fortawesome/free-solid-svg-icons';
-import {combineLatest, EMPTY, filter, interval, map, merge, Observable, scan, Subject, switchMap, tap} from 'rxjs';
+import {
+  catchError,
+  combineLatest,
+  EMPTY,
+  filter,
+  interval,
+  map,
+  merge,
+  Observable,
+  scan,
+  Subject,
+  switchMap,
+  tap,
+} from 'rxjs';
 import {distinctBy} from '../../../util/arrays';
 import {downloadBlob} from '../../../util/blob';
+import {getFormDisplayedError} from '../../../util/errors';
 import {ToastService} from '../../services/toast.service';
 import {SpinnerComponent} from '../spinner/spinner.component';
 
@@ -96,18 +110,18 @@ export class TimeseriesTableComponent {
       let nextAfter: Date | null = null;
       return merge(
         merge(
-          source.load(),
+          source.load().pipe(catchError((err) => this.handleError(err))),
           this.showOlder$.pipe(
             map(() => nextBefore),
             filter((before) => before !== null),
-            switchMap((before) => source.loadBefore(before))
+            switchMap((before) => source.loadBefore(before).pipe(catchError((err) => this.handleError(err))))
           )
         ).pipe(tap((entries) => (this.hasOlder = entries.length >= source.batchSize))),
         live
           ? interval(10_000).pipe(
               map(() => nextAfter),
               filter((after) => after !== null),
-              switchMap((after) => source.loadAfter(after))
+              switchMap((after) => source.loadAfter(after).pipe(catchError((err) => this.handleError(err))))
             )
           : EMPTY
       ).pipe(
@@ -140,6 +154,16 @@ export class TimeseriesTableComponent {
 
   protected showOlder() {
     this.showOlder$.next();
+  }
+
+  private handleError(err: unknown) {
+    const msg = getFormDisplayedError(err);
+    if (msg) {
+      this.toastService.error('Failed to load entries: ' + msg);
+    } else {
+      this.toastService.error('Failed to load entries');
+    }
+    return EMPTY;
   }
 
   protected pin(entry: TimeseriesEntry) {
