@@ -8,9 +8,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/handlerutil"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/getsentry/sentry-go"
@@ -39,9 +41,20 @@ func getDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+		filter := r.FormValue("filter")
+		if filter != "" {
+			if err := handlerutil.ValidateFilterRegex(filter); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+		}
 
-		records, err := db.GetDeploymentTargetLogRecords(ctx, deploymentTarget.ID, limit, before, after)
+		records, err := db.GetDeploymentTargetLogRecords(ctx, deploymentTarget.ID, limit, before, after, filter)
 		if err != nil {
+			if errors.Is(err, apierrors.ErrBadRequest) {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 			internalctx.GetLogger(ctx).Error("failed to get deployment target log records", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

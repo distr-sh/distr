@@ -8,11 +8,13 @@ on:
       - main
     paths:
       - 'website/**'
+      - '.github/workflows/website.yaml'
   pull_request:
     branches:
       - main
     paths:
       - 'website/**'
+      - '.github/workflows/website.yaml'
 
 permissions:
   id-token: write

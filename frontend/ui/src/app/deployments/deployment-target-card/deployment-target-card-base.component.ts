@@ -40,9 +40,6 @@ export abstract class DeploymentTargetCardBaseComponent {
   public readonly deploymentTargetMetrics = input<DeploymentTargetLatestMetrics | undefined>(undefined);
 
   protected readonly deploymentModal = viewChild.required<TemplateRef<unknown>>('deploymentModal');
-  protected readonly deploymentStatusModal = viewChild.required<TemplateRef<unknown>>('deploymentStatusModal');
-  protected readonly deploymentTargetStatusModal =
-    viewChild.required<TemplateRef<unknown>>('deploymentTargetStatusModal');
   protected readonly instructionsModal = viewChild.required<TemplateRef<unknown>>('instructionsModal');
   protected readonly deleteConfirmModal = viewChild.required<TemplateRef<unknown>>('deleteConfirmModal');
   protected readonly manageDeploymentTargetDrawer =

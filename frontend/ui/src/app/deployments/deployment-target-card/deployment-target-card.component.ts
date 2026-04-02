@@ -4,6 +4,7 @@ import {DatePipe, NgOptimizedImage} from '@angular/common';
 import {Component, computed, inject, resource, signal, TemplateRef, viewChild, WritableSignal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {ReactiveFormsModule} from '@angular/forms';
+import {RouterLink} from '@angular/router';
 import {ApplicationVersion, DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
@@ -21,6 +22,7 @@ import {maxBy} from '../../../util/arrays';
 import {isArchived} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {ConnectInstructionsComponent} from '../../components/connect-instructions/connect-instructions.component';
+import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {DeploymentTargetStatusDotComponent} from '../../components/status-dot';
 import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
@@ -29,8 +31,6 @@ import {ApplicationEntitlementsService} from '../../services/application-entitle
 import {ApplicationsService} from '../../services/applications.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
 import {DeploymentModalComponent} from '../deployment-modal.component';
-import {DeploymentStatusModalComponent} from '../deployment-status-modal/deployment-status-modal.component';
-import {DeploymentTargetStatusModalComponent} from '../deployment-target-status-modal/deployment-target-status-modal.component';
 import {DeploymentAppNameComponent} from './deployment-app-name.component';
 import {DeploymentStatusTextComponent} from './deployment-status-text.component';
 import {DeploymentTargetCardBaseComponent} from './deployment-target-card-base.component';
@@ -50,12 +50,12 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
     ReactiveFormsModule,
     DeploymentModalComponent,
     DeploymentTargetMetricsComponent,
-    DeploymentStatusModalComponent,
     TextFieldModule,
-    DeploymentTargetStatusModalComponent,
     DeploymentAppNameComponent,
     DeploymentStatusTextComponent,
     AutotrimDirective,
+    RouterLink,
+    SpinnerComponent,
   ],
 })
 export class DeploymentTargetCardComponent extends DeploymentTargetCardBaseComponent {
@@ -133,17 +133,6 @@ export class DeploymentTargetCardComponent extends DeploymentTargetCardBaseCompo
       this.deploymentTarget().currentStatus !== undefined &&
       this.deploymentTarget().agentVersion?.id !== this.deploymentTarget().reportedAgentVersionId
   );
-
-  protected openStatusModal(deployment: DeploymentWithLatestRevision) {
-    if (deployment?.id) {
-      this.selectedDeployment.set(deployment);
-      this.showModal(this.deploymentStatusModal());
-    }
-  }
-
-  protected openDeploymentTargetStatusModal() {
-    this.showModal(this.deploymentTargetStatusModal());
-  }
 
   protected setLogsEnabled(deployment: DeploymentWithLatestRevision, logsEnabled: boolean) {
     if (deployment.id) {

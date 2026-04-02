@@ -7,6 +7,7 @@ import (
 )
 
 type DeploymentLogRecord struct {
+	ID                   uuid.UUID `json:"id"`
 	DeploymentID         uuid.UUID `json:"deploymentId"`
 	DeploymentRevisionID uuid.UUID `json:"deploymentRevisionId"`
 	Resource             string    `json:"resource"`

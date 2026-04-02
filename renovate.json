@@ -11,25 +11,13 @@
       "extends": [
         "monorepo:opentelemetry-go"
       ],
-      "groupName": "opentelemetry-go monorepo",
-      "matchUpdateTypes": [
-        "digest",
-        "patch",
-        "minor",
-        "major"
-      ]
+      "groupName": "opentelemetry-go monorepo"
     },
     {
       "extends": [
         "monorepo:opentelemetry-go-contrib"
       ],
-      "groupName": "opentelemetry-go-contrib monorepo",
-      "matchUpdateTypes": [
-        "digest",
-        "patch",
-        "minor",
-        "major"
-      ]
+      "groupName": "opentelemetry-go-contrib monorepo"
     },
     {
       "matchManagers": [
@@ -86,6 +74,10 @@
         "https://github.com/golangci/golangci-lint"
       ],
       "groupName": "golangci-lint"
+    },
+    {
+      "matchFileNames": ["website/**"],
+      "groupName": "website dependencies"
     }
   ],
   "customManagers": [

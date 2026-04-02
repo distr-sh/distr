@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/angular';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import utc from 'dayjs/plugin/utc';
 import posthog from 'posthog-js';
 import {AppComponent} from './app/app.component';
 import {appConfig} from './app/app.config';
@@ -12,6 +13,7 @@ import {getRemoteEnvironment} from './env/remote';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
+dayjs.extend(utc);
 
 bootstrapApplication(AppComponent, appConfig).catch((err) => console.error(err));
 

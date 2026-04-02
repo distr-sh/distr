@@ -35,9 +35,11 @@ const ogUrl = Astro.url.href;
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={ogUrl} />
+    <meta property="og:image" content={`${Astro.site}og-distr.webp`} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={`${Astro.site}og-distr.webp`} />
     <meta name="robots" content="noindex" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />

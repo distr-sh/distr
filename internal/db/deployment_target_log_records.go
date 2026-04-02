@@ -7,11 +7,14 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/api"
+	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"go.uber.org/zap"
 )
 
@@ -22,6 +25,7 @@ func GetDeploymentTargetLogRecords(
 	deploymentTargetID uuid.UUID,
 	limit int,
 	before, after time.Time,
+	filter string,
 ) ([]types.DeploymentTargetLogRecord, error) {
 	if before.IsZero() {
 		before = time.Now()
@@ -29,12 +33,17 @@ func GetDeploymentTargetLogRecords(
 
 	db := internalctx.GetDb(ctx)
 
+	filterExpr := ""
+	if filter != "" {
+		filterExpr = "AND body ~ @filter"
+	}
 	rows, err := db.Query(
 		ctx,
 		`SELECT `+deploymentTargetLogRecordOutputExpr+`
 		FROM DeploymentTargetLogRecord
 		WHERE deployment_target_id = @deployment_target_id
 			AND timestamp BETWEEN @after AND @before
+			`+filterExpr+`
 		ORDER BY timestamp DESC
 		LIMIT @limit`,
 		pgx.NamedArgs{
@@ -42,9 +51,13 @@ func GetDeploymentTargetLogRecords(
 			"after":                after,
 			"before":               before,
 			"limit":                limit,
+			"filter":               filter,
 		},
 	)
 	if err != nil {
+		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.InvalidRegularExpression {
+			return nil, apierrors.NewBadRequest("invalid filter regex")
+		}
 		return nil, fmt.Errorf("could not query DeploymentTargetLogRecord: %w", err)
 	}
 

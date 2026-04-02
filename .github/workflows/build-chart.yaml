@@ -5,7 +5,8 @@ on:
     branches:
       - 'main'
     paths:
-      - deploy/charts/**
+      - 'deploy/charts/**'
+      - '.github/workflows/build-chart.yaml'
     tags:
       - '*'
   pull_request:

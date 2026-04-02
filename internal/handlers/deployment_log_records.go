@@ -9,9 +9,11 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/api"
+	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/handlerutil"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
@@ -114,6 +116,13 @@ func getDeploymentLogsHandler() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+		filter := r.FormValue("filter")
+		if filter != "" {
+			if err := handlerutil.ValidateFilterRegex(filter); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+		}
 
 		var secrets []types.SecretWithUpdatedBy
 		if dt, err := db.GetDeploymentTargetForDeploymentID(ctx, deployment.ID); err != nil {
@@ -128,7 +137,13 @@ func getDeploymentLogsHandler() http.HandlerFunc {
 			return
 		}
 
-		if records, err := db.GetDeploymentLogRecords(ctx, deployment.ID, resource, limit, before, after); err != nil {
+		if records, err := db.GetDeploymentLogRecords(
+			ctx, deployment.ID, resource, limit, before, after, filter,
+		); err != nil {
+			if errors.Is(err, apierrors.ErrBadRequest) {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 			internalctx.GetLogger(ctx).Error("failed to get log records", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -137,6 +152,7 @@ func getDeploymentLogsHandler() http.HandlerFunc {
 			response := make([]api.DeploymentLogRecord, len(records))
 			for i, record := range records {
 				response[i] = api.DeploymentLogRecord{
+					ID:                   record.ID,
 					DeploymentID:         record.DeploymentID,
 					DeploymentRevisionID: record.DeploymentRevisionID,
 					Resource:             record.Resource,

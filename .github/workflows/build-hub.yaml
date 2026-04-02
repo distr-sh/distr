@@ -10,9 +10,15 @@ on:
       - '*'
     paths-ignore:
       - 'website/**'
+      - 'docker-autoheal/**'
+      - 'sdk/**'
+      - 'deploy/charts/**'
   pull_request:
     paths-ignore:
       - 'website/**'
+      - 'docker-autoheal/**'
+      - 'sdk/**'
+      - 'deploy/charts/**'
 
 jobs:
   validate-migrations:
@@ -168,13 +174,14 @@ jobs:
             -X github.com/distr-sh/distr/internal/buildconfig.commit=${{ steps.hash.outputs.sha_short }}
             -X github.com/distr-sh/distr/internal/buildconfig.edition=${{ matrix.edition.name }}
 
-      - name: Start Hub and verify migrations
+      - name: Start Hub and verify migrations and docs
         shell: bash
-        run: dist/distr-amd64 serve &
-          sleep 5 &&
-          curl $DISTR_HOST/internal/environment -f &&
-          psql $DATABASE_URL -c "select version > 0, dirty from schema_migrations" --csv -t | grep "t,f" &&
-          pkill -SIGTERM distr-amd64 &&
+        run: |
+          dist/distr-amd64 serve &
+          curl --retry 10 --retry-delay 1 --retry-connrefused -sf "$DISTR_HOST/ready" || { echo "Hub did not become ready in time"; exit 1; }
+          curl $DISTR_HOST/docs/openapi.yaml -sf -o /dev/null
+          psql $DATABASE_URL -c "select version > 0, dirty from schema_migrations" --csv -t | grep "t,f"
+          pkill -SIGTERM distr-amd64
           dist/distr-amd64 migrate --down
         env:
           DATABASE_URL: postgres://test-user:test-password@localhost:5432/distr
