@@ -48,7 +48,7 @@
 
     pre {
       @apply rounded-md;
-      @apply px-4;
+      @apply px-3;
       @apply py-2;
       @apply border border-gray-200 dark:border-gray-600;
     }
@@ -72,6 +72,7 @@
     pre,
     code {
       @apply bg-gray-200 dark:bg-gray-800;
+      @apply text-sm;
     }
 
     hr {
@@ -85,8 +86,7 @@
     ul,
     ol {
       @apply space-y-1;
-      @apply list-inside;
-      @apply ms-3;
+      @apply ms-6;
     }
 
     ul {
@@ -100,7 +100,8 @@
     pre,
     p,
     ol,
-    ul {
+    ul,
+    table {
       @apply mb-3;
     }
 
@@ -114,7 +115,6 @@
     ul {
       @apply text-gray-600;
       @apply dark:text-gray-300;
-      @apply my-2;
     }
 
     blockquote {
