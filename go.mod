@@ -12,7 +12,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.14
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.98.0
 	github.com/aws/aws-sdk-go-v2/service/ses v1.34.22
-	github.com/compose-spec/compose-go/v2 v2.10.1
+	github.com/compose-spec/compose-go/v2 v2.10.2
 	github.com/containerd/log v0.1.0
 	github.com/coreos/go-oidc/v3 v3.17.0
 	github.com/docker/cli v29.3.1+incompatible
