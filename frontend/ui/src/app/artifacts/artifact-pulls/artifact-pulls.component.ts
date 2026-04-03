@@ -126,12 +126,12 @@ export class ArtifactPullsComponent {
       next: (blob) => {
         downloadBlob(blob, `${dayjs().format('YYYY-MM-DD')}_artifact_pulls.csv`);
         this.isExporting.set(false);
-        toastRef?.toastRef.close();
+        toastRef.close();
         this.toast.success('Download completed successfully');
       },
       error: () => {
         this.isExporting.set(false);
-        toastRef?.toastRef.close();
+        toastRef.close();
         this.toast.error('Export failed');
       },
     });

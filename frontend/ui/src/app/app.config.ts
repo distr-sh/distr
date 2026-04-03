@@ -10,7 +10,6 @@ import {
 import {provideRouter} from '@angular/router';
 import * as Sentry from '@sentry/angular';
 import {MARKED_OPTIONS, provideMarkdown} from 'ngx-markdown';
-import {provideToastr} from 'ngx-toastr';
 import {routes} from './app.routes';
 import {tokenInterceptor} from './services/auth.service';
 import {errorToastInterceptor} from './services/error-toast.interceptor';
@@ -25,7 +24,6 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({eventCoalescing: true}),
     provideRouter(routes),
     provideHttpClient(withInterceptors([tokenInterceptor, errorToastInterceptor])),
-    provideToastr(),
     provideMarkdown({
       markedOptions: {
         provide: MARKED_OPTIONS,

@@ -1,41 +1,40 @@
-import {inject, Injectable} from '@angular/core';
-import {IndividualConfig, ToastrService} from 'ngx-toastr';
-import {ToastComponent, ToastType} from '../components/toast.component';
+import {Injectable, signal} from '@angular/core';
+import {ToastType} from '../components/toast.component';
 
-const toastBaseConfig: Partial<IndividualConfig> = {
-  toastComponent: ToastComponent,
-  disableTimeOut: true,
-  tapToDismiss: false,
-  titleClass: '',
-  messageClass: '',
-  toastClass: '',
-  positionClass: 'toast-bottom-right',
-  easeTime: 150,
-};
+export interface ToastEntry {
+  id: string;
+  type: ToastType;
+  message: string;
+  autoClose: boolean;
+}
+
+export interface ToastRef {
+  close(): void;
+}
 
 @Injectable({providedIn: 'root'})
 export class ToastService {
-  private readonly toastr = inject(ToastrService);
+  readonly toasts = signal<ToastEntry[]>([]);
 
-  public success(message: string) {
-    this.toastr.show<ToastComponent, ToastType>('', message, {
-      ...toastBaseConfig,
-      payload: 'success',
-      disableTimeOut: 'extendedTimeOut',
-    });
+  public success(message: string): ToastRef {
+    return this.add('success', message, true);
   }
 
-  public error(message: string) {
-    this.toastr.show<ToastComponent, ToastType>('', message, {
-      ...toastBaseConfig,
-      payload: 'error',
-    });
+  public error(message: string): ToastRef {
+    return this.add('error', message, false);
   }
 
-  public info(message: string) {
-    return this.toastr.show<ToastComponent, ToastType>('', message, {
-      ...toastBaseConfig,
-      payload: 'info',
-    });
+  public info(message: string): ToastRef {
+    return this.add('info', message, false);
+  }
+
+  dismiss(id: string) {
+    this.toasts.update((toasts) => toasts.filter((t) => t.id !== id));
+  }
+
+  private add(type: ToastType, message: string, autoClose: boolean): ToastRef {
+    const id = crypto.randomUUID();
+    this.toasts.update((toasts) => [...toasts, {id, type, message, autoClose}]);
+    return {close: () => this.dismiss(id)};
   }
 }
