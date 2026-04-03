@@ -49,7 +49,6 @@
     "flowbite": "^3.0.0",
     "jwt-decode": "^4.0.0",
     "marked": "^17.0.0",
-    "ngx-markdown": "^21.0.1",
     "ngx-toastr": "^20.0.5",
     "posthog-js": "^1.187.0",
     "rxjs": "~7.8.0",

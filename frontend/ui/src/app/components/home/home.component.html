@@ -1,7 +1,7 @@
 <div class="p-4 bg-gray-50 dark:bg-gray-900">
   <div class="mx-auto max-w-screen-lg text-gray-900 dark:text-white">
     @if (brandingDescription$ | async; as description) {
-      <div class="markdown" [innerHTML]="description | markdown | async"></div>
+      <div class="markdown" [innerMarkdown]="description"></div>
     } @else {
       <div class="text-gray-500 dark:text-gray-400 italic">
         Homepage not yet configured by vendor in branding settings
