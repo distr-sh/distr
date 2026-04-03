@@ -1,7 +1,7 @@
 import {HttpClient} from '@angular/common/http';
 import {Injectable} from '@angular/core';
 import {Observable, Subject, switchMap, tap} from 'rxjs';
-import {LicenseKey} from '../types/license-key';
+import {LicenseKey, LicenseKeyRevision} from '../types/license-key';
 import {DefaultReactiveList, ReactiveList} from './cache';
 import {CrudService} from './interfaces';
 
@@ -45,5 +45,9 @@ export class LicenseKeysService implements CrudService<LicenseKey> {
 
   getToken(id: string): Observable<{token: string}> {
     return this.http.get<{token: string}>(`${this.licenseKeysUrl}/${id}/token`);
+  }
+
+  getRevisions(id: string): Observable<LicenseKeyRevision[]> {
+    return this.http.get<LicenseKeyRevision[]>(`${this.licenseKeysUrl}/${id}/revisions`);
   }
 }

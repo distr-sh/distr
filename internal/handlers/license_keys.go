@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
@@ -44,10 +45,15 @@ func LicenseKeysRouter(r chiopenapi.Router) {
 			With(option.Request(LicenseKeyIDRequest{})).
 			With(option.Response(http.StatusOK, map[string]string{}))
 
+		r.Get("/revisions", getLicenseKeyRevisions).
+			With(option.Description("List all revisions of a license key")).
+			With(option.Request(LicenseKeyIDRequest{})).
+			With(option.Response(http.StatusOK, []types.LicenseKeyRevision{}))
+
 		r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 			Group(func(r chiopenapi.Router) {
 				r.Put("/", updateLicenseKey).
-					With(option.Description("Update license key name and description")).
+					With(option.Description("Update license key metadata and optionally create a new revision")).
 					With(option.Request(struct {
 						LicenseKeyIDRequest
 						api.UpdateLicenseKeyRequest
@@ -155,6 +161,21 @@ func getLicenseKeyToken(w http.ResponseWriter, r *http.Request) {
 	RespondJSON(w, map[string]string{"token": token})
 }
 
+func getLicenseKeyRevisions(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+	lk := internalctx.GetLicenseKey(ctx)
+
+	revisions, err := db.GetLicenseKeyRevisions(ctx, lk.ID)
+	if err != nil {
+		log.Error("failed to get license key revisions", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	RespondJSON(w, revisions)
+}
+
 func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
@@ -169,17 +190,60 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "name is required", http.StatusBadRequest)
 		return
 	}
+	if body.NotBefore.IsZero() {
+		http.Error(w, "notBefore is required", http.StatusBadRequest)
+		return
+	}
+	if body.ExpiresAt.IsZero() {
+		http.Error(w, "expiresAt is required", http.StatusBadRequest)
+		return
+	}
+	if !body.ExpiresAt.After(body.NotBefore) {
+		http.Error(w, "expiresAt must be after notBefore", http.StatusBadRequest)
+		return
+	}
+	if err := licensekey.ValidatePayload(body.Payload); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	needsRevision, err := licenseKeyRevisionChanged(existing, body)
+	if err != nil {
+		log.Warn("could not compare license key revision", zap.Error(err))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	result, err := db.UpdateLicenseKeyMetadata(ctx, existing.ID, body.Name, body.Description)
 	if errors.Is(err, apierrors.ErrConflict) {
 		http.Error(w, "A license key with this name already exists", http.StatusBadRequest)
+		return
 	} else if err != nil {
 		log.Warn("could not update license key", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-	} else {
-		RespondJSON(w, result)
+		return
 	}
+
+	if needsRevision {
+		revision := types.LicenseKeyRevision{
+			LicenseKeyID: existing.ID,
+			NotBefore:    body.NotBefore,
+			ExpiresAt:    body.ExpiresAt,
+			Payload:      body.Payload,
+		}
+		if err := db.CreateLicenseKeyRevision(ctx, &revision); err != nil {
+			log.Warn("could not create license key revision", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		result.NotBefore = revision.NotBefore
+		result.ExpiresAt = revision.ExpiresAt
+		result.Payload = revision.Payload
+	}
+
+	RespondJSON(w, result)
 }
 
 func deleteLicenseKey(w http.ResponseWriter, r *http.Request) {
@@ -217,4 +281,20 @@ func licenseKeyMiddleware(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(ctx))
 		}
 	})
+}
+
+// licenseKeyRevisionChanged returns true if any of the revision fields differ
+// between the existing (latest) revision and the incoming request.
+func licenseKeyRevisionChanged(existing *types.LicenseKey, body api.UpdateLicenseKeyRequest) (bool, error) {
+	if !existing.NotBefore.Equal(body.NotBefore.UTC().Truncate(time.Microsecond)) {
+		return true, nil
+	}
+	if !existing.ExpiresAt.Equal(body.ExpiresAt.UTC().Truncate(time.Microsecond)) {
+		return true, nil
+	}
+	equal, err := db.PayloadsEqual(existing.Payload, body.Payload)
+	if err != nil {
+		return false, err
+	}
+	return !equal, nil
 }

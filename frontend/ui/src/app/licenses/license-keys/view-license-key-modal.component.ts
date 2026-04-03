@@ -1,23 +1,33 @@
+import {DatePipe, JsonPipe} from '@angular/common';
 import {Component, effect, inject, input, output, signal} from '@angular/core';
+import {rxResource} from '@angular/core/rxjs-interop';
 import {FormControl, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faClipboard, faClipboardCheck, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {EditorComponent} from '../../components/editor.component';
+import {LicenseKeysService} from '../../services/license-keys.service';
 import {ToastService} from '../../services/toast.service';
 import {LicenseKey} from '../../types/license-key';
 
 @Component({
   selector: 'app-view-license-key-modal',
   templateUrl: './view-license-key-modal.component.html',
-  imports: [FaIconComponent, ReactiveFormsModule, EditorComponent],
+  imports: [FaIconComponent, ReactiveFormsModule, EditorComponent, DatePipe, JsonPipe],
 })
 export class ViewLicenseKeyModalComponent {
   license = input.required<LicenseKey>();
   token = input.required<string>();
   closed = output<void>();
 
-  activeTab = signal<'token' | 'payload' | 'decoded'>('token');
+  activeTab = signal<'token' | 'payload' | 'decoded' | 'revisions'>('token');
   copied = false;
+
+  private readonly licenseKeysService = inject(LicenseKeysService);
+
+  revisionsResource = rxResource({
+    params: () => ({licenseId: this.license().id!}),
+    stream: ({params}) => this.licenseKeysService.getRevisions(params.licenseId),
+  });
 
   payloadControl = new FormControl({value: '', disabled: true});
   decodedControl = new FormControl({value: '', disabled: true});
