@@ -1,0 +1,124 @@
+---
+title: 'Self-Healing Docker Deployments: Why Your Containers Need More Than restart: always'
+description: "Docker's restart policy only fires when a container exits. For containers that are running but broken, you need something else. Here's how docker-autoheal fills the gap."
+publishDate: 2026-04-02
+lastUpdated: 2026-04-02
+slug: 'self-healing-docker-deployments'
+authors:
+  - name: 'Louis Weston'
+    role: 'Co-Founder'
+    image: '/src/assets/blog/authors/louis.jpg'
+    linkedIn: https://www.linkedin.com/in/louisnweston/
+    gitHub: https://github.com/thekubernaut
+image: src/assets/blog/2026-04-02-self-healing-docker-deployments/thumb.png
+tags:
+  - Features
+---
+
+import EmbeddedWhitePaperCta from '~/components/cta/embedded/EmbeddedWhitePaperCta.astro';
+
+A container crashes at 2am on a customer's server. Nobody on your team gets paged. The customer opens their browser the next morning and the app is broken.
+
+That's the scenario `restart: always` is supposed to prevent. And it does — when a container _exits_. But what about a container that's running, technically, and doing nothing useful? A web process with a stuck connection pool. A service that's alive but can't reach its database. An app returning HTTP 500s on every request but hasn't crashed.
+
+Docker sees it as running. You see nothing. The customer sees downtime.
+
+## What `restart: always` actually does
+
+Docker's restart policy is exit-triggered. When a container exits — with a non-zero code, or at all in `always` mode — Docker restarts it. That covers crashes, OOM kills, intentional exits.
+
+It does not cover containers stuck in an unhealthy state. A container can fail its own health checks indefinitely and Docker will leave it running. This was actually proposed as a core Docker feature years ago and didn't make the cut. The gap has been there ever since.
+
+## Enter docker-autoheal
+
+The open source project [docker-autoheal](https://github.com/willfarrell/docker-autoheal) was built specifically to close this gap.
+
+It runs as a sidecar container, mounts the Docker socket, and polls for containers with a health status of `unhealthy` every 5 seconds. When it finds one, it issues a restart. That's the whole thing.
+
+```yaml
+services:
+  autoheal:
+    image: willfarrell/autoheal:latest
+    restart: always
+    environment:
+      AUTOHEAL_CONTAINER_LABEL: all
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+```
+
+Set `AUTOHEAL_CONTAINER_LABEL=all` and it monitors every container on the host. Or scope it to containers with a specific label if you want finer control.
+
+One important prerequisite: autoheal only works if your containers define Docker `HEALTHCHECK` directives. No healthcheck means no health status, and autoheal ignores the container entirely. Your container defines what "healthy" means. Autoheal enforces it.
+
+A basic healthcheck for a web service looks like this:
+
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD curl -f http://localhost:8080/health || exit 1
+```
+
+Docker now tracks whether that endpoint responds. Three consecutive failures flip the container status to `unhealthy`. Autoheal sees it, issues a restart, and the container gets a clean start.
+
+You can also tune the stop timeout per container with a label:
+
+```yaml
+labels:
+  autoheal.stop.timeout: '20'
+```
+
+Useful for services that need more time to drain before a hard stop.
+
+<EmbeddedWhitePaperCta />
+
+## Targeting specific containers
+
+By default with `AUTOHEAL_CONTAINER_LABEL=all`, autoheal targets every unhealthy container visible to the Docker engine. If you want to be more selective:
+
+```yaml
+# Only restart containers with this label set to "true"
+environment:
+  AUTOHEAL_CONTAINER_LABEL: autoheal
+```
+
+Then on the containers you want monitored:
+
+```yaml
+labels:
+  autoheal: 'true'
+```
+
+Containers without the label are ignored. This is useful when you're running autoheal on a shared host and don't want it touching workloads that aren't yours.
+
+To explicitly exclude a container from an `all` configuration:
+
+```yaml
+labels:
+  autoheal: 'false'
+```
+
+## Why this matters more on customer infrastructure
+
+If your software runs on your own servers, you have alerting. A container stuck in an unhealthy loop shows up in your monitoring stack.
+
+When your software runs on a customer's server, tools like [Distr alerts](/docs/agents/alerts/) can surface those failures — but an alert still means someone has to act on it. A container stuck in an unhealthy loop at 2am becomes a page, a ticket, an interruption.
+
+Autoheal changes the equation. Instead of waiting for someone to notice and respond, the container restarts itself. Most transient failures — a momentary database hiccup, a memory leak that's been building for days, a connection pool that needs flushing — resolve before an alert ever fires. They get handled quietly, before anyone notices.
+
+Shipping production-grade software to [on-prem](/glossary/on-premises-definition/) and BYOC customers means delivering the resilience, not just the code.
+
+## How Distr handles this automatically
+
+If you use [Distr](/docs/) to manage software on customer infrastructure, autoheal is included with every Docker deployment target — no extra configuration on your end.
+
+The Distr agent ships as a Docker Compose stack. Autoheal is a co-deployed sidecar service in that stack, running alongside the agent. By default it monitors all containers on the host that define healthchecks — your application containers included. When you provision a new deployment target for a customer, autoheal is already running.
+
+The only thing to make sure of: your application defines `HEALTHCHECK` in its Dockerfile or Compose file. Autoheal can only restart what Docker can evaluate.
+
+For setup details, see the [Docker Agent documentation](/docs/agents/docker-agent/#autoheal).
+
+## Join the conversation
+
+Running autoheal in production, or questions about shipping self-healing software to customer environments?
+
+- [Discord](https://discord.gg/6qqBSAWZfW)
+- [Book a demo](https://cal.glasskube.com/team/gk/demo?duration=30)
