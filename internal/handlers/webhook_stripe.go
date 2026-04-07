@@ -23,7 +23,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var errNoOrganization = errors.New("subscription has no associated organization")
+var errNoOrganization = errors.New("stripe subscription metadata missing or invalid organizationId")
 
 func stripeWebhookHandler() http.HandlerFunc {
 	endpointSecret := env.StripeWebhookSecret()
