@@ -32,8 +32,8 @@ require (
 	github.com/jackc/pgx/v5 v5.9.1
 	github.com/joho/godotenv v1.5.1
 	github.com/lestrrat-go/jwx/v3 v3.0.13
-	github.com/moby/moby/api v1.54.0
-	github.com/moby/moby/client v0.3.0
+	github.com/moby/moby/api v1.54.1
+	github.com/moby/moby/client v0.4.0
 	github.com/oaswrap/spec v0.3.6
 	github.com/oaswrap/spec-ui v0.1.4
 	github.com/oaswrap/spec/adapter/chiopenapi v0.3.6
