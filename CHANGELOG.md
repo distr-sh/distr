@@ -1,5 +1,26 @@
 # Changelog
 
+## [2.16.2](https://github.com/distr-sh/distr/compare/2.16.1...2.16.2) (2026-04-07)
+
+
+### Bug Fixes
+
+* **backend:** return no content (204) status code if organizationId can't be found in subscription ([#2191](https://github.com/distr-sh/distr/issues/2191)) ([52c70b0](https://github.com/distr-sh/distr/commit/52c70b05c339f4184917480687963646f5caa698))
+* **deps:** update dependency marked to v18 ([#2189](https://github.com/distr-sh/distr/issues/2189)) ([bf26316](https://github.com/distr-sh/distr/commit/bf263162fad277eb597c1aebd721383624d6927d))
+* **deps:** update module github.com/docker/cli to v29.4.0+incompatible ([#2184](https://github.com/distr-sh/distr/issues/2184)) ([ebf0b17](https://github.com/distr-sh/distr/commit/ebf0b177eebcfd28ade55d4201befd805d5da4b6))
+* **deps:** update module github.com/go-co-op/gocron/v2 to v2.20.0 ([#2182](https://github.com/distr-sh/distr/issues/2182)) ([7b14d54](https://github.com/distr-sh/distr/commit/7b14d54d729b7d9b19a78282718ba4b3b1c73dbc))
+* **deps:** update module github.com/oaswrap/spec/adapter/chiopenapi to v0.4.0 ([#2173](https://github.com/distr-sh/distr/issues/2173)) ([29efb0b](https://github.com/distr-sh/distr/commit/29efb0bd1dbd433917b465997ee956819bd3d1be))
+* **deps:** update opentelemetry-go-contrib monorepo to v0.68.0 ([#2185](https://github.com/distr-sh/distr/issues/2185)) ([ee6572e](https://github.com/distr-sh/distr/commit/ee6572e8499a1d325936526347262fe2e5a5b23b))
+* **docker-agent:** don't mount / if metrics collection is disabled ([#2193](https://github.com/distr-sh/distr/issues/2193)) ([7719c2b](https://github.com/distr-sh/distr/commit/7719c2b8ed8e63a19d15803af91a6c51380ca66a))
+
+
+### Other
+
+* **deps:** update dependency stripe to v1.40.1 ([#2181](https://github.com/distr-sh/distr/issues/2181)) ([6de09e1](https://github.com/distr-sh/distr/commit/6de09e14c85433c82fa21fe305908c87164f20d0))
+* **deps:** update dependency vitest to v4.1.3 ([#2186](https://github.com/distr-sh/distr/issues/2186)) ([f25a430](https://github.com/distr-sh/distr/commit/f25a43058ab62b98e543a7e88042e3160b57cdf8))
+* fix typo in log collection ([#2194](https://github.com/distr-sh/distr/issues/2194)) ([fa0c0de](https://github.com/distr-sh/distr/commit/fa0c0de83cb3bbb2e5a78909bacc02746d126ec2))
+* revert "chore(deps): update dependency stripe to v1.40.1 ([#2181](https://github.com/distr-sh/distr/issues/2181))" ([#2190](https://github.com/distr-sh/distr/issues/2190)) ([2de4915](https://github.com/distr-sh/distr/commit/2de4915e5390dd331bc7db367f52f040873902b0))
+
 ## [2.16.1](https://github.com/distr-sh/distr/compare/2.16.0...2.16.1) (2026-04-07)
 
 
