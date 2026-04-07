@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 )
 
@@ -22,4 +23,10 @@ type UpdateLicenseKeyRequest struct {
 	NotBefore   *time.Time       `json:"notBefore,omitempty"`
 	ExpiresAt   *time.Time       `json:"expiresAt,omitempty"`
 	Payload     *json.RawMessage `json:"payload,omitempty"`
+}
+
+type LicenseKeyRevision struct {
+	types.LicenseKeyRevision
+
+	Token string `json:"token"`
 }

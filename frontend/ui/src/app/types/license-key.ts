@@ -13,4 +13,5 @@ export interface LicenseKeyRevision extends BaseModel {
   notBefore: string;
   expiresAt: string;
   payload: Record<string, unknown>;
+  token: string;
 }

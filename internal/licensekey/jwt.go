@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/v3/jwa"
 	"github.com/lestrrat-go/jwx/v3/jwk"
 	"github.com/lestrrat-go/jwx/v3/jwt"
@@ -40,17 +42,45 @@ func IsSigningKeyConfigured() bool {
 	return env.LicenseKeyPrivateKey() != nil
 }
 
-func GenerateToken(licenseKey *types.LicenseKey, issuer string) (string, error) {
+type LicenseKeyData struct {
+	LicenseKeyID uuid.UUID
+	IssuedAt     time.Time
+	ExpiresAt    time.Time
+	NotBefore    time.Time
+	Payload      json.RawMessage
+}
+
+func FromLicenseKey(lk types.LicenseKey) LicenseKeyData {
+	return LicenseKeyData{
+		LicenseKeyID: lk.ID,
+		IssuedAt:     lk.LastRevisedAt,
+		ExpiresAt:    lk.ExpiresAt,
+		NotBefore:    lk.NotBefore,
+		Payload:      lk.Payload,
+	}
+}
+
+func FromLicenseKeyAndRevision(lk types.LicenseKey, r types.LicenseKeyRevision) LicenseKeyData {
+	return LicenseKeyData{
+		LicenseKeyID: lk.ID,
+		IssuedAt:     r.CreatedAt,
+		ExpiresAt:    r.ExpiresAt,
+		NotBefore:    r.NotBefore,
+		Payload:      r.Payload,
+	}
+}
+
+func GenerateToken(src LicenseKeyData, issuer string) (string, error) {
 	key, err := signingKey()
 	if err != nil {
 		return "", err
 	}
-	return generateToken(key, licenseKey, issuer)
+	return generateToken(key, src, issuer)
 }
 
-func generateToken(key jwk.Key, licenseKey *types.LicenseKey, issuer string) (string, error) {
+func generateToken(key jwk.Key, src LicenseKeyData, issuer string) (string, error) {
 	var customClaims map[string]any
-	if err := json.Unmarshal(licenseKey.Payload, &customClaims); err != nil {
+	if err := json.Unmarshal(src.Payload, &customClaims); err != nil {
 		return "", fmt.Errorf("invalid payload JSON: %w", err)
 	}
 	for k := range registeredClaims {
@@ -59,11 +89,11 @@ func generateToken(key jwk.Key, licenseKey *types.LicenseKey, issuer string) (st
 
 	builder := jwt.NewBuilder().
 		Issuer(issuer).
-		Subject(licenseKey.ID.String()).
+		Subject(src.LicenseKeyID.String()).
 		Audience([]string{"license-key"}).
-		IssuedAt(licenseKey.CreatedAt).
-		NotBefore(licenseKey.NotBefore).
-		Expiration(licenseKey.ExpiresAt)
+		IssuedAt(src.IssuedAt).
+		NotBefore(src.NotBefore).
+		Expiration(src.ExpiresAt)
 
 	for k, v := range customClaims {
 		builder = builder.Claim(k, v)

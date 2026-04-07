@@ -4,6 +4,7 @@ import {rxResource} from '@angular/core/rxjs-interop';
 import {FormControl, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faClipboard, faClipboardCheck, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {ClipComponent} from '../../components/clip.component';
 import {EditorComponent} from '../../components/editor.component';
 import {LicenseKeysService} from '../../services/license-keys.service';
 import {ToastService} from '../../services/toast.service';
@@ -12,7 +13,7 @@ import {LicenseKey} from '../../types/license-key';
 @Component({
   selector: 'app-view-license-key-modal',
   templateUrl: './view-license-key-modal.component.html',
-  imports: [FaIconComponent, ReactiveFormsModule, EditorComponent, DatePipe],
+  imports: [FaIconComponent, ReactiveFormsModule, EditorComponent, DatePipe, ClipComponent],
 })
 export class ViewLicenseKeyModalComponent {
   license = input.required<LicenseKey>();
@@ -31,7 +32,7 @@ export class ViewLicenseKeyModalComponent {
 
   protected readonly payloadControl = new FormControl({value: '', disabled: true});
   protected readonly decodedControl = new FormControl({value: '', disabled: true});
-  protected readonly revisionPayloadControl = computed(() =>
+  protected readonly revisionPayloadControls = computed(() =>
     (this.revisionsResource.value() ?? [])?.map(
       (revision) => new FormControl({value: JSON.stringify(revision.payload, undefined, 2), disabled: true})
     )

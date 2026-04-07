@@ -1,4 +1,4 @@
-<div class="z-50 w-192 max-w-full max-h-full overflow-x-hidden overflow-y-auto">
+<div class="z-50 w-3xl max-w-full max-h-full overflow-x-hidden overflow-y-auto">
   <div class="relative w-full max-h-full">
     <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
       <!-- Modal header -->
@@ -101,10 +101,15 @@
                     <th scope="col" class="px-4 py-2">Not Before</th>
                     <th scope="col" class="px-4 py-2">Expires At</th>
                     <th scope="col" class="px-4 py-2">License Data</th>
+                    <th scope="col"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  @for (revision of revisionsResource.value() ?? []; track revision.id; let first = $first, i = $index) {
+                  @for (
+                    revision of revisionsResource.value() ?? [];
+                    track revision.id;
+                    let first = $first, i = $index
+                  ) {
                     <tr
                       class="border-t border-gray-200 dark:border-gray-600"
                       [class.bg-blue-50]="first"
@@ -113,7 +118,10 @@
                       <td class="px-4 py-2 whitespace-nowrap">{{ revision.notBefore | date }}</td>
                       <td class="px-4 py-2 whitespace-nowrap">{{ revision.expiresAt | date }}</td>
                       <td class="px-4 py-2 font-mono text-xs max-w-48 overflow-x-auto">
-                        <app-editor language="json" [formControl]="revisionPayloadControl()[i]" />
+                        <app-editor language="json" [formControl]="revisionPayloadControls()[i]" />
+                      </td>
+                      <td class="px-4 py-2 text-end">
+                        <app-clip [clip]="revision.token">Copy license</app-clip>
                       </td>
                     </tr>
                   }

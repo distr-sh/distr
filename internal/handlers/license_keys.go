@@ -155,7 +155,7 @@ func getLicenseKeyToken(w http.ResponseWriter, r *http.Request) {
 	log := internalctx.GetLogger(ctx)
 	lk := internalctx.GetLicenseKey(ctx)
 
-	token, err := licensekey.GenerateToken(lk, env.Host())
+	token, err := licensekey.GenerateToken(licensekey.FromLicenseKey(*lk), env.Host())
 	if err != nil {
 		log.Error("failed to generate license key token", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -177,7 +177,20 @@ func getLicenseKeyRevisions(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	RespondJSON(w, revisions)
+
+	result := make([]api.LicenseKeyRevision, len(revisions))
+	for i, r := range revisions {
+		t, err := licensekey.GenerateToken(licensekey.FromLicenseKeyAndRevision(*lk, r), env.Host())
+		if err != nil {
+			log.Error("failed to generate license key token", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, "failed to generate license key token", http.StatusInternalServerError)
+			return
+		}
+		result[i] = api.LicenseKeyRevision{LicenseKeyRevision: r, Token: t}
+	}
+
+	RespondJSON(w, result)
 }
 
 func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
