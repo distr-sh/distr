@@ -23,6 +23,8 @@ import (
 	"go.uber.org/zap"
 )
 
+var errNoOrganization = errors.New("subscription has no associated organization")
+
 func stripeWebhookHandler() http.HandlerFunc {
 	endpointSecret := env.StripeWebhookSecret()
 
@@ -91,7 +93,9 @@ func stripeWebhookHandler() http.HandlerFunc {
 			log.Info("unhandled stripe event")
 		}
 
-		if err != nil {
+		if errors.Is(err, errNoOrganization) {
+			w.WriteHeader(http.StatusNoContent)
+		} else if err != nil {
 			log.Error("Error handling stripe subscription", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			switch {
@@ -114,7 +118,7 @@ func handleStripeSubscription(ctx context.Context, sub stripe.Subscription) erro
 	orgID, err := uuid.Parse(sub.Metadata["organizationId"])
 	if err != nil {
 		log.Warn("subscription event with missing or invalid organizationId", zap.Error(err))
-		return fmt.Errorf("%w: %w", apierrors.ErrBadRequest, err)
+		return errNoOrganization
 	}
 
 	return db.RunTxRR(ctx, func(ctx context.Context) error {
