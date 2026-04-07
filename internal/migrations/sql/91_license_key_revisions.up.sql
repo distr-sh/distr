@@ -7,7 +7,8 @@ CREATE TABLE LicenseKeyRevision (
     payload        JSONB     NOT NULL DEFAULT '{}'
 );
 
-CREATE INDEX idx_licensekeyrevision_license_key_id ON LicenseKeyRevision (license_key_id);
+CREATE INDEX idx_licensekeyrevision_license_key_id_created_at_desc
+    ON LicenseKeyRevision (license_key_id, created_at DESC);
 
 INSERT INTO LicenseKeyRevision (created_at, license_key_id, not_before, expires_at, payload)
 SELECT lk.created_at, lk.id, lk.not_before, lk.expires_at, lk.payload
