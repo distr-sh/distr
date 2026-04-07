@@ -1,7 +1,7 @@
 ALTER TABLE LicenseKey
     ADD COLUMN not_before TIMESTAMP,
     ADD COLUMN expires_at TIMESTAMP,
-    ADD COLUMN payload    JSONB;
+    ADD COLUMN payload    JSONB DEFAULT '{}';
 
 UPDATE LicenseKey lk
 SET
