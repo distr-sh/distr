@@ -178,6 +178,9 @@ func decodeServiceLogs(
 		for scanner.Scan() {
 			consumer.AppendMessage(ctx, resource, severity, scanner.Text())
 		}
+		if err := scanner.Err(); err != nil {
+			pr.CloseWithError(err)
+		}
 	}
 	go scanAndCollect(outReader, "stdout")
 	go scanAndCollect(errReader, "stderr")
