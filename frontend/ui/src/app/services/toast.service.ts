@@ -15,6 +15,7 @@ export interface ToastRef {
 @Injectable({providedIn: 'root'})
 export class ToastService {
   readonly toasts = signal<ToastEntry[]>([]);
+  private toastIdSequence = 0;
 
   public success(message: string): ToastRef {
     return this.add('success', message, true);
@@ -33,7 +34,7 @@ export class ToastService {
   }
 
   private add(type: ToastType, message: string, autoClose: boolean): ToastRef {
-    const id = crypto.randomUUID();
+    const id = (this.toastIdSequence++).toFixed();
     this.toasts.update((toasts) => [...toasts, {id, type, message, autoClose}]);
     return {close: () => this.dismiss(id)};
   }
