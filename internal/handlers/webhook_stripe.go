@@ -118,7 +118,7 @@ func handleStripeSubscription(ctx context.Context, sub stripe.Subscription) erro
 	orgID, err := uuid.Parse(sub.Metadata["organizationId"])
 	if err != nil {
 		log.Warn("subscription event with missing or invalid organizationId", zap.Error(err))
-		return errNoOrganization
+		return fmt.Errorf("%w: %w", errNoOrganization, err)
 	}
 
 	return db.RunTxRR(ctx, func(ctx context.Context) error {
