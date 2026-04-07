@@ -104,7 +104,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @for (revision of revisionsResource.value() ?? []; track revision.id; let first = $first) {
+                  @for (revision of revisionsResource.value() ?? []; track revision.id; let first = $first, i = $index) {
                     <tr
                       class="border-t border-gray-200 dark:border-gray-600"
                       [class.bg-blue-50]="first"
@@ -113,7 +113,7 @@
                       <td class="px-4 py-2 whitespace-nowrap">{{ revision.notBefore | date }}</td>
                       <td class="px-4 py-2 whitespace-nowrap">{{ revision.expiresAt | date }}</td>
                       <td class="px-4 py-2 font-mono text-xs max-w-48 overflow-x-auto">
-                        <pre>{{ revision.payload | json }}</pre>
+                        <app-editor language="json" [formControl]="revisionPayloadControl()[i]" />
                       </td>
                     </tr>
                   }

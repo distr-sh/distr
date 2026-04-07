@@ -1,5 +1,5 @@
-import {DatePipe, JsonPipe} from '@angular/common';
-import {Component, effect, inject, input, output, signal} from '@angular/core';
+import {DatePipe} from '@angular/common';
+import {Component, computed, effect, inject, input, output, signal} from '@angular/core';
 import {rxResource} from '@angular/core/rxjs-interop';
 import {FormControl, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -12,7 +12,7 @@ import {LicenseKey} from '../../types/license-key';
 @Component({
   selector: 'app-view-license-key-modal',
   templateUrl: './view-license-key-modal.component.html',
-  imports: [FaIconComponent, ReactiveFormsModule, EditorComponent, DatePipe, JsonPipe],
+  imports: [FaIconComponent, ReactiveFormsModule, EditorComponent, DatePipe],
 })
 export class ViewLicenseKeyModalComponent {
   license = input.required<LicenseKey>();
@@ -29,8 +29,13 @@ export class ViewLicenseKeyModalComponent {
     stream: ({params}) => this.licenseKeysService.getRevisions(params.licenseId),
   });
 
-  payloadControl = new FormControl({value: '', disabled: true});
-  decodedControl = new FormControl({value: '', disabled: true});
+  protected readonly payloadControl = new FormControl({value: '', disabled: true});
+  protected readonly decodedControl = new FormControl({value: '', disabled: true});
+  protected readonly revisionPayloadControl = computed(() =>
+    (this.revisionsResource.value() ?? [])?.map(
+      (revision) => new FormControl({value: JSON.stringify(revision.payload, undefined, 2), disabled: true})
+    )
+  );
 
   protected readonly faXmark = faXmark;
   protected readonly faClipboard = faClipboard;
