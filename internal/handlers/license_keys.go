@@ -241,6 +241,7 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 		result.NotBefore = revision.NotBefore
 		result.ExpiresAt = revision.ExpiresAt
 		result.Payload = revision.Payload
+		result.LastRevisedAt = revision.CreatedAt
 	}
 
 	RespondJSON(w, result)
