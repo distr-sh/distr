@@ -2,12 +2,12 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"errors"
 	"io"
 	"os"
 	"path"
+	"sync"
 	"time"
 
 	"github.com/distr-sh/distr/internal/deploymentlogs"
@@ -147,31 +147,33 @@ func (*composeCollector) Register(containerName string) {}
 func (*composeCollector) Status(containerName string, message string) {}
 
 func decodeServiceLogs(resource string, r io.Reader, consumer deploymentlogs.DeploymentCollector) error {
-	// The docker api provides a multipexed stream for logs which must be demuxed. StdCopy does that.
-	var outBuf bytes.Buffer
-	var errBuf bytes.Buffer
-	if _, err := stdcopy.StdCopy(&outBuf, &errBuf, r); err != nil {
-		return err
-	}
-	collectFunc := func(name string) func(r, m string) {
-		return func(r, m string) { consumer.AppendMessage(r, name, m) }
-	}
-	streams := []struct {
-		*bufio.Scanner
-		Collect func(r, m string)
-	}{
-		{bufio.NewScanner(&outBuf), collectFunc("stdout")},
-		{bufio.NewScanner(&errBuf), collectFunc("stderr")},
-	}
-	for _, stream := range streams {
-		for stream.Scan() {
-			stream.Collect(resource, stream.Text())
-		}
-		if stream.Err() != nil {
-			return stream.Err()
+	// The docker API provides a multiplexed stream for logs which must be demuxed. StdCopy does that.
+	outReader, outWriter := io.Pipe()
+	errReader, errWriter := io.Pipe()
+
+	var wg sync.WaitGroup
+	wg.Add(3)
+
+	var copyErr error
+	go func() {
+		defer wg.Done()
+		_, copyErr = stdcopy.StdCopy(outWriter, errWriter, r)
+		outWriter.CloseWithError(copyErr)
+		errWriter.CloseWithError(copyErr)
+	}()
+
+	scanAndCollect := func(pr *io.PipeReader, severity string) {
+		defer wg.Done()
+		scanner := bufio.NewScanner(pr)
+		for scanner.Scan() {
+			consumer.AppendMessage(resource, severity, scanner.Text())
 		}
 	}
-	return nil
+	go scanAndCollect(outReader, "stdout")
+	go scanAndCollect(errReader, "stderr")
+
+	wg.Wait()
+	return copyErr
 }
 
 func UpdateLastLogsTimestamp(deployment AgentDeployment, timestamp time.Time) error {
