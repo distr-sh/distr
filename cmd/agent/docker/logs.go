@@ -26,6 +26,8 @@ func NewLogsWatcher() *logsWatcher {
 }
 
 func (lw *logsWatcher) Watch(ctx context.Context, d time.Duration) {
+	logger.Debug("logs watcher is starting to watch",
+		zap.Duration("interval", d))
 	tick := time.Tick(d)
 	for {
 		select {
@@ -38,6 +40,8 @@ func (lw *logsWatcher) Watch(ctx context.Context, d time.Duration) {
 }
 
 func (lw *logsWatcher) collect(ctx context.Context) {
+	logger.Debug("getting logs")
+
 	deployments, err := GetExistingDeployments()
 	if err != nil {
 		logger.Warn("watch logs could not get deployments", zap.Error(err))
