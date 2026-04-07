@@ -1,0 +1,200 @@
+---
+title: 'How to Protect Your Source Code and IP in Docker and Kubernetes Deployments'
+description: 'Shipping software on-prem means your customers have access to your container images. Here is what they can actually see, what they cannot, and the practical steps to protect your source code, model weights, and intellectual property.'
+publishDate: 2026-04-07
+lastUpdated: 2026-04-07
+slug: 'protect-source-code-docker-container'
+authors:
+  - name: 'Louis Weston'
+    role: 'Co-Founder'
+    image: '/src/assets/blog/authors/louis.jpg'
+    linkedIn: https://www.linkedin.com/in/louisnweston/
+    gitHub: https://github.com/thekubernaut
+image: src/assets/blog/2026-04-07-protect-source-code-docker/thumb.png
+tags:
+  - Security
+  - Self-Managed
+  - Docker
+  - Kubernetes
+---
+
+import EmbeddedWhitePaperCta from '~/components/cta/embedded/EmbeddedWhitePaperCta.astro';
+
+The question comes up in almost every onboarding call we have with software vendors moving to [on-prem delivery](/glossary/on-premises-definition/): "If we ship our application as a Docker image or Helm chart, can the customer just extract our source code?"
+
+The short answer: it depends on how you build and package your application. The longer answer involves a mix of technical choices, legal guardrails, and knowing when not to over-engineer the problem.
+
+We have talked to dozens of vendors shipping on-prem software through Distr. Below is what we have learned about what is actually visible inside container images, how Docker Compose and [Kubernetes](/glossary/kubernetes/) differ here, and what actually works in production.
+
+## What Docker image layers actually expose
+
+Every container image, whether pulled by Docker or Kubernetes, is a stack of read-only filesystem layers. Each layer corresponds to an instruction in your Dockerfile: a `RUN`, `COPY`, or `ADD` command. These layers are stored as tar archives, and anyone with access to the image can inspect every single one of them.
+
+Run `docker save myimage:latest | tar -xf -` and you get the full layer stack, plus a config JSON that contains your complete Dockerfile history. Every `RUN` command, every `ENV` declaration, every `COPY` path. Tools like [dive](https://github.com/wagoodman/dive) make this even easier by providing an interactive UI that shows exactly which files each layer added, modified, or removed.
+
+This means:
+
+- **Interpreted languages (Python, Node.js, Ruby):** Your source code is sitting in the image in plain text. If you `COPY` your Python app into the image, every `.py` file is directly readable. Even `.pyc` bytecode files can be decompiled back to near-original source using tools like `decompyle3` or `pycdc`.
+- **Compiled languages (Go, Rust, C++):** The binary is present, but the source code is not. Reverse engineering a stripped, optimized binary is a significant effort that requires specialized tools and skills. It yields assembly or pseudo-code, not your original source.
+- **JVM and .NET languages:** Bytecode can be decompiled to readable source with tools like JD-GUI (Java) or ILSpy (C#). Obfuscators help but are not foolproof.
+
+One common mistake catches even experienced teams: deleting files in a later Dockerfile layer does not remove them from earlier layers. If you `COPY` a secrets file and then `RUN rm` it, the file still exists in the earlier layer's tar archive. The same applies to source code copied during a build step.
+
+## Docker Compose vs Kubernetes: does the orchestrator change the container image security risk?
+
+Short answer: no. Both Docker Compose and Kubernetes pull OCI-compliant container images from registries. The image layers, filesystem contents, and binaries are identical regardless of which orchestrator runs them. Whoever controls the host can inspect the images.
+
+There are some differences in the details, though:
+
+**Helm charts expose more operational IP than Compose files.** A Helm chart is a directory containing Go templates, `values.yaml`, helpers, and potentially subcharts. The templates reveal your application's architecture in more detail than a flat `docker-compose.yml`: scaling logic, sidecar patterns, resource requirements, health check paths, and inter-service dependencies.
+
+**Kubernetes deployments often ship more artifacts.** If you distribute a custom operator, you are shipping an additional binary containing business logic. Init containers may contain migration scripts or seed data. ConfigMaps and Helm hooks can include SQL migrations or setup scripts. Each of these is an additional surface for IP exposure that Docker Compose deployments typically do not have.
+
+**Kubernetes has more security primitives, but none of them protect your IP from the customer.** Yes, Kubernetes Secrets can be encrypted at rest in etcd (though this needs explicit configuration; by default they are just base64-encoded). RBAC can restrict who reads what. Pod Security Standards can lock down containers. But your on-prem customer is the cluster admin. They have root. These controls protect the cluster from unauthorized users, not from the person who owns the infrastructure. In [self-managed](/glossary/self-managed-software/) deployments, the customer is always that person.
+
+**One area where Kubernetes pulls ahead: Confidential Containers.** The CNCF Confidential Containers (CoCo) project integrates Kata Containers with hardware TEEs (Intel TDX, AMD SEV-SNP). This runs pods inside encrypted VMs where even the node operator cannot inspect memory or filesystem contents. Docker has no equivalent. CoCo is still maturing and requires specific hardware, but it is the only container-native technology that genuinely protects runtime IP from the customer. More on this below.
+
+## Why AI model weights are the highest-risk asset
+
+If you are an AI company shipping models on-prem, this is where the stakes are highest. Model weights sitting in a container image are fully extractable, regardless of format:
+
+- **PyTorch `.pt`/`.pth`** files are ZIP64 archives containing pickled metadata and raw tensor storage. Load them with `torch.load()` and you have the complete model.
+- **ONNX** files contain both the computation graph and the weights. Open them in Netron and you can see the full architecture.
+- **Safetensors** files use a deliberately simple binary format with a JSON header. They were designed for easy, safe loading, which also means easy extraction.
+- **GGUF** files (used by llama.cpp) are single-file formats with metadata and tensor data, directly usable by any compatible runtime.
+
+None of these standard formats support encryption natively. The weights are stored as plain numerical data. If the file is in the image, it can be read.
+
+The same applies to prompt templates, system prompts, and configuration files. If they are embedded in your application code as Python strings, YAML files, or JSON configs, they are visible in the image layers.
+
+## Source code protection through compiled binaries and multi-stage builds
+
+If you do one thing after reading this post, do this: combine compiled binaries with multi-stage Docker builds. It works the same whether you deploy via Docker Compose or Kubernetes.
+
+**Multi-stage builds** ensure that source code never appears in the final image:
+
+```dockerfile
+# Build stage: contains source code and build tools
+FROM golang:1.22 AS builder
+COPY . /src
+RUN go build -ldflags="-s -w" -o /app ./cmd/server
+
+# Final stage: only the binary
+FROM scratch
+COPY --from=builder /app /app
+ENTRYPOINT ["/app"]
+```
+
+The source code, build tools, and intermediate artifacts exist only in the build stage. The final image contains nothing but the compiled binary. Build-stage layers are never pushed to a registry and never shipped to customers.
+
+**Language-specific options for compilation:**
+
+- **Go** produces statically linked binaries when built with `CGO_ENABLED=0` (some standard library packages like `net` enable CGO by default on Linux, which introduces dynamic linking). Add `-ldflags="-s -w"` to strip the OS-level symbol table and DWARF debug information, reducing binary size and making reverse engineering harder.
+- **Rust** with release mode, LTO (Link-Time Optimization), and symbol stripping produces binaries that are among the hardest to reverse engineer. No runtime reflection metadata leaks type information.
+- **Python** can be compiled to native binaries using [Nuitka](https://nuitka.net/), which translates Python to C and then compiles to machine code. Unlike PyInstaller (which bundles `.pyc` bytecode and can be trivially extracted with `pyinstxtractor`), Nuitka produces genuine native code that requires binary analysis to reverse engineer.
+- **C#/.NET** can use Native AOT compilation (available since .NET 7) to produce true native binaries instead of IL bytecode, making decompilation much harder.
+
+## How distroless and scratch container images reduce your attack surface
+
+Minimal base images are the next thing to get right:
+
+**`FROM scratch`** creates a completely empty image. No operating system, no shell, no utilities. This works only with statically compiled binaries (Go with `CGO_ENABLED=0`, Rust with musl target). An attacker cannot `docker exec` into the container because there is no shell to execute.
+
+**Distroless images** (maintained by Google at `gcr.io/distroless`) take a middle path. They include only the application runtime: glibc, SSL certificates, timezone data, and language-specific runtimes if needed. No shell, no package manager, no `curl`, no `cat`. They are available in several variants: `static` (closest to scratch), `base` (adds glibc), and language-specific versions for Java, Python, and Node.js.
+
+One thing to be clear about: neither approach prevents someone from running `docker save` or `ctr image export` and extracting files from the layers. What they do is block casual inspection (no shell to poke around in), cut the CVE surface dramatically, and show enterprise security teams that you take image hygiene seriously.
+
+<EmbeddedWhitePaperCta />
+
+## What your Compose file and Helm chart reveal about your architecture
+
+People focus on the container images, but the deployment manifests leak a surprising amount too.
+
+**Docker Compose files** reveal service topology, port mappings, environment variables (often including credentials), volume mounts, and health check commands. A `docker-compose.yml` with services named `api`, `worker`, `redis`, `postgres`, and `minio` tells anyone the exact technology stack and architecture.
+
+**Helm charts** expose even more: Go template logic, scaling parameters, resource requests and limits, sidecar configurations, ingress rules, and dependency graphs. If you ship a `values.yaml` with commented-out options, you are documenting your feature flags.
+
+Best practices for distributed manifests:
+
+- Never hardcode secrets. Use environment variable references (`${DB_PASSWORD}`) or Kubernetes Secrets with a separate `.env.example` or `values.yaml` that documents required variables without including values.
+- Minimize published ports and exposed services. Internal communication should use Docker networks or Kubernetes ClusterIP services.
+- Use image digests (`image: myapp@sha256:abc123...`) instead of mutable tags for integrity verification.
+- Use opaque service names if architecture exposure is a concern.
+- For Helm charts, avoid shipping templates that reveal optional features or scaling logic the customer does not need.
+
+## The hidden cost of over-protecting your on-prem software
+
+Before you reach for encryption and confidential computing, think about what happens on the customer's side.
+
+Most enterprise customers run vulnerability scanners (Trivy, Grype, Snyk) against every container image before it enters their environment. Encrypted images or heavily obfuscated binaries can break these scans or produce incomplete results. If the security team cannot verify your image against their CVE policies, your software sits in procurement limbo.
+
+Then there is debugging. When a customer reports an issue, your support team needs to check container logs, inspect the running process, reproduce the problem. If you have stripped away every debugging affordance and obfuscated everything, your own team cannot help. Over-protection ends up increasing your support load and dragging out incident resolution.
+
+Customers with mature platform engineering practices also expect to understand what runs in their clusters. They review resource usage, validate network policies, confirm that software does not phone home unexpectedly. If your deployment is a black box that requires a license server, specific hardware, and resists all inspection, many will just pick a competitor they can actually operate.
+
+And if your protection strategy depends on a runtime call to your key server for decryption? That is a non-starter for [air-gapped](/glossary/air-gapped-meaning/) customers. These are often the same high-security buyers who care the most about on-prem in the first place.
+
+The pattern we see work: make extraction non-trivial (compiled binaries, minimal images), make it contractually prohibited (legal agreements), but do not make your software harder to run. Your on-prem customers are not trying to steal your code. They are trying to run it reliably in a regulated environment.
+
+## When encryption and confidential computing actually make sense
+
+Most vendors do not need what follows. But if you are shipping a model that cost millions to train, or proprietary algorithms that are your entire competitive moat, the tradeoffs start looking different.
+
+**Application-level model encryption** works best for high-value model weights. Encrypt model files with AES-256-GCM before packaging. Your application decrypts at startup using a key fetched from a remote license server you control. The model is encrypted at rest in the image layers. The tradeoffs: once decrypted in memory a root user on the host can still dump process memory, and the application needs network access to your key server.
+
+**Runtime weight loading** avoids baking weights into the image entirely. Download them from a secure API at startup and store them only in memory (tmpfs mount in Docker, `emptyDir` with `medium: Memory` in Kubernetes). The weights never touch persistent disk and are not in the image layers. This eliminates the most common extraction vector but requires network connectivity.
+
+**Confidential computing with TEEs** is the strongest option. AMD SEV-SNP encrypts entire VM memory with per-VM keys managed by the CPU's secure processor. Even root access to the host cannot read the encrypted memory. For GPU workloads, Nvidia H100s support a Confidential Computing mode where GPU memory is encrypted during inference. On Kubernetes, the CNCF Confidential Containers project makes this accessible at the pod level. Docker has no equivalent today.
+
+**Encrypted container images** via the OCI `containerd/imgcrypt` project support layer-level encryption with RSA or ECDH keys. This works with containerd-based Kubernetes runtimes but not with Docker Engine. If your customers run Kubernetes, OCI encryption is a viable option. For Docker Compose customers, it is not.
+
+If your customer is a Fortune 500 in the US or EU with a signed contract, none of this is probably necessary. If you are distributing a high-value model to customers in jurisdictions where IP enforcement is weak, it might be.
+
+## Why legal protection still matters more than most technical measures
+
+We have had this conversation with enough vendors to see the pattern: the ones who ship successfully to on-prem all land on the same answer. Legal protection does the heavy lifting.
+
+Think about who your customers actually are. Enterprise buyers operate under SOC 2, ISO 27001, and similar compliance frameworks. They have internal audit teams. Their legal departments review contracts before signing. Reverse engineering your container image would be an off-contract action with real legal and reputational consequences. It is not worth it for them, and in practice, it does not happen.
+
+Your agreements should include:
+
+- A clear EULA prohibiting reverse engineering, decompilation, and disassembly
+- IP ownership clauses confirming all rights remain with you
+- For AI models specifically: explicit classification of model weights as trade secrets, with prohibitions on distillation, extraction, or using outputs to train competing models
+- Audit rights and data destruction obligations upon contract termination
+
+This matters for legal standing too. Under the Defend Trade Secrets Act (US) and the EU Trade Secrets Directive, qualifying for trade secret protection requires demonstrating that you took "reasonable measures" to keep the information secret. Shipping unprotected source code in a container image with no contractual guardrails weakens that claim. Combining technical measures with legal measures gives you the strongest position.
+
+## A practical container security checklist for software IP protection
+
+**Every vendor should do these:**
+
+- Use multi-stage Docker builds so source code never enters the final image
+- Compile to native binaries where possible (Go, Rust, Nuitka for Python)
+- Use distroless or scratch base images
+- Strip debug symbols from binaries
+- Never hardcode secrets in images, Compose files, or Helm charts
+- Sign images with Cosign or Docker Content Trust
+- Put strong IP clauses in your customer agreements
+
+**Consider these for high-value assets:**
+
+- Encrypt model weights and gate decryption via a license server
+- Load weights at runtime instead of baking them into images
+- Use opaque service names and minimal deployment manifests
+
+**Evaluate these if the asset justifies the complexity:**
+
+- Confidential Containers on Kubernetes (CoCo with AMD SEV-SNP or Intel TDX)
+- Hardware licensing dongles (Wibu CodeMeter, Thales Sentinel)
+- OCI image encryption (Kubernetes with containerd)
+
+For most B2B vendors shipping to enterprise customers, compiled binaries, minimal images, and solid contracts handle the problem. If you are shipping proprietary model weights worth millions in compute, the calculus changes. But do not add deployment friction for a threat that, in most cases, is not realistic.
+
+## How we handle this at Distr
+
+[Distr](/glossary/software-distribution-platform/) is built around this exact problem. You bring your Docker Compose or [Helm chart](/glossary/helm-chart/), upload it, and control which customers see which versions through [entitlements and license keys](/blog/license-key/). Everything goes through a private [OCI registry](/glossary/oci-container-artifact-registry/) that customers authenticate against. Nobody sees anything you have not explicitly granted them.
+
+On the customer side, our deployment agents handle installation with a single command. You get visibility into which version each customer is running, deployment logs, and health status from your vendor portal. Need to rotate images, push an update, or revoke access? One place.
+
+If you are shipping software to [self-managed](/glossary/self-managed-software/) customers and do not want to build the distribution plumbing yourself, [try Distr free for 30 days](https://app.distr.sh).
