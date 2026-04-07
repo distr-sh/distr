@@ -18,16 +18,10 @@ import (
 	"k8s.io/kubectl/pkg/polymorphichelpers"
 )
 
-type logsWatcher struct {
-	logsExporter deploymentlogs.Exporter
-	namespace    string
-}
+type logsWatcher struct{ namespace string }
 
 func NewLogsWatcher(namespace string) *logsWatcher {
-	return &logsWatcher{
-		logsExporter: deploymentlogs.ChunkExporter(agentClient, 100),
-		namespace:    namespace,
-	}
+	return &logsWatcher{namespace: namespace}
 }
 
 func (lw *logsWatcher) Watch(ctx context.Context, d time.Duration) {
@@ -53,7 +47,7 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 		return
 	}
 
-	collector := deploymentlogs.NewCollector()
+	collector := deploymentlogs.NewCollector(agentClient, logger)
 
 	for _, d := range existingDeployments {
 		lastTimestamp, err := GetLastLogsTimestamp(ctx, lw.namespace, d)
@@ -164,8 +158,7 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 		}
 	}
 
-	logger.Sugar().Debugf("exporting %v log records", len(collector.LogRecords()))
-	if err := lw.logsExporter.ExportDeploymentLogs(ctx, collector.LogRecords()); err != nil {
+	if err := collector.Flush(ctx); err != nil {
 		logger.Warn("error exporting logs", zap.Error(err))
 	}
 }

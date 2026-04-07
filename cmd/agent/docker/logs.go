@@ -19,10 +19,10 @@ import (
 	"go.uber.org/zap"
 )
 
-type logsWatcher struct{ logsExporter deploymentlogs.Exporter }
+type logsWatcher struct{}
 
 func NewLogsWatcher() *logsWatcher {
-	return &logsWatcher{logsExporter: deploymentlogs.ChunkExporter(client, 100)}
+	return &logsWatcher{}
 }
 
 func (lw *logsWatcher) Watch(ctx context.Context, d time.Duration) {
@@ -44,7 +44,7 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 		return
 	}
 
-	collector := deploymentlogs.NewCollector()
+	collector := deploymentlogs.NewCollector(client, logger)
 
 	for _, d := range deployments {
 		if !d.LogsEnabled {
@@ -117,7 +117,7 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 		}
 	}
 
-	if err := lw.logsExporter.ExportDeploymentLogs(ctx, collector.LogRecords()); err != nil {
+	if err := collector.Flush(ctx); err != nil {
 		logger.Warn("error exporting logs", zap.Error(err))
 	}
 }
