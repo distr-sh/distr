@@ -1,15 +1,13 @@
-import {inject, Injectable} from '@angular/core';
-import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
+import {Injectable} from '@angular/core';
 import {captureException} from '@sentry/angular';
 import {parse, parseInline, Renderer} from 'marked';
 
 @Injectable({providedIn: 'root'})
 export class MarkdownService {
-  private readonly sanitizer = inject(DomSanitizer);
   private readonly renderer = this.createRenderer();
 
-  parse(value: string | null | undefined): SafeHtml {
-    return this.sanitizer.bypassSecurityTrustHtml(parse(value ?? '', {renderer: this.renderer, async: false}));
+  parse(value: string | null | undefined): string {
+    return parse(value ?? '', {renderer: this.renderer, async: false});
   }
 
   private createRenderer(): Renderer {
