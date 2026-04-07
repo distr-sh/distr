@@ -1,9 +1,8 @@
-import {AsyncPipe} from '@angular/common';
 import {Component, effect, input, output, signal} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {Application, ApplicationVersion, ApplicationVersionResource} from '@distr-sh/distr-sdk';
-import {MarkdownPipe} from 'ngx-markdown';
 import {EditorComponent} from '../components/editor.component';
+import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
 
 export interface ApplicationVersionDetail {
   application: Application;
@@ -23,7 +22,7 @@ export interface ApplicationVersionDetail {
 @Component({
   selector: 'app-application-version-detail-modal',
   templateUrl: './application-version-detail-modal.component.html',
-  imports: [ReactiveFormsModule, EditorComponent, MarkdownPipe, AsyncPipe],
+  imports: [ReactiveFormsModule, EditorComponent, InnerMarkdownDirective],
 })
 export class ApplicationVersionDetailModalComponent {
   versionDetail = input.required<ApplicationVersionDetail>();

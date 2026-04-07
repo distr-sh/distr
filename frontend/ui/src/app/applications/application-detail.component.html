@@ -585,7 +585,7 @@
                         @if (resourcePreviewIndices().has($index)) {
                           <div
                             class="markdown p-2.5 min-h-38 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white"
-                            [innerHTML]="resource.controls.content.value | markdown | async"></div>
+                            [innerMarkdown]="resource.controls.content.value"></div>
                         } @else {
                           <textarea
                             [formControl]="resource.controls.content"
