@@ -82,7 +82,7 @@
                 @if (markdownPreviewMode) {
                   <div
                     class="markdown bg-gray-50 dark:bg-gray-900 p-2 -mx-2 rounded-sm border border-gray-200 dark:border-gray-600"
-                    [innerHTML]="form.value.description ?? '' | markdown | async"></div>
+                    [innerMarkdown]="form.value.description ?? ''"></div>
                 } @else {
                   <div
                     class="mb-4 w-full bg-gray-100 rounded-lg border border-gray-200 dark:bg-gray-600 dark:border-gray-600">

@@ -52,7 +52,7 @@ jobs:
         run: pnpm exec playwright install --only-shell
       - name: Build website
         run: pnpm run build
-      - uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6
+      - uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6
         if: github.ref == 'refs/heads/main'
         with:
           aws-region: eu-central-1
