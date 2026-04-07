@@ -71,7 +71,7 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 				logOptions.Since = since.Format(time.RFC3339Nano)
 			}
 
-			toplevelErr = composeService.Logs(ctx, d.ProjectName, &composeCollector{deploymentCollector}, logOptions)
+			toplevelErr = composeService.Logs(ctx, d.ProjectName, &composeCollector{ctx, deploymentCollector}, logOptions)
 			if toplevelErr != nil {
 				logger.Warn("could not get compose logs", zap.Error(toplevelErr))
 			}
@@ -103,7 +103,7 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 							return err
 						}
 						defer rc.Close()
-						return decodeServiceLogs(svc.Spec.Name, rc, deploymentCollector)
+						return decodeServiceLogs(ctx, svc.Spec.Name, rc, deploymentCollector)
 					}()
 					if err != nil {
 						logger.Warn("could not get service logs", zap.Error(err))
@@ -127,17 +127,18 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 }
 
 type composeCollector struct {
+	ctx context.Context
 	deploymentlogs.DeploymentCollector
 }
 
 // Err implements api.LogConsumer.
 func (cc *composeCollector) Err(containerName string, message string) {
-	cc.AppendMessage(containerName, "Err", message)
+	cc.AppendMessage(cc.ctx, containerName, "Err", message)
 }
 
 // Log implements api.LogConsumer.
 func (cc *composeCollector) Log(containerName string, message string) {
-	cc.AppendMessage(containerName, "Log", message)
+	cc.AppendMessage(cc.ctx, containerName, "Log", message)
 }
 
 // Register implements api.LogConsumer.
@@ -150,7 +151,12 @@ func (*composeCollector) Register(containerName string) {}
 // Noop for now
 func (*composeCollector) Status(containerName string, message string) {}
 
-func decodeServiceLogs(resource string, r io.Reader, consumer deploymentlogs.DeploymentCollector) error {
+func decodeServiceLogs(
+	ctx context.Context,
+	resource string,
+	r io.Reader,
+	consumer deploymentlogs.DeploymentCollector,
+) error {
 	// The docker API provides a multiplexed stream for logs which must be demuxed. StdCopy does that.
 	outReader, outWriter := io.Pipe()
 	errReader, errWriter := io.Pipe()
@@ -170,7 +176,7 @@ func decodeServiceLogs(resource string, r io.Reader, consumer deploymentlogs.Dep
 		defer wg.Done()
 		scanner := bufio.NewScanner(pr)
 		for scanner.Scan() {
-			consumer.AppendMessage(resource, severity, scanner.Text())
+			consumer.AppendMessage(ctx, resource, severity, scanner.Text())
 		}
 	}
 	go scanAndCollect(outReader, "stdout")

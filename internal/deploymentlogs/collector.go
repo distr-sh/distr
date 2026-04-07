@@ -21,7 +21,7 @@ type Collector interface {
 }
 
 type DeploymentCollector interface {
-	AppendMessage(resource, severity, message string)
+	AppendMessage(ctx context.Context, resource, severity, message string)
 }
 
 type collector struct {
@@ -73,12 +73,12 @@ func (c *collector) flushNoLock(ctx context.Context) error {
 	return nil
 }
 
-func (c *collector) appendRecord(record api.DeploymentLogRecord) {
+func (c *collector) appendRecord(ctx context.Context, record api.DeploymentLogRecord) {
 	c.mut.Lock()
 	defer c.mut.Unlock()
 	c.logRecords = append(c.logRecords, record)
 	if c.flushLimit > 0 && len(c.logRecords) >= c.flushLimit {
-		if err := c.flushNoLock(context.Background()); err != nil {
+		if err := c.flushNoLock(ctx); err != nil {
 			c.log.Warn("failed to flush log records", zap.Error(err), zap.Int("logRecords", len(c.logRecords)))
 		}
 	}
@@ -90,9 +90,9 @@ type deploymentCollector struct {
 }
 
 // AppendMessage implements DeploymentCollector.
-func (d *deploymentCollector) AppendMessage(resource string, severity string, message string) {
+func (d *deploymentCollector) AppendMessage(ctx context.Context, resource string, severity string, message string) {
 	record := NewRecord(d.GetDeploymentID(), d.GetDeploymentRevisionID(), resource, severity, message)
 	if record.Body != "" {
-		d.appendRecord(record)
+		d.appendRecord(ctx, record)
 	}
 }
