@@ -22,7 +22,7 @@ const licenseKeyLatestRevisionJoin = `
 		SELECT payload, not_before, expires_at, created_at
 		FROM LicenseKeyRevision
 		WHERE license_key_id = lk.id
-		ORDER BY created_at DESC
+		ORDER BY created_at DESC, id DESC
 		LIMIT 1
 	) lr ON true`
 
@@ -185,7 +185,7 @@ func GetLicenseKeyRevisions(ctx context.Context, licenseKeyID uuid.UUID) ([]type
 		SELECT id, created_at, license_key_id, not_before, expires_at, payload
 		FROM LicenseKeyRevision
 		WHERE license_key_id = @licenseKeyId
-		ORDER BY created_at DESC`,
+		ORDER BY created_at DESC, id DESC`,
 		pgx.NamedArgs{"licenseKeyId": licenseKeyID},
 	)
 	if err != nil {
