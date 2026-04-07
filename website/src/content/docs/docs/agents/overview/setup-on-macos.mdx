@@ -124,6 +124,11 @@ With these steps, your macOS environment should be fully configured to run Distr
 As the Distr agent is primarily designed for Linux server environments, macOS support is limited and for demo purposes only.
 It also has some common limitations:
 
-### 1. Log Collection does not work
+### 1. Metrics collection must be disabled
 
-Log and metrics collection is not supported on macOS.
+Metrics collection is not supported on macOS due to Docker Desktop's virtualized filesystem not supporting the required mount propagation.
+When creating or editing a deployment target for macOS, make sure to **disable metrics collection** in the deployment target settings.
+
+### 2. Log collection does not work
+
+Log collection is not supported on macOS.
