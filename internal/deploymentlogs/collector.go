@@ -67,7 +67,7 @@ func (c *collector) flushNoLock(ctx context.Context) error {
 		c.log.Debug("flushed log records",
 			zap.Int("logRecords", len(c.logRecords)),
 			zap.Duration("duration", time.Since(t)))
-		c.logRecords = make([]api.DeploymentLogRecord, 0, defaultFlushLimit)
+		c.logRecords = make([]api.DeploymentLogRecord, 0, c.flushLimit)
 	}
 
 	return nil
