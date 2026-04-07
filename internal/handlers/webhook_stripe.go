@@ -95,7 +95,6 @@ func stripeWebhookHandler() http.HandlerFunc {
 
 		if errors.Is(err, errNoOrganization) {
 			w.WriteHeader(http.StatusNoContent)
-			return
 		} else if err != nil {
 			log.Error("Error handling stripe subscription", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
