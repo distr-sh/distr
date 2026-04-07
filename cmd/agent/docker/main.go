@@ -45,7 +45,7 @@ var (
 	client         = util.Require(agentclient.NewFromEnv(logger))
 	dockerCli      = util.Require(dockercommand.NewDockerCli())
 	composeService composeapi.Compose
-	health         = NewHealthcheckServer(5 * time.Minute)
+	health         = NewHealthcheckServer(time.Hour)
 )
 
 func init() {
