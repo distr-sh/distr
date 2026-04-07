@@ -1,6 +1,8 @@
-import {Component, inject, input, OnInit} from '@angular/core';
+import {Component, inject, input} from '@angular/core';
+import {takeUntilDestroyed, toObservable} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faCircleExclamation, faCircleInfo, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {combineLatest, filter, timer} from 'rxjs';
 import {ToastService} from '../services/toast.service';
 
 export type ToastType = 'success' | 'error' | 'info';
@@ -52,7 +54,7 @@ const autoCloseDuration = 5000;
   `,
   imports: [FaIconComponent],
 })
-export class ToastComponent implements OnInit {
+export class ToastComponent {
   private readonly toastService = inject(ToastService);
 
   readonly id = input.required<string>();
@@ -65,10 +67,13 @@ export class ToastComponent implements OnInit {
   protected readonly faCircleInfo = faCircleInfo;
   protected readonly faXmark = faXmark;
 
-  ngOnInit() {
-    if (this.autoClose()) {
-      setTimeout(() => this.remove(), autoCloseDuration);
-    }
+  constructor() {
+    combineLatest([timer(autoCloseDuration), toObservable(this.autoClose)])
+      .pipe(
+        filter(([_, autoClose]) => autoClose),
+        takeUntilDestroyed()
+      )
+      .subscribe(() => this.remove());
   }
 
   protected remove() {
