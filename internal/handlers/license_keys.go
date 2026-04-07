@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
@@ -14,6 +16,7 @@ import (
 	"github.com/distr-sh/distr/internal/licensekey"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -190,21 +193,17 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "name is required", http.StatusBadRequest)
 		return
 	}
-	if body.NotBefore.IsZero() {
-		http.Error(w, "notBefore is required", http.StatusBadRequest)
-		return
-	}
-	if body.ExpiresAt.IsZero() {
-		http.Error(w, "expiresAt is required", http.StatusBadRequest)
-		return
-	}
-	if !body.ExpiresAt.After(body.NotBefore) {
+
+	if !util.PtrDerefOr(body.ExpiresAt, existing.ExpiresAt).After(util.PtrDerefOr(body.NotBefore, existing.NotBefore)) {
 		http.Error(w, "expiresAt must be after notBefore", http.StatusBadRequest)
 		return
 	}
-	if err := licensekey.ValidatePayload(body.Payload); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+
+	if body.Payload != nil {
+		if err := licensekey.ValidatePayload(*body.Payload); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 	}
 
 	needsRevision, err := licenseKeyRevisionChanged(existing, body)
@@ -228,10 +227,11 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 	if needsRevision {
 		revision := types.LicenseKeyRevision{
 			LicenseKeyID: existing.ID,
-			NotBefore:    body.NotBefore,
-			ExpiresAt:    body.ExpiresAt,
-			Payload:      body.Payload,
+			NotBefore:    util.PtrDerefOr(body.NotBefore, existing.NotBefore),
+			ExpiresAt:    util.PtrDerefOr(body.ExpiresAt, existing.ExpiresAt),
+			Payload:      util.PtrDerefOr(body.Payload, existing.Payload),
 		}
+
 		if err := db.CreateLicenseKeyRevision(ctx, &revision); err != nil {
 			log.Warn("could not create license key revision", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -287,15 +287,41 @@ func licenseKeyMiddleware(next http.Handler) http.Handler {
 // licenseKeyRevisionChanged returns true if any of the revision fields differ
 // between the existing (latest) revision and the incoming request.
 func licenseKeyRevisionChanged(existing *types.LicenseKey, body api.UpdateLicenseKeyRequest) (bool, error) {
-	if !existing.NotBefore.Equal(body.NotBefore.UTC().Truncate(time.Microsecond)) {
+	if body.NotBefore != nil && !existing.NotBefore.Equal(body.NotBefore.UTC().Truncate(time.Microsecond)) {
 		return true, nil
 	}
-	if !existing.ExpiresAt.Equal(body.ExpiresAt.UTC().Truncate(time.Microsecond)) {
+
+	if body.ExpiresAt != nil && !existing.ExpiresAt.Equal(body.ExpiresAt.UTC().Truncate(time.Microsecond)) {
 		return true, nil
 	}
-	equal, err := db.PayloadsEqual(existing.Payload, body.Payload)
+
+	if body.Payload != nil {
+		equal, err := payloadsEqual(existing.Payload, *body.Payload)
+		if err != nil {
+			return false, err
+		}
+		return !equal, nil
+	}
+
+	return false, nil
+}
+
+func payloadsEqual(a, b json.RawMessage) (bool, error) {
+	na, err := normalizeJSON(a)
 	if err != nil {
 		return false, err
 	}
-	return !equal, nil
+	nb, err := normalizeJSON(b)
+	if err != nil {
+		return false, err
+	}
+	return bytes.Equal(na, nb), nil
+}
+
+func normalizeJSON(raw json.RawMessage) ([]byte, error) {
+	var v any
+	if err := json.Unmarshal(raw, &v); err != nil {
+		return nil, err
+	}
+	return json.Marshal(v)
 }

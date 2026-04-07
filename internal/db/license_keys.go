@@ -1,9 +1,7 @@
 package db
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -226,25 +224,4 @@ func createLicenseKeyRevision(ctx context.Context, revision *types.LicenseKeyRev
 	}
 	*revision = result
 	return nil
-}
-
-// PayloadsEqual returns true if two JSON payloads are semantically equal (key-order independent).
-func PayloadsEqual(a, b json.RawMessage) (bool, error) {
-	na, err := normalizeJSON(a)
-	if err != nil {
-		return false, err
-	}
-	nb, err := normalizeJSON(b)
-	if err != nil {
-		return false, err
-	}
-	return bytes.Equal(na, nb), nil
-}
-
-func normalizeJSON(raw json.RawMessage) ([]byte, error) {
-	var v any
-	if err := json.Unmarshal(raw, &v); err != nil {
-		return nil, err
-	}
-	return json.Marshal(v)
 }

@@ -17,9 +17,9 @@ type CreateLicenseKeyRequest struct {
 }
 
 type UpdateLicenseKeyRequest struct {
-	Name        string          `json:"name"`
-	Description *string         `json:"description,omitempty"`
-	NotBefore   time.Time       `json:"notBefore"`
-	ExpiresAt   time.Time       `json:"expiresAt"`
-	Payload     json.RawMessage `json:"payload"`
+	Name        string           `json:"name"`
+	Description *string          `json:"description,omitempty"`
+	NotBefore   *time.Time       `json:"notBefore,omitempty"`
+	ExpiresAt   *time.Time       `json:"expiresAt,omitempty"`
+	Payload     *json.RawMessage `json:"payload,omitempty"`
 }
