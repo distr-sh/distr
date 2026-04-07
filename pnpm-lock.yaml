@@ -119,7 +119,7 @@ importers:
     devDependencies:
       '@angular/build':
         specifier: ^21.1.0
-        version: 21.2.6(@angular/compiler-cli@21.2.7(@angular/compiler@21.2.7)(typescript@5.9.3))(@angular/compiler@21.2.7)(@angular/core@21.2.7(@angular/compiler@21.2.7)(rxjs@7.8.2)(zone.js@0.16.1))(@angular/platform-browser@21.2.7(@angular/common@21.2.7(@angular/core@21.2.7(@angular/compiler@21.2.7)(rxjs@7.8.2)(zone.js@0.16.1))(rxjs@7.8.2))(@angular/core@21.2.7(@angular/compiler@21.2.7)(rxjs@7.8.2)(zone.js@0.16.1)))(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@types/node@25.5.2)(chokidar@5.0.0)(jiti@2.6.1)(lightningcss@1.32.0)(postcss@8.5.8)(tailwindcss@4.2.2)(tslib@2.8.1)(typescript@5.9.3)(vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.5.2)(jsdom@29.0.1)(vite@7.3.1(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)))
+        version: 21.2.6(@angular/compiler-cli@21.2.7(@angular/compiler@21.2.7)(typescript@5.9.3))(@angular/compiler@21.2.7)(@angular/core@21.2.7(@angular/compiler@21.2.7)(rxjs@7.8.2)(zone.js@0.16.1))(@angular/platform-browser@21.2.7(@angular/common@21.2.7(@angular/core@21.2.7(@angular/compiler@21.2.7)(rxjs@7.8.2)(zone.js@0.16.1))(rxjs@7.8.2))(@angular/core@21.2.7(@angular/compiler@21.2.7)(rxjs@7.8.2)(zone.js@0.16.1)))(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@types/node@25.5.2)(chokidar@5.0.0)(jiti@2.6.1)(lightningcss@1.32.0)(postcss@8.5.8)(tailwindcss@4.2.2)(tslib@2.8.1)(typescript@5.9.3)(vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.5.2)(jsdom@29.0.2)(vite@7.3.1(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)))
       '@angular/cli':
         specifier: ^21.1.0
         version: 21.2.6(@types/node@25.5.2)(chokidar@5.0.0)
@@ -146,7 +146,7 @@ importers:
         version: 6.1.0
       jsdom:
         specifier: ^29.0.0
-        version: 29.0.1
+        version: 29.0.2
       postcss:
         specifier: ^8.5.3
         version: 8.5.8
@@ -164,7 +164,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^4.0.17
-        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.5.2)(jsdom@29.0.1)(vite@7.3.1(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3))
+        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.5.2)(jsdom@29.0.2)(vite@7.3.1(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3))
 
 packages:
 
@@ -385,12 +385,12 @@ packages:
   '@antfu/install-pkg@1.1.0':
     resolution: {integrity: sha512-MGQsmw10ZyI+EJo45CdSER4zEb+p31LpDAFp2Z3gkSd1yqVZGi0Ebx++YTEMonJy4oChEMLsxZ64j8FH6sSqtQ==}
 
-  '@asamuzakjp/css-color@5.0.1':
-    resolution: {integrity: sha512-2SZFvqMyvboVV1d15lMf7XiI3m7SDqXUuKaTymJYLN6dSGadqp+fVojqJlVoMlbZnlTmu3S0TLwLTJpvBMO1Aw==}
+  '@asamuzakjp/css-color@5.1.6':
+    resolution: {integrity: sha512-BXWCh8dHs9GOfpo/fWGDJtDmleta2VePN9rn6WQt3GjEbxzutVF4t0x2pmH+7dbMCLtuv3MlwqRsAuxlzFXqFg==}
     engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
 
-  '@asamuzakjp/dom-selector@7.0.3':
-    resolution: {integrity: sha512-Q6mU0Z6bfj6YvnX2k9n0JxiIwrCFN59x/nWmYQnAqP000ruX/yV+5bp/GRcF5T8ncvfwJQ7fgfP74DlpKExILA==}
+  '@asamuzakjp/dom-selector@7.0.7':
+    resolution: {integrity: sha512-d2BgqDUOS1Hfp4IzKUZqCNz+Kg3Y88AkaBvJK/ZVSQPU1f7OpPNi7nQTH6/oI47Dkdg+Z3e8Yp6ynOu4UMINAQ==}
     engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
 
   '@asamuzakjp/nwsapi@2.3.9':
@@ -538,8 +538,8 @@ packages:
     peerDependencies:
       '@csstools/css-tokenizer': ^4.0.0
 
-  '@csstools/css-syntax-patches-for-csstree@1.1.1':
-    resolution: {integrity: sha512-BvqN0AMWNAnLk9G8jnUT77D+mUbY/H2b3uDTvg2isJkHaOufUE2R3AOwxWo7VBQKT1lOdwdvorddo2B/lk64+w==}
+  '@csstools/css-syntax-patches-for-csstree@1.1.2':
+    resolution: {integrity: sha512-5GkLzz4prTIpoyeUiIu3iV6CSG3Plo7xRVOFPKI7FVEJ3mZ0A8SwK0XU3Gl7xAkiQ+mDyam+NNp875/C5y+jSA==}
     peerDependencies:
       css-tree: ^3.2.1
     peerDependenciesMeta:
@@ -2835,8 +2835,8 @@ packages:
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
 
-  jsdom@29.0.1:
-    resolution: {integrity: sha512-z6JOK5gRO7aMybVq/y/MlIpKh8JIi68FBKMUtKkK2KH/wMSRlCxQ682d08LB9fYXplyY/UXG8P4XXTScmdjApg==}
+  jsdom@29.0.2:
+    resolution: {integrity: sha512-9VnGEBosc/ZpwyOsJBCQ/3I5p7Q5ngOY14a9bf5btenAORmZfDse1ZEheMiWcJ3h81+Fv7HmJFdS0szo/waF2w==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24.0.0}
     peerDependencies:
       canvas: ^3.0.0
@@ -2991,8 +2991,8 @@ packages:
   long@5.3.2:
     resolution: {integrity: sha512-mNAgZ1GmyNhD7AuqnTG3/VQ26o760+ZYBPKjPvugO8+nLbYfX6TVpJPseBvopbdY+qpZ/lKUnmEc1LeZYS3QAA==}
 
-  lru-cache@11.2.7:
-    resolution: {integrity: sha512-aY/R+aEsRelme17KGQa/1ZSIpLpNYYrhcrepKTZgE+W3WM16YMCaPwOHLHsmopZHELU0Ojin1lPVxKR0MihncA==}
+  lru-cache@11.3.2:
+    resolution: {integrity: sha512-wgWa6FWQ3QRRJbIjbsldRJZxdxYngT/dO0I5Ynmlnin8qy7tC6xYzbcJjtN4wHLXtkbVwHzk0C+OejVw1XM+DQ==}
     engines: {node: 20 || >=22}
 
   lru-cache@5.1.1:
@@ -3624,11 +3624,11 @@ packages:
     resolution: {integrity: sha512-Bf+ILmBgretUrdJxzXM0SgXLZ3XfiaUuOj/IKQHuTXip+05Xn+uyEYdVg0kYDipTBcLrCVyUzAPz7QmArb0mmw==}
     engines: {node: '>=14.0.0'}
 
-  tldts-core@7.0.26:
-    resolution: {integrity: sha512-5WJ2SqFsv4G2Dwi7ZFVRnz6b2H1od39QME1lc2y5Ew3eWiZMAeqOAfWpRP9jHvhUl881406QtZTODvjttJs+ew==}
+  tldts-core@7.0.28:
+    resolution: {integrity: sha512-7W5Efjhsc3chVdFhqtaU0KtK32J37Zcr9RKtID54nG+tIpcY79CQK/veYPODxtD/LJ4Lue66jvrQzIX2Z2/pUQ==}
 
-  tldts@7.0.26:
-    resolution: {integrity: sha512-WiGwQjr0qYdNNG8KpMKlSvpxz652lqa3Rd+/hSaDcY4Uo6SKWZq2LAF+hsAhUewTtYhXlorBKgNF3Kk8hnjGoQ==}
+  tldts@7.0.28:
+    resolution: {integrity: sha512-+Zg3vWhRUv8B1maGSTFdev9mjoo8Etn2Ayfs4cnjlD3CsGkxXX4QyW3j2WJ0wdjYcYmy7Lx2RDsZMhgCWafKIw==}
     hasBin: true
 
   toidentifier@1.0.1:
@@ -3677,8 +3677,8 @@ packages:
     resolution: {integrity: sha512-BM/JzwwaRXxrLdElV2Uo6cTLEjhSb3WXboncJamZ15NgUURmvlXvxa6xkwIOILIjPNo9i8ku136ZvWV0Uly8+w==}
     engines: {node: '>=20.18.1'}
 
-  undici@7.24.5:
-    resolution: {integrity: sha512-3IWdCpjgxp15CbJnsi/Y9TCDE7HWVN19j1hmzVhoAkY/+CJx449tVxT5wZc1Gwg8J+P0LWvzlBzxYRnHJ+1i7Q==}
+  undici@7.24.7:
+    resolution: {integrity: sha512-H/nlJ/h0ggGC+uRL3ovD+G0i4bqhvsDOpbDv7At5eFLlj2b41L8QliGbnl2H7SnDiYhENphh1tQFJZf+MyfLsQ==}
     engines: {node: '>=20.18.1'}
 
   unpipe@1.0.0:
@@ -4022,7 +4022,7 @@ snapshots:
     transitivePeerDependencies:
       - chokidar
 
-  '@angular/build@21.2.6(@angular/compiler-cli@21.2.7(@angular/compiler@21.2.7)(typescript@5.9.3))(@angular/compiler@21.2.7)(@angular/core@21.2.7(@angular/compiler@21.2.7)(rxjs@7.8.2)(zone.js@0.16.1))(@angular/platform-browser@21.2.7(@angular/common@21.2.7(@angular/core@21.2.7(@angular/compiler@21.2.7)(rxjs@7.8.2)(zone.js@0.16.1))(rxjs@7.8.2))(@angular/core@21.2.7(@angular/compiler@21.2.7)(rxjs@7.8.2)(zone.js@0.16.1)))(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@types/node@25.5.2)(chokidar@5.0.0)(jiti@2.6.1)(lightningcss@1.32.0)(postcss@8.5.8)(tailwindcss@4.2.2)(tslib@2.8.1)(typescript@5.9.3)(vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.5.2)(jsdom@29.0.1)(vite@7.3.1(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)))':
+  '@angular/build@21.2.6(@angular/compiler-cli@21.2.7(@angular/compiler@21.2.7)(typescript@5.9.3))(@angular/compiler@21.2.7)(@angular/core@21.2.7(@angular/compiler@21.2.7)(rxjs@7.8.2)(zone.js@0.16.1))(@angular/platform-browser@21.2.7(@angular/common@21.2.7(@angular/core@21.2.7(@angular/compiler@21.2.7)(rxjs@7.8.2)(zone.js@0.16.1))(rxjs@7.8.2))(@angular/core@21.2.7(@angular/compiler@21.2.7)(rxjs@7.8.2)(zone.js@0.16.1)))(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@types/node@25.5.2)(chokidar@5.0.0)(jiti@2.6.1)(lightningcss@1.32.0)(postcss@8.5.8)(tailwindcss@4.2.2)(tslib@2.8.1)(typescript@5.9.3)(vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.5.2)(jsdom@29.0.2)(vite@7.3.1(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)))':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@angular-devkit/architect': 0.2102.6(chokidar@5.0.0)
@@ -4061,7 +4061,7 @@ snapshots:
       lmdb: 3.5.1
       postcss: 8.5.8
       tailwindcss: 4.2.2
-      vitest: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.5.2)(jsdom@29.0.1)(vite@7.3.1(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3))
+      vitest: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.5.2)(jsdom@29.0.2)(vite@7.3.1(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3))
     transitivePeerDependencies:
       - '@emnapi/core'
       - '@emnapi/runtime'
@@ -4183,21 +4183,19 @@ snapshots:
       tinyexec: 1.0.4
     optional: true
 
-  '@asamuzakjp/css-color@5.0.1':
+  '@asamuzakjp/css-color@5.1.6':
     dependencies:
       '@csstools/css-calc': 3.1.1(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-color-parser': 4.0.2(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-tokenizer': 4.0.0
-      lru-cache: 11.2.7
 
-  '@asamuzakjp/dom-selector@7.0.3':
+  '@asamuzakjp/dom-selector@7.0.7':
     dependencies:
       '@asamuzakjp/nwsapi': 2.3.9
       bidi-js: 1.0.3
       css-tree: 3.2.1
       is-potential-custom-element-name: 1.0.1
-      lru-cache: 11.2.7
 
   '@asamuzakjp/nwsapi@2.3.9': {}
 
@@ -4405,7 +4403,7 @@ snapshots:
     dependencies:
       '@csstools/css-tokenizer': 4.0.0
 
-  '@csstools/css-syntax-patches-for-csstree@1.1.1(css-tree@3.2.1)':
+  '@csstools/css-syntax-patches-for-csstree@1.1.2(css-tree@3.2.1)':
     optionalDependencies:
       css-tree: 3.2.1
 
@@ -4886,7 +4884,7 @@ snapshots:
       agent-base: 7.1.4
       http-proxy-agent: 7.0.2
       https-proxy-agent: 7.0.6
-      lru-cache: 11.2.7
+      lru-cache: 11.3.2
       socks-proxy-agent: 8.0.5
     transitivePeerDependencies:
       - supports-color
@@ -4900,7 +4898,7 @@ snapshots:
       '@gar/promise-retry': 1.0.3
       '@npmcli/promise-spawn': 9.0.1
       ini: 6.0.0
-      lru-cache: 11.2.7
+      lru-cache: 11.3.2
       npm-pick-manifest: 11.0.3
       proc-log: 6.1.0
       semver: 7.7.4
@@ -5801,7 +5799,7 @@ snapshots:
       '@npmcli/fs': 5.0.0
       fs-minipass: 3.0.3
       glob: 13.0.6
-      lru-cache: 11.2.7
+      lru-cache: 11.3.2
       minipass: 7.1.3
       minipass-collect: 2.0.1
       minipass-flush: 1.0.7
@@ -6479,7 +6477,7 @@ snapshots:
 
   hosted-git-info@9.0.2:
     dependencies:
-      lru-cache: 11.2.7
+      lru-cache: 11.3.2
 
   html-encoding-sniffer@6.0.0:
     dependencies:
@@ -6599,24 +6597,24 @@ snapshots:
 
   js-tokens@4.0.0: {}
 
-  jsdom@29.0.1:
+  jsdom@29.0.2:
     dependencies:
-      '@asamuzakjp/css-color': 5.0.1
-      '@asamuzakjp/dom-selector': 7.0.3
+      '@asamuzakjp/css-color': 5.1.6
+      '@asamuzakjp/dom-selector': 7.0.7
       '@bramus/specificity': 2.4.2
-      '@csstools/css-syntax-patches-for-csstree': 1.1.1(css-tree@3.2.1)
+      '@csstools/css-syntax-patches-for-csstree': 1.1.2(css-tree@3.2.1)
       '@exodus/bytes': 1.15.0
       css-tree: 3.2.1
       data-urls: 7.0.0
       decimal.js: 10.6.0
       html-encoding-sniffer: 6.0.0
       is-potential-custom-element-name: 1.0.1
-      lru-cache: 11.2.7
+      lru-cache: 11.3.2
       parse5: 8.0.0
       saxes: 6.0.0
       symbol-tree: 3.2.4
       tough-cookie: 6.0.1
-      undici: 7.24.5
+      undici: 7.24.7
       w3c-xmlserializer: 5.0.0
       webidl-conversions: 8.0.1
       whatwg-mimetype: 5.0.0
@@ -6761,7 +6759,7 @@ snapshots:
 
   long@5.3.2: {}
 
-  lru-cache@11.2.7: {}
+  lru-cache@11.3.2: {}
 
   lru-cache@5.1.1:
     dependencies:
@@ -7095,7 +7093,7 @@ snapshots:
 
   path-scurry@2.0.2:
     dependencies:
-      lru-cache: 11.2.7
+      lru-cache: 11.3.2
       minipass: 7.1.3
 
   path-to-regexp@8.4.2: {}
@@ -7538,17 +7536,17 @@ snapshots:
 
   tinyrainbow@3.1.0: {}
 
-  tldts-core@7.0.26: {}
+  tldts-core@7.0.28: {}
 
-  tldts@7.0.26:
+  tldts@7.0.28:
     dependencies:
-      tldts-core: 7.0.26
+      tldts-core: 7.0.28
 
   toidentifier@1.0.1: {}
 
   tough-cookie@6.0.1:
     dependencies:
-      tldts: 7.0.26
+      tldts: 7.0.28
 
   tr46@6.0.0:
     dependencies:
@@ -7584,7 +7582,7 @@ snapshots:
 
   undici@7.24.4: {}
 
-  undici@7.24.5: {}
+  undici@7.24.7: {}
 
   unpipe@1.0.0: {}
 
@@ -7622,7 +7620,7 @@ snapshots:
       lightningcss: 1.32.0
       sass: 1.97.3
 
-  vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.5.2)(jsdom@29.0.1)(vite@7.3.1(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)):
+  vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.5.2)(jsdom@29.0.2)(vite@7.3.1(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)):
     dependencies:
       '@vitest/expect': 4.1.2
       '@vitest/mocker': 4.1.2(vite@7.3.1(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3))
@@ -7647,7 +7645,7 @@ snapshots:
     optionalDependencies:
       '@opentelemetry/api': 1.9.1
       '@types/node': 25.5.2
-      jsdom: 29.0.1
+      jsdom: 29.0.2
     transitivePeerDependencies:
       - msw
 
