@@ -43,6 +43,8 @@ jobs:
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
+          flavor: |
+            latest=false
           labels: |
             org.opencontainers.image.description=Docker Autoheal
             org.opencontainers.image.vendor=Glasskube
@@ -52,6 +54,7 @@ jobs:
         id: build-push
         with:
           context: '{{defaultContext}}:docker-autoheal'
+          platforms: ${{ startsWith(github.ref, 'refs/tags/') && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
           push: ${{ startsWith(github.ref, 'refs/tags/') }}
           sbom: true
           provenance: true
