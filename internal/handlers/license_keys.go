@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -213,38 +214,58 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := db.UpdateLicenseKeyMetadata(ctx, existing.ID, body.Name, body.Description)
-	if errors.Is(err, apierrors.ErrConflict) {
-		http.Error(w, "A license key with this name already exists", http.StatusBadRequest)
-		return
-	} else if err != nil {
-		log.Warn("could not update license key", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if needsRevision {
-		revision := types.LicenseKeyRevision{
-			LicenseKeyID: existing.ID,
-			NotBefore:    util.PtrDerefOr(body.NotBefore, existing.NotBefore),
-			ExpiresAt:    util.PtrDerefOr(body.ExpiresAt, existing.ExpiresAt),
-			Payload:      util.PtrDerefOr(body.Payload, existing.Payload),
-		}
-
-		if err := db.CreateLicenseKeyRevision(ctx, &revision); err != nil {
-			log.Warn("could not create license key revision", zap.Error(err))
+	var result *types.LicenseKey
+	var errorHandled bool
+	err = db.RunTx(ctx, func(ctx context.Context) error {
+		if r, err := db.UpdateLicenseKeyMetadata(
+			ctx, existing.ID, body.Name, body.Description,
+		); errors.Is(err, apierrors.ErrConflict) {
+			http.Error(w, "A license key with this name already exists", http.StatusBadRequest)
+			errorHandled = true
+			return err
+		} else if err != nil {
+			log.Warn("could not update license key", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			errorHandled = true
+			return err
+		} else {
+			result = r
 		}
-		result.NotBefore = revision.NotBefore
-		result.ExpiresAt = revision.ExpiresAt
-		result.Payload = revision.Payload
-		result.LastRevisedAt = revision.CreatedAt
-	}
 
-	RespondJSON(w, result)
+		if needsRevision {
+			revision := types.LicenseKeyRevision{
+				LicenseKeyID: existing.ID,
+				NotBefore:    util.PtrDerefOr(body.NotBefore, existing.NotBefore),
+				ExpiresAt:    util.PtrDerefOr(body.ExpiresAt, existing.ExpiresAt),
+				Payload:      util.PtrDerefOr(body.Payload, existing.Payload),
+			}
+
+			if err := db.CreateLicenseKeyRevision(ctx, &revision); err != nil {
+				log.Warn("could not create license key revision", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				errorHandled = true
+				return err
+			}
+			result.NotBefore = revision.NotBefore
+			result.ExpiresAt = revision.ExpiresAt
+			result.Payload = revision.Payload
+			result.LastRevisedAt = revision.CreatedAt
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		if !errorHandled {
+			log.Warn("update license key error", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	} else {
+		RespondJSON(w, result)
+	}
 }
 
 func deleteLicenseKey(w http.ResponseWriter, r *http.Request) {
