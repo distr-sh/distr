@@ -3,9 +3,8 @@ package handlers
 import (
 	"testing"
 
-	. "github.com/onsi/gomega"
-
 	"github.com/distr-sh/distr/api"
+	. "github.com/onsi/gomega"
 )
 
 func TestSanitizeLogRecords(t *testing.T) {
