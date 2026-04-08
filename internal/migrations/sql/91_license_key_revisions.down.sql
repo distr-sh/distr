@@ -12,7 +12,7 @@ FROM (
     SELECT DISTINCT ON (license_key_id)
         license_key_id, not_before, expires_at, payload
     FROM LicenseKeyRevision
-    ORDER BY license_key_id, created_at DESC
+    ORDER BY license_key_id, created_at DESC, id DESC
 ) r
 WHERE lk.id = r.license_key_id;
 
