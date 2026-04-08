@@ -137,7 +137,10 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 				defer rc.Close()
 				sc := bufio.NewScanner(rc)
 				for sc.Scan() {
-					deploymentCollector.AppendMessage(ctx, resourceName, "Log", sc.Text())
+					if err := deploymentCollector.AppendMessage(ctx, resourceName, "Log", sc.Text()); err != nil {
+						logger.Warn("error collecting log message", zap.Error(err))
+						return err
+					}
 				}
 				if err := sc.Err(); err != nil {
 					logger.Warn("error streaming logs", zap.Error(err))

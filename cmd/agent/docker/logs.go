@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"path"
-	"sync"
 	"time"
 
 	"github.com/distr-sh/distr/internal/deploymentlogs"
@@ -17,6 +16,7 @@ import (
 	"github.com/moby/moby/api/pkg/stdcopy"
 	mobyClient "github.com/moby/moby/client"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 type logsWatcher struct{}
@@ -71,7 +71,11 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 				logOptions.Since = since.Format(time.RFC3339Nano)
 			}
 
-			toplevelErr = composeService.Logs(ctx, d.ProjectName, &composeCollector{ctx, deploymentCollector}, logOptions)
+			// Allow the collector to cancel the context used for the API request.
+			// This allows propagating append errors downstream.
+			ctx, cancel := context.WithCancelCause(ctx)
+			collector := composeCollector{ctx, cancel, deploymentCollector}
+			toplevelErr = composeService.Logs(ctx, d.ProjectName, &collector, logOptions)
 			if toplevelErr != nil {
 				logger.Warn("could not get compose logs", zap.Error(toplevelErr))
 			}
@@ -127,18 +131,28 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 }
 
 type composeCollector struct {
-	ctx context.Context
+	ctx    context.Context
+	cancel func(error)
 	deploymentlogs.DeploymentCollector
 }
 
 // Err implements api.LogConsumer.
-func (cc *composeCollector) Err(containerName string, message string) {
-	cc.AppendMessage(cc.ctx, containerName, "Err", message)
+func (cc *composeCollector) Err(containerName, message string) {
+	cc.LogWithSeverity(containerName, "Err", message)
 }
 
 // Log implements api.LogConsumer.
-func (cc *composeCollector) Log(containerName string, message string) {
-	cc.AppendMessage(cc.ctx, containerName, "Log", message)
+func (cc *composeCollector) Log(containerName, message string) {
+	cc.LogWithSeverity(containerName, "Log", message)
+}
+
+func (cc *composeCollector) LogWithSeverity(containerName, severity, message string) {
+	if err := cc.AppendMessage(cc.ctx, containerName, severity, message); err != nil {
+		logger.Warn("failed to append log message", zap.Error(err))
+		if cc.cancel != nil {
+			cc.cancel(err)
+		}
+	}
 }
 
 // Register implements api.LogConsumer.
@@ -157,36 +171,41 @@ func decodeServiceLogs(
 	r io.Reader,
 	consumer deploymentlogs.DeploymentCollector,
 ) error {
-	// The docker API provides a multiplexed stream for logs which must be demuxed. StdCopy does that.
-	outReader, outWriter := io.Pipe()
-	errReader, errWriter := io.Pipe()
+	wg, ctx := errgroup.WithContext(ctx)
 
-	var wg sync.WaitGroup
-	wg.Add(3)
-
-	var copyErr error
-	go func() {
-		defer wg.Done()
-		_, copyErr = stdcopy.StdCopy(outWriter, errWriter, r)
-		outWriter.CloseWithError(copyErr)
-		errWriter.CloseWithError(copyErr)
-	}()
-
-	scanAndCollect := func(pr *io.PipeReader, severity string) {
-		defer wg.Done()
-		scanner := bufio.NewScanner(pr)
-		for scanner.Scan() {
-			consumer.AppendMessage(ctx, resource, severity, scanner.Text())
-		}
-		if err := scanner.Err(); err != nil {
-			pr.CloseWithError(err)
+	scanAndCollect := func(pr *io.PipeReader, severity string) func() error {
+		return func() error {
+			scanner := bufio.NewScanner(pr)
+			for scanner.Scan() {
+				if err := consumer.AppendMessage(ctx, resource, severity, scanner.Text()); err != nil {
+					pr.CloseWithError(err)
+					return err
+				}
+			}
+			if err := scanner.Err(); err != nil {
+				pr.CloseWithError(err)
+				return err
+			}
+			return nil
 		}
 	}
-	go scanAndCollect(outReader, "stdout")
-	go scanAndCollect(errReader, "stderr")
 
-	wg.Wait()
-	return copyErr
+	wg.SetLimit(3)
+
+	outReader, outWriter := io.Pipe()
+	errReader, errWriter := io.Pipe()
+	wg.Go(func() error {
+		// The docker API provides a multiplexed stream for logs which must be demuxed. StdCopy does that.
+		_, err := stdcopy.StdCopy(outWriter, errWriter, r)
+		outWriter.CloseWithError(err)
+		errWriter.CloseWithError(err)
+		return err
+	})
+
+	wg.Go(scanAndCollect(outReader, "stdout"))
+	wg.Go(scanAndCollect(errReader, "stderr"))
+
+	return wg.Wait()
 }
 
 func UpdateLastLogsTimestamp(deployment AgentDeployment, timestamp time.Time) error {
