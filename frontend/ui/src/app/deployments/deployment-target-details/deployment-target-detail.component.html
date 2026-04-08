@@ -131,6 +131,9 @@
                   animate.leave="animate-flip-out-top">
                   <ul class="py-2 text-sm text-gray-700 dark:text-gray-200">
                     <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                      <button class="px-4 w-full text-left" (click)="selectDeployment(undefined)">Agent Logs</button>
+                    </li>
+                    <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
                       <button class="px-4 w-full text-left" (click)="selectResource(undefined)">
                         Deployment Status
                       </button>
