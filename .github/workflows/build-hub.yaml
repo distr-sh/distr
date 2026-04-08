@@ -151,6 +151,10 @@ jobs:
           VERSION: ${{ github.ref_name }}
           SENTRY_VERSION: ${{ github.ref_name }}${{ matrix.edition.suffix }}
 
+      - name: Write license public key
+        if: ${{ matrix.edition.name == 'enterprise' }}
+        run: echo "${{ secrets.LICENSE_PUBLIC_KEY }}" > internal/license/embedded/pubkey.pem
+
       - name: Build application (amd64)
         run: go build -ldflags="$LDFLAGS" -o dist/distr-amd64 ./cmd/hub/
         env:
@@ -187,6 +191,7 @@ jobs:
           DATABASE_URL: postgres://test-user:test-password@localhost:5432/distr
           JWT_SECRET: H4V7z6mEpe8/k5H/KyogT/iATJhNpEIUMd5cHF6mqF8=
           DISTR_HOST: http://localhost:8080
+          LICENSE_KEY: ${{ matrix.edition.name == 'enterprise' && secrets.LICENSE_KEY || '' }}
 
       - name: Generate SBOM for frontend project
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
