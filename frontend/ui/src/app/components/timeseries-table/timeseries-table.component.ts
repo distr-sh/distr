@@ -1,5 +1,17 @@
-import {AsyncPipe, DatePipe} from '@angular/common';
-import {Component, computed, DestroyRef, effect, ElementRef, inject, input, signal, viewChild} from '@angular/core';
+import {AsyncPipe, DatePipe, NgTemplateOutlet} from '@angular/common';
+import {
+  afterNextRender,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  ElementRef,
+  inject,
+  Injector,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
 import {toObservable} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faThumbtack, faThumbtackSlash} from '@fortawesome/free-solid-svg-icons';
@@ -71,7 +83,7 @@ export interface TimeseriesExporter {
 @Component({
   selector: 'app-timeseries-table',
   templateUrl: './timeseries-table.component.html',
-  imports: [DatePipe, AsyncPipe, FaIconComponent, SpinnerComponent],
+  imports: [DatePipe, AsyncPipe, NgTemplateOutlet, FaIconComponent, SpinnerComponent],
 })
 export class TimeseriesTableComponent {
   public readonly source = input.required<TimeseriesSource>();
@@ -83,13 +95,17 @@ export class TimeseriesTableComponent {
   protected readonly showResourceColumn = computed(() => Object.keys(this.resourceColorMap()).length > 1);
 
   private readonly toastService = inject(ToastService);
+  private readonly injector = inject(Injector);
 
   protected readonly faThumbtack = faThumbtack;
   protected readonly faThumbtackSlash = faThumbtackSlash;
 
+  private static readonly LIVE_INTERVAL_MS = 10_000;
+
   protected hasMore = true;
   protected isExporting = false;
   protected readonly pinnedEntryId = signal<string | null>(null);
+  protected readonly liveProgress = signal(0);
 
   protected readonly sourceWithStatus = computed(() => new TimeseriesSourceWithStatus(this.source()));
 
@@ -101,6 +117,7 @@ export class TimeseriesTableComponent {
     switchMap(([source, live, newestFirst]) => {
       let nextBefore: Date | null = null;
       let nextAfter: Date | null = null;
+      let liveStart = Date.now();
       return merge(
         merge(
           source.load().pipe(catchError((err) => this.handleError(err))),
@@ -119,12 +136,27 @@ export class TimeseriesTableComponent {
           )
         ).pipe(tap((entries) => (this.hasMore = entries.length >= source.batchSize))),
         live
-          ? interval(10_000).pipe(
+          ? interval(TimeseriesTableComponent.LIVE_INTERVAL_MS).pipe(
               switchMap(() =>
                 nextAfter !== null
                   ? source.loadAfter(nextAfter).pipe(catchError((err) => this.handleError(err)))
                   : EMPTY
-              )
+              ),
+              tap((entries) => {
+                liveStart = Date.now();
+                if (!newestFirst && entries.length > 0) {
+                  afterNextRender(() => this.scrollToBottom(), {injector: this.injector});
+                }
+              })
+            )
+          : EMPTY,
+        live
+          ? interval(100).pipe(
+              tap(() => {
+                const elapsed = Date.now() - liveStart;
+                this.liveProgress.set(Math.min(100, (elapsed / TimeseriesTableComponent.LIVE_INTERVAL_MS) * 100));
+              }),
+              switchMap(() => EMPTY)
             )
           : EMPTY
       ).pipe(
@@ -155,6 +187,7 @@ export class TimeseriesTableComponent {
 
   private readonly loadMore$ = new Subject<void>();
   private readonly loadMoreButton = viewChild<ElementRef<HTMLElement>>('loadMoreButton');
+  private readonly tableBottom = viewChild<ElementRef<HTMLElement>>('tableBottom');
   private readonly destroyRef = inject(DestroyRef);
 
   constructor() {
@@ -186,6 +219,10 @@ export class TimeseriesTableComponent {
 
   protected loadMore() {
     this.loadMore$.next();
+  }
+
+  private scrollToBottom() {
+    this.tableBottom()?.nativeElement.scrollIntoView({behavior: 'smooth'});
   }
 
   private handleError(err: unknown) {

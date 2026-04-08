@@ -1,14 +1,8 @@
 @if (entries$ | async; as entries) {
-  <div class="relative flex flex-col gap-4">
-    @if (sourceWithStatus().loading()) {
-      <div class="absolute top-0 inset-e-0 rounded-xl bg-white dark:bg-gray-900 z-10 p-2">
-        <output class="flex justify-center items-center gap-2 text-gray-700 dark:text-gray-400 text-xs">
-          <app-spinner class="size-5" />
-          <span>Loading&hellip;</span>
-        </output>
-      </div>
-    }
-
+  @if (newestFirst()) {
+    <ng-container *ngTemplateOutlet="liveIndicator" />
+  }
+  <div class="flex flex-col gap-4">
     <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
       <thead
         class="dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-800 dark:text-gray-400 sr-only">
@@ -70,6 +64,7 @@
         }
       </tbody>
     </table>
+    <div #tableBottom></div>
 
     @if (hasMore && (newestFirst() || !live())) {
       <div class="flex items-center justify-center gap-2">
@@ -83,9 +78,32 @@
       </div>
     }
   </div>
+  @if (!newestFirst()) {
+    <ng-container *ngTemplateOutlet="liveIndicator" />
+  }
 } @else {
   <output class="flex justify-center items-center gap-2 text-gray-700 dark:text-gray-400">
     <app-spinner class="size-8" />
     <span>Loading&hellip;</span>
   </output>
 }
+
+<ng-template #liveIndicator>
+  @if (sourceWithStatus().loading()) {
+    <div class="flex justify-center py-2">
+      <output
+        class="flex items-center gap-2 text-gray-700 dark:text-gray-400 text-xs rounded-xl bg-white dark:bg-gray-900 px-3 py-1">
+        <app-spinner class="size-5" />
+        <span>Loading&hellip;</span>
+      </output>
+    </div>
+  } @else if (live()) {
+    <div class="flex justify-center py-2">
+      <div class="w-16 h-1 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+        <div
+          class="h-full bg-blue-500 dark:bg-blue-400 transition-[width] duration-100 ease-linear"
+          [style.width.%]="liveProgress()"></div>
+      </div>
+    </div>
+  }
+</ng-template>
