@@ -475,8 +475,9 @@ func getDeploymentStatus(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	order := types.ParseOrderDirection(r.FormValue("order"))
 	if deploymentStatus, err := db.GetDeploymentRevisionStatus(
-		ctx, deployment.ID, limit, before, after, filter,
+		ctx, deployment.ID, limit, before, after, filter, order,
 	); err != nil {
 		if errors.Is(err, apierrors.ErrBadRequest) {
 			http.Error(w, err.Error(), http.StatusBadRequest)

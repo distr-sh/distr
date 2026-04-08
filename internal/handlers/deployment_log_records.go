@@ -123,6 +123,7 @@ func getDeploymentLogsHandler() http.HandlerFunc {
 				return
 			}
 		}
+		order := types.ParseOrderDirection(r.FormValue("order"))
 
 		var secrets []types.SecretWithUpdatedBy
 		if dt, err := db.GetDeploymentTargetForDeploymentID(ctx, deployment.ID); err != nil {
@@ -138,7 +139,7 @@ func getDeploymentLogsHandler() http.HandlerFunc {
 		}
 
 		if records, err := db.GetDeploymentLogRecords(
-			ctx, deployment.ID, resource, limit, before, after, filter,
+			ctx, deployment.ID, resource, limit, before, after, filter, order,
 		); err != nil {
 			if errors.Is(err, apierrors.ErrBadRequest) {
 				http.Error(w, err.Error(), http.StatusBadRequest)

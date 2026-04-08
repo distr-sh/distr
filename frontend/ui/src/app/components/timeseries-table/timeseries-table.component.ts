@@ -3,24 +3,12 @@ import {Component, computed, inject, input, signal} from '@angular/core';
 import {toObservable} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faThumbtack, faThumbtackSlash} from '@fortawesome/free-solid-svg-icons';
-import {
-  catchError,
-  combineLatest,
-  EMPTY,
-  filter,
-  interval,
-  map,
-  merge,
-  Observable,
-  scan,
-  Subject,
-  switchMap,
-  tap,
-} from 'rxjs';
+import {catchError, combineLatest, EMPTY, interval, map, merge, Observable, scan, Subject, switchMap, tap} from 'rxjs';
 import {distinctBy} from '../../../util/arrays';
 import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
 import {ToastService} from '../../services/toast.service';
+import {OrderDirection} from '../../types/timeseries-options';
 import {SpinnerComponent} from '../spinner/spinner.component';
 
 export interface TimeseriesEntry {
@@ -88,14 +76,15 @@ export class TimeseriesTableComponent {
   public readonly source = input.required<TimeseriesSource>();
   public readonly exporter = input<TimeseriesExporter>();
   public readonly live = input<boolean>(true);
-  public readonly newestFirst = input<boolean>(true);
+  public readonly orderDirection = input(OrderDirection.DESC);
+  protected readonly newestFirst = computed(() => this.orderDirection() === OrderDirection.DESC);
 
   private readonly toastService = inject(ToastService);
 
   protected readonly faThumbtack = faThumbtack;
   protected readonly faThumbtackSlash = faThumbtackSlash;
 
-  protected hasOlder = true;
+  protected hasMore = true;
   protected isExporting = false;
   protected readonly pinnedEntryId = signal<string | null>(null);
 
@@ -104,24 +93,35 @@ export class TimeseriesTableComponent {
   private readonly accumulatedEntries$: Observable<TimeseriesEntry[]> = combineLatest([
     toObservable(this.sourceWithStatus),
     toObservable(this.live),
+    toObservable(this.newestFirst),
   ]).pipe(
-    switchMap(([source, live]) => {
+    switchMap(([source, live, newestFirst]) => {
       let nextBefore: Date | null = null;
       let nextAfter: Date | null = null;
       return merge(
         merge(
           source.load().pipe(catchError((err) => this.handleError(err))),
-          this.showOlder$.pipe(
-            map(() => nextBefore),
-            filter((before) => before !== null),
-            switchMap((before) => source.loadBefore(before).pipe(catchError((err) => this.handleError(err))))
+          this.loadMore$.pipe(
+            switchMap(() => {
+              if (newestFirst) {
+                return nextBefore !== null
+                  ? source.loadBefore(nextBefore).pipe(catchError((err) => this.handleError(err)))
+                  : EMPTY;
+              } else {
+                return nextAfter !== null
+                  ? source.loadAfter(nextAfter).pipe(catchError((err) => this.handleError(err)))
+                  : EMPTY;
+              }
+            })
           )
-        ).pipe(tap((entries) => (this.hasOlder = entries.length >= source.batchSize))),
+        ).pipe(tap((entries) => (this.hasMore = entries.length >= source.batchSize))),
         live
           ? interval(10_000).pipe(
-              map(() => nextAfter),
-              filter((after) => after !== null),
-              switchMap((after) => source.loadAfter(after).pipe(catchError((err) => this.handleError(err))))
+              switchMap(() =>
+                nextAfter !== null
+                  ? source.loadAfter(nextAfter).pipe(catchError((err) => this.handleError(err)))
+                  : EMPTY
+              )
             )
           : EMPTY
       ).pipe(
@@ -150,10 +150,10 @@ export class TimeseriesTableComponent {
     toObservable(this.newestFirst),
   ]).pipe(map(([entries, newestFirst]) => entries.sort(compareByDate(newestFirst))));
 
-  private readonly showOlder$ = new Subject<void>();
+  private readonly loadMore$ = new Subject<void>();
 
-  protected showOlder() {
-    this.showOlder$.next();
+  protected loadMore() {
+    this.loadMore$.next();
   }
 
   private handleError(err: unknown) {

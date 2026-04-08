@@ -8,6 +8,7 @@ import {
   TimeseriesTableComponent,
 } from '../../components/timeseries-table/timeseries-table.component';
 import {DeploymentStatusService} from '../../services/deployment-status.service';
+import {OrderDirection} from '../../types/timeseries-options';
 
 function statusToTimeseriesEntry(record: DeploymentRevisionStatus): TimeseriesEntry {
   return {id: record.id, date: record.createdAt!, status: record.type, detail: record.message};
@@ -19,6 +20,7 @@ class LogsTimeseriesSource implements TimeseriesSource {
   constructor(
     private readonly svc: DeploymentStatusService,
     private readonly deploymentId: string,
+    private readonly order: OrderDirection,
     private readonly after?: Date,
     private readonly before?: Date,
     private readonly filter?: string
@@ -31,19 +33,20 @@ class LogsTimeseriesSource implements TimeseriesSource {
         after: this.after,
         before: this.before,
         filter: this.filter,
+        order: this.order,
       })
       .pipe(map((logs) => logs.map(statusToTimeseriesEntry)));
   }
 
   loadAfter(after: Date): Observable<TimeseriesEntry[]> {
     return this.svc
-      .getStatuses(this.deploymentId, {limit: this.batchSize, after, filter: this.filter})
+      .getStatuses(this.deploymentId, {limit: this.batchSize, after, filter: this.filter, order: this.order})
       .pipe(map((logs) => logs.map(statusToTimeseriesEntry)));
   }
 
   loadBefore(before: Date): Observable<TimeseriesEntry[]> {
     return this.svc
-      .getStatuses(this.deploymentId, {limit: this.batchSize, before, filter: this.filter})
+      .getStatuses(this.deploymentId, {limit: this.batchSize, before, filter: this.filter, order: this.order})
       .pipe(map((logs) => logs.map(statusToTimeseriesEntry)));
   }
 }
@@ -54,7 +57,7 @@ class LogsTimeseriesSource implements TimeseriesSource {
     [source]="source()"
     [exporter]="exporter"
     [live]="live()"
-    [newestFirst]="newestFirst()" />`,
+    [orderDirection]="orderDirection()" />`,
   imports: [TimeseriesTableComponent],
 })
 export class DeploymentStatusTableComponent {
@@ -64,12 +67,20 @@ export class DeploymentStatusTableComponent {
   public readonly after = input<Date>();
   public readonly before = input<Date>();
   public readonly filter = input<string>();
-  public readonly newestFirst = input(true);
+  public readonly orderDirection = input(OrderDirection.DESC);
 
   protected readonly live = computed(() => !this.after() && !this.before());
 
   protected readonly source = computed(
-    () => new LogsTimeseriesSource(this.svc, this.deploymentId(), this.after(), this.before(), this.filter())
+    () =>
+      new LogsTimeseriesSource(
+        this.svc,
+        this.deploymentId(),
+        this.orderDirection(),
+        this.after(),
+        this.before(),
+        this.filter()
+      )
   );
 
   protected readonly exporter: TimeseriesExporter = {

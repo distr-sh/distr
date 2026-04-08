@@ -34,6 +34,27 @@ func ParseUserRole(value string) (UserRole, error) {
 	}
 }
 
+type OrderDirection string
+
+const (
+	OrderDirectionAsc  OrderDirection = "ASC"
+	OrderDirectionDesc OrderDirection = "DESC"
+)
+
+func ParseOrderDirection(value string) OrderDirection {
+	if value == string(OrderDirectionAsc) {
+		return OrderDirectionAsc
+	}
+	return OrderDirectionDesc
+}
+
+func EffectiveOrderDirection(order OrderDirection, hasAfter bool) OrderDirection {
+	if order == OrderDirectionAsc && hasAfter {
+		return OrderDirectionAsc
+	}
+	return OrderDirectionDesc
+}
+
 type SubscriptionType string
 
 func (st SubscriptionType) IsPro() bool {

@@ -92,6 +92,7 @@ func GetDeploymentRevisionStatus(
 	before time.Time,
 	after time.Time,
 	filter string,
+	order types.OrderDirection,
 ) ([]types.DeploymentRevisionStatus, error) {
 	if before.IsZero() {
 		before = time.Now()
@@ -123,7 +124,7 @@ func GetDeploymentRevisionStatus(
 		WHERE deployment_revision_id = ANY (@deploymentRevisionIds)
 			AND created_at BETWEEN @after AND @before
 			`+filterExpr+`
-		ORDER BY created_at DESC
+		ORDER BY created_at `+string(types.EffectiveOrderDirection(order, !after.IsZero()))+`
 		LIMIT @maxRows`,
 		pgx.NamedArgs{
 			"deploymentRevisionIds": deploymentRevisionIDs,

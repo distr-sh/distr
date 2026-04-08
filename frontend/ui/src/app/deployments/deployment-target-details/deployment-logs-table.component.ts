@@ -8,6 +8,7 @@ import {
 } from '../../components/timeseries-table/timeseries-table.component';
 import {DeploymentLogsService} from '../../services/deployment-logs.service';
 import {DeploymentLogRecord} from '../../types/deployment-log-record';
+import {OrderDirection} from '../../types/timeseries-options';
 
 const ansiEscapePattern = /\u001b[^m]*m/g;
 
@@ -27,6 +28,7 @@ class LogsTimeseriesSource implements TimeseriesSource {
     private readonly svc: DeploymentLogsService,
     private readonly deploymentId: string,
     private readonly resource: string,
+    private readonly order: OrderDirection,
     private readonly after?: Date,
     private readonly before?: Date,
     private readonly filter?: string
@@ -39,19 +41,20 @@ class LogsTimeseriesSource implements TimeseriesSource {
         after: this.after,
         before: this.before,
         filter: this.filter,
+        order: this.order,
       })
       .pipe(map((logs) => logs.map(logRecordToTimeseriesEntry)));
   }
 
   loadAfter(after: Date): Observable<TimeseriesEntry[]> {
     return this.svc
-      .get(this.deploymentId, this.resource, {limit: this.batchSize, after, filter: this.filter})
+      .get(this.deploymentId, this.resource, {limit: this.batchSize, after, filter: this.filter, order: this.order})
       .pipe(map((logs) => logs.map(logRecordToTimeseriesEntry)));
   }
 
   loadBefore(before: Date): Observable<TimeseriesEntry[]> {
     return this.svc
-      .get(this.deploymentId, this.resource, {limit: this.batchSize, before, filter: this.filter})
+      .get(this.deploymentId, this.resource, {limit: this.batchSize, before, filter: this.filter, order: this.order})
       .pipe(map((logs) => logs.map(logRecordToTimeseriesEntry)));
   }
 }
@@ -62,7 +65,7 @@ class LogsTimeseriesSource implements TimeseriesSource {
     [source]="source()"
     [exporter]="exporter"
     [live]="live()"
-    [newestFirst]="newestFirst()" />`,
+    [orderDirection]="orderDirection()" />`,
   imports: [TimeseriesTableComponent],
 })
 export class DeploymentLogsTableComponent {
@@ -73,7 +76,7 @@ export class DeploymentLogsTableComponent {
   public readonly after = input<Date>();
   public readonly before = input<Date>();
   public readonly filter = input<string>();
-  public readonly newestFirst = input(true);
+  public readonly orderDirection = input(OrderDirection.DESC);
 
   protected readonly live = computed(() => !this.after() && !this.before());
 
@@ -83,6 +86,7 @@ export class DeploymentLogsTableComponent {
         this.svc,
         this.deploymentId(),
         this.resource(),
+        this.orderDirection(),
         this.after(),
         this.before(),
         this.filter()

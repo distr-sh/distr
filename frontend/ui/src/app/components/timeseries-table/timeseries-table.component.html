@@ -1,5 +1,5 @@
 @if (entries$ | async; as entries) {
-  <div class="relative flex flex-col gap-4" [class.flex-col-reverse]="!newestFirst()">
+  <div class="relative flex flex-col gap-4">
     @if (sourceWithStatus().loading()) {
       <div class="absolute top-0 inset-e-0 rounded-xl bg-white dark:bg-gray-900 z-10 p-2">
         <output class="flex justify-center items-center gap-2 text-gray-700 dark:text-gray-400 text-xs">
@@ -63,13 +63,13 @@
       </tbody>
     </table>
 
-    @if (hasOlder) {
+    @if (hasMore && (newestFirst() || !live())) {
       <div class="flex items-center justify-center gap-2">
         <button
           type="button"
           class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
-          (click)="showOlder()">
-          Load older
+          (click)="loadMore()">
+          {{ newestFirst() ? 'Load older' : 'Load newer' }}
         </button>
       </div>
     }

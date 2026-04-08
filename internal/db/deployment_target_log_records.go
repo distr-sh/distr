@@ -26,6 +26,7 @@ func GetDeploymentTargetLogRecords(
 	limit int,
 	before, after time.Time,
 	filter string,
+	order types.OrderDirection,
 ) ([]types.DeploymentTargetLogRecord, error) {
 	if before.IsZero() {
 		before = time.Now()
@@ -44,7 +45,7 @@ func GetDeploymentTargetLogRecords(
 		WHERE deployment_target_id = @deployment_target_id
 			AND timestamp BETWEEN @after AND @before
 			`+filterExpr+`
-		ORDER BY timestamp DESC
+		ORDER BY timestamp `+string(types.EffectiveOrderDirection(order, !after.IsZero()))+`
 		LIMIT @limit`,
 		pgx.NamedArgs{
 			"deployment_target_id": deploymentTargetID,

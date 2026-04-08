@@ -169,6 +169,7 @@ func GetDeploymentLogRecords(
 	before time.Time,
 	after time.Time,
 	filter string,
+	order types.OrderDirection,
 ) ([]types.DeploymentLogRecord, error) {
 	if before.IsZero() {
 		before = time.Now()
@@ -186,7 +187,7 @@ func GetDeploymentLogRecords(
 			AND lr.resource = @resource
 			AND lr.timestamp BETWEEN @after AND @before
 			`+filterExpr+`
-		ORDER BY lr.timestamp DESC
+		ORDER BY lr.timestamp `+string(types.EffectiveOrderDirection(order, !after.IsZero()))+`
 		LIMIT @limit`,
 		pgx.NamedArgs{
 			"deploymentId": deploymentID,

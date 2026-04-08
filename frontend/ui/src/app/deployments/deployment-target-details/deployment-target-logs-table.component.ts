@@ -8,6 +8,7 @@ import {
 } from '../../components/timeseries-table/timeseries-table.component';
 import {DeploymentTargetLogsService} from '../../services/deployment-target-logs.service';
 import {DeploymentTargetLogRecord} from '../../types/deployment-target-log-record';
+import {OrderDirection} from '../../types/timeseries-options';
 
 function logRecordToTimeseriesEntry(record: DeploymentTargetLogRecord): TimeseriesEntry {
   return {id: record.id, date: record.timestamp, status: record.severity, detail: record.body.trim()};
@@ -19,6 +20,7 @@ class LogsTimeseriesSource implements TimeseriesSource {
   constructor(
     private readonly svc: DeploymentTargetLogsService,
     private readonly deploymentTargetId: string,
+    private readonly order: OrderDirection,
     private readonly after?: Date,
     private readonly before?: Date,
     private readonly filter?: string
@@ -31,19 +33,20 @@ class LogsTimeseriesSource implements TimeseriesSource {
         after: this.after,
         before: this.before,
         filter: this.filter,
+        order: this.order,
       })
       .pipe(map((logs) => logs.map(logRecordToTimeseriesEntry)));
   }
 
   loadAfter(after: Date): Observable<TimeseriesEntry[]> {
     return this.svc
-      .get(this.deploymentTargetId, {limit: this.batchSize, after, filter: this.filter})
+      .get(this.deploymentTargetId, {limit: this.batchSize, after, filter: this.filter, order: this.order})
       .pipe(map((logs) => logs.map(logRecordToTimeseriesEntry)));
   }
 
   loadBefore(before: Date): Observable<TimeseriesEntry[]> {
     return this.svc
-      .get(this.deploymentTargetId, {limit: this.batchSize, before, filter: this.filter})
+      .get(this.deploymentTargetId, {limit: this.batchSize, before, filter: this.filter, order: this.order})
       .pipe(map((logs) => logs.map(logRecordToTimeseriesEntry)));
   }
 }
@@ -54,7 +57,7 @@ class LogsTimeseriesSource implements TimeseriesSource {
     [source]="source()"
     [exporter]="exporter"
     [live]="live()"
-    [newestFirst]="newestFirst()" />`,
+    [orderDirection]="orderDirection()" />`,
   imports: [TimeseriesTableComponent],
 })
 export class DeploymentTargetLogsTableComponent {
@@ -64,12 +67,20 @@ export class DeploymentTargetLogsTableComponent {
   public readonly after = input<Date>();
   public readonly before = input<Date>();
   public readonly filter = input<string>();
-  public readonly newestFirst = input(true);
+  public readonly orderDirection = input(OrderDirection.DESC);
 
   protected readonly live = computed(() => !this.after() && !this.before());
 
   protected readonly source = computed(
-    () => new LogsTimeseriesSource(this.svc, this.deploymentTargetId(), this.after(), this.before(), this.filter())
+    () =>
+      new LogsTimeseriesSource(
+        this.svc,
+        this.deploymentTargetId(),
+        this.orderDirection(),
+        this.after(),
+        this.before(),
+        this.filter()
+      )
   );
 
   protected readonly exporter: TimeseriesExporter = {

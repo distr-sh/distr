@@ -15,6 +15,7 @@ import (
 	"github.com/distr-sh/distr/internal/handlerutil"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/subscription"
+	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	"go.uber.org/zap"
 )
@@ -48,8 +49,9 @@ func getDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 				return
 			}
 		}
+		order := types.ParseOrderDirection(r.FormValue("order"))
 
-		records, err := db.GetDeploymentTargetLogRecords(ctx, deploymentTarget.ID, limit, before, after, filter)
+		records, err := db.GetDeploymentTargetLogRecords(ctx, deploymentTarget.ID, limit, before, after, filter, order)
 		if err != nil {
 			if errors.Is(err, apierrors.ErrBadRequest) {
 				http.Error(w, err.Error(), http.StatusBadRequest)
