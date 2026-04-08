@@ -14,7 +14,11 @@ import (
 	"github.com/distr-sh/distr/internal/agentauth"
 	"github.com/distr-sh/distr/internal/agentenv"
 	"github.com/distr-sh/distr/internal/types"
+	dockercommand "github.com/docker/cli/cli/command"
 	dockerconfig "github.com/docker/cli/cli/config"
+	dockerflags "github.com/docker/cli/cli/flags"
+	composeapi "github.com/docker/compose/v5/pkg/api"
+	"github.com/docker/compose/v5/pkg/compose"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
@@ -22,7 +26,10 @@ import (
 func DockerEngineApply(
 	ctx context.Context,
 	deployment api.AgentDeployment,
+	statusCh chan<- string,
 ) (agentDeployment *AgentDeployment, status string, err error) {
+	defer close(statusCh)
+
 	agentDeployment, err = NewAgentDeployment(deployment)
 	if err != nil {
 		return agentDeployment, status, err
@@ -34,9 +41,9 @@ func DockerEngineApply(
 	}
 
 	if *deployment.DockerType == types.DockerTypeSwarm {
-		status, err = ApplyComposeFileSwarm(ctx, deployment)
+		status, err = ApplyComposeFileSwarm(ctx, deployment, statusCh)
 	} else {
-		status, err = ApplyComposeFile(ctx, deployment)
+		status, err = ApplyComposeFile(ctx, deployment, statusCh)
 	}
 
 	if err == nil {
@@ -52,7 +59,11 @@ func DockerEngineApply(
 	return agentDeployment, status, err
 }
 
-func ApplyComposeFile(ctx context.Context, deployment api.AgentDeployment) (string, error) {
+func ApplyComposeFile(
+	ctx context.Context,
+	deployment api.AgentDeployment,
+	statusCh chan<- string,
+) (string, error) {
 	var envFile *os.File
 	var err error
 
@@ -74,6 +85,12 @@ func ApplyComposeFile(ctx context.Context, deployment api.AgentDeployment) (stri
 		}
 	}
 
+	statusCh <- "pulling docker images"
+	if err := PullComposeImages(ctx, deployment); err != nil {
+		return "", fmt.Errorf("failed to pull compose images: %w", err)
+	}
+
+	statusCh <- "applying compose project"
 	composeArgs := []string{"compose"}
 	if envFile != nil {
 		composeArgs = append(composeArgs, fmt.Sprintf("--env-file=%v", envFile.Name()))
@@ -96,7 +113,54 @@ func ApplyComposeFile(ctx context.Context, deployment api.AgentDeployment) (stri
 	}
 }
 
-func ApplyComposeFileSwarm(ctx context.Context, deployment api.AgentDeployment) (string, error) {
+func PullComposeImages(ctx context.Context, deployment api.AgentDeployment) error {
+	composeFile, err := os.CreateTemp("", "distr-compose-*.yaml")
+	if err != nil {
+		return fmt.Errorf("failed to create temp compose file: %w", err)
+	}
+	defer func() {
+		if err := os.Remove(composeFile.Name()); err != nil {
+			logger.Error("failed to remove temp compose file", zap.Error(err))
+		}
+	}()
+	if _, err := composeFile.Write(deployment.ComposeFile); err != nil {
+		return fmt.Errorf("failed to write temp compose file: %w", err)
+	}
+	_ = composeFile.Close()
+
+	dockerCli, err := dockercommand.NewDockerCli()
+	if err != nil {
+		return fmt.Errorf("failed to create docker CLI object: %w", err)
+	}
+
+	if err := dockerCli.Initialize(DockerCLIOpts(deployment)); err != nil {
+		return fmt.Errorf("failed to initialize docker CLI object: %w", err)
+	}
+
+	composeService, err := compose.NewComposeService(dockerCli)
+	if err != nil {
+		return fmt.Errorf("failed to initialize compose service: %w", err)
+	}
+
+	project, err := composeService.LoadProject(ctx, composeapi.ProjectLoadOptions{
+		ConfigPaths: []string{composeFile.Name()},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to load compose project: %w", err)
+	}
+
+	if err = composeService.Pull(ctx, project, composeapi.PullOptions{}); err != nil {
+		return fmt.Errorf("failed to pull images: %w", err)
+	}
+
+	return nil
+}
+
+func ApplyComposeFileSwarm(
+	ctx context.Context,
+	deployment api.AgentDeployment,
+	statusCh chan<- string,
+) (string, error) {
 	// Step 1 Ensure Docker Swarm is initialized
 	initCmd := exec.CommandContext(ctx, "docker", "info", "--format", "{{.Swarm.LocalNodeState}}")
 	initOutput, err := initCmd.CombinedOutput()
@@ -134,6 +198,8 @@ func ApplyComposeFileSwarm(ctx context.Context, deployment api.AgentDeployment) 
 			envVars = append(envVars, fmt.Sprintf("%s=%s", key, value))
 		}
 	}
+
+	statusCh <- "applying compose project"
 
 	// Deploy the stack
 	composeArgs := []string{
@@ -211,6 +277,14 @@ func DockerConfigEnv(deployment api.AgentDeployment) []string {
 	} else {
 		return nil
 	}
+}
+
+func DockerCLIOpts(deployment api.AgentDeployment) *dockerflags.ClientOptions {
+	var opts dockerflags.ClientOptions
+	if len(deployment.RegistryAuth) > 0 || hasRegistryImages(deployment) {
+		opts.ConfigDir = agentauth.DockerConfigDir(deployment)
+	}
+	return &opts
 }
 
 // hasRegistryImages parses the compose file in order to check whether one of the services uses an image hosted on
