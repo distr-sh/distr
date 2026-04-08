@@ -86,7 +86,7 @@ func ApplyComposeFile(
 	}
 
 	statusCh <- "pulling docker images"
-	if err := PullComposeImages(ctx, deployment); err != nil {
+	if err := PullComposeImages(ctx, deployment, statusCh); err != nil {
 		return "", fmt.Errorf("failed to pull compose images: %w", err)
 	}
 
@@ -113,7 +113,38 @@ func ApplyComposeFile(
 	}
 }
 
-func PullComposeImages(ctx context.Context, deployment api.AgentDeployment) error {
+type pullEventProcessor struct {
+	statusCh chan<- string
+}
+
+func (p *pullEventProcessor) Start(_ context.Context, _ string) {}
+func (p *pullEventProcessor) Done(_ string, _ bool)             {}
+func (p *pullEventProcessor) On(events ...composeapi.Resource) {
+	for _, e := range events {
+		var msg string
+		switch e.Text {
+		case composeapi.StatusPulling, composeapi.StatusPulled:
+			// e.ID is "Image nginx:latest" for image-level events
+			image := strings.TrimPrefix(e.ID, "Image ")
+			msg = fmt.Sprintf("%s: %s", image, e.Text)
+		case composeapi.StatusDownloading, composeapi.StatusDownloadComplete:
+			// e.ParentID is the image name, e.ID is the layer digest
+			image := strings.TrimPrefix(e.ParentID, "Image ")
+			msg = fmt.Sprintf("%s (%s): %s", image, e.ID, e.Text)
+			if e.Percent > 0 {
+				msg = fmt.Sprintf("%s (%d%%)", msg, e.Percent)
+			}
+		default:
+			continue
+		}
+		select {
+		case p.statusCh <- msg:
+		default:
+		}
+	}
+}
+
+func PullComposeImages(ctx context.Context, deployment api.AgentDeployment, statusCh chan<- string) error {
 	composeFile, err := os.CreateTemp("", "distr-compose-*.yaml")
 	if err != nil {
 		return fmt.Errorf("failed to create temp compose file: %w", err)
@@ -137,7 +168,7 @@ func PullComposeImages(ctx context.Context, deployment api.AgentDeployment) erro
 		return fmt.Errorf("failed to initialize docker CLI object: %w", err)
 	}
 
-	composeService, err := compose.NewComposeService(dockerCli)
+	composeService, err := compose.NewComposeService(dockerCli, compose.WithEventProcessor(&pullEventProcessor{statusCh: statusCh}))
 	if err != nil {
 		return fmt.Errorf("failed to initialize compose service: %w", err)
 	}
