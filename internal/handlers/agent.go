@@ -315,6 +315,8 @@ func agentPutDeploymentLogsHandler() http.HandlerFunc {
 			return
 		}
 
+		sanitizeLogRecords(&records)
+
 		if err := db.ValidateDeploymentLogRecords(ctx, auth.CurrentDeploymentTargetID(), records); err != nil {
 			if errors.Is(err, apierrors.ErrNotFound) {
 				http.Error(w, fmt.Sprintf("bad request: %v", err), http.StatusBadRequest)
@@ -337,6 +339,21 @@ func agentPutDeploymentLogsHandler() http.HandlerFunc {
 
 		w.WriteHeader(http.StatusNoContent)
 	}
+}
+
+func sanitizeLogRecords(records *[]api.DeploymentLogRecord) {
+	if records == nil {
+		return
+	}
+
+	filteredRecords := make([]api.DeploymentLogRecord, 0, len(*records))
+	for _, record := range *records {
+		record.Body = strings.ReplaceAll(record.Body, "\x00", "")
+		if record.Body != "" {
+			filteredRecords = append(filteredRecords, record)
+		}
+	}
+	*records = filteredRecords
 }
 
 func agentPutDeploymentTargetLogsHandler() http.HandlerFunc {
