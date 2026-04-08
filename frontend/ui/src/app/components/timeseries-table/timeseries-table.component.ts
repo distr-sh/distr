@@ -16,6 +16,7 @@ export interface TimeseriesEntry {
   date: string;
   status: string;
   detail: string;
+  resource?: string;
 }
 
 export interface TimeseriesSource {
@@ -77,7 +78,9 @@ export class TimeseriesTableComponent {
   public readonly exporter = input<TimeseriesExporter>();
   public readonly live = input<boolean>(true);
   public readonly orderDirection = input(OrderDirection.DESC);
+  public readonly resourceColorMap = input<Record<string, string>>({});
   protected readonly newestFirst = computed(() => this.orderDirection() === OrderDirection.DESC);
+  protected readonly showResourceColumn = computed(() => Object.keys(this.resourceColorMap()).length > 1);
 
   private readonly toastService = inject(ToastService);
 

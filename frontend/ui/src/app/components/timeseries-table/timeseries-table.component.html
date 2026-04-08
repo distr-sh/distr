@@ -15,6 +15,9 @@
         <tr>
           <th scope="col"></th>
           <th scope="col">Date</th>
+          @if (showResourceColumn()) {
+            <th scope="col">Service</th>
+          }
           <th scope="col">Status</th>
           <th scope="col">Details</th>
         </tr>
@@ -43,6 +46,11 @@
               </button>
             </td>
             <th class="px-1 font-medium whitespace-nowrap">{{ entry.date | date: 'medium' }}</th>
+            @if (showResourceColumn()) {
+              <td class="px-1 whitespace-nowrap text-xs font-mono" [style.color]="resourceColorMap()[entry.resource!]">
+                {{ entry.resource }}
+              </td>
+            }
             <td
               class="uppercase px-1"
               [class.text-red-500]="entry.status.toLowerCase().includes('err')"

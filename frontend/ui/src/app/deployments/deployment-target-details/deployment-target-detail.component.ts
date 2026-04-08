@@ -78,8 +78,8 @@ export class DeploymentTargetDetailComponent {
   protected readonly deploymentTargetId = toSignal(this.deploymentTargetId$);
   private readonly deploymentId$ = this.route.queryParamMap.pipe(map((p) => p.get('deploymentId')));
   protected readonly deploymentId = toSignal(this.deploymentId$);
-  private readonly resource$ = this.route.queryParamMap.pipe(map((p) => p.get('resource')));
-  protected readonly resource = toSignal(this.resource$);
+  private readonly selectedResources$ = this.route.queryParamMap.pipe(map((p) => p.getAll('resources')));
+  protected readonly selectedResources = toSignal(this.selectedResources$, {initialValue: [] as string[]});
   private readonly after$ = this.route.queryParamMap.pipe(
     map((p) => (p.has('from') ? new Date(p.get('from')!) : undefined))
   );
@@ -106,7 +106,7 @@ export class DeploymentTargetDetailComponent {
     return id ? this.selectedDeploymentTarget()?.deployments?.find((d) => d.id === id) : undefined;
   });
 
-  protected readonly resources = toSignal(
+  protected readonly availableResources = toSignal(
     this.route.queryParamMap.pipe(
       map((p) => p.get('deploymentId')),
       switchMap((id) => (id ? this.deploymentLogsService.getResources(id) : of(null)))
@@ -175,17 +175,25 @@ export class DeploymentTargetDetailComponent {
     this.deploymentDropdown.set(false);
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: {deploymentId: deployment?.id ?? null, resource: null},
+      queryParams: {deploymentId: deployment?.id ?? null, resources: null},
       queryParamsHandling: 'merge',
     });
   }
 
-  protected selectResource(resource: string | undefined) {
-    this.form.patchValue({filter: ''});
-    this.resourceDropdown.set(false);
+  protected toggleResource(resource: string) {
+    const current = this.selectedResources();
+    const updated = current.includes(resource) ? current.filter((r) => r !== resource) : [...current, resource];
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: {resource: resource ?? null},
+      queryParams: {resources: updated.length > 0 ? updated : null},
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  protected clearResources() {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {resources: null},
       queryParamsHandling: 'merge',
     });
   }

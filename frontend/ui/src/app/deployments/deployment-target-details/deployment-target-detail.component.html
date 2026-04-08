@@ -111,7 +111,11 @@
                 #resourceDropdownTrigger
                 (click)="toggleResourceDropdown()"
                 class="inline-flex items-center gap-1 p-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
-                {{ resource() ?? 'Deployment Status' }}
+                @if (selectedResources().length > 0) {
+                  {{ selectedResources().length }} services selected
+                } @else {
+                  Deployment Status
+                }
                 <fa-icon
                   class="transition duration-150 ease-in-out"
                   [class.rotate-x-180]="resourceDropdown()"
@@ -134,16 +138,26 @@
                       <button class="px-4 w-full text-left" (click)="selectDeployment(undefined)">Agent Logs</button>
                     </li>
                     <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
-                      <button class="px-4 w-full text-left" (click)="selectResource(undefined)">
-                        Deployment Status
-                      </button>
+                      <button class="px-4 w-full text-left" (click)="clearResources()">Deployment Status</button>
                     </li>
-                    @for (r of resources()?.active; track r) {
-                      <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
-                        <button class="px-4 w-full text-left" (click)="selectResource(r)">{{ r }}</button>
+                    @for (r of availableResources()?.active; track r) {
+                      <li class="w-full border-t border-gray-100 dark:border-gray-600">
+                        <div class="flex items-center ps-3">
+                          <input
+                            [id]="'resource-' + r"
+                            type="checkbox"
+                            [checked]="selectedResources().includes(r)"
+                            (change)="toggleResource(r)"
+                            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-xs focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+                          <label
+                            [for]="'resource-' + r"
+                            class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                            {{ r }}
+                          </label>
+                        </div>
                       </li>
                     }
-                    @if (resources()?.archived?.length) {
+                    @if (availableResources()?.archived?.length) {
                       <li class="border-t border-gray-100 dark:border-gray-600">
                         <button
                           class="px-4 py-2 w-full text-left text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white flex items-center gap-1"
@@ -156,11 +170,21 @@
                         </button>
                       </li>
                       @if (showArchivedResources()) {
-                        @for (r of resources()?.archived; track r) {
-                          <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
-                            <button class="px-4 w-full text-left text-gray-400" (click)="selectResource(r)">
-                              {{ r }}
-                            </button>
+                        @for (r of availableResources()?.archived; track r) {
+                          <li class="w-full border-t border-gray-100 dark:border-gray-600">
+                            <div class="flex items-center ps-3">
+                              <input
+                                [id]="'resource-archived-' + r"
+                                type="checkbox"
+                                [checked]="selectedResources().includes(r)"
+                                (change)="toggleResource(r)"
+                                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-xs focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+                              <label
+                                [for]="'resource-archived-' + r"
+                                class="w-full py-3 ms-2 text-sm font-medium text-gray-400 dark:text-gray-500">
+                                {{ r }}
+                              </label>
+                            </div>
                           </li>
                         }
                       }
@@ -239,10 +263,10 @@
       </form>
 
       @if (deploymentId(); as deploymentId) {
-        @if (resource(); as resource) {
+        @if (selectedResources().length > 0) {
           <app-deployment-logs-table
             [deploymentId]="deploymentId"
-            [resource]="resource"
+            [resources]="selectedResources()"
             [after]="after()"
             [before]="before()"
             [filter]="filter()"
