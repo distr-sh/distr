@@ -1,11 +1,10 @@
 <form [formGroup]="editForm" class="space-y-4">
   @if (isEditMode()) {
-    <div class="flex items-start p-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-700 dark:text-blue-400">
-      <fa-icon [icon]="faCircleInfo" class="mr-2 mt-0.5 shrink-0"></fa-icon>
-      <span
-        >License keys are immutable. Only the name and description can be changed after creation. The license token,
-        payload, expiration, and customer assignment cannot be modified or revoked.</span
-      >
+    <div
+      class="flex items-start gap-2 p-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-700 dark:text-blue-400">
+      <fa-icon [icon]="faCircleInfo" />
+      Changing the dates or payload will create a new revision. The customer assignment cannot be changed after
+      creation.
     </div>
   }
 

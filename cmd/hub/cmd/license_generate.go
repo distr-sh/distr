@@ -118,7 +118,7 @@ func runGenerateLicenseKey(ctx context.Context, opts GenerateLicenseKeyOptions) 
 		return err
 	}
 
-	token, err := licensekey.GenerateToken(&license, env.Host())
+	token, err := licensekey.GenerateToken(licensekey.FromLicenseKey(license), env.Host())
 	if err != nil {
 		log.Error("token creation error", zap.Error(err))
 		return err

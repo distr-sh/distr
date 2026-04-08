@@ -44,6 +44,7 @@
                 <th scope="col" class="p-4">Customer</th>
               }
               <th scope="col" class="p-4">Expires</th>
+              <th scope="col" class="p-4">Last Updated</th>
               <th scope="col" class="p-4"></th>
             </tr>
           </thead>
@@ -72,6 +73,11 @@
                   @if (isExpired(license)) {
                     <span class="text-red-600 dark:text-red-400">(expired)</span>
                   }
+                </td>
+                <td
+                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+                  [title]="license.lastRevisedAt | date: 'medium'">
+                  {{ license.lastRevisedAt | date }}
                 </td>
                 <td
                   class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">

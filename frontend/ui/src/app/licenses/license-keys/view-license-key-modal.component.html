@@ -1,4 +1,4 @@
-<div class="z-50 w-192 max-w-full max-h-full overflow-x-hidden overflow-y-auto">
+<div class="z-50 w-3xl max-w-full max-h-full overflow-x-hidden overflow-y-auto">
   <div class="relative w-full max-h-full">
     <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
       <!-- Modal header -->
@@ -50,6 +50,16 @@
               [class.border-transparent]="activeTab() !== 'decoded'">
               Decoded License
             </button>
+            <button
+              type="button"
+              (click)="activeTab.set('revisions')"
+              class="text-sm cursor-pointer inline-flex items-center justify-center p-2 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+              [class.text-blue-600]="activeTab() === 'revisions'"
+              [class.dark:text-blue-500]="activeTab() === 'revisions'"
+              [class.border-blue-600]="activeTab() === 'revisions'"
+              [class.border-transparent]="activeTab() !== 'revisions'">
+              Revisions
+            </button>
           </div>
 
           <div class="mt-4">
@@ -81,6 +91,42 @@
                 [formControl]="decodedControl"
                 class="block w-full rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white [&_.cm-editor]:min-h-32 [&_.cm-editor.cm-focused]:outline-none">
               </app-editor>
+            }
+
+            @if (activeTab() === 'revisions') {
+              <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
+                  <tr>
+                    <th scope="col" class="px-4 py-2">Created</th>
+                    <th scope="col" class="px-4 py-2">Not Before</th>
+                    <th scope="col" class="px-4 py-2">Expires At</th>
+                    <th scope="col" class="px-4 py-2">License Data</th>
+                    <th scope="col"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (
+                    revision of revisionsResource.value() ?? [];
+                    track revision.id;
+                    let first = $first, i = $index
+                  ) {
+                    <tr
+                      class="border-t border-gray-200 dark:border-gray-600"
+                      [class.bg-blue-50]="first"
+                      [class.dark:bg-gray-600]="first">
+                      <td class="px-4 py-2 whitespace-nowrap">{{ revision.createdAt | date: 'medium' }}</td>
+                      <td class="px-4 py-2 whitespace-nowrap">{{ revision.notBefore | date }}</td>
+                      <td class="px-4 py-2 whitespace-nowrap">{{ revision.expiresAt | date }}</td>
+                      <td class="px-4 py-2 font-mono text-xs max-w-48 overflow-x-auto">
+                        <app-editor language="json" [formControl]="revisionPayloadControls()[i]" />
+                      </td>
+                      <td class="px-4 py-2 text-end">
+                        <app-clip [clip]="revision.token">Copy license</app-clip>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
             }
           </div>
         </div>

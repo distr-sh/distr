@@ -67,7 +67,7 @@ export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAcces
           id: val.id,
           name: val.name,
           description: val.description,
-          payload: this.isEditMode() ? {} : JSON.parse(val.payload),
+          payload: JSON.parse(val.payload),
           notBefore: dayjs(val.notBefore).toDate().toISOString(),
           expiresAt: dayjs(val.expiresAt).toDate().toISOString(),
           customerOrganizationId: val.customerOrganizationId,
@@ -104,21 +104,9 @@ export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAcces
         customerOrganizationId: license.customerOrganizationId,
       });
       this.editForm.controls.customerOrganizationId.disable({emitEvent: false});
-      if (isEdit) {
-        this.editForm.controls.expiresAt.disable();
-        this.editForm.controls.notBefore.disable();
-        this.editForm.controls.payload.disable();
-      } else {
-        this.editForm.controls.expiresAt.enable();
-        this.editForm.controls.notBefore.enable();
-        this.editForm.controls.payload.enable();
-      }
     } else {
       this.isEditMode.set(false);
       this.editForm.reset({payload: '{}', notBefore: this.today, expiresAt: this.inOneYear});
-      this.editForm.controls.expiresAt.enable();
-      this.editForm.controls.notBefore.enable();
-      this.editForm.controls.payload.enable();
       this.editForm.controls.customerOrganizationId.disable({emitEvent: false});
     }
   }

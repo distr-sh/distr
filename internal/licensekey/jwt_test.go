@@ -31,15 +31,16 @@ func TestGenerateToken(t *testing.T) {
 	g := NewWithT(t)
 	key := testKey(t)
 	now := time.Now().Truncate(time.Second)
-	licenseKey := &types.LicenseKey{
-		ID:        uuid.New(),
-		CreatedAt: now,
-		NotBefore: now,
-		ExpiresAt: now.Add(24 * time.Hour),
-		Payload:   json.RawMessage(`{"plan":"enterprise"}`),
+	licenseKey := types.LicenseKey{
+		ID:            uuid.New(),
+		CreatedAt:     now,
+		LastRevisedAt: now,
+		NotBefore:     now,
+		ExpiresAt:     now.Add(24 * time.Hour),
+		Payload:       json.RawMessage(`{"plan":"enterprise"}`),
 	}
 
-	token, err := generateToken(key, licenseKey, "test-issuer")
+	token, err := generateToken(key, FromLicenseKey(licenseKey), "test-issuer")
 	g.Expect(err).ToNot(HaveOccurred())
 
 	pubKey, err := key.PublicKey()
@@ -66,15 +67,16 @@ func TestGenerateToken_ReservedClaimsStripped(t *testing.T) {
 	g := NewWithT(t)
 	key := testKey(t)
 	now := time.Now().Truncate(time.Second)
-	licenseKey := &types.LicenseKey{
-		ID:        uuid.New(),
-		CreatedAt: now,
-		NotBefore: now,
-		ExpiresAt: now.Add(24 * time.Hour),
-		Payload:   json.RawMessage(`{"exp":99999,"plan":"pro"}`),
+	licenseKey := types.LicenseKey{
+		ID:            uuid.New(),
+		CreatedAt:     now,
+		LastRevisedAt: now,
+		NotBefore:     now,
+		ExpiresAt:     now.Add(24 * time.Hour),
+		Payload:       json.RawMessage(`{"exp":99999,"plan":"pro"}`),
 	}
 
-	token, err := generateToken(key, licenseKey, "test-issuer")
+	token, err := generateToken(key, FromLicenseKey(licenseKey), "test-issuer")
 	g.Expect(err).ToNot(HaveOccurred())
 
 	pubKey, _ := key.PublicKey()
