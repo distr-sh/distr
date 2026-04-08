@@ -128,6 +128,15 @@ func startMetrics(ctx context.Context) {
 		if dm, err := diskMetrics(ctx); err != nil {
 			logger.Warn("failed to collect disk metrics", zap.Error(err))
 		} else {
+			for _, d := range dm {
+				logger.Debug("disk usage",
+					zap.String("device", d.Device),
+					zap.String("path", d.Path),
+					zap.String("fsType", d.FsType),
+					zap.Int64("total", d.BytesTotal),
+					zap.Int64("used", d.BytesUsed),
+				)
+			}
 			reportMetrics.DiskMetrics = dm
 		}
 

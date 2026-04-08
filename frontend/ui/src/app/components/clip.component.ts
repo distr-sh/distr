@@ -17,6 +17,7 @@ import {ToastService} from '../services/toast.service';
       } @else {
         <fa-icon [icon]="faClipboardCheck" />
       }
+      <ng-content />
     </button>
   `,
 })
@@ -32,7 +33,7 @@ export class ClipComponent {
 
   public async writeClip() {
     await navigator.clipboard.writeText(this.clip());
-    this.toast.success('copied to clipboard');
+    this.toast.success('Copied to clipboard');
     this.copied = true;
     setTimeout(() => (this.copied = false), 2000);
   }

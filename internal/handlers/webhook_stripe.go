@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/internal/apierrors"
@@ -18,10 +19,12 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
-	"github.com/stripe/stripe-go/v84"
-	"github.com/stripe/stripe-go/v84/webhook"
+	"github.com/stripe/stripe-go/v85"
+	"github.com/stripe/stripe-go/v85/webhook"
 	"go.uber.org/zap"
 )
+
+var errNoOrganization = errors.New("stripe subscription metadata missing or invalid organizationId")
 
 func stripeWebhookHandler() http.HandlerFunc {
 	endpointSecret := env.StripeWebhookSecret()
@@ -46,6 +49,14 @@ func stripeWebhookHandler() http.HandlerFunc {
 		event, err := webhook.ConstructEvent(payload, req.Header.Get("Stripe-Signature"), *endpointSecret)
 		if err != nil {
 			log.Warn("webhook signature verification failed", zap.Error(err))
+
+			if env.StripeWebhookVersionMismatchBehavior() == env.StripeWebhookVersionMismatchBehaviorIgnore {
+				if event.APIVersion != "" && !strings.HasSuffix(event.APIVersion, "."+stripe.APIMajorVersion) {
+					w.WriteHeader(http.StatusOK)
+					return
+				}
+			}
+
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -91,7 +102,9 @@ func stripeWebhookHandler() http.HandlerFunc {
 			log.Info("unhandled stripe event")
 		}
 
-		if err != nil {
+		if errors.Is(err, errNoOrganization) {
+			w.WriteHeader(http.StatusNoContent)
+		} else if err != nil {
 			log.Error("Error handling stripe subscription", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			switch {
@@ -114,7 +127,7 @@ func handleStripeSubscription(ctx context.Context, sub stripe.Subscription) erro
 	orgID, err := uuid.Parse(sub.Metadata["organizationId"])
 	if err != nil {
 		log.Warn("subscription event with missing or invalid organizationId", zap.Error(err))
-		return fmt.Errorf("%w: %w", apierrors.ErrBadRequest, err)
+		return fmt.Errorf("%w: %w", errNoOrganization, err)
 	}
 
 	return db.RunTxRR(ctx, func(ctx context.Context) error {

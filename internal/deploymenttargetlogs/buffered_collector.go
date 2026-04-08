@@ -2,6 +2,8 @@ package deploymenttargetlogs
 
 import (
 	"errors"
+	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -10,11 +12,13 @@ import (
 
 const (
 	defaultBufferSize    = 128
+	defaultMaxSize       = 1024
 	defaultFlushInterval = 30 * time.Second
 )
 
 type BufferedCollector struct {
 	Size          int
+	MaxSize       int
 	FlushInterval time.Duration
 	Delegate      Exporter
 
@@ -90,15 +94,32 @@ func (bc *BufferedCollector) sizeOrDefault() int {
 	return defaultBufferSize
 }
 
+func (bc *BufferedCollector) maxSizeOrDefault() int {
+	if bc.MaxSize != 0 {
+		return bc.MaxSize
+	}
+	return defaultMaxSize
+}
+
 func (bc *BufferedCollector) resetBuffer() {
 	bc.buf = make([]api.DeploymentTargetLogRecord, 0, bc.sizeOrDefault())
 }
 
 func (bc *BufferedCollector) appendBuffer(record api.DeploymentTargetLogRecord) error {
+	if bc.isMaxBufferSize() {
+		if err := bc.syncNoLock(); err != nil {
+			// Max buffer size is reached and sync failed --> write error (the record will be lost!)
+			return err
+		}
+	}
+
 	bc.buf = append(bc.buf, record)
+
 	if bc.isSyncRequired() {
 		if err := bc.syncNoLock(); err != nil {
-			return err
+			// Do not return an error, because a failure to sync at this point does not indicate a write error.
+			// Print an error to stderr, we can not use the zap logger here (zap does this too internally).
+			fmt.Fprintf(os.Stderr, "%v sync error: %v\n", time.Now(), err)
 		}
 	}
 	return nil
@@ -119,6 +140,10 @@ func (bc *BufferedCollector) syncNoLock() error {
 
 func (bc *BufferedCollector) isSyncRequired() bool {
 	return len(bc.buf) >= bc.sizeOrDefault()
+}
+
+func (bc *BufferedCollector) isMaxBufferSize() bool {
+	return len(bc.buf) >= bc.maxSizeOrDefault()
 }
 
 var (

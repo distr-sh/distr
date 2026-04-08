@@ -4,6 +4,7 @@ import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import * as Sentry from '@sentry/angular';
 import posthog from 'posthog-js';
 import {filter, Observable} from 'rxjs';
+import {ToastContainerComponent} from './components/toast-container.component';
 import {AuthService} from './services/auth.service';
 import {ColorSchemeService} from './services/color-scheme.service';
 import {ImageUploadService} from './services/image-upload.service';
@@ -12,9 +13,9 @@ import {OverlayService} from './services/overlay.service';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, FontAwesomeModule],
+  imports: [RouterOutlet, FontAwesomeModule, ToastContainerComponent],
   providers: [OverlayService, ImageUploadService],
-  template: `<router-outlet></router-outlet>`,
+  template: `<router-outlet /><app-toast-container />`,
 })
 export class AppComponent implements OnInit {
   private readonly router = inject(Router);

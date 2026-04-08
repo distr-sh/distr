@@ -1,6 +1,6 @@
 {
   "name": "@distr-sh/distr",
-  "version": "2.16.0",
+  "version": "2.16.2",
   "type": "module",
   "license": "Apache-2.0",
   "description": "Distr",
@@ -48,9 +48,7 @@
     "dayjs": "^1.11.13",
     "flowbite": "^3.0.0",
     "jwt-decode": "^4.0.0",
-    "marked": "^17.0.0",
-    "ngx-markdown": "^21.0.1",
-    "ngx-toastr": "^20.0.5",
+    "marked": "^18.0.0",
     "posthog-js": "^1.187.0",
     "rxjs": "~7.8.0",
     "semver": "^7.7.1",

@@ -8,34 +8,36 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
-import agentContLogsDark from '~/assets/docs/agents/monitoring/logs-and-metrics/container-logs-dark.png';
-import agentContLogsLight from '~/assets/docs/agents/monitoring/logs-and-metrics/container-logs-light.png';
-import agentContLogsEnableLight from '~/assets/docs/agents/monitoring/logs-and-metrics/enable-cont-logs-light.png';
-import agentContLogsEnableDark from '~/assets/docs/agents/monitoring/logs-and-metrics/enable-cont-logs-dark.png';
+import logViewerResourceDropdownLight from '~/assets/docs/agents/monitoring/logs-and-metrics/log-viewer-resource-dropdown-light.png';
+import logViewerResourceDropdownDark from '~/assets/docs/agents/monitoring/logs-and-metrics/log-viewer-resource-dropdown-dark.png';
+import enableContLogsLight from '~/assets/docs/agents/monitoring/logs-and-metrics/enable-cont-logs-light.png';
+import enableContLogsDark from '~/assets/docs/agents/monitoring/logs-and-metrics/enable-cont-logs-dark.png';
 
 Distr gives you three layers of observability for every deployment target: **status indicators** that show health at a glance, **logs** that let you dig into what happened, and **metrics** that track resource usage over time.
 
 ## Deployment Target Status
 
-Every deployment target shows a colored dot to the left of its name in the Deployments view. This status is always on — there is nothing to enable.
+Every deployment target shows a colored dot to the left of its name in the Deployments view.
 
 The Distr agent reports its health every 5 seconds, so the status reflects near-real-time connectivity:
 
 - ⚫ **Not connected** — The agent has never connected, or credentials have been invalidated.
 - 🟢 **Connected** — The agent is actively reporting.
-- 🟡 **Stale** — The agent was connected before but has not reported in the last 60 seconds. Your deployments may still be running; Distr has simply lost contact with the agent. Only in this state can you reconnect by generating new credentials from the **⋮** menu.
+- 🟡 **Stale** — The agent was connected before but has not reported in the last 60 seconds. Your deployments may still be running; Distr has simply lost contact with the agent. See [Troubleshooting: Stale Status](#troubleshooting-stale-status) for how to reconnect.
 
 ## Deployment Status
 
-Each deployment within a target also has its own status indicator. This tells you whether the application itself is healthy, not just whether the agent is reachable:
+Each deployment within a target also has its own colored dot and status label. This tells you whether the application itself is healthy, not just whether the agent is reachable:
 
 - ⚫ **No status** — The agent has not reported anything for this deployment yet.
-- 🔴 **Error** — Something is wrong. Healthchecks are failing or the deployment encountered an error. Check the status logs for details.
+- 🔴 **Error** — Something is wrong. Healthchecks are failing or the deployment encountered an error.
 - 🟡 **Stale** — The agent has not reported this deployment's health in the last 60 seconds.
 - 🔵 **Progressing** — The agent is installing or upgrading the deployment, or containers are still starting up.
 - <strong class="text-green-500 text-xl leading-none ml-0.5">O</strong>
   **Running** — The deployment is running but no healthchecks are configured.
 - 🟢 **Healthy** — The deployment is running and all healthchecks are passing.
+
+Clicking the status label (e.g. "Running") opens the [log viewer](#log-viewer) with the full status history for that deployment.
 
 ### Healthchecks
 
@@ -49,62 +51,57 @@ Configure healthchecks so Distr can distinguish between **Running** (no checks c
 - **Docker deployments**: Add a [healthcheck](https://docs.docker.com/reference/compose-file/services/#healthcheck) to your service definition in the Compose file.
 - **Kubernetes deployments**: Configure [container probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/) (liveness, readiness, or startup probes).
 
-## Agent Logs
+## Log Viewer
 
-Agent logs show the raw output from the Distr agent process itself — connection events, deployment reconciliation cycles, errors, and status reports. These logs belong to the **deployment target**, not to any individual deployment.
+The log viewer is a dedicated page for inspecting all log data associated with a deployment target. Open it by clicking the deployment target name, clicking **Inspect** on a deployment, or selecting **Agent Logs** from the **⋮** menu.
 
-To view them:
+Once open, use the breadcrumb dropdowns to switch between deployment targets and views. The view dropdown lets you choose what to inspect:
 
-1. Find the deployment target in the Deployments view.
-2. Click the **⋮** (vertical ellipsis) menu in the top-right of the deployment target card.
-3. Select **Agent Logs**.
-
-The log viewer shows a timestamped stream of agent activity. This is the first place to look when a deployment target shows an unexpected status or stops reporting.
-
-<Aside type="tip">
-  Agent logs are always available — they do not need to be enabled. As long as
-  the agent has connected at least once, you can view its logs.
-</Aside>
-
-## Container Logs
-
-Container logs show the output from your application containers. Unlike agent logs, container logs are **not enabled by default** — you activate them per deployment.
-
-### Enabling Container Logs
-
-1. In the Deployments view, find the deployment you want to monitor.
-2. Click the **⋮** menu on the deployment.
-3. Select **Enable log collection**.
+- **Deployment Status** — The history of status transitions for the selected deployment.
+- **Agent Logs** — Raw output from the Distr agent process: connection events, reconciliation cycles, errors. Always available.
+- **Container resources** — Application container logs (e.g. `backend-1`, `proxy-1`). Only available when [log collection is enabled](#container-logs).
 
 <ThemedImage
-  lightSrc={agentContLogsEnableLight}
-  darkSrc={agentContLogsEnableDark}
+  lightSrc={logViewerResourceDropdownLight}
+  darkSrc={logViewerResourceDropdownDark}
+  alt="Log viewer with view dropdown showing Deployment Status, Agent Logs, and container resources"
+/>
+
+The log viewer auto-refreshes every 10 seconds. Use the **From** and **To** fields to view a specific time window, or the **Filter** field to search with plain text or a regular expression. You can pin any log entry by clicking the thumbtack icon on hover — the row stays sticky while you scroll, making it easy to compare entries.
+
+### Agent Logs
+
+Agent logs show the raw output from the Distr agent process itself — connection events, deployment reconciliation cycles, errors, and status reports. These logs belong to the deployment target, not to any individual deployment, and are always available without any setup.
+
+### Container Logs
+
+Container logs show the output from your application containers. Log collection can be configured in two places:
+
+- **When creating a deployment** — The deployment form includes an **Enable log collection** toggle in the configuration step. It is enabled by default.
+- **After deployment** — Click the **⋮** menu on the deployment to enable or disable log collection at any time.
+
+<ThemedImage
+  lightSrc={enableContLogsLight}
+  darkSrc={enableContLogsDark}
   alt="Enable container log collection"
 />
 
-The first logs should appear within 30 seconds. Once enabled, logs are collected and updated every 30 seconds, providing near-real-time visibility into your application's output.
-
-<ThemedImage
-  lightSrc={agentContLogsLight}
-  darkSrc={agentContLogsDark}
-  alt="Container log viewer"
-/>
+The first logs should appear within 30 seconds. To disable, open the same menu and select **Disable log collection**.
 
 <Aside type="note">
-  Your application must actually produce logs to stdout/stderr. If it doesn't,
-  the container logs tab won't appear even when collection is enabled.
+  Your application must produce logs to stdout/stderr. If it doesn't, the
+  container resource won't appear in the view dropdown even when collection is
+  enabled.
 </Aside>
 
-To disable log collection, open the same **⋮** menu and select **Disable log collection**.
+#### Active and Archived Resources
 
-### Active and Archived Log Resources
+The view dropdown separates container resources into **active** and **archived**:
 
-The log viewer groups logs by **resource** (typically a container or pod name). Resources are split into two categories:
+- **Active** — The resource has produced logs in one of the five most recent deployment revisions.
+- **Archived** — The resource only has logs from older revisions, typically because a container was renamed or removed during an update.
 
-- **Active** -- The resource has produced logs in one of the five most recent deployment revisions. Active resources are shown as tabs by default.
-- **Archived** -- The resource only has logs from older deployment revisions. This happens when a container was renamed, removed, or replaced during a deployment update.
-
-To view archived resources, check the **Show archived** checkbox above the resource tabs. Archived tabs appear with reduced opacity. This is useful for reviewing logs from a previous version of your deployment, for example after a rollback or a configuration change that renamed a service.
+Click **Show archived** at the bottom of the dropdown to reveal archived resources.
 
 ## Metrics
 

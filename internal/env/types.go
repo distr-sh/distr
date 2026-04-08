@@ -22,6 +22,23 @@ func parseRegistrationMode(value string) (RegistrationMode, error) {
 	}
 }
 
+type StripeWebhookVersionMismatchBehaviorType string
+
+const (
+	StripeWebhookVersionMismatchBehaviorIgnore StripeWebhookVersionMismatchBehaviorType = "ignore"
+	StripeWebhookVersionMismatchBehaviorError  StripeWebhookVersionMismatchBehaviorType = "error"
+)
+
+func parseStripeWebhookVersionMismatchBehavior(value string) (StripeWebhookVersionMismatchBehaviorType, error) {
+	switch value {
+	case string(StripeWebhookVersionMismatchBehaviorIgnore),
+		string(StripeWebhookVersionMismatchBehaviorError):
+		return StripeWebhookVersionMismatchBehaviorType(value), nil
+	default:
+		return "", fmt.Errorf("invalid StripeWebhookVersionMismatchBehavior: %v", value)
+	}
+}
+
 type MailerTypeString string
 
 const (

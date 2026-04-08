@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/distr-sh/distr/internal/util"
-	"github.com/stripe/stripe-go/v84"
-	"github.com/stripe/stripe-go/v84/billingportal/session"
+	"github.com/stripe/stripe-go/v85"
+	"github.com/stripe/stripe-go/v85/billingportal/session"
 )
 
 type BillingPortalSessionParams struct {

@@ -44,6 +44,12 @@ func SettingsRouter(r chiopenapi.Router) {
 	r.Route("/verify", func(r chiopenapi.Router) {
 		r.WithOptions(option.GroupHidden(true))
 
+		requestVerificationMailRateLimitPerUser := httprate.Limit(
+			3,
+			10*time.Minute,
+			httprate.WithKeyFuncs(middleware.RateLimitUserIDKey),
+		)
+
 		r.With(requestVerificationMailRateLimitPerUser, middleware.BlockSuperAdmin).
 			Post("/request", userSettingsVerifyRequestHandler)
 
@@ -279,15 +285,3 @@ func userSettingsVerifyConfirmHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
-
-var requestVerificationMailRateLimitPerUser = httprate.Limit(
-	3,
-	10*time.Minute,
-	httprate.WithKeyFuncs(middleware.RateLimitUserIDKey),
-)
-
-var inviteUserRateLimiter = httprate.Limit(
-	3,
-	10*time.Minute,
-	httprate.WithKeyFuncs(middleware.RateLimitUserIDKey, middleware.RateLimitPathValueKey("userId")),
-)

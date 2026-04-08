@@ -78,6 +78,7 @@ func getTemplateData(
 		"targetSecret":      secret,
 		"logsEndpoint":      logsEndpoint,
 		"agentLogsEndpoint": agentLogsEndpoint,
+		"metricsEnabled":    deploymentTarget.MetricsEnabled,
 	}
 	if deploymentTarget.Namespace != nil {
 		result["targetNamespace"] = *deploymentTarget.Namespace

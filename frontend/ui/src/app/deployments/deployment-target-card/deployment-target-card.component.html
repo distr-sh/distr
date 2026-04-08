@@ -302,9 +302,9 @@
                                 "
                                 [disabled]="!isLoggingSupported()">
                                 @if (deployment.logsEnabled) {
-                                  Disable logs collection
+                                  Disable log collection
                                 } @else {
-                                  Enable logs collection
+                                  Enable log collection
                                 }
                               </button>
                             </li>
@@ -546,6 +546,9 @@
             Metrics reporting is not available for a namespace scoped agent.
           </p>
         }
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+          Changing metrics reporting requires the agent to reconnect. Metrics reporting is not supported on macOS.
+        </p>
 
         @if (editForm.controls.imageCleanupEnabled.enabled) {
           <div class="flex items-center">

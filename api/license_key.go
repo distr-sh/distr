@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 )
 
@@ -17,6 +18,15 @@ type CreateLicenseKeyRequest struct {
 }
 
 type UpdateLicenseKeyRequest struct {
-	Name        string  `json:"name"`
-	Description *string `json:"description,omitempty"`
+	Name        string           `json:"name"`
+	Description *string          `json:"description,omitempty"`
+	NotBefore   *time.Time       `json:"notBefore,omitempty"`
+	ExpiresAt   *time.Time       `json:"expiresAt,omitempty"`
+	Payload     *json.RawMessage `json:"payload,omitempty"`
+}
+
+type LicenseKeyRevision struct {
+	types.LicenseKeyRevision
+
+	Token string `json:"token"`
 }

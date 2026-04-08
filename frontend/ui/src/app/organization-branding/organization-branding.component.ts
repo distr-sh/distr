@@ -5,11 +5,11 @@ import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {OrganizationBranding} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faFloppyDisk} from '@fortawesome/free-solid-svg-icons';
-import {MarkdownPipe} from 'ngx-markdown';
 import {lastValueFrom, map, Observable} from 'rxjs';
 import {base64ToBlob} from '../../util/blob';
 import {getFormDisplayedError} from '../../util/errors';
 import {AutotrimDirective} from '../directives/autotrim.directive';
+import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
 import {AuthService} from '../services/auth.service';
 import {OrganizationBrandingService} from '../services/organization-branding.service';
 import {ToastService} from '../services/toast.service';
@@ -17,7 +17,7 @@ import {ToastService} from '../services/toast.service';
 @Component({
   selector: 'app-organization-branding',
   templateUrl: './organization-branding.component.html',
-  imports: [FaIconComponent, ReactiveFormsModule, AsyncPipe, AutotrimDirective, MarkdownPipe],
+  imports: [FaIconComponent, ReactiveFormsModule, AsyncPipe, AutotrimDirective, InnerMarkdownDirective],
 })
 export class OrganizationBrandingComponent implements OnInit {
   protected readonly faFloppyDisk = faFloppyDisk;

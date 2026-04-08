@@ -23,7 +23,6 @@ import {
 } from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {ApplicationVersionResource, DeploymentRequest, DeploymentType, HelmOptions} from '@distr-sh/distr-sdk';
-import {MarkdownPipe} from 'ngx-markdown';
 import {
   BehaviorSubject,
   catchError,
@@ -44,6 +43,7 @@ import {isArchived} from '../../../util/dates';
 import {DURATION_REGEX, HELM_RELEASE_NAME_MAX_LENGTH, HELM_RELEASE_NAME_REGEX} from '../../../util/validation';
 import {EditorComponent} from '../../components/editor.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
+import {InnerMarkdownDirective} from '../../directives/inner-markdown.directive';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ApplicationsService} from '../../services/applications.service';
 import {AuthService} from '../../services/auth.service';
@@ -85,7 +85,7 @@ type DeploymentFormValueCallback = (v: DeploymentFormValue | undefined) => void;
 
 @Component({
   selector: 'app-deployment-form',
-  imports: [ReactiveFormsModule, AsyncPipe, EditorComponent, AutotrimDirective, RouterLink, MarkdownPipe],
+  imports: [ReactiveFormsModule, AsyncPipe, EditorComponent, AutotrimDirective, RouterLink, InnerMarkdownDirective],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,

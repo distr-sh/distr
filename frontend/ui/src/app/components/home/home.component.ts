@@ -1,15 +1,15 @@
 import {AsyncPipe} from '@angular/common';
 import {HttpErrorResponse} from '@angular/common/http';
 import {Component, inject} from '@angular/core';
-import {MarkdownPipe} from 'ngx-markdown';
 import {catchError, EMPTY, map, Observable} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
+import {InnerMarkdownDirective} from '../../directives/inner-markdown.directive';
 import {OrganizationBrandingService} from '../../services/organization-branding.service';
 import {ToastService} from '../../services/toast.service';
 
 @Component({
   selector: 'app-home',
-  imports: [AsyncPipe, MarkdownPipe],
+  imports: [AsyncPipe, InnerMarkdownDirective],
   templateUrl: './home.component.html',
 })
 export class HomeComponent {

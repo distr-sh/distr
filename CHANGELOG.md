@@ -1,5 +1,60 @@
 # Changelog
 
+## [2.16.2](https://github.com/distr-sh/distr/compare/2.16.1...2.16.2) (2026-04-07)
+
+
+### Bug Fixes
+
+* **backend:** return no content (204) status code if organizationId can't be found in subscription ([#2191](https://github.com/distr-sh/distr/issues/2191)) ([52c70b0](https://github.com/distr-sh/distr/commit/52c70b05c339f4184917480687963646f5caa698))
+* **deps:** update dependency marked to v18 ([#2189](https://github.com/distr-sh/distr/issues/2189)) ([bf26316](https://github.com/distr-sh/distr/commit/bf263162fad277eb597c1aebd721383624d6927d))
+* **deps:** update module github.com/docker/cli to v29.4.0+incompatible ([#2184](https://github.com/distr-sh/distr/issues/2184)) ([ebf0b17](https://github.com/distr-sh/distr/commit/ebf0b177eebcfd28ade55d4201befd805d5da4b6))
+* **deps:** update module github.com/go-co-op/gocron/v2 to v2.20.0 ([#2182](https://github.com/distr-sh/distr/issues/2182)) ([7b14d54](https://github.com/distr-sh/distr/commit/7b14d54d729b7d9b19a78282718ba4b3b1c73dbc))
+* **deps:** update module github.com/oaswrap/spec/adapter/chiopenapi to v0.4.0 ([#2173](https://github.com/distr-sh/distr/issues/2173)) ([29efb0b](https://github.com/distr-sh/distr/commit/29efb0bd1dbd433917b465997ee956819bd3d1be))
+* **deps:** update opentelemetry-go-contrib monorepo to v0.68.0 ([#2185](https://github.com/distr-sh/distr/issues/2185)) ([ee6572e](https://github.com/distr-sh/distr/commit/ee6572e8499a1d325936526347262fe2e5a5b23b))
+* **docker-agent:** don't mount / if metrics collection is disabled ([#2193](https://github.com/distr-sh/distr/issues/2193)) ([7719c2b](https://github.com/distr-sh/distr/commit/7719c2b8ed8e63a19d15803af91a6c51380ca66a))
+
+
+### Other
+
+* **deps:** update dependency stripe to v1.40.1 ([#2181](https://github.com/distr-sh/distr/issues/2181)) ([6de09e1](https://github.com/distr-sh/distr/commit/6de09e14c85433c82fa21fe305908c87164f20d0))
+* **deps:** update dependency vitest to v4.1.3 ([#2186](https://github.com/distr-sh/distr/issues/2186)) ([f25a430](https://github.com/distr-sh/distr/commit/f25a43058ab62b98e543a7e88042e3160b57cdf8))
+* fix typo in log collection ([#2194](https://github.com/distr-sh/distr/issues/2194)) ([fa0c0de](https://github.com/distr-sh/distr/commit/fa0c0de83cb3bbb2e5a78909bacc02746d126ec2))
+* revert "chore(deps): update dependency stripe to v1.40.1 ([#2181](https://github.com/distr-sh/distr/issues/2181))" ([#2190](https://github.com/distr-sh/distr/issues/2190)) ([2de4915](https://github.com/distr-sh/distr/commit/2de4915e5390dd331bc7db367f52f040873902b0))
+
+## [2.16.1](https://github.com/distr-sh/distr/compare/2.16.0...2.16.1) (2026-04-07)
+
+
+### Bug Fixes
+
+* **agent:** increase healty timeout for agent autoheal ([#2180](https://github.com/distr-sh/distr/issues/2180)) ([60fdeb5](https://github.com/distr-sh/distr/commit/60fdeb5f051aad24c9f803b89aea22683f03fb73))
+* **agent:** prevent repeated uninstall after failure ([#2154](https://github.com/distr-sh/distr/issues/2154)) ([31cbbaa](https://github.com/distr-sh/distr/commit/31cbbaac87b19779f42243d62d3d3ebc8ab681d6))
+* **deps:** update aws-sdk-go-v2 monorepo ([#2157](https://github.com/distr-sh/distr/issues/2157)) ([032ad9f](https://github.com/distr-sh/distr/commit/032ad9f4a8b5240ddcb93e1211cbb988797c839f))
+* **deps:** update module github.com/aws/smithy-go to v1.24.3 ([#2158](https://github.com/distr-sh/distr/issues/2158)) ([65aa11d](https://github.com/distr-sh/distr/commit/65aa11dd9af648c0dc4ae54b36604d636a129333))
+* **deps:** update module github.com/compose-spec/compose-go/v2 to v2.10.2 ([#2163](https://github.com/distr-sh/distr/issues/2163)) ([c823109](https://github.com/distr-sh/distr/commit/c8231099912db806a7ba3834ef7f0f9854fc79f5))
+* **deps:** update module github.com/moby/moby/client to v0.4.0 ([#2167](https://github.com/distr-sh/distr/issues/2167)) ([490dd83](https://github.com/distr-sh/distr/commit/490dd835aedaec9a069d66b83d866d1f8441c54a))
+* **deps:** update opentelemetry-go monorepo to v1.43.0 ([#2160](https://github.com/distr-sh/distr/issues/2160)) ([025ea7d](https://github.com/distr-sh/distr/commit/025ea7d0e98ee5aab13a6b68b788e8b66ca1bcbf))
+
+
+### Other
+
+* **deps:** bump lodash from 4.17.23 to 4.18.1 in /website in the npm_and_yarn group across 1 directory ([#2151](https://github.com/distr-sh/distr/issues/2151)) ([e87e1e9](https://github.com/distr-sh/distr/commit/e87e1e9b63ca511b725637454b615692b0209306))
+* **deps:** bump the go_modules group across 1 directory with 2 updates ([#2159](https://github.com/distr-sh/distr/issues/2159)) ([54a5514](https://github.com/distr-sh/distr/commit/54a5514380ab89b6647a466a7232758ebc61df6f))
+* **deps:** bump the npm_and_yarn group across 1 directory with 2 updates ([#2177](https://github.com/distr-sh/distr/issues/2177)) ([7b50c95](https://github.com/distr-sh/distr/commit/7b50c95e58b5eea800952475375220595262a5ac))
+* **deps:** update aws-actions/configure-aws-credentials digest to ec61189 ([#2178](https://github.com/distr-sh/distr/issues/2178)) ([8298a96](https://github.com/distr-sh/distr/commit/8298a96859141d378a28b933e6779806a2ceb2e6))
+* **deps:** update axllent/mailpit docker tag to v1.29.6 ([#2171](https://github.com/distr-sh/distr/issues/2171)) ([01422d5](https://github.com/distr-sh/distr/commit/01422d5de154f16ab596c38d9309a0c4ef0967a5))
+* **deps:** update dependency @sentry/cli to v3.3.5 ([#2174](https://github.com/distr-sh/distr/issues/2174)) ([841a3de](https://github.com/distr-sh/distr/commit/841a3dead124bb5d83fe34d6cf1f536955138740))
+* **deps:** update dependency jsdom to v29.0.2 ([#2179](https://github.com/distr-sh/distr/issues/2179)) ([7ddeaa6](https://github.com/distr-sh/distr/commit/7ddeaa698dcc081733e9543cf5d5e0a3773c58d8))
+* **deps:** update dependency marked to v17.0.6 ([#2169](https://github.com/distr-sh/distr/issues/2169)) ([ed5dd88](https://github.com/distr-sh/distr/commit/ed5dd8801907e3605abacc35045d4ed87c88a693))
+* **deps:** update dependency posthog-js to v1.364.7 ([#2175](https://github.com/distr-sh/distr/issues/2175)) ([a4e26c8](https://github.com/distr-sh/distr/commit/a4e26c8579befa1a3f7dbe0f56868eaa38daee11))
+* **deps:** update docker/login-action action to v4.1.0 ([#2155](https://github.com/distr-sh/distr/issues/2155)) ([5df2bcd](https://github.com/distr-sh/distr/commit/5df2bcdc12ceba5d41e3c93b9338ebf51b0c36b6))
+* **frontend:** remove `ngx-toastr` ([#2162](https://github.com/distr-sh/distr/issues/2162)) ([d5c103a](https://github.com/distr-sh/distr/commit/d5c103a31479647fec2ae3f6d128a223fc6c31a8))
+* **frontend:** replace `ngx-markdown` with a thin `marked` wrapper ([#2161](https://github.com/distr-sh/distr/issues/2161)) ([5c420a5](https://github.com/distr-sh/distr/commit/5c420a529025ea62206610ce3b8f8eb7767b9771))
+
+
+### Docs
+
+* update documentation for v2.15 features ([#2140](https://github.com/distr-sh/distr/issues/2140)) ([3e00f86](https://github.com/distr-sh/distr/commit/3e00f86ee6a33602be42812298a6554f9195abd5))
+
 ## [2.16.0](https://github.com/distr-sh/distr/compare/2.15.1...2.16.0) (2026-04-02)
 
 

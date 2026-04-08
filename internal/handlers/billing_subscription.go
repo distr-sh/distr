@@ -17,7 +17,7 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
-	"github.com/stripe/stripe-go/v84"
+	"github.com/stripe/stripe-go/v85"
 	"go.uber.org/zap"
 )
 

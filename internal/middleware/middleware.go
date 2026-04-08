@@ -191,28 +191,6 @@ func AgentSentryUser(h http.Handler) http.Handler {
 	})
 }
 
-func RateLimitUserIDKey(r *http.Request) (string, error) {
-	if auth, err := auth.Authentication.Get(r.Context()); err != nil {
-		return "", err
-	} else {
-		return getTokenIdKey(auth.Token(), auth.CurrentUserID()), nil
-	}
-}
-
-func RateLimitPathValueKey(name string) func(r *http.Request) (string, error) {
-	return func(r *http.Request) (string, error) {
-		return r.PathValue(name), nil
-	}
-}
-
-func RateLimitCurrentDeploymentTargetIdKeyFunc(r *http.Request) (string, error) {
-	if auth, err := auth.AgentAuthentication.Get(r.Context()); err != nil {
-		return "", err
-	} else {
-		return getTokenIdKey(auth.Token(), auth.CurrentDeploymentTargetID()), nil
-	}
-}
-
 func getTokenIdKey(token any, id uuid.UUID) string {
 	prefix := ""
 	switch token.(type) {

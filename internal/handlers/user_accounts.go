@@ -21,6 +21,7 @@ import (
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
+	"github.com/go-chi/httprate"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
@@ -42,6 +43,12 @@ func UserAccountsRouter(r chiopenapi.Router) {
 			type UserAccountRequest struct {
 				UserId string `json:"-" path:"userId"`
 			}
+
+			inviteUserRateLimiter := httprate.Limit(
+				3,
+				10*time.Minute,
+				httprate.WithKeyFuncs(middleware.RateLimitUserIDKey, middleware.RateLimitPathValueKey("userId")),
+			)
 
 			r.Use(userAccountMiddleware)
 			r.With(middleware.ProFeature).
