@@ -16,7 +16,7 @@ func TestSanitizeLogRecords(t *testing.T) {
 	t.Run("empty slice remains empty", func(t *testing.T) {
 		g := NewWithT(t)
 		records := []api.DeploymentLogRecord{}
-		sanitizeLogRecords(&records)
+		records = sanitizeLogRecords(records)
 		g.Expect(records).To(BeEmpty())
 	})
 
@@ -26,7 +26,7 @@ func TestSanitizeLogRecords(t *testing.T) {
 			{Body: "hello world"},
 			{Body: "another log line"},
 		}
-		sanitizeLogRecords(&records)
+		records = sanitizeLogRecords(records)
 		g.Expect(records).To(HaveLen(2))
 		g.Expect(records[0].Body).To(Equal("hello world"))
 		g.Expect(records[1].Body).To(Equal("another log line"))
@@ -39,7 +39,7 @@ func TestSanitizeLogRecords(t *testing.T) {
 			{Body: "\x00leading"},
 			{Body: "trailing\x00"},
 		}
-		sanitizeLogRecords(&records)
+		records = sanitizeLogRecords(records)
 		g.Expect(records).To(HaveLen(3))
 		g.Expect(records[0].Body).To(Equal("hello"))
 		g.Expect(records[1].Body).To(Equal("leading"))
@@ -53,7 +53,7 @@ func TestSanitizeLogRecords(t *testing.T) {
 			{Body: "\x00\x00\x00"},
 			{Body: "keep me too"},
 		}
-		sanitizeLogRecords(&records)
+		records = sanitizeLogRecords(records)
 		g.Expect(records).To(HaveLen(2))
 		g.Expect(records[0].Body).To(Equal("keep me"))
 		g.Expect(records[1].Body).To(Equal("keep me too"))
@@ -65,7 +65,7 @@ func TestSanitizeLogRecords(t *testing.T) {
 			{Body: ""},
 			{Body: "non-empty"},
 		}
-		sanitizeLogRecords(&records)
+		records = sanitizeLogRecords(records)
 		g.Expect(records).To(HaveLen(1))
 		g.Expect(records[0].Body).To(Equal("non-empty"))
 	})
