@@ -18,7 +18,6 @@ import {
   faTrash,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import {MarkdownPipe} from 'ngx-markdown';
 import {
   catchError,
   combineLatestWith,
@@ -42,6 +41,7 @@ import {SecureImagePipe} from '../../util/secureImage';
 import {EditorComponent} from '../components/editor.component';
 import {UuidComponent} from '../components/uuid';
 import {AutotrimDirective} from '../directives/autotrim.directive';
+import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
 import {ApplicationsService} from '../services/applications.service';
 import {AuthService} from '../services/auth.service';
 import {ImageUploadService} from '../services/image-upload.service';
@@ -68,7 +68,7 @@ import {
     SecureImagePipe,
     FormsModule,
     ApplicationVersionDetailModalComponent,
-    MarkdownPipe,
+    InnerMarkdownDirective,
   ],
   templateUrl: './application-detail.component.html',
 })
