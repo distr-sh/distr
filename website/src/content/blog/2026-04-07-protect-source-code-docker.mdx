@@ -85,11 +85,11 @@ COPY --from=builder /app /app
 ENTRYPOINT ["/app"]
 ```
 
-The source code, build tools, and intermediate artifacts exist only in the build stage. The final image contains nothing but the compiled binary. Build-stage layers are never pushed to a registry and never shipped to customers.
+The source code, build tools, and intermediate artifacts exist only in the build stage. The final image contains nothing but the compiled binary. Build-stage layers are not included in the final image and are not shipped to customers (unless you explicitly push build cache with BuildKit or publish a build-stage image).
 
 **Language-specific options for compilation:**
 
-- **Go** produces statically linked binaries when built with `CGO_ENABLED=0` (some standard library packages like `net` enable CGO by default on Linux, which introduces dynamic linking). Add `-ldflags="-s -w"` to strip the OS-level symbol table and DWARF debug information, reducing binary size and making reverse engineering harder.
+- **Go** produces statically linked binaries when built with `CGO_ENABLED=0`. When CGO is enabled by the toolchain or environment, standard library packages such as `net` may use the cgo DNS resolver on Linux, which introduces libc dependencies and dynamic linking. Add `-ldflags="-s -w"` to strip the OS-level symbol table and DWARF debug information, reducing binary size and making reverse engineering harder.
 - **Rust** with release mode, LTO (Link-Time Optimization), and symbol stripping produces binaries that are among the hardest to reverse engineer. No runtime reflection metadata leaks type information.
 - **Python** can be compiled to native binaries using [Nuitka](https://nuitka.net/), which translates Python to C and then compiles to machine code. Unlike PyInstaller (which bundles `.pyc` bytecode and can be trivially extracted with `pyinstxtractor`), Nuitka produces genuine native code that requires binary analysis to reverse engineer.
 - **C#/.NET** can use Native AOT compilation (available since .NET 7) to produce true native binaries instead of IL bytecode, making decompilation much harder.
@@ -98,7 +98,7 @@ The source code, build tools, and intermediate artifacts exist only in the build
 
 Minimal base images are the next thing to get right:
 
-**`FROM scratch`** creates a completely empty image. No operating system, no shell, no utilities. This works only with statically compiled binaries (Go with `CGO_ENABLED=0`, Rust with musl target). An attacker cannot `docker exec` into the container because there is no shell to execute.
+**`FROM scratch`** creates a completely empty image. No operating system, no shell, no utilities. This works only with statically compiled binaries (Go with `CGO_ENABLED=0`, Rust with musl target). Without a shell, nobody can `docker exec` into an interactive session or use common utilities to browse the filesystem.
 
 **Distroless images** (maintained by Google at `gcr.io/distroless`) take a middle path. They include only the application runtime: glibc, SSL certificates, timezone data, and language-specific runtimes if needed. No shell, no package manager, no `curl`, no `cat`. They are available in several variants: `static` (closest to scratch), `base` (adds glibc), and language-specific versions for Java, Python, and Node.js.
 
