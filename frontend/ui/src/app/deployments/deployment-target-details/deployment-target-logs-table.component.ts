@@ -15,7 +15,7 @@ function logRecordToTimeseriesEntry(record: DeploymentTargetLogRecord): Timeseri
 }
 
 class LogsTimeseriesSource implements TimeseriesSource {
-  public readonly batchSize = 25;
+  public readonly batchSize = 50;
 
   constructor(
     private readonly svc: DeploymentTargetLogsService,

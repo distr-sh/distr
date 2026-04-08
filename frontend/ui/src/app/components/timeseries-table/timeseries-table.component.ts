@@ -1,5 +1,5 @@
 import {AsyncPipe, DatePipe} from '@angular/common';
-import {Component, computed, inject, input, signal} from '@angular/core';
+import {Component, computed, DestroyRef, effect, ElementRef, inject, input, signal, viewChild} from '@angular/core';
 import {toObservable} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faThumbtack, faThumbtackSlash} from '@fortawesome/free-solid-svg-icons';
@@ -151,6 +151,35 @@ export class TimeseriesTableComponent {
   ]).pipe(map(([entries, newestFirst]) => entries.sort(compareByDate(newestFirst))));
 
   private readonly loadMore$ = new Subject<void>();
+  private readonly loadMoreButton = viewChild<ElementRef<HTMLElement>>('loadMoreButton');
+  private readonly destroyRef = inject(DestroyRef);
+
+  constructor() {
+    let observer: IntersectionObserver | null = null;
+
+    effect(() => {
+      const buttonEl = this.loadMoreButton()?.nativeElement;
+
+      observer?.disconnect();
+      observer = null;
+
+      if (buttonEl) {
+        observer = new IntersectionObserver(
+          (entries) => {
+            if (entries.some((e) => e.isIntersecting)) {
+              this.loadMore();
+            }
+          },
+          {threshold: 0.1}
+        );
+        observer.observe(buttonEl);
+      }
+    });
+
+    this.destroyRef.onDestroy(() => {
+      observer?.disconnect();
+    });
+  }
 
   protected loadMore() {
     this.loadMore$.next();

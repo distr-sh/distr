@@ -22,7 +22,7 @@ function logRecordToTimeseriesEntry(record: DeploymentLogRecord): TimeseriesEntr
 }
 
 class LogsTimeseriesSource implements TimeseriesSource {
-  public readonly batchSize = 25;
+  public readonly batchSize = 50;
 
   constructor(
     private readonly svc: DeploymentLogsService,
