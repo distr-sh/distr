@@ -48,7 +48,9 @@
               [class.text-red-500]="entry.status.toLowerCase().includes('err')"
               [class.dark:text-red-400]="entry.status.toLowerCase().includes('err')"
               [class.text-yellow-600]="entry.status.toLowerCase().includes('warn')"
-              [class.dark:text-yellow-500]="entry.status.toLowerCase().includes('warn')">
+              [class.dark:text-yellow-500]="entry.status.toLowerCase().includes('warn')"
+              [class.text-blue-600]="entry.status.toLowerCase().includes('info')"
+              [class.dark:text-blue-500]="entry.status.toLowerCase().includes('info')">
               {{ entry.status }}
             </td>
             <td class="px-1 max-w-0 w-full" data-ph-mask-text="true">
