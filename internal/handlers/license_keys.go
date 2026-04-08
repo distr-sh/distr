@@ -52,7 +52,7 @@ func LicenseKeysRouter(r chiopenapi.Router) {
 		r.Get("/revisions", getLicenseKeyRevisions).
 			With(option.Description("List all revisions of a license key")).
 			With(option.Request(LicenseKeyIDRequest{})).
-			With(option.Response(http.StatusOK, []types.LicenseKeyRevision{}))
+			With(option.Response(http.StatusOK, []api.LicenseKeyRevision{}))
 
 		r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 			Group(func(r chiopenapi.Router) {
