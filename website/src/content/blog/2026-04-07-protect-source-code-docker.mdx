@@ -165,6 +165,12 @@ Your agreements should include:
 
 This matters for legal standing too. Under the Defend Trade Secrets Act (US) and the EU Trade Secrets Directive, qualifying for trade secret protection requires demonstrating that you took "reasonable measures" to keep the information secret. Shipping unprotected source code in a container image with no contractual guardrails weakens that claim. Combining technical measures with legal measures gives you the strongest position.
 
+It is also worth stepping back and asking: how much is your source code really worth to a competitor? Some of the most successful infrastructure companies in the world publish their entire codebase. HashiCorp built a multi-billion dollar business around Terraform, Vault, and Consul while keeping them open source for years. GitLab went public with its source code visible to everyone. Elastic, Redis, Grafana, Sentry -- all built category-defining products with public repositories. Distr itself is open source. The code is on GitHub, anyone can read it, and that has not slowed us down.
+
+The reason is straightforward: the value of a software company is not in the lines of code. It is in the team building it, the speed at which it ships, the domain expertise behind the architecture decisions, and the customer relationships around it. Nobody is going to read your source, replicate your product, and out-execute your team. For application code, the fear of theft is almost always bigger than the actual risk.
+
+Proprietary model weights and trained algorithms are a different story. Those represent millions in compute and data curation that can be copied instantly. That is where technical protection earns its complexity. But for the application code that wraps and serves those models? The patterns above are more than enough.
+
 ## A practical container security checklist for software IP protection
 
 **Every vendor should do these:**
