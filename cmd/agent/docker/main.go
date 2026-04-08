@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os/signal"
 	"slices"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -178,10 +179,11 @@ loop:
 								}
 							}
 
+							statusCh := make(chan string)
 							progressCtx, progressCancel := context.WithCancel(ctx)
 							defer progressCancel()
-							go sendProgressInterval(progressCtx, deployment.RevisionID)
-							agentDeployment, status, err = DockerEngineApply(ctx, deployment)
+							go sendProgressInterval(progressCtx, deployment.RevisionID, statusCh)
+							agentDeployment, status, err = DockerEngineApply(ctx, deployment, statusCh)
 							if err == nil {
 								if deployment.ImageCleanupEnabled {
 									if delErr := DeleteImages(ctx, previousDeploymentImages); delErr != nil {
@@ -218,8 +220,17 @@ loop:
 	}
 }
 
-func sendProgressInterval(ctx context.Context, revisionID uuid.UUID) {
+func sendProgressInterval(ctx context.Context, revisionID uuid.UUID, statusCh chan string) {
 	tick := time.Tick(agentenv.Interval)
+	var status atomic.Value
+	status.Store("initializing")
+
+	go func() {
+		for s := range statusCh {
+			status.Store(s)
+		}
+	}()
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -231,7 +242,7 @@ func sendProgressInterval(ctx context.Context, revisionID uuid.UUID) {
 				ctx,
 				revisionID,
 				types.DeploymentStatusTypeProgressing,
-				"applying docker compose…",
+				status.Load().(string),
 			)
 			if err != nil {
 				logger.Warn("error updating status", zap.Error(err))
