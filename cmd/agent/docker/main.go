@@ -221,7 +221,7 @@ loop:
 }
 
 func sendProgressInterval(ctx context.Context, revisionID uuid.UUID, statusCh chan string) {
-	tick := time.Tick(agentenv.Interval)
+	tick := time.Tick(time.Second)
 	var status atomic.Value
 	status.Store("initializing")
 
