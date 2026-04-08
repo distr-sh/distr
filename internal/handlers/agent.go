@@ -39,6 +39,12 @@ import (
 )
 
 func AgentRouter(r chiopenapi.Router) {
+	rateLimitPerDeploymentTargetID := httprate.Limit(
+		500,
+		1*time.Minute,
+		httprate.WithKeyFuncs(middleware.RateLimitCurrentDeploymentTargetIdKeyFunc),
+	)
+
 	r.With(queryAuthDeploymentTargetCtxMiddleware).Group(func(r chiopenapi.Router) {
 		r.WithOptions(option.GroupTags("Agents"))
 
@@ -58,13 +64,13 @@ func AgentRouter(r chiopenapi.Router) {
 	r.Route("/agent", func(r chiopenapi.Router) {
 		r.WithOptions(option.GroupHidden(true))
 		// agent login (from basic auth to token)
-		r.Post("/login", agentLoginHandler)
+		r.Post("/login", agentLoginHandler())
 
 		r.With(
 			auth.AgentAuthentication.Middleware,
 			middleware.AgentSentryUser,
 			agentAuthDeploymentTargetCtxMiddleware,
-			rateLimitPerAgent,
+			rateLimitPerDeploymentTargetID,
 		).Group(func(r chiopenapi.Router) {
 			// agent routes, authenticated via token
 			r.Get("/manifest", agentManifestHandler())
@@ -136,36 +142,40 @@ func preConnectHandler() http.HandlerFunc {
 	}
 }
 
-func agentLoginHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
+func agentLoginHandler() func(w http.ResponseWriter, r *http.Request) {
+	limiter := httprate.NewRateLimiter(5, time.Minute)
 
-	if targetID, targetSecret, ok := r.BasicAuth(); !ok {
-		log.Info("invalid Basic Auth")
-		w.WriteHeader(http.StatusUnauthorized)
-	} else if parsedTargetID, err := uuid.Parse(targetID); err != nil {
-		http.Error(w, "targetId is not a valid UUID", http.StatusBadRequest)
-	} else if agentLoginPerTargetIdRateLimiter.RespondOnLimit(w, r, targetID) {
-		return
-	} else if deploymentTarget, err := getVerifiedDeploymentTarget(ctx, parsedTargetID, targetSecret); err != nil {
-		if errors.Is(err, apierrors.ErrUnauthorized) {
-			log.Info("agent unauthorized", zap.Error(err), zap.String("deploymentTargetId", targetID))
-			http.Error(w, err.Error(), http.StatusUnauthorized)
-		} else {
-			log.Error("failed to get deployment target from basic auth", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-		}
-	} else {
-		// TODO maybe even randomize token valid duration
-		if _, token, err := authjwt.GenerateAgentTokenValidFor(
-			deploymentTarget.ID, deploymentTarget.OrganizationID, env.AgentTokenMaxValidDuration()); err != nil {
-			log.Error("failed to create agent token", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-		} else {
-			if err := json.NewEncoder(w).Encode(api.AuthLoginResponse{Token: token}); err != nil {
-				log.Error("failed to write response", zap.Error(err))
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		log := internalctx.GetLogger(ctx)
+
+		if targetID, targetSecret, ok := r.BasicAuth(); !ok {
+			log.Info("invalid Basic Auth")
+			w.WriteHeader(http.StatusUnauthorized)
+		} else if parsedTargetID, err := uuid.Parse(targetID); err != nil {
+			http.Error(w, "targetId is not a valid UUID", http.StatusBadRequest)
+		} else if limiter.RespondOnLimit(w, r, targetID) {
+			return
+		} else if deploymentTarget, err := getVerifiedDeploymentTarget(ctx, parsedTargetID, targetSecret); err != nil {
+			if errors.Is(err, apierrors.ErrUnauthorized) {
+				log.Info("agent unauthorized", zap.Error(err), zap.String("deploymentTargetId", targetID))
+				http.Error(w, err.Error(), http.StatusUnauthorized)
+			} else {
+				log.Error("failed to get deployment target from basic auth", zap.Error(err))
 				w.WriteHeader(http.StatusInternalServerError)
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+			}
+		} else {
+			// TODO maybe even randomize token valid duration
+			if _, token, err := authjwt.GenerateAgentTokenValidFor(
+				deploymentTarget.ID, deploymentTarget.OrganizationID, env.AgentTokenMaxValidDuration()); err != nil {
+				log.Error("failed to create agent token", zap.Error(err))
+				w.WriteHeader(http.StatusInternalServerError)
+			} else {
+				if err := json.NewEncoder(w).Encode(api.AuthLoginResponse{Token: token}); err != nil {
+					log.Error("failed to write response", zap.Error(err))
+					w.WriteHeader(http.StatusInternalServerError)
+				}
 			}
 		}
 	}
@@ -497,6 +507,8 @@ func agentPostMetricsHander(w http.ResponseWriter, r *http.Request) {
 }
 
 func queryAuthDeploymentTargetCtxMiddleware(next http.Handler) http.Handler {
+	limiter := httprate.NewRateLimiter(5, time.Minute)
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
@@ -507,7 +519,7 @@ func queryAuthDeploymentTargetCtxMiddleware(next http.Handler) http.Handler {
 		}
 		targetSecret := r.URL.Query().Get("targetSecret")
 
-		if agentConnectPerTargetIdRateLimiter.RespondOnLimit(w, r, targetID.String()) {
+		if limiter.RespondOnLimit(w, r, targetID.String()) {
 			return
 		} else if deploymentTarget, err := getVerifiedDeploymentTarget(ctx, targetID, targetSecret); err != nil {
 			if errors.Is(err, apierrors.ErrUnauthorized) {
@@ -600,14 +612,3 @@ func getVerifiedDeploymentTarget(
 		return deploymentTarget, nil
 	}
 }
-
-var (
-	agentConnectPerTargetIdRateLimiter = httprate.NewRateLimiter(5, time.Minute)
-	agentLoginPerTargetIdRateLimiter   = httprate.NewRateLimiter(5, time.Minute)
-
-	rateLimitPerAgent = httprate.Limit(
-		500,
-		1*time.Minute,
-		httprate.WithKeyFuncs(middleware.RateLimitCurrentDeploymentTargetIdKeyFunc),
-	)
-)
