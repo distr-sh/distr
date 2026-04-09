@@ -1,4 +1,4 @@
-import {AsyncPipe, DatePipe, NgTemplateOutlet} from '@angular/common';
+import {AsyncPipe, DatePipe, NgClass, NgTemplateOutlet} from '@angular/common';
 import {
   afterNextRender,
   Component,
@@ -83,7 +83,7 @@ export interface TimeseriesExporter {
 @Component({
   selector: 'app-timeseries-table',
   templateUrl: './timeseries-table.component.html',
-  imports: [DatePipe, AsyncPipe, NgTemplateOutlet, FaIconComponent, SpinnerComponent],
+  imports: [DatePipe, AsyncPipe, NgClass, NgTemplateOutlet, FaIconComponent, SpinnerComponent],
 })
 export class TimeseriesTableComponent {
   public readonly source = input.required<TimeseriesSource>();

@@ -5,7 +5,7 @@ import {DeploymentLogRecord, DeploymentLogRecordResources} from '../types/deploy
 import {TimeseriesOptions, timeseriesOptionsAsParams} from '../types/timeseries-options';
 
 function appendResources(params: HttpParams, resources: string[]): HttpParams {
-  return params.appendAll({resources});
+  return params.appendAll({resource: resources});
 }
 
 @Injectable({providedIn: 'root'})

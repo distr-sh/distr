@@ -13,16 +13,16 @@ import {OrderDirection} from '../../types/timeseries-options';
 const ansiEscapePattern = /\u001b[^m]*m/g;
 
 const RESOURCE_COLORS = [
-  '#3b82f6', // blue
-  '#10b981', // emerald
-  '#f59e0b', // amber
-  '#8b5cf6', // violet
-  '#06b6d4', // cyan
-  '#f43f5e', // rose
-  '#84cc16', // lime
-  '#ec4899', // pink
-  '#14b8a6', // teal
-  '#f97316', // orange
+  'text-blue-600 dark:text-blue-400',
+  'text-emerald-600 dark:text-emerald-400',
+  'text-amber-600 dark:text-amber-400',
+  'text-violet-600 dark:text-violet-400',
+  'text-cyan-600 dark:text-cyan-400',
+  'text-rose-600 dark:text-rose-400',
+  'text-lime-700 dark:text-lime-400',
+  'text-pink-600 dark:text-pink-400',
+  'text-teal-600 dark:text-teal-400',
+  'text-orange-600 dark:text-orange-400',
 ];
 
 function logRecordToTimeseriesEntry(record: DeploymentLogRecord): TimeseriesEntry {

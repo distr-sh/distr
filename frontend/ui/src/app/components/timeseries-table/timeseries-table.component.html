@@ -41,7 +41,7 @@
             </td>
             <th class="px-1 font-medium whitespace-nowrap">{{ entry.date | date: 'medium' }}</th>
             @if (showResourceColumn()) {
-              <td class="px-1 whitespace-nowrap text-xs font-mono" [style.color]="resourceColorMap()[entry.resource!]">
+              <td class="px-1 whitespace-nowrap text-xs font-mono" [ngClass]="resourceColorMap()[entry.resource!]">
                 {{ entry.resource }}
               </td>
             }
