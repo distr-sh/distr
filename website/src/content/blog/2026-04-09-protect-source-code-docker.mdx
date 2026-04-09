@@ -30,7 +30,7 @@ We have talked to dozens of vendors shipping on-prem software through Distr. Bel
 
 Every container image, whether pulled by Docker or Kubernetes, is a stack of read-only filesystem layers. Each layer corresponds to an instruction in your Dockerfile: a `RUN`, `COPY`, or `ADD` command. These layers are stored as tar archives, and anyone with access to the image can inspect every single one of them.
 
-Run `docker save myimage:latest | tar -xf -` and you get the full layer stack, plus a config JSON that contains your complete Dockerfile history. Every `RUN` command, every `ENV` declaration, every `COPY` path. Tools like [dive](https://github.com/wagoodman/dive) make this even easier by providing an interactive UI that shows exactly which files each layer added, modified, or removed.
+Run `docker save myimage:latest | tar -xf -` and you get the full layer stack, plus a config JSON with image metadata and build history. You can often reconstruct most `RUN` commands and `ENV` declarations from that history and inspect what files each layer contains. Tools like [dive](https://github.com/wagoodman/dive) make this even easier by providing an interactive UI that shows exactly which files each layer added, modified, or removed.
 
 This means:
 
@@ -77,7 +77,8 @@ If you do one thing after reading this post, do this: combine compiled binaries 
 # Build stage: contains source code and build tools
 FROM golang:1.22 AS builder
 COPY . /src
-RUN go build -ldflags="-s -w" -o /app ./cmd/server
+WORKDIR /src
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /app ./cmd/server
 
 # Final stage: only the binary
 FROM scratch
@@ -203,4 +204,4 @@ For most B2B vendors shipping to enterprise customers, compiled binaries, minima
 
 On the customer side, our deployment agents handle installation with a single command. You get visibility into which version each customer is running, deployment logs, and health status from your vendor portal. Need to rotate images, push an update, or revoke access? One place.
 
-If you are shipping software to [self-managed](/glossary/self-managed-software/) customers and do not want to build the distribution plumbing yourself, [try Distr free for 30 days](https://app.distr.sh).
+If you are shipping software to [self-managed](/glossary/self-managed-software/) customers and do not want to build the distribution plumbing yourself, [try Distr free for 30 days](https://distr.sh/onboarding/).
