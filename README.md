@@ -119,7 +119,7 @@ Using Distr agents on macOS? Follow the [guide](https://distr.sh/docs/guides/dis
 
 ### Building from source
 
-To build Distr Hub from source se recommend that you use [mise](https://mise.jdx.dev/) to install these tools, but you do don't have to.
+To build Distr Hub from source we recommend that you use [mise](https://mise.jdx.dev/) to install all required dependencies, but you don't have to.
 
 All dependency versions and build tasks can be found in the [`mise.toml`](./mise.toml) file, for example:
 
@@ -158,7 +158,7 @@ The full SDK documentation is at https://distr.sh/docs/integrations/sdk/
 ### GitHub Action
 
 Automate artifact version creation in your CI/CD pipeline with the official Distr GitHub Action.
-It is available on the GitHub Marketplace at https://github.com/distr-sh/distr-create-version-action.
+It is available at https://github.com/distr-sh/distr-create-version-action.
 
 For setup and usage instructions, see https://distr.sh/docs/integrations/gh-action/.
 
