@@ -98,6 +98,9 @@ func CheckDockerSwarmStatus(
 	if err != nil {
 		return types.DeploymentStatusTypeError, "", err
 	}
+	if len(services.Items) == 0 {
+		return types.DeploymentStatusTypeError, "deployment has no services", nil
+	}
 	for _, service := range services.Items {
 		if service.Spec.Mode.GlobalJob == nil && service.Spec.Mode.ReplicatedJob == nil {
 			if service.ServiceStatus == nil {
