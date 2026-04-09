@@ -33,7 +33,7 @@ func CheckDockerComposeStatus(
 	}
 
 	if len(summaries) == 0 {
-		return types.DeploymentStatusTypeRunning, "deployment has no containers", nil
+		return types.DeploymentStatusTypeError, "deployment has no containers", nil
 	}
 
 	var healthyCount, runningCount, startingCount int
