@@ -475,7 +475,7 @@ func getDeploymentStatus(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	order := types.ParseOrderDirection(r.FormValue("order"))
+	order := types.OrderDirection(r.FormValue("order"))
 	if deploymentStatus, err := db.GetDeploymentRevisionStatus(
 		ctx, deployment.ID, limit, before, after, filter, order,
 	); err != nil {

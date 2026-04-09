@@ -41,13 +41,6 @@ const (
 	OrderDirectionDesc OrderDirection = "DESC"
 )
 
-func ParseOrderDirection(value string) OrderDirection {
-	if value == string(OrderDirectionAsc) {
-		return OrderDirectionAsc
-	}
-	return OrderDirectionDesc
-}
-
 func EffectiveOrderDirection(order OrderDirection, hasAfter bool) OrderDirection {
 	if order == OrderDirectionAsc && hasAfter {
 		return OrderDirectionAsc

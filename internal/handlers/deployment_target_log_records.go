@@ -49,7 +49,7 @@ func getDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 				return
 			}
 		}
-		order := types.ParseOrderDirection(r.FormValue("order"))
+		order := types.OrderDirection(r.FormValue("order"))
 
 		records, err := db.GetDeploymentTargetLogRecords(ctx, deploymentTarget.ID, limit, before, after, filter, order)
 		if err != nil {
