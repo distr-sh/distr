@@ -45,7 +45,7 @@ Distr is an Open Source software distribution platform that provides a ready-to-
 - Bring Your Own Cloud (BYOC) automation
 - Edge & Fleet management
 
-Read more about Distr and concept at https://distr.sh/docs/core-concepts/
+Read more about Distr and its core concepts at https://distr.sh/docs/core-concepts/
 
 ## Architecture overview
 
