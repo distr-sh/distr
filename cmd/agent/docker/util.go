@@ -31,8 +31,12 @@ func WriteTempFile(pattern string, data []byte) (tempFile, error) {
 		return "", fmt.Errorf("failed to create temp file: %w", err)
 	}
 	defer func() { _ = f.Close() }()
+
 	if _, err = f.Write(data); err != nil {
+		_ = f.Close()
+		_ = os.Remove(f.Name())
 		return "", fmt.Errorf("failed to write data to temp file: %w", err)
 	}
+
 	return tempFile(f.Name()), nil
 }
