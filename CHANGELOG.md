@@ -1,5 +1,55 @@
 # Changelog
 
+## [2.17.0](https://github.com/distr-sh/distr/compare/2.16.2...2.17.0) (2026-04-09)
+
+
+### Features
+
+* add license key revisions ([#2165](https://github.com/distr-sh/distr/issues/2165)) ([ccddfcf](https://github.com/distr-sh/distr/commit/ccddfcf6bd9db33f96a31f1e0c801e35f7011496))
+* **agent:** run docker compose up directly instead of using `Exec` ([#2223](https://github.com/distr-sh/distr/issues/2223)) ([ec79ef9](https://github.com/distr-sh/distr/commit/ec79ef95f3c26b23f4e8ce33ed7f0f656efb7848))
+
+
+### Bug Fixes
+
+* add cap for agent logs buffer size and increase max request size for agent endpoints to 10MiB ([#2208](https://github.com/distr-sh/distr/issues/2208)) ([6527482](https://github.com/distr-sh/distr/commit/6527482ada53de3e2f72dbc391f4c07e39cbb935))
+* **agent:** prevent resource exhaustion caused by log congestion ([#2187](https://github.com/distr-sh/distr/issues/2187)) ([ac181be](https://github.com/distr-sh/distr/commit/ac181be6e3e2df721bc385af329e7df5e6e601c0))
+* **backend:** add missing organization ID check ([#2218](https://github.com/distr-sh/distr/issues/2218)) ([a5c3633](https://github.com/distr-sh/distr/commit/a5c3633919fa989cbe9ad5e13f8613a5b1335782))
+* **backend:** add sanitizing deployment log records ([#2204](https://github.com/distr-sh/distr/issues/2204)) ([9c7fabc](https://github.com/distr-sh/distr/commit/9c7fabcd40ed2a1c54ac363635f149e0c5a6da58))
+* **backend:** update to latest hello-distr compose file for agents tutorial ([#2221](https://github.com/distr-sh/distr/issues/2221)) ([6967e2b](https://github.com/distr-sh/distr/commit/6967e2bb6d1014db0cb489dd9983ba5754b2c2b8))
+* **deps:** update dependency astro to v6.1.5 ([#2220](https://github.com/distr-sh/distr/issues/2220)) ([6970bec](https://github.com/distr-sh/distr/commit/6970bec5231f403af79b3e74a5ff38174c9ca5ea))
+* **deps:** update module github.com/aws/aws-sdk-go-v2/service/s3 to v1.99.0 ([#2201](https://github.com/distr-sh/distr/issues/2201)) ([d15a1c6](https://github.com/distr-sh/distr/commit/d15a1c63a9f760fd51242fd5695b2b043b86409d))
+* **deps:** update module github.com/coreos/go-oidc/v3 to v3.18.0 ([#2203](https://github.com/distr-sh/distr/issues/2203)) ([ab84c71](https://github.com/distr-sh/distr/commit/ab84c71020f3fcd47229c6983eba0ecd6194cae9))
+* **deps:** update module github.com/docker/compose/v5 to v5.1.2 ([#2219](https://github.com/distr-sh/distr/issues/2219)) ([091dacb](https://github.com/distr-sh/distr/commit/091dacb39961abdb43d498b248835c7dedc5bf77))
+* **deps:** update module github.com/getsentry/sentry-go to v0.45.0 ([#2222](https://github.com/distr-sh/distr/issues/2222)) ([dc5abbf](https://github.com/distr-sh/distr/commit/dc5abbf19306eb5d17149ef2e94c503c4a72a93f))
+* **deps:** update module github.com/stripe/stripe-go/v85 to v85.0.1 ([#2207](https://github.com/distr-sh/distr/issues/2207)) ([c8f8068](https://github.com/distr-sh/distr/commit/c8f806899081294e33a2533286da889e35adbef6))
+* **deps:** update module helm.sh/helm/v4 to v4.1.4 ([#2217](https://github.com/distr-sh/distr/issues/2217)) ([4dfcfcf](https://github.com/distr-sh/distr/commit/4dfcfcf09a02492640b97aa2ecaf5df8c18561ea))
+* **deps:** update website dependencies ([#2164](https://github.com/distr-sh/distr/issues/2164)) ([d437279](https://github.com/distr-sh/distr/commit/d437279265317622d4ad8a4cc2f7e760445b7908))
+
+
+### Other
+
+* **backend:** migrate to sentry OTLP exporter ([#2227](https://github.com/distr-sh/distr/issues/2227)) ([576128a](https://github.com/distr-sh/distr/commit/576128abb3087fa3f93d840ba2eeb257acecb02a))
+* **deps:** bump go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp from 1.40.0 to 1.43.0 in the go_modules group across 1 directory ([#2211](https://github.com/distr-sh/distr/issues/2211)) ([78b5c33](https://github.com/distr-sh/distr/commit/78b5c332cb1305579bfb1ab6cdf41f777a8bd4f2))
+* **deps:** bump stripe-go to v85 ([#2153](https://github.com/distr-sh/distr/issues/2153)) ([4c3adfb](https://github.com/distr-sh/distr/commit/4c3adfbdfa209d7c3fd8507689a39fcca4b1beaa))
+* **deps:** bump the npm_and_yarn group across 1 directory with 2 updates ([#2202](https://github.com/distr-sh/distr/issues/2202)) ([bb5b973](https://github.com/distr-sh/distr/commit/bb5b9731c7fcc44a8d1de1d6ce1befecfa5bf42f))
+* **deps:** update angular monorepo to v21.2.8 ([#2212](https://github.com/distr-sh/distr/issues/2212)) ([cc80d8a](https://github.com/distr-sh/distr/commit/cc80d8a14d5562088a1a63ab71c94204a00fb5c4))
+* **deps:** update angular-cli monorepo to v21.2.7 ([#2213](https://github.com/distr-sh/distr/issues/2213)) ([6c9cafd](https://github.com/distr-sh/distr/commit/6c9cafd3fd2d0251547d695ed21c1fe2653f7989))
+* **deps:** update dependency @angular/cdk to v21.2.6 ([#2214](https://github.com/distr-sh/distr/issues/2214)) ([0bc1393](https://github.com/distr-sh/distr/commit/0bc13931f153688ab06f5dac15a88032ee487ad1))
+* **deps:** update dependency go to v1.26.2 ([#2198](https://github.com/distr-sh/distr/issues/2198)) ([524e5e3](https://github.com/distr-sh/distr/commit/524e5e31c6905c1dac9d2999796a7b6d65e99315))
+* **deps:** update dependency postcss to v8.5.9 ([#2200](https://github.com/distr-sh/distr/issues/2200)) ([f8ef054](https://github.com/distr-sh/distr/commit/f8ef054000b3a6194df277cef230bf464d1edab4))
+* **deps:** update dependency stripe to v1.40.2 ([#2196](https://github.com/distr-sh/distr/issues/2196)) ([214a6b3](https://github.com/distr-sh/distr/commit/214a6b3bc13cbac69220e913dab9497209b03238))
+* **deps:** update dependency stripe to v1.40.3 ([#2215](https://github.com/distr-sh/distr/issues/2215)) ([70e1f08](https://github.com/distr-sh/distr/commit/70e1f08042712d6ffaa3c6573505505cd2656d47))
+* **deps:** update dependency vitest to v4.1.4 ([#2216](https://github.com/distr-sh/distr/issues/2216)) ([c1f1753](https://github.com/distr-sh/distr/commit/c1f175320a5427030e337f54ad948c19d28dbc1b))
+* **deps:** update docker docker tag to v29.4.0 ([#2199](https://github.com/distr-sh/distr/issues/2199)) ([88b5dc2](https://github.com/distr-sh/distr/commit/88b5dc23b506131e30aaa7901ea75aaf7eb262a7))
+* **docker-agent:** report error status if a deployment has no containers ([#2225](https://github.com/distr-sh/distr/issues/2225)) ([0d513ec](https://github.com/distr-sh/distr/commit/0d513ec2ed4843d19d5c7b86a75f8c33521aa067))
+* log viewer improvements ([#2206](https://github.com/distr-sh/distr/issues/2206)) ([6a29b46](https://github.com/distr-sh/distr/commit/6a29b462af217405bc4bd2b66ea91b3481fca928))
+* update rate limit policy ([#2205](https://github.com/distr-sh/distr/issues/2205)) ([9f3b909](https://github.com/distr-sh/distr/commit/9f3b909f210ba80ef01b23c6bdd99bae3343c4a3))
+
+
+### Docs
+
+* restructure logs & metrics page for new log viewer ([#2156](https://github.com/distr-sh/distr/issues/2156)) ([39395d2](https://github.com/distr-sh/distr/commit/39395d2d69d4ddda2a1b2a3fc23ea31b5a2e5fbd))
+
 ## [2.16.2](https://github.com/distr-sh/distr/compare/2.16.1...2.16.2) (2026-04-07)
 
 
