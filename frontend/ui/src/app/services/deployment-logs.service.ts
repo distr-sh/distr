@@ -6,7 +6,7 @@ import {TimeseriesOptions, timeseriesOptionsAsParams} from '../types/timeseries-
 
 function appendResources(params: HttpParams, resources: string[]): HttpParams {
   for (const r of resources) {
-    params = params.append('resources', r);
+    params = params.append('resource', r);
   }
   return params;
 }

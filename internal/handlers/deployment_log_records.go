@@ -42,9 +42,9 @@ func exportDeploymentLogsHandler() http.HandlerFunc {
 
 		deployment := internalctx.GetDeployment(ctx)
 
-		resources := r.URL.Query()["resources"]
+		resources := r.URL.Query()["resource"]
 		if len(resources) == 0 {
-			http.Error(w, "query parameter resources is required", http.StatusBadRequest)
+			http.Error(w, "query parameter resource is required", http.StatusBadRequest)
 			return
 		}
 
@@ -94,9 +94,9 @@ func getDeploymentLogsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		deployment := internalctx.GetDeployment(ctx)
-		resources := r.URL.Query()["resources"]
+		resources := r.URL.Query()["resource"]
 		if len(resources) == 0 {
-			http.Error(w, "query parameter resources is required", http.StatusBadRequest)
+			http.Error(w, "query parameter resource is required", http.StatusBadRequest)
 			return
 		}
 		limit, err := QueryParam(r, "limit", strconv.Atoi, Max(100))

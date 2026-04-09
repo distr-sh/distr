@@ -78,7 +78,7 @@ export class DeploymentTargetDetailComponent {
   protected readonly deploymentTargetId = toSignal(this.deploymentTargetId$);
   private readonly deploymentId$ = this.route.queryParamMap.pipe(map((p) => p.get('deploymentId')));
   protected readonly deploymentId = toSignal(this.deploymentId$);
-  private readonly selectedResources$ = this.route.queryParamMap.pipe(map((p) => p.getAll('resources')));
+  private readonly selectedResources$ = this.route.queryParamMap.pipe(map((p) => p.getAll('resource')));
   protected readonly selectedResources = toSignal(this.selectedResources$, {initialValue: [] as string[]});
   private readonly after$ = this.route.queryParamMap.pipe(
     map((p) => (p.has('from') ? new Date(p.get('from')!) : undefined))
@@ -175,7 +175,7 @@ export class DeploymentTargetDetailComponent {
     this.deploymentDropdown.set(false);
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: {deploymentId: deployment?.id ?? null, resources: null},
+      queryParams: {deploymentId: deployment?.id ?? null, resource: null},
       queryParamsHandling: 'merge',
     });
   }
@@ -185,7 +185,7 @@ export class DeploymentTargetDetailComponent {
     const updated = current.includes(resource) ? current.filter((r) => r !== resource) : [...current, resource];
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: {resources: updated.length > 0 ? updated : null},
+      queryParams: {resource: updated.length > 0 ? updated : null},
       queryParamsHandling: 'merge',
     });
   }
@@ -193,7 +193,7 @@ export class DeploymentTargetDetailComponent {
   protected clearResources() {
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: {resources: null},
+      queryParams: {resource: null},
       queryParamsHandling: 'merge',
     });
   }
