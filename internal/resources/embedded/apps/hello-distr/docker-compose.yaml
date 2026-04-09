@@ -9,7 +9,7 @@ x-shared-env: &shared-env
 
 services:
   postgres:
-    image: 'postgres:17.5-alpine3.20'
+    image: 'postgres:18.3-alpine3.23'
     environment:
       <<: *shared-env
       POSTGRES_USER: ${HELLO_DISTR_DB_USER:?error}
@@ -19,7 +19,7 @@ services:
       test: pg_isready -h localhost -U ${HELLO_DISTR_DB_USER:?error} -d ${HELLO_DISTR_DB_NAME:?error}
       interval: 5s
     volumes:
-      - 'postgres:/var/lib/postgresql/data/'
+      - 'postgres:/var/lib/postgresql/'
     networks:
       - app_network
 
