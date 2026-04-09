@@ -6,7 +6,7 @@ import (
 
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/tracers"
-	sentryotel "github.com/getsentry/sentry-go/otel"
+	sentryotlp "github.com/getsentry/sentry-go/otel/otlp"
 	"github.com/go-logr/zapr"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -33,8 +33,11 @@ func (reg *Registry) createTracer(ctx context.Context) (*tracers.Tracers, error)
 	}
 
 	if env.OtelExporterSentryEnabled() {
-		tpopts = append(tpopts, trace.WithSpanProcessor(sentryotel.NewSentrySpanProcessor()))
-		tmps = append(tmps, sentryotel.NewSentryPropagator())
+		if exp, err := sentryotlp.NewTraceExporter(ctx, env.SentryDSN()); err != nil {
+			return nil, err
+		} else {
+			tpopts = append(tpopts, trace.WithSpanProcessor(trace.NewBatchSpanProcessor(exp)))
+		}
 	}
 
 	tracers := tracers.Tracers{
