@@ -43,7 +43,10 @@ func DockerEngineApply(
 	if *deployment.DockerType == types.DockerTypeSwarm {
 		status, err = ApplyComposeFileSwarm(ctx, deployment, statusCh)
 	} else {
-		status, err = ApplyComposeFile(ctx, deployment, statusCh)
+		err = ApplyComposeFile(ctx, deployment, statusCh)
+		if err == nil {
+			status = "compose command executed successfully"
+		}
 	}
 
 	if err == nil {
@@ -59,92 +62,9 @@ func DockerEngineApply(
 	return agentDeployment, status, err
 }
 
-func ApplyComposeFile(
-	ctx context.Context,
-	deployment api.AgentDeployment,
-	statusCh chan<- string,
-) (string, error) {
-	var envFile *os.File
-	var err error
+func ApplyComposeFile(ctx context.Context, deployment api.AgentDeployment, statusCh chan<- string) error {
+	statusCh <- "initializing compose service"
 
-	if deployment.EnvFile != nil {
-		if envFile, err = os.CreateTemp("", "distr-env"); err != nil {
-			logger.Error("", zap.Error(err))
-			return "", fmt.Errorf("failed to create env file in tmp directory: %w", err)
-		} else {
-			if _, err = envFile.Write(deployment.EnvFile); err != nil {
-				logger.Error("", zap.Error(err))
-				return "", fmt.Errorf("failed to write env file: %w", err)
-			}
-			_ = envFile.Close()
-			defer func() {
-				if err := os.Remove(envFile.Name()); err != nil {
-					logger.Error("failed to remove env file from tmp directory", zap.Error(err))
-				}
-			}()
-		}
-	}
-
-	statusCh <- "pulling docker images"
-	if err := PullComposeImages(ctx, deployment, statusCh); err != nil {
-		return "", fmt.Errorf("failed to pull compose images: %w", err)
-	}
-
-	statusCh <- "applying compose project"
-	composeArgs := []string{"compose"}
-	if envFile != nil {
-		composeArgs = append(composeArgs, fmt.Sprintf("--env-file=%v", envFile.Name()))
-	}
-	composeArgs = append(composeArgs, "-f", "-", "up", "-d", "--quiet-pull", "--remove-orphans")
-
-	cmd := exec.CommandContext(ctx, "docker", composeArgs...)
-	cmd.Stdin = bytes.NewReader(deployment.ComposeFile)
-	cmd.Env = append(os.Environ(), DockerConfigEnv(deployment)...)
-
-	var cmdOut []byte
-	cmdOut, err = cmd.CombinedOutput()
-	statusStr := string(cmdOut)
-	logger.Debug("docker compose returned", zap.String("output", statusStr), zap.Error(err))
-
-	if err != nil {
-		return "", errors.New(statusStr)
-	} else {
-		return statusStr, nil
-	}
-}
-
-type pullEventProcessor struct {
-	statusCh chan<- string
-}
-
-func (p *pullEventProcessor) Start(_ context.Context, _ string) {}
-func (p *pullEventProcessor) Done(_ string, _ bool)             {}
-func (p *pullEventProcessor) On(events ...composeapi.Resource) {
-	for _, e := range events {
-		var msg string
-		switch e.Text {
-		case composeapi.StatusPulling, composeapi.StatusPulled:
-			// e.ID is "Image nginx:latest" for image-level events
-			image := strings.TrimPrefix(e.ID, "Image ")
-			msg = fmt.Sprintf("%s: %s", image, e.Text)
-		case composeapi.StatusDownloading, composeapi.StatusDownloadComplete:
-			// e.ParentID is the image name, e.ID is the layer digest
-			image := strings.TrimPrefix(e.ParentID, "Image ")
-			msg = fmt.Sprintf("%s (%s): %s", image, e.ID, e.Text)
-			if e.Percent > 0 {
-				msg = fmt.Sprintf("%s (%d%%)", msg, e.Percent)
-			}
-		default:
-			continue
-		}
-		select {
-		case p.statusCh <- msg:
-		default:
-		}
-	}
-}
-
-func PullComposeImages(ctx context.Context, deployment api.AgentDeployment, statusCh chan<- string) error {
 	composeFile, err := os.CreateTemp("", "distr-compose-*.yaml")
 	if err != nil {
 		return fmt.Errorf("failed to create temp compose file: %w", err)
@@ -159,6 +79,25 @@ func PullComposeImages(ctx context.Context, deployment api.AgentDeployment, stat
 	}
 	_ = composeFile.Close()
 
+	var envFile *os.File
+	if deployment.EnvFile != nil {
+		if envFile, err = os.CreateTemp("", "distr-*.env"); err != nil {
+			logger.Error("", zap.Error(err))
+			return fmt.Errorf("failed to create env file in tmp directory: %w", err)
+		} else {
+			if _, err = envFile.Write(deployment.EnvFile); err != nil {
+				logger.Error("", zap.Error(err))
+				return fmt.Errorf("failed to write env file: %w", err)
+			}
+			_ = envFile.Close()
+			defer func() {
+				if err := os.Remove(envFile.Name()); err != nil {
+					logger.Error("failed to remove env file from tmp directory", zap.Error(err))
+				}
+			}()
+		}
+	}
+
 	dockerCli, err := dockercommand.NewDockerCli()
 	if err != nil {
 		return fmt.Errorf("failed to create docker CLI object: %w", err)
@@ -168,20 +107,27 @@ func PullComposeImages(ctx context.Context, deployment api.AgentDeployment, stat
 		return fmt.Errorf("failed to initialize docker CLI object: %w", err)
 	}
 
-	composeService, err := compose.NewComposeService(dockerCli, compose.WithEventProcessor(&pullEventProcessor{statusCh: statusCh}))
+	composeService, err := compose.NewComposeService(dockerCli, compose.WithEventProcessor(NewEventProcessor(statusCh)))
 	if err != nil {
 		return fmt.Errorf("failed to initialize compose service: %w", err)
 	}
 
-	project, err := composeService.LoadProject(ctx, composeapi.ProjectLoadOptions{
-		ConfigPaths: []string{composeFile.Name()},
-	})
+	loadOpts := composeapi.ProjectLoadOptions{ConfigPaths: []string{composeFile.Name()}}
+	if envFile != nil {
+		loadOpts.EnvFiles = []string{envFile.Name()}
+	}
+
+	project, err := composeService.LoadProject(ctx, loadOpts)
 	if err != nil {
 		return fmt.Errorf("failed to load compose project: %w", err)
 	}
 
-	if err = composeService.Pull(ctx, project, composeapi.PullOptions{}); err != nil {
-		return fmt.Errorf("failed to pull images: %w", err)
+	err = composeService.Up(ctx, project, composeapi.UpOptions{
+		Create: composeapi.CreateOptions{RemoveOrphans: true},
+		Start:  composeapi.StartOptions{Project: project},
+	})
+	if err != nil {
+		return fmt.Errorf("compose up failed: %w", err)
 	}
 
 	return nil
