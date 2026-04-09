@@ -24,7 +24,7 @@ services:
       - app_network
 
   backend:
-    image: ghcr.io/distr-sh/hello-distr/backend:0.4.3 # x-release-please-version
+    image: ghcr.io/distr-sh/hello-distr/backend:0.4.4 # x-release-please-version
     environment:
       <<: *shared-env
       DB_URL: postgresql://${HELLO_DISTR_DB_USER:?error}:${HELLO_DISTR_DB_PASSWORD:?error}@postgres/${HELLO_DISTR_DB_NAME:?error}?sslmode=disable
@@ -44,7 +44,7 @@ services:
       - app_network
 
   frontend:
-    image: ghcr.io/distr-sh/hello-distr/frontend:0.4.3 # x-release-please-version
+    image: ghcr.io/distr-sh/hello-distr/frontend:0.4.4 # x-release-please-version
     environment:
       <<: *shared-env
       NEXT_PUBLIC_API_URL: '${HELLO_DISTR_PROTOCOL:-http}://${HELLO_DISTR_HOST:?error}/api'
@@ -60,7 +60,7 @@ services:
       - app_network
 
   proxy:
-    image: ghcr.io/distr-sh/hello-distr/proxy:0.4.3 # x-release-please-version
+    image: ghcr.io/distr-sh/hello-distr/proxy:0.4.4 # x-release-please-version
     environment:
       <<: *shared-env
       HOST: ${HELLO_DISTR_HOST:?error}
@@ -73,13 +73,13 @@ services:
       frontend:
         condition: service_healthy
     healthcheck:
-      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:80']
+      test: ['CMD', 'wget', '--no-check-certificate', '-qO-', 'http://127.0.0.1']
       interval: 5s
     networks:
       - app_network
 
   jobs:
-    image: ghcr.io/distr-sh/hello-distr/jobs:0.4.3 # x-release-please-version
+    image: ghcr.io/distr-sh/hello-distr/jobs:0.4.4 # x-release-please-version
     depends_on:
       backend:
         condition: service_healthy
