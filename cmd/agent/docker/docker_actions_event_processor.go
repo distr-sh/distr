@@ -71,7 +71,7 @@ func (p *composeEventProcessor) On(events ...composeapi.Resource) {
 			p.containerStatus[e.ID] = e.Text
 
 		case composeapi.StatusError:
-			p.containerStatus[e.ID] = fmt.Sprintf("error: %s", e.Text)
+			p.containerStatus[e.ID] = fmt.Sprintf("error: %s", e.Details)
 
 		default:
 			continue
