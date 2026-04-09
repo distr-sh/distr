@@ -69,8 +69,6 @@ func NewRouter(
 	baseRouter.Use(
 		// Handles panics
 		chimiddleware.Recoverer,
-		// Reject bodies larger than 1MiB
-		chimiddleware.RequestSize(1048576),
 	)
 
 	openapiRouter := chiopenapi.NewRouter(
@@ -112,6 +110,9 @@ func ApiRouter(
 	oidcer *oidc.OIDCer,
 	prometheusCollector *prometheus.DistrCollector,
 ) func(r chiopenapi.Router) {
+	requestSize1MiB := chimiddleware.RequestSize(1024 * 1024)
+	requestSize10MiB := chimiddleware.RequestSize(10 * 1024 * 1024)
+
 	return func(r chiopenapi.Router) {
 		r.Use(
 			chimiddleware.RequestID,
@@ -128,6 +129,7 @@ func ApiRouter(
 			r.Group(func(r chiopenapi.Router) {
 				r.Use(
 					middleware.OTEL(tracers.Default()),
+					requestSize1MiB,
 				)
 
 				// public routes go here
@@ -147,7 +149,7 @@ func ApiRouter(
 						middleware.SentryUser,
 						auth.Authentication.Middleware,
 						httprate.Limit(30, 1*time.Second, httprate.WithKeyFuncs(middleware.RateLimitUserIDKey)),
-						httprate.Limit(60, 1*time.Minute, httprate.WithKeyFuncs(middleware.RateLimitUserIDKey)),
+						httprate.Limit(300, 1*time.Minute, httprate.WithKeyFuncs(middleware.RateLimitUserIDKey)),
 						httprate.Limit(2000, 1*time.Hour, httprate.WithKeyFuncs(middleware.RateLimitUserIDKey)),
 
 						// TODO (low-prio) in the future, additionally check token audience and require it to be "api"/"user",
@@ -185,12 +187,18 @@ func ApiRouter(
 			// agent connect and download routes go here (authenticated but with accessKeyId and accessKeySecret)
 			r.Group(func(r chiopenapi.Router) {
 				r.Group(func(r chiopenapi.Router) {
-					r.Use(middleware.OTEL(tracers.Agent()))
+					r.Use(
+						middleware.OTEL(tracers.Agent()),
+						requestSize10MiB,
+					)
 					r.Route("/", handlers.AgentRouter)
 				})
 
 				r.Group(func(r chiopenapi.Router) {
-					r.Use(middleware.OTEL(tracers.Default()))
+					r.Use(
+						middleware.OTEL(tracers.Default()),
+						requestSize1MiB,
+					)
 					r.Route("/support-bundle-collect", handlers.SupportBundleScriptRouter)
 				})
 			})

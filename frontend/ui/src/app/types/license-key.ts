@@ -5,5 +5,13 @@ export interface LicenseKey extends BaseModel, Named {
   payload: Record<string, unknown>;
   notBefore: string;
   expiresAt: string;
+  lastRevisedAt?: string;
   customerOrganizationId?: string;
+}
+
+export interface LicenseKeyRevision extends BaseModel {
+  notBefore: string;
+  expiresAt: string;
+  payload: Record<string, unknown>;
+  token: string;
 }

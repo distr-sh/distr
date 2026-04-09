@@ -82,6 +82,7 @@ var (
 	oidcGenericPKCEEnabled                  bool
 	wellKnownMicrosoftIdentityAssociation   []byte
 	stripeWebhookSecret                     *string
+	stripeWebhookVersionMismatchBehavior    StripeWebhookVersionMismatchBehaviorType
 	stripeAPIKey                            *string
 	licenseKeyPrivateKeyPEM                 []byte
 	licenseKey                              string
@@ -241,6 +242,11 @@ func Initialize() {
 		"WELLKNOWN_MICROSOFT_IDENTITY_ASSOCIATION_JSON", envparse.ByteSlice, nil)
 
 	stripeWebhookSecret = envutil.GetEnvOrNil("STRIPE_WEBHOOK_SECRET")
+	stripeWebhookVersionMismatchBehavior = envutil.GetEnvParsedOrDefault(
+		"STRIPE_WEBHOOK_VERSION_MISMATCH_BEHAVIOR",
+		parseStripeWebhookVersionMismatchBehavior,
+		StripeWebhookVersionMismatchBehaviorError,
+	)
 	stripeAPIKey = envutil.GetEnvOrNil("STRIPE_API_KEY")
 
 	if pem := envutil.GetEnvOrNil("LICENSE_KEY_PRIVATE_KEY"); pem != nil {
@@ -513,6 +519,10 @@ func WellKnownMicrosoftIdentityAssociation() []byte {
 
 func StripeWebhookSecret() *string {
 	return stripeWebhookSecret
+}
+
+func StripeWebhookVersionMismatchBehavior() StripeWebhookVersionMismatchBehaviorType {
+	return stripeWebhookVersionMismatchBehavior
 }
 
 func StripeAPIKey() *string {

@@ -1,8 +1,14 @@
 package deploymentlogs
 
 import (
+	"context"
+	"fmt"
+	"sync"
+	"time"
+
 	"github.com/distr-sh/distr/api"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 type DeploymentIDer interface {
@@ -12,19 +18,36 @@ type DeploymentIDer interface {
 
 type Collector interface {
 	For(DeploymentIDer) DeploymentCollector
-	LogRecords() []api.DeploymentLogRecord
+	Flush(context.Context) error
 }
 
 type DeploymentCollector interface {
-	AppendMessage(resource, severity, message string)
+	AppendMessage(ctx context.Context, resource, severity, message string) error
 }
 
 type collector struct {
-	logRecords []api.DeploymentLogRecord
+	mut             *sync.Mutex
+	flushLimit      int
+	bufferSizeLimit int
+	exporter        Exporter
+	log             *zap.Logger
+	logRecords      []api.DeploymentLogRecord
 }
 
-func NewCollector() Collector {
-	return &collector{}
+const (
+	defaultFlushLimit      = 100
+	defaultBufferSizeLimit = 1000
+)
+
+func NewCollector(exporter Exporter, log *zap.Logger) Collector {
+	return &collector{
+		mut:             new(sync.Mutex),
+		flushLimit:      defaultFlushLimit,
+		bufferSizeLimit: defaultBufferSizeLimit,
+		exporter:        exporter,
+		log:             log,
+		logRecords:      make([]api.DeploymentLogRecord, 0, defaultFlushLimit),
+	}
 }
 
 // For implements Collector.
@@ -32,13 +55,46 @@ func (c *collector) For(d DeploymentIDer) DeploymentCollector {
 	return &deploymentCollector{collector: c, DeploymentIDer: d}
 }
 
-// LogRecords implements Collector.
-func (c *collector) LogRecords() []api.DeploymentLogRecord {
-	return c.logRecords
+func (c *collector) Flush(ctx context.Context) error {
+	c.mut.Lock()
+	defer c.mut.Unlock()
+	return c.flushNoLock(ctx)
 }
 
-func (c *collector) appendRecord(record api.DeploymentLogRecord) {
+func (c *collector) flushNoLock(ctx context.Context) error {
+	if len(c.logRecords) == 0 {
+		return nil
+	}
+
+	t := time.Now()
+	if err := c.exporter.ExportDeploymentLogs(ctx, c.logRecords); err != nil {
+		return fmt.Errorf("export log records: %w", err)
+	} else {
+		c.log.Debug("flushed log records",
+			zap.Int("logRecords", len(c.logRecords)),
+			zap.Duration("duration", time.Since(t)))
+		c.logRecords = make([]api.DeploymentLogRecord, 0, c.flushLimit)
+	}
+
+	return nil
+}
+
+func (c *collector) appendRecord(ctx context.Context, record api.DeploymentLogRecord) error {
+	c.mut.Lock()
+	defer c.mut.Unlock()
+
+	if len(c.logRecords) >= c.bufferSizeLimit {
+		return fmt.Errorf("buffer size limit of %v has been reached", c.bufferSizeLimit)
+	}
+
 	c.logRecords = append(c.logRecords, record)
+	if c.flushLimit > 0 && len(c.logRecords) >= c.flushLimit {
+		if err := c.flushNoLock(ctx); err != nil {
+			c.log.Warn("failed to flush log records", zap.Error(err), zap.Int("logRecords", len(c.logRecords)))
+		}
+	}
+
+	return nil
 }
 
 type deploymentCollector struct {
@@ -47,9 +103,12 @@ type deploymentCollector struct {
 }
 
 // AppendMessage implements DeploymentCollector.
-func (d *deploymentCollector) AppendMessage(resource string, severity string, message string) {
+func (d *deploymentCollector) AppendMessage(ctx context.Context, resource, severity, message string) error {
 	record := NewRecord(d.GetDeploymentID(), d.GetDeploymentRevisionID(), resource, severity, message)
 	if record.Body != "" {
-		d.appendRecord(record)
+		if err := d.appendRecord(ctx, record); err != nil {
+			return fmt.Errorf("append message: %w", err)
+		}
 	}
+	return nil
 }

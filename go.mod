@@ -2,7 +2,7 @@ module github.com/distr-sh/distr
 
 go 1.26.0
 
-toolchain go1.26.1
+toolchain go1.26.2
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
@@ -10,11 +10,11 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.41.5
 	github.com/aws/aws-sdk-go-v2/config v1.32.14
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.14
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.98.0
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.99.0
 	github.com/aws/aws-sdk-go-v2/service/ses v1.34.22
 	github.com/compose-spec/compose-go/v2 v2.10.2
 	github.com/containerd/log v0.1.0
-	github.com/coreos/go-oidc/v3 v3.17.0
+	github.com/coreos/go-oidc/v3 v3.18.0
 	github.com/docker/cli v29.4.0+incompatible
 	github.com/docker/compose/v5 v5.1.1
 	github.com/exaring/otelpgx v0.10.0
@@ -44,7 +44,7 @@ require (
 	github.com/samber/slog-zap/v2 v2.6.4
 	github.com/shirou/gopsutil/v4 v4.26.3
 	github.com/spf13/cobra v1.10.2
-	github.com/stripe/stripe-go/v84 v84.4.1
+	github.com/stripe/stripe-go/v85 v85.0.1
 	github.com/wneessen/go-mail v0.7.2
 	go.opentelemetry.io/collector/component v1.55.0
 	go.opentelemetry.io/collector/confmap v1.55.0
@@ -312,9 +312,9 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.63.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.63.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.40.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.40.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.43.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.43.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.40.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.43.0 // indirect
 	go.opentelemetry.io/otel/metric v1.43.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.43.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.10.0 // indirect
@@ -323,7 +323,7 @@ require (
 	go.yaml.in/yaml/v4 v4.0.0-rc.4 // indirect
 	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/oauth2 v0.36.0
-	golang.org/x/sync v0.20.0 // indirect
+	golang.org/x/sync v0.20.0
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/term v0.41.0 // indirect
 	golang.org/x/text v0.35.0 // indirect

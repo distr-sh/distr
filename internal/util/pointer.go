@@ -24,3 +24,10 @@ func PtrDerefOrDefault[T any](p *T) (v T) {
 	}
 	return
 }
+
+func PtrDerefOr[T any](p *T, v T) T {
+	if p != nil {
+		return *p
+	}
+	return v
+}

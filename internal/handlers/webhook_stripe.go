@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/internal/apierrors"
@@ -18,8 +19,8 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
-	"github.com/stripe/stripe-go/v84"
-	"github.com/stripe/stripe-go/v84/webhook"
+	"github.com/stripe/stripe-go/v85"
+	"github.com/stripe/stripe-go/v85/webhook"
 	"go.uber.org/zap"
 )
 
@@ -48,6 +49,14 @@ func stripeWebhookHandler() http.HandlerFunc {
 		event, err := webhook.ConstructEvent(payload, req.Header.Get("Stripe-Signature"), *endpointSecret)
 		if err != nil {
 			log.Warn("webhook signature verification failed", zap.Error(err))
+
+			if env.StripeWebhookVersionMismatchBehavior() == env.StripeWebhookVersionMismatchBehaviorIgnore {
+				if event.APIVersion != "" && !strings.HasSuffix(event.APIVersion, "."+stripe.APIMajorVersion) {
+					w.WriteHeader(http.StatusOK)
+					return
+				}
+			}
+
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}

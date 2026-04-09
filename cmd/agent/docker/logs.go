@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -17,15 +16,18 @@ import (
 	"github.com/moby/moby/api/pkg/stdcopy"
 	mobyClient "github.com/moby/moby/client"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
-type logsWatcher struct{ logsExporter deploymentlogs.Exporter }
+type logsWatcher struct{}
 
 func NewLogsWatcher() *logsWatcher {
-	return &logsWatcher{logsExporter: deploymentlogs.ChunkExporter(client, 100)}
+	return &logsWatcher{}
 }
 
 func (lw *logsWatcher) Watch(ctx context.Context, d time.Duration) {
+	logger.Debug("logs watcher is starting to watch",
+		zap.Duration("interval", d))
 	tick := time.Tick(d)
 	for {
 		select {
@@ -38,13 +40,15 @@ func (lw *logsWatcher) Watch(ctx context.Context, d time.Duration) {
 }
 
 func (lw *logsWatcher) collect(ctx context.Context) {
+	logger.Debug("getting logs")
+
 	deployments, err := GetExistingDeployments()
 	if err != nil {
 		logger.Warn("watch logs could not get deployments", zap.Error(err))
 		return
 	}
 
-	collector := deploymentlogs.NewCollector()
+	collector := deploymentlogs.NewCollector(client, logger)
 
 	for _, d := range deployments {
 		if !d.LogsEnabled {
@@ -67,7 +71,12 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 				logOptions.Since = since.Format(time.RFC3339Nano)
 			}
 
-			toplevelErr = composeService.Logs(ctx, d.ProjectName, &composeCollector{deploymentCollector}, logOptions)
+			// Allow the collector to cancel the context used for the API request.
+			// This allows propagating append errors downstream.
+			ctx, cancel := context.WithCancelCause(ctx)
+			defer cancel(nil)
+			collector := composeCollector{ctx, cancel, deploymentCollector}
+			toplevelErr = composeService.Logs(ctx, d.ProjectName, &collector, logOptions)
 			if toplevelErr != nil {
 				logger.Warn("could not get compose logs", zap.Error(toplevelErr))
 			}
@@ -99,7 +108,7 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 							return err
 						}
 						defer rc.Close()
-						return decodeServiceLogs(svc.Spec.Name, rc, deploymentCollector)
+						return decodeServiceLogs(ctx, svc.Spec.Name, rc, deploymentCollector)
 					}()
 					if err != nil {
 						logger.Warn("could not get service logs", zap.Error(err))
@@ -117,23 +126,34 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 		}
 	}
 
-	if err := lw.logsExporter.ExportDeploymentLogs(ctx, collector.LogRecords()); err != nil {
+	if err := collector.Flush(ctx); err != nil {
 		logger.Warn("error exporting logs", zap.Error(err))
 	}
 }
 
 type composeCollector struct {
+	ctx    context.Context
+	cancel func(error)
 	deploymentlogs.DeploymentCollector
 }
 
 // Err implements api.LogConsumer.
-func (cc *composeCollector) Err(containerName string, message string) {
-	cc.AppendMessage(containerName, "Err", message)
+func (cc *composeCollector) Err(containerName, message string) {
+	cc.LogWithSeverity(containerName, "Err", message)
 }
 
 // Log implements api.LogConsumer.
-func (cc *composeCollector) Log(containerName string, message string) {
-	cc.AppendMessage(containerName, "Log", message)
+func (cc *composeCollector) Log(containerName, message string) {
+	cc.LogWithSeverity(containerName, "Log", message)
+}
+
+func (cc *composeCollector) LogWithSeverity(containerName, severity, message string) {
+	if err := cc.AppendMessage(cc.ctx, containerName, severity, message); err != nil {
+		logger.Warn("failed to append log message", zap.Error(err))
+		if cc.cancel != nil {
+			cc.cancel(err)
+		}
+	}
 }
 
 // Register implements api.LogConsumer.
@@ -146,32 +166,47 @@ func (*composeCollector) Register(containerName string) {}
 // Noop for now
 func (*composeCollector) Status(containerName string, message string) {}
 
-func decodeServiceLogs(resource string, r io.Reader, consumer deploymentlogs.DeploymentCollector) error {
-	// The docker api provides a multipexed stream for logs which must be demuxed. StdCopy does that.
-	var outBuf bytes.Buffer
-	var errBuf bytes.Buffer
-	if _, err := stdcopy.StdCopy(&outBuf, &errBuf, r); err != nil {
+func decodeServiceLogs(
+	ctx context.Context,
+	resource string,
+	r io.Reader,
+	consumer deploymentlogs.DeploymentCollector,
+) error {
+	wg, ctx := errgroup.WithContext(ctx)
+
+	scanAndCollect := func(pr *io.PipeReader, severity string) func() error {
+		return func() error {
+			scanner := bufio.NewScanner(pr)
+			for scanner.Scan() {
+				if err := consumer.AppendMessage(ctx, resource, severity, scanner.Text()); err != nil {
+					pr.CloseWithError(err)
+					return err
+				}
+			}
+			if err := scanner.Err(); err != nil {
+				pr.CloseWithError(err)
+				return err
+			}
+			return nil
+		}
+	}
+
+	wg.SetLimit(3)
+
+	outReader, outWriter := io.Pipe()
+	errReader, errWriter := io.Pipe()
+	wg.Go(func() error {
+		// The docker API provides a multiplexed stream for logs which must be demuxed. StdCopy does that.
+		_, err := stdcopy.StdCopy(outWriter, errWriter, r)
+		outWriter.CloseWithError(err)
+		errWriter.CloseWithError(err)
 		return err
-	}
-	collectFunc := func(name string) func(r, m string) {
-		return func(r, m string) { consumer.AppendMessage(r, name, m) }
-	}
-	streams := []struct {
-		*bufio.Scanner
-		Collect func(r, m string)
-	}{
-		{bufio.NewScanner(&outBuf), collectFunc("stdout")},
-		{bufio.NewScanner(&errBuf), collectFunc("stderr")},
-	}
-	for _, stream := range streams {
-		for stream.Scan() {
-			stream.Collect(resource, stream.Text())
-		}
-		if stream.Err() != nil {
-			return stream.Err()
-		}
-	}
-	return nil
+	})
+
+	wg.Go(scanAndCollect(outReader, "stdout"))
+	wg.Go(scanAndCollect(errReader, "stderr"))
+
+	return wg.Wait()
 }
 
 func UpdateLastLogsTimestamp(deployment AgentDeployment, timestamp time.Time) error {

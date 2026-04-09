@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/stripe/stripe-go/v84"
-	"github.com/stripe/stripe-go/v84/price"
+	"github.com/stripe/stripe-go/v85"
+	"github.com/stripe/stripe-go/v85/price"
 )
 
 const (
