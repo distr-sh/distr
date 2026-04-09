@@ -14,9 +14,7 @@ import (
 	"github.com/distr-sh/distr/internal/agentauth"
 	"github.com/distr-sh/distr/internal/agentenv"
 	"github.com/distr-sh/distr/internal/types"
-	dockercommand "github.com/docker/cli/cli/command"
 	dockerconfig "github.com/docker/cli/cli/config"
-	dockerflags "github.com/docker/cli/cli/flags"
 	composeapi "github.com/docker/compose/v5/pkg/api"
 	"github.com/docker/compose/v5/pkg/compose"
 	"go.uber.org/zap"
@@ -63,57 +61,33 @@ func DockerEngineApply(
 func ApplyComposeFile(ctx context.Context, deployment api.AgentDeployment, updateStatus func(string)) error {
 	updateStatus("initializing compose service")
 
-	composeFile, err := os.CreateTemp("", "distr-compose-*.yaml")
-	if err != nil {
-		return fmt.Errorf("failed to create temp compose file: %w", err)
+	var composeFileName string
+	if f, err := WriteTempFile("distr-compose-*.yaml", deployment.ComposeFile); err != nil {
+		return fmt.Errorf("failed to write compose file: %w", err)
+	} else {
+		composeFileName = string(f)
+		defer f.Destroy()
 	}
-	defer func() {
-		if err := os.Remove(composeFile.Name()); err != nil {
-			logger.Error("failed to remove temp compose file", zap.Error(err))
-		}
-	}()
-	if _, err := composeFile.Write(deployment.ComposeFile); err != nil {
-		return fmt.Errorf("failed to write temp compose file: %w", err)
-	}
-	_ = composeFile.Close()
 
-	var envFile *os.File
+	var envFileName string
 	if deployment.EnvFile != nil {
-		if envFile, err = os.CreateTemp("", "distr-*.env"); err != nil {
-			logger.Error("", zap.Error(err))
-			return fmt.Errorf("failed to create env file in tmp directory: %w", err)
+		if f, err := WriteTempFile("distr-*.env", deployment.EnvFile); err != nil {
+			return fmt.Errorf("failed to write env file: %w", err)
 		} else {
-			if _, err = envFile.Write(deployment.EnvFile); err != nil {
-				logger.Error("", zap.Error(err))
-				return fmt.Errorf("failed to write env file: %w", err)
-			}
-			_ = envFile.Close()
-			defer func() {
-				if err := os.Remove(envFile.Name()); err != nil {
-					logger.Error("failed to remove env file from tmp directory", zap.Error(err))
-				}
-			}()
+			envFileName = string(f)
+			defer f.Destroy()
 		}
 	}
 
-	dockerCli, err := dockercommand.NewDockerCli()
-	if err != nil {
-		return fmt.Errorf("failed to create docker CLI object: %w", err)
-	} else if err = dockerCli.Initialize(DockerCLIOpts(deployment)); err != nil {
-		return fmt.Errorf("failed to initialize docker CLI object: %w", err)
-	}
-
-	composeService, err := compose.NewComposeService(
-		dockerCli,
-		compose.WithEventProcessor(NewEventProcessor(updateStatus)),
-	)
+	eventProcessor := NewEventProcessor(updateStatus)
+	composeService, err := ComposeServiceForDeployment(deployment, compose.WithEventProcessor(eventProcessor))
 	if err != nil {
 		return fmt.Errorf("failed to initialize compose service: %w", err)
 	}
 
-	loadOpts := composeapi.ProjectLoadOptions{ConfigPaths: []string{composeFile.Name()}}
-	if envFile != nil {
-		loadOpts.EnvFiles = []string{envFile.Name()}
+	loadOpts := composeapi.ProjectLoadOptions{ConfigPaths: []string{composeFileName}}
+	if envFileName != "" {
+		loadOpts.EnvFiles = []string{envFileName}
 	}
 
 	project, err := composeService.LoadProject(ctx, loadOpts)
@@ -253,14 +227,6 @@ func DockerConfigEnv(deployment api.AgentDeployment) []string {
 	} else {
 		return nil
 	}
-}
-
-func DockerCLIOpts(deployment api.AgentDeployment) *dockerflags.ClientOptions {
-	var opts dockerflags.ClientOptions
-	if len(deployment.RegistryAuth) > 0 || hasRegistryImages(deployment) {
-		opts.ConfigDir = agentauth.DockerConfigDir(deployment)
-	}
-	return &opts
 }
 
 // hasRegistryImages parses the compose file in order to check whether one of the services uses an image hosted on
