@@ -12,14 +12,14 @@
     "format": "prettier --write ."
   },
   "dependencies": {
-    "@astrojs/mdx": "^5.0.2",
-    "@astrojs/preact": "^5.0.2",
+    "@astrojs/mdx": "5.0.3",
+    "@astrojs/preact": "5.1.1",
     "@astrojs/sitemap": "3.7.2",
     "@astrojs/starlight": "0.38.3",
     "@astrojs/starlight-tailwind": "5.0.0",
     "@iconify-json/lucide": "^1.2.98",
     "@tailwindcss/vite": "^4.2.2",
-    "astro": "6.1.4",
+    "astro": "6.1.5",
     "astro-icon": "^1.1.5",
     "astrojs-service-worker": "^2.0.0",
     "embla-carousel": "^8.6.0",
