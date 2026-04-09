@@ -20,7 +20,7 @@ require (
 	github.com/exaring/otelpgx v0.10.0
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/getsentry/sentry-go v0.45.0
-	github.com/getsentry/sentry-go/otel v0.44.1
+	github.com/getsentry/sentry-go/otel v0.45.0
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/go-chi/httprate v0.15.0
 	github.com/go-chi/jwtauth/v5 v5.4.0
