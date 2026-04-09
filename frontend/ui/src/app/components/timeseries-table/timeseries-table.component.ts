@@ -109,9 +109,9 @@ export class TimeseriesTableComponent {
   public readonly source = input.required<TimeseriesSource>();
   public readonly exporter = input<TimeseriesExporter>();
   public readonly live = input<boolean>(true);
-  public readonly orderDirection = input(OrderDirection.DESC);
+  public readonly orderDirection = input<OrderDirection>('DESC');
   public readonly resourceColorMap = input<Record<string, string>>({});
-  protected readonly newestFirst = computed(() => this.orderDirection() === OrderDirection.DESC);
+  protected readonly newestFirst = computed(() => this.orderDirection() === 'DESC');
   protected readonly showResourceColumn = computed(() => Object.keys(this.resourceColorMap()).length > 1);
 
   private readonly toastService = inject(ToastService);

@@ -91,7 +91,7 @@ export class DeploymentLogsTableComponent {
   public readonly after = input<Date>();
   public readonly before = input<Date>();
   public readonly filter = input<string>();
-  public readonly orderDirection = input(OrderDirection.DESC);
+  public readonly orderDirection = input<OrderDirection>('DESC');
 
   protected readonly live = computed(() => !this.after() && !this.before());
 

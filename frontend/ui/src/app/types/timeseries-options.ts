@@ -1,7 +1,4 @@
-export enum OrderDirection {
-  ASC = 'ASC',
-  DESC = 'DESC',
-}
+export type OrderDirection = 'ASC' | 'DESC';
 
 export type TimeseriesOptions = {limit?: number; before?: Date; after?: Date; filter?: string; order?: OrderDirection};
 

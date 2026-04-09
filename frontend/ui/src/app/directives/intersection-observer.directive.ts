@@ -1,10 +1,10 @@
 import {Directive, effect, ElementRef, inject, input, OnDestroy, output} from '@angular/core';
 
-@Directive({selector: '[appIntersectionObserver]'})
+@Directive({selector: '[appIntersect]'})
 export class IntersectionObserverDirective implements OnDestroy {
-  public readonly enabled = input(true);
+  public readonly intersectEnabled = input(true);
   public readonly threshold = input(0.1);
-  public readonly intersecting = output<boolean>();
+  public readonly appIntersect = output<boolean>();
 
   private readonly el = inject(ElementRef<HTMLElement>);
   private observer: IntersectionObserver | null = null;
@@ -14,11 +14,11 @@ export class IntersectionObserverDirective implements OnDestroy {
       this.observer?.disconnect();
       this.observer = null;
 
-      if (this.enabled()) {
+      if (this.intersectEnabled()) {
         this.observer = new IntersectionObserver(
           (entries) => {
             for (const entry of entries) {
-              this.intersecting.emit(entry.isIntersecting);
+              this.appIntersect.emit(entry.isIntersecting);
             }
           },
           {threshold: this.threshold()}

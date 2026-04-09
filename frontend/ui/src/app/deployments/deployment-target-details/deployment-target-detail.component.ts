@@ -54,12 +54,10 @@ export class DeploymentTargetDetailComponent {
   protected readonly faPlay = faPlay;
   protected readonly faArrowDownWideShort = faArrowDownWideShort;
   protected readonly faArrowUpShortWide = faArrowUpShortWide;
-  protected readonly OrderDirection = OrderDirection;
-
-  protected readonly orderDirection = signal(
-    (localStorage.getItem(ORDER_DIRECTION_KEY) as OrderDirection) || OrderDirection.DESC
+  protected readonly orderDirection = signal<OrderDirection>(
+    (localStorage.getItem(ORDER_DIRECTION_KEY) as OrderDirection) || 'DESC'
   );
-  protected readonly newestFirst = computed(() => this.orderDirection() === OrderDirection.DESC);
+  protected readonly newestFirst = computed(() => this.orderDirection() === 'DESC');
 
   protected readonly targetDropdown = signal(false);
   protected targetDropdownWidth = 0;
@@ -173,6 +171,7 @@ export class DeploymentTargetDetailComponent {
   protected selectDeployment(deployment: DeploymentWithLatestRevision | undefined) {
     this.form.patchValue({filter: ''});
     this.deploymentDropdown.set(false);
+    this.resourceDropdown.set(false);
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {deploymentId: deployment?.id ?? null, resource: null},
@@ -191,6 +190,7 @@ export class DeploymentTargetDetailComponent {
   }
 
   protected clearResources() {
+    this.resourceDropdown.set(false);
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {resource: null},
