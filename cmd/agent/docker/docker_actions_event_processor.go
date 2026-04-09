@@ -13,16 +13,16 @@ import (
 )
 
 type composeEventProcessor struct {
-	statusCh        chan<- string
+	updateStatus    func(string)
 	mut             sync.Mutex
 	imageBlobs      map[string]map[string]bool // image -> blob ID -> done
 	pulledImages    map[string]bool            // images that finished pulling
 	containerStatus map[string]string          // container ID -> status text
 }
 
-func NewEventProcessor(statusCh chan<- string) *composeEventProcessor {
+func NewEventProcessor(updateStatus func(string)) *composeEventProcessor {
 	return &composeEventProcessor{
-		statusCh:        statusCh,
+		updateStatus:    updateStatus,
 		imageBlobs:      make(map[string]map[string]bool),
 		pulledImages:    make(map[string]bool),
 		containerStatus: make(map[string]string),
@@ -78,13 +78,8 @@ func (p *composeEventProcessor) On(events ...composeapi.Resource) {
 		}
 	}
 
-	msg := p.buildMessage()
-	if msg == "" {
-		return
-	}
-	select {
-	case p.statusCh <- msg:
-	default:
+	if msg := p.buildMessage(); msg != "" {
+		p.updateStatus(msg)
 	}
 }
 

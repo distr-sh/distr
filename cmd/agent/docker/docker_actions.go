@@ -26,10 +26,8 @@ import (
 func DockerEngineApply(
 	ctx context.Context,
 	deployment api.AgentDeployment,
-	statusCh chan<- string,
+	updateStatus func(string),
 ) (agentDeployment *AgentDeployment, status string, err error) {
-	defer close(statusCh)
-
 	agentDeployment, err = NewAgentDeployment(deployment)
 	if err != nil {
 		return agentDeployment, status, err
@@ -41,9 +39,9 @@ func DockerEngineApply(
 	}
 
 	if *deployment.DockerType == types.DockerTypeSwarm {
-		status, err = ApplyComposeFileSwarm(ctx, deployment, statusCh)
+		status, err = ApplyComposeFileSwarm(ctx, deployment, updateStatus)
 	} else {
-		err = ApplyComposeFile(ctx, deployment, statusCh)
+		err = ApplyComposeFile(ctx, deployment, updateStatus)
 		if err == nil {
 			status = "compose command executed successfully"
 		}
@@ -62,8 +60,8 @@ func DockerEngineApply(
 	return agentDeployment, status, err
 }
 
-func ApplyComposeFile(ctx context.Context, deployment api.AgentDeployment, statusCh chan<- string) error {
-	statusCh <- "initializing compose service"
+func ApplyComposeFile(ctx context.Context, deployment api.AgentDeployment, updateStatus func(string)) error {
+	updateStatus("initializing compose service")
 
 	composeFile, err := os.CreateTemp("", "distr-compose-*.yaml")
 	if err != nil {
@@ -101,13 +99,14 @@ func ApplyComposeFile(ctx context.Context, deployment api.AgentDeployment, statu
 	dockerCli, err := dockercommand.NewDockerCli()
 	if err != nil {
 		return fmt.Errorf("failed to create docker CLI object: %w", err)
-	}
-
-	if err := dockerCli.Initialize(DockerCLIOpts(deployment)); err != nil {
+	} else if err = dockerCli.Initialize(DockerCLIOpts(deployment)); err != nil {
 		return fmt.Errorf("failed to initialize docker CLI object: %w", err)
 	}
 
-	composeService, err := compose.NewComposeService(dockerCli, compose.WithEventProcessor(NewEventProcessor(statusCh)))
+	composeService, err := compose.NewComposeService(
+		dockerCli,
+		compose.WithEventProcessor(NewEventProcessor(updateStatus)),
+	)
 	if err != nil {
 		return fmt.Errorf("failed to initialize compose service: %w", err)
 	}
@@ -136,7 +135,7 @@ func ApplyComposeFile(ctx context.Context, deployment api.AgentDeployment, statu
 func ApplyComposeFileSwarm(
 	ctx context.Context,
 	deployment api.AgentDeployment,
-	statusCh chan<- string,
+	updateStatus func(string),
 ) (string, error) {
 	// Step 1 Ensure Docker Swarm is initialized
 	initCmd := exec.CommandContext(ctx, "docker", "info", "--format", "{{.Swarm.LocalNodeState}}")
@@ -176,7 +175,7 @@ func ApplyComposeFileSwarm(
 		}
 	}
 
-	statusCh <- "applying compose project"
+	updateStatus("applying compose project")
 
 	// Deploy the stack
 	composeArgs := []string{
