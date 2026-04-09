@@ -45,7 +45,7 @@ Distr is an Open Source software distribution platform that provides a ready-to-
 - Bring Your Own Cloud (BYOC) automation
 - Edge & Fleet management
 
-Read more about Distr and our use cases at https://distr.sh/docs/getting-started/about/
+Read more about Distr and concept at https://distr.sh/docs/core-concepts/
 
 ## Architecture overview
 
@@ -113,21 +113,15 @@ You can find them in the reference [values.yaml](https://artifacthub.io/packages
 
 Register your first account at http://localhost:8080/register
 
-The full self-hosting documentation is at https://distr.sh/docs/self-hosting/self-hosting/
+The full self-hosting documentation is at https://distr.sh/docs/self-hosting/
 
 Using Distr agents on macOS? Follow the [guide](https://distr.sh/docs/guides/distr-on-macos/) to get started.
 
 ### Building from source
 
-To build Distr Hub from source, first ensure that the following build dependencies are installed:
+To build Distr Hub from source se recommend that you use [mise](https://mise.jdx.dev/) to install these tools, but you do don't have to.
 
-- NodeJS (Version 22)
-- Go (Version 1.25)
-- Docker (when building the Docker images)
-
-We recommend that you use [mise](https://mise.jdx.dev/) to install these tools, but you do don't have to.
-
-All build tasks can be found in the `mise.toml` file, for example:
+All dependency versions and build tasks can be found in the [`mise.toml`](./mise.toml) file, for example:
 
 ```shell
 # Build the control plane
@@ -136,11 +130,18 @@ mise run build:hub
 mise run "docker-build:**"
 ```
 
-### Local development & Contributing
+## Distr Integrations
 
-Check out our [contributing guidelines](./CONTRIBUTING.md).
+Distr offers several ways to integrate with your existing tools and workflows.
 
-## Distr SDK
+### Distr API
+
+Distr provides a comprehensive REST API that allows you to manage deployments, artifacts, agents, licenses, and more programmatically.
+The full API reference is available at https://app.distr.sh/docs.
+
+For further details on authentication and usage, see https://distr.sh/docs/integrations/api/.
+
+### Distr SDK
 
 Interact with Distr directly from your application code using our first-party SDK.
 The Distr SDK is currently available for JavaScript only, but more languages and frameworks are on the roadmap.
@@ -154,7 +155,17 @@ npm install --save @distr-sh/distr-sdk
 
 The full SDK documentation is at https://distr.sh/docs/integrations/sdk/
 
-## Distr MCP server
+### GitHub Action
 
-> [!NOTE]
-> Development of the Distr MCP server has ended. New versions will not be released. To integrate Distr into your agentic workflows, we suggest to use our OpenAPI specification document to generate an MCP server dynamically or let LLMs consume the Distr API directly.
+Automate artifact version creation in your CI/CD pipeline with the official Distr GitHub Action.
+It is available on the GitHub Marketplace at https://github.com/distr-sh/distr-create-version-action.
+
+For setup and usage instructions, see https://distr.sh/docs/integrations/gh-action/.
+
+## Contributing & Local Development
+
+If you are interested in contributing to Distr or want to modify it for your own needs, check out our [contributing guidelines](./CONTRIBUTING.md).
+
+## License
+
+Distr is licensed under the [Apache License 2.0](./LICENSE). For a hosted version and Enterprise plans, see https://distr.sh/pricing/.
