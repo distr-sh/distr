@@ -144,13 +144,13 @@ export class TimeseriesTableComponent {
           source.load().pipe(catchError((err) => this.handleError(err))),
           this.loadMore$.pipe(
             switchMap(() => {
-              if (newestFirst) {
-                return nextBefore !== null
-                  ? source.loadBefore(nextBefore).pipe(catchError((err) => this.handleError(err)))
-                  : EMPTY;
-              } else {
+              if (!newestFirst && !live) {
                 return nextAfter !== null
                   ? source.loadAfter(nextAfter).pipe(catchError((err) => this.handleError(err)))
+                  : EMPTY;
+              } else {
+                return nextBefore !== null
+                  ? source.loadBefore(nextBefore).pipe(catchError((err) => this.handleError(err)))
                   : EMPTY;
               }
             })
