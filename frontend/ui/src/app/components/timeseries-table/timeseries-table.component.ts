@@ -3,8 +3,6 @@ import {
   afterNextRender,
   Component,
   computed,
-  DestroyRef,
-  effect,
   ElementRef,
   inject,
   Injector,
@@ -12,13 +10,14 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import {toObservable} from '@angular/core/rxjs-interop';
+import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faThumbtack, faThumbtackSlash} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatest, EMPTY, interval, map, merge, Observable, scan, Subject, switchMap, tap} from 'rxjs';
 import {distinctBy} from '../../../util/arrays';
 import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
+import {IntersectionObserverDirective} from '../../directives/intersection-observer.directive';
 import {ToastService} from '../../services/toast.service';
 import {OrderDirection} from '../../types/timeseries-options';
 import {SpinnerComponent} from '../spinner/spinner.component';
@@ -83,7 +82,15 @@ export interface TimeseriesExporter {
 @Component({
   selector: 'app-timeseries-table',
   templateUrl: './timeseries-table.component.html',
-  imports: [DatePipe, AsyncPipe, NgClass, NgTemplateOutlet, FaIconComponent, SpinnerComponent],
+  imports: [
+    DatePipe,
+    AsyncPipe,
+    NgClass,
+    NgTemplateOutlet,
+    FaIconComponent,
+    IntersectionObserverDirective,
+    SpinnerComponent,
+  ],
 })
 export class TimeseriesTableComponent {
   public readonly source = input.required<TimeseriesSource>();
@@ -105,7 +112,22 @@ export class TimeseriesTableComponent {
   protected hasMore = true;
   protected isExporting = false;
   protected readonly pinnedEntryId = signal<string | null>(null);
-  protected readonly liveProgress = signal(0);
+  private readonly liveResetTimestamp = signal(Date.now());
+
+  protected readonly liveProgress = toSignal(
+    combineLatest([toObservable(this.live), toObservable(this.liveResetTimestamp)]).pipe(
+      switchMap(([live, resetTimestamp]) =>
+        live
+          ? interval(100).pipe(
+              map(() =>
+                Math.min(100, ((Date.now() - resetTimestamp) / TimeseriesTableComponent.LIVE_INTERVAL_MS) * 100)
+              )
+            )
+          : EMPTY
+      )
+    ),
+    {initialValue: 0}
+  );
 
   protected readonly sourceWithStatus = computed(() => new TimeseriesSourceWithStatus(this.source()));
 
@@ -117,7 +139,6 @@ export class TimeseriesTableComponent {
     switchMap(([source, live, newestFirst]) => {
       let nextBefore: Date | null = null;
       let nextAfter: Date | null = null;
-      let liveStart = Date.now();
       return merge(
         merge(
           source.load().pipe(catchError((err) => this.handleError(err))),
@@ -143,20 +164,11 @@ export class TimeseriesTableComponent {
                   : EMPTY
               ),
               tap((entries) => {
-                liveStart = Date.now();
+                this.liveResetTimestamp.set(Date.now());
                 if (!newestFirst && entries.length > 0) {
                   afterNextRender(() => this.scrollToBottom(), {injector: this.injector});
                 }
               })
-            )
-          : EMPTY,
-        live
-          ? interval(100).pipe(
-              tap(() => {
-                const elapsed = Date.now() - liveStart;
-                this.liveProgress.set(Math.min(100, (elapsed / TimeseriesTableComponent.LIVE_INTERVAL_MS) * 100));
-              }),
-              switchMap(() => EMPTY)
             )
           : EMPTY
       ).pipe(
@@ -186,39 +198,16 @@ export class TimeseriesTableComponent {
   ]).pipe(map(([entries, newestFirst]) => entries.sort(compareByDate(newestFirst))));
 
   private readonly loadMore$ = new Subject<void>();
-  private readonly loadMoreButton = viewChild<ElementRef<HTMLElement>>('loadMoreButton');
   private readonly tableBottom = viewChild<ElementRef<HTMLElement>>('tableBottom');
-  private readonly destroyRef = inject(DestroyRef);
-
-  constructor() {
-    let observer: IntersectionObserver | null = null;
-
-    effect(() => {
-      const buttonEl = this.loadMoreButton()?.nativeElement;
-
-      observer?.disconnect();
-      observer = null;
-
-      if (buttonEl) {
-        observer = new IntersectionObserver(
-          (entries) => {
-            if (entries.some((e) => e.isIntersecting)) {
-              this.loadMore();
-            }
-          },
-          {threshold: 0.1}
-        );
-        observer.observe(buttonEl);
-      }
-    });
-
-    this.destroyRef.onDestroy(() => {
-      observer?.disconnect();
-    });
-  }
 
   protected loadMore() {
     this.loadMore$.next();
+  }
+
+  protected onLoadMoreVisible(isIntersecting: boolean) {
+    if (isIntersecting) {
+      this.loadMore();
+    }
   }
 
   private scrollToBottom() {
