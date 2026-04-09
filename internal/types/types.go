@@ -41,6 +41,9 @@ const (
 	OrderDirectionDesc OrderDirection = "DESC"
 )
 
+// EffectiveOrderDirection determines the SQL ORDER BY direction for log queries.
+// In live mode or with only a "before" filter, we want the latest logs first (DESC).
+// ASC is only applied when an "after" filter is set, meaning the user wants to paginate forward from a specific point.
 func EffectiveOrderDirection(order OrderDirection, hasAfter bool) OrderDirection {
 	if order == OrderDirectionAsc && hasAfter {
 		return OrderDirectionAsc
