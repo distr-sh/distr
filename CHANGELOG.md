@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.17.1](https://github.com/distr-sh/distr/compare/2.17.0...2.17.1) (2026-04-09)
+
+
+### Other
+
+* **deps:** update dependency distr-sh/hello-distr to v0.4.4 ([#2228](https://github.com/distr-sh/distr/issues/2228)) ([5eface9](https://github.com/distr-sh/distr/commit/5eface951432441e6bbe3d024bbd068caee082a9))
+
 ## [2.17.0](https://github.com/distr-sh/distr/compare/2.16.2...2.17.0) (2026-04-09)
 
 
