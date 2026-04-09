@@ -93,12 +93,13 @@ func UpdateArtifactEntitlement(ctx context.Context, entitlement *types.ArtifactE
 			name = @name,
             expires_at = @expiresAt,
             customer_organization_id = @customerOrganizationId
-		 	WHERE id = @id RETURNING *
+		 	WHERE id = @id AND organization_id = @organizationId RETURNING *
 		)
 		SELECT `+artifactEntitlementOutExpr+`
 		FROM updated al`,
 		pgx.NamedArgs{
 			"id":                     entitlement.ID,
+			"organizationId":         entitlement.OrganizationID,
 			"name":                   entitlement.Name,
 			"expiresAt":              entitlement.ExpiresAt,
 			"customerOrganizationId": entitlement.CustomerOrganizationID,

@@ -213,6 +213,7 @@ func deleteArtifactEntitlement(w http.ResponseWriter, r *http.Request) {
 func artifactEntitlementMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		a := auth.Authentication.Require(ctx)
 		if entitlementId, err := uuid.Parse(r.PathValue("artifactEntitlementId")); err != nil {
 			http.Error(w, "artifactEntitlementId is not a valid UUID", http.StatusBadRequest)
 		} else if entitlement, err := db.GetArtifactEntitlementByID(ctx, entitlementId); errors.Is(
@@ -223,6 +224,8 @@ func artifactEntitlementMiddleware(next http.Handler) http.Handler {
 			internalctx.GetLogger(r.Context()).Error("failed to get entitlement", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			w.WriteHeader(http.StatusInternalServerError)
+		} else if entitlement.OrganizationID != *a.CurrentOrgID() {
+			w.WriteHeader(http.StatusNotFound)
 		} else {
 			ctx = internalctx.WithArtifactEntitlement(ctx, entitlement)
 			next.ServeHTTP(w, r.WithContext(ctx))
