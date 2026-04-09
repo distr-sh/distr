@@ -183,6 +183,7 @@ func createHelloDistrDeploymentTarget(ctx context.Context) (*types.DeploymentTar
 const helloDistrEnvironment = `
 # mandatory values:
 HELLO_DISTR_HOST=localhost
+HELLO_DISTR_PROTOCOL=http
 HELLO_DISTR_DB_NAME=hello-distr
 HELLO_DISTR_DB_USER=distr
 HELLO_DISTR_DB_PASSWORD=distr123
@@ -194,6 +195,7 @@ func createHelloDistrDeploymentAndRevision(ctx context.Context, appVersionID uui
 		DeploymentTargetID:   dtID,
 		EnvFileData:          []byte(helloDistrEnvironment),
 		DockerType:           util.PtrTo(types.DockerTypeCompose),
+		LogsEnabled:          true,
 	}
 	if err := db.CreateDeployment(ctx, deploymentRequest); err != nil {
 		return err
