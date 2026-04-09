@@ -1,10 +1,10 @@
-# this is a copy of https://github.com/distr-sh/hello-distr/blob/0.1.10/deploy/docker-compose.yaml
 # note: the compose project name will be overridden by the distr agent, to create a unique name
 name: hello-distr
 
 # note: only share non-sensitive data to avoid accidental exposure of sensitive values (like passwords) to other containers
 x-shared-env: &shared-env
   HELLO_DISTR_HOST: ${HELLO_DISTR_HOST:?error}
+  HELLO_DISTR_PROTOCOL: ${HELLO_DISTR_PROTOCOL:-http}
   HELLO_DISTR_DB_NAME: ${HELLO_DISTR_DB_NAME:?error}
 
 services:
@@ -15,12 +15,9 @@ services:
       POSTGRES_USER: ${HELLO_DISTR_DB_USER:?error}
       POSTGRES_PASSWORD: ${HELLO_DISTR_DB_PASSWORD:?error}
       POSTGRES_DB: ${HELLO_DISTR_DB_NAME:?error}
-    restart: unless-stopped
     healthcheck:
       test: pg_isready -h localhost -U ${HELLO_DISTR_DB_USER:?error} -d ${HELLO_DISTR_DB_NAME:?error}
-      start_interval: 1s
       interval: 5s
-      retries: 6
     volumes:
       - 'postgres:/var/lib/postgresql/data/'
     networks:
@@ -34,7 +31,15 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'python',
+          '-c',
+          "import urllib.request; urllib.request.urlopen('http://localhost:5000/health', timeout=1)",
+        ]
+      interval: 5s
     networks:
       - app_network
 
@@ -42,10 +47,13 @@ services:
     image: ghcr.io/distr-sh/hello-distr/frontend:0.4.3 # x-release-please-version
     environment:
       <<: *shared-env
-      NEXT_PUBLIC_API_URL: 'http://${HELLO_DISTR_HOST:?error}/api'
+      NEXT_PUBLIC_API_URL: '${HELLO_DISTR_PROTOCOL:-http}://${HELLO_DISTR_HOST:?error}/api'
     depends_on:
-      - backend
-    restart: unless-stopped
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:3000']
+      interval: 5s
     extra_hosts:
       - '${HELLO_DISTR_HOST:?error}=host-gateway'
     networks:
@@ -58,10 +66,26 @@ services:
       HOST: ${HELLO_DISTR_HOST:?error}
     ports:
       - '80:80'
+      - '443:443'
     depends_on:
-      - backend
-      - frontend
-    restart: unless-stopped
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:80']
+      interval: 5s
+    networks:
+      - app_network
+
+  jobs:
+    image: ghcr.io/distr-sh/hello-distr/jobs:0.4.3 # x-release-please-version
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'pgrep', 'busybox']
+      interval: 5s
     networks:
       - app_network
 
