@@ -109,8 +109,9 @@ func UpdateArtifactEntitlement(ctx context.Context, entitlement *types.ArtifactE
 		return fmt.Errorf("could not update ArtifactEntitlement: %w", err)
 	}
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ArtifactEntitlementBase]); err != nil {
-		var pgError *pgconn.PgError
-		if errors.As(err, &pgError) && pgError.Code == pgerrcode.UniqueViolation {
+		if errors.Is(err, pgx.ErrNoRows) {
+			err = apierrors.ErrNotFound
+		} else if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation {
 			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
 		}
 		return err

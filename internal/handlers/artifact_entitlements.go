@@ -125,7 +125,10 @@ func updateArtifactEntitlement(w http.ResponseWriter, r *http.Request) {
 
 	_ = db.RunTx(ctx, func(ctx context.Context) error {
 		err := db.UpdateArtifactEntitlement(ctx, &entitlement.ArtifactEntitlementBase)
-		if errors.Is(err, apierrors.ErrConflict) {
+		if errors.Is(err, apierrors.ErrNotFound) {
+			http.NotFound(w, r)
+			return err
+		} else if errors.Is(err, apierrors.ErrConflict) {
 			http.Error(w, "An artifact entitlement with this name already exists", http.StatusBadRequest)
 			return err
 		} else if err != nil {
