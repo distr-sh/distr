@@ -13,7 +13,20 @@ import {
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faThumbtack, faThumbtackSlash} from '@fortawesome/free-solid-svg-icons';
-import {catchError, combineLatest, EMPTY, interval, map, merge, Observable, scan, Subject, switchMap, tap} from 'rxjs';
+import {
+  catchError,
+  combineLatest,
+  EMPTY,
+  exhaustMap,
+  interval,
+  map,
+  merge,
+  Observable,
+  scan,
+  Subject,
+  switchMap,
+  tap,
+} from 'rxjs';
 import {distinctBy} from '../../../util/arrays';
 import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
@@ -143,7 +156,7 @@ export class TimeseriesTableComponent {
         merge(
           source.load().pipe(catchError((err) => this.handleError(err))),
           this.loadMore$.pipe(
-            switchMap(() => {
+            exhaustMap(() => {
               if (!newestFirst && !live) {
                 return nextAfter !== null
                   ? source.loadAfter(nextAfter).pipe(catchError((err) => this.handleError(err)))
