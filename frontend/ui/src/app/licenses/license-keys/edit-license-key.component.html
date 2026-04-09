@@ -33,46 +33,79 @@
         placeholder="License description"></textarea>
     </div>
 
-    <div class="grid grid-cols-2 gap-4">
+    @if (!isEditMode() && templates().length > 0) {
       <div>
-        <label for="notBefore" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Not Before *</label>
-        <input
-          formControlName="notBefore"
-          type="date"
-          id="notBefore"
-          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-60" />
-        @if (editForm.controls.notBefore.invalid && editForm.controls.notBefore.touched) {
-          <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
+        <label for="licenseTemplateId" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+          License Template
+        </label>
+        <select
+          formControlName="licenseTemplateId"
+          id="licenseTemplateId"
+          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+          <option [ngValue]="undefined">— None (manual payload) —</option>
+          @for (template of templates(); track template.id) {
+            <option [value]="template.id">{{ template.name }}</option>
+          }
+        </select>
+        @if (hasTemplate) {
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Payload and dates will be set automatically by Stripe when a subscription event is received.
+          </p>
         }
       </div>
-      <div>
-        <label for="expiresAt" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Expires At *</label>
-        <input
-          formControlName="expiresAt"
-          type="date"
-          id="expiresAt"
-          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-60" />
-        @if (editForm.controls.expiresAt.invalid && editForm.controls.expiresAt.touched) {
-          <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
-        }
-      </div>
-    </div>
-    @if (
-      editForm.errors?.['dateRange'] && (editForm.controls.notBefore.touched || editForm.controls.expiresAt.touched)
-    ) {
-      <p class="text-sm text-red-600 dark:text-red-500">{{ editForm.errors?.['dateRange'] }}</p>
     }
 
-    <div>
-      <label for="payload" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Payload (JSON) *</label>
-      <app-editor
-        formControlName="payload"
-        language="json"
-        class="block w-full rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white [&_.cm-editor]:min-h-32 [&_.cm-editor.cm-focused]:outline-none"></app-editor>
-      @if (editForm.controls.payload.errors?.['json'] && editForm.controls.payload.touched) {
-        <p class="mt-1 text-sm text-red-600 dark:text-red-500">{{ editForm.controls.payload.errors?.['json'] }}</p>
+    @if (!hasTemplate) {
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label for="notBefore" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >Not Before *</label
+          >
+          <input
+            formControlName="notBefore"
+            type="date"
+            id="notBefore"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-60" />
+          @if (editForm.errors?.['notBeforeRequired'] && editForm.controls.notBefore.touched) {
+            <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
+          }
+        </div>
+        <div>
+          <label for="expiresAt" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >Expires At *</label
+          >
+          <input
+            formControlName="expiresAt"
+            type="date"
+            id="expiresAt"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-60" />
+          @if (editForm.errors?.['expiresAtRequired'] && editForm.controls.expiresAt.touched) {
+            <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
+          }
+        </div>
+      </div>
+      @if (
+        editForm.errors?.['dateRange'] && (editForm.controls.notBefore.touched || editForm.controls.expiresAt.touched)
+      ) {
+        <p class="text-sm text-red-600 dark:text-red-500">{{ editForm.errors?.['dateRange'] }}</p>
       }
-    </div>
+
+      <div>
+        <label for="payload" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+          >Payload (JSON) *</label
+        >
+        <app-editor
+          formControlName="payload"
+          language="json"
+          class="block w-full rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white [&_.cm-editor]:min-h-32 [&_.cm-editor.cm-focused]:outline-none"></app-editor>
+        @if (editForm.errors?.['payloadRequired'] && editForm.controls.payload.touched) {
+          <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
+        }
+        @if (editForm.controls.payload.errors?.['json'] && editForm.controls.payload.touched) {
+          <p class="mt-1 text-sm text-red-600 dark:text-red-500">{{ editForm.controls.payload.errors?.['json'] }}</p>
+        }
+      </div>
+    }
 
     @if (editForm.getRawValue().customerOrganizationId) {
       <div>

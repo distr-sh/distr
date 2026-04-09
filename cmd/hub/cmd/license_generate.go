@@ -89,10 +89,11 @@ func runGenerateLicenseKey(ctx context.Context, opts GenerateLicenseKeyOptions) 
 			log.Error("invalid not-before", zap.Error(err))
 			return err
 		} else {
-			license.NotBefore = t
+			license.NotBefore = &t
 		}
 	} else {
-		license.NotBefore = time.Now()
+		t := time.Now()
+		license.NotBefore = &t
 	}
 
 	if opts.ExpiresAt != "" {
@@ -100,14 +101,15 @@ func runGenerateLicenseKey(ctx context.Context, opts GenerateLicenseKeyOptions) 
 			log.Error("invalid expires-at", zap.Error(err))
 			return err
 		} else {
-			license.ExpiresAt = t
+			license.ExpiresAt = &t
 		}
 	} else {
 		if d, err := time.ParseDuration(opts.ValidPeriod); err != nil {
 			log.Error("invalid valid-period", zap.Error(err))
 			return err
 		} else {
-			license.ExpiresAt = license.NotBefore.Add(d)
+			t := license.NotBefore.Add(d)
+			license.ExpiresAt = &t
 		}
 	}
 

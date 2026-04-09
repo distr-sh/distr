@@ -30,6 +30,8 @@ type Organization struct {
 	PreConnectScript                    *string            `db:"pre_connect_script" json:"preConnectScript"`
 	PostConnectScript                   *string            `db:"post_connect_script" json:"postConnectScript"`
 	ConnectScriptIsSudo                 bool               `db:"connect_script_is_sudo" json:"connectScriptIsSudo"`
+	StripeWebhookSecret                 *string            `db:"stripe_webhook_secret"            json:"-"`
+	StripeWebhookSecretConfigured       bool               `db:"stripe_webhook_secret_configured" json:"stripeWebhookSecretConfigured"` //nolint:lll
 }
 
 func (org *Organization) HasFeature(feature Feature) bool {

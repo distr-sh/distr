@@ -31,12 +31,13 @@ func TestGenerateToken(t *testing.T) {
 	g := NewWithT(t)
 	key := testKey(t)
 	now := time.Now().Truncate(time.Second)
+	expiresAt := now.Add(24 * time.Hour)
 	licenseKey := types.LicenseKey{
 		ID:            uuid.New(),
 		CreatedAt:     now,
-		LastRevisedAt: now,
-		NotBefore:     now,
-		ExpiresAt:     now.Add(24 * time.Hour),
+		LastRevisedAt: &now,
+		NotBefore:     &now,
+		ExpiresAt:     &expiresAt,
 		Payload:       json.RawMessage(`{"plan":"enterprise"}`),
 	}
 
@@ -67,12 +68,13 @@ func TestGenerateToken_ReservedClaimsStripped(t *testing.T) {
 	g := NewWithT(t)
 	key := testKey(t)
 	now := time.Now().Truncate(time.Second)
+	expiresAt := now.Add(24 * time.Hour)
 	licenseKey := types.LicenseKey{
 		ID:            uuid.New(),
 		CreatedAt:     now,
-		LastRevisedAt: now,
-		NotBefore:     now,
-		ExpiresAt:     now.Add(24 * time.Hour),
+		LastRevisedAt: &now,
+		NotBefore:     &now,
+		ExpiresAt:     &expiresAt,
 		Payload:       json.RawMessage(`{"exp":99999,"plan":"pro"}`),
 	}
 

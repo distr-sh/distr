@@ -35,7 +35,9 @@ const (
 		o.subscription_user_account_quantity,
 		o.pre_connect_script,
 		o.post_connect_script,
-		o.connect_script_is_sudo
+		o.connect_script_is_sudo,
+		o.stripe_webhook_secret,
+		(o.stripe_webhook_secret IS NOT NULL)
 	`
 	organizationWithUserRoleOutputExpr = organizationOutputExpr + `,
 		j.user_role,
@@ -68,7 +70,7 @@ func CreateOrganization(ctx context.Context, org *types.Organization) error {
 	if err != nil {
 		return fmt.Errorf("could not create orgnization: %w", err)
 	}
-	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByName[types.Organization])
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByPos[types.Organization])
 	if err != nil {
 		return err
 	}
@@ -82,7 +84,7 @@ func CreateOrganization(ctx context.Context, org *types.Organization) error {
 		}
 	})
 
-	*org = *result
+	*org = result
 	return nil
 }
 
@@ -103,7 +105,8 @@ func UpdateOrganization(ctx context.Context, org *types.Organization) error {
 			subscription_user_account_quantity = @subscription_user_account_quantity,
 			pre_connect_script = @pre_connect_script,
 			post_connect_script = @post_connect_script,
-			connect_script_is_sudo = @connect_script_is_sudo
+			connect_script_is_sudo = @connect_script_is_sudo,
+			stripe_webhook_secret = @stripe_webhook_secret
 		WHERE id = @id
 		RETURNING `+organizationOutputExpr,
 		pgx.NamedArgs{
@@ -121,19 +124,20 @@ func UpdateOrganization(ctx context.Context, org *types.Organization) error {
 			"pre_connect_script":                          org.PreConnectScript,
 			"post_connect_script":                         org.PostConnectScript,
 			"connect_script_is_sudo":                      org.ConnectScriptIsSudo,
+			"stripe_webhook_secret":                       org.StripeWebhookSecret,
 		},
 	)
 	if err != nil {
 		return err
 	}
-	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByName[types.Organization]); err != nil {
+	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByPos[types.Organization]); err != nil {
 		var pgError *pgconn.PgError
 		if errors.As(err, &pgError) && pgError.Code == pgerrcode.UniqueViolation {
 			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
 		}
 		return err
 	} else {
-		*org = *result
+		*org = result
 		return nil
 	}
 }
@@ -206,7 +210,7 @@ func GetOrganizationsForUser(ctx context.Context, userID uuid.UUID) ([]types.Org
 	if err != nil {
 		return nil, err
 	}
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.OrganizationWithUserRole])
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.OrganizationWithUserRole])
 	if err != nil {
 		return nil, err
 	} else {
@@ -229,7 +233,7 @@ func GetAllOrganizationsForSuperAdmin(ctx context.Context) ([]types.Organization
 	if err != nil {
 		return nil, err
 	}
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.OrganizationWithUserRole])
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.OrganizationWithUserRole])
 	if err != nil {
 		return nil, err
 	} else {
@@ -255,7 +259,7 @@ func GetOrganizationByID(ctx context.Context, orgID uuid.UUID) (*types.Organizat
 	if err != nil {
 		return nil, err
 	}
-	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.Organization])
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByPos[types.Organization])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, apierrors.ErrNotFound
 	} else if err != nil {
@@ -282,15 +286,27 @@ func GetOrganizationWithBranding(ctx context.Context, orgID uuid.UUID) (*types.O
 	if err != nil {
 		return nil, err
 	}
-	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByName[types.OrganizationWithBranding])
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByPos[types.OrganizationWithBranding])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			err = apierrors.ErrNotFound
 		}
 		return nil, fmt.Errorf("could not get organization: %w", err)
 	} else {
-		return result, nil
+		return &result, nil
 	}
+}
+
+func SetOrganizationStripeWebhookSecret(ctx context.Context, orgID uuid.UUID, secret *string) error {
+	db := internalctx.GetDb(ctx)
+	_, err := db.Exec(ctx,
+		`UPDATE Organization SET stripe_webhook_secret = @secret WHERE id = @id`,
+		pgx.NamedArgs{"id": orgID, "secret": secret},
+	)
+	if err != nil {
+		return fmt.Errorf("could not update Organization stripe webhook secret: %w", err)
+	}
+	return nil
 }
 
 func SetOrganizationDeletedAtNow(ctx context.Context, orgID uuid.UUID) error {

@@ -17,7 +17,6 @@ import (
 	"github.com/distr-sh/distr/internal/licensekey"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -110,32 +109,46 @@ func createLicenseKey(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "name is required", http.StatusBadRequest)
 		return
 	}
-	if body.NotBefore.IsZero() {
-		http.Error(w, "notBefore is required", http.StatusBadRequest)
-		return
-	}
-	if body.ExpiresAt.IsZero() {
-		http.Error(w, "expiresAt is required", http.StatusBadRequest)
-		return
-	}
-	if !body.ExpiresAt.After(body.NotBefore) {
-		http.Error(w, "expiresAt must be after notBefore", http.StatusBadRequest)
-		return
-	}
-
-	if err := licensekey.ValidatePayload(body.Payload); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
 
 	licenseKey := types.LicenseKey{
 		Name:                   body.Name,
 		Description:            body.Description,
-		Payload:                body.Payload,
-		NotBefore:              body.NotBefore,
-		ExpiresAt:              body.ExpiresAt,
 		OrganizationID:         *authCtx.CurrentOrgID(),
 		CustomerOrganizationID: body.CustomerOrganizationID,
+		LicenseTemplateID:      body.LicenseTemplateID,
+	}
+
+	if body.LicenseTemplateID != nil {
+		_, err := db.GetLicenseTemplateByID(ctx, *body.LicenseTemplateID, *authCtx.CurrentOrgID())
+		if errors.Is(err, apierrors.ErrNotFound) {
+			http.Error(w, "license template not found", http.StatusBadRequest)
+			return
+		} else if err != nil {
+			log.Warn("could not get license template", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		if body.NotBefore.IsZero() {
+			http.Error(w, "notBefore is required", http.StatusBadRequest)
+			return
+		}
+		if body.ExpiresAt.IsZero() {
+			http.Error(w, "expiresAt is required", http.StatusBadRequest)
+			return
+		}
+		if !body.ExpiresAt.After(body.NotBefore) {
+			http.Error(w, "expiresAt must be after notBefore", http.StatusBadRequest)
+			return
+		}
+		if err := licensekey.ValidatePayload(body.Payload); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		licenseKey.Payload = body.Payload
+		licenseKey.NotBefore = &body.NotBefore
+		licenseKey.ExpiresAt = &body.ExpiresAt
 	}
 
 	if err := db.CreateLicenseKey(ctx, &licenseKey); errors.Is(err, apierrors.ErrConflict) {
@@ -154,6 +167,11 @@ func getLicenseKeyToken(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 	lk := internalctx.GetLicenseKey(ctx)
+
+	if lk.Payload == nil {
+		http.Error(w, "license key has no revision yet", http.StatusUnprocessableEntity)
+		return
+	}
 
 	token, err := licensekey.GenerateToken(licensekey.FromLicenseKey(*lk), env.Host())
 	if err != nil {
@@ -208,16 +226,24 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !util.PtrDerefOr(body.ExpiresAt, existing.ExpiresAt).After(util.PtrDerefOr(body.NotBefore, existing.NotBefore)) {
-		http.Error(w, "expiresAt must be after notBefore", http.StatusBadRequest)
-		return
-	}
-
 	if body.Payload != nil {
 		if err := licensekey.ValidatePayload(*body.Payload); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+	}
+
+	effectiveNotBefore := body.NotBefore
+	if effectiveNotBefore == nil {
+		effectiveNotBefore = existing.NotBefore
+	}
+	effectiveExpiresAt := body.ExpiresAt
+	if effectiveExpiresAt == nil {
+		effectiveExpiresAt = existing.ExpiresAt
+	}
+	if effectiveExpiresAt != nil && effectiveNotBefore != nil && !effectiveExpiresAt.After(*effectiveNotBefore) {
+		http.Error(w, "expiresAt must be after notBefore", http.StatusBadRequest)
+		return
 	}
 
 	needsRevision, err := licenseKeyRevisionChanged(existing, body)
@@ -231,7 +257,7 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 	var errorHandled bool
 	err = db.RunTx(ctx, func(ctx context.Context) error {
 		if r, err := db.UpdateLicenseKeyMetadata(
-			ctx, existing.ID, body.Name, body.Description,
+			ctx, existing.ID, body.Name, body.Description, body.LicenseTemplateID,
 		); errors.Is(err, apierrors.ErrConflict) {
 			http.Error(w, "A license key with this name already exists", http.StatusBadRequest)
 			errorHandled = true
@@ -247,11 +273,32 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if needsRevision {
+			notBefore := body.NotBefore
+			if notBefore == nil {
+				notBefore = existing.NotBefore
+			}
+			expiresAt := body.ExpiresAt
+			if expiresAt == nil {
+				expiresAt = existing.ExpiresAt
+			}
+			var payload json.RawMessage
+			if body.Payload != nil {
+				payload = *body.Payload
+			} else {
+				payload = existing.Payload
+			}
+
+			if notBefore == nil || expiresAt == nil || payload == nil {
+				http.Error(w, "notBefore, expiresAt and payload are required to create a revision", http.StatusBadRequest)
+				errorHandled = true
+				return errors.New("missing revision fields")
+			}
+
 			revision := types.LicenseKeyRevision{
 				LicenseKeyID: existing.ID,
-				NotBefore:    util.PtrDerefOr(body.NotBefore, existing.NotBefore),
-				ExpiresAt:    util.PtrDerefOr(body.ExpiresAt, existing.ExpiresAt),
-				Payload:      util.PtrDerefOr(body.Payload, existing.Payload),
+				NotBefore:    *notBefore,
+				ExpiresAt:    *expiresAt,
+				Payload:      payload,
 			}
 
 			if err := db.CreateLicenseKeyRevision(ctx, &revision); err != nil {
@@ -261,10 +308,10 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 				errorHandled = true
 				return err
 			}
-			result.NotBefore = revision.NotBefore
-			result.ExpiresAt = revision.ExpiresAt
+			result.NotBefore = &revision.NotBefore
+			result.ExpiresAt = &revision.ExpiresAt
 			result.Payload = revision.Payload
-			result.LastRevisedAt = revision.CreatedAt
+			result.LastRevisedAt = &revision.CreatedAt
 		}
 
 		return nil
@@ -321,15 +368,22 @@ func licenseKeyMiddleware(next http.Handler) http.Handler {
 // licenseKeyRevisionChanged returns true if any of the revision fields differ
 // between the existing (latest) revision and the incoming request.
 func licenseKeyRevisionChanged(existing *types.LicenseKey, body api.UpdateLicenseKeyRequest) (bool, error) {
-	if body.NotBefore != nil && !existing.NotBefore.Equal(body.NotBefore.UTC().Truncate(time.Microsecond)) {
-		return true, nil
+	if body.NotBefore != nil {
+		if existing.NotBefore == nil || !existing.NotBefore.Equal(body.NotBefore.UTC().Truncate(time.Microsecond)) {
+			return true, nil
+		}
 	}
 
-	if body.ExpiresAt != nil && !existing.ExpiresAt.Equal(body.ExpiresAt.UTC().Truncate(time.Microsecond)) {
-		return true, nil
+	if body.ExpiresAt != nil {
+		if existing.ExpiresAt == nil || !existing.ExpiresAt.Equal(body.ExpiresAt.UTC().Truncate(time.Microsecond)) {
+			return true, nil
+		}
 	}
 
 	if body.Payload != nil {
+		if existing.Payload == nil {
+			return true, nil
+		}
 		equal, err := payloadsEqual(existing.Payload, *body.Payload)
 		if err != nil {
 			return false, err

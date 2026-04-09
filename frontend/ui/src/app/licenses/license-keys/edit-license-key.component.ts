@@ -1,6 +1,6 @@
 import {AsyncPipe} from '@angular/common';
 import {AfterViewInit, Component, DestroyRef, forwardRef, inject, Injector, signal} from '@angular/core';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {
   ControlValueAccessor,
   FormBuilder,
@@ -18,6 +18,7 @@ import {jsonObjectValidator} from '../../../util/validation';
 import {EditorComponent} from '../../components/editor.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
+import {LicenseTemplatesService} from '../../services/license-templates.service';
 import {LicenseKey} from '../../types/license-key';
 
 @Component({
@@ -35,7 +36,9 @@ import {LicenseKey} from '../../types/license-key';
 export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAccessor {
   private readonly injector = inject(Injector);
   private readonly customerOrganizationService = inject(CustomerOrganizationsService);
+  private readonly licenseTemplatesService = inject(LicenseTemplatesService);
   customers$ = this.customerOrganizationService.getCustomerOrganizations().pipe(first());
+  protected readonly templates = toSignal(this.licenseTemplatesService.list(), {initialValue: []});
 
   protected readonly faCircleInfo = faCircleInfo;
 
@@ -48,29 +51,40 @@ export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAcces
       id: this.fb.nonNullable.control<string | undefined>(undefined),
       name: this.fb.nonNullable.control<string | undefined>(undefined, Validators.required),
       description: this.fb.nonNullable.control<string | undefined>(undefined),
-      expiresAt: this.fb.nonNullable.control(this.inOneYear, Validators.required),
-      notBefore: this.fb.nonNullable.control(this.today, Validators.required),
-      payload: this.fb.nonNullable.control('{}', [Validators.required, jsonObjectValidator]),
+      expiresAt: this.fb.nonNullable.control(this.inOneYear),
+      notBefore: this.fb.nonNullable.control(this.today),
+      payload: this.fb.nonNullable.control('{}', jsonObjectValidator),
       customerOrganizationId: this.fb.nonNullable.control<string | undefined>(undefined),
+      licenseTemplateId: this.fb.nonNullable.control<string | undefined>(undefined),
     },
-    {validators: this.dateRangeValidator}
+    {validators: [this.dateRangeValidator, this.manualFieldsValidator]}
   );
 
   readonly isEditMode = signal(false);
+
+  protected get hasTemplate(): boolean {
+    return !!this.editForm.getRawValue().licenseTemplateId;
+  }
 
   constructor() {
     this.editForm.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
       this.onTouched();
       const val = this.editForm.getRawValue();
+      const templateSelected = !!val.licenseTemplateId;
       if (this.editForm.valid) {
         const license: LicenseKey = {
           id: val.id,
           name: val.name,
           description: val.description,
-          payload: JSON.parse(val.payload),
-          notBefore: dayjs(val.notBefore).toDate().toISOString(),
-          expiresAt: dayjs(val.expiresAt).toDate().toISOString(),
           customerOrganizationId: val.customerOrganizationId,
+          licenseTemplateId: val.licenseTemplateId || undefined,
+          ...(templateSelected
+            ? {}
+            : {
+                payload: JSON.parse(val.payload),
+                notBefore: dayjs(val.notBefore).toISOString(),
+                expiresAt: dayjs(val.expiresAt).toISOString(),
+              }),
         };
         this.onChange(license);
       } else {
@@ -102,8 +116,12 @@ export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAcces
         notBefore: license.notBefore ? dayjs(license.notBefore).format('YYYY-MM-DD') : this.today,
         payload: license.payload ? JSON.stringify(license.payload, null, 2) : '{}',
         customerOrganizationId: license.customerOrganizationId,
+        licenseTemplateId: license.licenseTemplateId,
       });
       this.editForm.controls.customerOrganizationId.disable({emitEvent: false});
+      if (isEdit) {
+        this.editForm.controls.licenseTemplateId.disable({emitEvent: false});
+      }
     } else {
       this.isEditMode.set(false);
       this.editForm.reset({payload: '{}', notBefore: this.today, expiresAt: this.inOneYear});
@@ -122,11 +140,40 @@ export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAcces
     this.onTouched = fn;
   }
 
-  private dateRangeValidator(group: {value: {notBefore: string; expiresAt: string}}) {
+  private dateRangeValidator(group: {value: {notBefore: string; expiresAt: string; licenseTemplateId?: string}}) {
+    if (group.value.licenseTemplateId) {
+      return null;
+    }
+
     const {notBefore, expiresAt} = group.value;
     if (notBefore && expiresAt && !dayjs(expiresAt).isAfter(notBefore)) {
       return {dateRange: 'Expires At must be after Not Before'};
     }
+
     return null;
+  }
+
+  private manualFieldsValidator(group: {
+    value: {payload: string; notBefore: string; expiresAt: string; licenseTemplateId?: string};
+  }) {
+    if (group.value.licenseTemplateId) {
+      return null;
+    }
+
+    const errors: Record<string, string> = {};
+
+    if (!group.value.notBefore) {
+      errors['notBeforeRequired'] = 'required';
+    }
+
+    if (!group.value.expiresAt) {
+      errors['expiresAtRequired'] = 'required';
+    }
+
+    if (!group.value.payload) {
+      errors['payloadRequired'] = 'required';
+    }
+
+    return Object.keys(errors).length ? errors : null;
   }
 }

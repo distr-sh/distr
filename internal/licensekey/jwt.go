@@ -51,11 +51,21 @@ type LicenseKeyData struct {
 }
 
 func FromLicenseKey(lk types.LicenseKey) LicenseKeyData {
+	var issuedAt, expiresAt, notBefore time.Time
+	if lk.LastRevisedAt != nil {
+		issuedAt = *lk.LastRevisedAt
+	}
+	if lk.ExpiresAt != nil {
+		expiresAt = *lk.ExpiresAt
+	}
+	if lk.NotBefore != nil {
+		notBefore = *lk.NotBefore
+	}
 	return LicenseKeyData{
 		LicenseKeyID: lk.ID,
-		IssuedAt:     lk.LastRevisedAt,
-		ExpiresAt:    lk.ExpiresAt,
-		NotBefore:    lk.NotBefore,
+		IssuedAt:     issuedAt,
+		ExpiresAt:    expiresAt,
+		NotBefore:    notBefore,
 		Payload:      lk.Payload,
 	}
 }
