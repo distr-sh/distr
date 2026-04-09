@@ -136,7 +136,7 @@ func createHelloDistrApp(ctx context.Context) (*types.Application, error) {
 
 	version := types.ApplicationVersion{
 		Name:             "0.4.3", // renovate: datasource=github-releases depName=distr-sh/hello-distr
-		LinkTemplate:     "http://{{ .Env.HELLO_DISTR_HOST }}",
+		LinkTemplate:     "{{ .Env.HELLO_DISTR_PROTOCOL }}{{ .Env.HELLO_DISTR_HOST }}",
 		ComposeFileData:  composeFileData,
 		TemplateFileData: templateFileData,
 	}
@@ -157,9 +157,10 @@ func createHelloDistrDeploymentTarget(ctx context.Context) (*types.DeploymentTar
 	auth := auth.Authentication.Require(ctx)
 	dt := types.DeploymentTargetFull{
 		DeploymentTarget: types.DeploymentTarget{
-			Name:           "hello-distr-tutorial",
-			Type:           types.DeploymentTypeDocker,
-			MetricsEnabled: true,
+			Name:            "hello-distr-tutorial",
+			Type:            types.DeploymentTypeDocker,
+			AutohealEnabled: true,
+			MetricsEnabled:  true,
 		},
 	}
 	if agentVersion, err := db.GetCurrentAgentVersion(ctx); err != nil {
