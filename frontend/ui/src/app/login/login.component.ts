@@ -5,7 +5,7 @@ import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faGithub, faGoogle, faMicrosoft} from '@fortawesome/free-brands-svg-icons';
-import {faArrowRightToBracket} from '@fortawesome/free-solid-svg-icons/faArrowRightToBracket';
+import {faArrowRightToBracket} from '@fortawesome/free-solid-svg-icons';
 import {distinctUntilChanged, filter, lastValueFrom, map, take} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {AutotrimDirective} from '../directives/autotrim.directive';
