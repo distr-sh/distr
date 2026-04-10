@@ -47,6 +47,14 @@ type AgentDeployment struct {
 	Values             map[string]any `json:"values"`
 	IgnoreRevisionSkew bool           `json:"ignoreRevisionSkew"`
 	HelmOptions        *HelmOptions   `json:"helmOptions,omitempty"`
+
+	// OpenTofu specific data
+
+	TofuConfigURL     string            `json:"tofuConfigUrl,omitempty"`
+	TofuConfigVersion string            `json:"tofuConfigVersion,omitempty"`
+	TofuVars          map[string]any    `json:"tofuVars,omitempty"`
+	TofuBackendConfig map[string]string `json:"tofuBackendConfig,omitempty"`
+	TofuVersion       string            `json:"tofuVersion,omitempty"`
 }
 
 type AgentDeploymentStatus struct {

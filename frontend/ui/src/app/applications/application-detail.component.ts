@@ -143,6 +143,10 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
       compose: new FormControl(''),
       template: new FormControl(''),
     }),
+    opentofu: new FormGroup({
+      tofuConfigUrl: new FormControl('', Validators.required),
+      tofuConfigVersion: new FormControl(''),
+    }),
     resources: new FormArray<
       FormGroup<{
         name: FormControl<string>;
@@ -263,6 +267,18 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
           this.newVersionForm.controls.docker.controls.compose.value!,
           this.newVersionForm.controls.docker.controls.template.value
         );
+      } else if (application.type === 'opentofu') {
+        const tofuFormVal = this.newVersionForm.controls.opentofu.value;
+        res = this.applicationService.createApplicationVersionForOpenTofu(
+          application,
+          {
+            name: this.newVersionForm.controls.versionName.value!,
+            linkTemplate: this.newVersionForm.controls.linkTemplate.value!,
+            tofuConfigUrl: tofuFormVal.tofuConfigUrl!,
+            tofuConfigVersion: tofuFormVal.tofuConfigVersion ?? undefined,
+            resources,
+          },
+        );
       } else {
         const versionFormVal = this.newVersionForm.controls.kubernetes.value;
         res = this.applicationService.createApplicationVersionForKubernetes(
@@ -324,6 +340,15 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
             chartVersion: version.chartVersion,
             baseValues,
             template,
+          },
+          resources,
+        };
+      } else if (application.type === 'opentofu') {
+        return {
+          linkTemplate: version.linkTemplate,
+          opentofu: {
+            tofuConfigUrl: version.tofuConfigUrl,
+            tofuConfigVersion: version.tofuConfigVersion,
           },
           resources,
         };
@@ -458,12 +483,15 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   }
 
   private enableTypeSpecificGroups(app: Application) {
+    disableControlsWithoutEvent(this.newVersionForm.controls.kubernetes);
+    disableControlsWithoutEvent(this.newVersionForm.controls.docker);
+    disableControlsWithoutEvent(this.newVersionForm.controls.opentofu);
     if (app.type === 'kubernetes') {
       enableControlsWithoutEvent(this.newVersionForm.controls.kubernetes);
-      disableControlsWithoutEvent(this.newVersionForm.controls.docker);
+    } else if (app.type === 'opentofu') {
+      enableControlsWithoutEvent(this.newVersionForm.controls.opentofu);
     } else {
       enableControlsWithoutEvent(this.newVersionForm.controls.docker);
-      disableControlsWithoutEvent(this.newVersionForm.controls.kubernetes);
     }
   }
 

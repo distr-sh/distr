@@ -27,6 +27,14 @@ services:
       RUSTFS_ACCESS_KEY: local
       RUSTFS_SECRET_KEY: local
 
+  localstack:
+    image: 'localstack/localstack:4.4'
+    ports:
+      - '4566:4566'
+    environment:
+      - SERVICES=s3
+      - DEBUG=0
+
 volumes:
   postgres:
   rustfs:

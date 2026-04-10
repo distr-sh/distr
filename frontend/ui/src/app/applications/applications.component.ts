@@ -26,6 +26,7 @@ import {
 } from '../directives/required-role.directive';
 import {ApplicationsService} from '../services/applications.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
+import {FeatureFlagService} from '../services/feature-flag.service';
 import {ToastService} from '../services/toast.service';
 
 @Component({
@@ -82,6 +83,7 @@ export class ApplicationsComponent implements OnDestroy {
 
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
+  protected readonly featureFlags = inject(FeatureFlagService);
 
   ngOnDestroy() {
     this.destroyed$.next();

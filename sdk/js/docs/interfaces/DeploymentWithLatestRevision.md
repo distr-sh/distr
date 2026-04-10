@@ -20,7 +20,7 @@
 
 ### applicationEntitlementId?
 
-> `optional` **applicationEntitlementId?**: `string`
+> `optional` **applicationEntitlementId**: `string`
 
 ---
 
@@ -64,7 +64,7 @@ Use application.name instead
 
 ### createdAt?
 
-> `optional` **createdAt?**: `string`
+> `optional` **createdAt**: `string`
 
 #### Inherited from
 
@@ -74,13 +74,13 @@ Use application.name instead
 
 ### deploymentRevisionCreatedAt?
 
-> `optional` **deploymentRevisionCreatedAt?**: `string`
+> `optional` **deploymentRevisionCreatedAt**: `string`
 
 ---
 
 ### deploymentRevisionId?
 
-> `optional` **deploymentRevisionId?**: `string`
+> `optional` **deploymentRevisionId**: `string`
 
 ---
 
@@ -96,7 +96,7 @@ Use application.name instead
 
 ### dockerType?
 
-> `optional` **dockerType?**: [`DockerType`](../type-aliases/DockerType.md)
+> `optional` **dockerType**: [`DockerType`](../type-aliases/DockerType.md)
 
 #### Inherited from
 
@@ -106,19 +106,19 @@ Use application.name instead
 
 ### envFileData?
 
-> `optional` **envFileData?**: `string`
+> `optional` **envFileData**: `string`
 
 ---
 
 ### helmOptions?
 
-> `optional` **helmOptions?**: [`HelmOptions`](HelmOptions.md)
+> `optional` **helmOptions**: [`HelmOptions`](HelmOptions.md)
 
 ---
 
 ### id?
 
-> `optional` **id?**: `string`
+> `optional` **id**: `string`
 
 #### Inherited from
 
@@ -128,13 +128,13 @@ Use application.name instead
 
 ### latestStatus?
 
-> `optional` **latestStatus?**: [`DeploymentRevisionStatus`](DeploymentRevisionStatus.md)
+> `optional` **latestStatus**: [`DeploymentRevisionStatus`](DeploymentRevisionStatus.md)
 
 ---
 
 ### releaseName?
 
-> `optional` **releaseName?**: `string`
+> `optional` **releaseName**: `string`
 
 #### Inherited from
 
@@ -144,4 +144,4 @@ Use application.name instead
 
 ### valuesYaml?
 
-> `optional` **valuesYaml?**: `string`
+> `optional` **valuesYaml**: `string`

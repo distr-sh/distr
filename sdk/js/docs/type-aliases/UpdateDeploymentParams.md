@@ -30,8 +30,8 @@
 
 ### kubernetesDeployment?
 
-> `optional` **kubernetesDeployment?**: `object`
+> `optional` **kubernetesDeployment**: `object`
 
 #### valuesYaml?
 
-> `optional` **valuesYaml?**: `string`
+> `optional` **valuesYaml**: `string`

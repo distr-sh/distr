@@ -6,4 +6,5 @@ import (
 
 var ProFeatures = []types.Feature{
 	types.FeatureLicensing,
+	types.FeatureOpenTofu,
 }

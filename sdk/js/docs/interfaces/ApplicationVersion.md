@@ -10,55 +10,55 @@
 
 ### applicationId?
 
-> `optional` **applicationId?**: `string`
+> `optional` **applicationId**: `string`
 
 ---
 
 ### archivedAt?
 
-> `optional` **archivedAt?**: `string`
+> `optional` **archivedAt**: `string`
 
 ---
 
 ### chartName?
 
-> `optional` **chartName?**: `string`
+> `optional` **chartName**: `string`
 
 ---
 
 ### chartType?
 
-> `optional` **chartType?**: [`HelmChartType`](../type-aliases/HelmChartType.md)
+> `optional` **chartType**: [`HelmChartType`](../type-aliases/HelmChartType.md)
 
 ---
 
 ### chartUrl?
 
-> `optional` **chartUrl?**: `string`
+> `optional` **chartUrl**: `string`
 
 ---
 
 ### chartVersion?
 
-> `optional` **chartVersion?**: `string`
+> `optional` **chartVersion**: `string`
 
 ---
 
 ### createdAt?
 
-> `optional` **createdAt?**: `string`
+> `optional` **createdAt**: `string`
 
 ---
 
 ### id?
 
-> `optional` **id?**: `string`
+> `optional` **id**: `string`
 
 ---
 
 ### linkTemplate?
 
-> `optional` **linkTemplate?**: `string`
+> `optional` **linkTemplate**: `string`
 
 ---
 
@@ -70,4 +70,16 @@
 
 ### resources?
 
-> `optional` **resources?**: [`ApplicationVersionResource`](ApplicationVersionResource.md)[]
+> `optional` **resources**: [`ApplicationVersionResource`](ApplicationVersionResource.md)[]
+
+---
+
+### tofuConfigUrl?
+
+> `optional` **tofuConfigUrl**: `string`
+
+---
+
+### tofuConfigVersion?
+
+> `optional` **tofuConfigVersion**: `string`

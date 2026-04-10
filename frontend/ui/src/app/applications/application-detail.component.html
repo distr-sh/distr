@@ -188,6 +188,10 @@
                         <th scope="col" class="px-6 py-3">Chart Name</th>
                         <th scope="col" class="px-6 py-3">Chart Version</th>
                       }
+                      @if (application.type === 'opentofu') {
+                        <th scope="col" class="px-6 py-3">Config URL</th>
+                        <th scope="col" class="px-6 py-3">Config Version</th>
+                      }
                       <th scope="col" class="px-6 py-3">Created At</th>
                       <th scope="col" class="px-6 py-3">Status</th>
                       <th scope="col" class="px-6 py-3"></th>
@@ -229,6 +233,14 @@
                         </td>
                         <td class="px-6 py-4">
                           {{ version.chartVersion }}
+                        </td>
+                      }
+                      @if (application.type === 'opentofu') {
+                        <td class="px-6 py-4">
+                          {{ version.tofuConfigUrl }}
+                        </td>
+                        <td class="px-6 py-4">
+                          {{ version.tofuConfigVersion || 'latest' }}
                         </td>
                       }
                       <td class="px-6 py-4">
@@ -338,10 +350,59 @@
                       >user provided values (<code>{{ .Values.app.ingress.hostname }}</code
                       >).</span
                     >
+                  } @else if (application.type === 'opentofu') {
+                    <span>OpenTofu output values.</span>
                   }
                 </div>
 
-                @if (application.type === 'kubernetes') {
+                @if (application.type === 'opentofu') {
+                  <div class="space-y-4 mt-4">
+                    <div class="grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
+                      <div class="w-full">
+                        <label
+                          for="tofuConfigUrl"
+                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                          >OCI Config Reference *</label
+                        >
+                        <input
+                          [formControl]="newVersionForm.controls.opentofu.controls.tofuConfigUrl"
+                          autotrim
+                          type="text"
+                          name="tofuConfigUrl"
+                          id="tofuConfigUrl"
+                          placeholder="registry.example.com/org/tofu-config"
+                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          OCI reference to the OpenTofu configuration artifact (without tag).
+                        </div>
+                        @if (
+                          newVersionForm.controls.opentofu.controls.tofuConfigUrl.invalid &&
+                          newVersionForm.controls.opentofu.controls.tofuConfigUrl.touched
+                        ) {
+                          <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
+                        }
+                      </div>
+                      <div class="w-full">
+                        <label
+                          for="tofuConfigVersion"
+                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                          >Config Tag</label
+                        >
+                        <input
+                          [formControl]="newVersionForm.controls.opentofu.controls.tofuConfigVersion"
+                          autotrim
+                          type="text"
+                          name="tofuConfigVersion"
+                          id="tofuConfigVersion"
+                          placeholder="latest"
+                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          OCI tag for the configuration artifact. Defaults to "latest".
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                } @else if (application.type === 'kubernetes') {
                   <div class="space-y-4 mt-4">
                     <div class="grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
                       <div class="w-full">

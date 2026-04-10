@@ -88,6 +88,7 @@ const (
 	FeatureArtifactVersionMutable Feature = "artifact_version_mutable"
 	FeatureVendorBilling          Feature = "vendor_billing"
 	FeatureDeploymentLogsAfter    Feature = "deployment_logs_after"
+	FeatureOpenTofu               Feature = "opentofu"
 )
 
 type DeploymentStatusType string
@@ -150,6 +151,7 @@ type (
 const (
 	DeploymentTypeDocker     DeploymentType = "docker"
 	DeploymentTypeKubernetes DeploymentType = "kubernetes"
+	DeploymentTypeOpenTofu   DeploymentType = "opentofu"
 
 	HelmChartTypeRepository HelmChartType = "repository"
 	HelmChartTypeOCI        HelmChartType = "oci"

@@ -6,7 +6,8 @@ export type Feature =
   | 'pre_post_scripts'
   | 'artifact_version_mutable'
   | 'vendor_billing'
-  | 'deployment_logs_after';
+  | 'deployment_logs_after'
+  | 'opentofu';
 
 export interface SubscriptionLimits {
   maxCustomerOrganizations: number;
@@ -22,6 +23,7 @@ export interface CreateUpdateOrganizationRequest {
   connectScriptIsSudo: boolean;
   artifactVersionMutable: boolean;
   prePostScriptsEnabled: boolean;
+  openTofuEnabled?: boolean;
 }
 
 export interface Organization extends BaseModel, Named {

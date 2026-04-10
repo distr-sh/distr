@@ -293,8 +293,12 @@ export class DeploymentWizardComponent implements OnInit {
       } else {
         this.deploymentTargetForm.controls.resources.disable();
       }
-    } else if (type === 'docker') {
-      this.deploymentTargetForm.controls.autohealEnabled.enable();
+    } else if (type === 'docker' || type === 'opentofu') {
+      if (type === 'docker') {
+        this.deploymentTargetForm.controls.autohealEnabled.enable();
+      } else {
+        this.deploymentTargetForm.controls.autohealEnabled.disable();
+      }
       this.deploymentTargetForm.controls.namespace.disable();
       this.deploymentTargetForm.controls.clusterScope.disable();
       this.deploymentTargetForm.controls.scope.disable();

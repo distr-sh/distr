@@ -19,6 +19,9 @@ export interface DeploymentRequest {
   forceRestart?: boolean;
   ignoreRevisionSkew?: boolean;
   helmOptions?: HelmOptions;
+  tofuVars?: Record<string, unknown>;
+  tofuBackendConfig?: Record<string, string>;
+  tofuVersion?: string;
 }
 
 export interface HelmOptions {
@@ -55,7 +58,7 @@ export interface DeploymentRevisionStatus extends BaseModel {
   message: string;
 }
 
-export type DeploymentType = 'docker' | 'kubernetes';
+export type DeploymentType = 'docker' | 'kubernetes' | 'opentofu';
 
 export type HelmChartType = 'repository' | 'oci';
 

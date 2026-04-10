@@ -14,7 +14,7 @@
 
 ### createdAt?
 
-> `optional` **createdAt?**: `string`
+> `optional` **createdAt**: `string`
 
 #### Inherited from
 
@@ -24,7 +24,7 @@
 
 ### id?
 
-> `optional` **id?**: `string`
+> `optional` **id**: `string`
 
 #### Inherited from
 
@@ -34,19 +34,19 @@
 
 ### imageId?
 
-> `optional` **imageId?**: `string`
+> `optional` **imageId**: `string`
 
 ---
 
 ### imageUrl?
 
-> `optional` **imageUrl?**: `string`
+> `optional` **imageUrl**: `string`
 
 ---
 
 ### name?
 
-> `optional` **name?**: `string`
+> `optional` **name**: `string`
 
 #### Inherited from
 
@@ -62,4 +62,4 @@
 
 ### versions?
 
-> `optional` **versions?**: [`ApplicationVersion`](ApplicationVersion.md)[]
+> `optional` **versions**: [`ApplicationVersion`](ApplicationVersion.md)[]
