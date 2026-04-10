@@ -1,0 +1,27 @@
+name: distr-opentofu
+services:
+  agent:
+    restart: unless-stopped
+    image: 'ghcr.io/distr-sh/distr/opentofu-agent:{{ .agentVersion }}'
+    environment:
+      DISTR_TARGET_ID: '{{ .targetId }}'
+      DISTR_TARGET_SECRET: '{{ .targetSecret }}'
+      DISTR_LOGIN_ENDPOINT: '{{ .loginEndpoint }}'
+      DISTR_MANIFEST_ENDPOINT: '{{ .manifestEndpoint }}'
+      DISTR_RESOURCE_ENDPOINT: '{{ .resourcesEndpoint }}'
+      DISTR_STATUS_ENDPOINT: '{{ .statusEndpoint }}'
+      DISTR_METRICS_ENDPOINT: '{{ .metricsEndpoint }}'
+      DISTR_LOGS_ENDPOINT: '{{ .logsEndpoint }}'
+      DISTR_AGENT_LOGS_ENDPOINT: '{{ .agentLogsEndpoint }}'
+      DISTR_REGISTRY_HOST: '{{ .registryHost }}'
+      DISTR_REGISTRY_PLAIN_HTTP: '{{ .registryPlainHttp }}'
+      DISTR_INTERVAL: '{{ .agentInterval }}'
+      DISTR_AGENT_VERSION_ID: '{{ .agentVersionId }}'
+      DISTR_AGENT_SCRATCH_DIR: /scratch
+      TF_IN_AUTOMATION: '1'
+      TF_INPUT: '0'
+      TF_PLUGIN_CACHE_DIR: /scratch/plugin-cache
+    volumes:
+      - scratch:/scratch
+volumes:
+  scratch:

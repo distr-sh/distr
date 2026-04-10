@@ -16,17 +16,17 @@
 
 #### id?
 
-> `optional` **id?**: `string`
+> `optional` **id**: `string`
 
 #### versionId?
 
-> `optional` **versionId?**: `string`
+> `optional` **versionId**: `string`
 
 ---
 
 ### kubernetesDeployment?
 
-> `optional` **kubernetesDeployment?**: `object`
+> `optional` **kubernetesDeployment**: `object`
 
 #### releaseName
 
@@ -34,7 +34,7 @@
 
 #### valuesYaml?
 
-> `optional` **valuesYaml?**: `string`
+> `optional` **valuesYaml**: `string`
 
 ---
 
@@ -44,7 +44,7 @@
 
 #### kubernetes?
 
-> `optional` **kubernetes?**: `object`
+> `optional` **kubernetes**: `object`
 
 ##### kubernetes.namespace
 

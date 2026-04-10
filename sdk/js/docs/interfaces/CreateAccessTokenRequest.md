@@ -10,10 +10,10 @@
 
 ### expiresAt?
 
-> `optional` **expiresAt?**: `Date`
+> `optional` **expiresAt**: `Date`
 
 ---
 
 ### label?
 
-> `optional` **label?**: `string`
+> `optional` **label**: `string`

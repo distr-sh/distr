@@ -18,7 +18,7 @@
 
 ### createdAt?
 
-> `optional` **createdAt?**: `string`
+> `optional` **createdAt**: `string`
 
 #### Inherited from
 
@@ -28,13 +28,13 @@
 
 ### expiresAt?
 
-> `optional` **expiresAt?**: `string`
+> `optional` **expiresAt**: `string`
 
 ---
 
 ### id?
 
-> `optional` **id?**: `string`
+> `optional` **id**: `string`
 
 #### Inherited from
 
@@ -44,10 +44,10 @@
 
 ### label?
 
-> `optional` **label?**: `string`
+> `optional` **label**: `string`
 
 ---
 
 ### lastUsedAt?
 
-> `optional` **lastUsedAt?**: `string`
+> `optional` **lastUsedAt**: `string`

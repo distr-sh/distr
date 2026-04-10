@@ -14,13 +14,13 @@
 
 ### agentVersion?
 
-> `optional` **agentVersion?**: [`AgentVersion`](AgentVersion.md)
+> `optional` **agentVersion**: [`AgentVersion`](AgentVersion.md)
 
 ---
 
 ### createdAt?
 
-> `optional` **createdAt?**: `string`
+> `optional` **createdAt**: `string`
 
 #### Inherited from
 
@@ -30,13 +30,13 @@
 
 ### currentStatus?
 
-> `optional` **currentStatus?**: [`DeploymentTargetStatus`](DeploymentTargetStatus.md)
+> `optional` **currentStatus**: [`DeploymentTargetStatus`](DeploymentTargetStatus.md)
 
 ---
 
 ### customerOrganization?
 
-> `optional` **customerOrganization?**: [`CustomerOrganization`](CustomerOrganization.md)
+> `optional` **customerOrganization**: [`CustomerOrganization`](CustomerOrganization.md)
 
 ---
 
@@ -48,7 +48,7 @@
 
 ### id?
 
-> `optional` **id?**: `string`
+> `optional` **id**: `string`
 
 #### Inherited from
 
@@ -80,25 +80,25 @@
 
 ### namespace?
 
-> `optional` **namespace?**: `string`
+> `optional` **namespace**: `string`
 
 ---
 
 ### reportedAgentVersionId?
 
-> `optional` **reportedAgentVersionId?**: `string`
+> `optional` **reportedAgentVersionId**: `string`
 
 ---
 
 ### resources?
 
-> `optional` **resources?**: [`DeploymentTargetResources`](DeploymentTargetResources.md)
+> `optional` **resources**: [`DeploymentTargetResources`](DeploymentTargetResources.md)
 
 ---
 
 ### scope?
 
-> `optional` **scope?**: [`DeploymentTargetScope`](../type-aliases/DeploymentTargetScope.md)
+> `optional` **scope**: [`DeploymentTargetScope`](../type-aliases/DeploymentTargetScope.md)
 
 ---
 

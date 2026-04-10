@@ -1,7 +1,7 @@
 import {BaseModel, Named, UserRole} from '@distr-sh/distr-sdk';
 import {SubscriptionType} from './subscription';
 
-export type Feature = 'licensing' | 'pre_post_scripts' | 'artifact_version_mutable';
+export type Feature = 'licensing' | 'pre_post_scripts' | 'artifact_version_mutable' | 'opentofu';
 
 export interface SubscriptionLimits {
   maxCustomerOrganizations: number;
@@ -17,6 +17,7 @@ export interface CreateUpdateOrganizationRequest {
   connectScriptIsSudo: boolean;
   artifactVersionMutable: boolean;
   prePostScriptsEnabled: boolean;
+  openTofuEnabled?: boolean;
 }
 
 export interface Organization extends BaseModel, Named {

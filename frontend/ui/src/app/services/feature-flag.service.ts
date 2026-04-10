@@ -14,6 +14,9 @@ export class FeatureFlagService {
   public readonly isPrePostScriptEnabled$ = this.organizationService
     .get()
     .pipe(map((org) => org.features.includes('pre_post_scripts')));
+  public readonly isOpenTofuEnabled$ = this.organizationService
+    .get()
+    .pipe(map((org) => org.features.includes('opentofu')));
 
   public readonly isNotificationsEnabled$ = this.requireSubscriptionType('trial', 'pro', 'enterprise');
 

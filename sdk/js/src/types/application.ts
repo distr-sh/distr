@@ -19,6 +19,8 @@ export interface ApplicationVersion {
   chartName?: string;
   chartUrl?: string;
   chartVersion?: string;
+  tofuConfigUrl?: string;
+  tofuConfigVersion?: string;
   resources?: ApplicationVersionResource[];
 }
 
