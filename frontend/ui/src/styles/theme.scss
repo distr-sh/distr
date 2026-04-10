@@ -31,7 +31,6 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @plugin 'flowbite/plugin';
-@source '../../../node_modules/flowbite';
 
 @layer base {
   button:not(:disabled),
