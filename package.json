@@ -46,7 +46,7 @@
     "@sentry/angular": "^10.25.0",
     "@sentry/browser": "^10.25.0",
     "dayjs": "^1.11.13",
-    "flowbite": "^3.0.0",
+    "flowbite": "^4.0.1",
     "jwt-decode": "^4.0.0",
     "marked": "^18.0.0",
     "posthog-js": "^1.187.0",
