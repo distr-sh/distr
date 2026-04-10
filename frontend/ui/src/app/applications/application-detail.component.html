@@ -469,9 +469,8 @@
                       <app-editor
                         id="base_values_input"
                         language="yaml"
-                        class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                        [formControl]="newVersionForm.controls.kubernetes.controls.baseValues">
-                      </app-editor>
+                        class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        [formControl]="newVersionForm.controls.kubernetes.controls.baseValues" />
                     </div>
 
                     <div class="w-full">
@@ -492,9 +491,8 @@
                       </div>
                       <app-editor
                         id="template_input"
-                        class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                        [formControl]="newVersionForm.controls.kubernetes.controls.template">
-                      </app-editor>
+                        class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        [formControl]="newVersionForm.controls.kubernetes.controls.template" />
                     </div>
                   </div>
                 } @else {
@@ -506,9 +504,8 @@
                       <app-editor
                         id="compose_input"
                         language="yaml"
-                        class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                        [formControl]="newVersionForm.controls.docker.controls.compose">
-                      </app-editor>
+                        class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        [formControl]="newVersionForm.controls.docker.controls.compose" />
                       <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         Paste your docker compose file here.
                       </div>
@@ -528,9 +525,8 @@
                       >
                       <app-editor
                         id="compose_template_input"
-                        class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                        [formControl]="newVersionForm.controls.docker.controls.template">
-                      </app-editor>
+                        class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        [formControl]="newVersionForm.controls.docker.controls.template" />
                       <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         This template will be shown when somebody deploys this application.
                       </div>
