@@ -146,10 +146,10 @@ importers:
         version: 8.5.9
       prettier:
         specifier: ^3.3.3
-        version: 3.8.1
+        version: 3.8.2
       prettier-plugin-organize-imports:
         specifier: ^4.3.0
-        version: 4.3.0(prettier@3.8.1)(typescript@5.9.3)
+        version: 4.3.0(prettier@3.8.2)(typescript@5.9.3)
       tailwindcss:
         specifier: ^4.0.0
         version: 4.2.2
@@ -2910,8 +2910,8 @@ packages:
       vue-tsc:
         optional: true
 
-  prettier@3.8.1:
-    resolution: {integrity: sha512-UOnG6LftzbdaHZcKoPFtOcCKztrQ57WkHDeRD9t/PTQtmT0NHSeWWepj6pS0z/N7+08BHFDQVUrfmfMRcZwbMg==}
+  prettier@3.8.2:
+    resolution: {integrity: sha512-8c3mgTe0ASwWAJK+78dpviD+A8EqhndQPUBpNUIPt6+xWlIigCwfN01lWr9MAede4uqXGTEKeQWTvzb3vjia0Q==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -6104,12 +6104,12 @@ snapshots:
 
   preact@10.29.1: {}
 
-  prettier-plugin-organize-imports@4.3.0(prettier@3.8.1)(typescript@5.9.3):
+  prettier-plugin-organize-imports@4.3.0(prettier@3.8.2)(typescript@5.9.3):
     dependencies:
-      prettier: 3.8.1
+      prettier: 3.8.2
       typescript: 5.9.3
 
-  prettier@3.8.1: {}
+  prettier@3.8.2: {}
 
   proc-log@6.1.0: {}
 
