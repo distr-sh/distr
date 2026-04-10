@@ -33,6 +33,11 @@
             ],
             "styles": [
               "frontend/ui/src/styles.scss"
+            ],
+            "allowedCommonJsDependencies": [
+              "dayjs",
+              "dayjs/plugin/*",
+              "semver"
             ]
           },
           "configurations": {
@@ -40,8 +45,9 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "5MB"
+                  "baseline": "1MB",
+                  "maximumWarning": "150%",
+                  "maximumError": "200%"
                 },
                 {
                   "type": "anyComponentStyle",
@@ -61,8 +67,9 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "5MB"
+                  "baseline": "1MB",
+                  "maximumWarning": "150%",
+                  "maximumError": "200%"
                 },
                 {
                   "type": "anyComponentStyle",
