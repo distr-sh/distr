@@ -4,14 +4,25 @@ import {Component, inject, input, signal, TemplateRef, viewChild} from '@angular
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCopy, faEye, faMagnifyingGlass, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {
+  faCheck,
+  faCopy,
+  faEye,
+  faMagnifyingGlass,
+  faPen,
+  faPlus,
+  faTrash,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, shareReplay, switchMap} from 'rxjs';
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
+import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
+import {FeatureFlagService} from '../../services/feature-flag.service';
 import {LicenseKeysService} from '../../services/license-keys.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
@@ -29,6 +40,7 @@ import {ViewLicenseKeyModalComponent} from './view-license-key-modal.component';
     EditLicenseKeyComponent,
     ViewLicenseKeyModalComponent,
     AutotrimDirective,
+    UuidComponent,
   ],
   templateUrl: './license-keys.component.html',
 })
@@ -36,6 +48,7 @@ export class LicenseKeysComponent {
   readonly customerOrganizationId = input<string>();
 
   protected readonly auth = inject(AuthService);
+  protected readonly features = inject(FeatureFlagService);
   private readonly licenseKeysService = inject(LicenseKeysService);
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
@@ -47,6 +60,7 @@ export class LicenseKeysComponent {
   protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
   protected readonly faCopy = faCopy;
+  protected readonly faCheck = faCheck;
   protected readonly faEye = faEye;
   protected readonly isExpired = isExpired;
 
@@ -117,7 +131,11 @@ export class LicenseKeysComponent {
       try {
         const saved = await firstValueFrom(action);
         this.hideDrawer();
-        this.toast.success(`${saved.name} saved successfully`);
+        if (!license.id && saved.licenseTemplateId) {
+          this.toast.success(`${saved.name} saved successfully. Link the license key ID in your Stripe dashboard.`);
+        } else {
+          this.toast.success(`${saved.name} saved successfully`);
+        }
       } catch (e) {
         const msg = getFormDisplayedError(e);
         if (msg) {

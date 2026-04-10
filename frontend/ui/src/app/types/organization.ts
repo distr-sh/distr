@@ -1,7 +1,7 @@
 import {BaseModel, Named, UserRole} from '@distr-sh/distr-sdk';
 import {SubscriptionType} from './subscription';
 
-export type Feature = 'licensing' | 'pre_post_scripts' | 'artifact_version_mutable';
+export type Feature = 'licensing' | 'pre_post_scripts' | 'artifact_version_mutable' | 'vendor_billing';
 
 export interface SubscriptionLimits {
   maxCustomerOrganizations: number;
@@ -34,6 +34,7 @@ export interface Organization extends BaseModel, Named {
   preConnectScript?: string;
   postConnectScript?: string;
   connectScriptIsSudo: boolean;
+  stripeWebhookSecretConfigured: boolean;
 }
 
 export interface OrganizationWithUserRole extends Organization {

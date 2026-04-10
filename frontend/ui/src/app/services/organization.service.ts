@@ -66,4 +66,16 @@ export class OrganizationService {
   delete(): Observable<void> {
     return this.httpClient.delete<void>(this.baseUrl);
   }
+
+  updateWebhookSecret(webhookSecret: string): Observable<void> {
+    return this.httpClient
+      .put<void>(`${this.baseUrl}/webhook`, {webhookSecret})
+      .pipe(tap(() => this.contextService.reload()));
+  }
+
+  deleteWebhookSecret(): Observable<void> {
+    return this.httpClient
+      .put<void>(`${this.baseUrl}/webhook`, {webhookSecret: null})
+      .pipe(tap(() => this.contextService.reload()));
+  }
 }

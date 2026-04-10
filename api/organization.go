@@ -18,3 +18,11 @@ type OrganizationResponse struct {
 	types.Organization
 	SubscriptionLimits SubscriptionLimits `json:"subscriptionLimits"`
 }
+
+type OrganizationWebhookResponse struct {
+	Configured bool `json:"configured"`
+}
+
+type UpdateOrganizationWebhookRequest struct {
+	WebhookSecret *string `json:"webhookSecret"`
+}

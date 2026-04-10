@@ -9,6 +9,8 @@ import (
 func WebhookRouter(r chiopenapi.Router) {
 	const MaxBodyBytes = int64(65536)
 
-	r.With(middleware.RequestSize(MaxBodyBytes)).
-		Post("/stripe", stripeWebhookHandler()).With(option.Hidden(true))
+	r.With(middleware.RequestSize(MaxBodyBytes)).Group(func(r chiopenapi.Router) {
+		r.Post("/stripe", stripeWebhookHandler()).With(option.Hidden(true))
+		r.Post("/{organizationId}/stripe", vendorStripeWebhookHandler()).With(option.Hidden(true))
+	})
 }

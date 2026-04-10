@@ -53,6 +53,19 @@ func OrganizationRouter(r chiopenapi.Router) {
 	})
 
 	r.Route("/branding", OrganizationBrandingRouter)
+
+	r.Route("/webhook", func(r chiopenapi.Router) {
+		r.Use(middleware.RequireVendor, middleware.VendorBillingFeatureMiddleware)
+
+		r.Get("/", getOrganizationWebhook).
+			With(option.Description("Get vendor webhook configuration status")).
+			With(option.Response(http.StatusOK, api.OrganizationWebhookResponse{}))
+
+		r.With(middleware.RequireAdmin, middleware.BlockSuperAdmin).
+			Put("/", updateOrganizationWebhook).
+			With(option.Description("Set vendor Stripe webhook secret")).
+			With(option.Request(api.UpdateOrganizationWebhookRequest{}))
+	})
 }
 
 func getOrganization(w http.ResponseWriter, r *http.Request) {
@@ -270,4 +283,30 @@ func deleteOrganizationHandler() http.HandlerFunc {
 
 		w.WriteHeader(http.StatusNoContent)
 	}
+}
+
+func getOrganizationWebhook(w http.ResponseWriter, r *http.Request) {
+	authCtx := auth.Authentication.Require(r.Context())
+	RespondJSON(w, api.OrganizationWebhookResponse{
+		Configured: authCtx.CurrentOrg().StripeWebhookSecretConfigured,
+	})
+}
+
+func updateOrganizationWebhook(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+	authCtx := auth.Authentication.Require(ctx)
+
+	body, err := JsonBody[api.UpdateOrganizationWebhookRequest](w, r)
+	if err != nil {
+		return
+	}
+
+	if err := db.SetOrganizationStripeWebhookSecret(ctx, *authCtx.CurrentOrgID(), body.WebhookSecret); err != nil {
+		log.Error("failed to update stripe webhook secret", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
