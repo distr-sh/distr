@@ -1,5 +1,27 @@
 # Changelog
 
+## [2.17.2](https://github.com/distr-sh/distr/compare/2.17.1...2.17.2) (2026-04-10)
+
+
+### Bug Fixes
+
+* **deps:** update module golang.org/x/crypto to v0.50.0 ([#2233](https://github.com/distr-sh/distr/issues/2233)) ([972c804](https://github.com/distr-sh/distr/commit/972c804e11fd5678855a4d8ed79ca2b10fbba758))
+
+
+### Other
+
+* **deps:** update dependency prettier to v3.8.2 ([#2234](https://github.com/distr-sh/distr/issues/2234)) ([6f4fb43](https://github.com/distr-sh/distr/commit/6f4fb433f88216fb3d55a382ff87e70babeffdd4))
+* **deps:** update docker/build-push-action action to v7.1.0 ([#2238](https://github.com/distr-sh/distr/issues/2238)) ([2394658](https://github.com/distr-sh/distr/commit/2394658faffe0c19d8b14d4d1ad845ce387b4ac2))
+* **deps:** update flowbite to v4 ([#2236](https://github.com/distr-sh/distr/issues/2236)) ([99734e3](https://github.com/distr-sh/distr/commit/99734e3e1bdda0cc9be4186a080fa0220919bbb6))
+* **frontend:** fix build warnings ([#2235](https://github.com/distr-sh/distr/issues/2235)) ([f3b3442](https://github.com/distr-sh/distr/commit/f3b34425d886ac2dcf4c0785654db80a8e6a48b5))
+* **frontend:** minor CSS adjustments ([#2237](https://github.com/distr-sh/distr/issues/2237)) ([0a790d4](https://github.com/distr-sh/distr/commit/0a790d4b2f23d2e300fd1d1d320680c948b2b265))
+
+
+### Docs
+
+* add blog post - How to Protect Source Code and IP in Docker/K8s ([#2197](https://github.com/distr-sh/distr/issues/2197)) ([b88bd7f](https://github.com/distr-sh/distr/commit/b88bd7f4a3f9eb194a5dee572ac87badba406a56))
+* update readme ([#2230](https://github.com/distr-sh/distr/issues/2230)) ([def5879](https://github.com/distr-sh/distr/commit/def58792dd0885683ae816ec1549d9744806b136))
+
 ## [2.17.1](https://github.com/distr-sh/distr/compare/2.17.0...2.17.1) (2026-04-09)
 
 
