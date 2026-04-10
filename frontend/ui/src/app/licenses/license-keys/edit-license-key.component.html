@@ -79,7 +79,7 @@
         <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Customer</label>
         @let customers = customers$ | async;
         <p class="text-sm text-gray-900 dark:text-white">
-          {{ customers?.find(c => c.id === editForm.getRawValue().customerOrganizationId)?.name ?? '—' }}
+          {{ customers?.find((c) => c.id === editForm.getRawValue().customerOrganizationId)?.name ?? '—' }}
         </p>
       </div>
     }
