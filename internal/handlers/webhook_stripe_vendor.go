@@ -146,11 +146,15 @@ func handleVendorStripeSubscription(ctx context.Context, orgID uuid.UUID, sub st
 	} else if periodEnd, err := billing.GetCurrentPeriodEnd(sub); err == nil {
 		eventTime = *periodEnd
 	}
+	notBefore := time.Now()
 	expiresAt := eventTime.AddDate(0, 0, tmpl.ExpirationGracePeriodDays)
+	if notBefore.After(expiresAt) {
+		notBefore = expiresAt
+	}
 
 	revision := types.LicenseKeyRevision{
 		LicenseKeyID: licenseKeyID,
-		NotBefore:    time.Now(),
+		NotBefore:    notBefore,
 		ExpiresAt:    expiresAt,
 		Payload:      payload,
 	}
