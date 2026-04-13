@@ -396,7 +396,10 @@
           </li>
         }
 
-        @for (link of customerOrgLinks(); track link.id) {
+        @for (link of customerOrgLinks(); track link.id; let i = $index) {
+          @if (i === 0) {
+            <hr class="border-gray-200 dark:border-gray-600 my-4" />
+          }
           <li>
             <a
               [href]="link.link"

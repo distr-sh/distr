@@ -5,3 +5,5 @@ CREATE TABLE CustomerOrganizationLink (
   name TEXT NOT NULL,
   link TEXT NOT NULL
 );
+
+CREATE INDEX idx_customer_organization_link_customer_organization_id ON CustomerOrganizationLink (customer_organization_id);
