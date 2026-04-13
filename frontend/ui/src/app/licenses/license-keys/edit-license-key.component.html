@@ -4,10 +4,10 @@
       class="flex items-start gap-2 p-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-700 dark:text-blue-400">
       <fa-icon [icon]="faCircleInfo" />
       @if (editForm.value.licenseTemplateId) {
+        This license key is configured with a license template. Manually changing the dates or payload is not supported.
+      } @else {
         Changing the dates or payload will create a new revision. The customer assignment cannot be changed after
         creation.
-      } @else {
-        This license key is configured with a license template. Manually changing the dates or payload is not supported.
       }
     </div>
   }
