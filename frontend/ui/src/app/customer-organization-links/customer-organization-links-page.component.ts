@@ -4,7 +4,7 @@ import {Component, computed, ElementRef, inject, signal, TemplateRef, viewChild}
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
-import {CustomerOrganizationLink} from '@distr-sh/distr-sdk';
+import {SidebarLink} from '@distr-sh/distr-sdk';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {
   faBoxesStacked,
@@ -19,16 +19,16 @@ import {combineLatest, firstValueFrom, of, startWith, Subject, switchMap} from '
 import {getFormDisplayedError} from '../../util/errors';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AuthService} from '../services/auth.service';
-import {CustomerOrganizationLinksService} from '../services/customer-organization-links.service';
 import {CustomerOrganizationsService} from '../services/customer-organizations.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
+import {SidebarLinksService} from '../services/sidebar-links.service';
 import {ToastService} from '../services/toast.service';
 
 @Component({
   templateUrl: './customer-organization-links-page.component.html',
   imports: [RouterLink, FontAwesomeModule, OverlayModule, ReactiveFormsModule, DatePipe, AutotrimDirective],
 })
-export class CustomerOrganizationLinksPageComponent {
+export class SidebarLinksPageComponent {
   protected readonly faBoxesStacked = faBoxesStacked;
   protected readonly faChevronDown = faChevronDown;
   protected readonly faMagnifyingGlass = faMagnifyingGlass;
@@ -39,7 +39,7 @@ export class CustomerOrganizationLinksPageComponent {
 
   protected readonly auth = inject(AuthService);
   private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
-  private readonly linksService = inject(CustomerOrganizationLinksService);
+  private readonly linksService = inject(SidebarLinksService);
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder).nonNullable;
@@ -92,7 +92,7 @@ export class CustomerOrganizationLinksPageComponent {
     this.dialogRef?.close();
   }
 
-  protected showDialog(existing?: CustomerOrganizationLink) {
+  protected showDialog(existing?: SidebarLink) {
     this.closeDialog();
 
     if (existing) {
@@ -146,7 +146,7 @@ export class CustomerOrganizationLinksPageComponent {
     }
   }
 
-  protected async deleteLink(link: CustomerOrganizationLink) {
+  protected async deleteLink(link: SidebarLink) {
     const customerOrgId = this.customerOrganizationId();
     if (!customerOrgId) return;
 

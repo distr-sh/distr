@@ -20,14 +20,15 @@ export interface CreateUpdateCustomerOrganizationRequest {
   features?: CustomerOrganizationFeature[];
 }
 
-export interface CustomerOrganizationLink {
+export interface SidebarLink {
   id: string;
   createdAt: string;
-  customerOrganizationId: string;
+  organizationId: string;
+  customerOrganizationId?: string;
   name: string;
   link: string;
 }
 
 export interface CustomerOrganizationResponse extends CustomerOrganization {
-  links: CustomerOrganizationLink[];
+  links: SidebarLink[];
 }

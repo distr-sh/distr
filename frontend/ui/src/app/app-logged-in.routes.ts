@@ -16,7 +16,7 @@ import {DashboardComponent} from './components/dashboard/dashboard.component';
 import {HomeComponent} from './components/home/home.component';
 import {CustomerUsersComponent} from './components/users/customers/customer-users.component';
 import {VendorUsersComponent} from './components/users/vendors/vendor-users.component';
-import {CustomerOrganizationLinksPageComponent} from './customer-organization-links/customer-organization-links-page.component';
+import {SidebarLinksPageComponent} from './customer-organization-links/customer-organization-links-page.component';
 import {DeploymentTargetDetailComponent} from './deployments/deployment-target-details/deployment-target-detail.component';
 import {DeploymentTargetsComponent} from './deployments/deployment-targets.component';
 import {CustomerLicenseDetailComponent} from './licenses/customer-license-detail.component';
@@ -180,7 +180,7 @@ export const routes: Routes = [
         children: [
           {path: 'users', component: CustomerUsersComponent},
           {path: 'secrets', component: CustomerSecretsPageComponent},
-          {path: 'links', component: CustomerOrganizationLinksPageComponent},
+          {path: 'links', component: SidebarLinksPageComponent},
           {path: '', pathMatch: 'full', redirectTo: 'users'},
         ],
       },

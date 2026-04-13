@@ -1,6 +1,6 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
-import {CustomerOrganizationResponse, UserAccountWithRole} from '@distr-sh/distr-sdk';
+import {CustomerOrganization, SidebarLink, UserAccountWithRole} from '@distr-sh/distr-sdk';
 import posthog from 'posthog-js';
 import {map, Observable, shareReplay, startWith, Subject, switchMap, tap} from 'rxjs';
 import {Organization, OrganizationWithUserRole} from '../types/organization';
@@ -8,7 +8,8 @@ import {Organization, OrganizationWithUserRole} from '../types/organization';
 interface ContextResponse {
   user: UserAccountWithRole;
   organization: Organization;
-  customerOrganization?: CustomerOrganizationResponse;
+  customerOrganization?: CustomerOrganization;
+  sidebarLinks?: SidebarLink[];
   availableContexts?: OrganizationWithUserRole[];
 }
 
@@ -46,8 +47,12 @@ export class ContextService {
     return this.cache.pipe(map((ctx) => ctx.availableContexts ?? []));
   }
 
-  public getCustomerOrganization(): Observable<CustomerOrganizationResponse | undefined> {
+  public getCustomerOrganization(): Observable<CustomerOrganization | undefined> {
     return this.cache.pipe(map((ctx) => ctx.customerOrganization));
+  }
+
+  public getSidebarLinks(): Observable<SidebarLink[]> {
+    return this.cache.pipe(map((ctx) => ctx.sidebarLinks ?? []));
   }
 
   public reload() {

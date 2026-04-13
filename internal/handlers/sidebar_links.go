@@ -18,29 +18,29 @@ import (
 	"go.uber.org/zap"
 )
 
-func CustomerOrganizationLinksRouter(r chiopenapi.Router) {
-	r.WithOptions(option.GroupTags("Customer Organization Links"))
+func SidebarLinksRouter(r chiopenapi.Router) {
+	r.WithOptions(option.GroupTags("Sidebar Links"))
 	r.Use(middleware.RequireOrgAndRole)
 
 	type customerOrganizationIDRequest struct {
 		CustomerOrganizationID uuid.UUID `path:"customerOrganizationId"`
 	}
 
-	r.Get("/", getCustomerOrganizationLinksHandler()).
-		With(option.Description("List all links for a customer organization")).
+	r.Get("/", getSidebarLinksHandler()).
+		With(option.Description("List all sidebar links for a customer organization")).
 		With(option.Request(customerOrganizationIDRequest{})).
-		With(option.Response(http.StatusOK, []api.CustomerOrganizationLink{}))
+		With(option.Response(http.StatusOK, []api.SidebarLink{}))
 
 	r.Group(func(r chiopenapi.Router) {
 		r.Use(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin)
 
-		r.Post("/", createCustomerOrganizationLinkHandler()).
-			With(option.Description("Create a link for a customer organization")).
+		r.Post("/", createSidebarLinkHandler()).
+			With(option.Description("Create a sidebar link for a customer organization")).
 			With(option.Request(struct {
 				customerOrganizationIDRequest
-				api.CreateUpdateCustomerOrganizationLinkRequest
+				api.CreateUpdateSidebarLinkRequest
 			}{})).
-			With(option.Response(http.StatusCreated, api.CustomerOrganizationLink{}))
+			With(option.Response(http.StatusCreated, api.SidebarLink{}))
 
 		r.Route("/{linkId}", func(r chiopenapi.Router) {
 			type linkIDRequest struct {
@@ -48,22 +48,22 @@ func CustomerOrganizationLinksRouter(r chiopenapi.Router) {
 				LinkID uuid.UUID `path:"linkId"`
 			}
 
-			r.Put("/", updateCustomerOrganizationLinkHandler()).
-				With(option.Description("Update a customer organization link")).
+			r.Put("/", updateSidebarLinkHandler()).
+				With(option.Description("Update a sidebar link")).
 				With(option.Request(struct {
 					linkIDRequest
-					api.CreateUpdateCustomerOrganizationLinkRequest
+					api.CreateUpdateSidebarLinkRequest
 				}{})).
-				With(option.Response(http.StatusOK, api.CustomerOrganizationLink{}))
+				With(option.Response(http.StatusOK, api.SidebarLink{}))
 
-			r.Delete("/", deleteCustomerOrganizationLinkHandler()).
-				With(option.Description("Delete a customer organization link")).
+			r.Delete("/", deleteSidebarLinkHandler()).
+				With(option.Description("Delete a sidebar link")).
 				With(option.Request(linkIDRequest{}))
 		})
 	})
 }
 
-func getCustomerOrganizationLinksHandler() http.HandlerFunc {
+func getSidebarLinksHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
@@ -80,18 +80,18 @@ func getCustomerOrganizationLinksHandler() http.HandlerFunc {
 			return
 		}
 
-		links, err := db.GetCustomerOrganizationLinks(ctx, customerOrgID)
+		links, err := db.GetSidebarLinks(ctx, customerOrgID)
 		if err != nil {
-			log.Error("failed to get customer organization links", zap.Error(err))
+			log.Error("failed to get sidebar links", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		} else {
-			RespondJSON(w, mapping.List(links, mapping.CustomerOrganizationLinkToAPI))
+			RespondJSON(w, mapping.List(links, mapping.SidebarLinkToAPI))
 		}
 	}
 }
 
-func createCustomerOrganizationLinkHandler() http.HandlerFunc {
+func createSidebarLinkHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
@@ -108,7 +108,7 @@ func createCustomerOrganizationLinkHandler() http.HandlerFunc {
 			return
 		}
 
-		body, err := JsonBody[api.CreateUpdateCustomerOrganizationLinkRequest](w, r)
+		body, err := JsonBody[api.CreateUpdateSidebarLinkRequest](w, r)
 		if err != nil {
 			return
 		}
@@ -123,19 +123,19 @@ func createCustomerOrganizationLinkHandler() http.HandlerFunc {
 			return
 		}
 
-		link, err := db.CreateCustomerOrganizationLink(ctx, customerOrgID, body.Name, body.Link)
+		link, err := db.CreateSidebarLink(ctx, *auth.CurrentOrgID(), customerOrgID, body.Name, body.Link)
 		if err != nil {
-			log.Error("failed to create customer organization link", zap.Error(err))
+			log.Error("failed to create sidebar link", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		} else {
 			w.WriteHeader(http.StatusCreated)
-			RespondJSON(w, mapping.CustomerOrganizationLinkToAPI(*link))
+			RespondJSON(w, mapping.SidebarLinkToAPI(*link))
 		}
 	}
 }
 
-func updateCustomerOrganizationLinkHandler() http.HandlerFunc {
+func updateSidebarLinkHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
@@ -158,7 +158,7 @@ func updateCustomerOrganizationLinkHandler() http.HandlerFunc {
 			return
 		}
 
-		body, err := JsonBody[api.CreateUpdateCustomerOrganizationLinkRequest](w, r)
+		body, err := JsonBody[api.CreateUpdateSidebarLinkRequest](w, r)
 		if err != nil {
 			return
 		}
@@ -173,22 +173,22 @@ func updateCustomerOrganizationLinkHandler() http.HandlerFunc {
 			return
 		}
 
-		link, err := db.UpdateCustomerOrganizationLink(ctx, linkID, customerOrgID, body.Name, body.Link)
+		link, err := db.UpdateSidebarLink(ctx, linkID, customerOrgID, body.Name, body.Link)
 		if err != nil {
 			if errors.Is(err, apierrors.ErrNotFound) {
 				http.NotFound(w, r)
 			} else {
-				log.Error("failed to update customer organization link", zap.Error(err))
+				log.Error("failed to update sidebar link", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			}
 		} else {
-			RespondJSON(w, mapping.CustomerOrganizationLinkToAPI(*link))
+			RespondJSON(w, mapping.SidebarLinkToAPI(*link))
 		}
 	}
 }
 
-func deleteCustomerOrganizationLinkHandler() http.HandlerFunc {
+func deleteSidebarLinkHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
@@ -211,12 +211,12 @@ func deleteCustomerOrganizationLinkHandler() http.HandlerFunc {
 			return
 		}
 
-		err = db.DeleteCustomerOrganizationLink(ctx, linkID, customerOrgID)
+		err = db.DeleteSidebarLink(ctx, linkID, customerOrgID)
 		if err != nil {
 			if errors.Is(err, apierrors.ErrNotFound) {
 				http.NotFound(w, r)
 			} else {
-				log.Error("failed to delete customer organization link", zap.Error(err))
+				log.Error("failed to delete sidebar link", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			}

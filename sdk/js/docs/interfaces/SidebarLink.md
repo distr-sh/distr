@@ -2,9 +2,9 @@
 
 ---
 
-[@distr-sh/distr-sdk](../README.md) / CustomerOrganizationLink
+[@distr-sh/distr-sdk](../README.md) / SidebarLink
 
-# Interface: CustomerOrganizationLink
+# Interface: SidebarLink
 
 ## Properties
 
@@ -14,9 +14,9 @@
 
 ---
 
-### customerOrganizationId
+### customerOrganizationId?
 
-> **customerOrganizationId**: `string`
+> `optional` **customerOrganizationId?**: `string`
 
 ---
 
@@ -35,3 +35,9 @@
 ### name
 
 > **name**: `string`
+
+---
+
+### organizationId
+
+> **organizationId**: `string`

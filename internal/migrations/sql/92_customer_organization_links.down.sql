@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS CustomerOrganizationLink;
+DROP TABLE IF EXISTS SidebarLink;

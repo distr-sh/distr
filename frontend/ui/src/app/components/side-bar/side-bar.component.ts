@@ -3,7 +3,7 @@ import {NgTemplateOutlet} from '@angular/common';
 import {Component, inject, input, signal, WritableSignal} from '@angular/core';
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {RouterLink, RouterLinkActive} from '@angular/router';
-import {CustomerOrganizationLink, CustomerOrganizationResponse} from '@distr-sh/distr-sdk';
+import {CustomerOrganization, SidebarLink} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faAddressBook,
@@ -104,21 +104,16 @@ export class SideBarComponent {
 
   protected readonly customerOrgFeatures = toSignal(
     this.contextService.getCustomerOrganization().pipe(
-      map((customerOrg: CustomerOrganizationResponse | undefined): string[] => {
+      map((customerOrg: CustomerOrganization | undefined): string[] => {
         return customerOrg?.features || [];
       })
     ),
     {initialValue: [] as string[]}
   );
 
-  protected readonly customerOrgLinks = toSignal(
-    this.contextService.getCustomerOrganization().pipe(
-      map((customerOrg: CustomerOrganizationResponse | undefined): CustomerOrganizationLink[] => {
-        return customerOrg?.links || [];
-      })
-    ),
-    {initialValue: [] as CustomerOrganizationLink[]}
-  );
+  protected readonly customerOrgLinks = toSignal(this.contextService.getSidebarLinks(), {
+    initialValue: [] as SidebarLink[],
+  });
 
   protected hasCustomerOrganizationFeature(feature: string): boolean {
     const features = this.customerOrgFeatures();

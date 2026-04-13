@@ -64,7 +64,7 @@
 
 ### links
 
-> **links**: [`CustomerOrganizationLink`](CustomerOrganizationLink.md)[]
+> **links**: [`SidebarLink`](SidebarLink.md)[]
 
 ---
 
