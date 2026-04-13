@@ -187,8 +187,9 @@ func sendLicenseKeyRevisionEmails(
 		customerOrg, err := db.GetCustomerOrganizationByID(ctx, *licenseKey.CustomerOrganizationID)
 		if err != nil {
 			log.Error("failed to get customer organization for license key revision notification", zap.Error(err))
+		} else {
+			customerOrgName = customerOrg.Name
 		}
-		customerOrgName = customerOrg.Name
 	}
 
 	token, err := licensekey.GenerateToken(licensekey.FromLicenseKeyAndRevision(*licenseKey, revision), env.Host())
