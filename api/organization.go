@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"regexp"
 
 	"github.com/distr-sh/distr/internal/types"
@@ -36,7 +35,7 @@ func (r UpdateOrganizationWebhookRequest) Validate() error {
 		if ok, err := regexp.MatchString("^whsec_[A-Za-z0-9]{1,128}$", *r.WebhookSecret); err != nil {
 			return err
 		} else if !ok {
-			return validation.NewValidationFailedError(fmt.Sprintf("invalid webhookSecret: \"%v\"", *r.WebhookSecret))
+			return validation.NewValidationFailedError("invalid webhookSecret format")
 		}
 	}
 
