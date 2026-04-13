@@ -32,16 +32,22 @@ func RenderPayload(tmpl types.LicenseTemplate, sub stripe.Subscription) (json.Ra
 func templateFuncMap(sub stripe.Subscription) template.FuncMap {
 	return template.FuncMap{
 		"hasItem": func(keys ...string) bool {
-			return slices.ContainsFunc(sub.Items.Data, func(item *stripe.SubscriptionItem) bool {
-				return item != nil && item.Price != nil && slices.Contains(keys, item.Price.LookupKey)
-			})
+			return sub.Items != nil &&
+				slices.ContainsFunc(sub.Items.Data, func(item *stripe.SubscriptionItem) bool {
+					return item != nil && item.Price != nil && slices.Contains(keys, item.Price.LookupKey)
+				})
 		},
 		"itemQuantity": func(key string) int64 {
+			if sub.Items == nil {
+				return 0
+			}
+
 			for _, item := range sub.Items.Data {
 				if item != nil && item.Price != nil && item.Price.LookupKey == key {
 					return item.Quantity
 				}
 			}
+
 			return 0
 		},
 	}
