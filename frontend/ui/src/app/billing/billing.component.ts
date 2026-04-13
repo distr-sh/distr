@@ -54,7 +54,7 @@ export class BillingComponent {
     webhookSecret: this.fb.control('', [Validators.required, Validators.pattern(/^whsec_[a-zA-Z0-9]+$/)]),
   });
 
-  protected readonly payloadTemplatePlaceholder = `{ "plan": "{{ if hasItemWithPriceLookupKey \\"pro-monthly\\" }}pro{{ else }}starter{{ end }}", "seats": {{ itemQuantityForPriceLookupKey \\"seats-monthly\\" }} }`;
+  protected readonly payloadTemplatePlaceholder = `{ "plan": "{{ if hasItem \\"pro-monthly\\" }}pro{{ else }}starter{{ end }}", "seats": {{ itemQuantity \\"seats-monthly\\" }} }`;
 
   protected readonly webhookUrl = computed(() => `${location.origin}/api/v1/webhook/${this.organization()?.id}/stripe`);
 
