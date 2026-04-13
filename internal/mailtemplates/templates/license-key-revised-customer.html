@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    {{ template "fragments/style.html" }}
+  </head>
+  <body>
+    <div class="message-container">
+      {{ template "fragments/header.html" . }}
+      <main>
+        <p>Hi,</p>
+
+        <p>A new revision has been created for your license key <strong>{{ .LicenseKey.Name }}</strong>.</p>
+
+        <p><strong>Payload:</strong></p>
+        <pre>{{ .PayloadFormatted }}</pre>
+
+        <p><strong>Signed license key:</strong></p>
+        <pre style="word-break: break-all; white-space: pre-wrap">{{ .Token }}</pre>
+
+        <p><strong>Expires at:</strong> {{ .Revision.ExpiresAt.UTC.Format "2006-01-02 15:04:05 UTC" }}</p>
+
+        <p>{{template "fragments/signature.html" . }}</p>
+      </main>
+      {{template "fragments/footer.html" . }}
+    </div>
+  </body>
+</html>

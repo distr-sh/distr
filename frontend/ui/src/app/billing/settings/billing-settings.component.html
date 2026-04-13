@@ -1,0 +1,103 @@
+<div class="py-3 sm:py-5 antialiased">
+  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
+    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg p-6">
+      <a
+        routerLink=".."
+        class="inline-flex items-center mb-4 text-sm font-medium text-primary-700 hover:text-primary-800 dark:text-primary-500 dark:hover:text-primary-400">
+        <fa-icon [icon]="faArrowLeft" class="mr-2" />
+        Back to Billing
+      </a>
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Stripe Webhook</h2>
+
+      <div class="mb-6">
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+          Configure this webhook URL in your Stripe dashboard to trigger automatic license key generation:
+        </p>
+        <div class="flex items-center gap-2">
+          <code
+            class="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm rounded-lg px-3 py-2 font-mono truncate select-all"
+            >{{ webhookUrl() }}</code
+          >
+          <button
+            type="button"
+            [appClip]="webhookUrl()"
+            #clip="clip"
+            (click)="clip.writeClip()"
+            class="py-2 px-3 flex items-center text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+            <fa-icon [icon]="clip.copied() ? faCheck : faCopy" [class.text-green-500]="clip.copied()" />
+          </button>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 mb-4">
+        <span class="text-sm text-gray-700 dark:text-gray-300 font-medium">Webhook secret:</span>
+        @if (organization()?.stripeWebhookSecretConfigured) {
+          <span
+            class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-green-900 dark:text-green-300">
+            <fa-icon [icon]="faCheck" />
+            Configured
+          </span>
+        } @else {
+          <span
+            class="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-gray-700 dark:text-gray-300">
+            <fa-icon [icon]="faCircleXmark" />
+            Not configured
+          </span>
+        }
+      </div>
+
+      @if (auth.hasRole('admin')) {
+        <form [formGroup]="webhookForm" (ngSubmit)="saveWebhookSecret()">
+          <label for="webhook-secret" class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+            @if (organization()?.stripeWebhookSecretConfigured) {
+              Update webhook secret
+            } @else {
+              Set webhook secret
+            }
+          </label>
+          <div class="flex gap-3">
+            <input
+              id="webhook-secret"
+              type="text"
+              formControlName="webhookSecret"
+              name="webhookSecret"
+              autocomplete="off"
+              placeholder="whsec_&hellip;"
+              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-128 max-w-128 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+            <button
+              type="submit"
+              [disabled]="webhookForm.invalid || webhookSecretLoading()"
+              class="text-white inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60">
+              Save
+            </button>
+          </div>
+          @if (webhookForm.controls.webhookSecret.errors?.['pattern']) {
+            <p class="mt-1 text-sm text-red-600 dark:text-red-400">Invalid webhook secret format</p>
+          }
+        </form>
+      }
+
+      @if (auth.hasRole('admin') && organization()?.stripeWebhookSecretConfigured) {
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white mt-6 mb-2">Danger Zone</h3>
+        <div
+          class="flex flex-col rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
+          <div class="p-4 flex items-center justify-between dark:text-white">
+            <div>
+              <div>Remove webhook secret</div>
+              <div class="text-xs font-normal text-gray-500 dark:text-gray-400">
+                Remove the configured Stripe webhook secret. Stripe webhook events will no longer be processed.
+              </div>
+            </div>
+            <button
+              type="button"
+              [disabled]="webhookSecretLoading()"
+              (click)="deleteWebhookSecret()"
+              class="text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900 disabled:opacity-60">
+              Remove
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

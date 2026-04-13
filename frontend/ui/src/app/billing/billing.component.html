@@ -1,0 +1,170 @@
+<div class="py-3 sm:py-5 antialiased">
+  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12 flex flex-col gap-8">
+    <!-- License Templates -->
+    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+      <div class="flex items-center justify-between mx-4 py-4">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">License Templates</h2>
+        <div class="flex items-center gap-2">
+          @if (auth.hasRole('admin')) {
+            <a
+              routerLink="settings"
+              class="flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+              <fa-icon [icon]="faGear" class="text-gray-500 dark:text-gray-400 mr-2" />
+              Settings
+            </a>
+          }
+          @if (auth.hasAnyRole('read_write', 'admin')) {
+            <button
+              (click)="openTemplateDrawer()"
+              type="button"
+              class="flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+              <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
+              New Template
+            </button>
+          }
+        </div>
+      </div>
+      @if (organization() && !organization()!.stripeWebhookSecretConfigured) {
+        <div
+          class="mx-4 mb-4 p-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400 border border-blue-200 dark:border-blue-800 flex items-center justify-between gap-4"
+          role="alert">
+          <div>
+            <p class="font-semibold mb-1">Stripe webhook has not been configured yet.</p>
+            <p>
+              Configure the Stripe webhook secret to enable automatic license key generation from Stripe subscriptions.
+            </p>
+          </div>
+          <a
+            routerLink="settings"
+            class="shrink-0 py-1.5 px-3 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+            Configure webhook
+          </a>
+        </div>
+      }
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+          <thead
+            class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
+            <tr>
+              <th scope="col" class="p-4">Name</th>
+              <th scope="col" class="p-4">Grace Period</th>
+              <th scope="col" class="p-4"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (template of templates(); track template.id) {
+              <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ template.name }}</td>
+                <td class="px-4 py-3 text-gray-900 dark:text-white">
+                  {{ template.expirationGracePeriodDays }} day{{ template.expirationGracePeriodDays !== 1 ? 's' : '' }}
+                </td>
+                <td class="px-4 py-3 flex justify-end gap-2">
+                  @if (auth.hasAnyRole('read_write', 'admin')) {
+                    <button
+                      type="button"
+                      (click)="openTemplateDrawer(template)"
+                      class="py-2 px-3 flex gap-2 items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                      <fa-icon [icon]="faPen" class="text-gray-500 dark:text-gray-400" />
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Delete"
+                      (click)="deleteTemplate(template)"
+                      class="py-2 px-3 text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900">
+                      <fa-icon [icon]="faTrash" />
+                    </button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr class="border-t border-gray-200 dark:border-gray-600">
+                <td colspan="3" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
+                  No license templates yet. Create one to enable automatic license key generation from Stripe
+                  subscriptions.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #templateDrawer>
+  <div
+    class="h-screen p-4 overflow-y-auto bg-white w-160 dark:bg-gray-800"
+    animate.enter="animate-fly-in-right"
+    animate.leave="animate-fly-out-right"
+    tabindex="-1">
+    <h5 class="inline-flex items-center mb-6 text-sm font-semibold text-gray-500 uppercase dark:text-gray-400">
+      {{ selectedTemplate() ? 'Edit' : 'New' }} License Template
+    </h5>
+    <button
+      type="button"
+      (click)="hideDrawer()"
+      class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 right-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
+      <fa-icon [icon]="faXmark" class="w-5 h-5"></fa-icon>
+      <span class="sr-only">Close</span>
+    </button>
+
+    <form [formGroup]="templateForm" (ngSubmit)="saveTemplate()" class="flex flex-col gap-4">
+      <div>
+        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300" for="template-name">Name</label>
+        <input
+          id="template-name"
+          type="text"
+          formControlName="name"
+          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" />
+        @if (templateForm.controls.name.invalid && templateForm.controls.name.touched) {
+          <p class="mt-1 text-sm text-red-600 dark:text-red-400">Name is required</p>
+        }
+      </div>
+
+      <div>
+        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300" for="template-grace-period">
+          Expiration Grace Period (days)
+        </label>
+        <input
+          id="template-grace-period"
+          type="number"
+          min="0"
+          formControlName="expirationGracePeriodDays"
+          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" />
+        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          Added to the subscription period end to calculate when the license expires.
+        </p>
+      </div>
+
+      <div>
+        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300" for="template-payload">
+          Payload Template
+        </label>
+        <p class="mb-1 text-xs text-gray-500 dark:text-gray-400">
+          Go template that produces a JSON payload. The Stripe subscription is available as <code>.</code>. Available
+          functions: <code>hasItem "lookup_key_1" "lookup_key_2"</code> and <code>itemQuantity "lookup_key"</code>.
+        </p>
+        <textarea
+          id="template-payload"
+          formControlName="payloadTemplate"
+          rows="12"
+          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm font-mono rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+          [attr.placeholder]="payloadTemplatePlaceholder"></textarea>
+        @if (templateForm.controls.payloadTemplate.invalid && templateForm.controls.payloadTemplate.touched) {
+          <p class="mt-1 text-sm text-red-600 dark:text-red-400">Payload template is required</p>
+        }
+      </div>
+
+      <div class="flex justify-center w-full pb-4">
+        <button
+          type="submit"
+          [disabled]="templateFormLoading()"
+          class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60">
+          <fa-icon [icon]="faPen" class="me-2" />
+          Save
+        </button>
+      </div>
+    </form>
+  </div>
+</ng-template>

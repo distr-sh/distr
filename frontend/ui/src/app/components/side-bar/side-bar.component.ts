@@ -16,6 +16,7 @@ import {
   faCreditCard,
   faDashboard,
   faGear,
+  faHandHoldingDollar,
   faHome,
   faKey,
   faLifeRing,
@@ -77,6 +78,7 @@ export class SideBarComponent {
   protected readonly faChevronDown = faChevronDown;
   protected readonly faAsterisk = faAsterisk;
   protected readonly faLifeRing = faLifeRing;
+  protected readonly faHandHoldingDollar = faHandHoldingDollar;
   protected feedbackAlert = true;
   protected readonly agentsSubMenuOpen = signal(true);
   protected readonly registrySubMenuOpen = signal(true);
@@ -96,6 +98,7 @@ export class SideBarComponent {
   protected readonly isLicensingFeatureEnabled = toSignal(this.featureFlags.isLicensingEnabled$);
   protected readonly isNotificationsFeatureEnabled = toSignal(this.featureFlags.isNotificationsEnabled$);
   protected readonly isSupportBundlesFeatureEnabled = toSignal(this.featureFlags.isSupportBundlesEnabled$);
+  protected readonly isVendorBillingFeatureEnabled = this.featureFlags.isVendorBillingEnabled;
 
   public readonly isSubscriptionBannerVisible = input<boolean>();
   public readonly isSidebarVisible = input<boolean>();

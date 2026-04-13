@@ -9,9 +9,11 @@ import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observabl
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
+import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
+import {FeatureFlagService} from '../../services/feature-flag.service';
 import {LicenseKeysService} from '../../services/license-keys.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
@@ -29,6 +31,7 @@ import {ViewLicenseKeyModalComponent} from './view-license-key-modal.component';
     EditLicenseKeyComponent,
     ViewLicenseKeyModalComponent,
     AutotrimDirective,
+    UuidComponent,
   ],
   templateUrl: './license-keys.component.html',
 })
@@ -36,6 +39,7 @@ export class LicenseKeysComponent {
   readonly customerOrganizationId = input<string>();
 
   protected readonly auth = inject(AuthService);
+  protected readonly features = inject(FeatureFlagService);
   private readonly licenseKeysService = inject(LicenseKeysService);
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
@@ -117,7 +121,11 @@ export class LicenseKeysComponent {
       try {
         const saved = await firstValueFrom(action);
         this.hideDrawer();
-        this.toast.success(`${saved.name} saved successfully`);
+        if (!license.id && saved.licenseTemplateId) {
+          this.toast.success(`${saved.name} saved successfully. Link the license key ID in your Stripe dashboard.`);
+        } else {
+          this.toast.success(`${saved.name} saved successfully`);
+        }
       } catch (e) {
         const msg = getFormDisplayedError(e);
         if (msg) {

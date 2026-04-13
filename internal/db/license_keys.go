@@ -14,11 +14,21 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-const licenseKeyOutExpr = `lk.id, lk.created_at, lk.name, lk.description, lr.payload, ` +
-	`lr.not_before, lr.expires_at, lr.created_at AS last_revised_at, lk.organization_id, lk.customer_organization_id`
+const licenseKeyOutExpr = `
+	lk.id,
+	lk.created_at,
+	lk.name,
+	lk.description,
+	lr.payload,
+	lr.not_before,
+	lr.expires_at,
+	lr.created_at AS last_revised_at,
+	lk.organization_id,
+	lk.customer_organization_id,
+	lk.license_template_id `
 
 const licenseKeyLatestRevisionJoin = `
-	JOIN LATERAL (
+	LEFT JOIN LATERAL (
 		SELECT payload, not_before, expires_at, created_at
 		FROM LicenseKeyRevision
 		WHERE license_key_id = lk.id
@@ -53,6 +63,7 @@ func GetLicenseKeysByCustomerOrgID(
 		SELECT `+licenseKeyOutExpr+`
 		FROM LicenseKey lk`+licenseKeyLatestRevisionJoin+`
 		WHERE lk.organization_id = @orgId AND lk.customer_organization_id = @customerOrgId
+			AND lr.payload IS NOT NULL
 		ORDER BY lk.name`,
 		pgx.NamedArgs{"orgId": orgID, "customerOrgId": customerOrgID},
 	)
@@ -91,14 +102,15 @@ func CreateLicenseKey(ctx context.Context, licenseKey *types.LicenseKey) error {
 	return RunTx(ctx, func(ctx context.Context) error {
 		db := internalctx.GetDb(ctx)
 		rows, err := db.Query(ctx, `
-			INSERT INTO LicenseKey (name, description, organization_id, customer_organization_id)
-			VALUES (@name, @description, @organizationId, @customerOrganizationId)
+			INSERT INTO LicenseKey (name, description, organization_id, customer_organization_id, license_template_id)
+			VALUES (@name, @description, @organizationId, @customerOrganizationId, @licenseTemplateId)
 			RETURNING id`,
 			pgx.NamedArgs{
 				"name":                   licenseKey.Name,
 				"description":            licenseKey.Description,
 				"organizationId":         licenseKey.OrganizationID,
 				"customerOrganizationId": licenseKey.CustomerOrganizationID,
+				"licenseTemplateId":      licenseKey.LicenseTemplateID,
 			},
 		)
 		if err != nil {
@@ -115,14 +127,16 @@ func CreateLicenseKey(ctx context.Context, licenseKey *types.LicenseKey) error {
 			insertedID = id
 		}
 
-		revision := types.LicenseKeyRevision{
-			LicenseKeyID: insertedID,
-			NotBefore:    licenseKey.NotBefore,
-			ExpiresAt:    licenseKey.ExpiresAt,
-			Payload:      licenseKey.Payload,
-		}
-		if err := createLicenseKeyRevision(ctx, &revision); err != nil {
-			return err
+		if licenseKey.LicenseTemplateID == nil {
+			revision := types.LicenseKeyRevision{
+				LicenseKeyID: insertedID,
+				NotBefore:    *licenseKey.NotBefore,
+				ExpiresAt:    *licenseKey.ExpiresAt,
+				Payload:      licenseKey.Payload,
+			}
+			if err := createLicenseKeyRevision(ctx, &revision); err != nil {
+				return err
+			}
 		}
 
 		result, err := GetLicenseKeyByID(ctx, insertedID)
@@ -135,22 +149,24 @@ func CreateLicenseKey(ctx context.Context, licenseKey *types.LicenseKey) error {
 }
 
 func UpdateLicenseKeyMetadata(
-	ctx context.Context, id uuid.UUID, name string, description *string,
+	ctx context.Context, id uuid.UUID, name string, description *string, licenseTemplateID *uuid.UUID,
 ) (*types.LicenseKey, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `
 		WITH updated AS (
 			UPDATE LicenseKey SET
 				name = @name,
-				description = @description
+				description = @description,
+				license_template_id = @licenseTemplateId
 			WHERE id = @id RETURNING *
 		)
 		SELECT `+licenseKeyOutExpr+`
 		FROM updated lk`+licenseKeyLatestRevisionJoin,
 		pgx.NamedArgs{
-			"id":          id,
-			"name":        name,
-			"description": description,
+			"id":                id,
+			"name":              name,
+			"description":       description,
+			"licenseTemplateId": licenseTemplateID,
 		},
 	)
 	if err != nil {

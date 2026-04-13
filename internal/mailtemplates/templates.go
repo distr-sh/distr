@@ -183,6 +183,34 @@ func DeploymentStatusNotificationRecovered(
 	return deploymentStatusNotification("recovered", deploymentTarget, deployment, nil, &currentStatus)
 }
 
+func LicenseKeyRevisedCustomer(
+	licenseKey types.LicenseKey,
+	revision types.LicenseKeyRevision,
+	payloadFormatted string,
+	token string,
+) (*template.Template, any) {
+	return templates.Lookup("license-key-revised-customer.html"), map[string]any{
+		"LicenseKey":       licenseKey,
+		"Revision":         revision,
+		"PayloadFormatted": payloadFormatted,
+		"Token":            token,
+	}
+}
+
+func LicenseKeyRevisedVendor(
+	licenseKey types.LicenseKey,
+	revision types.LicenseKeyRevision,
+	payloadFormatted string,
+	customerOrgName string,
+) (*template.Template, any) {
+	return templates.Lookup("license-key-revised-vendor.html"), map[string]any{
+		"LicenseKey":       licenseKey,
+		"Revision":         revision,
+		"PayloadFormatted": payloadFormatted,
+		"CustomerOrgName":  customerOrgName,
+	}
+}
+
 func deploymentStatusNotification(
 	eventType string,
 	deploymentTarget types.DeploymentTargetFull,

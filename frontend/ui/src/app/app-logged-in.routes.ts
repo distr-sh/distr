@@ -11,6 +11,8 @@ import {ApplicationsPageComponent} from './applications/applications-page.compon
 import {ArtifactPullsComponent} from './artifacts/artifact-pulls/artifact-pulls.component';
 import {ArtifactVersionsComponent} from './artifacts/artifact-versions/artifact-versions.component';
 import {ArtifactsComponent} from './artifacts/artifacts/artifacts.component';
+import {BillingComponent} from './billing/billing.component';
+import {BillingSettingsComponent} from './billing/settings/billing-settings.component';
 import {CustomerOrganizationsComponent} from './components/customer-organizations/customer-organizations.component';
 import {DashboardComponent} from './components/dashboard/dashboard.component';
 import {HomeComponent} from './components/home/home.component';
@@ -84,6 +86,13 @@ function supportBundlesEnabledGuard(): CanActivateFn {
   return async () => {
     const featureFlags = inject(FeatureFlagService);
     return await firstValueFrom(featureFlags.isSupportBundlesEnabled$);
+  };
+}
+
+function vendorBillingEnabledGuard(): CanActivateFn {
+  return async () => {
+    const featureFlags = inject(FeatureFlagService);
+    return await firstValueFrom(featureFlags.isVendorBillingEnabled$);
   };
 }
 
@@ -203,6 +212,22 @@ export const routes: Routes = [
         component: OrganizationBrandingComponent,
         data: {userRole: 'vendor'},
         canActivate: [requireVendor, requiredRoleGuard('read_write', 'admin')],
+      },
+      {
+        path: 'billing',
+        canActivate: [requireVendor, vendorBillingEnabledGuard()],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            component: BillingComponent,
+          },
+          {
+            path: 'settings',
+            component: BillingSettingsComponent,
+            canActivate: [requiredRoleGuard('admin')],
+          },
+        ],
       },
       {
         path: 'licenses',
