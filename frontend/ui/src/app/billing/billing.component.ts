@@ -47,7 +47,10 @@ export class BillingComponent {
     expirationGracePeriodDays: this.fb.control(0, [Validators.required, Validators.min(0)]),
   });
 
-  protected readonly payloadTemplatePlaceholder = `{ "plan": "{{ if hasItem \\"pro-monthly\\" }}pro{{ else }}starter{{ end }}", "seats": {{ itemQuantity \\"seats-monthly\\" }} }`;
+  protected readonly payloadTemplatePlaceholder = `{
+  "plan": "{{ if hasItem "pro" }}pro{{ else }}starter{{ end }}",
+  "seats": {{ itemQuantity "seats" }}
+}`;
 
   openTemplateDrawer(template?: LicenseTemplate) {
     this.hideDrawer();
