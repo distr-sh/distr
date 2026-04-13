@@ -1,5 +1,4 @@
-import {AsyncPipe} from '@angular/common';
-import {AfterViewInit, Component, DestroyRef, forwardRef, inject, Injector, signal} from '@angular/core';
+import {AfterViewInit, Component, computed, DestroyRef, forwardRef, inject, Injector} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {
   ControlValueAccessor,
@@ -13,7 +12,6 @@ import {
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleInfo} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import {first} from 'rxjs';
 import {jsonObjectValidator} from '../../../util/validation';
 import {EditorComponent} from '../../components/editor.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
@@ -24,7 +22,7 @@ import {LicenseKey} from '../../types/license-key';
 @Component({
   selector: 'app-edit-license-key',
   templateUrl: './edit-license-key.component.html',
-  imports: [AsyncPipe, AutotrimDirective, EditorComponent, ReactiveFormsModule, FaIconComponent],
+  imports: [AutotrimDirective, EditorComponent, ReactiveFormsModule, FaIconComponent],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -37,7 +35,7 @@ export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAcces
   private readonly injector = inject(Injector);
   private readonly customerOrganizationService = inject(CustomerOrganizationsService);
   private readonly licenseTemplatesService = inject(LicenseTemplatesService);
-  customers$ = this.customerOrganizationService.getCustomerOrganizations().pipe(first());
+  protected readonly customers = toSignal(this.customerOrganizationService.getCustomerOrganizations());
   protected readonly templates = toSignal(this.licenseTemplatesService.list(), {initialValue: []});
 
   protected readonly faCircleInfo = faCircleInfo;
@@ -60,7 +58,19 @@ export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAcces
     {validators: [this.dateRangeValidator, this.manualFieldsValidator]}
   );
 
-  readonly isEditMode = signal(false);
+  private readonly editFormValue = toSignal(this.editForm.valueChanges, {initialValue: this.editForm.value});
+
+  protected readonly isEditMode = computed(() => !!this.editFormValue().id);
+
+  protected readonly selectedCustomer = computed(() => {
+    const id = this.editFormValue().customerOrganizationId;
+    return id && this.customers()?.find((c) => c.id === id);
+  });
+
+  protected readonly selectedLicenseTemplate = computed(() => {
+    const id = this.editFormValue().licenseTemplateId;
+    return id && this.templates().find((t) => t.id === id);
+  });
 
   protected get hasTemplate(): boolean {
     return !!this.editForm.getRawValue().licenseTemplateId;
@@ -106,8 +116,6 @@ export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAcces
 
   writeValue(license: LicenseKey | undefined): void {
     if (license) {
-      const isEdit = !!license.id;
-      this.isEditMode.set(isEdit);
       this.editForm.patchValue({
         id: license.id,
         name: license.name,
@@ -118,14 +126,8 @@ export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAcces
         customerOrganizationId: license.customerOrganizationId,
         licenseTemplateId: license.licenseTemplateId,
       });
-      this.editForm.controls.customerOrganizationId.disable({emitEvent: false});
-      if (isEdit) {
-        this.editForm.controls.licenseTemplateId.disable({emitEvent: false});
-      }
     } else {
-      this.isEditMode.set(false);
       this.editForm.reset({payload: '{}', notBefore: this.today, expiresAt: this.inOneYear});
-      this.editForm.controls.customerOrganizationId.disable({emitEvent: false});
     }
   }
 

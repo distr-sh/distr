@@ -3,8 +3,12 @@
     <div
       class="flex items-start gap-2 p-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-700 dark:text-blue-400">
       <fa-icon [icon]="faCircleInfo" />
-      Changing the dates or payload will create a new revision. The customer assignment cannot be changed after
-      creation.
+      @if (editForm.value.licenseTemplateId) {
+        Changing the dates or payload will create a new revision. The customer assignment cannot be changed after
+        creation.
+      } @else {
+        This license key is configured with a license template. Manually changing the dates or payload is not supported.
+      }
     </div>
   }
 
@@ -33,7 +37,14 @@
         placeholder="License description"></textarea>
     </div>
 
-    @if (!isEditMode() && templates().length > 0) {
+    @if (isEditMode()) {
+      @if (selectedLicenseTemplate(); as template) {
+        <div>
+          <label class="block mb-1 text-sm font-medium text-gray-900 dark:text-white">License Template</label>
+          <p class="text-sm text-gray-900 dark:text-white">{{ template.name }}</p>
+        </div>
+      }
+    } @else if (templates().length > 0) {
       <div>
         <label for="licenseTemplateId" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
           License Template
@@ -107,13 +118,10 @@
       </div>
     }
 
-    @if (editForm.getRawValue().customerOrganizationId) {
+    @if (selectedCustomer(); as c) {
       <div>
-        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Customer</label>
-        @let customers = customers$ | async;
-        <p class="text-sm text-gray-900 dark:text-white">
-          {{ customers?.find((c) => c.id === editForm.getRawValue().customerOrganizationId)?.name ?? '—' }}
-        </p>
+        <label class="block mb-1 text-sm font-medium text-gray-900 dark:text-white">Customer</label>
+        <p class="text-sm text-gray-900 dark:text-white">{{ c.name }}</p>
       </div>
     }
   </div>
