@@ -12,6 +12,7 @@ import {ArtifactPullsComponent} from './artifacts/artifact-pulls/artifact-pulls.
 import {ArtifactVersionsComponent} from './artifacts/artifact-versions/artifact-versions.component';
 import {ArtifactsComponent} from './artifacts/artifacts/artifacts.component';
 import {BillingComponent} from './billing/billing.component';
+import {BillingSettingsComponent} from './billing/settings/billing-settings.component';
 import {CustomerOrganizationsComponent} from './components/customer-organizations/customer-organizations.component';
 import {DashboardComponent} from './components/dashboard/dashboard.component';
 import {HomeComponent} from './components/home/home.component';
@@ -212,8 +213,19 @@ export const routes: Routes = [
       },
       {
         path: 'billing',
-        component: BillingComponent,
         canActivate: [requireVendor, vendorBillingEnabledGuard()],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            component: BillingComponent,
+          },
+          {
+            path: 'settings',
+            component: BillingSettingsComponent,
+            canActivate: [requiredRoleGuard('admin')],
+          },
+        ],
       },
       {
         path: 'licenses',

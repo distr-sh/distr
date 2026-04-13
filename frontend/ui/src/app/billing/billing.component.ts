@@ -1,11 +1,11 @@
-import {Component, computed, inject, signal, TemplateRef, viewChild} from '@angular/core';
+import {Component, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
+import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCheck, faCircleXmark, faCopy, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faGear, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {catchError, EMPTY, filter, firstValueFrom, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
-import {ClipDirective} from '../components/clip.component';
 import {AuthService} from '../services/auth.service';
 import {LicenseTemplatesService} from '../services/license-templates.service';
 import {OrganizationService} from '../services/organization.service';
@@ -16,7 +16,7 @@ import {LicenseTemplate} from '../types/license-template';
 @Component({
   selector: 'app-billing',
   templateUrl: './billing.component.html',
-  imports: [FaIconComponent, ReactiveFormsModule, ClipDirective],
+  imports: [FaIconComponent, ReactiveFormsModule, RouterLink],
 })
 export class BillingComponent {
   protected readonly auth = inject(AuthService);
@@ -26,20 +26,17 @@ export class BillingComponent {
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder).nonNullable;
 
+  protected readonly faGear = faGear;
   protected readonly faPen = faPen;
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
-  protected readonly faCopy = faCopy;
-  protected readonly faCheck = faCheck;
-  protected readonly faCircleXmark = faCircleXmark;
 
   protected readonly templates = toSignal(this.templatesService.list(), {initialValue: [] as LicenseTemplate[]});
   protected readonly organization = toSignal(this.organizationService.get());
 
   protected readonly selectedTemplate = signal<LicenseTemplate | undefined>(undefined);
   protected readonly templateFormLoading = signal(false);
-  protected readonly webhookSecretLoading = signal(false);
 
   private drawerRef?: DialogRef;
   private readonly templateDrawerTemplate = viewChild.required<TemplateRef<unknown>>('templateDrawer');
@@ -50,13 +47,7 @@ export class BillingComponent {
     expirationGracePeriodDays: this.fb.control(0, [Validators.required, Validators.min(0)]),
   });
 
-  protected readonly webhookForm = this.fb.group({
-    webhookSecret: this.fb.control('', [Validators.required, Validators.pattern(/^whsec_[a-zA-Z0-9]+$/)]),
-  });
-
   protected readonly payloadTemplatePlaceholder = `{ "plan": "{{ if hasItem \\"pro-monthly\\" }}pro{{ else }}starter{{ end }}", "seats": {{ itemQuantity \\"seats-monthly\\" }} }`;
-
-  protected readonly webhookUrl = computed(() => `${location.origin}/api/v1/webhook/${this.organization()?.id}/stripe`);
 
   openTemplateDrawer(template?: LicenseTemplate) {
     this.hideDrawer();
@@ -119,45 +110,5 @@ export class BillingComponent {
         })
       )
       .subscribe();
-  }
-
-  async saveWebhookSecret() {
-    this.webhookForm.markAllAsTouched();
-    if (!this.webhookForm.valid) {
-      return;
-    }
-    this.webhookSecretLoading.set(true);
-    const {webhookSecret} = this.webhookForm.getRawValue();
-    try {
-      await firstValueFrom(this.organizationService.updateWebhookSecret(webhookSecret));
-      this.webhookForm.reset();
-      this.toast.success('Webhook secret saved successfully');
-    } catch (e) {
-      const msg = getFormDisplayedError(e);
-      if (msg) {
-        this.toast.error(msg);
-      }
-    } finally {
-      this.webhookSecretLoading.set(false);
-    }
-  }
-
-  async deleteWebhookSecret() {
-    const confirmed = await firstValueFrom(this.overlay.confirm('Really remove the webhook secret?'));
-    if (!confirmed) {
-      return;
-    }
-    this.webhookSecretLoading.set(true);
-    try {
-      await firstValueFrom(this.organizationService.deleteWebhookSecret());
-      this.toast.success('Webhook secret removed');
-    } catch (e) {
-      const msg = getFormDisplayedError(e);
-      if (msg) {
-        this.toast.error(msg);
-      }
-    } finally {
-      this.webhookSecretLoading.set(false);
-    }
   }
 }
