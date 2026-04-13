@@ -21,8 +21,13 @@ import (
 func CustomerOrganizationLinksRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Customer Organization Links"))
 
+	type customerOrganizationIDRequest struct {
+		CustomerOrganizationID uuid.UUID `path:"customerOrganizationId"`
+	}
+
 	r.Get("/", getCustomerOrganizationLinksHandler()).
 		With(option.Description("List all links for a customer organization")).
+		With(option.Request(customerOrganizationIDRequest{})).
 		With(option.Response(http.StatusOK, []api.CustomerOrganizationLink{}))
 
 	r.Group(func(r chiopenapi.Router) {
@@ -30,18 +35,29 @@ func CustomerOrganizationLinksRouter(r chiopenapi.Router) {
 
 		r.Post("/", createCustomerOrganizationLinkHandler()).
 			With(option.Description("Create a link for a customer organization")).
-			With(option.Request(api.CreateUpdateCustomerOrganizationLinkRequest{})).
+			With(option.Request(struct {
+				customerOrganizationIDRequest
+				api.CreateUpdateCustomerOrganizationLinkRequest
+			}{})).
 			With(option.Response(http.StatusCreated, api.CustomerOrganizationLink{}))
 
 		r.Route("/{linkId}", func(r chiopenapi.Router) {
+			type linkIDRequest struct {
+				customerOrganizationIDRequest
+				LinkID uuid.UUID `path:"linkId"`
+			}
+
 			r.Put("/", updateCustomerOrganizationLinkHandler()).
 				With(option.Description("Update a customer organization link")).
-				With(option.Request(api.CreateUpdateCustomerOrganizationLinkRequest{})).
+				With(option.Request(struct {
+					linkIDRequest
+					api.CreateUpdateCustomerOrganizationLinkRequest
+				}{})).
 				With(option.Response(http.StatusOK, api.CustomerOrganizationLink{}))
 
 			r.Delete("/", deleteCustomerOrganizationLinkHandler()).
 				With(option.Description("Delete a customer organization link")).
-				With(option.Request(api.DeleteCustomerOrganizationLinkRequest{}))
+				With(option.Request(linkIDRequest{}))
 		})
 	})
 }

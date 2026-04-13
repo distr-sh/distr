@@ -28,17 +28,17 @@ func CustomerOrganizationsRouter(r chiopenapi.Router) {
 			With(option.Description("List all customer organizations")).
 			With(option.Response(http.StatusOK, []api.CustomerOrganizationWithUsage{}))
 
-		r.Route("/{customerOrganizationId}/links", CustomerOrganizationLinksRouter)
-
 		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
 			r.Post("/", createCustomerOrganizationHandler()).
 				With(option.Description("Create a new customer organization")).
 				With(option.Request(api.CreateUpdateCustomerOrganizationRequest{})).
-				With(option.Response(http.StatusOK, api.CustomerOrganization{}))
+				With(option.Response(http.StatusOK, api.CustomerOrganizationResponse{}))
 			r.Route("/{customerOrganizationId}", func(r chiopenapi.Router) {
 				type CustomerOrganizationIDRequest struct {
 					CustomerOrganizationID uuid.UUID `path:"customerOrganizationId"`
 				}
+
+				r.Route("/links", CustomerOrganizationLinksRouter)
 
 				r.Put("/", updateCustomerOrganizationHandler()).
 					With(option.Description("Update a customer organization")).
@@ -46,7 +46,7 @@ func CustomerOrganizationsRouter(r chiopenapi.Router) {
 						CustomerOrganizationIDRequest
 						api.CreateUpdateCustomerOrganizationRequest
 					}{})).
-					With(option.Response(http.StatusOK, api.CustomerOrganization{}))
+					With(option.Response(http.StatusOK, api.CustomerOrganizationResponse{}))
 				r.Delete("/", deleteCustomerOrganizationHandler()).
 					With(option.Description("Delete a customer organization")).
 					With(option.Request(CustomerOrganizationIDRequest{}))
@@ -114,7 +114,7 @@ func createCustomerOrganizationHandler() http.HandlerFunc {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
-			RespondJSON(w, mapping.CustomerOrganizationToAPI(customerOrganization))
+			RespondJSON(w, mapping.CustomerOrganizationResponseToAPI(customerOrganization, nil))
 		}
 	}
 }
@@ -161,7 +161,8 @@ func updateCustomerOrganizationHandler() http.HandlerFunc {
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
-			RespondJSON(w, mapping.CustomerOrganizationToAPI(customerOrganization))
+			links, _ := db.GetCustomerOrganizationLinks(ctx, customerOrganization.ID)
+			RespondJSON(w, mapping.CustomerOrganizationResponseToAPI(customerOrganization, links))
 		}
 	}
 }

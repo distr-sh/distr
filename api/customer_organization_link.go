@@ -18,7 +18,3 @@ type CreateUpdateCustomerOrganizationLinkRequest struct {
 	Name string `json:"name"`
 	Link string `json:"link"`
 }
-
-type DeleteCustomerOrganizationLinkRequest struct {
-	ID uuid.UUID `path:"linkId"`
-}
