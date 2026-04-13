@@ -4,16 +4,7 @@ import {Component, inject, input, signal, TemplateRef, viewChild} from '@angular
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {
-  faCheck,
-  faCopy,
-  faEye,
-  faMagnifyingGlass,
-  faPen,
-  faPlus,
-  faTrash,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
+import {faCopy, faEye, faMagnifyingGlass, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, shareReplay, switchMap} from 'rxjs';
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
@@ -60,7 +51,6 @@ export class LicenseKeysComponent {
   protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
   protected readonly faCopy = faCopy;
-  protected readonly faCheck = faCheck;
   protected readonly faEye = faEye;
   protected readonly isExpired = isExpired;
 
