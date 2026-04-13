@@ -90,7 +90,10 @@ func TestRenderPayload(t *testing.T) {
 			subscriptionItem("seats-monthly", 3),
 		)
 		result, err := RenderPayload(
-			tmpl(`{"plan": "{{ if hasItem "pro-monthly" }}pro{{ else }}starter{{ end }}", "seats": {{ itemQuantity "seats-monthly" }}}`),
+			tmpl(
+				`{"plan": "{{ if hasItem "pro-monthly" }}pro{{ else }}starter{{ end }}", `+
+					`"seats": {{ itemQuantity "seats-monthly" }}}`,
+			),
 			sub,
 		)
 		g.Expect(err).NotTo(HaveOccurred())
