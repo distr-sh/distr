@@ -25,7 +25,7 @@ import {SidebarLinksService} from '../services/sidebar-links.service';
 import {ToastService} from '../services/toast.service';
 
 @Component({
-  templateUrl: './customer-organization-links-page.component.html',
+  templateUrl: './sidebar-links-page.component.html',
   imports: [RouterLink, FontAwesomeModule, OverlayModule, ReactiveFormsModule, DatePipe, AutotrimDirective],
 })
 export class SidebarLinksPageComponent {
