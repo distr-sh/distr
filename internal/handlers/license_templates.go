@@ -105,7 +105,10 @@ func createLicenseTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := db.CreateLicenseTemplate(ctx, &t); err != nil {
+	if err := db.CreateLicenseTemplate(ctx, &t); errors.Is(err, apierrors.ErrConflict) {
+		http.Error(w, "a license template with this name already exists", http.StatusBadRequest)
+		return
+	} else if err != nil {
 		log.Error("failed to create license template", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -158,6 +161,9 @@ func updateLicenseTemplate(w http.ResponseWriter, r *http.Request) {
 
 	if err := db.UpdateLicenseTemplate(ctx, &t); errors.Is(err, apierrors.ErrNotFound) {
 		w.WriteHeader(http.StatusNotFound)
+		return
+	} else if errors.Is(err, apierrors.ErrConflict) {
+		http.Error(w, "a license template with this name already exists", http.StatusBadRequest)
 		return
 	} else if err != nil {
 		log.Error("failed to update license template", zap.Error(err))

@@ -9,7 +9,9 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 const licenseTemplateOutExpr = `id, created_at, name, organization_id, payload_template, expiration_grace_period_days`
@@ -65,7 +67,9 @@ func CreateLicenseTemplate(ctx context.Context, t *types.LicenseTemplate) error 
 		return fmt.Errorf("could not insert LicenseTemplate: %w", err)
 	}
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.LicenseTemplate])
-	if err != nil {
+	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation {
+		return fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+	} else if err != nil {
 		return fmt.Errorf("could not collect LicenseTemplate: %w", err)
 	}
 	*t = result
@@ -95,6 +99,8 @@ func UpdateLicenseTemplate(ctx context.Context, t *types.LicenseTemplate) error 
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.LicenseTemplate])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return apierrors.ErrNotFound
+	} else if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation {
+		return fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
 	} else if err != nil {
 		return fmt.Errorf("could not collect LicenseTemplate: %w", err)
 	}
