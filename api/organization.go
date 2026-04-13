@@ -1,7 +1,11 @@
 package api
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/validation"
 )
 
 type CreateUpdateOrganizationRequest struct {
@@ -25,4 +29,14 @@ type OrganizationWebhookResponse struct {
 
 type UpdateOrganizationWebhookRequest struct {
 	WebhookSecret *string `json:"webhookSecret"`
+}
+
+func (r UpdateOrganizationWebhookRequest) Validate() error {
+	if r.WebhookSecret != nil {
+		if strings.TrimSpace(*r.WebhookSecret) == "" {
+			return validation.NewValidationFailedError(fmt.Sprintf("invalid webhookSecret: \"%v\"", *r.WebhookSecret))
+		}
+	}
+
+	return nil
 }

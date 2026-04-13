@@ -302,6 +302,11 @@ func updateOrganizationWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := body.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	if err := db.SetOrganizationStripeWebhookSecret(ctx, *authCtx.CurrentOrgID(), body.WebhookSecret); err != nil {
 		log.Error("failed to update stripe webhook secret", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
