@@ -5,6 +5,8 @@ CREATE TABLE LicenseTemplate (
     organization_id UUID NOT NULL REFERENCES Organization(id) ON DELETE CASCADE,
     payload_template TEXT NOT NULL,
     expiration_grace_period_days INTEGER NOT NULL DEFAULT 0
+      CHECK (expiration_grace_period_days >= 0),
+    UNIQUE (organization_id, name)
 );
 
 CREATE INDEX ON LicenseTemplate(organization_id);
