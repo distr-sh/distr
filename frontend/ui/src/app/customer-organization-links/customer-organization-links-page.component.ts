@@ -15,7 +15,7 @@ import {
   faTrash,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import {combineLatest, firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
+import {combineLatest, firstValueFrom, of, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AuthService} from '../services/auth.service';
@@ -60,7 +60,7 @@ export class CustomerOrganizationLinksPageComponent {
     combineLatest([this.refresh$.pipe(startWith(undefined)), toObservable(this.customerOrganizationId)]).pipe(
       switchMap(([, customerOrganizationId]) => {
         if (!customerOrganizationId) {
-          return [];
+          return of([]);
         }
         return this.linksService.list(customerOrganizationId);
       })
