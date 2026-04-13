@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
@@ -9,12 +10,14 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/licensetemplate"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
+	"github.com/stripe/stripe-go/v85"
 	"go.uber.org/zap"
 )
 
@@ -96,6 +99,12 @@ func createLicenseTemplate(w http.ResponseWriter, r *http.Request) {
 		PayloadTemplate:           body.PayloadTemplate,
 		ExpirationGracePeriodDays: body.ExpirationGracePeriodDays,
 	}
+
+	if err := validatePayloadTemplate(t); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	if err := db.CreateLicenseTemplate(ctx, &t); err != nil {
 		log.Error("failed to create license template", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -141,6 +150,12 @@ func updateLicenseTemplate(w http.ResponseWriter, r *http.Request) {
 		PayloadTemplate:           body.PayloadTemplate,
 		ExpirationGracePeriodDays: body.ExpirationGracePeriodDays,
 	}
+
+	if err := validatePayloadTemplate(t); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	if err := db.UpdateLicenseTemplate(ctx, &t); errors.Is(err, apierrors.ErrNotFound) {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -175,4 +190,13 @@ func deleteLicenseTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func validatePayloadTemplate(template types.LicenseTemplate) error {
+	_, err := licensetemplate.RenderPayload(template, stripe.Subscription{})
+	if err != nil {
+		return fmt.Errorf("%w: invalid payload template: %w", apierrors.ErrBadRequest, err)
+	}
+
+	return nil
 }
