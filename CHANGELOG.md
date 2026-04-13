@@ -1,5 +1,42 @@
 # Changelog
 
+## [2.18.0](https://github.com/distr-sh/distr/compare/2.17.1...2.18.0) (2026-04-13)
+
+
+### Features
+
+* sidebar links ([#2244](https://github.com/distr-sh/distr/issues/2244)) ([f07fba3](https://github.com/distr-sh/distr/commit/f07fba32d25b8c7cdfba111ee7cf28e51860df83))
+* vendor billing and license templates ([#2231](https://github.com/distr-sh/distr/issues/2231)) ([073a22c](https://github.com/distr-sh/distr/commit/073a22c0222b28ca5fcb13c4d85dfd68f8c3a023))
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/getsentry/sentry-go/otel/otlp to v0.45.1 ([#2248](https://github.com/distr-sh/distr/issues/2248)) ([4dab532](https://github.com/distr-sh/distr/commit/4dab532a5eb5d9de41445267bc536b137727bf0d))
+* **deps:** update module github.com/oaswrap/spec/adapter/chiopenapi to v0.4.1 ([#2243](https://github.com/distr-sh/distr/issues/2243)) ([e66a35a](https://github.com/distr-sh/distr/commit/e66a35a1f7130875a3a5d4c3b52d17685770328f))
+* **deps:** update module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver to v0.150.0 ([#2253](https://github.com/distr-sh/distr/issues/2253)) ([89ef0b7](https://github.com/distr-sh/distr/commit/89ef0b7fa911a35d5733fb64ef43f720e3cac70f))
+* **deps:** update module golang.org/x/crypto to v0.50.0 ([#2233](https://github.com/distr-sh/distr/issues/2233)) ([972c804](https://github.com/distr-sh/distr/commit/972c804e11fd5678855a4d8ed79ca2b10fbba758))
+* **deps:** update website dependencies ([#2226](https://github.com/distr-sh/distr/issues/2226)) ([26113e5](https://github.com/distr-sh/distr/commit/26113e5a0da3b1842da3f6816fbc8cdc91162138))
+
+
+### Other
+
+* **deps:** update actions/upload-artifact action to v7.0.1 ([#2239](https://github.com/distr-sh/distr/issues/2239)) ([c2bfd86](https://github.com/distr-sh/distr/commit/c2bfd8673511934fe6102e2acfec2bd849ad731e))
+* **deps:** update dependency jasmine-core to ~6.2.0 ([#2241](https://github.com/distr-sh/distr/issues/2241)) ([7c3c1b6](https://github.com/distr-sh/distr/commit/7c3c1b6668777f72094735ae2c8ebd625bdc3eb7))
+* **deps:** update dependency posthog-js to v1.367.0 ([#2245](https://github.com/distr-sh/distr/issues/2245)) ([424a109](https://github.com/distr-sh/distr/commit/424a1090f051df50988672ceb812b3e7ab0da3b0))
+* **deps:** update dependency prettier to v3.8.2 ([#2234](https://github.com/distr-sh/distr/issues/2234)) ([6f4fb43](https://github.com/distr-sh/distr/commit/6f4fb433f88216fb3d55a382ff87e70babeffdd4))
+* **deps:** update dependency typedoc to v0.28.19 ([#2242](https://github.com/distr-sh/distr/issues/2242)) ([b133094](https://github.com/distr-sh/distr/commit/b133094cce797ecd5168f7172a52e68a6a77464c))
+* **deps:** update docker/build-push-action action to v7.1.0 ([#2238](https://github.com/distr-sh/distr/issues/2238)) ([2394658](https://github.com/distr-sh/distr/commit/2394658faffe0c19d8b14d4d1ad845ce387b4ac2))
+* **deps:** update flowbite to v4 ([#2236](https://github.com/distr-sh/distr/issues/2236)) ([99734e3](https://github.com/distr-sh/distr/commit/99734e3e1bdda0cc9be4186a080fa0220919bbb6))
+* **deps:** update sentry-javascript monorepo to v10.48.0 ([#2246](https://github.com/distr-sh/distr/issues/2246)) ([551f4cd](https://github.com/distr-sh/distr/commit/551f4cd1bf82f2b47c151c4d7ec1178f598d6d8c))
+* **frontend:** fix build warnings ([#2235](https://github.com/distr-sh/distr/issues/2235)) ([f3b3442](https://github.com/distr-sh/distr/commit/f3b34425d886ac2dcf4c0785654db80a8e6a48b5))
+* **frontend:** minor CSS adjustments ([#2237](https://github.com/distr-sh/distr/issues/2237)) ([0a790d4](https://github.com/distr-sh/distr/commit/0a790d4b2f23d2e300fd1d1d320680c948b2b265))
+
+
+### Docs
+
+* add blog post - How to Protect Source Code and IP in Docker/K8s ([#2197](https://github.com/distr-sh/distr/issues/2197)) ([b88bd7f](https://github.com/distr-sh/distr/commit/b88bd7f4a3f9eb194a5dee572ac87badba406a56))
+* update readme ([#2230](https://github.com/distr-sh/distr/issues/2230)) ([def5879](https://github.com/distr-sh/distr/commit/def58792dd0885683ae816ec1549d9744806b136))
+
 ## [2.17.1](https://github.com/distr-sh/distr/compare/2.17.0...2.17.1) (2026-04-09)
 
 
