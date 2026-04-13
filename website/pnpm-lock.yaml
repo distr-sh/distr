@@ -25,7 +25,7 @@ importers:
         version: 5.0.0(@astrojs/starlight@0.38.3(astro@6.1.5(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@2.80.0)(terser@5.46.1)(typescript@5.8.3)(yaml@2.8.3)))(tailwindcss@4.2.2)
       '@iconify-json/lucide':
         specifier: ^1.2.98
-        version: 1.2.101
+        version: 1.2.102
       '@tailwindcss/vite':
         specifier: ^4.2.2
         version: 4.2.2(vite@7.3.2(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.3))
@@ -63,8 +63,8 @@ importers:
         specifier: ^0.34.5
         version: 0.34.5
       starlight-links-validator:
-        specifier: ^0.22.0
-        version: 0.22.0(@astrojs/starlight@0.38.3(astro@6.1.5(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@2.80.0)(terser@5.46.1)(typescript@5.8.3)(yaml@2.8.3)))(astro@6.1.5(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@2.80.0)(terser@5.46.1)(typescript@5.8.3)(yaml@2.8.3))
+        specifier: ^0.23.0
+        version: 0.23.0(@astrojs/starlight@0.38.3(astro@6.1.5(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@2.80.0)(terser@5.46.1)(typescript@5.8.3)(yaml@2.8.3)))(astro@6.1.5(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@2.80.0)(terser@5.46.1)(typescript@5.8.3)(yaml@2.8.3))
       starlight-sidebar-topics:
         specifier: ^0.7.1
         version: 0.7.1(@astrojs/starlight@0.38.3(astro@6.1.5(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@2.80.0)(terser@5.46.1)(typescript@5.8.3)(yaml@2.8.3)))
@@ -74,16 +74,16 @@ importers:
     devDependencies:
       baseline-browser-mapping:
         specifier: ^2.10.9
-        version: 2.10.16
+        version: 2.10.18
       prettier:
         specifier: ^3.8.1
-        version: 3.8.1
+        version: 3.8.2
       prettier-plugin-astro:
         specifier: ^0.14.1
         version: 0.14.1
       prettier-plugin-organize-imports:
         specifier: ^4.3.0
-        version: 4.3.0(prettier@3.8.1)(typescript@5.8.3)
+        version: 4.3.0(prettier@3.8.2)(typescript@5.8.3)
 
 packages:
 
@@ -865,8 +865,8 @@ packages:
     resolution: {integrity: sha512-JUOtgFW6k9u4Y+xeIaEiLr3+cjoUPiAuLXoyKOJSia6Duzb7pq+A76P9ZdPDoAoxHdHzq6gE9/jKBGXlZT8FbA==}
     engines: {node: '>=6'}
 
-  '@iconify-json/lucide@1.2.101':
-    resolution: {integrity: sha512-JUN7uuSLRG3GK/9c5b8cK9e7sL6EAWDaASIwBOd0zUeKS0ACcokJubo2RMQHyVUVpd8mYkrR3Zd2mkH9ghhw1Q==}
+  '@iconify-json/lucide@1.2.102':
+    resolution: {integrity: sha512-Dm3EEqu5NrmzyDMB2U1+8yroEj2/dB9V4KlH0m/szwwF/ofSf0cPaGTZqkd1aExXjCor+vU53ttRMCGuXf+/cg==}
 
   '@iconify/tools@4.2.0':
     resolution: {integrity: sha512-WRxPva/ipxYkqZd1+CkEAQmd86dQmrwH0vwK89gmp2Kh2WyyVw57XbPng0NehP3x4V1LzLsXUneP1uMfTMZmUA==}
@@ -1722,8 +1722,8 @@ packages:
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
 
-  baseline-browser-mapping@2.10.16:
-    resolution: {integrity: sha512-Lyf3aK28zpsD1yQMiiHD4RvVb6UdMoo8xzG2XzFIfR9luPzOpcBlAsT/qfB1XWS1bxWT+UtE4WmQgsp297FYOA==}
+  baseline-browser-mapping@2.10.18:
+    resolution: {integrity: sha512-VSnGQAOLtP5mib/DPyg2/t+Tlv65NTBz83BJBJvmLVHHuKJVaDOBvJJykiT5TR++em5nfAySPccDZDa4oSrn8A==}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
@@ -3317,8 +3317,8 @@ packages:
       vue-tsc:
         optional: true
 
-  prettier@3.8.1:
-    resolution: {integrity: sha512-UOnG6LftzbdaHZcKoPFtOcCKztrQ57WkHDeRD9t/PTQtmT0NHSeWWepj6pS0z/N7+08BHFDQVUrfmfMRcZwbMg==}
+  prettier@3.8.2:
+    resolution: {integrity: sha512-8c3mgTe0ASwWAJK+78dpviD+A8EqhndQPUBpNUIPt6+xWlIigCwfN01lWr9MAede4uqXGTEKeQWTvzb3vjia0Q==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -3624,8 +3624,8 @@ packages:
     resolution: {integrity: sha512-2ztBJRek8IVofG9DBJqdy2N5kulaacX30Nz7xmkYF6ale9WBVmIy6mFBchvGX7Vx/MyjBhx+Rcxqrj+dbOnQ6A==}
     engines: {node: '>=16'}
 
-  starlight-links-validator@0.22.0:
-    resolution: {integrity: sha512-G+RiDfZN07UOmkKWe7MKG2eBa4kQV6w+ZvC2rpf2eYYDCyaGsXu0T+ja/u2CdQt02mt4Pfk5DUndp6MVtnjefg==}
+  starlight-links-validator@0.23.0:
+    resolution: {integrity: sha512-dpKJdNv170+jyw8HDgPKGIW/MnXUxa3v8RqJrER47jx4fbxvLsITIw0/Y76xzTTrDv8LhQ7t/ExFutUDQqm3FQ==}
     engines: {node: '>=22.12.0'}
     peerDependencies:
       '@astrojs/starlight': '>=0.38.0'
@@ -5150,7 +5150,7 @@ snapshots:
 
   '@fortawesome/fontawesome-free@6.7.2': {}
 
-  '@iconify-json/lucide@1.2.101':
+  '@iconify-json/lucide@1.2.102':
     dependencies:
       '@iconify/types': 2.0.0
 
@@ -6071,7 +6071,7 @@ snapshots:
 
   balanced-match@1.0.2: {}
 
-  baseline-browser-mapping@2.10.16: {}
+  baseline-browser-mapping@2.10.18: {}
 
   bcp-47-match@2.0.3: {}
 
@@ -6094,7 +6094,7 @@ snapshots:
 
   browserslist@4.28.1:
     dependencies:
-      baseline-browser-mapping: 2.10.16
+      baseline-browser-mapping: 2.10.18
       caniuse-lite: 1.0.30001780
       electron-to-chromium: 1.5.321
       node-releases: 2.0.36
@@ -8174,15 +8174,15 @@ snapshots:
   prettier-plugin-astro@0.14.1:
     dependencies:
       '@astrojs/compiler': 2.13.1
-      prettier: 3.8.1
+      prettier: 3.8.2
       sass-formatter: 0.7.9
 
-  prettier-plugin-organize-imports@4.3.0(prettier@3.8.1)(typescript@5.8.3):
+  prettier-plugin-organize-imports@4.3.0(prettier@3.8.2)(typescript@5.8.3):
     dependencies:
-      prettier: 3.8.1
+      prettier: 3.8.2
       typescript: 5.8.3
 
-  prettier@3.8.1: {}
+  prettier@3.8.2: {}
 
   pretty-bytes@5.6.0: {}
 
@@ -8665,7 +8665,7 @@ snapshots:
 
   stack-trace@1.0.0-pre2: {}
 
-  starlight-links-validator@0.22.0(@astrojs/starlight@0.38.3(astro@6.1.5(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@2.80.0)(terser@5.46.1)(typescript@5.8.3)(yaml@2.8.3)))(astro@6.1.5(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@2.80.0)(terser@5.46.1)(typescript@5.8.3)(yaml@2.8.3)):
+  starlight-links-validator@0.23.0(@astrojs/starlight@0.38.3(astro@6.1.5(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@2.80.0)(terser@5.46.1)(typescript@5.8.3)(yaml@2.8.3)))(astro@6.1.5(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@2.80.0)(terser@5.46.1)(typescript@5.8.3)(yaml@2.8.3)):
     dependencies:
       '@astrojs/starlight': 0.38.3(astro@6.1.5(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@2.80.0)(terser@5.46.1)(typescript@5.8.3)(yaml@2.8.3))
       '@types/picomatch': 4.0.2
