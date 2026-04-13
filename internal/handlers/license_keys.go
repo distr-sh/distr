@@ -226,6 +226,21 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	authCtx := auth.Authentication.Require(ctx)
+
+	if body.LicenseTemplateID != nil {
+		_, err := db.GetLicenseTemplateByID(ctx, *body.LicenseTemplateID, *authCtx.CurrentOrgID())
+		if errors.Is(err, apierrors.ErrNotFound) {
+			http.Error(w, "license template not found", http.StatusBadRequest)
+			return
+		} else if err != nil {
+			log.Warn("could not get license template", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
 	if body.Payload != nil {
 		if err := licensekey.ValidatePayload(*body.Payload); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
