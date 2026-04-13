@@ -39,6 +39,7 @@
 - [OrganizationBranding](interfaces/OrganizationBranding.md)
 - [PatchApplicationRequest](interfaces/PatchApplicationRequest.md)
 - [PatchDeploymentRequest](interfaces/PatchDeploymentRequest.md)
+- [SidebarLink](interfaces/SidebarLink.md)
 - [SupportBundle](interfaces/SupportBundle.md)
 - [SupportBundleComment](interfaces/SupportBundleComment.md)
 - [SupportBundleConfigurationEnvVar](interfaces/SupportBundleConfigurationEnvVar.md)

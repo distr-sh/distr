@@ -70,6 +70,7 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var customerOrg *api.CustomerOrganization
+	var sidebarLinks []api.SidebarLink
 	if customerOrgID != nil {
 		if co, err := db.GetCustomerOrganizationByID(ctx, *customerOrgID); err != nil {
 			log.Error("failed to get customer organization", zap.Error(err))
@@ -77,6 +78,12 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			mapped := mapping.CustomerOrganizationToAPI(co.CustomerOrganization)
 			customerOrg = &mapped
+		}
+		if links, err := db.GetSidebarLinks(ctx, *customerOrgID); err != nil {
+			log.Error("failed to get sidebar links", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+		} else {
+			sidebarLinks = mapping.List(links, mapping.SidebarLinkToAPI)
 		}
 	}
 
@@ -86,6 +93,7 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 		),
 		Organization:         mapping.OrganizationToAPI(*auth.CurrentOrg()),
 		CustomerOrganization: customerOrg,
+		SidebarLinks:         sidebarLinks,
 		AvailableContexts:    orgs,
 	})
 }

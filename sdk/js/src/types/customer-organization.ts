@@ -19,3 +19,12 @@ export interface CreateUpdateCustomerOrganizationRequest {
   imageId?: string;
   features?: CustomerOrganizationFeature[];
 }
+
+export interface SidebarLink {
+  id: string;
+  createdAt: string;
+  organizationId: string;
+  customerOrganizationId?: string;
+  name: string;
+  link: string;
+}

@@ -28,16 +28,14 @@ func CustomerOrganizationsRouter(r chiopenapi.Router) {
 			With(option.Description("List all customer organizations")).
 			With(option.Response(http.StatusOK, []api.CustomerOrganizationWithUsage{}))
 
-		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
-			r.Post("/", createCustomerOrganizationHandler()).
-				With(option.Description("Create a new customer organization")).
-				With(option.Request(api.CreateUpdateCustomerOrganizationRequest{})).
-				With(option.Response(http.StatusOK, api.CustomerOrganization{}))
-			r.Route("/{customerOrganizationId}", func(r chiopenapi.Router) {
-				type CustomerOrganizationIDRequest struct {
-					CustomerOrganizationID uuid.UUID `path:"customerOrganizationId"`
-				}
+		r.Route("/{customerOrganizationId}", func(r chiopenapi.Router) {
+			type CustomerOrganizationIDRequest struct {
+				CustomerOrganizationID uuid.UUID `path:"customerOrganizationId"`
+			}
 
+			r.Route("/links", SidebarLinksRouter)
+
+			r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
 				r.Put("/", updateCustomerOrganizationHandler()).
 					With(option.Description("Update a customer organization")).
 					With(option.Request(struct {
@@ -50,6 +48,12 @@ func CustomerOrganizationsRouter(r chiopenapi.Router) {
 					With(option.Request(CustomerOrganizationIDRequest{}))
 			})
 		})
+
+		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
+			Post("/", createCustomerOrganizationHandler()).
+			With(option.Description("Create a new customer organization")).
+			With(option.Request(api.CreateUpdateCustomerOrganizationRequest{})).
+			With(option.Response(http.StatusOK, api.CustomerOrganization{}))
 	})
 }
 

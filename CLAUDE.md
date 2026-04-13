@@ -143,6 +143,7 @@ Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Pret
 
 ### Frontend Code
 
+- Always use self-closing tags for Angular components when they have no content (e.g. `<fa-icon [icon]="faPlus" />` instead of `<fa-icon [icon]="faPlus"></fa-icon>`)
 - Use standalone components (no NgModules) - This is the default so `standalone: true` is not needed
 - Services are singleton by default (`providedIn: 'root'`)
 - Use Angular's HttpClient for API calls, injected via constructor
@@ -195,6 +196,8 @@ API routes are defined in `internal/routing/`. Routes are grouped by authenticat
 - Admin routes (admin user required)
 - Agent routes (agent token auth)
 - Registry routes (special OCI auth)
+
+When adding new routes, ensure the OpenAPI spec remains valid. The `chiopenapi` router generates the spec from route definitions. Endpoints that have path parameters, query parameters, or a request body must declare them via `option.Request()` with a struct using the appropriate tags (`path:`, `query:`, `json:`). Endpoints without any parameters or body do not need `option.Request()`. Follow the existing pattern of composing path param structs with body request structs via embedding.
 
 ## General rules
 
