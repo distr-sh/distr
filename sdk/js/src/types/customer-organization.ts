@@ -31,8 +31,3 @@ export interface CustomerOrganizationLink {
 export interface CustomerOrganizationResponse extends CustomerOrganization {
   links: CustomerOrganizationLink[];
 }
-
-export interface CreateUpdateCustomerOrganizationLinkRequest {
-  name: string;
-  link: string;
-}

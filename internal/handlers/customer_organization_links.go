@@ -20,6 +20,7 @@ import (
 
 func CustomerOrganizationLinksRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Customer Organization Links"))
+	r.Use(middleware.RequireOrgAndRole)
 
 	type customerOrganizationIDRequest struct {
 		CustomerOrganizationID uuid.UUID `path:"customerOrganizationId"`

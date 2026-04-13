@@ -22,7 +22,6 @@
 - [CreateSupportBundleCommentRequest](interfaces/CreateSupportBundleCommentRequest.md)
 - [CreateSupportBundleRequest](interfaces/CreateSupportBundleRequest.md)
 - [CreateSupportBundleResponse](interfaces/CreateSupportBundleResponse.md)
-- [CreateUpdateCustomerOrganizationLinkRequest](interfaces/CreateUpdateCustomerOrganizationLinkRequest.md)
 - [CreateUpdateCustomerOrganizationRequest](interfaces/CreateUpdateCustomerOrganizationRequest.md)
 - [CreateUpdateSupportBundleConfigurationRequest](interfaces/CreateUpdateSupportBundleConfigurationRequest.md)
 - [CustomerOrganization](interfaces/CustomerOrganization.md)
