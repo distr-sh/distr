@@ -30,6 +30,7 @@ import {AuthService} from './services/auth.service';
 import {FeatureFlagService} from './services/feature-flag.service';
 import {OrganizationService} from './services/organization.service';
 import {ToastService} from './services/toast.service';
+import {SidebarLinksPageComponent} from './sidebar-links/sidebar-links-page.component';
 import {SubscriptionCallbackComponent} from './subscription/subscription-callback.component';
 import {SubscriptionComponent} from './subscription/subscription.component';
 import {SupportBundleDetailComponent} from './support-bundles/detail/support-bundle-detail.component';
@@ -179,6 +180,7 @@ export const routes: Routes = [
         children: [
           {path: 'users', component: CustomerUsersComponent},
           {path: 'secrets', component: CustomerSecretsPageComponent},
+          {path: 'links', component: SidebarLinksPageComponent},
           {path: '', pathMatch: 'full', redirectTo: 'users'},
         ],
       },

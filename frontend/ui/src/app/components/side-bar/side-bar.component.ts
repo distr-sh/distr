@@ -3,11 +3,12 @@ import {NgTemplateOutlet} from '@angular/common';
 import {Component, inject, input, signal, WritableSignal} from '@angular/core';
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {RouterLink, RouterLinkActive} from '@angular/router';
-import {CustomerOrganization} from '@distr-sh/distr-sdk';
+import {CustomerOrganization, SidebarLink} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faAddressBook,
   faArrowRightLong,
+  faArrowUpRightFromSquare,
   faAsterisk,
   faBox,
   faBoxesStacked,
@@ -71,6 +72,7 @@ export class SideBarComponent {
   protected readonly faBox = faBox;
   protected readonly faCreditCard = faCreditCard;
   protected readonly faArrowRightLong = faArrowRightLong;
+  protected readonly faArrowUpRightFromSquare = faArrowUpRightFromSquare;
   protected readonly faHome = faHome;
   protected readonly faChevronDown = faChevronDown;
   protected readonly faAsterisk = faAsterisk;
@@ -108,6 +110,10 @@ export class SideBarComponent {
     ),
     {initialValue: [] as string[]}
   );
+
+  protected readonly customerOrgLinks = toSignal(this.contextService.getSidebarLinks(), {
+    initialValue: [] as SidebarLink[],
+  });
 
   protected hasCustomerOrganizationFeature(feature: string): boolean {
     const features = this.customerOrgFeatures();
