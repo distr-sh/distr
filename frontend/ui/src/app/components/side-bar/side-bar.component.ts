@@ -3,11 +3,12 @@ import {NgTemplateOutlet} from '@angular/common';
 import {Component, inject, input, signal, WritableSignal} from '@angular/core';
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {RouterLink, RouterLinkActive} from '@angular/router';
-import {CustomerOrganization} from '@distr-sh/distr-sdk';
+import {CustomerOrganizationLink, CustomerOrganizationResponse} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faAddressBook,
   faArrowRightLong,
+  faArrowUpRightFromSquare,
   faAsterisk,
   faBox,
   faBoxesStacked,
@@ -71,6 +72,7 @@ export class SideBarComponent {
   protected readonly faBox = faBox;
   protected readonly faCreditCard = faCreditCard;
   protected readonly faArrowRightLong = faArrowRightLong;
+  protected readonly faArrowUpRightFromSquare = faArrowUpRightFromSquare;
   protected readonly faHome = faHome;
   protected readonly faChevronDown = faChevronDown;
   protected readonly faAsterisk = faAsterisk;
@@ -102,11 +104,20 @@ export class SideBarComponent {
 
   protected readonly customerOrgFeatures = toSignal(
     this.contextService.getCustomerOrganization().pipe(
-      map((customerOrg: CustomerOrganization | undefined): string[] => {
+      map((customerOrg: CustomerOrganizationResponse | undefined): string[] => {
         return customerOrg?.features || [];
       })
     ),
     {initialValue: [] as string[]}
+  );
+
+  protected readonly customerOrgLinks = toSignal(
+    this.contextService.getCustomerOrganization().pipe(
+      map((customerOrg: CustomerOrganizationResponse | undefined): CustomerOrganizationLink[] => {
+        return customerOrg?.links || [];
+      })
+    ),
+    {initialValue: [] as CustomerOrganizationLink[]}
   );
 
   protected hasCustomerOrganizationFeature(feature: string): boolean {

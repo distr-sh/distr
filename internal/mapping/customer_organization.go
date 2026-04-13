@@ -16,6 +16,16 @@ func CustomerOrganizationToAPI(customerOrganization types.CustomerOrganization) 
 	}
 }
 
+func CustomerOrganizationResponseToAPI(
+	customerOrganization types.CustomerOrganization,
+	links []types.CustomerOrganizationLink,
+) api.CustomerOrganizationResponse {
+	return api.CustomerOrganizationResponse{
+		CustomerOrganization: CustomerOrganizationToAPI(customerOrganization),
+		Links:                List(links, CustomerOrganizationLinkToAPI),
+	}
+}
+
 func CustomerOrganizationWithUsageToAPI(
 	customerOrganizationWithUsage types.CustomerOrganizationWithUsage,
 ) api.CustomerOrganizationWithUsage {

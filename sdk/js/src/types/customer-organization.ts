@@ -19,3 +19,20 @@ export interface CreateUpdateCustomerOrganizationRequest {
   imageId?: string;
   features?: CustomerOrganizationFeature[];
 }
+
+export interface CustomerOrganizationLink {
+  id: string;
+  createdAt: string;
+  customerOrganizationId: string;
+  name: string;
+  link: string;
+}
+
+export interface CustomerOrganizationResponse extends CustomerOrganization {
+  links: CustomerOrganizationLink[];
+}
+
+export interface CreateUpdateCustomerOrganizationLinkRequest {
+  name: string;
+  link: string;
+}

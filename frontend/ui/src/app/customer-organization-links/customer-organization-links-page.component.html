@@ -1,0 +1,208 @@
+<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
+  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
+    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+      @if (customerOrganization(); as customer) {
+        <nav class="flex justify-between m-4" aria-label="Breadcrumb">
+          <ol class="inline-flex items-center mb-3 sm:mb-0">
+            <li class="flex items-center">
+              <a
+                [routerLink]="['/', 'customers']"
+                class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
+                <fa-icon class="mr-2" [icon]="faBoxesStacked"></fa-icon>
+                Customers
+              </a>
+            </li>
+            <span class="mx-2 text-gray-400">/</span>
+            <li aria-current="page">
+              <div class="flex items-center">
+                <button
+                  id="application-dropdown"
+                  cdkOverlayOrigin
+                  #dropdownTrigger="cdkOverlayOrigin"
+                  #dropdownTriggerButton
+                  (click)="toggleBreadcrumbDropdown()"
+                  class="inline-flex items-center px-3 py-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
+                  {{ customer.name }}
+                  <fa-icon class="ml-2" [icon]="faChevronDown"></fa-icon>
+                </button>
+                <ng-template
+                  cdkConnectedOverlay
+                  [cdkConnectedOverlayHasBackdrop]="true"
+                  (backdropClick)="breadcrumbDropdown.set(false)"
+                  [cdkConnectedOverlayBackdropClass]="'transparent'"
+                  [cdkConnectedOverlayOrigin]="dropdownTrigger"
+                  [cdkConnectedOverlayMinWidth]="breadcrumbDropdownWidth + 'px'"
+                  [cdkConnectedOverlayOpen]="breadcrumbDropdown()">
+                  <div
+                    style="transform-origin: top center"
+                    class="z-10 w-full bg-white divide-y divide-gray-100 rounded-lg shadow-xs dark:bg-gray-700">
+                    <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownDefault">
+                      @for (customer of customerOrganizations(); track customer.id) {
+                        <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                          <a class="px-4 flex items-stretch" [routerLink]="['/', 'customers', customer.id, 'links']">
+                            {{ customer.name }}
+                          </a>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                </ng-template>
+              </div>
+            </li>
+          </ol>
+        </nav>
+      }
+
+      <div
+        class="flex flex-col md:flex-row items-stretch md:items-center md:space-x-3 space-y-3 md:space-y-0 justify-between m-4 dark:border-gray-700">
+        <div class="w-full md:w-1/2"></div>
+        <div
+          class="w-full md:w-auto flex flex-col md:flex-row items-stretch md:items-center justify-end gap-4 flex-shrink-0 flex-grow">
+          @if (auth.hasAnyRole('read_write', 'admin')) {
+            <button
+              type="button"
+              (click)="showDialog()"
+              class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+              <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2"></fa-icon>
+              Create Link
+            </button>
+          }
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+          <thead
+            class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
+            <tr>
+              <th scope="col" class="p-4">Name</th>
+              <th scope="col" class="p-4">Link</th>
+              <th scope="col" class="p-4">Created at</th>
+              <th scope="col" class="p-4"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (link of links(); track link.id) {
+              <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">{{ link.name }}</td>
+                <td
+                  class="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap max-w-96 overflow-hidden text-ellipsis">
+                  <a
+                    [href]="link.link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-blue-600 dark:text-blue-400 hover:underline">
+                    {{ link.link }}
+                  </a>
+                </td>
+                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
+                  {{ link.createdAt | date }}
+                </td>
+                <td class="px-4 py-3 flex gap-2 justify-end">
+                  @if (auth.hasAnyRole('read_write', 'admin')) {
+                    <button
+                      type="button"
+                      (click)="showDialog(link)"
+                      class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                      <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Delete"
+                      (click)="deleteLink(link)"
+                      class="py-2 px-3 text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900">
+                      <fa-icon [icon]="faTrash" class="h-4 w-4"></fa-icon>
+                    </button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr class="border-t border-gray-200 dark:border-gray-600">
+                <td
+                  colspan="4"
+                  class="px-4 py-3 font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap text-center">
+                  No links found
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<ng-template #createUpdateDialog>
+  <div
+    class="p-4 w-xl max-w-full mt-12 max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-900"
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top">
+    <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+        @if (createUpdateForm.value.id) {
+          Edit Link
+        } @else {
+          Create Link
+        }
+      </h2>
+      <button
+        type="button"
+        (click)="closeDialog()"
+        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+        <fa-icon [icon]="faXmark" />
+        <span class="sr-only">Close modal</span>
+      </button>
+    </div>
+
+    <div class="p-4 md:p-5 space-y-4">
+      <section class="antialiased">
+        <div class="mx-auto max-w-screen-xl px-4 2xl:px-0">
+          <form class="mx-auto" (ngSubmit)="submitForm()" [formGroup]="createUpdateForm">
+            <div class="flex flex-col space-y-5">
+              <div class="space-y-2">
+                <label for="linkName" class="block text-sm font-medium text-gray-900 dark:text-white">
+                  Name <span class="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="linkName"
+                  formControlName="name"
+                  autotrim
+                  autocomplete="off"
+                  placeholder="Documentation"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+                @if (createUpdateForm.controls.name.touched && createUpdateForm.controls.name.errors?.['required']) {
+                  <span class="text-red-500 text-xs">Name is required</span>
+                }
+              </div>
+
+              <div class="space-y-2">
+                <label for="linkUrl" class="block text-sm font-medium text-gray-900 dark:text-white">
+                  Link <span class="text-red-500">*</span>
+                </label>
+                <input
+                  type="url"
+                  id="linkUrl"
+                  formControlName="link"
+                  autotrim
+                  autocomplete="off"
+                  placeholder="https://example.com/docs"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+                @if (createUpdateForm.controls.link.touched && createUpdateForm.controls.link.errors?.['required']) {
+                  <span class="text-red-500 text-xs">Link is required</span>
+                }
+              </div>
+
+              <button
+                type="submit"
+                [disabled]="!createUpdateForm.valid"
+                class="self-end text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                Submit
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+</ng-template>

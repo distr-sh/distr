@@ -28,6 +28,8 @@ func CustomerOrganizationsRouter(r chiopenapi.Router) {
 			With(option.Description("List all customer organizations")).
 			With(option.Response(http.StatusOK, []api.CustomerOrganizationWithUsage{}))
 
+		r.Route("/{customerOrganizationId}/links", CustomerOrganizationLinksRouter)
+
 		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
 			r.Post("/", createCustomerOrganizationHandler()).
 				With(option.Description("Create a new customer organization")).

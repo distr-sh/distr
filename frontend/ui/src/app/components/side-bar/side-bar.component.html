@@ -396,6 +396,22 @@
           </li>
         }
 
+        @for (link of customerOrgLinks(); track link.id) {
+          <li>
+            <a
+              [href]="link.link"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              <fa-icon
+                [icon]="faArrowUpRightFromSquare"
+                size="lg"
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+              <span class="ms-3">{{ link.name }}</span>
+            </a>
+          </li>
+        }
+
         <hr class="border-gray-200 dark:border-gray-600 my-4" />
 
         @if (auth.hasRole('admin')) {

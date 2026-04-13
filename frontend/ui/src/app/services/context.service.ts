@@ -1,6 +1,6 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
-import {CustomerOrganization, UserAccountWithRole} from '@distr-sh/distr-sdk';
+import {CustomerOrganizationResponse, UserAccountWithRole} from '@distr-sh/distr-sdk';
 import posthog from 'posthog-js';
 import {map, Observable, shareReplay, startWith, Subject, switchMap, tap} from 'rxjs';
 import {Organization, OrganizationWithUserRole} from '../types/organization';
@@ -8,7 +8,7 @@ import {Organization, OrganizationWithUserRole} from '../types/organization';
 interface ContextResponse {
   user: UserAccountWithRole;
   organization: Organization;
-  customerOrganization?: CustomerOrganization;
+  customerOrganization?: CustomerOrganizationResponse;
   availableContexts?: OrganizationWithUserRole[];
 }
 
@@ -46,7 +46,7 @@ export class ContextService {
     return this.cache.pipe(map((ctx) => ctx.availableContexts ?? []));
   }
 
-  public getCustomerOrganization(): Observable<CustomerOrganization | undefined> {
+  public getCustomerOrganization(): Observable<CustomerOrganizationResponse | undefined> {
     return this.cache.pipe(map((ctx) => ctx.customerOrganization));
   }
 
