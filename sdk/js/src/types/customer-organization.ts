@@ -28,7 +28,3 @@ export interface SidebarLink {
   name: string;
   link: string;
 }
-
-export interface CustomerOrganizationResponse extends CustomerOrganization {
-  links: SidebarLink[];
-}

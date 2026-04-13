@@ -13,7 +13,6 @@
 ## Extended by
 
 - [`CustomerOrganizationWithUsage`](CustomerOrganizationWithUsage.md)
-- [`CustomerOrganizationResponse`](CustomerOrganizationResponse.md)
 
 ## Properties
 

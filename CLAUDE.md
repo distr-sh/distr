@@ -197,7 +197,7 @@ API routes are defined in `internal/routing/`. Routes are grouped by authenticat
 - Agent routes (agent token auth)
 - Registry routes (special OCI auth)
 
-When adding new routes, ensure the OpenAPI spec remains valid. The `chiopenapi` router generates the spec from route definitions. Endpoints that have path parameters, query parameters, or a request body must declare them via `option.Request()` with a struct using the appropriate tags (`path:`, `query:`, `json:`). Follow the existing pattern of composing path param structs with body request structs via embedding.
+When adding new routes, ensure the OpenAPI spec remains valid. The `chiopenapi` router generates the spec from route definitions. Endpoints that have path parameters, query parameters, or a request body must declare them via `option.Request()` with a struct using the appropriate tags (`path:`, `query:`, `json:`). Endpoints without any parameters or body do not need `option.Request()`. Follow the existing pattern of composing path param structs with body request structs via embedding.
 
 ## General rules
 

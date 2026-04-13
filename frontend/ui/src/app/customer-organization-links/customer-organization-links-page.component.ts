@@ -57,8 +57,8 @@ export class SidebarLinksPageComponent {
   protected readonly refresh$ = new Subject<void>();
 
   protected readonly links = toSignal(
-    combineLatest([this.refresh$.pipe(startWith(undefined)), toObservable(this.customerOrganizationId)]).pipe(
-      switchMap(([, customerOrganizationId]) => {
+    combineLatest([toObservable(this.customerOrganizationId), this.refresh$.pipe(startWith(undefined))]).pipe(
+      switchMap(([customerOrganizationId]) => {
         if (!customerOrganizationId) {
           return of([]);
         }
@@ -150,15 +150,7 @@ export class SidebarLinksPageComponent {
     const customerOrgId = this.customerOrganizationId();
     if (!customerOrgId) return;
 
-    if (
-      await firstValueFrom(
-        this.overlay.confirm({
-          message: {
-            message: `Do you really want to delete the link "${link.name}"?`,
-          },
-        })
-      )
-    ) {
+    if (await firstValueFrom(this.overlay.confirm(`Do you really want to delete the link "${link.name}"?`))) {
       try {
         await firstValueFrom(this.linksService.delete(customerOrgId, link.id));
         this.refresh$.next();

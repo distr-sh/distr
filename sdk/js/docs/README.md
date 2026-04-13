@@ -25,7 +25,6 @@
 - [CreateUpdateCustomerOrganizationRequest](interfaces/CreateUpdateCustomerOrganizationRequest.md)
 - [CreateUpdateSupportBundleConfigurationRequest](interfaces/CreateUpdateSupportBundleConfigurationRequest.md)
 - [CustomerOrganization](interfaces/CustomerOrganization.md)
-- [CustomerOrganizationResponse](interfaces/CustomerOrganizationResponse.md)
 - [CustomerOrganizationWithUsage](interfaces/CustomerOrganizationWithUsage.md)
 - [Deployment](interfaces/Deployment.md)
 - [DeploymentRequest](interfaces/DeploymentRequest.md)

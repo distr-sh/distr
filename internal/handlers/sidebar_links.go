@@ -20,7 +20,7 @@ import (
 
 func SidebarLinksRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Sidebar Links"))
-	r.Use(middleware.RequireOrgAndRole)
+	r.Use(middleware.RequireVendor, middleware.RequireOrgAndRole)
 
 	type customerOrganizationIDRequest struct {
 		CustomerOrganizationID uuid.UUID `path:"customerOrganizationId"`
