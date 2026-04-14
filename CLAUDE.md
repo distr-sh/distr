@@ -14,7 +14,7 @@ The platform consists of a control plane (Hub) running in the cloud and agents t
 
 1. **Distr Hub** (`cmd/hub/`): The main control plane server
    - Go backend with chi router
-   - Angular 20 frontend (TypeScript, TailwindCSS 4)
+   - Angular 21 frontend (TypeScript, TailwindCSS 4)
    - REST API at `/api/v1`
    - Serves the compiled frontend on root path
 
@@ -146,7 +146,7 @@ Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Pret
 - Always use self-closing tags for Angular components when they have no content (e.g. `<fa-icon [icon]="faPlus" />` instead of `<fa-icon [icon]="faPlus"></fa-icon>`)
 - Use standalone components (no NgModules) - This is the default so `standalone: true` is not needed
 - Services are singleton by default (`providedIn: 'root'`)
-- Use Angular's HttpClient for API calls, injected via constructor
+- Use Angular's `inject()` function for dependency injection (e.g. `private readonly http = inject(HttpClient)`). Do not use constructor injection.
 - Component file structure: `component-name.component.ts`, `component-name.component.html` (no need for scss files)
 - Use TypeScript interfaces from `app/types/` for API models
 - Use reactive forms for all form handling
@@ -208,3 +208,7 @@ When adding new routes, ensure the OpenAPI spec remains valid. The `chiopenapi` 
 - If you see any typos, or spelling mistakes, please fix them.
 - If you fetch data from GitHub always use the GitHub cli (`gh`) instead of the web interface.
 - When you resolve merge conflicts (whether during a merge or rebase), always ensure that the conflict resolutions are committed before continuing, or at least prompt the user to commit them, so that unrelated new changes are not unintentionally included in that commit.
+
+## Code Review Instructions
+
+Follow @.github/copilot-code-review-instructions.md when performing code reviews.
