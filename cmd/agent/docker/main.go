@@ -115,8 +115,7 @@ loop:
 			}
 
 			logWatcher.SetLogsAfter(resource.DeploymentLogsAfter)
-			s := logsGoroutine.GoOrCancel(ctx, resource.DeploymentLogsEnabled)
-			logger.Debug("log watcher status", zap.String("status", s), zap.Bool("enabled", resource.DeploymentLogsEnabled))
+			logsGoroutine.GoOrCancel(ctx, resource.DeploymentLogsEnabled)
 
 			if resource.MetricsEnabled {
 				startMetrics(ctx)
