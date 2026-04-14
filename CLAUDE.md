@@ -14,7 +14,7 @@ The platform consists of a control plane (Hub) running in the cloud and agents t
 
 1. **Distr Hub** (`cmd/hub/`): The main control plane server
    - Go backend with chi router
-   - Angular 21 frontend (TypeScript, TailwindCSS 4)
+   - Angular frontend (TypeScript, TailwindCSS 4)
    - REST API at `/api/v1`
    - Serves the compiled frontend on root path
 
@@ -71,7 +71,7 @@ Key internal packages:
 
 ### Frontend Architecture (Angular)
 
-- **Framework**: Angular 21 with standalone components
+- **Framework**: Angular with standalone components
 - **Styling**: TailwindCSS 4, SCSS, Flowbite components
 - **Routing**: Angular Router with lazy-loaded routes
 - **State**: Service-based state management
