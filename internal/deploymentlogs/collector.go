@@ -35,7 +35,7 @@ type collector struct {
 }
 
 const (
-	defaultFlushLimit      = 100
+	defaultFlushLimit      = 500
 	defaultBufferSizeLimit = 1000
 )
 
