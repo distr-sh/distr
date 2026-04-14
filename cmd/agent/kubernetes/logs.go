@@ -62,6 +62,10 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 			continue
 		}
 
+		if d.LogsAfter != nil && lastTimestamp == nil || lastTimestamp.Before(*d.LogsAfter) {
+			lastTimestamp = d.LogsAfter
+		}
+
 		var resources []runtime.Object
 		if resUnstr, err := GetHelmManifest(ctx, lw.namespace, d.ReleaseName); err != nil {
 			logger.Error("could not get helm manifest for deployment", zap.Error(err))

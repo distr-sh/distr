@@ -14,8 +14,8 @@ import {
   faPlay,
   faServer,
 } from '@fortawesome/free-solid-svg-icons';
-import dayjs from 'dayjs';
 import {combineLatest, debounceTime, map, of, switchMap} from 'rxjs';
+import {dateTimeLocalToISO, isoToDateTimeLocal} from '../../../util/dates';
 import {DeploymentLogsService} from '../../services/deployment-logs.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
 import {OrderDirection} from '../../types/timeseries-options';
@@ -212,12 +212,4 @@ export class DeploymentTargetDetailComponent {
     this.deploymentStatusTable()?.export();
     this.deploymentLogsTable()?.export();
   }
-}
-
-function dateTimeLocalToISO(dateTimeLocal: string | null | undefined): string | null {
-  return dateTimeLocal ? dayjs(dateTimeLocal).toISOString() : null;
-}
-
-function isoToDateTimeLocal(iso: string | null | undefined): string {
-  return iso ? dayjs(iso).local().format('YYYY-MM-DDTHH:mm') : '';
 }

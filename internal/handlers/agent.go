@@ -215,7 +215,8 @@ func agentResourcesHandler(w http.ResponseWriter, r *http.Request) {
 			agentDeployment := api.AgentDeployment{
 				ID:                 deployment.ID,
 				RevisionID:         deployment.DeploymentRevisionID,
-				LogsEnabled:        deploymentTarget.LogsEnabled,
+				LogsEnabled:        deploymentTarget.DeploymentLogsEnabled,
+				LogsAfter:          deploymentTarget.DeploymentLogsAfter,
 				ForceRestart:       deployment.ForceRestart,
 				IgnoreRevisionSkew: deployment.IgnoreRevisionSkew,
 			}

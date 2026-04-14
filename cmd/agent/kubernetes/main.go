@@ -321,8 +321,10 @@ func runInstallOrUpgrade(
 		}
 	} else {
 		logger.Info("no action required. running status check")
-		if currentDeployment.LogsEnabled != deployment.LogsEnabled {
+		if currentDeployment.LogsEnabled != deployment.LogsEnabled ||
+			currentDeployment.LogsAfter != deployment.LogsAfter {
 			currentDeployment.LogsEnabled = deployment.LogsEnabled
+			currentDeployment.LogsAfter = deployment.LogsAfter
 			if err := SaveDeployment(ctx, namespace, *currentDeployment); err != nil {
 				logger.Error("could not save latest deployment", zap.Error(err))
 				pushErrorStatus(ctx, deployment, fmt.Errorf("could not save latest deployment: %w", err))

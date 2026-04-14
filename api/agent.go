@@ -1,6 +1,8 @@
 package api
 
 import (
+	"time"
+
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 )
@@ -22,6 +24,7 @@ type AgentDeployment struct {
 	RevisionID   uuid.UUID                    `json:"revisionId"`
 	RegistryAuth map[string]AgentRegistryAuth `json:"registryAuth"`
 	LogsEnabled  bool                         `json:"logsEnabled"`
+	LogsAfter    *time.Time                   `json:"logsAfter,omitempty"`
 	ForceRestart bool                         `json:"forceRestart"`
 
 	// Docker specific data

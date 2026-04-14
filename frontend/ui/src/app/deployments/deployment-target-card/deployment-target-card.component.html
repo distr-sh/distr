@@ -292,7 +292,7 @@
                                 type="button"
                                 class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
                                 (click)="showDeploymentDropdownForId.set(undefined); showLogsEnabledMovedAlert()">
-                                @if (deploymentTarget().logsEnabled) {
+                                @if (deploymentTarget().deploymentLogsEnabled) {
                                   Disable log collection
                                 } @else {
                                   Enable log collection
@@ -548,7 +548,7 @@
             <input
               id="logs-enabled-checkbox"
               type="checkbox"
-              formControlName="logsEnabled"
+              formControlName="deploymentLogsEnabled"
               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
             <label for="logs-enabled-checkbox" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
               Collect application logs
@@ -559,6 +559,40 @@
             <p class="text-xs text-yellow-800 dark:text-yellow-300">
               Log collection requires Agent version 1.9.0 or later
             </p>
+          }
+          @if (editForm.controls.deploymentLogsEnabled.value) {
+            <div class="ml-6 mt-2">
+              <label
+                for="deployment-logs-after"
+                class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">
+                Collect logs after
+              </label>
+              <input
+                type="datetime-local"
+                id="deployment-logs-after"
+                formControlName="deploymentLogsAfter"
+                class="bg-gray-50 border leading-none border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+              <div class="flex gap-1 mt-1">
+                <button
+                  type="button"
+                  (click)="setDeploymentLogsAfterNow()"
+                  class="px-1.5 py-0.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600">
+                  now
+                </button>
+                <button
+                  type="button"
+                  (click)="setDeploymentLogsAfterNowMinus1h()"
+                  class="px-1.5 py-0.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600">
+                  now-1h
+                </button>
+                <button
+                  type="button"
+                  (click)="clearDeploymentLogsAfter()"
+                  class="px-1.5 py-0.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600">
+                  clear
+                </button>
+              </div>
+            </div>
           }
         </div>
 

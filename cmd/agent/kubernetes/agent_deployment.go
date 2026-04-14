@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/google/uuid"
@@ -23,12 +24,13 @@ const (
 )
 
 type AgentDeployment struct {
-	ID           uuid.UUID `json:"id"`
-	RevisionID   uuid.UUID `json:"revisionId"`
-	ReleaseName  string    `json:"releaseName"`
-	HelmRevision *int      `json:"helmRevision,omitempty"`
-	LogsEnabled  bool      `json:"logsEnabled"`
-	State        State     `json:"phase"`
+	ID           uuid.UUID  `json:"id"`
+	RevisionID   uuid.UUID  `json:"revisionId"`
+	ReleaseName  string     `json:"releaseName"`
+	HelmRevision *int       `json:"helmRevision,omitempty"`
+	LogsEnabled  bool       `json:"logsEnabled"`
+	LogsAfter    *time.Time `json:"deploymentLogsAfter,omitempty"`
+	State        State      `json:"phase"`
 }
 
 func (d AgentDeployment) GetDeploymentID() uuid.UUID {
@@ -49,6 +51,7 @@ func NewAgentDeployment(deployment api.AgentDeployment) AgentDeployment {
 		ID:          deployment.ID,
 		RevisionID:  deployment.RevisionID,
 		LogsEnabled: deployment.LogsEnabled,
+		LogsAfter:   deployment.LogsAfter,
 	}
 }
 

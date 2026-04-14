@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"sync"
+	"time"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/types"
@@ -28,6 +29,7 @@ type AgentDeployment struct {
 	ProjectName string           `json:"projectName"`
 	DockerType  types.DockerType `json:"docker_type,omitempty"`
 	LogsEnabled bool             `json:"logsEnabled"`
+	LogsAfter   *time.Time       `json:"deploymentLogsAfter,omitempty"`
 	State       State            `json:"phase"`
 }
 
@@ -57,6 +59,7 @@ func NewAgentDeployment(deployment api.AgentDeployment) (*AgentDeployment, error
 			ProjectName: name,
 			DockerType:  *deployment.DockerType,
 			LogsEnabled: deployment.LogsEnabled,
+			LogsAfter:   deployment.LogsAfter,
 		}, nil
 	}
 }

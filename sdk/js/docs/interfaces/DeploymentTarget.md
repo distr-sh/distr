@@ -68,9 +68,15 @@
 
 ---
 
-### logsEnabled
+### deploymentLogsEnabled
 
-> **logsEnabled**: `boolean`
+> **deploymentLogsEnabled**: `boolean`
+
+---
+
+### deploymentLogsAfter
+
+> **deploymentLogsAfter**?: `string`
 
 ---
 

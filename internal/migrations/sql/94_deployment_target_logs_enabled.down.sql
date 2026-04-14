@@ -4,8 +4,9 @@ ALTER TABLE Deployment
 UPDATE Deployment d
 SET logs_enabled = true
 WHERE EXISTS (
-  SELECT 1 FROM DeploymentTarget dt WHERE dt.id = d.deployment_target_id AND dt.logs_enabled = true
+  SELECT 1 FROM DeploymentTarget dt WHERE dt.id = d.deployment_target_id AND dt.deployment_logs_enabled = true
 );
 
 ALTER TABLE DeploymentTarget
-  DROP COLUMN logs_enabled;
+  DROP COLUMN deployment_logs_enabled,
+  DROP COLUMN deployment_logs_after;

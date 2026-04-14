@@ -16,7 +16,9 @@ import {
   faPen,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
+import dayjs from 'dayjs';
 import {firstValueFrom, lastValueFrom} from 'rxjs';
+import {dateTimeLocalToISO, isoToDateTimeLocal} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {RESOURCE_QUANTITY_REGEX} from '../../../util/validation';
 import {AuthService} from '../../services/auth.service';
@@ -65,7 +67,8 @@ export abstract class DeploymentTargetCardBaseComponent {
     scope: new FormControl<DeploymentTargetScope>({value: 'namespace', disabled: true}),
     metricsEnabled: new FormControl<boolean>(true),
     imageCleanupEnabled: new FormControl<boolean>(false, {nonNullable: true}),
-    logsEnabled: new FormControl<boolean>(true, {nonNullable: true}),
+    deploymentLogsEnabled: new FormControl<boolean>(true, {nonNullable: true}),
+    deploymentLogsAfter: new FormControl<string | null>(null),
     customResources: new FormControl<boolean>(false, {nonNullable: true}),
     resources: new FormGroup({
       cpuRequest: new FormControl<string>('100m', {
@@ -127,7 +130,8 @@ export abstract class DeploymentTargetCardBaseComponent {
         deployments: [],
         metricsEnabled: val.metricsEnabled ?? false,
         imageCleanupEnabled: this.editForm.controls.imageCleanupEnabled.value,
-        logsEnabled: this.editForm.controls.logsEnabled.value,
+        deploymentLogsEnabled: this.editForm.controls.deploymentLogsEnabled.value,
+        deploymentLogsAfter: dateTimeLocalToISO(this.editForm.controls.deploymentLogsAfter.value) ?? undefined,
         resources: val.resources && {
           cpuRequest: val.resources.cpuRequest!,
           cpuLimit: val.resources.cpuLimit!,
@@ -177,7 +181,8 @@ export abstract class DeploymentTargetCardBaseComponent {
   private loadDeploymentTarget(dt: DeploymentTarget) {
     this.editForm.patchValue({
       ...dt,
-      logsEnabled: dt.logsEnabled,
+      deploymentLogsEnabled: dt.deploymentLogsEnabled,
+      deploymentLogsAfter: isoToDateTimeLocal(dt.deploymentLogsAfter) || null,
       customResources: !!dt.resources,
     });
     if (dt.scope === 'namespace') {
@@ -249,6 +254,18 @@ export abstract class DeploymentTargetCardBaseComponent {
     this.drawerRef?.close();
     this.resetEditForm();
     this.notesForm.reset();
+  }
+
+  protected setDeploymentLogsAfterNow() {
+    this.editForm.controls.deploymentLogsAfter.setValue(isoToDateTimeLocal(dayjs().toISOString()));
+  }
+
+  protected setDeploymentLogsAfterNowMinus1h() {
+    this.editForm.controls.deploymentLogsAfter.setValue(isoToDateTimeLocal(dayjs().subtract(1, 'hour').toISOString()));
+  }
+
+  protected clearDeploymentLogsAfter() {
+    this.editForm.controls.deploymentLogsAfter.setValue(null);
   }
 
   private resetEditForm() {
