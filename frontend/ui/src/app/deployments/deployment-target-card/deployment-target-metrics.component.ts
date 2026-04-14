@@ -1,5 +1,5 @@
 import {OverlayModule} from '@angular/cdk/overlay';
-import {NgStyle, PercentPipe} from '@angular/common';
+import {PercentPipe} from '@angular/common';
 import {Component, computed, input, signal} from '@angular/core';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faExclamation, faHardDrive} from '@fortawesome/free-solid-svg-icons';
@@ -10,7 +10,7 @@ import {DeploymentTargetLatestMetrics} from '../../types/deployment-target-metri
 @Component({
   selector: 'app-deployment-target-metrics',
   templateUrl: './deployment-target-metrics.component.html',
-  imports: [OverlayModule, BytesPipe, PercentPipe, NgStyle, FaIconComponent, StatusDotDirective],
+  imports: [OverlayModule, BytesPipe, PercentPipe, FaIconComponent, StatusDotDirective],
   styleUrls: ['./deployment-target-metrics.component.scss'],
 })
 export class DeploymentTargetMetricsComponent {
