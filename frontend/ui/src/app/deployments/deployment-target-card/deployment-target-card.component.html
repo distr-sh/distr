@@ -108,8 +108,8 @@
                   (click)="showDeploymentTargetDropdown.set(false); openEditDrawer()"
                   aria-controls="manage-deployment-target-drawer"
                   class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white">
-                  <fa-icon [icon]="faPen" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
-                  Edit
+                  <fa-icon [icon]="faGear" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
+                  Settings
                 </button>
               </li>
 
@@ -291,17 +291,8 @@
                               <button
                                 type="button"
                                 class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
-                                (click)="
-                                  setLogsEnabled(deployment, !deployment.logsEnabled);
-                                  showDeploymentDropdownForId.set(undefined)
-                                "
-                                [title]="
-                                  isLoggingSupported()
-                                    ? ''
-                                    : 'Agent must have version 1.9.0 or greater. Please update this agent.'
-                                "
-                                [disabled]="!isLoggingSupported()">
-                                @if (deployment.logsEnabled) {
+                                (click)="showDeploymentDropdownForId.set(undefined); showLogsEnabledMovedAlert()">
+                                @if (deploymentTarget().logsEnabled) {
                                   Disable log collection
                                 } @else {
                                   Enable log collection
@@ -530,24 +521,46 @@
               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:select-none" />
           </div>
         }
-        <div class="flex items-center">
-          <input
-            id="metrics-checkbox"
-            type="checkbox"
-            formControlName="metricsEnabled"
-            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
-          <label for="metrics-checkbox" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-            Report Metrics
-          </label>
-        </div>
-        @if (editForm.controls.metricsEnabled.disabled) {
+
+        <div class="space-y-1">
+          <div class="flex items-center">
+            <input
+              id="metrics-checkbox"
+              type="checkbox"
+              formControlName="metricsEnabled"
+              class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+            <label for="metrics-checkbox" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+              Report Metrics
+            </label>
+          </div>
+          @if (editForm.controls.metricsEnabled.disabled) {
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Metrics reporting is not available for a namespace scoped agent.
+            </p>
+          }
           <p class="text-xs text-gray-500 dark:text-gray-400">
-            Metrics reporting is not available for a namespace scoped agent.
+            Changing metrics reporting requires the agent to reconnect. Metrics reporting is not supported on macOS.
           </p>
-        }
-        <p class="text-xs text-gray-500 dark:text-gray-400">
-          Changing metrics reporting requires the agent to reconnect. Metrics reporting is not supported on macOS.
-        </p>
+        </div>
+
+        <div class="space-y-1">
+          <div class="flex items-center">
+            <input
+              id="logs-enabled-checkbox"
+              type="checkbox"
+              formControlName="logsEnabled"
+              class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+            <label for="logs-enabled-checkbox" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+              Collect application logs
+            </label>
+          </div>
+
+          @if (!isLoggingSupported()) {
+            <p class="text-xs text-yellow-800 dark:text-yellow-300">
+              Log collection requires Agent version 1.9.0 or later
+            </p>
+          }
+        </div>
 
         @if (editForm.controls.imageCleanupEnabled.enabled) {
           <div class="flex items-center">

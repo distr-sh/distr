@@ -10,6 +10,7 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faBinoculars,
   faEllipsisVertical,
+  faGear,
   faHeartPulse,
   faPlus,
   faRotate,
@@ -70,6 +71,7 @@ export class DeploymentTargetCardComponent extends DeploymentTargetCardBaseCompo
 
   protected readonly faBinoculars = faBinoculars;
   protected readonly faEllipsisVertical = faEllipsisVertical;
+  protected readonly faGear = faGear;
   protected readonly faHeartPulse = faHeartPulse;
   protected readonly faPlus = faPlus;
   protected readonly faRotate = faRotate;
@@ -134,18 +136,17 @@ export class DeploymentTargetCardComponent extends DeploymentTargetCardBaseCompo
       this.deploymentTarget().agentVersion?.id !== this.deploymentTarget().reportedAgentVersionId
   );
 
-  protected setLogsEnabled(deployment: DeploymentWithLatestRevision, logsEnabled: boolean) {
-    if (deployment.id) {
-      this.deploymentTargets.patchDeployment(deployment.id, {logsEnabled}).subscribe({
-        next: () => this.toast.success('Deployment has been updated.'),
-        error: (e) => {
-          const msg = getFormDisplayedError(e);
-          if (msg) {
-            this.toast.error(msg);
-          }
+  protected showLogsEnabledMovedAlert() {
+    this.overlay
+      .confirm({
+        message: {
+          message: 'Log collection is now configured per agent. Open the agent settings to enable or disable it.',
         },
-      });
-    }
+        confirmLabel: 'Open Settings',
+        cancelLabel: 'Close',
+      })
+      .pipe(filter((result) => result === true))
+      .subscribe(() => this.openEditDrawer());
   }
 
   protected forceRestart(deployment: DeploymentWithLatestRevision) {

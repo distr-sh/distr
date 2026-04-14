@@ -65,6 +65,7 @@ export abstract class DeploymentTargetCardBaseComponent {
     scope: new FormControl<DeploymentTargetScope>({value: 'namespace', disabled: true}),
     metricsEnabled: new FormControl<boolean>(true),
     imageCleanupEnabled: new FormControl<boolean>(false, {nonNullable: true}),
+    logsEnabled: new FormControl<boolean>(true, {nonNullable: true}),
     customResources: new FormControl<boolean>(false, {nonNullable: true}),
     resources: new FormGroup({
       cpuRequest: new FormControl<string>('100m', {
@@ -126,6 +127,7 @@ export abstract class DeploymentTargetCardBaseComponent {
         deployments: [],
         metricsEnabled: val.metricsEnabled ?? false,
         imageCleanupEnabled: this.editForm.controls.imageCleanupEnabled.value,
+        logsEnabled: this.editForm.controls.logsEnabled.value,
         resources: val.resources && {
           cpuRequest: val.resources.cpuRequest!,
           cpuLimit: val.resources.cpuLimit!,
@@ -175,6 +177,7 @@ export abstract class DeploymentTargetCardBaseComponent {
   private loadDeploymentTarget(dt: DeploymentTarget) {
     this.editForm.patchValue({
       ...dt,
+      logsEnabled: dt.logsEnabled,
       customResources: !!dt.resources,
     });
     if (dt.scope === 'namespace') {

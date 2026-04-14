@@ -58,7 +58,6 @@ export type DeploymentFormValue = Partial<{
   releaseName: string;
   envFileData: string;
   swarmMode: boolean;
-  logsEnabled: boolean;
   forceRestart: boolean;
   ignoreRevisionSkew: boolean;
   helmOptions: Partial<HelmOptions>;
@@ -74,7 +73,6 @@ export function mapToDeploymentRequest(value: DeploymentFormValue, deploymentTar
     valuesYaml: value.valuesYaml ? btoa(value.valuesYaml) : undefined,
     dockerType: value.swarmMode ? 'swarm' : 'compose',
     envFileData: value.envFileData ? btoa(value.envFileData) : undefined,
-    logsEnabled: value.logsEnabled ?? false,
     forceRestart: value.forceRestart ?? false,
     ignoreRevisionSkew: value.ignoreRevisionSkew ?? false,
     helmOptions: value.helmOptions as HelmOptions | undefined,
@@ -126,7 +124,6 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
     valuesYaml: this.fb.control(''),
     envFileData: this.fb.control(''),
     swarmMode: this.fb.control(false),
-    logsEnabled: this.fb.control(true),
     forceRestart: this.fb.control(false),
     ignoreRevisionSkew: this.fb.control(false),
     helmOptionsEnabled: this.fb.control(false),

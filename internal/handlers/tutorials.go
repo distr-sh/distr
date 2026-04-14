@@ -196,7 +196,6 @@ func createHelloDistrDeploymentAndRevision(ctx context.Context, appVersionID uui
 		DeploymentTargetID:   dtID,
 		EnvFileData:          []byte(helloDistrEnvironment),
 		DockerType:           util.PtrTo(types.DockerTypeCompose),
-		LogsEnabled:          true,
 	}
 	if err := db.CreateDeployment(ctx, deploymentRequest); err != nil {
 		return err

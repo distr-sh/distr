@@ -68,6 +68,12 @@
 
 ---
 
+### logsEnabled
+
+> **logsEnabled**: `boolean`
+
+---
+
 ### metricsEnabled
 
 > **metricsEnabled**: `boolean`

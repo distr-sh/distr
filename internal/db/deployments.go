@@ -22,8 +22,7 @@ import (
 
 const (
 	deploymentOutputExpr = `
-		d.id, d.created_at, d.deployment_target_id, d.release_name, d.application_entitlement_id, d.docker_type,
-		d.logs_enabled
+		d.id, d.created_at, d.deployment_target_id, d.release_name, d.application_entitlement_id, d.docker_type
 	`
 	deploymentWithLatestRevisionFromExpr = `
 		Deployment d
@@ -204,15 +203,14 @@ func CreateDeployment(ctx context.Context, request *api.DeploymentRequest) error
 	rows, err := db.Query(
 		ctx,
 		`INSERT INTO Deployment AS d
-			(deployment_target_id, release_name, application_entitlement_id, docker_type, logs_enabled)
-			VALUES (@deploymentTargetId, @releaseName, @applicationEntitlementId, @dockerType, @logsEnabled)
+			(deployment_target_id, release_name, application_entitlement_id, docker_type)
+			VALUES (@deploymentTargetId, @releaseName, @applicationEntitlementId, @dockerType)
 			RETURNING`+deploymentOutputExpr,
 		pgx.NamedArgs{
 			"deploymentTargetId":       request.DeploymentTargetID,
 			"releaseName":              request.ReleaseName,
 			"applicationEntitlementId": request.ApplicationEntitlementID,
 			"dockerType":               request.DockerType,
-			"logsEnabled":              request.LogsEnabled,
 		},
 	)
 	if err != nil {
@@ -227,33 +225,6 @@ func CreateDeployment(ctx context.Context, request *api.DeploymentRequest) error
 		return fmt.Errorf("could not save Deployment: %w", err)
 	} else {
 		request.DeploymentID = &result.ID
-		return nil
-	}
-}
-
-func UpdateDeployment(ctx context.Context, deployment *types.Deployment) error {
-	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(
-		ctx,
-		`UPDATE Deployment AS d
-		SET logs_enabled = @logsEnabled
-		WHERE id = @id
-		RETURNING`+deploymentOutputExpr,
-		pgx.NamedArgs{
-			"id":          deployment.ID,
-			"logsEnabled": deployment.LogsEnabled,
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("could not update Deployment: %w", err)
-	}
-	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.Deployment]); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			err = apierrors.ErrNotFound
-		}
-		return fmt.Errorf("could not update Deployment: %w", err)
-	} else {
-		*deployment = result
 		return nil
 	}
 }

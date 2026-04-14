@@ -25,6 +25,7 @@ type DeploymentTarget struct {
 	MetricsEnabled         bool                       `db:"metrics_enabled" json:"metricsEnabled"`
 	ImageCleanupEnabled    bool                       `db:"image_cleanup_enabled" json:"imageCleanupEnabled"`
 	AutohealEnabled        bool                       `db:"autoheal_enabled" json:"autohealEnabled"`
+	LogsEnabled            bool                       `db:"logs_enabled" json:"logsEnabled"`
 	Resources              *DeploymentTargetResources `db:"resources" json:"resources,omitempty"`
 }
 
