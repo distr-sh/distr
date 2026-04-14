@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/api"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	applyconfigurationscorev1 "k8s.io/client-go/applyconfigurations/core/v1"
@@ -59,18 +60,39 @@ func PullSecretName(releaseName string) string {
 	return fmt.Sprintf("sh.distr.agent.v1.%v.pull", releaseName)
 }
 
-func GetExistingDeployments(ctx context.Context, namespace string) ([]AgentDeployment, error) {
+func UpdateAgentDeployment(ctx context.Context, namespace string, deployment api.AgentDeployment) error {
+	deployments, err := GetExistingDeployments(ctx, namespace)
+	if err != nil {
+		return err
+	}
+
+	d, ok := deployments[deployment.ID]
+	if !ok {
+		return nil
+	}
+
+	if d.LogsEnabled != deployment.LogsEnabled ||
+		!util.PtrEq(d.LogsAfter, deployment.LogsAfter) {
+		d.LogsEnabled = deployment.LogsEnabled
+		d.LogsAfter = deployment.LogsAfter
+		return SaveDeployment(ctx, namespace, d)
+	}
+
+	return nil
+}
+
+func GetExistingDeployments(ctx context.Context, namespace string) (map[uuid.UUID]AgentDeployment, error) {
 	if secrets, err := k8sClient.CoreV1().Secrets(namespace).
 		List(ctx, metav1.ListOptions{LabelSelector: LabelDeplyoment}); err != nil {
 		return nil, err
 	} else {
-		deployments := make([]AgentDeployment, len(secrets.Items))
-		for i, secret := range secrets.Items {
+		deployments := make(map[uuid.UUID]AgentDeployment, len(secrets.Items))
+		for _, secret := range secrets.Items {
 			var deployment AgentDeployment
 			if err := json.Unmarshal(secret.Data["release"], &deployment); err != nil {
 				return nil, err
 			} else {
-				deployments[i] = deployment
+				deployments[deployment.ID] = deployment
 			}
 		}
 		return deployments, nil

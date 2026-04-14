@@ -62,7 +62,7 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 			continue
 		}
 
-		if d.LogsAfter != nil && lastTimestamp == nil || lastTimestamp.Before(*d.LogsAfter) {
+		if d.LogsAfter != nil && (lastTimestamp == nil || lastTimestamp.Before(*d.LogsAfter)) {
 			lastTimestamp = d.LogsAfter
 		}
 

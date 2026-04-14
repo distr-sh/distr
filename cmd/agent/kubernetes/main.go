@@ -320,6 +320,10 @@ func runInstallOrUpgrade(
 			pushRunningStatus(ctx, deployment, successMessage)
 		}
 	} else {
+		if err := UpdateAgentDeployment(ctx, namespace, deployment); err != nil {
+			logger.Warn("failed to update agent deployment", zap.Error(err))
+		}
+
 		logger.Info("no action required. running status check")
 		if currentDeployment.LogsEnabled != deployment.LogsEnabled ||
 			currentDeployment.LogsAfter != deployment.LogsAfter {

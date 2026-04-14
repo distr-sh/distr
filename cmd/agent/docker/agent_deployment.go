@@ -11,6 +11,7 @@ import (
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 )
 
@@ -72,6 +73,27 @@ func getProjectName(data []byte) (string, error) {
 	} else {
 		return name, nil
 	}
+}
+
+func UpdateAgentDeployment(deployment api.AgentDeployment) error {
+	deployments, err := GetExistingDeployments()
+	if err != nil {
+		return err
+	}
+
+	d, ok := deployments[deployment.ID]
+	if !ok {
+		return nil
+	}
+
+	if d.LogsEnabled != deployment.LogsEnabled ||
+		!util.PtrEq(d.LogsAfter, deployment.LogsAfter) {
+		d.LogsEnabled = deployment.LogsEnabled
+		d.LogsAfter = deployment.LogsAfter
+		return SaveDeployment(d)
+	}
+
+	return nil
 }
 
 var agentDeploymentMutex = sync.RWMutex{}

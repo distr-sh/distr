@@ -109,24 +109,8 @@ loop:
 		if resource, err := client.Resource(ctx); err != nil {
 			logger.Error("failed to get resource", zap.Error(err))
 		} else {
-			if agentenv.AgentVersionID != "" {
-				if agentenv.AgentVersionID != resource.Version.ID.String() {
-					logger.Info("agent version has changed. starting self-update")
-					if err := RunAgentSelfUpdate(ctx); err != nil {
-						logger.Error("self update failed", zap.Error(err))
-						// TODO: Support status without revision ID?
-						if len(resource.Deployments) > 0 {
-							if err := client.StatusWithError(ctx, resource.Deployments[0].RevisionID, err); err != nil {
-								logger.Error("failed to send status", zap.Error(err))
-							}
-						}
-					} else {
-						logger.Info("self-update has been applied")
-						continue
-					}
-				} else {
-					logger.Debug("agent version is up to date")
-				}
+			if selfUpdateIfRequired(ctx, *resource) {
+				continue
 			}
 
 			if resource.MetricsEnabled {
@@ -196,6 +180,10 @@ loop:
 							}
 						}()
 					} else {
+						if err := UpdateAgentDeployment(deployment); err != nil {
+							logger.Warn("failed to update agent deploymnet", zap.Error(err))
+						}
+
 						if statusType1, statusMessage, err1 := CheckStatus(ctx, *agentDeployment); err1 != nil {
 							err = errors.Join(err, err1)
 						} else {
@@ -255,6 +243,29 @@ func startHealthServer() error {
 	}
 
 	return nil
+}
+
+func selfUpdateIfRequired(ctx context.Context, resource api.AgentResource) bool {
+	if agentenv.AgentVersionID != "" {
+		if agentenv.AgentVersionID != resource.Version.ID.String() {
+			logger.Info("agent version has changed. starting self-update")
+			if err := RunAgentSelfUpdate(ctx); err != nil {
+				logger.Error("self update failed", zap.Error(err))
+				// TODO: Support status without revision ID?
+				if len(resource.Deployments) > 0 {
+					if err := client.StatusWithError(ctx, resource.Deployments[0].RevisionID, err); err != nil {
+						logger.Error("failed to send status", zap.Error(err))
+					}
+				}
+			} else {
+				logger.Info("self-update has been applied")
+				return true
+			}
+		} else {
+			logger.Debug("agent version is up to date")
+		}
+	}
+	return false
 }
 
 func cleanupOldDeployments(ctx context.Context, resource api.AgentResource, deployments []AgentDeployment) {

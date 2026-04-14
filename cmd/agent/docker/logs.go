@@ -64,7 +64,7 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 			logger.Warn("could not get last logs timestamp", zap.Error(err))
 		}
 
-		if d.LogsAfter != nil && since == nil || since.Before(*d.LogsAfter) {
+		if d.LogsAfter != nil && (since == nil || since.Before(*d.LogsAfter)) {
 			since = d.LogsAfter
 		}
 
