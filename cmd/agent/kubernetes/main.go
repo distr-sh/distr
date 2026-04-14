@@ -100,10 +100,12 @@ func main() {
 		}
 	}()
 
-	var metricsCancelFunc context.CancelFunc
 	var logsWatcher *logsWatcher
-	var logsCancelFunc context.CancelFunc
+	var logsGoroutine *util.ToggleableGoroutine
+	metricsGoroutine := util.NewToggleableGoroutine(watchMetrics)
+
 	tick := time.Tick(agentenv.Interval)
+
 	for ctx.Err() == nil {
 		select {
 		case <-tick:
@@ -129,24 +131,14 @@ func main() {
 			continue
 		}
 
-		if res.MetricsEnabled && metricsCancelFunc == nil {
-			var metricsCtx context.Context
-			metricsCtx, metricsCancelFunc = context.WithCancel(ctx)
-			go watchMetrics(metricsCtx)
-		} else if !res.MetricsEnabled && metricsCancelFunc != nil {
-			metricsCancelFunc()
-			metricsCancelFunc = nil
+		if logsWatcher == nil {
+			logsWatcher = NewLogsWatcher(res.Namespace, 30*time.Second)
+			logsGoroutine = util.NewToggleableGoroutine(logsWatcher.Watch)
 		}
-
-		if logsWatcher == nil || logsWatcher.namespace != res.Namespace {
-			if logsCancelFunc != nil {
-				logsCancelFunc()
-			}
-			ctx, cancel := context.WithCancel(ctx)
-			logsWatcher = NewLogsWatcher(res.Namespace)
-			logsCancelFunc = cancel
-			go logsWatcher.Watch(ctx, 30*time.Second)
-		}
+		logsWatcher.SetNamespace(res.Namespace)
+		logsWatcher.SetLogsAfter(res.DeploymentLogsAfter)
+		logsGoroutine.GoOrCancel(ctx, res.DeploymentLogsEnabled)
+		metricsGoroutine.GoOrCancel(ctx, res.MetricsEnabled)
 
 		existingDeployments, err := GetExistingDeployments(ctx, res.Namespace)
 		if err != nil {
@@ -320,20 +312,8 @@ func runInstallOrUpgrade(
 			pushRunningStatus(ctx, deployment, successMessage)
 		}
 	} else {
-		if err := UpdateAgentDeployment(ctx, namespace, deployment); err != nil {
-			logger.Warn("failed to update agent deployment", zap.Error(err))
-		}
-
 		logger.Info("no action required. running status check")
-		if currentDeployment.LogsEnabled != deployment.LogsEnabled ||
-			currentDeployment.LogsAfter != deployment.LogsAfter {
-			currentDeployment.LogsEnabled = deployment.LogsEnabled
-			currentDeployment.LogsAfter = deployment.LogsAfter
-			if err := SaveDeployment(ctx, namespace, *currentDeployment); err != nil {
-				logger.Error("could not save latest deployment", zap.Error(err))
-				pushErrorStatus(ctx, deployment, fmt.Errorf("could not save latest deployment: %w", err))
-			}
-		} else if resources, err := GetHelmManifest(ctx, namespace, deployment.ReleaseName); err != nil {
+		if resources, err := GetHelmManifest(ctx, namespace, deployment.ReleaseName); err != nil {
 			logger.Warn("could not get helm manifest", zap.Error(err))
 			pushErrorStatus(ctx, deployment, fmt.Errorf("could not get helm manifest: %w", err))
 		} else {

@@ -4,10 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	applyconfigurationscorev1 "k8s.io/client-go/applyconfigurations/core/v1"
@@ -25,13 +23,11 @@ const (
 )
 
 type AgentDeployment struct {
-	ID           uuid.UUID  `json:"id"`
-	RevisionID   uuid.UUID  `json:"revisionId"`
-	ReleaseName  string     `json:"releaseName"`
-	HelmRevision *int       `json:"helmRevision,omitempty"`
-	LogsEnabled  bool       `json:"logsEnabled"`
-	LogsAfter    *time.Time `json:"deploymentLogsAfter,omitempty"`
-	State        State      `json:"phase"`
+	ID           uuid.UUID `json:"id"`
+	RevisionID   uuid.UUID `json:"revisionId"`
+	ReleaseName  string    `json:"releaseName"`
+	HelmRevision *int      `json:"helmRevision,omitempty"`
+	State        State     `json:"phase"`
 }
 
 func (d AgentDeployment) GetDeploymentID() uuid.UUID {
@@ -51,34 +47,11 @@ func NewAgentDeployment(deployment api.AgentDeployment) AgentDeployment {
 		ReleaseName: deployment.ReleaseName,
 		ID:          deployment.ID,
 		RevisionID:  deployment.RevisionID,
-		LogsEnabled: deployment.LogsEnabled,
-		LogsAfter:   deployment.LogsAfter,
 	}
 }
 
 func PullSecretName(releaseName string) string {
 	return fmt.Sprintf("sh.distr.agent.v1.%v.pull", releaseName)
-}
-
-func UpdateAgentDeployment(ctx context.Context, namespace string, deployment api.AgentDeployment) error {
-	deployments, err := GetExistingDeployments(ctx, namespace)
-	if err != nil {
-		return err
-	}
-
-	d, ok := deployments[deployment.ID]
-	if !ok {
-		return nil
-	}
-
-	if d.LogsEnabled != deployment.LogsEnabled ||
-		!util.PtrEq(d.LogsAfter, deployment.LogsAfter) {
-		d.LogsEnabled = deployment.LogsEnabled
-		d.LogsAfter = deployment.LogsAfter
-		return SaveDeployment(ctx, namespace, d)
-	}
-
-	return nil
 }
 
 func GetExistingDeployments(ctx context.Context, namespace string) (map[uuid.UUID]AgentDeployment, error) {

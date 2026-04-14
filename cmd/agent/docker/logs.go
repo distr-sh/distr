@@ -19,24 +19,33 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type logsWatcher struct{}
-
-func NewLogsWatcher() *logsWatcher {
-	return &logsWatcher{}
+type logsWatcher struct {
+	interval  time.Duration
+	logsAfter *time.Time
 }
 
-func (lw *logsWatcher) Watch(ctx context.Context, d time.Duration) {
+func NewLogsWatcher(interval time.Duration) *logsWatcher {
+	return &logsWatcher{interval: interval}
+}
+
+func (lw *logsWatcher) Watch(ctx context.Context) {
 	logger.Debug("logs watcher is starting to watch",
-		zap.Duration("interval", d))
-	tick := time.Tick(d)
+		zap.Duration("interval", lw.interval))
+	tick := time.Tick(lw.interval)
 	for {
+		lw.collect(ctx)
 		select {
 		case <-ctx.Done():
+			logger.Debug("log watcher stopped", zap.Error(ctx.Err()))
 			return
 		case <-tick:
-			lw.collect(ctx)
+			continue
 		}
 	}
+}
+
+func (lw *logsWatcher) SetLogsAfter(v *time.Time) {
+	lw.logsAfter = v
 }
 
 func (lw *logsWatcher) collect(ctx context.Context) {
@@ -51,10 +60,6 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 	collector := deploymentlogs.NewCollector(client, logger)
 
 	for _, d := range deployments {
-		if !d.LogsEnabled {
-			continue
-		}
-
 		deploymentCollector := collector.For(d)
 		now := time.Now()
 		var toplevelErr error
@@ -64,8 +69,8 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 			logger.Warn("could not get last logs timestamp", zap.Error(err))
 		}
 
-		if d.LogsAfter != nil && (since == nil || since.Before(*d.LogsAfter)) {
-			since = d.LogsAfter
+		if lw.logsAfter != nil && (since == nil || since.Before(*lw.logsAfter)) {
+			since = lw.logsAfter
 		}
 
 		switch d.DockerType {

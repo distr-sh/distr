@@ -18,25 +18,39 @@ import (
 	"k8s.io/kubectl/pkg/polymorphichelpers"
 )
 
-type logsWatcher struct{ namespace string }
-
-func NewLogsWatcher(namespace string) *logsWatcher {
-	return &logsWatcher{namespace: namespace}
+type logsWatcher struct {
+	interval  time.Duration
+	logsAfter *time.Time
+	namespace string
 }
 
-func (lw *logsWatcher) Watch(ctx context.Context, d time.Duration) {
+func NewLogsWatcher(namespace string, interval time.Duration) *logsWatcher {
+	return &logsWatcher{namespace: namespace, interval: interval}
+}
+
+func (lw *logsWatcher) Watch(ctx context.Context) {
 	logger.Debug("logs watcher is starting to watch",
 		zap.String("namespace", lw.namespace),
-		zap.Duration("interval", d))
-	tick := time.Tick(d)
+		zap.Duration("interval", lw.interval))
+	tick := time.Tick(lw.interval)
 	for {
+		lw.collect(ctx)
 		select {
 		case <-ctx.Done():
+			logger.Debug("log watcher stopped", zap.Error(ctx.Err()))
 			return
 		case <-tick:
-			lw.collect(ctx)
+			continue
 		}
 	}
+}
+
+func (lw *logsWatcher) SetLogsAfter(v *time.Time) {
+	lw.logsAfter = v
+}
+
+func (lw *logsWatcher) SetNamespace(ns string) {
+	lw.namespace = ns
 }
 
 func (lw *logsWatcher) collect(ctx context.Context) {
@@ -57,13 +71,9 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 		}
 
 		logger := logger.With(zap.Any("deploymentId", d.ID))
-		if !d.LogsEnabled {
-			logger.Debug("skip deployment with logs disabled")
-			continue
-		}
 
-		if d.LogsAfter != nil && (lastTimestamp == nil || lastTimestamp.Before(*d.LogsAfter)) {
-			lastTimestamp = d.LogsAfter
+		if lw.logsAfter != nil && (lastTimestamp == nil || lastTimestamp.Before(*lw.logsAfter)) {
+			lastTimestamp = lw.logsAfter
 		}
 
 		var resources []runtime.Object

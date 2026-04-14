@@ -80,8 +80,6 @@ func main() {
 		zap.String("commit", buildconfig.Commit()),
 		zap.Bool("release", buildconfig.IsRelease()))
 
-	go NewLogsWatcher().Watch(ctx, 30*time.Second)
-
 	go func() {
 		if err := startHealthServer(); err != nil {
 			logger.Warn("health server error", zap.Error(err))
@@ -95,6 +93,9 @@ func main() {
 
 func mainLoop(ctx context.Context) {
 	tick := time.Tick(agentenv.Interval)
+
+	logWatcher := NewLogsWatcher(30 * time.Second)
+	logsGoroutine := util.NewToggleableGoroutine(logWatcher.Watch)
 
 loop:
 	for ctx.Err() == nil {
@@ -112,6 +113,10 @@ loop:
 			if selfUpdateIfRequired(ctx, *resource) {
 				continue
 			}
+
+			logWatcher.SetLogsAfter(resource.DeploymentLogsAfter)
+			s := logsGoroutine.GoOrCancel(ctx, resource.DeploymentLogsEnabled)
+			logger.Debug("log watcher status", zap.String("status", s), zap.Bool("enabled", resource.DeploymentLogsEnabled))
 
 			if resource.MetricsEnabled {
 				startMetrics(ctx)
@@ -180,10 +185,6 @@ loop:
 							}
 						}()
 					} else {
-						if err := UpdateAgentDeployment(deployment); err != nil {
-							logger.Warn("failed to update agent deploymnet", zap.Error(err))
-						}
-
 						if statusType1, statusMessage, err1 := CheckStatus(ctx, *agentDeployment); err1 != nil {
 							err = errors.Join(err, err1)
 						} else {

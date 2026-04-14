@@ -8,10 +8,12 @@ import (
 )
 
 type AgentResource struct {
-	Version        types.AgentVersion `json:"version"`
-	Namespace      string             `json:"namespace,omitempty"`
-	MetricsEnabled bool               `json:"metricsEnabled"`
-	Deployments    []AgentDeployment  `json:"deployments,omitempty"`
+	Version               types.AgentVersion `json:"version"`
+	Namespace             string             `json:"namespace,omitempty"`
+	MetricsEnabled        bool               `json:"metricsEnabled"`
+	DeploymentLogsEnabled bool               `json:"deploymentLogsEnabled"`
+	DeploymentLogsAfter   *time.Time         `json:"deploymentLogsAfter,omitempty"`
+	Deployments           []AgentDeployment  `json:"deployments,omitempty"`
 }
 
 type AgentRegistryAuth struct {
@@ -23,9 +25,11 @@ type AgentDeployment struct {
 	ID           uuid.UUID                    `json:"id"`
 	RevisionID   uuid.UUID                    `json:"revisionId"`
 	RegistryAuth map[string]AgentRegistryAuth `json:"registryAuth"`
-	LogsEnabled  bool                         `json:"logsEnabled"`
-	LogsAfter    *time.Time                   `json:"logsAfter,omitempty"`
-	ForceRestart bool                         `json:"forceRestart"`
+
+	// Deprecated: Use DeploymentLogsEnabled in [AgentResource]
+	LogsEnabled bool `json:"logsEnabled"`
+
+	ForceRestart bool `json:"forceRestart"`
 
 	// Docker specific data
 

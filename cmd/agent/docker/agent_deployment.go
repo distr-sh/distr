@@ -7,11 +7,9 @@ import (
 	"os"
 	"path"
 	"sync"
-	"time"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 )
 
@@ -29,8 +27,6 @@ type AgentDeployment struct {
 	RevisionID  uuid.UUID        `json:"revisionId"`
 	ProjectName string           `json:"projectName"`
 	DockerType  types.DockerType `json:"docker_type,omitempty"`
-	LogsEnabled bool             `json:"logsEnabled"`
-	LogsAfter   *time.Time       `json:"deploymentLogsAfter,omitempty"`
 	State       State            `json:"phase"`
 }
 
@@ -59,8 +55,6 @@ func NewAgentDeployment(deployment api.AgentDeployment) (*AgentDeployment, error
 			RevisionID:  deployment.RevisionID,
 			ProjectName: name,
 			DockerType:  *deployment.DockerType,
-			LogsEnabled: deployment.LogsEnabled,
-			LogsAfter:   deployment.LogsAfter,
 		}, nil
 	}
 }
@@ -73,27 +67,6 @@ func getProjectName(data []byte) (string, error) {
 	} else {
 		return name, nil
 	}
-}
-
-func UpdateAgentDeployment(deployment api.AgentDeployment) error {
-	deployments, err := GetExistingDeployments()
-	if err != nil {
-		return err
-	}
-
-	d, ok := deployments[deployment.ID]
-	if !ok {
-		return nil
-	}
-
-	if d.LogsEnabled != deployment.LogsEnabled ||
-		!util.PtrEq(d.LogsAfter, deployment.LogsAfter) {
-		d.LogsEnabled = deployment.LogsEnabled
-		d.LogsAfter = deployment.LogsAfter
-		return SaveDeployment(d)
-	}
-
-	return nil
 }
 
 var agentDeploymentMutex = sync.RWMutex{}
