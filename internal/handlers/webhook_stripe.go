@@ -190,7 +190,7 @@ func handleStripeSubscription(ctx context.Context, sub stripe.Subscription) erro
 		}
 
 		if org.SubscriptionType == types.SubscriptionTypeStarter {
-			if err := subscription.ReconcileStarterFeaturesForOrganizationID(ctx, orgID); err != nil {
+			if err := subscription.ReconcileStarterFeaturesForOrganizationID(ctx, log, orgID); err != nil {
 				return err
 			}
 		}

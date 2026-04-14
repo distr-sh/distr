@@ -70,7 +70,7 @@ func runServe(ctx context.Context, opts ServeOptions) {
 
 	dbCtx := internalctx.WithDb(ctx, registry.GetDbPool())
 	util.Must(db.CreateAgentVersion(dbCtx))
-	util.Must(subscription.ReconcileStarterFeatures(dbCtx))
+	util.Must(subscription.ReconcileEditionFeatures(dbCtx, registry.GetLogger()))
 
 	if env.MetricsEnabled() {
 		util.Must(registry.GetPrometheusCollector().Initialize(dbCtx, db.QueryableInitDataSource{}))

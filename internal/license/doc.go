@@ -10,6 +10,7 @@ A compatible Distr license key can be generated using the following JSON as a te
 	{
 		"ld": {
 			"enf": true,
+			"p": "monthly",
 			"mo": 123,
 			"mou": 123,
 			"moc": 123,
