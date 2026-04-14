@@ -159,6 +159,7 @@ func TestParseAndValidate_PartialClaims_DefaultsForUnspecifiedFields(t *testing.
 	g.Expect(err).ToNot(HaveOccurred())
 	g.Expect(got.LicenseData).To(Equal(LicenseData{
 		EnforceLimitsOnStartup:                      false,
+		Period:                                      defaultLicenseData.Period,
 		MaxOrganizations:                            limit.New(5),
 		MaxUsersPerOrganization:                     defaultLicenseData.MaxUsersPerOrganization,
 		MaxCustomersPerOrganization:                 defaultLicenseData.MaxCustomersPerOrganization,
@@ -188,6 +189,7 @@ func TestParseAndValidate_ZeroLimits(t *testing.T) {
 	g.Expect(err).ToNot(HaveOccurred())
 	g.Expect(got.LicenseData).To(Equal(LicenseData{
 		EnforceLimitsOnStartup:                      false,
+		Period:                                      types.SubscriptionPeriodYearly,
 		MaxOrganizations:                            limit.New(0),
 		MaxUsersPerOrganization:                     limit.New(0),
 		MaxCustomersPerOrganization:                 limit.New(0),
