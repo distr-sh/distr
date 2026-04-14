@@ -1,16 +1,18 @@
 import {HttpClient} from '@angular/common/http';
-import {Injectable} from '@angular/core';
+import {Injectable, inject} from '@angular/core';
 import {Observable, Subject, switchMap, tap} from 'rxjs';
 import {LicenseTemplate} from '../types/license-template';
 import {DefaultReactiveList, ReactiveList} from './cache';
 
 @Injectable({providedIn: 'root'})
 export class LicenseTemplatesService {
+  private readonly http = inject(HttpClient);
+
   private readonly cache: ReactiveList<LicenseTemplate>;
   private readonly templatesUrl = '/api/v1/license-templates';
   private readonly refresh$ = new Subject<void>();
 
-  constructor(private readonly http: HttpClient) {
+  constructor() {
     this.cache = new DefaultReactiveList(this.http.get<LicenseTemplate[]>(this.templatesUrl));
     this.refresh$
       .pipe(

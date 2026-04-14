@@ -1,5 +1,5 @@
 import {HttpClient} from '@angular/common/http';
-import {Injectable} from '@angular/core';
+import {Injectable, inject} from '@angular/core';
 import {Observable, Subject, switchMap, tap} from 'rxjs';
 import {ApplicationEntitlement} from '../types/application-entitlement';
 import {DefaultReactiveList, ReactiveList} from './cache';
@@ -9,11 +9,13 @@ import {CrudService} from './interfaces';
   providedIn: 'root',
 })
 export class ApplicationEntitlementsService implements CrudService<ApplicationEntitlement> {
+  private readonly httpClient = inject(HttpClient);
+
   private readonly entitlementsUrl = '/api/v1/application-entitlements';
   private readonly cache: ReactiveList<ApplicationEntitlement>;
   private readonly refresh$ = new Subject<void>();
 
-  constructor(private readonly httpClient: HttpClient) {
+  constructor() {
     this.cache = new DefaultReactiveList(this.httpClient.get<ApplicationEntitlement[]>(this.entitlementsUrl));
     this.refresh$
       .pipe(

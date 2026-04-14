@@ -1,5 +1,5 @@
 import {HttpClient} from '@angular/common/http';
-import {Injectable} from '@angular/core';
+import {Injectable, inject} from '@angular/core';
 import {OrganizationBranding} from '@distr-sh/distr-sdk';
 import {Observable, of, tap} from 'rxjs';
 
@@ -7,10 +7,10 @@ import {Observable, of, tap} from 'rxjs';
   providedIn: 'root',
 })
 export class OrganizationBrandingService {
+  private readonly httpClient = inject(HttpClient);
+
   private readonly organizationBrandingUrl = '/api/v1/organization/branding';
   private cache?: OrganizationBranding;
-
-  constructor(private readonly httpClient: HttpClient) {}
 
   get(): Observable<OrganizationBranding> {
     if (this.cache) {

@@ -1,5 +1,5 @@
 import {HttpClient} from '@angular/common/http';
-import {Injectable} from '@angular/core';
+import {Injectable, inject} from '@angular/core';
 import {Observable, Subject, switchMap, tap} from 'rxjs';
 import {LicenseKey, LicenseKeyRevision} from '../types/license-key';
 import {DefaultReactiveList, ReactiveList} from './cache';
@@ -7,11 +7,13 @@ import {CrudService} from './interfaces';
 
 @Injectable({providedIn: 'root'})
 export class LicenseKeysService implements CrudService<LicenseKey> {
+  private readonly http = inject(HttpClient);
+
   private readonly cache: ReactiveList<LicenseKey>;
   private readonly licenseKeysUrl = '/api/v1/license-keys';
   private readonly refresh$ = new Subject<void>();
 
-  constructor(private readonly http: HttpClient) {
+  constructor() {
     this.cache = new DefaultReactiveList(this.http.get<LicenseKey[]>(this.licenseKeysUrl));
     this.refresh$
       .pipe(
