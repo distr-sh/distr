@@ -1,5 +1,5 @@
 <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
-  @if (fullVersion) {
+  @if (fullVersion()) {
     <div
       class="flex flex-col md:flex-row items-stretch md:items-center md:space-x-3 space-y-3 md:space-y-0 justify-between mx-4 py-4 dark:border-gray-700">
       <div class="w-full md:w-1/2">
@@ -41,7 +41,7 @@
           <th scope="col" class="p-4">Application</th>
           <th scope="col" class="p-4">Type</th>
           <th scope="col" class="p-4">Versions</th>
-          @if (fullVersion) {
+          @if (fullVersion()) {
             <th scope="col" class="p-4">Creation Date</th>
             <th scope="col" class="p-4"></th>
           }
@@ -83,7 +83,7 @@
                 {{ application.versions?.length || 0 }}
               </div>
             </td>
-            @if (fullVersion) {
+            @if (fullVersion()) {
               <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                 <div class="flex items-center">
                   {{ application.createdAt | date: 'short' }}
