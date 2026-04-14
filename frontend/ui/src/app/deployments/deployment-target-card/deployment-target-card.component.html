@@ -560,18 +560,21 @@
               Log collection requires Agent version 1.9.0 or later
             </p>
           }
-          @if (editForm.controls.deploymentLogsEnabled.value) {
+
+          @if (editForm.controls.deploymentLogsEnabled.value && isDeploymentLogsAfterEnabled()) {
             <div class="ml-6 mt-2">
               <label
                 for="deployment-logs-after"
                 class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">
                 Collect logs after
               </label>
+
               <input
                 type="datetime-local"
                 id="deployment-logs-after"
                 formControlName="deploymentLogsAfter"
                 class="bg-gray-50 border leading-none border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+
               <div class="flex gap-1 mt-1">
                 <button
                   type="button"
@@ -579,19 +582,28 @@
                   class="px-1.5 py-0.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600">
                   now
                 </button>
+
                 <button
                   type="button"
                   (click)="setDeploymentLogsAfterNowMinus1h()"
                   class="px-1.5 py-0.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600">
                   now-1h
                 </button>
-                <button
-                  type="button"
-                  (click)="clearDeploymentLogsAfter()"
-                  class="px-1.5 py-0.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600">
-                  clear
-                </button>
+
+                @if (editForm.controls.deploymentLogsAfter.value) {
+                  <button
+                    type="button"
+                    (click)="clearDeploymentLogsAfter()"
+                    class="px-1.5 py-0.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600">
+                    clear
+                  </button>
+                }
               </div>
+
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                Only collect application logs with a timestamp greater than specified. Use this if an agent appears
+                stuck collecting very old logs.
+              </p>
             </div>
           }
         </div>

@@ -1,3 +1,5 @@
+ALTER TYPE FEATURE ADD VALUE IF NOT EXISTS 'deployment_logs_after';
+
 ALTER TABLE DeploymentTarget
   ADD COLUMN deployment_logs_enabled BOOLEAN NOT NULL DEFAULT false,
   ADD COLUMN deployment_logs_after TIMESTAMP;

@@ -99,6 +99,7 @@ export class DeploymentTargetCardComponent {
   private readonly applicationEntitlementsService = inject(ApplicationEntitlementsService);
   private readonly applicationsService = inject(ApplicationsService);
   private readonly featureFlags = inject(FeatureFlagService);
+  protected readonly isDeploymentLogsAfterEnabled = this.featureFlags.isDeploymentLogsAfterEnabled;
 
   protected readonly customerManagedWarning = `
     You are about to make changes to a customer-managed deployment.
