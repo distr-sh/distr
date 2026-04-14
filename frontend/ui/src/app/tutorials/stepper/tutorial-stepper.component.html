@@ -9,7 +9,7 @@
           [class.text-blue-700]="isCurrentStep(i)"
           [class.dark:text-blue-600]="isCurrentStep(i)"
           class="flex items-center gap-2 md:flex-1 md:flex-col md:gap-1.5 lg:flex-none text-gray-500 dark:text-gray-400">
-          <fa-icon [icon]="step.completed ? faCircleCheck : faCircle"></fa-icon>
+          <fa-icon [icon]="step.completed ? faCircleCheck : faCircle" />
           <p class="text-sm font-medium leading-tight">{{ step.label }}</p>
         </li>
 
@@ -19,6 +19,6 @@
       }
     </ol>
 
-    <ng-container *ngTemplateOutlet="selected ? selected.content : null"></ng-container>
+    <ng-container *ngTemplateOutlet="selected ? selected.content : null" />
   </div>
 </div>

@@ -4,7 +4,7 @@
       <div
         class="flex p-4 mb-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400"
         role="alert">
-        <fa-icon [icon]="faLightbulb" class="me-4"></fa-icon>
+        <fa-icon [icon]="faLightbulb" class="me-4" />
         <div>
           <div class="font-medium">
             <p><b>Congratulations!</b> You have successfully completed all the tutorials.</p>
@@ -18,7 +18,7 @@
       <div
         class="flex p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400"
         role="alert">
-        <fa-icon [icon]="faCircleCheck" class="me-4"></fa-icon>
+        <fa-icon [icon]="faCircleCheck" class="me-4" />
         <div>
           <div class="font-bold">Welcome to Distr!</div>
           <div class="font-medium mt-2">
@@ -41,7 +41,7 @@
       <div
         class="flex p-4 mb-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400"
         role="alert">
-        <fa-icon [icon]="faLightbulb" class="me-4"></fa-icon>
+        <fa-icon [icon]="faLightbulb" class="me-4" />
         <div>
           <div class="font-medium">
             After completing all 3 tutorials you are eligible for a Distr swag pack, including Socks, T-Shirt, stickers
@@ -58,7 +58,7 @@
             <li class="py-3 px-6 sm:py-4">
               <div class="flex items-center">
                 <div class="shrink-0 text-gray-900 dark:text-white">
-                  <fa-icon class="text-xl inline-block h-5 w-5" [icon]="tutorial.icon"></fa-icon>
+                  <fa-icon class="text-xl inline-block h-5 w-5" [icon]="tutorial.icon" />
                 </div>
                 <div class="flex-1 min-w-0 ms-4">
                   <a
@@ -74,7 +74,7 @@
                   } @else if (tutorial?.progress?.completedAt) {
                     <span
                       class="ml-4 bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-md dark:bg-gray-700 dark:text-green-400 border border-green-400">
-                      <fa-icon [icon]="faCheck"></fa-icon>
+                      <fa-icon [icon]="faCheck" />
                       Completed
                     </span>
                   }
@@ -94,7 +94,7 @@
                     } @else {
                       Start Tutorial
                     }
-                    <fa-icon class="ml-2" [icon]="faArrowRight"></fa-icon>
+                    <fa-icon class="ml-2" [icon]="faArrowRight" />
                   </a>
                 </div>
               </div>

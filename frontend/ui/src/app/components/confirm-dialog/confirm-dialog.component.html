@@ -13,7 +13,7 @@
           type="button"
           class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
           (click)="dialogRef.dismiss()">
-          <fa-icon [icon]="faXmark"></fa-icon>
+          <fa-icon [icon]="faXmark" />
           <span class="sr-only">Close modal</span>
         </button>
       </div>
@@ -36,7 +36,7 @@
         }
 
         @if (data.customTemplate) {
-          <ng-container *ngTemplateOutlet="data.customTemplate"></ng-container>
+          <ng-container *ngTemplateOutlet="data.customTemplate" />
         } @else {
           <p class="text-base leading-relaxed text-gray-500 dark:text-gray-200">
             {{ data.message?.message }}

@@ -143,9 +143,7 @@
                                     class="flex gap-3 mt-1 text-xs font-normal text-gray-500 truncate dark:text-gray-400">
                                     <li>{{ tag!.createdAt | relativeDate }}</li>
                                     <li>
-                                      <app-artifacts-hash
-                                        [hash]="tag!.digest"
-                                        [expandable]="false"></app-artifacts-hash>
+                                      <app-artifacts-hash [hash]="tag!.digest" [expandable]="false" />
                                     </li>
                                   </ul>
                                 </div>

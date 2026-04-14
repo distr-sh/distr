@@ -8,7 +8,7 @@
       type="button"
       (click)="close()"
       class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
-      <fa-icon [icon]="faXmark"></fa-icon>
+      <fa-icon [icon]="faXmark" />
       <span class="sr-only">Close modal</span>
     </button>
   </div>
@@ -70,7 +70,7 @@
                         <!-- Selection Indicator -->
                         @if (isSelected) {
                           <div class="absolute top-2 left-2 text-primary-600 dark:text-primary-400">
-                            <fa-icon [icon]="faCheckCircle" class="w-6 h-6"></fa-icon>
+                            <fa-icon [icon]="faCheckCircle" class="w-6 h-6" />
                           </div>
                         }
                       </button>
@@ -102,7 +102,7 @@
                         } @else {
                           <div
                             class="w-12 h-12 mb-2 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                            <fa-icon [icon]="faBuildingUser" class="text-xl text-gray-400 dark:text-gray-500"></fa-icon>
+                            <fa-icon [icon]="faBuildingUser" class="text-xl text-gray-400 dark:text-gray-500" />
                           </div>
                         }
 
@@ -120,7 +120,7 @@
                         <!-- Selection Indicator -->
                         @if (customerForm.value.customerOrganizationId === customer.id) {
                           <div class="absolute top-2 left-2 text-primary-600 dark:text-primary-400">
-                            <fa-icon [icon]="faCheckCircle" class="w-6 h-6"></fa-icon>
+                            <fa-icon [icon]="faCheckCircle" class="w-6 h-6" />
                           </div>
                         }
                       </button>
@@ -160,7 +160,7 @@
                       } @else {
                         <div
                           class="w-12 h-12 mb-2 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                          <fa-icon [icon]="faShip" class="text-xl text-gray-400 dark:text-gray-500"></fa-icon>
+                          <fa-icon [icon]="faShip" class="text-xl text-gray-400 dark:text-gray-500" />
                         </div>
                       }
 
@@ -173,10 +173,10 @@
                       <div
                         class="px-2 py-1 rounded-md text-xs font-medium mb-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
                         @if (app.type === 'docker') {
-                          <fa-icon [icon]="faDocker" class="mr-1"></fa-icon>
+                          <fa-icon [icon]="faDocker" class="mr-1" />
                           Docker
                         } @else {
-                          <fa-icon [icon]="faDharmachakra" class="mr-1"></fa-icon>
+                          <fa-icon [icon]="faDharmachakra" class="mr-1" />
                           Kubernetes
                         }
                       </div>
@@ -189,7 +189,7 @@
                       <!-- Selection Indicator -->
                       @if (applicationForm.value.applicationId === app.id) {
                         <div class="absolute top-2 left-2 text-primary-600 dark:text-primary-400">
-                          <fa-icon [icon]="faCheckCircle" class="w-6 h-6"></fa-icon>
+                          <fa-icon [icon]="faCheckCircle" class="w-6 h-6" />
                         </div>
                       }
                     </button>
@@ -436,8 +436,7 @@
                     [deploymentType]="selectedDeploymentType()"
                     [customerOrganizationId]="selectedCustomerOrganizationId()"
                     [deploymentTargetName]="deploymentTargetForm.value.name ?? ''"
-                    [formControl]="applicationConfigForm.controls.deploymentFormData">
-                  </app-deployment-form>
+                    [formControl]="applicationConfigForm.controls.deploymentFormData" />
                 }
               </div>
             </div>
@@ -448,7 +447,7 @@
             <div class="space-y-6 mt-12">
               <div class="space-y-6">
                 <div class="flex flex-col items-center text-center space-y-4">
-                  <fa-icon [icon]="faCheckCircle" class="text-green-600 dark:text-green-500 text-6xl mt-4"></fa-icon>
+                  <fa-icon [icon]="faCheckCircle" class="text-green-600 dark:text-green-500 text-6xl mt-4" />
                   <h3 class="text-2xl font-semibold text-gray-900 dark:text-white">Deployment Created Successfully</h3>
                   <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400 max-w-2xl">
                     Your deployment has been created successfully. To deploy it, please copy and paste the following
@@ -456,7 +455,7 @@
                   </p>
                 </div>
                 @if (selectedDeploymentTarget(); as dt) {
-                  <app-connect-instructions [deploymentTarget]="dt"></app-connect-instructions>
+                  <app-connect-instructions [deploymentTarget]="dt" />
                 }
               </div>
             </div>

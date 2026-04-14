@@ -12,7 +12,7 @@ import {UsersService} from '../services/users.service';
   selector: 'app-artifacts-download-count',
   template: `
     <div class="inline-flex items-center text-sm text-gray-500 truncate dark:text-gray-400">
-      <fa-icon class="me-1" [icon]="faDownload"></fa-icon>
+      <fa-icon class="me-1" [icon]="faDownload" />
       {{ source().downloadsTotal }}
     </div>
   `,
@@ -36,11 +36,7 @@ export class ArtifactsDownloadCountComponent {
             [attr.src]="imageUrl | secureImage | async"
             [title]="user.name ?? user.email" />
         } @else {
-          <fa-icon
-            [icon]="faUserCircle"
-            size="xl"
-            class="text-xl text-gray-400"
-            [title]="user.name ?? user.email"></fa-icon>
+          <fa-icon [icon]="faUserCircle" size="xl" class="text-xl text-gray-400" [title]="user.name ?? user.email" />
         }
       }
       @let shownCustomers = downloadedByCustomerOrganizations();
@@ -51,7 +47,7 @@ export class ArtifactsDownloadCountComponent {
             [attr.src]="imageUrl | secureImage | async"
             [title]="customer.name" />
         } @else {
-          <fa-icon [icon]="faUserCircle" size="xl" class="text-xl text-gray-400" [title]="customer.name"></fa-icon>
+          <fa-icon [icon]="faUserCircle" size="xl" class="text-xl text-gray-400" [title]="customer.name" />
         }
       }
       @if (count(); as count) {
@@ -109,7 +105,7 @@ export class ArtifactsDownloadedByComponent {
         type="button"
         class="inline-flex items-center justify-center h-3.5 ms-1 px-1 rounded-xs bg-gray-200 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600"
         (click)="showFull.set(!showFull())">
-        <fa-icon [icon]="faEllipsis"></fa-icon>
+        <fa-icon [icon]="faEllipsis" />
       </button>
     }
   `,

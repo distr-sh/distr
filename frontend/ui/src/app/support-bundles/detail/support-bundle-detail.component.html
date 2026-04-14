@@ -8,7 +8,7 @@
             <a
               [routerLink]="backRoute"
               class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mr-3">
-              <fa-icon [icon]="faArrowLeft"></fa-icon>
+              <fa-icon [icon]="faArrowLeft" />
             </a>
             <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
               {{ bundle.title || 'Support Bundle ' + shortId(bundle.id) }}
@@ -26,7 +26,7 @@
                 (click)="cancelBundle()"
                 [disabled]="updatingStatus()"
                 class="inline-flex items-center py-2 px-4 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg dark:text-gray-300 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700">
-                <fa-icon [icon]="faXmark" class="mr-2"></fa-icon>
+                <fa-icon [icon]="faXmark" class="mr-2" />
                 Cancel
               </button>
             }
@@ -36,7 +36,7 @@
                 (click)="markAsResolved()"
                 [disabled]="updatingStatus()"
                 class="inline-flex items-center py-2 px-4 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg dark:text-gray-300 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700">
-                <fa-icon [icon]="faCheck" class="mr-2"></fa-icon>
+                <fa-icon [icon]="faCheck" class="mr-2" />
                 Mark as Resolved
               </button>
             }
@@ -97,8 +97,7 @@
                   <span>{{ resource.name }}</span>
                   <fa-icon
                     [icon]="isResourceExpanded(resource.id) ? faChevronDown : faChevronRight"
-                    class="text-gray-500 dark:text-gray-400">
-                  </fa-icon>
+                    class="text-gray-500 dark:text-gray-400" />
                 </button>
                 @if (isResourceExpanded(resource.id)) {
                   <div class="border-t border-gray-200 dark:border-gray-700 p-4">
@@ -117,7 +116,7 @@
       <!-- Comments card -->
       <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden p-6">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          <fa-icon [icon]="faComment" class="mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
+          <fa-icon [icon]="faComment" class="mr-2 text-gray-500 dark:text-gray-400" />
           Comments ({{ bundle.comments.length }})
         </h2>
 
@@ -170,7 +169,7 @@
                 type="submit"
                 [disabled]="submittingComment()"
                 class="inline-flex items-center py-2 px-4 text-sm font-medium text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 rounded-lg dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
-                <fa-icon [icon]="faPaperPlane" class="mr-2"></fa-icon>
+                <fa-icon [icon]="faPaperPlane" class="mr-2" />
                 Submit
               </button>
             </div>

@@ -13,12 +13,12 @@ import {SideBarComponent} from './side-bar/side-bar.component';
   template: `
     <app-nav-bar
       [isSubscriptionBannerVisible]="isSubscriptionBannerVisible()"
-      [isSidebarVisible]="isSidebarVisible()"></app-nav-bar>
+      [isSidebarVisible]="isSidebarVisible()" />
     <app-side-bar
       [isSubscriptionBannerVisible]="isSubscriptionBannerVisible()"
-      [isSidebarVisible]="isSidebarVisible()"></app-side-bar>
+      [isSidebarVisible]="isSidebarVisible()" />
     <div [class.sm:ml-64]="isSidebarVisible()">
-      <router-outlet></router-outlet>
+      <router-outlet />
     </div>
   `,
   imports: [NavBarComponent, SideBarComponent, RouterOutlet],

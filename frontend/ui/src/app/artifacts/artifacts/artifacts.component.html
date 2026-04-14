@@ -4,7 +4,7 @@
       <div
         class="flex p-4 mb-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400"
         role="alert">
-        <fa-icon [icon]="faLightbulb" class="me-4"></fa-icon>
+        <fa-icon [icon]="faLightbulb" class="me-4" />
         <div>
           @if (registrySlug$ | async; as slug) {
             @if (registryHost$ | async; as host) {
@@ -70,7 +70,7 @@
           <label for="simple-search" class="sr-only">Search</label>
           <div class="relative w-full">
             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <fa-icon [icon]="faMagnifyingGlass" class="text-gray-500 dark:text-gray-400"></fa-icon>
+              <fa-icon [icon]="faMagnifyingGlass" class="text-gray-500 dark:text-gray-400" />
             </div>
             <input
               [formControl]="filterForm.controls.search"
@@ -98,11 +98,7 @@
                     alt="" />
                 } @else {
                   <div class="shrink-0 text-gray-900 dark:text-gray-400">
-                    <fa-icon
-                      [routerLink]="artifact.id"
-                      [icon]="faBox"
-                      size="xl"
-                      class="text-xl cursor-pointer"></fa-icon>
+                    <fa-icon [routerLink]="artifact.id" [icon]="faBox" size="xl" class="text-xl cursor-pointer" />
                   </div>
                 }
                 <div class="flex-1 min-w-0 ms-4">
@@ -112,12 +108,12 @@
                     {{ artifact.name }}
                   </a>
                   <p class="text-sm text-gray-500 truncate dark:text-gray-400 mt-1">
-                    <app-uuid [uuid]="artifact.id" [small]="true"></app-uuid>
+                    <app-uuid [uuid]="artifact.id" [small]="true" />
                   </p>
                 </div>
                 <div class="flex flex-col items-end gap-1" *appRequireVendor>
-                  <app-artifacts-download-count [source]="artifact"></app-artifacts-download-count>
-                  <app-artifacts-downloaded-by [source]="artifact"></app-artifacts-downloaded-by>
+                  <app-artifacts-download-count [source]="artifact" />
+                  <app-artifacts-downloaded-by [source]="artifact" />
                 </div>
               </div>
             </li>
@@ -126,7 +122,7 @@
       </div>
     } @else {
       <div class="flex justify-center items-center py-8 text-gray-500 dark:text-gray-400">
-        <fa-icon [icon]="faSpinner" class="animate-spin me-2" size="lg"></fa-icon>
+        <fa-icon [icon]="faSpinner" class="animate-spin me-2" size="lg" />
         <span>Loading&hellip;</span>
       </div>
     }

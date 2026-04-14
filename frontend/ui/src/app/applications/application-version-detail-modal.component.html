@@ -132,15 +132,13 @@
                     id="compose-file"
                     language="yaml"
                     class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    [formControl]="versionDetailsForm.controls.docker.controls.compose">
-                  </app-editor>
+                    [formControl]="versionDetailsForm.controls.docker.controls.compose" />
                 }
                 @if (activeTab() === 'environment') {
                   <app-editor
                     id="env-file"
                     class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    [formControl]="versionDetailsForm.controls.docker.controls.template">
-                  </app-editor>
+                    [formControl]="versionDetailsForm.controls.docker.controls.template" />
                 }
               } @else if (detail.application.type === 'kubernetes') {
                 @if (activeTab() === 'basevalues') {
@@ -148,15 +146,13 @@
                     id="basevalues-file"
                     language="yaml"
                     class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    [formControl]="versionDetailsForm.controls.kubernetes.controls.baseValues">
-                  </app-editor>
+                    [formControl]="versionDetailsForm.controls.kubernetes.controls.baseValues" />
                 }
                 @if (activeTab() === 'customervalues') {
                   <app-editor
                     id="customervalues-file"
                     class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    [formControl]="versionDetailsForm.controls.kubernetes.controls.template">
-                  </app-editor>
+                    [formControl]="versionDetailsForm.controls.kubernetes.controls.template" />
                 }
               }
 

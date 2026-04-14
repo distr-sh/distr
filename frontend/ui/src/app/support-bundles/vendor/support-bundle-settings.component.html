@@ -4,7 +4,7 @@
       <a
         routerLink="/support-bundles"
         class="inline-flex items-center mb-4 text-sm font-medium text-primary-700 hover:text-primary-800 dark:text-primary-500 dark:hover:text-primary-400">
-        <fa-icon [icon]="faArrowLeft" class="mr-2"></fa-icon>
+        <fa-icon [icon]="faArrowLeft" class="mr-2" />
         Back to Support Bundles
       </a>
       <h1
@@ -27,14 +27,14 @@
                   type="button"
                   (click)="openImportModal(importModal)"
                   class="inline-flex items-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                  <fa-icon [icon]="faFileImport" class="mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
+                  <fa-icon [icon]="faFileImport" class="mr-2 text-gray-500 dark:text-gray-400" />
                   Import
                 </button>
                 <button
                   type="button"
                   (click)="addEnvVar()"
                   class="inline-flex items-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                  <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
+                  <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
                   Add Variable
                 </button>
               </div>
@@ -71,7 +71,7 @@
                       type="button"
                       (click)="removeEnvVar($index)"
                       class="py-2 px-3 text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900">
-                      <fa-icon [icon]="faTrash" class="h-4 w-4"></fa-icon>
+                      <fa-icon [icon]="faTrash" class="h-4 w-4" />
                     </button>
                   }
                 </div>
@@ -90,7 +90,7 @@
                 (click)="save()"
                 [disabled]="saving() || duplicateIndices.size > 0 || envVarsArray.pristine"
                 class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60 disabled:cursor-not-allowed">
-                <fa-icon [icon]="faFloppyDisk" class="mr-2"></fa-icon>
+                <fa-icon [icon]="faFloppyDisk" class="mr-2" />
                 Save
               </button>
             </div>
@@ -110,7 +110,7 @@
           type="button"
           (click)="closeImportModal()"
           class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
-          <fa-icon [icon]="faXmark"></fa-icon>
+          <fa-icon [icon]="faXmark" />
           <span class="sr-only">Close modal</span>
         </button>
       </div>
@@ -136,7 +136,7 @@
           type="button"
           (click)="importEnvVars()"
           class="text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
-          <fa-icon [icon]="faFileImport" class="mr-2"></fa-icon>
+          <fa-icon [icon]="faFileImport" class="mr-2" />
           Import
         </button>
       </div>

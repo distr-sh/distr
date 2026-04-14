@@ -2,7 +2,7 @@
   <div
     class="flex flex-col justify-between items-start h-17 px-4 w-full sm:gap-8 sm:items-center sm:flex-row bg-gray-50 dark:bg-gray-900 text-red-700 dark:text-red-400 border-b border-gray-200 dark:border-gray-700">
     <div class="sm:flex items-center">
-      <fa-icon size="lg" [icon]="faExclamationTriangle" class="hidden mr-3 mt-1 w-6 h-6 lg:flex"></fa-icon>
+      <fa-icon size="lg" [icon]="faExclamationTriangle" class="hidden mr-3 mt-1 w-6 h-6 lg:flex" />
       <p class="text-sm">
         Your <span class="font-semibold uppercase">{{ organization().subscriptionType }}</span> subscription has expired
         on <span class="font-semibold">{{ organization().subscriptionEndsAt | date: 'longDate' }}</span
@@ -36,7 +36,7 @@
   <div
     class="flex flex-col justify-between items-start h-17 px-4 w-full bg-gray-50 border border-b border-gray-200 sm:gap-8 sm:items-center sm:flex-row dark:border-gray-700 dark:bg-gray-900">
     <div class="sm:flex items-center">
-      <fa-icon size="lg" [icon]="faCircleInfo" class="hidden mr-3 mt-1 w-6 h-6 lg:flex text-gray-400"></fa-icon>
+      <fa-icon size="lg" [icon]="faCircleInfo" class="hidden mr-3 mt-1 w-6 h-6 lg:flex text-gray-400" />
       <div>
         <p class="text-sm text-gray-500 dark:text-gray-300">
           You are currently on the Distr Pro Unlimited trial. Your trial will expire on

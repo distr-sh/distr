@@ -54,7 +54,7 @@
               ? undefined
               : 'Multiple deployments require agent version 1.6 or newer. Please consider updating.'
           ">
-          <fa-icon [icon]="faPlus" class="h-5 w-5 mr-0.5 -ml-1 text-gray-500 dark:text-gray-400"></fa-icon>
+          <fa-icon [icon]="faPlus" class="h-5 w-5 mr-0.5 -ml-1 text-gray-500 dark:text-gray-400" />
           <span class="whitespace-nowrap">Deploy App</span>
         </button>
         @if (!status) {
@@ -62,7 +62,7 @@
             type="button"
             (click)="openInstructionsModal()"
             class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed">
-            <fa-icon [icon]="faLink" class="h-5 w-5 mr-1.5 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
+            <fa-icon [icon]="faLink" class="h-5 w-5 mr-1.5 -ml-0.5 text-gray-500 dark:text-gray-400" />
             Connect
           </button>
         }
@@ -74,7 +74,7 @@
         cdkOverlayOrigin
         #dropdownTrigger="cdkOverlayOrigin"
         (click)="showDeploymentTargetDropdown.set(true)">
-        <fa-icon [icon]="faEllipsisVertical" class="h-5 w-5 text-gray-500 dark:text-gray-400"></fa-icon>
+        <fa-icon [icon]="faEllipsisVertical" class="h-5 w-5 text-gray-500 dark:text-gray-400" />
         @if (agentUpdateAvailable() || agentUpdatePending()) {
           <span class="rounded-full size-2 bg-blue-400 absolute -bottom-0.5 -right-0.5"></span>
         }
@@ -97,7 +97,7 @@
             @if (deploymentTarget().id; as id) {
               <li>
                 <div class="px-4 py-2">
-                  <app-uuid [uuid]="id" [small]="true"></app-uuid>
+                  <app-uuid [uuid]="id" [small]="true" />
                 </div>
               </li>
             }
@@ -108,7 +108,7 @@
                   (click)="showDeploymentTargetDropdown.set(false); openEditDrawer()"
                   aria-controls="manage-deployment-target-drawer"
                   class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white">
-                  <fa-icon [icon]="faPen" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
+                  <fa-icon [icon]="faPen" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
                   Edit
                 </button>
               </li>
@@ -119,14 +119,14 @@
                     type="button"
                     (click)="showDeploymentTargetDropdown.set(false); updateDeploymentTargetAgent()"
                     class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white">
-                    <fa-icon [icon]="faRotate" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
+                    <fa-icon [icon]="faRotate" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
                     Update Agent
                   </button>
                 </li>
               } @else if (agentUpdatePending()) {
                 <li>
                   <span class="text-start block w-full px-4 py-2 text-sm text-gray-500 dark:text-gray-400 select-none">
-                    <fa-icon [icon]="faRotate" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
+                    <fa-icon [icon]="faRotate" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
                     Update pending&hellip;
                   </span>
                 </li>
@@ -162,7 +162,7 @@
                     type="button"
                     (click)="showDeploymentTargetDropdown.set(false); openInstructionsModal()"
                     class="text-start block w-full px-4 py-2 text-sm">
-                    <fa-icon [icon]="faLink" class="h-5 w-5 mr-2 -ml-0.5"></fa-icon>
+                    <fa-icon [icon]="faLink" class="h-5 w-5 mr-2 -ml-0.5" />
                     Reconnect
                   </button>
                 </li>
@@ -177,7 +177,7 @@
                   [title]="hasDeployments ? 'Undeploy applications first' : ''"
                   (click)="showDeploymentTargetDropdown.set(false); deleteDeploymentTarget()"
                   class="text-start block w-full px-4 py-2 text-sm text-red-700 enabled:hover:text-white enabled:hover:bg-red-800 dark:text-red-500 dark:enabled:hover:text-white dark:enabled:hover:bg-red-600 disabled:opacity-60 disabled:cursor-not-allowed">
-                  <fa-icon [icon]="faTrash" class="inline-block w-4 mr-2"></fa-icon>
+                  <fa-icon [icon]="faTrash" class="inline-block w-4 mr-2" />
                   Delete
                 </button>
                 <ng-template #deleteConfirmModal>
@@ -233,7 +233,7 @@
                         class="px-2 py-1 inline-flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
                         <fa-icon
                           [icon]="faArrowUpRightFromSquare"
-                          class="h-5 w-5 mr-1 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
+                          class="h-5 w-5 mr-1 -ml-0.5 text-gray-500 dark:text-gray-400" />
                         Open
                       </a>
                     }
@@ -267,7 +267,7 @@
                         cdkOverlayOrigin
                         #dropdownTrigger="cdkOverlayOrigin"
                         (click)="showDeploymentDropdownForId.set(deployment.id)">
-                        <fa-icon [icon]="faEllipsisVertical" class="h-5 w-5 text-gray-500 dark:text-gray-400"></fa-icon>
+                        <fa-icon [icon]="faEllipsisVertical" class="h-5 w-5 text-gray-500 dark:text-gray-400" />
                       </button>
 
                       <ng-template
@@ -338,7 +338,7 @@
                                     : 'Agent must have version 1.3.0 or greater. Please update this agent.'
                                 "
                                 [disabled]="!isUndeploySupported()">
-                                <fa-icon [icon]="faTriangleExclamation" class="inline-block w-4 mr-2"></fa-icon>
+                                <fa-icon [icon]="faTriangleExclamation" class="inline-block w-4 mr-2" />
                                 Undeploy
                               </button>
                               <ng-template #undeployConfirmTemplate>
@@ -408,7 +408,7 @@
         type="button"
         (click)="hideModal()"
         class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
-        <fa-icon [icon]="faXmark"></fa-icon>
+        <fa-icon [icon]="faXmark" />
         <span class="sr-only">Close modal</span>
       </button>
     </div>
@@ -418,7 +418,7 @@
         To setup this Deployment, the Distr Agent must be installed on the target server/VM. Simply connect to the
         target (e.g. via SSH) and execute the following:
       </p>
-      <app-connect-instructions [deploymentTarget]="deploymentTarget()"></app-connect-instructions>
+      <app-connect-instructions [deploymentTarget]="deploymentTarget()" />
     </div>
   </div>
 </ng-template>
@@ -429,8 +429,7 @@
     animate.leave="animate-fly-out-top"
     [deploymentTarget]="selectedDeploymentTarget()!"
     [deployment]="selectedDeployment()"
-    (closed)="hideModal()">
-  </app-deployment-modal>
+    (closed)="hideModal()" />
 </ng-template>
 
 <ng-template #deleteDeploymentProgressModal>
@@ -471,7 +470,7 @@
       (click)="hideDrawer()"
       aria-controls="manage-deployment-target-drawer"
       class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 right-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
-      <fa-icon [icon]="faXmark" class="w-5 h-5"></fa-icon>
+      <fa-icon [icon]="faXmark" class="w-5 h-5" />
       <span class="sr-only">Close menu</span>
     </button>
     <form [formGroup]="editForm" (ngSubmit)="saveDeploymentTarget()">
@@ -667,7 +666,7 @@
           type="submit"
           [disabled]="editFormLoading"
           class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
-          <fa-icon [icon]="faPen" class="me-2"></fa-icon>
+          <fa-icon [icon]="faPen" class="me-2" />
           Update
         </button>
       </div>
@@ -693,7 +692,7 @@
       (click)="hideDrawer()"
       aria-controls="manage-deployment-target-drawer"
       class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 right-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
-      <fa-icon [icon]="faXmark" class="size-5"></fa-icon>
+      <fa-icon [icon]="faXmark" class="size-5" />
       <span class="sr-only">Close menu</span>
     </button>
     <form [formGroup]="notesForm" (ngSubmit)="saveDeploymentTargetNotes()">
