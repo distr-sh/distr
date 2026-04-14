@@ -71,6 +71,7 @@ var (
 	cachedLicense      *ParsedLicense
 	defaultLicenseData = LicenseData{
 		EnforceLimitsOnStartup:                      false,
+		Period:                                      types.SubscriptionPeriodYearly,
 		MaxOrganizations:                            limit.Unlimited,
 		MaxUsersPerOrganization:                     limit.Unlimited,
 		MaxCustomersPerOrganization:                 limit.Unlimited,
