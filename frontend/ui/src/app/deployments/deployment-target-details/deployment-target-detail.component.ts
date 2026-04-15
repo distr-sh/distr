@@ -1,5 +1,5 @@
 import {OverlayModule} from '@angular/cdk/overlay';
-import {afterNextRender, Component, computed, effect, ElementRef, inject, signal, viewChild} from '@angular/core';
+import {Component, computed, effect, ElementRef, inject, signal, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
@@ -72,9 +72,6 @@ export class DeploymentTargetDetailComponent {
   private readonly resourceDropdownTrigger = viewChild<ElementRef<HTMLElement>>('resourceDropdownTrigger');
   protected readonly showArchivedResources = signal(false);
 
-  private readonly stickyHeader = viewChild<ElementRef<HTMLElement>>('stickyHeader');
-  private readonly contentContainer = viewChild<ElementRef<HTMLElement>>('contentContainer');
-
   private readonly deploymentTargetId$ = this.route.paramMap.pipe(map((p) => p.get('deploymentTargetId')!));
   protected readonly deploymentTargetId = toSignal(this.deploymentTargetId$);
   private readonly deploymentId$ = this.route.queryParamMap.pipe(map((p) => p.get('deploymentId')));
@@ -145,18 +142,6 @@ export class DeploymentTargetDetailComponent {
 
   constructor() {
     effect(() => localStorage.setItem(ORDER_DIRECTION_KEY, this.orderDirection()));
-
-    const STICKY_HEADER_TOP = 64; // top-16 = 4rem = 64px
-    afterNextRender(() => {
-      const headerEl = this.stickyHeader()?.nativeElement;
-      const containerEl = this.contentContainer()?.nativeElement;
-      if (!headerEl || !containerEl) return;
-
-      const height = headerEl.offsetHeight;
-      // Subtract 1px to ensure the pinned row overlaps the sticky header edge,
-      // avoiding a visible gap caused by sub-pixel rounding differences.
-      containerEl.style.setProperty('--pinned-row-top', `${STICKY_HEADER_TOP + height - 1}px`);
-    });
 
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       this.form.patchValue(

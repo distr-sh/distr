@@ -27,7 +27,7 @@
             [class.dark:bg-yellow-950]="pinned"
             [class.sticky]="pinned"
             [class.bottom-0]="pinned"
-            [style.top]="pinned ? 'var(--pinned-row-top, 4rem)' : null"
+            [class.top-[calc(var(--spacing)*45-1px)]]="pinned"
             [class.hover:bg-gray-50]="!pinned"
             [class.dark:hover:bg-gray-600]="!pinned"
             [class.hover:bg-yellow-200]="pinned"
