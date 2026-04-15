@@ -157,10 +157,11 @@ func createHelloDistrDeploymentTarget(ctx context.Context) (*types.DeploymentTar
 	auth := auth.Authentication.Require(ctx)
 	dt := types.DeploymentTargetFull{
 		DeploymentTarget: types.DeploymentTarget{
-			Name:            "hello-distr-tutorial",
-			Type:            types.DeploymentTypeDocker,
-			AutohealEnabled: true,
-			MetricsEnabled:  true,
+			Name:                  "hello-distr-tutorial",
+			Type:                  types.DeploymentTypeDocker,
+			AutohealEnabled:       true,
+			MetricsEnabled:        true,
+			DeploymentLogsEnabled: true,
 		},
 	}
 	if agentVersion, err := db.GetCurrentAgentVersion(ctx); err != nil {
