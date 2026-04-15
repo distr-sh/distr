@@ -4,8 +4,7 @@
     <app-nav-bar-subscription-banner
       [organization]="organization"
       [isTrial]="isTrial()"
-      [isSubscriptionExpired]="isSubscriptionExpired()">
-    </app-nav-bar-subscription-banner>
+      [isSubscriptionExpired]="isSubscriptionExpired()" />
   }
 
   @if (tutorial()) {
@@ -14,7 +13,7 @@
         <a
           [routerLink]="['tutorials', tutorial()]"
           class="flex-1 sm:flex-none items-center justify-center text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-          <fa-icon [icon]="faArrowLeft" class="me-4"></fa-icon>
+          <fa-icon [icon]="faArrowLeft" class="me-4" />
           Continue Tutorial</a
         >
       </div>
@@ -34,7 +33,7 @@
               (click)="sidebar.toggle()"
               class="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600">
               <span class="sr-only">Open sidebar</span>
-              <fa-icon [icon]="faBarsStaggered" size="xl" class="h-6 w-6"></fa-icon>
+              <fa-icon [icon]="faBarsStaggered" size="xl" class="h-6 w-6" />
             </button>
           }
           <a routerLink="/" class="flex ms-2 md:me-24">
@@ -51,7 +50,7 @@
         <div class="flex items-center">
           <div class="flex items-center ms-3">
             <div>
-              <app-color-scheme-switcher></app-color-scheme-switcher>
+              <app-color-scheme-switcher />
             </div>
 
             @if (isVendorSomewhere() || availableOrgs().length > 0) {
@@ -102,7 +101,7 @@
                             [title]="'Switch to this organization'"
                             class="flex items-center w-full text-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
                             role="menuitem">
-                            <fa-icon class="me-4" [icon]="faShuffle"></fa-icon>
+                            <fa-icon class="me-4" [icon]="faShuffle" />
                             <span
                               class="flex flex-col text-start text-sm font-medium text-gray-900 dark:text-gray-300"
                               role="none">
@@ -154,7 +153,7 @@
                           type="button"
                           class="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
                           role="menuitem">
-                          <fa-icon [icon]="faPlus"></fa-icon>
+                          <fa-icon [icon]="faPlus" />
                           Create Organization
                         </button>
                       </li>
@@ -177,7 +176,7 @@
                   <img class="size-8 rounded-full" [attr.src]="user.imageUrl | secureImage | async" alt="user photo" />
                 } @else {
                   <div class="shrink-0 text-gray-400 -m-1">
-                    <fa-icon [icon]="faUserCircle" class="text-3xl cursor-pointer"></fa-icon>
+                    <fa-icon [icon]="faUserCircle" class="text-3xl cursor-pointer" />
                   </div>
                 }
               </button>
@@ -253,7 +252,7 @@
         type="button"
         (click)="closeCreateOrgModal()"
         class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
-        <fa-icon [icon]="faXmark"></fa-icon>
+        <fa-icon [icon]="faXmark" />
         <span class="sr-only">Close modal</span>
       </button>
     </div>

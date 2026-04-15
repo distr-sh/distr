@@ -126,8 +126,7 @@
           <app-editor
             id="env-file"
             class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            formControlName="envFileData">
-          </app-editor>
+            formControlName="envFileData" />
           <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
             Set your environment variables here. Documentation:
             <a
@@ -149,8 +148,7 @@
             id="compose-file"
             language="yaml"
             class="cursor-not-allowed block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            [formControl]="composeFile">
-          </app-editor>
+            [formControl]="composeFile" />
           <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
             This Docker Compose file comes from the application version and is read-only.
           </div>
@@ -159,8 +157,7 @@
           <app-editor
             language="yaml"
             class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            formControlName="valuesYaml">
-          </app-editor>
+            formControlName="valuesYaml" />
           @if (auth.hasAnyRole('read_write', 'admin')) {
             <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
               You can
@@ -225,18 +222,6 @@
           class="size-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
           formControlName="forceRestart" />
         <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Force restart</span>
-      </label>
-    </div>
-  }
-
-  @if (!deployForm.value.deploymentId) {
-    <div class="col-span-2">
-      <label class="inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
-        <input
-          type="checkbox"
-          class="size-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-          formControlName="logsEnabled" />
-        <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Enable log collection</span>
       </label>
     </div>
   }

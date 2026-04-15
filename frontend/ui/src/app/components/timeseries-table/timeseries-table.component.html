@@ -26,8 +26,8 @@
             [class.bg-yellow-100]="pinned"
             [class.dark:bg-yellow-950]="pinned"
             [class.sticky]="pinned"
-            [class.top-16]="pinned"
             [class.bottom-0]="pinned"
+            [class.top-[calc(var(--spacing)*43+1px)]]="pinned"
             [class.hover:bg-gray-50]="!pinned"
             [class.dark:hover:bg-gray-600]="!pinned"
             [class.hover:bg-yellow-200]="pinned"
@@ -67,6 +67,17 @@
         }
       </tbody>
     </table>
+    @if (showScrollToBottom()) {
+      <div class="sticky bottom-4 flex justify-center z-10">
+        <button
+          type="button"
+          (click)="scrollToBottom()"
+          class="py-2 px-4 flex items-center gap-2 text-xs font-medium text-gray-900 bg-white rounded-full border border-gray-200 shadow-lg hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700">
+          <fa-icon [icon]="faArrowDown" />
+          Live logs
+        </button>
+      </div>
+    }
     <div #tableBottom></div>
 
     @if (hasMore && (newestFirst() || !live())) {

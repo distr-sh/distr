@@ -75,13 +75,6 @@ func DeploymentsRouter(r chiopenapi.Router) {
 			}{})).
 			With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
 		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
-			r.Patch("/", patchDeploymentHandler()).
-				With(option.Description("Partially update a deployment")).
-				With(option.Request(struct {
-					DeploymentIDRequest
-					api.PatchDeploymentRequest
-				}{})).
-				With(option.Response(http.StatusOK, types.Deployment{}))
 			r.Delete("/", deleteDeploymentHandler()).
 				With(option.Description("Delete a deployment")).
 				With(option.Request(DeploymentIDRequest{}))
@@ -151,36 +144,6 @@ func putDeployment(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 		return nil
 	})
-}
-
-func patchDeploymentHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		deployment := internalctx.GetDeployment(ctx)
-		req, err := JsonBody[api.PatchDeploymentRequest](w, r)
-		if err != nil {
-			return
-		}
-
-		needsUpdate := false
-
-		if req.LogsEnabled != nil && *req.LogsEnabled != deployment.LogsEnabled {
-			deployment.LogsEnabled = *req.LogsEnabled
-			needsUpdate = true
-		}
-
-		if needsUpdate {
-			if err := db.UpdateDeployment(ctx, deployment); err != nil {
-				log.Warn("deployment update failed", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-		}
-
-		RespondJSON(w, deployment)
-	}
 }
 
 func deleteDeploymentHandler() http.HandlerFunc {

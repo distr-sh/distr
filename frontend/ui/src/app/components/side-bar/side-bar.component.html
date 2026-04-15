@@ -19,7 +19,7 @@
               <fa-icon
                 [icon]="faLightbulb"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
               <span class="flex-grow ms-3">Tutorials</span>
               @if (!isAllTutorialsStarted()) {
                 <span class="w-2.5 h-2.5 mr-1.5 text-xs font-semibold rounded-full bg-blue-700 dark:bg-blue-600"></span>
@@ -36,7 +36,7 @@
             <fa-icon
               [icon]="faDashboard"
               size="lg"
-              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
             <span class="ms-3">Dashboard</span>
           </a>
         </li>
@@ -50,12 +50,12 @@
             <fa-icon
               [icon]="faBoxesStacked"
               size="lg"
-              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
             <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Agents</span>
             <fa-icon
               [icon]="faChevronDown"
               [class.rotate-x-180]="agentsSubMenuOpen()"
-              class="transition duration-150 ease-in-out"></fa-icon>
+              class="transition duration-150 ease-in-out" />
           </button>
           @if (agentsSubMenuOpen()) {
             <ul class="space-y-1">
@@ -102,12 +102,12 @@
             <fa-icon
               [icon]="faBox"
               size="lg"
-              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
             <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Registry</span>
             <fa-icon
               [icon]="faChevronDown"
               [class.rotate-x-180]="registrySubMenuOpen()"
-              class="transition duration-150 ease-in-out"></fa-icon>
+              class="transition duration-150 ease-in-out" />
           </button>
           @if (registrySubMenuOpen()) {
             <ul class="space-y-1">
@@ -143,7 +143,7 @@
               <fa-icon
                 [icon]="faKey"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
               <span class="ms-3">Licenses</span>
             </a>
           } @else {
@@ -156,7 +156,7 @@
               <fa-icon
                 [icon]="faKey"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
               <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Licenses</span>
               <span
                 class="ml-2 bg-gray-300 text-gray-900 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-gray-500 dark:text-gray-100"
@@ -172,7 +172,7 @@
                   {originX: 'end', overlayX: 'start', originY: 'center', overlayY: 'center'},
                 ]"
                 [cdkConnectedOverlayOpen]="licenseOverlayOpen()">
-                <ng-container *ngTemplateOutlet="proFeatureOverlayContent"></ng-container>
+                <ng-container *ngTemplateOutlet="proFeatureOverlayContent" />
               </ng-template>
             </a>
           }
@@ -188,7 +188,7 @@
               <fa-icon
                 [icon]="faHandHoldingDollar"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
               <span class="ms-3">Billing</span>
             </a>
           </li>
@@ -205,7 +205,7 @@
             <fa-icon
               [icon]="faAddressBook"
               size="lg"
-              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
             <span class="ms-3">Customers</span>
           </a>
         </li>
@@ -220,7 +220,7 @@
               <fa-icon
                 [icon]="faLifeRing"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
               <span class="ms-3">Support Bundles</span>
             </a>
           } @else {
@@ -233,7 +233,7 @@
               <fa-icon
                 [icon]="faLifeRing"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
               <span class="ms-3">Support Bundles</span>
               <span
                 class="ml-2 bg-gray-300 text-gray-900 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-gray-700 dark:text-gray-300"
@@ -249,7 +249,7 @@
                   {originX: 'end', overlayX: 'start', originY: 'center', overlayY: 'center'},
                 ]"
                 [cdkConnectedOverlayOpen]="supportBundlesOverlayOpen()">
-                <ng-container *ngTemplateOutlet="proFeatureOverlayContent"></ng-container>
+                <ng-container *ngTemplateOutlet="proFeatureOverlayContent" />
               </ng-template>
             </a>
           }
@@ -265,7 +265,7 @@
               <fa-icon
                 [icon]="faUsers"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
               <span class="ms-3">Users</span>
             </a>
           </li>
@@ -280,7 +280,7 @@
             <fa-icon
               [icon]="faAsterisk"
               size="lg"
-              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
             <span class="ms-3">Secrets</span>
           </a>
         </li>
@@ -295,7 +295,7 @@
               <fa-icon
                 [icon]="faPalette"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
               <span class="ms-3">Branding</span>
             </a>
           </li>
@@ -312,7 +312,7 @@
                 <fa-icon
                   [icon]="faCreditCard"
                   size="lg"
-                  class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+                  class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
                 <span class="ms-3">Subscription</span>
               </a>
             </li>
@@ -327,7 +327,7 @@
               <fa-icon
                 [icon]="faGear"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
               <span class="ms-3">Settings</span>
             </a>
           </li>
@@ -344,7 +344,7 @@
             <fa-icon
               [icon]="faHome"
               size="lg"
-              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
             <span class="ms-3">Home</span>
           </a>
         </li>
@@ -359,7 +359,7 @@
               <fa-icon
                 [icon]="faDashboard"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
               <span class="ms-3">Deployments</span>
             </a>
           </li>
@@ -375,7 +375,7 @@
               <fa-icon
                 [icon]="faBox"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
               <span class="ms-3">Artifacts</span>
             </a>
           </li>
@@ -391,7 +391,7 @@
               <fa-icon
                 [icon]="faKey"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
               <span class="ms-3">Licenses</span>
             </a>
           </li>
@@ -406,7 +406,7 @@
               <fa-icon
                 [icon]="faLifeRing"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
               <span class="ms-3">Support</span>
             </a>
           </li>
@@ -423,7 +423,7 @@
               <fa-icon
                 [icon]="faUsers"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
               <span class="ms-3">Users</span>
             </a>
           </li>
@@ -439,7 +439,7 @@
               <fa-icon
                 [icon]="faAsterisk"
                 size="lg"
-                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></fa-icon>
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
               <span class="ms-3">Secrets</span>
             </a>
           </li>
@@ -499,7 +499,7 @@
             target="_blank"
             class="inline-flex items-center text-sm font-medium text-gray-600 dark:text-gray-500 hover:underline">
             Contact us
-            <fa-icon [icon]="faArrowRightLong" class="ml-2"></fa-icon>
+            <fa-icon [icon]="faArrowRightLong" class="ml-2" />
           </a>
         </div>
       }

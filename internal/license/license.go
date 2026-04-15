@@ -7,9 +7,11 @@ import (
 	"io"
 	"io/fs"
 	"sync"
+	"time"
 
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/limit"
+	"github.com/distr-sh/distr/internal/types"
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/lestrrat-go/jwx/v3/jwa"
 	"github.com/lestrrat-go/jwx/v3/jwk"
@@ -48,22 +50,24 @@ type LicenseData struct {
 	EnforceLimitsOnStartup bool `mapstructure:"enf"`
 
 	// Global limits
-
-	MaxOrganizations limit.Limit `mapstructure:"mo"`
+	MaxOrganizations limit.Limit              `mapstructure:"mo"`
+	Period           types.SubscriptionPeriod `mapstructure:"p"`
 
 	// Limits for organizations with subscription type Enterprise
-
 	MaxUsersPerOrganization                     limit.Limit `mapstructure:"mou"`
 	MaxCustomersPerOrganization                 limit.Limit `mapstructure:"moc"`
 	MaxUsersPerCustomerOrganization             limit.Limit `mapstructure:"mcu"`
 	MaxDeploymentTargetsPerCustomerOrganization limit.Limit `mapstructure:"mcd"`
 	MaxLogExportRows                            limit.Limit `mapstructure:"mlr"`
+
+	ExpirationDate time.Time
 }
 
 var (
-	cachedLicenseData  *LicenseData
+	cachedLicense      *LicenseData
 	defaultLicenseData = LicenseData{
 		EnforceLimitsOnStartup:                      false,
+		Period:                                      types.SubscriptionPeriodYearly,
 		MaxOrganizations:                            limit.Unlimited,
 		MaxUsersPerOrganization:                     limit.Unlimited,
 		MaxCustomersPerOrganization:                 limit.Unlimited,
@@ -74,10 +78,10 @@ var (
 )
 
 func Initialize() error {
-	if licenseData, err := parseAndValidate(cachedPubKey, env.LicenseKey()); err != nil {
+	if parsed, err := parseAndValidate(cachedPubKey, env.LicenseKey()); err != nil {
 		return fmt.Errorf("license key initialization: %w", err)
 	} else {
-		cachedLicenseData = licenseData
+		cachedLicense = parsed
 	}
 
 	return nil
@@ -85,12 +89,11 @@ func Initialize() error {
 
 // GetLicenseData MUST be called after [Initialize], otherwise it WILL panic.
 func GetLicenseData() LicenseData {
-	if cachedLicenseData == nil {
-		// panic with a more useful error message than "nil pointer dereference"
+	if cachedLicense == nil {
 		panic("detected call to license.GetLicenseData before calling license.Initialize")
 	}
 
-	return *cachedLicenseData
+	return *cachedLicense
 }
 
 func parseAndValidate(pubKeySrc func() (jwk.Key, error), licenseKey string) (*LicenseData, error) {
@@ -100,7 +103,7 @@ func parseAndValidate(pubKeySrc func() (jwk.Key, error), licenseKey string) (*Li
 	} else if key == nil {
 		return &defaultLicenseData, nil
 	} else if licenseKey == "" {
-		return nil, errors.New("license key is required")
+		return nil, errors.New("distr license key is required via environment variable LICENSE_KEY")
 	}
 
 	token, err := jwt.ParseString(licenseKey, jwt.WithKey(jwa.EdDSA(), key))
@@ -116,6 +119,12 @@ func parseAndValidate(pubKeySrc func() (jwk.Key, error), licenseKey string) (*Li
 	licenseData := defaultLicenseData
 	if err := mapstructure.Decode(licenseDataMap, &licenseData); err != nil {
 		return nil, fmt.Errorf("invalid license key: %w", err)
+	}
+
+	if exp, ok := token.Expiration(); !ok {
+		return nil, fmt.Errorf("invalid license key: missing expiration date")
+	} else {
+		licenseData.ExpirationDate = exp
 	}
 
 	return &licenseData, nil

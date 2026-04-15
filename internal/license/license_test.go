@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/internal/limit"
+	"github.com/distr-sh/distr/internal/types"
 	"github.com/lestrrat-go/jwx/v3/jwa"
 	"github.com/lestrrat-go/jwx/v3/jwk"
 	"github.com/lestrrat-go/jwx/v3/jwt"
@@ -41,9 +42,9 @@ func testKeyPair(t *testing.T) (jwk.Key, ed25519.PrivateKey) {
 	return jwkPubKey, privKey
 }
 
-func signToken(t *testing.T, privKey ed25519.PrivateKey, claims map[string]any) string {
+func signToken(t *testing.T, privKey ed25519.PrivateKey, expiration time.Time, claims map[string]any) string {
 	t.Helper()
-	b := jwt.NewBuilder().Expiration(time.Now().Add(time.Hour))
+	b := jwt.NewBuilder().Expiration(expiration)
 	for k, v := range claims {
 		b = b.Claim(k, v)
 	}
@@ -105,7 +106,7 @@ func TestParseAndValidate_WrongKey(t *testing.T) {
 
 	otherSeed := [32]byte{0xff, 0xfe, 0xfd}
 	otherPriv := ed25519.NewKeyFromSeed(otherSeed[:])
-	token := signToken(t, otherPriv, map[string]any{"enf": true})
+	token := signToken(t, otherPriv, time.Now().Add(time.Hour), map[string]any{"enf": true})
 
 	_, err := parseAndValidate(pubKeyFunc(pub), token)
 	g.Expect(err).To(HaveOccurred())
@@ -114,9 +115,11 @@ func TestParseAndValidate_WrongKey(t *testing.T) {
 func TestParseAndValidate_AllFields(t *testing.T) {
 	g := NewWithT(t)
 	pub, priv := testKeyPair(t)
-	token := signToken(t, priv, map[string]any{
+	expiration := time.Now().Add(24 * time.Hour).Truncate(time.Second)
+	token := signToken(t, priv, expiration, map[string]any{
 		"ld": map[string]any{
 			"enf": true,
+			"p":   "yearly",
 			"mo":  10,
 			"mou": 20,
 			"moc": 30,
@@ -128,8 +131,11 @@ func TestParseAndValidate_AllFields(t *testing.T) {
 
 	got, err := parseAndValidate(pubKeyFunc(pub), token)
 	g.Expect(err).ToNot(HaveOccurred())
+	g.Expect(got.ExpirationDate).To(BeTemporally("~", expiration, time.Second))
+	got.ExpirationDate = time.Time{}
 	g.Expect(*got).To(Equal(LicenseData{
 		EnforceLimitsOnStartup:                      true,
+		Period:                                      types.SubscriptionPeriodYearly,
 		MaxOrganizations:                            limit.New(10),
 		MaxUsersPerOrganization:                     limit.New(20),
 		MaxCustomersPerOrganization:                 limit.New(30),
@@ -142,7 +148,7 @@ func TestParseAndValidate_AllFields(t *testing.T) {
 func TestParseAndValidate_PartialClaims_DefaultsForUnspecifiedFields(t *testing.T) {
 	g := NewWithT(t)
 	pub, priv := testKeyPair(t)
-	token := signToken(t, priv, map[string]any{
+	token := signToken(t, priv, time.Now().Add(time.Hour), map[string]any{
 		"ld": map[string]any{
 			"enf": false,
 			"mo":  5,
@@ -151,8 +157,11 @@ func TestParseAndValidate_PartialClaims_DefaultsForUnspecifiedFields(t *testing.
 
 	got, err := parseAndValidate(pubKeyFunc(pub), token)
 	g.Expect(err).ToNot(HaveOccurred())
+	g.Expect(got.ExpirationDate).ToNot(BeZero())
+	got.ExpirationDate = time.Time{}
 	g.Expect(*got).To(Equal(LicenseData{
 		EnforceLimitsOnStartup:                      false,
+		Period:                                      defaultLicenseData.Period,
 		MaxOrganizations:                            limit.New(5),
 		MaxUsersPerOrganization:                     defaultLicenseData.MaxUsersPerOrganization,
 		MaxCustomersPerOrganization:                 defaultLicenseData.MaxCustomersPerOrganization,
@@ -165,7 +174,7 @@ func TestParseAndValidate_PartialClaims_DefaultsForUnspecifiedFields(t *testing.
 func TestParseAndValidate_ZeroLimits(t *testing.T) {
 	g := NewWithT(t)
 	pub, priv := testKeyPair(t)
-	token := signToken(t, priv, map[string]any{
+	token := signToken(t, priv, time.Now().Add(time.Hour), map[string]any{
 		"ld": map[string]any{
 			"enf": false,
 			"mo":  0,
@@ -179,8 +188,10 @@ func TestParseAndValidate_ZeroLimits(t *testing.T) {
 
 	got, err := parseAndValidate(pubKeyFunc(pub), token)
 	g.Expect(err).ToNot(HaveOccurred())
+	got.ExpirationDate = time.Time{}
 	g.Expect(*got).To(Equal(LicenseData{
 		EnforceLimitsOnStartup:                      false,
+		Period:                                      types.SubscriptionPeriodYearly,
 		MaxOrganizations:                            limit.New(0),
 		MaxUsersPerOrganization:                     limit.New(0),
 		MaxCustomersPerOrganization:                 limit.New(0),
@@ -188,4 +199,19 @@ func TestParseAndValidate_ZeroLimits(t *testing.T) {
 		MaxDeploymentTargetsPerCustomerOrganization: limit.New(0),
 		MaxLogExportRows:                            limit.New(0),
 	}))
+}
+
+func TestParseAndValidate_ExpirationDate(t *testing.T) {
+	g := NewWithT(t)
+	pub, priv := testKeyPair(t)
+	expiration := time.Now().Add(7 * 24 * time.Hour).Truncate(time.Second)
+	token := signToken(t, priv, expiration, map[string]any{
+		"ld": map[string]any{
+			"enf": false,
+		},
+	})
+
+	got, err := parseAndValidate(pubKeyFunc(pub), token)
+	g.Expect(err).ToNot(HaveOccurred())
+	g.Expect(got.ExpirationDate).To(BeTemporally("~", expiration, time.Second))
 }

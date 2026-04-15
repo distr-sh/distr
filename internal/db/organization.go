@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/buildconfig"
@@ -175,18 +176,27 @@ func UpdateOrganizationFeaturesWithSubscriptionType(
 	return nil
 }
 
-func UpdateOrganizationEnterpriseLimits(ctx context.Context, maxCustomerOrgs, maxUserAccounts limit.Limit) error {
+func UpdateOrganizationEnterpriseLimits(
+	ctx context.Context,
+	maxCustomerOrgs, maxUserAccounts limit.Limit,
+	subscriptionPeriod types.SubscriptionPeriod,
+	subscriptionEndsAt time.Time,
+) error {
 	db := internalctx.GetDb(ctx)
 	_, err := db.Exec(
 		ctx,
 		`UPDATE Organization
 		SET subscription_customer_organization_quantity = @max_customer_orgs,
-			subscription_user_account_quantity = @max_user_accounts
-		WHERE subscription_type = @subscription_type`,
+			subscription_user_account_quantity = @max_user_accounts,
+			subscription_period = @subscription_period,
+			subscription_ends_at = @subscription_ends_at,
+			subscription_type = @subscription_type`,
 		pgx.NamedArgs{
-			"max_customer_orgs": maxCustomerOrgs,
-			"max_user_accounts": maxUserAccounts,
-			"subscription_type": types.SubscriptionTypeEnterprise,
+			"max_customer_orgs":    maxCustomerOrgs,
+			"max_user_accounts":    maxUserAccounts,
+			"subscription_period":  subscriptionPeriod,
+			"subscription_ends_at": subscriptionEndsAt.UTC(),
+			"subscription_type":    types.SubscriptionTypeEnterprise,
 		},
 	)
 	if err != nil {

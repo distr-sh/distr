@@ -47,6 +47,7 @@ var (
 	dockerCli      = util.Require(dockercommand.NewDockerCli())
 	composeService composeapi.Compose
 	health         = NewHealthcheckServer(time.Hour)
+	logWatcher     = NewLogsWatcher(30 * time.Second)
 )
 
 func init() {
@@ -80,8 +81,6 @@ func main() {
 		zap.String("commit", buildconfig.Commit()),
 		zap.Bool("release", buildconfig.IsRelease()))
 
-	go NewLogsWatcher().Watch(ctx, 30*time.Second)
-
 	go func() {
 		if err := startHealthServer(); err != nil {
 			logger.Warn("health server error", zap.Error(err))
@@ -95,6 +94,7 @@ func main() {
 
 func mainLoop(ctx context.Context) {
 	tick := time.Tick(agentenv.Interval)
+	logsGoroutine := util.NewToggleableGoroutine(logWatcher.Watch)
 
 loop:
 	for ctx.Err() == nil {
@@ -109,25 +109,12 @@ loop:
 		if resource, err := client.Resource(ctx); err != nil {
 			logger.Error("failed to get resource", zap.Error(err))
 		} else {
-			if agentenv.AgentVersionID != "" {
-				if agentenv.AgentVersionID != resource.Version.ID.String() {
-					logger.Info("agent version has changed. starting self-update")
-					if err := RunAgentSelfUpdate(ctx); err != nil {
-						logger.Error("self update failed", zap.Error(err))
-						// TODO: Support status without revision ID?
-						if len(resource.Deployments) > 0 {
-							if err := client.StatusWithError(ctx, resource.Deployments[0].RevisionID, err); err != nil {
-								logger.Error("failed to send status", zap.Error(err))
-							}
-						}
-					} else {
-						logger.Info("self-update has been applied")
-						continue
-					}
-				} else {
-					logger.Debug("agent version is up to date")
-				}
+			if selfUpdateIfRequired(ctx, *resource) {
+				continue
 			}
+
+			logWatcher.SetLogsAfter(resource.DeploymentLogsAfter)
+			logsGoroutine.GoOrCancel(ctx, resource.DeploymentLogsEnabled)
 
 			if resource.MetricsEnabled {
 				startMetrics(ctx)
@@ -257,6 +244,29 @@ func startHealthServer() error {
 	return nil
 }
 
+func selfUpdateIfRequired(ctx context.Context, resource api.AgentResource) bool {
+	if agentenv.AgentVersionID != "" {
+		if agentenv.AgentVersionID != resource.Version.ID.String() {
+			logger.Info("agent version has changed. starting self-update")
+			if err := RunAgentSelfUpdate(ctx); err != nil {
+				logger.Error("self update failed", zap.Error(err))
+				// TODO: Support status without revision ID?
+				if len(resource.Deployments) > 0 {
+					if err := client.StatusWithError(ctx, resource.Deployments[0].RevisionID, err); err != nil {
+						logger.Error("failed to send status", zap.Error(err))
+					}
+				}
+			} else {
+				logger.Info("self-update has been applied")
+				return true
+			}
+		} else {
+			logger.Debug("agent version is up to date")
+		}
+	}
+	return false
+}
+
 func cleanupOldDeployments(ctx context.Context, resource api.AgentResource, deployments []AgentDeployment) {
 	for _, deployment := range deployments {
 		resourceHasExistingDeployment := slices.ContainsFunc(
@@ -281,7 +291,7 @@ func cleanupOldDeployments(ctx context.Context, resource api.AgentResource, depl
 				logger.Warn("could not delete deployment", zap.Error(err))
 			}
 
-			CleanupLogsTimestamps(deployment)
+			logWatcher.CleanupLogsTimestamps(deployment)
 		}
 	}
 }

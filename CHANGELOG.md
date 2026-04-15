@@ -1,5 +1,39 @@
 # Changelog
 
+## [2.19.0](https://github.com/distr-sh/distr/compare/2.18.0...2.19.0) (2026-04-15)
+
+
+### Features
+
+* move deployment logs toggle to agent settings ([#2263](https://github.com/distr-sh/distr/issues/2263)) ([9a5148e](https://github.com/distr-sh/distr/commit/9a5148e60de71c7a21eb247b88481987e549ee6d))
+
+
+### Bug Fixes
+
+* **backend:** Distr Enterprise limit enforcement ([#2264](https://github.com/distr-sh/distr/issues/2264)) ([0a864a2](https://github.com/distr-sh/distr/commit/0a864a29d30f94f234894ce3c930b518df669ea0))
+* **deps:** update module github.com/go-co-op/gocron/v2 to v2.21.0 ([#2265](https://github.com/distr-sh/distr/issues/2265)) ([cacae3d](https://github.com/distr-sh/distr/commit/cacae3d6c82f7b6b4f735696f23dde7080ab11cc))
+
+
+### Other
+
+* **deps:** update dependency autoprefixer to v10.5.0 ([#2259](https://github.com/distr-sh/distr/issues/2259)) ([20a246e](https://github.com/distr-sh/distr/commit/20a246e7951e7b0076450774fb744d81c1ac54ce))
+* **deps:** update dependency prettier to v3.8.3 ([#2267](https://github.com/distr-sh/distr/issues/2267)) ([a096aea](https://github.com/distr-sh/distr/commit/a096aeaf8b4fef02f3faf72baefb8374f2f14f93))
+* **deps:** update dependency stripe to v1.40.5 ([#2256](https://github.com/distr-sh/distr/issues/2256)) ([317409f](https://github.com/distr-sh/distr/commit/317409f6ccb5af6e7f5874a90595470887d6a74a))
+* **deps:** update googleapis/release-please-action action to v4.4.1 ([#2254](https://github.com/distr-sh/distr/issues/2254)) ([a2e0093](https://github.com/distr-sh/distr/commit/a2e00936c84071d0ba8798f17eb536f33c76fd65))
+* **frontend:** add select all, sticky filter and disable auto-scroll to log viewer ([#2270](https://github.com/distr-sh/distr/issues/2270)) ([5121f63](https://github.com/distr-sh/distr/commit/5121f630f634ac80d514af824528d71282893870))
+* **frontend:** always display reconnect button ([#2268](https://github.com/distr-sh/distr/issues/2268)) ([8670b6a](https://github.com/distr-sh/distr/commit/8670b6ac2d81f56b98d6376698dbfcac1c7d17f9))
+* update claude code instructions ([#2262](https://github.com/distr-sh/distr/issues/2262)) ([c60b28c](https://github.com/distr-sh/distr/commit/c60b28cba4958d52cc40ce73c73927c0057c9086))
+
+
+### Docs
+
+* **copilot:** add info on known false-positives to review instructions ([#2269](https://github.com/distr-sh/distr/issues/2269)) ([339dcfc](https://github.com/distr-sh/distr/commit/339dcfc0f7cd844676a3bca8f1306d316a33b57b))
+
+
+### Refactoring
+
+* **frontend:** modernize Angular code style ([#2261](https://github.com/distr-sh/distr/issues/2261)) ([abdac75](https://github.com/distr-sh/distr/commit/abdac7514c0f7d34b0deaf554a62c2a1f8a77d35))
+
 ## [2.18.0](https://github.com/distr-sh/distr/compare/2.17.1...2.18.0) (2026-04-13)
 
 

@@ -22,7 +22,7 @@
                   type="submit"
                   class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
                   Let's Go
-                  <fa-icon class="ml-2" [icon]="faArrowRight"></fa-icon>
+                  <fa-icon class="ml-2" [icon]="faArrowRight" />
                 </button>
               </div>
             </div>
@@ -35,7 +35,7 @@
                   <li class="mb-10 ms-8">
                     <span
                       class="absolute flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full -start-4 ring-4 ring-white dark:ring-gray-900 dark:bg-gray-700">
-                      <fa-icon [icon]="faLightbulb"></fa-icon>
+                      <fa-icon [icon]="faLightbulb" />
                     </span>
                     <h3 class="text-lg font-medium leading-tight">Prepare Registry</h3>
                     <p class="text-sm mt-2">
@@ -87,7 +87,7 @@
                     } @else {
                       Continue
                     }
-                    <fa-icon class="ml-2" [icon]="faArrowRight"></fa-icon>
+                    <fa-icon class="ml-2" [icon]="faArrowRight" />
                   </button>
                 </div>
               </form>
@@ -102,7 +102,7 @@
                   <li class="mb-10 ms-8">
                     <span
                       class="absolute flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full -start-4 ring-4 ring-white dark:ring-gray-900 dark:bg-gray-700">
-                      <fa-icon [icon]="faLightbulb"></fa-icon>
+                      <fa-icon [icon]="faLightbulb" />
                     </span>
                     <h3 class="text-lg font-medium leading-tight">Login</h3>
                     <p class="text-sm mt-2">
@@ -151,7 +151,7 @@
                         <p>
                           Your Personal Access Token:
                           <code class="select-all" data-ph-mask-text="true">{{ t.key }}</code>
-                          <app-clip class="mx-2" [clip]="t.key"></app-clip>
+                          <app-clip class="mx-2" [clip]="t.key" />
                         </p>
                         <p>
                           <strong>Important:</strong>
@@ -209,7 +209,7 @@
                     } @else {
                       Continue
                     }
-                    <fa-icon class="ml-2" [icon]="faArrowRight"></fa-icon>
+                    <fa-icon class="ml-2" [icon]="faArrowRight" />
                   </button>
                 </div>
               </form>
@@ -224,7 +224,7 @@
                   <li class="mb-10 ms-8">
                     <span
                       class="absolute flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full -start-4 ring-4 ring-white dark:ring-gray-900 dark:bg-gray-700">
-                      <fa-icon [icon]="faLightbulb"></fa-icon>
+                      <fa-icon [icon]="faLightbulb" />
                     </span>
                     <h3 class="text-lg font-medium leading-tight">Manage Images</h3>
                     <p class="text-sm mt-2">
@@ -369,7 +369,7 @@
                     [disabled]="loading()"
                     type="submit"
                     class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
-                    <fa-icon class="mr-2" [icon]="faCheck"></fa-icon>
+                    <fa-icon class="mr-2" [icon]="faCheck" />
                     @if (progress?.completedAt) {
                       Done
                     } @else {

@@ -1,5 +1,5 @@
 import {HttpClient} from '@angular/common/http';
-import {Injectable} from '@angular/core';
+import {Injectable, inject} from '@angular/core';
 import {Observable, Subject, switchMap, tap} from 'rxjs';
 import {ArtifactEntitlement} from '../types/artifact-entitlement';
 import {DefaultReactiveList, ReactiveList} from './cache';
@@ -7,11 +7,13 @@ import {CrudService} from './interfaces';
 
 @Injectable({providedIn: 'root'})
 export class ArtifactEntitlementsService implements CrudService<ArtifactEntitlement> {
+  private readonly http = inject(HttpClient);
+
   private readonly cache: ReactiveList<ArtifactEntitlement>;
   private readonly artifactEntitlementsUrl = '/api/v1/artifact-entitlements';
   private readonly refresh$ = new Subject<void>();
 
-  constructor(private readonly http: HttpClient) {
+  constructor() {
     this.cache = new DefaultReactiveList(this.http.get<ArtifactEntitlement[]>(this.artifactEntitlementsUrl));
     this.refresh$
       .pipe(

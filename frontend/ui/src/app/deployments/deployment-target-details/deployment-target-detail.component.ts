@@ -14,8 +14,8 @@ import {
   faPlay,
   faServer,
 } from '@fortawesome/free-solid-svg-icons';
-import dayjs from 'dayjs';
 import {combineLatest, debounceTime, map, of, switchMap} from 'rxjs';
+import {dateTimeLocalToISO, isoToDateTimeLocal} from '../../../util/dates';
 import {DeploymentLogsService} from '../../services/deployment-logs.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
 import {OrderDirection} from '../../types/timeseries-options';
@@ -111,6 +111,29 @@ export class DeploymentTargetDetailComponent {
     )
   );
 
+  protected readonly visibleResources = computed(() => {
+    const available = this.availableResources();
+    if (!available) return [];
+    const resources = [...(available.active ?? [])];
+    if (this.showArchivedResources()) {
+      resources.push(...(available.archived ?? []));
+    }
+    return resources;
+  });
+
+  protected readonly allVisibleResourcesSelected = computed(() => {
+    const visible = this.visibleResources();
+    if (visible.length === 0) return false;
+    const selected = this.selectedResources();
+    return visible.every((r) => selected.includes(r));
+  });
+
+  protected readonly someVisibleResourcesSelected = computed(() => {
+    const visible = this.visibleResources();
+    const selected = this.selectedResources();
+    return visible.some((r) => selected.includes(r)) && !this.allVisibleResourcesSelected();
+  });
+
   protected readonly form = this.fb.group({from: '', to: '', filter: ''});
 
   private readonly deploymentTargetLogsTable = viewChild(DeploymentTargetLogsTableComponent);
@@ -179,9 +202,12 @@ export class DeploymentTargetDetailComponent {
     });
   }
 
-  protected toggleResource(resource: string) {
+  protected toggleResources(resources: string[]) {
     const current = this.selectedResources();
-    const updated = current.includes(resource) ? current.filter((r) => r !== resource) : [...current, resource];
+    const allSelected = resources.every((r) => current.includes(r));
+    const updated = allSelected
+      ? current.filter((r) => !resources.includes(r))
+      : [...new Set([...current, ...resources])];
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {resource: updated.length > 0 ? updated : null},
@@ -212,12 +238,4 @@ export class DeploymentTargetDetailComponent {
     this.deploymentStatusTable()?.export();
     this.deploymentLogsTable()?.export();
   }
-}
-
-function dateTimeLocalToISO(dateTimeLocal: string | null | undefined): string | null {
-  return dateTimeLocal ? dayjs(dateTimeLocal).toISOString() : null;
-}
-
-function isoToDateTimeLocal(iso: string | null | undefined): string {
-  return iso ? dayjs(iso).local().format('YYYY-MM-DDTHH:mm') : '';
 }

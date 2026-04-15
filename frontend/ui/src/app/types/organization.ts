@@ -1,7 +1,12 @@
 import {BaseModel, Named, UserRole} from '@distr-sh/distr-sdk';
 import {SubscriptionType} from './subscription';
 
-export type Feature = 'licensing' | 'pre_post_scripts' | 'artifact_version_mutable' | 'vendor_billing';
+export type Feature =
+  | 'licensing'
+  | 'pre_post_scripts'
+  | 'artifact_version_mutable'
+  | 'vendor_billing'
+  | 'deployment_logs_after';
 
 export interface SubscriptionLimits {
   maxCustomerOrganizations: number;

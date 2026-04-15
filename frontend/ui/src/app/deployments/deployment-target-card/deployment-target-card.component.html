@@ -54,7 +54,7 @@
               ? undefined
               : 'Multiple deployments require agent version 1.6 or newer. Please consider updating.'
           ">
-          <fa-icon [icon]="faPlus" class="h-5 w-5 mr-0.5 -ml-1 text-gray-500 dark:text-gray-400"></fa-icon>
+          <fa-icon [icon]="faPlus" class="h-5 w-5 mr-0.5 -ml-1 text-gray-500 dark:text-gray-400" />
           <span class="whitespace-nowrap">Deploy App</span>
         </button>
         @if (!status) {
@@ -62,7 +62,7 @@
             type="button"
             (click)="openInstructionsModal()"
             class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed">
-            <fa-icon [icon]="faLink" class="h-5 w-5 mr-1.5 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
+            <fa-icon [icon]="faLink" class="h-5 w-5 mr-1.5 -ml-0.5 text-gray-500 dark:text-gray-400" />
             Connect
           </button>
         }
@@ -74,7 +74,7 @@
         cdkOverlayOrigin
         #dropdownTrigger="cdkOverlayOrigin"
         (click)="showDeploymentTargetDropdown.set(true)">
-        <fa-icon [icon]="faEllipsisVertical" class="h-5 w-5 text-gray-500 dark:text-gray-400"></fa-icon>
+        <fa-icon [icon]="faEllipsisVertical" class="h-5 w-5 text-gray-500 dark:text-gray-400" />
         @if (agentUpdateAvailable() || agentUpdatePending()) {
           <span class="rounded-full size-2 bg-blue-400 absolute -bottom-0.5 -right-0.5"></span>
         }
@@ -97,7 +97,7 @@
             @if (deploymentTarget().id; as id) {
               <li>
                 <div class="px-4 py-2">
-                  <app-uuid [uuid]="id" [small]="true"></app-uuid>
+                  <app-uuid [uuid]="id" [small]="true" />
                 </div>
               </li>
             }
@@ -108,8 +108,8 @@
                   (click)="showDeploymentTargetDropdown.set(false); openEditDrawer()"
                   aria-controls="manage-deployment-target-drawer"
                   class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white">
-                  <fa-icon [icon]="faPen" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
-                  Edit
+                  <fa-icon [icon]="faGear" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
+                  Settings
                 </button>
               </li>
 
@@ -119,14 +119,14 @@
                     type="button"
                     (click)="showDeploymentTargetDropdown.set(false); updateDeploymentTargetAgent()"
                     class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white">
-                    <fa-icon [icon]="faRotate" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
+                    <fa-icon [icon]="faRotate" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
                     Update Agent
                   </button>
                 </li>
               } @else if (agentUpdatePending()) {
                 <li>
                   <span class="text-start block w-full px-4 py-2 text-sm text-gray-500 dark:text-gray-400 select-none">
-                    <fa-icon [icon]="faRotate" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400"></fa-icon>
+                    <fa-icon [icon]="faRotate" class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
                     Update pending&hellip;
                   </span>
                 </li>
@@ -154,19 +154,16 @@
             </li>
 
             @if (auth.hasAnyRole('read_write', 'admin')) {
-              @let status = deploymentTarget().currentStatus;
-              @if (status) {
-                <li
-                  class="text-yellow-400 hover:bg-yellow-500 hover:text-white dark:text-yellow-300 dark:hover:text-white dark:hover:bg-yellow-400">
-                  <button
-                    type="button"
-                    (click)="showDeploymentTargetDropdown.set(false); openInstructionsModal()"
-                    class="text-start block w-full px-4 py-2 text-sm">
-                    <fa-icon [icon]="faLink" class="h-5 w-5 mr-2 -ml-0.5"></fa-icon>
-                    Reconnect
-                  </button>
-                </li>
-              }
+              <li
+                class="text-yellow-400 hover:bg-yellow-500 hover:text-white dark:text-yellow-300 dark:hover:text-white dark:hover:bg-yellow-400">
+                <button
+                  type="button"
+                  (click)="showDeploymentTargetDropdown.set(false); openInstructionsModal()"
+                  class="text-start block w-full px-4 py-2 text-sm">
+                  <fa-icon [icon]="faLink" class="h-5 w-5 mr-2 -ml-0.5" />
+                  Reconnect
+                </button>
+              </li>
 
               <li>
                 @let hasDeployments = deploymentTarget().deployments.length > 0;
@@ -177,7 +174,7 @@
                   [title]="hasDeployments ? 'Undeploy applications first' : ''"
                   (click)="showDeploymentTargetDropdown.set(false); deleteDeploymentTarget()"
                   class="text-start block w-full px-4 py-2 text-sm text-red-700 enabled:hover:text-white enabled:hover:bg-red-800 dark:text-red-500 dark:enabled:hover:text-white dark:enabled:hover:bg-red-600 disabled:opacity-60 disabled:cursor-not-allowed">
-                  <fa-icon [icon]="faTrash" class="inline-block w-4 mr-2"></fa-icon>
+                  <fa-icon [icon]="faTrash" class="inline-block w-4 mr-2" />
                   Delete
                 </button>
                 <ng-template #deleteConfirmModal>
@@ -233,7 +230,7 @@
                         class="px-2 py-1 inline-flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
                         <fa-icon
                           [icon]="faArrowUpRightFromSquare"
-                          class="h-5 w-5 mr-1 -ml-0.5 text-gray-500 dark:text-gray-400"></fa-icon>
+                          class="h-5 w-5 mr-1 -ml-0.5 text-gray-500 dark:text-gray-400" />
                         Open
                       </a>
                     }
@@ -267,7 +264,7 @@
                         cdkOverlayOrigin
                         #dropdownTrigger="cdkOverlayOrigin"
                         (click)="showDeploymentDropdownForId.set(deployment.id)">
-                        <fa-icon [icon]="faEllipsisVertical" class="h-5 w-5 text-gray-500 dark:text-gray-400"></fa-icon>
+                        <fa-icon [icon]="faEllipsisVertical" class="h-5 w-5 text-gray-500 dark:text-gray-400" />
                       </button>
 
                       <ng-template
@@ -291,17 +288,8 @@
                               <button
                                 type="button"
                                 class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
-                                (click)="
-                                  setLogsEnabled(deployment, !deployment.logsEnabled);
-                                  showDeploymentDropdownForId.set(undefined)
-                                "
-                                [title]="
-                                  isLoggingSupported()
-                                    ? ''
-                                    : 'Agent must have version 1.9.0 or greater. Please update this agent.'
-                                "
-                                [disabled]="!isLoggingSupported()">
-                                @if (deployment.logsEnabled) {
+                                (click)="showDeploymentDropdownForId.set(undefined); showLogsEnabledMovedAlert()">
+                                @if (deploymentTarget().deploymentLogsEnabled) {
                                   Disable log collection
                                 } @else {
                                   Enable log collection
@@ -338,7 +326,7 @@
                                     : 'Agent must have version 1.3.0 or greater. Please update this agent.'
                                 "
                                 [disabled]="!isUndeploySupported()">
-                                <fa-icon [icon]="faTriangleExclamation" class="inline-block w-4 mr-2"></fa-icon>
+                                <fa-icon [icon]="faTriangleExclamation" class="inline-block w-4 mr-2" />
                                 Undeploy
                               </button>
                               <ng-template #undeployConfirmTemplate>
@@ -408,7 +396,7 @@
         type="button"
         (click)="hideModal()"
         class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
-        <fa-icon [icon]="faXmark"></fa-icon>
+        <fa-icon [icon]="faXmark" />
         <span class="sr-only">Close modal</span>
       </button>
     </div>
@@ -418,7 +406,7 @@
         To setup this Deployment, the Distr Agent must be installed on the target server/VM. Simply connect to the
         target (e.g. via SSH) and execute the following:
       </p>
-      <app-connect-instructions [deploymentTarget]="deploymentTarget()"></app-connect-instructions>
+      <app-connect-instructions [deploymentTarget]="deploymentTarget()" />
     </div>
   </div>
 </ng-template>
@@ -429,8 +417,7 @@
     animate.leave="animate-fly-out-top"
     [deploymentTarget]="selectedDeploymentTarget()!"
     [deployment]="selectedDeployment()"
-    (closed)="hideModal()">
-  </app-deployment-modal>
+    (closed)="hideModal()" />
 </ng-template>
 
 <ng-template #deleteDeploymentProgressModal>
@@ -471,7 +458,7 @@
       (click)="hideDrawer()"
       aria-controls="manage-deployment-target-drawer"
       class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 right-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
-      <fa-icon [icon]="faXmark" class="w-5 h-5"></fa-icon>
+      <fa-icon [icon]="faXmark" class="w-5 h-5" />
       <span class="sr-only">Close menu</span>
     </button>
     <form [formGroup]="editForm" (ngSubmit)="saveDeploymentTarget()">
@@ -531,24 +518,92 @@
               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:select-none" />
           </div>
         }
-        <div class="flex items-center">
-          <input
-            id="metrics-checkbox"
-            type="checkbox"
-            formControlName="metricsEnabled"
-            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
-          <label for="metrics-checkbox" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-            Report Metrics
-          </label>
-        </div>
-        @if (editForm.controls.metricsEnabled.disabled) {
+
+        <div class="space-y-1">
+          <div class="flex items-center">
+            <input
+              id="metrics-checkbox"
+              type="checkbox"
+              formControlName="metricsEnabled"
+              class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+            <label for="metrics-checkbox" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+              Report Metrics
+            </label>
+          </div>
+          @if (editForm.controls.metricsEnabled.disabled) {
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Metrics reporting is not available for a namespace scoped agent.
+            </p>
+          }
           <p class="text-xs text-gray-500 dark:text-gray-400">
-            Metrics reporting is not available for a namespace scoped agent.
+            Changing metrics reporting requires the agent to reconnect. Metrics reporting is not supported on macOS.
           </p>
-        }
-        <p class="text-xs text-gray-500 dark:text-gray-400">
-          Changing metrics reporting requires the agent to reconnect. Metrics reporting is not supported on macOS.
-        </p>
+        </div>
+
+        <div class="space-y-1">
+          <div class="flex items-center">
+            <input
+              id="logs-enabled-checkbox"
+              type="checkbox"
+              formControlName="deploymentLogsEnabled"
+              class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+            <label for="logs-enabled-checkbox" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+              Collect application logs
+            </label>
+          </div>
+
+          @if (!isLoggingSupported()) {
+            <p class="text-xs text-yellow-800 dark:text-yellow-300">
+              Log collection requires Agent version 1.9.0 or later
+            </p>
+          }
+
+          @if (editForm.controls.deploymentLogsEnabled.value && isDeploymentLogsAfterEnabled()) {
+            <div class="ml-6 mt-2">
+              <label
+                for="deployment-logs-after"
+                class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">
+                Collect logs after
+              </label>
+
+              <input
+                type="datetime-local"
+                id="deployment-logs-after"
+                formControlName="deploymentLogsAfter"
+                class="bg-gray-50 border leading-none border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+
+              <div class="flex gap-1 mt-1">
+                <button
+                  type="button"
+                  (click)="setDeploymentLogsAfterNow()"
+                  class="px-1.5 py-0.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600">
+                  now
+                </button>
+
+                <button
+                  type="button"
+                  (click)="setDeploymentLogsAfterNowMinus1h()"
+                  class="px-1.5 py-0.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600">
+                  now-1h
+                </button>
+
+                @if (editForm.controls.deploymentLogsAfter.value) {
+                  <button
+                    type="button"
+                    (click)="clearDeploymentLogsAfter()"
+                    class="px-1.5 py-0.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600">
+                    clear
+                  </button>
+                }
+              </div>
+
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                Only collect application logs with a timestamp greater than specified. Use this if an agent appears
+                stuck collecting very old logs.
+              </p>
+            </div>
+          }
+        </div>
 
         @if (editForm.controls.imageCleanupEnabled.enabled) {
           <div class="flex items-center">
@@ -667,7 +722,7 @@
           type="submit"
           [disabled]="editFormLoading"
           class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
-          <fa-icon [icon]="faPen" class="me-2"></fa-icon>
+          <fa-icon [icon]="faPen" class="me-2" />
           Update
         </button>
       </div>
@@ -693,7 +748,7 @@
       (click)="hideDrawer()"
       aria-controls="manage-deployment-target-drawer"
       class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 right-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
-      <fa-icon [icon]="faXmark" class="size-5"></fa-icon>
+      <fa-icon [icon]="faXmark" class="size-5" />
       <span class="sr-only">Close menu</span>
     </button>
     <form [formGroup]="notesForm" (ngSubmit)="saveDeploymentTargetNotes()">

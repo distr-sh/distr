@@ -18,13 +18,15 @@ import {OverlayService} from './services/overlay.service';
   template: `<router-outlet /><app-toast-container />`,
 })
 export class AppComponent implements OnInit {
+  private readonly colorSchemeService = inject(ColorSchemeService);
+
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
   private readonly navigationEnd$: Observable<NavigationEnd> = this.router.events.pipe(
     filter((event: Event) => event instanceof NavigationEnd)
   );
 
-  constructor(private readonly colorSchemeService: ColorSchemeService) {
+  constructor() {
     effect(() => {
       document.body.classList.toggle('dark', this.colorSchemeService.colorScheme() === 'dark');
     });

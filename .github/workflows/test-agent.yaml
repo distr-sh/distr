@@ -9,12 +9,14 @@ on:
       - 'docker-autoheal/**'
       - 'sdk/**'
       - 'deploy/charts/**'
+      - 'frontend/**'
   pull_request:
     paths-ignore:
       - 'website/**'
       - 'docker-autoheal/**'
       - 'sdk/**'
       - 'deploy/charts/**'
+      - 'frontend/**'
 
 jobs:
   test:

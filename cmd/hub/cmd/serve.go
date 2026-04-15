@@ -69,8 +69,9 @@ func runServe(ctx context.Context, opts ServeOptions) {
 	defer func() { util.Must(registry.Shutdown(ctx)) }()
 
 	dbCtx := internalctx.WithDb(ctx, registry.GetDbPool())
-	util.Must(db.CreateAgentVersion(dbCtx))
-	util.Must(subscription.ReconcileStarterFeatures(dbCtx))
+	dbLogCtx := internalctx.WithLogger(dbCtx, registry.GetLogger())
+	util.Must(db.CreateAgentVersion(dbLogCtx))
+	util.Must(subscription.ReconcileEditionFeatures(dbLogCtx))
 
 	if env.MetricsEnabled() {
 		util.Must(registry.GetPrometheusCollector().Initialize(dbCtx, db.QueryableInitDataSource{}))

@@ -1,5 +1,5 @@
 import {HttpClient, HttpErrorResponse} from '@angular/common/http';
-import {Injectable} from '@angular/core';
+import {inject, Injectable} from '@angular/core';
 import {
   Application,
   ApplicationVersion,
@@ -14,11 +14,13 @@ import {CrudService} from './interfaces';
   providedIn: 'root',
 })
 export class ApplicationsService implements CrudService<Application> {
+  private readonly httpClient = inject(HttpClient);
+
   private readonly applicationsUrl = '/api/v1/applications';
   private readonly cache: ReactiveList<Application>;
   private readonly refresh$ = new Subject<void>();
 
-  constructor(private readonly httpClient: HttpClient) {
+  constructor() {
     this.cache = new DefaultReactiveList(this.httpClient.get<Application[]>(this.applicationsUrl));
     this.refresh$
       .pipe(

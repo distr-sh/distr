@@ -23,6 +23,8 @@ export interface ConfirmConfig {
   message?: ConfirmMessage;
   customTemplate?: TemplateRef<any>;
   requiredConfirmInputText?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
 }
 
 @Component({

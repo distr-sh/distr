@@ -9,7 +9,7 @@
             <label for="simple-search" class="sr-only">Search</label>
             <div class="relative w-full">
               <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <fa-icon [icon]="faMagnifyingGlass" class="text-gray-500 dark:text-gray-400"></fa-icon>
+                <fa-icon [icon]="faMagnifyingGlass" class="text-gray-500 dark:text-gray-400" />
               </div>
               <input
                 type="text"
@@ -33,7 +33,7 @@
               type="button"
               id="createCustomerButton"
               class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
-              <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2"></fa-icon>
+              <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
               Create Customer
             </button>
           }
@@ -76,7 +76,7 @@
                   class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-32 lg:max-w-64 xl:max-w-128 overflow-hidden text-ellipsis">
                   {{ customer.name }}
                   <button type="button" class="text-gray-900 dark:text-gray-400" (click)="showUpdateDialog(customer)">
-                    <fa-icon [icon]="faEdit"></fa-icon>
+                    <fa-icon [icon]="faEdit" />
                   </button>
                 </td>
                 <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
@@ -172,7 +172,7 @@
                       aria-label="Delete"
                       (click)="delete(customer)"
                       class="py-2 px-3 text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900">
-                      <fa-icon [icon]="faTrash" class="h-4 w-4"></fa-icon>
+                      <fa-icon [icon]="faTrash" class="h-4 w-4" />
                     </button>
                   }
                 </td>
@@ -203,7 +203,7 @@
         type="button"
         (click)="closeCreateDialog()"
         class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
-        <fa-icon [icon]="faXmark"></fa-icon>
+        <fa-icon [icon]="faXmark" />
         <span class="sr-only">Close modal</span>
       </button>
     </div>

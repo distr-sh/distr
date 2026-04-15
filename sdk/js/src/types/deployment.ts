@@ -5,7 +5,6 @@ export interface Deployment extends BaseModel {
   deploymentTargetId: string;
   releaseName?: string;
   dockerType?: DockerType;
-  logsEnabled: boolean;
 }
 
 export interface DeploymentRequest {
@@ -17,7 +16,6 @@ export interface DeploymentRequest {
   dockerType?: DockerType;
   valuesYaml?: string;
   envFileData?: string;
-  logsEnabled?: boolean;
   forceRestart?: boolean;
   ignoreRevisionSkew?: boolean;
   helmOptions?: HelmOptions;
@@ -28,10 +26,6 @@ export interface HelmOptions {
   waitStrategy: string;
   rollbackOnFailure: boolean;
   cleanupOnFailure: boolean;
-}
-
-export interface PatchDeploymentRequest {
-  logsEnabled?: boolean;
 }
 
 export interface DeploymentWithLatestRevision extends Deployment {

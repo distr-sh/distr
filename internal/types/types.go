@@ -87,6 +87,7 @@ const (
 	FeaturePrePostScripts         Feature = "pre_post_scripts"
 	FeatureArtifactVersionMutable Feature = "artifact_version_mutable"
 	FeatureVendorBilling          Feature = "vendor_billing"
+	FeatureDeploymentLogsAfter    Feature = "deployment_logs_after"
 )
 
 type DeploymentStatusType string

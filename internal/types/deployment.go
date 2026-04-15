@@ -12,7 +12,6 @@ type Deployment struct {
 	ReleaseName              *string     `db:"release_name" json:"releaseName,omitempty"`
 	ApplicationEntitlementID *uuid.UUID  `db:"application_entitlement_id" json:"applicationEntitlementId,omitempty"`
 	DockerType               *DockerType `db:"docker_type" json:"dockerType,omitempty"`
-	LogsEnabled              bool        `db:"logs_enabled" json:"logsEnabled"`
 }
 
 type DeploymentWithLatestRevision struct {

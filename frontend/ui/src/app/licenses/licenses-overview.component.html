@@ -7,7 +7,7 @@
           <label for="simple-search" class="sr-only">Search</label>
           <div class="relative w-full">
             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <fa-icon [icon]="faMagnifyingGlass" class="text-gray-500 dark:text-gray-400"></fa-icon>
+              <fa-icon [icon]="faMagnifyingGlass" class="text-gray-500 dark:text-gray-400" />
             </div>
             <input
               type="text"
@@ -33,7 +33,7 @@
             } @else {
               <fa-icon
                 [icon]="faBuildingUser"
-                class="size-10 flex items-center justify-center text-2xl text-gray-400"></fa-icon>
+                class="size-10 flex items-center justify-center text-2xl text-gray-400" />
             }
             <div class="min-w-0 flex-1">
               <h3 class="font-bold text-gray-900 dark:text-white truncate">
@@ -58,7 +58,7 @@
                   type="button"
                   (click)="openCopyModal($event, license)"
                   class="inline-flex items-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
-                  <fa-icon [icon]="faCopy"></fa-icon>
+                  <fa-icon [icon]="faCopy" />
                   Copy from another customer
                 </button>
               }
@@ -102,7 +102,7 @@
           type="button"
           (click)="closeCopyModal()"
           class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
-          <fa-icon [icon]="faXmark"></fa-icon>
+          <fa-icon [icon]="faXmark" />
           <span class="sr-only">Close modal</span>
         </button>
       </div>

@@ -10,7 +10,7 @@
           [class.dark:text-gray-400]="!isCustomerStep()"
           [class.text-blue-700]="isCustomerStep()"
           [class.dark:text-blue-600]="isCustomerStep()">
-          <fa-icon [icon]="faBuildingUser"></fa-icon>
+          <fa-icon [icon]="faBuildingUser" />
           <p class="text-sm font-medium leading-tight">Customer</p>
         </li>
 
@@ -24,7 +24,7 @@
         [class.dark:text-gray-400]="!isApplicationStep()"
         [class.text-blue-700]="isApplicationStep()"
         [class.dark:text-blue-600]="isApplicationStep()">
-        <fa-icon [icon]="faShip"></fa-icon>
+        <fa-icon [icon]="faShip" />
         <p class="text-sm font-medium leading-tight">Application</p>
       </li>
 
@@ -37,7 +37,7 @@
         [class.dark:text-gray-400]="!isTargetStep()"
         [class.text-blue-700]="isTargetStep()"
         [class.dark:text-blue-600]="isTargetStep()">
-        <fa-icon [icon]="faServer"></fa-icon>
+        <fa-icon [icon]="faServer" />
         <p class="text-sm font-medium leading-tight whitespace-nowrap">Deployment Config</p>
       </li>
 
@@ -50,7 +50,7 @@
         [class.dark:text-gray-400]="!isConfigurationStep()"
         [class.text-blue-700]="isConfigurationStep()"
         [class.dark:text-blue-600]="isConfigurationStep()">
-        <fa-icon [icon]="faCog"></fa-icon>
+        <fa-icon [icon]="faCog" />
         <p class="text-sm font-medium leading-tight whitespace-nowrap">App Config</p>
       </li>
 
@@ -64,9 +64,9 @@
         [class.text-green-600]="isConnectStep()"
         [class.dark:text-green-500]="isConnectStep()">
         @if (isConnectStep()) {
-          <fa-icon [icon]="faCheckCircle"></fa-icon>
+          <fa-icon [icon]="faCheckCircle" />
         } @else {
-          <fa-icon [icon]="faNetworkWired"></fa-icon>
+          <fa-icon [icon]="faNetworkWired" />
         }
         <p class="text-sm font-medium leading-tight">Deploy</p>
       </li>
@@ -75,7 +75,7 @@
 
   @if (!isFinalStep()) {
     <form [formGroup]="currentFormGroup()" (ngSubmit)="this.attemptContinueOutput.emit()">
-      <ng-container *ngTemplateOutlet="selected ? selected.content : null"></ng-container>
+      <ng-container *ngTemplateOutlet="selected ? selected.content : null" />
 
       <div class="gap-4 flex justify-stretch sm:justify-end mt-4">
         @if (shouldShowBackButton()) {
@@ -98,7 +98,7 @@
       </div>
     </form>
   } @else {
-    <ng-container *ngTemplateOutlet="selected ? selected.content : null"></ng-container>
+    <ng-container *ngTemplateOutlet="selected ? selected.content : null" />
 
     <div class="gap-4 flex justify-stretch sm:justify-end mt-4">
       <button

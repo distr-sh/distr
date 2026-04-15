@@ -1,6 +1,6 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe, NgOptimizedImage} from '@angular/common';
-import {Component, inject, Input, OnDestroy, TemplateRef} from '@angular/core';
+import {Component, inject, input, OnDestroy, TemplateRef} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
 import {Application, DeploymentType} from '@distr-sh/distr-sdk';
@@ -47,7 +47,7 @@ import {ToastService} from '../services/toast.service';
   templateUrl: './applications.component.html',
 })
 export class ApplicationsComponent implements OnDestroy {
-  @Input('fullVersion') fullVersion: boolean = false;
+  readonly fullVersion = input<boolean>(false);
   private readonly router = inject(Router);
   protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faPlus = faPlus;

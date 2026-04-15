@@ -108,7 +108,7 @@
         <app-editor
           formControlName="payload"
           language="json"
-          class="block w-full rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white [&_.cm-editor]:min-h-32 [&_.cm-editor.cm-focused]:outline-none"></app-editor>
+          class="block w-full rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white [&_.cm-editor]:min-h-32 [&_.cm-editor.cm-focused]:outline-none" />
         @if (editForm.errors?.['payloadRequired'] && editForm.controls.payload.touched) {
           <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
         }
