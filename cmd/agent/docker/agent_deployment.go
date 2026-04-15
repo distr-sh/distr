@@ -27,7 +27,6 @@ type AgentDeployment struct {
 	RevisionID  uuid.UUID        `json:"revisionId"`
 	ProjectName string           `json:"projectName"`
 	DockerType  types.DockerType `json:"docker_type,omitempty"`
-	LogsEnabled bool             `json:"logsEnabled"`
 	State       State            `json:"phase"`
 }
 
@@ -56,7 +55,6 @@ func NewAgentDeployment(deployment api.AgentDeployment) (*AgentDeployment, error
 			RevisionID:  deployment.RevisionID,
 			ProjectName: name,
 			DockerType:  *deployment.DockerType,
-			LogsEnabled: deployment.LogsEnabled,
 		}, nil
 	}
 }

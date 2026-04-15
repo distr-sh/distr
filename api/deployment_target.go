@@ -21,7 +21,6 @@ type DeploymentRequest struct {
 	ValuesYaml               []byte            `json:"valuesYaml"`
 	DockerType               *types.DockerType `json:"dockerType"`
 	EnvFileData              []byte            `json:"envFileData"`
-	LogsEnabled              bool              `json:"logsEnabled"`
 	ForceRestart             bool              `json:"forceRestart"`
 	IgnoreRevisionSkew       bool              `json:"ignoreRevisionSkew"`
 	HelmOptions              *HelmOptions      `json:"helmOptions,omitempty"`
@@ -33,10 +32,6 @@ func (d *DeploymentRequest) GetValuesYAML() []byte {
 
 func (d *DeploymentRequest) GetEnvFileData() []byte {
 	return d.EnvFileData
-}
-
-type PatchDeploymentRequest struct {
-	LogsEnabled *bool `json:"logsEnabled,omitempty"`
 }
 
 type HelmOptions struct {

@@ -29,7 +29,7 @@ sources = ["sdk/js/package.json", "sdk/js/pnpm-lock.yaml"]
 [tasks.frontend-deps]
 run = 'pnpm install'
 depends = ["build:sdk"]
-sources = ["package.json", "pnpm-lock.yaml"]
+sources = ["package.json", "pnpm-lock.yaml", "sdk/js/src/**/*"]
 
 [tasks.go-tidy]
 run = 'go mod tidy'

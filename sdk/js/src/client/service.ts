@@ -211,6 +211,7 @@ export class DistrService {
       deployments: [],
       metricsEnabled: false,
       imageCleanupEnabled: false,
+      deploymentLogsEnabled: false,
       autohealEnabled: false,
     });
     await this.client.createOrUpdateDeployment({
@@ -250,7 +251,7 @@ export class DistrService {
    * Only updates deployments that are not already on the target version.
    * @param applicationId The application ID to update
    * @param applicationVersionId The target version ID to update to
-   * @param reuseConfigFromCurrentRevision If true, the existing deployment configuration (values YAML, env file, helm options, logsEnabled) will be reused for the update. Otherwise, the defaults will be used.
+   * @param reuseConfigFromCurrentRevision If true, the existing deployment configuration (values YAML, env file, helm options) will be reused for the update. Otherwise, the defaults will be used.
    */
   public async updateAllDeployments(
     applicationId: string,
@@ -308,7 +309,6 @@ export class DistrService {
         if (reuseConfigFromCurrentRevision) {
           deploymentRequest.valuesYaml = deployment.valuesYaml;
           deploymentRequest.envFileData = deployment.envFileData;
-          deploymentRequest.logsEnabled = deployment.logsEnabled;
           deploymentRequest.helmOptions = deployment.helmOptions;
         }
 

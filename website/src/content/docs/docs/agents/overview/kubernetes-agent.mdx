@@ -145,7 +145,7 @@ Note the **REVISION** number from the output.
 ```bash
 kubectl create secret generic "sh.distr.agent.v1.<release-name>" \
   --namespace=<namespace> \
-  --from-literal=release='{"id":"00000000-0000-0000-0000-000000000000","revisionId":"00000000-0000-0000-0000-000000000000","releaseName":"<release-name>","helmRevision":<REVISION>,"logsEnabled":false,"phase":"ready"}'
+  --from-literal=release='{"id":"00000000-0000-0000-0000-000000000000","revisionId":"00000000-0000-0000-0000-000000000000","releaseName":"<release-name>","helmRevision":<REVISION>,"deploymentLogsEnabled":false,"phase":"ready"}'
 ```
 
 Then label it so the agent can discover it:

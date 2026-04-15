@@ -20,3 +20,11 @@ export function isExpired(obj: {expiresAt?: Date | string}): boolean {
 export function isArchived(obj: {archivedAt?: Date | string}): boolean {
   return obj.archivedAt ? dayjs(obj.archivedAt).isBefore() : false;
 }
+
+export function dateTimeLocalToISO(dateTimeLocal: string | null | undefined): string | null {
+  return dateTimeLocal ? dayjs(dateTimeLocal).toISOString() : null;
+}
+
+export function isoToDateTimeLocal(iso: string | null | undefined): string {
+  return iso ? dayjs(iso).local().format('YYYY-MM-DDTHH:mm') : '';
+}

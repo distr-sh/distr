@@ -31,6 +31,8 @@ const (
 		dt.metrics_enabled,
 		dt.image_cleanup_enabled,
 		dt.autoheal_enabled,
+		dt.deployment_logs_enabled,
+		dt.deployment_logs_after,
 		CASE WHEN dt.resources_cpu_request IS NOT NULL THEN (
 			dt.resources_cpu_request,
 			dt.resources_memory_request,
@@ -188,16 +190,18 @@ func CreateDeploymentTarget(
 
 	db := internalctx.GetDb(ctx)
 	args := pgx.NamedArgs{
-		"name":                dt.Name,
-		"type":                dt.Type,
-		"orgId":               dt.OrganizationID,
-		"namespace":           dt.Namespace,
-		"scope":               dt.Scope,
-		"agentVersionId":      dt.AgentVersionID,
-		"metricsEnabled":      dt.MetricsEnabled,
-		"imageCleanupEnabled": dt.ImageCleanupEnabled,
-		"autohealEnabled":     dt.AutohealEnabled,
-		"customerOrgId":       customerOrgID,
+		"name":                  dt.Name,
+		"type":                  dt.Type,
+		"orgId":                 dt.OrganizationID,
+		"namespace":             dt.Namespace,
+		"scope":                 dt.Scope,
+		"agentVersionId":        dt.AgentVersionID,
+		"metricsEnabled":        dt.MetricsEnabled,
+		"imageCleanupEnabled":   dt.ImageCleanupEnabled,
+		"deploymentLogsEnabled": dt.DeploymentLogsEnabled,
+		"deploymentLogsAfter":   dt.DeploymentLogsAfter,
+		"autohealEnabled":       dt.AutohealEnabled,
+		"customerOrgId":         customerOrgID,
 	}
 
 	if dt.Resources != nil {
@@ -212,11 +216,11 @@ func CreateDeploymentTarget(
 		`WITH inserted AS (
 			INSERT INTO DeploymentTarget
 			(name, type, organization_id, namespace, scope, agent_version_id, metrics_enabled, image_cleanup_enabled,
-				autoheal_enabled, customer_organization_id, resources_cpu_request, resources_memory_request,
-				resources_cpu_limit, resources_memory_limit)
+				deployment_logs_enabled, deployment_logs_after, autoheal_enabled, customer_organization_id,
+				resources_cpu_request, resources_memory_request, resources_cpu_limit, resources_memory_limit)
 			VALUES (@name, @type, @orgId, @namespace, @scope, @agentVersionId, @metricsEnabled, @imageCleanupEnabled,
-				@autohealEnabled, @customerOrgId, @resourcesCpuRequest, @resourcesMemoryRequest, @resourcesCpuLimit,
-				@resourcesMemoryLimit)
+				@deploymentLogsEnabled, @deploymentLogsAfter, @autohealEnabled, @customerOrgId,
+				@resourcesCpuRequest, @resourcesMemoryRequest, @resourcesCpuLimit, @resourcesMemoryLimit)
 			RETURNING *
 		)
 		SELECT `+deploymentTargetFullOutputExpr+` FROM inserted dt`+deploymentTargetJoinExpr,
@@ -238,11 +242,13 @@ func UpdateDeploymentTarget(ctx context.Context, dt *types.DeploymentTargetFull,
 	agentUpdateStr := ""
 	db := internalctx.GetDb(ctx)
 	args := pgx.NamedArgs{
-		"id":                  dt.ID,
-		"name":                dt.Name,
-		"orgId":               orgID,
-		"metricsEnabled":      dt.MetricsEnabled,
-		"imageCleanupEnabled": dt.ImageCleanupEnabled,
+		"id":                    dt.ID,
+		"name":                  dt.Name,
+		"orgId":                 orgID,
+		"metricsEnabled":        dt.MetricsEnabled,
+		"imageCleanupEnabled":   dt.ImageCleanupEnabled,
+		"deploymentLogsEnabled": dt.DeploymentLogsEnabled,
+		"deploymentLogsAfter":   dt.DeploymentLogsAfter,
 	}
 	if dt.AgentVersionID != nil {
 		args["agentVersionId"] = dt.AgentVersionID
@@ -260,6 +266,8 @@ func UpdateDeploymentTarget(ctx context.Context, dt *types.DeploymentTargetFull,
 				name = @name,
 				metrics_enabled = @metricsEnabled,
 				image_cleanup_enabled = @imageCleanupEnabled,
+				deployment_logs_enabled = @deploymentLogsEnabled,
+				deployment_logs_after = @deploymentLogsAfter,
 				resources_cpu_request = @cpuRequest,
 				resources_cpu_limit = @cpuLimit,
 				resources_memory_request = @memoryRequest,
