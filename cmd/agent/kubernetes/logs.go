@@ -205,7 +205,11 @@ func (lw *logsWatcher) UpdateLastLogsTimestamp(
 	return err
 }
 
-func (lw *logsWatcher) GetLastLogsTimestamp(ctx context.Context, namespace string, deployment AgentDeployment) (*time.Time, error) {
+func (lw *logsWatcher) GetLastLogsTimestamp(
+	ctx context.Context,
+	namespace string,
+	deployment AgentDeployment,
+) (*time.Time, error) {
 	logsAfter := lw.logsAfter.Load()
 
 	if secret, err := k8sClient.CoreV1().Secrets(namespace).
