@@ -189,8 +189,8 @@ func UpdateOrganizationEnterpriseLimits(
 		SET subscription_customer_organization_quantity = @max_customer_orgs,
 			subscription_user_account_quantity = @max_user_accounts,
 			subscription_period = @subscription_period,
-			subscription_ends_at = @subscription_ends_at
-		WHERE subscription_type = @subscription_type`,
+			subscription_ends_at = @subscription_ends_at,
+			subscription_type = @subscription_type`,
 		pgx.NamedArgs{
 			"max_customer_orgs":    maxCustomerOrgs,
 			"max_user_accounts":    maxUserAccounts,

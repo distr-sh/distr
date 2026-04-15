@@ -50,13 +50,6 @@ func ReconcileEditionFeatures(ctx context.Context) error {
 			}
 		}
 
-		if buildconfig.IsEnterpriseEdition() {
-			log.Info("updating organization subscription type to enterprise")
-			if err := db.UpdateOrganizationSubscriptionType(ctx, types.SubscriptionTypeEnterprise); err != nil {
-				return err
-			}
-		}
-
 		if err := db.UpdateAllUserAccountOrganizationAssignmentsWithOrganizationSuscriptionType(
 			ctx,
 			types.NonProSubscriptionTypes,
