@@ -251,6 +251,28 @@ func GetAllOrganizationsForSuperAdmin(ctx context.Context) ([]types.Organization
 	}
 }
 
+func GetAllOrganizations(ctx context.Context) ([]types.Organization, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx, `SELECT`+organizationOutputExpr+` FROM Organization o WHERE deleted_at IS NULL`)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByPos[types.Organization])
+}
+
+func UpdateOrganizationFeatures(ctx context.Context, orgID uuid.UUID, features []types.Feature) error {
+	db := internalctx.GetDb(ctx)
+	_, err := db.Exec(
+		ctx,
+		`UPDATE Organization SET features = @features WHERE id = @id`,
+		pgx.NamedArgs{"id": orgID, "features": features},
+	)
+	if err != nil {
+		return fmt.Errorf("could not update Organization features: %w", err)
+	}
+	return nil
+}
+
 func CountAllOrganizations(ctx context.Context) (res int64, err error) {
 	db := internalctx.GetDb(ctx)
 	err = db.QueryRow(ctx, "SELECT count(id) FROM Organization WHERE deleted_at IS NULL").Scan(&res)

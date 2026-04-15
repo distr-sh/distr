@@ -13,6 +13,36 @@ import (
 	"go.uber.org/zap"
 )
 
+func ensureProFeatures(ctx context.Context) error {
+	log := internalctx.GetLogger(ctx)
+	log.Info("ensuring pro features for all organizations")
+	orgs, err := db.GetAllOrganizations(ctx)
+	if err != nil {
+		return err
+	}
+	for _, org := range orgs {
+		hasMissing := false
+		for _, f := range ProFeatures {
+			if !org.HasFeature(f) {
+				hasMissing = true
+				break
+			}
+		}
+		if hasMissing {
+			org.AddFeatures(ProFeatures...)
+			log.Info("adding missing pro features to organization",
+				zap.Stringer("organization_id", org.ID),
+				zap.String("organization_name", org.Name),
+				zap.Any("features", org.Features),
+			)
+			if err := db.UpdateOrganizationFeatures(ctx, org.ID, org.Features); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func ReconcileStarterFeaturesForOrganizationID(ctx context.Context, orgID uuid.UUID) error {
 	log := internalctx.GetLogger(ctx)
 	log.Info("reconciling starter features for organization", zap.String("organization_id", orgID.String()))
@@ -93,6 +123,10 @@ func ReconcileEditionFeatures(ctx context.Context) error {
 				licenseData.Period,
 				licenseData.ExpirationDate,
 			); err != nil {
+				return err
+			}
+
+			if err := ensureProFeatures(ctx); err != nil {
 				return err
 			}
 
