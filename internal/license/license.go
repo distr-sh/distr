@@ -103,7 +103,7 @@ func parseAndValidate(pubKeySrc func() (jwk.Key, error), licenseKey string) (*Li
 	} else if key == nil {
 		return &defaultLicenseData, nil
 	} else if licenseKey == "" {
-		return nil, errors.New("Distr license key is required via environment variable LICENSE_KEY")
+		return nil, errors.New("distr license key is required via environment variable LICENSE_KEY")
 	}
 
 	token, err := jwt.ParseString(licenseKey, jwt.WithKey(jwa.EdDSA(), key))
