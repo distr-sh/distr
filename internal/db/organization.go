@@ -253,7 +253,7 @@ func GetAllOrganizationsForSuperAdmin(ctx context.Context) ([]types.Organization
 
 func GetAllOrganizations(ctx context.Context) ([]types.Organization, error) {
 	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(ctx, `SELECT`+organizationOutputExpr+` FROM Organization o WHERE deleted_at IS NULL`)
+	rows, err := db.Query(ctx, `SELECT`+organizationOutputExpr+` FROM Organization o WHERE o.deleted_at IS NULL`)
 	if err != nil {
 		return nil, err
 	}
