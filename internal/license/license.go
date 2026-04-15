@@ -45,12 +45,6 @@ var (
 
 const licenseDataClaimName = "ld"
 
-// ParsedLicense holds the parsed JWT claims including both standard claims and private license data.
-type ParsedLicense struct {
-	LicenseData
-	ExpirationDate time.Time
-}
-
 // LicenseData is the parsed private claims from the license key JWT.
 type LicenseData struct {
 	EnforceLimitsOnStartup bool `mapstructure:"enf"`
@@ -65,10 +59,12 @@ type LicenseData struct {
 	MaxUsersPerCustomerOrganization             limit.Limit `mapstructure:"mcu"`
 	MaxDeploymentTargetsPerCustomerOrganization limit.Limit `mapstructure:"mcd"`
 	MaxLogExportRows                            limit.Limit `mapstructure:"mlr"`
+
+	ExpirationDate time.Time
 }
 
 var (
-	cachedLicense      *ParsedLicense
+	cachedLicense      *LicenseData
 	defaultLicenseData = LicenseData{
 		EnforceLimitsOnStartup:                      false,
 		Period:                                      types.SubscriptionPeriodYearly,
@@ -93,27 +89,21 @@ func Initialize() error {
 
 // GetLicenseData MUST be called after [Initialize], otherwise it WILL panic.
 func GetLicenseData() LicenseData {
-	return GetParsedLicense().LicenseData
-}
-
-// GetParsedLicense returns the full parsed license including the JWT expiration date.
-// MUST be called after [Initialize], otherwise it WILL panic.
-func GetParsedLicense() ParsedLicense {
 	if cachedLicense == nil {
-		panic("detected call to license.GetParsedLicense before calling license.Initialize")
+		panic("detected call to license.GetLicenseData before calling license.Initialize")
 	}
 
 	return *cachedLicense
 }
 
-func parseAndValidate(pubKeySrc func() (jwk.Key, error), licenseKey string) (*ParsedLicense, error) {
+func parseAndValidate(pubKeySrc func() (jwk.Key, error), licenseKey string) (*LicenseData, error) {
 	key, err := pubKeySrc()
 	if err != nil {
 		return nil, fmt.Errorf("read validation key: %w", err)
 	} else if key == nil {
-		return &ParsedLicense{LicenseData: defaultLicenseData}, nil
+		return &defaultLicenseData, nil
 	} else if licenseKey == "" {
-		return nil, errors.New("license key is required")
+		return nil, errors.New("Distr license key is required via environment variable LICENSE_KEY")
 	}
 
 	token, err := jwt.ParseString(licenseKey, jwt.WithKey(jwa.EdDSA(), key))
@@ -131,10 +121,11 @@ func parseAndValidate(pubKeySrc func() (jwk.Key, error), licenseKey string) (*Pa
 		return nil, fmt.Errorf("invalid license key: %w", err)
 	}
 
-	parsed := &ParsedLicense{LicenseData: licenseData}
-	if exp, ok := token.Expiration(); ok {
-		parsed.ExpirationDate = exp
+	if exp, ok := token.Expiration(); !ok {
+		return nil, fmt.Errorf("invalid license key: missing expiration date")
+	} else {
+		licenseData.ExpirationDate = exp
 	}
 
-	return parsed, nil
+	return &licenseData, nil
 }

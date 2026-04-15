@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/distr-sh/distr/internal/buildconfig"
+	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/license"
 	"github.com/distr-sh/distr/internal/types"
@@ -12,7 +13,8 @@ import (
 	"go.uber.org/zap"
 )
 
-func ReconcileStarterFeaturesForOrganizationID(ctx context.Context, log *zap.Logger, orgID uuid.UUID) error {
+func ReconcileStarterFeaturesForOrganizationID(ctx context.Context, orgID uuid.UUID) error {
+	log := internalctx.GetLogger(ctx)
 	log.Info("reconciling starter features for organization", zap.String("organization_id", orgID.String()))
 	return db.RunTx(ctx, func(ctx context.Context) error {
 		if err := db.UpdateAllUserAccountOrganizationAssignmentsWithOrganizationID(
@@ -35,10 +37,11 @@ func ReconcileStarterFeaturesForOrganizationID(ctx context.Context, log *zap.Log
 	})
 }
 
-func ReconcileEditionFeatures(ctx context.Context, log *zap.Logger) error {
+func ReconcileEditionFeatures(ctx context.Context) error {
+	log := internalctx.GetLogger(ctx)
 	log.Info("reconciling edition features")
 	return db.RunTx(ctx, func(ctx context.Context) error {
-		parsedLicense := license.GetParsedLicense()
+		licenseData := license.GetLicenseData()
 
 		if buildconfig.IsCommunityEdition() {
 			log.Info("updating organization subscription type to community")
@@ -83,24 +86,24 @@ func ReconcileEditionFeatures(ctx context.Context, log *zap.Logger) error {
 			return err
 		}
 
-		if parsedLicense.EnforceLimitsOnStartup {
+		if licenseData.EnforceLimitsOnStartup {
 			log.Info("updating enterprise edition limits",
-				zap.Any("max_customers", parsedLicense.MaxCustomersPerOrganization),
-				zap.Any("max_users", parsedLicense.MaxUsersPerOrganization),
-				zap.String("subscription_period", string(parsedLicense.Period)),
-				zap.Time("subscription_ends_at", parsedLicense.ExpirationDate),
+				zap.Any("max_customers", licenseData.MaxCustomersPerOrganization),
+				zap.Any("max_users", licenseData.MaxUsersPerOrganization),
+				zap.String("subscription_period", string(licenseData.Period)),
+				zap.Time("subscription_ends_at", licenseData.ExpirationDate),
 			)
 			if err := db.UpdateOrganizationEnterpriseLimits(
 				ctx,
-				parsedLicense.MaxCustomersPerOrganization,
-				parsedLicense.MaxUsersPerOrganization,
-				parsedLicense.Period,
-				parsedLicense.ExpirationDate,
+				licenseData.MaxCustomersPerOrganization,
+				licenseData.MaxUsersPerOrganization,
+				licenseData.Period,
+				licenseData.ExpirationDate,
 			); err != nil {
 				return err
 			}
 
-			if limit := parsedLicense.MaxOrganizations; !limit.IsUnlimited() {
+			if limit := licenseData.MaxOrganizations; !limit.IsUnlimited() {
 				if count, err := db.CountAllOrganizations(ctx); err != nil {
 					return err
 				} else if limit.IsExceeded(count) {

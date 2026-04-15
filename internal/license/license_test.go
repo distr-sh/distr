@@ -77,8 +77,7 @@ func TestParseAndValidate_NoPubKey_ReturnsDefault(t *testing.T) {
 	g := NewWithT(t)
 	got, err := parseAndValidate(nilPubKeyFunc, "")
 	g.Expect(err).ToNot(HaveOccurred())
-	g.Expect(got.LicenseData).To(Equal(defaultLicenseData))
-	g.Expect(got.ExpirationDate).To(BeZero())
+	g.Expect(*got).To(Equal(defaultLicenseData))
 }
 
 func TestParseAndValidate_PubKeyLoadError(t *testing.T) {
@@ -132,7 +131,9 @@ func TestParseAndValidate_AllFields(t *testing.T) {
 
 	got, err := parseAndValidate(pubKeyFunc(pub), token)
 	g.Expect(err).ToNot(HaveOccurred())
-	g.Expect(got.LicenseData).To(Equal(LicenseData{
+	g.Expect(got.ExpirationDate).To(BeTemporally("~", expiration, time.Second))
+	got.ExpirationDate = time.Time{}
+	g.Expect(*got).To(Equal(LicenseData{
 		EnforceLimitsOnStartup:                      true,
 		Period:                                      types.SubscriptionPeriodYearly,
 		MaxOrganizations:                            limit.New(10),
@@ -142,7 +143,6 @@ func TestParseAndValidate_AllFields(t *testing.T) {
 		MaxDeploymentTargetsPerCustomerOrganization: limit.New(50),
 		MaxLogExportRows:                            limit.New(60),
 	}))
-	g.Expect(got.ExpirationDate).To(BeTemporally("~", expiration, time.Second))
 }
 
 func TestParseAndValidate_PartialClaims_DefaultsForUnspecifiedFields(t *testing.T) {
@@ -157,7 +157,9 @@ func TestParseAndValidate_PartialClaims_DefaultsForUnspecifiedFields(t *testing.
 
 	got, err := parseAndValidate(pubKeyFunc(pub), token)
 	g.Expect(err).ToNot(HaveOccurred())
-	g.Expect(got.LicenseData).To(Equal(LicenseData{
+	g.Expect(got.ExpirationDate).ToNot(BeZero())
+	got.ExpirationDate = time.Time{}
+	g.Expect(*got).To(Equal(LicenseData{
 		EnforceLimitsOnStartup:                      false,
 		Period:                                      defaultLicenseData.Period,
 		MaxOrganizations:                            limit.New(5),
@@ -167,7 +169,6 @@ func TestParseAndValidate_PartialClaims_DefaultsForUnspecifiedFields(t *testing.
 		MaxDeploymentTargetsPerCustomerOrganization: defaultLicenseData.MaxDeploymentTargetsPerCustomerOrganization,
 		MaxLogExportRows:                            defaultLicenseData.MaxLogExportRows,
 	}))
-	g.Expect(got.ExpirationDate).ToNot(BeZero())
 }
 
 func TestParseAndValidate_ZeroLimits(t *testing.T) {
@@ -187,7 +188,8 @@ func TestParseAndValidate_ZeroLimits(t *testing.T) {
 
 	got, err := parseAndValidate(pubKeyFunc(pub), token)
 	g.Expect(err).ToNot(HaveOccurred())
-	g.Expect(got.LicenseData).To(Equal(LicenseData{
+	got.ExpirationDate = time.Time{}
+	g.Expect(*got).To(Equal(LicenseData{
 		EnforceLimitsOnStartup:                      false,
 		Period:                                      types.SubscriptionPeriodYearly,
 		MaxOrganizations:                            limit.New(0),
