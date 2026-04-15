@@ -154,19 +154,16 @@
             </li>
 
             @if (auth.hasAnyRole('read_write', 'admin')) {
-              @let status = deploymentTarget().currentStatus;
-              @if (status) {
-                <li
-                  class="text-yellow-400 hover:bg-yellow-500 hover:text-white dark:text-yellow-300 dark:hover:text-white dark:hover:bg-yellow-400">
-                  <button
-                    type="button"
-                    (click)="showDeploymentTargetDropdown.set(false); openInstructionsModal()"
-                    class="text-start block w-full px-4 py-2 text-sm">
-                    <fa-icon [icon]="faLink" class="h-5 w-5 mr-2 -ml-0.5" />
-                    Reconnect
-                  </button>
-                </li>
-              }
+              <li
+                class="text-yellow-400 hover:bg-yellow-500 hover:text-white dark:text-yellow-300 dark:hover:text-white dark:hover:bg-yellow-400">
+                <button
+                  type="button"
+                  (click)="showDeploymentTargetDropdown.set(false); openInstructionsModal()"
+                  class="text-start block w-full px-4 py-2 text-sm">
+                  <fa-icon [icon]="faLink" class="h-5 w-5 mr-2 -ml-0.5" />
+                  Reconnect
+                </button>
+              </li>
 
               <li>
                 @let hasDeployments = deploymentTarget().deployments.length > 0;
