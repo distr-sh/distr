@@ -26,8 +26,8 @@
             [class.bg-yellow-100]="pinned"
             [class.dark:bg-yellow-950]="pinned"
             [class.sticky]="pinned"
-            [class.top-16]="pinned"
             [class.bottom-0]="pinned"
+            [style.top]="pinned ? 'var(--pinned-row-top, 0px)' : null"
             [class.hover:bg-gray-50]="!pinned"
             [class.dark:hover:bg-gray-600]="!pinned"
             [class.hover:bg-yellow-200]="pinned"
@@ -93,6 +93,24 @@
       </output>
     </div>
   } @else if (live()) {
+    @if (!newestFirst()) {
+      <div class="flex justify-center py-1">
+        <button
+          type="button"
+          (click)="autoScroll.set(!autoScroll())"
+          class="py-1 px-2 flex items-center text-xs font-medium rounded-lg border"
+          [class.text-blue-600]="autoScroll()"
+          [class.dark:text-blue-400]="autoScroll()"
+          [class.border-blue-300]="autoScroll()"
+          [class.dark:border-blue-600]="autoScroll()"
+          [class.text-gray-500]="!autoScroll()"
+          [class.dark:text-gray-400]="!autoScroll()"
+          [class.border-gray-200]="!autoScroll()"
+          [class.dark:border-gray-600]="!autoScroll()">
+          Auto-scroll {{ autoScroll() ? 'on' : 'off' }}
+        </button>
+      </div>
+    }
     <div class="flex justify-center py-2">
       <div class="w-16 h-1 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
         <div

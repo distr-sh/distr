@@ -125,6 +125,7 @@ export class TimeseriesTableComponent {
   protected hasMore = true;
   protected isExporting = false;
   protected readonly pinnedEntryId = signal<string | null>(null);
+  protected readonly autoScroll = signal(true);
   private readonly liveResetTimestamp = signal(Date.now());
 
   protected readonly liveProgress = toSignal(
@@ -178,7 +179,7 @@ export class TimeseriesTableComponent {
               ),
               tap((entries) => {
                 this.liveResetTimestamp.set(Date.now());
-                if (!newestFirst && entries.length > 0) {
+                if (!newestFirst && entries.length > 0 && this.autoScroll()) {
                   afterNextRender(() => this.scrollToBottom(), {injector: this.injector});
                 }
               })
