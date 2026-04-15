@@ -154,7 +154,11 @@
                             <label
                               for="resource-check-all"
                               class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                              {{ allVisibleResourcesSelected() ? 'Uncheck all' : 'Check all' }}
+                              @if (allVisibleResourcesSelected()) {
+                                Select none
+                              } @else {
+                                Select all
+                              }
                             </label>
                           </div>
                         </li>

@@ -109,7 +109,11 @@
           [class.dark:text-gray-400]="!autoScroll()"
           [class.border-gray-200]="!autoScroll()"
           [class.dark:border-gray-600]="!autoScroll()">
-          Auto-scroll {{ autoScroll() ? 'on' : 'off' }}
+          @if (autoScroll()) {
+            Auto-scroll on
+          } @else {
+            Auto-scroll off
+          }
         </button>
       </div>
     }
