@@ -141,7 +141,7 @@
                       <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
                         <button class="px-4 w-full text-left" (click)="clearResources()">Deployment Status</button>
                       </li>
-                      @if (allResourcesCount() > 1) {
+                      @if (visibleResources().length > 1) {
                         <li class="w-full border-t border-gray-100 dark:border-gray-600">
                           <div class="flex items-center ps-3">
                             <input

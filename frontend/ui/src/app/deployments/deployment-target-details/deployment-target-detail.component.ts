@@ -111,12 +111,6 @@ export class DeploymentTargetDetailComponent {
     )
   );
 
-  protected readonly allResourcesCount = computed(() => {
-    const available = this.availableResources();
-    if (!available) return 0;
-    return (available.active?.length ?? 0) + (available.archived?.length ?? 0);
-  });
-
   protected readonly visibleResources = computed(() => {
     const available = this.availableResources();
     if (!available) return [];
