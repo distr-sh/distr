@@ -47,6 +47,7 @@ var (
 	dockerCli      = util.Require(dockercommand.NewDockerCli())
 	composeService composeapi.Compose
 	health         = NewHealthcheckServer(time.Hour)
+	logWatcher     = NewLogsWatcher(30 * time.Second)
 )
 
 func init() {
@@ -93,8 +94,6 @@ func main() {
 
 func mainLoop(ctx context.Context) {
 	tick := time.Tick(agentenv.Interval)
-
-	logWatcher := NewLogsWatcher(30 * time.Second)
 	logsGoroutine := util.NewToggleableGoroutine(logWatcher.Watch)
 
 loop:
@@ -292,7 +291,7 @@ func cleanupOldDeployments(ctx context.Context, resource api.AgentResource, depl
 				logger.Warn("could not delete deployment", zap.Error(err))
 			}
 
-			CleanupLogsTimestamps(deployment)
+			logWatcher.CleanupLogsTimestamps(deployment)
 		}
 	}
 }

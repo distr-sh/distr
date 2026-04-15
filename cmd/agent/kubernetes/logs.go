@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"maps"
+	"sync/atomic"
 	"time"
 
 	"github.com/distr-sh/distr/internal/deploymentlogs"
@@ -20,17 +21,19 @@ import (
 
 type logsWatcher struct {
 	interval  time.Duration
-	logsAfter *time.Time
-	namespace string
+	logsAfter atomic.Pointer[time.Time]
+	namespace atomic.Value
 }
 
 func NewLogsWatcher(namespace string, interval time.Duration) *logsWatcher {
-	return &logsWatcher{namespace: namespace, interval: interval}
+	lw := logsWatcher{interval: interval}
+	lw.namespace.Store(namespace)
+	return &lw
 }
 
 func (lw *logsWatcher) Watch(ctx context.Context) {
 	logger.Debug("logs watcher is starting to watch",
-		zap.String("namespace", lw.namespace),
+		zap.String("namespace", lw.GetNamespace()),
 		zap.Duration("interval", lw.interval))
 	tick := time.Tick(lw.interval)
 	for {
@@ -46,16 +49,26 @@ func (lw *logsWatcher) Watch(ctx context.Context) {
 }
 
 func (lw *logsWatcher) SetLogsAfter(v *time.Time) {
-	lw.logsAfter = v
+	lw.logsAfter.Store(v)
 }
 
 func (lw *logsWatcher) SetNamespace(ns string) {
-	lw.namespace = ns
+	lw.namespace.Store(ns)
+}
+
+func (lw *logsWatcher) GetNamespace() string {
+	if s, ok := lw.namespace.Load().(string); ok {
+		return s
+	} else {
+		return ""
+	}
 }
 
 func (lw *logsWatcher) collect(ctx context.Context) {
+	namespace := lw.GetNamespace()
+
 	logger.Debug("getting logs")
-	existingDeployments, err := GetExistingDeployments(ctx, lw.namespace)
+	existingDeployments, err := GetExistingDeployments(ctx, namespace)
 	if err != nil {
 		logger.Error("could not get existing deployments", zap.Error(err))
 		return
@@ -64,20 +77,15 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 	collector := deploymentlogs.NewCollector(agentClient, logger)
 
 	for _, d := range existingDeployments {
-		lastTimestamp, err := GetLastLogsTimestamp(ctx, lw.namespace, d)
+		logger := logger.With(zap.Any("deploymentId", d.ID))
+		sinceTime, err := lw.GetLastLogsTimestamp(ctx, namespace, d)
 		if err != nil {
 			logger.Error("could not get last logs timestamp for deployment", zap.Error(err))
 			continue
 		}
 
-		logger := logger.With(zap.Any("deploymentId", d.ID))
-
-		if lw.logsAfter != nil && (lastTimestamp == nil || lastTimestamp.Before(*lw.logsAfter)) {
-			lastTimestamp = lw.logsAfter
-		}
-
 		var resources []runtime.Object
-		if resUnstr, err := GetHelmManifest(ctx, lw.namespace, d.ReleaseName); err != nil {
+		if resUnstr, err := GetHelmManifest(ctx, namespace, d.ReleaseName); err != nil {
 			logger.Error("could not get helm manifest for deployment", zap.Error(err))
 			continue
 		} else {
@@ -95,7 +103,7 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 
 			var resourceName string
 			if metaObj, ok := obj.(metav1.Object); ok {
-				metaObj.SetNamespace(lw.namespace)
+				metaObj.SetNamespace(namespace)
 				logger = logger.With(zap.String("resourceName", metaObj.GetName()))
 
 				if restMapping, err := k8sRestMapper.RESTMapping(obj.GetObjectKind().GroupVersionKind().GroupKind()); err != nil {
@@ -108,11 +116,11 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 			}
 
 			logOptions := corev1.PodLogOptions{Timestamps: true}
-			if lastTimestamp != nil {
-				logOptions.SinceTime = &metav1.Time{Time: *lastTimestamp}
+			if sinceTime != nil {
+				logOptions.SinceTime = &metav1.Time{Time: *sinceTime}
 			}
 
-			logger.Sugar().Debugf("get logs since %v", logOptions.SinceTime)
+			logger.Debug("get logs for resource", zap.Timep("sinceTime", sinceTime))
 
 			resourceResponseMap, err := polymorphichelpers.AllPodLogsForObjectFn(
 				k8sConfigFlags, obj, &logOptions, 10*time.Second, true,
@@ -169,7 +177,7 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 		}
 
 		if toplevelErr == nil {
-			if err := UpdateLastLogsTimestamp(ctx, lw.namespace, d, now); err != nil {
+			if err := lw.UpdateLastLogsTimestamp(ctx, namespace, d, now); err != nil {
 				logger.Warn("could not update last logs timestamp for deployment", zap.Error(err))
 			}
 		}
@@ -180,7 +188,7 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 	}
 }
 
-func UpdateLastLogsTimestamp(
+func (lw *logsWatcher) UpdateLastLogsTimestamp(
 	ctx context.Context,
 	namespace string,
 	deployment AgentDeployment,
@@ -197,14 +205,18 @@ func UpdateLastLogsTimestamp(
 	return err
 }
 
-func GetLastLogsTimestamp(ctx context.Context, namespace string, deployment AgentDeployment) (*time.Time, error) {
+func (lw *logsWatcher) GetLastLogsTimestamp(ctx context.Context, namespace string, deployment AgentDeployment) (*time.Time, error) {
+	logsAfter := lw.logsAfter.Load()
+
 	if secret, err := k8sClient.CoreV1().Secrets(namespace).
 		Get(ctx, deployment.SecretName(), metav1.GetOptions{}); err != nil {
 		return nil, err
 	} else if timeStr, ok := secret.Data["lastLogTimestamp"]; !ok {
-		return nil, nil
+		return logsAfter, nil
 	} else if parsed, err := time.Parse(time.RFC3339Nano, string(timeStr)); err != nil {
 		return nil, err
+	} else if logsAfter != nil && parsed.Before(*logsAfter) {
+		return logsAfter, nil
 	} else {
 		return &parsed, nil
 	}

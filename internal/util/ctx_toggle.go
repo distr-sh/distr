@@ -1,10 +1,14 @@
 package util
 
-import "context"
+import (
+	"context"
+	"sync"
+)
 
 type ToggleableGoroutine struct {
 	fn       func(context.Context)
 	cancelFn func()
+	mut      sync.Mutex
 }
 
 func NewToggleableGoroutine(fn func(context.Context)) *ToggleableGoroutine {
@@ -12,11 +16,13 @@ func NewToggleableGoroutine(fn func(context.Context)) *ToggleableGoroutine {
 }
 
 func (t *ToggleableGoroutine) GoOrCancel(ctx context.Context, v bool) string {
+	t.mut.Lock()
+	defer t.mut.Unlock()
 	if v && t.cancelFn == nil {
-		t.Go(ctx)
+		t.goNoLock(ctx)
 		return "started"
 	} else if !v && t.cancelFn != nil {
-		t.Cancel()
+		t.cancelNoLock()
 		return "stopped"
 	}
 
@@ -24,13 +30,28 @@ func (t *ToggleableGoroutine) GoOrCancel(ctx context.Context, v bool) string {
 }
 
 func (t *ToggleableGoroutine) Go(ctx context.Context) {
-	t.Cancel()
+	t.mut.Lock()
+	defer t.mut.Unlock()
+	t.goNoLock(ctx)
+}
+
+func (t *ToggleableGoroutine) goNoLock(ctx context.Context) {
+	t.cancelNoLock()
 	ctx, cancel := context.WithCancel(ctx)
 	t.cancelFn = cancel
-	go t.fn(ctx)
+	go func() {
+		defer t.Cancel()
+		t.fn(ctx)
+	}()
 }
 
 func (t *ToggleableGoroutine) Cancel() {
+	t.mut.Lock()
+	defer t.mut.Unlock()
+	t.cancelNoLock()
+}
+
+func (t *ToggleableGoroutine) cancelNoLock() {
 	if t.cancelFn != nil {
 		t.cancelFn()
 		t.cancelFn = nil

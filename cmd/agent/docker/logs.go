@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"path"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/distr-sh/distr/internal/deploymentlogs"
@@ -20,8 +22,9 @@ import (
 )
 
 type logsWatcher struct {
-	interval  time.Duration
-	logsAfter *time.Time
+	interval   time.Duration
+	logsAfter  atomic.Pointer[time.Time]
+	storageMut sync.RWMutex
 }
 
 func NewLogsWatcher(interval time.Duration) *logsWatcher {
@@ -45,7 +48,7 @@ func (lw *logsWatcher) Watch(ctx context.Context) {
 }
 
 func (lw *logsWatcher) SetLogsAfter(v *time.Time) {
-	lw.logsAfter = v
+	lw.logsAfter.Store(v)
 }
 
 func (lw *logsWatcher) collect(ctx context.Context) {
@@ -60,25 +63,26 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 	collector := deploymentlogs.NewCollector(client, logger)
 
 	for _, d := range deployments {
+		logger := logger.With(zap.Stringer("deploymentId", d.ID), zap.String("projectName", d.ProjectName))
+
 		deploymentCollector := collector.For(d)
 		now := time.Now()
 		var toplevelErr error
 
-		since, err := GetLastLogsTimestamp(d)
+		since, err := lw.GetLastLogsTimestamp(d)
 		if err != nil {
 			logger.Warn("could not get last logs timestamp", zap.Error(err))
 		}
 
-		if lw.logsAfter != nil && (since == nil || since.Before(*lw.logsAfter)) {
-			since = lw.logsAfter
-		}
-
+		logger = logger.With(zap.Timep("since", since))
 		switch d.DockerType {
 		case types.DockerTypeCompose:
 			logOptions := composeapi.LogOptions{Timestamps: true}
 			if since != nil {
 				logOptions.Since = since.Format(time.RFC3339Nano)
 			}
+
+			logger.Debug("getting compose logs")
 
 			// Allow the collector to cancel the context used for the API request.
 			// This allows propagating append errors downstream.
@@ -106,6 +110,8 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 				toplevelErr = err
 			} else {
 				for _, svc := range services.Items {
+					logger.Debug("getting service logs", zap.String("serviceId", svc.ID))
+
 					// fake closure to close the ReadCloser returned by ServiceLogs after each iteration
 					err := func() error {
 						logOptions := mobyClient.ServiceLogsOptions{Timestamps: true, ShowStdout: true, ShowStderr: true}
@@ -129,7 +135,7 @@ func (lw *logsWatcher) collect(ctx context.Context) {
 		}
 
 		if toplevelErr == nil {
-			if err := UpdateLastLogsTimestamp(d, now); err != nil {
+			if err := lw.UpdateLastLogsTimestamp(d, now); err != nil {
 				logger.Warn("could not update last logs timestamp for deployment", zap.Error(err))
 			}
 		}
@@ -218,7 +224,10 @@ func decodeServiceLogs(
 	return wg.Wait()
 }
 
-func UpdateLastLogsTimestamp(deployment AgentDeployment, timestamp time.Time) error {
+func (lw *logsWatcher) UpdateLastLogsTimestamp(deployment AgentDeployment, timestamp time.Time) error {
+	lw.storageMut.Lock()
+	defer lw.storageMut.Unlock()
+
 	if err := os.MkdirAll(path.Dir(lastLogsTimestampFileName(deployment)), 0o700); err != nil {
 		return err
 	}
@@ -233,10 +242,14 @@ func UpdateLastLogsTimestamp(deployment AgentDeployment, timestamp time.Time) er
 	return err
 }
 
-func GetLastLogsTimestamp(deployment AgentDeployment) (*time.Time, error) {
+func (lw *logsWatcher) GetLastLogsTimestamp(deployment AgentDeployment) (*time.Time, error) {
+	lw.storageMut.RLock()
+	defer lw.storageMut.RUnlock()
+
+	logsAfter := lw.logsAfter.Load()
 	file, err := os.Open(lastLogsTimestampFileName(deployment))
 	if errors.Is(err, os.ErrNotExist) {
-		return nil, nil
+		return logsAfter, nil
 	} else if err != nil {
 		return nil, err
 	}
@@ -246,12 +259,17 @@ func GetLastLogsTimestamp(deployment AgentDeployment) (*time.Time, error) {
 		return nil, err
 	} else if ts, err := time.Parse(time.RFC3339Nano, string(data)); err != nil {
 		return nil, err
+	} else if logsAfter != nil && ts.Before(*logsAfter) {
+		return logsAfter, nil
 	} else {
 		return &ts, nil
 	}
 }
 
-func CleanupLogsTimestamps(deployment AgentDeployment) {
+func (lw *logsWatcher) CleanupLogsTimestamps(deployment AgentDeployment) {
+	lw.storageMut.Lock()
+	defer lw.storageMut.Unlock()
+
 	if err := os.Remove(lastLogsTimestampFileName(deployment)); err != nil {
 		logger.Warn("could not remove last logs timestamp file", zap.Error(err))
 	}

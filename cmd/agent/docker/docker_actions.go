@@ -26,6 +26,7 @@ func DockerEngineApply(
 	deployment api.AgentDeployment,
 	updateStatus func(string),
 ) (agentDeployment *AgentDeployment, status string, err error) {
+	logger := logger.With(zap.Stringer("deploymentId", deployment.ID))
 	agentDeployment, err = NewAgentDeployment(deployment)
 	if err != nil {
 		return agentDeployment, status, err
@@ -37,8 +38,10 @@ func DockerEngineApply(
 	}
 
 	if *deployment.DockerType == types.DockerTypeSwarm {
+		logger.Debug("applying compose file in swarm mode")
 		status, err = ApplyComposeFileSwarm(ctx, deployment, updateStatus)
 	} else {
+		logger.Debug("applying compose file")
 		err = ApplyComposeFile(ctx, deployment, updateStatus)
 		if err == nil {
 			status = "compose command executed successfully"
