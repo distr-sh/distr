@@ -250,6 +250,14 @@ Rotation happens in the Distr UI, not in git. Scoping is vendor-level or custome
 
 <EmbeddedWhitePaperCta />
 
+## Three practical notes before you use Compose `configs` in production
+
+I have tripped over each of these at least once while helping customers move to this pattern:
+
+- **Check the minimum Compose version on the target hosts.** Compose `2.23.1` shipped in November 2023 and is bundled with current Docker Desktop and Docker CE. But if your customers still run the legacy Compose v1 Python binary (`docker-compose` with a dash), the `configs` block with inline `content:` is not going to work. Print the expected version in your installer and fail fast if it is lower.
+- **Inline content is not a secret store.** The file is plain text inside your Compose file. Do not put database passwords, license keys, or TLS private keys in a `configs` block. Use the Compose `secrets` top-level keyword, an external secret manager, or [Distr Secrets](/docs/agents/secrets/), which are stored centrally in Distr and substituted into deployments at deploy time using `{{ .Secrets.KEY }}` template syntax so the actual values never land in your Compose file or deployment logs.
+- **Locale and extension assumptions still belong to the image.** `shared_preload_libraries = 'age'` or `lc_messages = 'en_US.UTF-8'` only work if your Postgres image actually ships the `age` extension and the `en_US.UTF-8` locale. Switching to `configs` does not change that. You are still responsible for picking an image that has what your `postgresql.conf` asks for.
+
 ## Configuration File Approach Comparison
 
 &nbsp;
@@ -257,11 +265,14 @@ Rotation happens in the Distr UI, not in git. Scoping is vendor-level or custome
 | Feature                    | Bind Mount              | Custom Image                  | Compose `configs` Inline    | `configs` + `secrets`         |
 | -------------------------- | ----------------------- | ----------------------------- | --------------------------- | ----------------------------- |
 | Single-file deployment     | No                      | Yes (image + Compose)         | Yes                         | Yes (with Distr Secrets)      |
+| Distr support              | No (multi-file)         | Yes                           | Yes                         | Yes (with Distr Secrets)      |
 | Editable by operator       | Yes (host file)         | No (rebuild required)         | Yes (edit Compose file)     | Yes                           |
 | Safe for sensitive values  | No                      | No                            | No                          | Yes                           |
 | Supports variable defaults | No                      | No                            | Yes (Compose interpolation) | Yes                           |
 | Minimum Compose version    | Any                     | Any                           | 2.23.1                      | 2.23.1                        |
 | Best for                   | Local dev, git checkout | Custom extensions or binaries | Shipped Compose artifacts   | Shipped Compose + credentials |
+
+Distr ships a single Compose file to the agent in the customer's environment. Approaches that require the operator to place extra files on the host outside of that Compose file (host bind mounts, Compose-native `secrets:` sourced from `./postgres_password.txt`) add management complexity for both the vendor and the customer, because there is no single artifact to version, sign, and roll out.
 
 ## Conclusion
 
@@ -279,7 +290,7 @@ For customer-shipped Docker Compose deployments, inline `configs` is almost alwa
 
 ## Getting started
 
-If you are distributing Docker Compose applications to customer environments and you are tired of coordinating Compose files, configuration files, and credential files as separate artifacts, [try Distr](https://distr.sh/onboarding). Distr ships the Compose file verbatim to an agent running in the customer's environment, injects [Distr Secrets](/docs/agents/secrets/) at deploy time, and gives you a single view for versioning, rollouts, and customer-scoped configuration. The inline `configs` pattern in this post fits cleanly into that model.
+If you are distributing Docker Compose applications to customer environments and you are tired of coordinating Compose files, configuration files, and credential files as separate artifacts, [try Distr](https://distr.sh/onboarding). Distr ships your Compose file to an agent running in the customer's environment (the Hub only rewrites the top-level `name:` to a unique `distr-<deployment-id>` project name so multiple deployments on the same host do not collide), injects [Distr Secrets](/docs/agents/secrets/) at deploy time, and gives you a single view for versioning, rollouts, and customer-scoped configuration. The inline `configs` pattern in this post fits cleanly into that model.
 
 ## Join the conversation
 
