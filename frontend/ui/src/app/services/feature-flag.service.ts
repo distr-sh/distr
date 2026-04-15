@@ -20,6 +20,11 @@ export class FeatureFlagService {
     .pipe(map((org) => org.features.includes('vendor_billing')));
   public readonly isVendorBillingEnabled = toSignal(this.isVendorBillingEnabled$, {initialValue: false});
 
+  public readonly isDeploymentLogsAfterEnabled = toSignal(
+    this.organizationService.get().pipe(map((org) => org.features.includes('deployment_logs_after'))),
+    {initialValue: false}
+  );
+
   public readonly isNotificationsEnabled$ = this.requireSubscriptionType('trial', 'pro', 'enterprise');
 
   public readonly isSupportBundlesEnabled$ = this.requireSubscriptionType('trial', 'pro', 'enterprise');

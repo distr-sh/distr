@@ -195,8 +195,10 @@ func agentResourcesHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
 		agentResource := api.AgentResource{
-			Version:        deploymentTarget.AgentVersion,
-			MetricsEnabled: deploymentTarget.MetricsEnabled,
+			Version:               deploymentTarget.AgentVersion,
+			MetricsEnabled:        deploymentTarget.MetricsEnabled,
+			DeploymentLogsEnabled: deploymentTarget.DeploymentLogsEnabled,
+			DeploymentLogsAfter:   deploymentTarget.DeploymentLogsAfter,
 		}
 		if deploymentTarget.Namespace != nil {
 			agentResource.Namespace = *deploymentTarget.Namespace
@@ -215,7 +217,7 @@ func agentResourcesHandler(w http.ResponseWriter, r *http.Request) {
 			agentDeployment := api.AgentDeployment{
 				ID:                 deployment.ID,
 				RevisionID:         deployment.DeploymentRevisionID,
-				LogsEnabled:        deployment.LogsEnabled,
+				LogsEnabled:        deploymentTarget.DeploymentLogsEnabled,
 				ForceRestart:       deployment.ForceRestart,
 				IgnoreRevisionSkew: deployment.IgnoreRevisionSkew,
 			}

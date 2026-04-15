@@ -27,7 +27,6 @@ type AgentDeployment struct {
 	RevisionID   uuid.UUID `json:"revisionId"`
 	ReleaseName  string    `json:"releaseName"`
 	HelmRevision *int      `json:"helmRevision,omitempty"`
-	LogsEnabled  bool      `json:"logsEnabled"`
 	State        State     `json:"phase"`
 }
 
@@ -48,7 +47,6 @@ func NewAgentDeployment(deployment api.AgentDeployment) AgentDeployment {
 		ReleaseName: deployment.ReleaseName,
 		ID:          deployment.ID,
 		RevisionID:  deployment.RevisionID,
-		LogsEnabled: deployment.LogsEnabled,
 	}
 }
 
@@ -56,18 +54,18 @@ func PullSecretName(releaseName string) string {
 	return fmt.Sprintf("sh.distr.agent.v1.%v.pull", releaseName)
 }
 
-func GetExistingDeployments(ctx context.Context, namespace string) ([]AgentDeployment, error) {
+func GetExistingDeployments(ctx context.Context, namespace string) (map[uuid.UUID]AgentDeployment, error) {
 	if secrets, err := k8sClient.CoreV1().Secrets(namespace).
 		List(ctx, metav1.ListOptions{LabelSelector: LabelDeplyoment}); err != nil {
 		return nil, err
 	} else {
-		deployments := make([]AgentDeployment, len(secrets.Items))
-		for i, secret := range secrets.Items {
+		deployments := make(map[uuid.UUID]AgentDeployment, len(secrets.Items))
+		for _, secret := range secrets.Items {
 			var deployment AgentDeployment
 			if err := json.Unmarshal(secret.Data["release"], &deployment); err != nil {
 				return nil, err
 			} else {
-				deployments[i] = deployment
+				deployments[deployment.ID] = deployment
 			}
 		}
 		return deployments, nil

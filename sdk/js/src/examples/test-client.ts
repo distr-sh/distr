@@ -55,6 +55,8 @@ try {
     type: 'docker',
     deployments: [],
     metricsEnabled: false,
+    imageCleanupEnabled: false,
+    deploymentLogsEnabled: false,
   });
   log(newDockerDeploymentTarget, 'create docker deployment target');
 
@@ -63,6 +65,8 @@ try {
     type: 'kubernetes',
     deployments: [],
     metricsEnabled: false,
+    imageCleanupEnabled: false,
+    deploymentLogsEnabled: false,
     namespace: 'glasskube',
     scope: 'namespace',
   });

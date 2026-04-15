@@ -3,6 +3,8 @@ package deploymentlogs
 import (
 	"context"
 	"fmt"
+	"maps"
+	"slices"
 	"sync"
 	"time"
 
@@ -35,7 +37,7 @@ type collector struct {
 }
 
 const (
-	defaultFlushLimit      = 100
+	defaultFlushLimit      = 500
 	defaultBufferSizeLimit = 1000
 )
 
@@ -62,7 +64,9 @@ func (c *collector) Flush(ctx context.Context) error {
 }
 
 func (c *collector) flushNoLock(ctx context.Context) error {
+	log := c.log.With(zap.Int("logRecords", len(c.logRecords)), zap.Strings("resourceNames", c.resourceNames()))
 	if len(c.logRecords) == 0 {
+		log.Debug("skipped flushing log records")
 		return nil
 	}
 
@@ -70,9 +74,7 @@ func (c *collector) flushNoLock(ctx context.Context) error {
 	if err := c.exporter.ExportDeploymentLogs(ctx, c.logRecords); err != nil {
 		return fmt.Errorf("export log records: %w", err)
 	} else {
-		c.log.Debug("flushed log records",
-			zap.Int("logRecords", len(c.logRecords)),
-			zap.Duration("duration", time.Since(t)))
+		log.Debug("flushed log records", zap.Duration("duration", time.Since(t)))
 		c.logRecords = make([]api.DeploymentLogRecord, 0, c.flushLimit)
 	}
 
@@ -95,6 +97,17 @@ func (c *collector) appendRecord(ctx context.Context, record api.DeploymentLogRe
 	}
 
 	return nil
+}
+
+func (c *collector) resourceNames() []string {
+	namesMap := make(map[string]struct{})
+	for _, r := range c.logRecords {
+		if _, ok := namesMap[r.Resource]; !ok {
+			namesMap[r.Resource] = struct{}{}
+		}
+	}
+
+	return slices.Sorted(maps.Keys(namesMap))
 }
 
 type deploymentCollector struct {
