@@ -17,5 +17,5 @@ This file provides additional context to the code review instructions.
 
 Do not produce comments about the following patterns:
 
--  `time.Tick` and `time.After` leaking a goroutine if the codebase uses Go version 1.23 or newer
+- `time.Tick` and `time.After` leaking a goroutine if the codebase uses Go version 1.23 or newer
 - Keeping reference of a loop variable after the end of its iteration if the codebase uses Go version 1.22 or newer
