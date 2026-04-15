@@ -46,6 +46,18 @@
 
 ---
 
+### deploymentLogsAfter?
+
+> `optional` **deploymentLogsAfter?**: `string`
+
+---
+
+### deploymentLogsEnabled
+
+> **deploymentLogsEnabled**: `boolean`
+
+---
+
 ### deployments
 
 > **deployments**: [`DeploymentWithLatestRevision`](DeploymentWithLatestRevision.md)[]
@@ -65,18 +77,6 @@
 ### imageCleanupEnabled
 
 > **imageCleanupEnabled**: `boolean`
-
----
-
-### deploymentLogsEnabled
-
-> **deploymentLogsEnabled**: `boolean`
-
----
-
-### deploymentLogsAfter
-
-> **deploymentLogsAfter**?: `string`
 
 ---
 
