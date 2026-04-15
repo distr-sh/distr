@@ -6,9 +6,10 @@ import (
 )
 
 type ToggleableGoroutine struct {
-	fn       func(context.Context)
-	cancelFn func()
-	mut      sync.Mutex
+	fn         func(context.Context)
+	cancelFn   func()
+	generation uint64
+	mut        sync.Mutex
 }
 
 func NewToggleableGoroutine(fn func(context.Context)) *ToggleableGoroutine {
@@ -39,8 +40,10 @@ func (t *ToggleableGoroutine) goNoLock(ctx context.Context) {
 	t.cancelNoLock()
 	ctx, cancel := context.WithCancel(ctx)
 	t.cancelFn = cancel
+	t.generation++
+	currentGeneration := t.generation
 	go func() {
-		defer t.Cancel()
+		defer t.cancelGeneration(currentGeneration)
 		t.fn(ctx)
 	}()
 }
@@ -49,6 +52,14 @@ func (t *ToggleableGoroutine) Cancel() {
 	t.mut.Lock()
 	defer t.mut.Unlock()
 	t.cancelNoLock()
+}
+
+func (t *ToggleableGoroutine) cancelGeneration(generation uint64) {
+	t.mut.Lock()
+	defer t.mut.Unlock()
+	if t.generation == generation {
+		t.cancelNoLock()
+	}
 }
 
 func (t *ToggleableGoroutine) cancelNoLock() {
