@@ -27,7 +27,7 @@
             [class.dark:bg-yellow-950]="pinned"
             [class.sticky]="pinned"
             [class.bottom-0]="pinned"
-            [style.top]="pinned ? 'var(--pinned-row-top, 0px)' : null"
+            [style.top]="pinned ? 'var(--pinned-row-top, 4rem)' : null"
             [class.hover:bg-gray-50]="!pinned"
             [class.dark:hover:bg-gray-600]="!pinned"
             [class.hover:bg-yellow-200]="pinned"
@@ -98,6 +98,8 @@
         <button
           type="button"
           (click)="autoScroll.set(!autoScroll())"
+          [attr.aria-pressed]="autoScroll()"
+          aria-label="Toggle auto-scroll"
           class="py-1 px-2 flex items-center text-xs font-medium rounded-lg border"
           [class.text-blue-600]="autoScroll()"
           [class.dark:text-blue-400]="autoScroll()"
