@@ -67,6 +67,17 @@
         }
       </tbody>
     </table>
+    @if (showScrollToBottom()) {
+      <div class="sticky bottom-4 flex justify-center z-10">
+        <button
+          type="button"
+          (click)="scrollToBottom()"
+          class="py-2 px-4 flex items-center gap-2 text-xs font-medium text-gray-900 bg-white rounded-full border border-gray-200 shadow-lg hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700">
+          <fa-icon [icon]="faArrowDown" />
+          Live logs
+        </button>
+      </div>
+    }
     <div #tableBottom></div>
 
     @if (hasMore && (newestFirst() || !live())) {
@@ -93,30 +104,6 @@
       </output>
     </div>
   } @else if (live()) {
-    @if (!newestFirst()) {
-      <div class="flex justify-center py-1">
-        <button
-          type="button"
-          (click)="autoScroll.set(!autoScroll())"
-          [attr.aria-pressed]="autoScroll()"
-          aria-label="Toggle auto-scroll"
-          class="py-1 px-2 flex items-center text-xs font-medium rounded-lg border"
-          [class.text-blue-600]="autoScroll()"
-          [class.dark:text-blue-400]="autoScroll()"
-          [class.border-blue-300]="autoScroll()"
-          [class.dark:border-blue-600]="autoScroll()"
-          [class.text-gray-500]="!autoScroll()"
-          [class.dark:text-gray-400]="!autoScroll()"
-          [class.border-gray-200]="!autoScroll()"
-          [class.dark:border-gray-600]="!autoScroll()">
-          @if (autoScroll()) {
-            Auto-scroll on
-          } @else {
-            Auto-scroll off
-          }
-        </button>
-      </div>
-    }
     <div class="flex justify-center py-2">
       <div class="w-16 h-1 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
         <div

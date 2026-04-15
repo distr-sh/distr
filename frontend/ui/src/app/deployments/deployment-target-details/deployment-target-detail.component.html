@@ -257,7 +257,7 @@
                 type="button"
                 title="Live"
                 (click)="resetDateFilters()"
-                class="p-2 h-[33px] leading-none flex items-center text-xs font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                class="p-2 leading-none flex items-center text-xs font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
                 <fa-icon [icon]="faPlay" class="2xl:mr-2 text-gray-500 dark:text-gray-400" />
                 <span class="hidden 2xl:inline">Live</span>
               </button>
@@ -266,7 +266,7 @@
               type="button"
               title="Reset"
               (click)="resetAllFilters()"
-              class="p-2 h-[33px] leading-none flex items-center text-xs font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+              class="p-2 leading-none flex items-center text-xs font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
               <fa-icon [icon]="faFilterCircleXmark" class="2xl:mr-2 text-gray-500 dark:text-gray-400" />
               <span class="hidden 2xl:inline">Reset</span>
             </button>
@@ -274,7 +274,7 @@
               type="button"
               [title]="newestFirst() ? 'Newest first' : 'Oldest first'"
               (click)="orderDirection.set(newestFirst() ? 'ASC' : 'DESC')"
-              class="p-2 h-[33px] leading-none flex items-center text-xs font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+              class="p-2 leading-none flex items-center text-xs font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
               <fa-icon
                 [icon]="newestFirst() ? faArrowDownWideShort : faArrowUpShortWide"
                 class="2xl:mr-2 text-gray-500 dark:text-gray-400" />
@@ -284,7 +284,7 @@
               type="button"
               title="Export all"
               (click)="export()"
-              class="p-2 h-[33px] leading-none flex items-center text-xs font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+              class="p-2 leading-none flex items-center text-xs font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
               <fa-icon [icon]="faDownload" class="2xl:mr-2 text-gray-500 dark:text-gray-400" />
               <span class="hidden 2xl:inline">Export all</span>
             </button>

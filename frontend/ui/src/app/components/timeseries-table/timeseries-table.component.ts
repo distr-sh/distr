@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faThumbtack, faThumbtackSlash} from '@fortawesome/free-solid-svg-icons';
+import {faArrowDown, faThumbtack, faThumbtackSlash} from '@fortawesome/free-solid-svg-icons';
 import {
   catchError,
   combineLatest,
@@ -117,6 +117,7 @@ export class TimeseriesTableComponent {
   private readonly toastService = inject(ToastService);
   private readonly injector = inject(Injector);
 
+  protected readonly faArrowDown = faArrowDown;
   protected readonly faThumbtack = faThumbtack;
   protected readonly faThumbtackSlash = faThumbtackSlash;
 
@@ -125,7 +126,8 @@ export class TimeseriesTableComponent {
   protected hasMore = true;
   protected isExporting = false;
   protected readonly pinnedEntryId = signal<string | null>(null);
-  protected readonly autoScroll = signal(true);
+  protected readonly userIsAtBottom = signal(true);
+  protected readonly showScrollToBottom = computed(() => !this.userIsAtBottom() && this.live() && !this.newestFirst());
   private readonly liveResetTimestamp = signal(Date.now());
 
   protected readonly liveProgress = toSignal(
@@ -179,8 +181,8 @@ export class TimeseriesTableComponent {
               ),
               tap((entries) => {
                 this.liveResetTimestamp.set(Date.now());
-                if (!newestFirst && entries.length > 0 && this.autoScroll()) {
-                  afterNextRender(() => this.scrollToBottom(), {injector: this.injector});
+                if (!newestFirst && entries.length > 0) {
+                  this.autoScrollIfAtBottom();
                 }
               })
             )
@@ -224,7 +226,17 @@ export class TimeseriesTableComponent {
     }
   }
 
-  private scrollToBottom() {
+  private autoScrollIfAtBottom() {
+    const bottomEl = this.tableBottom()?.nativeElement;
+    const isAtBottom = !bottomEl || bottomEl.getBoundingClientRect().top < window.innerHeight + 100;
+    this.userIsAtBottom.set(isAtBottom);
+    if (isAtBottom) {
+      afterNextRender(() => this.scrollToBottom(), {injector: this.injector});
+    }
+  }
+
+  protected scrollToBottom() {
+    this.userIsAtBottom.set(true);
     this.tableBottom()?.nativeElement.scrollIntoView({behavior: 'smooth'});
   }
 
