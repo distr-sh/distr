@@ -225,7 +225,7 @@
               type="datetime-local"
               id="range-start"
               formControlName="from"
-              class="bg-gray-50 border leading-none border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+              class="bg-gray-50 border leading-none border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
           </div>
 
           <div>
@@ -234,7 +234,7 @@
               type="datetime-local"
               id="range-end"
               formControlName="to"
-              class="bg-gray-50 border leading-none border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+              class="bg-gray-50 border leading-none border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
           </div>
 
           <div>
@@ -244,41 +244,45 @@
               id="filter"
               formControlName="filter"
               placeholder="Text or regexp"
-              class="bg-gray-50 border leading-none border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+              class="bg-gray-50 border leading-none border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
           </div>
 
-          <div class="ml-auto flex items-center gap-2 self-center">
+          <div class="ml-auto flex items-center gap-2 self-end">
             @if (!live()) {
               <button
                 type="button"
+                title="Live"
                 (click)="resetDateFilters()"
-                class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                <fa-icon [icon]="faPlay" class="mr-2 text-gray-500 dark:text-gray-400" />
-                Live
+                class="p-2 h-[33px] leading-none flex items-center text-xs font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                <fa-icon [icon]="faPlay" class="2xl:mr-2 text-gray-500 dark:text-gray-400" />
+                <span class="hidden 2xl:inline">Live</span>
               </button>
             }
             <button
               type="button"
+              title="Reset"
               (click)="resetAllFilters()"
-              class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-              <fa-icon [icon]="faFilterCircleXmark" class="mr-2 text-gray-500 dark:text-gray-400" />
-              Reset
+              class="p-2 h-[33px] leading-none flex items-center text-xs font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+              <fa-icon [icon]="faFilterCircleXmark" class="2xl:mr-2 text-gray-500 dark:text-gray-400" />
+              <span class="hidden 2xl:inline">Reset</span>
             </button>
             <button
               type="button"
+              [title]="newestFirst() ? 'Newest first' : 'Oldest first'"
               (click)="orderDirection.set(newestFirst() ? 'ASC' : 'DESC')"
-              class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+              class="p-2 h-[33px] leading-none flex items-center text-xs font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
               <fa-icon
                 [icon]="newestFirst() ? faArrowDownWideShort : faArrowUpShortWide"
-                class="mr-2 text-gray-500 dark:text-gray-400" />
-              {{ newestFirst() ? 'Newest first' : 'Oldest first' }}
+                class="2xl:mr-2 text-gray-500 dark:text-gray-400" />
+              <span class="hidden 2xl:inline">{{ newestFirst() ? 'Newest first' : 'Oldest first' }}</span>
             </button>
             <button
               type="button"
+              title="Export all"
               (click)="export()"
-              class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
-              <fa-icon [icon]="faDownload" class="mr-2 text-gray-500 dark:text-gray-400" />
-              Export all
+              class="p-2 h-[33px] leading-none flex items-center text-xs font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+              <fa-icon [icon]="faDownload" class="2xl:mr-2 text-gray-500 dark:text-gray-400" />
+              <span class="hidden 2xl:inline">Export all</span>
             </button>
           </div>
         </form>
