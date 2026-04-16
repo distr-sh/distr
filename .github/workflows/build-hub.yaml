@@ -151,9 +151,15 @@ jobs:
           VERSION: ${{ github.ref_name }}
           SENTRY_VERSION: ${{ github.ref_name }}${{ matrix.edition.suffix }}
 
-      - name: Write license public key
-        if: ${{ matrix.edition.name == 'enterprise' }}
+      - name: Write license public key (tag only)
+        if: ${{ matrix.edition.name == 'enterprise' && startsWith(github.ref, 'refs/tags/') }}
         run: echo "${{ secrets.LICENSE_PUBLIC_KEY }}" > internal/license/embedded/pubkey.pem
+
+      - name: Generate ephemeral license public key (non-tag)
+        if: ${{ matrix.edition.name == 'enterprise' && !startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          openssl genpkey -algorithm ed25519 -out /tmp/ephemeral_private.pem
+          openssl pkey -in /tmp/ephemeral_private.pem -pubout -out internal/license/embedded/pubkey.pem
 
       - name: Build application (amd64)
         run: go build -ldflags="$LDFLAGS" -o dist/distr-amd64 ./cmd/hub/
