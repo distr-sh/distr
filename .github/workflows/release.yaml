@@ -27,3 +27,28 @@ jobs:
         with:
           token: ${{ secrets.GLASSKUBE_BOT_SECRET }}
           target-branch: ${{ github.ref_name }}
+
+  agent-changelog:
+    needs: release-please
+    timeout-minutes: 2
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout release-please branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: true
+          ref: release-please--branches--${{ github.ref_name }}
+          fetch-depth: 0
+      - name: Generate agent changelog
+        run: bash hack/agent-changelog.sh website/public/agent-changelog.json ${{ github.ref_name }}
+      - name: Commit and push
+        run: |
+          git add website/public/agent-changelog.json
+          if git diff --cached --quiet; then
+            echo "No agent changelog changes to commit"
+          else
+            git commit -m "chore: update agent changelog"
+            git push
+          fi
