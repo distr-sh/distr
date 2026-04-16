@@ -14,7 +14,6 @@
 - [`Deployment`](Deployment.md)
 - [`DeploymentRevisionStatus`](DeploymentRevisionStatus.md)
 - [`DeploymentTarget`](DeploymentTarget.md)
-- [`DeploymentTargetStatus`](DeploymentTargetStatus.md)
 - [`OrganizationBranding`](OrganizationBranding.md)
 - [`UserAccount`](UserAccount.md)
 

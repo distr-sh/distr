@@ -186,13 +186,11 @@ func agentResourcesHandler(w http.ResponseWriter, r *http.Request) {
 	deploymentTarget := internalctx.GetDeploymentTarget(ctx)
 	log := internalctx.GetLogger(ctx).With(zap.String("deploymentTargetId", deploymentTarget.ID.String()))
 
-	statusMessage := "OK"
 	deployments, err := db.GetDeploymentsForDeploymentTarget(ctx, deploymentTarget.ID)
 	if err != nil {
-		msg := "failed to get latest Deployment from DB"
-		log.Error(msg, zap.Error(err))
-		statusMessage = fmt.Sprintf("%v: %v", msg, err)
+		log.Error("failed to get latest Deployment from DB", zap.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	} else {
 		agentResource := api.AgentResource{
 			Version:               deploymentTarget.AgentVersion,
@@ -207,11 +205,9 @@ func agentResourcesHandler(w http.ResponseWriter, r *http.Request) {
 		for _, deployment := range deployments {
 			appVersion, err := db.GetApplicationVersion(ctx, deployment.ApplicationVersionID)
 			if err != nil {
-				msg := "failed to get ApplicationVersion from DB"
-				log.Error(msg, zap.Error(err))
-				statusMessage = fmt.Sprintf("%v: %v", msg, err)
+				log.Error("failed to get ApplicationVersion from DB", zap.Error(err))
 				http.Error(w, err.Error(), http.StatusInternalServerError)
-				break
+				return
 			}
 
 			agentDeployment := api.AgentDeployment{
@@ -224,11 +220,9 @@ func agentResourcesHandler(w http.ResponseWriter, r *http.Request) {
 
 			if deployment.ApplicationEntitlementID != nil {
 				if entitlement, err := db.GetApplicationEntitlementByID(ctx, *deployment.ApplicationEntitlementID); err != nil {
-					msg := "failed to get ApplicationEntitlement from DB"
-					log.Error(msg, zap.Error(err))
-					statusMessage = fmt.Sprintf("%v: %v", msg, err)
+					log.Error("failed to get ApplicationEntitlement from DB", zap.Error(err))
 					http.Error(w, err.Error(), http.StatusInternalServerError)
-					break
+					return
 				} else if entitlement.RegistryURL != nil {
 					agentDeployment.RegistryAuth = map[string]api.AgentRegistryAuth{
 						*entitlement.RegistryURL: {
@@ -241,11 +235,9 @@ func agentResourcesHandler(w http.ResponseWriter, r *http.Request) {
 
 			var secrets []types.SecretWithUpdatedBy
 			if secrets, err = db.GetSecretsForDeploymentTarget(ctx, deploymentTarget.DeploymentTarget); err != nil {
-				msg := "failed to get secrets from DB"
-				log.Error(msg, zap.Error(err))
-				statusMessage = fmt.Sprintf("%v: %v", msg, err)
+				log.Error("failed to get secrets from DB", zap.Error(err))
 				http.Error(w, err.Error(), http.StatusInternalServerError)
-				break
+				return
 			}
 
 			if deploymentTarget.Type == types.DeploymentTypeDocker {
@@ -304,16 +296,7 @@ func agentResourcesHandler(w http.ResponseWriter, r *http.Request) {
 			agentResource.Deployments = append(agentResource.Deployments, agentDeployment)
 		}
 
-		if statusMessage == "OK" {
-			RespondJSON(w, agentResource)
-		}
-	}
-
-	// not in a TX because insertion should not be rolled back when the cleanup fails
-	if err := db.CreateDeploymentTargetStatus(ctx, &deploymentTarget.DeploymentTarget, statusMessage); err != nil {
-		log.Error("failed to create deployment target status – skipping cleanup of old statuses", zap.Error(err),
-			zap.String("deploymentTargetId", deploymentTarget.ID.String()),
-			zap.String("statusMessage", statusMessage))
+		RespondJSON(w, agentResource)
 	}
 }
 

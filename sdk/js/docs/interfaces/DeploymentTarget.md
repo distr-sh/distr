@@ -34,12 +34,6 @@
 
 ---
 
-### currentStatus?
-
-> `optional` **currentStatus?**: [`DeploymentTargetStatus`](DeploymentTargetStatus.md)
-
----
-
 ### customerOrganization?
 
 > `optional` **customerOrganization?**: [`CustomerOrganization`](CustomerOrganization.md)
