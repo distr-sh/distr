@@ -103,6 +103,8 @@ hub:
       value: '1h'
     - name: LOG_RECORD_ENTRIES_MAX_COUNT
       value: '500'
+    # - name: CLEANUP_ARTIFACT_BLOB_MIN_AGE
+    #   value: '24h'
     # - name: OIDC_GITHUB_ENABLED
     #   value: 'true'
     # - name: OIDC_GITHUB_CLIENT_ID # required if OIDC_GITHUB_ENABLED
