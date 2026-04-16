@@ -49,9 +49,9 @@ jobs:
           if [ -z "$STATUS" ]; then
             echo Repository is clean.
           else
-            echo "Repository is not clean:
-          $STATUS
-            You might want to run 'pnpm i && pnpm run docs' in sdk/js and try again"
+            echo "Repository is not clean:"
+            git diff
+            echo "You might want to run 'pnpm i && pnpm run docs' in sdk/js and try again"
             exit 1
           fi
       - name: Publish to npmjs
