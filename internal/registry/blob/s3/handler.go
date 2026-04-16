@@ -47,12 +47,17 @@ func NewBlobHandler(ctx context.Context, s3Client *s3.Client) (blob.BlobHandler,
 		}
 	}
 
-	return &blobHandler{
-		s3Client:        s3Client,
-		s3PresignClient: s3.NewPresignClient(s3Client),
-		allowRedirect:   s3Config.AllowRedirect,
-		bucket:          s3Config.Bucket,
-	}, nil
+	h := blobHandler{
+		s3Client:      s3Client,
+		allowRedirect: s3Config.AllowRedirect,
+		bucket:        s3Config.Bucket,
+	}
+
+	if h.allowRedirect {
+		h.s3PresignClient = s3.NewPresignClient(s3Client)
+	}
+
+	return &h, nil
 }
 
 func ensureBucketExists(ctx context.Context, client *s3.Client, bucket string, region string) error {
