@@ -18,6 +18,8 @@ jobs:
     outputs:
       releases_created: ${{ steps.release-please.outputs.releases_created }}
       tag_name: ${{ steps.release-please.outputs.tag_name }}
+      prs_created: ${{ steps.release-please.outputs.prs_created }}
+      pr_head_branch: ${{ steps.release-please.outputs.pr && fromJSON(steps.release-please.outputs.pr).headBranchName || '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -30,21 +32,22 @@ jobs:
 
   agent-changelog:
     needs: release-please
+    if: needs.release-please.outputs.prs_created == 'true'
     timeout-minutes: 2
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Checkout release-please branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          persist-credentials: true
-          ref: release-please--branches--${{ github.ref_name }}
+          token: ${{ secrets.GLASSKUBE_BOT_SECRET }}
+          ref: ${{ needs.release-please.outputs.pr_head_branch }}
           fetch-depth: 0
       - name: Generate agent changelog
-        run: bash hack/agent-changelog.sh website/public/agent-changelog.json ${{ github.ref_name }}
+        run: node hack/agent-changelog.mjs website/public/agent-changelog.json origin/${{ github.ref_name }}
       - name: Commit and push
         run: |
+          git config user.name "glasskube-bot"
+          git config user.email "glasskube-bot@glasskube.com"
           git add website/public/agent-changelog.json
           if git diff --cached --quiet; then
             echo "No agent changelog changes to commit"
