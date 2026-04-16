@@ -3,6 +3,7 @@ package context
 import (
 	"context"
 
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/distr-sh/distr/internal/db/queryable"
 	"github.com/distr-sh/distr/internal/mail"
 	"github.com/distr-sh/distr/internal/oidc"
@@ -29,6 +30,7 @@ const (
 	ctxKeyOIDCer
 	ctxKeyLicenseKey
 	ctxKeyPrometheusCollector
+	ctxKeyS3Client
 )
 
 func GetDb(ctx context.Context) queryable.Queryable {
@@ -104,4 +106,17 @@ func WithPrometheusCollector(ctx context.Context, collector *prometheus.DistrCol
 	}
 
 	return context.WithValue(ctx, ctxKeyPrometheusCollector, collector)
+}
+
+func GetS3Client(ctx context.Context) *s3.Client {
+	if client, ok := ctx.Value(ctxKeyS3Client).(*s3.Client); ok {
+		if client != nil {
+			return client
+		}
+	}
+	panic("s3 client not contained in context")
+}
+
+func WithS3Client(ctx context.Context, client *s3.Client) context.Context {
+	return context.WithValue(ctx, ctxKeyS3Client, client)
 }

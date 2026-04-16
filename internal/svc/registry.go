@@ -9,6 +9,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/distr-sh/distr/internal/buildconfig"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/env"
@@ -39,6 +40,7 @@ type Registry struct {
 	oidcer            *oidc.OIDCer
 	promRegistry      *prometheus.Registry
 	promCollector     *distrprometheus.DistrCollector
+	s3Client          *s3.Client
 }
 
 func New(ctx context.Context, options ...RegistryOption) (*Registry, error) {
@@ -92,6 +94,10 @@ func newRegistry(ctx context.Context, reg *Registry) (*Registry, error) {
 		reg.dbPool = db
 	}
 
+	if env.RegistryEnabled() {
+		reg.s3Client = newS3Client(ctx)
+	}
+
 	if scheduler, err := reg.createJobsScheduler(); err != nil {
 		return nil, err
 	} else {
@@ -140,6 +146,7 @@ func (reg *Registry) createArtifactsRegistry(ctx context.Context) (http.Handler,
 		reg.GetDbPool(),
 		reg.GetMailer(),
 		reg.GetTracers().Registry(),
+		reg.s3Client,
 	)
 }
 
@@ -207,4 +214,8 @@ func (r *Registry) GetMetricsServer() server.Server {
 
 func (r *Registry) GetPrometheusCollector() *distrprometheus.DistrCollector {
 	return r.promCollector
+}
+
+func (r *Registry) GetS3Client() *s3.Client {
+	return r.s3Client
 }

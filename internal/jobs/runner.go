@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/distr-sh/distr/internal/buildconfig"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db/queryable"
@@ -18,10 +19,11 @@ const (
 )
 
 type runner struct {
-	db     queryable.Queryable
-	mailer mail.Mailer
-	logger *zap.Logger
-	tracer trace.Tracer
+	db       queryable.Queryable
+	mailer   mail.Mailer
+	logger   *zap.Logger
+	tracer   trace.Tracer
+	s3Client *s3.Client
 }
 
 func NewRunner(
@@ -29,12 +31,14 @@ func NewRunner(
 	db queryable.Queryable,
 	mailer mail.Mailer,
 	traceProvider trace.TracerProvider,
+	s3Client *s3.Client,
 ) *runner {
 	runner := runner{
-		db:     db,
-		mailer: mailer,
-		logger: logger,
-		tracer: traceProvider.Tracer(tracerScope, trace.WithInstrumentationVersion(buildconfig.Version())),
+		db:       db,
+		mailer:   mailer,
+		logger:   logger,
+		tracer:   traceProvider.Tracer(tracerScope, trace.WithInstrumentationVersion(buildconfig.Version())),
+		s3Client: s3Client,
 	}
 	return &runner
 }
@@ -76,5 +80,8 @@ func (runner *runner) jobCtx(ctx context.Context, job Job) context.Context {
 	ctx = internalctx.WithLogger(ctx, runner.logger.With(zap.String("job", job.name)))
 	ctx = internalctx.WithDb(ctx, runner.db)
 	ctx = internalctx.WithMailer(ctx, runner.mailer)
+	if runner.s3Client != nil {
+		ctx = internalctx.WithS3Client(ctx, runner.s3Client)
+	}
 	return ctx
 }

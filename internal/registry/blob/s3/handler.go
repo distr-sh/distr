@@ -8,9 +8,6 @@ import (
 	"net/http"
 	"path"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	awsconfig "github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	internalctx "github.com/distr-sh/distr/internal/context"
@@ -20,7 +17,6 @@ import (
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 	"github.com/opencontainers/go-digest"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 	"go.uber.org/zap"
 )
 
@@ -42,22 +38,8 @@ var (
 	_ blob.BlobDeleteHandler = &blobHandler{}
 )
 
-func NewBlobHandler(ctx context.Context) (blob.BlobHandler, error) {
+func NewBlobHandler(ctx context.Context, s3Client *s3.Client) (blob.BlobHandler, error) {
 	s3Config := env.RegistryS3Config()
-
-	var s3Client *s3.Client
-	if config, err := awsconfig.LoadDefaultConfig(ctx); err != nil {
-		s3Client = s3.New(s3.Options{}, clientOpts(s3Config))
-		if s3Config.ResignForGCP {
-			s3Client = s3.New(s3.Options{}, clientOpts(s3Config), ResignForGCP)
-		}
-	} else {
-		otelaws.AppendMiddlewares(&config.APIOptions)
-		s3Client = s3.NewFromConfig(config, clientOpts(s3Config))
-		if s3Config.ResignForGCP {
-			s3Client = s3.NewFromConfig(config, clientOpts(s3Config), ResignForGCP)
-		}
-	}
 
 	if s3Config.CreateBucket {
 		if err := ensureBucketExists(ctx, s3Client, s3Config.Bucket, s3Config.Region); err != nil {
@@ -94,25 +76,6 @@ func ensureBucketExists(ctx context.Context, client *s3.Client, bucket string, r
 
 	log.Info("bucket created")
 	return nil
-}
-
-func clientOpts(s3Config env.S3Config) func(o *s3.Options) {
-	return func(o *s3.Options) {
-		o.Region = s3Config.Region
-		o.BaseEndpoint = s3Config.Endpoint
-		o.UsePathStyle = s3Config.UsePathStyle
-		if s3Config.RequestChecksumCalculationWhenRequired {
-			o.RequestChecksumCalculation = aws.RequestChecksumCalculationWhenRequired
-		}
-		if s3Config.ResponseChecksumValidationWhenRequired {
-			o.ResponseChecksumValidation = aws.ResponseChecksumValidationWhenRequired
-		}
-		if s3Config.AccessKeyID != nil && s3Config.SecretAccessKey != nil {
-			o.Credentials = aws.NewCredentialsCache(
-				credentials.NewStaticCredentialsProvider(*s3Config.AccessKeyID, *s3Config.SecretAccessKey, ""),
-			)
-		}
-	}
 }
 
 // Get implements blob.BlobHandler.

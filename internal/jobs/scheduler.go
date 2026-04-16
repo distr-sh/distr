@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/distr-sh/distr/internal/db/queryable"
 	"github.com/distr-sh/distr/internal/mail"
 	"github.com/go-co-op/gocron/v2"
@@ -19,6 +20,7 @@ func NewScheduler(
 	db queryable.Queryable,
 	mailer mail.Mailer,
 	traceProvider trace.TracerProvider,
+	s3Client *s3.Client,
 ) (*Scheduler, error) {
 	if scheduler, err := gocron.NewScheduler(
 		gocron.WithLogger(&gocronLoggerAdapter{logger: logger.Sugar()}),
@@ -28,7 +30,7 @@ func NewScheduler(
 		return &Scheduler{
 			scheduler: scheduler,
 			logger:    logger,
-			runner:    NewRunner(logger, db, mailer, traceProvider),
+			runner:    NewRunner(logger, db, mailer, traceProvider, s3Client),
 		}, nil
 	}
 }

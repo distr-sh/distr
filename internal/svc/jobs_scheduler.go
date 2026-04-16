@@ -12,7 +12,7 @@ func (r *Registry) GetJobsScheduler() *jobs.Scheduler {
 }
 
 func (r *Registry) createJobsScheduler() (*jobs.Scheduler, error) {
-	scheduler, err := jobs.NewScheduler(r.GetLogger(), r.GetDbPool(), r.GetMailer(), r.GetTracers().Always())
+	scheduler, err := jobs.NewScheduler(r.GetLogger(), r.GetDbPool(), r.GetMailer(), r.GetTracers().Always(), r.s3Client)
 	if err != nil {
 		return nil, err
 	}

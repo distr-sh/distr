@@ -103,6 +103,9 @@ func runCleanup(ctx context.Context, opts CleanupOptions) error {
 	ctx, _ = signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	ctx = internalctx.WithDb(ctx, registry.GetDbPool())
 	ctx = internalctx.WithLogger(ctx, log)
+	if s3Client := registry.GetS3Client(); s3Client != nil {
+		ctx = internalctx.WithS3Client(ctx, s3Client)
+	}
 
 	ctx, span := registry.GetTracers().Always().
 		Tracer("github.com/distr-sh/distr/cmd/hub/cmd", trace.WithInstrumentationVersion(buildconfig.Version())).

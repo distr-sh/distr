@@ -1,4 +1,4 @@
-package s3
+package svc
 
 import (
 	"context"
@@ -15,12 +15,12 @@ const acceptEncodingHeader = "Accept-Encoding"
 
 type acceptEncodingKey struct{}
 
-func GetAcceptEncodingKey(ctx context.Context) (v string) {
+func getAcceptEncodingKey(ctx context.Context) (v string) {
 	v, _ = middleware.GetStackValue(ctx, acceptEncodingKey{}).(string)
 	return v
 }
 
-func SetAcceptEncodingKey(ctx context.Context, value string) context.Context {
+func setAcceptEncodingKey(ctx context.Context, value string) context.Context {
 	return middleware.WithStackValue(ctx, acceptEncodingKey{}, value)
 }
 
@@ -34,7 +34,7 @@ var dropAcceptEncodingHeader = middleware.FinalizeMiddlewareFunc("DropAcceptEnco
 		}
 
 		ae := req.Header.Get(acceptEncodingHeader)
-		ctx = SetAcceptEncodingKey(ctx, ae)
+		ctx = setAcceptEncodingKey(ctx, ae)
 		req.Header.Del(acceptEncodingHeader)
 		in.Request = req
 
@@ -51,7 +51,7 @@ var replaceAcceptEncodingHeader = middleware.FinalizeMiddlewareFunc("ReplaceAcce
 			return out, metadata, &v4.SigningError{Err: fmt.Errorf("unexpected request middleware type %T", in.Request)}
 		}
 
-		ae := GetAcceptEncodingKey(ctx)
+		ae := getAcceptEncodingKey(ctx)
 		req.Header.Set(acceptEncodingHeader, ae)
 		in.Request = req
 
@@ -59,7 +59,7 @@ var replaceAcceptEncodingHeader = middleware.FinalizeMiddlewareFunc("ReplaceAcce
 	},
 )
 
-func ResignForGCP(o *s3.Options) {
+func resignForGCP(o *s3.Options) {
 	o.APIOptions = append(o.APIOptions, func(stack *middleware.Stack) error {
 		if err := stack.Finalize.Insert(dropAcceptEncodingHeader, "Signing", middleware.Before); err != nil {
 			return err
