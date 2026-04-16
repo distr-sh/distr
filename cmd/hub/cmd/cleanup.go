@@ -27,6 +27,7 @@ const (
 	deploymentLogRecord       = "DeploymentLogRecord"
 	deploymentTargetLogRecord = "DeploymentTargetLogRecord"
 	oidcState                 = "OIDCState"
+	artifactBlob              = "ArtifactBlob"
 )
 
 type CleanupOptions struct {
@@ -39,12 +40,13 @@ func NewCleanupCommand() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "cleanup <type>",
 		Long: fmt.Sprintf(
-			"type must be one of: %v, %v, %v, %v, %v",
+			"type must be one of: %v, %v, %v, %v, %v, %v",
 			deploymentRevisionStatus,
 			deploymentTargetMetrics,
 			deploymentLogRecord,
 			deploymentTargetLogRecord,
 			oidcState,
+			artifactBlob,
 		),
 		Short: "delete old data",
 		Args:  cobra.ExactArgs(1),
@@ -54,6 +56,7 @@ func NewCleanupCommand() *cobra.Command {
 			deploymentLogRecord,
 			deploymentTargetLogRecord,
 			oidcState,
+			artifactBlob,
 		},
 		PreRun: func(cmd *cobra.Command, args []string) { env.Initialize() },
 		Run: func(cmd *cobra.Command, args []string) {
@@ -90,6 +93,8 @@ func runCleanup(ctx context.Context, opts CleanupOptions) error {
 		cleanupFunc = cleanup.RunDeploymentTargetLogRecordCleanup
 	case oidcState:
 		cleanupFunc = cleanup.RunOIDCStateCleanup
+	case artifactBlob:
+		cleanupFunc = cleanup.RunArtifactBlobCleanup
 	default:
 		log.Sugar().Errorf("invalid cleanup type: %v", opts.Type)
 		return errors.New("invalid cleanup type")

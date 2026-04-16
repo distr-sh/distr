@@ -42,6 +42,18 @@ services:
       RUSTFS_ACCESS_KEY: local
       RUSTFS_SECRET_KEY: local
 
+  artifact-blob-cleanup:
+    image: ghcr.io/distr-sh/distr-ce:2.19.0 # x-release-please-version
+    command: [cleanup, ArtifactBlob, --timeout, 10m]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    restart: 'no'
+    profiles:
+      - cleanup
+
 volumes:
   postgres:
   rustfs:

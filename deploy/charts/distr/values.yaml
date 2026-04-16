@@ -263,6 +263,10 @@ cronJobs:
     labels:
       distr.sh/job: oidcstate-cleanup
     args: [cleanup, OIDCState, --timeout, 10m]
+  - name: artifact-blob-cleanup
+    labels:
+      distr.sh/job: artifact-blob-cleanup
+    args: [cleanup, ArtifactBlob, --timeout, 10m]
 
 postgresql:
   enabled: false
