@@ -101,3 +101,13 @@ All alert notifications are sent by email to the users selected in the configura
 - The trigger type (status change, CPU, memory, or disk)
 - For resource alerts: the configured threshold and the current usage percentage
 - Whether it is an alert or a recovery notification
+
+## Custom alerting with Prometheus
+
+<Aside type="note">
+  The Prometheus integration is an **Enterprise feature** and requires an
+  [Enterprise subscription](/pricing/).
+</Aside>
+
+For more advanced alerting workflows beyond the built-in email notifications, Distr exposes deployment status metrics via a [Prometheus-compatible endpoint](/docs/self-hosting/prometheus/).
+These metrics can be combined with tools like [Alertmanager](https://github.com/prometheus/alertmanager) or [Grafana Alerts](https://grafana.com/docs/grafana/latest/alerting/) to route notifications to Slack, PagerDuty, or other channels.
