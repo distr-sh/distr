@@ -251,26 +251,20 @@ func GetAllOrganizationsForSuperAdmin(ctx context.Context) ([]types.Organization
 	}
 }
 
-func GetAllOrganizations(ctx context.Context) ([]types.Organization, error) {
+func EnsureOrganizationFeatures(ctx context.Context, features []types.Feature) (int64, error) {
 	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(ctx, `SELECT`+organizationOutputExpr+` FROM Organization o WHERE o.deleted_at IS NULL`)
-	if err != nil {
-		return nil, err
-	}
-	return pgx.CollectRows(rows, pgx.RowToStructByPos[types.Organization])
-}
-
-func UpdateOrganizationFeatures(ctx context.Context, orgID uuid.UUID, features []types.Feature) error {
-	db := internalctx.GetDb(ctx)
-	_, err := db.Exec(
+	result, err := db.Exec(
 		ctx,
-		`UPDATE Organization SET features = @features WHERE id = @id`,
-		pgx.NamedArgs{"id": orgID, "features": features},
+		`UPDATE Organization
+		SET features = array(SELECT DISTINCT unnest FROM unnest(features || @features::text[]))
+		WHERE NOT (features @> @features::text[])
+		AND deleted_at IS NULL`,
+		pgx.NamedArgs{"features": features},
 	)
 	if err != nil {
-		return fmt.Errorf("could not update Organization features: %w", err)
+		return 0, fmt.Errorf("could not ensure organization features: %w", err)
 	}
-	return nil
+	return result.RowsAffected(), nil
 }
 
 func CountAllOrganizations(ctx context.Context) (res int64, err error) {
