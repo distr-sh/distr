@@ -193,7 +193,12 @@ jobs:
       - name: Generate ephemeral license JWT (non-tag enterprise only)
         id: ephemeral-license
         if: ${{ matrix.edition.name == 'enterprise' && !startsWith(github.ref, 'refs/tags/') }}
-        run: echo "license-key=$(LICENSE_KEY_PRIVATE_KEY='${{ steps.ephemeral-key.outputs.private-key }}' dist/distr-amd64 license-key generate --no-save --payload='{"ld":{}}')" >> $GITHUB_OUTPUT
+        run: echo "license-key=$(dist/distr-amd64 license-key generate --no-save --payload='{"ld":{}}')" >> $GITHUB_OUTPUT
+        env:
+          LICENSE_KEY_PRIVATE_KEY: ${{ steps.ephemeral-key.outputs.private-key }}
+          DATABASE_URL: postgres://placeholder
+          JWT_SECRET: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          DISTR_HOST: http://placeholder
 
       - name: Start Hub and verify migrations and docs
         shell: bash
