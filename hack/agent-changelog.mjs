@@ -55,11 +55,19 @@ function buildRelease(version, lines) {
 
 const outputFile = process.argv[2] || 'agent-changelog.json';
 const branch = process.argv[3] || 'main';
+const nextVersion = process.argv[4] || 'unreleased';
 
 const tags = getTags(branch);
+
+if (tags.length === 0) {
+  writeFileSync(outputFile, JSON.stringify({releases: []}, null, 2) + '\n');
+  console.log(`Wrote agent changelog to ${outputFile} (0 releases — no tags found)`);
+  process.exit(0);
+}
+
 const ranges = [
   ...tags.map((tag, i) => [tag, i === 0 ? tag : `${tags[i - 1]}..${tag}`]),
-  ['unreleased', `${tags.at(-1)}..${branch}`],
+  [nextVersion, `${tags.at(-1)}..${branch}`],
 ];
 
 const releases = ranges

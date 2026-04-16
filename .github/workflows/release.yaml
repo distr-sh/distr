@@ -42,8 +42,13 @@ jobs:
           token: ${{ secrets.GLASSKUBE_BOT_SECRET }}
           ref: ${{ needs.release-please.outputs.pr_head_branch }}
           fetch-depth: 0
+      - name: Fetch base branch
+        run: git fetch origin ${{ github.ref_name }}
+      - name: Read next version from manifest
+        id: version
+        run: echo "version=$(jq -r '.["."]' .release-please-manifest.json)" >> "$GITHUB_OUTPUT"
       - name: Generate agent changelog
-        run: node hack/agent-changelog.mjs website/public/agent-changelog.json origin/${{ github.ref_name }}
+        run: node hack/agent-changelog.mjs website/public/agent-changelog.json origin/${{ github.ref_name }} ${{ steps.version.outputs.version }}
       - name: Commit and push
         run: |
           git config user.name "glasskube-bot"
