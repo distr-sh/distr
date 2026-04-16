@@ -36,11 +36,6 @@ The metrics server port is configured separately via `service.metricsPort`.
 An example configuration can be found in
 [`github.com/distr-sh/distr/deploy/charts/distr`](https://github.com/distr-sh/distr/blob/main/deploy/charts/distr/values.yaml):
 
-service:
-metricsPort: 3000
-
-````
-
 Once enabled, the metrics are available at `GET /metrics` on the configured address (e.g. `http://localhost:3000/metrics`).
 
 ## Securing the metrics endpoint
@@ -59,7 +54,7 @@ scrape_configs:
     authorization:
       type: Bearer
       credentials: my-secret-token
-````
+```
 
 ## Available metrics
 
