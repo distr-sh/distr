@@ -68,8 +68,4 @@ cronJobs:
     labels:
       distr.sh/job: deployment-target-metrics-cleanup
     args: [cleanup, DeploymentTargetMetrics]
-  - name: deployment-target-status-cleanup
-    labels:
-      distr.sh/job: deployment-target-status-cleanup
-    args: [cleanup, DeploymentTargetStatus]
 ```

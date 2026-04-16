@@ -9,7 +9,6 @@ export interface DeploymentTarget extends BaseModel, Named {
   namespace?: string;
   scope?: DeploymentTargetScope;
   customerOrganization?: CustomerOrganization;
-  currentStatus?: DeploymentTargetStatus;
   deployments: DeploymentWithLatestRevision[];
   agentVersion?: AgentVersion;
   reportedAgentVersionId?: string;
@@ -26,8 +25,4 @@ export interface DeploymentTargetResources {
   memoryRequest: string;
   cpuLimit: string;
   memoryLimit: string;
-}
-
-export interface DeploymentTargetStatus extends BaseModel {
-  message: string;
 }

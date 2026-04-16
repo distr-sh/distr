@@ -7,11 +7,9 @@ import (
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
-	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"go.uber.org/zap"
 )
 
 const (
@@ -43,27 +41,11 @@ const (
 	deploymentTargetOutputExpr = deploymentTargetOutputExprBase +
 		", CASE WHEN co.id IS NOT NULL THEN (" + customerOrganizationOutputExpr + ") END AS customer_organization"
 	deploymentTargetFullOutputExpr = deploymentTargetOutputExpr + `,
-		CASE WHEN status.id IS NOT NULL
-			THEN (status.id, status.created_at, status.message) END
-			AS current_status,
 		CASE WHEN agv.id IS NOT NULL
 			THEN (agv.id, agv.created_at, agv.name, agv.manifest_file_revision, agv.compose_file_revision) END
 			AS agent_version
 	`
 	deploymentTargetJoinExpr = `
-		LEFT JOIN (
-			-- find the creation date of the latest status entry for each deployment target
-			-- IMPORTANT: The sub-query here might seem inefficient but it is MUCH FASTER than using a GROUP BY clause
-			-- because it can utilize an index!!
-			SELECT
-				dt1.id AS deployment_target_id,
-				(SELECT max(created_at) FROM DeploymentTargetStatus WHERE deployment_target_id = dt1.id) AS max_created_at
-			FROM DeploymentTarget dt1
-		) status_max
-		 	ON dt.id = status_max.deployment_target_id
-		LEFT JOIN DeploymentTargetStatus status
-			ON dt.id = status.deployment_target_id
-			AND status.created_at = status_max.max_created_at
 		LEFT JOIN AgentVersion agv
 			ON dt.agent_version_id = agv.id
 		LEFT JOIN CustomerOrganization co
@@ -344,58 +326,6 @@ func UpdateDeploymentTargetReportedAgentVersionID(
 	} else {
 		*dt = updated
 		return nil
-	}
-}
-
-func CreateDeploymentTargetStatus(ctx context.Context, dt *types.DeploymentTarget, message string) error {
-	db := internalctx.GetDb(ctx)
-	_, err := db.Exec(ctx,
-		"INSERT INTO DeploymentTargetStatus (deployment_target_id, message) VALUES (@deploymentTargetId, @message)",
-		pgx.NamedArgs{"deploymentTargetId": dt.ID, "message": message})
-	if err != nil {
-		return err
-	}
-
-	RunAfterTx(ctx, func(ctx context.Context) {
-		log := internalctx.GetLogger(ctx)
-		if c := internalctx.GetPrometheusCollector(ctx); c != nil {
-			m, err := GetDeploymentTargetForMetricsByID(ctx, dt.ID)
-			if err != nil {
-				log.Warn("could not update deployment target status metrics", zap.Error(err))
-				return
-			}
-			c.HandleDeploymentTargetStatus(*m)
-		} else {
-			log.Warn("could not update deployment target status metrics because collector is nil")
-		}
-	})
-
-	return nil
-}
-
-func CleanupDeploymentTargetStatus(ctx context.Context) (int64, error) {
-	if env.StatusEntriesMaxAge() == nil {
-		return 0, nil
-	}
-	db := internalctx.GetDb(ctx)
-	if cmd, err := db.Exec(
-		ctx,
-		`DELETE FROM DeploymentTargetStatus dts
-		USING (
-			SELECT
-				dt.id AS deployment_target_id,
-				(SELECT max(created_at) FROM DeploymentTargetStatus WHERE deployment_target_id = dt.id)
-					AS max_created_at
-			FROM DeploymentTarget dt
-		) max_created_at
-		WHERE dts.deployment_target_id = max_created_at.deployment_target_id
-			AND dts.created_at < max_created_at.max_created_at
-			AND current_timestamp - dts.created_at > @statusEntriesMaxAge`,
-		pgx.NamedArgs{"statusEntriesMaxAge": env.StatusEntriesMaxAge()},
-	); err != nil {
-		return 0, err
-	} else {
-		return cmd.RowsAffected(), nil
 	}
 }
 

@@ -10,48 +10,6 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func GetDeploymentTargetsForMetrics(ctx context.Context) ([]types.DeploymentTargetStatusMetricsItem, error) {
-	db := internalctx.GetDb(ctx)
-
-	rows, err := db.Query(
-		ctx,
-		`SELECT o.name, co.name, dt.name, status.created_at FROM`+deploymentTargetFromExpr+`WHERE o.deleted_at IS NULL`,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query DeploymentTargets: %w", err)
-	}
-
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.DeploymentTargetStatusMetricsItem])
-	if err != nil {
-		return nil, fmt.Errorf("failed to collect DeploymentTargets: %w", err)
-	}
-
-	return result, nil
-}
-
-func GetDeploymentTargetForMetricsByID(
-	ctx context.Context,
-	id uuid.UUID,
-) (*types.DeploymentTargetStatusMetricsItem, error) {
-	db := internalctx.GetDb(ctx)
-
-	rows, err := db.Query(
-		ctx,
-		`SELECT o.name, co.name, dt.name, status.created_at FROM`+deploymentTargetFromExpr+`WHERE dt.id = @id`,
-		pgx.NamedArgs{"id": id},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query DeploymentTargets: %w", err)
-	}
-
-	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByPos[types.DeploymentTargetStatusMetricsItem])
-	if err != nil {
-		return nil, fmt.Errorf("failed to collect DeploymentTargets: %w", err)
-	}
-
-	return result, nil
-}
-
 func GetDeploymentsForMetrics(ctx context.Context) ([]types.DeploymentStatusMetricsItem, error) {
 	db := internalctx.GetDb(ctx)
 
@@ -110,12 +68,6 @@ type QueryableInitDataSource struct{}
 
 func (QueryableInitDataSource) OrganizationsTotal(ctx context.Context) (int64, error) {
 	return CountAllOrganizations(ctx)
-}
-
-func (QueryableInitDataSource) DeploymentTargetStatus(
-	ctx context.Context,
-) ([]types.DeploymentTargetStatusMetricsItem, error) {
-	return GetDeploymentTargetsForMetrics(ctx)
 }
 
 func (QueryableInitDataSource) DeploymentStatus(ctx context.Context) ([]types.DeploymentStatusMetricsItem, error) {
