@@ -62,6 +62,7 @@ var (
 	cleanupOIDCStateCronTimeout             time.Duration
 	cleanupArtifactBlobCron                 *string
 	cleanupArtifactBlobTimeout              time.Duration
+	cleanupArtifactBlobMinAge               time.Duration
 	deploymentStatusNotificationCron        *string
 	deploymentStatusNotificationTimeout     time.Duration
 	oidcGithubEnabled                       bool
@@ -210,6 +211,8 @@ func Initialize() {
 	cleanupArtifactBlobCron = envutil.GetEnvOrNil("CLEANUP_ARTIFACT_BLOB_CRON")
 	cleanupArtifactBlobTimeout = envutil.GetEnvParsedOrDefault("CLEANUP_ARTIFACT_BLOB_TIMEOUT",
 		envparse.PositiveDuration, 0)
+	cleanupArtifactBlobMinAge = envutil.GetEnvParsedOrDefault("CLEANUP_ARTIFACT_BLOB_MIN_AGE",
+		envparse.PositiveDuration, 24*time.Hour)
 	deploymentStatusNotificationCron = envutil.GetEnvOrNil("DEPLOYMENT_STATUS_NOTIFICATION_CRON")
 	deploymentStatusNotificationTimeout = envutil.GetEnvParsedOrDefault("DEPLOYMENT_STATUS_NOTIFICATION_TIMEOUT",
 		envparse.PositiveDuration, 0)
@@ -449,6 +452,10 @@ func CleanupArtifactBlobCron() *string {
 
 func CleanupArtifactBlobTimeout() time.Duration {
 	return cleanupArtifactBlobTimeout
+}
+
+func CleanupArtifactBlobMinAge() time.Duration {
+	return cleanupArtifactBlobMinAge
 }
 
 func OIDCGithubEnabled() bool {

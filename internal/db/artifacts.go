@@ -1131,3 +1131,20 @@ func DeleteArtifactVersion(ctx context.Context, artifactID uuid.UUID, tagName st
 
 	return nil
 }
+
+func GetAllReferencedBlobDigests(ctx context.Context) ([]string, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx, `
+		SELECT manifest_blob_digest FROM ArtifactVersion
+		UNION
+		SELECT artifact_blob_digest FROM ArtifactVersionPart
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("could not query referenced blob digests: %w", err)
+	}
+	digests, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
+		return nil, fmt.Errorf("could not collect referenced blob digests: %w", err)
+	}
+	return digests, nil
+}

@@ -3,6 +3,7 @@ package util
 import (
 	"errors"
 	"fmt"
+	"iter"
 	"strings"
 )
 
@@ -64,4 +65,19 @@ func GetValues[K comparable, V any](src map[K]V) []V {
 		values = append(values, value)
 	}
 	return values
+}
+
+func CollectKeys[K comparable](src iter.Seq[K]) map[K]struct{} {
+	dst := make(map[K]struct{})
+	InsertKeys(dst, src)
+	return dst
+}
+
+func InsertKeys[K comparable, T any](dst map[K]T, src iter.Seq[K]) {
+	var t T
+	for v := range src {
+		if _, ok := dst[v]; !ok {
+			dst[v] = t
+		}
+	}
 }
