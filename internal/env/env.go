@@ -52,8 +52,6 @@ var (
 	artifactTagsDefaultLimitPerOrg          int
 	cleanupDeploymentRevisionStatusCron     *string
 	cleanupDeploymentRevisionStatusTimeout  time.Duration
-	cleanupDeploymentTargetStatusCron       *string
-	cleanupDeploymentTargetStatusTimeout    time.Duration
 	cleanupDeploymentTargetMetricsCron      *string
 	cleanupDeploymentTargetMetricsTimeout   time.Duration
 	cleanupDeploymentLogRecordCron          *string
@@ -194,9 +192,6 @@ func Initialize() {
 
 	cleanupDeploymentRevisionStatusCron = envutil.GetEnvOrNil("CLEANUP_DEPLOYMENT_REVISION_STATUS_CRON")
 	cleanupDeploymentRevisionStatusTimeout = envutil.GetEnvParsedOrDefault("CLEANUP_DEPLOYMENT_REVISION_STATUS_TIMEOUT",
-		envparse.PositiveDuration, 0)
-	cleanupDeploymentTargetStatusCron = envutil.GetEnvOrNil("CLEANUP_DEPLOYMENT_TARGET_STATUS_CRON")
-	cleanupDeploymentTargetStatusTimeout = envutil.GetEnvParsedOrDefault("CLEANUP_DEPLOYMENT_TARGET_STATUS_TIMEOUT",
 		envparse.PositiveDuration, 0)
 	cleanupDeploymentTargetMetricsCron = envutil.GetEnvOrNil("CLEANUP_DEPLOYMENT_TARGET_METRICS_CRON")
 	cleanupDeploymentTargetMetricsTimeout = envutil.GetEnvParsedOrDefault("CLEANUP_DEPLOYMENT_TARGET_METRICS_TIMEOUT",
@@ -401,14 +396,6 @@ func CleanupDeploymenRevisionStatusCron() *string {
 
 func CleanupDeploymenRevisionStatusTimeout() time.Duration {
 	return cleanupDeploymentRevisionStatusTimeout
-}
-
-func CleanupDeploymenTargetStatusCron() *string {
-	return cleanupDeploymentTargetStatusCron
-}
-
-func CleanupDeploymenTargetStatusTimeout() time.Duration {
-	return cleanupDeploymentTargetStatusTimeout
 }
 
 func CleanupDeploymentTargetMetricsCron() *string {

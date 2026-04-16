@@ -84,7 +84,6 @@ func (dt *DeploymentTarget) Validate() error {
 type DeploymentTargetFull struct {
 	DeploymentTarget
 	CustomerOrganization *CustomerOrganization          `db:"customer_organization" json:"customerOrganization,omitempty"`
-	CurrentStatus        *DeploymentTargetStatus        `db:"current_status" json:"currentStatus,omitempty"`
 	Deployments          []DeploymentWithLatestRevision `db:"-" json:"deployments"`
 	AgentVersion         AgentVersion                   `db:"agent_version" json:"agentVersion"`
 }
