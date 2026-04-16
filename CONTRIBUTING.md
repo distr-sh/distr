@@ -8,7 +8,7 @@ Distr is open-source software licensed under the [Apache 2.0 license](https://gi
 
 To avoid unnecessary and redundant work, please reach out before you start working on your contribution.
 
-You can either create an issue on GitHub or join our [Discord](https://discord.gg/6qqBSAWZfW) server to get in touch with the community.
+You can either create an issue on GitHub or join our [community forum](https://github.com/distr-sh/distr/discussions) to get in touch with the community.
 
 ## How to run distr for development
 
