@@ -1,0 +1,300 @@
+---
+title: 'Mounting Configuration Files in Docker Compose'
+description: 'A practical guide to shipping configuration files like postgresql.conf inside a Docker Compose deployment. Covers bind mounts, custom images, the Compose configs top-level keyword with inline content, and Compose secrets for sensitive values.'
+publishDate: 2026-04-15
+lastUpdated: 2026-04-15
+slug: 'docker-compose-mount-config-files'
+authors:
+  - name: 'Philip Miglinci'
+    role: 'Co-Founder'
+    image: '/src/assets/blog/authors/pmig.jpg'
+    linkedIn: https://www.linkedin.com/in/pmigat/
+    gitHub: https://github.com/pmig
+image: '/src/assets/blog/2026-04-15-docker-compose-mount-config-files/thumb.png'
+tags:
+  - Docker
+  - Docker Compose
+  - PostgreSQL
+  - Configuration
+  - DevOps
+---
+
+import {Aside, Code} from '@astrojs/starlight/components';
+import EmbeddedWhitePaperCta from '~/components/cta/embedded/EmbeddedWhitePaperCta.astro';
+import postgresConfigsCompose from './2026-04-15-docker-compose-postgres-config-file/docker-compose.yaml?raw';
+import postgresBindMountCompose from './2026-04-15-docker-compose-postgres-config-file/docker-compose-bind-mount.yaml?raw';
+
+I am Philip, an engineer working at Distr, which helps software and AI companies distribute their applications to self-managed environments.
+Our Open Source Software Distribution platform is available on GitHub ([`github.com/distr-sh/distr`](https://github.com/distr-sh/distr)) and orchestrates both Docker Compose and Kubernetes deployments.
+
+[Docker Compose](https://docs.docker.com/compose/) is one of the most common ways to ship a multi-container application to a customer environment, alongside Kubernetes. Most services it runs accept runtime tuning through environment variables, but a surprising number of well-known images, including PostgreSQL, Nginx, Dex, Redis, Traefik, and HAProxy, expect a real configuration file inside the container and not a flat list of `KEY=value` pairs.
+
+In this post, I'll walk through four approaches for getting a configuration file into a Docker Compose service: bind mounting from the host, baking the file into a custom image, using the Compose `configs` top-level keyword with inline `content:`, and pairing `configs` with `secrets` for values that must not live in plain text. I'll use `postgresql.conf` as the running example because it shows up the most in real customer deployments, but the patterns apply to any image that wants a config file on disk.
+
+<hr />
+
+## How Docker Compose Passes Configuration to Services
+
+Before picking an approach, it helps to understand the two fundamentally different ways a container consumes configuration at startup.
+
+### Environment Variables as Container Configuration
+
+Environment variables are the default in the 12-factor style. They are set on the service in `docker-compose.yaml`, injected into the container by Docker at start time, and read by the application at launch. They are simple, stable across image versions, and survive rebuilds without any filesystem gymnastics.
+
+They do not cover every case. Multi-line values are awkward. Structured configuration with sections, nested keys, or arrays does not fit into flat key/value pairs. And some upstream images deliberately refuse to expose certain settings as environment variables, pointing operators at a config file instead.
+
+### Configuration Files Mounted Into the Container
+
+The alternative is a real file on disk inside the container that the application reads at startup, usually via a `-c`, `--config`, or `$APP_CONFIG_FILE` flag. Getting the file into the container is where the approaches diverge: the file can come from the host filesystem, a pre-built image, or Docker Compose itself.
+
+### PostgreSQL as a Canonical Example of Mixed Configuration
+
+The upstream [`postgres`](https://hub.docker.com/_/postgres) image documents both options. Environment variables like `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, and `POSTGRES_INITDB_ARGS` bootstrap the database on first start, and everything else is either a `-c key=value` command-line flag or a mounted `postgresql.conf` referenced via `config_file=...`.
+
+Settings like `shared_buffers`, `max_connections`, `work_mem`, `effective_cache_size`, `wal_level`, `shared_preload_libraries`, and locale-related options like `lc_messages` are not exposed through environment variables at all. If you want to tune them, you need the file-based route. The same pattern shows up in Nginx (`nginx.conf`), Dex (`config.yaml`), Redis (`redis.conf`), Traefik (`traefik.yml`), and HAProxy (`haproxy.cfg`), so the approaches below apply to all of them.
+
+## Approach 1: Bind-Mounting postgresql.conf from the Host
+
+The pattern in almost every Postgres tutorial is a bind mount from the host filesystem into the container.
+
+<Code
+  code={postgresBindMountCompose}
+  lang="yaml"
+  title="docker-compose.yaml (bind mount)"
+/>
+
+Deploy with:
+
+```bash
+docker compose up -d
+```
+
+### Setting Up the postgresql.conf Bind Mount
+
+The host file sits next to the Compose file. Docker mounts it read-only at `/etc/postgresql/postgresql.conf` inside the container, and the `command:` override tells Postgres to read its configuration from that path instead of the file `initdb` generates inside `PGDATA` by default. The rest of the Compose file is ordinary: a named volume for the data directory, a port publish, and the usual `POSTGRES_*` environment variables.
+
+### Limitations of the Bind-Mount Approach
+
+This works fine on a developer laptop where everything lives in a single git checkout, but it introduces real friction the moment you ship the deployment as a single artifact to a customer:
+
+1. **The deployment becomes two files instead of one.** The customer has to place `postgresql.conf` on the host at the exact path the Compose file expects. If they run `docker compose up` from the wrong directory, they get a cryptic `bind source path does not exist` error.
+2. **Permissions drift.** On hosts where the container runs as a non-root user, a bind-mounted file can end up with an owner the Postgres process inside the container cannot read, and Postgres refuses to start.
+3. **Updates coordinate poorly.** When you roll out a new application version and the recommended config defaults change, you have two moving parts to keep in sync: the Compose file and the external config file.
+4. **Editability is unclear.** Nothing in the Compose file signals to the customer which file they are supposed to edit or what the defaults were.
+
+### When to Use Bind Mounts for Container Configuration
+
+Bind mounts are fine for local development, internal deployments where the Compose file and the config file travel together in a git checkout, and one-off installations where the operator is comfortable touching host paths. They are the wrong choice when the Compose file is itself the artifact you distribute.
+
+<EmbeddedWhitePaperCta />
+
+## Approach 2: Baking postgresql.conf Into a Custom Image
+
+The second option builds a custom image on top of the upstream `postgres` image with the configuration file baked in.
+
+```dockerfile
+# Dockerfile
+FROM postgres:17-alpine
+COPY postgresql.conf /etc/postgresql/postgresql.conf
+CMD ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+```
+
+### Setting Up the Custom Postgres Image
+
+You build and push this image to your registry, reference it from the Compose file with something like `image: myregistry/postgres-tuned:17`, and drop the bind mount entirely. The config file is frozen into the image layers and ships wherever the image does.
+
+### Tradeoffs of the Custom Image Approach
+
+This works, but it inverts the right authorship boundary. PostgreSQL tuning belongs to the operator, not to whoever builds the image. Every change to a single setting requires a full image rebuild, a registry push, and a redeployment, even for a one-line update to `max_connections`. You also lose the ability to hand the configuration file to a customer for inspection or editing: it lives inside the image, and has to be extracted with `docker cp`, `docker exec cat`, or `docker save` before anyone can read it.
+
+### When to Use a Custom Image for Configuration
+
+A custom image is the right call when you need to ship additional native libraries, compiled Postgres extensions, or locale data alongside the config file. If you already maintain a custom Postgres image for other reasons, folding the config file into it is reasonable. If you do not, skip this approach and use `configs` instead.
+
+## Approach 3: Docker Compose `configs` With Inline `content`
+
+Docker Compose has a top-level `configs` keyword that was originally introduced by Docker Swarm and later carried into the [Compose Spec](https://docs.docker.com/reference/compose-file/configs/). Since Compose version 2.23.1 it supports an inline `content:` field, which lets you embed a configuration file directly in the Compose file and mount it into a service at container start time.
+
+This is the cleanest fit for distributed Compose deployments. The configuration file and the Compose file are literally the same file. No host-side artifacts, no custom image, no second git repository.
+
+<Code
+  code={postgresConfigsCompose}
+  lang="yaml"
+  title="docker-compose.yaml (Compose configs)"
+/>
+
+Deploy with:
+
+```bash
+docker compose up -d
+```
+
+### How Docker Compose `configs` With Inline `content` Works
+
+Three pieces make this work:
+
+**The top-level `configs:` block.** At the bottom of the file, a top-level `configs:` block declares `postgresql.conf` with an inline `content:` YAML block. Compose materializes the inline content as a file and mounts it into the container at start time.
+
+**Service-level `configs:` reference.** The service uses `source:` and `target:` under its own `configs:` entry to mount the file at `/etc/postgresql/postgresql.conf`. `target:` is important here because the default mount location is `/<config-name>`, and Postgres expects its config at the path passed via `config_file=`.
+
+**Command override.** The service `command:` launches Postgres with `-c config_file=/etc/postgresql/postgresql.conf`. The official `postgres` entrypoint passes trailing arguments through to the `postgres` binary, so `initdb` still runs on first start and `POSTGRES_USER` and friends still behave normally.
+
+Files created this way are mounted read-only with mode `0444` by default, which matches the upstream image's expectations.
+
+<Aside type="note">
+  Older versions of Docker Compose do not understand the inline `content:`
+  field. Depending on the exact version you either get a schema error at parse
+  time or an empty file inside the container, followed by a Postgres `could not
+  open configuration file` failure. Require Compose `>= 2.23.1` in your
+  installation instructions, or fall back to an external `file:` source if you
+  cannot.
+</Aside>
+
+### Using Compose Variables for Editable postgresql.conf Defaults
+
+Because the `content:` block is processed through Compose's normal variable interpolation, you can expose individual tuning parameters as environment variables while keeping the rest baked in:
+
+```yaml
+configs:
+  postgresql.conf:
+    content: |
+      listen_addresses = '*'
+      max_connections = ${PG_MAX_CONNECTIONS:-200}
+      shared_buffers = ${PG_SHARED_BUFFERS:-512MB}
+```
+
+The operator overrides `PG_MAX_CONNECTIONS` in their environment or `.env` file, Compose renders the value into the generated config file at startup, and Postgres picks it up. This gives you "shipped defaults with editable knobs" without building a custom image.
+
+### Updating Configuration Files in Production
+
+When you change the inline content, Compose treats it the same as any other service configuration change: `docker compose up -d` recreates the container with the new file mounted. For zero-downtime changes, you still need the application to support reloading. For Postgres, that means `SELECT pg_reload_conf();` for the parameters that allow it, or a full restart for the ones that do not.
+
+<Aside type="caution">
+  Inline `content:` is parsed by YAML before Postgres ever sees it. Be careful
+  with characters that have meaning in YAML: unquoted `#` starts a comment,
+  leading whitespace matters, and single quotes inside single-quoted strings
+  have to be escaped. When in doubt, wrap values in double quotes and test the
+  generated file with `docker compose exec postgres cat
+  /etc/postgresql/postgresql.conf`.
+</Aside>
+
+### When to Use Compose `configs`
+
+Use `configs` with inline `content:` when you are shipping the Compose file as the deployment artifact. It is the right default for:
+
+- Docker Compose deployments handed to customers or distributed through a platform like Distr.
+- Any scenario where you want the Compose file to be self-contained.
+- Cases where configuration needs to change per environment via variable interpolation.
+
+Stick with bind mounts if your team already works out of a git checkout and prefers the config file on its own. Stick with a custom image if you are shipping additional binaries or extensions anyway.
+
+## Approach 4: Pairing `configs` With `secrets` for Sensitive Values
+
+The `configs` keyword is intended for configuration in the boring sense: tuning parameters, application settings, static templates. The content lives as plain text in your Compose file, which means database passwords, license keys, API tokens, and TLS private keys do not belong in a `configs` block.
+
+Docker Compose has a separate [`secrets`](https://docs.docker.com/reference/compose-file/secrets/) top-level keyword for exactly that case. Secrets are mounted into the container as files at `/run/secrets/<name>`, and the value comes from an external `file:` source or an `environment:` reference rather than inlined in the Compose file. In Swarm mode the value is delivered through the Swarm Raft store with at-rest encryption and mTLS; in plain `docker compose` the source file is bind-mounted from the path you specify, which is still better than embedding the secret in the Compose file but not a cryptographic protection by itself.
+
+### Combining Compose `configs` and `secrets` for Postgres
+
+A common pattern for Postgres is to keep the tuning file in `configs:` and the database password in `secrets:`:
+
+```yaml
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      POSTGRES_DB: app
+    configs:
+      - source: postgresql.conf
+        target: /etc/postgresql/postgresql.conf
+    secrets:
+      - postgres_password
+
+configs:
+  postgresql.conf:
+    file: ./postgresql.conf
+
+secrets:
+  postgres_password:
+    file: ./postgres_password.txt
+```
+
+The Postgres image honors `*_FILE` variants of its environment variables and reads the value from the file at the given path, so the plaintext password never appears in the Compose file or in `docker inspect` output.
+
+### When combining `configs` and `secrets` is actually useful
+
+Most applications accept credentials through environment variables, and for those, pushing every secret through a `*_FILE` variable is overkill. The `configs` + `secrets` combination earns its complexity in one specific case: when the application will only read a credential from a file inside the container, not from an environment variable. The common examples:
+
+- **TLS private keys.** Nginx (`ssl_certificate_key`), HAProxy, and Postgres with streaming replication TLS all read keys from a file path. None of them accept a private key over an env var. The main configuration file lives in `configs:`, the key lives in `secrets:`, both land in the same container without either leaking into the Compose file.
+- **Grafana provisioning with file references.** Grafana's [file provider](https://grafana.com/docs/grafana/latest/administration/provisioning/#using-file-provider) lets you write `password: $__file{/run/secrets/grafana_db_password}` inside a `datasource.yaml`. The provisioning file lives in `configs:`, the password file lives in `secrets:`, and the datasource credential never has to show up in the Compose file or an env var.
+- **SSH host keys** for anything terminating SSH inside a container (Gitea, SFTP bridges, or a CI runner doing git-over-SSH).
+- **Postgres `POSTGRES_PASSWORD_FILE` hardening.** Even when you could set `POSTGRES_PASSWORD` directly, the file-based variant keeps the password out of `docker inspect`, `/proc/<pid>/environ`, and startup logs. For deployments that go through a security review this is a common check-box.
+
+If your application happily reads every credential from environment variables, skip Compose-native `secrets:` and use a single `configs:` block plus `POSTGRES_PASSWORD={{ .Secrets.POSTGRES_PASSWORD }}` from Distr Secrets. The file-based route is for applications that will not take credentials any other way.
+
+### Distr Secrets for Vendor-Distributed Deployments
+
+The Compose-native `secrets` mechanism still expects the sensitive value to exist on disk as `./postgres_password.txt` when you run `docker compose up`. If you are shipping the Compose file itself through a control plane, that is one more file the customer has to place correctly.
+
+[Distr Secrets](/docs/agents/secrets/) solves that by storing sensitive values centrally in Distr and substituting them into deployments at deploy time using `{{ .Secrets.KEY }}` template syntax. The actual values never land in the Compose file, never appear in the registry, and never show up in deployment logs: the Distr agent redacts them automatically.
+
+In practice that looks like a `.env` file that references Distr Secrets by key:
+
+```dotenv
+POSTGRES_PASSWORD={{ .Secrets.POSTGRES_PASSWORD }}
+```
+
+Rotation happens in the Distr UI, not in git. Scoping is vendor-level or customer-specific, so the same Compose file can be delivered to every customer with different credentials rendered into it. See the [Secrets Management documentation](/docs/agents/secrets/) for the full template syntax and scoping rules.
+
+<EmbeddedWhitePaperCta />
+
+## Three practical notes before you use Compose `configs` in production
+
+I have tripped over each of these at least once while helping customers move to this pattern:
+
+- **Check the minimum Compose version on the target hosts.** Compose `2.23.1` shipped in November 2023 and is bundled with current Docker Desktop and Docker CE. But if your customers still run the legacy Compose v1 Python binary (`docker-compose` with a dash), the `configs` block with inline `content:` is not going to work. Print the expected version in your installer and fail fast if it is lower.
+- **Inline content is not a secret store.** The file is plain text inside your Compose file. Do not put database passwords, license keys, or TLS private keys in a `configs` block. Use the Compose `secrets` top-level keyword, an external secret manager, or [Distr Secrets](/docs/agents/secrets/), which are stored centrally in Distr and substituted into deployments at deploy time using `{{ .Secrets.KEY }}` template syntax so the actual values never land in your Compose file or deployment logs.
+- **Locale and extension assumptions still belong to the image.** `shared_preload_libraries = 'age'` or `lc_messages = 'en_US.UTF-8'` only work if your Postgres image actually ships the `age` extension and the `en_US.UTF-8` locale. Switching to `configs` does not change that. You are still responsible for picking an image that has what your `postgresql.conf` asks for.
+
+## Configuration File Approach Comparison
+
+&nbsp;
+
+| Feature                    | Bind Mount              | Custom Image                  | Compose `configs` Inline    | `configs` + `secrets`         |
+| -------------------------- | ----------------------- | ----------------------------- | --------------------------- | ----------------------------- |
+| Single-file deployment     | No                      | Yes (image + Compose)         | Yes                         | Yes (with Distr Secrets)      |
+| Distr support              | No (multi-file)         | Yes                           | Yes                         | Yes (with Distr Secrets)      |
+| Editable by operator       | Yes (host file)         | No (rebuild required)         | Yes (edit Compose file)     | Yes                           |
+| Safe for sensitive values  | No                      | No                            | No                          | Yes                           |
+| Supports variable defaults | No                      | No                            | Yes (Compose interpolation) | Yes                           |
+| Minimum Compose version    | Any                     | Any                           | 2.23.1                      | 2.23.1                        |
+| Best for                   | Local dev, git checkout | Custom extensions or binaries | Shipped Compose artifacts   | Shipped Compose + credentials |
+
+Distr ships a single Compose file to the agent in the customer's environment. Approaches that require the operator to place extra files on the host outside of that Compose file (host bind mounts, Compose-native `secrets:` sourced from `./postgres_password.txt`) add management complexity for both the vendor and the customer, because there is no single artifact to version, sign, and roll out.
+
+## Conclusion
+
+Docker Compose has more ways to pass configuration files into a service than most tutorials admit, and the right answer depends on where the Compose file lives in your delivery pipeline.
+
+**Use bind mounts** for local development and internal deployments where the Compose file and the config file travel together in a git checkout. They are the simplest setup with no additional moving parts on the Compose side.
+
+**Use a custom image** when you already maintain one for other reasons, such as shipping compiled extensions or locale data. Folding the config file into an image is reasonable then, but not as a standalone solution.
+
+**Use Compose `configs` with inline `content:`** when the Compose file is the deployment artifact. It keeps everything in one file, supports variable interpolation for editable defaults, and removes the "place this file on the host before running `docker compose up`" step that trips up customers.
+
+**Pair `configs` with `secrets`**, and with [Distr Secrets](/docs/agents/secrets/) for distributed deployments, for anything sensitive. Treat `configs` as plain text and let the secrets mechanism handle credentials, tokens, and private keys.
+
+For customer-shipped Docker Compose deployments, inline `configs` is almost always the right default. It is the shortest path from "my application needs a real config file" to "my customer runs one command and it works".
+
+## Getting started
+
+If you are distributing Docker Compose applications to customer environments and you are tired of coordinating Compose files, configuration files, and credential files as separate artifacts, [try Distr](https://distr.sh/onboarding). Distr ships your Compose file to an agent running in the customer's environment (the Hub only rewrites the top-level `name:` to a unique `distr-<deployment-id>` project name so multiple deployments on the same host do not collide), injects [Distr Secrets](/docs/agents/secrets/) at deploy time, and gives you a single view for versioning, rollouts, and customer-scoped configuration. The inline `configs` pattern in this post fits cleanly into that model.
+
+## Join the conversation
+
+Questions, feedback, or war stories about shipping configuration files to customer environments? We are around.
+
+- [Discord](https://discord.gg/6qqBSAWZfW)
+- [Book a demo](https://cal.glasskube.com/team/gk/demo?duration=30)

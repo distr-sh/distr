@@ -6,13 +6,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type DeploymentTargetStatusMetricsItem struct {
-	OrganizationName                string
-	CustomerOrganizationName        *string
-	DeploymentTargetName            string
-	DeploymentTargetStatusTimestamp *time.Time
-}
-
 type DeploymentStatusMetricsItem struct {
 	OrganizationName          string
 	CustomerOrganizationName  *string

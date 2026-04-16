@@ -22,7 +22,6 @@ import (
 )
 
 const (
-	deploymentTargetStatus    = "DeploymentTargetStatus"
 	deploymentTargetMetrics   = "DeploymentTargetMetrics"
 	deploymentRevisionStatus  = "DeploymentRevisionStatus"
 	deploymentLogRecord       = "DeploymentLogRecord"
@@ -40,8 +39,7 @@ func NewCleanupCommand() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "cleanup <type>",
 		Long: fmt.Sprintf(
-			"type must be one of: %v, %v, %v, %v, %v, %v",
-			deploymentTargetStatus,
+			"type must be one of: %v, %v, %v, %v, %v",
 			deploymentRevisionStatus,
 			deploymentTargetMetrics,
 			deploymentLogRecord,
@@ -51,7 +49,6 @@ func NewCleanupCommand() *cobra.Command {
 		Short: "delete old data",
 		Args:  cobra.ExactArgs(1),
 		ValidArgs: []cobra.Completion{
-			deploymentTargetStatus,
 			deploymentRevisionStatus,
 			deploymentTargetMetrics,
 			deploymentLogRecord,
@@ -83,8 +80,6 @@ func runCleanup(ctx context.Context, opts CleanupOptions) error {
 
 	var cleanupFunc func(context.Context) error
 	switch opts.Type {
-	case deploymentTargetStatus:
-		cleanupFunc = cleanup.RunDeploymentTargetStatusCleanup
 	case deploymentRevisionStatus:
 		cleanupFunc = cleanup.RunDeploymentRevisionStatusCleanup
 	case deploymentTargetMetrics:

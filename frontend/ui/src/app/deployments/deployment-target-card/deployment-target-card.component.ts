@@ -48,7 +48,6 @@ import {getFormDisplayedError} from '../../../util/errors';
 import {RESOURCE_QUANTITY_REGEX} from '../../../util/validation';
 import {ConnectInstructionsComponent} from '../../components/connect-instructions/connect-instructions.component';
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
-import {DeploymentTargetStatusDotComponent} from '../../components/status-dot';
 import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AgentVersionService} from '../../services/agent-version.service';
@@ -70,7 +69,6 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
   templateUrl: './deployment-target-card.component.html',
   imports: [
     NgOptimizedImage,
-    DeploymentTargetStatusDotComponent,
     UuidComponent,
     DatePipe,
     FaIconComponent,
@@ -231,7 +229,7 @@ export class DeploymentTargetCardComponent {
 
   protected readonly agentUpdatePending = computed(
     () =>
-      this.deploymentTarget().currentStatus !== undefined &&
+      this.deploymentTarget().reportedAgentVersionId !== undefined &&
       this.deploymentTarget().agentVersion?.id !== this.deploymentTarget().reportedAgentVersionId
   );
 
@@ -460,7 +458,7 @@ export class DeploymentTargetCardComponent {
 
   protected async openInstructionsModal() {
     const dt = this.deploymentTarget();
-    if (dt.currentStatus !== undefined) {
+    if (dt.reportedAgentVersionId !== undefined) {
       const message = `If you continue, the previous authentication secret for ${dt.name} becomes invalid. Continue?`;
       const alert =
         dt.customerOrganization !== undefined && this.auth.isVendor()

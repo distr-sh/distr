@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"go.uber.org/zap"
 )
 
 const (
@@ -249,6 +250,27 @@ func GetAllOrganizationsForSuperAdmin(ctx context.Context) ([]types.Organization
 	} else {
 		return result, nil
 	}
+}
+
+func EnsureOrganizationFeatures(ctx context.Context, features []types.Feature) (int64, error) {
+	db := internalctx.GetDb(ctx)
+	query := `UPDATE Organization
+		SET features = array(SELECT DISTINCT unnest FROM unnest(features || @features::feature[]))
+		WHERE NOT (features @> @features::feature[])
+		AND deleted_at IS NULL`
+	internalctx.GetLogger(ctx).Debug("executing EnsureOrganizationFeatures",
+		zap.String("query", query),
+		zap.Any("features", features),
+	)
+	result, err := db.Exec(
+		ctx,
+		query,
+		pgx.NamedArgs{"features": features},
+	)
+	if err != nil {
+		return 0, fmt.Errorf("could not ensure organization features: %w", err)
+	}
+	return result.RowsAffected(), nil
 }
 
 func CountAllOrganizations(ctx context.Context) (res int64, err error) {
