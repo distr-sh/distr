@@ -12,7 +12,7 @@ services:
     ports:
       - '5432:5432'
   mailpit:
-    image: 'axllent/mailpit:v1.29.6'
+    image: 'axllent/mailpit:v1.29.7'
     ports:
       - '1025:1025'
       - '8025:8025'

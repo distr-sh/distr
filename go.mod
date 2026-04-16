@@ -16,7 +16,7 @@ require (
 	github.com/containerd/log v0.1.0
 	github.com/coreos/go-oidc/v3 v3.18.0
 	github.com/docker/cli v29.4.0+incompatible
-	github.com/docker/compose/v5 v5.1.2
+	github.com/docker/compose/v5 v5.1.3
 	github.com/exaring/otelpgx v0.10.0
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/getsentry/sentry-go v0.45.1
@@ -62,12 +62,12 @@ require (
 	golang.org/x/crypto v0.50.0
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v4 v4.1.4
-	k8s.io/api v0.35.3
-	k8s.io/apimachinery v0.35.3
-	k8s.io/cli-runtime v0.35.3
-	k8s.io/client-go v0.35.3
-	k8s.io/kubectl v0.35.3
-	k8s.io/metrics v0.35.3
+	k8s.io/api v0.35.4
+	k8s.io/apimachinery v0.35.4
+	k8s.io/cli-runtime v0.35.4
+	k8s.io/client-go v0.35.4
+	k8s.io/kubectl v0.35.4
+	k8s.io/metrics v0.35.4
 	oras.land/oras-go/v2 v2.6.0
 )
 
@@ -103,7 +103,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sso v1.30.15 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.19 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.41.10 // indirect
-	github.com/aws/smithy-go v1.24.3
+	github.com/aws/smithy-go v1.25.0
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
@@ -114,7 +114,7 @@ require (
 	github.com/cloudflare/circl v1.6.3 // indirect
 	github.com/containerd/console v1.0.5 // indirect
 	github.com/containerd/containerd/api v1.10.0 // indirect
-	github.com/containerd/containerd/v2 v2.2.2 // indirect
+	github.com/containerd/containerd/v2 v2.2.3 // indirect
 	github.com/containerd/continuity v0.4.5 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
@@ -339,8 +339,8 @@ require (
 	gotest.tools/v3 v3.5.2 // indirect
 	k8s.io/apiextensions-apiserver v0.35.1 // indirect
 	k8s.io/apiserver v0.35.1 // indirect
-	k8s.io/component-base v0.35.3 // indirect
-	k8s.io/component-helpers v0.35.3 // indirect
+	k8s.io/component-base v0.35.4 // indirect
+	k8s.io/component-helpers v0.35.4 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4 // indirect

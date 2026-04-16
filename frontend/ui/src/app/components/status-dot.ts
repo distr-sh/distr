@@ -1,6 +1,4 @@
-import {Component, computed, Directive, input, Signal} from '@angular/core';
-import {DeploymentTarget} from '@distr-sh/distr-sdk';
-import {isStale} from '../../util/model';
+import {Directive, input, Signal} from '@angular/core';
 
 type StatusDotStyle = 'unknown' | 'danger' | 'warning' | 'info' | 'ok' | 'ok-circle';
 
@@ -24,24 +22,4 @@ export abstract class AbstractStatusDotDirective {
 @Directive({selector: '[appStatusDot]'})
 export class StatusDotDirective extends AbstractStatusDotDirective {
   public override style = input.required<StatusDotStyle>({alias: 'appStatusDot'});
-}
-
-@Component({
-  selector: 'deployment-target-status-dot',
-  template: '<div class="size-full" [appStatusDot]="statusStyle()"></div>',
-  imports: [StatusDotDirective],
-})
-export class DeploymentTargetStatusDotComponent {
-  public readonly deploymentTarget = input.required<DeploymentTarget>();
-
-  protected readonly statusStyle = computed(() => {
-    const s = this.deploymentTarget().currentStatus;
-    if (s === undefined) {
-      return 'unknown';
-    } else if (isStale(s)) {
-      return 'warning';
-    } else {
-      return 'ok';
-    }
-  });
 }

@@ -13,17 +13,7 @@ import logViewerResourceDropdownDark from '~/assets/docs/agents/monitoring/logs-
 import enableContLogsLight from '~/assets/docs/agents/monitoring/logs-and-metrics/enable-cont-logs-light.png';
 import enableContLogsDark from '~/assets/docs/agents/monitoring/logs-and-metrics/enable-cont-logs-dark.png';
 
-Distr gives you three layers of observability for every deployment target: **status indicators** that show health at a glance, **logs** that let you dig into what happened, and **metrics** that track resource usage over time.
-
-## Deployment Target Status
-
-Every deployment target shows a colored dot to the left of its name in the Deployments view.
-
-The Distr agent reports its health every 5 seconds, so the status reflects near-real-time connectivity:
-
-- ⚫ **Not connected** — The agent has never connected, or credentials have been invalidated.
-- 🟢 **Connected** — The agent is actively reporting.
-- 🟡 **Stale** — The agent was connected before but has not reported in the last 60 seconds. Your deployments may still be running; Distr has simply lost contact with the agent. See [Troubleshooting: Stale Status](#troubleshooting-stale-status) for how to reconnect.
+Distr gives you observability for every deployment target via **logs** that let you dig into what happened, and **metrics** that track resource usage over time.
 
 ## Deployment Status
 

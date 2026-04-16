@@ -65,10 +65,6 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | cronJobs[2].args[1]                        | string | `"DeploymentTargetMetrics"`                      |             |
 | cronJobs[2].labels."distr.sh/job"          | string | `"deployment-target-metrics-cleanup"`            |             |
 | cronJobs[2].name                           | string | `"deployment-target-metrics-cleanup"`            |             |
-| cronJobs[3].args[0]                        | string | `"cleanup"`                                      |             |
-| cronJobs[3].args[1]                        | string | `"DeploymentTargetStatus"`                       |             |
-| cronJobs[3].labels."distr.sh/job"          | string | `"deployment-target-status-cleanup"`             |             |
-| cronJobs[3].name                           | string | `"deployment-target-status-cleanup"`             |             |
 | externalDatabase.existingSecret            | string | `""`                                             |             |
 | externalDatabase.existingSecretUriKey      | string | `"uri"`                                          |             |
 | externalDatabase.uri                       | string | `""`                                             |             |

@@ -31,8 +31,6 @@ An example configuration file can be found on
 ```dotenv
 # Cron interval for cleaning deployment revision statuses older than STATUS_ENTRIES_MAX_AGE
 CLEANUP_DEPLOYMENT_REVISION_STATUS_CRON="*/5 * * * *"
-# Cron interval for cleaning deployment target statuses older than STATUS_ENTRIES_MAX_AGE
-CLEANUP_DEPLOYMENT_TARGET_STATUS_CRON="*/5 * * * *"
 # Cron interval for cleaning metrics older than METRICS_ENTRIES_MAX_AGE
 CLEANUP_DEPLOYMENT_TARGET_METRICS_CRON="*/5 * * * *"
 # Cron interval for cleaning log entries older than LOG_RECORD_ENTRIES_MAX_COUNT
@@ -68,8 +66,4 @@ cronJobs:
     labels:
       distr.sh/job: deployment-target-metrics-cleanup
     args: [cleanup, DeploymentTargetMetrics]
-  - name: deployment-target-status-cleanup
-    labels:
-      distr.sh/job: deployment-target-status-cleanup
-    args: [cleanup, DeploymentTargetStatus]
 ```

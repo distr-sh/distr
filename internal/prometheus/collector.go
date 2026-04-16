@@ -15,10 +15,9 @@ import (
 const namespace = "distr"
 
 type DistrCollector struct {
-	organizationsTotal              prometheus.Gauge
-	deploymentTargetStatusTimestamp *prometheus.GaugeVec
-	deploymentStatus                *prometheus.GaugeVec
-	deploymentStatusTimestamp       *prometheus.GaugeVec
+	organizationsTotal        prometheus.Gauge
+	deploymentStatus          *prometheus.GaugeVec
+	deploymentStatusTimestamp *prometheus.GaugeVec
 }
 
 var _ prometheus.Collector = (*DistrCollector)(nil)
@@ -26,7 +25,6 @@ var _ prometheus.Collector = (*DistrCollector)(nil)
 // Collect implements [prometheus.Collector].
 func (d *DistrCollector) Collect(c chan<- prometheus.Metric) {
 	d.organizationsTotal.Collect(c)
-	d.deploymentTargetStatusTimestamp.Collect(c)
 	d.deploymentStatus.Collect(c)
 	d.deploymentStatusTimestamp.Collect(c)
 }
@@ -34,14 +32,12 @@ func (d *DistrCollector) Collect(c chan<- prometheus.Metric) {
 // Describe implements [prometheus.Collector].
 func (d *DistrCollector) Describe(c chan<- *prometheus.Desc) {
 	d.organizationsTotal.Describe(c)
-	d.deploymentTargetStatusTimestamp.Describe(c)
 	d.deploymentStatus.Describe(c)
 	d.deploymentStatusTimestamp.Describe(c)
 }
 
 type InitDataSource interface {
 	OrganizationsTotal(context.Context) (int64, error)
-	DeploymentTargetStatus(context.Context) ([]types.DeploymentTargetStatusMetricsItem, error)
 	DeploymentStatus(context.Context) ([]types.DeploymentStatusMetricsItem, error)
 }
 
@@ -50,14 +46,6 @@ func (c *DistrCollector) Initialize(ctx context.Context, src InitDataSource) (re
 		retErr = errors.Join(retErr, err)
 	} else {
 		c.RecordOrganizationsTotal(count)
-	}
-
-	if metrics, err := src.DeploymentTargetStatus(ctx); err != nil {
-		retErr = errors.Join(retErr, err)
-	} else {
-		for _, m := range metrics {
-			c.HandleDeploymentTargetStatus(m)
-		}
 	}
 
 	if metrics, err := src.DeploymentStatus(ctx); err != nil {
@@ -81,39 +69,6 @@ func (d *DistrCollector) IncOrganizationsTotal() {
 
 func (d *DistrCollector) DecOrganizationsTotal() {
 	d.organizationsTotal.Dec()
-}
-
-type DeploymentTargetStatusLabels struct {
-	OrganizationName         string
-	CustomerOrganizationName *string
-	DeploymentTargetName     string
-}
-
-func (l DeploymentTargetStatusLabels) Values() []string {
-	return []string{
-		l.OrganizationName,
-		util.PtrDerefOrDefault(l.CustomerOrganizationName),
-		l.DeploymentTargetName,
-	}
-}
-
-func (d *DistrCollector) RecordDeploymentTargetStatus(l DeploymentTargetStatusLabels, t *time.Time) {
-	var v float64
-	if t != nil {
-		v = float64(t.Unix())
-	}
-	d.deploymentTargetStatusTimestamp.WithLabelValues(l.Values()...).Set(float64(v))
-}
-
-func (c *DistrCollector) HandleDeploymentTargetStatus(item types.DeploymentTargetStatusMetricsItem) {
-	c.RecordDeploymentTargetStatus(
-		DeploymentTargetStatusLabels{
-			OrganizationName:         item.OrganizationName,
-			CustomerOrganizationName: item.CustomerOrganizationName,
-			DeploymentTargetName:     item.DeploymentTargetName,
-		},
-		item.DeploymentTargetStatusTimestamp,
-	)
 }
 
 type DeploymentStatusLabels struct {
@@ -172,15 +127,6 @@ func NewDistrCollector() *DistrCollector {
 
 	c.organizationsTotal = prometheus.NewGauge(
 		prometheus.GaugeOpts{Namespace: namespace, Name: "organizations_total"},
-	)
-
-	c.deploymentTargetStatusTimestamp = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "deployment_target_status_timestamp_seconds",
-			Help:      "Timestamp of latest deployment target status",
-		},
-		[]string{"organization", "customerorganization", "deploymenttarget"},
 	)
 
 	deploymentStatusLabels := []string{
