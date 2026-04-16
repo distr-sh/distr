@@ -102,7 +102,7 @@ To install Distr in Kubernetes, simply run:
 ```shell
 helm upgrade --install --wait --namespace distr --create-namespace \
   distr oci://ghcr.io/distr-sh/charts/distr \
-  --set postgresql.enabled=true --set minio.enabled=true
+  --set postgresql.enabled=true --set rustfs.enabled=true
 ```
 
 For a quick testing setup, you don't have to modify the values.

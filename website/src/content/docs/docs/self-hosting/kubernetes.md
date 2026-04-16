@@ -1,6 +1,6 @@
 ---
 title: Kubernetes
-description: Deploy Distr in your Kubernetes cluster using our Helm chart with built-in PostgreSQL and MinIO storage.
+description: Deploy Distr in your Kubernetes cluster using our Helm chart with built-in PostgreSQL and RustFS storage.
 sidebar:
   order: 2
 ---
@@ -11,7 +11,7 @@ To install Distr in [Kubernetes](/glossary/kubernetes/), simply run:
 ```shell
 helm upgrade --install --wait --namespace distr --create-namespace \
   distr oci://ghcr.io/distr-sh/charts/distr \
-  --set postgresql.enabled=true --set minio.enabled=true
+  --set postgresql.enabled=true --set rustfs.enabled=true
 ```
 
 For a quick testing setup, you don't have to modify the values. However, if you intend to use distr in production, please revisit all available configuration values and adapt them accordingly.
