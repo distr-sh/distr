@@ -94,6 +94,10 @@ func runCleanup(ctx context.Context, opts CleanupOptions) error {
 	case oidcState:
 		cleanupFunc = cleanup.RunOIDCStateCleanup
 	case artifactBlob:
+		if registry.GetS3Client() == nil {
+			log.Error("S3 client not available; ensure the registry is enabled and S3 is configured")
+			return errors.New("S3 client not configured")
+		}
 		cleanupFunc = cleanup.RunArtifactBlobCleanup
 	default:
 		log.Sugar().Errorf("invalid cleanup type: %v", opts.Type)
