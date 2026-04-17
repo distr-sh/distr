@@ -2,7 +2,7 @@
 title: '5 Ways Vendors Can Succeed Without Access to Customer Environments'
 description: Software vendors don't have it easy, especially when trying to serve their self-managed customers, here are 5 tips that are sure to help.
 publishDate: 2025-01-02
-lastUpdated: 2025-01-02
+lastUpdated: 2026-04-17
 slug: '5-ways-to-succeed-without-access-to-customer-environments'
 authors:
   - name: 'Jake Page'
@@ -22,158 +22,146 @@ tags:
   - Software Distribution Platform
 ---
 
-In recent years, companies of all sizes have faced a wave of new regulations and compliance demands, reshaping the landscape of software procurement. Enterprise customers now face heightened scrutiny over the tools they integrate, with each new application needing to meet strict security, regulatory, and data protection standards. It's no longer just about onboarding any technology in-house, it's about ensuring that every new piece of software can withstand regulatory scrutiny.
+Companies of every size are operating under more scrutiny than they used to. Regulations, compliance checks, security reviews: enterprise customers are being held to tougher standards on every piece of software they bring in. That has quietly changed what it means to sell enterprise software. The old pattern of convincing one decision-maker with a slick demo and a credit card is largely gone.
 
-For [Software and AI companies](/glossary/isv-meaning/), this shift means the days of simply convincing a single decision-maker with a product demo and only needing a credit card number are gone. These [Independent Software Vendors (ISVs)](/glossary/isv-meaning/) face unique distribution challenges. Today's enterprise customers have to deal with internal controls, legal reviews, and compliance checks before they can approve any new software. As a vendor, understanding exactly in which ways their end-customers hands are tied and preparing for their specific constraints is crucial if you want to sell software they can actually adopt.
+For [Software and AI companies](/glossary/isv-meaning/), and the [Independent Software Vendors (ISVs)](/glossary/isv-meaning/) that fall under that umbrella, the distribution challenges are real and specific. Today's enterprise buyers run internal controls, legal reviews, and compliance checks before they can approve anything. As a vendor, the difference between closing and losing is how well you understand those constraints and design your product around them.
 
-In industries like healthcare, banking, and government, customers can't just [hand over a credit card](/glossary/saas-definition/) and grant access to their infrastructure. Vendor have to offer a more thoughtful approach to software delivery.
+In regulated spaces (healthcare, banking, government), customers can't [hand over a credit card](/glossary/saas-definition/) and grant infrastructure access. Vendors have to offer a more thoughtful approach to software delivery.
 
-So, what's the takeaway? You don't need to obsess over your customers—you just need to understand them. Recognizing their restrictions, the environments they host software in, and how you can make self-hosting easier is key.
+The takeaway isn't that you should obsess over every customer. It's that you need to understand them. What are they restricted from doing? Where do they host software? What makes self-hosting easier for them? Those questions matter more than any demo.
 
-Let's explore five ways software vendors can succeed without direct access to their end-customers' environments.
+Here are five ways to succeed without direct access to your customer's environments.
 
-## 1. Build Software that is "self-managed Ready"
+## 1. Build software that is "self-managed ready"
 
 ![self-managed ready software](../../assets/blog/2025-01-02-5-ways-to-succeed/self-managed-ready.jpg)
 
-The first key consideration to keep in mind is that you have to build software that, for lack of a better way of putting it, is "[self-managed ready](/glossary/self-managed-software/)". End-customer's should not be expected to have more than the minimal knowledge of how your software works, they should be given a set of installation steps to get up and running that simply work. Beyond installation, your software must be architected for easy updates, seamless rollbacks, and compliance with modern safety, performance, and reliability standards. Let's break down what "self-managed ready" entails and the components that make it possible.
-
-So how can this be achieved:
+Your software needs to be built, from the start, for someone else to run. End customers shouldn't need deep knowledge of how your product works. They get a set of installation steps and those steps work. Beyond day-one installation, the product has to update cleanly, roll back safely, and meet modern standards for performance, reliability, and compliance. Here's what goes into that.
 
 ### Consistent versioning
 
-A consistent, and what many consider to be a software versioning best practice is to use a method like Semantic Versioning (SemVer), which has intuitive and inherently encoded information that helps customers understand what to expect with each release. Use the MAJOR.MINOR.PATCH format to communicate changes clearly:
+Semantic Versioning (SemVer) is the industry default for good reason. The `MAJOR.MINOR.PATCH` format encodes the nature of each release:
 
-- **Major** for breaking changes.
-- **Minor** for new features.
-- **Patch** for bug fixes.
+- **Major** for breaking changes
+- **Minor** for new features
+- **Patch** for bug fixes
 
-### Well-Packaged Solutions
+Customers can read a version number and know what they're in for.
 
-Examples across varied environments of optimized packaging prepared for each potential target:
+### Well-packaged solutions
+
+Different target environments need different packaging:
 
 - Use **multi-architecture Docker images** to support diverse systems.
-- Provide **metadata-rich [Helm charts](/glossary/helm-chart/)** with versioning and repository links for transparency.
+- Provide **metadata-rich [Helm charts](/glossary/helm-chart/)** with versioning and repository links so customers can inspect what they're installing.
 
-### Cloud-Native Portability
+### Cloud-native portability
 
-Portability as mentioned before is hugely beneficial as application might be dynamic and change environments over time, consider adopting the principles of the 12-Factor App to enhance adaptability across environments, some useful tips are to:
+Portability pays off because applications rarely stay put. Adopt 12-Factor App principles to make your software portable across environments:
 
-- Externalize configurations using environment variables.
-- Treat backing services like databases as replaceable resources.
-- Offer deployment methods compatible with VMs, bare-metal, and [Kubernetes](/glossary/kubernetes/).
+- Externalize configuration via environment variables.
+- Treat backing services (databases, caches) as replaceable resources.
+- Offer deployment methods for VMs, bare-metal, and [Kubernetes](/glossary/kubernetes/).
 
 ### SBOM (Software Bill of Materials)
 
-Security is paramount in [self-managed](/glossary/self-managed-software/) environments and any environment for that matter. So, generate an [SBOM](/glossary/sbom-software-bill-of-materials/) during building your application in your CI/CD pipeline to:
+Security matters in every environment, and especially in [self-managed](/glossary/self-managed-software/) ones. Generate an [SBOM](/glossary/sbom-software-bill-of-materials/) as part of your CI/CD pipeline to:
 
 - Document dependencies and licensing for compliance.
-- Identify vulnerabilities through automated [CVE](/glossary/cve-common-vulnerabilities-and-exposures/) scans.
-- Build trust by providing customers with transparent software component details.
+- Flag vulnerabilities through automated [CVE](/glossary/cve-common-vulnerabilities-and-exposures/) scans.
+- Give customers transparent insight into what's actually inside the software they're running.
 
-### Secure Base Images
+### Secure base images
 
-Have security in mind at the deepest base level of your software. Start with secure, minimal base images:
+Start from minimal, secure base images and carry that mindset through the stack:
 
-- Use **distroless images** to reduce attack surfaces.
-- Apply **cryptographic signatures** to ensure image integrity. Learn more about [image signing and verification](/glossary/oci-container-artifact-registry/#image-signing-and-verification) in our container registry guide.
-- Regularly scan images for vulnerabilities and host them in trusted registries.
+- Use **distroless images** to reduce attack surface.
+- Apply **cryptographic signatures** for image integrity. More on [image signing and verification](/glossary/oci-container-artifact-registry/#image-signing-and-verification) in our container registry guide.
+- Scan regularly for vulnerabilities and host in trusted registries.
 
-## 2. Perform Deployment Target Validations
+## 2. Perform deployment target validations
 
 ![Deployment target validations](../../assets/blog/2025-01-02-5-ways-to-succeed/deployment-target.jpg)
 
-What makes a sommelier such a valuable resource at a restaurant? When they stand at your table, describing the rolling hills of Tuscany or the ancient open-air vats of Georgian natural wine producers, they're speaking from experience. That's why you're willing to pay for their expertise: they've tested what they're recommending so you don't have to.
+When someone asks "can I run your software on this version of Kubernetes, or this Linux distribution, or my regional cloud provider?", a confident yes only works if you've actually tested it. Anything less is guesswork, and customers can tell.
 
-This is exactly the role software vendors must play when it comes to deployment targets. As a vendor, you need to know, from hands-on experience, how your software behaves in a variety of environments and platforms. If an end user asks, "Can I run your software on this version of Kubernetes, these operating systems, or my niche regional cloud provider?" you must be able to confidently say, "Yes," because you've already done the groundwork.
+### How to ensure deployment readiness
 
-### How to Ensure Deployment Readiness
+To give customers that level of confidence, vendors have to test systematically across the deployment targets their customers use.
 
-To provide this level of assurance, vendors need to rigorously test their software across diverse deployment targets. Here's how to approach it:
+- **Build sophisticated pre-flight checks.** Pre-flight checks validate that the target environment meets the necessary requirements before deployment starts. They verify resource availability, version compatibility, and critical dependencies, cutting the failure rate dramatically.
+- **Simulate real target environments with IaC tools.** Pulumi or Terraform can spin up infrastructure simulations that mimic customer environments. Those Infrastructure-as-Code templates let you test your software in controlled replicas of the environments your customers actually run.
 
-- **Build Sophisticated Pre-Flight Checks**
-  Pre-flight checks validate whether the target environment meets the necessary requirements for your software to run. These automated checks can verify resource availability, version compatibility, and other critical dependencies before deployment begins, reducing the likelihood of failures.
-- **Simulate Real Target Environments with IaC tools**
-  Tools like Pulumi or Terraform can be used to create infrastructure simulations that mimic customer environments. These Infrastructure as Code (IaC) templates allow you to test your software in controlled replicas of varied environments, ensuring compatibility across different configurations.
-
-## 3. Simplify Licensing
+## 3. Simplify licensing
 
 ![Licensing](../../assets/blog/2025-01-02-5-ways-to-succeed/licensing.jpg)
 
-[Licensing](/glossary/software-license-management/) is the mechanism through which vendors control the access and define the feature set of the software that is sold to end-customers. For a comprehensive guide to [software license management](/glossary/software-license-management/), see our glossary. A well-designed licensing system codifies software contracts and integrates seamlessly with the application, often via a license server during startup or runtime. For self-managed deployments, this system has to account for the fact that vendors won't have direct access to the end customer's environment. This makes it essential for licensing to be built-in, unobtrusive, and highly targeted.
+[Licensing](/glossary/software-license-management/) is how vendors control access and define the feature set of the software they sell. For a complete walk-through, see our [software license management](/glossary/software-license-management/) glossary entry. A good licensing system codifies software contracts and integrates cleanly with the application, usually via a license server at startup or runtime. For self-managed deployments, the catch is that vendors have no direct access to the customer environment. The licensing system has to be built-in, unobtrusive, and targeted.
 
-### Two Primary Approaches to Licensing
+### Two primary approaches to licensing
 
-1. **Simple On/Off Licensing**:
-   This straightforward approach uses a license key to activate or deactivate an entire deployment or by simply giving access to a private [container registry](/glossary/oci-container-artifact-registry/). While it's easy to implement and manage, it offers limited flexibility. Essentially, the license acts as a switch, either granting or denying access to the entire application. Learn more about [container registries](/glossary/oci-container-artifact-registry/) and how they work.
-2. **Feature-Flag Licensing**:
-   This approach uses a more granular licensing system, where individual features within an application deployment can be unlocked or restricted via feature flags, this method also allows for dynamic pricing based on users, data usage or storage. While this method provides greater flexibility to tailor features to customer needs, it requires more effort to implement and maintain due to the complexity of managing feature states and dependencies.
+1. **Simple on/off licensing.** A license key activates or deactivates an entire deployment, or grants access to a private [container registry](/glossary/oci-container-artifact-registry/). Easy to implement, easy to manage. Flexibility is limited: the license is essentially a switch.
+2. **Feature-flag licensing.** Individual features within a deployment can be unlocked or restricted via flags. This opens up dynamic pricing on users, data usage, storage, and more. The trade-off is implementation complexity and the ongoing maintenance of feature states and dependencies.
 
-### Licensing as a Tool for Insights
+### Licensing as a source of insight
 
-The right licensing mechanism can go beyond access control, offering valuable insights into software usage. By incorporating usage tracking and reporting into the licensing process, vendors can monitor adoption patterns, identify opportunities for contract expansion, and address overages during renewal cycles.
+The right licensing mechanism goes beyond access control. It surfaces usage data vendors can actually act on: adoption patterns, expansion opportunities, overages visible before renewal.
 
-- **For vendors:**
-  While licensing dashboards may seem unnecessary for vendors with only a few self-managed customers, they become incredibly valuable as the customer base grows. These dashboards can track contract expirations, monitor enabled features, and help identify potential infractions.
-- **For end customers:**
-  Detailed usage reports allow customers to visualize their software utilization, helping them avoid contract violations and better plan for future needs. This transparency fosters trust and encourages smoother renewals or expansions.
+- **For vendors.** Licensing dashboards seem optional when you have three self-managed customers. They become essential fast as the base grows. Track contract expirations, monitor enabled features, and spot potential infractions.
+- **For end customers.** Usage reports let customers see their own utilization, avoid contract violations, and plan ahead. That transparency builds trust and smooths renewals.
 
-## 4. Provide Unified Installers and Self-Service Updates
+## 4. Provide unified installers and self-service updates
 
-Just as a parent might lay out their child's clothes and pack their backpack the night before to simplify the morning routine, software vendors have to offer the same level of simplification to their end-customers by eliminating unnecessary decisions. This principle lies at the heart of serving self-managed customers: simplifying critical processes like installation and updates.
+Parents who lay out clothes and pack backpacks the night before know a truth that applies equally to software distribution: you simplify the morning by removing decisions. For vendors serving self-managed customers, the same logic applies. Two of the biggest decision points, installation and updates, need to be stripped down to something predictable and boring.
 
-These are processes that can be completely bespoke and will always be dictated by how you have previously architected your software, having said that, there is a lot vendors can do to guarantee that these two crucial steps are reliable, predictable and not prone to error. Unified installers and lightweight agent-based components play a crucial role in this, forming the foundation for a seamless software lifecycle.
+What "boring" looks like depends on how you've architected your software. There's always some bespoke logic involved. The goal is making installation and updates reliable, repeatable, and hard to get wrong. Unified installers and lightweight agents are the main tools for that.
 
-### Installers and Lightweight Agents
+### Installers and lightweight agents
 
-Unified installers, or installer components, are vendor-provided tools installed in the end customer's environment to assist with deploying and managing the vendor's software. Think of them like a trusted chaperone on a school trip: someone who ensures the kid gets on the bus (handles installation errors), looks after them if they're feeling sick (manages drift detection), and keeps track of updates (this is where the metaphor starts to wobble—but you get the idea). Unified installers act as reliable intermediaries, ensuring the smooth operation and lifecycle management of the vendor's software in the customer's environment.
+Unified installers are vendor-provided tools that customers run inside their environments to deploy and manage your software. They handle installation errors, drift detection, and update tracking so the customer doesn't have to. Think of them as a trusted chaperone: responsible for getting things where they need to go and keeping tabs on the journey.
 
-Incorporating lightweight agent-based components into these installers can further enhance functionality without overburdening customer systems. These agents can:
+Adding a lightweight agent extends this further without putting meaningful load on customer systems. Agents can:
 
 - Monitor performance and resource usage.
 - Facilitate automated updates or patches.
-- Provide feedback about the environment, enabling proactive issue detection and resolution.
+- Provide feedback about the environment, enabling proactive issue detection.
 
-These components can help be a proxy for vendor processes that ensure the smooth and successful lifecycle, starting with installation, of the vendor's software in the end-customers environment.
+These components become a proxy for vendor processes that ensure the full lifecycle, starting with installation, works smoothly in the customer's environment.
 
-### Self-Service updates
+### Self-service updates
 
-Once the software is installed, the inevitable need for routine updates will arise at some point. It's on the vendor to ensure that end-customers are properly notified when updates are available and that these updates are delivered in a safe and reliable way. Since vendors lack direct access to customer environments, their role is limited to providing updates that are easy to apply and designed with safety in mind. Ultimately, it's the end-customers who decide when and how updates will occur.
+Once the software is installed, routine updates are inevitable. The vendor's job is to make sure customers know when updates are available and that applying them is safe. Since vendors don't have direct access, the best they can do is provide updates that are easy to apply and designed with safety as the priority. Customers decide when to update.
 
-Initially, customers may be reluctant to update their software too often. They know all too well that changes to a stable system are when outages are most likely to happen. However, vendors can overcome this reluctance over time by building trust. Delivering a consistently smooth and reliable self-update process reassures customers, demonstrating that updates won't compromise their systems but instead enhance their stability and performance.
+Initially, customers will be reluctant to update often. They know from experience that changes to a working system are when outages happen. Reluctance erodes over time if the self-update process is consistently smooth. Every uneventful update is evidence that the next one is safe too.
 
-## 5. Focus on High-Quality Communication
+## 5. Focus on high-quality communication
 
 ![Communication](../../assets/blog/2025-01-02-5-ways-to-succeed/communication.jpg)
 
-When vendors are dealing with end-customers who are not at liberty to grant access to their infrastructure. You must be able to build out or leverage software distribution platforms that bridge the gap between you and them. "Bridging the gap" is a saying at times admittedly overused, but really what are we referring to? We are talking about processes and platforms that are conducive to one thing, **clear communication**.
-Communication, just to clarify isn't only jumping on a call and chatting directly to each other. If it were that simple, exchanging phone numbers would solve all your problems. Here are the elements I believe lead to truly effective communication with end-customers:
+When customers can't grant infrastructure access, communication becomes the infrastructure. You either build (or plug into) a distribution platform that closes the gap, or you don't. Closing the gap is really about one thing: clear communication.
 
-- **Establish clear collaboration channels:** Define how you and your customers will work together, ensuring everyone knows where and how to share feedback or report issues.
-- **Expose health endpoints:** Provide software with health endpoints that both the vendor and customer can monitor, ensuring everyone operates with the same base data.
-- **Share key metrics and logs:** If possible and always with the consent of the end customer, implement processes to expose or share non-sensitive but essential metrics or logs, enabling more effective troubleshooting when errors occur.
-- **Deliver thorough documentation:** Offer well-organized, easily accessible, and comprehensive documentation to reduce ambiguity and save time.
-- **Check in routinely:** Schedule regular usage, performance, and satisfaction check-ins to identify what can be improved to enhance customer success and satisfaction.
+Communication isn't just calls, of course. If it were, exchanging phone numbers would solve every distribution problem. The elements that make communication genuinely effective with end customers:
 
-Of course, there are many other ways to improve communication with end-customers. Remember that one of the very first things we mentioned in this piece is the inescapable base requirement of understanding your customer. As time goes by, customer needs change and previously reached understanding might need updating. The only way to achieve it is by being commited to high-quality communication and treat it as if it was a feature of your product.
+- **Clear collaboration channels.** Define how you and your customers will work together, where feedback goes, and how issues get reported.
+- **Exposed health endpoints.** Provide endpoints that both vendor and customer can monitor, so everyone operates off the same base data.
+- **Shared key metrics and logs.** Where it's appropriate (and always with customer consent), expose or share non-sensitive metrics or logs so troubleshooting is faster when something breaks.
+- **Thorough documentation.** Organized, searchable, and comprehensive docs reduce ambiguity and save everyone time.
+- **Routine check-ins.** Schedule regular conversations about usage, performance, and satisfaction. Those calls surface the problems you wouldn't otherwise see.
 
-## Common Pitfalls: Things to Avoid When Applying These Methods
+There are plenty of other ways to improve communication. The fundamental requirement is the one from the start of this piece: understand your customer. Customer needs change over time, and old understandings go stale. The only way to keep up is to treat communication as a product feature rather than an operational cost.
 
-1. **Neglecting Thorough Deployment Testing**
-   Insufficient validation of deployment targets can lead to compatibility issues, unexpected failures, and frustrated customers. Not testing enough or not testing the right way can hugely impact your customer trust
-2. **Failing to Address Security and Compliance**
-   Overlooking essential components like SBOMs, secure base images, or compliance with industry standards can lead to vulnerabilities, compliance issues. If your software ever becomes a vulnerability source in a customer controlled environment, a churn is surely on the horizon.
-3. **Lack of Visibility into Software Health**
-   Without exposing health endpoints or sharing relevant logs, troubleshooting becomes exponentially more challenging for both vendors and customers, nobody want to be on an on-call bridge for longer than strictly needed.
-4. **Ignoring Customer Feedback and Evolving Needs**
-   Customer requirements and environments change over time. Failing to adapt to these shifts by not engaging in regular feedback loops risks misalignment with customer priorities.
-5. **Overloading Software with Dependencies**
-   Relying on too many external components or locking into opinionated third-party services can make deployments brittle and harder to support, especially in diverse environments.
+## Common pitfalls to avoid
 
-## Conclusion
+1. **Neglecting thorough deployment testing.** Insufficient validation of deployment targets leads to compatibility issues, unexpected failures, and frustrated customers. Testing the wrong things, or not enough, erodes trust quickly.
+2. **Failing to address security and compliance.** Skipping SBOMs, minimal base images, or industry-standard compliance invites vulnerabilities. If your software ever becomes a vulnerability source in a customer-controlled environment, churn is on the horizon.
+3. **Lack of visibility into software health.** Without health endpoints or accessible logs, troubleshooting becomes exponentially harder for everyone involved. Nobody wants to stay on an on-call bridge longer than needed.
+4. **Ignoring customer feedback and evolving needs.** Customer environments change. Failing to run regular feedback loops means you drift out of alignment with what they actually need.
+5. **Overloading software with dependencies.** Too many external components, or heavy lock-in to opinionated third-party services, makes deployments brittle and tough to support in diverse environments.
 
-As you can probably tell from everything covered above, there's no silver bullet or golden framework that fits every self-managed customer. Getting the delicate and synchronized dance between a vendor and their end-customers right, requires a process that's carefully tailored to the specifics of your software and the unique needs of the customers you serve.
+## Wrapping up
 
-It all starts with building software designed with [self-managed readiness](/glossary/self-managed-software/) in mind. Simply lifting and shifting a SaaS offering to an self-managed customer isn't a viable option in almost any case. Instead, by starting with a solid foundation of portable software, tested to run in diverse environments, and built with security, compliance, installation infrastructure, and updates as core considerations, you set yourself and your customers up for success.
+There's no single framework that fits every self-managed customer. The dance between vendor and end customer has to be tailored to the specifics of your software and the constraints of the customers you serve.
 
-When you get it right be it by building the internal processes individually or by leveraging a software delivery management software like [Distr](/), serving your self-managed customers doesn't just become manageable, it might even open doors to new deployment methods and help you grow your business. And really, who wouldn't want that?
+It starts with building software with [self-managed readiness](/glossary/self-managed-software/) in mind. Lifting and shifting a SaaS offering into a self-managed environment almost never works. A solid foundation is portable software, tested across realistic environments, with security, compliance, installation infrastructure, and updates built in from the start.
+
+When that foundation is there, whether you build the surrounding processes in-house or use a software delivery management software like [Distr](/), serving self-managed customers becomes manageable and can open doors to new deployment models that grow the business.

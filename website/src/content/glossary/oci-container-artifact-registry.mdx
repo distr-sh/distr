@@ -10,116 +10,117 @@ import EmbeddedWhitePaperCta from '~/components/cta/embedded/EmbeddedWhitePaperC
 
 ## What is a Container Registry?
 
-A **container registry** is a centralized service that stores, manages, and distributes container images and OCI-compliant artifacts. Container registries act as a critical hub in the software development lifecycle, enabling teams to publish container images from CI/CD pipelines, distribute software to customers, and deploy applications across diverse infrastructure—from Kubernetes clusters to [on-premises](/glossary/on-premises-definition/) data centers to [air-gapped](/glossary/air-gapped-meaning/) environments.
-Unlike simple file storage systems, container registries provide specialized features for managing containerized software: version control through tags, layer deduplication for efficient storage, authentication and access controls, vulnerability scanning, and APIs for programmatic push/pull operations. Container registries connect seamlessly with container orchestration platforms like Docker and Kubernetes, making them the backbone of modern cloud-native application development and deployment.
+A **container registry** is the service that stores, manages, and distributes container images and OCI-compliant artifacts. It's the hub software teams use to publish container images out of CI/CD, distribute software to customers, and pull applications onto deployment targets, whether those targets are Kubernetes clusters, [on-premises](/glossary/on-premises-definition/) data centers, or [air-gapped](/glossary/air-gapped-meaning/) environments.
+
+Registries are more than file storage. They add capabilities specific to containerized software: version control through tags, layer deduplication, authentication and access controls, vulnerability scanning, and APIs for programmatic push and pull. Registries plug directly into Docker and Kubernetes, which is why they've become foundational to modern cloud-native workflows.
 
 ## What is a Docker Registry?
 
-A **Docker registry** is a specific type of container registry designed to store and distribute Docker container images. Modern Docker registries follow the OCI (Open Container Initiative) Distribution Specification, making them compatible with Docker tooling and most modern container platforms. When developers run `docker pull` or `docker push` commands, they're interacting with a Docker registry to download or upload container images.
+A **Docker registry** is a specific type of container registry designed to store and distribute Docker container images. Modern Docker registries follow the OCI (Open Container Initiative) Distribution Specification, so they work with Docker tooling and most modern container platforms. Every `docker pull` and `docker push` talks to a Docker registry.
 
-The most well-known Docker registry is **Docker Hub**, Docker's public registry hosting millions of container images from official vendors, open-source projects, and community contributors. However, organizations also run private Docker registries for internal use or use commercial registry services like those from [AWS, Azure, Google Cloud, Harbor, and others](/blog/container-image-registry-comparison/). For a detailed comparison of these registries, see our [container registry comparison guide](/blog/container-image-registry-comparison/).
+The best-known Docker registry is **Docker Hub**, Docker's public registry that hosts millions of container images from official vendors, open-source projects, and community contributors. Plenty of organizations also run private Docker registries internally, or use commercial services like those from [AWS, Azure, Google Cloud, Harbor, and others](/blog/container-image-registry-comparison/). See our [container registry comparison guide](/blog/container-image-registry-comparison/) for a detailed look at those options.
 
 Docker registries store images as a collection of layers (each layer representing a filesystem change) along with metadata called a manifest that describes how to assemble those layers into a runnable container image.
 
 ## Container Registry vs Repository: Understanding the Difference
 
-One of the most common sources of confusion is the distinction between a **registry** and a **repository**. While these terms are often used interchangeably, they have distinct meanings:
+These terms get used interchangeably, but they actually mean different things.
 
-**Container Registry:**
+**Container registry:**
 
 - A service or platform that hosts multiple repositories
-- Examples: Docker Hub (the registry), Azure Container Registry (the registry), Google Artifact Registry
+- Examples: Docker Hub, Azure Container Registry, Google Artifact Registry
 - Provides authentication, access control, web UI, and APIs
-- Think of it as the entire "building" that houses many storage units
+- The "building" that contains many individual storage units
 
-**Container Repository:**
+**Container repository:**
 
 - A collection of related container images with the same name but different versions
-- Identified by tags or digests (e.g., `nginx:latest`, `nginx:1.25`, `nginx:alpine`)
+- Identified by tags or digests (`nginx:latest`, `nginx:1.25`, `nginx:alpine`)
 - Stored within a registry
-- Think of it as a "folder" or "storage unit" inside the registry building
+- A "folder" or "storage unit" inside the registry building
 
-**Analogy**: If a registry is a library (the building), repositories are the bookshelves, and individual container images are the books on those shelves.
+If a registry is a library, repositories are the bookshelves, and individual container images are the books on those shelves.
 
 For example:
 
 - **Registry**: `registry.example.com`
 - **Repository**: `registry.example.com/my-repository`
-- **Application (Image)**: `registry.example.com/my-repository/my-app`
-- **Application (Image) with tag**: `registry.example.com/my-repository/my-app:v1.2.0`
-- **Application (Image) with digest**: `registry.example.com/my-repository/my-app@sha256:abc123...`
+- **Application (image)**: `registry.example.com/my-repository/my-app`
+- **Application (image) with tag**: `registry.example.com/my-repository/my-app:v1.2.0`
+- **Application (image) with digest**: `registry.example.com/my-repository/my-app@sha256:abc123...`
 
 ## How Container Registries Work
 
-Container registries operate through a standardized API that allows clients (like Docker CLI, Kubernetes, or CI/CD tools) to push and pull container images. Here's how the core workflow functions:
+Container registries expose a standardized API so that clients (Docker CLI, Kubernetes, CI/CD tools) can push and pull container images. The typical workflow looks like this.
 
-### Pushing Images to a Registry
+### Pushing images to a registry
 
-1. **Image Build**: Developer builds a container image locally using `docker build` or similar tooling
-2. **Authentication**: Client authenticates with the registry using credentials (username/password, token, or OAuth)
-3. **Layer Upload**: Docker client uploads each layer of the image to the registry. Layers already present in the registry (from other images sharing base layers) are skipped.
-4. **Manifest Upload**: Client uploads the image manifest, a JSON document describing the image's layers, configuration, and metadata
-5. **Tagging**: The image is tagged (e.g., `v1.2.0`, `latest`) and made available in the repository
+1. **Image build.** Developer builds a container image locally with `docker build` or equivalent.
+2. **Authentication.** Client authenticates with the registry (username/password, token, OAuth).
+3. **Layer upload.** The Docker client uploads each layer. Layers already present in the registry (from other images sharing base layers) get skipped.
+4. **Manifest upload.** The client uploads the image manifest, which is a JSON document describing the image's layers, configuration, and metadata.
+5. **Tagging.** The image gets tagged (`v1.2.0`, `latest`) and becomes available in the repository.
 
-### Pulling Images from a Registry
+### Pulling images from a registry
 
-1. **Authentication**: Client authenticates if the image is in a private repository
-2. **Manifest Retrieval**: Client downloads the image manifest to learn which layers are needed
-3. **Layer Download**: Client downloads only the layers not already present in local cache
-4. **Image Assembly**: Docker assembles the layers into a usable container image
-5. **Container Execution**: The image can now be used to run containers
+1. **Authentication.** Client authenticates if the image is in a private repository.
+2. **Manifest retrieval.** Client downloads the image manifest to learn which layers are needed.
+3. **Layer download.** Client downloads only the layers not already present locally.
+4. **Image assembly.** Docker stitches layers into a usable container image.
+5. **Container execution.** The image can now be used to run containers.
 
-### Layer Deduplication and Storage Efficiency
+### Layer deduplication and storage efficiency
 
-Container registries optimize storage through layer sharing. Because container images are built in layers (typically one layer per instruction in a Dockerfile), registries store each unique layer only once, even if hundreds of images reference it.
+Registries optimize storage by sharing layers. Container images are built in layers (typically one layer per Dockerfile instruction), and registries store each unique layer only once even when hundreds of images reference it.
 
 For example:
 
-- Image A uses Ubuntu base layer + Node.js layer + App layer
-- Image B uses Ubuntu base layer + Python layer + Different app layer
-- The registry stores the Ubuntu base layer only once and both images reference it
+- Image A uses Ubuntu base + Node.js layer + app layer
+- Image B uses Ubuntu base + Python layer + different app layer
+- The registry keeps the Ubuntu base layer once, and both images point to it
 
-This deduplication dramatically reduces storage costs and speeds up image transfers since clients only download layers they don't already have.
+That deduplication cuts storage costs and speeds up image transfers, because clients only download layers they don't already have.
 
 ## Public Container Registries vs Private Container Registries
 
-Container registries fall into two primary categories based on access control:
+Registries split into two broad categories based on access control.
 
-### Public Container Registries
+### Public container registries
 
-**Public registries** allow anyone to pull (download) container images without authentication. They're ideal for open-source projects, community-shared tools, and public base images.
+**Public registries** let anyone pull images without authentication. They work well for open-source projects, community tools, and public base images.
 
-**Popular public registries:**
+Popular public registries:
 
-- **Docker Hub** - The default public registry with millions of container images
-- **GitHub Container Registry (GHCR)** - Integrated with GitHub repositories
-- **Quay.io** - Red Hat's public registry for open-source projects
+- **Docker Hub**, the default public registry with millions of container images
+- **GitHub Container Registry (GHCR)**, integrated with GitHub repositories
+- **Quay.io**, Red Hat's public registry for open-source projects
 
-**Use cases for public registries:**
+Use cases:
 
-- Distributing open-source software to global audiences
+- Distributing open-source software to a global audience
 - Sharing base images (Alpine Linux, Ubuntu, Python, Node.js)
 - Publishing community tools and frameworks
 - Educational projects and tutorials
 
-**Limitations:**
+Limitations:
 
-- No privacy controls (anyone can see your images)
-- Rate limiting on anonymous pulls (Docker Hub limits anonymous users to 100 pulls per 6 hours)
+- No privacy controls (your images are visible to anyone)
+- Rate limiting on anonymous pulls (Docker Hub caps anonymous at 100 pulls per 6 hours)
 - Limited access control and auditing
-- Not suitable for proprietary software or sensitive code
+- Not a fit for proprietary software or sensitive code
 
-### Private Container Registries
+### Private container registries
 
-**Private registries** require authentication and allow organizations to control exactly who can access which images. They're essential for commercial software, internal applications, and any scenario requiring security or compliance.
+**Private registries** require authentication and let organizations control exactly who accesses which images. Essential for commercial software, internal applications, and anything with security or compliance requirements.
 
-**Types of private registries:**
+Types:
 
-- **Cloud-hosted private registries** - AWS ECR, Azure ACR, Google Artifact Registry
-- **Self-hosted registries** - Harbor, Distribution (Docker Registry), Gitea
-- **Commercial registries** - JFrog Artifactory, Cloudsmith, [Distr](/docs/registry/)
+- **Cloud-hosted private registries**: AWS ECR, Azure ACR, Google Artifact Registry
+- **Self-hosted registries**: Harbor, Distribution (Docker Registry), Gitea
+- **Commercial registries**: JFrog Artifactory, Cloudsmith, [Distr](/docs/registry/)
 
-**Use cases for private registries:**
+Use cases:
 
 - Internal application development and deployment
 - Commercial software distribution to customers
@@ -127,11 +128,11 @@ Container registries fall into two primary categories based on access control:
 - Software vendors distributing to [self-managed](/glossary/self-managed-software/) or [on-premises](/glossary/on-premises-definition/) customer environments
 - [Air-gapped](/glossary/air-gapped-meaning/) deployments with no internet connectivity
 
-**Security features:**
+Security features:
 
 - Role-based access control (RBAC) defining who can push/pull specific repositories
 - Image vulnerability scanning to detect security issues
-- Image signing to ensure authenticity and integrity
+- Image signing to verify authenticity and integrity
 - Audit logging for compliance and tracking
 - Network isolation and private networking options
 
@@ -141,174 +142,159 @@ For detailed comparisons of popular private and public registries, see our [comp
 
 ## OCI Container Registry: What is OCI Compliance?
 
-**OCI (Open Container Initiative)** is an industry standard that ensures container images, runtimes, and distribution methods work consistently across different platforms and tools. An **OCI-compliant registry** adheres to the OCI Distribution Specification, guaranteeing interoperability with standard tooling.
+**OCI (Open Container Initiative)** is the industry standard that keeps container images, runtimes, and distribution methods consistent across platforms and tools. An **OCI-compliant registry** implements the OCI Distribution Specification, which guarantees interoperability with standard tooling.
 
-### The Three OCI Specifications:
+### The three OCI specifications
 
-**1. OCI Image Format Specification**
-Defines how container images should be structured and stored, including the manifest, configuration, and filesystem layers.
+**1. OCI Image Format Specification.** Defines how container images should be structured and stored: manifest, configuration, filesystem layers.
 
-**2. OCI Distribution Specification**
-Standardizes the API for distributing container images—how clients push and pull images from registries. This is what makes registries "OCI-compliant."
+**2. OCI Distribution Specification.** Standardizes the API for distributing container images: how clients push and pull images from registries. This is what makes a registry "OCI-compliant".
 
-**3. OCI Runtime Specification**
-Specifies how container runtimes should execute OCI-compliant containers.
+**3. OCI Runtime Specification.** Defines how container runtimes should execute OCI-compliant containers.
 
-### Why OCI Compliance Matters:
+### Why OCI compliance matters
 
-**Portability**: OCI-compliant images work across any OCI-compliant registry and runtime, avoiding vendor lock-in.
+**Portability.** OCI-compliant images run across any OCI-compliant registry and runtime, avoiding vendor lock-in.
 
-**Interoperability**: Tools like Docker, Kubernetes, Podman, containerd, and ORAS can all work with OCI-compliant registries.
+**Interoperability.** Docker, Kubernetes, Podman, containerd, and ORAS can all work with OCI-compliant registries.
 
-**Future-proofing**: As new container technologies emerge, OCI compliance ensures backward compatibility.
+**Future-proofing.** As new container technologies show up, OCI compliance keeps backward compatibility.
 
-**Beyond Containers**: OCI compliance isn't just for Docker images. Modern registries use the OCI format to store Helm charts, Terraform modules, machine learning models, WebAssembly (WASM) modules, and other software artifacts.
+**Beyond containers.** OCI compliance isn't just for Docker images. Modern registries use the OCI format to store Helm charts, Terraform modules, machine-learning models, WebAssembly (WASM) modules, and other software artifacts.
 
-### OCI Registry Conformance Testing
+### OCI registry conformance testing
 
-To verify a registry is truly OCI-compliant, the OCI provides [conformance testing tools](https://github.com/opencontainers/distribution-spec/tree/main/conformance). A conformant registry must support at minimum all APIs in the "Pull" workflow category. Full conformance includes Pull, Push, Content Discovery, and Content Management workflows.
+To verify a registry is actually OCI-compliant, the OCI provides [conformance testing tools](https://github.com/opencontainers/distribution-spec/tree/main/conformance). A conformant registry must support, at minimum, all APIs in the "Pull" workflow category. Full conformance includes Pull, Push, Content Discovery, and Content Management workflows.
 
-Check [conformance results](https://conformance.opencontainers.org/) to verify which registries have passed official OCI testing.
+Check [conformance results](https://conformance.opencontainers.org/) to see which registries have passed official OCI testing.
 
 ## Container Registry Security: Best Practices
 
-Container registries are a critical part of the software supply chain, making security paramount. Compromised images can introduce vulnerabilities, malware, or backdoors into production systems.
+Container registries sit inside the software supply chain, so security is non-negotiable. A compromised image can push vulnerabilities, malware, or backdoors straight into production.
 
-### Image Scanning and Vulnerability Detection
+### Image scanning and vulnerability detection
 
-**Vulnerability scanning** analyzes container images for known security issues (CVEs) in the operating system packages, application dependencies, and libraries. Modern registries integrate scanning tools that automatically check images on push.
+**Vulnerability scanning** analyzes container images for known security issues (CVEs) in OS packages, application dependencies, and libraries. Modern registries integrate scanning tools that run automatically on push.
 
-**Best practices:**
+Good practice:
 
-- Scan all images before deploying to production
-- Configure policies that block images with critical or high-severity vulnerabilities
-- Regularly rescan stored images as new vulnerabilities are discovered
-- Use minimal base images (Alpine Linux, distroless images) to reduce attack surface
+- Scan every image before it goes to production
+- Configure policy to block images with critical or high-severity vulnerabilities
+- Rescan stored images periodically as new vulnerabilities surface
+- Use minimal base images (Alpine Linux, distroless) to cut the attack surface
 
 For more on vulnerability scanning, see our [vulnerability scanning glossary](/glossary/vulnerability-scanning/).
 
-### Image Signing and Verification
+### Image signing and verification
 
-**Image signing** uses cryptographic signatures to prove an image's authenticity and detect tampering. Tools like Docker Content Trust, Notary, and Sigstore Cosign enable signing and verification workflows.
+**Image signing** uses cryptographic signatures to prove an image's authenticity and detect tampering. Tools like Docker Content Trust, Notary, and Sigstore Cosign handle signing and verification.
 
-**How it works:**
+The flow:
 
-1. Developer signs the image with a private key before pushing to registry
-2. Registry stores the signature alongside the image
-3. When pulling the image, the client verifies the signature using the public key
-4. If the signature is invalid or missing, the pull is rejected
+1. Developer signs the image with a private key before pushing to the registry.
+2. Registry stores the signature alongside the image.
+3. On pull, the client verifies the signature using the public key.
+4. An invalid or missing signature means the pull is rejected.
 
-**Benefits:**
+Benefits:
 
-- Ensures images come from trusted sources
-- Detects if images were modified after signing
-- Enforces policy that only signed images can be deployed
+- Guarantees images come from trusted sources
+- Detects tampering after signing
+- Enables policy that only signed images can be deployed
 
-### Access Control and Authentication
+### Access control and authentication
 
-**Authentication mechanisms:**
+Authentication mechanisms:
 
-- **Username/Password**: Basic authentication for simple use cases
-- **Token-based auth**: Short-lived tokens for CI/CD pipelines
-- **OAuth/OIDC**: Integration with identity providers (Google, GitHub, Okta)
-- **Service accounts**: Machine identities for automated systems
-- **Mutual TLS (mTLS)**: Certificate-based authentication for high-security environments
+- **Username/password**, basic authentication for simple use cases
+- **Token-based auth**, short-lived tokens for CI/CD pipelines
+- **OAuth/OIDC**, integration with identity providers (Google, GitHub, Okta)
+- **Service accounts**, machine identities for automated systems
+- **Mutual TLS (mTLS)**, certificate-based authentication for high-security environments
 
-**Authorization models:**
+Authorization models:
 
-- **Role-Based Access Control (RBAC)**: Grant permissions based on user roles
-- **Repository-level permissions**: Control access per repository (read-only vs read-write)
-- **Tag-level restrictions**: Allow access only to specific image versions
-- **IP allowlists**: Restrict registry access to specific networks
+- **Role-based access control (RBAC)**, permissions based on user roles
+- **Repository-level permissions**, per-repository access (read-only vs read-write)
+- **Tag-level restrictions**, access to specific image versions only
+- **IP allowlists**, registry access restricted to specific networks
 
-### Network Security
+### Network security
 
-**Private networking:**
+Private networking:
 
 - Deploy registries inside private VPCs or VLANs
-- Use VPN or private endpoints to access registries without exposing them to the internet
+- Use VPN or private endpoints instead of exposing registries to the internet
 - Configure firewall rules limiting access to known IP ranges
 
-**TLS/SSL encryption:**
+TLS/SSL encryption:
 
 - Always use HTTPS for registry communication
 - Enforce TLS 1.2 or higher
 - Use valid certificates from trusted CAs
 
-### Audit Logging and Monitoring
+### Audit logging and monitoring
 
-**Log critical events:**
+Log the events that matter:
 
 - Image push and pull operations
-- Authentication attempts (successful and failed)
+- Authentication attempts, both successful and failed
 - Permission changes and user management
 - Image deletions or tag updates
 
-**Monitoring and alerting:**
+Monitoring and alerting:
 
 - Alert on unusual pull volumes (potential data exfiltration)
-- Track which images are being pulled by which systems
-- Monitor for deprecated or vulnerable images still in use
+- Track which images are pulled by which systems
+- Watch for deprecated or vulnerable images still in active use
 
 <EmbeddedWhitePaperCta />
 
 ## Container Registry for Software Distribution to Customers
 
-While container registries are commonly used for internal development workflows, a growing number of companies and [ISVs](/glossary/isv-meaning/) are using registries to distribute commercial software to external customers. This introduces unique requirements beyond traditional registry use cases.
+Container registries are commonly used for internal development workflows, but a growing number of companies and [ISVs](/glossary/isv-meaning/) are also using registries to distribute commercial software to external customers. That introduces a different set of requirements.
 
-### Challenges of Customer-Facing Container Registries
+### Challenges of customer-facing container registries
 
-**1. Customer-Specific Access Control**
+**1. Customer-specific access control.** Software vendors need to grant specific customers access to specific image versions based on license or subscription tier. Most registries are designed for internal use, where team members have broadly similar permissions. Managing hundreds of external customer accounts with varying entitlements is a different problem.
 
-Software vendors need to grant specific customers access to specific image versions based on their license or subscription tier. Most registries are designed for internal use where all team members have similar permissions, not for managing hundreds of external customer accounts with varying entitlements.
+**2. Usage tracking and analytics.** Commercial vendors need to know which customers are pulling which images, how often, and whether they're staying current. That data informs customer success, flags at-risk accounts, and helps with capacity planning.
 
-**2. Usage Tracking and Analytics**
+**3. License and entitlement management.** Vendors need mechanisms to control which features or image tags customers can access based on subscription tier, prevent license violations, and enforce seat limits across distributed installations.
 
-Commercial software vendors need to know which customers are pulling which images, how frequently, and whether they're staying on current versions. This data informs customer success efforts, identifies at-risk accounts, and helps plan capacity.
+**4. Air-gapped and disconnected environments.** Many enterprise customers run [air-gapped networks](/glossary/air-gapped-meaning/) with no internet connectivity (military, government, critical infrastructure). Standard registries assume internet access, which makes distribution to these environments its own engineering problem.
 
-**3. License and Entitlement Management**
+**5. Self-managed and on-premises deployments.** Customers keep demanding [self-managed software](/glossary/self-managed-software/) running in their own infrastructure ([BYOC, Bring Your Own Cloud](/glossary/byoc-definition/), [on-premises](/glossary/on-premises-definition/), private clouds). Vendors need registry solutions that actually support that.
 
-Vendors need mechanisms to control which features or image tags customers can access based on their subscription tier, prevent license violations, and enforce seat limits across distributed installations.
+**6. Customer portal experience.** External customers expect self-service portals where they can view available images, generate access credentials, and manage deployments. Raw API access doesn't cut it.
 
-**4. Air-Gapped and Disconnected Environments**
+### Purpose-built registries for external distribution
 
-Many enterprise customers operate [air-gapped networks](/glossary/air-gapped-meaning/) with no internet connectivity (military, government, critical infrastructure). Standard registries require internet access, making software distribution to these environments challenging.
+Registries like [Docker Hub, Harbor, JFrog Artifactory, and cloud provider registries](/blog/container-image-registry-comparison/) work fine for internal use. Specialized platforms like [Distr](/docs/) are designed specifically for software vendors distributing to external customers.
 
-**5. Self-Managed and On-Premises Deployments**
+Key capabilities for customer-facing distribution:
 
-Customers increasingly demand [self-managed software](/glossary/self-managed-software/) running in their own infrastructure ([BYOC - Bring Your Own Cloud](/glossary/byoc-definition/), [on-premises data centers](/glossary/on-premises-definition/), or private clouds). Vendors need registry solutions that support this deployment model.
+- **Granular customer access control.** Assign specific customers access to specific image repositories and tags.
+- **Usage analytics and tracking.** Monitor which customers pull which images and when.
+- **License management integration.** Enforce subscription tiers and feature access.
+- **Customer portals.** White-labeled portals where customers view available images and create access tokens.
+- **Air-gapped support.** Offline distribution methods for disconnected environments.
 
-**6. Customer Portal Experience**
-
-External customers expect self-service portals where they can view available images, generate access credentials, and manage their deployments—not just raw API access.
-
-### Purpose-Built Registries for External Distribution
-
-While registries like [Docker Hub, Harbor, JFrog Artifactory, and cloud provider registries](/blog/container-image-registry-comparison/) work well for internal use, specialized platforms like [Distr](/docs/) are designed specifically for software vendors distributing to external customers.
-
-**Key capabilities for customer-facing distribution:**
-
-- **Granular customer access control**: Assign specific customers access to specific image repositories and tags
-- **Usage analytics and tracking**: Monitor which customers are pulling images and when
-- **License management integration**: Enforce subscription tiers and feature access
-- **Customer portals**: White-labeled portals for customers to view available images and create access tokens
-- **Air-gapped support**: Offline distribution methods for disconnected environments
-
-For a detailed comparison of registries supporting external customer distribution, see our [container registry comparison guide](/blog/container-image-registry-comparison/).
+For a detailed comparison of registries that support external customer distribution, see our [container registry comparison guide](/blog/container-image-registry-comparison/).
 
 ## Container Registry Use Cases
 
-### CI/CD Pipeline Integration
+### CI/CD pipeline integration
 
 Container registries are essential in modern CI/CD workflows:
 
-1. **Build Stage**: CI system builds container image from source code
-2. **Test Stage**: CI system runs automated tests on the image
-3. **Scan Stage**: Image is scanned for vulnerabilities and policy violations
-4. **Push Stage**: Validated image is pushed to registry with appropriate tags
-5. **Deploy Stage**: CD system pulls image from registry and deploys to target environment
+1. **Build stage.** CI system builds a container image from source code.
+2. **Test stage.** CI system runs automated tests against the image.
+3. **Scan stage.** Image is scanned for vulnerabilities and policy violations.
+4. **Push stage.** Validated image is pushed to the registry with appropriate tags.
+5. **Deploy stage.** CD system pulls the image from the registry and deploys it.
 
-**Example with Docker:**
+Example with Docker:
 
 ```shell
 # Build and tag image
@@ -324,47 +310,47 @@ docker push registry.example.com/myapp:${VERSION}
 kubectl set image deployment/myapp myapp=registry.example.com/myapp:${VERSION}
 ```
 
-### Microservices Architecture
+### Microservices architecture
 
-In microservices architectures with dozens or hundreds of services, container registries provide:
+In microservices architectures running dozens or hundreds of services, container registries provide:
 
 - **Centralized image storage** for all services
 - **Version management** with tags for each microservice release
-- **Shared base images** to ensure consistency across services
+- **Shared base images** to keep consistency across services
 - **Dependency tracking** through image layers and manifests
 
-### Multi-Cloud and Hybrid Cloud Deployments
+### Multi-cloud and hybrid cloud deployments
 
-Organizations running workloads across multiple cloud providers use container registries to:
+Organizations running workloads across multiple cloud providers use registries to:
 
 - Store images once and deploy anywhere (AWS, Azure, GCP, on-premises)
 - Use registry replication to place images close to deployment regions for faster pulls
-- Maintain consistent images across all environments
+- Keep images consistent across every environment
 - Support [hybrid cloud](/glossary/on-premises-definition/) architectures mixing cloud and on-premises infrastructure
 
-### Edge Computing and IoT
+### Edge computing and IoT
 
-For edge deployments where software runs on distributed devices:
+For edge deployments running on distributed devices:
 
-- **Bandwidth efficiency**: Layer caching minimizes data transfer to edge locations
-- **Offline operation**: Local registry caches enable updates without constant internet connectivity
-- **Version control**: Manage software versions across thousands of edge devices
-- **Selective updates**: Deploy different image versions to different device tiers
+- **Bandwidth efficiency**: layer caching minimizes data transfer to edge locations
+- **Offline operation**: local registry caches allow updates without constant internet connectivity
+- **Version control**: manage software versions across thousands of edge devices
+- **Selective updates**: deploy different image versions to different device tiers
 
-### Air-Gapped and High-Security Environments
+### Air-gapped and high-security environments
 
-[Air-gapped environments](/glossary/air-gapped-meaning/) require special registry considerations:
+[Air-gapped environments](/glossary/air-gapped-meaning/) need specific registry considerations:
 
-- **Offline registry deployment**: Self-hosted registry inside the air-gapped network
-- **Manual image transfer**: Physical media (USB drives, external drives) to move images across the air gap
-- **Registry mirroring**: Sync images from external registries to the air-gapped registry
-- **Signature verification**: Ensure image authenticity when images cross the air gap
+- **Offline registry deployment**: self-hosted registry inside the air-gapped network
+- **Manual image transfer**: physical media (USB drives, external drives) moving images across the air gap
+- **Registry mirroring**: syncing images from external registries into the air-gapped registry
+- **Signature verification**: making sure images haven't been tampered with on the way across
 
 ## Container Registry Best Practices
 
-### Tagging Strategy
+### Tagging strategy
 
-**Use semantic versioning for releases:**
+Semantic versioning for releases:
 
 ```
 myapp:1.2.3
@@ -373,7 +359,7 @@ myapp:1
 myapp:latest
 ```
 
-**Tag by Git commit for traceability:**
+Git commit tags for traceability:
 
 ```
 myapp:sha-7f8d92a
@@ -381,7 +367,7 @@ myapp:pr-456
 myapp:dev-7f8d92a
 ```
 
-**Environment-specific tags:**
+Environment-specific tags:
 
 ```
 myapp:production
@@ -389,130 +375,130 @@ myapp:staging
 myapp:development
 ```
 
-**Avoid overwriting tags**: Many registries support immutable tags that prevent accidental overwrites. Enable this feature to ensure `myapp:1.2.3` always points to the same image.
+Avoid overwriting tags: many registries support immutable tags to prevent accidental overwrites. Enable that, and `myapp:1.2.3` will always resolve to the same image.
 
-### Image Lifecycle Management
+### Image lifecycle management
 
-**Set retention policies** to automatically delete:
+Retention policies that automatically delete:
 
-- Untagged images (artifacts left over from CI/CD workflows)
+- Untagged images (CI/CD leftovers)
 - Images older than N days with no recent pulls
 - Images superseded by newer versions
 
-**Implement cleanup automation:**
+Cleanup automation:
 
 - Schedule regular cleanup jobs to prune old images
-- Configure registries to automatically expire images based on age or usage
+- Configure registries to expire images by age or usage
 - Keep recent versions and production images indefinitely
 
-**Monitor image sprawl:**
+Monitoring image sprawl:
 
 - Track registry storage growth over time
 - Identify repositories with the most images
 - Find abandoned or unused images
 
-### Secure Image Distribution
+### Secure image distribution
 
-**Pull images by digest, not just tag:**
+Pull images by digest, not just by tag:
 
 ```shell
-# Tag can change, digest guarantees exact version
+# Tags can change; the digest guarantees the exact version
 docker pull myapp@sha256:abc123def456...
 ```
 
-**Use private registries for proprietary software:**
+Use private registries for proprietary software:
 
-- Never push internal or customer applications to public registries
-- Even with "private" repositories on Docker Hub, consider dedicated private registries for sensitive workloads
+- Don't push internal or customer applications to public registries
+- Even "private" Docker Hub repositories deserve a second look for sensitive workloads, because a dedicated private registry usually offers more controls
 
-**Enable vulnerability scanning:**
+Enable vulnerability scanning:
 
 - Configure automated scanning on push
-- Set policies that block deployment of images with critical vulnerabilities
-- Regularly rescan stored images as new CVEs are discovered
+- Set policy to block deployment of images with critical vulnerabilities
+- Rescan stored images regularly as new CVEs get published
 
-**Implement image signing:**
+Implement image signing:
 
 - Sign production images before pushing to registry
-- Configure Kubernetes admission controllers to only allow signed images
+- Configure Kubernetes admission controllers to allow only signed images
 - Verify signatures before deploying
 
-### Registry Performance Optimization
+### Registry performance optimization
 
-**Use registry caching and mirroring:**
+Use registry caching and mirroring:
 
 - Set up local registry mirrors for frequently pulled base images
 - Configure pull-through caches to reduce bandwidth and speed up pulls
 - Replicate registries to multiple regions for geo-distributed teams
 
-**Optimize image size:**
+Optimize image size:
 
 - Use minimal base images (Alpine, distroless)
 - Combine RUN commands to reduce layers
-- Use multi-stage builds to exclude build tools from final image
+- Use multi-stage builds to exclude build tools from the final image
 - Remove unnecessary files before creating image layers
 
-**Leverage layer caching:**
+Leverage layer caching:
 
 - Order Dockerfile instructions from least frequently changed to most frequently changed
 - Put dependency installation before application code
-- This maximizes layer reuse across builds
+- That ordering maximizes layer reuse across builds
 
 <EmbeddedWhitePaperCta />
 
 ## Artifact Registry vs Container Registry: Beyond Docker Images
 
-Modern registries increasingly support **OCI artifacts** beyond traditional container images. An **artifact registry** stores any OCI-compliant artifact type, including:
+Modern registries increasingly support **OCI artifacts** beyond container images. An **artifact registry** stores any OCI-compliant artifact type:
 
-**Helm Charts**: Kubernetes application packages
+**Helm charts**, Kubernetes application packages:
 
 ```shell
 helm push my-chart.tgz oci://registry.example.com/helm-charts
 ```
 
-**Terraform Modules**: Infrastructure-as-code templates
+**Terraform modules**, infrastructure-as-code templates:
 
 ```shell
 oras push registry.example.com/terraform/aws-vpc:v1.0 ./module:application/vnd.hashicorp.terraform.module.v1+tar.gz
 ```
 
-**Machine Learning Models**: AI/ML model files packaged as OCI artifacts
+**Machine learning models**, AI/ML model files packaged as OCI artifacts:
 
 ```shell
 oras push registry.example.com/models/bert-base:v1.0 model.pkl:application/vnd.myorg.model
 ```
 
-**WebAssembly (WASM) Modules**: Lightweight, portable binary modules
+**WebAssembly (WASM) modules**, lightweight, portable binary modules:
 
 ```shell
 oras push registry.example.com/wasm/serverless-fn:v1.0 function.wasm:application/vnd.wasm.content.layer.v1+wasm
 ```
 
-**Software Bill of Materials (SBOM)**: Security metadata about software components
+**Software Bill of Materials (SBOM)**, security metadata about software components:
 
 ```shell
 # SBOM attached to container image
 oras attach registry.example.com/myapp:v1.0 sbom.json:application/vnd.cyclonedx+json
 ```
 
-**Generic OCI Artifacts**: Any file type wrapped in OCI format using [ORAS](https://oras.land/)
+**Generic OCI artifacts**, any file type wrapped in OCI format using [ORAS](https://oras.land/).
 
-The line between "container registry" and "artifact registry" has blurred as registries adopt OCI standards. Most modern registries support both container images and other OCI artifacts, making "artifact registry" the more accurate term.
+The line between "container registry" and "artifact registry" has blurred as registries adopted OCI standards. Most modern registries support both container images and other OCI artifacts, which is why "artifact registry" is the more accurate label.
 
 ## Docker Registry Mirror and Pull-Through Cache
 
-A **registry mirror** (also called pull-through cache) is a registry that caches images from upstream registries like Docker Hub. When clients request an image, the mirror checks its cache first. If the image exists locally, it's served immediately. If not, the mirror fetches it from the upstream registry, caches it, and serves it to the client.
+A **registry mirror** (also called pull-through cache) is a registry that caches images from upstream registries like Docker Hub. When a client requests an image, the mirror checks its cache first. If the image is there, the mirror serves it immediately. If not, the mirror pulls it from the upstream registry, caches it, and returns it to the client.
 
-**Benefits:**
+Benefits:
 
-- **Faster pulls**: Images served from local cache are much faster than pulling from the internet
-- **Reduced bandwidth**: Upstream bandwidth only used once per image
-- **Rate limit avoidance**: Avoid hitting Docker Hub rate limits
-- **Reliability**: Continue operating even if upstream registry is down (for cached images)
+- **Faster pulls**, local cache vs internet latency
+- **Reduced bandwidth**, upstream bandwidth is used once per image
+- **Rate limit avoidance**, no Docker Hub rate limits
+- **Reliability**, cached images stay available even when the upstream registry is down
 
-**Setting up a Docker Hub mirror:**
+Setting up a Docker Hub mirror:
 
-Configure a mirror in `/etc/docker/daemon.json`
+Configure a mirror in `/etc/docker/daemon.json`:
 
 ```json
 {"registry-mirrors": ["https://mirror.example.com:5000"]}
@@ -530,19 +516,19 @@ sudo systemctl restart docker
 
 ### What is the difference between a container registry and a Docker registry?
 
-A Docker registry is a type of container registry specifically designed for Docker images. "Container registry" is the broader term that includes Docker registries as well as OCI-compliant registries that may store Helm charts, Terraform modules, and other artifacts alongside container images.
+A Docker registry is a specific type of container registry built for Docker images. "Container registry" is the broader term, which also covers OCI-compliant registries that may store Helm charts, Terraform modules, and other artifacts alongside container images.
 
 ### What is the difference between a registry and a repository?
 
-A registry is the service or platform that hosts repositories. A repository is a collection of related container images with the same name but different versions (tags). For example, Docker Hub is a registry; `nginx` is a repository within Docker Hub; and `nginx:latest` is a specific image tag within that repository.
+A registry is the service or platform that hosts repositories. A repository is a collection of related container images with the same name but different versions. Docker Hub is a registry. `nginx` is a repository within Docker Hub. `nginx:latest` is a specific image tag within that repository.
 
 ### What is the most popular container registry?
 
-Docker Hub is the most widely used public container registry, hosting millions of images. For private, enterprise use, AWS Elastic Container Registry (ECR), Azure Container Registry (ACR), and Google Artifact Registry are popular cloud-hosted options, while Harbor is the leading open-source self-hosted registry.
+Docker Hub is the most widely used public container registry, with millions of images. For private, enterprise use, AWS ECR, Azure ACR, and Google Artifact Registry are popular cloud-hosted options, and Harbor is the leading open-source self-hosted registry.
 
 ### How do I push an image to a Docker registry?
 
-First, tag your image with the registry URL: `docker tag myapp:latest registry.example.com/myapp:latest`. Then authenticate: `docker login registry.example.com`. Finally, push: `docker push registry.example.com/myapp:latest`.
+Tag the image with the registry URL: `docker tag myapp:latest registry.example.com/myapp:latest`. Authenticate: `docker login registry.example.com`. Push: `docker push registry.example.com/myapp:latest`.
 
 - [JFrog Artifactory](https://jfrog.com/artifact-management/)
 - [Distr](/)
@@ -550,46 +536,46 @@ First, tag your image with the registry URL: `docker tag myapp:latest registry.e
 - [Docker Hub](https://www.docker.com/blog/announcing-docker-hub-oci-artifacts-support/)
 - [Cloudsmith Registry](https://help.cloudsmith.io/docs/oci-repository)
 
-Container registry security depends on configuration. Best practices include: using private registries with authentication, enabling vulnerability scanning, implementing image signing, configuring role-based access control, using TLS/SSL encryption, and enabling audit logging. Properly configured registries can be very secure.
+Container registry security depends heavily on configuration. Best practices: use private registries with authentication, enable vulnerability scanning, implement image signing, configure role-based access control, use TLS/SSL encryption, and enable audit logging. A properly configured registry can be very secure.
 
 ### Can I use a container registry for Helm charts?
 
-Yes, modern OCI-compliant registries support Helm charts. Helm v3.8.0+ includes native OCI registry support, allowing you to push and pull Helm charts from container registries just like Docker images.
+Yes. Modern OCI-compliant registries support Helm charts. Helm v3.8.0+ has native OCI registry support, so you can push and pull Helm charts from container registries just like Docker images.
 
 ### What is the difference between Docker Hub and private registries?
 
-Docker Hub is a public registry where anyone can pull images (rate limits apply). Private registries require authentication and allow organizations to control access, implement security policies, and keep proprietary images confidential. Private registries can be cloud-hosted (AWS ECR, Azure ACR) or self-hosted (Harbor, Distribution).
+Docker Hub is a public registry where anyone can pull images (with rate limits). Private registries require authentication, let organizations control access, enforce security policies, and keep proprietary images confidential. Private registries can be cloud-hosted (AWS ECR, Azure ACR) or self-hosted (Harbor, Distribution).
 
 ### How much does a container registry cost?
 
-Costs vary widely. Docker Hub offers limited free public repositories. Cloud provider registries (ECR, ACR, GAR) charge based on storage ($0.10/GB/month typical) and bandwidth. Self-hosted registries have server/infrastructure costs but no per-GB fees. Enterprise registries like JFrog Artifactory have license fees. [Distr](/pricing/) offers free open-source and paid managed options.
+It varies. Docker Hub offers limited free public repositories. Cloud provider registries (ECR, ACR, GAR) bill for storage (roughly $0.10/GB/month) and bandwidth. Self-hosted registries have server/infrastructure costs but no per-GB fees. Enterprise registries like JFrog Artifactory have license fees. [Distr](/pricing/) offers free open-source and paid managed options.
 
 ### Can I run a registry on-premises or in an air-gapped environment?
 
-Yes, self-hosted registries like Harbor, Distribution, and [Distr self-hosted](/docs/self-hosting/) can run entirely on-premises or in [air-gapped](/glossary/air-gapped-meaning/) environments with no internet connectivity. This is common in regulated industries and high-security deployments.
+Yes. Self-hosted registries like Harbor, Distribution, and [Distr self-hosted](/docs/self-hosting/) can run entirely on-premises or in [air-gapped](/glossary/air-gapped-meaning/) environments with no internet connectivity. Common practice in regulated industries and high-security deployments.
 
 ### What is OCI compliance and why does it matter?
 
-OCI (Open Container Initiative) compliance means a registry follows standardized specifications for image format and distribution. This ensures your images work across any OCI-compliant tools and registries, preventing vendor lock-in and ensuring portability.
+OCI (Open Container Initiative) compliance means a registry follows standardized specifications for image format and distribution. That makes your images portable across OCI-compliant tools and registries, so you aren't locked to a single ecosystem.
 
 ### How do I choose between cloud-hosted and self-hosted registries?
 
-Cloud-hosted registries (AWS ECR, Azure ACR, Distr) offer minimal operational overhead, automatic updates, and pay-per-use pricing. Self-hosted registries (Harbor, Distribution) provide complete control, work in [air-gapped](/glossary/air-gapped-meaning/) environments, and avoid cloud egress fees but require operational management. Choose based on your team's operational capabilities, security requirements, and infrastructure strategy.
+Cloud-hosted registries (AWS ECR, Azure ACR, Distr) have minimal operational overhead, automatic updates, and pay-per-use pricing. Self-hosted registries (Harbor, Distribution) give you full control, work in [air-gapped](/glossary/air-gapped-meaning/) environments, and avoid cloud egress fees, at the cost of operational management. The right answer depends on your team's operational capacity, your security requirements, and your broader infrastructure strategy.
 
 ### What is the best registry for software vendors distributing to customers?
 
-Software vendors distributing commercial applications to external customers should use purpose-built registries like [Distr](/docs/registry/) that provide customer-specific access controls, usage analytics, license management, and support for self-managed and [air-gapped](/glossary/air-gapped-meaning/) customer deployments. Standard internal registries lack these customer-facing capabilities.
+Software vendors distributing commercial applications to external customers should use purpose-built registries like [Distr](/docs/registry/), which provide customer-specific access controls, usage analytics, license management, and support for self-managed and [air-gapped](/glossary/air-gapped-meaning/) customer deployments. Standard internal registries aren't built for that.
 
 ---
 
 ## Distribute Software with Distr's Container Registry
 
-[Distr](/) provides an OCI-compliant artifact registry built specifically for software vendors and ISVs distributing containerized applications to customers. Unlike registries designed for internal use, Distr offers:
+[Distr](/) provides an OCI-compliant artifact registry built specifically for software vendors and ISVs distributing containerized applications to customers. Where most registries are designed for internal use, Distr focuses on the external case:
 
-- **Customer access management**: Grant specific customers access to specific image versions based on their license
-- **Usage tracking and analytics**: Monitor which customers are pulling which images and when
-- **Customer portal**: White-labeled portal where customers can view available images and create access credentials
-- **Air-gap support**: Distribute to disconnected environments without internet connectivity
-- **Open source**: Available as [managed SaaS](/get-started/) or [self-hosted](/docs/self-hosting/)
+- **Customer access management**: grant specific customers access to specific image versions based on their license
+- **Usage tracking and analytics**: see which customers are pulling which images and when
+- **Customer portal**: white-labeled portal where customers view available images and create access credentials
+- **Air-gap support**: distribute to disconnected environments without internet connectivity
+- **Open source**: available as [managed SaaS](/get-started/) or [self-hosted](/docs/self-hosting/)
 
 For detailed comparisons with other registries, see our [container registry comparison guide](/blog/container-image-registry-comparison/).
