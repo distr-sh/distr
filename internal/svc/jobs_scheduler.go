@@ -83,7 +83,7 @@ func (r *Registry) createJobsScheduler() (*jobs.Scheduler, error) {
 		}
 	}
 
-	if cron := env.CleanupArtifactBlobCron(); cron != nil {
+	if cron := env.CleanupArtifactBlobCron(); cron != nil && r.s3Client != nil {
 		err = scheduler.RegisterCronJob(
 			*cron,
 			jobs.NewJob("ArtifactBlobCleanup", cleanup.RunArtifactBlobCleanup, env.CleanupArtifactBlobTimeout()),
