@@ -28,6 +28,21 @@ export const GlossaryEntryConfigSchema = z.object({
   title: z.string(),
   description: z.string(),
   slug: z.string(),
+  // Optional structured-data fields. When present, the glossary page emits
+  // JSON-LD (WebPage + DefinedTerm, and FAQPage) so AI Overviews and search
+  // engines can cite the entry as a canonical definition.
+  term: z.string().optional(),
+  alternateNames: z.array(z.string()).optional(),
+  shortDefinition: z.string().optional(),
+  lastUpdated: z.coerce.date().optional(),
+  faq: z
+    .array(
+      z.object({
+        question: z.string(),
+        answer: z.string(),
+      }),
+    )
+    .optional(),
 });
 
 export const collections = {

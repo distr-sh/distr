@@ -14,7 +14,67 @@ export async function getStaticPaths() {
 
 const {entry} = Astro.props;
 const {Content} = await render(entry);
-const {title, description} = entry.data as GlossaryEntryConfig;
+const {
+  title,
+  description,
+  slug,
+  term,
+  alternateNames,
+  shortDefinition,
+  lastUpdated,
+  faq,
+} = entry.data as GlossaryEntryConfig;
+
+const canonicalUrl = `https://distr.sh/glossary/${slug}/`;
+const head: {tag: 'script'; attrs: {type: string}; content: string}[] = [];
+
+if (term) {
+  head.push({
+    tag: 'script',
+    attrs: {type: 'application/ld+json'},
+    content: JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      url: canonicalUrl,
+      name: title,
+      description,
+      ...(lastUpdated && {
+        dateModified: lastUpdated.toISOString().split('T')[0],
+      }),
+      mainEntity: {
+        '@type': 'DefinedTerm',
+        name: term,
+        ...(alternateNames?.length && {alternateName: alternateNames}),
+        description: shortDefinition ?? description,
+        url: canonicalUrl,
+        inDefinedTermSet: {
+          '@type': 'DefinedTermSet',
+          name: 'Distr Glossary',
+          url: 'https://distr.sh/glossary/',
+        },
+      },
+    }),
+  });
+}
+
+if (faq?.length) {
+  head.push({
+    tag: 'script',
+    attrs: {type: 'application/ld+json'},
+    content: JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faq.map(({question, answer}) => ({
+        '@type': 'Question',
+        name: question,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: answer,
+        },
+      })),
+    }),
+  });
+}
 ---
 
 <style>
@@ -37,7 +97,7 @@ const {title, description} = entry.data as GlossaryEntryConfig;
   }
 </style>
 
-<Layout title={title} description={description}>
+<Layout title={title} description={description} head={head}>
   <div
     class="relative overflow-hidden bg-gray-50 dark:bg-slate-900 py-12 sm:py-20">
     <div class="absolute inset-0 bg-gray-50/80 dark:bg-slate-900/80"></div>

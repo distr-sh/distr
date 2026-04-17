@@ -2,6 +2,36 @@
 title: 'Docker Registry & Container Registry Explained (2026)'
 slug: oci-container-artifact-registry
 description: 'Complete guide to container registries and Docker registries: what they are, how they work, public vs private registries, OCI compliance, security best practices, and choosing the right registry for CI/CD, software distribution, and air-gapped deployments.'
+term: Container Registry
+alternateNames:
+  - Docker Registry
+  - OCI Registry
+  - Artifact Registry
+shortDefinition: 'A container registry is the service that stores, manages, and distributes container images and OCI-compliant artifacts. It is the hub software teams use to publish container images out of CI/CD, distribute software to customers, and pull applications onto deployment targets.'
+lastUpdated: 2026-04-17
+faq:
+  - question: What is the difference between a container registry and a Docker registry?
+    answer: 'A Docker registry is a specific type of container registry built for Docker images. "Container registry" is the broader term, which also covers OCI-compliant registries that may store Helm charts, Terraform modules, and other artifacts alongside container images.'
+  - question: What is the difference between a registry and a repository?
+    answer: 'A registry is the service or platform that hosts repositories. A repository is a collection of related container images with the same name but different versions. Docker Hub is a registry. nginx is a repository within Docker Hub. nginx:latest is a specific image tag within that repository.'
+  - question: What is the most popular container registry?
+    answer: 'Docker Hub is the most widely used public container registry, with millions of images. For private, enterprise use, AWS ECR, Azure ACR, and Google Artifact Registry are popular cloud-hosted options, and Harbor is the leading open-source self-hosted registry.'
+  - question: How do I push an image to a Docker registry?
+    answer: 'Tag the image with the registry URL, authenticate with docker login, then run docker push. The image becomes available in the registry under the tag you specified.'
+  - question: Can I use a container registry for Helm charts?
+    answer: 'Yes. Modern OCI-compliant registries support Helm charts. Helm v3.8.0+ has native OCI registry support, so you can push and pull Helm charts from container registries just like Docker images.'
+  - question: What is the difference between Docker Hub and private registries?
+    answer: 'Docker Hub is a public registry where anyone can pull images (with rate limits). Private registries require authentication, let organizations control access, enforce security policies, and keep proprietary images confidential. Private registries can be cloud-hosted (AWS ECR, Azure ACR) or self-hosted (Harbor, Distribution).'
+  - question: How much does a container registry cost?
+    answer: 'It varies. Docker Hub offers limited free public repositories. Cloud provider registries (ECR, ACR, GAR) bill for storage (roughly $0.10/GB/month) and bandwidth. Self-hosted registries have server/infrastructure costs but no per-GB fees. Enterprise registries like JFrog Artifactory have license fees. Distr offers free open-source and paid managed options.'
+  - question: Can I run a registry on-premises or in an air-gapped environment?
+    answer: 'Yes. Self-hosted registries like Harbor, Distribution, and Distr self-hosted can run entirely on-premises or in air-gapped environments with no internet connectivity. Common practice in regulated industries and high-security deployments.'
+  - question: What is OCI compliance and why does it matter?
+    answer: 'OCI (Open Container Initiative) compliance means a registry follows standardized specifications for image format and distribution. That makes your images portable across OCI-compliant tools and registries, so you are not locked to a single ecosystem.'
+  - question: How do I choose between cloud-hosted and self-hosted registries?
+    answer: 'Cloud-hosted registries (AWS ECR, Azure ACR, Distr) have minimal operational overhead, automatic updates, and pay-per-use pricing. Self-hosted registries (Harbor, Distribution) give you full control, work in air-gapped environments, and avoid cloud egress fees, at the cost of operational management.'
+  - question: What is the best registry for software vendors distributing to customers?
+    answer: 'Software vendors distributing commercial applications to external customers should use purpose-built registries like Distr, which provide customer-specific access controls, usage analytics, license management, and support for self-managed and air-gapped customer deployments.'
 ---
 
 import EmbeddedWhitePaperCta from '~/components/cta/embedded/EmbeddedWhitePaperCta.astro';
