@@ -489,5 +489,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
     // Integration redirects
     '/docs/integrations/mcp/': '/docs/integrations/',
+
+    // Legacy blog redirects (content superseded by /compare/ pages)
+    '/blog/distr-vs-replicated/': '/compare/replicated/',
   },
 });
