@@ -43,6 +43,9 @@ func RunArtifactBlobCleanup(ctx context.Context) error {
 			return fmt.Errorf("listing S3 objects: %w", err)
 		}
 		for _, obj := range page.Contents {
+			if obj.Key == nil {
+				continue
+			}
 			if strings.HasPrefix(*obj.Key, "chunks/") {
 				continue
 			}
