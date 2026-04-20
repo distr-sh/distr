@@ -1136,7 +1136,7 @@ func GetAllReferencedBlobDigests(ctx context.Context) ([]string, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `
 		SELECT manifest_blob_digest FROM ArtifactVersion
-		UNION
+		UNION ALL
 		SELECT artifact_blob_digest FROM ArtifactVersionPart
 	`)
 	if err != nil {
