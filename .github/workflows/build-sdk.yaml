@@ -6,12 +6,14 @@ on:
       - 'main'
     paths:
       - 'sdk/**'
+      - 'tsconfig.json'
       - '.github/workflows/build-sdk.yaml'
     tags:
       - '*'
   pull_request:
     paths:
       - sdk/**
+      - 'tsconfig.json'
       - .github/workflows/build-sdk.yaml
 
 jobs:
