@@ -3,6 +3,7 @@ import {getCollection, render} from 'astro:content';
 import Layout from '~/layouts/StarlightLayout.astro';
 import WhitePaperCta from '~/components/cta/standalone/WhitePaperCta.astro';
 import type {GlossaryEntryConfig} from '~/content.config';
+import type {StarlightPageFrontmatter} from '@astrojs/starlight/types';
 
 export async function getStaticPaths() {
   const glossaryEntries = await getCollection('glossary');
@@ -25,32 +26,35 @@ const {
   faq,
 } = entry.data as GlossaryEntryConfig;
 
-const canonicalUrl = `https://distr.sh/glossary/${slug}/`;
-const head: {tag: 'script'; attrs: {type: string}; content: string}[] = [];
+const canonicalUrl = new URL(`/glossary/${slug}/`, Astro.site).toString();
+const glossaryIndexUrl = new URL('/glossary/', Astro.site).toString();
+const head: StarlightPageFrontmatter['head'] = [];
+
+const ldJson = (obj: unknown) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
 if (term) {
   head.push({
     tag: 'script',
     attrs: {type: 'application/ld+json'},
-    content: JSON.stringify({
+    content: ldJson({
       '@context': 'https://schema.org',
       '@type': 'WebPage',
       url: canonicalUrl,
       name: title,
       description,
-      ...(lastUpdated && {
-        dateModified: lastUpdated.toISOString().split('T')[0],
-      }),
+      ...(lastUpdated
+        ? {dateModified: lastUpdated.toISOString().split('T')[0]}
+        : {}),
       mainEntity: {
         '@type': 'DefinedTerm',
         name: term,
-        ...(alternateNames?.length && {alternateName: alternateNames}),
+        ...(alternateNames?.length ? {alternateName: alternateNames} : {}),
         description: shortDefinition ?? description,
         url: canonicalUrl,
         inDefinedTermSet: {
           '@type': 'DefinedTermSet',
           name: 'Distr Glossary',
-          url: 'https://distr.sh/glossary/',
+          url: glossaryIndexUrl,
         },
       },
     }),
@@ -61,7 +65,7 @@ if (faq?.length) {
   head.push({
     tag: 'script',
     attrs: {type: 'application/ld+json'},
-    content: JSON.stringify({
+    content: ldJson({
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
       mainEntity: faq.map(({question, answer}) => ({
