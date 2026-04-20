@@ -33,7 +33,6 @@ import (
 
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
-	"github.com/distr-sh/distr/internal/mail"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/registry/audit"
 	"github.com/distr-sh/distr/internal/registry/authz"
@@ -43,6 +42,7 @@ import (
 	"github.com/distr-sh/distr/internal/registry/manifest/db"
 	"github.com/getsentry/sentry-go"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/go-mailx/mailx"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
@@ -129,7 +129,7 @@ func NewDefault(
 	ctx context.Context,
 	logger *zap.Logger,
 	pool *pgxpool.Pool,
-	mailer mail.Mailer,
+	mailer *mailx.Mailer,
 	tracer trace.TracerProvider,
 ) (http.Handler, error) {
 	blobHandler, err := s3.NewBlobHandler(ctx)

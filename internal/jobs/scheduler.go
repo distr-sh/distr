@@ -2,8 +2,8 @@ package jobs
 
 import (
 	"github.com/distr-sh/distr/internal/db/queryable"
-	"github.com/distr-sh/distr/internal/mail"
 	"github.com/go-co-op/gocron/v2"
+	"github.com/go-mailx/mailx"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
@@ -17,7 +17,7 @@ type Scheduler struct {
 func NewScheduler(
 	logger *zap.Logger,
 	db queryable.Queryable,
-	mailer mail.Mailer,
+	mailer *mailx.Mailer,
 	traceProvider trace.TracerProvider,
 ) (*Scheduler, error) {
 	if scheduler, err := gocron.NewScheduler(

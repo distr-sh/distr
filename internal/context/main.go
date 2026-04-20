@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/distr-sh/distr/internal/db/queryable"
-	"github.com/distr-sh/distr/internal/mail"
 	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/prometheus"
+	"github.com/go-mailx/mailx"
 	"go.uber.org/zap"
 )
 
@@ -61,8 +61,8 @@ func WithLogger(ctx context.Context, logger *zap.Logger) context.Context {
 	return ctx
 }
 
-func GetMailer(ctx context.Context) mail.Mailer {
-	if mailer, ok := ctx.Value(ctxKeyMailer).(mail.Mailer); ok {
+func GetMailer(ctx context.Context) *mailx.Mailer {
+	if mailer, ok := ctx.Value(ctxKeyMailer).(*mailx.Mailer); ok {
 		if mailer != nil {
 			return mailer
 		}
@@ -70,7 +70,7 @@ func GetMailer(ctx context.Context) mail.Mailer {
 	panic("mailer not contained in context")
 }
 
-func WithMailer(ctx context.Context, mailer mail.Mailer) context.Context {
+func WithMailer(ctx context.Context, mailer *mailx.Mailer) context.Context {
 	return context.WithValue(ctx, ctxKeyMailer, mailer)
 }
 
