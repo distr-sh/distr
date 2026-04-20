@@ -7,12 +7,13 @@
   "homepage": "https://distr.sh",
   "scripts": {
     "buildconfig": "node hack/update-frontend-version.js",
+    "agent-changelog": "node hack/agent-changelog.mjs CHANGELOG.md frontend/ui/public/agent-changelog.json",
     "sentry-upload": "hack/sentry-release.sh",
-    "start": "pnpm buildconfig && ng serve",
-    "build:community": "pnpm buildconfig && ng build --configuration=production-community",
-    "build:enterprise": "pnpm buildconfig && ng build --configuration=production-enterprise",
-    "build:dev": "pnpm buildconfig && ng build --configuration=development",
-    "watch": "pnpm buildconfig && ng build --watch --configuration=development",
+    "start": "pnpm buildconfig && pnpm agent-changelog && ng serve",
+    "build:community": "pnpm buildconfig && pnpm agent-changelog && ng build --configuration=production-community",
+    "build:enterprise": "pnpm buildconfig && pnpm agent-changelog && ng build --configuration=production-enterprise",
+    "build:dev": "pnpm buildconfig && pnpm agent-changelog && ng build --configuration=development",
+    "watch": "pnpm buildconfig && pnpm agent-changelog && ng build --watch --configuration=development",
     "test": "pnpm buildconfig && ng test",
     "lint": "prettier --check .",
     "format": "prettier --write ."
