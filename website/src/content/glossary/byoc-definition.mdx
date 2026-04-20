@@ -13,7 +13,7 @@ faq:
   - question: Is BYOC more expensive than SaaS?
     answer: 'Usually, yes. Vendors charge premium prices for BYOC because it requires more complex infrastructure, dedicated per-customer deployments, and additional operational overhead compared to SaaS. BYOC can become cost-effective for organizations with large existing cloud commitments.'
   - question: Can I use BYOC with on-premises infrastructure?
-    answer: 'Traditional BYOC targets public cloud. Similar models exist for on-premises deployments and are often called "customer data center" or "self-managed" offerings. Some vendors support hybrid models that bridge cloud and on-premises.'
+    answer: 'Traditional BYOC targets public cloud. Similar models exist for [on-premises](/glossary/on-premises-definition/) deployments and are often called "customer data center" or "[self-managed](/glossary/self-managed-software/)" offerings. Some vendors support hybrid models that bridge cloud and on-premises.'
   - question: Who is responsible for security in BYOC?
     answer: 'Responsibility is shared. Vendors secure the application layer (software vulnerabilities, updates, access controls). Customers secure the infrastructure layer (network policies, IAM, cloud resources, data encryption). Clear responsibility matrices are essential.'
   - question: How long does BYOC deployment take?
@@ -21,7 +21,7 @@ faq:
   - question: Can I migrate from BYOC to SaaS or vice versa?
     answer: 'Yes, with planning. BYOC to SaaS means data migration into vendor infrastructure. SaaS to BYOC means setting up customer infrastructure and transferring data. Vendors that offer both paths typically provide migration support.'
   - question: Does BYOC work with air-gapped environments?
-    answer: 'Standard BYOC needs internet connectivity for vendor control plane access. Air-gapped deployments need self-managed or specialized deployment models with offline update mechanisms and local support tooling.'
+    answer: 'Standard BYOC needs internet connectivity for vendor control plane access. [Air-gapped](/glossary/air-gapped-meaning/) deployments need [self-managed](/glossary/self-managed-software/) or specialized deployment models with offline update mechanisms and local support tooling.'
   - question: How does BYOC handle software updates?
     answer: 'Vendors manage updates through the control plane, usually with automated updates gated by customer approval workflows. Update strategies vary: vendor-scheduled maintenance windows, customer-controlled timing, or prioritized security patches.'
   - question: What cloud providers support BYOC?
@@ -314,41 +314,3 @@ BYOC is still evolving as a deployment model, and a few trends are worth watchin
 **Platform consolidation.** Software distribution platforms are stepping in to help vendors offer BYOC without building custom control planes.
 
 <EmbeddedWhitePaperCta />
-
-## Frequently Asked Questions (FAQ)
-
-### **What is the difference between BYOC and private cloud?**
-
-BYOC runs vendor-managed software inside your public cloud account (AWS, Azure, GCP). Private cloud refers to cloud infrastructure dedicated to a single organization. BYOC can use private cloud infrastructure, but it typically uses public cloud providers with isolated customer accounts.
-
-### **Is BYOC more expensive than SaaS?**
-
-Usually, yes. Vendors charge premium prices for BYOC because it requires more complex infrastructure, dedicated per-customer deployments, and additional operational overhead compared to SaaS. BYOC can become cost-effective for organizations with large existing cloud commitments.
-
-### **Can I use BYOC with on-premises infrastructure?**
-
-Traditional BYOC targets public cloud. Similar models exist for [on-premises](/glossary/on-premises-definition/) deployments and are often called "customer data center" or "[self-managed](/glossary/self-managed-software/)" offerings. Some vendors support hybrid models that bridge cloud and on-premises.
-
-### **Who is responsible for security in BYOC?**
-
-Responsibility is shared. Vendors secure the application layer (software vulnerabilities, updates, access controls). Customers secure the infrastructure layer (network policies, IAM, cloud resources, data encryption). Clear responsibility matrices are essential.
-
-### **How long does BYOC deployment take?**
-
-Initial BYOC setup usually takes 1 to 4 weeks, depending on complexity, customer security requirements, and integration needs.
-
-### **Can I migrate from BYOC to SaaS or vice versa?**
-
-Yes, with planning. BYOC to SaaS means data migration into vendor infrastructure. SaaS to BYOC means setting up customer infrastructure and transferring data. Vendors that offer both paths typically provide migration support.
-
-### **Does BYOC work with air-gapped environments?**
-
-Standard BYOC needs internet connectivity for vendor control plane access. [Air-gapped](/glossary/air-gapped-meaning/) deployments need [self-managed](/glossary/self-managed-software/) or specialized deployment models with offline update mechanisms and local support tooling.
-
-### **How does BYOC handle software updates?**
-
-Vendors manage updates through the control plane, usually with automated updates gated by customer approval workflows. Update strategies vary: vendor-scheduled maintenance windows, customer-controlled timing, or prioritized security patches.
-
-### **What cloud providers support BYOC?**
-
-Most BYOC offerings support AWS, with Azure and Google Cloud support growing. BYOC availability depends on the vendor's platform capabilities. Always verify your preferred cloud provider is supported before committing.

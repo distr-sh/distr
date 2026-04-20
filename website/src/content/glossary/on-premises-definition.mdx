@@ -26,7 +26,7 @@ faq:
   - question: What is the difference between on-premises and self-hosted?
     answer: 'Often synonymous. "On-premises" emphasizes the location (the customer''s infrastructure). "Self-hosted" emphasizes the operation (the customer manages everything). Both stand in contrast to SaaS, where the vendor operates the software.'
   - question: How do software vendors distribute on-premises software?
-    answer: 'Through software distribution platforms (Distr, for example) that distribute containers, automate artifact distribution, track versions across customer installations, enforce licenses, and optionally collect telemetry. This is what lets vendors support both SaaS and self-managed deployment efficiently.'
+    answer: 'Through software distribution platforms (Distr, for example) that distribute containers, automate artifact distribution, track versions across customer installations, enforce licenses, and optionally collect telemetry. This is what lets vendors support both SaaS and [self-managed deployment](/glossary/self-managed-software/) efficiently.'
 ---
 
 ## What does on-premises mean?
@@ -204,48 +204,6 @@ Platforms like Distr make on-prem deployment operationally manageable at scale b
 - **Remote troubleshooting** when customers grant access
 
 The result is that on-premises deployment can be run with roughly the same operational profile as SaaS for the vendor, while the customer keeps the control and security they require.
-
----
-
-## Frequently asked questions (FAQ)
-
-### What does on-premise deployment mean?
-
-It means software runs on infrastructure controlled by the customer. That can be physical data centers or their own cloud accounts. The customer manages infrastructure, security, and maintenance instead of relying on the vendor's SaaS platform.
-
-### Is on-premise the same as on-premises?
-
-In IT contexts, yes. "On-premises" is the grammatically correct version ("premises" is a noun meaning a property). "On-premise" is the widely-used variant. Both refer to software deployed in customer-controlled infrastructure.
-
-### What is on-prem short for?
-
-On-prem is the abbreviated form of on-premises. Common in technical discussions, DevOps contexts, and B2B software conversations.
-
-### What is the difference between on-premise and cloud?
-
-On-premise, the customer owns and manages the infrastructure. Cloud (SaaS), the vendor operates the software in their multi-tenant environment. The difference is control. On-premise customers control their deployment. Cloud customers access a shared service.
-
-### Why do companies still use on-premises software?
-
-Data sovereignty (keeping data in specific locations), regulatory compliance (HIPAA, GDPR, PCI-DSS), security requirements (air-gapped networks), performance needs (low latency), deep customization, and occasionally long-term cost optimization.
-
-### Is on-premises deployment dying?
-
-No. It has changed, and remains essential. Regulated industries, government agencies, enterprises with data-sovereignty requirements, and organizations running air-gapped deployments all continue to demand on-prem. What's different is that modern on-prem often means Kubernetes running in customer cloud accounts rather than physical data centers.
-
-### Can on-premises software work without internet?
-
-Yes, and that's a key advantage. On-premises software can usually run fully offline (air-gapped) after initial installation, which suits classified networks, remote locations, or critical infrastructure that must remain independent of internet connectivity.
-
-### What is the difference between on-premises and self-hosted?
-
-Often synonymous. "On-premises" emphasizes the location (the customer's infrastructure). "Self-hosted" emphasizes the operation (the customer manages everything). Both stand in contrast to SaaS, where the vendor operates the software.
-
-### How do software vendors distribute on-premises software?
-
-Through software distribution platforms (Distr, for example) that distribute containers, automate artifact distribution, track versions across customer installations, enforce licenses, and optionally collect telemetry. This is what lets vendors support both SaaS and [self-managed deployment](/glossary/self-managed-software/) efficiently.
-
----
 
 ## Distribute to on-premises customers with Distr
 

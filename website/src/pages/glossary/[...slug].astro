@@ -2,8 +2,10 @@
 import {getCollection, render} from 'astro:content';
 import Layout from '~/layouts/StarlightLayout.astro';
 import WhitePaperCta from '~/components/cta/standalone/WhitePaperCta.astro';
+import FAQ from '~/components/common/FAQ.astro';
 import type {GlossaryEntryConfig} from '~/content.config';
 import type {StarlightPageFrontmatter} from '@astrojs/starlight/types';
+import {createMarkdownProcessor} from '@astrojs/markdown-remark';
 
 export async function getStaticPaths() {
   const glossaryEntries = await getCollection('glossary');
@@ -12,6 +14,12 @@ export async function getStaticPaths() {
     props: {entry},
   }));
 }
+
+const markdownProcessor = await createMarkdownProcessor({gfm: true});
+const renderInlineMarkdown = async (md: string): Promise<string> => {
+  const {code} = await markdownProcessor.render(md);
+  return code.replace(/^<p>/, '').replace(/<\/p>\s*$/, '');
+};
 
 const {entry} = Astro.props;
 const {Content} = await render(entry);
@@ -29,6 +37,15 @@ const {
 const canonicalUrl = new URL(`/glossary/${slug}/`, Astro.site).toString();
 const glossaryIndexUrl = new URL('/glossary/', Astro.site).toString();
 const head: StarlightPageFrontmatter['head'] = [];
+
+const faqRendered = faq?.length
+  ? await Promise.all(
+      faq.map(async ({question, answer}) => ({
+        question,
+        answerHtml: await renderInlineMarkdown(answer),
+      })),
+    )
+  : [];
 
 const ldJson = (obj: unknown) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
@@ -57,25 +74,6 @@ if (term) {
           url: glossaryIndexUrl,
         },
       },
-    }),
-  });
-}
-
-if (faq?.length) {
-  head.push({
-    tag: 'script',
-    attrs: {type: 'application/ld+json'},
-    content: ldJson({
-      '@context': 'https://schema.org',
-      '@type': 'FAQPage',
-      mainEntity: faq.map(({question, answer}) => ({
-        '@type': 'Question',
-        name: question,
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: answer,
-        },
-      })),
     }),
   });
 }
@@ -152,5 +150,15 @@ if (faq?.length) {
       </article>
     </div>
   </div>
+  {
+    faqRendered.length > 0 && (
+      <FAQ
+        faqs={faqRendered.map(({question, answerHtml}) => ({
+          question,
+          answer: answerHtml,
+        }))}
+      />
+    )
+  }
   <WhitePaperCta />
 </Layout>

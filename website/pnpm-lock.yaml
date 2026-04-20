@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@astrojs/markdown-remark':
+        specifier: 7.1.0
+        version: 7.1.0
       '@astrojs/mdx':
         specifier: 5.0.3
         version: 5.0.3(astro@6.1.8(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@2.80.0)(terser@5.46.1)(typescript@5.8.3)(yaml@2.8.3))

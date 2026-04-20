@@ -480,60 +480,6 @@ Organizations running air-gapped systems should follow these principles.
 
 <EmbeddedWhitePaperCta />
 
----
-
-## Frequently Asked Questions (FAQ)
-
-### **What does air-gapped mean?**
-
-Air-gapped means a computer, network, or device is completely isolated from unsecured networks, including the internet. That isolation prevents unauthorized remote access and protects against most cyberattacks.
-
-### **What is an air-gapped network?**
-
-An air-gapped network is a computer network physically or logically separated from all external connections. Devices in the network can't reach the internet or any untrusted network, which produces maximum security isolation.
-
-### **What is an air-gapped computer?**
-
-An air-gapped computer is a standalone device with no network connections, no Wi-Fi, no Ethernet, no Bluetooth. Data can only enter or leave via physical media like USB drives. Common in military, government, and classified research environments.
-
-### **How does an air gap work?**
-
-Air gaps work by removing every network pathway between secure and unsecured systems. Data transfer has to happen via physical media (USB drives, external drives) or highly controlled one-way channels. That's what keeps remote hackers out.
-
-### **Can air-gapped systems be hacked?**
-
-Yes, but it's hard. Attacks like Stuxnet have compromised air-gapped systems through infected USB drives. Researchers have also demonstrated covert channels using electromagnetic signals, acoustic waves, and thermal manipulation, although those require pre-existing malware and physical proximity.
-
-### **What is air gap security?**
-
-Air gap security is the practice of physically or logically isolating critical systems from unsecured networks to prevent cyberattacks. It's considered one of the strongest security measures available, used by military, government, and critical-infrastructure operators.
-
-### **What is the difference between air-gapped and offline?**
-
-"Offline" just means not currently connected to a network. "Air-gapped" means designed to never connect to unsecured networks, which is a permanent architectural choice rather than a temporary state. Air-gapped systems may still have internal networks, they just don't have external connectivity.
-
-### **Why do organizations use air-gapped networks?**
-
-To protect classified data, meet regulatory compliance (HIPAA, PCI-DSS, NIST), prevent ransomware, maintain critical-infrastructure security, and safeguard intellectual property. It's usually mandated by regulation rather than optional.
-
-### **What are air-gapped backups?**
-
-Air-gapped backups are copies of critical data stored on systems completely isolated from production networks. They protect backups from ransomware and cyberattacks specifically designed to hit backup systems.
-
-### **How do you update software in air-gapped environments?**
-
-Software updates in air-gapped environments need offline delivery: physical media (USB drives, DVDs), controlled transfer stations, private container registries, or semi-permeable boundaries allowing outbound-only connections to trusted sources. Vendors have to bundle all dependencies for offline installation.
-
-### **What is air-gapped cloud?**
-
-Air-gapped cloud refers to cloud services operating with isolation principles: private VPCs with no internet access, immutable object storage, cross-account backup isolation, or dedicated cloud environments with strict network controls. Logical air-gapping rather than physical disconnection.
-
-### **Is air-gapping still relevant in 2026?**
-
-Yes. Air-gapping remains essential for government, military, critical infrastructure, healthcare, and financial systems. The implementations have evolved (logical air gaps, cloud-based isolation), but the fundamental principle of protecting critical systems through isolation is more important than ever given current cyber threats.
-
----
-
 ## Distribute Software to Air-Gapped Customers with Distr
 
 Supporting air-gapped customers shouldn't mean rebuilding your distribution infrastructure. **Distr** provides the tooling software vendors need to profitably serve enterprise customers with air-gapped requirements:
