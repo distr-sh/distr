@@ -1,80 +1,66 @@
 #!/usr/bin/env node
 
-import {execSync} from 'node:child_process';
-import {writeFileSync} from 'node:fs';
+import {readFileSync, writeFileSync} from 'node:fs';
 
-const COMMIT_RE =
-  /^(?<type>[a-z]+)\((?<scope>kubernetes-agent|docker-agent|agent)\): (?<description>.+?)(?:\s\(#(?<pr>\d+)\))?$/;
+const AGENT_SCOPES = new Set(['agent', 'docker-agent', 'kubernetes-agent']);
 
-function git(args) {
-  return execSync(`git ${args}`, {encoding: 'utf-8'}).trimEnd();
-}
+const VERSION_RE = /^## (?:\[([^\]]+)\]\([^)]+\)|([^\s]+))\s+\(([^)]+)\)/;
+const SECTION_RE = /^### (.+)$/;
+const ENTRY_RE =
+  /^\* \*\*(?<scope>[^:*]+):\*\* (?<description>.+?)(?:\s+\(\[#(?<pr>\d+)\]\([^)]+\)\))?\s+\(\[(?<hash>[0-9a-f]+)\]\([^)]+\)\)\s*$/;
 
-function getTags(branch) {
-  return git(`tag --sort=v:refname --merged ${branch}`)
-    .split('\n')
-    .filter((t) => /^\d+\.\d+\.\d+$/.test(t));
-}
+function parseChangelog(content) {
+  const releases = [];
+  let currentRelease = null;
+  let currentSection = null;
 
-function getCommits(range) {
-  try {
-    return git(`log --first-parent --format="%h %s" ${range}`).split('\n').filter(Boolean);
-  } catch {
-    return [];
+  for (const line of content.split('\n')) {
+    const versionMatch = line.match(VERSION_RE);
+    if (versionMatch) {
+      currentRelease = {
+        version: versionMatch[1] ?? versionMatch[2],
+        sections: [],
+      };
+      currentSection = null;
+      releases.push(currentRelease);
+      continue;
+    }
+
+    if (!currentRelease) continue;
+
+    const sectionMatch = line.match(SECTION_RE);
+    if (sectionMatch) {
+      currentSection = {section: sectionMatch[1].trim(), changes: []};
+      currentRelease.sections.push(currentSection);
+      continue;
+    }
+
+    if (!currentSection) continue;
+
+    const entryMatch = line.match(ENTRY_RE);
+    if (!entryMatch) continue;
+
+    const {scope, description, pr, hash} = entryMatch.groups;
+    if (!AGENT_SCOPES.has(scope)) continue;
+
+    const entry = {scope, description, commit: hash};
+    if (pr) entry.pr = Number(pr);
+    currentSection.changes.push(entry);
   }
+
+  return releases
+    .map((r) => ({
+      ...r,
+      sections: r.sections.filter((s) => s.changes.length > 0),
+    }))
+    .filter((r) => r.sections.length > 0);
 }
 
-function parseCommit(line) {
-  const i = line.indexOf(' ');
-  const hash = line.slice(0, i);
-  const subject = line.slice(i + 1);
-  const m = subject.match(COMMIT_RE);
-  if (!m) return null;
-  const entry = {
-    scope: m.groups.scope,
-    description: m.groups.description,
-    commit: hash,
-  };
-  if (m.groups.pr) entry.pr = Number(m.groups.pr);
-  return {section: m.groups.type, entry};
-}
+const changelogFile = process.argv[2] || 'CHANGELOG.md';
+const outputFile = process.argv[3] || 'agent-changelog.json';
 
-function buildRelease(version, lines) {
-  const bySection = new Map();
-  for (const line of lines) {
-    const parsed = parseCommit(line);
-    if (!parsed) continue;
-    if (!bySection.has(parsed.section)) bySection.set(parsed.section, []);
-    bySection.get(parsed.section).push(parsed.entry);
-  }
-  if (bySection.size === 0) return null;
-  return {
-    version,
-    sections: [...bySection.entries()].map(([section, changes]) => ({section, changes})),
-  };
-}
-
-const outputFile = process.argv[2] || 'agent-changelog.json';
-const branch = process.argv[3] || 'main';
-const nextVersion = process.argv[4] || 'unreleased';
-
-const tags = getTags(branch);
-
-if (tags.length === 0) {
-  writeFileSync(outputFile, JSON.stringify({releases: []}, null, 2) + '\n');
-  console.log(`Wrote agent changelog to ${outputFile} (0 releases — no tags found)`);
-  process.exit(0);
-}
-
-const ranges = [
-  ...tags.map((tag, i) => [tag, i === 0 ? tag : `${tags[i - 1]}..${tag}`]),
-  [nextVersion, `${tags.at(-1)}..${branch}`],
-];
-
-const releases = ranges
-  .reverse()
-  .map(([version, range]) => buildRelease(version, getCommits(range)))
-  .filter(Boolean);
+const content = readFileSync(changelogFile, 'utf-8');
+const releases = parseChangelog(content);
 
 writeFileSync(outputFile, JSON.stringify({releases}, null, 2) + '\n');
 console.log(`Wrote agent changelog to ${outputFile} (${releases.length} releases with agent changes)`);

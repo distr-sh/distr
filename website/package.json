@@ -3,6 +3,10 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
+    "agent-changelog": "node ../hack/agent-changelog.mjs ../CHANGELOG.md public/agent-changelog.json",
+    "predev": "pnpm agent-changelog",
+    "prestart": "pnpm agent-changelog",
+    "prebuild": "pnpm agent-changelog",
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",
