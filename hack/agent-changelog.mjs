@@ -18,38 +18,39 @@ function getTags(branch) {
 
 function getCommits(range) {
   try {
-    return git(`log --first-parent --format="%H %s" ${range}`).split('\n').filter(Boolean);
+    return git(`log --first-parent --format="%h %s" ${range}`).split('\n').filter(Boolean);
   } catch {
     return [];
   }
 }
 
 function parseCommit(line) {
-  const hash = line.slice(0, 40);
-  const subject = line.slice(41);
+  const i = line.indexOf(' ');
+  const hash = line.slice(0, i);
+  const subject = line.slice(i + 1);
   const m = subject.match(COMMIT_RE);
   if (!m) return null;
   const entry = {
     scope: m.groups.scope,
     description: m.groups.description,
-    commit: hash.slice(0, 8),
+    commit: hash,
   };
   if (m.groups.pr) entry.pr = Number(m.groups.pr);
-  return {type: m.groups.type, entry};
+  return {section: m.groups.type, entry};
 }
 
 function buildRelease(version, lines) {
-  const byType = new Map();
+  const bySection = new Map();
   for (const line of lines) {
     const parsed = parseCommit(line);
     if (!parsed) continue;
-    if (!byType.has(parsed.type)) byType.set(parsed.type, []);
-    byType.get(parsed.type).push(parsed.entry);
+    if (!bySection.has(parsed.section)) bySection.set(parsed.section, []);
+    bySection.get(parsed.section).push(parsed.entry);
   }
-  if (byType.size === 0) return null;
+  if (bySection.size === 0) return null;
   return {
     version,
-    types: [...byType.entries()].map(([type, changes]) => ({type, changes})),
+    sections: [...bySection.entries()].map(([section, changes]) => ({section, changes})),
   };
 }
 
