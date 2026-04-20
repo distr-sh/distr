@@ -1,5 +1,59 @@
 # Changelog
 
+## [2.20.0](https://github.com/distr-sh/distr/compare/2.19.0...2.20.0) (2026-04-20)
+
+
+### Features
+
+* **backend:** artifact blob cleanup ([#2290](https://github.com/distr-sh/distr/issues/2290)) ([3ddb7cd](https://github.com/distr-sh/distr/commit/3ddb7cd359cc818e532d4684c6e0056a30d095ce))
+
+
+### Bug Fixes
+
+* **backend:** ensure pro features for enterprise orgs with license ([#2273](https://github.com/distr-sh/distr/issues/2273)) ([7a6b530](https://github.com/distr-sh/distr/commit/7a6b5309f3f90918d77b974cfc7fa8ae0f35797e))
+* **deps:** update aws-sdk-go-v2 monorepo ([#2301](https://github.com/distr-sh/distr/issues/2301)) ([852712f](https://github.com/distr-sh/distr/commit/852712fd90bd9e7bf0ddd71f20d56f581d41fb09))
+* **deps:** update kubernetes monorepo to v0.35.4 ([#2283](https://github.com/distr-sh/distr/issues/2283)) ([f07f840](https://github.com/distr-sh/distr/commit/f07f840e0cbfecbd01650dc827a5c8f6c67bda4b))
+* **deps:** update module github.com/aws/aws-sdk-go-v2/config to v1.32.15 ([#2295](https://github.com/distr-sh/distr/issues/2295)) ([3b06981](https://github.com/distr-sh/distr/commit/3b069813d0ef92a37778c778e0dd18dd1ef32c00))
+* **deps:** update module github.com/aws/smithy-go to v1.25.0 ([#2285](https://github.com/distr-sh/distr/issues/2285)) ([999aaa1](https://github.com/distr-sh/distr/commit/999aaa1e37f78f14650f8d546b038f9b022f4740))
+* **deps:** update module github.com/docker/compose/v5 to v5.1.3 ([#2284](https://github.com/distr-sh/distr/issues/2284)) ([1a9e2b5](https://github.com/distr-sh/distr/commit/1a9e2b5e75b289396a3e19a861371d5cb870c933))
+* **deps:** update module github.com/jackc/pgx/v5 to v5.9.2 ([#2304](https://github.com/distr-sh/distr/issues/2304)) ([fe7fcf8](https://github.com/distr-sh/distr/commit/fe7fcf85dc191dd01579a60cd92ddac8d5165d62))
+* **deps:** update module github.com/lestrrat-go/jwx/v3 to v3.1.0 ([#2305](https://github.com/distr-sh/distr/issues/2305)) ([6865703](https://github.com/distr-sh/distr/commit/6865703e522e38dd95ef9e92ad18bee767f529ad))
+* **deps:** update website dependencies ([#2257](https://github.com/distr-sh/distr/issues/2257)) ([8fe8075](https://github.com/distr-sh/distr/commit/8fe8075e989a0638965c80d5f656ced35791d105))
+
+
+### Other
+
+* **deps:** bump protobufjs from 7.5.4 to 7.5.5 in the npm_and_yarn group across 1 directory ([#2298](https://github.com/distr-sh/distr/issues/2298)) ([c61d325](https://github.com/distr-sh/distr/commit/c61d325739c805f99ca53e4637e958b962f707af))
+* **deps:** bump the npm_and_yarn group across 2 directories with 2 updates ([#2275](https://github.com/distr-sh/distr/issues/2275)) ([54a8414](https://github.com/distr-sh/distr/commit/54a84146296d34357860b94638d8806eee450029))
+* **deps:** update actions/setup-node action to v6.4.0 ([#2308](https://github.com/distr-sh/distr/issues/2308)) ([eb13a03](https://github.com/distr-sh/distr/commit/eb13a03b15b4defc6759ff1356455f84b4e7ea62))
+* **deps:** update alpine docker tag to v3.23.4 ([#2276](https://github.com/distr-sh/distr/issues/2276)) ([b99caa0](https://github.com/distr-sh/distr/commit/b99caa07f014d93270508f3a2be8f90d1a107147))
+* **deps:** update angular monorepo to v21.2.9 ([#2277](https://github.com/distr-sh/distr/issues/2277)) ([890b774](https://github.com/distr-sh/distr/commit/890b7742e591c92ff7804e40e149a01b7e55eb07))
+* **deps:** update axllent/mailpit docker tag to v1.29.7 ([#2279](https://github.com/distr-sh/distr/issues/2279)) ([7953c51](https://github.com/distr-sh/distr/commit/7953c5170eafd191ebee4f2dd09bfd3de9cb4175))
+* **deps:** update dependency @angular/cdk to v21.2.7 ([#2294](https://github.com/distr-sh/distr/issues/2294)) ([78019c7](https://github.com/distr-sh/distr/commit/78019c7cc2fe7928d3b072b87f14b462a1fa812f))
+* **deps:** update dependency @codemirror/view to v6.41.1 ([#2303](https://github.com/distr-sh/distr/issues/2303)) ([78a75bd](https://github.com/distr-sh/distr/commit/78a75bde3ce2a5baaa9b83c6709ab31c4be9b322))
+* **deps:** update dependency marked to v18.0.1 ([#2299](https://github.com/distr-sh/distr/issues/2299)) ([b9d19c1](https://github.com/distr-sh/distr/commit/b9d19c10e1b4bb3a2bdc385bafe9e87322f26b5e))
+* **deps:** update dependency marked to v18.0.2 ([#2302](https://github.com/distr-sh/distr/issues/2302)) ([31da516](https://github.com/distr-sh/distr/commit/31da516a1395f787b071d261b4c79e3eba7fd197))
+* **deps:** update dependency postcss to v8.5.10 ([#2280](https://github.com/distr-sh/distr/issues/2280)) ([376c117](https://github.com/distr-sh/distr/commit/376c117ae9a8274ea37bc55d3f1cbb77364a3e3d))
+* **deps:** update dependency posthog-js to v1.369.3 ([#2310](https://github.com/distr-sh/distr/issues/2310)) ([7972fda](https://github.com/distr-sh/distr/commit/7972fda76fb60ebebfdfab1882e1a9eaef4371b1))
+* **deps:** update dependency stripe to v1.40.6 ([#2282](https://github.com/distr-sh/distr/issues/2282)) ([7082e98](https://github.com/distr-sh/distr/commit/7082e987519f9d364801be26e6533857ce086725))
+* **deps:** update sentry-javascript monorepo to v10.49.0 ([#2311](https://github.com/distr-sh/distr/issues/2311)) ([d87d115](https://github.com/distr-sh/distr/commit/d87d11557ef8954919b4e7c56291087461d468ca))
+* remove deployment target status ([#2281](https://github.com/distr-sh/distr/issues/2281)) ([a1ba987](https://github.com/distr-sh/distr/commit/a1ba987a2fe22ae484b12c8623e146adb2892a0a))
+* replace Discord references with GitHub Discussions ([#2297](https://github.com/distr-sh/distr/issues/2297)) ([8cc8969](https://github.com/distr-sh/distr/commit/8cc8969471e974b1fd2757d509d48fc116741daa))
+
+
+### Docs
+
+* blog post on mounting configuration files in Docker Compose ([#2266](https://github.com/distr-sh/distr/issues/2266)) ([37f722e](https://github.com/distr-sh/distr/commit/37f722ecb8c4ec81713cc5e9c313fe7d2143ae9e))
+* minio -&gt; rustfs migration ([#2293](https://github.com/distr-sh/distr/issues/2293)) ([f2f20a4](https://github.com/distr-sh/distr/commit/f2f20a4a3c5a5307bcf9e2912b43d4f05fb0108b))
+* prometheus integration ([#2286](https://github.com/distr-sh/distr/issues/2286)) ([530403e](https://github.com/distr-sh/distr/commit/530403e1b669fd5371e7c083f89ba4aa1172b2f6))
+* **website:** 2026 refresh for blog posts and glossary ([#2300](https://github.com/distr-sh/distr/issues/2300)) ([15f9138](https://github.com/distr-sh/distr/commit/15f9138cef707df754055eb6453911c17c30803b))
+* **website:** add glossary link in footer ([#2291](https://github.com/distr-sh/distr/issues/2291)) ([554f8e0](https://github.com/distr-sh/distr/commit/554f8e0c571aaa6fbd48e75d3c6fda161dd4b858))
+
+
+### Refactoring
+
+* migrate `internal/mail` to `github.com/go-mailx/mailx` ([#2313](https://github.com/distr-sh/distr/issues/2313)) ([fd36731](https://github.com/distr-sh/distr/commit/fd3673130e45c9dafe387345cb92a64054f70427))
+
 ## [2.19.0](https://github.com/distr-sh/distr/compare/2.18.0...2.19.0) (2026-04-15)
 
 
