@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -14,6 +13,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/util"
+	"github.com/opencontainers/go-digest"
 	"go.uber.org/zap"
 )
 
@@ -64,7 +64,7 @@ func RunArtifactBlobCleanup(ctx context.Context) error {
 			if obj.Key == nil {
 				continue
 			}
-			if strings.HasPrefix(*obj.Key, "chunks/") {
+			if _, err := digest.Parse(*obj.Key); err != nil {
 				continue
 			}
 			if _, ok := referencedDigests[*obj.Key]; ok {
