@@ -1,5 +1,6 @@
 ---
 import {Icon} from 'astro-icon/components';
+import {parse} from 'node-html-parser';
 
 export interface FAQItem {
   id?: string;
@@ -15,6 +16,11 @@ interface Props {
 
 const {faqs, title = 'Frequently Asked Questions', subtitle} = Astro.props;
 
+// Plain-text version of the answer for the FAQPage JSON-LD `text` field.
+// Google's FAQ rich-result eligibility prefers plain text over HTML markup.
+const htmlToPlainText = (html: string): string =>
+  parse(html).text.replace(/\s+/g, ' ').trim();
+
 const faqLdJson = JSON.stringify({
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
@@ -23,7 +29,7 @@ const faqLdJson = JSON.stringify({
     name: question,
     acceptedAnswer: {
       '@type': 'Answer',
-      text: answer,
+      text: htmlToPlainText(answer),
     },
   })),
 }).replace(/</g, '\\u003c');

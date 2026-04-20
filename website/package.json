@@ -12,7 +12,6 @@
     "format": "prettier --write ."
   },
   "dependencies": {
-    "@astrojs/markdown-remark": "7.1.0",
     "@astrojs/mdx": "5.0.3",
     "@astrojs/preact": "5.1.1",
     "@astrojs/sitemap": "3.7.2",
@@ -26,7 +25,9 @@
     "embla-carousel": "^8.6.0",
     "embla-carousel-autoplay": "^8.6.0",
     "github-buttons": "^2.31.1",
+    "marked": "^16.4.2",
     "mermaid": "^11.13.0",
+    "node-html-parser": "^6.1.13",
     "playwright": "^1.58.2",
     "preact": "^10.29.0",
     "rehype-mermaid": "^3.0.0",
