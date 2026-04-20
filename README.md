@@ -9,7 +9,7 @@
 
 Distr enables software and AI companies to distribute applications to self-managed customers with minimal setup.
 
-### **[Website](https://distr.sh/?utm_source=github)** • **[Quickstart](https://distr.sh/docs/quickstart/?utm_source=github)** • **[Documentation](https://distr.sh/docs/?utm_source=github)** • **[Blog](https://distr.sh/blog/)** • **[Discord](https://discord.gg/6qqBSAWZfW)**
+### **[Website](https://distr.sh/?utm_source=github)** • **[Quickstart](https://distr.sh/docs/quickstart/?utm_source=github)** • **[Documentation](https://distr.sh/docs/?utm_source=github)** • **[Blog](https://distr.sh/blog/)** • **[Community](https://github.com/distr-sh/distr/discussions)**
 
 <hr>
 
@@ -79,7 +79,7 @@ architecture-beta
 ## Self-hosting
 
 In case you get stuck, have questions, or need help, we're happy to support you,
-drop by our [Discord](https://discord.gg/6qqBSAWZfW).
+join our [community forum](https://github.com/distr-sh/distr/discussions).
 
 ### Docker
 

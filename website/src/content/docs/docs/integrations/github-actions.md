@@ -613,8 +613,8 @@ Now that you have automatic deployments set up, consider:
 - [Release Please Documentation](https://github.com/googleapis/release-please) - Automated release management
 - [Conventional Commits Specification](https://www.conventionalcommits.org/) - Commit message format for Release Please
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [Distr Discord Community](https://discord.gg/6qqBSAWZfW)
+- [Distr Community Forum](https://github.com/distr-sh/distr/discussions)
 
 ---
 
-Have questions? Join our [Discord community](https://discord.gg/6qqBSAWZfW) or check out the [FAQs](/docs/faqs/).
+Have questions? [Get help](https://github.com/distr-sh/distr/discussions) in our community forum or check out the [FAQs](/docs/faqs/).
