@@ -6,9 +6,9 @@ import (
 	"fmt"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
-	"github.com/distr-sh/distr/internal/mail"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/go-mailx/mailx"
 	"go.uber.org/zap"
 )
 
@@ -27,13 +27,11 @@ func SendLicenseKeyRevisedCustomer(
 		return fmt.Errorf("could not format license key payload: %w", err)
 	}
 
-	m := mail.New(
-		mail.To(user.Email),
-		mail.Subject(fmt.Sprintf("License key updated: %s", licenseKey.Name)),
-		mail.HtmlBodyTemplate(mailtemplates.LicenseKeyRevisedCustomer(licenseKey, revision, payloadFormatted, token)),
-	)
-
-	if err := mailer.Send(ctx, m); err != nil {
+	if err := mailer.Send(ctx,
+		mailx.To(user.Email),
+		mailx.Subject(fmt.Sprintf("License key updated: %s", licenseKey.Name)),
+		mailx.HtmlBodyTemplate(mailtemplates.LicenseKeyRevisedCustomer(licenseKey, revision, payloadFormatted, token)),
+	); err != nil {
 		log.Error("could not send license key revised mail to customer user",
 			zap.Error(err),
 			zap.String("email", user.Email),
@@ -63,13 +61,13 @@ func SendLicenseKeyRevisedVendor(
 		subject = fmt.Sprintf("License key updated for %s: %s", customerOrgName, licenseKey.Name)
 	}
 
-	m := mail.New(
-		mail.To(user.Email),
-		mail.Subject(subject),
-		mail.HtmlBodyTemplate(mailtemplates.LicenseKeyRevisedVendor(licenseKey, revision, payloadFormatted, customerOrgName)),
-	)
-
-	if err := mailer.Send(ctx, m); err != nil {
+	if err := mailer.Send(ctx,
+		mailx.To(user.Email),
+		mailx.Subject(subject),
+		mailx.HtmlBodyTemplate(
+			mailtemplates.LicenseKeyRevisedVendor(licenseKey, revision, payloadFormatted, customerOrgName),
+		),
+	); err != nil {
 		log.Error("could not send license key revised mail to vendor user",
 			zap.Error(err),
 			zap.String("email", user.Email),

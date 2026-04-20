@@ -2,7 +2,10 @@
 import {getCollection, render} from 'astro:content';
 import Layout from '~/layouts/StarlightLayout.astro';
 import WhitePaperCta from '~/components/cta/standalone/WhitePaperCta.astro';
+import FAQ from '~/components/common/FAQ.astro';
 import type {GlossaryEntryConfig} from '~/content.config';
+import type {StarlightPageFrontmatter} from '@astrojs/starlight/types';
+import {marked} from 'marked';
 
 export async function getStaticPaths() {
   const glossaryEntries = await getCollection('glossary');
@@ -14,7 +17,57 @@ export async function getStaticPaths() {
 
 const {entry} = Astro.props;
 const {Content} = await render(entry);
-const {title, description} = entry.data as GlossaryEntryConfig;
+const {
+  title,
+  description,
+  slug,
+  term,
+  alternateNames,
+  shortDefinition,
+  lastUpdated,
+  faq,
+} = entry.data as GlossaryEntryConfig;
+
+const canonicalUrl = new URL(`/glossary/${slug}/`, Astro.site).toString();
+const glossaryIndexUrl = new URL('/glossary/', Astro.site).toString();
+const head: StarlightPageFrontmatter['head'] = [];
+
+const faqRendered =
+  faq?.map(({question, answer}) => ({
+    question,
+    answer: marked.parseInline(answer) as string,
+  })) ?? [];
+
+const ldJson = (obj: unknown) => JSON.stringify(obj).replace(/</g, '\\u003c');
+
+if (term) {
+  head.push({
+    tag: 'script',
+    attrs: {type: 'application/ld+json'},
+    content: ldJson({
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      url: canonicalUrl,
+      name: title,
+      description,
+      ...(lastUpdated
+        ? {dateModified: lastUpdated.toISOString().split('T')[0]}
+        : {}),
+      mainEntity: {
+        '@type': 'DefinedTerm',
+        name: term,
+        ...(alternateNames?.length ? {alternateName: alternateNames} : {}),
+        description: shortDefinition ?? description,
+        url: canonicalUrl,
+        inDefinedTermSet: {
+          '@type': 'DefinedTermSet',
+          name: 'Distr Glossary',
+          url: glossaryIndexUrl,
+        },
+      },
+    }),
+  });
+}
 ---
 
 <style>
@@ -37,7 +90,7 @@ const {title, description} = entry.data as GlossaryEntryConfig;
   }
 </style>
 
-<Layout title={title} description={description}>
+<Layout title={title} description={description} head={head}>
   <div
     class="relative overflow-hidden bg-gray-50 dark:bg-slate-900 py-12 sm:py-20">
     <div class="absolute inset-0 bg-gray-50/80 dark:bg-slate-900/80"></div>
@@ -88,5 +141,6 @@ const {title, description} = entry.data as GlossaryEntryConfig;
       </article>
     </div>
   </div>
+  {faqRendered.length > 0 && <FAQ faqs={faqRendered} />}
   <WhitePaperCta />
 </Layout>

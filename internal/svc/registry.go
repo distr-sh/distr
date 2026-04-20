@@ -14,7 +14,6 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/jobs"
-	"github.com/distr-sh/distr/internal/mail"
 	"github.com/distr-sh/distr/internal/migrations"
 	"github.com/distr-sh/distr/internal/oidc"
 	distrprometheus "github.com/distr-sh/distr/internal/prometheus"
@@ -23,6 +22,7 @@ import (
 	"github.com/distr-sh/distr/internal/server"
 	"github.com/distr-sh/distr/internal/tracers"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-mailx/mailx"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -32,7 +32,7 @@ import (
 type Registry struct {
 	dbPool            *pgxpool.Pool
 	logger            *zap.Logger
-	mailer            mail.Mailer
+	mailer            *mailx.Mailer
 	execDbMigrations  bool
 	artifactsRegistry http.Handler
 	tracers           *tracers.Tracers

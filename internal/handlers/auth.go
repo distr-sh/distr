@@ -15,7 +15,6 @@ import (
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
-	"github.com/distr-sh/distr/internal/mail"
 	"github.com/distr-sh/distr/internal/mailsending"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/middleware"
@@ -23,6 +22,7 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/httprate"
+	"github.com/go-mailx/mailx"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
@@ -346,9 +346,9 @@ func authResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "something went wrong", http.StatusInternalServerError)
 	} else {
 		var organization *types.OrganizationWithBranding
-		mailOpts := []mail.MailOpt{
-			mail.To(user.Email),
-			mail.Subject("Password reset"),
+		mailOpts := []mailx.MailOpt{
+			mailx.To(user.Email),
+			mailx.Subject("Password reset"),
 		}
 		if len(orgs) > 0 {
 			if result, err := db.GetOrganizationWithBranding(ctx, orgs[0].ID); err != nil {
@@ -361,13 +361,13 @@ func authResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if from, err := customdomains.EmailFromAddressParsedOrDefault(organization.Organization); err == nil {
-				mailOpts = append(mailOpts, mail.From(*from))
+				mailOpts = append(mailOpts, mailx.From(*from))
 			} else {
 				log.Warn("error parsing custom from address", zap.Error(err))
 			}
 		}
-		mailOpts = append(mailOpts, mail.HtmlBodyTemplate(mailtemplates.PasswordReset(*user, organization, token)))
-		if err := mailer.Send(ctx, mail.New(mailOpts...)); err != nil {
+		mailOpts = append(mailOpts, mailx.HtmlBodyTemplate(mailtemplates.PasswordReset(*user, organization, token)))
+		if err := mailer.Send(ctx, mailOpts...); err != nil {
 			log.Warn("could not send reset mail", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, "something went wrong", http.StatusInternalServerError)

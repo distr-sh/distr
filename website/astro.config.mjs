@@ -84,9 +84,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           href: 'https://github.com/distr-sh/distr',
         },
         {
-          icon: 'discord',
-          label: 'Discord',
-          href: 'https://discord.gg/6qqBSAWZfW',
+          icon: 'comment-alt',
+          label: 'GitHub Discussions',
+          href: 'https://github.com/distr-sh/distr/discussions',
         },
       ],
       components: {
@@ -489,5 +489,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
     // Integration redirects
     '/docs/integrations/mcp/': '/docs/integrations/',
+
+    // Legacy blog redirects (content superseded by /compare/ pages)
+    '/blog/distr-vs-replicated/': '/compare/replicated/',
   },
 });

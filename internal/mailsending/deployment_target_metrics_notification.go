@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
-	"github.com/distr-sh/distr/internal/mail"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/go-mailx/mailx"
 )
 
 func DeploymentTargetMetricsNotificationAlert(
@@ -22,14 +22,13 @@ func DeploymentTargetMetricsNotificationAlert(
 	usagePercent int64,
 ) error {
 	mailer := internalctx.GetMailer(ctx)
-	m := mail.New(
-		mail.Subject(getDeploymentTargetMetricsNotificationSubject("Alert", metricType, organization, deploymentTarget)),
-		mail.HtmlBodyTemplate(mailtemplates.DeploymentTargetMetricsNotificationAlert(
+	return mailer.Send(ctx,
+		mailx.Subject(getDeploymentTargetMetricsNotificationSubject("Alert", metricType, organization, deploymentTarget)),
+		mailx.HtmlBodyTemplate(mailtemplates.DeploymentTargetMetricsNotificationAlert(
 			deploymentTarget, metricType, diskDevice, diskPath, threshold, usagePercent,
 		)),
-		mail.To(user.Email),
+		mailx.To(user.Email),
 	)
-	return mailer.Send(ctx, m)
 }
 
 func DeploymentTargetMetricsNotificationResolved(
@@ -44,14 +43,13 @@ func DeploymentTargetMetricsNotificationResolved(
 	usagePercent int64,
 ) error {
 	mailer := internalctx.GetMailer(ctx)
-	m := mail.New(
-		mail.Subject(getDeploymentTargetMetricsNotificationSubject("Resolved", metricType, organization, deploymentTarget)),
-		mail.HtmlBodyTemplate(mailtemplates.DeploymentTargetMetricsNotificationResolved(
+	return mailer.Send(ctx,
+		mailx.Subject(getDeploymentTargetMetricsNotificationSubject("Resolved", metricType, organization, deploymentTarget)),
+		mailx.HtmlBodyTemplate(mailtemplates.DeploymentTargetMetricsNotificationResolved(
 			deploymentTarget, metricType, diskDevice, diskPath, threshold, usagePercent,
 		)),
-		mail.To(user.Email),
+		mailx.To(user.Email),
 	)
-	return mailer.Send(ctx, m)
 }
 
 func getDeploymentTargetMetricsNotificationSubject(

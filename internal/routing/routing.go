@@ -9,7 +9,6 @@ import (
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/frontend"
 	"github.com/distr-sh/distr/internal/handlers"
-	"github.com/distr-sh/distr/internal/mail"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/prometheus"
@@ -17,6 +16,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httprate"
+	"github.com/go-mailx/mailx"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/oaswrap/spec-ui/config"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -60,7 +60,7 @@ Read more about Distr and our use cases at https://distr.sh/docs/
 func NewRouter(
 	logger *zap.Logger,
 	db *pgxpool.Pool,
-	mailer mail.Mailer,
+	mailer *mailx.Mailer,
 	tracers *tracers.Tracers,
 	oidcer *oidc.OIDCer,
 	prometheusCollector *prometheus.DistrCollector,
@@ -105,7 +105,7 @@ func NewRouter(
 func ApiRouter(
 	logger *zap.Logger,
 	db *pgxpool.Pool,
-	mailer mail.Mailer,
+	mailer *mailx.Mailer,
 	tracers *tracers.Tracers,
 	oidcer *oidc.OIDCer,
 	prometheusCollector *prometheus.DistrCollector,

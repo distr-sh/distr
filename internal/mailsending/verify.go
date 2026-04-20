@@ -9,9 +9,9 @@ import (
 	"github.com/distr-sh/distr/internal/authjwt"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
-	"github.com/distr-sh/distr/internal/mail"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/go-mailx/mailx"
 	"go.uber.org/zap"
 )
 
@@ -31,12 +31,11 @@ func SendUserVerificationMail(ctx context.Context, userAccount types.UserAccount
 		log.Error("could not generate verification token for email verification", zap.Error(err))
 		return err
 	} else {
-		mail := mail.New(
-			mail.To(userAccount.Email),
-			mail.Subject("Verify your Distr account"),
-			mail.HtmlBodyTemplate(mailtemplates.VerifyEmail(userAccount, owb, token)),
-		)
-		if err := mailer.Send(ctx, mail); err != nil {
+		if err := mailer.Send(ctx,
+			mailx.To(userAccount.Email),
+			mailx.Subject("Verify your Distr account"),
+			mailx.HtmlBodyTemplate(mailtemplates.VerifyEmail(userAccount, owb, token)),
+		); err != nil {
 			log.Error(
 				"could not send verification mail",
 				zap.Error(err),

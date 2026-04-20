@@ -14,7 +14,6 @@ import (
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
 	internalctx "github.com/distr-sh/distr/internal/context"
-	"github.com/distr-sh/distr/internal/mail"
 	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/prometheus"
 	"github.com/distr-sh/distr/internal/types"
@@ -22,6 +21,7 @@ import (
 	sentryhttp "github.com/getsentry/sentry-go/http"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-mailx/mailx"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lestrrat-go/jwx/v3/jwt"
@@ -32,7 +32,7 @@ import (
 
 func ContextInjectorMiddleware(
 	db *pgxpool.Pool,
-	mailer mail.Mailer,
+	mailer *mailx.Mailer,
 	oidcer *oidc.OIDCer,
 	prometheusCollector *prometheus.DistrCollector,
 ) func(next http.Handler) http.Handler {

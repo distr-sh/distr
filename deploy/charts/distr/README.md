@@ -32,7 +32,7 @@ To install Distr in Kubernetes, simply run:
 ```shell
 helm upgrade --install --wait --namespace distr --create-namespace \
   distr oci://ghcr.io/distr-sh/charts/distr --version 1.11.0 \
-  --set postgresql.enabled=true --set minio.enabled=true
+  --set postgresql.enabled=true --set rustfs.enabled=true
 ```
 
 <!-- x-release-please-end -->
@@ -41,8 +41,8 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 
 | Repository                               | Name       | Version |
 | ---------------------------------------- | ---------- | ------- |
-| https://charts.min.io                    | minio      | 5.x.x   |
-| oci://registry-1.docker.io/bitnamicharts | postgresql | 16.x.x  |
+| https://charts.rustfs.com                | rustfs     | 0.0.x   |
+| oci://registry-1.docker.io/bitnamicharts | postgresql | 18.x.x  |
 
 ## Values
 
@@ -97,7 +97,7 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | hub.env[4].name                            | string | `"REGISTRY_S3_REGION"`                           |             |
 | hub.env[4].value                           | string | `"local"`                                        |             |
 | hub.env[5].name                            | string | `"REGISTRY_S3_ENDPOINT"`                         |             |
-| hub.env[5].value                           | string | `"http://distr-registry-minio:9000"`             |             |
+| hub.env[5].value                           | string | `"http://distr-registry-rustfs-svc:9000"`        |             |
 | hub.env[6].name                            | string | `"REGISTRY_S3_ACCESS_KEY_ID"`                    |             |
 | hub.env[6].value                           | string | `"distr"`                                        |             |
 | hub.env[7].name                            | string | `"REGISTRY_S3_SECRET_ACCESS_KEY"`                |             |
@@ -124,16 +124,17 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | ingress.tls                                | list   | `[]`                                             |             |
 | livenessProbe.httpGet.path                 | string | `"/"`                                            |             |
 | livenessProbe.httpGet.port                 | string | `"http"`                                         |             |
-| minio.buckets[0].name                      | string | `"distr"`                                        |             |
-| minio.buckets[0].purge                     | bool   | `false`                                          |             |
-| minio.deploymentUpdate.type                | string | `"Recreate"`                                     |             |
-| minio.enabled                              | bool   | `false`                                          |             |
-| minio.fullnameOverride                     | string | `"distr-registry-minio"`                         |             |
-| minio.mode                                 | string | `"standalone"`                                   |             |
-| minio.persistence.size                     | string | `"20Gi"`                                         |             |
-| minio.replicas                             | int    | `1`                                              |             |
-| minio.rootPassword                         | string | `"distr123"`                                     |             |
-| minio.rootUser                             | string | `"distr"`                                        |             |
+| rustfs.enabled                             | bool   | `false`                                          |             |
+| rustfs.fullnameOverride                    | string | `"distr-registry-rustfs"`                        |             |
+| rustfs.ingress.enabled                     | bool   | `false`                                          |             |
+| rustfs.mode.distributed.enabled            | bool   | `false`                                          |             |
+| rustfs.mode.standalone.enabled             | bool   | `true`                                           |             |
+| rustfs.mode.standalone.strategy.type       | string | `"Recreate"`                                     |             |
+| rustfs.secret.rustfs.access_key            | string | `"distr"`                                        |             |
+| rustfs.secret.rustfs.secret_key            | string | `"distr 123"`                                    |             |
+| rustfs.storageclass.dataStorageSize        | string | `"20Gi"`                                         |             |
+| rustfs.storageclass.logStorageSize         | string | `"10Gi"`                                         |             |
+| rustfs.storageclass.name                   | string | `""`                                             |             |
 | nameOverride                               | string | `""`                                             |             |
 | nodeSelector                               | object | `{}`                                             |             |
 | podAnnotations                             | object | `{}`                                             |             |

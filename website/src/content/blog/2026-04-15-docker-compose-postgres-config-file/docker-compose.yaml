@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: always
+    shm_size: 1gb
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+    configs:
+      - source: postgresql.conf
+        target: /etc/postgresql/postgresql.conf
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
+
+configs:
+  postgresql.conf:
+    content: |
+      listen_addresses = '*'
+      max_connections = 200
+      shared_buffers = 512MB
+      effective_cache_size = 1536MB
+      work_mem = 8MB
+      maintenance_work_mem = 128MB
+      wal_level = replica
+      max_wal_size = 2GB
+      min_wal_size = 160MB
+      checkpoint_completion_target = 0.9
+      log_timezone = 'Etc/UTC'
+      timezone = 'Etc/UTC'
+      datestyle = 'iso, mdy'
+      default_text_search_config = 'pg_catalog.english'

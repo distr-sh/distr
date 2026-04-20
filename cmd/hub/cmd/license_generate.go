@@ -3,7 +3,7 @@ package cmd
 import (
 	"context"
 	"encoding/json"
-	"os"
+	"fmt"
 	"time"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
@@ -27,6 +27,7 @@ type GenerateLicenseKeyOptions struct {
 	NotBefore     string
 	ExpiresAt     string
 	ValidPeriod   string
+	NoSave        bool
 }
 
 func NewGenerateLicenseKeyCommand() *cobra.Command {
@@ -34,19 +35,15 @@ func NewGenerateLicenseKeyCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:    "generate",
 		PreRun: func(cmd *cobra.Command, args []string) { env.Initialize() },
-		Run: func(cmd *cobra.Command, args []string) {
-			if err := runGenerateLicenseKey(cmd.Context(), opts); err != nil {
-				os.Exit(1)
-			}
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runGenerateLicenseKey(cmd.Context(), opts)
 		},
 	}
 
-	cmd.Flags().StringVarP(&opts.OrgID, "organization-id", "o", "", "Organization ID (required)")
-	util.Must(cmd.MarkFlagRequired("organization-id"))
-	cmd.Flags().StringVarP(&opts.CustomerOrgID, "customer-id", "c", "", "Customer organization ID (required)")
-	util.Must(cmd.MarkFlagRequired("customer-id"))
-	cmd.Flags().StringVarP(&opts.Name, "name", "n", "", "License key name (required)")
-	util.Must(cmd.MarkFlagRequired("name"))
+	cmd.Flags().StringVarP(&opts.OrgID, "organization-id", "o", "", "Organization ID (required without --no-save)")
+	cmd.Flags().StringVarP(&opts.CustomerOrgID, "customer-id", "c", "",
+		"Customer organization ID (required without --no-save)")
+	cmd.Flags().StringVarP(&opts.Name, "name", "n", "", "License key name (required without --no-save)")
 	cmd.Flags().StringVarP(&opts.Description, "description", "d", "", "License key description")
 	cmd.Flags().StringVarP(&opts.Payload, "payload", "p", "{}", "License key JSON payload")
 	cmd.Flags().StringVar(&opts.NotBefore, "not-before", "",
@@ -54,17 +51,70 @@ func NewGenerateLicenseKeyCommand() *cobra.Command {
 	cmd.Flags().StringVar(&opts.ExpiresAt, "expires-at", "",
 		"Date until the license key is valid (yyyy-mm-dd)")
 	cmd.Flags().StringVar(&opts.ValidPeriod, "valid-period", "8760h", "Validity period")
+	cmd.Flags().BoolVar(&opts.NoSave, "no-save", false, "Skip saving the license key to the database")
 	cmd.MarkFlagsMutuallyExclusive("expires-at", "valid-period")
+	cmd.MarkFlagsRequiredTogether("organization-id", "customer-id", "name")
+	for _, f := range []string{"organization-id", "customer-id", "name"} {
+		cmd.MarkFlagsOneRequired("no-save", f)
+		cmd.MarkFlagsMutuallyExclusive("no-save", f)
+	}
 
 	return cmd
 }
 
 func runGenerateLicenseKey(ctx context.Context, opts GenerateLicenseKeyOptions) error {
+	var notBefore time.Time
+	if opts.NotBefore != "" {
+		if t, err := time.Parse(time.DateOnly, opts.NotBefore); err != nil {
+			return fmt.Errorf("invalid not-before: %w", err)
+		} else {
+			notBefore = t
+		}
+	} else {
+		notBefore = time.Now()
+	}
+
+	var expiresAt time.Time
+	if opts.ExpiresAt != "" {
+		if t, err := time.Parse(time.DateOnly, opts.ExpiresAt); err != nil {
+			return fmt.Errorf("invalid expires-at: %w", err)
+		} else {
+			expiresAt = t
+		}
+	} else {
+		if d, err := time.ParseDuration(opts.ValidPeriod); err != nil {
+			return fmt.Errorf("invalid valid-period: %w", err)
+		} else {
+			expiresAt = notBefore.Add(d)
+		}
+	}
+
+	if opts.NoSave {
+		data := licensekey.LicenseKeyData{
+			LicenseKeyID: uuid.New(),
+			IssuedAt:     time.Now(),
+			NotBefore:    notBefore,
+			ExpiresAt:    expiresAt,
+			Payload:      json.RawMessage(opts.Payload),
+		}
+		token, err := licensekey.GenerateToken(data, env.Host())
+		if err != nil {
+			return fmt.Errorf("token creation error: %w", err)
+		}
+		fmt.Println(token)
+		return nil
+	}
+
 	registry := util.Require(svc.NewDefault(ctx))
 	defer func() { util.Must(registry.Shutdown(ctx)) }()
 	log := registry.GetLogger()
 
-	license := types.LicenseKey{Name: opts.Name, Payload: json.RawMessage(opts.Payload)}
+	license := types.LicenseKey{
+		Name:      opts.Name,
+		Payload:   json.RawMessage(opts.Payload),
+		NotBefore: &notBefore,
+		ExpiresAt: &expiresAt,
+	}
 
 	if opts.Description != "" {
 		license.Description = &opts.Description
@@ -82,35 +132,6 @@ func runGenerateLicenseKey(ctx context.Context, opts GenerateLicenseKeyOptions) 
 		return err
 	} else {
 		license.CustomerOrganizationID = &p
-	}
-
-	if opts.NotBefore != "" {
-		if t, err := time.Parse(time.DateOnly, opts.NotBefore); err != nil {
-			log.Error("invalid not-before", zap.Error(err))
-			return err
-		} else {
-			license.NotBefore = &t
-		}
-	} else {
-		t := time.Now()
-		license.NotBefore = &t
-	}
-
-	if opts.ExpiresAt != "" {
-		if t, err := time.Parse(time.DateOnly, opts.ExpiresAt); err != nil {
-			log.Error("invalid expires-at", zap.Error(err))
-			return err
-		} else {
-			license.ExpiresAt = &t
-		}
-	} else {
-		if d, err := time.ParseDuration(opts.ValidPeriod); err != nil {
-			log.Error("invalid valid-period", zap.Error(err))
-			return err
-		} else {
-			t := license.NotBefore.Add(d)
-			license.ExpiresAt = &t
-		}
 	}
 
 	log.Debug("creating license", zap.Any("license", license))

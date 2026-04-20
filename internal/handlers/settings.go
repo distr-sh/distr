@@ -11,7 +11,6 @@ import (
 	"github.com/distr-sh/distr/internal/authjwt"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
-	"github.com/distr-sh/distr/internal/mail"
 	"github.com/distr-sh/distr/internal/mailsending"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/middleware"
@@ -20,6 +19,7 @@ import (
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/httprate"
+	"github.com/go-mailx/mailx"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
@@ -222,14 +222,11 @@ func userSettingsUpdateEmailHandler() http.HandlerFunc {
 		}
 
 		owb := types.OrganizationWithBranding{Organization: *auth.CurrentOrg(), Branding: branding}
-
-		msg := mail.New(
-			mail.To(body.Email),
-			mail.Subject("[Action required] Distr E-Mail address change"),
-			mail.HtmlBodyTemplate(mailtemplates.UpdateEmail(*user, owb, token)),
-		)
-
-		if err := mailer.Send(ctx, msg); err != nil {
+		if err := mailer.Send(ctx,
+			mailx.To(body.Email),
+			mailx.Subject("[Action required] Distr E-Mail address change"),
+			mailx.HtmlBodyTemplate(mailtemplates.UpdateEmail(*user, owb, token)),
+		); err != nil {
 			log.Error("failed to send email verification", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)

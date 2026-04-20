@@ -3,23 +3,22 @@ package svc
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/env"
-	"github.com/distr-sh/distr/internal/mail"
-	"github.com/distr-sh/distr/internal/mail/noop"
-	"github.com/distr-sh/distr/internal/mail/ses"
-	"github.com/distr-sh/distr/internal/mail/smtp"
-	gomail "github.com/wneessen/go-mail"
+	"github.com/go-mailx/mailx"
+	ses "github.com/go-mailx/mailx-ses"
+	smtp "github.com/go-mailx/mailx-smtp"
 )
 
-func (r *Registry) GetMailer() mail.Mailer {
+func (r *Registry) GetMailer() *mailx.Mailer {
 	return r.mailer
 }
 
-func createMailer(ctx context.Context) (mail.Mailer, error) {
+func createMailer(ctx context.Context) (*mailx.Mailer, error) {
 	config := env.GetMailerConfig()
-	authOrgOverrideFromAddress := func(ctx context.Context, mail mail.Mail) string {
+	authOrgOverrideFromAddress := func(ctx context.Context, mail mailx.Mail) string {
 		if auth, err := auth.Authentication.Get(ctx); err == nil {
 			if org := auth.CurrentOrg(); org != nil && org.EmailFromAddress != nil {
 				return *org.EmailFromAddress
@@ -27,38 +26,38 @@ func createMailer(ctx context.Context) (mail.Mailer, error) {
 		}
 		return ""
 	}
+
+	var adapter mailx.MailerAdapter
+	var err error
+
 	switch config.Type {
 	case env.MailerTypeSMTP:
 		smtpConfig := smtp.Config{
-			MailerConfig: mail.MailerConfig{
-				FromAddressSrc: []mail.FromAddressSrcFn{
-					mail.MailOverrideFromAddress(),
-					authOrgOverrideFromAddress,
-					mail.StaticFromAddress(config.FromAddress.String()),
-				},
-			},
 			Host:        config.SmtpConfig.Host,
 			Port:        config.SmtpConfig.Port,
 			Username:    config.SmtpConfig.Username,
 			Password:    config.SmtpConfig.Password,
 			ImplicitTLS: config.SmtpConfig.ImplicitTLS,
-			TLSPolicy:   gomail.TLSOpportunistic,
+			TLSPolicy:   smtp.TLSOpportunistic,
 		}
-		return smtp.New(smtpConfig)
+		adapter, err = smtp.New(smtpConfig)
 	case env.MailerTypeSES:
-		sesConfig := ses.Config{
-			MailerConfig: mail.MailerConfig{
-				FromAddressSrc: []mail.FromAddressSrcFn{
-					mail.MailOverrideFromAddress(),
-					authOrgOverrideFromAddress,
-					mail.StaticFromAddress(config.FromAddress.String()),
-				},
-			},
-		}
-		return ses.NewFromContext(ctx, sesConfig)
+		adapter, err = ses.NewFromContext(ctx)
 	case env.MailerTypeUnspecified:
-		return noop.New(), nil
+		adapter = &mailx.Noop{}
 	default:
-		return nil, errors.New("invalid mailer type")
+		err = errors.New("invalid mailer type")
 	}
+
+	if err != nil {
+		return nil, fmt.Errorf("mailer creation failed: %w", err)
+	}
+
+	return &mailx.Mailer{MailerAdapter: adapter, Config: &mailx.MailerConfig{
+		FromAddressSrc: []mailx.FromAddressFunc{
+			mailx.MailOverrideFromAddress(),
+			authOrgOverrideFromAddress,
+			mailx.StaticFromAddress(config.FromAddress.String()),
+		},
+	}}, nil
 }

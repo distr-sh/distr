@@ -7,9 +7,9 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
-	"github.com/distr-sh/distr/internal/mail"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/go-mailx/mailx"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
@@ -51,16 +51,14 @@ func SendUserInviteMail(
 		targetOrgName = customerOrg.Name
 	}
 
-	email := mail.New(
-		mail.To(userAccount.Email),
-		mail.From(*from),
-		mail.Bcc(currentUser.Email),
-		mail.ReplyTo(currentUser.Email),
-		mail.Subject(subject),
-		mail.HtmlBodyTemplate(mailtemplates.InviteUser(userAccount, organization, *currentUser, targetOrgName, inviteURL)),
-	)
-
-	if err := mailer.Send(ctx, email); err != nil {
+	if err := mailer.Send(ctx,
+		mailx.To(userAccount.Email),
+		mailx.From(*from),
+		mailx.Bcc(currentUser.Email),
+		mailx.ReplyTo(currentUser.Email),
+		mailx.Subject(subject),
+		mailx.HtmlBodyTemplate(mailtemplates.InviteUser(userAccount, organization, *currentUser, targetOrgName, inviteURL)),
+	); err != nil {
 		log.Error(
 			"could not send invite mail",
 			zap.Error(err),
