@@ -381,7 +381,7 @@
 </div>
 
 <ng-template #updateAgentConfirmTemplate>
-  <div class="space-y-4 text-sm text-gray-700 dark:text-gray-200">
+  <div class="space-y-4 text-sm text-gray-700 dark:text-gray-200 min-w-[42rem]">
     <div class="p-4 rounded-lg bg-blue-50 text-blue-800 dark:bg-gray-800 dark:text-blue-300" role="note">
       Updating the agent is a safe action. It does not trigger any changes or restarts for the deployed application.
     </div>
@@ -392,37 +392,20 @@
       >?
     </p>
 
-    @if (agentUpdateChangelogReleases().length > 0) {
+    @if (agentUpdateChangelogSections().length > 0) {
       <div>
-        <h4 class="font-semibold text-gray-900 dark:text-white mb-2">What's included in this update</h4>
-        <div class="max-h-72 overflow-y-auto pr-1 space-y-4">
-          @for (release of agentUpdateChangelogReleases(); track release.version) {
+        <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Agent release notes</h4>
+        <div class="max-h-72 overflow-y-auto pr-1 space-y-3">
+          @for (section of agentUpdateChangelogSections(); track section.section) {
             <div>
-              <h5 class="font-semibold text-gray-900 dark:text-white">{{ release.version }}</h5>
-              @for (section of release.sections; track section.section) {
-                <div class="mt-1">
-                  <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    {{ section.section }}
-                  </div>
-                  <ul class="list-disc list-inside space-y-0.5">
-                    @for (change of section.changes; track change.commit) {
-                      <li>
-                        <span class="text-gray-500 dark:text-gray-400">{{ change.scope }}:</span>
-                        {{ change.description }}
-                        @if (change.pr) {
-                          <a
-                            [href]="githubUrl + '/pull/' + change.pr"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="text-primary-700 dark:text-primary-400 hover:underline">
-                            (#{{ change.pr }})
-                          </a>
-                        }
-                      </li>
-                    }
-                  </ul>
-                </div>
-              }
+              <h5 class="text-sm text-gray-900 dark:text-white">
+                {{ section.section }}
+              </h5>
+              <ul class="list-disc list-inside space-y-0.5">
+                @for (change of section.changes; track change.commit) {
+                  <li>{{ change.description }}</li>
+                }
+              </ul>
             </div>
           }
         </div>
@@ -430,15 +413,15 @@
     }
 
     <p class="text-xs text-gray-500 dark:text-gray-400">
-      See the full
+      Visit our
       <a
-        [href]="websiteUrl + '/docs/changelog/'"
+        [href]="websiteUrl + '/changelog/'"
         target="_blank"
         rel="noopener noreferrer"
         class="text-primary-700 dark:text-primary-400 hover:underline">
-        changelog
+        changelog page
       </a>
-      for all releases.
+      to read the release notes of our latest releases.
     </p>
   </div>
 </ng-template>
