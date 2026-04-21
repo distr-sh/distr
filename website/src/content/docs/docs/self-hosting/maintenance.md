@@ -1,6 +1,6 @@
 ---
 title: Maintenance Jobs
-description: Configure automated cleanup jobs to prune metrics and statuses from your Distr database.
+description: Configure automated cleanup jobs to prune metrics, logs, and registry blobs from your Distr database and storage.
 slug: docs/self-hosting/maintenance
 sidebar:
   order: 5
@@ -8,13 +8,24 @@ sidebar:
 
 ## Database Cleanup Jobs
 
-Distr includes built-in cli tasks for database pruning to prevent unbounded growth of metrics and status entries.
+Distr includes built-in CLI tasks for database and storage pruning to prevent unbounded growth of resources such as metrics, logs, and status entries.
 
-The cleanup jobs can be executed manually.
+The cleanup routine can be executed manually.
 
 ```shell
-distr cleanup DeploymentLogRecord
+distr cleanup $CLEANUP_TARGET
 ```
+
+Available cleanup targets:
+
+| Target                      | Description                                                           |
+| --------------------------- | --------------------------------------------------------------------- |
+| `DeploymentLogRecord`       | Deployment log entries                                                |
+| `DeploymentTargetLogRecord` | Deployment target log entries                                         |
+| `DeploymentRevisionStatus`  | Deployment revision status entries                                    |
+| `DeploymentTargetMetrics`   | Deployment target metrics entries                                     |
+| `OIDCState`                 | Expired OIDC state entries                                            |
+| `ArtifactBlob`              | Unreferenced registry blobs from S3 (requires registry to be enabled) |
 
 For production deployments we recommend scheduling these jobs automatically, either using the built-in job scheduler for single instance deployments
 or using Kubernetes CronJobs for high-availability deployments.
@@ -30,11 +41,24 @@ An example configuration file can be found on
 
 ```dotenv
 # Cron interval for cleaning deployment revision statuses older than STATUS_ENTRIES_MAX_AGE
-CLEANUP_DEPLOYMENT_REVISION_STATUS_CRON="*/5 * * * *"
+CLEANUP_DEPLOYMENT_REVISION_STATUS_CRON="0 * * * *"
+CLEANUP_DEPLOYMENT_REVISION_STATUS_TIMEOUT="10m"
 # Cron interval for cleaning metrics older than METRICS_ENTRIES_MAX_AGE
-CLEANUP_DEPLOYMENT_TARGET_METRICS_CRON="*/5 * * * *"
-# Cron interval for cleaning log entries older than LOG_RECORD_ENTRIES_MAX_COUNT
-CLEANUP_DEPLOYMENT_LOG_RECORD_CRON="*/5 * * * *"
+CLEANUP_DEPLOYMENT_TARGET_METRICS_CRON="0 * * * *"
+CLEANUP_DEPLOYMENT_TARGET_METRICS_TIMEOUT="10m"
+# Cron interval for cleaning deployment log entries exceeding LOG_RECORD_ENTRIES_MAX_COUNT
+CLEANUP_DEPLOYMENT_LOG_RECORD_CRON="0 * * * *"
+CLEANUP_DEPLOYMENT_LOG_RECORD_TIMEOUT="10m"
+# Cron interval for cleaning deployment target log entries
+CLEANUP_DEPLOYMENT_TARGET_LOG_RECORD_CRON="0 * * * *"
+CLEANUP_DEPLOYMENT_TARGET_LOG_RECORD_TIMEOUT="10m"
+# Cron interval for cleaning expired OIDC state entries
+CLEANUP_OIDC_STATE_CRON="0 * * * *"
+CLEANUP_OIDC_STATE_CRON_TIMEOUT="10m"
+# Cron interval for cleaning unreferenced artifact blobs from S3 (requires registry)
+CLEANUP_ARTIFACT_BLOB_CRON="0 * * * *"
+CLEANUP_ARTIFACT_BLOB_TIMEOUT="10m"
+CLEANUP_ARTIFACT_BLOB_MIN_AGE="24h"
 ```
 
 If these variables are not set, no cleanup jobs are scheduled.
@@ -45,7 +69,7 @@ For high-availability deployments with multiple instances of Distr (e.g., using 
 is not suitable, as it would lead to multiple instances trying to perform the same cleanup tasks concurrently.
 
 Therefore, we recommend using [CronJobs](https://kubernetes.io/docs/core-concepts/workloads/controllers/cron-jobs/) in Kubernetes to handle the cleanup tasks.
-But the concept can apply to any HA setup where the cleanup jobs are triggered by
+But the concept can apply to any HA setup where the cleanup jobs are triggered externally.
 
 These jobs can also be configured via our Helm Chart.
 
@@ -57,13 +81,32 @@ cronJobs:
   - name: deployment-log-record-cleanup
     labels:
       distr.sh/job: deployment-log-record-cleanup
-    args: [cleanup, DeploymentLogRecord]
+    args: [cleanup, DeploymentLogRecord, --timeout, 10m]
+  - name: deployment-target-log-record-cleanup
+    labels:
+      distr.sh/job: deployment-target-log-record-cleanup
+    args: [cleanup, DeploymentTargetLogRecord, --timeout, 10m]
   - name: deployment-revision-status-cleanup
     labels:
       distr.sh/job: deployment-revision-status-cleanup
-    args: [cleanup, DeploymentRevisionStatus]
+    args: [cleanup, DeploymentRevisionStatus, --timeout, 10m]
   - name: deployment-target-metrics-cleanup
     labels:
       distr.sh/job: deployment-target-metrics-cleanup
-    args: [cleanup, DeploymentTargetMetrics]
+    args: [cleanup, DeploymentTargetMetrics, --timeout, 10m]
+  - name: oidcstate-cleanup
+    labels:
+      distr.sh/job: oidcstate-cleanup
+    args: [cleanup, OIDCState, --timeout, 10m]
+  - name: artifact-blob-cleanup
+    labels:
+      distr.sh/job: artifact-blob-cleanup
+    args: [cleanup, ArtifactBlob, --timeout, 10m]
 ```
+
+## Removed features
+
+### Deployment Target Status (removed in v2.20.0)
+
+Prior to v2.20.0, Distr tracked a separate `DeploymentTargetStatus` per deployment target.
+This concept has been removed and is no longer available as a cleanup target.
