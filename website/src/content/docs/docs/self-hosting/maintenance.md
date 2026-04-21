@@ -8,7 +8,7 @@ sidebar:
 
 ## Database Cleanup Jobs
 
-Distr includes built-in CLI tasks for database and storage pruning to prevent unbounded growth of resources such as metrics, log, and status entries.
+Distr includes built-in CLI tasks for database and storage pruning to prevent unbounded growth of resources such as metrics, logs, and status entries.
 
 The cleanup routine can be executed manually.
 
@@ -46,7 +46,7 @@ CLEANUP_DEPLOYMENT_REVISION_STATUS_TIMEOUT="10m"
 # Cron interval for cleaning metrics older than METRICS_ENTRIES_MAX_AGE
 CLEANUP_DEPLOYMENT_TARGET_METRICS_CRON="0 * * * *"
 CLEANUP_DEPLOYMENT_TARGET_METRICS_TIMEOUT="10m"
-# Cron interval for cleaning deployment log entries older than LOG_RECORD_ENTRIES_MAX_COUNT
+# Cron interval for cleaning deployment log entries exceeding LOG_RECORD_ENTRIES_MAX_COUNT
 CLEANUP_DEPLOYMENT_LOG_RECORD_CRON="0 * * * *"
 CLEANUP_DEPLOYMENT_LOG_RECORD_TIMEOUT="10m"
 # Cron interval for cleaning deployment target log entries
