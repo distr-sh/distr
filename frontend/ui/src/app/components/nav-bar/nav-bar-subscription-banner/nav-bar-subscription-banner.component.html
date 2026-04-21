@@ -20,7 +20,7 @@
       @if (isVendorAdmin()) {
         <div class="flex items-center space-x-4 lg:pl-10 shrink-0">
           <a
-            href="https://distr.sh/contact/"
+            [href]="websiteUrl + '/contact/'"
             target="_blank"
             class="text-sm font-medium text-blue-600 dark:text-blue-500 hover:underline"
             >Contact Sales</a
@@ -55,7 +55,7 @@
     @if (isVendorAdmin()) {
       <div class="hidden md:flex items-center space-x-4 lg:pl-10 shrink-0">
         <a
-          href="https://distr.sh/contact/"
+          [href]="websiteUrl + '/contact/'"
           target="_blank"
           class="text-sm font-medium text-blue-600 dark:text-blue-500 hover:underline"
           >Contact Sales</a

@@ -124,7 +124,9 @@
                     <h2 class="text-xl font-bold dark:text-white">Change Subscription Quantities</h2>
                     <p class="text-sm text-gray-600 dark:text-gray-400">
                       Prorated adjustments will be reflected on your next invoice (<a
-                        href="https://distr.sh/docs/product/subscription-management/#quantity-updates-during-billing-cycle"
+                        [href]="
+                          websiteUrl + '/docs/product/subscription-management/#quantity-updates-during-billing-cycle'
+                        "
                         class="underline"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -459,7 +461,7 @@
                     <p>
                       <strong>Note:</strong>
                       For Enterprise plans with unlimited usage, please
-                      <a href="https://distr.sh/contact/" target="_blank" class="text-primary-600 hover:underline"
+                      <a [href]="websiteUrl + '/contact/'" target="_blank" class="text-primary-600 hover:underline"
                         >contact our sales team</a
                       >.
                     </p>

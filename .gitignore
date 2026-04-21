@@ -59,4 +59,4 @@ Thumbs.db
 .serena
 
 # generated agent changelog
-frontend/ui/public/agent-changelog.json
+frontend/ui/src/buildconfig/agent-changelog.json

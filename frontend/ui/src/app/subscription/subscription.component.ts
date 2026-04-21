@@ -6,6 +6,7 @@ import {NonNullableFormBuilder, ReactiveFormsModule, Validators} from '@angular/
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faCreditCard, faShoppingCart, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
+import {WEBSITE_URL} from '../../env/constants';
 import {getFormDisplayedError} from '../../util/errors';
 import {never} from '../../util/exhaust';
 import {AuthService} from '../services/auth.service';
@@ -27,6 +28,7 @@ export class SubscriptionComponent implements OnInit {
   protected readonly faXmark = faXmark;
 
   protected readonly unlimited = UNLIMITED_QTY;
+  protected readonly websiteUrl = WEBSITE_URL;
 
   protected readonly auth = inject(AuthService);
   private readonly subscriptionService = inject(SubscriptionService);

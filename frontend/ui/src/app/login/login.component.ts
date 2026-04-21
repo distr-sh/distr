@@ -7,6 +7,7 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faGithub, faGoogle, faMicrosoft} from '@fortawesome/free-brands-svg-icons';
 import {faArrowRightToBracket} from '@fortawesome/free-solid-svg-icons';
 import {distinctUntilChanged, filter, lastValueFrom, map, take} from 'rxjs';
+import {WEBSITE_URL} from '../../env/constants';
 import {getFormDisplayedError} from '../../util/errors';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AuthService} from '../services/auth.service';
@@ -23,6 +24,8 @@ export class LoginComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder).nonNullable;
+
+  protected readonly websiteUrl = WEBSITE_URL;
 
   protected readonly emailPasswordForm = this.fb.group({
     email: this.fb.control('', [Validators.required, Validators.email]),

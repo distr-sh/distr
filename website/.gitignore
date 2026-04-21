@@ -19,5 +19,5 @@ pnpm-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# generated agent changelog
-public/agent-changelog.json
+# copied changelog (from root CHANGELOG.md)
+src/content/docs/changelog.md

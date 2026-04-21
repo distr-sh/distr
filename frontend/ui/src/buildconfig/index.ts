@@ -1,3 +1,4 @@
+import * as agentChangelog from './agent-changelog.json';
 import * as buildConfig from './version.json';
 
-export {buildConfig};
+export {agentChangelog, buildConfig};
