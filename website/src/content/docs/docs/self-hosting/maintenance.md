@@ -18,14 +18,14 @@ distr cleanup $CLEANUP_TARGET
 
 Available cleanup targets:
 
-| Target | Description |
-|---|---|
-| `DeploymentLogRecord` | Deployment log entries |
-| `DeploymentTargetLogRecord` | Deployment target log entries |
-| `DeploymentRevisionStatus` | Deployment revision status entries |
-| `DeploymentTargetMetrics` | Deployment target metrics entries |
-| `OIDCState` | Expired OIDC state entries |
-| `ArtifactBlob` | Unreferenced registry blobs from S3 (requires registry to be enabled) |
+| Target                      | Description                                                           |
+| --------------------------- | --------------------------------------------------------------------- |
+| `DeploymentLogRecord`       | Deployment log entries                                                |
+| `DeploymentTargetLogRecord` | Deployment target log entries                                         |
+| `DeploymentRevisionStatus`  | Deployment revision status entries                                    |
+| `DeploymentTargetMetrics`   | Deployment target metrics entries                                     |
+| `OIDCState`                 | Expired OIDC state entries                                            |
+| `ArtifactBlob`              | Unreferenced registry blobs from S3 (requires registry to be enabled) |
 
 For production deployments we recommend scheduling these jobs automatically, either using the built-in job scheduler for single instance deployments
 or using Kubernetes CronJobs for high-availability deployments.
