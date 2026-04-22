@@ -43,7 +43,10 @@
                   <ul class="py-2 text-sm text-gray-700 dark:text-gray-200">
                     @for (target of deploymentTargets(); track target.id) {
                       <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
-                        <a class="px-4 flex items-stretch" [routerLink]="['/', 'deployments', target.id]" (click)="targetDropdown.set(false)">
+                        <a
+                          class="px-4 flex items-stretch"
+                          [routerLink]="['/', 'deployments', target.id]"
+                          (click)="targetDropdown.set(false)">
                           {{ target.name }}
                         </a>
                       </li>
