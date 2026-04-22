@@ -41,7 +41,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.150.0
 	github.com/pquerna/otp v1.5.0
 	github.com/prometheus/client_golang v1.23.2
-	github.com/samber/slog-zap/v2 v2.6.4
+	github.com/samber/slog-zap/v2 v2.7.0
 	github.com/shirou/gopsutil/v4 v4.26.3
 	github.com/spf13/cobra v1.10.2
 	github.com/stripe/stripe-go/v85 v85.0.1
