@@ -119,7 +119,7 @@ Best practices for distributed manifests:
 
 - Never hardcode secrets. Use environment variable references (`${DB_PASSWORD}`) or Kubernetes Secrets with a separate `.env.example` or `values.yaml` that documents required variables without including values.
 - Minimize published ports and exposed services. Internal communication should use Docker networks or Kubernetes ClusterIP services.
-- Use image digests (`image: myapp@sha256:abc123...`) instead of mutable tags for integrity verification.
+- Use image digests (`image: myapp@sha256:abc123...`) instead of mutable tags for integrity verification. The same point comes up in [Running Docker in Production](/blog/running-docker-in-production/) under why `:latest` is a lie, with the commands for retrieving and pinning a digest.
 - Use opaque service names if architecture exposure is a concern.
 - For Helm charts, avoid shipping templates that reveal optional features or scaling logic the customer does not need.
 

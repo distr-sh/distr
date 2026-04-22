@@ -1,0 +1,241 @@
+---
+title: 'Running Docker in Production: Quirks and How to Handle Them'
+description: 'Docker Compose on a single host can run production workloads — if you know the foot-guns. Orphan containers, disk-filling images, non-healing health checks, mutable tags, socket risk, remote updates, and when to reach for Swarm.'
+publishDate: 2026-04-22
+lastUpdated: 2026-04-22
+slug: 'running-docker-in-production'
+authors:
+  - name: 'Philip Miglinci'
+    role: 'Co-Founder'
+    image: '/src/assets/blog/authors/pmig.jpg'
+    linkedIn: https://www.linkedin.com/in/pmigat/
+    gitHub: https://github.com/pmig
+image: '/src/assets/blog/2026-04-22-running-docker-in-production/thumb.png'
+tags:
+  - Docker
+  - Docker Compose
+  - Docker Swarm
+  - Production
+  - DevOps
+  - Security
+---
+
+import {Aside, Code} from '@astrojs/starlight/components';
+import EmbeddedWhitePaperCta from '~/components/cta/embedded/EmbeddedWhitePaperCta.astro';
+
+I am Philip—an engineer working at Distr, which helps software and AI companies distribute their applications to self-managed environments.
+Our Open Source Software Distribution platform is available on GitHub ([`github.com/distr-sh/distr`](https://github.com/distr-sh/distr)) and orchestrates both Docker Compose and Docker Swarm deployments on customer hosts every day.
+
+Most of the production incidents I have seen on Docker Compose hosts come from the same handful of quirks: an old container that should have been removed, a disk that filled up overnight, a health check that detected a problem and then did nothing about it, a `:latest` tag that pointed somewhere new, or a socket mount nobody thought twice about. None of these are bugs in Docker. They are deliberate trade-offs in a tool that started as a developer experience and is now running the back end of a lot of real businesses. This post collects the seven I keep running into, with the commands and the operational answer for each.
+
+<hr />
+
+## Why Docker Compose Still Runs a Lot of Production
+
+Before the list of quirks, a quick word on the audience. The sweet spot for Docker Compose in production is the single-node deployment that ships as a self-contained artifact: a vendor pushing a multi-container application into a customer environment, an internal team running a long-tail service that does not justify a Kubernetes cluster, an edge box in a retail location. The footprint is small, the operational overhead is low, and a competent operator can reason about the whole stack from one `docker-compose.yaml`.
+
+That posture is exactly why the quirks bite. Compose does not have a control plane reminding you to clean up images or restart unhealthy containers, and it does not assume you have one. It assumes you—or whoever is deploying it—will. If you ship Compose files to customers, the safe assumption is that the customer will not. The rest of this post is about closing that gap, either by hand or with an [agent](/docs/agents/docker-agent) that does it for you. If you have already concluded that the gap is too wide and you want a comparison with the next step up, [Docker Compose vs Kubernetes](/blog/docker-compose-vs-kubernetes/) is the deeper read.
+
+## Orphan Containers When You Remove a Service from Compose
+
+Remove a service from `docker-compose.yaml`, run `docker compose up -d`, and the container you removed keeps running. It is detached from the project but still bound to the same networks and ports. `docker compose ps` will not show it, because Compose only lists what is in the current file. `docker ps --filter label=com.docker.compose.project=<name>` will, because Docker still has the label on the container. This is how you discover, six months in, that an old `worker` service has been quietly consuming RAM since the last refactor.
+
+The fix is one flag:
+
+```bash
+docker compose up -d --remove-orphans
+docker compose down --remove-orphans
+```
+
+The flag tells Compose: anything that was once part of this project but is no longer in the file should be removed. To audit before deleting, list everything Docker still associates with the project name:
+
+```bash
+docker ps -a --filter label=com.docker.compose.project=<name>
+```
+
+<Aside type="note">
+  `--remove-orphans` only touches containers that share the Compose project
+  label. It will not remove unrelated containers on the host. The risk is
+  bounded to containers Compose itself created earlier under this project name.
+</Aside>
+
+In Distr's Docker agent we pass `RemoveOrphans: true` on every Compose `Up` call, so customer hosts never accumulate orphans across deployment updates. That single flag has eliminated a recurring class of "the old version is still answering on port 8080" support tickets.
+
+## Old Images and Logs Quietly Fill the Disk
+
+Every `docker compose pull` keeps the previous image on disk. Every container with the default `json-file` log driver writes unbounded JSON to `/var/lib/docker/containers/<id>/<id>-json.log`. On a busy host this is the most common reason for an outage: the disk fills and Docker stops being able to write anything—logs, metadata, image layers—at which point containers start failing in confusing ways.
+
+The first thing to learn is the audit command:
+
+```bash
+docker system df
+docker system df -v
+```
+
+`-v` breaks the totals down per image, container, volume, and build cache, which is usually enough to spot the offender. From there, the targeted prune commands:
+
+```bash
+docker image prune -a --filter "until=168h" -f   # delete unused images older than 7 days
+docker container prune -f                         # remove stopped containers
+docker builder prune -f                           # drop the BuildKit cache
+```
+
+`docker volume prune -f` exists too, and it is genuinely useful, but read the next aside before you run it.
+
+<Aside type="caution">
+  `docker volume prune` removes **every volume not currently attached to a
+  container**, including named volumes you created on purpose. If you stop a
+  database container to do maintenance and run `docker volume prune` while it is
+  down, you can lose its data. Use `docker volume ls --filter dangling=true`
+  first to see what is actually unreferenced, and prefer named-volume management
+  over blanket prunes on production hosts.
+</Aside>
+
+The other half of the disk story is logs. Cap them at the daemon level, once, in `/etc/docker/daemon.json`:
+
+```json
+{
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  }
+}
+```
+
+After `systemctl restart docker`, every new container will rotate its logs at 10 MB and keep at most three rotated files—30 MB ceiling per container, instead of "until the disk is gone." Existing containers need to be recreated to pick up the new defaults.
+
+This is one of the topics worth getting right before you ship. If you also need to ship config files alongside the Compose file (a `daemon.json` is one such file, but most apps have their own), the patterns in [Mounting Configuration Files in Docker Compose](/blog/docker-compose-mount-config-files/) cover the four approaches I have seen survive customer deployments.
+
+In Distr's Docker agent the cleanup is built in: each deployment target has an opt-out **container image cleanup** setting that removes the previous version's images automatically after a successful update, with retries on failure. It only fires on success, so the previous image stays on disk if something goes wrong and you need to roll back.
+
+## Health Checks That Detect But Never Heal
+
+This is the one that surprises people the most. You add a `HEALTHCHECK` to your Dockerfile or a `healthcheck:` block to the service in Compose, you watch the container go from `healthy` to `unhealthy`, and then... nothing happens. The Docker Engine reports the status. It does not act on it. `restart: unless-stopped` is triggered by the container _exiting_, not by it being marked unhealthy.
+
+You can confirm what Docker actually thinks:
+
+```bash
+docker inspect --format='{{json .State.Health}}' <container> | jq
+```
+
+You will see the status, the streak of failures, and the last few probe outputs—useful information that is silently ignored by the engine.
+
+There are three answers to this:
+
+1. **Run an autoheal sidecar.** The community standard is [`willfarrell/autoheal`](https://github.com/willfarrell/docker-autoheal): a tiny container that mounts the Docker socket, watches for `unhealthy` events, and restarts the offending container. You opt containers in by labeling them `autoheal=true` (or set `AUTOHEAL_CONTAINER_LABEL=all` to monitor everything).
+2. **Run on Docker Swarm.** Swarm restarts unhealthy tasks by default. If you are already considering Swarm, this is one of the better reasons.
+3. **Use Distr.** Every Distr Docker agent deploys an adapted autoheal service alongside it. The "Enable autoheal for all containers" toggle is on by default at deployment-target creation, so customer-side restarts of unhealthy containers happen without anyone configuring it.
+
+<Aside type="note">
+  In Distr the autoheal setting is fixed at deployment-target creation and
+  cannot be toggled later. If you need to change it on an existing target,
+  recreate the target. Worth knowing before you provision.
+</Aside>
+
+Whichever path you pick, the takeaway is the same: a `HEALTHCHECK` without something acting on it is a status light, not a self-healing system.
+
+<EmbeddedWhitePaperCta />
+
+## `:latest` Is a Lie — Pin by Digest
+
+Docker tags are mutable references. `myapp:1.4` today is whatever the registry currently has under that tag; tomorrow it can point at a different layer set after a re-push. `:latest` is the worst offender because everyone treats it as a synonym for "stable" when in practice it means "whatever was pushed most recently." The result, in production, is that two hosts pulling the "same" tag five minutes apart can end up running different code.
+
+The fix is to pin by content-addressable digest. Every image has one, and Docker accepts it anywhere a tag would go.
+
+To find the digest for an image you already pulled:
+
+```bash
+docker image inspect --format='{{index .RepoDigests 0}}' myapp:1.4
+# myapp@sha256:9b7c…
+```
+
+Or, without pulling, from the local Docker installation against the remote registry:
+
+```bash
+docker buildx imagetools inspect myapp:1.4
+```
+
+In your Compose file, replace the tag with the digest:
+
+```yaml
+services:
+  app:
+    image: myapp@sha256:9b7c0a3e1f...
+```
+
+A pull against a digest fails fast if the registry no longer has those bytes, which is exactly what you want—silent drift becomes a loud error. The same image reference works in `docker stack deploy`, in `docker run`, and in Kubernetes manifests.
+
+For the broader picture of what your customers can extract from a published image (and why image hygiene matters beyond reproducibility), [How to Protect Your Source Code and IP in Docker and Kubernetes Deployments](/blog/protect-source-code-docker-container/) is the companion read. And if the registry choice itself is up in the air, the [container registry comparison](/blog/container-image-registry-comparison/) covers the trade-offs.
+
+## Mounting the Docker Socket Is Root Equivalence
+
+A container with `/var/run/docker.sock` mounted can call the Docker API, and the Docker API can launch a privileged container that mounts the host's root filesystem. In other words: any container with the socket has root on the host. This is not a Docker bug; it is the threat model of the socket. It deserves a moment of attention because the line that grants this access is one bind mount in a Compose file and is easy to add without thinking about it.
+
+<Aside type="caution">
+  Mounting `/var/run/docker.sock` into a container is equivalent to giving that
+  container root on the host. A `:ro` flag does **not** help—the socket is
+  bidirectional RPC, not a file you read. Treat every container that mounts the
+  socket as a tier-one trust boundary.
+</Aside>
+
+Practical hygiene:
+
+- **Inventory the containers that mount the socket.** Agents, CI runners, monitoring sidecars, container management UIs—keep the list short and intentional.
+- **Run rootless Docker where possible.** [`dockerd-rootless-setuptool.sh install`](https://docs.docker.com/engine/security/rootless/) sets up a Docker daemon that runs as a regular user. The blast radius of a compromised socket-mounting container shrinks from "full host" to "this user account."
+- **Consider socket-proxy.** Projects like Tecnativa's `docker-socket-proxy` expose a filtered subset of the API to the container that needs it (e.g. read-only `containers` and `events` for monitoring) instead of the full socket.
+- **Keep socket-mounting images minimal.** Smaller surface, fewer libraries, fewer ways in.
+
+The Distr Docker agent does mount the socket—it has to, in order to orchestrate Compose and Swarm on the host. We document that boundary openly in the [Docker agent docs](/docs/agents/docker-agent) so customer security teams can review it before installation. The agent authenticates to the Hub with a JWT, the install secret is shown once and never stored, and the host's `~/.docker` directory is mounted read-only so existing registry credentials are reused without being copied.
+
+## There Is No Remote-Update Button in Docker
+
+`docker compose pull && docker compose up -d` is a fine command if you are SSH'd into the host. At customer scale—dozens of self-managed environments behind firewalls, each with its own change-control process—it is the wrong shape of solution. Docker has no built-in mechanism to push a new manifest to a running host from somewhere else. Docker Hub webhooks can trigger a CI rebuild when an image is pushed, but they do not reach into a customer's network and tell their `docker compose` to pull.
+
+The usual workarounds and what they cost:
+
+- **[Watchtower](https://github.com/containrrr/watchtower):** Polls the registry on a schedule, pulls new images, recreates containers. Easy to set up, hard to control. No staged rollout, no rollback path, no visibility from your side—you find out a customer updated when they file a ticket.
+- **Bastion + SSH + Ansible/scripts:** Works for ten customers. Falls apart at fifty, especially when three of them are air-gapped and four run their own change-control cadence. Every operator has to live with shared keys and a maintenance window calendar.
+- **A pull-based agent.** This is the shape Distr lands on. The agent runs on the customer host, polls a known endpoint at a configurable interval (5 seconds by default), and reconciles the local Compose state against what the Hub says it should be. The agent reports status back, so you can see in your dashboard which customers are on which version. When the agent itself needs to update, it spawns a separate container to perform the swap so it is not trying to replace itself while running.
+
+The pattern is not unique—Kubernetes operators and GitOps tools do the same thing—but Compose users routinely re-invent it badly. If you find yourself building one, at least give it rollback, status reporting, and a way to pin versions, or you will end up with a fleet that drifts in ways you cannot see.
+
+The other thing worth noting: scheduled jobs run _inside_ the application also have no native Compose answer. If your update story includes "run this migration once after the deploy," you will eventually need to pick one of [the three approaches I cover for Compose cron jobs](/blog/docker-compose-cron-jobs/).
+
+<EmbeddedWhitePaperCta />
+
+## When to Graduate to Docker Swarm
+
+Docker Swarm is the natural next step when a single-node Compose deployment outgrows itself but Kubernetes is too much. It uses the same Compose YAML format (with extra `deploy:` keys), it ships in the box with every Docker installation, and it solves three of the quirks above directly:
+
+- **It restarts unhealthy tasks** without an autoheal sidecar.
+- **It rolls out updates with `update_config`** including parallelism, delay, and rollback on failure.
+- **It treats secrets and configs as first-class objects** instead of bind mounts.
+
+To kick the tires:
+
+```bash
+docker swarm init --advertise-addr <ip>
+docker stack deploy -c docker-compose.yaml mystack
+docker service update --image myapp@sha256:9b7c... mystack_app
+```
+
+Swarm does not solve the socket problem (managers mount the socket too), it does not solve tag mutability (still your job to pin digests), and it does not solve remote orchestration (you still need a way to tell a customer cluster what to do). What it does is give you a real scheduler for the cost of a few extra YAML keys.
+
+The deep-dive on routing, SSL termination, and putting Traefik in front of Swarm lives in [Load Balancing and Routing in Docker Swarm](/blog/docker-swarm-load-balancing-routing/), and the original product walkthrough for Swarm support is in [Distributing Applications to Docker Swarm](/blog/distr-docker-swarm/). The Distr agent detects Swarm mode automatically and switches from `docker compose up` to `docker stack deploy`, so the operator-facing experience is the same.
+
+## Docker in Production Is a Solved Problem If You Know the Shape of the Problem
+
+None of the quirks above are secret. They are all in Docker's documentation, in GitHub issues that have been open for years, and in the war stories of every team that has run Compose in anger. What makes them dangerous is not the quirks themselves but the order in which you discover them: usually at 2 a.m., one at a time.
+
+The summary version, in case you want to leave a note for the next person:
+
+- Pass `--remove-orphans` on every `compose up` and `compose down`.
+- Cap container logs in `daemon.json` and prune images on a schedule. Be careful with `docker volume prune`.
+- Health checks do not heal. Run an autoheal sidecar, run on Swarm, or use an agent that bundles one.
+- Pin by `@sha256:...` digest. Treat tags as references, not contracts.
+- The socket is root. Inventory the containers that mount it; prefer rootless Docker.
+- Updates need an agent of some kind. Watchtower is fine for one host; not for a fleet.
+- When Compose stops being enough, Swarm is usually the right next step before Kubernetes.
+
+If you ship software to self-managed customers and you would rather not rebuild this list yourself, the Distr Docker agent handles all of the above on the customer side. The [Docker agent documentation](/docs/agents/docker-agent) walks through the install, the socket model, the autoheal and image-cleanup defaults, and how the agent self-updates. The repository is on [GitHub](https://github.com/distr-sh/distr).
