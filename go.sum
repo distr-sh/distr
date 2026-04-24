@@ -682,8 +682,8 @@ github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
-github.com/stripe/stripe-go/v85 v85.0.1 h1:vlIo5VHrR9GkYneH5D9YGOPwNDRD6LW/THhtx9zNs6M=
-github.com/stripe/stripe-go/v85 v85.0.1/go.mod h1:5P+HGFenpWgak27T5Is6JMsmDfUC1yJnjhhmquz7kXw=
+github.com/stripe/stripe-go/v85 v85.1.0 h1:MywWUmgw9M7cnwFFch9cyLmRZuAiYM5cZ27JxH3a5/s=
+github.com/stripe/stripe-go/v85 v85.1.0/go.mod h1:5P+HGFenpWgak27T5Is6JMsmDfUC1yJnjhhmquz7kXw=
 github.com/swaggest/assertjson v1.9.0 h1:dKu0BfJkIxv/xe//mkCrK5yZbs79jL7OVf9Ija7o2xQ=
 github.com/swaggest/assertjson v1.9.0/go.mod h1:b+ZKX2VRiUjxfUIal0HDN85W0nHPAYUbYH5WkkSsFsU=
 github.com/swaggest/jsonschema-go v0.3.79 h1:0TOShCbAJ9Xjt1e2W83l+QtMQSG2pbun2EkiYTyafCs=
