@@ -34,8 +34,8 @@ type DeploymentWithLatestRevision struct {
 	IgnoreRevisionSkew      bool                      `db:"ignore_revision_skew" json:"ignoreRevisionSkew"`
 	HelmOptions             *HelmOptions              `db:"helm_options" json:"helmOptions,omitempty"`
 
-	TofuVars          *string `db:"tofu_vars" json:"-"`
-	TofuBackendConfig *string `db:"tofu_backend_config" json:"-"`
+	TofuVars          *string `db:"tofu_vars" json:"tofuVars,omitempty"`
+	TofuBackendConfig *string `db:"tofu_backend_config" json:"tofuBackendConfig,omitempty"`
 }
 
 func (d *DeploymentWithLatestRevision) GetValuesYAML() []byte {

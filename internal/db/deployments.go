@@ -330,6 +330,8 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 		})
 	}
 
+	args["tofuVars"] = nil
+	args["tofuBackendConfig"] = nil
 	if request.TofuVars != nil {
 		tofuVarsJSON, err := json.Marshal(request.TofuVars)
 		if err != nil {
