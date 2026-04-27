@@ -100,6 +100,7 @@ func AgentRouter(r chiopenapi.Router) {
 		middleware.AgentSentryUser,
 		agentAuthDeploymentTargetCtxMiddleware,
 		rateLimitPerStateTarget,
+		stateDeploymentMiddleware,
 	).Group(func(r chiopenapi.Router) {
 		r.WithOptions(option.GroupHidden(true))
 		s3Client, bucket := newStateS3Client(context.Background())

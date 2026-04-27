@@ -28,69 +28,60 @@ import (
 // lockInfo from OpenTofu HTTP backend protocol — keys are kept as map for forward compatibility.
 type lockInfo = map[string]string
 
-func resolveStateDeployment(
-	w http.ResponseWriter,
-	r *http.Request,
-) (uuid.UUID, *types.DeploymentTargetFull, bool) {
-	deploymentTarget := internalctx.GetDeploymentTarget(r.Context())
+// stateDeploymentMiddleware validates that the path's deploymentID belongs to
+// the authenticated OpenTofu deployment target and 400s/404s otherwise.
+func stateDeploymentMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		deploymentTarget := internalctx.GetDeploymentTarget(r.Context())
 
-	if deploymentTarget.Type != types.DeploymentTypeOpenTofu {
-		http.Error(w, "state backend is only available for opentofu deployment targets", http.StatusBadRequest)
-		return uuid.Nil, nil, false
-	}
+		if deploymentTarget.Type != types.DeploymentTypeOpenTofu {
+			http.Error(w, "state backend is only available for opentofu deployment targets", http.StatusBadRequest)
+			return
+		}
 
-	deploymentID, err := uuid.Parse(r.PathValue("deploymentID"))
-	if err != nil {
-		http.Error(w, "deploymentID is not a valid UUID", http.StatusBadRequest)
-		return uuid.Nil, nil, false
-	}
+		deploymentID, err := uuid.Parse(r.PathValue("deploymentID"))
+		if err != nil {
+			http.Error(w, "deploymentID is not a valid UUID", http.StatusBadRequest)
+			return
+		}
 
-	if !slices.ContainsFunc(deploymentTarget.Deployments, func(d types.DeploymentWithLatestRevision) bool {
-		return d.ID == deploymentID
-	}) {
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return uuid.Nil, nil, false
-	}
+		if !slices.ContainsFunc(deploymentTarget.Deployments, func(d types.DeploymentWithLatestRevision) bool {
+			return d.ID == deploymentID
+		}) {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
 
-	return deploymentID, deploymentTarget, true
+		next.ServeHTTP(w, r)
+	})
 }
 
 func stateGetHandler(s3Client *s3.Client, bucket string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		deploymentID, _, ok := resolveStateDeployment(w, r)
-		if !ok {
-			return
-		}
+		deploymentID := uuid.MustParse(r.PathValue("deploymentID"))
 		handleStateGet(w, r, s3Client, bucket, deploymentID, internalctx.GetLogger(r.Context()))
 	}
 }
 
 func statePostHandler(s3Client *s3.Client, bucket string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		deploymentID, dt, ok := resolveStateDeployment(w, r)
-		if !ok {
-			return
-		}
+		deploymentID := uuid.MustParse(r.PathValue("deploymentID"))
+		dt := internalctx.GetDeploymentTarget(r.Context())
 		handleStatePost(w, r, s3Client, bucket, deploymentID, dt.OrganizationID, internalctx.GetLogger(r.Context()))
 	}
 }
 
 func stateLockHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		deploymentID, dt, ok := resolveStateDeployment(w, r)
-		if !ok {
-			return
-		}
+		deploymentID := uuid.MustParse(r.PathValue("deploymentID"))
+		dt := internalctx.GetDeploymentTarget(r.Context())
 		handleStateLock(w, r, deploymentID, dt.OrganizationID, internalctx.GetLogger(r.Context()))
 	}
 }
 
 func stateUnlockHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		deploymentID, _, ok := resolveStateDeployment(w, r)
-		if !ok {
-			return
-		}
+		deploymentID := uuid.MustParse(r.PathValue("deploymentID"))
 		handleStateUnlock(w, r, deploymentID, internalctx.GetLogger(r.Context()))
 	}
 }
