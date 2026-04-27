@@ -259,7 +259,23 @@ func handleStateUnlock(
 
 func newStateS3Client(ctx context.Context) (*s3.Client, string) {
 	s3Config := env.RegistryS3Config()
-	opts := func(o *s3.Options) {
+	opts := stateS3ClientOptions(s3Config)
+
+	var s3Client *s3.Client
+	config, err := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion(s3Config.Region))
+	if err != nil {
+		if hub := sentry.GetHubFromContext(ctx); hub != nil {
+			hub.CaptureException(fmt.Errorf("failed to load AWS config for state S3 client: %w", err))
+		}
+		s3Client = s3.New(s3.Options{}, opts)
+	} else {
+		s3Client = s3.NewFromConfig(config, opts)
+	}
+	return s3Client, s3Config.Bucket
+}
+
+func stateS3ClientOptions(s3Config env.S3Config) func(o *s3.Options) {
+	return func(o *s3.Options) {
 		o.Region = s3Config.Region
 		o.BaseEndpoint = s3Config.Endpoint
 		o.UsePathStyle = s3Config.UsePathStyle
@@ -275,16 +291,4 @@ func newStateS3Client(ctx context.Context) (*s3.Client, string) {
 			)
 		}
 	}
-
-	var s3Client *s3.Client
-	config, err := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion(s3Config.Region))
-	if err != nil {
-		if hub := sentry.GetHubFromContext(ctx); hub != nil {
-			hub.CaptureException(fmt.Errorf("failed to load AWS config for state S3 client: %w", err))
-		}
-		s3Client = s3.New(s3.Options{}, opts)
-	} else {
-		s3Client = s3.NewFromConfig(config, opts)
-	}
-	return s3Client, s3Config.Bucket
 }
