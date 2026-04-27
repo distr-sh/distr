@@ -35,10 +35,12 @@ var Authentication = authn.New(
 	),
 )
 
-// AgentAuthentication supports only Bearer JWT tokens
+// AgentAuthentication supports Bearer JWT tokens and Basic Auth where the
+// password is the agent JWT. The Basic Auth path is used by the OpenTofu HTTP
+// state backend, which only supports Basic Auth credentials.
 var AgentAuthentication = authn.New(
 	authn.Chain3(
-		token.NewExtractor(token.WithExtractorFuncs(token.FromHeader("Bearer"))),
+		token.NewExtractor(token.WithExtractorFuncs(token.FromHeader("Bearer"), token.FromBasicAuth())),
 		jwt.Authenticator(authjwt.JWTAuth),
 		authinfo.AgentJWTAuthenticator(),
 		// for agents, db check is done in the agent auth middleware, therefore no DbAuthenticator here

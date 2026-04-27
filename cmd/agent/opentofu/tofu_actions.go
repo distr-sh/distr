@@ -35,15 +35,11 @@ var (
 	defaultTofuPath string
 	defaultTofuMu   sync.Mutex
 
-	hubBase      string
-	targetID     string
-	targetSecret string
+	hubBase string
 )
 
 func initHubConfig() {
 	hubBase = strings.TrimSuffix(os.Getenv("DISTR_LOGIN_ENDPOINT"), "/api/v1/agent/login")
-	targetID = os.Getenv("DISTR_TARGET_ID")
-	targetSecret = os.Getenv("DISTR_TARGET_SECRET")
 }
 
 func resolveTofuBinary() (string, error) {
@@ -128,14 +124,16 @@ func prepareTofuExecutor(
 
 	stateURL := fmt.Sprintf("%s/api/v1/state/%s", hubBase, deploymentID.String())
 
+	// The Hub authenticates state requests via the agent JWT supplied as the
+	// Basic Auth password. Username is unused but required by the protocol.
 	initOpts := []tfexec.InitOption{
 		tfexec.BackendConfig(fmt.Sprintf("address=%s", stateURL)),
 		tfexec.BackendConfig(fmt.Sprintf("lock_address=%s/lock", stateURL)),
 		tfexec.BackendConfig(fmt.Sprintf("unlock_address=%s/unlock", stateURL)),
 		tfexec.BackendConfig("lock_method=POST"),
 		tfexec.BackendConfig("unlock_method=POST"),
-		tfexec.BackendConfig(fmt.Sprintf("username=%s", targetID)),
-		tfexec.BackendConfig(fmt.Sprintf("password=%s", targetSecret)),
+		tfexec.BackendConfig("username=agent"),
+		tfexec.BackendConfig(fmt.Sprintf("password=%s", client.RawToken())),
 	}
 
 	for key, value := range backendConfig {

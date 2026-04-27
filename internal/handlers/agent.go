@@ -91,13 +91,14 @@ func AgentRouter(r chiopenapi.Router) {
 		})
 	})
 
-	// OpenTofu state backend routes, authenticated via Basic Auth with target credentials.
-	// Uses Basic Auth (target ID / secret) instead of JWT because OpenTofu's
-	// http backend sends credentials as Basic Auth, not Bearer tokens.
-	// Lock/unlock use separate POST endpoints because chi does not support
-	// the LOCK/UNLOCK HTTP methods used by the default OpenTofu HTTP backend.
+	// OpenTofu state backend routes. Authenticated via the Agent JWT supplied as
+	// the Basic Auth password (since OpenTofu's HTTP backend only sends Basic
+	// Auth credentials). Lock/unlock use separate POST endpoints because chi
+	// does not support the LOCK/UNLOCK HTTP methods.
 	r.With(
-		basicAuthDeploymentTargetCtxMiddleware,
+		auth.AgentAuthentication.Middleware,
+		middleware.AgentSentryUser,
+		agentAuthDeploymentTargetCtxMiddleware,
 		rateLimitPerStateTarget,
 	).Group(func(r chiopenapi.Router) {
 		r.WithOptions(option.GroupHidden(true))
@@ -589,38 +590,6 @@ func queryAuthDeploymentTargetCtxMiddleware(next http.Handler) http.Handler {
 				log.Error("failed to get deployment target from query auth", zap.Error(err))
 				w.WriteHeader(http.StatusInternalServerError)
 				sentry.GetHubFromContext(ctx).CaptureException(err)
-			}
-		} else {
-			ctx = internalctx.WithDeploymentTarget(ctx, deploymentTarget)
-			next.ServeHTTP(w, r.WithContext(ctx))
-		}
-	})
-}
-
-func basicAuthDeploymentTargetCtxMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-		targetIDStr, targetSecret, ok := r.BasicAuth()
-		if !ok {
-			w.Header().Set("WWW-Authenticate", `Basic realm="distr"`)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		targetID, err := uuid.Parse(targetIDStr)
-		if err != nil {
-			http.Error(w, "targetId is not a valid UUID", http.StatusBadRequest)
-			return
-		}
-		if deploymentTarget, err := getVerifiedDeploymentTarget(ctx, targetID, targetSecret); err != nil {
-			if errors.Is(err, apierrors.ErrUnauthorized) {
-				log.Warn("unauthorized deployment target", zap.Error(err))
-				w.Header().Set("WWW-Authenticate", `Basic realm="distr"`)
-				w.WriteHeader(http.StatusUnauthorized)
-			} else {
-				log.Error("failed to get deployment target from basic auth", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				w.WriteHeader(http.StatusInternalServerError)
 			}
 		} else {
 			ctx = internalctx.WithDeploymentTarget(ctx, deploymentTarget)
