@@ -115,7 +115,6 @@ func GetDeploymentsForDeploymentTarget(
 				dr.ignore_revision_skew AS ignore_revision_skew,
 				dr.tofu_vars AS tofu_vars,
 				dr.tofu_backend_config AS tofu_backend_config,
-				dr.tofu_version AS tofu_version,
 				CASE WHEN dr.helm_options_timeout IS NOT NULL THEN (
 					dr.helm_options_timeout,
 					dr.helm_options_wait_strategy,
@@ -345,9 +344,6 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 		}
 		args["tofuBackendConfig"] = string(tofuBackendConfigJSON)
 	}
-	if request.TofuVersion != nil {
-		args["tofuVersion"] = *request.TofuVersion
-	}
 
 	rows, err := db.Query(
 		ctx,
@@ -363,8 +359,7 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 			helm_options_rollback_on_failure,
 			helm_options_cleanup_on_failure,
 			tofu_vars,
-			tofu_backend_config,
-			tofu_version
+			tofu_backend_config
 		) VALUES (
 		 	@deploymentId,
 			@applicationVersionId,
@@ -377,8 +372,7 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 			@helmOptionsRollbackOnFailure,
 			@helmOptionsCleanupOnFailure,
 			COALESCE(@tofuVars, '{}'::jsonb),
-			COALESCE(@tofuBackendConfig, '{}'::jsonb),
-			@tofuVersion
+			COALESCE(@tofuBackendConfig, '{}'::jsonb)
 		) RETURNING
 		 	dr.id,
 			dr.created_at,
@@ -393,8 +387,7 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 				dr.helm_options_cleanup_on_failure
 			) END as helm_options,
 			dr.tofu_vars,
-			dr.tofu_backend_config,
-			dr.tofu_version`,
+			dr.tofu_backend_config`,
 		args,
 	)
 	if err != nil {

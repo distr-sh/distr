@@ -36,7 +36,6 @@ type DeploymentWithLatestRevision struct {
 
 	TofuVars          *string `db:"tofu_vars" json:"-"`
 	TofuBackendConfig *string `db:"tofu_backend_config" json:"-"`
-	TofuVersion       *string `db:"tofu_version" json:"-"`
 }
 
 func (d *DeploymentWithLatestRevision) GetValuesYAML() []byte {

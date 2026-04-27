@@ -16,7 +16,6 @@ type DeploymentRevision struct {
 
 	TofuVars          *string `db:"tofu_vars" json:"-"`
 	TofuBackendConfig *string `db:"tofu_backend_config" json:"-"`
-	TofuVersion       *string `db:"tofu_version" json:"-"`
 }
 
 type HelmOptions struct {

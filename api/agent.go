@@ -54,7 +54,6 @@ type AgentDeployment struct {
 	TofuConfigVersion string            `json:"tofuConfigVersion,omitempty"`
 	TofuVars          map[string]any    `json:"tofuVars,omitempty"`
 	TofuBackendConfig map[string]string `json:"tofuBackendConfig,omitempty"`
-	TofuVersion       string            `json:"tofuVersion,omitempty"`
 }
 
 type AgentDeploymentStatus struct {

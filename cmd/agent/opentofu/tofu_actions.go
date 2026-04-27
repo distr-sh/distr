@@ -19,7 +19,6 @@ import (
 )
 
 var (
-	validVersionPattern = regexp.MustCompile(`^[0-9A-Za-z._-]+$`)
 	validHCLIdentifier  = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 	reservedBackendKeys = map[string]bool{
 		"address":        true,
@@ -47,14 +46,10 @@ func initHubConfig() {
 	targetSecret = os.Getenv("DISTR_TARGET_SECRET")
 }
 
-func resolveTofuBinary(ctx context.Context, version string) (string, error) {
+func resolveTofuBinary() (string, error) {
 	if envPath := os.Getenv("DISTR_TOFU_PATH"); envPath != "" {
 		logger.Info("using tofu binary from DISTR_TOFU_PATH", zap.String("path", envPath))
 		return envPath, nil
-	}
-
-	if version != "" {
-		return downloadTofuVersion(ctx, version)
 	}
 
 	defaultTofuMu.Lock()
@@ -70,7 +65,7 @@ func resolveTofuBinary(ctx context.Context, version string) (string, error) {
 		return defaultTofuPath, nil
 	}
 
-	path, err := downloadTofuVersion(context.Background(), "") //nolint:contextcheck
+	path, err := downloadDefaultTofu()
 	if err != nil {
 		return "", err
 	}
@@ -78,39 +73,17 @@ func resolveTofuBinary(ctx context.Context, version string) (string, error) {
 	return defaultTofuPath, nil
 }
 
-func downloadTofuVersion(ctx context.Context, version string) (string, error) {
-	if version != "" && !validVersionPattern.MatchString(version) {
-		return "", fmt.Errorf("invalid tofu version string: %q", version)
-	}
-
-	if version != "" {
-		binPath := filepath.Join(ScratchDir(), "bin", fmt.Sprintf("tofu-%s", version))
-		if _, err := os.Stat(binPath); err == nil {
-			logger.Info("using cached tofu binary", zap.String("path", binPath))
-			return binPath, nil
-		}
-	}
-
-	logger.Info("downloading tofu via tofudl", zap.String("version", version))
+func downloadDefaultTofu() (string, error) {
+	logger.Info("downloading tofu via tofudl")
 
 	dl, err := tofudl.New()
 	if err != nil {
 		return "", fmt.Errorf("could not create tofudl downloader: %w", err)
 	}
 
-	var opts []tofudl.DownloadOpt
-	if version != "" {
-		opts = append(opts, tofudl.DownloadOptVersion(tofudl.Version(version)))
-	}
-
-	binary, err := dl.Download(ctx, opts...)
+	binary, err := dl.Download(context.Background())
 	if err != nil {
 		return "", fmt.Errorf("could not download tofu binary: %w", err)
-	}
-
-	binName := "tofu"
-	if version != "" {
-		binName = fmt.Sprintf("tofu-%s", version)
 	}
 
 	binDir := filepath.Join(ScratchDir(), "bin")
@@ -118,12 +91,12 @@ func downloadTofuVersion(ctx context.Context, version string) (string, error) {
 		return "", fmt.Errorf("could not create bin directory: %w", err)
 	}
 
-	binPath := filepath.Join(binDir, binName)
+	binPath := filepath.Join(binDir, "tofu")
 	if err := os.WriteFile(binPath, binary, 0o755); err != nil {
 		return "", fmt.Errorf("could not write tofu binary: %w", err)
 	}
 
-	logger.Info("tofu binary downloaded", zap.String("path", binPath), zap.String("version", version))
+	logger.Info("tofu binary downloaded", zap.String("path", binPath))
 	return binPath, nil
 }
 
@@ -134,12 +107,12 @@ type tofuExecutor struct {
 }
 
 func prepareTofuExecutor(
-	ctx context.Context, deploymentID uuid.UUID,
-	tofuVersion string, backendConfig map[string]string, logPrefix string,
+	deploymentID uuid.UUID,
+	backendConfig map[string]string, logPrefix string,
 ) (*tofuExecutor, error) {
 	workspaceDir := WorkspaceDir(deploymentID)
 
-	tofuBin, err := resolveTofuBinary(ctx, tofuVersion)
+	tofuBin, err := resolveTofuBinary()
 	if err != nil {
 		return nil, fmt.Errorf("could not resolve tofu binary: %w", err)
 	}
@@ -212,7 +185,7 @@ func tofuApply(ctx context.Context, deployment api.AgentDeployment, existing *Ag
 		return fmt.Errorf("could not write tfvars file: %w", err)
 	}
 
-	exec, err := prepareTofuExecutor(ctx, deployment.ID, deployment.TofuVersion, deployment.TofuBackendConfig, "tofu")
+	exec, err := prepareTofuExecutor(deployment.ID, deployment.TofuBackendConfig, "tofu")
 	if err != nil {
 		return err
 	}
@@ -252,9 +225,7 @@ func tofuDestroy(ctx context.Context, deployment AgentDeployment) error {
 		zap.String("configUrl", deployment.TofuConfigURL),
 		zap.String("configVersion", deployment.TofuConfigVersion))
 
-	exec, err := prepareTofuExecutor(
-		ctx, deployment.ID, deployment.TofuVersion, deployment.TofuBackendConfig, "tofu-destroy",
-	)
+	exec, err := prepareTofuExecutor(deployment.ID, deployment.TofuBackendConfig, "tofu-destroy")
 	if err != nil {
 		return err
 	}

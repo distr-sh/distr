@@ -359,9 +359,6 @@ func populateOpenTofuDeployment(
 		}
 		agentDeployment.TofuBackendConfig = backendConfig
 	}
-	if deployment.TofuVersion != nil {
-		agentDeployment.TofuVersion = *deployment.TofuVersion
-	}
 	return nil
 }
 

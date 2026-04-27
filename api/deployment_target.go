@@ -26,7 +26,6 @@ type DeploymentRequest struct {
 	HelmOptions              *HelmOptions      `json:"helmOptions,omitempty"`
 	TofuVars                 map[string]any    `json:"tofuVars,omitempty"`
 	TofuBackendConfig        map[string]string `json:"tofuBackendConfig,omitempty"`
-	TofuVersion              *string           `json:"tofuVersion,omitempty"`
 }
 
 func (d *DeploymentRequest) GetValuesYAML() []byte {

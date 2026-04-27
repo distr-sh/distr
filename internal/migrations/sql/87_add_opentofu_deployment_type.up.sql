@@ -7,8 +7,7 @@ ALTER TABLE ApplicationVersion
 
 ALTER TABLE DeploymentRevision
     ADD COLUMN IF NOT EXISTS tofu_vars JSONB DEFAULT '{}'::jsonb,
-    ADD COLUMN IF NOT EXISTS tofu_backend_config JSONB DEFAULT '{}'::jsonb,
-    ADD COLUMN IF NOT EXISTS tofu_version TEXT;
+    ADD COLUMN IF NOT EXISTS tofu_backend_config JSONB DEFAULT '{}'::jsonb;
 
 CREATE TABLE IF NOT EXISTS opentofu_state (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

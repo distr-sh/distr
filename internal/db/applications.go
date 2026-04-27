@@ -23,7 +23,7 @@ const (
 	applicationWithVersionsOutputExpr = applicationOutputExpr + `,
 		coalesce((
 			SELECT array_agg(row(av.id, av.created_at, av.archived_at, av.name, av.link_template, av.application_id,
-				av.chart_type, av.chart_name, av.chart_url, av.chart_version) ORDER BY av.created_at ASC)
+				av.chart_type, av.chart_name, av.chart_url, av.chart_version, av.tofu_config_url, av.tofu_config_version) ORDER BY av.created_at ASC)
 			FROM ApplicationVersion av
 			WHERE av.application_id = a.id
 		), array[]::record[]) AS versions `
@@ -31,7 +31,7 @@ const (
 	applicationWithEntitledVersionsOutputExpr = applicationOutputExpr + `,
 		coalesce((
 			SELECT array_agg(row(av.id, av.created_at, av.archived_at, av.name, av.link_template, av.application_id,
-				av.chart_type, av.chart_name, av.chart_url, av.chart_version) ORDER BY av.created_at ASC)
+				av.chart_type, av.chart_name, av.chart_url, av.chart_version, av.tofu_config_url, av.tofu_config_version) ORDER BY av.created_at ASC)
 			FROM ApplicationVersion av
 			WHERE av.application_id = a.id and
 				((av.id IN

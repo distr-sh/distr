@@ -25,7 +25,6 @@ type AgentDeployment struct {
 	RevisionID        uuid.UUID         `json:"revisionId"`
 	TofuConfigURL     string            `json:"tofuConfigUrl"`
 	TofuConfigVersion string            `json:"tofuConfigVersion"`
-	TofuVersion       string            `json:"tofuVersion,omitempty"`
 	TofuBackendConfig map[string]string `json:"tofuBackendConfig,omitempty"`
 	State             State             `json:"phase"`
 }
@@ -48,7 +47,6 @@ func NewAgentDeployment(deployment api.AgentDeployment) *AgentDeployment {
 		RevisionID:        deployment.RevisionID,
 		TofuConfigURL:     deployment.TofuConfigURL,
 		TofuConfigVersion: deployment.TofuConfigVersion,
-		TofuVersion:       deployment.TofuVersion,
 		TofuBackendConfig: deployment.TofuBackendConfig,
 	}
 }

@@ -16,7 +16,6 @@ DROP TABLE IF EXISTS opentofu_state;
 ALTER TABLE DeploymentRevision
     DROP COLUMN IF EXISTS tofu_vars,
     DROP COLUMN IF EXISTS tofu_backend_config,
-    DROP COLUMN IF EXISTS tofu_version;
 
 ALTER TABLE ApplicationVersion
     DROP COLUMN IF EXISTS tofu_config_url,

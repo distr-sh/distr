@@ -21,7 +21,6 @@ export interface DeploymentRequest {
   helmOptions?: HelmOptions;
   tofuVars?: Record<string, unknown>;
   tofuBackendConfig?: Record<string, string>;
-  tofuVersion?: string;
 }
 
 export interface HelmOptions {
