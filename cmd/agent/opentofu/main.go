@@ -58,7 +58,11 @@ func main() {
 		}
 	}()
 
-	signalCtx, _ := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	signalCtx, stopSignal := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	// Stop the signal handler when main returns so a second signal gets default
+	// behavior (force-quit). Without this, repeated SIGINT just keeps cancelling
+	// signalCtx without escalating, and operators can't force-stop a hung agent.
+	defer stopSignal()
 
 	context.AfterFunc(signalCtx, func() { logger.Info("shutdown signal received") })
 

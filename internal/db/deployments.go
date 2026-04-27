@@ -3,7 +3,6 @@ package db
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"maps"
@@ -330,22 +329,11 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 		})
 	}
 
-	args["tofuVars"] = nil
-	args["tofuBackendConfig"] = nil
-	if request.TofuVars != nil {
-		tofuVarsJSON, err := json.Marshal(request.TofuVars)
-		if err != nil {
-			return nil, fmt.Errorf("could not marshal tofu vars: %w", err)
-		}
-		args["tofuVars"] = string(tofuVarsJSON)
-	}
-	if request.TofuBackendConfig != nil {
-		tofuBackendConfigJSON, err := json.Marshal(request.TofuBackendConfig)
-		if err != nil {
-			return nil, fmt.Errorf("could not marshal tofu backend config: %w", err)
-		}
-		args["tofuBackendConfig"] = string(tofuBackendConfigJSON)
-	}
+	// pgx encodes map[string]any / map[string]string directly to JSONB.
+	// We keep nil-safe defaults so the @tofuVars / @tofuBackendConfig SQL
+	// references always have a matching arg even for non-OpenTofu deployments.
+	args["tofuVars"] = request.TofuVars
+	args["tofuBackendConfig"] = request.TofuBackendConfig
 
 	rows, err := db.Query(
 		ctx,
