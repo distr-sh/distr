@@ -21,20 +21,12 @@ import (
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
-	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
-type lockInfo struct {
-	ID        string `json:"ID"`
-	Operation string `json:"Operation"`
-	Info      string `json:"Info"`
-	Who       string `json:"Who"`
-	Version   string `json:"Version"`
-	Created   string `json:"Created"`
-	Path      string `json:"Path"`
-}
+// lockInfo from OpenTofu HTTP backend protocol — keys are kept as map for forward compatibility.
+type lockInfo = map[string]string
 
 func resolveStateDeployment(
 	w http.ResponseWriter,
@@ -47,7 +39,7 @@ func resolveStateDeployment(
 		return uuid.Nil, nil, false
 	}
 
-	deploymentID, err := uuid.Parse(chi.URLParam(r, "deploymentID"))
+	deploymentID, err := uuid.Parse(r.PathValue("deploymentID"))
 	if err != nil {
 		http.Error(w, "deploymentID is not a valid UUID", http.StatusBadRequest)
 		return uuid.Nil, nil, false
@@ -224,7 +216,7 @@ func handleStateLock(
 		return
 	}
 
-	if err := db.LockState(ctx, deploymentID, li.ID, string(lockInfoJSON)); err != nil {
+	if err := db.LockState(ctx, deploymentID, li["ID"], string(lockInfoJSON)); err != nil {
 		if errors.Is(err, apierrors.ErrConflict) {
 			state, getErr := db.GetState(ctx, deploymentID)
 			if getErr != nil {
@@ -260,7 +252,7 @@ func handleStateUnlock(
 		return
 	}
 
-	if err := db.UnlockState(ctx, deploymentID, li.ID); err != nil {
+	if err := db.UnlockState(ctx, deploymentID, li["ID"]); err != nil {
 		if errors.Is(err, apierrors.ErrConflict) {
 			http.Error(w, "lock ID mismatch", http.StatusConflict)
 			return

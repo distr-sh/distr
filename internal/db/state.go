@@ -4,27 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
-type OpenTofuState struct {
-	ID             uuid.UUID  `db:"id"`
-	DeploymentID   uuid.UUID  `db:"deployment_id"`
-	OrganizationID uuid.UUID  `db:"organization_id"`
-	S3Key          string     `db:"s3_key"`
-	LockID         *string    `db:"lock_id"`
-	LockInfo       *string    `db:"lock_info"`
-	LockedAt       *time.Time `db:"locked_at"`
-	UpdatedAt      time.Time  `db:"updated_at"`
-	CreatedAt      time.Time  `db:"created_at"`
-}
-
-func GetOrCreateState(ctx context.Context, deploymentID, organizationID uuid.UUID) (*OpenTofuState, error) {
+func GetOrCreateState(ctx context.Context, deploymentID, organizationID uuid.UUID) (*types.OpenTofuState, error) {
 	db := internalctx.GetDb(ctx)
 	s3Key := fmt.Sprintf("state/%s", deploymentID.String())
 
@@ -43,14 +31,14 @@ func GetOrCreateState(ctx context.Context, deploymentID, organizationID uuid.UUI
 		return nil, fmt.Errorf("failed to upsert opentofu_state: %w", err)
 	}
 
-	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByPos[OpenTofuState])
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByPos[types.OpenTofuState])
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan opentofu_state: %w", err)
 	}
 	return &result, nil
 }
 
-func GetState(ctx context.Context, deploymentID uuid.UUID) (*OpenTofuState, error) {
+func GetState(ctx context.Context, deploymentID uuid.UUID) (*types.OpenTofuState, error) {
 	db := internalctx.GetDb(ctx)
 
 	rows, err := db.Query(ctx,
@@ -63,7 +51,7 @@ func GetState(ctx context.Context, deploymentID uuid.UUID) (*OpenTofuState, erro
 		return nil, fmt.Errorf("failed to query opentofu_state: %w", err)
 	}
 
-	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByPos[OpenTofuState])
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByPos[types.OpenTofuState])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, apierrors.ErrNotFound
 	} else if err != nil {

@@ -185,7 +185,7 @@ func tofuApply(ctx context.Context, deployment api.AgentDeployment, existing *Ag
 		return fmt.Errorf("could not write tfvars file: %w", err)
 	}
 
-	exec, err := prepareTofuExecutor(deployment.ID, deployment.TofuBackendConfig, "tofu")
+	exec, err := prepareTofuExecutor(deployment.ID, deployment.TofuBackendConfig, "tofu") //nolint:contextcheck
 	if err != nil {
 		return err
 	}
@@ -225,7 +225,7 @@ func tofuDestroy(ctx context.Context, deployment AgentDeployment) error {
 		zap.String("configUrl", deployment.TofuConfigURL),
 		zap.String("configVersion", deployment.TofuConfigVersion))
 
-	exec, err := prepareTofuExecutor(deployment.ID, deployment.TofuBackendConfig, "tofu-destroy")
+	exec, err := prepareTofuExecutor(deployment.ID, deployment.TofuBackendConfig, "tofu-destroy") //nolint:contextcheck
 	if err != nil {
 		return err
 	}
