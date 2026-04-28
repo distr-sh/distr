@@ -6,6 +6,7 @@
 /out-tsc
 /bazel-out
 hub
+opentofu
 
 # Node
 /node_modules
