@@ -68,6 +68,18 @@
 
 ---
 
+### tofuBackendConfig?
+
+> `optional` **tofuBackendConfig?**: `Record`\<`string`, `string`\>
+
+---
+
+### tofuVars?
+
+> `optional` **tofuVars?**: `Record`\<`string`, `unknown`\>
+
+---
+
 ### valuesYaml?
 
 > `optional` **valuesYaml?**: `string`
