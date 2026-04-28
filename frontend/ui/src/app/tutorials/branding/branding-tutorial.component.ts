@@ -18,6 +18,7 @@ import {
   faRightToBracket,
 } from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, lastValueFrom, Observable, Subject} from 'rxjs';
+import {WEBSITE_URL} from '../../../constants';
 import {getFormDisplayedError} from '../../../util/errors';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AuthService} from '../../services/auth.service';
@@ -60,6 +61,7 @@ const customerTaskLogin = 'login';
 export class BrandingTutorialComponent implements OnInit, OnDestroy {
   loading = signal(true);
   private readonly destroyed$ = new Subject<void>();
+  protected readonly websiteUrl = WEBSITE_URL;
   protected readonly faBox = faBox;
   protected readonly faDownload = faDownload;
   protected readonly faPalette = faPalette;

@@ -1,0 +1,19 @@
+---
+import Default from '@astrojs/starlight/components/Sidebar.astro';
+
+const {entry} = Astro.locals.starlightRoute;
+const hideSidebar = entry.data.hideSidebar === true;
+---
+
+{
+  hideSidebar ? (
+    <style
+      is:global
+      set:html="nav.sidebar, #starlight__sidebar { display: none !important; } .main-pane { --sl-content-pad-x: 1.5rem; }"
+    />
+  ) : (
+    <Default>
+      <slot />
+    </Default>
+  )
+}

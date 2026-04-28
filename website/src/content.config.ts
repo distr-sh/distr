@@ -46,7 +46,14 @@ export const GlossaryEntryConfigSchema = z.object({
 });
 
 export const collections = {
-  docs: defineCollection({loader: docsLoader(), schema: docsSchema()}),
+  docs: defineCollection({
+    loader: docsLoader(),
+    schema: docsSchema({
+      extend: z.object({
+        hideSidebar: z.boolean().default(false),
+      }),
+    }),
+  }),
   blog: defineCollection({
     loader: glob({pattern: '**/*.{md,mdx}', base: 'src/content/blog'}),
     schema: BlogPostConfigSchema,

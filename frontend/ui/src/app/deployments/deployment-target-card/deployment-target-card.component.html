@@ -378,6 +378,55 @@
   }
 </div>
 
+<ng-template #updateAgentConfirmTemplate>
+  <div class="space-y-4 text-sm text-gray-700 dark:text-gray-200">
+    <div class="p-4 rounded-lg bg-blue-50 text-blue-800 dark:bg-gray-800 dark:text-blue-300" role="note">
+      Updating the agent is a safe action. It does not trigger any changes or restarts for the deployed application.
+    </div>
+
+    <p>
+      Update {{ deploymentTarget().name }} agent from <code>{{ agentUpdateFromVersion() ?? 'unknown' }}</code> to
+      <code>{{ agentUpdateToVersion() }}</code
+      >?
+    </p>
+
+    @if (agentUpdateChangelogReleases().length > 0) {
+      <div>
+        <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Agent release notes</h4>
+        <div class="max-h-72 overflow-y-auto pr-1 space-y-4">
+          @for (release of agentUpdateChangelogReleases(); track release.version) {
+            <div>
+              <h5 class="font-semibold text-gray-900 dark:text-white">{{ release.version }}</h5>
+              @for (section of release.sections; track section.section) {
+                <div class="mt-1">
+                  <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ section.section }}</div>
+                  <ul class="list-disc list-inside space-y-0.5">
+                    @for (change of section.changes; track change.commit) {
+                      <li>{{ change.description }}</li>
+                    }
+                  </ul>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <p class="text-xs text-gray-500 dark:text-gray-400">
+      Visit our
+      <a
+        [href]="websiteUrl + '/changelog/'"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="text-primary-700 dark:text-primary-400 hover:underline">
+        changelog page
+      </a>
+      to read the release notes of our latest releases.
+    </p>
+  </div>
+</ng-template>
+
 <ng-template #instructionsModal>
   <div
     animate.enter="animate-fly-in-top"

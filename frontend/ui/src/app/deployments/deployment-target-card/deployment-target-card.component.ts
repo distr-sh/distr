@@ -42,6 +42,8 @@ import {
 import dayjs from 'dayjs';
 import {EMPTY, filter, firstValueFrom, lastValueFrom, switchMap} from 'rxjs';
 import {SemVer} from 'semver';
+import {GITHUB_URL, WEBSITE_URL} from '../../../constants';
+import {agentChangelog} from '../../../data';
 import {maxBy} from '../../../util/arrays';
 import {dateTimeLocalToISO, isArchived, isoToDateTimeLocal} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
@@ -113,6 +115,8 @@ export class DeploymentTargetCardComponent {
   protected readonly deleteDeploymentProgressModal = viewChild.required<TemplateRef<unknown>>(
     'deleteDeploymentProgressModal'
   );
+  protected readonly updateAgentConfirmTemplate =
+    viewChild.required<TemplateRef<unknown>>('updateAgentConfirmTemplate');
 
   protected readonly faArrowUpRightFromSquare = faArrowUpRightFromSquare;
   protected readonly faCircleExclamation = faCircleExclamation;
@@ -128,6 +132,9 @@ export class DeploymentTargetCardComponent {
   protected readonly faTrash = faTrash;
   protected readonly faTriangleExclamation = faTriangleExclamation;
   protected readonly faXmark = faXmark;
+
+  protected readonly githubUrl = GITHUB_URL;
+  protected readonly websiteUrl = WEBSITE_URL;
 
   protected readonly selectedDeploymentTarget = signal<DeploymentTarget | undefined>(undefined);
   protected readonly selectedDeployment = signal<DeploymentWithLatestRevision | undefined>(undefined);
@@ -182,6 +189,10 @@ export class DeploymentTargetCardComponent {
   protected readonly agentVersions = resource({
     loader: () => firstValueFrom(this.agentVersionsSvc.list()),
   });
+
+  protected readonly agentUpdateFromVersion = signal<string | undefined>(undefined);
+  protected readonly agentUpdateToVersion = signal<string | undefined>(undefined);
+  protected readonly agentUpdateChangelogReleases = signal<typeof agentChangelog.releases>([]);
 
   protected readonly isUndeploySupported = this.isAgentVersionAtLeast('1.3.0');
   protected readonly isMultiDeploymentSupported = this.isAgentVersionAtLeast('1.6.0');
@@ -435,9 +446,17 @@ export class DeploymentTargetCardComponent {
       const agentVersions = this.agentVersions.value();
       if (agentVersions?.length) {
         const targetVersion = agentVersions[agentVersions.length - 1];
+        const fromVersion = dt.agentVersion?.name;
+        this.agentUpdateFromVersion.set(fromVersion);
+        this.agentUpdateToVersion.set(targetVersion.name);
+        this.agentUpdateChangelogReleases.set(this.loadChangelogReleases(fromVersion, targetVersion.name, dt.type));
+
         if (
           await firstValueFrom(
-            this.overlay.confirm(`Update ${dt.name} agent from ${dt.agentVersion?.name} to ${targetVersion.name}?`)
+            this.overlay.confirm({
+              customTemplate: this.updateAgentConfirmTemplate(),
+              confirmLabel: 'Update Agent',
+            })
           )
         ) {
           dt.agentVersion = targetVersion;
@@ -450,6 +469,29 @@ export class DeploymentTargetCardComponent {
         this.toast.error(msg);
       }
     }
+  }
+
+  private loadChangelogReleases(fromVersion: string | undefined, toVersion: string, type: DeploymentType) {
+    const allowedScopes = new Set(['agent', `${type}-agent`]);
+    return agentChangelog.releases
+      .filter((release) => {
+        try {
+          const released = new SemVer(release.version);
+          return released.compare(toVersion) <= 0 && (!fromVersion || released.compare(fromVersion) > 0);
+        } catch {
+          return false;
+        }
+      })
+      .map((release) => ({
+        ...release,
+        sections: release.sections
+          .map((section) => ({
+            ...section,
+            changes: section.changes.filter((change) => allowedScopes.has(change.scope)),
+          }))
+          .filter((section) => section.changes.length > 0),
+      }))
+      .filter((release) => release.sections.length > 0);
   }
 
   protected toggle(signal: WritableSignal<boolean>) {

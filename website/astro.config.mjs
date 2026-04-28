@@ -96,6 +96,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         PageTitle: './src/components/overwrites/PageTitle.astro',
         ContentPanel: './src/components/overwrites/ContentPanel.astro',
         Footer: './src/components/overwrites/Footer.astro',
+        Sidebar: './src/components/overwrites/Sidebar.astro',
         SocialIcons: './src/components/overwrites/SocialIcons.astro',
         ThemeProvider: './src/components/overwrites/ThemeProvider.astro',
         ThemeSelect: './src/components/overwrites/ThemeSelect.astro',
@@ -408,7 +409,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             },
           ],
           {
-            exclude: ['**/privacy-policy', '**/404'],
+            exclude: ['**/privacy-policy', '**/404', '**/changelog'],
           },
         ),
         starlightLinksValidator({

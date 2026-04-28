@@ -25,7 +25,8 @@ import {
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
 import {map, of, switchMap} from 'rxjs';
-import {buildConfig} from '../../../buildconfig';
+import {GITHUB_URL} from '../../../constants';
+import {buildConfig} from '../../../data';
 import {environment} from '../../../env/env';
 import {RequireCustomerDirective, RequireVendorDirective} from '../../directives/required-role.directive';
 import {AuthService} from '../../services/auth.service';
@@ -61,6 +62,7 @@ export class SideBarComponent {
 
   protected readonly buildConfig = buildConfig;
   protected readonly edition = environment.edition;
+  protected readonly githubUrl = GITHUB_URL;
 
   protected readonly faDashboard = faDashboard;
   protected readonly faBoxesStacked = faBoxesStacked;

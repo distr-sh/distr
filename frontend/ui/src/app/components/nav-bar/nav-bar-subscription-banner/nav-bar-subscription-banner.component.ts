@@ -3,6 +3,7 @@ import {Component, inject, input} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleInfo, faExclamationTriangle} from '@fortawesome/free-solid-svg-icons';
+import {WEBSITE_URL} from '../../../../constants';
 import {AuthService} from '../../../services/auth.service';
 import {Organization} from '../../../types/organization';
 
@@ -20,6 +21,7 @@ export class NavBarSubscriptionBannerComponent {
 
   protected readonly faExclamationTriangle = faExclamationTriangle;
   protected readonly faCircleInfo = faCircleInfo;
+  protected readonly websiteUrl = WEBSITE_URL;
 
   isVendorAdmin(): boolean {
     return this.auth.isVendor() && this.auth.hasRole('admin');

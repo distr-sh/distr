@@ -2,6 +2,7 @@ import {CurrencyPipe} from '@angular/common';
 import {Component, inject, input, output} from '@angular/core';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {WEBSITE_URL} from '../../constants';
 import {getFormDisplayedError} from '../../util/errors';
 import {SubscriptionService} from '../services/subscription.service';
 import {ToastService} from '../services/toast.service';
@@ -23,6 +24,7 @@ export interface PendingSubscriptionUpdate {
 export class SubscriptionUpdateModalComponent {
   protected readonly xmarkIcon = faXmark;
   protected readonly checkIcon = faCheck;
+  protected readonly websiteUrl = WEBSITE_URL;
 
   private readonly subscriptionService = inject(SubscriptionService);
   private readonly toast = inject(ToastService);

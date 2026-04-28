@@ -1,3 +1,5 @@
 pnpm-lock.yaml
 # Header.astro contains conditional style blocks that Prettier cannot parse
 src/components/overwrites/Header.astro
+# Generated from root CHANGELOG.md, which is prettier-ignored
+src/content/docs/changelog.md

@@ -17,6 +17,7 @@ import {
   faWarning,
 } from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, lastValueFrom, Subject, switchMap, takeUntil, tap} from 'rxjs';
+import {GITHUB_URL, WEBSITE_URL} from '../../../constants';
 import {getFormDisplayedError} from '../../../util/errors';
 import {ClipComponent} from '../../components/clip.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
@@ -57,6 +58,8 @@ const releaseStepTaskRelease = 'release';
 export class AgentsTutorialComponent implements OnInit, AfterViewInit, OnDestroy {
   loading = signal(true);
   private readonly destroyed$ = new Subject<void>();
+  protected readonly githubUrl = GITHUB_URL;
+  protected readonly websiteUrl = WEBSITE_URL;
   protected readonly faBox = faBox;
   protected readonly faPalette = faPalette;
   protected readonly faBoxesStacked = faBoxesStacked;
