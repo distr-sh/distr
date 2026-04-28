@@ -43,7 +43,10 @@
                   <ul class="py-2 text-sm text-gray-700 dark:text-gray-200">
                     @for (target of deploymentTargets(); track target.id) {
                       <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
-                        <a class="px-4 flex items-stretch" [routerLink]="['/', 'deployments', target.id]">
+                        <a
+                          class="px-4 flex items-stretch"
+                          [routerLink]="['/', 'deployments', target.id]"
+                          (click)="targetDropdown.set(false)">
                           {{ target.name }}
                         </a>
                       </li>
@@ -143,7 +146,7 @@
                       </li>
                       @if (visibleResources().length > 1) {
                         <li class="w-full border-t border-gray-100 dark:border-gray-600">
-                          <div class="flex items-center ps-3">
+                          <div class="flex items-center px-4">
                             <input
                               id="resource-check-all"
                               type="checkbox"
@@ -165,7 +168,7 @@
                       }
                       @for (r of availableResources()?.active; track r) {
                         <li class="w-full border-t border-gray-100 dark:border-gray-600">
-                          <div class="flex items-center ps-3">
+                          <div class="flex items-center px-4">
                             <input
                               [id]="'resource-' + r"
                               type="checkbox"
