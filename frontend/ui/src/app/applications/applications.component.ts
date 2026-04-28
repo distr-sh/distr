@@ -25,8 +25,8 @@ import {
   RequireVendorDirective,
 } from '../directives/required-role.directive';
 import {ApplicationsService} from '../services/applications.service';
-import {DialogRef, OverlayService} from '../services/overlay.service';
 import {FeatureFlagService} from '../services/feature-flag.service';
+import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
 
 @Component({

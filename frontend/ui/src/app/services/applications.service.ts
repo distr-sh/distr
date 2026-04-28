@@ -109,7 +109,7 @@ export class ApplicationsService implements CrudService<Application> {
 
   createApplicationVersionForOpenTofu(
     application: Application,
-    applicationVersion: ApplicationVersion,
+    applicationVersion: ApplicationVersion
   ): Observable<ApplicationVersion> {
     const formData = new FormData();
     return this.doCreateVersion(application, applicationVersion, formData);

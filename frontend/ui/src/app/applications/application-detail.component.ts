@@ -269,16 +269,13 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
         );
       } else if (application.type === 'opentofu') {
         const tofuFormVal = this.newVersionForm.controls.opentofu.value;
-        res = this.applicationService.createApplicationVersionForOpenTofu(
-          application,
-          {
-            name: this.newVersionForm.controls.versionName.value!,
-            linkTemplate: this.newVersionForm.controls.linkTemplate.value!,
-            tofuConfigUrl: tofuFormVal.tofuConfigUrl!,
-            tofuConfigVersion: tofuFormVal.tofuConfigVersion ?? undefined,
-            resources,
-          },
-        );
+        res = this.applicationService.createApplicationVersionForOpenTofu(application, {
+          name: this.newVersionForm.controls.versionName.value!,
+          linkTemplate: this.newVersionForm.controls.linkTemplate.value!,
+          tofuConfigUrl: tofuFormVal.tofuConfigUrl!,
+          tofuConfigVersion: tofuFormVal.tofuConfigVersion ?? undefined,
+          resources,
+        });
       } else {
         const versionFormVal = this.newVersionForm.controls.kubernetes.value;
         res = this.applicationService.createApplicationVersionForKubernetes(
