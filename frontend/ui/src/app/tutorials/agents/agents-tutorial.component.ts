@@ -17,7 +17,7 @@ import {
   faWarning,
 } from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, lastValueFrom, Subject, switchMap, takeUntil, tap} from 'rxjs';
-import {GITHUB_URL, WEBSITE_URL} from '../../../env/constants';
+import {GITHUB_URL, WEBSITE_URL} from '../../../constants';
 import {getFormDisplayedError} from '../../../util/errors';
 import {ClipComponent} from '../../components/clip.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';

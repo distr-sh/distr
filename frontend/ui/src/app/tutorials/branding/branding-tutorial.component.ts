@@ -18,7 +18,7 @@ import {
   faRightToBracket,
 } from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, lastValueFrom, Observable, Subject} from 'rxjs';
-import {WEBSITE_URL} from '../../../env/constants';
+import {WEBSITE_URL} from '../../../constants';
 import {getFormDisplayedError} from '../../../util/errors';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AuthService} from '../../services/auth.service';

@@ -42,7 +42,8 @@ import {
 import dayjs from 'dayjs';
 import {EMPTY, filter, firstValueFrom, lastValueFrom, switchMap} from 'rxjs';
 import {SemVer} from 'semver';
-import {GITHUB_URL, WEBSITE_URL} from '../../../env/constants';
+import {GITHUB_URL, WEBSITE_URL} from '../../../constants';
+import {agentChangelog} from '../../../data';
 import {maxBy} from '../../../util/arrays';
 import {dateTimeLocalToISO, isArchived, isoToDateTimeLocal} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
@@ -51,7 +52,6 @@ import {ConnectInstructionsComponent} from '../../components/connect-instruction
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
-import {AgentChangelogSection, AgentChangelogService} from '../../services/agent-changelog.service';
 import {AgentVersionService} from '../../services/agent-version.service';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ApplicationsService} from '../../services/applications.service';
@@ -96,7 +96,6 @@ export class DeploymentTargetCardComponent {
   private readonly deploymentTargets = inject(DeploymentTargetsService);
   private readonly toast = inject(ToastService);
   private readonly agentVersionsSvc = inject(AgentVersionService);
-  private readonly agentChangelogSvc = inject(AgentChangelogService);
   private readonly applicationEntitlementsService = inject(ApplicationEntitlementsService);
   private readonly applicationsService = inject(ApplicationsService);
   private readonly featureFlags = inject(FeatureFlagService);
@@ -193,7 +192,7 @@ export class DeploymentTargetCardComponent {
 
   protected readonly agentUpdateFromVersion = signal<string | undefined>(undefined);
   protected readonly agentUpdateToVersion = signal<string | undefined>(undefined);
-  protected readonly agentUpdateChangelogSections = signal<AgentChangelogSection[]>([]);
+  protected readonly agentUpdateChangelogReleases = signal<typeof agentChangelog.releases>([]);
 
   protected readonly isUndeploySupported = this.isAgentVersionAtLeast('1.3.0');
   protected readonly isMultiDeploymentSupported = this.isAgentVersionAtLeast('1.6.0');
@@ -450,7 +449,7 @@ export class DeploymentTargetCardComponent {
         const fromVersion = dt.agentVersion?.name;
         this.agentUpdateFromVersion.set(fromVersion);
         this.agentUpdateToVersion.set(targetVersion.name);
-        this.agentUpdateChangelogSections.set(this.loadChangelogSections(fromVersion, targetVersion.name, dt.type));
+        this.agentUpdateChangelogReleases.set(this.loadChangelogReleases(fromVersion, targetVersion.name, dt.type));
 
         if (
           await firstValueFrom(
@@ -472,33 +471,27 @@ export class DeploymentTargetCardComponent {
     }
   }
 
-  private loadChangelogSections(
-    fromVersion: string | undefined,
-    toVersion: string,
-    type: DeploymentType
-  ): AgentChangelogSection[] {
+  private loadChangelogReleases(fromVersion: string | undefined, toVersion: string, type: DeploymentType) {
     const allowedScopes = new Set(['agent', `${type}-agent`]);
-    const sections = new Map<string, AgentChangelogSection>();
-    for (const release of this.agentChangelogSvc.get().releases) {
-      try {
-        const released = new SemVer(release.version);
-        if (released.compare(toVersion) > 0) continue;
-        if (fromVersion && released.compare(fromVersion) <= 0) continue;
-      } catch {
-        continue;
-      }
-      for (const section of release.sections) {
-        const changes = section.changes.filter((change) => allowedScopes.has(change.scope));
-        if (changes.length === 0) continue;
-        const merged = sections.get(section.section);
-        if (merged) {
-          merged.changes.push(...changes);
-        } else {
-          sections.set(section.section, {section: section.section, changes: [...changes]});
+    return agentChangelog.releases
+      .filter((release) => {
+        try {
+          const released = new SemVer(release.version);
+          return released.compare(toVersion) <= 0 && (!fromVersion || released.compare(fromVersion) > 0);
+        } catch {
+          return false;
         }
-      }
-    }
-    return [...sections.values()];
+      })
+      .map((release) => ({
+        ...release,
+        sections: release.sections
+          .map((section) => ({
+            ...section,
+            changes: section.changes.filter((change) => allowedScopes.has(change.scope)),
+          }))
+          .filter((section) => section.changes.length > 0),
+      }))
+      .filter((release) => release.sections.length > 0);
   }
 
   protected toggle(signal: WritableSignal<boolean>) {

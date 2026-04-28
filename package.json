@@ -7,7 +7,7 @@
   "homepage": "https://distr.sh",
   "scripts": {
     "buildconfig": "node hack/update-frontend-version.js",
-    "agent-changelog": "node hack/agent-changelog.mjs CHANGELOG.md frontend/ui/src/buildconfig/agent-changelog.json",
+    "agent-changelog": "node hack/agent-changelog.mjs CHANGELOG.md frontend/ui/src/data/agent-changelog.json",
     "sentry-upload": "hack/sentry-release.sh",
     "start": "pnpm buildconfig && pnpm agent-changelog && ng serve",
     "build:community": "pnpm buildconfig && pnpm agent-changelog && ng build --configuration=production-community",

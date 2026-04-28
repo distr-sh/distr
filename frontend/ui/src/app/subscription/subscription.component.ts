@@ -6,7 +6,7 @@ import {NonNullableFormBuilder, ReactiveFormsModule, Validators} from '@angular/
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faCreditCard, faShoppingCart, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
-import {WEBSITE_URL} from '../../env/constants';
+import {WEBSITE_URL} from '../../constants';
 import {getFormDisplayedError} from '../../util/errors';
 import {never} from '../../util/exhaust';
 import {AuthService} from '../services/auth.service';

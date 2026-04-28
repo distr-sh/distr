@@ -57,6 +57,3 @@ Thumbs.db
 # agents & mcp servers
 .claude/agents
 .serena
-
-# generated agent changelog
-frontend/ui/src/buildconfig/agent-changelog.json

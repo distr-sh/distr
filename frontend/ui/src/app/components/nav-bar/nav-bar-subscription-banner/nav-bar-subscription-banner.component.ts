@@ -3,7 +3,7 @@ import {Component, inject, input} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleInfo, faExclamationTriangle} from '@fortawesome/free-solid-svg-icons';
-import {WEBSITE_URL} from '../../../../env/constants';
+import {WEBSITE_URL} from '../../../../constants';
 import {AuthService} from '../../../services/auth.service';
 import {Organization} from '../../../types/organization';
 

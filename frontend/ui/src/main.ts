@@ -7,7 +7,7 @@ import utc from 'dayjs/plugin/utc';
 import posthog from 'posthog-js';
 import {AppComponent} from './app/app.component';
 import {appConfig} from './app/app.config';
-import {buildConfig} from './buildconfig';
+import {buildConfig} from './data';
 import {environment} from './env/env';
 import {getRemoteEnvironment} from './env/remote';
 

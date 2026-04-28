@@ -23,4 +23,4 @@ const buildconfig = {version, sentryVersion, commit, release: version !== 'snaps
 
 console.log(buildconfig);
 
-await writeFile('frontend/ui/src/buildconfig/version.json', JSON.stringify(buildconfig, null, 2));
+await writeFile('frontend/ui/src/data/version.json', JSON.stringify(buildconfig, null, 2));
