@@ -46,7 +46,7 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/stripe/stripe-go/v85 v85.1.0
 	go.opentelemetry.io/collector/component v1.56.0
-	go.opentelemetry.io/collector/confmap v1.56.0
+	go.opentelemetry.io/collector/confmap v1.57.0
 	go.opentelemetry.io/collector/consumer v1.56.0
 	go.opentelemetry.io/collector/pdata v1.56.0
 	go.opentelemetry.io/collector/receiver v1.56.0
@@ -299,7 +299,7 @@ require (
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/collector/confmap/xconfmap v0.150.0 // indirect
 	go.opentelemetry.io/collector/consumer/consumererror v0.150.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.56.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.57.0 // indirect
 	go.opentelemetry.io/collector/filter v0.150.0 // indirect
 	go.opentelemetry.io/collector/internal/componentalias v0.150.0 // indirect
 	go.opentelemetry.io/collector/pdata/pprofile v0.150.0 // indirect
