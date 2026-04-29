@@ -59,8 +59,12 @@
     ul,
     ol {
       @apply space-y-1;
-      @apply ml-3;
-      @apply list-inside;
+
+      li {
+        @apply ms-6;
+        @apply ps-1;
+        @apply list-outside;
+      }
     }
 
     ul {
