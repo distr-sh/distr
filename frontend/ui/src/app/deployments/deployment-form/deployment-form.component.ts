@@ -61,6 +61,8 @@ export type DeploymentFormValue = Partial<{
   forceRestart: boolean;
   ignoreRevisionSkew: boolean;
   helmOptions: Partial<HelmOptions>;
+  tofuVars: string;
+  tofuBackendConfig: string;
 }>;
 
 export function mapToDeploymentRequest(value: DeploymentFormValue, deploymentTargetId: string): DeploymentRequest {
@@ -76,6 +78,10 @@ export function mapToDeploymentRequest(value: DeploymentFormValue, deploymentTar
     forceRestart: value.forceRestart ?? false,
     ignoreRevisionSkew: value.ignoreRevisionSkew ?? false,
     helmOptions: value.helmOptions as HelmOptions | undefined,
+    tofuVars: value.tofuVars ? (JSON.parse(value.tofuVars) as Record<string, unknown>) : undefined,
+    tofuBackendConfig: value.tofuBackendConfig
+      ? (JSON.parse(value.tofuBackendConfig) as Record<string, string>)
+      : undefined,
   };
 }
 
@@ -133,6 +139,8 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
       rollbackOnFailure: this.fb.control(true),
       cleanupOnFailure: this.fb.control(true),
     }),
+    tofuVars: this.fb.control(''),
+    tofuBackendConfig: this.fb.control(''),
   });
   protected readonly composeFile = this.fb.control({disabled: true, value: ''});
   protected readonly resources = signal<ApplicationVersionResource[]>([]);
@@ -309,6 +317,8 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
           this.deployForm.controls.valuesYaml.enable();
           this.deployForm.controls.helmOptionsEnabled.enable();
           this.deployForm.controls.envFileData.disable();
+          this.deployForm.controls.tofuVars.disable();
+          this.deployForm.controls.tofuBackendConfig.disable();
 
           const targetName = this.deploymentTargetName();
           if (!this.deployForm.value.releaseName && targetName) {
@@ -316,11 +326,20 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
               releaseName: targetName.trim().toLowerCase().replaceAll(/\W+/g, '-'),
             });
           }
+        } else if (type === 'opentofu') {
+          this.deployForm.controls.envFileData.disable();
+          this.deployForm.controls.releaseName.disable();
+          this.deployForm.controls.valuesYaml.disable();
+          this.deployForm.controls.helmOptionsEnabled.disable();
+          this.deployForm.controls.tofuVars.enable();
+          this.deployForm.controls.tofuBackendConfig.enable();
         } else {
           this.deployForm.controls.envFileData.enable();
           this.deployForm.controls.releaseName.disable();
           this.deployForm.controls.valuesYaml.disable();
           this.deployForm.controls.helmOptionsEnabled.disable();
+          this.deployForm.controls.tofuVars.disable();
+          this.deployForm.controls.tofuBackendConfig.disable();
         }
       }
     });

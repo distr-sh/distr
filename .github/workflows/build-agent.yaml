@@ -34,6 +34,7 @@ jobs:
         agent:
           - docker-agent
           - kubernetes-agent
+          - opentofu-agent
         platform:
           - arch: linux/amd64
             runner: ubuntu-latest
@@ -108,6 +109,7 @@ jobs:
         agent:
           - docker-agent
           - kubernetes-agent
+          - opentofu-agent
     env:
       REGISTRY_IMAGE: ghcr.io/distr-sh/distr/${{ matrix.agent }}
     steps:

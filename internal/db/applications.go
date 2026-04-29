@@ -19,11 +19,12 @@ const (
 	applicationOutputExpr        = `a.id, a.created_at, a.organization_id, a.name, a.type, a.image_id`
 	applicationVersionOutputExpr = `av.id, av.created_at, av.archived_at, av.name, av.link_template, av.application_id,
 		av.chart_type, av.chart_name, av.chart_url, av.chart_version, av.values_file_data, av.template_file_data,
-	 av.compose_file_data`
+	 av.compose_file_data, av.tofu_config_url, av.tofu_config_version`
 	applicationWithVersionsOutputExpr = applicationOutputExpr + `,
 		coalesce((
 			SELECT array_agg(row(av.id, av.created_at, av.archived_at, av.name, av.link_template, av.application_id,
-				av.chart_type, av.chart_name, av.chart_url, av.chart_version) ORDER BY av.created_at ASC)
+				av.chart_type, av.chart_name, av.chart_url, av.chart_version,
+				av.tofu_config_url, av.tofu_config_version) ORDER BY av.created_at ASC)
 			FROM ApplicationVersion av
 			WHERE av.application_id = a.id
 		), array[]::record[]) AS versions `
@@ -31,7 +32,8 @@ const (
 	applicationWithEntitledVersionsOutputExpr = applicationOutputExpr + `,
 		coalesce((
 			SELECT array_agg(row(av.id, av.created_at, av.archived_at, av.name, av.link_template, av.application_id,
-				av.chart_type, av.chart_name, av.chart_url, av.chart_version) ORDER BY av.created_at ASC)
+				av.chart_type, av.chart_name, av.chart_url, av.chart_version,
+				av.tofu_config_url, av.tofu_config_version) ORDER BY av.created_at ASC)
 			FROM ApplicationVersion av
 			WHERE av.application_id = a.id and
 				((av.id IN
@@ -217,13 +219,15 @@ func CreateApplicationVersion(ctx context.Context, applicationVersion *types.App
 	db := internalctx.GetDb(ctx)
 
 	args := pgx.NamedArgs{
-		"name":          applicationVersion.Name,
-		"linkTemplate":  applicationVersion.LinkTemplate,
-		"applicationId": applicationVersion.ApplicationID,
-		"chartType":     applicationVersion.ChartType,
-		"chartName":     applicationVersion.ChartName,
-		"chartUrl":      applicationVersion.ChartUrl,
-		"chartVersion":  applicationVersion.ChartVersion,
+		"name":              applicationVersion.Name,
+		"linkTemplate":      applicationVersion.LinkTemplate,
+		"applicationId":     applicationVersion.ApplicationID,
+		"chartType":         applicationVersion.ChartType,
+		"chartName":         applicationVersion.ChartName,
+		"chartUrl":          applicationVersion.ChartUrl,
+		"chartVersion":      applicationVersion.ChartVersion,
+		"tofuConfigUrl":     applicationVersion.TofuConfigURL,
+		"tofuConfigVersion": applicationVersion.TofuConfigVersion,
 	}
 	if applicationVersion.ComposeFileData != nil {
 		args["composeFileData"] = applicationVersion.ComposeFileData
@@ -237,12 +241,12 @@ func CreateApplicationVersion(ctx context.Context, applicationVersion *types.App
 
 	row, err := db.Query(ctx,
 		`INSERT INTO ApplicationVersion AS av (name, link_template, application_id, chart_type, chart_name, chart_url,
-				chart_version, compose_file_data, values_file_data, template_file_data)
+				chart_version, compose_file_data, values_file_data, template_file_data, tofu_config_url, tofu_config_version)
 		VALUES (@name, @linkTemplate, @applicationId, @chartType, @chartName, @chartUrl, @chartVersion,
-			@composeFileData::bytea, @valuesFileData::bytea, @templateFileData::bytea)
+			@composeFileData::bytea, @valuesFileData::bytea, @templateFileData::bytea, @tofuConfigUrl, @tofuConfigVersion)
 		RETURNING av.id, av.created_at, av.archived_at, av.name, av.link_template, av.chart_type, av.chart_name,
 			av.chart_url, av.chart_version, av.values_file_data, av.template_file_data, av.compose_file_data,
-			av.application_id`,
+			av.application_id, av.tofu_config_url, av.tofu_config_version`,
 		args)
 	if err != nil {
 		return fmt.Errorf("can not create ApplicationVersion: %w", err)

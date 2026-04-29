@@ -71,3 +71,15 @@
 ### resources?
 
 > `optional` **resources?**: [`ApplicationVersionResource`](ApplicationVersionResource.md)[]
+
+---
+
+### tofuConfigUrl?
+
+> `optional` **tofuConfigUrl?**: `string`
+
+---
+
+### tofuConfigVersion?
+
+> `optional` **tofuConfigVersion?**: `string`

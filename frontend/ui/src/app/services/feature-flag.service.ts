@@ -25,6 +25,10 @@ export class FeatureFlagService {
     {initialValue: false}
   );
 
+  public readonly isOpenTofuEnabled$ = this.organizationService
+    .get()
+    .pipe(map((org) => org.features.includes('opentofu')));
+
   public readonly isNotificationsEnabled$ = this.requireSubscriptionType('trial', 'pro', 'enterprise');
 
   public readonly isSupportBundlesEnabled$ = this.requireSubscriptionType('trial', 'pro', 'enterprise');

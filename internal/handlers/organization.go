@@ -255,6 +255,11 @@ func handleUpdateOrganization(
 			needsUpdate = true
 		}
 
+		if request.OpenTofuEnabled != org.HasFeature(types.FeatureOpenTofu) {
+			org.SetFeature(types.FeatureOpenTofu, request.OpenTofuEnabled)
+			needsUpdate = true
+		}
+
 		if needsUpdate {
 			return db.UpdateOrganization(ctx, org)
 		}

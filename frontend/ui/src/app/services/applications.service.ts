@@ -107,6 +107,14 @@ export class ApplicationsService implements CrudService<Application> {
     return this.doCreateVersion(application, applicationVersion, formData);
   }
 
+  createApplicationVersionForOpenTofu(
+    application: Application,
+    applicationVersion: ApplicationVersion
+  ): Observable<ApplicationVersion> {
+    const formData = new FormData();
+    return this.doCreateVersion(application, applicationVersion, formData);
+  }
+
   createApplicationVersionForKubernetes(
     application: Application,
     applicationVersion: ApplicationVersion,

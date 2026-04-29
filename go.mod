@@ -28,6 +28,7 @@ require (
 	github.com/go-mailx/mailx-smtp v1.0.2
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/google/uuid v1.6.0
+	github.com/hashicorp/terraform-exec v0.25.1
 	github.com/jackc/pgerrcode v0.0.0-20250907135507-afb5586c32a6
 	github.com/jackc/pgx/v5 v5.9.2
 	github.com/joho/godotenv v1.5.1
@@ -39,6 +40,7 @@ require (
 	github.com/oaswrap/spec/adapter/chiopenapi v0.4.2
 	github.com/onsi/gomega v1.40.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.150.0
+	github.com/opentofu/tofudl v0.0.1
 	github.com/pquerna/otp v1.5.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/samber/slog-zap/v2 v2.7.0
@@ -71,6 +73,14 @@ require (
 )
 
 require (
+	github.com/ProtonMail/go-mime v0.0.0-20230322103455-7d82a3887f2f // indirect
+	github.com/ProtonMail/gopenpgp/v2 v2.7.5 // indirect
+	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
+	github.com/hashicorp/terraform-json v0.27.2 // indirect
+	github.com/zclconf/go-cty v1.18.1 // indirect
+)
+
+require (
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
@@ -81,7 +91,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0 // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/ProtonMail/go-crypto v1.3.0 // indirect
+	github.com/ProtonMail/go-crypto v1.4.1 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.9 // indirect

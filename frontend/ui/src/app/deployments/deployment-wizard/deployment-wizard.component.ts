@@ -12,7 +12,14 @@ import {
 } from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faDocker} from '@fortawesome/free-brands-svg-icons';
-import {faBuildingUser, faCheckCircle, faDharmachakra, faShip, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {
+  faBuildingUser,
+  faCheckCircle,
+  faCubes,
+  faDharmachakra,
+  faShip,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, distinctUntilChanged, firstValueFrom, map, of, switchMap, take} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
@@ -55,6 +62,7 @@ export class DeploymentWizardComponent implements OnInit {
   protected readonly faShip = faShip;
   protected readonly faDocker = faDocker;
   protected readonly faDharmachakra = faDharmachakra;
+  protected readonly faCubes = faCubes;
   protected readonly faBuildingUser = faBuildingUser;
   protected readonly faCheckCircle = faCheckCircle;
 
@@ -293,8 +301,12 @@ export class DeploymentWizardComponent implements OnInit {
       } else {
         this.deploymentTargetForm.controls.resources.disable();
       }
-    } else if (type === 'docker') {
-      this.deploymentTargetForm.controls.autohealEnabled.enable();
+    } else if (type === 'docker' || type === 'opentofu') {
+      if (type === 'docker') {
+        this.deploymentTargetForm.controls.autohealEnabled.enable();
+      } else {
+        this.deploymentTargetForm.controls.autohealEnabled.disable();
+      }
       this.deploymentTargetForm.controls.namespace.disable();
       this.deploymentTargetForm.controls.clusterScope.disable();
       this.deploymentTargetForm.controls.scope.disable();

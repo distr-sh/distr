@@ -112,6 +112,8 @@ func GetDeploymentsForDeploymentTarget(
 				dr.created_at AS deployment_revision_created_at,
 				dr.force_restart AS force_restart,
 				dr.ignore_revision_skew AS ignore_revision_skew,
+				dr.tofu_vars AS tofu_vars,
+				dr.tofu_backend_config AS tofu_backend_config,
 				CASE WHEN dr.helm_options_timeout IS NOT NULL THEN (
 					dr.helm_options_timeout,
 					dr.helm_options_wait_strategy,
@@ -327,6 +329,12 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 		})
 	}
 
+	// pgx encodes map[string]any / map[string]string directly to JSONB.
+	// We keep nil-safe defaults so the @tofuVars / @tofuBackendConfig SQL
+	// references always have a matching arg even for non-OpenTofu deployments.
+	args["tofuVars"] = request.TofuVars
+	args["tofuBackendConfig"] = request.TofuBackendConfig
+
 	rows, err := db.Query(
 		ctx,
 		`INSERT INTO DeploymentRevision AS dr (
@@ -339,7 +347,9 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 			helm_options_timeout,
 			helm_options_wait_strategy,
 			helm_options_rollback_on_failure,
-			helm_options_cleanup_on_failure
+			helm_options_cleanup_on_failure,
+			tofu_vars,
+			tofu_backend_config
 		) VALUES (
 		 	@deploymentId,
 			@applicationVersionId,
@@ -350,7 +360,9 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 			@helmOptionsTimeout,
 			@helmOptionsWaitStrategy,
 			@helmOptionsRollbackOnFailure,
-			@helmOptionsCleanupOnFailure
+			@helmOptionsCleanupOnFailure,
+			COALESCE(@tofuVars, '{}'::jsonb),
+			COALESCE(@tofuBackendConfig, '{}'::jsonb)
 		) RETURNING
 		 	dr.id,
 			dr.created_at,
@@ -363,7 +375,9 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 				dr.helm_options_wait_strategy,
 				dr.helm_options_rollback_on_failure,
 				dr.helm_options_cleanup_on_failure
-			) END as helm_options`,
+			) END as helm_options,
+			dr.tofu_vars,
+			dr.tofu_backend_config`,
 		args,
 	)
 	if err != nil {

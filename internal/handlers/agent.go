@@ -45,6 +45,15 @@ func AgentRouter(r chiopenapi.Router) {
 		httprate.WithKeyFuncs(middleware.RateLimitCurrentDeploymentTargetIdKeyFunc),
 	)
 
+	rateLimitPerStateTarget := httprate.Limit(
+		600,
+		1*time.Minute,
+		httprate.WithKeyFuncs(func(r *http.Request) (string, error) {
+			dt := internalctx.GetDeploymentTarget(r.Context())
+			return fmt.Sprintf("state-%s", dt.ID), nil
+		}),
+	)
+
 	r.With(queryAuthDeploymentTargetCtxMiddleware).Group(func(r chiopenapi.Router) {
 		r.WithOptions(option.GroupTags("Agents"))
 
@@ -80,6 +89,25 @@ func AgentRouter(r chiopenapi.Router) {
 			r.Put("/logs", agentPutDeploymentLogsHandler())
 			r.Put("/deployment-target-logs", agentPutDeploymentTargetLogsHandler())
 		})
+	})
+
+	// OpenTofu state backend routes. Authenticated via the Agent JWT supplied as
+	// the Basic Auth password (since OpenTofu's HTTP backend only sends Basic
+	// Auth credentials). Lock/unlock use separate POST endpoints because chi
+	// does not support the LOCK/UNLOCK HTTP methods.
+	r.With(
+		auth.AgentAuthentication.Middleware,
+		middleware.AgentSentryUser,
+		agentAuthDeploymentTargetCtxMiddleware,
+		rateLimitPerStateTarget,
+		stateDeploymentMiddleware,
+	).Group(func(r chiopenapi.Router) {
+		r.WithOptions(option.GroupHidden(true))
+		s3Client, bucket := newStateS3Client(context.Background())
+		r.Get("/state/{deploymentID}", stateGetHandler(s3Client, bucket))
+		r.Post("/state/{deploymentID}", statePostHandler(s3Client, bucket))
+		r.Post("/state/{deploymentID}/lock", stateLockHandler())
+		r.Post("/state/{deploymentID}/unlock", stateUnlockHandler())
 	})
 }
 
@@ -240,7 +268,8 @@ func agentResourcesHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			if deploymentTarget.Type == types.DeploymentTypeDocker {
+			switch deploymentTarget.Type {
+			case types.DeploymentTypeDocker:
 				if composeYaml, err := appVersion.ParsedComposeFile(); err != nil {
 					log.Warn("parse error", zap.Error(err))
 					http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -259,7 +288,7 @@ func agentResourcesHandler(w http.ResponseWriter, r *http.Request) {
 					agentDeployment.DockerType = util.PtrCopy(deployment.DockerType)
 					agentDeployment.ImageCleanupEnabled = deploymentTarget.ImageCleanupEnabled
 				}
-			} else {
+			case types.DeploymentTypeKubernetes:
 				agentDeployment.ReleaseName = *deployment.ReleaseName
 				agentDeployment.ChartUrl = *appVersion.ChartUrl
 				agentDeployment.ChartVersion = *appVersion.ChartVersion
@@ -292,12 +321,47 @@ func agentResourcesHandler(w http.ResponseWriter, r *http.Request) {
 						CleanupOnFailure:  deployment.HelmOptions.CleanupOnFailure,
 					}
 				}
+			case types.DeploymentTypeOpenTofu:
+				if err := populateOpenTofuDeployment(&agentDeployment, deployment, appVersion); err != nil {
+					log.Error("failed to populate opentofu deployment", zap.Error(err))
+					sentry.GetHubFromContext(ctx).CaptureException(err)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
 			}
 			agentResource.Deployments = append(agentResource.Deployments, agentDeployment)
 		}
 
 		RespondJSON(w, agentResource)
 	}
+}
+
+func populateOpenTofuDeployment(
+	agentDeployment *api.AgentDeployment,
+	deployment types.DeploymentWithLatestRevision,
+	appVersion *types.ApplicationVersion,
+) error {
+	if appVersion.TofuConfigURL != nil {
+		agentDeployment.TofuConfigURL = *appVersion.TofuConfigURL
+	}
+	if appVersion.TofuConfigVersion != nil {
+		agentDeployment.TofuConfigVersion = *appVersion.TofuConfigVersion
+	}
+	if deployment.TofuVars != nil && *deployment.TofuVars != "{}" {
+		var tofuVars map[string]any
+		if err := json.Unmarshal([]byte(*deployment.TofuVars), &tofuVars); err != nil {
+			return fmt.Errorf("failed to parse tofu vars: %w", err)
+		}
+		agentDeployment.TofuVars = tofuVars
+	}
+	if deployment.TofuBackendConfig != nil && *deployment.TofuBackendConfig != "{}" {
+		var backendConfig map[string]string
+		if err := json.Unmarshal([]byte(*deployment.TofuBackendConfig), &backendConfig); err != nil {
+			return fmt.Errorf("failed to parse tofu backend config: %w", err)
+		}
+		agentDeployment.TofuBackendConfig = backendConfig
+	}
+	return nil
 }
 
 func agentPutDeploymentLogsHandler() http.HandlerFunc {

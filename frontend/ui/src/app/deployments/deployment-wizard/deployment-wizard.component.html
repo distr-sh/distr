@@ -175,6 +175,9 @@
                         @if (app.type === 'docker') {
                           <fa-icon [icon]="faDocker" class="mr-1" />
                           Docker
+                        } @else if (app.type === 'opentofu') {
+                          <fa-icon [icon]="faCubes" class="mr-1"></fa-icon>
+                          OpenTofu
                         } @else {
                           <fa-icon [icon]="faDharmachakra" class="mr-1" />
                           Kubernetes

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"fmt"
 	"io"
 	"net/url"
 	"path"
@@ -93,17 +94,26 @@ func getTemplateData(
 }
 
 func getTemplate(deploymentTarget types.DeploymentTargetFull) (*template.Template, error) {
-	if deploymentTarget.Type == types.DeploymentTypeDocker {
+	switch deploymentTarget.Type {
+	case types.DeploymentTypeDocker:
 		return resources.GetTemplate(path.Join(
 			"agent/docker",
 			deploymentTarget.AgentVersion.ComposeFileRevision,
 			"docker-compose.yaml.tmpl",
 		))
-	} else {
+	case types.DeploymentTypeKubernetes:
 		return resources.GetTemplate(path.Join(
 			"agent/kubernetes",
 			deploymentTarget.AgentVersion.ManifestFileRevision,
 			"manifest.yaml.tmpl",
 		))
+	case types.DeploymentTypeOpenTofu:
+		return resources.GetTemplate(path.Join(
+			"agent/opentofu",
+			deploymentTarget.AgentVersion.ComposeFileRevision,
+			"docker-compose.yaml.tmpl",
+		))
+	default:
+		return nil, fmt.Errorf("unsupported deployment type: %s", deploymentTarget.Type)
 	}
 }

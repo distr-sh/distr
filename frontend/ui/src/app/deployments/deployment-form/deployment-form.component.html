@@ -182,6 +182,37 @@
     </div>
   }
 
+  @if (deployForm.controls.tofuVars.enabled) {
+    <div class="col-span-2 space-y-4">
+      <div>
+        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">OpenTofu Variables (JSON)</label>
+        <app-editor
+          language="json"
+          class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          formControlName="tofuVars">
+        </app-editor>
+        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          Variables passed to <code>tofu apply</code> as <code>terraform.tfvars.json</code>. Example:
+          <code>{{ '{' }}"region": "us-east-1", "instance_count": 3{{ '}' }}</code>
+        </div>
+      </div>
+      <div>
+        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+          >OpenTofu Backend Config (JSON)</label
+        >
+        <app-editor
+          language="json"
+          class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          formControlName="tofuBackendConfig">
+        </app-editor>
+        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          Additional <code>-backend-config</code> options as a JSON object of string key/value pairs. The state backend
+          itself is configured by the Hub.
+        </div>
+      </div>
+    </div>
+  }
+
   @if (swarmModeVisible$ | async) {
     <div class="col-span-2">
       <label class="inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
