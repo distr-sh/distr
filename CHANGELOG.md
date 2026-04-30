@@ -1,5 +1,69 @@
 # Changelog
 
+## [2.20.1](https://github.com/distr-sh/distr/compare/2.20.0...2.20.1) (2026-04-30)
+
+
+### Bug Fixes
+
+* **backend:** prevent error when two metric rows have the same created_at ([#2376](https://github.com/distr-sh/distr/issues/2376)) ([947e807](https://github.com/distr-sh/distr/commit/947e807010568a3493d83ce0191a5759e0479aea))
+* **deps:** update aws-sdk-go-v2 monorepo ([#2371](https://github.com/distr-sh/distr/issues/2371)) ([24ccb1c](https://github.com/distr-sh/distr/commit/24ccb1c7f6c90a77de956ff41973b110dcdddfca))
+* **deps:** update kubernetes monorepo to v0.36.0 ([#2345](https://github.com/distr-sh/distr/issues/2345)) ([ab9293f](https://github.com/distr-sh/distr/commit/ab9293f2cbecae66a71cec36c76e74566d94b6df))
+* **deps:** update module github.com/aws/aws-sdk-go-v2/service/s3 to v1.100.0 ([#2340](https://github.com/distr-sh/distr/issues/2340)) ([ec8f868](https://github.com/distr-sh/distr/commit/ec8f868655c28fec4ba6aa8bfbdf9d1b1d16ec02))
+* **deps:** update module github.com/aws/smithy-go to v1.25.1 ([#2348](https://github.com/distr-sh/distr/issues/2348)) ([1ea6c31](https://github.com/distr-sh/distr/commit/1ea6c31dbd7282309b19fa965338f2330a7bfab8))
+* **deps:** update module github.com/docker/cli to v29.4.1+incompatible ([#2318](https://github.com/distr-sh/distr/issues/2318)) ([4c803bc](https://github.com/distr-sh/distr/commit/4c803bcc28bc58660085663956dfe8062bdd3116))
+* **deps:** update module github.com/getsentry/sentry-go to v0.46.0 ([#2330](https://github.com/distr-sh/distr/issues/2330)) ([4cb1b2e](https://github.com/distr-sh/distr/commit/4cb1b2ed5eb0180375be218f0d10ede9917fdb00))
+* **deps:** update module github.com/getsentry/sentry-go/otel/otlp to v0.46.0 ([#2331](https://github.com/distr-sh/distr/issues/2331)) ([4938b3b](https://github.com/distr-sh/distr/commit/4938b3b43766c5148ad0399be94c760c671d034c))
+* **deps:** update module github.com/getsentry/sentry-go/otel/otlp to v0.46.1 ([#2359](https://github.com/distr-sh/distr/issues/2359)) ([9e6dac7](https://github.com/distr-sh/distr/commit/9e6dac71fc15ed1b6581de2ecbf8649b92ee254b))
+* **deps:** update module github.com/go-co-op/gocron/v2 to v2.21.1 ([#2329](https://github.com/distr-sh/distr/issues/2329)) ([d2ff895](https://github.com/distr-sh/distr/commit/d2ff895afab7a3e301fc4f6a61d63d58d1401e04))
+* **deps:** update module github.com/moby/moby/client to v0.4.1 ([#2319](https://github.com/distr-sh/distr/issues/2319)) ([14d02cd](https://github.com/distr-sh/distr/commit/14d02cd1c8c6d6765e4c758ebe9b485c4a9e6046))
+* **deps:** update module github.com/oaswrap/spec to v0.4.2 ([#2333](https://github.com/distr-sh/distr/issues/2333)) ([3b5c8ca](https://github.com/distr-sh/distr/commit/3b5c8caedd44f5bd821f25cd3625174c3056cdcc))
+* **deps:** update module github.com/oaswrap/spec/adapter/chiopenapi to v0.4.2 ([#2334](https://github.com/distr-sh/distr/issues/2334)) ([4ad4ec4](https://github.com/distr-sh/distr/commit/4ad4ec4c325f8d7347903dc6c98f94125c369972))
+* **deps:** update module github.com/onsi/gomega to v1.40.0 ([#2361](https://github.com/distr-sh/distr/issues/2361)) ([0ab78e6](https://github.com/distr-sh/distr/commit/0ab78e6fd89a04670f6272cb16deafc1d8a9a543))
+* **deps:** update module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver to v0.151.0 ([#2362](https://github.com/distr-sh/distr/issues/2362)) ([5488b16](https://github.com/distr-sh/distr/commit/5488b1631bdf0baa21480545fe07eacf79e246a2))
+* **deps:** update module github.com/samber/slog-zap/v2 to v2.7.0 ([#2341](https://github.com/distr-sh/distr/issues/2341)) ([ee7c5b3](https://github.com/distr-sh/distr/commit/ee7c5b37c8f0a13ff826817140913bcbb2f916e8))
+* **deps:** update module github.com/stripe/stripe-go/v85 to v85.1.0 ([#2349](https://github.com/distr-sh/distr/issues/2349)) ([f78d381](https://github.com/distr-sh/distr/commit/f78d3815ad152d2004d9a64c81e412e799d2c89a))
+* **deps:** update module go.uber.org/zap to v1.28.0 ([#2357](https://github.com/distr-sh/distr/issues/2357)) ([1fe5337](https://github.com/distr-sh/distr/commit/1fe53370981a5fa0eb8954a7ab51bfda7fc6f51f))
+* **deps:** update website dependencies (major) ([#2314](https://github.com/distr-sh/distr/issues/2314)) ([9603151](https://github.com/distr-sh/distr/commit/96031519a9bdcdf3b4de10c4f89f8cbba2420d9b))
+* **frontend:** add missing dropdown padding ([#2335](https://github.com/distr-sh/distr/issues/2335)) ([3f7f005](https://github.com/distr-sh/distr/commit/3f7f005c74dbb26ecc06b6e0b01188a1456a3f11))
+* **frontend:** close dropdown after click ([#2338](https://github.com/distr-sh/distr/issues/2338)) ([d37d01e](https://github.com/distr-sh/distr/commit/d37d01e3f86e53e33745ae5ed8a98ea38d2c6058))
+* **frontend:** prevent "undefined" button title ([#2339](https://github.com/distr-sh/distr/issues/2339)) ([dd3ec12](https://github.com/distr-sh/distr/commit/dd3ec12b70dfa05ac1d6359e3f594364243c975c))
+
+
+### Other
+
+* **deps:** bump postcss from 8.5.8 to 8.5.12 in /website in the npm_and_yarn group across 1 directory ([#2355](https://github.com/distr-sh/distr/issues/2355)) ([822ea39](https://github.com/distr-sh/distr/commit/822ea3917d1b51568edef3a0385a624f14922119))
+* **deps:** update angular monorepo to v21.2.10 ([#2343](https://github.com/distr-sh/distr/issues/2343)) ([05971d4](https://github.com/distr-sh/distr/commit/05971d40cf4d97431da756cfd8e783c8f2a4117e))
+* **deps:** update angular-cli monorepo to v21.2.8 ([#2336](https://github.com/distr-sh/distr/issues/2336)) ([7648c21](https://github.com/distr-sh/distr/commit/7648c21098ce837698599ee40d5740da5d046dc8))
+* **deps:** update angular-cli monorepo to v21.2.9 ([#2370](https://github.com/distr-sh/distr/issues/2370)) ([b111629](https://github.com/distr-sh/distr/commit/b1116292aca9fb99c7e9e2a91b0c0d07200dcda0))
+* **deps:** update dependency @angular/cdk to v21.2.8 ([#2344](https://github.com/distr-sh/distr/issues/2344)) ([a5ddedc](https://github.com/distr-sh/distr/commit/a5ddedc7ba1919490162db66b7b8229dcba8de24))
+* **deps:** update dependency @angular/cdk to v21.2.9 ([#2369](https://github.com/distr-sh/distr/issues/2369)) ([8838e7e](https://github.com/distr-sh/distr/commit/8838e7ed1b34321afa9178f14d27acd28b48b8cf))
+* **deps:** update dependency @sentry/cli to v3.4.0 ([#2353](https://github.com/distr-sh/distr/issues/2353)) ([796cfdd](https://github.com/distr-sh/distr/commit/796cfdd04dd9d5fbe7a524b70055a975ef14111d))
+* **deps:** update dependency jsdom to v29.1.0 ([#2352](https://github.com/distr-sh/distr/issues/2352)) ([e8a3550](https://github.com/distr-sh/distr/commit/e8a35502f1893108c11aba9ae3507f0f72980c96))
+* **deps:** update dependency postcss to v8.5.12 ([#2351](https://github.com/distr-sh/distr/issues/2351)) ([aa90e85](https://github.com/distr-sh/distr/commit/aa90e85ad276bc7bb0996753b060969bc37c603e))
+* **deps:** update dependency posthog-js to v1.372.1 ([#2354](https://github.com/distr-sh/distr/issues/2354)) ([593c9ee](https://github.com/distr-sh/distr/commit/593c9ee360bad856f70ce926228bfd1b71cba3a5))
+* **deps:** update dependency stripe to v1.40.7 ([#2332](https://github.com/distr-sh/distr/issues/2332)) ([5338323](https://github.com/distr-sh/distr/commit/5338323385b6752871df83b2f47e588b57029476))
+* **deps:** update dependency stripe to v1.40.8 ([#2350](https://github.com/distr-sh/distr/issues/2350)) ([0d77932](https://github.com/distr-sh/distr/commit/0d77932f63c19f8cfb342a86e9b6fbc83c20aa60))
+* **deps:** update dependency stripe to v1.40.9 ([#2360](https://github.com/distr-sh/distr/issues/2360)) ([3852898](https://github.com/distr-sh/distr/commit/38528981ac693269483d45b67bfe02e89b4fd7fd))
+* **deps:** update dependency vitest to v4.1.5 ([#2326](https://github.com/distr-sh/distr/issues/2326)) ([733c08e](https://github.com/distr-sh/distr/commit/733c08e6d8faf2b504a5eb6c875c2dfec43239cd))
+* **deps:** update dependency watchexec to v2.5.1 ([#2366](https://github.com/distr-sh/distr/issues/2366)) ([b7b295a](https://github.com/distr-sh/distr/commit/b7b295a12cd0e698a30ed1ff077117ad9f37c781))
+* **deps:** update docker docker tag to v29.4.1 ([#2322](https://github.com/distr-sh/distr/issues/2322)) ([a4311de](https://github.com/distr-sh/distr/commit/a4311deedc58caa094b575ebb418cf127fbf3fa7))
+* **deps:** update googleapis/release-please-action action to v5 ([#2346](https://github.com/distr-sh/distr/issues/2346)) ([859108f](https://github.com/distr-sh/distr/commit/859108fecd450ab38a719bedc273ee54013db514))
+* **deps:** update module go:github.com/go-delve/delve/cmd/dlv to v1.26.2 ([#2316](https://github.com/distr-sh/distr/issues/2316)) ([eb42a84](https://github.com/distr-sh/distr/commit/eb42a8419377ae40590ca5f99a34750f40abdf8d))
+* **deps:** update module go:github.com/go-delve/delve/cmd/dlv to v1.26.3 ([#2356](https://github.com/distr-sh/distr/issues/2356)) ([dfe7856](https://github.com/distr-sh/distr/commit/dfe785629f3ea3c2b84e54847f85bbe7fc8f745f))
+* **deps:** update pnpm to v10.33.1 ([#2337](https://github.com/distr-sh/distr/issues/2337)) ([7ed37a7](https://github.com/distr-sh/distr/commit/7ed37a7ee1cda16ecc2a7da949310b073010a17f))
+* **deps:** update pnpm to v10.33.2 ([#2347](https://github.com/distr-sh/distr/issues/2347)) ([66012bb](https://github.com/distr-sh/distr/commit/66012bb42ff67f29704e5f773067fa9b088943ae))
+* **deps:** update pnpm/action-setup action to v6 ([#2240](https://github.com/distr-sh/distr/issues/2240)) ([f0eb410](https://github.com/distr-sh/distr/commit/f0eb410f550e803061acb222d97f3ac9ca935d26))
+* **deps:** update tailwindcss monorepo to v4.2.3 ([#2320](https://github.com/distr-sh/distr/issues/2320)) ([6f08318](https://github.com/distr-sh/distr/commit/6f0831881f77d989b815bd7f0a18a283642e455b))
+* **deps:** update tailwindcss monorepo to v4.2.4 ([#2327](https://github.com/distr-sh/distr/issues/2327)) ([6f58be7](https://github.com/distr-sh/distr/commit/6f58be760beaf5de78d93f6b6b6c06d44a6ed443))
+* **deps:** update website dependencies to v4.2.3 ([#2321](https://github.com/distr-sh/distr/issues/2321)) ([4d562b8](https://github.com/distr-sh/distr/commit/4d562b85274a886538bc8623a2f16c0acd4f2ae1))
+* improved agent update modal ([#2325](https://github.com/distr-sh/distr/issues/2325)) ([9a461dd](https://github.com/distr-sh/distr/commit/9a461dd357234404d9161c992ddc44bda47a773e))
+* **website:** small CSS tweaks ([#2368](https://github.com/distr-sh/distr/issues/2368)) ([ddadbbd](https://github.com/distr-sh/distr/commit/ddadbbd9eeba1f8ba7c41d6d36d6af37bda1dd12))
+
+
+### Docs
+
+* update "Maintenance Jobs" page ([#2324](https://github.com/distr-sh/distr/issues/2324)) ([6f41a2e](https://github.com/distr-sh/distr/commit/6f41a2ef18f4b7dff93dbce6c70e8065649305dd))
+
 ## [2.20.0](https://github.com/distr-sh/distr/compare/2.19.0...2.20.0) (2026-04-20)
 
 
