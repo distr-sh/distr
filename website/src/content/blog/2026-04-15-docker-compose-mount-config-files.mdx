@@ -31,7 +31,7 @@ Our Open Source Software Distribution platform is available on GitHub ([`github.
 
 In this post, I'll walk through four approaches for getting a configuration file into a Docker Compose service: bind mounting from the host, baking the file into a custom image, using the Compose `configs` top-level keyword with inline `content:`, and pairing `configs` with `secrets` for values that must not live in plain text. I'll use `postgresql.conf` as the running example because it shows up the most in real customer deployments, but the patterns apply to any image that wants a config file on disk.
 
-Mounting configuration files is one of a handful of recurring Docker Compose pain points—if you want the broader picture, [Running Docker in Production](/blog/running-docker-in-production/) collects the rest.
+Mounting configuration files is one of a handful of recurring Docker Compose pain points—if you want the broader picture, [Should I Run Plain Docker Compose in Production?](/blog/running-docker-in-production/) collects the rest.
 
 <hr />
 

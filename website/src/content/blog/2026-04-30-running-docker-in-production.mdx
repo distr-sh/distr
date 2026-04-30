@@ -1,6 +1,6 @@
 ---
-title: 'Running Docker in Production: Quirks and How to Handle Them'
-description: 'Docker Compose on a single host can run production workloads — if you know the foot-guns. Orphan containers, disk-filling images, non-healing health checks, mutable tags, socket risk, remote updates, and when to outgrow Compose.'
+title: 'Should I Run Plain Docker Compose in Production in 2026?'
+description: 'Yes, plain Docker Compose can still run production workloads in 2026—if you close the operational gaps it leaves: cleanup, healing, image pinning, socket security, and updates.'
 publishDate: 2026-04-30
 lastUpdated: 2026-04-30
 slug: 'running-docker-in-production'
@@ -28,15 +28,17 @@ Our Open Source Software Distribution platform is available on GitHub ([`github.
 
 Most of the production incidents I have seen on Docker Compose hosts come from the same handful of quirks: an old container that should have been removed, a disk that filled up overnight, a health check that detected a problem and then did nothing about it, a `:latest` tag that pointed somewhere new, or a socket mount nobody thought twice about. None of these are bugs in Docker. They are deliberate trade-offs in a tool that started as internal tooling at dotCloud, a PaaS company that wrapped LXC to fix "it works on my machine," and is now running the back end of a lot of real businesses. This post collects the recurring ones, with the commands and the operational answer for each.
 
+**Short answer: yes—plain Docker Compose can still run real production workloads in 2026, but only if you handle the operational gaps it leaves yourself.**
+
 <hr />
 
-## Why Docker Compose Still Runs a Lot of Production
+## Where Plain Docker Compose Fits in Production
 
 Before the list of quirks, a quick word on the audience. Docker Compose is a declarative way to wire up a multi-container application: one YAML file describes the services, the networks between them, the volumes they share, the environment they need, and—through [the patterns for overwriting or patching service configuration](/blog/docker-compose-mount-config-files/)—the on-disk configuration each application expects. `docker compose up` reconciles the host to that file. The sweet spot in production is the single-node deployment built around exactly that—a vendor pushing a multi-container application into a customer environment, an internal team running a long-tail service that does not justify a Kubernetes cluster, an edge box in a retail location. The footprint is small, the operational overhead is low, and a competent operator can reason about the whole stack from one `docker-compose.yaml`. There is no control plane behind Compose itself—no scheduler watching the host, no reconciler reapplying state, no operator pushing updates from somewhere else. `docker compose up` runs once and exits.
 
 That architectural simplicity is exactly why the quirks bite. Compose assumes you—or whoever runs the host—will do the operational work nothing else is doing, and if you ship Compose files to customers the safe assumption is that the customer will not. The rest of this post is about closing the gap between what Compose does and what a production host actually needs, either by hand or with an [agent](/docs/agents/docker-agent) that does it for you. If you have already concluded that the gap is too wide and you want a comparison with the next step up, [Docker Compose vs Kubernetes](/blog/docker-compose-vs-kubernetes/) is the deeper read.
 
-## Orphan Containers When You Remove a Service from Compose
+## Docker Compose Orphan Containers and `--remove-orphans`
 
 Remove a service from `docker-compose.yaml`, run `docker compose up -d`, and the container you removed keeps running. It is detached from the project but still bound to the same networks and ports. `docker compose ps` will not show it, because Compose only lists what is in the current file. `docker ps --filter label=com.docker.compose.project=<name>` will, because Docker still has the label on the container. This is how you discover, six months in, that an old `worker` service has been quietly consuming RAM since the last refactor.
 
@@ -61,7 +63,7 @@ docker ps -a --filter label=com.docker.compose.project=<name>
 
 Distr's Docker agent passes `RemoveOrphans: true` on every Compose `Up` call, so customer hosts never accumulate orphans across deployment updates. That single flag has eliminated a recurring class of "the old version is still answering on port 8080" support tickets.
 
-## Old Images and Logs Quietly Fill the Disk
+## Pruning Docker Images and Capping Container Logs
 
 Every `docker compose pull` keeps the previous image on disk. Every container with the default `json-file` log driver writes unbounded JSON to `/var/lib/docker/containers/<id>/<id>-json.log`. On a busy host this is one of the most common reasons for an outage: the disk fills and Docker stops being able to write anything—logs, metadata, image layers—at which point containers start failing in confusing ways.
 
@@ -109,7 +111,7 @@ This is one of the topics worth getting right before you ship.
 
 In Distr's Docker agent the cleanup is built in: each deployment target has an opt-out **container image cleanup** setting that removes the previous version's images automatically after a successful update, with retries on failure. It only fires on success, so the previous image stays on disk if something goes wrong and you need to roll back.
 
-## Health Checks That Detect But Never Heal
+## Docker Health Checks Don't Restart Unhealthy Containers
 
 This is the one that surprises people the most. You add a `HEALTHCHECK` to your Dockerfile or a `healthcheck:` block to the service in Compose, you watch the container go from `healthy` to `unhealthy`, and then... nothing happens. The Docker Engine reports the status. It does not act on it. `restart: unless-stopped` is triggered by the container _exiting_, not by it being marked unhealthy.
 
@@ -137,7 +139,7 @@ Whichever path you pick, the takeaway is the same: a `HEALTHCHECK` without somet
 
 <EmbeddedWhitePaperCta />
 
-## `:latest` Is a Lie — Pin by Digest
+## Pinning Docker Images by Digest Instead of `:latest`
 
 Docker tags are mutable references. `myapp:1.4` today is whatever the registry currently has under that tag; tomorrow it can point at a different layer set after a re-push. `:latest` is the worst offender because everyone treats it as a synonym for "stable" when in practice it often means "whatever was pushed most recently." It is also the silent default: an unqualified `image: nginx` in a Compose file is treated as `image: nginx:latest`, so even Compose files that never type the word land on it by accident. The result, in production, is that two hosts pulling the "same" tag five minutes apart can end up running different code.
 
@@ -168,7 +170,7 @@ A pull against a digest fails fast if the registry no longer has those bytes, wh
 
 For the broader picture of what your customers can extract from a published image (and why image hygiene matters beyond reproducibility), [How to Protect Your Source Code and IP in Docker and Kubernetes Deployments](/blog/protect-source-code-docker-container/) is the companion read. And if the registry choice itself is up in the air, the [container registry comparison](/blog/container-image-registry-comparison/) covers the trade-offs.
 
-## Mounting the Docker Socket Is Root Equivalence
+## Why Mounting `/var/run/docker.sock` Is a Security Risk
 
 A container with `/var/run/docker.sock` mounted can call the Docker API, and the Docker API can launch a privileged container that mounts the host's root filesystem. In other words: any container with the socket has effectively root privileges on the host. This is not a Docker bug; it is the threat model of the socket. It deserves a moment of attention because the line that grants this access is one bind mount in a Compose file and is easy to add without thinking about it.
 
@@ -188,7 +190,7 @@ Practical hygiene:
 
 The Distr Docker agent does mount the socket—it has to, in order to orchestrate Compose and Swarm on the host. We document that boundary openly in the [Docker agent docs](/docs/agents/docker-agent) so customer security teams can review it before installation. The agent authenticates to the Hub with a JWT, and the install secret is shown once and never stored.
 
-## There Is No Remote-Update Button in Docker
+## Updating Docker Compose Deployments Across Customer Hosts
 
 `docker compose pull && docker compose up -d` is a fine command if you are SSH'd into the host. At customer scale—dozens of self-managed environments behind firewalls, each with its own change-control process—that manual process doesn't scale. Docker has no built-in mechanism to push a new manifest to a running host from somewhere else. Docker Hub webhooks can trigger a CI rebuild when an image is pushed, but they do not reach into a customer's network and tell their `docker compose` to pull.
 
@@ -204,7 +206,7 @@ The other thing worth noting: recurring scheduled jobs alongside the application
 
 <EmbeddedWhitePaperCta />
 
-## When Compose Stops Being Enough
+## Outgrowing Docker Compose: Kubernetes vs Swarm
 
 If a single-node Compose deployment outgrows itself, the realistic next step for most teams is Kubernetes. The ecosystem is large, the operational patterns are well documented, and the talent pool to hire against actually exists. The deeper comparison lives in [Docker Compose vs Kubernetes](/blog/docker-compose-vs-kubernetes/).
 
@@ -220,9 +222,9 @@ Docker Swarm is the other option — it reuses the Compose YAML format, ships in
 
 The Distr agent supports both — the Hub records whether a deployment is Compose or Swarm, and the agent runs the matching `docker compose up` or `docker stack deploy`. If you do choose Swarm, the routing-and-Traefik write-up is in [Load Balancing and Routing in Docker Swarm](/blog/docker-swarm-load-balancing-routing/), and the product walkthrough is in [Distributing Applications to Docker Swarm](/blog/distr-docker-swarm/).
 
-## Docker in Production Is a Solved Problem If You Know the Shape of the Problem
+## So, should you run plain Docker Compose in production?
 
-None of the quirks above are secret. They are all in Docker's documentation, in GitHub issues that have been open for years, and in the war stories of every team that has run Compose in anger. What makes them dangerous is not the quirks themselves but the order in which you discover them: usually at 2 a.m., one at a time.
+Yes—plain Docker Compose still runs a lot of real production workloads in 2026, as long as you accept that "plain Compose" is shorthand for "Compose plus the operator practices it doesn't enforce." None of the quirks above are secret. They are all in Docker's documentation, in GitHub issues that have been open for years, and in the war stories of every team that has run Compose in anger. What makes them dangerous is not the quirks themselves but the order in which you discover them: usually at 2 a.m., one at a time.
 
 **TL;DR:**
 
