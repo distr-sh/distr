@@ -38,26 +38,20 @@ func GetLatestDeploymentTargetMetrics(
 		`SELECT `+deploymentTargetMetricsOutputExpr+` FROM DeploymentTarget dt
 		LEFT JOIN CustomerOrganization co
 			ON dt.customer_organization_id = co.id
-		LEFT JOIN (
-			-- copied from getting deployment target latest status:
-			-- find the creation date of the latest status entry for each deployment target
-			-- IMPORTANT: The sub-query here might seem inefficient but it is MUCH FASTER than using a GROUP BY clause
-			-- because it can utilize an index!!
-			SELECT
-				dt1.id AS deployment_target_id,
-				(SELECT max(created_at) FROM DeploymentTargetMetrics WHERE deployment_target_id = dt1.id) AS max_created_at
-			FROM DeploymentTarget dt1
-		) metrics_max
-			ON dt.id = metrics_max.deployment_target_id
-		INNER JOIN DeploymentTargetMetrics dtm
-			ON dt.id = dtm.deployment_target_id
-				AND dtm.created_at = metrics_max.max_created_at
+		INNER JOIN LATERAL (
+			SELECT id, deployment_target_id, cpu_cores_millis, cpu_usage, memory_bytes, memory_usage
+			FROM DeploymentTargetMetrics
+			WHERE deployment_target_id = dt.id
+			ORDER BY created_at DESC, id
+			LIMIT 1
+		) dtm ON true
 		LEFT JOIN DeploymentTargetDiskMetrics dtdm
 			ON dtm.id = dtdm.deployment_target_metrics_id
 		WHERE dt.organization_id = @orgId
 		AND (@isVendorUser OR dt.customer_organization_id = @customerOrganizationId)
 		AND dt.metrics_enabled = true
-		GROUP BY dtm.deployment_target_id, dtm.id, co.name, dt.name
+		GROUP BY dtm.id, dtm.deployment_target_id, dtm.cpu_cores_millis, dtm.cpu_usage, dtm.memory_bytes, dtm.memory_usage,
+			co.name, dt.name
 		ORDER BY co.name, dt.name`,
 		pgx.NamedArgs{"orgId": orgID, "customerOrganizationId": customerOrganizationID, "isVendorUser": isVendorUser},
 	)
@@ -78,18 +72,18 @@ func GetLatestDeploymentTargetMetricsForID(ctx context.Context, id uuid.UUID) (*
 
 	rows, err := db.Query(ctx,
 		`SELECT `+deploymentTargetMetricsOutputExpr+` FROM DeploymentTarget dt
-		INNER JOIN DeploymentTargetMetrics dtm
-			ON dt.id = dtm.deployment_target_id
+		INNER JOIN LATERAL (
+			SELECT id, deployment_target_id, cpu_cores_millis, cpu_usage, memory_bytes, memory_usage
+			FROM DeploymentTargetMetrics
+			WHERE deployment_target_id = @deploymentTargetId
+			ORDER BY created_at DESC, id
+			LIMIT 1
+		) dtm ON true
 		LEFT JOIN DeploymentTargetDiskMetrics dtdm
 			ON dtm.id = dtdm.deployment_target_metrics_id
 		WHERE dt.id = @deploymentTargetId
-			AND dtm.created_at = (
-				SELECT max(created_at)
-				FROM DeploymentTargetMetrics
-				WHERE deployment_target_id = @deploymentTargetId
-			)
 			AND dt.metrics_enabled = true
-		GROUP BY dtm.deployment_target_id, dtm.id`,
+		GROUP BY dtm.id, dtm.deployment_target_id, dtm.cpu_cores_millis, dtm.cpu_usage, dtm.memory_bytes, dtm.memory_usage`,
 		pgx.NamedArgs{"deploymentTargetId": id},
 	)
 	if err != nil {
