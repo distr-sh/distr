@@ -38,20 +38,14 @@ func GetLatestDeploymentTargetMetrics(
 		`SELECT `+deploymentTargetMetricsOutputExpr+` FROM DeploymentTarget dt
 		LEFT JOIN CustomerOrganization co
 			ON dt.customer_organization_id = co.id
-		LEFT JOIN (
-			-- copied from getting deployment target latest status:
-			-- find the creation date of the latest status entry for each deployment target
-			-- IMPORTANT: The sub-query here might seem inefficient but it is MUCH FASTER than using a GROUP BY clause
-			-- because it can utilize an index!!
-			SELECT
-				dt1.id AS deployment_target_id,
-				(SELECT max(created_at) FROM DeploymentTargetMetrics WHERE deployment_target_id = dt1.id) AS max_created_at
-			FROM DeploymentTarget dt1
-		) metrics_max
-			ON dt.id = metrics_max.deployment_target_id
-		INNER JOIN DeploymentTargetMetrics dtm
-			ON dt.id = dtm.deployment_target_id
-				AND dtm.created_at = metrics_max.max_created_at
+		INNER JOIN LATERAL (
+			SELECT id
+			FROM DeploymentTargetMetrics
+			WHERE deployment_target_id = dt.id
+			ORDER BY created_at DESC, id
+			LIMIT 1
+		) dtm_latest ON true
+		INNER JOIN DeploymentTargetMetrics dtm ON dtm.id = dtm_latest.id
 		LEFT JOIN DeploymentTargetDiskMetrics dtdm
 			ON dtm.id = dtdm.deployment_target_metrics_id
 		WHERE dt.organization_id = @orgId
@@ -78,13 +72,14 @@ func GetLatestDeploymentTargetMetricsForID(ctx context.Context, id uuid.UUID) (*
 
 	rows, err := db.Query(ctx,
 		`SELECT `+deploymentTargetMetricsOutputExpr+` FROM DeploymentTarget dt
-		INNER JOIN (
-			SELECT *
+		INNER JOIN LATERAL (
+			SELECT id
 			FROM DeploymentTargetMetrics
 			WHERE deployment_target_id = @deploymentTargetId
 			ORDER BY created_at DESC, id
 			LIMIT 1
-		) dtm ON dt.id = dtm.deployment_target_id
+		) dtm_latest ON true
+		INNER JOIN DeploymentTargetMetrics dtm ON dtm.id = dtm_latest.id
 		LEFT JOIN DeploymentTargetDiskMetrics dtdm
 			ON dtm.id = dtdm.deployment_target_metrics_id
 		WHERE dt.id = @deploymentTargetId
