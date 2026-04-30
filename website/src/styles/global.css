@@ -59,8 +59,11 @@
     ul,
     ol {
       @apply space-y-1;
-      @apply ml-3;
-      @apply list-inside;
+
+      li {
+        @apply ms-3;
+        @apply list-inside;
+      }
     }
 
     ul {
@@ -75,6 +78,19 @@
   /* Remove default list styling for custom lists outside markdown content */
   ul.list-none li {
     list-style-type: none;
+  }
+
+  .prose {
+    ul,
+    ol {
+      @apply space-y-1;
+
+      li {
+        @apply ms-6;
+        @apply ps-1;
+        @apply list-outside;
+      }
+    }
   }
 
   /* Blog post inline code styling */
