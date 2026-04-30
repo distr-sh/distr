@@ -6,6 +6,8 @@ sidebar:
   order: 5
 ---
 
+import {Aside} from '@astrojs/starlight/components';
+
 ## Database Cleanup Jobs
 
 Distr includes built-in CLI tasks for database and storage pruning to prevent unbounded growth of resources such as metrics, logs, and status entries.
@@ -103,6 +105,23 @@ cronJobs:
       distr.sh/job: artifact-blob-cleanup
     args: [cleanup, ArtifactBlob, --timeout, 10m]
 ```
+
+## Additional configuration
+
+Some cleanup targets allow for additional customization using the following environment variables:
+
+```dotenv
+STATUS_ENTRIES_MAX_AGE="24h"
+METRICS_ENTRIES_MAX_AGE="24h"
+LOG_RECORD_ENTRIES_MAX_COUNT="500"
+CLEANUP_ARTIFACT_BLOB_MIN_AGE="24h"
+```
+
+<Aside type="caution">
+  `STATUS_ENTRIES_MAX_AGE`, `METRICS_ENTRIES_MAX_AGE` and
+  `LOG_RECORD_ENTRIES_MAX_COUNT` do not have a default value. If unset, the
+  cleanup routine for these targets will have no effect.
+</Aside>
 
 ## Removed features
 
