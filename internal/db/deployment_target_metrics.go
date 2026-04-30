@@ -39,19 +39,18 @@ func GetLatestDeploymentTargetMetrics(
 		LEFT JOIN CustomerOrganization co
 			ON dt.customer_organization_id = co.id
 		INNER JOIN LATERAL (
-			SELECT id
+			SELECT id, deployment_target_id, cpu_cores_millis, cpu_usage, memory_bytes, memory_usage
 			FROM DeploymentTargetMetrics
 			WHERE deployment_target_id = dt.id
 			ORDER BY created_at DESC, id
 			LIMIT 1
-		) dtm_latest ON true
-		INNER JOIN DeploymentTargetMetrics dtm ON dtm.id = dtm_latest.id
+		) dtm ON true
 		LEFT JOIN DeploymentTargetDiskMetrics dtdm
 			ON dtm.id = dtdm.deployment_target_metrics_id
 		WHERE dt.organization_id = @orgId
 		AND (@isVendorUser OR dt.customer_organization_id = @customerOrganizationId)
 		AND dt.metrics_enabled = true
-		GROUP BY dtm.deployment_target_id, dtm.id, co.name, dt.name
+		GROUP BY dtm.id, dtm.deployment_target_id, dtm.cpu_cores_millis, dtm.cpu_usage, dtm.memory_bytes, dtm.memory_usage, co.name, dt.name
 		ORDER BY co.name, dt.name`,
 		pgx.NamedArgs{"orgId": orgID, "customerOrganizationId": customerOrganizationID, "isVendorUser": isVendorUser},
 	)
@@ -73,18 +72,17 @@ func GetLatestDeploymentTargetMetricsForID(ctx context.Context, id uuid.UUID) (*
 	rows, err := db.Query(ctx,
 		`SELECT `+deploymentTargetMetricsOutputExpr+` FROM DeploymentTarget dt
 		INNER JOIN LATERAL (
-			SELECT id
+			SELECT id, deployment_target_id, cpu_cores_millis, cpu_usage, memory_bytes, memory_usage
 			FROM DeploymentTargetMetrics
 			WHERE deployment_target_id = @deploymentTargetId
 			ORDER BY created_at DESC, id
 			LIMIT 1
-		) dtm_latest ON true
-		INNER JOIN DeploymentTargetMetrics dtm ON dtm.id = dtm_latest.id
+		) dtm ON true
 		LEFT JOIN DeploymentTargetDiskMetrics dtdm
 			ON dtm.id = dtdm.deployment_target_metrics_id
 		WHERE dt.id = @deploymentTargetId
 			AND dt.metrics_enabled = true
-		GROUP BY dtm.deployment_target_id, dtm.id`,
+		GROUP BY dtm.id, dtm.deployment_target_id, dtm.cpu_cores_millis, dtm.cpu_usage, dtm.memory_bytes, dtm.memory_usage`,
 		pgx.NamedArgs{"deploymentTargetId": id},
 	)
 	if err != nil {
