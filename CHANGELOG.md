@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.20.2](https://github.com/distr-sh/distr/compare/2.20.1...2.20.2) (2026-04-30)
+
+
+### Bug Fixes
+
+* **website:** restore sidebar topics ([#2379](https://github.com/distr-sh/distr/issues/2379)) ([a398005](https://github.com/distr-sh/distr/commit/a39800570518a37dc4fd07af8fe7b26160b77cc2))
+
+
+### Docs
+
+* add info on additional config about maintenance jobs ([#2380](https://github.com/distr-sh/distr/issues/2380)) ([b6dd750](https://github.com/distr-sh/distr/commit/b6dd7504fdeddab2954df755637a766219a7bfda))
+* **website:** running docker in prod post ([#2342](https://github.com/distr-sh/distr/issues/2342)) ([5e7838e](https://github.com/distr-sh/distr/commit/5e7838e6acfb777fd24b2f38a54118d10a816868))
+
 ## [2.20.1](https://github.com/distr-sh/distr/compare/2.20.0...2.20.1) (2026-04-30)
 
 
