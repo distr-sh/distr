@@ -10,7 +10,7 @@ authors:
     image: '/src/assets/blog/authors/pmig.jpg'
     linkedIn: https://www.linkedin.com/in/pmigat/
     gitHub: https://github.com/pmig
-image: '/src/assets/blog/2026-04-22-running-docker-in-production/thumb.png'
+image: '/src/assets/blog/2026-04-30-running-docker-in-production/thumb.png'
 tags:
   - Docker
   - Docker Compose
@@ -36,7 +36,7 @@ Most of the production incidents I have seen on Docker Compose hosts come from t
 
 Before the list of quirks, a quick word on the audience. Docker Compose is a declarative way to wire up a multi-container application: one YAML file describes the services, the networks between them, the volumes they share, the environment they need, and—through [the patterns for overwriting or patching service configuration](/blog/docker-compose-mount-config-files/)—the on-disk configuration each application expects. `docker compose up` reconciles the host to that file. The sweet spot in production is the single-node deployment built around exactly that—a vendor pushing a multi-container application into a customer environment, an internal team running a long-tail service that does not justify a Kubernetes cluster, an edge box in a retail location. The footprint is small, the operational overhead is low, and a competent operator can reason about the whole stack from one `docker-compose.yaml`. There is no control plane behind Compose itself—no scheduler watching the host, no reconciler reapplying state, no operator pushing updates from somewhere else. `docker compose up` runs once and exits.
 
-That architectural simplicity is exactly why the quirks bite. Compose assumes you—or whoever runs the host—will do the operational work nothing else is doing, and if you ship Compose files to customers the safe assumption is that the customer will not. The rest of this post is about closing the gap between what Compose does and what a production host actually needs, either by hand or with an [agent](/docs/agents/docker-agent) that does it for you. If you have already concluded that the gap is too wide and you want a comparison with the next step up, [Docker Compose vs Kubernetes](/blog/docker-compose-vs-kubernetes/) is the deeper read.
+That architectural simplicity is exactly why the quirks bite. Compose assumes you—or whoever runs the host—will do the operational work nothing else is doing, and if you ship Compose files to customers the safe assumption is that the customer will not. The rest of this post is about closing the gap between what Compose does and what a production host actually needs, either by hand or with an [agent](/docs/agents/docker-agent) that does it for you. If you have already concluded that the gap is too wide and want to compare with the next step up, read our [Docker Compose vs Kubernetes](/blog/docker-compose-vs-kubernetes/) breakdown.
 
 ## Docker Compose Orphan Containers and `--remove-orphans`
 
@@ -168,7 +168,7 @@ services:
 
 A pull against a digest fails fast if the registry no longer has those bytes, which is exactly what you want—silent drift becomes a loud error. The same image reference works in `docker stack deploy`, in `docker run`, and in Kubernetes manifests.
 
-For the broader picture of what your customers can extract from a published image (and why image hygiene matters beyond reproducibility), [How to Protect Your Source Code and IP in Docker and Kubernetes Deployments](/blog/protect-source-code-docker-container/) is the companion read. And if the registry choice itself is up in the air, the [container registry comparison](/blog/container-image-registry-comparison/) covers the trade-offs.
+For the broader picture of what your customers can extract from a published image (and why image hygiene matters beyond reproducibility), check out our guide on [protecting source code and IP in Docker and Kubernetes deployments](/blog/protect-source-code-docker-container/). And if you're still picking a registry, our [container registry comparison](/blog/container-image-registry-comparison/) walks through the trade-offs.
 
 ## Why Mounting `/var/run/docker.sock` Is a Security Risk
 
@@ -202,15 +202,15 @@ The usual workarounds and what they cost:
 
 The pattern is not unique—Kubernetes operators and GitOps tools do the same thing—but Compose users routinely re-invent it badly. If you find yourself building one, at least give it rollback, status reporting, and a way to pin versions, or you will end up with a fleet that drifts in ways you cannot see.
 
-The other thing worth noting: recurring scheduled jobs alongside the application have no native Compose answer either. If your stack includes anything like a nightly cleanup, a periodic report, or a heartbeat-style task, the in-app scheduler is one option, but you eventually run into the cases it can't cover (cross-service jobs, jobs that should outlive a single container). The three patterns I have seen survive customer deployments are in [Compose Cron Jobs](/blog/docker-compose-cron-jobs/).
+The other thing worth noting: recurring scheduled jobs alongside the application have no native Compose answer either. If your stack includes anything like a nightly cleanup, a periodic report, or a heartbeat-style task, the in-app scheduler is one option, but you eventually run into the cases it can't cover (cross-service jobs, jobs that should outlive a single container). For the three patterns I have seen survive customer deployments, check out our guide on [Compose cron jobs](/blog/docker-compose-cron-jobs/).
 
 <EmbeddedWhitePaperCta />
 
 ## Outgrowing Docker Compose: Kubernetes vs Swarm
 
-If a single-node Compose deployment outgrows itself, the realistic next step for most teams is Kubernetes. The ecosystem is large, the operational patterns are well documented, and the talent pool to hire against actually exists. The deeper comparison lives in [Docker Compose vs Kubernetes](/blog/docker-compose-vs-kubernetes/).
+If a single-node Compose deployment outgrows itself, the realistic next step for most teams is Kubernetes. The ecosystem is large, the operational patterns are well documented, and the talent pool to hire against actually exists. For the side-by-side, read our [Docker Compose vs Kubernetes comparison](/blog/docker-compose-vs-kubernetes/).
 
-Docker Swarm is the other option — it reuses the Compose YAML format, ships in the box, and solves a few of the quirks above directly (it restarts unhealthy tasks, rolls out updates with `update_config`, and treats secrets and configs as first-class objects). It is a real fit for some single-cluster, low-ceremony deployments.
+Docker Swarm is the other option—it reuses the Compose YAML format, ships in the box, and solves a few of the quirks above directly (it restarts unhealthy tasks, rolls out updates with `update_config`, and treats secrets and configs as first-class objects). It is a real fit for some single-cluster, low-ceremony deployments.
 
 <Aside type="caution">
   Swarm is not an industry standard. Adoption has plateaued, third-party tooling
@@ -220,7 +220,7 @@ Docker Swarm is the other option — it reuses the Compose YAML format, ships in
   is the safer long-term bet.
 </Aside>
 
-The Distr agent supports both — the Hub records whether a deployment is Compose or Swarm, and the agent runs the matching `docker compose up` or `docker stack deploy`. If you do choose Swarm, the routing-and-Traefik write-up is in [Load Balancing and Routing in Docker Swarm](/blog/docker-swarm-load-balancing-routing/), and the product walkthrough is in [Distributing Applications to Docker Swarm](/blog/distr-docker-swarm/).
+The Distr agent supports both—the Hub records whether a deployment is Compose or Swarm, and the agent runs the matching `docker compose up` or `docker stack deploy`. If you do choose Swarm, read our [routing and Traefik guide for Docker Swarm](/blog/docker-swarm-load-balancing-routing/) and the [product walkthrough for distributing applications to Swarm](/blog/distr-docker-swarm/) for the details.
 
 ## So, should you run plain Docker Compose in production?
 
