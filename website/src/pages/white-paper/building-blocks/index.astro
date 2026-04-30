@@ -16,40 +16,43 @@ const DESCRIPTION =
 
 <StarlightLayout title={TITLE} description={DESCRIPTION}>
   <div class="not-content">
-    <!-- Hero Header -->
-    <section class="text-center mt-8 mb-12">
-      <h1 class="text-4xl font-bold mb-4">{TITLE}</h1>
-      <p class="text-xl font-semibold text-gray-600 dark:text-gray-300">
-        {DESCRIPTION}
-      </p>
-    </section>
+    <div class="max-w-7xl mx-auto my-28 space-y-8">
+      <!-- Hero Header -->
+      <section class="text-center">
+        <h1 class="text-4xl font-bold mb-4">{TITLE}</h1>
+        <p class="text-xl font-semibold text-gray-600 dark:text-gray-300">
+          {DESCRIPTION}
+        </p>
+      </section>
 
-    <!-- Main Content Section -->
-    <section class="container mx-auto px-4 mb-16">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
-        <!-- Whitepaper Image -->
-        <div class="relative">
-          <div class="whitepaper-card rounded-2xl overflow-hidden p-[3px]">
-            <div class="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden">
-              <Image
-                src={whitepaperImage}
-                alt="Building Blocks White Paper Preview"
-                class="w-full h-auto"
-              />
+      <!-- Main Content Section -->
+      <section class="container px-4 mb-16">
+        <div
+          class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+          <!-- Whitepaper Image -->
+          <div class="relative">
+            <div class="whitepaper-card rounded-2xl overflow-hidden p-1">
+              <div class="bg-white dark:bg-gray-900 rounded-xl overflow-hidden">
+                <Image
+                  src={whitepaperImage}
+                  alt="Building Blocks White Paper Preview"
+                  class="w-full h-auto"
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Form -->
-        <div class="lg:sticky lg:top-8">
-          <WhitePaperForm
-            client:load
-            formsServerBaseUrl={formsServerBaseUrl}
-            reCaptchaKeyV2={reCaptchaKeyV2}
-          />
+          <!-- Form -->
+          <div class="lg:sticky lg:top-8">
+            <WhitePaperForm
+              client:load
+              formsServerBaseUrl={formsServerBaseUrl}
+              reCaptchaKeyV2={reCaptchaKeyV2}
+            />
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
 
     <!-- Testimonials Section -->
     <TestimonialsSection />
