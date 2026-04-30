@@ -78,15 +78,18 @@ func GetLatestDeploymentTargetMetricsForID(ctx context.Context, id uuid.UUID) (*
 
 	rows, err := db.Query(ctx,
 		`SELECT `+deploymentTargetMetricsOutputExpr+` FROM DeploymentTarget dt
-		INNER JOIN DeploymentTargetMetrics dtm
-			ON dt.id = dtm.deployment_target_id
+		INNER JOIN (
+			SELECT *
+			FROM DeploymentTargetMetrics
+			WHERE deployment_target_id = @deploymentTargetId
+			ORDER BY created_at DESC, id
+			LIMIT 1
+		) dtm ON dt.id = dtm.deployment_target_id
 		LEFT JOIN DeploymentTargetDiskMetrics dtdm
 			ON dtm.id = dtdm.deployment_target_metrics_id
 		WHERE dt.id = @deploymentTargetId
 			AND dt.metrics_enabled = true
-		GROUP BY dtm.deployment_target_id, dtm.id
-		ORDER BY dtm.created_at DESC, dtm.id DESC
-		LIMIT 1`,
+		GROUP BY dtm.deployment_target_id, dtm.id`,
 		pgx.NamedArgs{"deploymentTargetId": id},
 	)
 	if err != nil {
