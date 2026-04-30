@@ -50,7 +50,8 @@ func GetLatestDeploymentTargetMetrics(
 		WHERE dt.organization_id = @orgId
 		AND (@isVendorUser OR dt.customer_organization_id = @customerOrganizationId)
 		AND dt.metrics_enabled = true
-		GROUP BY dtm.id, dtm.deployment_target_id, dtm.cpu_cores_millis, dtm.cpu_usage, dtm.memory_bytes, dtm.memory_usage, co.name, dt.name
+		GROUP BY dtm.id, dtm.deployment_target_id, dtm.cpu_cores_millis, dtm.cpu_usage, dtm.memory_bytes, dtm.memory_usage,
+			co.name, dt.name
 		ORDER BY co.name, dt.name`,
 		pgx.NamedArgs{"orgId": orgID, "customerOrganizationId": customerOrganizationID, "isVendorUser": isVendorUser},
 	)
