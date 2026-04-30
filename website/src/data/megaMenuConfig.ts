@@ -19,17 +19,17 @@ export const megaMenuConfigs: Record<MegaMenuType, MegaMenuConfig> = {
   },
   docs: {
     items: docsMenu,
-    columns: 6,
-    itemWidth: '140px',
+    columns: 3,
+    itemWidth: '180px',
   },
   pricing: {
     items: pricingMenu,
     columns: 2,
-    itemWidth: '200px',
+    itemWidth: '160px',
   },
   resources: {
     items: resourcesMenu,
     columns: 3,
-    itemWidth: '200px',
+    itemWidth: '140px',
   },
 };
