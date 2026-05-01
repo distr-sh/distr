@@ -23,7 +23,7 @@
     "@astrojs/starlight-tailwind": "5.0.0",
     "@iconify-json/lucide": "^1.2.105",
     "@tailwindcss/vite": "^4.2.4",
-    "astro": "6.2.0",
+    "astro": "6.2.1",
     "astro-icon": "^1.1.5",
     "astrojs-service-worker": "^2.0.0",
     "embla-carousel": "^8.6.0",
@@ -36,7 +36,7 @@
     "preact": "^10.29.1",
     "rehype-mermaid": "^3.0.0",
     "sharp": "^0.34.5",
-    "starlight-links-validator": "^0.23.0",
+    "starlight-links-validator": "^0.24.0",
     "starlight-sidebar-topics": "^0.7.1",
     "tailwindcss": "^4.2.4"
   },
@@ -46,7 +46,7 @@
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-organize-imports": "^4.3.0"
   },
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@10.33.2",
   "engines": {
     "node": ">=24"
   }
