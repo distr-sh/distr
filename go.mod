@@ -12,7 +12,7 @@ require (
 	github.com/compose-spec/compose-go/v2 v2.10.2
 	github.com/containerd/log v0.1.0
 	github.com/coreos/go-oidc/v3 v3.18.0
-	github.com/docker/cli v29.4.2+incompatible
+	github.com/docker/cli v29.4.3+incompatible
 	github.com/docker/compose/v5 v5.1.3
 	github.com/exaring/otelpgx v0.10.0
 	github.com/fsnotify/fsnotify v1.10.1
