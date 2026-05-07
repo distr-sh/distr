@@ -5,20 +5,28 @@ import {images} from '~/assets/index';
 
 const products = [
   {
-    title: 'Software Distributor Platform',
+    title: 'One pane of glass for every self-managed customer',
     description:
-      'Onboard customers faster, distribute artifacts and update deployments easily and troubleshoot issues with confidence.',
+      'Manage customers, releases, deployment targets, artifacts, entitlements, logs, health, and support workflows from one place.',
     lightImage: images.distr.dashboard.light,
     darkImage: images.distr.dashboard.dark,
-    alt: 'Software distribution platform',
+    alt: 'Distr software distribution platform dashboard',
   },
   {
-    title: 'Customer Portal',
+    title: 'A guided path for your customers',
     description:
-      'Give your customers a simple, but powerful portal to simplify their installations and artifact download and stay on top of their deployments and potential security vulnerability in used images.',
+      'Give customers one place to install, access artifacts, manage credentials, control versions, and stay on top of their deployments.',
     lightImage: images.distr.customerPortal.light,
     darkImage: images.distr.customerPortal.dark,
-    alt: 'Glasskube overview page',
+    alt: 'Distr customer portal for self-managed deployments',
+  },
+  {
+    title: 'Cut the support burden of self-managed deployments',
+    description:
+      'Centralize customer versions, entitlements, logs, metrics, deployment status, and support bundles so support and engineering can diagnose issues without long back-and-forth cycles.',
+    lightImage: images.distr.logViewer.light,
+    darkImage: images.distr.logViewer.dark,
+    alt: 'Distr log viewer for self-managed customer deployments',
   },
 ];
 ---
@@ -27,8 +35,13 @@ const products = [
   <div class="container mx-auto px-4 max-w-7xl">
     <div class="text-center mb-12 md:mb-16 max-w-4xl mx-auto">
       <h2 class="text-2xl md:text-3xl lg:text-4xl font-bold leading-tight">
-        From onboarding to update distribution, and support—all in one platform.
+        The operational layer for self-managed software
       </h2>
+      <p class="mt-4 text-base md:text-lg text-gray-600 dark:text-gray-300">
+        Keep onboarding, access, updates, observability, troubleshooting, and
+        customer-facing workflows consistent across VPC, BYOC, on-prem,
+        GovCloud, and air-gapped environments.
+      </p>
     </div>
 
     {

@@ -15,6 +15,8 @@ import distrDashboardDark from './screenshots/distr/distr-dashboard-dark.webp';
 import distrDashboardLight from './screenshots/distr/distr-dashboard-light.webp';
 import distrDeploymentsDark from './screenshots/distr/distr-deployments-dark.webp';
 import distrDeploymentsLight from './screenshots/distr/distr-deployments-light.webp';
+import distrLogViewerDark from './screenshots/distr/distr-log-viewer-dark.png';
+import distrLogViewerLight from './screenshots/distr/distr-log-viewer-light.png';
 
 export const images = {
   yc: {
@@ -45,6 +47,10 @@ export const images = {
     customerPortal: {
       light: distrCustomerPortalLight,
       dark: distrCustomerPortalDark,
+    },
+    logViewer: {
+      light: distrLogViewerLight,
+      dark: distrLogViewerDark,
     },
   },
 };

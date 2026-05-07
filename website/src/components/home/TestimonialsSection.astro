@@ -2,15 +2,25 @@
 import {Icon} from 'astro-icon/components';
 import jeffersonImage from '~/assets/testimonials/testimonial-7.jpg';
 import anshGuptaImage from '~/assets/case-studies/sophris/ansh-gupta.jpeg';
+import andrewChurchillImage from '~/assets/testimonials/andrew-churchill.jpeg';
 import corbinKlettImage from '~/assets/testimonials/testimonial-8.jpeg';
 import derekReynoldsImage from '~/assets/case-studies/basedash/reynolds.jpeg';
 
 const testimonials = [
   {
+    name: 'Andrew Churchill',
+    role: 'Co-Founder & CTO',
+    company: 'Weave',
+    image: andrewChurchillImage,
+    outcome: 'Self-managed without the engineering tax',
+    text: "Weave has a fully self-hosted offering. It's a huge unlock for us, but we almost didn't build it. Distr made such a huge difference in getting us there.",
+  },
+  {
     name: 'Jefferson Rodrigues',
     role: 'Co-Founder & CTO',
     company: 'Lerian',
     image: jeffersonImage,
+    outcome: 'Manual operations become one-click workflows',
     text: 'Our main goal is to simplify the daily operations. No more manual installations, updates, or rollbacks — everything can now be handled with a single click with Distr.',
     caseStudyUrl: '/case-studies/lerian/',
   },
@@ -19,6 +29,7 @@ const testimonials = [
     role: 'CTO',
     company: 'Sophris.ai',
     image: anshGuptaImage,
+    outcome: 'Updates that took days now take minutes',
     text: 'Distr eliminated nearly all deployment headaches. Updates that used to take days now take minutes.',
     caseStudyUrl: '/case-studies/sophris/',
   },
@@ -27,6 +38,7 @@ const testimonials = [
     role: 'Co-Founder',
     company: 'Artifact',
     image: corbinKlettImage,
+    outcome: 'GovCloud deployments without extra overhead',
     text: 'Distr gives us a clean way to deploy and update our software in GovCloud without breaking security or adding operational overhead.',
   },
   {
@@ -34,6 +46,7 @@ const testimonials = [
     role: 'Product Engineer',
     company: 'Basedash',
     image: derekReynoldsImage,
+    outcome: 'One place for every self-managed customer',
     text: 'Having a dedicated space for all our self-hosted customers that can manage authenticated registry access is great.',
     caseStudyUrl: '/case-studies/basedash/',
   },
@@ -44,22 +57,31 @@ const testimonials = [
   <div class="container mx-auto px-4 max-w-7xl">
     <h2
       class="text-2xl md:text-3xl lg:text-4xl font-bold text-center mb-8 md:mb-12 lg:mb-16">
-      What our users say
+      Proof from teams shipping self-managed software
     </h2>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
       {
         testimonials.map(testimonial => (
           <div class="bg-white dark:bg-gray-900 rounded-xl p-6 md:p-8 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col h-full border border-gray-200 dark:border-gray-700">
+            <p class="text-sm font-semibold uppercase tracking-wide text-accent-600 dark:text-accent-200 mb-3">
+              {testimonial.outcome}
+            </p>
             <p class="text-base md:text-lg mb-6 italic leading-relaxed text-gray-700 dark:text-gray-300 flex-grow">
               "{testimonial.text}"
             </p>
             <div class="flex items-center gap-4 mt-auto">
-              <img
-                src={testimonial.image.src}
-                alt={testimonial.name}
-                class="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover flex-shrink-0"
-              />
+              {testimonial.image ? (
+                <img
+                  src={testimonial.image.src}
+                  alt={testimonial.name}
+                  class="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover flex-shrink-0"
+                />
+              ) : (
+                <div class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-accent-600 text-white flex items-center justify-center font-bold flex-shrink-0">
+                  {testimonial.initials ?? testimonial.name.charAt(0)}
+                </div>
+              )}
               <div class="flex-grow">
                 <p class="font-bold text-gray-900 dark:text-white">
                   {testimonial.name}
