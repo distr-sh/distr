@@ -296,6 +296,7 @@ rustfs:
     standalone:
       enabled: true
       strategy:
+        rollingUpdate: null
         type: Recreate
     distributed:
       enabled: false
