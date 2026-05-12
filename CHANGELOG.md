@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.20.3](https://github.com/distr-sh/distr/compare/2.20.2...2.20.3) (2026-05-12)
+
+
+### Performance
+
+* **backend:** further optimize GetLatestDeploymentRevisionStatus query ([#2417](https://github.com/distr-sh/distr/issues/2417)) ([63eb501](https://github.com/distr-sh/distr/commit/63eb501a36538bdb6be043e6123558eb70229d2a))
+
 ## [2.20.2](https://github.com/distr-sh/distr/compare/2.20.1...2.20.2) (2026-05-12)
 
 
