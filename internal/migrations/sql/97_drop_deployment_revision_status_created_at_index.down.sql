@@ -1,0 +1,1 @@
+CREATE INDEX DeploymentRevisionStatus_created_at_single ON DeploymentRevisionStatus (created_at DESC);

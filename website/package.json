@@ -30,7 +30,7 @@
     "embla-carousel-autoplay": "^8.6.0",
     "github-buttons": "^2.32.0",
     "marked": "^18.0.2",
-    "mermaid": "^11.14.0",
+    "mermaid": "^11.15.0",
     "node-html-parser": "^7.1.0",
     "playwright": "^1.59.1",
     "preact": "^10.29.1",
