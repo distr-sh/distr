@@ -208,10 +208,18 @@ func GetLatestDeploymentRevisionStatus(
 	rows, err := db.Query(
 		ctx,
 		`SELECT id, created_at, deployment_revision_id, type, message
-		FROM DeploymentRevisionStatus
-		WHERE deployment_revision_id = ANY(
-			SELECT id FROM DeploymentRevision WHERE deployment_id = @deploymentID
-		)
+		FROM (
+			SELECT latest.*
+			FROM DeploymentRevision dr
+			CROSS JOIN LATERAL (
+				SELECT id, created_at, deployment_revision_id, type, message
+				FROM DeploymentRevisionStatus
+				WHERE deployment_revision_id = dr.id
+				ORDER BY created_at DESC
+				LIMIT 1
+			) latest
+			WHERE dr.deployment_id = @deploymentID
+		) per_revision
 		ORDER BY created_at DESC
 		LIMIT 1`,
 		pgx.NamedArgs{"deploymentID": deploymentID},
