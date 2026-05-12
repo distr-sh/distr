@@ -399,22 +399,3 @@ func GetDeploymentIDForRevisionID(ctx context.Context, revisionID uuid.UUID) (uu
 
 	return deploymentID, nil
 }
-
-func GetDeploymentRevisionIDs(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error) {
-	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(
-		ctx,
-		"SELECT id from DeploymentRevision WHERE deployment_id = @deploymentId",
-		pgx.NamedArgs{"deploymentId": deploymentID},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query DeploymentRevision IDs: %w", err)
-	}
-
-	deploymentRevisionIDs, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID])
-	if err != nil {
-		return nil, fmt.Errorf("failed to scan DeploymentRevision IDs: %w", err)
-	}
-
-	return deploymentRevisionIDs, nil
-}

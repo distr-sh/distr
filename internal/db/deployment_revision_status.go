@@ -205,19 +205,16 @@ func GetLatestDeploymentRevisionStatus(
 ) (*types.DeploymentRevisionStatus, error) {
 	db := internalctx.GetDb(ctx)
 
-	revisionIDs, err := GetDeploymentRevisionIDs(ctx, deploymentID)
-	if err != nil {
-		return nil, err
-	}
-
 	rows, err := db.Query(
 		ctx,
 		`SELECT id, created_at, deployment_revision_id, type, message
 		FROM DeploymentRevisionStatus
-		WHERE deployment_revision_id = ANY(@revisionIDs)
+		WHERE deployment_revision_id = ANY(
+			SELECT id FROM DeploymentRevision WHERE deployment_id = @deploymentID
+		)
 		ORDER BY created_at DESC
 		LIMIT 1`,
-		pgx.NamedArgs{"revisionIDs": revisionIDs},
+		pgx.NamedArgs{"deploymentID": deploymentID},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query latest DeploymentRevisionStatus: %w", err)
