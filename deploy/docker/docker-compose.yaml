@@ -17,7 +17,7 @@ services:
       retries: 6
       start_period: 30s
   hub:
-    image: ghcr.io/distr-sh/distr-ce:2.20.2 # x-release-please-version
+    image: ghcr.io/distr-sh/distr-ce:2.20.3 # x-release-please-version
     depends_on:
       postgres:
         condition: service_healthy
@@ -43,7 +43,7 @@ services:
       RUSTFS_SECRET_KEY: local
 
   artifact-blob-cleanup:
-    image: ghcr.io/distr-sh/distr-ce:2.20.2 # x-release-please-version
+    image: ghcr.io/distr-sh/distr-ce:2.20.3 # x-release-please-version
     command: [cleanup, ArtifactBlob, --timeout, 10m]
     depends_on:
       postgres:
