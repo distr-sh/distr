@@ -99,39 +99,35 @@ func GetDeploymentRevisionStatus(
 	}
 
 	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(
-		ctx,
-		"SELECT id from DeploymentRevision WHERE deployment_id = @deploymentId",
-		pgx.NamedArgs{"deploymentId": deploymentID},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query DeploymentRevision for status: %w", err)
-	}
-	deploymentRevisionIDs, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID])
-	if err != nil {
-		return nil, fmt.Errorf("failed to scan DeploymentRevision for status: %w", err)
-	}
 
 	filterExpr := ""
 	if filter != "" {
 		filterExpr = "AND message ~ @filter"
 	}
+	direction := string(types.EffectiveOrderDirection(order, !after.IsZero()))
 
-	rows, err = db.Query(
+	rows, err := db.Query(
 		ctx,
-		`SELECT id, created_at, deployment_revision_id, type, message
-		FROM DeploymentRevisionStatus
-		WHERE deployment_revision_id = ANY (@deploymentRevisionIds)
-			AND created_at BETWEEN @after AND @before
-			`+filterExpr+`
-		ORDER BY created_at `+string(types.EffectiveOrderDirection(order, !after.IsZero()))+`
+		`SELECT drs.id, drs.created_at, drs.deployment_revision_id, drs.type, drs.message
+		FROM DeploymentRevision dr
+		CROSS JOIN LATERAL (
+			SELECT id, created_at, deployment_revision_id, type, message
+			FROM DeploymentRevisionStatus
+			WHERE deployment_revision_id = dr.id
+				AND created_at BETWEEN @after AND @before
+				`+filterExpr+`
+			ORDER BY created_at `+direction+`
+			LIMIT @maxRows
+		) drs
+		WHERE dr.deployment_id = @deploymentId
+		ORDER BY drs.created_at `+direction+`
 		LIMIT @maxRows`,
 		pgx.NamedArgs{
-			"deploymentRevisionIds": deploymentRevisionIDs,
-			"maxRows":               maxRows,
-			"before":                before,
-			"after":                 after,
-			"filter":                filter,
+			"deploymentId": deploymentID,
+			"maxRows":      maxRows,
+			"before":       before,
+			"after":        after,
+			"filter":       filter,
 		},
 	)
 	if err != nil {
@@ -153,29 +149,24 @@ func GetDeploymentRevisionStatusForExport(
 	callback func(types.DeploymentRevisionStatus) error,
 ) error {
 	db := internalctx.GetDb(ctx)
+
 	rows, err := db.Query(
 		ctx,
-		"SELECT id from DeploymentRevision WHERE deployment_id = @deploymentId",
-		pgx.NamedArgs{"deploymentId": deploymentID},
-	)
-	if err != nil {
-		return fmt.Errorf("failed to query DeploymentRevision for status: %w", err)
-	}
-	deploymentRevisionIDs, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID])
-	if err != nil {
-		return fmt.Errorf("failed to scan DeploymentRevision for status: %w", err)
-	}
-
-	rows, err = db.Query(
-		ctx,
-		`SELECT id, created_at, deployment_revision_id, type, message
-		FROM DeploymentRevisionStatus
-		WHERE deployment_revision_id = ANY (@deploymentRevisionIds)
-		ORDER BY created_at DESC
+		`SELECT drs.id, drs.created_at, drs.deployment_revision_id, drs.type, drs.message
+		FROM DeploymentRevision dr
+		CROSS JOIN LATERAL (
+			SELECT id, created_at, deployment_revision_id, type, message
+			FROM DeploymentRevisionStatus
+			WHERE deployment_revision_id = dr.id
+			ORDER BY created_at DESC
+			LIMIT @limit
+		) drs
+		WHERE dr.deployment_id = @deploymentId
+		ORDER BY drs.created_at DESC
 		LIMIT @limit`,
 		pgx.NamedArgs{
-			"deploymentRevisionIds": deploymentRevisionIDs,
-			"limit":                 limit,
+			"deploymentId": deploymentID,
+			"limit":        limit,
 		},
 	)
 	if err != nil {
