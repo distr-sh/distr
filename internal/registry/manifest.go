@@ -24,16 +24,20 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/containers/image/v5/manifest"
 	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/registry/audit"
 	"github.com/distr-sh/distr/internal/registry/authz"
 	"github.com/distr-sh/distr/internal/registry/blob"
 	registryerror "github.com/distr-sh/distr/internal/registry/error"
 	imanifest "github.com/distr-sh/distr/internal/registry/manifest"
+	"github.com/distr-sh/distr/internal/registry/name"
+	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	"github.com/opencontainers/go-digest"
 	"github.com/opencontainers/image-spec/specs-go"
@@ -41,6 +45,11 @@ import (
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
+
+// UpstreamTagSyncer syncs tags from an upstream OCI registry into the local DB.
+type UpstreamTagSyncer interface {
+	SyncArtifactTags(ctx context.Context, artifact *types.Artifact) error
+}
 
 type catalog struct {
 	Repos []string `json:"repositories"`
@@ -57,6 +66,7 @@ type manifests struct {
 	authz           authz.Authorizer
 	audit           audit.ArtifactAuditor
 	log             *zap.SugaredLogger
+	upstreamSyncer  UpstreamTagSyncer
 }
 
 func isManifest(req *http.Request) bool {
@@ -165,6 +175,8 @@ func (m *manifests) handleTags(resp http.ResponseWriter, req *http.Request) *reg
 			}
 			return regErrInternal(err)
 		}
+
+		m.syncIfStale(req.Context(), repo)
 
 		last := req.URL.Query().Get("last")
 		n := 10000
@@ -345,9 +357,37 @@ func (m *manifests) handleReferrers(resp http.ResponseWriter, req *http.Request)
 	return nil
 }
 
+func (handler *manifests) syncIfStale(ctx context.Context, repo string) {
+	if handler.upstreamSyncer == nil {
+		return
+	}
+	n, err := name.Parse(repo)
+	if err != nil {
+		return
+	}
+	artifact, err := db.GetArtifactByName(ctx, n.OrgName, n.ArtifactName)
+	if err != nil || artifact.UpstreamURL == nil {
+		return
+	}
+	staleness := env.RegistryUpstreamSyncStaleness()
+	if artifact.LastSyncedAt != nil && time.Since(*artifact.LastSyncedAt) < staleness {
+		return
+	}
+	if err := handler.upstreamSyncer.SyncArtifactTags(ctx, artifact); err != nil {
+		log := internalctx.GetLogger(ctx)
+		log.Warn("upstream tag sync failed", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+	}
+}
+
 func (handler *manifests) handleGet(resp http.ResponseWriter, req *http.Request, repo, target string) *regError {
 	ctx := req.Context()
 	m, err := handler.manifestHandler.Get(ctx, repo, target)
+	if (errors.Is(err, imanifest.ErrNameUnknown) || errors.Is(err, imanifest.ErrManifestUnknown)) &&
+		handler.upstreamSyncer != nil {
+		handler.syncIfStale(ctx, repo)
+		m, err = handler.manifestHandler.Get(ctx, repo, target)
+	}
 	if errors.Is(err, imanifest.ErrNameUnknown) {
 		return regErrNameUnknown
 	} else if errors.Is(err, imanifest.ErrManifestUnknown) {

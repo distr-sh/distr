@@ -133,6 +133,8 @@ func NewDefault(
 	mailer *mailx.Mailer,
 	tracer trace.TracerProvider,
 	s3Client *awss3.Client,
+	upstreamSyncer UpstreamTagSyncer,
+	upstreamFetcher UpstreamBlobFetcher,
 ) (http.Handler, error) {
 	blobHandler, err := s3.NewBlobHandler(ctx, s3Client)
 	if err != nil {
@@ -145,6 +147,7 @@ func NewDefault(
 		WithManifestHandler(db.NewManifestHandler()),
 		WithAuthorizer(authz.NewAuthorizer()),
 		WithAuditor(audit.NewAuditor()),
+		WithUpstreamSyncer(upstreamSyncer, upstreamFetcher),
 		WithMiddlewares(
 			chimiddleware.Recoverer,
 			chimiddleware.RequestID,
@@ -225,5 +228,12 @@ func WithAuthorizer(a authz.Authorizer) Option {
 func WithAuditor(a audit.ArtifactAuditor) Option {
 	return func(r *registry) {
 		r.manifests.audit = a
+	}
+}
+
+func WithUpstreamSyncer(syncer UpstreamTagSyncer, fetcher UpstreamBlobFetcher) Option {
+	return func(r *registry) {
+		r.manifests.upstreamSyncer = syncer
+		r.blobs.upstreamFetcher = fetcher
 	}
 }

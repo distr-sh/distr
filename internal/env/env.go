@@ -50,6 +50,7 @@ var (
 	registryS3Config                        S3Config
 	registryScratchDir                      *string
 	artifactTagsDefaultLimitPerOrg          int
+	registryUpstreamSyncStaleness           time.Duration
 	cleanupDeploymentRevisionStatusCron     *string
 	cleanupDeploymentRevisionStatusTimeout  time.Duration
 	cleanupDeploymentTargetMetricsCron      *string
@@ -166,6 +167,9 @@ func Initialize() {
 	}
 	artifactTagsDefaultLimitPerOrg = envutil.GetEnvParsedOrDefault(
 		"ARTIFACT_TAGS_DEFAULT_LIMIT_PER_ORG", envparse.NonNegativeNumber, 0,
+	)
+	registryUpstreamSyncStaleness = envutil.GetEnvParsedOrDefault(
+		"REGISTRY_UPSTREAM_SYNC_STALENESS", envparse.PositiveDuration, 30*time.Minute,
 	)
 
 	sentryDSN = envutil.GetEnv("SENTRY_DSN")
@@ -380,6 +384,10 @@ func RegistryScratchDir() *string {
 
 func ArtifactTagsDefaultLimitPerOrg() int {
 	return artifactTagsDefaultLimitPerOrg
+}
+
+func RegistryUpstreamSyncStaleness() time.Duration {
+	return registryUpstreamSyncStaleness
 }
 
 func OtelAgentSampler() *SamplerConfig {

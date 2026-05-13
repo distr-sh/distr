@@ -20,12 +20,21 @@ import (
 	"go.uber.org/zap"
 )
 
-func ArtifactsRouter(r chiopenapi.Router) {
+type UpstreamTagSyncer interface {
+	SyncArtifactTags(ctx context.Context, artifact *types.Artifact) error
+}
+
+func ArtifactsRouter(r chiopenapi.Router, syncer UpstreamTagSyncer) {
 	r.WithOptions(option.GroupTags("Artifacts"))
 	r.Use(middleware.RequireOrgAndRole)
 	r.Get("/", getArtifacts).
 		With(option.Description("List all artifacts")).
 		With(option.Response(http.StatusOK, []api.ArtifactsResponse{}))
+	r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
+		Post("/", createArtifactHandler(syncer)).
+		With(option.Description("Create an artifact")).
+		With(option.Request(api.CreateArtifactRequest{})).
+		With(option.Response(http.StatusCreated, api.ArtifactResponse{}))
 	r.With(artifactMiddleware).Route("/{artifactId}", func(r chiopenapi.Router) {
 		type ArtifactRequest struct {
 			ArtifactID uuid.UUID `path:"artifactId"`
@@ -44,6 +53,10 @@ func ArtifactsRouter(r chiopenapi.Router) {
 						api.PatchImageRequest
 					}{})).
 					With(option.Response(http.StatusOK, []api.ArtifactResponse{}))
+				r.Post("/sync", syncArtifactHandler(syncer)).
+					With(option.Description("Trigger upstream sync for a pull-through artifact")).
+					With(option.Request(ArtifactRequest{})).
+					With(option.Response(http.StatusOK, api.ArtifactResponse{}))
 				r.Delete("/", deleteArtifactHandler).
 					With(option.Description("Delete an artifact")).
 					With(option.Request(ArtifactRequest{}))
@@ -55,6 +68,91 @@ func ArtifactsRouter(r chiopenapi.Router) {
 					}{}))
 			})
 	})
+}
+
+func createArtifactHandler(syncer UpstreamTagSyncer) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		log := internalctx.GetLogger(ctx)
+		authentication := auth.Authentication.Require(ctx)
+
+		body, err := JsonBody[api.CreateArtifactRequest](w, r)
+		if err != nil {
+			return
+		}
+		if body.Name == "" {
+			http.Error(w, "name is required", http.StatusBadRequest)
+			return
+		}
+
+		artifact := &types.Artifact{
+			Name:           body.Name,
+			OrganizationID: *authentication.CurrentOrgID(),
+			UpstreamURL:    body.UpstreamURL,
+		}
+		if err := db.CreateArtifact(ctx, artifact); err != nil {
+			if errors.Is(err, apierrors.ErrConflict) {
+				http.Error(w, "artifact name already exists", http.StatusConflict)
+				return
+			}
+			log.Error("failed to create artifact", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		if artifact.UpstreamURL != nil && syncer != nil {
+			if err := syncer.SyncArtifactTags(ctx, artifact); err != nil {
+				log.Warn("initial upstream sync failed", zap.Error(err))
+			}
+		}
+
+		result, err := db.GetArtifactByID(ctx, artifact.OrganizationID, artifact.ID, nil)
+		if err != nil {
+			log.Error("failed to fetch created artifact", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		RespondJSON(w, mapping.ArtifactToAPI(*result))
+	}
+}
+
+func syncArtifactHandler(syncer UpstreamTagSyncer) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		log := internalctx.GetLogger(ctx)
+		artifact := internalctx.GetArtifact(ctx)
+
+		if artifact.UpstreamURL == nil {
+			http.Error(w, "artifact is not a pull-through cache", http.StatusBadRequest)
+			return
+		}
+
+		if syncer == nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		if err := syncer.SyncArtifactTags(ctx, &artifact.Artifact); err != nil {
+			log.Error("upstream sync failed", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		result, err := db.GetArtifactByID(ctx, artifact.OrganizationID, artifact.ID, nil)
+		if err != nil {
+			log.Error("failed to fetch artifact after sync", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		RespondJSON(w, mapping.ArtifactToAPI(*result))
+	}
 }
 
 func getArtifacts(w http.ResponseWriter, r *http.Request) {

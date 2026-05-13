@@ -21,6 +21,9 @@ type Artifact struct {
 	OrganizationID uuid.UUID  `db:"organization_id" json:"-"`
 	Name           string     `db:"name" json:"name"`
 	ImageID        *uuid.UUID `db:"image_id" json:"-"`
+	UpstreamURL    *string    `db:"upstream_url" json:"upstreamUrl,omitempty"`
+	LastSyncedAt   *time.Time `db:"last_synced_at" json:"lastSyncedAt,omitempty"`
+	LastSyncError  *string    `db:"last_sync_error" json:"lastSyncError,omitempty"`
 }
 
 type DownloadMetrics struct {

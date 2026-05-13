@@ -42,7 +42,11 @@ export interface BaseArtifactVersion {
   name: string;
 }
 
-export interface Artifact extends BaseArtifact, HasDownloads {}
+export interface Artifact extends BaseArtifact, HasDownloads {
+  upstreamUrl?: string;
+  lastSyncedAt?: string;
+  lastSyncError?: string;
+}
 
 export interface TaggedArtifactVersion extends HasDownloads {
   id: string;
@@ -104,6 +108,18 @@ export class ArtifactsService {
         this.cache.remove({id: artifactId} as ArtifactWithTags);
       })
     );
+  }
+
+  public createArtifact(name: string, upstreamUrl?: string): Observable<ArtifactWithTags> {
+    return this.http
+      .post<ArtifactWithTags>(this.artifactsUrl, {name, upstreamUrl})
+      .pipe(tap((it) => this.cache.save(it)));
+  }
+
+  public syncArtifact(id: string): Observable<ArtifactWithTags> {
+    return this.http
+      .post<ArtifactWithTags>(`${this.artifactsUrl}/${id}/sync`, {})
+      .pipe(tap((it) => this.cache.save(it)));
   }
 
   public deleteArtifactTag(artifact: ArtifactWithTags, tagName: string) {

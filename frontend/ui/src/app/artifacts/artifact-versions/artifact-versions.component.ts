@@ -8,6 +8,7 @@ import {
   faBox,
   faEllipsisVertical,
   faFileSignature,
+  faRotate,
   faSpinner,
   faTrash,
   faXmark,
@@ -70,6 +71,9 @@ export class ArtifactVersionsComponent {
   protected readonly faEllipsisVertical = faEllipsisVertical;
   protected readonly faSpinner = faSpinner;
   protected readonly faFileSignature = faFileSignature;
+  protected readonly faRotate = faRotate;
+
+  protected readonly syncing = signal(false);
 
   protected readonly showDropdown = signal(false);
   protected readonly signatureOverlayDigest = signal<string | void>(undefined);
@@ -212,6 +216,24 @@ export class ArtifactVersionsComponent {
         tap(() => this.toast.success(`Tag "${tagName}" removed successfully`))
       )
       .subscribe();
+  }
+
+  public syncArtifact(artifact: ArtifactWithTags): void {
+    if (this.syncing()) return;
+    this.syncing.set(true);
+    this.artifacts
+      .syncArtifact(artifact.id)
+      .pipe(
+        catchError((e) => {
+          const msg = getFormDisplayedError(e);
+          if (msg) {
+            this.toast.error(msg);
+          }
+          return NEVER;
+        }),
+        tap(() => this.toast.success('Sync triggered successfully'))
+      )
+      .subscribe({complete: () => this.syncing.set(false)});
   }
 
   protected showSignatureOverlay(version: TaggedArtifactVersion) {

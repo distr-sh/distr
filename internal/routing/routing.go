@@ -64,6 +64,7 @@ func NewRouter(
 	tracers *tracers.Tracers,
 	oidcer *oidc.OIDCer,
 	prometheusCollector *prometheus.DistrCollector,
+	artifactSyncer handlers.UpstreamTagSyncer,
 ) http.Handler {
 	baseRouter := chi.NewRouter()
 	baseRouter.Use(
@@ -91,7 +92,7 @@ func NewRouter(
 			Layout:      "responsive",
 		}),
 	)
-	openapiRouter.Route("/api", ApiRouter(logger, db, mailer, tracers, oidcer, prometheusCollector))
+	openapiRouter.Route("/api", ApiRouter(logger, db, mailer, tracers, oidcer, prometheusCollector, artifactSyncer))
 
 	baseRouter.Mount("/internal", InternalRouter())
 	baseRouter.Mount("/status", StatusRouter())
@@ -109,6 +110,7 @@ func ApiRouter(
 	tracers *tracers.Tracers,
 	oidcer *oidc.OIDCer,
 	prometheusCollector *prometheus.DistrCollector,
+	artifactSyncer handlers.UpstreamTagSyncer,
 ) func(r chiopenapi.Router) {
 	requestSize1MiB := chimiddleware.RequestSize(1024 * 1024)
 	requestSize10MiB := chimiddleware.RequestSize(10 * 1024 * 1024)
@@ -161,7 +163,9 @@ func ApiRouter(
 					r.Route("/applications", handlers.ApplicationsRouter)
 					r.Route("/artifact-entitlements", handlers.ArtifactEntitlementsRouter)
 					r.Route("/artifact-pulls", handlers.ArtifactPullsRouter)
-					r.Route("/artifacts", handlers.ArtifactsRouter)
+					r.Route("/artifacts", func(r chiopenapi.Router) {
+						handlers.ArtifactsRouter(r, artifactSyncer)
+					})
 					r.Route("/billing", handlers.BillingRouter)
 					r.Route("/context", handlers.ContextRouter)
 					r.Route("/customer-organizations", handlers.CustomerOrganizationsRouter)

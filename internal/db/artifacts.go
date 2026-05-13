@@ -7,6 +7,7 @@ import (
 	"math"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/containers/image/v5/manifest"
 	"github.com/distr-sh/distr/internal/apierrors"
@@ -20,7 +21,7 @@ import (
 )
 
 const (
-	artifactOutputExpr = ` a.id, a.created_at, a.organization_id, a.name, a.image_id `
+	artifactOutputExpr = ` a.id, a.created_at, a.organization_id, a.name, a.image_id, a.upstream_url, a.last_synced_at, a.last_sync_error `
 
 	artifactDownloadsOutExpr = `
 		count(DISTINCT avpl.id) AS downloads_total,
@@ -393,10 +394,12 @@ func CreateArtifact(ctx context.Context, artifact *types.Artifact) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`INSERT INTO Artifact AS a (name, organization_id) VALUES (@name, @organizationId) RETURNING `+artifactOutputExpr,
+		`INSERT INTO Artifact AS a (name, organization_id, upstream_url)
+		VALUES (@name, @organizationId, @upstreamUrl) RETURNING `+artifactOutputExpr,
 		pgx.NamedArgs{
 			"name":           artifact.Name,
 			"organizationId": artifact.OrganizationID,
+			"upstreamUrl":    artifact.UpstreamURL,
 		},
 	)
 	if err != nil {
@@ -412,6 +415,27 @@ func CreateArtifact(ctx context.Context, artifact *types.Artifact) error {
 		*artifact = result
 		return nil
 	}
+}
+
+func UpdateArtifactSyncStatus(ctx context.Context, artifactID uuid.UUID, lastSyncError *string) error {
+	db := internalctx.GetDb(ctx)
+	var lastSyncedAt *time.Time
+	if lastSyncError == nil {
+		now := time.Now().UTC()
+		lastSyncedAt = &now
+	}
+	_, err := db.Exec(ctx,
+		`UPDATE Artifact SET last_synced_at = @lastSyncedAt, last_sync_error = @lastSyncError WHERE id = @id`,
+		pgx.NamedArgs{
+			"id":            artifactID,
+			"lastSyncedAt":  lastSyncedAt,
+			"lastSyncError": lastSyncError,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("could not update artifact sync status: %w", err)
+	}
+	return nil
 }
 
 func HasAnyArtifactEntitlement(ctx context.Context, orgID uuid.UUID) (bool, error) {
@@ -1130,6 +1154,75 @@ func DeleteArtifactVersion(ctx context.Context, artifactID uuid.UUID, tagName st
 	}
 
 	return nil
+}
+
+func UpsertArtifactVersionForSync(ctx context.Context, av *types.ArtifactVersion) error {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`INSERT INTO ArtifactVersion AS av (
+            name,
+			manifest_blob_digest,
+			manifest_blob_size,
+			manifest_content_type,
+			manifest_data,
+			artifact_id
+        ) VALUES (
+        	@name, @manifestBlobDigest, @manifestBlobSize, @manifestContentType, @manifestData, @artifactId
+        )
+		ON CONFLICT ON CONSTRAINT ArtifactVersion_unique_name DO UPDATE SET
+			manifest_blob_digest = EXCLUDED.manifest_blob_digest,
+			manifest_blob_size = EXCLUDED.manifest_blob_size,
+			manifest_content_type = EXCLUDED.manifest_content_type,
+			manifest_data = EXCLUDED.manifest_data,
+			updated_at = current_timestamp
+		RETURNING *`,
+		pgx.NamedArgs{
+			"name":                av.Name,
+			"manifestBlobDigest":  av.ManifestBlobDigest,
+			"manifestBlobSize":    av.ManifestBlobSize,
+			"manifestContentType": av.ManifestContentType,
+			"manifestData":        av.ManifestData,
+			"artifactId":          av.ArtifactID,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("could not upsert ArtifactVersion: %w", err)
+	}
+	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ArtifactVersion]); err != nil {
+		return fmt.Errorf("could not collect upserted ArtifactVersion: %w", err)
+	} else {
+		*av = result
+		return nil
+	}
+}
+
+func GetPullThroughBlobSize(ctx context.Context, orgSlug, artifactName, blobDigest string) (int64, error) {
+	db := internalctx.GetDb(ctx)
+	var size int64
+	err := db.QueryRow(ctx, `
+		SELECT avp.artifact_blob_size
+		FROM ArtifactVersionPart avp
+		JOIN ArtifactVersion av ON av.id = avp.artifact_version_id
+		JOIN Artifact a ON a.id = av.artifact_id
+		JOIN Organization o ON o.id = a.organization_id
+		WHERE o.slug = @orgSlug AND a.name = @artifactName
+		  AND a.upstream_url IS NOT NULL
+		  AND avp.artifact_blob_digest = @blobDigest
+		LIMIT 1`,
+		pgx.NamedArgs{
+			"orgSlug":      orgSlug,
+			"artifactName": artifactName,
+			"blobDigest":   blobDigest,
+		},
+	).Scan(&size)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, apierrors.ErrNotFound
+		}
+		return 0, fmt.Errorf("could not query blob size: %w", err)
+	}
+	return size, nil
 }
 
 func GetAllReferencedBlobDigests(ctx context.Context) ([]string, error) {

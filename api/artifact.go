@@ -7,6 +7,11 @@ import (
 	"github.com/google/uuid"
 )
 
+type CreateArtifactRequest struct {
+	Name        string  `json:"name"`
+	UpstreamURL *string `json:"upstreamUrl,omitempty"`
+}
+
 type ArtifactResponse struct {
 	types.ArtifactWithTaggedVersion
 	ImageUrl *string `json:"imageUrl,omitempty"`

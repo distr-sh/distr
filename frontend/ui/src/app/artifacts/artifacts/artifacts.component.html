@@ -82,6 +82,15 @@
           </div>
         </form>
       </div>
+      <div *appRequireVendor class="mt-3 md:mt-0 md:ms-4">
+        <button
+          (click)="openCreateModal(newArtifactModal)"
+          type="button"
+          class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+          <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
+          Add artifact
+        </button>
+      </div>
     </div>
 
     @if (filteredArtifacts(); as artifacts) {
@@ -102,11 +111,19 @@
                   </div>
                 }
                 <div class="flex-1 min-w-0 ms-4">
-                  <a
-                    class="font-semibold text-gray-900 truncate dark:text-white hover:underline hover:text-blue-600 dark:hover:text-blue-500"
-                    [routerLink]="artifact.id">
-                    {{ artifact.name }}
-                  </a>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <a
+                      class="font-semibold text-gray-900 truncate dark:text-white hover:underline hover:text-blue-600 dark:hover:text-blue-500"
+                      [routerLink]="artifact.id">
+                      {{ artifact.name }}
+                    </a>
+                    @if (artifact.upstreamUrl) {
+                      <span
+                        class="bg-purple-100 text-purple-800 text-xs font-medium px-2 py-0.5 rounded-md dark:bg-purple-900 dark:text-purple-300">
+                        pull-through
+                      </span>
+                    }
+                  </div>
                   <p class="text-sm text-gray-500 truncate dark:text-gray-400 mt-1">
                     <app-uuid [uuid]="artifact.id" [small]="true" />
                   </p>
@@ -128,3 +145,78 @@
     }
   </div>
 </section>
+
+<ng-template #newArtifactModal>
+  <div
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top"
+    class="p-4 w-128 my-auto max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900">
+    <div class="relative w-full max-h-full">
+      <div class="relative rounded-lg">
+        <div
+          class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Add Artifact</h3>
+          <button
+            type="button"
+            class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+            (click)="hideCreateModal()">
+            <fa-icon [icon]="faXmark" />
+            <span class="sr-only">Close modal</span>
+          </button>
+        </div>
+
+        <div class="p-4 md:p-5">
+          <form [formGroup]="createForm" (ngSubmit)="createArtifact()">
+            <div class="space-y-4">
+              <div>
+                <label for="artifact-name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >Artifact Name *</label
+                >
+                <input
+                  [formControl]="createForm.controls.name"
+                  autotrim
+                  autocomplete="off"
+                  type="text"
+                  id="artifact-name"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                @if (createForm.controls.name.invalid && createForm.controls.name.touched) {
+                  <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
+                }
+              </div>
+
+              <div>
+                <label for="artifact-upstream-url" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >Upstream URL
+                  <span class="font-normal text-gray-500 dark:text-gray-400">(optional, for pull-through cache)</span>
+                </label>
+                <input
+                  [formControl]="createForm.controls.upstreamUrl"
+                  autotrim
+                  autocomplete="off"
+                  type="text"
+                  id="artifact-upstream-url"
+                  placeholder="e.g. registry-1.docker.io/library/nginx"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  If set, tags from the upstream OCI repository are automatically synced.
+                </p>
+              </div>
+
+              <div class="flex justify-stretch sm:justify-end space-x-2.5">
+                <button
+                  type="submit"
+                  [disabled]="createFormLoading"
+                  class="flex-1 sm:flex-none items-center justify-center text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 disabled:opacity-60 disabled:cursor-not-allowed">
+                  @if (createFormLoading) {
+                    <fa-icon [icon]="faSpinner" class="animate-spin mr-2" />
+                  }
+                  Add Artifact
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</ng-template>
