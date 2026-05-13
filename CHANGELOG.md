@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.20.4](https://github.com/distr-sh/distr/compare/2.20.3...2.20.4) (2026-05-13)
+
+
+### Docs
+
+* update homepage outcome positioning ([#2398](https://github.com/distr-sh/distr/issues/2398)) ([4179322](https://github.com/distr-sh/distr/commit/4179322fc09da6e7dd38b0f802027c0cd0817f85))
+
+
+### Performance
+
+* **backend:** optimize GetDeploymentRevisionStatus query ([#2424](https://github.com/distr-sh/distr/issues/2424)) ([f9d285c](https://github.com/distr-sh/distr/commit/f9d285c2345275a6ca5480f275a623ee326054d1))
+
 ## [2.20.3](https://github.com/distr-sh/distr/compare/2.20.2...2.20.3) (2026-05-12)
 
 
