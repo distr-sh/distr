@@ -140,15 +140,13 @@ func NewDefault(
 		return nil, err
 	}
 
-	syncer := new(upstream.Syncer)
-
 	reg := New(
 		WithLogger(logger),
 		WithBlobHandler(blobHandler),
 		WithManifestHandler(db.NewManifestHandler()),
 		WithAuthorizer(authz.NewAuthorizer()),
 		WithAuditor(audit.NewAuditor()),
-		WithUpstreamSyncer(syncer, syncer),
+		WithUpstreamFetcher(new(upstream.Syncer)),
 		WithMiddlewares(
 			chimiddleware.Recoverer,
 			chimiddleware.RequestID,
@@ -232,9 +230,8 @@ func WithAuditor(a audit.ArtifactAuditor) Option {
 	}
 }
 
-func WithUpstreamSyncer(syncer UpstreamTagSyncer, fetcher UpstreamBlobFetcher) Option {
+func WithUpstreamFetcher(fetcher UpstreamBlobFetcher) Option {
 	return func(r *registry) {
-		r.manifests.upstreamSyncer = syncer
 		r.blobs.upstreamFetcher = fetcher
 	}
 }

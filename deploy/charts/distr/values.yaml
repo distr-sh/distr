@@ -269,6 +269,10 @@ cronJobs:
     labels:
       distr.sh/job: artifact-blob-cleanup
     args: [cleanup, ArtifactBlob, --timeout, 10m]
+  - name: registry-upstream-sync
+    labels:
+      distr.sh/job: registry-upstream-sync
+    args: [maintenance, sync-artifacts-upstream, --timeout, 10m]
 
 postgresql:
   enabled: false

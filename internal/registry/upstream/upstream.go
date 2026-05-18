@@ -85,7 +85,7 @@ func syncTag(ctx context.Context, repo *remote.Repository, artifact *types.Artif
 	if contentType == "" {
 		contentType = manifest.GuessMIMEType(data)
 	}
-	d := godigest.Digest(desc.Digest.String())
+	d := desc.Digest
 
 	tagVersion := &types.ArtifactVersion{
 		Name:                tag,

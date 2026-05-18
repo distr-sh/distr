@@ -44,7 +44,9 @@ type UpstreamBlobFetcher interface {
 	// for repo, stores it via bph, and returns a TmpStream for serving the content
 	// directly to the client. The caller must call TmpStream.Destroy() after use.
 	// Returns apierrors.ErrNotFound if repo has no upstream configured.
-	FetchAndStoreBlob(ctx context.Context, repo string, d digest.Digest, bph blob.BlobPutHandler) (tmpstream.TmpStream, int64, error)
+	FetchAndStoreBlob(
+		ctx context.Context, repo string, d digest.Digest, bph blob.BlobPutHandler,
+	) (tmpstream.TmpStream, int64, error)
 }
 
 const (
@@ -370,7 +372,9 @@ func (b *blobs) handleGet(resp http.ResponseWriter, req *http.Request, repo, tar
 	return nil
 }
 
-func (b *blobs) fetchFromUpstream(ctx context.Context, repo string, h digest.Digest) (tmpstream.TmpStream, int64, error) {
+func (b *blobs) fetchFromUpstream(
+	ctx context.Context, repo string, h digest.Digest,
+) (tmpstream.TmpStream, int64, error) {
 	if b.upstreamFetcher == nil {
 		return nil, 0, blob.ErrNotFound
 	}

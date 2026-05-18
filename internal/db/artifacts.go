@@ -439,6 +439,15 @@ func UpdateArtifactSyncStatus(ctx context.Context, artifactID uuid.UUID, lastSyn
 	return nil
 }
 
+func GetArtifactsWithUpstreamURL(ctx context.Context) ([]types.Artifact, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx, `SELECT`+artifactOutputExpr+`FROM Artifact a WHERE a.upstream_url IS NOT NULL`)
+	if err != nil {
+		return nil, fmt.Errorf("could not query artifacts with upstream URL: %w", err)
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[types.Artifact])
+}
+
 func HasAnyArtifactEntitlement(ctx context.Context, orgID uuid.UUID) (bool, error) {
 	db := internalctx.GetDb(ctx)
 	var hasEntitlements bool
