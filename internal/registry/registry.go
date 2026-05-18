@@ -41,6 +41,7 @@ import (
 	"github.com/distr-sh/distr/internal/registry/blob/s3"
 	"github.com/distr-sh/distr/internal/registry/manifest"
 	"github.com/distr-sh/distr/internal/registry/manifest/db"
+	"github.com/distr-sh/distr/internal/registry/upstream"
 	"github.com/getsentry/sentry-go"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-mailx/mailx"
@@ -133,13 +134,13 @@ func NewDefault(
 	mailer *mailx.Mailer,
 	tracer trace.TracerProvider,
 	s3Client *awss3.Client,
-	upstreamSyncer UpstreamTagSyncer,
-	upstreamFetcher UpstreamBlobFetcher,
 ) (http.Handler, error) {
 	blobHandler, err := s3.NewBlobHandler(ctx, s3Client)
 	if err != nil {
 		return nil, err
 	}
+
+	syncer := new(upstream.Syncer)
 
 	reg := New(
 		WithLogger(logger),
@@ -147,7 +148,7 @@ func NewDefault(
 		WithManifestHandler(db.NewManifestHandler()),
 		WithAuthorizer(authz.NewAuthorizer()),
 		WithAuditor(audit.NewAuditor()),
-		WithUpstreamSyncer(upstreamSyncer, upstreamFetcher),
+		WithUpstreamSyncer(syncer, syncer),
 		WithMiddlewares(
 			chimiddleware.Recoverer,
 			chimiddleware.RequestID,

@@ -12,6 +12,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/registry/upstream"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
@@ -24,14 +25,14 @@ type UpstreamTagSyncer interface {
 	SyncArtifactTags(ctx context.Context, artifact *types.Artifact) error
 }
 
-func ArtifactsRouter(r chiopenapi.Router, syncer UpstreamTagSyncer) {
+func ArtifactsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Artifacts"))
 	r.Use(middleware.RequireOrgAndRole)
 	r.Get("/", getArtifacts).
 		With(option.Description("List all artifacts")).
 		With(option.Response(http.StatusOK, []api.ArtifactsResponse{}))
 	r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
-		Post("/", createArtifactHandler(syncer)).
+		Post("/", createArtifactHandler()).
 		With(option.Description("Create an artifact")).
 		With(option.Request(api.CreateArtifactRequest{})).
 		With(option.Response(http.StatusCreated, api.ArtifactResponse{}))
@@ -53,7 +54,7 @@ func ArtifactsRouter(r chiopenapi.Router, syncer UpstreamTagSyncer) {
 						api.PatchImageRequest
 					}{})).
 					With(option.Response(http.StatusOK, []api.ArtifactResponse{}))
-				r.Post("/sync", syncArtifactHandler(syncer)).
+				r.Post("/sync", syncArtifactHandler()).
 					With(option.Description("Trigger upstream sync for a pull-through artifact")).
 					With(option.Request(ArtifactRequest{})).
 					With(option.Response(http.StatusOK, api.ArtifactResponse{}))
@@ -70,7 +71,8 @@ func ArtifactsRouter(r chiopenapi.Router, syncer UpstreamTagSyncer) {
 	})
 }
 
-func createArtifactHandler(syncer UpstreamTagSyncer) http.HandlerFunc {
+func createArtifactHandler() http.HandlerFunc {
+	syncer := new(upstream.Syncer)
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
@@ -120,7 +122,8 @@ func createArtifactHandler(syncer UpstreamTagSyncer) http.HandlerFunc {
 	}
 }
 
-func syncArtifactHandler(syncer UpstreamTagSyncer) http.HandlerFunc {
+func syncArtifactHandler() http.HandlerFunc {
+	syncer := new(upstream.Syncer)
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)

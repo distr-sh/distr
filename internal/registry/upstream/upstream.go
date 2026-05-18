@@ -1,4 +1,4 @@
-package svc
+package upstream
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 
 	"github.com/containers/image/v5/manifest"
 	"github.com/distr-sh/distr/internal/apierrors"
+	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/registry/blob"
 	"github.com/distr-sh/distr/internal/registry/name"
@@ -15,19 +16,19 @@ import (
 	"github.com/distr-sh/distr/internal/util"
 	godigest "github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"go.uber.org/zap"
 	"oras.land/oras-go/v2/registry/remote"
 )
 
-type UpstreamSyncer struct{}
+type Syncer struct{}
 
-func NewUpstreamSyncer() *UpstreamSyncer {
-	return &UpstreamSyncer{}
-}
-
-func (s *UpstreamSyncer) SyncArtifactTags(ctx context.Context, artifact *types.Artifact) error {
+func (s *Syncer) SyncArtifactTags(ctx context.Context, artifact *types.Artifact) error {
 	if artifact.UpstreamURL == nil {
 		return nil
 	}
+
+	log := internalctx.GetLogger(ctx).With(zap.Stringer("artifactId", artifact.ID))
+	log.Debug("upstream sync started")
 
 	repo, err := remote.NewRepository(*artifact.UpstreamURL)
 	if err != nil {
@@ -38,6 +39,7 @@ func (s *UpstreamSyncer) SyncArtifactTags(ctx context.Context, artifact *types.A
 	var firstErr error
 	if err := repo.Tags(ctx, "", func(tags []string) error {
 		for _, tag := range tags {
+			log.Debug("upstream sync tag", zap.String("tag", tag))
 			if err := syncTag(ctx, repo, artifact, tag); err != nil && firstErr == nil {
 				firstErr = fmt.Errorf("syncing tag %q: %w", tag, err)
 			}
@@ -51,6 +53,9 @@ func (s *UpstreamSyncer) SyncArtifactTags(ctx context.Context, artifact *types.A
 	if firstErr != nil {
 		errStr = util.PtrTo(firstErr.Error())
 	}
+
+	log.Debug("upstream sync finished")
+
 	return db.UpdateArtifactSyncStatus(ctx, artifact.ID, errStr)
 }
 
@@ -115,7 +120,6 @@ func syncTag(ctx context.Context, repo *remote.Repository, artifact *types.Artif
 		}
 	}
 
-	// Eagerly fetch and store sub-manifests (platform manifests in an image index)
 	for _, sub := range subManifests {
 		if err := syncSubManifest(ctx, repo, artifact, sub); err != nil {
 			return fmt.Errorf("syncing sub-manifest %s: %w", sub.Digest, err)
@@ -125,7 +129,9 @@ func syncTag(ctx context.Context, repo *remote.Repository, artifact *types.Artif
 	return nil
 }
 
-func syncSubManifest(ctx context.Context, repo *remote.Repository, artifact *types.Artifact, desc ocispec.Descriptor) error {
+func syncSubManifest(
+	ctx context.Context, repo *remote.Repository, artifact *types.Artifact, desc ocispec.Descriptor,
+) error {
 	rc, err := repo.Fetch(ctx, desc)
 	if err != nil {
 		return fmt.Errorf("fetching sub-manifest: %w", err)
@@ -177,7 +183,9 @@ type blobRef struct {
 	Size   int64
 }
 
-func extractBlobsAndSubManifests(data []byte, contentType string) (blobs []blobRef, subManifests []ocispec.Descriptor, err error) {
+func extractBlobsAndSubManifests(
+	data []byte, contentType string,
+) (blobs []blobRef, subManifests []ocispec.Descriptor, err error) {
 	if manifest.MIMETypeIsMultiImage(contentType) {
 		im, err := manifest.ListFromBlob(data, contentType)
 		if err != nil {
@@ -213,7 +221,7 @@ func extractBlobsAndSubManifests(data []byte, contentType string) (blobs []blobR
 // stores it in the blob handler, and returns a TmpStream that can be used to serve
 // the blob content to the client. The caller must call TmpStream.Destroy() after use.
 // Returns apierrors.ErrNotFound if the artifact has no upstream configured.
-func (s *UpstreamSyncer) FetchAndStoreBlob(
+func (s *Syncer) FetchAndStoreBlob(
 	ctx context.Context,
 	repoStr string,
 	d godigest.Digest,

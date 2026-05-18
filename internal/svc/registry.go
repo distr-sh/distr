@@ -140,7 +140,6 @@ func (r *Registry) Shutdown(ctx context.Context) error {
 }
 
 func (reg *Registry) createArtifactsRegistry(ctx context.Context) (http.Handler, error) {
-	syncer := NewUpstreamSyncer()
 	return registry.NewDefault(
 		ctx,
 		reg.GetLogger().With(zap.String("component", "registry")),
@@ -148,8 +147,6 @@ func (reg *Registry) createArtifactsRegistry(ctx context.Context) (http.Handler,
 		reg.GetMailer(),
 		reg.GetTracers().Registry(),
 		reg.s3Client,
-		syncer,
-		syncer,
 	)
 }
 
@@ -161,7 +158,6 @@ func (r *Registry) GetRouter() http.Handler {
 		r.GetTracers(),
 		r.GetOIDCer(),
 		r.GetPrometheusCollector(),
-		NewUpstreamSyncer(),
 	)
 }
 

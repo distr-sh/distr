@@ -369,7 +369,7 @@ func (handler *manifests) syncIfStale(ctx context.Context, repo string) {
 	if err != nil || artifact.UpstreamURL == nil {
 		return
 	}
-	staleness := env.RegistryUpstreamSyncStaleness()
+	staleness := env.RegistryUpstreamSyncStaleAfterDuration()
 	if artifact.LastSyncedAt != nil && time.Since(*artifact.LastSyncedAt) < staleness {
 		return
 	}

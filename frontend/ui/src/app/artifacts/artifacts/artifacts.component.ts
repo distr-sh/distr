@@ -22,7 +22,7 @@ import {SecureImagePipe} from '../../../util/secureImage';
 import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {RequireCustomerDirective, RequireVendorDirective} from '../../directives/required-role.directive';
-import {ArtifactsService, ArtifactWithTags} from '../../services/artifacts.service';
+import {ArtifactsService} from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsCache} from '../../services/customer-organizations.service';
 import {OrganizationService} from '../../services/organization.service';
