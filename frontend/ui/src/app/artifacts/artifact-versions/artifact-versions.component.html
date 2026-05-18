@@ -114,6 +114,26 @@
 
       <div class="mt-4 bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
         <div class="overflow-x-auto">
+          @if (filteredVersions().length === 0 && artifact.upstreamUrl) {
+            <div class="flex flex-col items-center justify-center py-10 px-6 text-center text-gray-500 dark:text-gray-400">
+              <p class="text-sm">
+                Versions for this artifact will be automatically synced from
+                <span class="font-mono text-gray-700 dark:text-gray-300">{{ artifact.upstreamUrl }}</span>.
+              </p>
+              @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
+                <p class="mt-1 text-sm">
+                  To sync now, click
+                  <button
+                    type="button"
+                    (click)="syncArtifact(artifact)"
+                    [disabled]="syncing()"
+                    class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Sync now
+                  </button>.
+                </p>
+              }
+            </div>
+          }
           <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
             @for (version of filteredVersions(); track version.digest) {
               @if (version.tags.length) {

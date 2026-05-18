@@ -10,7 +10,6 @@ import {
   faLightbulb,
   faMagnifyingGlass,
   faPlus,
-  faSpinner,
   faTrash,
   faUserCircle,
   faXmark,
@@ -28,6 +27,7 @@ import {CustomerOrganizationsCache} from '../../services/customer-organizations.
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
+import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {ArtifactsDownloadCountComponent, ArtifactsDownloadedByComponent} from '../components';
 import {getFormDisplayedError} from '../../../util/errors';
 
@@ -46,6 +46,7 @@ import {getFormDisplayedError} from '../../../util/errors';
     RequireCustomerDirective,
     SecureImagePipe,
     OverlayModule,
+    SpinnerComponent,
   ],
   templateUrl: './artifacts.component.html',
   providers: [CustomerOrganizationsCache],
@@ -59,7 +60,6 @@ export class ArtifactsComponent {
   protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faBox = faBox;
   protected readonly faTrash = faTrash;
-  protected readonly faSpinner = faSpinner;
   protected readonly faPlus = faPlus;
   protected readonly faXmark = faXmark;
   protected readonly faLightbulb = faLightbulb;
