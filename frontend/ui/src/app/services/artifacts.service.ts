@@ -85,7 +85,7 @@ export class ArtifactsService {
     return this.list().pipe(
       map((ls) => ls.find((a) => a.id === id)),
       switchMap((existing) => {
-        if ((existing?.versions ?? []).length > 0) {
+        if (existing?.versions !== undefined) {
           return of(existing);
         } else if (existing) {
           return this.http.get<ArtifactWithTags>(`${this.artifactsUrl}/${id}`).pipe(tap((a) => this.cache.save(a)));

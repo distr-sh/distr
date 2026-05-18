@@ -64,5 +64,5 @@ type ArtifactWithDownloads struct {
 
 type ArtifactWithTaggedVersion struct {
 	ArtifactWithDownloads
-	Versions []TaggedArtifactVersion `db:"versions" json:"versions,omitempty"`
+	Versions []TaggedArtifactVersion `db:"versions" json:"versions"`
 }
