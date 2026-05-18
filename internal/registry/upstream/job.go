@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func RunUpstreamSync(ctx context.Context) error {
+func RunUpstreamSync(ctx context.Context, skipExistingTags bool) error {
 	log := internalctx.GetLogger(ctx)
 	artifacts, err := db.GetArtifactsWithUpstreamURL(ctx)
 	if err != nil {
@@ -16,7 +16,7 @@ func RunUpstreamSync(ctx context.Context) error {
 	}
 	syncer := &Syncer{}
 	for _, artifact := range artifacts {
-		if err := syncer.SyncArtifactTags(ctx, &artifact); err != nil {
+		if err := syncer.SyncArtifactTags(ctx, &artifact, skipExistingTags); err != nil {
 			log.Warn("upstream sync failed", zap.Stringer("artifactId", artifact.ID), zap.Error(err))
 		}
 	}

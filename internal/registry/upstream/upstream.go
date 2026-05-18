@@ -23,7 +23,7 @@ import (
 
 type Syncer struct{}
 
-func (s *Syncer) SyncArtifactTags(ctx context.Context, artifact *types.Artifact) error {
+func (s *Syncer) SyncArtifactTags(ctx context.Context, artifact *types.Artifact, skipExistingTags bool) error {
 	if artifact.UpstreamURL == nil {
 		return nil
 	}
@@ -43,7 +43,7 @@ func (s *Syncer) SyncArtifactTags(ctx context.Context, artifact *types.Artifact)
 		for _, tag := range tags {
 			g.Go(func() error {
 				log.Debug("upstream sync tag", zap.String("tag", tag))
-				if err := syncTag(gCtx, repo, artifact, tag); err != nil {
+				if err := syncTag(gCtx, repo, artifact, tag, skipExistingTags); err != nil {
 					return fmt.Errorf("syncing tag %q: %w", tag, err)
 				}
 				return nil
@@ -70,7 +70,14 @@ func (s *Syncer) SyncArtifactTags(ctx context.Context, artifact *types.Artifact)
 	return db.UpdateArtifactSyncStatus(ctx, artifact.ID, errStr)
 }
 
-func syncTag(ctx context.Context, repo *remote.Repository, artifact *types.Artifact, tag string) error {
+func syncTag(
+	ctx context.Context, repo *remote.Repository, artifact *types.Artifact, tag string, skipExistingTags bool,
+) error {
+	if skipExistingTags {
+		if _, err := db.GetArtifactVersionByName(ctx, artifact.ID, tag); err == nil {
+			return nil
+		}
+	}
 	desc, rc, err := repo.FetchReference(ctx, tag)
 	if err != nil {
 		return fmt.Errorf("fetching manifest: %w", err)

@@ -42,7 +42,7 @@ func (h *handler) Delete(ctx context.Context, nameStr string, reference string) 
 	}
 
 	return db.RunTx(ctx, func(ctx context.Context) error {
-		version, err := db.GetArtifactVersionByTag(ctx, artifact.ID, reference)
+		version, err := db.GetArtifactVersionByName(ctx, artifact.ID, reference)
 		if err != nil {
 			if errors.Is(err, apierrors.ErrNotFound) {
 				return fmt.Errorf("%w: %w", manifest.ErrManifestUnknown, err)

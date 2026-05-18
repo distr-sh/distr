@@ -1,6 +1,8 @@
 package svc
 
 import (
+	"context"
+
 	"github.com/distr-sh/distr/internal/cleanup"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/jobs"
@@ -111,7 +113,9 @@ func (r *Registry) createJobsScheduler() (*jobs.Scheduler, error) {
 	if cron := env.RegistryUpstreamSyncCron(); cron != nil {
 		err = scheduler.RegisterCronJob(
 			*cron,
-			jobs.NewJob("RegistryUpstreamSync", upstream.RunUpstreamSync, env.RegistryUpstreamSyncTimeout()),
+			jobs.NewJob("RegistryUpstreamSync", func(ctx context.Context) error {
+				return upstream.RunUpstreamSync(ctx, true)
+			}, env.RegistryUpstreamSyncTimeout()),
 		)
 		if err != nil {
 			return nil, err

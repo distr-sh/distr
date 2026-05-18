@@ -969,8 +969,8 @@ func ArtifactIsReferencedInEntitlements(ctx context.Context, artifactID uuid.UUI
 	return exists, nil
 }
 
-// GetArtifactVersionByTag retrieves an artifact version by its tag name
-func GetArtifactVersionByTag(
+// GetArtifactVersionByName retrieves an artifact version by its tag name
+func GetArtifactVersionByName(
 	ctx context.Context,
 	artifactID uuid.UUID,
 	tagName string,

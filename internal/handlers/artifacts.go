@@ -22,7 +22,7 @@ import (
 )
 
 type UpstreamTagSyncer interface {
-	SyncArtifactTags(ctx context.Context, artifact *types.Artifact) error
+	SyncArtifactTags(ctx context.Context, artifact *types.Artifact, skipExistingTags bool) error
 }
 
 func ArtifactsRouter(r chiopenapi.Router) {
@@ -104,7 +104,7 @@ func createArtifactHandler() http.HandlerFunc {
 		}
 
 		if artifact.UpstreamURL != nil && syncer != nil {
-			if err := syncer.SyncArtifactTags(ctx, artifact); err != nil {
+			if err := syncer.SyncArtifactTags(ctx, artifact, false); err != nil {
 				log.Warn("initial upstream sync failed", zap.Error(err))
 			}
 		}
@@ -139,7 +139,7 @@ func syncArtifactHandler() http.HandlerFunc {
 			return
 		}
 
-		if err := syncer.SyncArtifactTags(ctx, &artifact.Artifact); err != nil {
+		if err := syncer.SyncArtifactTags(ctx, &artifact.Artifact, false); err != nil {
 			log.Error("upstream sync failed", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -253,7 +253,7 @@ func deleteArtifactTagHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := db.RunTx(ctx, func(ctx context.Context) error {
 		// Step 1: Validate version exists and fetch it
-		version, err := db.GetArtifactVersionByTag(ctx, artifact.ID, tagName)
+		version, err := db.GetArtifactVersionByName(ctx, artifact.ID, tagName)
 		if err != nil {
 			return err
 		}
