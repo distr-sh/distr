@@ -21,7 +21,8 @@ import (
 )
 
 const (
-	artifactOutputExpr = ` a.id, a.created_at, a.organization_id, a.name, a.image_id, a.upstream_url, a.last_synced_at, a.last_sync_error `
+	artifactOutputExpr = ` a.id, a.created_at, a.organization_id, a.name, a.image_id, ` +
+		`a.upstream_url, a.last_synced_at, a.last_sync_error `
 
 	artifactDownloadsOutExpr = `
 		count(DISTINCT avpl.id) AS downloads_total,
@@ -658,6 +659,32 @@ func CreateArtifactVersionPart(ctx context.Context, avp *types.ArtifactVersionPa
 		*avp = result
 		return nil
 	}
+}
+
+func BulkUpsertArtifactVersionParts(ctx context.Context, parts []types.ArtifactVersionPart) error {
+	if len(parts) == 0 {
+		return nil
+	}
+	db := internalctx.GetDb(ctx)
+	versionIDs := make([]uuid.UUID, len(parts))
+	digests := make([]string, len(parts))
+	sizes := make([]int64, len(parts))
+	for i, p := range parts {
+		versionIDs[i] = p.ArtifactVersionID
+		digests[i] = string(p.ArtifactBlobDigest)
+		sizes[i] = p.ArtifactBlobSize
+	}
+	_, err := db.Exec(ctx, `
+		INSERT INTO ArtifactVersionPart (artifact_version_id, artifact_blob_digest, artifact_blob_size)
+		SELECT * FROM unnest($1::uuid[], $2::text[], $3::bigint[])
+		ON CONFLICT (artifact_version_id, artifact_blob_digest) DO UPDATE SET
+			artifact_blob_size = EXCLUDED.artifact_blob_size`,
+		versionIDs, digests, sizes,
+	)
+	if err != nil {
+		return fmt.Errorf("could not bulk upsert ArtifactVersionParts: %w", err)
+	}
+	return nil
 }
 
 func CreateArtifactPullLogEntry(

@@ -17,6 +17,7 @@ import (
 	godigest "github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 	"oras.land/oras-go/v2/registry/remote"
 )
 
@@ -36,17 +37,27 @@ func (s *Syncer) SyncArtifactTags(ctx context.Context, artifact *types.Artifact)
 		return db.UpdateArtifactSyncStatus(ctx, artifact.ID, &syncErr)
 	}
 
-	var firstErr error
-	if err := repo.Tags(ctx, "", func(tags []string) error {
+	g, gCtx := errgroup.WithContext(ctx)
+	g.SetLimit(5)
+	tagsErr := repo.Tags(ctx, "", func(tags []string) error {
 		for _, tag := range tags {
-			log.Debug("upstream sync tag", zap.String("tag", tag))
-			if err := syncTag(ctx, repo, artifact, tag); err != nil && firstErr == nil {
-				firstErr = fmt.Errorf("syncing tag %q: %w", tag, err)
-			}
+			g.Go(func() error {
+				log.Debug("upstream sync tag", zap.String("tag", tag))
+				if err := syncTag(gCtx, repo, artifact, tag); err != nil {
+					return fmt.Errorf("syncing tag %q: %w", tag, err)
+				}
+				return nil
+			})
 		}
 		return nil
-	}); err != nil {
-		firstErr = err
+	})
+	syncErr := g.Wait()
+
+	var firstErr error
+	if tagsErr != nil {
+		firstErr = tagsErr
+	} else if syncErr != nil {
+		firstErr = syncErr
 	}
 
 	var errStr *string
@@ -105,25 +116,37 @@ func syncTag(ctx context.Context, repo *remote.Repository, artifact *types.Artif
 		return fmt.Errorf("parsing manifest: %w", err)
 	}
 
+	parts := make([]types.ArtifactVersionPart, 0, len(blobs)*2)
 	for _, b := range blobs {
-		part := types.ArtifactVersionPart{
-			ArtifactVersionID:  tagVersion.ID,
-			ArtifactBlobDigest: types.Digest(b.Digest),
-			ArtifactBlobSize:   b.Size,
-		}
-		if err := db.CreateArtifactVersionPart(ctx, &part); err != nil {
-			return err
-		}
-		part.ArtifactVersionID = digestVersion.ID
-		if err := db.CreateArtifactVersionPart(ctx, &part); err != nil {
-			return err
-		}
+		parts = append(parts,
+			types.ArtifactVersionPart{
+				ArtifactVersionID:  tagVersion.ID,
+				ArtifactBlobDigest: types.Digest(b.Digest),
+				ArtifactBlobSize:   b.Size,
+			},
+			types.ArtifactVersionPart{
+				ArtifactVersionID:  digestVersion.ID,
+				ArtifactBlobDigest: types.Digest(b.Digest),
+				ArtifactBlobSize:   b.Size,
+			},
+		)
+	}
+	if err := db.BulkUpsertArtifactVersionParts(ctx, parts); err != nil {
+		return err
 	}
 
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(5)
 	for _, sub := range subManifests {
-		if err := syncSubManifest(ctx, repo, artifact, sub); err != nil {
-			return fmt.Errorf("syncing sub-manifest %s: %w", sub.Digest, err)
-		}
+		g.Go(func() error {
+			if err := syncSubManifest(ctx, repo, artifact, sub); err != nil {
+				return fmt.Errorf("syncing sub-manifest %s: %w", sub.Digest, err)
+			}
+			return nil
+		})
+	}
+	if err := g.Wait(); err != nil {
+		return err
 	}
 
 	return nil
@@ -165,17 +188,15 @@ func syncSubManifest(
 		return fmt.Errorf("parsing sub-manifest: %w", err)
 	}
 
-	for _, b := range blobs {
-		part := types.ArtifactVersionPart{
+	parts := make([]types.ArtifactVersionPart, len(blobs))
+	for i, b := range blobs {
+		parts[i] = types.ArtifactVersionPart{
 			ArtifactVersionID:  version.ID,
 			ArtifactBlobDigest: types.Digest(b.Digest),
 			ArtifactBlobSize:   b.Size,
 		}
-		if err := db.CreateArtifactVersionPart(ctx, &part); err != nil {
-			return err
-		}
 	}
-	return nil
+	return db.BulkUpsertArtifactVersionParts(ctx, parts)
 }
 
 type blobRef struct {
