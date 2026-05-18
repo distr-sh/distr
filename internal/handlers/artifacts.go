@@ -72,7 +72,6 @@ func ArtifactsRouter(r chiopenapi.Router) {
 }
 
 func createArtifactHandler() http.HandlerFunc {
-	syncer := new(upstream.Syncer)
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
@@ -101,12 +100,6 @@ func createArtifactHandler() http.HandlerFunc {
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
-		}
-
-		if artifact.UpstreamURL != nil && syncer != nil {
-			if err := syncer.SyncArtifactTags(ctx, artifact, false); err != nil {
-				log.Warn("initial upstream sync failed", zap.Error(err))
-			}
 		}
 
 		result, err := db.GetArtifactByID(ctx, artifact.OrganizationID, artifact.ID, nil)
