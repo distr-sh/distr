@@ -17,7 +17,9 @@ import {
 import {combineLatest, lastValueFrom, map, startWith} from 'rxjs';
 import {fromPromise} from 'rxjs/internal/observable/innerFrom';
 import {getRemoteEnvironment} from '../../../env/remote';
+import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
+import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {RequireCustomerDirective, RequireVendorDirective} from '../../directives/required-role.directive';
@@ -27,9 +29,7 @@ import {CustomerOrganizationsCache} from '../../services/customer-organizations.
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
-import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {ArtifactsDownloadCountComponent, ArtifactsDownloadedByComponent} from '../components';
-import {getFormDisplayedError} from '../../../util/errors';
 
 @Component({
   selector: 'app-artifacts',
@@ -117,9 +117,7 @@ export class ArtifactsComponent {
     this.createFormLoading = true;
     try {
       const {name, upstreamUrl} = this.createForm.value;
-      const created = await lastValueFrom(
-        this.artifactsService.createArtifact(name!, upstreamUrl || undefined)
-      );
+      const created = await lastValueFrom(this.artifactsService.createArtifact(name!, upstreamUrl || undefined));
       this.toast.success(`${name} created successfully`);
       this.hideCreateModal();
       await this.router.navigate(['/artifacts', created.id]);
