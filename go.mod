@@ -34,7 +34,7 @@ require (
 	github.com/lestrrat-go/jwx/v3 v3.1.1
 	github.com/moby/moby/api v1.54.2
 	github.com/moby/moby/client v0.4.1
-	github.com/oaswrap/spec v0.4.2
+	github.com/oaswrap/spec v0.5.1
 	github.com/oaswrap/spec-ui v0.2.0
 	github.com/oaswrap/spec/adapter/chiopenapi v0.4.2
 	github.com/onsi/gomega v1.40.0
