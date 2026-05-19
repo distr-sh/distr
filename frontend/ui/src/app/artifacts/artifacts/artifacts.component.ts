@@ -2,7 +2,7 @@ import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
 import {Component, inject, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
-import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
+import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
@@ -56,6 +56,7 @@ export class ArtifactsComponent {
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
+  private readonly fb = inject(FormBuilder).nonNullable;
 
   protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faBox = faBox;
@@ -66,15 +67,15 @@ export class ArtifactsComponent {
   protected readonly faUserCircle = faUserCircle;
 
   protected readonly filterForm = new FormGroup({
-    search: new FormControl(''),
+    search: this.fb.control(''),
   });
 
   protected readonly createForm = new FormGroup({
-    name: new FormControl('', Validators.required),
-    upstreamUrl: new FormControl(''),
-    upstreamAuthType: new FormControl<UpstreamAuthType | ''>(''),
-    upstreamUsername: new FormControl(''),
-    upstreamPassword: new FormControl(''),
+    name: this.fb.control('', Validators.required),
+    upstreamUrl: this.fb.control('', Validators.required),
+    upstreamAuthType: this.fb.control<UpstreamAuthType | 'none'>('none', Validators.required),
+    upstreamUsername: this.fb.control('', Validators.required),
+    upstreamPassword: this.fb.control('', Validators.required),
   });
   protected createFormLoading = false;
   private createModalRef?: DialogRef;
@@ -100,6 +101,20 @@ export class ArtifactsComponent {
   protected readonly auth = inject(AuthService);
   protected readonly hasNoSubscription = this.organizationService.hasNoSubscription;
 
+  constructor() {
+    this.createForm.controls.upstreamAuthType.valueChanges
+      .pipe(startWith(this.createForm.controls.upstreamAuthType.value), takeUntilDestroyed())
+      .subscribe((t) => {
+        if (t === 'none') {
+          this.createForm.controls.upstreamUsername.disable();
+          this.createForm.controls.upstreamPassword.disable();
+        } else {
+          this.createForm.controls.upstreamUsername.enable();
+          this.createForm.controls.upstreamPassword.enable();
+        }
+      });
+  }
+
   openCreateModal(templateRef: TemplateRef<unknown>) {
     this.hideCreateModal();
     this.createModalRef = this.overlay.showModal(templateRef, {
@@ -109,7 +124,7 @@ export class ArtifactsComponent {
 
   hideCreateModal() {
     this.createModalRef?.close();
-    this.createForm.reset();
+    this.createForm.reset({upstreamAuthType: 'none'});
   }
 
   async createArtifact() {
@@ -121,7 +136,7 @@ export class ArtifactsComponent {
     try {
       const {name, upstreamUrl, upstreamAuthType, upstreamUsername, upstreamPassword} = this.createForm.value;
       let upstreamAuth: ArtifactUpstreamAuth | undefined;
-      if (upstreamAuthType) {
+      if (upstreamAuthType && upstreamAuthType !== 'none') {
         upstreamAuth = {
           type: upstreamAuthType,
           username: upstreamUsername || undefined,

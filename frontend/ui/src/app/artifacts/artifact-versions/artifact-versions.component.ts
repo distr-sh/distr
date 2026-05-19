@@ -2,13 +2,16 @@ import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
 import {Component, computed, inject, resource, signal, TemplateRef} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
-import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
+import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faBox,
+  faCheck,
   faEllipsisVertical,
+  faExclamationTriangle,
   faFileSignature,
+  faKey,
   faPen,
   faRotate,
   faTrash,
@@ -82,6 +85,7 @@ export class ArtifactVersionsComponent {
   private readonly overlay = inject(OverlayService);
   private readonly imageUploadService = inject(ImageUploadService);
   private readonly toast = inject(ToastService);
+  private readonly fb = inject(FormBuilder).nonNullable;
 
   protected readonly faBox = faBox;
   protected readonly faXmark = faXmark;
@@ -90,6 +94,9 @@ export class ArtifactVersionsComponent {
   protected readonly faFileSignature = faFileSignature;
   protected readonly faRotate = faRotate;
   protected readonly faPen = faPen;
+  protected readonly faKey = faKey;
+  protected readonly faCheck = faCheck;
+  protected readonly faExclamationTriangle = faExclamationTriangle;
 
   protected readonly syncing = signal(false);
 
@@ -97,15 +104,15 @@ export class ArtifactVersionsComponent {
   protected readonly signatureOverlayDigest = signal<string | void>(undefined);
 
   protected readonly upstreamURLForm = new FormGroup({
-    upstreamUrl: new FormControl(''),
+    upstreamUrl: this.fb.control('', Validators.required),
   });
   protected upstreamURLFormLoading = false;
   protected upstreamURLModalRef?: DialogRef;
 
   protected readonly upstreamAuthForm = new FormGroup({
-    upstreamAuthType: new FormControl<UpstreamAuthType | ''>(''),
-    upstreamUsername: new FormControl(''),
-    upstreamPassword: new FormControl(''),
+    upstreamAuthType: this.fb.control<UpstreamAuthType | 'none'>('none', Validators.required),
+    upstreamUsername: this.fb.control('', Validators.required),
+    upstreamPassword: this.fb.control('', Validators.required),
   });
   protected upstreamAuthFormLoading = false;
   protected upstreamAuthModalRef?: DialogRef;
@@ -210,7 +217,12 @@ export class ArtifactVersionsComponent {
   }
 
   async saveUpstreamURL(artifact: ArtifactWithTags) {
+    this.upstreamURLForm.markAllAsTouched();
+    if (this.upstreamURLForm.invalid) {
+      return;
+    }
     this.upstreamURLFormLoading = true;
+
     try {
       const {upstreamUrl} = this.upstreamURLForm.value;
       await lastValueFrom(this.artifacts.patchUpstreamURL(artifact.id, upstreamUrl || null));
@@ -226,7 +238,7 @@ export class ArtifactVersionsComponent {
 
   openUpstreamAuthModal(artifact: ArtifactWithTags, templateRef: TemplateRef<unknown>) {
     this.upstreamAuthForm.reset({
-      upstreamAuthType: artifact.upstreamAuthType ?? '',
+      upstreamAuthType: artifact.upstreamAuthType ?? 'none',
       upstreamUsername: '',
       upstreamPassword: '',
     });
@@ -237,11 +249,16 @@ export class ArtifactVersionsComponent {
   }
 
   async saveUpstreamAuth(artifact: ArtifactWithTags) {
+    this.upstreamAuthForm.markAllAsTouched();
+    if (this.upstreamAuthForm.invalid) {
+      return;
+    }
     this.upstreamAuthFormLoading = true;
+
     try {
       const {upstreamAuthType, upstreamUsername, upstreamPassword} = this.upstreamAuthForm.value;
       let auth: ArtifactUpstreamAuth | null = null;
-      if (upstreamAuthType) {
+      if (upstreamAuthType && upstreamAuthType !== 'none') {
         auth = {
           type: upstreamAuthType,
           username: upstreamUsername || undefined,
