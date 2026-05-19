@@ -161,9 +161,7 @@ func ApiRouter(
 					r.Route("/applications", handlers.ApplicationsRouter)
 					r.Route("/artifact-entitlements", handlers.ArtifactEntitlementsRouter)
 					r.Route("/artifact-pulls", handlers.ArtifactPullsRouter)
-					r.Route("/artifacts", func(r chiopenapi.Router) {
-						handlers.ArtifactsRouter(r)
-					})
+					r.Route("/artifacts", handlers.ArtifactsRouter)
 					r.Route("/billing", handlers.BillingRouter)
 					r.Route("/context", handlers.ContextRouter)
 					r.Route("/customer-organizations", handlers.CustomerOrganizationsRouter)
