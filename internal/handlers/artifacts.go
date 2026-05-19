@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -336,28 +335,20 @@ func patchArtifactUpstreamHandler(w http.ResponseWriter, r *http.Request) {
 	params := db.UpdateArtifactUpstreamParams{}
 
 	if body.UpstreamURL != nil {
-		params.UpdateURL = true
-		if string(body.UpstreamURL) != "null" {
-			var url string
-			if err := json.Unmarshal(body.UpstreamURL, &url); err != nil {
-				http.Error(w, "invalid upstreamUrl", http.StatusBadRequest)
-				return
-			}
-			params.UpstreamURL = &url
+		if *body.UpstreamURL == "" {
+			http.Error(w, "upstreamUrl must not be empty", http.StatusBadRequest)
+			return
 		}
+		params.UpdateURL = true
+		params.UpstreamURL = body.UpstreamURL
 	}
 
-	if body.Auth != nil {
+	if body.Auth.Present {
 		params.UpdateAuth = true
-		if string(body.Auth) != "null" {
-			var auth api.ArtifactUpstreamAuth
-			if err := json.Unmarshal(body.Auth, &auth); err != nil {
-				http.Error(w, "invalid auth", http.StatusBadRequest)
-				return
-			}
-			params.AuthType = &auth.Type
-			params.Username = auth.Username
-			params.Password = auth.Password
+		if body.Auth.Value != nil {
+			params.AuthType = &body.Auth.Value.Type
+			params.Username = body.Auth.Value.Username
+			params.Password = body.Auth.Value.Password
 		}
 	}
 

@@ -18,6 +18,7 @@ const (
 type UpstreamAuthType string
 
 const (
+	UpstreamAuthTypeNone   UpstreamAuthType = "none"
 	UpstreamAuthTypeBasic  UpstreamAuthType = "basic"
 	UpstreamAuthTypeAWSECR UpstreamAuthType = "aws_ecr"
 )

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/distr-sh/distr/internal/types"
@@ -20,11 +19,11 @@ type CreateArtifactRequest struct {
 	UpstreamAuth *ArtifactUpstreamAuth `json:"upstreamAuth,omitempty"`
 }
 
-// PatchArtifactUpstreamRequest supports partial updates: omitted fields are left unchanged,
-// explicit null clears the field. Both upstreamUrl and auth are independently optional.
+// PatchArtifactUpstreamRequest supports partial updates: omitted fields are left unchanged.
+// For auth, explicit null clears the credentials.
 type PatchArtifactUpstreamRequest struct {
-	UpstreamURL json.RawMessage `json:"upstreamUrl"`
-	Auth        json.RawMessage `json:"auth"`
+	UpstreamURL *string                        `json:"upstreamUrl,omitempty"`
+	Auth        Nullable[ArtifactUpstreamAuth] `json:"auth"`
 }
 
 type ArtifactResponse struct {
