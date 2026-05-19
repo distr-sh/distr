@@ -111,17 +111,17 @@
                     }
                   }
                 </div>
+                @if (artifact.lastSyncError) {
+                  <p class="text-xs text-red-600 dark:text-red-400">{{ artifact.lastSyncError }}</p>
+                }
                 <div class="flex items-center gap-3 flex-wrap">
                   <span class="text-gray-500 dark:text-gray-400 text-xs">
-                    @if (artifact.lastSyncedAt || artifact.lastSyncError) {
-                      <fa-icon
-                        [icon]="artifact.lastSyncError ? faExclamationTriangle : faCheck"
-                        [class.text-red-500]="artifact.lastSyncError"
-                        [class.text-green-600]="!artifact.lastSyncError"
-                        [class.dark:text-green-400]="!artifact.lastSyncError" />
-                    }
                     @if (artifact.lastSyncedAt) {
+                      <fa-icon [icon]="faCheck" class="text-green-600 dark:text-green-400" />
                       Last synced {{ artifact.lastSyncedAt | relativeDate }}
+                    } @else if (artifact.lastSyncError) {
+                      <fa-icon [icon]="faExclamationTriangle" class="text-red-500" />
+                      Sync error
                     } @else {
                       Not synced yet
                     }
@@ -138,9 +138,6 @@
                   }
                 </div>
               </div>
-              @if (artifact.lastSyncError) {
-                <p class="mt-1 text-xs text-red-600 dark:text-red-400">Sync error: {{ artifact.lastSyncError }}</p>
-              }
             }
             @if (getArtifactUsage(artifact); as usage) {
               <div class="text-sm">
