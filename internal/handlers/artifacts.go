@@ -104,6 +104,11 @@ func createArtifactHandler() http.HandlerFunc {
 			artifact.UpstreamUsername = body.UpstreamAuth.Username
 			artifact.UpstreamPassword = body.UpstreamAuth.Password
 		}
+		if err := upstream.ValidateUpstreamCredentials(ctx, artifact); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
 		if err := db.CreateArtifact(ctx, artifact); err != nil {
 			if errors.Is(err, apierrors.ErrConflict) {
 				http.Error(w, "artifact name already exists", http.StatusConflict)
@@ -348,6 +353,22 @@ func patchArtifactUpstreamHandler(w http.ResponseWriter, r *http.Request) {
 			params.AuthType = &auth.Type
 			params.Username = auth.Username
 			params.Password = auth.Password
+		}
+	}
+
+	if params.UpdateURL || params.UpdateAuth {
+		validationArtifact := artifact.Artifact
+		if params.UpdateURL {
+			validationArtifact.UpstreamURL = params.UpstreamURL
+		}
+		if params.UpdateAuth {
+			validationArtifact.UpstreamAuthType = params.AuthType
+			validationArtifact.UpstreamUsername = params.Username
+			validationArtifact.UpstreamPassword = params.Password
+		}
+		if err := upstream.ValidateUpstreamCredentials(ctx, &validationArtifact); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
 	}
 

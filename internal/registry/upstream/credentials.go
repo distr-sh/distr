@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
+	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
 )
 
@@ -111,6 +112,36 @@ func getECRCredential(ctx context.Context, artifact *types.Artifact) (auth.Crede
 	}
 
 	return auth.Credential{Username: username, Password: password}, nil
+}
+
+// ValidateUpstreamCredentials checks that the configured credentials can authenticate
+// against the upstream registry. It is a no-op when no auth type is set.
+func ValidateUpstreamCredentials(ctx context.Context, artifact *types.Artifact) error {
+	if artifact.UpstreamURL == nil || artifact.UpstreamAuthType == nil {
+		return nil
+	}
+	if artifact.UpstreamUsername == nil || *artifact.UpstreamUsername == "" {
+		return fmt.Errorf("username is required when upstream authentication is configured")
+	}
+	if artifact.UpstreamPassword == nil || *artifact.UpstreamPassword == "" {
+		return fmt.Errorf("password is required when upstream authentication is configured")
+	}
+	repo, err := remote.NewRepository(*artifact.UpstreamURL)
+	if err != nil {
+		return fmt.Errorf("invalid upstream URL: %w", err)
+	}
+	repo.Client = &auth.Client{Credential: credentialForArtifact(artifact)}
+
+	reg, err := remote.NewRegistry(repo.Reference.Registry)
+	if err != nil {
+		return fmt.Errorf("invalid upstream URL: %w", err)
+	}
+	reg.Client = repo.Client
+
+	if err := reg.Ping(ctx); err != nil {
+		return fmt.Errorf("upstream registry authentication failed: %w", err)
+	}
+	return nil
 }
 
 // ecrRegionFromURL parses the AWS region from an ECR URL.
