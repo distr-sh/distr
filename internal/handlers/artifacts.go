@@ -323,6 +323,11 @@ func patchArtifactUpstreamHandler(w http.ResponseWriter, r *http.Request) {
 	log := internalctx.GetLogger(ctx)
 	artifact := internalctx.GetArtifact(ctx)
 
+	if artifact.UpstreamURL == nil {
+		http.Error(w, "artifact is not a pull-through cache artifact", http.StatusBadRequest)
+		return
+	}
+
 	body, err := JsonBody[api.PatchArtifactUpstreamRequest](w, r)
 	if err != nil {
 		return

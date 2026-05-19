@@ -51,12 +51,23 @@ func (a *authorizer) Authorize(ctx context.Context, nameStr string, action Actio
 	}
 
 	org := auth.CurrentOrg()
-	if name, err := name.Parse(nameStr); err != nil {
+	n, err := name.Parse(nameStr)
+	if err != nil {
 		return err
 	} else if org.Slug == nil {
 		return NewErrAccessDenied("organization has no slug")
-	} else if *org.Slug != name.OrgName {
+	} else if *org.Slug != n.OrgName {
 		return NewErrAccessDenied("organization slug does not match reference")
+	}
+
+	if action == ActionWrite {
+		if artifact, err := db.GetArtifactByName(ctx, n.OrgName, n.ArtifactName); err != nil {
+			if !errors.Is(err, apierrors.ErrNotFound) {
+				return err
+			}
+		} else if artifact.UpstreamURL != nil {
+			return NewErrAccessDenied("cannot push to a pull-through cache artifact")
+		}
 	}
 
 	return nil
