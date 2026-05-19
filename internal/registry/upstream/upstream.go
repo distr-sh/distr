@@ -19,6 +19,7 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"oras.land/oras-go/v2/registry/remote"
+	"oras.land/oras-go/v2/registry/remote/auth"
 )
 
 type Syncer struct{}
@@ -36,6 +37,7 @@ func (s *Syncer) SyncArtifactTags(ctx context.Context, artifact *types.Artifact,
 		syncErr := fmt.Sprintf("failed to create upstream client: %v", err)
 		return db.UpdateArtifactSyncStatus(ctx, artifact.ID, &syncErr)
 	}
+	repo.Client = &auth.Client{Credential: credentialForArtifact(artifact)}
 
 	g, gCtx := errgroup.WithContext(ctx)
 	g.SetLimit(5)
@@ -269,6 +271,7 @@ func (s *Syncer) FetchAndStoreBlob(
 	if err != nil {
 		return nil, 0, fmt.Errorf("upstream client: %w", err)
 	}
+	repo.Client = &auth.Client{Credential: credentialForArtifact(artifact)}
 
 	blobDesc, rc, err := repo.Blobs().FetchReference(ctx, d.String())
 	if err != nil {

@@ -42,10 +42,19 @@ export interface BaseArtifactVersion {
   name: string;
 }
 
+export type UpstreamAuthType = 'basic' | 'aws_ecr';
+
+export interface ArtifactUpstreamAuth {
+  type: UpstreamAuthType;
+  username?: string;
+  password?: string;
+}
+
 export interface Artifact extends BaseArtifact, HasDownloads {
   upstreamUrl?: string;
   lastSyncedAt?: string;
   lastSyncError?: string;
+  upstreamAuthType?: UpstreamAuthType;
 }
 
 export interface TaggedArtifactVersion extends HasDownloads {
@@ -110,9 +119,25 @@ export class ArtifactsService {
     );
   }
 
-  public createArtifact(name: string, upstreamUrl?: string): Observable<ArtifactWithTags> {
+  public createArtifact(
+    name: string,
+    upstreamUrl?: string,
+    upstreamAuth?: ArtifactUpstreamAuth
+  ): Observable<ArtifactWithTags> {
     return this.http
-      .post<ArtifactWithTags>(this.artifactsUrl, {name, upstreamUrl})
+      .post<ArtifactWithTags>(this.artifactsUrl, {name, upstreamUrl, upstreamAuth})
+      .pipe(tap((it) => this.cache.save(it)));
+  }
+
+  public patchUpstreamURL(artifactId: string, upstreamUrl: string | null): Observable<ArtifactWithTags> {
+    return this.http
+      .patch<ArtifactWithTags>(`${this.artifactsUrl}/${artifactId}`, {upstreamUrl})
+      .pipe(tap((it) => this.cache.save(it)));
+  }
+
+  public patchUpstreamAuth(artifactId: string, auth: ArtifactUpstreamAuth | null): Observable<ArtifactWithTags> {
+    return this.http
+      .patch<ArtifactWithTags>(`${this.artifactsUrl}/${artifactId}`, {auth})
       .pipe(tap((it) => this.cache.save(it)));
   }
 

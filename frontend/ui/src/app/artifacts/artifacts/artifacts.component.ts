@@ -23,7 +23,7 @@ import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {RequireCustomerDirective, RequireVendorDirective} from '../../directives/required-role.directive';
-import {ArtifactsService} from '../../services/artifacts.service';
+import {ArtifactUpstreamAuth, ArtifactsService, UpstreamAuthType} from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsCache} from '../../services/customer-organizations.service';
 import {OrganizationService} from '../../services/organization.service';
@@ -72,6 +72,9 @@ export class ArtifactsComponent {
   protected readonly createForm = new FormGroup({
     name: new FormControl('', Validators.required),
     upstreamUrl: new FormControl(''),
+    upstreamAuthType: new FormControl<UpstreamAuthType | ''>(''),
+    upstreamUsername: new FormControl(''),
+    upstreamPassword: new FormControl(''),
   });
   protected createFormLoading = false;
   private createModalRef?: DialogRef;
@@ -116,8 +119,18 @@ export class ArtifactsComponent {
     }
     this.createFormLoading = true;
     try {
-      const {name, upstreamUrl} = this.createForm.value;
-      const created = await lastValueFrom(this.artifactsService.createArtifact(name!, upstreamUrl || undefined));
+      const {name, upstreamUrl, upstreamAuthType, upstreamUsername, upstreamPassword} = this.createForm.value;
+      let upstreamAuth: ArtifactUpstreamAuth | undefined;
+      if (upstreamAuthType) {
+        upstreamAuth = {
+          type: upstreamAuthType,
+          username: upstreamUsername || undefined,
+          password: upstreamPassword || undefined,
+        };
+      }
+      const created = await lastValueFrom(
+        this.artifactsService.createArtifact(name!, upstreamUrl || undefined, upstreamAuth)
+      );
       this.toast.success(`${name} created successfully`);
       this.hideCreateModal();
       await this.router.navigate(['/artifacts', created.id]);

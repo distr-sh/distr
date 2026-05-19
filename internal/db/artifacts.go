@@ -22,7 +22,8 @@ import (
 
 const (
 	artifactOutputExpr = ` a.id, a.created_at, a.organization_id, a.name, a.image_id, ` +
-		`a.upstream_url, a.last_synced_at, a.last_sync_error `
+		`a.upstream_url, a.last_synced_at, a.last_sync_error, ` +
+		`a.upstream_auth_type, a.upstream_username, a.upstream_password `
 
 	artifactDownloadsOutExpr = `
 		count(DISTINCT avpl.id) AS downloads_total,
@@ -395,12 +396,15 @@ func CreateArtifact(ctx context.Context, artifact *types.Artifact) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`INSERT INTO Artifact AS a (name, organization_id, upstream_url)
-		VALUES (@name, @organizationId, @upstreamUrl) RETURNING `+artifactOutputExpr,
+		`INSERT INTO Artifact AS a (name, organization_id, upstream_url, upstream_auth_type, upstream_username, upstream_password)
+		VALUES (@name, @organizationId, @upstreamUrl, @upstreamAuthType, @upstreamUsername, @upstreamPassword) RETURNING `+artifactOutputExpr,
 		pgx.NamedArgs{
-			"name":           artifact.Name,
-			"organizationId": artifact.OrganizationID,
-			"upstreamUrl":    artifact.UpstreamURL,
+			"name":             artifact.Name,
+			"organizationId":   artifact.OrganizationID,
+			"upstreamUrl":      artifact.UpstreamURL,
+			"upstreamAuthType": artifact.UpstreamAuthType,
+			"upstreamUsername": artifact.UpstreamUsername,
+			"upstreamPassword": artifact.UpstreamPassword,
 		},
 	)
 	if err != nil {
@@ -435,6 +439,46 @@ func UpdateArtifactSyncStatus(ctx context.Context, artifactID uuid.UUID, lastSyn
 	)
 	if err != nil {
 		return fmt.Errorf("could not update artifact sync status: %w", err)
+	}
+	return nil
+}
+
+type UpdateArtifactUpstreamParams struct {
+	UpdateURL   bool
+	UpstreamURL *string
+	UpdateAuth  bool
+	AuthType    *types.UpstreamAuthType
+	Username    *string
+	Password    *string
+}
+
+func UpdateArtifactUpstream(ctx context.Context, artifactID uuid.UUID, p UpdateArtifactUpstreamParams) error {
+	if !p.UpdateURL && !p.UpdateAuth {
+		return nil
+	}
+	db := internalctx.GetDb(ctx)
+	var setClauses []string
+	args := pgx.NamedArgs{"id": artifactID}
+	if p.UpdateURL {
+		setClauses = append(setClauses, "upstream_url = @upstreamUrl")
+		args["upstreamUrl"] = p.UpstreamURL
+	}
+	if p.UpdateAuth {
+		setClauses = append(setClauses,
+			"upstream_auth_type = @authType",
+			"upstream_username = @username",
+			"upstream_password = @password",
+		)
+		args["authType"] = p.AuthType
+		args["username"] = p.Username
+		args["password"] = p.Password
+	}
+	_, err := db.Exec(ctx,
+		`UPDATE Artifact SET `+strings.Join(setClauses, ", ")+` WHERE id = @id`,
+		args,
+	)
+	if err != nil {
+		return fmt.Errorf("could not update artifact upstream: %w", err)
 	}
 	return nil
 }

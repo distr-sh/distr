@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -54,6 +55,13 @@ func ArtifactsRouter(r chiopenapi.Router) {
 						api.PatchImageRequest
 					}{})).
 					With(option.Response(http.StatusOK, []api.ArtifactResponse{}))
+				r.Patch("/", patchArtifactUpstreamHandler).
+					With(option.Description("Update artifact upstream URL and/or authentication")).
+					With(option.Request(struct {
+						ArtifactRequest
+						api.PatchArtifactUpstreamRequest
+					}{})).
+					With(option.Response(http.StatusOK, api.ArtifactResponse{}))
 				r.Post("/sync", syncArtifactHandler()).
 					With(option.Description("Trigger upstream sync for a pull-through artifact")).
 					With(option.Request(ArtifactRequest{})).
@@ -90,6 +98,11 @@ func createArtifactHandler() http.HandlerFunc {
 			Name:           body.Name,
 			OrganizationID: *authentication.CurrentOrgID(),
 			UpstreamURL:    body.UpstreamURL,
+		}
+		if body.UpstreamAuth != nil {
+			artifact.UpstreamAuthType = &body.UpstreamAuth.Type
+			artifact.UpstreamUsername = body.UpstreamAuth.Username
+			artifact.UpstreamPassword = body.UpstreamAuth.Password
 		}
 		if err := db.CreateArtifact(ctx, artifact); err != nil {
 			if errors.Is(err, apierrors.ErrConflict) {
@@ -298,6 +311,61 @@ func deleteArtifactTagHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func patchArtifactUpstreamHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+	artifact := internalctx.GetArtifact(ctx)
+
+	body, err := JsonBody[api.PatchArtifactUpstreamRequest](w, r)
+	if err != nil {
+		return
+	}
+
+	params := db.UpdateArtifactUpstreamParams{}
+
+	if body.UpstreamURL != nil {
+		params.UpdateURL = true
+		if string(body.UpstreamURL) != "null" {
+			var url string
+			if err := json.Unmarshal(body.UpstreamURL, &url); err != nil {
+				http.Error(w, "invalid upstreamUrl", http.StatusBadRequest)
+				return
+			}
+			params.UpstreamURL = &url
+		}
+	}
+
+	if body.Auth != nil {
+		params.UpdateAuth = true
+		if string(body.Auth) != "null" {
+			var auth api.ArtifactUpstreamAuth
+			if err := json.Unmarshal(body.Auth, &auth); err != nil {
+				http.Error(w, "invalid auth", http.StatusBadRequest)
+				return
+			}
+			params.AuthType = &auth.Type
+			params.Username = auth.Username
+			params.Password = auth.Password
+		}
+	}
+
+	if err := db.UpdateArtifactUpstream(ctx, artifact.ID, params); err != nil {
+		log.Error("failed to update artifact upstream", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	result, err := db.GetArtifactByID(ctx, artifact.OrganizationID, artifact.ID, nil)
+	if err != nil {
+		log.Error("failed to fetch artifact after upstream update", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	RespondJSON(w, mapping.ArtifactToAPI(*result))
 }
 
 func artifactMiddleware(h http.Handler) http.Handler {

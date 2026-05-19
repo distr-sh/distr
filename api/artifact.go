@@ -1,15 +1,30 @@
 package api
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 )
 
+type ArtifactUpstreamAuth struct {
+	Type     types.UpstreamAuthType `json:"type"`
+	Username *string                `json:"username,omitempty"`
+	Password *string                `json:"password,omitempty"`
+}
+
 type CreateArtifactRequest struct {
-	Name        string  `json:"name"`
-	UpstreamURL *string `json:"upstreamUrl,omitempty"`
+	Name         string                `json:"name"`
+	UpstreamURL  *string               `json:"upstreamUrl,omitempty"`
+	UpstreamAuth *ArtifactUpstreamAuth `json:"upstreamAuth,omitempty"`
+}
+
+// PatchArtifactUpstreamRequest supports partial updates: omitted fields are left unchanged,
+// explicit null clears the field. Both upstreamUrl and auth are independently optional.
+type PatchArtifactUpstreamRequest struct {
+	UpstreamURL json.RawMessage `json:"upstreamUrl"`
+	Auth        json.RawMessage `json:"auth"`
 }
 
 type ArtifactResponse struct {
