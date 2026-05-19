@@ -14,7 +14,17 @@ import {
   faTrash,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import {catchError, distinctUntilChanged, filter, firstValueFrom, lastValueFrom, map, NEVER, switchMap, tap} from 'rxjs';
+import {
+  catchError,
+  distinctUntilChanged,
+  filter,
+  firstValueFrom,
+  lastValueFrom,
+  map,
+  NEVER,
+  switchMap,
+  tap,
+} from 'rxjs';
 import {getRemoteEnvironment} from '../../../env/remote';
 import {RelativeDatePipe} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
@@ -26,8 +36,8 @@ import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {RequireVendorDirective} from '../../directives/required-role.directive';
 import {
-  ArtifactUpstreamAuth,
   ArtifactsService,
+  ArtifactUpstreamAuth,
   ArtifactWithTags,
   HasDownloads,
   TaggedArtifactVersion,

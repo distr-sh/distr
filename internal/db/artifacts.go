@@ -396,8 +396,10 @@ func CreateArtifact(ctx context.Context, artifact *types.Artifact) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`INSERT INTO Artifact AS a (name, organization_id, upstream_url, upstream_auth_type, upstream_username, upstream_password)
-		VALUES (@name, @organizationId, @upstreamUrl, @upstreamAuthType, @upstreamUsername, @upstreamPassword) RETURNING `+artifactOutputExpr,
+		`INSERT INTO Artifact AS a (name, organization_id, upstream_url, upstream_auth_type, upstream_username,
+			upstream_password)
+		VALUES (@name, @organizationId, @upstreamUrl, @upstreamAuthType, @upstreamUsername, @upstreamPassword)
+		RETURNING `+artifactOutputExpr,
 		pgx.NamedArgs{
 			"name":             artifact.Name,
 			"organizationId":   artifact.OrganizationID,

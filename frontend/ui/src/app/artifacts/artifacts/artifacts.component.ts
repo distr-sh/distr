@@ -23,7 +23,7 @@ import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {RequireCustomerDirective, RequireVendorDirective} from '../../directives/required-role.directive';
-import {ArtifactUpstreamAuth, ArtifactsService, UpstreamAuthType} from '../../services/artifacts.service';
+import {ArtifactsService, ArtifactUpstreamAuth, UpstreamAuthType} from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsCache} from '../../services/customer-organizations.service';
 import {OrganizationService} from '../../services/organization.service';

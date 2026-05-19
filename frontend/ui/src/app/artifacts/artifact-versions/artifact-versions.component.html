@@ -233,184 +233,185 @@
           </ul>
         </div>
       </div>
-    <ng-template #upstreamURLModal>
-    <div
-      animate.enter="animate-fly-in-top"
-      animate.leave="animate-fly-out-top"
-      class="p-4 w-128 my-auto max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900">
-      <div class="relative w-full max-h-full">
-        <div class="relative rounded-lg">
-          <div
-            class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Upstream URL</h3>
-            <button
-              type="button"
-              class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
-              (click)="upstreamURLModalRef?.close()">
-              <fa-icon [icon]="faXmark" />
-              <span class="sr-only">Close modal</span>
-            </button>
-          </div>
-          <div class="p-4 md:p-5">
-            <form [formGroup]="upstreamURLForm" (ngSubmit)="saveUpstreamURL(artifact)">
-              <div class="space-y-4">
-                <div>
-                  <label
-                    for="edit-upstream-url"
-                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >Upstream URL</label
-                  >
-                  <input
-                    [formControl]="upstreamURLForm.controls.upstreamUrl"
-                    autotrim
-                    autocomplete="off"
-                    type="text"
-                    id="edit-upstream-url"
-                    placeholder="e.g. registry-1.docker.io/library/nginx"
-                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
-                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave empty to remove the upstream URL.</p>
-                </div>
-                <div class="flex justify-end gap-2">
-                  <button
-                    type="button"
-                    (click)="upstreamURLModalRef?.close()"
-                    class="py-2 px-4 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700">
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    [disabled]="upstreamURLFormLoading"
-                    class="py-2 px-4 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 disabled:opacity-60 disabled:cursor-not-allowed">
-                    Save
-                  </button>
-                </div>
+      <ng-template #upstreamURLModal>
+        <div
+          animate.enter="animate-fly-in-top"
+          animate.leave="animate-fly-out-top"
+          class="p-4 w-128 my-auto max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900">
+          <div class="relative w-full max-h-full">
+            <div class="relative rounded-lg">
+              <div
+                class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Upstream URL</h3>
+                <button
+                  type="button"
+                  class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                  (click)="upstreamURLModalRef?.close()">
+                  <fa-icon [icon]="faXmark" />
+                  <span class="sr-only">Close modal</span>
+                </button>
               </div>
-            </form>
+              <div class="p-4 md:p-5">
+                <form [formGroup]="upstreamURLForm" (ngSubmit)="saveUpstreamURL(artifact)">
+                  <div class="space-y-4">
+                    <div>
+                      <label
+                        for="edit-upstream-url"
+                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                        >Upstream URL</label
+                      >
+                      <input
+                        [formControl]="upstreamURLForm.controls.upstreamUrl"
+                        autotrim
+                        autocomplete="off"
+                        type="text"
+                        id="edit-upstream-url"
+                        placeholder="e.g. registry-1.docker.io/library/nginx"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Leave empty to remove the upstream URL.
+                      </p>
+                    </div>
+                    <div class="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        (click)="upstreamURLModalRef?.close()"
+                        class="py-2 px-4 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700">
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        [disabled]="upstreamURLFormLoading"
+                        class="py-2 px-4 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 disabled:opacity-60 disabled:cursor-not-allowed">
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  </ng-template>
+      </ng-template>
 
-  <ng-template #upstreamAuthModal>
-    <div
-      animate.enter="animate-fly-in-top"
-      animate.leave="animate-fly-out-top"
-      class="p-4 w-128 my-auto max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900">
-      <div class="relative w-full max-h-full">
-        <div class="relative rounded-lg">
-          <div
-            class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Upstream Credentials</h3>
-            <button
-              type="button"
-              class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
-              (click)="upstreamAuthModalRef?.close()">
-              <fa-icon [icon]="faXmark" />
-              <span class="sr-only">Close modal</span>
-            </button>
-          </div>
-          <div class="p-4 md:p-5">
-            <form [formGroup]="upstreamAuthForm" (ngSubmit)="saveUpstreamAuth(artifact)">
-              <div class="space-y-4">
-                <div>
-                  <label
-                    for="edit-upstream-auth-type"
-                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >Authentication type</label
-                  >
-                  <select
-                    [formControl]="upstreamAuthForm.controls.upstreamAuthType"
-                    id="edit-upstream-auth-type"
-                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
-                    <option value="">No authentication</option>
-                    <option value="basic">Basic (username / password)</option>
-                    <option value="aws_ecr">AWS ECR (access key)</option>
-                  </select>
-                </div>
-
-                @if (upstreamAuthForm.controls.upstreamAuthType.value === 'basic') {
-                  <div>
-                    <label
-                      for="edit-upstream-username"
-                      class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                      >Username</label
-                    >
-                    <input
-                      [formControl]="upstreamAuthForm.controls.upstreamUsername"
-                      autotrim
-                      autocomplete="off"
-                      type="text"
-                      id="edit-upstream-username"
-                      class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
-                  </div>
-                  <div>
-                    <label
-                      for="edit-upstream-password"
-                      class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                      >Password</label
-                    >
-                    <input
-                      [formControl]="upstreamAuthForm.controls.upstreamPassword"
-                      autocomplete="new-password"
-                      type="password"
-                      id="edit-upstream-password"
-                      class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
-                  </div>
-                }
-
-                @if (upstreamAuthForm.controls.upstreamAuthType.value === 'aws_ecr') {
-                  <div>
-                    <label
-                      for="edit-upstream-key-id"
-                      class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                      >AWS Access Key ID</label
-                    >
-                    <input
-                      [formControl]="upstreamAuthForm.controls.upstreamUsername"
-                      autotrim
-                      autocomplete="off"
-                      type="text"
-                      id="edit-upstream-key-id"
-                      class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
-                  </div>
-                  <div>
-                    <label
-                      for="edit-upstream-secret"
-                      class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                      >AWS Secret Access Key</label
-                    >
-                    <input
-                      [formControl]="upstreamAuthForm.controls.upstreamPassword"
-                      autocomplete="new-password"
-                      type="password"
-                      id="edit-upstream-secret"
-                      class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
-                  </div>
-                }
-
-                <div class="flex justify-end gap-2">
-                  <button
-                    type="button"
-                    (click)="upstreamAuthModalRef?.close()"
-                    class="py-2 px-4 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700">
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    [disabled]="upstreamAuthFormLoading"
-                    class="py-2 px-4 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 disabled:opacity-60 disabled:cursor-not-allowed">
-                    Save
-                  </button>
-                </div>
+      <ng-template #upstreamAuthModal>
+        <div
+          animate.enter="animate-fly-in-top"
+          animate.leave="animate-fly-out-top"
+          class="p-4 w-128 my-auto max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900">
+          <div class="relative w-full max-h-full">
+            <div class="relative rounded-lg">
+              <div
+                class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Upstream Credentials</h3>
+                <button
+                  type="button"
+                  class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                  (click)="upstreamAuthModalRef?.close()">
+                  <fa-icon [icon]="faXmark" />
+                  <span class="sr-only">Close modal</span>
+                </button>
               </div>
-            </form>
+              <div class="p-4 md:p-5">
+                <form [formGroup]="upstreamAuthForm" (ngSubmit)="saveUpstreamAuth(artifact)">
+                  <div class="space-y-4">
+                    <div>
+                      <label
+                        for="edit-upstream-auth-type"
+                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                        >Authentication type</label
+                      >
+                      <select
+                        [formControl]="upstreamAuthForm.controls.upstreamAuthType"
+                        id="edit-upstream-auth-type"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                        <option value="">No authentication</option>
+                        <option value="basic">Basic (username / password)</option>
+                        <option value="aws_ecr">AWS ECR (access key)</option>
+                      </select>
+                    </div>
+
+                    @if (upstreamAuthForm.controls.upstreamAuthType.value === 'basic') {
+                      <div>
+                        <label
+                          for="edit-upstream-username"
+                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                          >Username</label
+                        >
+                        <input
+                          [formControl]="upstreamAuthForm.controls.upstreamUsername"
+                          autotrim
+                          autocomplete="off"
+                          type="text"
+                          id="edit-upstream-username"
+                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                      </div>
+                      <div>
+                        <label
+                          for="edit-upstream-password"
+                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                          >Password</label
+                        >
+                        <input
+                          [formControl]="upstreamAuthForm.controls.upstreamPassword"
+                          autocomplete="new-password"
+                          type="password"
+                          id="edit-upstream-password"
+                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                      </div>
+                    }
+
+                    @if (upstreamAuthForm.controls.upstreamAuthType.value === 'aws_ecr') {
+                      <div>
+                        <label
+                          for="edit-upstream-key-id"
+                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                          >AWS Access Key ID</label
+                        >
+                        <input
+                          [formControl]="upstreamAuthForm.controls.upstreamUsername"
+                          autotrim
+                          autocomplete="off"
+                          type="text"
+                          id="edit-upstream-key-id"
+                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                      </div>
+                      <div>
+                        <label
+                          for="edit-upstream-secret"
+                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                          >AWS Secret Access Key</label
+                        >
+                        <input
+                          [formControl]="upstreamAuthForm.controls.upstreamPassword"
+                          autocomplete="new-password"
+                          type="password"
+                          id="edit-upstream-secret"
+                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                      </div>
+                    }
+
+                    <div class="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        (click)="upstreamAuthModalRef?.close()"
+                        class="py-2 px-4 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700">
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        [disabled]="upstreamAuthFormLoading"
+                        class="py-2 px-4 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 disabled:opacity-60 disabled:cursor-not-allowed">
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  </ng-template>
-
+      </ng-template>
     } @else {
       <div class="flex justify-center items-center py-8 text-gray-500 dark:text-gray-400">
         <app-spinner class="size-6 me-2" />
