@@ -1,7 +1,7 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
 import {Component, computed, inject, resource, signal, TemplateRef} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -25,6 +25,7 @@ import {
   lastValueFrom,
   map,
   NEVER,
+  startWith,
   switchMap,
   tap,
 } from 'rxjs';
@@ -116,6 +117,20 @@ export class ArtifactVersionsComponent {
   });
   protected upstreamAuthFormLoading = false;
   protected upstreamAuthModalRef?: DialogRef;
+
+  constructor() {
+    this.upstreamAuthForm.controls.upstreamAuthType.valueChanges
+      .pipe(startWith(this.upstreamAuthForm.controls.upstreamAuthType.value), takeUntilDestroyed())
+      .subscribe((authType) => {
+        if (authType === 'none') {
+          this.upstreamAuthForm.controls.upstreamUsername.disable();
+          this.upstreamAuthForm.controls.upstreamPassword.disable();
+        } else {
+          this.upstreamAuthForm.controls.upstreamUsername.enable();
+          this.upstreamAuthForm.controls.upstreamPassword.enable();
+        }
+      });
+  }
 
   protected readonly artifact = toSignal(
     this.route.params.pipe(
