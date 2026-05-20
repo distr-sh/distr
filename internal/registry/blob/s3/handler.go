@@ -264,7 +264,6 @@ func (handler *blobHandler) PutChunk(ctx context.Context, id string, r io.Reader
 			return 0, err
 		}
 	}
-	partNumber += int32(numParts)
 
 	return size, nil
 }
