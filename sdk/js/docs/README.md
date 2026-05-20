@@ -6,6 +6,7 @@
 
 ## Classes
 
+- [Base64EncodeError](classes/Base64EncodeError.md)
 - [Client](classes/Client.md)
 - [DistrService](classes/DistrService.md)
 
@@ -70,3 +71,7 @@
 - [UpdateAllDeploymentsUpdatedTarget](type-aliases/UpdateAllDeploymentsUpdatedTarget.md)
 - [UpdateDeploymentParams](type-aliases/UpdateDeploymentParams.md)
 - [UserRole](type-aliases/UserRole.md)
+
+## Functions
+
+- [toBase64](functions/toBase64.md)
