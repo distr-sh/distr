@@ -154,7 +154,7 @@
   <div
     animate.enter="animate-fly-in-top"
     animate.leave="animate-fly-out-top"
-    class="p-4 w-128 my-auto max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900">
+    class="p-4 w-150 my-auto max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900">
     <div class="relative w-full max-h-full">
       <div class="relative rounded-lg">
         <div
@@ -170,7 +170,23 @@
         </div>
 
         <div class="p-4 md:p-5">
+          <h4 class="text-base font-semibold text-gray-900 dark:text-white">Direct upload</h4>
+          <div class="text-sm text-gray-500 dark:text-gray-400">
+            Push artifacts to your registry using the Docker CLI or any other OCI-compliant tool. Just make sure to tag
+            your images with the correct registry URL and artifact name. For example:
+          </div>
+          <code class="mt-1 select-all block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
+            docker tag SOURCE-IMAGE:TAG {{ registryHost$ | async }}/{{ registrySlug$ | async }}/ARTIFACT-NAME:TAG docker
+            push {{ registryHost$ | async }}/{{ registrySlug$ | async }}/ARTIFACT-NAME:TAG
+          </code>
+
+          <hr class="my-4 border-gray-200 dark:border-gray-600" />
+
           <form [formGroup]="formGroup" (ngSubmit)="createArtifact()">
+            <h4 class="text-base font-semibold text-gray-900 dark:text-white">Pull-through cache</h4>
+            <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">
+              Configure this artifact with an upstream OCI registry URL to automatically sync tags from.
+            </div>
             <div class="space-y-4">
               <div>
                 <label for="artifact-name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
