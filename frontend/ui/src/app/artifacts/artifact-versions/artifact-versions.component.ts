@@ -353,7 +353,7 @@ export class ArtifactVersionsComponent {
           }
           return NEVER;
         }),
-        tap(() => this.toast.success('Sync triggered successfully'))
+        tap(() => this.toast.success('Sync completed'))
       )
       .subscribe({complete: () => this.syncing.set(false)});
   }
