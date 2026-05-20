@@ -12,7 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/google/uuid"
+	"golang.org/x/sync/singleflight"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
 )
@@ -24,8 +24,8 @@ type cachedECRToken struct {
 }
 
 var (
-	ecrTokenCache   = map[uuid.UUID]cachedECRToken{}
-	ecrTokenCacheMu sync.Mutex
+	ecrTokenCache   sync.Map // map[uuid.UUID]cachedECRToken
+	ecrSingleflight singleflight.Group
 )
 
 func credentialForArtifact(artifact *types.Artifact) auth.CredentialFunc {
@@ -54,64 +54,72 @@ func credentialForArtifact(artifact *types.Artifact) auth.CredentialFunc {
 }
 
 func getECRCredential(ctx context.Context, artifact *types.Artifact) (auth.Credential, error) {
-	ecrTokenCacheMu.Lock()
-	defer ecrTokenCacheMu.Unlock()
-
-	if cached, ok := ecrTokenCache[artifact.ID]; ok && time.Now().Before(cached.expiresAt) {
-		return auth.Credential{Username: cached.username, Password: cached.password}, nil
+	if v, ok := ecrTokenCache.Load(artifact.ID); ok {
+		if cached := v.(cachedECRToken); time.Now().Before(cached.expiresAt) {
+			return auth.Credential{Username: cached.username, Password: cached.password}, nil
+		}
 	}
 
-	if artifact.UpstreamURL == nil {
-		return auth.Credential{}, fmt.Errorf("ECR artifact %s has no upstream URL", artifact.ID)
-	}
-	region := ecrRegionFromURL(*artifact.UpstreamURL)
-	if region == "" {
-		return auth.Credential{}, fmt.Errorf("could not determine AWS region from upstream URL for artifact %s", artifact.ID)
-	}
-	if artifact.UpstreamUsername == nil || artifact.UpstreamPassword == nil {
-		return auth.Credential{}, fmt.Errorf("missing AWS credentials for ECR artifact %s", artifact.ID)
-	}
+	v, err, _ := ecrSingleflight.Do(artifact.ID.String(), func() (any, error) {
+		// Double-check cache: another goroutine may have fetched the token while we waited.
+		if v, ok := ecrTokenCache.Load(artifact.ID); ok {
+			if cached := v.(cachedECRToken); time.Now().Before(cached.expiresAt) {
+				return auth.Credential{Username: cached.username, Password: cached.password}, nil
+			}
+		}
 
-	cfg, err := config.LoadDefaultConfig(ctx,
-		config.WithRegion(region),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
-			*artifact.UpstreamUsername,
-			*artifact.UpstreamPassword,
-			"",
-		)),
-	)
+		if artifact.UpstreamURL == nil {
+			return nil, fmt.Errorf("ECR artifact %s has no upstream URL", artifact.ID)
+		}
+		region := ecrRegionFromURL(*artifact.UpstreamURL)
+		if region == "" {
+			return nil, fmt.Errorf("could not determine AWS region from upstream URL for artifact %s", artifact.ID)
+		}
+		if artifact.UpstreamUsername == nil || artifact.UpstreamPassword == nil {
+			return nil, fmt.Errorf("missing AWS credentials for ECR artifact %s", artifact.ID)
+		}
+
+		cfg, err := config.LoadDefaultConfig(ctx,
+			config.WithRegion(region),
+			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
+				*artifact.UpstreamUsername,
+				*artifact.UpstreamPassword,
+				"",
+			)),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("loading AWS config: %w", err)
+		}
+
+		result, err := ecr.NewFromConfig(cfg).GetAuthorizationToken(ctx, &ecr.GetAuthorizationTokenInput{})
+		if err != nil {
+			return nil, fmt.Errorf("getting ECR authorization token: %w", err)
+		}
+		if len(result.AuthorizationData) == 0 {
+			return nil, fmt.Errorf("no ECR authorization data returned")
+		}
+
+		decoded, err := base64.StdEncoding.DecodeString(*result.AuthorizationData[0].AuthorizationToken)
+		if err != nil {
+			return nil, fmt.Errorf("decoding ECR token: %w", err)
+		}
+		username, password, ok := strings.Cut(string(decoded), ":")
+		if !ok {
+			return nil, fmt.Errorf("unexpected ECR token format")
+		}
+
+		expiresAt := time.Now().Add(11 * time.Hour)
+		if result.AuthorizationData[0].ExpiresAt != nil {
+			expiresAt = result.AuthorizationData[0].ExpiresAt.Add(-1 * time.Hour)
+		}
+		ecrTokenCache.Store(artifact.ID, cachedECRToken{username: username, password: password, expiresAt: expiresAt})
+
+		return auth.Credential{Username: username, Password: password}, nil
+	})
 	if err != nil {
-		return auth.Credential{}, fmt.Errorf("loading AWS config: %w", err)
+		return auth.Credential{}, err
 	}
-
-	result, err := ecr.NewFromConfig(cfg).GetAuthorizationToken(ctx, &ecr.GetAuthorizationTokenInput{})
-	if err != nil {
-		return auth.Credential{}, fmt.Errorf("getting ECR authorization token: %w", err)
-	}
-	if len(result.AuthorizationData) == 0 {
-		return auth.Credential{}, fmt.Errorf("no ECR authorization data returned")
-	}
-
-	decoded, err := base64.StdEncoding.DecodeString(*result.AuthorizationData[0].AuthorizationToken)
-	if err != nil {
-		return auth.Credential{}, fmt.Errorf("decoding ECR token: %w", err)
-	}
-	username, password, ok := strings.Cut(string(decoded), ":")
-	if !ok {
-		return auth.Credential{}, fmt.Errorf("unexpected ECR token format")
-	}
-
-	expiresAt := time.Now().Add(11 * time.Hour)
-	if result.AuthorizationData[0].ExpiresAt != nil {
-		expiresAt = result.AuthorizationData[0].ExpiresAt.Add(-1 * time.Hour)
-	}
-	ecrTokenCache[artifact.ID] = cachedECRToken{
-		username:  username,
-		password:  password,
-		expiresAt: expiresAt,
-	}
-
-	return auth.Credential{Username: username, Password: password}, nil
+	return v.(auth.Credential), nil
 }
 
 // ValidateUpstreamCredentials checks that the configured credentials can authenticate
