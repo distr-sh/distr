@@ -144,8 +144,8 @@ func main() {
 		if installRequired {
 			pushStatus(ctx, "helm install in progress")
 			if deployment, err := RunHelmInstall(ctx, res.Namespace, *res.Deployment); err != nil {
-				logger.Error("helm upgrade failed", zap.Error(err))
-				pushErrorStatus(ctx, fmt.Errorf("helm upgrade failed: %w", err))
+				logger.Error("helm install failed", zap.Error(err))
+				pushErrorStatus(ctx, fmt.Errorf("helm install failed: %w", err))
 			} else if err := SaveDeployment(ctx, res.Namespace, *deployment); err != nil {
 				logger.Error("could not save latest deployment", zap.Error(err))
 				pushErrorStatus(ctx, fmt.Errorf("could not save latest deployment: %w", err))
