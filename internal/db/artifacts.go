@@ -721,6 +721,22 @@ func BulkUpsertArtifactVersionParts(ctx context.Context, parts []types.ArtifactV
 		return nil
 	}
 	db := internalctx.GetDb(ctx)
+
+	type key struct {
+		versionID uuid.UUID
+		digest    types.Digest
+	}
+	seen := make(map[key]struct{}, len(parts))
+	deduped := parts[:0:0]
+	for _, p := range parts {
+		k := key{p.ArtifactVersionID, p.ArtifactBlobDigest}
+		if _, ok := seen[k]; !ok {
+			seen[k] = struct{}{}
+			deduped = append(deduped, p)
+		}
+	}
+	parts = deduped
+
 	versionIDs := make([]uuid.UUID, len(parts))
 	digests := make([]string, len(parts))
 	sizes := make([]int64, len(parts))
