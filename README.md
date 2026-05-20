@@ -115,7 +115,8 @@ Register your first account at http://localhost:8080/register
 
 The full self-hosting documentation is at https://distr.sh/docs/self-hosting/
 
-Using Distr agents on macOS? Follow the [guide](https://distr.sh/docs/guides/distr-on-macos/) to get started.
+Using Distr agents on macOS? Follow the [macOS guide](https://distr.sh/docs/agents/distr-on-macos/) to get started.
+Using Distr agents on Windows with WSL2? Follow the [Windows WSL2 guide](https://distr.sh/docs/agents/distr-on-windows-wsl/) to get started.
 
 ### Building from source
 
