@@ -1,18 +1,19 @@
 export class Base64EncodeError extends Error {
-  constructor(cause: unknown) {
+  constructor() {
     super(
-      'Cannot encode value: contains characters outside the Latin-1 range (e.g. emdash "—", smart quotes, or other Unicode). ' +
-        'Please replace them with plain ASCII equivalents.'
+      'Cannot encode value: contains characters outside the Latin-1 range (codepoint > 0xFF), ' +
+        'e.g. the emdash "—", smart quotes, or other non-Latin-1 Unicode. ' +
+        'Please replace them with Latin-1 equivalents (ASCII works).'
     );
     this.name = 'Base64EncodeError';
-    this.cause = cause;
   }
 }
 
 export function toBase64(value: string): string {
-  try {
-    return btoa(value);
-  } catch (e) {
-    throw new Base64EncodeError(e);
+  for (let i = 0; i < value.length; i++) {
+    if (value.charCodeAt(i) > 0xff) {
+      throw new Base64EncodeError();
+    }
   }
+  return btoa(value);
 }

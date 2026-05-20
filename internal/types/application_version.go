@@ -92,8 +92,8 @@ func (av ApplicationVersion) Validate(deplType DeploymentType) error {
 func validateLatin1(data []byte) error {
 	for _, r := range string(data) {
 		if r > 0xFF {
-			return fmt.Errorf("contains non-Latin-1 character %q (codepoint U+%04X); "+
-				"please remove non-ASCII characters such as the emdash or smart quotes", r, r)
+			return fmt.Errorf("contains non-Latin-1 character %q (codepoint U+%04X > 0xFF); "+
+				"please remove non-Latin-1 characters such as the emdash or smart quotes", r, r)
 		}
 	}
 	return nil
