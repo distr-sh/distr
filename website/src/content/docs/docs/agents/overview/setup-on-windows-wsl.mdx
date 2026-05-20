@@ -27,11 +27,9 @@ You need:
 - The [Docker Compose plugin](https://docs.docker.com/compose/install/linux/)
   installed inside WSL
 - `docker compose` available inside WSL
-- Docker access inside WSL, either with `sudo` or without it
 - PowerShell Administrator access if the application exposes a UI or another
   inbound service outside WSL
-- Optional: inbound access to the application UI port, usually port `80`, if
-  the deployed application exposes a web UI
+- Optional: inbound access to the application UI port, usually port `80` and `443`, if the deployed application exposes a web UI
 
 <Aside type="caution">
   If you run this on a cloud VM, for example a Windows VM on AWS EC2, the VM
@@ -43,7 +41,6 @@ You need:
 Compared with a regular Linux Docker host, the important differences are:
 
 - Run the Distr connect command inside WSL, not in PowerShell.
-- Use `docker compose`, not the legacy `docker-compose` command.
 - Web-facing services can usually be reached from Windows at `localhost`, but
   traffic to the Windows machine's LAN or public IP may need a Windows
   `portproxy` rule.
@@ -74,32 +71,17 @@ sudo service docker start
 Verify Docker:
 
 ```sh
-sudo docker run hello-world
+docker run hello-world
 docker compose version
-```
-
-If `docker ps` works without `sudo`, you can run the Distr command exactly as
-Distr generates it. Otherwise, add `sudo` before `docker compose`.
-
-To allow Docker without `sudo`, add your Linux user to the `docker` group:
-
-```shell
-sudo usermod -aG docker $USER
-exit
-```
-
-Then restart WSL from PowerShell:
-
-```powershell
-wsl --shutdown
-wsl
-```
-
-Enter WSL again and test:
-
-```sh
 docker ps
 ```
+
+If those commands succeed, you can run the Distr connect command exactly as
+Distr generates it.
+
+If any of them fail with a permission error on `/var/run/docker.sock`, see
+[Docker permission denied](#docker-permission-denied) in the troubleshooting
+section, then re-run the verification commands above.
 
 ## Configure mount propagation
 
@@ -117,25 +99,30 @@ resources. Without it, the agent may fail with this error:
 path / is mounted on / but it is not a shared or slave mount
 ```
 
+This change is not persistent and will be lost on reboot or after
+`wsl --shutdown`. To re-apply it automatically each time WSL starts, add a
+boot command to `/etc/wsl.conf` inside your WSL distribution:
+
+```ini
+[boot]
+command = mount --make-rshared /
+```
+
+Then restart WSL from PowerShell with `wsl --shutdown` for the change to take
+effect.
+
 ## Run the Distr connect command
 
 Create a deployment in Distr and copy the generated connect command from the
-deployment target.
-
-Distr generates the command without `sudo`:
+deployment target. Run it inside WSL:
 
 ```sh
 curl -fsSL "https://<DISTR_HOST>/api/v1/connect?targetId=<TARGET_ID>&targetSecret=<TARGET_SECRET>" | docker compose -f - up -d
 ```
 
-Run the generated command inside WSL.
-
-If you did not configure Docker access without `sudo` in the previous step, add
-`sudo` before `docker compose`:
-
-```sh
-curl -fsSL "https://<DISTR_HOST>/api/v1/connect?targetId=<TARGET_ID>&targetSecret=<TARGET_SECRET>" | sudo docker compose -f - up -d
-```
+If this fails with a permission error on `/var/run/docker.sock`, configure
+Docker access without `sudo` as described in
+[Check Docker inside WSL](#check-docker-inside-wsl) and re-run the command.
 
 ## Check the deployment in Distr
 
@@ -146,7 +133,7 @@ resources once the containers have started.
 You can optionally check the containers directly inside WSL:
 
 ```sh
-sudo docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+docker ps -a
 ```
 
 If the application exposes a web UI, you can also test it from inside WSL:
@@ -187,34 +174,19 @@ Use the first IP address, then run this in PowerShell as Administrator:
 netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=80 connectaddress=<WSL_IP> connectport=80
 ```
 
-Test the forwarded port:
+Test the forwarded port from PowerShell, where `<HOST_IP>` is the Windows
+machine's LAN or public IP:
 
 ```powershell
 curl.exe -I http://<HOST_IP>
-```
-
-The Distr host and protocol should match the IP address or DNS name users will
-use to access the UI:
-
-```text
-HELLO_DISTR_HOST=your-domain.example.com
-HELLO_DISTR_PROTOCOL=http
-```
-
-Or, with TLS configured:
-
-```text
-HELLO_DISTR_HOST=your-domain.example.com
-HELLO_DISTR_PROTOCOL=https
 ```
 
 ## Troubleshooting
 
 ### Docker permission denied
 
-If Docker reports a permission error for `/var/run/docker.sock`, add `sudo`
-before `docker compose` in the generated Distr command, or configure Docker
-access without `sudo`:
+If Docker reports a permission error for `/var/run/docker.sock`, add your
+Linux user to the `docker` group:
 
 ```shell
 sudo usermod -aG docker $USER
