@@ -12,8 +12,8 @@ type inMemoryStream struct{ data []byte }
 func (i *inMemoryStream) Destroy() error { return nil }
 
 // Get implements TmpStream.
-func (i *inMemoryStream) Get() (io.ReadSeekCloser, error) {
-	return &noopReadSeekCloser{bytes.NewReader(i.data)}, nil
+func (i *inMemoryStream) Get() (ReadSeekAtCloser, error) {
+	return &noopReadSeekAtCloser{bytes.NewReader(i.data)}, nil
 }
 
 func newInMemoryStream(src io.Reader) (result TmpStream, rerr error) {
@@ -24,6 +24,6 @@ func newInMemoryStream(src io.Reader) (result TmpStream, rerr error) {
 	}
 }
 
-type noopReadSeekCloser struct{ io.ReadSeeker }
+type noopReadSeekAtCloser struct{ ReadSeekAt }
 
-func (n *noopReadSeekCloser) Close() error { return nil }
+func (n *noopReadSeekAtCloser) Close() error { return nil }

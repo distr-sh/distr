@@ -21,7 +21,8 @@ import (
 )
 
 const (
-	chunksPrefix = "chunks"
+	chunksPrefix  = "chunks"
+	maxS3PartSize = int64(5) * 1024 * 1024 * 1024 // S3 maximum per-part size is 5 GB
 )
 
 type blobHandler struct {
@@ -224,39 +225,46 @@ func (handler *blobHandler) PutChunk(ctx context.Context, id string, r io.Reader
 		return 0, blob.NewErrBadUpload("range is not as expected")
 	}
 
-	if s, err := tmpstream.New(r); err != nil {
+	s, err := tmpstream.New(r)
+	if err != nil {
 		return 0, fmt.Errorf("failed to create tmp stream: %w", err)
-	} else {
-		defer func() {
-			if err := s.Destroy(); err != nil {
-				internalctx.GetLogger(ctx).Warn("ephemeral resource cleanup error", zap.Error(err))
-			}
-		}()
-		if sr, err := s.Get(); err != nil {
-			return 0, fmt.Errorf("failed to get tmp stream reader: %w", err)
-		} else {
-			defer sr.Close()
-			if srl, err := io.Copy(io.Discard, sr); err != nil {
-				return 0, fmt.Errorf("failed to get stream reader length: %w", err)
-			} else {
-				size += srl
-				if _, err := sr.Seek(0, io.SeekStart); err != nil {
-					return 0, fmt.Errorf("failed to reset stream reader position to 0: %w", err)
-				}
-			}
-			r = sr
+	}
+	defer func() {
+		if err := s.Destroy(); err != nil {
+			internalctx.GetLogger(ctx).Warn("ephemeral resource cleanup error", zap.Error(err))
+		}
+	}()
+
+	sr, err := s.Get()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get tmp stream reader: %w", err)
+	}
+	defer sr.Close()
+
+	chunkSize, err := io.Copy(io.Discard, sr)
+	if err != nil {
+		return 0, fmt.Errorf("failed to measure chunk size: %w", err)
+	}
+	size += chunkSize
+
+	// S3 limits each UploadPart call to 5 GB. Split larger chunks into multiple parts.
+	numParts := max(int64(1), (chunkSize+maxS3PartSize-1)/maxS3PartSize)
+	for i := range numParts {
+		pn := partNumber + int32(i)
+		partStart := i * maxS3PartSize
+		partSize := min(maxS3PartSize, chunkSize-partStart)
+		if _, err := handler.s3Client.UploadPart(ctx, &s3.UploadPartInput{
+			Bucket:        &handler.bucket,
+			Key:           &uploadKey,
+			UploadId:      uploadID,
+			PartNumber:    &pn,
+			Body:          io.NewSectionReader(sr, partStart, partSize),
+			ContentLength: &partSize,
+		}); err != nil {
+			return 0, err
 		}
 	}
-
-	if _, err := handler.s3Client.UploadPart(ctx, &s3.UploadPartInput{
-		Bucket:     &handler.bucket,
-		Key:        &uploadKey,
-		UploadId:   uploadID,
-		PartNumber: &partNumber,
-		Body:       r,
-	}); err != nil {
-		return 0, err
-	}
+	partNumber += int32(numParts)
 
 	return size, nil
 }
@@ -301,21 +309,94 @@ func (handler *blobHandler) CompleteSession(ctx context.Context, repo, id string
 			MultipartUpload: &s3types.CompletedMultipartUpload{Parts: completionParts},
 		}); err != nil {
 			return err
-		} else if _, err := handler.s3Client.CopyObject(ctx, &s3.CopyObjectInput{
-			Bucket:     &handler.bucket,
-			Key:        new(digest.String()),
-			CopySource: new(path.Join(handler.bucket, uploadKey)),
-		}); err != nil {
+		}
+
+		finalKey := digest.String()
+		if err := handler.copyObject(ctx, uploadKey, finalKey); err != nil {
 			return err
-		} else if _, err := handler.s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		}
+
+		_, err := handler.s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
 			Bucket: &handler.bucket,
 			Key:    &uploadKey,
-		}); err != nil {
-			return err
-		} else {
-			return nil
-		}
+		})
+		return err
 	}
+}
+
+// copyObject copies srcKey to dstKey within the same bucket. For objects larger than the 5 GB CopyObject limit,
+// it falls back to a multipart copy using UploadPartCopy.
+func (handler *blobHandler) copyObject(ctx context.Context, srcKey, dstKey string) error {
+	head, err := handler.s3Client.HeadObject(ctx, &s3.HeadObjectInput{
+		Bucket: &handler.bucket,
+		Key:    &srcKey,
+	})
+	if err != nil {
+		return err
+	}
+	objectSize := *head.ContentLength
+
+	if objectSize <= maxS3PartSize {
+		copySource := handler.bucket + "/" + srcKey
+		_, err = handler.s3Client.CopyObject(ctx, &s3.CopyObjectInput{
+			Bucket:     &handler.bucket,
+			Key:        &dstKey,
+			CopySource: &copySource,
+		})
+		return err
+	}
+
+	upload, err := handler.s3Client.CreateMultipartUpload(ctx, &s3.CreateMultipartUploadInput{
+		Bucket: &handler.bucket,
+		Key:    &dstKey,
+	})
+	if err != nil {
+		return err
+	}
+
+	abort := func() {
+		_, _ = handler.s3Client.AbortMultipartUpload(ctx, &s3.AbortMultipartUploadInput{
+			Bucket:   &handler.bucket,
+			Key:      &dstKey,
+			UploadId: upload.UploadId,
+		})
+	}
+
+	numParts := (objectSize + maxS3PartSize - 1) / maxS3PartSize
+	completedParts := make([]s3types.CompletedPart, numParts)
+	copySource := handler.bucket + "/" + srcKey
+
+	for i := range numParts {
+		partNumber := int32(i + 1)
+		rangeStart := i * maxS3PartSize
+		rangeEnd := min(rangeStart+maxS3PartSize, objectSize) - 1
+		copySourceRange := fmt.Sprintf("bytes=%d-%d", rangeStart, rangeEnd)
+
+		result, err := handler.s3Client.UploadPartCopy(ctx, &s3.UploadPartCopyInput{
+			Bucket:          &handler.bucket,
+			Key:             &dstKey,
+			UploadId:        upload.UploadId,
+			PartNumber:      &partNumber,
+			CopySource:      &copySource,
+			CopySourceRange: &copySourceRange,
+		})
+		if err != nil {
+			abort()
+			return err
+		}
+		completedParts[i] = s3types.CompletedPart{PartNumber: &partNumber, ETag: result.CopyPartResult.ETag}
+	}
+
+	if _, err = handler.s3Client.CompleteMultipartUpload(ctx, &s3.CompleteMultipartUploadInput{
+		Bucket:          &handler.bucket,
+		Key:             &dstKey,
+		UploadId:        upload.UploadId,
+		MultipartUpload: &s3types.CompletedMultipartUpload{Parts: completedParts},
+	}); err != nil {
+		abort()
+		return err
+	}
+	return nil
 }
 
 // Delete implements blob.BlobDeleteHandler.
