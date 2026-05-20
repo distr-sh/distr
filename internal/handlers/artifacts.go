@@ -92,6 +92,10 @@ func createArtifactHandler() http.HandlerFunc {
 			http.Error(w, "name is required", http.StatusBadRequest)
 			return
 		}
+		if body.UpstreamURL != nil && *body.UpstreamURL == "" {
+			http.Error(w, "upstreamUrl must not be empty", http.StatusBadRequest)
+			return
+		}
 
 		artifact := &types.Artifact{
 			Name:           body.Name,
