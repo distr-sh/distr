@@ -7,9 +7,10 @@
 # Class: Base64EncodeError
 
 Thrown by [toBase64](../functions/toBase64.md) when the input contains characters that the
-platform's `btoa` cannot encode (codepoints outside the Latin-1 range).
+platform's `btoa` cannot encode (codepoints outside the Latin-1 range,
+i.e. > 0xFF).
 
-Common culprits: the emdash "—" (U+2014), smart quotes ("" '' "" ''), and
+Common culprits: the emdash "—" (U+2014), smart quotes (" " ' '), and
 other typographic punctuation that text editors silently insert.
 
 ## Extends
@@ -20,17 +21,13 @@ other typographic punctuation that text editors silently insert.
 
 ### Constructor
 
-> **new Base64EncodeError**(`field`, `cause`): `Base64EncodeError`
+> **new Base64EncodeError**(`field`): `Base64EncodeError`
 
 #### Parameters
 
 ##### field
 
 `string`
-
-##### cause
-
-`unknown`
 
 #### Returns
 

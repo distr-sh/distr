@@ -8,9 +8,10 @@
 
 > **toBase64**(`value`, `field`): `string`
 
-Wraps `btoa` and rethrows the InvalidCharacterError as a typed
-[Base64EncodeError](../classes/Base64EncodeError.md) with a descriptive message identifying the field
-that failed to encode.
+Encodes a string as base64. Pre-validates the input against the Latin-1
+range that `btoa` accepts; if the input is out of range, throws a typed
+[Base64EncodeError](../classes/Base64EncodeError.md) naming the field. Any other errors thrown by
+the platform's `btoa` (e.g. it being unavailable) propagate unchanged.
 
 ## Parameters
 
