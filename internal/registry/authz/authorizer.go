@@ -92,17 +92,17 @@ func (a *authorizer) AuthorizeReference(ctx context.Context, nameStr string, ref
 	}
 
 	org := auth.CurrentOrg()
-	if name, err := name.Parse(nameStr); err != nil {
+	if n, err := name.Parse(nameStr); err != nil {
 		return err
 	} else if org.Slug == nil {
 		return NewErrAccessDenied("organization has no slug")
-	} else if *org.Slug != name.OrgName {
+	} else if *org.Slug != n.OrgName {
 		return NewErrAccessDenied("organization slug does not match reference")
 	} else if action != ActionWrite && auth.CurrentCustomerOrgID() != nil {
 		if org.HasFeature(types.FeatureLicensing) {
 			err := db.CheckEntitlementForArtifact(ctx,
-				name.OrgName,
-				name.ArtifactName,
+				n.OrgName,
+				n.ArtifactName,
 				reference,
 				*auth.CurrentCustomerOrgID(),
 				*auth.CurrentOrgID(),
@@ -112,6 +112,14 @@ func (a *authorizer) AuthorizeReference(ctx context.Context, nameStr string, ref
 			} else if err != nil {
 				return err
 			}
+		}
+	} else if action == ActionWrite {
+		if artifact, err := db.GetArtifactByName(ctx, n.OrgName, n.ArtifactName); err != nil {
+			if !errors.Is(err, apierrors.ErrNotFound) {
+				return err
+			}
+		} else if artifact.UpstreamURL != nil {
+			return NewErrAccessDenied("cannot push to a pull-through cache artifact")
 		}
 	}
 
