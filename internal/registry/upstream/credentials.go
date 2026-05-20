@@ -2,6 +2,7 @@ package upstream
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
 	"strings"
@@ -24,7 +25,7 @@ type cachedECRToken struct {
 }
 
 var (
-	ecrTokenCache   sync.Map // map[uuid.UUID]cachedECRToken
+	ecrTokenCache   sync.Map // map[string]cachedECRToken
 	ecrSingleflight singleflight.Group
 )
 
@@ -53,16 +54,31 @@ func credentialForArtifact(artifact *types.Artifact) auth.CredentialFunc {
 	}
 }
 
+func ecrCacheKey(artifact *types.Artifact) string {
+	h := sha256.New()
+	h.Write([]byte(artifact.ID.String()))
+	if artifact.UpstreamUsername != nil {
+		h.Write([]byte{0})
+		h.Write([]byte(*artifact.UpstreamUsername))
+	}
+	if artifact.UpstreamPassword != nil {
+		h.Write([]byte{0})
+		h.Write([]byte(*artifact.UpstreamPassword))
+	}
+	return string(h.Sum(nil))
+}
+
 func getECRCredential(ctx context.Context, artifact *types.Artifact) (auth.Credential, error) {
-	if v, ok := ecrTokenCache.Load(artifact.ID); ok {
+	cacheKey := ecrCacheKey(artifact)
+	if v, ok := ecrTokenCache.Load(cacheKey); ok {
 		if cached := v.(cachedECRToken); time.Now().Before(cached.expiresAt) {
 			return auth.Credential{Username: cached.username, Password: cached.password}, nil
 		}
 	}
 
-	v, err, _ := ecrSingleflight.Do(artifact.ID.String(), func() (any, error) {
+	v, err, _ := ecrSingleflight.Do(cacheKey, func() (any, error) {
 		// Double-check cache: another goroutine may have fetched the token while we waited.
-		if v, ok := ecrTokenCache.Load(artifact.ID); ok {
+		if v, ok := ecrTokenCache.Load(cacheKey); ok {
 			if cached := v.(cachedECRToken); time.Now().Before(cached.expiresAt) {
 				return auth.Credential{Username: cached.username, Password: cached.password}, nil
 			}
@@ -112,7 +128,7 @@ func getECRCredential(ctx context.Context, artifact *types.Artifact) (auth.Crede
 		if result.AuthorizationData[0].ExpiresAt != nil {
 			expiresAt = result.AuthorizationData[0].ExpiresAt.Add(-1 * time.Hour)
 		}
-		ecrTokenCache.Store(artifact.ID, cachedECRToken{username: username, password: password, expiresAt: expiresAt})
+		ecrTokenCache.Store(cacheKey, cachedECRToken{username: username, password: password, expiresAt: expiresAt})
 
 		return auth.Credential{Username: username, Password: password}, nil
 	})
