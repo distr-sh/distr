@@ -142,6 +142,7 @@ func main() {
 		}
 
 		if installRequired {
+			pushStatus(ctx, "helm install in progress")
 			if deployment, err := RunHelmInstall(ctx, res.Namespace, *res.Deployment); err != nil {
 				logger.Error("helm upgrade failed", zap.Error(err))
 				pushErrorStatus(ctx, fmt.Errorf("helm upgrade failed: %w", err))
@@ -153,9 +154,24 @@ func main() {
 				pushStatus(ctx, "helm install succeeded")
 			}
 		} else if upgradeRequired {
+			pushStatus(ctx, "helm upgrade in progress")
 			if deployment, err := RunHelmUpgrade(ctx, res.Namespace, *res.Deployment); err != nil {
-				logger.Error("helm install failed", zap.Error(err))
-				pushErrorStatus(ctx, fmt.Errorf("helm install failed: %w", err))
+				logger.Error("helm upgrade failed", zap.Error(err))
+				// Helm Atomic rollback creates a new revision in the cluster. Sync the tracking
+				// secret so the next iteration's revision check passes and the agent retries.
+				if recovered, recoverErr := GetLatestHelmRelease(ctx, res.Namespace, *res.Deployment); recoverErr == nil {
+					synced := AgentDeployment{
+						ReleaseName:  currentDeployment.ReleaseName,
+						RevisionID:   res.Deployment.RevisionID,
+						HelmRevision: recovered.Version,
+					}
+					if saveErr := SaveDeployment(ctx, res.Namespace, synced); saveErr != nil {
+						logger.Warn("could not sync tracking secret after rollback", zap.Error(saveErr))
+					} else {
+						logger.Info("synced tracking secret after atomic rollback", zap.Int("helmRevision", recovered.Version))
+					}
+				}
+				pushErrorStatus(ctx, fmt.Errorf("helm upgrade failed: %w", err))
 			} else if err := SaveDeployment(ctx, res.Namespace, *deployment); err != nil {
 				logger.Error("could not save latest deployment", zap.Error(err))
 				pushErrorStatus(ctx, fmt.Errorf("could not save latest deployment: %w", err))
