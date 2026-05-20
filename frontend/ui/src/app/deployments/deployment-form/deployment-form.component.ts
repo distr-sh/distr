@@ -40,8 +40,15 @@ import {
   takeUntil,
 } from 'rxjs';
 import {isArchived} from '../../../util/dates';
-import {DURATION_REGEX, HELM_RELEASE_NAME_MAX_LENGTH, HELM_RELEASE_NAME_REGEX} from '../../../util/validation';
+import {toBase64} from '../../../util/encoding';
+import {
+  DURATION_REGEX,
+  HELM_RELEASE_NAME_MAX_LENGTH,
+  HELM_RELEASE_NAME_REGEX,
+  latin1Validator,
+} from '../../../util/validation';
 import {EditorComponent} from '../../components/editor.component';
+import {Latin1ErrorComponent} from '../../components/latin1-error.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {InnerMarkdownDirective} from '../../directives/inner-markdown.directive';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
@@ -70,9 +77,9 @@ export function mapToDeploymentRequest(value: DeploymentFormValue, deploymentTar
     applicationEntitlementId: value.applicationEntitlementId || undefined,
     deploymentId: value.deploymentId || undefined,
     releaseName: value.releaseName || undefined,
-    valuesYaml: value.valuesYaml ? btoa(value.valuesYaml) : undefined,
+    valuesYaml: value.valuesYaml ? toBase64(value.valuesYaml) : undefined,
     dockerType: value.swarmMode ? 'swarm' : 'compose',
-    envFileData: value.envFileData ? btoa(value.envFileData) : undefined,
+    envFileData: value.envFileData ? toBase64(value.envFileData) : undefined,
     forceRestart: value.forceRestart ?? false,
     ignoreRevisionSkew: value.ignoreRevisionSkew ?? false,
     helmOptions: value.helmOptions as HelmOptions | undefined,
@@ -83,7 +90,15 @@ type DeploymentFormValueCallback = (v: DeploymentFormValue | undefined) => void;
 
 @Component({
   selector: 'app-deployment-form',
-  imports: [ReactiveFormsModule, AsyncPipe, EditorComponent, AutotrimDirective, RouterLink, InnerMarkdownDirective],
+  imports: [
+    ReactiveFormsModule,
+    AsyncPipe,
+    EditorComponent,
+    AutotrimDirective,
+    RouterLink,
+    InnerMarkdownDirective,
+    Latin1ErrorComponent,
+  ],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -121,8 +136,8 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
       Validators.maxLength(HELM_RELEASE_NAME_MAX_LENGTH),
       Validators.pattern(HELM_RELEASE_NAME_REGEX),
     ]),
-    valuesYaml: this.fb.control(''),
-    envFileData: this.fb.control(''),
+    valuesYaml: this.fb.control('', latin1Validator),
+    envFileData: this.fb.control('', latin1Validator),
     swarmMode: this.fb.control(false),
     forceRestart: this.fb.control(false),
     ignoreRevisionSkew: this.fb.control(false),

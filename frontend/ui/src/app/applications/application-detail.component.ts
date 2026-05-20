@@ -38,7 +38,9 @@ import {isArchived} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
 import {disableControlsWithoutEvent, enableControlsWithoutEvent} from '../../util/forms';
 import {SecureImagePipe} from '../../util/secureImage';
+import {latin1Validator} from '../../util/validation';
 import {EditorComponent} from '../components/editor.component';
+import {Latin1ErrorComponent} from '../components/latin1-error.component';
 import {UuidComponent} from '../components/uuid';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
@@ -69,6 +71,7 @@ import {
     FormsModule,
     ApplicationVersionDetailModalComponent,
     InnerMarkdownDirective,
+    Latin1ErrorComponent,
   ],
   templateUrl: './application-detail.component.html',
 })
@@ -127,7 +130,7 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
         chartUrl: new FormControl('', Validators.required),
         chartVersion: new FormControl('', Validators.required),
         baseValues: new FormControl(''),
-        template: new FormControl(''),
+        template: new FormControl('', latin1Validator),
       },
       (v) => {
         if (v.value.chartType === 'oci' && v.value.chartUrl && !/^oci:\/\/.+/.test(v.value.chartUrl)) {
@@ -141,7 +144,7 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
     ),
     docker: new FormGroup({
       compose: new FormControl(''),
-      template: new FormControl(''),
+      template: new FormControl('', latin1Validator),
     }),
     resources: new FormArray<
       FormGroup<{

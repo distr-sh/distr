@@ -80,5 +80,21 @@ func (av ApplicationVersion) Validate(deplType DeploymentType) error {
 			return errors.New("unexpected docker file in kubernetes application")
 		}
 	}
+	if err := validateLatin1(av.TemplateFileData); err != nil {
+		return fmt.Errorf("template file: %w", err)
+	}
+	return nil
+}
+
+// validateLatin1 returns an error if data contains any character outside the
+// Latin-1 range (codepoint > 0xFF). The template file is later base64-encoded
+// by the frontend via btoa, which only accepts Latin-1.
+func validateLatin1(data []byte) error {
+	for _, r := range string(data) {
+		if r > 0xFF {
+			return fmt.Errorf("contains non-Latin-1 character %q (codepoint U+%04X); "+
+				"please remove non-ASCII characters such as the emdash or smart quotes", r, r)
+		}
+	}
 	return nil
 }
