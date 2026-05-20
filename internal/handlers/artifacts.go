@@ -148,11 +148,6 @@ func syncArtifactHandler() http.HandlerFunc {
 			return
 		}
 
-		if syncer == nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
 		if err := syncer.SyncArtifactTags(ctx, &artifact.Artifact, false); err != nil {
 			log.Error("upstream sync failed", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
