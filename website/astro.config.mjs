@@ -197,6 +197,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                       label: 'Run on macOS',
                       link: '/docs/agents/distr-on-macos/',
                     },
+                    {
+                      label: 'Run on Windows with WSL2',
+                      link: '/docs/agents/distr-on-windows-wsl/',
+                    },
                   ],
                 },
                 {
