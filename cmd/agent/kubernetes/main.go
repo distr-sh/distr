@@ -314,10 +314,12 @@ func runInstallOrUpgrade(
 				synced := NewAgentDeployment(deployment)
 				synced.State = StateFailed
 				synced.HelmRevision = util.PtrTo(recovered.Version())
-				if saveErr := SaveDeployment(ctx, namespace, synced); saveErr != nil {
+				if util.PtrEq(currentDeployment.HelmRevision, synced.HelmRevision) {
+					logger.Debug("tracking secret is already synced")
+				} else if saveErr := SaveDeployment(ctx, namespace, synced); saveErr != nil {
 					logger.Warn("could not sync tracking secret after rollback", zap.Error(saveErr))
 				} else {
-					logger.Info("synced tracking secret after atomic rollback", zap.Int("helmRevision", recovered.Version()))
+					logger.Info("synced tracking secret after rollback", zap.Int("helmRevision", recovered.Version()))
 				}
 			} else {
 				logger.Warn("could not get helm release after rollback", zap.Error(recoverErr))
