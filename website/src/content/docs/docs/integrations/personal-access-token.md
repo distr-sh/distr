@@ -3,6 +3,7 @@ title: Creating a Personal Access Token
 description: Generate secure access tokens to authenticate with Distr's Registry, API and SDK.
 slug: docs/integrations/personal-access-token
 sidebar:
+  label: Personal Access Tokens
   order: 4
 ---
 

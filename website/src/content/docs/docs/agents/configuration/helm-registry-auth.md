@@ -3,6 +3,7 @@ title: Helm Chart Registry Authentication
 description: Configure your Helm charts to support authenticated image pulls from the Distr registry by correctly using imagePullSecrets which enables agent-based credential injection.
 slug: docs/agents/helm-registry-auth
 sidebar:
+  label: Helm Chart Registry Authentication
   order: 5
 ---
 
