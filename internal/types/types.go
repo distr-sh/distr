@@ -34,6 +34,18 @@ func ParseUserRole(value string) (UserRole, error) {
 	}
 }
 
+func (ref *UserRole) UnmarshalJSON(data []byte) error {
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	} else if userRole, err := ParseUserRole(value); err != nil {
+		return err
+	} else {
+		*ref = userRole
+		return nil
+	}
+}
+
 type OrderDirection string
 
 const (
