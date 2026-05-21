@@ -104,6 +104,11 @@ func createArtifactHandler() http.HandlerFunc {
 			UpstreamURL:    body.UpstreamURL,
 		}
 		if body.UpstreamAuth != nil {
+			if artifact.UpstreamURL == nil {
+				http.Error(w, "upstream auth can only be set if upstream URL is set", http.StatusBadRequest)
+				return
+			}
+
 			artifact.UpstreamAuthType = &body.UpstreamAuth.Type
 			artifact.UpstreamUsername = body.UpstreamAuth.Username
 			artifact.UpstreamPassword = body.UpstreamAuth.Password
