@@ -266,7 +266,9 @@ func (s *Syncer) FetchAndStoreBlob(
 	}
 
 	artifact, err := db.GetArtifactByName(ctx, n.OrgName, n.ArtifactName)
-	if err != nil || artifact.UpstreamURL == nil {
+	if err != nil {
+		return nil, 0, fmt.Errorf("getting artifact by name: %w", err)
+	} else if artifact.UpstreamURL == nil {
 		return nil, 0, apierrors.ErrNotFound
 	}
 
