@@ -116,7 +116,8 @@ func GetDeploymentsForDeploymentTarget(
 					dr.helm_options_timeout,
 					dr.helm_options_wait_strategy,
 					dr.helm_options_rollback_on_failure,
-					dr.helm_options_cleanup_on_failure
+					dr.helm_options_cleanup_on_failure,
+					dr.helm_options_force_conflicts
 				) END AS helm_options,
 				a.id AS application_id,
 				a.name AS application_name,
@@ -324,6 +325,7 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 			"helmOptionsWaitStrategy":      request.HelmOptions.WaitStrategy,
 			"helmOptionsRollbackOnFailure": request.HelmOptions.RollbackOnFailure,
 			"helmOptionsCleanupOnFailure":  request.HelmOptions.CleanupOnFailure,
+			"helmOptionsForceConflicts":    request.HelmOptions.ForceConflicts,
 		})
 	}
 
@@ -339,7 +341,8 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 			helm_options_timeout,
 			helm_options_wait_strategy,
 			helm_options_rollback_on_failure,
-			helm_options_cleanup_on_failure
+			helm_options_cleanup_on_failure,
+			helm_options_force_conflicts
 		) VALUES (
 		 	@deploymentId,
 			@applicationVersionId,
@@ -350,7 +353,8 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 			@helmOptionsTimeout,
 			@helmOptionsWaitStrategy,
 			@helmOptionsRollbackOnFailure,
-			@helmOptionsCleanupOnFailure
+			@helmOptionsCleanupOnFailure,
+			@helmOptionsForceConflicts
 		) RETURNING
 		 	dr.id,
 			dr.created_at,
@@ -362,7 +366,8 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 				dr.helm_options_timeout,
 				dr.helm_options_wait_strategy,
 				dr.helm_options_rollback_on_failure,
-				dr.helm_options_cleanup_on_failure
+				dr.helm_options_cleanup_on_failure,
+				dr.helm_options_force_conflicts
 			) END as helm_options`,
 		args,
 	)

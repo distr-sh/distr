@@ -26,6 +26,7 @@ export interface HelmOptions {
   waitStrategy: string;
   rollbackOnFailure: boolean;
   cleanupOnFailure: boolean;
+  forceConflicts: boolean;
 }
 
 export interface DeploymentWithLatestRevision extends Deployment {

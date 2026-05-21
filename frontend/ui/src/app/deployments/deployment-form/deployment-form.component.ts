@@ -133,6 +133,7 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
       waitStrategy: this.fb.control('watcher', [Validators.required]),
       rollbackOnFailure: this.fb.control(true),
       cleanupOnFailure: this.fb.control(true),
+      forceConflicts: this.fb.control(false),
     }),
   });
   protected readonly composeFile = this.fb.control({disabled: true, value: ''});
