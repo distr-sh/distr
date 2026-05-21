@@ -68,7 +68,21 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	provider := oidc.Provider(r.PathValue("oidcProvider"))
 	log = log.With(zap.String("provider", string(provider)))
+
+	if oidcError := r.URL.Query().Get("error"); oidcError != "" {
+		log.Warn("OIDC provider returned error",
+			zap.String("error", oidcError),
+			zap.String("error_description", r.URL.Query().Get("error_description")))
+		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
+		return
+	}
+
 	code := r.URL.Query().Get("code")
+	if code == "" {
+		log.Warn("OIDC callback missing code parameter")
+		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
+		return
+	}
 
 	oidcer := internalctx.GetOIDCer(ctx)
 	email, emailVerified, err := oidcer.GetEmailForCode(ctx, provider, code, pkceVerifier, r)
