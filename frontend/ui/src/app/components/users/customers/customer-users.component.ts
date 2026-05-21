@@ -5,15 +5,18 @@ import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faBoxesStacked, faChevronDown} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, map, startWith, Subject, switchMap} from 'rxjs';
+import {ServiceAccountsComponent} from '../../../service-accounts/service-accounts.component';
+import {AuthService} from '../../../services/auth.service';
 import {CustomerOrganizationsService} from '../../../services/customer-organizations.service';
 import {UsersService} from '../../../services/users.service';
 import {UsersComponent} from '../users.component';
 
 @Component({
   templateUrl: './customer-users.component.html',
-  imports: [UsersComponent, RouterLink, FontAwesomeModule, OverlayModule],
+  imports: [UsersComponent, ServiceAccountsComponent, RouterLink, FontAwesomeModule, OverlayModule],
 })
 export class CustomerUsersComponent {
+  protected readonly auth = inject(AuthService);
   protected readonly faBoxesStacked = faBoxesStacked;
   protected readonly faChevronDown = faChevronDown;
 

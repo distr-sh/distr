@@ -13,6 +13,10 @@ type AuthInfo interface {
 	CurrentCustomerOrgID() *uuid.UUID
 	CurrentUserEmailVerified() bool
 	IsSuperAdmin() bool
+	// CurrentServiceAccountID returns the ID of the calling service account, or nil when the
+	// caller is a human user. Service-account-backed AuthInfo has CurrentUserID() == uuid.Nil and
+	// CurrentUserEmail() == "".
+	CurrentServiceAccountID() *uuid.UUID
 	Token() any
 }
 

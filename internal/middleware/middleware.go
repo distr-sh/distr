@@ -231,6 +231,18 @@ func BlockSuperAdmin(handler http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
+func BlockServiceAccount(handler http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		if a, err := auth.Authentication.Get(ctx); err == nil && a.CurrentServiceAccountID() != nil {
+			http.Error(w, "service accounts cannot perform this action", http.StatusForbidden)
+			return
+		}
+		handler.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
+}
+
 func FeatureFlagMiddleware(feature types.Feature) func(handler http.Handler) http.Handler {
 	return func(handler http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {

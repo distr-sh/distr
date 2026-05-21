@@ -60,3 +60,6 @@
     </div>
   </div>
 </section>
+@if (auth.hasRole('admin')) {
+  <app-service-accounts [customerOrganizationId]="customerOrganizationId()" />
+}

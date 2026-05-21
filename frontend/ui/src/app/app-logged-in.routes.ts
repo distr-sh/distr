@@ -199,6 +199,12 @@ export const routes: Routes = [
         canActivate: [requiredRoleGuard('admin')],
       },
       {
+        path: 'users/service-accounts/:serviceAccountId',
+        loadComponent: () =>
+          import('./service-accounts/service-account-detail.component').then((m) => m.ServiceAccountDetailComponent),
+        canActivate: [requiredRoleGuard('admin')],
+      },
+      {
         path: 'secrets',
         component: SecretsPage,
       },

@@ -31,6 +31,7 @@ const (
 	ctxKeyLicenseKey
 	ctxKeyPrometheusCollector
 	ctxKeyS3Client
+	ctxKeyServiceAccount
 )
 
 func GetDb(ctx context.Context) queryable.Queryable {

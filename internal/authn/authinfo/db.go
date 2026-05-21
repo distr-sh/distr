@@ -13,8 +13,9 @@ import (
 
 type DbAuthInfo struct {
 	AuthInfo
-	user *types.UserAccount
-	org  *types.Organization
+	user           *types.UserAccount
+	org            *types.Organization
+	serviceAccount *types.ServiceAccount
 }
 
 func (a DbAuthInfo) CurrentUser() *types.UserAccount {
@@ -25,8 +26,40 @@ func (a DbAuthInfo) CurrentOrg() *types.Organization {
 	return a.org
 }
 
+func (a DbAuthInfo) CurrentServiceAccount() *types.ServiceAccount {
+	return a.serviceAccount
+}
+
 func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganization] {
 	fn := func(ctx context.Context, a AuthInfo) (AuthInfoWithUserAndOrganization, error) {
+		if saID := a.CurrentServiceAccountID(); saID != nil {
+			if a.CurrentOrgID() == nil {
+				return nil, authn.ErrBadAuthentication
+			}
+			sa, err := db.GetServiceAccountByID(ctx, *saID, *a.CurrentOrgID())
+			if errors.Is(err, apierrors.ErrNotFound) {
+				return nil, authn.ErrBadAuthentication
+			} else if err != nil {
+				return nil, err
+			}
+			org, err := db.GetOrganizationByID(ctx, *a.CurrentOrgID())
+			if errors.Is(err, apierrors.ErrNotFound) {
+				return nil, authn.ErrBadAuthentication
+			} else if err != nil {
+				return nil, err
+			}
+			return &DbAuthInfo{
+				AuthInfo: &SimpleAuthInfo{
+					organizationID:         a.CurrentOrgID(),
+					customerOrganizationID: sa.CustomerOrganizationID,
+					accountRole:            &sa.AccountRole,
+					serviceAccountID:       &sa.ID,
+					rawToken:               a.Token(),
+				},
+				org:            org,
+				serviceAccount: sa,
+			}, nil
+		}
 		if a.CurrentOrgID() != nil {
 			// Super admins: skip membership check, just verify user and org exist
 			if a.IsSuperAdmin() {

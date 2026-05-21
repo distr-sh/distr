@@ -137,3 +137,14 @@ func GetRequestIPAddress(ctx context.Context) string {
 func WithRequestIPAddress(ctx context.Context, address string) context.Context {
 	return context.WithValue(ctx, ctxKeyIPAddress, address)
 }
+
+func WithServiceAccount(ctx context.Context, sa *types.ServiceAccount) context.Context {
+	return context.WithValue(ctx, ctxKeyServiceAccount, sa)
+}
+
+func GetServiceAccount(ctx context.Context) *types.ServiceAccount {
+	if sa, ok := ctx.Value(ctxKeyServiceAccount).(*types.ServiceAccount); ok {
+		return sa
+	}
+	panic("no ServiceAccount found in context")
+}

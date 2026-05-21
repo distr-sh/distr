@@ -18,8 +18,9 @@ import (
 	"go.uber.org/zap"
 )
 
-// Authentication supports Bearer (classic JWT) and AccessToken (PAT) headers and uses authinfo.DbAuthenticator
-// to verify the token against the database, thereby ensuring the user exists in the database.
+// Authentication supports Bearer (classic JWT) and AccessToken (PAT or service-account token)
+// headers and uses authinfo.DbAuthenticator to verify the token against the database, thereby
+// ensuring the user or service account exists in the database.
 var Authentication = authn.New(
 	authn.Chain4(
 		token.NewExtractor(token.WithExtractorFuncs(token.FromHeader("Bearer"))),
@@ -30,7 +31,7 @@ var Authentication = authn.New(
 	authn.Chain4(
 		token.NewExtractor(token.WithExtractorFuncs(token.FromHeader("AccessToken"))),
 		authkey.Authenticator(),
-		authinfo.AuthKeyAuthenticator(),
+		authinfo.UnifiedAuthKeyAuthenticator(),
 		authinfo.DbAuthenticator(),
 	),
 )
@@ -54,10 +55,10 @@ var ArtifactsAuthentication = authn.New(
 			token.WithErrorHeaders(http.Header{"WWW-Authenticate": []string{"Basic realm=\"Distr\""}}),
 		),
 		authn.Alternative[string, authinfo.AuthInfoWithOrganization](
-			// Authenticate UserAccount with PAT
+			// Authenticate UserAccount with PAT or service account token
 			authn.Chain4(
 				authkey.Authenticator(),
-				authinfo.AuthKeyAuthenticator(),
+				authinfo.UnifiedAuthKeyAuthenticator(),
 				authinfo.DbAuthenticator(),
 				authinfo.DropUser(),
 			),
