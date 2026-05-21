@@ -1,5 +1,45 @@
 # Changelog
 
+## [2.21.0](https://github.com/distr-sh/distr/compare/2.20.4...2.21.0) (2026-05-21)
+
+
+### Features
+
+* **kubernetes-agent:** add "force conflicts" option for helm upgrade ([#2445](https://github.com/distr-sh/distr/issues/2445)) ([acdd327](https://github.com/distr-sh/distr/commit/acdd327ca0df6af5ddff265d66de700e2e418298))
+* **registry:** add pull-through cache ([#2426](https://github.com/distr-sh/distr/issues/2426)) ([fcee9a7](https://github.com/distr-sh/distr/commit/fcee9a7ef1521e2ab2932b3669ca1b9e003f828c))
+
+
+### Bug Fixes
+
+* **deps:** update kubernetes monorepo to v0.36.1 ([#2447](https://github.com/distr-sh/distr/issues/2447)) ([cff3283](https://github.com/distr-sh/distr/commit/cff3283d1504bb4435df785e5bcdc11ffb479e2a))
+* **deps:** update module github.com/aws/aws-sdk-go-v2/service/s3 to v1.101.0 ([#2420](https://github.com/distr-sh/distr/issues/2420)) ([1f1702d](https://github.com/distr-sh/distr/commit/1f1702d61577f37b2ebe7de5f16a747b82010d09))
+* **deps:** update module github.com/oaswrap/spec/adapter/chiopenapi to v0.5.1 ([#2422](https://github.com/distr-sh/distr/issues/2422)) ([9c71577](https://github.com/distr-sh/distr/commit/9c71577c521e8de3cdc0834d59d33d338f3bd019))
+* **deps:** update website dependencies ([#2328](https://github.com/distr-sh/distr/issues/2328)) ([d95c743](https://github.com/distr-sh/distr/commit/d95c743656f361ad24521f7d8d6af12c66aaef8a))
+* enforce latin1 char set for template values ([#2430](https://github.com/distr-sh/distr/issues/2430)) ([4bbfece](https://github.com/distr-sh/distr/commit/4bbfece4e22690d58bfae09f9b95b06440d53e23))
+* **registry:** add support for chunk uploads larger than 5GB ([#2428](https://github.com/distr-sh/distr/issues/2428)) ([46c3e8e](https://github.com/distr-sh/distr/commit/46c3e8ec2d0bcee2765a16d1cf5ecef1e8baf815))
+
+
+### Other
+
+* **deps:** update angular monorepo to v21.2.14 ([#2436](https://github.com/distr-sh/distr/issues/2436)) ([3e34dba](https://github.com/distr-sh/distr/commit/3e34dba2b321269a14e648cd109e86bd75ecd3cc))
+* **deps:** update angular-cli monorepo to v21.2.12 ([#2394](https://github.com/distr-sh/distr/issues/2394)) ([3b339c6](https://github.com/distr-sh/distr/commit/3b339c62d15abee31f059d383db3185fd71b4388))
+* **deps:** update dependency @angular/cdk to v21.2.12 ([#2438](https://github.com/distr-sh/distr/issues/2438)) ([99bb1b4](https://github.com/distr-sh/distr/commit/99bb1b4ef4eb8ceed0b629b34f19332f0adf0c9f))
+* **deps:** update dependency flowbite to v4.0.2 ([#2439](https://github.com/distr-sh/distr/issues/2439)) ([6c79ecc](https://github.com/distr-sh/distr/commit/6c79eccecc55d43b938d6c954f47aa2609e1e79a))
+* **deps:** update dependency marked to v18.0.4 ([#2442](https://github.com/distr-sh/distr/issues/2442)) ([dfd7c34](https://github.com/distr-sh/distr/commit/dfd7c345f186cdbc5c97135de38687ed7e82a918))
+* **deps:** update dependency postcss to v8.5.15 ([#2443](https://github.com/distr-sh/distr/issues/2443)) ([03f34c0](https://github.com/distr-sh/distr/commit/03f34c0ba3be94a31b29fd175104937863ee0651))
+* **deps:** update dependency vitest to v4.1.7 ([#2446](https://github.com/distr-sh/distr/issues/2446)) ([1f9750f](https://github.com/distr-sh/distr/commit/1f9750f55d5ff53e2e4881d3719e63bb559e4558))
+* **deps:** update gcr.io/distroless/static-debian12:nonroot docker digest to d093aa3 ([#2435](https://github.com/distr-sh/distr/issues/2435)) ([e0c1a7b](https://github.com/distr-sh/distr/commit/e0c1a7bf21bfa585f3e6c9c4c34065a146f63eb1))
+* **deps:** update helm release rustfs to 0.4.x ([#2415](https://github.com/distr-sh/distr/issues/2415)) ([855ce9d](https://github.com/distr-sh/distr/commit/855ce9d910b187e64ac9b3f2ce760a48269ebb72))
+* **deps:** update pnpm/action-setup action to v6.0.8 ([#2419](https://github.com/distr-sh/distr/issues/2419)) ([b586296](https://github.com/distr-sh/distr/commit/b586296e7f13f74090366a52893b6be4ac9d2347))
+* **deps:** update tailwindcss monorepo to v4.3.0 ([#2416](https://github.com/distr-sh/distr/issues/2416)) ([b394925](https://github.com/distr-sh/distr/commit/b394925d9d54bcdd0de02a92277c2f47dd42c82c))
+* **deps:** upgrade astro ([#2444](https://github.com/distr-sh/distr/issues/2444)) ([a610847](https://github.com/distr-sh/distr/commit/a610847a47e8693b53566f1ffd1c6925e301bb7e))
+
+
+### Docs
+
+* add Windows WSL2 agent setup guide ([#2429](https://github.com/distr-sh/distr/issues/2429)) ([cd5a70a](https://github.com/distr-sh/distr/commit/cd5a70ad4a92cc08d1f1b714705afecb07955f7b))
+* **website:** use self-hosted instead of self-managed wording ([#2441](https://github.com/distr-sh/distr/issues/2441)) ([b2a4e46](https://github.com/distr-sh/distr/commit/b2a4e4626bef4a165bb6a8b61ac1198cc90bb88c))
+
 ## [2.20.4](https://github.com/distr-sh/distr/compare/2.20.3...2.20.4) (2026-05-13)
 
 
