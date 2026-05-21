@@ -40,6 +40,7 @@ import {
   takeUntil,
 } from 'rxjs';
 import {isArchived} from '../../../util/dates';
+import {toBase64} from '../../../util/encoding';
 import {DURATION_REGEX, HELM_RELEASE_NAME_MAX_LENGTH, HELM_RELEASE_NAME_REGEX} from '../../../util/validation';
 import {EditorComponent} from '../../components/editor.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
@@ -70,9 +71,9 @@ export function mapToDeploymentRequest(value: DeploymentFormValue, deploymentTar
     applicationEntitlementId: value.applicationEntitlementId || undefined,
     deploymentId: value.deploymentId || undefined,
     releaseName: value.releaseName || undefined,
-    valuesYaml: value.valuesYaml ? btoa(value.valuesYaml) : undefined,
+    valuesYaml: value.valuesYaml ? toBase64(value.valuesYaml) : undefined,
     dockerType: value.swarmMode ? 'swarm' : 'compose',
-    envFileData: value.envFileData ? btoa(value.envFileData) : undefined,
+    envFileData: value.envFileData ? toBase64(value.envFileData) : undefined,
     forceRestart: value.forceRestart ?? false,
     ignoreRevisionSkew: value.ignoreRevisionSkew ?? false,
     helmOptions: value.helmOptions as HelmOptions | undefined,

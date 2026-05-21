@@ -12,6 +12,7 @@ import {
 } from '../types';
 import {Client, ClientConfig} from './client';
 import {ConditionalPartial, defaultClientConfig} from './config';
+import {toBase64} from './encoding';
 
 /**
  * The strategy for determining the latest version of an application.
@@ -218,7 +219,7 @@ export class DistrService {
       deploymentTargetId: deploymentTarget.id!,
       applicationVersionId: versionId,
       releaseName: kubernetesDeployment?.releaseName,
-      valuesYaml: kubernetesDeployment?.valuesYaml ? btoa(kubernetesDeployment?.valuesYaml) : undefined,
+      valuesYaml: kubernetesDeployment?.valuesYaml ? toBase64(kubernetesDeployment.valuesYaml) : undefined,
     });
     return {
       deploymentTarget: await this.client.getDeploymentTarget(deploymentTarget.id!),
@@ -242,7 +243,7 @@ export class DistrService {
       deploymentTargetId,
       deploymentId: existingDeployment.id,
       applicationVersionId,
-      valuesYaml: kubernetesDeployment?.valuesYaml ? btoa(kubernetesDeployment?.valuesYaml) : undefined,
+      valuesYaml: kubernetesDeployment?.valuesYaml ? toBase64(kubernetesDeployment.valuesYaml) : undefined,
     });
   }
 
