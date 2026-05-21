@@ -1,0 +1,227 @@
+---
+title: Run Distr Agents on Windows with WSL2
+description: Run Distr's Docker agent on Windows by using WSL2 and Docker Engine inside WSL, with optional Windows port forwarding for web-facing applications.
+slug: docs/agents/distr-on-windows-wsl
+sidebar:
+  order: 7
+---
+
+import {Aside} from '@astrojs/starlight/components';
+
+Distr's Docker-based agent can run on Windows through WSL2. In this setup, the
+Distr agent and your application containers run inside Linux/WSL.
+
+<Aside type="note">
+  This guide covers Distr-specific setup and the Windows/WSL networking steps
+  that are different from a normal Linux Docker host. For installing WSL and
+  Docker, follow the official Microsoft and Docker documentation linked below.
+</Aside>
+
+## Requirements
+
+You need:
+
+- Windows with [WSL2 installed](https://learn.microsoft.com/windows/wsl/install)
+- A Linux distribution installed in WSL, for example Ubuntu
+- [Docker Engine installed inside WSL](https://docs.docker.com/engine/install/ubuntu/)
+- The [Docker Compose plugin](https://docs.docker.com/compose/install/linux/)
+  installed inside WSL
+- `docker compose` available inside WSL
+- PowerShell Administrator access if the application exposes a UI or another
+  inbound service outside WSL
+- Optional: inbound access to the application UI port, usually port `80` and `443`, if the deployed application exposes a web UI
+
+<Aside type="caution">
+  If you run this on a cloud VM, for example a Windows VM on AWS EC2, the VM
+  must support virtualization or nested virtualization for WSL2 to work.
+</Aside>
+
+## What is different on Windows
+
+Compared with a regular Linux Docker host, the important differences are:
+
+- Run the Distr connect command inside WSL, not in PowerShell.
+- Web-facing services can usually be reached from Windows at `localhost`, but
+  traffic to the Windows machine's LAN or public IP may need a Windows
+  `portproxy` rule.
+- The WSL IP address can change after reboot or after `wsl --shutdown`, so
+  `portproxy` rules may need to be recreated.
+- Windows Firewall must allow inbound traffic to the application UI port if the
+  application needs to be reachable from outside the Windows host.
+
+If you use Docker Desktop instead of Docker Engine inside WSL, make sure your
+Docker CLI inside WSL talks to the Docker daemon that runs your containers.
+This guide assumes Docker Engine is installed directly inside the WSL
+distribution.
+
+## Check Docker inside WSL
+
+Enter WSL:
+
+```powershell
+wsl
+```
+
+Start Docker if it is not already running:
+
+```sh
+sudo service docker start
+```
+
+Verify Docker:
+
+```sh
+docker run hello-world
+docker compose version
+docker ps
+```
+
+If those commands succeed, you can run the Distr connect command exactly as
+Distr generates it.
+
+If any of them fail with a permission error on `/var/run/docker.sock`, see
+[Docker permission denied](#docker-permission-denied) in the troubleshooting
+section, then re-run the verification commands above.
+
+## Configure mount propagation
+
+Before running the Distr connect command, configure mount propagation inside
+WSL:
+
+```sh
+sudo mount --make-rshared /
+```
+
+The Distr agent needs this for disk metrics and other host-mounted Docker
+resources. Without it, the agent may fail with this error:
+
+```text
+path / is mounted on / but it is not a shared or slave mount
+```
+
+This change is not persistent and will be lost on reboot or after
+`wsl --shutdown`. To re-apply it automatically each time WSL starts, add a
+boot command to `/etc/wsl.conf` inside your WSL distribution:
+
+```ini
+[boot]
+command = mount --make-rshared /
+```
+
+Then restart WSL from PowerShell with `wsl --shutdown` for the change to take
+effect.
+
+## Run the Distr connect command
+
+Create a deployment in Distr and copy the generated connect command from the
+deployment target. Run it inside WSL:
+
+```sh
+curl -fsSL "https://<DISTR_HOST>/api/v1/connect?targetId=<TARGET_ID>&targetSecret=<TARGET_SECRET>" | docker compose -f - up -d
+```
+
+If this fails with a permission error on `/var/run/docker.sock`, configure
+Docker access without `sudo` as described in
+[Check Docker inside WSL](#check-docker-inside-wsl) and re-run the command.
+
+## Check the deployment in Distr
+
+After running the connect command, check the deployment status in Distr. The
+deployment target should connect, and the deployment should report healthy
+resources once the containers have started.
+
+You can optionally check the containers directly inside WSL:
+
+```sh
+docker ps -a
+```
+
+If the application exposes a web UI, you can also test it from inside WSL:
+
+```shell
+curl -I http://localhost
+```
+
+## Optional: expose a web UI outside WSL
+
+Skip this section if the deployed application does not expose a UI or another
+inbound service.
+
+If users must reach the application through the Windows machine's LAN or public
+IP, open the Windows Firewall port from PowerShell as Administrator:
+
+```powershell
+New-NetFirewallRule -DisplayName "Allow HTTP 80" -Direction Inbound -Protocol TCP -LocalPort 80 -Action Allow
+```
+
+Optional for HTTPS:
+
+```powershell
+New-NetFirewallRule -DisplayName "Allow HTTPS 443" -Direction Inbound -Protocol TCP -LocalPort 443 -Action Allow
+```
+
+WSL2 often exposes services on Windows `localhost`, but not automatically on the
+Windows machine's LAN or public IP. To forward traffic to WSL, get the WSL IP
+inside WSL:
+
+```sh
+hostname -I
+```
+
+Use the first IP address, then run this in PowerShell as Administrator:
+
+```powershell
+netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=80 connectaddress=<WSL_IP> connectport=80
+```
+
+Test the forwarded port from PowerShell, where `<HOST_IP>` is the Windows
+machine's LAN or public IP:
+
+```powershell
+curl.exe -I http://<HOST_IP>
+```
+
+## Troubleshooting
+
+### Docker permission denied
+
+If Docker reports a permission error for `/var/run/docker.sock`, add your
+Linux user to the `docker` group:
+
+```shell
+sudo usermod -aG docker $USER
+exit
+```
+
+Then restart WSL from PowerShell:
+
+```powershell
+wsl --shutdown
+wsl
+```
+
+### UI works on localhost but not on the host IP
+
+For web-facing applications, if Windows `localhost` works but the LAN or public
+host IP does not, the missing piece is usually the Windows Firewall rule or the
+WSL `portproxy` rule:
+
+```powershell
+netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=80 connectaddress=<WSL_IP> connectport=80
+```
+
+### WSL IP changed after restart
+
+WSL IPs can change after reboot or after `wsl --shutdown`. If a forwarded
+service stops working, get the new WSL IP inside WSL:
+
+```sh
+hostname -I
+```
+
+Then delete and recreate the `portproxy` rule in PowerShell as Administrator:
+
+```powershell
+netsh interface portproxy delete v4tov4 listenaddress=0.0.0.0 listenport=80
+netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=80 connectaddress=<NEW_WSL_IP> connectport=80
+```
