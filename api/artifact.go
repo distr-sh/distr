@@ -7,6 +7,25 @@ import (
 	"github.com/google/uuid"
 )
 
+type ArtifactUpstreamAuth struct {
+	Type     types.UpstreamAuthType `json:"type"`
+	Username *string                `json:"username,omitempty"`
+	Password *string                `json:"password,omitempty"`
+}
+
+type CreateArtifactRequest struct {
+	Name         string                `json:"name"`
+	UpstreamURL  *string               `json:"upstreamUrl,omitempty"`
+	UpstreamAuth *ArtifactUpstreamAuth `json:"upstreamAuth,omitempty"`
+}
+
+// PatchArtifactUpstreamRequest supports partial updates: omitted fields are left unchanged.
+// For auth, explicit null clears the credentials.
+type PatchArtifactUpstreamRequest struct {
+	UpstreamURL *string                        `json:"upstreamUrl,omitempty"`
+	Auth        Nullable[ArtifactUpstreamAuth] `json:"auth"`
+}
+
 type ArtifactResponse struct {
 	types.ArtifactWithTaggedVersion
 	ImageUrl *string `json:"imageUrl,omitempty"`

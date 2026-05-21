@@ -51,17 +51,37 @@
                   ]"
                   [cdkConnectedOverlayOpen]="showDropdown()">
                   <div
-                    class="text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600 overflow-hidden origin-top"
+                    class="bg-white divide-y divide-gray-100 rounded-lg shadow-sm dark:bg-gray-700 origin-top"
                     animate.enter="animate-flip-in-top"
                     animate.leave="animate-flip-out-top">
-                    <button
-                      type="button"
-                      aria-label="Delete"
-                      (click)="deleteArtifact(artifact)"
-                      class="text-start block w-full px-4 py-2 text-sm text-red-700 enabled:hover:text-white enabled:hover:bg-red-800 dark:text-red-500 dark:enabled:hover:text-white dark:enabled:hover:bg-red-600 disabled:opacity-60 disabled:cursor-not-allowed">
-                      <fa-icon [icon]="faTrash" class="inline-block mr-2" />
-                      Delete
-                    </button>
+                    <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownDefaultButton">
+                      @if (artifact.upstreamUrl) {
+                        <li>
+                          <button
+                            class="block w-full flex items-center gap-2 text-start px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                            (click)="openUpstreamURLModal(artifact, upstreamURLModal)">
+                            <fa-icon [icon]="faPen" />
+                            Edit upstream URL
+                          </button>
+                        </li>
+                        <li>
+                          <button
+                            class="block w-full flex items-center gap-2 text-start px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                            (click)="openUpstreamAuthModal(artifact, upstreamAuthModal)">
+                            <fa-icon [icon]="faKey" />
+                            Edit upstream credentials
+                          </button>
+                        </li>
+                      }
+                      <li>
+                        <button
+                          class="block w-full flex items-center gap-2 text-start px-4 py-2 text-sm text-red-700 enabled:hover:text-white enabled:hover:bg-red-800 dark:text-red-500 dark:enabled:hover:text-white dark:enabled:hover:bg-red-600 disabled:opacity-60 disabled:cursor-not-allowed"
+                          (click)="deleteArtifact(artifact)">
+                          <fa-icon [icon]="faTrash" />
+                          Delete
+                        </button>
+                      </li>
+                    </ul>
                   </div>
                 </ng-template>
               }
@@ -69,6 +89,65 @@
               <app-artifacts-download-count class="self-start" [source]="artifact" />
             </div>
 
+            @if (auth.isVendor() && artifact.upstreamUrl) {
+              <div class="flex flex-col gap-1 text-sm">
+                <div class="flex items-center gap-3 flex-wrap">
+                  <div>
+                    <span class="text-gray-500 dark:text-gray-400">Upstream: </span>
+                    <span class="font-mono text-gray-900 dark:text-white">{{ artifact.upstreamUrl }}</span>
+                  </div>
+                  @if (artifact.upstreamAuthType) {
+                    @switch (artifact.upstreamAuthType) {
+                      @case ('aws_ecr') {
+                        <span
+                          class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-yellow-900 dark:text-yellow-300">
+                          AWS ECR
+                        </span>
+                      }
+                      @case ('basic') {
+                        <span
+                          class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-blue-900 dark:text-blue-300">
+                          Basic Auth
+                        </span>
+                      }
+                    }
+                  }
+                </div>
+                @if (artifact.lastSyncError) {
+                  <p class="text-xs text-red-600 dark:text-red-400">{{ artifact.lastSyncError }}</p>
+                }
+                <div class="flex items-center gap-3 flex-wrap">
+                  <span class="text-gray-500 dark:text-gray-400 text-xs">
+                    @if (artifact.lastSyncedAt) {
+                      <fa-icon [icon]="faCheck" class="text-green-600 dark:text-green-400" />
+                      Last synced {{ artifact.lastSyncedAt | relativeDate }}
+                    } @else if (artifact.lastSyncError) {
+                      <fa-icon [icon]="faExclamationTriangle" class="text-red-500" />
+                      Sync error
+                    } @else {
+                      Not synced yet
+                    }
+                  </span>
+                  @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
+                    <button
+                      type="button"
+                      (click)="syncArtifact(artifact)"
+                      [disabled]="syncing()"
+                      class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                      <fa-icon [icon]="faRotate" [class.animate-spin]="syncing()" />
+                      Sync now
+                    </button>
+                  }
+                </div>
+
+                @if (syncing()) {
+                  <span
+                    class="p-2 text-xs text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
+                    >Do not close this window while syncing</span
+                  >
+                }
+              </div>
+            }
             @if (getArtifactUsage(artifact); as usage) {
               <div class="text-sm">
                 <div class="text-gray-500 dark:text-gray-400">Use this artifact with:</div>
@@ -84,6 +163,28 @@
 
       <div class="mt-4 bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
         <div class="overflow-x-auto">
+          @if (filteredVersions().length === 0 && artifact.upstreamUrl) {
+            <div
+              class="flex flex-col items-center justify-center py-10 px-6 text-center text-gray-500 dark:text-gray-400">
+              <p class="text-sm">
+                Versions for this artifact will be automatically synced from
+                <span class="font-mono text-gray-700 dark:text-gray-300">{{ artifact.upstreamUrl }}</span
+                >.
+              </p>
+              @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
+                <p class="mt-1 text-sm">
+                  To sync now, click
+                  <button
+                    type="button"
+                    (click)="syncArtifact(artifact)"
+                    [disabled]="syncing()"
+                    class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Sync now</button
+                  >.
+                </p>
+              }
+            </div>
+          }
           <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
             @for (version of filteredVersions(); track version.digest) {
               @if (version.tags.length) {
@@ -163,9 +264,193 @@
           </ul>
         </div>
       </div>
+      <ng-template #upstreamURLModal>
+        @let formGroup = upstreamURLForm;
+
+        <div
+          animate.enter="animate-fly-in-top"
+          animate.leave="animate-fly-out-top"
+          class="p-4 w-128 my-auto max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900">
+          <div class="relative w-full max-h-full">
+            <div class="relative rounded-lg">
+              <div
+                class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Upstream URL</h3>
+                <button
+                  type="button"
+                  class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                  (click)="upstreamURLModalRef?.close()">
+                  <fa-icon [icon]="faXmark" />
+                  <span class="sr-only">Close modal</span>
+                </button>
+              </div>
+              <div class="p-4 md:p-5">
+                <form [formGroup]="formGroup" (ngSubmit)="saveUpstreamURL(artifact)">
+                  <div class="space-y-4">
+                    <div>
+                      <div>
+                        <label
+                          for="artifact-upstream-url"
+                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                          Upstream URL
+                          <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                          formControlName="upstreamUrl"
+                          autotrim
+                          autocomplete="off"
+                          type="text"
+                          id="artifact-upstream-url"
+                          placeholder="e.g. registry-1.docker.io/library/nginx"
+                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          Tags are automatically synced from the upstream OCI repository.
+                        </p>
+                        @if (formGroup.controls.upstreamUrl.invalid && formGroup.controls.upstreamUrl.touched) {
+                          <p class="mt-1 text-xs text-red-600 dark:text-red-500">Field is required.</p>
+                        }
+                      </div>
+                    </div>
+                    <div class="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        (click)="upstreamURLModalRef?.close()"
+                        class="py-2 px-4 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700">
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        [disabled]="upstreamURLFormLoading"
+                        class="py-2 px-4 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 disabled:opacity-60 disabled:cursor-not-allowed">
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-template>
+
+      <ng-template #upstreamAuthModal>
+        @let formGroup = upstreamAuthForm;
+
+        <div
+          animate.enter="animate-fly-in-top"
+          animate.leave="animate-fly-out-top"
+          class="p-4 w-128 my-auto max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900">
+          <div class="relative w-full max-h-full">
+            <div class="relative rounded-lg">
+              <div
+                class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Upstream Credentials</h3>
+                <button
+                  type="button"
+                  class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                  (click)="upstreamAuthModalRef?.close()">
+                  <fa-icon [icon]="faXmark" />
+                  <span class="sr-only">Close modal</span>
+                </button>
+              </div>
+              <div class="p-4 md:p-5">
+                <form [formGroup]="formGroup" (ngSubmit)="saveUpstreamAuth(artifact)">
+                  <div class="space-y-4">
+                    <div>
+                      <label
+                        for="artifact-upstream-auth-type"
+                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                        >Upstream Authentication</label
+                      >
+                      <select
+                        formControlName="upstreamAuthType"
+                        id="artifact-upstream-auth-type"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                        <option value="none">No authentication</option>
+                        <option value="basic">Basic (Username/Password)</option>
+                        <option value="aws_ecr">AWS ECR (IAM Access Key)</option>
+                      </select>
+                    </div>
+
+                    @if (formGroup.controls.upstreamAuthType.value !== 'none') {
+                      <div>
+                        <label
+                          for="artifact-upstream-username"
+                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                          @switch (formGroup.controls.upstreamAuthType.value) {
+                            @case ('basic') {
+                              Username
+                            }
+                            @case ('aws_ecr') {
+                              AWS Access Key ID
+                            }
+                          }
+                          <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                          formControlName="upstreamUsername"
+                          autotrim
+                          autocomplete="off"
+                          type="text"
+                          id="artifact-upstream-username"
+                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                        @if (
+                          formGroup.controls.upstreamUsername.invalid && formGroup.controls.upstreamUsername.touched
+                        ) {
+                          <p class="mt-1 text-xs text-red-600 dark:text-red-500">Field is required.</p>
+                        }
+                      </div>
+                      <div>
+                        <label
+                          for="artifact-upstream-password"
+                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                          @switch (formGroup.controls.upstreamAuthType.value) {
+                            @case ('basic') {
+                              Password
+                            }
+                            @case ('aws_ecr') {
+                              AWS Secret Access Key
+                            }
+                          }
+                          <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                          formControlName="upstreamPassword"
+                          autocomplete="new-password"
+                          type="password"
+                          id="artifact-upstream-password"
+                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                        @if (
+                          formGroup.controls.upstreamPassword.invalid && formGroup.controls.upstreamPassword.touched
+                        ) {
+                          <p class="mt-1 text-xs text-red-600 dark:text-red-500">Field is required.</p>
+                        }
+                      </div>
+                    }
+                    <div class="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        (click)="upstreamAuthModalRef?.close()"
+                        class="py-2 px-4 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700">
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        [disabled]="upstreamAuthFormLoading"
+                        class="py-2 px-4 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 disabled:opacity-60 disabled:cursor-not-allowed">
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-template>
     } @else {
       <div class="flex justify-center items-center py-8 text-gray-500 dark:text-gray-400">
-        <fa-icon [icon]="faSpinner" class="animate-spin me-2" size="lg" />
+        <app-spinner class="size-6 me-2" />
         <span>Loading&hellip;</span>
       </div>
     }
