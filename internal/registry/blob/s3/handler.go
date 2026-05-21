@@ -440,19 +440,20 @@ func (handler *blobHandler) getExistingParts(
 	uploadKey string,
 	uploadID string,
 ) ([]s3types.Part, error) {
-	if result, err := handler.s3Client.ListParts(ctx, &s3.ListPartsInput{
+	paginator := s3.NewListPartsPaginator(handler.s3Client, &s3.ListPartsInput{
 		Bucket:   &handler.bucket,
 		Key:      &uploadKey,
 		UploadId: &uploadID,
-	}); err != nil {
-		return nil, err
-	} else if result.IsTruncated != nil && *result.IsTruncated {
-		// ListParts returns at most 1000 elements.
-		// Thus, we can not currently handle uploads with more than 1000 chunks!
-		return nil, blob.NewErrBadUpload("blob uploads with more than 1000 chunks are not supported")
-	} else {
-		return result.Parts, nil
+	})
+	var parts []s3types.Part
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			return nil, err
+		}
+		parts = append(parts, page.Parts...)
 	}
+	return parts, nil
 }
 
 func convertErrNotFound(err error) error {
