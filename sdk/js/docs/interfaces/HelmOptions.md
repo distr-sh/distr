@@ -14,6 +14,12 @@
 
 ---
 
+### forceConflicts
+
+> **forceConflicts**: `boolean`
+
+---
+
 ### rollbackOnFailure
 
 > **rollbackOnFailure**: `boolean`
