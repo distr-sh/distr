@@ -22,7 +22,8 @@ import (
 
 const (
 	chunksPrefix  = "chunks"
-	maxS3PartSize = int64(5) * 1024 * 1024 * 1024 // S3 maximum per-part size is 5 GB
+	maxS3PartSize = int64(5) * 1024 * 1024 * 1024 // S3 maximum per-part size is 5 GiB
+	splitPartSize = int64(1) * 1024 * 1024 * 1024 // target size per UploadPart call
 )
 
 type blobHandler struct {
@@ -247,18 +248,22 @@ func (handler *blobHandler) PutChunk(ctx context.Context, id string, r io.Reader
 	}
 	size += chunkSize
 
-	// S3 limits each UploadPart call to 5 GB. Split larger chunks into multiple parts.
-	numParts := max(int64(1), (chunkSize+maxS3PartSize-1)/maxS3PartSize)
+	// Split the chunk into 1 GiB parts. The last part absorbs any remainder so that
+	// no non-final part is smaller than the S3 minimum (5 MiB).
+	numParts := max(int64(1), chunkSize/splitPartSize)
 	for i := range numParts {
 		pn := partNumber + int32(i)
-		partStart := i * maxS3PartSize
-		partSize := min(maxS3PartSize, chunkSize-partStart)
+		offset := i * splitPartSize
+		partSize := splitPartSize
+		if i == numParts-1 {
+			partSize = chunkSize - offset
+		}
 		if _, err := handler.s3Client.UploadPart(ctx, &s3.UploadPartInput{
 			Bucket:        &handler.bucket,
 			Key:           &uploadKey,
 			UploadId:      uploadID,
 			PartNumber:    &pn,
-			Body:          io.NewSectionReader(sr, partStart, partSize),
+			Body:          io.NewSectionReader(sr, offset, partSize),
 			ContentLength: &partSize,
 		}); err != nil {
 			return 0, err
