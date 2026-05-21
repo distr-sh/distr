@@ -359,7 +359,7 @@ func (handler *blobHandler) copyObject(ctx context.Context, srcKey, dstKey strin
 	}
 
 	abort := func() {
-		_, _ = handler.s3Client.AbortMultipartUpload(ctx, &s3.AbortMultipartUploadInput{
+		_, _ = handler.s3Client.AbortMultipartUpload(context.WithoutCancel(ctx), &s3.AbortMultipartUploadInput{
 			Bucket:   &handler.bucket,
 			Key:      &dstKey,
 			UploadId: upload.UploadId,
