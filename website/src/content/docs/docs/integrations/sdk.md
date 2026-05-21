@@ -2,6 +2,7 @@
 title: Distr SDK
 description: Integrate Distr into your applications with our TypeScript/JavaScript SDK for programmatic access to deployments, registries, and more.
 sidebar:
+  label: Distr SDK
   order: 2
 ---
 

@@ -131,36 +131,17 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   label: 'Distribution Scenarios',
                   items: [
                     {
-                      label: 'Fully Self-Managed',
-                      link: '/docs/use-cases/fully-self-managed/',
-                    },
-                    {
-                      label: 'Assisted Self-Managed',
-                      link: '/docs/use-cases/assisted-self-managed/',
-                    },
-                    {
-                      label: 'BYOC',
-                      link: '/docs/use-cases/byoc-bring-your-own-cloud/',
-                    },
-                    {
-                      label: 'Air-Gapped Deployments',
-                      link: '/docs/use-cases/air-gapped-deployments/',
-                    },
-                    {
-                      label: 'Edge Deployments',
-                      link: '/docs/use-cases/edge-deployments/',
+                      autogenerate: {
+                        directory:
+                          'docs/getting-started/distribution-scenarios',
+                      },
                     },
                   ],
                 },
                 {
                   label: 'Account',
                   items: [
-                    {label: 'Free Trial', link: '/docs/free-trial/'},
-                    {label: 'Choosing a Plan', link: '/docs/subscription/'},
-                    {
-                      label: 'Subscription Management',
-                      link: '/docs/subscription-management/',
-                    },
+                    {autogenerate: {directory: 'docs/getting-started/account'}},
                   ],
                 },
               ],
@@ -172,74 +153,18 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               items: [
                 {
                   label: 'Overview & Setup',
-                  items: [
-                    {
-                      label: 'Deployment Agents',
-                      link: '/docs/agents/',
-                    },
-                    {
-                      label: 'Docker Agent',
-                      link: '/docs/agents/docker-agent/',
-                    },
-                    {
-                      label: 'Kubernetes Agent',
-                      link: '/docs/agents/kubernetes-agent/',
-                    },
-                    {
-                      label: 'Application',
-                      link: '/docs/agents/application/',
-                    },
-                    {
-                      label: 'Deployment',
-                      link: '/docs/agents/deployment/',
-                    },
-                    {
-                      label: 'Run on macOS',
-                      link: '/docs/agents/distr-on-macos/',
-                    },
-                    {
-                      label: 'Run on Windows with WSL2',
-                      link: '/docs/agents/distr-on-windows-wsl/',
-                    },
-                  ],
+                  items: [{autogenerate: {directory: 'docs/agents/overview'}}],
                 },
                 {
                   label: 'Configuration',
                   items: [
-                    {
-                      label: 'Docker Environment Variables',
-                      link: '/docs/agents/docker-env/',
-                    },
-                    {
-                      label: 'Secrets Management',
-                      link: '/docs/agents/secrets/',
-                    },
-                    {
-                      label: 'Docker Compose Secrets',
-                      link: '/docs/agents/docker-compose-secrets/',
-                    },
-                    {
-                      label: 'Application Links',
-                      link: '/docs/agents/application-links/',
-                    },
-                    {
-                      label: 'Helm Chart Registry Authentication',
-                      link: '/docs/agents/helm-registry-auth/',
-                    },
-                    {
-                      label: 'Pre-Flight Checks',
-                      link: '/docs/agents/preflight-checks/',
-                    },
+                    {autogenerate: {directory: 'docs/agents/configuration'}},
                   ],
                 },
                 {
                   label: 'Monitoring',
                   items: [
-                    {label: 'Alerts', link: '/docs/agents/alerts/'},
-                    {
-                      label: 'Logs & Metrics',
-                      link: '/docs/agents/logs-and-metrics/',
-                    },
+                    {autogenerate: {directory: 'docs/agents/monitoring'}},
                   ],
                 },
               ],
@@ -252,18 +177,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 {
                   label: 'Overview',
                   items: [
-                    {
-                      label: 'Artifact Registry',
-                      link: '/docs/registry/',
-                    },
-                    {
-                      label: 'Registry Configuration',
-                      link: '/docs/registry/configuration/',
-                    },
-                    {
-                      label: 'Artifact Download Analytics',
-                      link: '/docs/registry/analytics/',
-                    },
+                    {autogenerate: {directory: 'docs/registry/overview'}},
                   ],
                 },
               ],
@@ -276,89 +190,36 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 {
                   label: 'License Management',
                   items: [
-                    {
-                      label: 'Overview',
-                      link: '/docs/platform/license-management/',
-                    },
-                    {
-                      label: 'Application Entitlements',
-                      link: '/docs/platform/application-entitlements/',
-                    },
-                    {
-                      label: 'Artifact Entitlements',
-                      link: '/docs/platform/artifact-entitlements/',
-                    },
-                    {
-                      label: 'License Keys',
-                      link: '/docs/platform/license-keys/',
-                    },
+                    {autogenerate: {directory: 'docs/platform/licenses'}},
                   ],
                 },
                 {
                   label: 'Support',
-                  items: [
-                    {
-                      label: 'Support Bundles',
-                      link: '/docs/platform/support-bundles/',
-                    },
-                    {
-                      label: 'Kubernetes Compatibility Matrix',
-                      link: '/docs/platform/kubernetes-compatibility-matrix/',
-                    },
-                    {
-                      label: 'Vulnerability Scanning',
-                      link: '/docs/platform/vulnerability-scanning/',
-                    },
-                  ],
+                  items: [{autogenerate: {directory: 'docs/platform/support'}}],
                 },
                 {
                   label: 'Customer Portal',
                   items: [
                     {
-                      label: 'Overview',
-                      link: '/docs/platform/customer-portal/',
-                    },
-                    {
-                      label: 'Artifact Registry',
-                      link: '/docs/platform/customer-portal/registry/',
-                    },
-                    {
-                      label: 'Deployments',
-                      link: '/docs/platform/customer-portal/deployments/',
-                    },
-                    {
-                      label: 'Licenses',
-                      link: '/docs/platform/customer-portal/licenses/',
-                    },
-                    {
-                      label: 'Support Bundles',
-                      link: '/docs/platform/customer-portal/support/',
-                    },
-                    {
-                      label: 'Secrets',
-                      link: '/docs/platform/customer-portal/secrets/',
+                      autogenerate: {
+                        directory: 'docs/platform/customer-portal',
+                      },
                     },
                   ],
                 },
                 {
                   label: 'Customer Management',
                   items: [
-                    {
-                      label: 'Overview',
-                      link: '/docs/platform/customer-management/',
-                    },
-                    {
-                      label: 'Branding & White-Labeling',
-                      link: '/docs/platform/branding/',
-                    },
+                    {autogenerate: {directory: 'docs/platform/customers'}},
                   ],
                 },
                 {
                   label: 'User Management',
                   items: [
                     {
-                      label: 'Role-Based Access Control (RBAC)',
-                      link: '/docs/platform/rbac/',
+                      autogenerate: {
+                        directory: 'docs/platform/user-management',
+                      },
                     },
                   ],
                 },
@@ -407,7 +268,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               items: [
                 {
                   label: 'Self-Hosting',
-                  autogenerate: {directory: 'docs/self-hosting'},
+                  items: [{autogenerate: {directory: 'docs/self-hosting'}}],
                 },
               ],
             },

@@ -2,6 +2,7 @@
 title: Kubernetes
 description: Deploy Distr in your Kubernetes cluster using our Helm chart with built-in PostgreSQL and RustFS storage.
 sidebar:
+  label: Kubernetes
   order: 2
 ---
 

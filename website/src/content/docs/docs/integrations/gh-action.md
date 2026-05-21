@@ -3,6 +3,7 @@ title: GitHub Actions
 description: Automatically create new application versions in Distr whenever you push a release to GitHub, supporting both Docker and Helm applications.
 slug: docs/integrations/gh-action
 sidebar:
+  label: GitHub Action Reference
   order: 5
 ---
 

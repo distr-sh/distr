@@ -3,6 +3,7 @@ title: Pre-Flight Checks
 description: Validate target environments before deployment by checking Docker version, CPU, RAM, disk space and more with custom pre-flight check scripts.
 slug: docs/agents/preflight-checks
 sidebar:
+  label: Pre-Flight Checks
   order: 6
 ---
 

@@ -2,6 +2,7 @@
 title: Docker Compose
 description: Deploy Distr in minutes using Docker Compose with minimal configuration and automatic database setup.
 sidebar:
+  label: Docker Compose
   order: 1
 ---
 
