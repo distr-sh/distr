@@ -55,22 +55,24 @@
                     animate.enter="animate-flip-in-top"
                     animate.leave="animate-flip-out-top">
                     <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownDefaultButton">
-                      <li>
-                        <button
-                          class="block w-full flex items-center gap-2 text-start px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white disabled:opacity-60 disabled:cursor-not-allowed"
-                          (click)="openUpstreamURLModal(artifact, upstreamURLModal)">
-                          <fa-icon [icon]="faPen" />
-                          Edit upstream URL
-                        </button>
-                      </li>
-                      <li>
-                        <button
-                          class="block w-full flex items-center gap-2 text-start px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white disabled:opacity-60 disabled:cursor-not-allowed"
-                          (click)="openUpstreamAuthModal(artifact, upstreamAuthModal)">
-                          <fa-icon [icon]="faKey" />
-                          Edit upstream credentials
-                        </button>
-                      </li>
+                      @if (artifact.upstreamUrl) {
+                        <li>
+                          <button
+                            class="block w-full flex items-center gap-2 text-start px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                            (click)="openUpstreamURLModal(artifact, upstreamURLModal)">
+                            <fa-icon [icon]="faPen" />
+                            Edit upstream URL
+                          </button>
+                        </li>
+                        <li>
+                          <button
+                            class="block w-full flex items-center gap-2 text-start px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                            (click)="openUpstreamAuthModal(artifact, upstreamAuthModal)">
+                            <fa-icon [icon]="faKey" />
+                            Edit upstream credentials
+                          </button>
+                        </li>
+                      }
                       <li>
                         <button
                           class="block w-full flex items-center gap-2 text-start px-4 py-2 text-sm text-red-700 enabled:hover:text-white enabled:hover:bg-red-800 dark:text-red-500 dark:enabled:hover:text-white dark:enabled:hover:bg-red-600 disabled:opacity-60 disabled:cursor-not-allowed"
