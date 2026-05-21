@@ -60,6 +60,11 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	pkceVerifier, err := verifyOIDCState(r)
 	if err != nil {
+		if errors.Is(err, apierrors.ErrBadRequest) {
+			http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
+			return
+		}
+
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		log.Warn("could not verify OIDC state", zap.Error(err))
 		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
@@ -147,15 +152,18 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 func verifyOIDCState(r *http.Request) (string, error) {
 	state, err := uuid.Parse(r.URL.Query().Get("state"))
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%w: %w", apierrors.ErrBadRequest, err)
 	}
 	pkceVerifier, createdAt, err := db.DeleteOIDCState(r.Context(), state)
 	if err != nil {
+		if errors.Is(err, apierrors.ErrNotFound) {
+			return "", apierrors.ErrBadRequest
+		}
 		return "", err
 	}
 	if createdAt.Before(time.Now().UTC().Add(-1 * time.Minute)) {
-		return "", fmt.Errorf("got an OIDC state that is too old: %v, created_at: %v, now: %v",
-			state, createdAt, time.Now().UTC())
+		return "", fmt.Errorf("%wgot an OIDC state that is too old: %v, created_at: %v, now: %v",
+			apierrors.ErrBadRequest, state, createdAt, time.Now().UTC())
 	}
 	return pkceVerifier, nil
 }
