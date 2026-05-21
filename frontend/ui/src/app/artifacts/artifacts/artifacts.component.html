@@ -172,8 +172,8 @@
         <div class="p-4 md:p-5">
           <h4 class="text-base font-semibold text-gray-900 dark:text-white">Direct upload</h4>
           <div class="text-sm text-gray-500 dark:text-gray-400">
-            Push artifacts to your registry using the Docker CLI or any other OCI-compliant tool. Just make sure to tag
-            your images with the correct registry URL and artifact name. For example:
+            Push artifacts to your registry using a personal access token and the Docker CLI or any other OCI-compliant
+            tool. Just make sure to tag your images with the correct registry URL and artifact name. For example:
           </div>
           <pre class="mt-1 select-all block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
             docker tag SOURCE-IMAGE:TAG {{ registryHost$ | async }}/{{ registrySlug$ | async }}/ARTIFACT-NAME:TAG
