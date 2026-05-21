@@ -5,3 +5,5 @@ ALTER TABLE Artifact
   DROP COLUMN IF EXISTS upstream_auth_type,
   DROP COLUMN IF EXISTS upstream_username,
   DROP COLUMN IF EXISTS upstream_password;
+
+DROP TYPE IF EXISTS UPSTREAM_AUTH_TYPE;

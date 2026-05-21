@@ -51,6 +51,7 @@ func (reg *Registry) createDBPool(ctx context.Context) (*pgxpool.Pool, error) {
 			"_SUBSCRIPTIONTYPE",
 			"CUSTOMER_ORGANIZATION_FEATURE",
 			"_CUSTOMER_ORGANIZATION_FEATURE",
+			"UPSTREAM_AUTH_TYPE",
 		}
 		for _, typeName := range typeNames {
 			if pgType, err := conn.LoadType(ctx, typeName); err != nil {
