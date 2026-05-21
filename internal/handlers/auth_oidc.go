@@ -162,7 +162,7 @@ func verifyOIDCState(r *http.Request) (string, error) {
 		return "", err
 	}
 	if createdAt.Before(time.Now().UTC().Add(-1 * time.Minute)) {
-		return "", fmt.Errorf("%wgot an OIDC state that is too old: %v, created_at: %v, now: %v",
+		return "", fmt.Errorf("%w: got an OIDC state that is too old: %v, created_at: %v, now: %v",
 			apierrors.ErrBadRequest, state, createdAt, time.Now().UTC())
 	}
 	return pkceVerifier, nil
