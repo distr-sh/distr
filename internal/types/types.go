@@ -137,8 +137,39 @@ func (ref *DeploymentStatusType) UnmarshalJSON(data []byte) error {
 	}
 }
 
+type DeploymentType string
+
+const (
+	DeploymentTypeDocker     DeploymentType = "docker"
+	DeploymentTypeKubernetes DeploymentType = "kubernetes"
+)
+
+var ErrInvalidDeploymentType = errors.New("invalid deployment type")
+
+func ParseDeploymentType(value string) (DeploymentType, error) {
+	switch value {
+	case string(DeploymentTypeDocker):
+		return DeploymentTypeDocker, nil
+	case string(DeploymentTypeKubernetes):
+		return DeploymentTypeKubernetes, nil
+	default:
+		return "", fmt.Errorf("%w: %v", ErrInvalidDeploymentType, value)
+	}
+}
+
+func (ref *DeploymentType) UnmarshalJSON(data []byte) error {
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	} else if deploymentType, err := ParseDeploymentType(value); err != nil {
+		return err
+	} else {
+		*ref = deploymentType
+		return nil
+	}
+}
+
 type (
-	DeploymentType        string
 	HelmChartType         string
 	DeploymentTargetScope string
 	DockerType            string
@@ -148,9 +179,6 @@ type (
 )
 
 const (
-	DeploymentTypeDocker     DeploymentType = "docker"
-	DeploymentTypeKubernetes DeploymentType = "kubernetes"
-
 	HelmChartTypeRepository HelmChartType = "repository"
 	HelmChartTypeOCI        HelmChartType = "oci"
 
