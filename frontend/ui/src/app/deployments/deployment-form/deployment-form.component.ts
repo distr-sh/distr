@@ -41,14 +41,8 @@ import {
 } from 'rxjs';
 import {isArchived} from '../../../util/dates';
 import {toBase64} from '../../../util/encoding';
-import {
-  DURATION_REGEX,
-  HELM_RELEASE_NAME_MAX_LENGTH,
-  HELM_RELEASE_NAME_REGEX,
-  latin1Validator,
-} from '../../../util/validation';
+import {DURATION_REGEX, HELM_RELEASE_NAME_MAX_LENGTH, HELM_RELEASE_NAME_REGEX} from '../../../util/validation';
 import {EditorComponent} from '../../components/editor.component';
-import {Latin1ErrorComponent} from '../../components/latin1-error.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {InnerMarkdownDirective} from '../../directives/inner-markdown.directive';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
@@ -90,15 +84,7 @@ type DeploymentFormValueCallback = (v: DeploymentFormValue | undefined) => void;
 
 @Component({
   selector: 'app-deployment-form',
-  imports: [
-    ReactiveFormsModule,
-    AsyncPipe,
-    EditorComponent,
-    AutotrimDirective,
-    RouterLink,
-    InnerMarkdownDirective,
-    Latin1ErrorComponent,
-  ],
+  imports: [ReactiveFormsModule, AsyncPipe, EditorComponent, AutotrimDirective, RouterLink, InnerMarkdownDirective],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -136,8 +122,8 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
       Validators.maxLength(HELM_RELEASE_NAME_MAX_LENGTH),
       Validators.pattern(HELM_RELEASE_NAME_REGEX),
     ]),
-    valuesYaml: this.fb.control('', latin1Validator),
-    envFileData: this.fb.control('', latin1Validator),
+    valuesYaml: this.fb.control(''),
+    envFileData: this.fb.control(''),
     swarmMode: this.fb.control(false),
     forceRestart: this.fb.control(false),
     ignoreRevisionSkew: this.fb.control(false),

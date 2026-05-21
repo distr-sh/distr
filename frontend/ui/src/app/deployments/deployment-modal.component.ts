@@ -4,7 +4,7 @@ import {DeploymentTarget, DeploymentWithLatestRevision} from '@distr-sh/distr-sd
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleExclamation, faShip} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
-import {Base64EncodeError} from '../../util/encoding';
+import {fromBase64} from '../../util/encoding';
 import {getFormDisplayedError} from '../../util/errors';
 import {AuthService} from '../services/auth.service';
 import {DeploymentTargetsService} from '../services/deployment-targets.service';
@@ -103,9 +103,9 @@ export class DeploymentModalComponent {
         applicationVersionId: this.versionId() ?? deployment?.applicationVersionId,
         applicationEntitlementId: deployment?.applicationEntitlementId,
         releaseName: deployment?.releaseName,
-        valuesYaml: deployment?.valuesYaml ? atob(deployment.valuesYaml) : undefined,
+        valuesYaml: deployment?.valuesYaml ? fromBase64(deployment.valuesYaml) : undefined,
         swarmMode: deployment?.dockerType === 'swarm',
-        envFileData: deployment?.envFileData ? atob(deployment.envFileData) : undefined,
+        envFileData: deployment?.envFileData ? fromBase64(deployment.envFileData) : undefined,
         helmOptions: deployment?.helmOptions,
       });
     });
@@ -115,19 +115,15 @@ export class DeploymentModalComponent {
     this.deployForm.markAllAsTouched();
     if (this.deployForm.valid) {
       this.loading.set(true);
+      const deployment = mapToDeploymentRequest(this.deployForm.value!, this.deploymentTarget().id!);
       try {
-        const deployment = mapToDeploymentRequest(this.deployForm.value!, this.deploymentTarget().id!);
         await firstValueFrom(this.deploymentTargets.deploy(deployment));
         this.toast.success('Deployment saved successfully');
         this.closed.emit();
       } catch (e) {
-        if (e instanceof Base64EncodeError) {
-          this.toast.error(e.message);
-        } else {
-          const msg = getFormDisplayedError(e);
-          if (msg) {
-            this.toast.error(msg);
-          }
+        const msg = getFormDisplayedError(e);
+        if (msg) {
+          this.toast.error(msg);
         }
       } finally {
         this.loading.set(false);

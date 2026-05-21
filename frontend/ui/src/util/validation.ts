@@ -42,23 +42,6 @@ export const DURATION_REGEX =
 export const RESOURCE_QUANTITY_REGEX =
   /^(\d+|\d+\.\d+|\d+\.|\.\d+)(m|k|M|G|T|P|E|Ki|Mi|Gi|Ti|Pi|Ei|((e|E)(\d+|\d+\.\d+|\d+\.|\.\d+)))?$/;
 
-/**
- * Rejects values containing characters outside the Latin-1 range (codepoints > 0xFF).
- * Required for fields that are base64-encoded via `btoa`, which only accepts Latin-1.
- */
-export function latin1Validator(control: AbstractControl): ValidationErrors | null {
-  const value = control.value;
-  if (typeof value !== 'string' || value.length === 0) {
-    return null;
-  }
-  for (let i = 0; i < value.length; i++) {
-    if (value.charCodeAt(i) > 0xff) {
-      return {latin1: true};
-    }
-  }
-  return null;
-}
-
 export function jsonObjectValidator(control: AbstractControl): ValidationErrors | null {
   try {
     const parsed = JSON.parse(control.value);

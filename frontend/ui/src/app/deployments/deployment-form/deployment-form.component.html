@@ -127,7 +127,6 @@
             id="env-file"
             class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             formControlName="envFileData" />
-          <app-latin1-error [control]="deployForm.controls.envFileData" />
           <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
             Set your environment variables here. Documentation:
             <a
@@ -159,7 +158,6 @@
             language="yaml"
             class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             formControlName="valuesYaml" />
-          <app-latin1-error [control]="deployForm.controls.valuesYaml" />
           @if (auth.hasAnyRole('read_write', 'admin')) {
             <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
               You can

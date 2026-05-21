@@ -6,7 +6,6 @@
 
 ## Classes
 
-- [Base64EncodeError](classes/Base64EncodeError.md)
 - [Client](classes/Client.md)
 - [DistrService](classes/DistrService.md)
 
@@ -74,4 +73,5 @@
 
 ## Functions
 
+- [fromBase64](functions/fromBase64.md)
 - [toBase64](functions/toBase64.md)

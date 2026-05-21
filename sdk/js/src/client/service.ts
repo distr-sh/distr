@@ -219,9 +219,7 @@ export class DistrService {
       deploymentTargetId: deploymentTarget.id!,
       applicationVersionId: versionId,
       releaseName: kubernetesDeployment?.releaseName,
-      valuesYaml: kubernetesDeployment?.valuesYaml
-        ? toBase64(kubernetesDeployment.valuesYaml, 'valuesYaml')
-        : undefined,
+      valuesYaml: kubernetesDeployment?.valuesYaml ? toBase64(kubernetesDeployment.valuesYaml) : undefined,
     });
     return {
       deploymentTarget: await this.client.getDeploymentTarget(deploymentTarget.id!),
@@ -245,9 +243,7 @@ export class DistrService {
       deploymentTargetId,
       deploymentId: existingDeployment.id,
       applicationVersionId,
-      valuesYaml: kubernetesDeployment?.valuesYaml
-        ? toBase64(kubernetesDeployment.valuesYaml, 'valuesYaml')
-        : undefined,
+      valuesYaml: kubernetesDeployment?.valuesYaml ? toBase64(kubernetesDeployment.valuesYaml) : undefined,
     });
   }
 
