@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.21.2](https://github.com/distr-sh/distr/compare/2.21.1...2.21.2) (2026-05-21)
+
+
+### Bug Fixes
+
+* helm option force conflict default value ([#2461](https://github.com/distr-sh/distr/issues/2461)) ([6f39686](https://github.com/distr-sh/distr/commit/6f39686c50cbbfd409862d6f65ead252ba09f620))
+
 ## [2.21.1](https://github.com/distr-sh/distr/compare/2.21.0...2.21.1) (2026-05-21)
 
 
