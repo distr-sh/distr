@@ -290,6 +290,7 @@ func agentResourcesHandler(w http.ResponseWriter, r *http.Request) {
 						WaitStrategy:      deployment.HelmOptions.WaitStrategy,
 						RollbackOnFailure: deployment.HelmOptions.RollbackOnFailure,
 						CleanupOnFailure:  deployment.HelmOptions.CleanupOnFailure,
+						ForceConflicts:    deployment.HelmOptions.ForceConflicts,
 					}
 				}
 			}

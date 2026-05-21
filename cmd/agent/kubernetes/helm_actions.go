@@ -169,11 +169,14 @@ func RunHelmUpgrade(
 	upgradeAction.MaxHistory = 10
 
 	if deployment.HelmOptions != nil {
+		logger.Debug("settings helm options", zap.Any("helmOptions", deployment.HelmOptions))
 		upgradeAction.Timeout = time.Duration(deployment.HelmOptions.Timeout)
 		upgradeAction.WaitStrategy = kube.WaitStrategy(deployment.HelmOptions.WaitStrategy)
 		upgradeAction.RollbackOnFailure = deployment.HelmOptions.RollbackOnFailure
 		upgradeAction.CleanupOnFail = deployment.HelmOptions.CleanupOnFailure
+		upgradeAction.ForceConflicts = deployment.HelmOptions.ForceConflicts
 	} else {
+		logger.Debug("settings default helm options")
 		upgradeAction.Timeout = 5 * time.Minute
 		upgradeAction.WaitStrategy = kube.StatusWatcherStrategy
 		upgradeAction.RollbackOnFailure = true
