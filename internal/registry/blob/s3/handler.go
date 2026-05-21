@@ -241,7 +241,7 @@ func (handler *blobHandler) PutChunk(ctx context.Context, id string, r io.Reader
 	}
 	defer sr.Close()
 
-	chunkSize, err := io.Copy(io.Discard, sr)
+	chunkSize, err := sr.Seek(0, io.SeekEnd)
 	if err != nil {
 		return 0, fmt.Errorf("failed to measure chunk size: %w", err)
 	}
