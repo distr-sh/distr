@@ -1,3 +1,4 @@
+import {DatePipe} from '@angular/common';
 import {Component, computed, Directive, input} from '@angular/core';
 import {DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
 import {never} from '../../../util/exhaust';
@@ -29,9 +30,9 @@ export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
 
 @Component({
   selector: 'app-deployment-status-text',
-  imports: [DeploymentStatusDotDirective, IsStalePipe],
+  imports: [DeploymentStatusDotDirective, IsStalePipe, DatePipe],
   template: `
-    <div class="flex gap-1 items-center">
+    <div class="flex gap-1 items-center" [title]="(deployment().latestStatus?.createdAt | date: 'short') ?? ''">
       <div class="size-3" appDeploymentStatusDot [deployment]="deployment()"></div>
       @if (deployment().latestStatus; as drs) {
         @if (drs.type === 'error') {
