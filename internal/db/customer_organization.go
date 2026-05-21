@@ -67,7 +67,13 @@ func CreateCustomerOrganization(ctx context.Context, customerOrg *types.Customer
 	}
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.CustomerOrganization])
 	if err != nil {
-		return err
+		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok &&
+			pgErr.Code == pgerrcode.ForeignKeyViolation &&
+			pgErr.ConstraintName == "customerorganization_image_id_fkey" {
+			return apierrors.NewBadRequest("invalid image ID")
+		}
+
+		return fmt.Errorf("could not scan created CustomerOrganization: %w", err)
 	} else {
 		*customerOrg = result
 		return nil
