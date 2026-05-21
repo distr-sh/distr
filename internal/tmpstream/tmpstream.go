@@ -22,8 +22,9 @@ type TmpStream interface {
 	Destroy() error
 }
 
-// New creates a new TmpStream that makes an [io.Reader] seekable by either buffering it in memory or writing it to a
-// temporary file, depending on whether [env.RegistryScratchDir] is set.
+// New creates a new TmpStream that buffers an [io.Reader] into a [ReadSeekAtCloser] (seekable and randomly
+// addressable via [io.ReaderAt], e.g. for use with [io.NewSectionReader]) by either buffering it in memory
+// or writing it to a temporary file, depending on whether [env.RegistryScratchDir] is set.
 func New(src io.Reader) (TmpStream, error) {
 	if dir := env.RegistryScratchDir(); dir == nil {
 		return newInMemoryStream(src)
