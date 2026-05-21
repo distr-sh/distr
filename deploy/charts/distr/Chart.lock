@@ -1,9 +1,9 @@
 dependencies:
 - name: postgresql
   repository: oci://registry-1.docker.io/bitnamicharts
-  version: 18.6.2
+  version: 18.6.7
 - name: rustfs
   repository: https://charts.rustfs.com
-  version: 0.1.0
-digest: sha256:c568bbfd0df80ffb1547b62b2b4119c88f24759cfed9982ea6e26473b6c12eb0
-generated: "2026-04-30T05:58:08.350674677Z"
+  version: 0.4.0
+digest: sha256:25dc7a88dee9a4d7d778faf1a766aeebea97d76bb1e9cbc12efe876f4b35e0c1
+generated: "2026-05-21T09:03:02.743081213Z"
