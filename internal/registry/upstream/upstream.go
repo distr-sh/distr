@@ -2,6 +2,7 @@ package upstream
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -78,6 +79,8 @@ func syncTag(
 	if skipExistingTags {
 		if _, err := db.GetArtifactVersionByName(ctx, artifact.ID, tag); err == nil {
 			return nil
+		} else if !errors.Is(err, apierrors.ErrNotFound) {
+			return fmt.Errorf("checking if tag exists: %w", err)
 		}
 	}
 	desc, rc, err := repo.FetchReference(ctx, tag)
