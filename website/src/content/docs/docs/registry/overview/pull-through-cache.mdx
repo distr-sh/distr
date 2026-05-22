@@ -1,0 +1,134 @@
+---
+title: Pull-Through Cache
+description: Use the Distr registry as a pull-through cache for upstream OCI registries, including Docker Hub, AWS ECR, and any other OCI-compliant registry.
+slug: docs/registry/pull-through-cache
+sidebar:
+  label: Pull-Through Cache
+  order: 4
+---
+
+import {Aside} from '@astrojs/starlight/components';
+import ThemedImage from '~/components/util/ThemedImage.astro';
+import pullThroughCacheDialogLight from '~/assets/docs/registry/overview/pull-through-cache-dialog-light.png';
+import pullThroughCacheDialogDark from '~/assets/docs/registry/overview/pull-through-cache-dialog-dark.png';
+
+The Distr registry can act as a pull-through cache for upstream OCI registries.
+When a client requests an image that is not yet cached locally, Distr transparently fetches it from the configured upstream registry, stores it, and serves it back.
+Subsequent pulls are served directly from the local cache.
+
+This lets you consolidate all image pulls through a single registry endpoint with unified access control, download analytics, and entitlement enforcement — regardless of where the images are originally hosted.
+
+## How it works
+
+1. A client pulls an image through the Distr registry URL.
+2. If the blob is not cached locally, Distr fetches it from the upstream registry using the configured credentials.
+3. The blob is stored in local object storage and returned to the client.
+4. Distr periodically syncs the tag list from upstream so that available tags are always up to date.
+5. Subsequent pulls for the same blob are served from the local cache without contacting the upstream registry.
+
+## Setting up a pull-through cache artifact
+
+<ThemedImage
+  lightSrc={pullThroughCacheDialogLight}
+  darkSrc={pullThroughCacheDialogDark}
+  alt="Pull-through cache configuration dialog"
+/>
+
+Create an artifact in the Distr registry and provide an upstream URL. Distr will treat this artifact as a pull-through cache for the specified upstream repository.
+
+The upstream URL must point to a specific repository in an OCI-compliant registry, for example:
+
+| Upstream registry | Example URL |
+|---|---|
+| Docker Hub | `docker.io/library/redis` |
+| AWS ECR | `123456789012.dkr.ecr.us-east-1.amazonaws.com/my-repo` |
+| GitHub Container Registry | `ghcr.io/org/repo` |
+| Google Artifact Registry | `us-docker.pkg.dev/project/repo/image` |
+
+<Aside type="note">
+  The upstream URL refers to a single repository, not the entire registry.
+  Each pull-through artifact maps to exactly one upstream repository.
+</Aside>
+
+## Authentication
+
+### No authentication
+
+Public repositories (e.g. Docker Hub public images) do not require authentication. Leave the auth fields empty when creating the artifact.
+
+### Basic authentication
+
+For private registries that use username and password credentials, select `basic` as the auth type and provide your username and password.
+
+### AWS ECR
+
+For AWS Elastic Container Registry, select `aws_ecr` as the auth type and provide an AWS access key ID and secret access key.
+Distr automatically exchanges these credentials for a short-lived ECR authorization token and refreshes it before it expires.
+
+<Aside type="tip">
+  ECR tokens are valid for 12 hours. Distr refreshes them automatically, so you
+  never need to rotate the credentials stored in Distr unless the underlying IAM
+  credentials change.
+</Aside>
+
+The IAM identity associated with the credentials must have the following permissions:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DistrPullThroughCache",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage",
+        "ecr:DescribeImages",
+        "ecr:GetAuthorizationToken",
+        "ecr:DescribeRepositories",
+        "ecr:ListImages"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+<Aside type="note">
+  `ecr:GetAuthorizationToken` does not support resource-level permissions and
+  must always use `"Resource": "*"`. The remaining actions can be scoped to
+  specific repository ARNs if you prefer a least-privilege policy.
+</Aside>
+
+## Pulling images through the cache
+
+Once configured, pull images using the standard Docker CLI (or any OCI client) via the Distr registry URL:
+
+```shell
+docker pull registry.distr.sh/<slug>/<artifact-name>:<tag>
+```
+
+Replace `<slug>` with your organization's registry slug, `<artifact-name>` with the name you gave the artifact in Distr, and `<tag>` with the upstream tag you want to pull.
+
+Clients must [authenticate with a Personal Access Token](/docs/integrations/personal-access-token/) the same way they do for any other artifact in the Distr registry.
+
+## Tag synchronization
+
+Distr runs a background sync job to keep the local tag list in sync with the upstream repository.
+The sync fetches all tags and their manifest metadata, making them available for HEAD requests and entitlement enforcement without requiring an actual pull.
+
+You can also trigger a manual sync at any time from the artifact details page or via the API:
+
+```shell
+curl -X POST https://app.distr.sh/api/v1/artifacts/<artifactId>/sync \
+  -H "Authorization: Bearer <token>"
+```
+
+## Monitoring sync status
+
+The artifact details page shows:
+
+- **Last synced at** — when the most recent sync completed successfully.
+- **Last sync error** — the error message from the most recent failed sync, if any.
+
+If the sync error field is populated, verify that the upstream URL is correct and that the configured credentials have not expired or been revoked.
