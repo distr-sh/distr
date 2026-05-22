@@ -120,8 +120,10 @@ Clients must [authenticate with a Personal Access Token](/docs/integrations/pers
 
 ## Tag synchronization
 
-Distr runs a background sync job twice per hour (at :15 and :45) to keep the local tag list in sync with the upstream repository.
+Distr runs a background sync job to keep the local tag list in sync with the upstream repository.
 The sync fetches all tags and their manifest metadata, making them available for HEAD requests and entitlement enforcement without requiring an actual pull.
+On Distr Cloud, the sync runs twice per hour (at :15 and :45).
+For self-hosted instances, the schedule is controlled by the `REGISTRY_UPSTREAM_SYNC_CRON` environment variable — see [Upstream Tag Synchronization](/docs/self-hosting/maintenance#upstream-tag-synchronization).
 
 You can also trigger a manual sync at any time from the artifact details page or via the API:
 

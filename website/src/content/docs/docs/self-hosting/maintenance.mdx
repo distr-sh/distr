@@ -124,6 +124,25 @@ CLEANUP_ARTIFACT_BLOB_MIN_AGE="24h"
   cleanup routine for these targets will have no effect.
 </Aside>
 
+## Upstream Tag Synchronization
+
+When the pull-through cache is in use, Distr can automatically sync tags from upstream registries on a schedule.
+This is configured via a single environment variable:
+
+```dotenv
+# Cron schedule for syncing tags from upstream registries
+REGISTRY_UPSTREAM_SYNC_CRON="15,45 * * * *"
+```
+
+If `REGISTRY_UPSTREAM_SYNC_CRON` is not set, no automatic sync is scheduled.
+Tags are still fetched on demand when a client pulls an image, but the tag list will not be proactively refreshed.
+
+<Aside type="note">
+  In high-availability deployments, the built-in scheduler runs on every
+  instance. To avoid redundant upstream requests, consider using a Kubernetes
+  CronJob to trigger syncs externally instead.
+</Aside>
+
 ## Removed features
 
 ### Deployment Target Status (removed in v2.20.0)
