@@ -24,3 +24,8 @@ func NewBadRequest(message string) error {
 func NewConflict(message string) error {
 	return fmt.Errorf("%w: %s", ErrConflict, message)
 }
+
+// NewForbidden creates a new forbidden error with the given message
+func NewForbidden(message string) error {
+	return fmt.Errorf("%w: %s", ErrForbidden, message)
+}
