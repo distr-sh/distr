@@ -46,7 +46,13 @@ services:
       # Production strict TLS example (SAN/FQDN aligned, no `-k`):
       # curl -f --cacert /opt/tls/ca.crt --resolve rustfs-a.example.com:9000:127.0.0.1 https://rustfs-a.example.com:9000/health
       # curl -f --cacert /opt/tls/ca.crt --resolve rustfs-a.example.com:9001:127.0.0.1 https://rustfs-a.example.com:9001/rustfs/console/health
-      test: [ "CMD", "sh", "-c", "curl -f http://127.0.0.1:9000/health && curl -f http://127.0.0.1:9001/rustfs/console/health" ]
+      test:
+        [
+          'CMD',
+          'sh',
+          '-c',
+          'curl -f http://127.0.0.1:9000/health && curl -f http://127.0.0.1:9001/rustfs/console/health',
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
