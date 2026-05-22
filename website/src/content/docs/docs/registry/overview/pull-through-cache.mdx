@@ -1,6 +1,6 @@
 ---
 title: Pull-Through Cache
-description: Use the Distr registry as a pull-through cache for upstream OCI registries, including Docker Hub, AWS ECR, and any other OCI-compliant registry.
+description: Configure the Distr registry to proxy and cache artifact tags from an upstream OCI-compatible registry.
 slug: docs/registry/pull-through-cache
 sidebar:
   label: Pull-Through Cache
@@ -12,19 +12,19 @@ import ThemedImage from '~/components/util/ThemedImage.astro';
 import pullThroughCacheDialogLight from '~/assets/docs/registry/overview/pull-through-cache-dialog-light.png';
 import pullThroughCacheDialogDark from '~/assets/docs/registry/overview/pull-through-cache-dialog-dark.png';
 
-The Distr registry can act as a pull-through cache for upstream OCI registries.
-When a client requests an image that is not yet cached locally, Distr transparently fetches it from the configured upstream registry, stores it, and serves it back.
-Subsequent pulls are served directly from the local cache.
+The Distr registry can act as a pull-through cache for any OCI-compatible upstream registry.
+Configure an artifact with an upstream URL and Distr will sync tags from the upstream and serve blobs to your customers on demand — no direct upstream access required.
 
 This lets you consolidate all image pulls through a single registry endpoint with unified access control, download analytics, and entitlement enforcement — regardless of where the images are originally hosted.
 
 ## How it works
 
-1. A client pulls an image through the Distr registry URL.
-2. If the blob is not cached locally, Distr fetches it from the upstream registry using the configured credentials.
-3. The blob is stored in local object storage and returned to the client.
-4. Distr periodically syncs the tag list from upstream so that available tags are always up to date.
-5. Subsequent pulls for the same blob are served from the local cache without contacting the upstream registry.
+After a sync, Distr stores the tag list and manifest metadata from the upstream. Blob data (layers, image configs) is fetched from the upstream on first pull and cached in the Distr registry. Subsequent pulls are served entirely from Distr.
+
+<Aside type="note">
+  Pull counts and download analytics work the same way for pull-through artifacts
+  as for all other artifacts.
+</Aside>
 
 ## Setting up a pull-through cache artifact
 
@@ -34,9 +34,13 @@ This lets you consolidate all image pulls through a single registry endpoint wit
   alt="Pull-through cache configuration dialog"
 />
 
-Create an artifact in the Distr registry and provide an upstream URL. Distr will treat this artifact as a pull-through cache for the specified upstream repository.
+<Aside type="caution">
+  Pull-through and direct push are mutually exclusive. Once an artifact is
+  configured with an upstream, it cannot be pushed to manually. If you need
+  both, use separate artifacts.
+</Aside>
 
-The upstream URL must point to a specific repository in an OCI-compliant registry, for example:
+When creating or editing an artifact, set the **Upstream URL** to the fully qualified image reference of the upstream repository. The URL must point to a specific repository, not the entire registry. Each pull-through artifact maps to exactly one upstream repository.
 
 | Upstream registry | Example URL |
 |---|---|
@@ -45,24 +49,20 @@ The upstream URL must point to a specific repository in an OCI-compliant registr
 | GitHub Container Registry | `ghcr.io/org/repo` |
 | Google Artifact Registry | `us-docker.pkg.dev/project/repo/image` |
 
-<Aside type="note">
-  The upstream URL refers to a single repository, not the entire registry.
-  Each pull-through artifact maps to exactly one upstream repository.
-</Aside>
-
 ## Authentication
 
-### No authentication
+If the upstream requires authentication, select one of the supported auth types. Credentials are validated against the upstream when saved.
 
-Public repositories (e.g. Docker Hub public images) do not require authentication. Leave the auth fields empty when creating the artifact.
+| Type | Credentials |
+|---|---|
+| Basic | Username and password |
+| AWS ECR | AWS Access Key ID and Secret Access Key |
 
-### Basic authentication
-
-For private registries that use username and password credentials, select `basic` as the auth type and provide your username and password.
+Public repositories do not require authentication — select "No authentication".
 
 ### AWS ECR
 
-For AWS Elastic Container Registry, select `aws_ecr` as the auth type and provide an AWS access key ID and secret access key.
+For AWS Elastic Container Registry, select "AWS ECR" and provide an AWS access key ID and secret access key.
 Distr automatically exchanges these credentials for a short-lived ECR authorization token and refreshes it before it expires.
 
 <Aside type="tip">
@@ -100,6 +100,10 @@ The IAM identity associated with the credentials must have the following permiss
   specific repository ARNs if you prefer a least-privilege policy.
 </Aside>
 
+<Aside type="note">
+  Coming soon: support for short-lived delegated credentials such as **AWS AssumeRole** (STS) and **GCP Workload Identity Federation** with service account impersonation.
+</Aside>
+
 ## Pulling images through the cache
 
 Once configured, pull images using the standard Docker CLI (or any OCI client) via the Distr registry URL:
@@ -114,14 +118,14 @@ Clients must [authenticate with a Personal Access Token](/docs/integrations/pers
 
 ## Tag synchronization
 
-Distr runs a background sync job to keep the local tag list in sync with the upstream repository.
+Distr runs a background sync job twice per hour (at :15 and :45) to keep the local tag list in sync with the upstream repository.
 The sync fetches all tags and their manifest metadata, making them available for HEAD requests and entitlement enforcement without requiring an actual pull.
 
 You can also trigger a manual sync at any time from the artifact details page or via the API:
 
 ```shell
 curl -X POST https://app.distr.sh/api/v1/artifacts/<artifactId>/sync \
-  -H "Authorization: Bearer <token>"
+  -H "Authorization: AccessKey <token>"
 ```
 
 ## Monitoring sync status
