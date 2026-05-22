@@ -22,8 +22,8 @@ This lets you consolidate all image pulls through a single registry endpoint wit
 After a sync, Distr stores the tag list and manifest metadata from the upstream. Blob data (layers, image configs) is fetched from the upstream on first pull and cached in the Distr registry. Subsequent pulls are served entirely from Distr.
 
 <Aside type="note">
-  Pull counts and download analytics work the same way for pull-through artifacts
-  as for all other artifacts.
+  Pull counts and download analytics work the same way for pull-through
+  artifacts as for all other artifacts.
 </Aside>
 
 ## Setting up a pull-through cache artifact
@@ -42,20 +42,20 @@ After a sync, Distr stores the tag list and manifest metadata from the upstream.
 
 When creating or editing an artifact, set the **Upstream URL** to the fully qualified image reference of the upstream repository. The URL must point to a specific repository, not the entire registry. Each pull-through artifact maps to exactly one upstream repository.
 
-| Upstream registry | Example URL |
-|---|---|
-| Docker Hub | `docker.io/library/redis` |
-| AWS ECR | `123456789012.dkr.ecr.us-east-1.amazonaws.com/my-repo` |
-| GitHub Container Registry | `ghcr.io/org/repo` |
-| Google Artifact Registry | `us-docker.pkg.dev/project/repo/image` |
+| Upstream registry         | Example URL                                            |
+| ------------------------- | ------------------------------------------------------ |
+| Docker Hub                | `docker.io/library/redis`                              |
+| AWS ECR                   | `123456789012.dkr.ecr.us-east-1.amazonaws.com/my-repo` |
+| GitHub Container Registry | `ghcr.io/org/repo`                                     |
+| Google Artifact Registry  | `us-docker.pkg.dev/project/repo/image`                 |
 
 ## Authentication
 
 If the upstream requires authentication, select one of the supported auth types. Credentials are validated against the upstream when saved.
 
-| Type | Credentials |
-|---|---|
-| Basic | Username and password |
+| Type    | Credentials                             |
+| ------- | --------------------------------------- |
+| Basic   | Username and password                   |
 | AWS ECR | AWS Access Key ID and Secret Access Key |
 
 Public repositories do not require authentication — select "No authentication".
@@ -101,7 +101,9 @@ The IAM identity associated with the credentials must have the following permiss
 </Aside>
 
 <Aside type="note">
-  Coming soon: support for short-lived delegated credentials such as **AWS AssumeRole** (STS) and **GCP Workload Identity Federation** with service account impersonation.
+  Coming soon: support for short-lived delegated credentials such as **AWS
+  AssumeRole** (STS) and **GCP Workload Identity Federation** with service
+  account impersonation.
 </Aside>
 
 ## Pulling images through the cache
