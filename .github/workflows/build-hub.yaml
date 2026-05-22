@@ -207,12 +207,24 @@ jobs:
           curl --retry 10 --retry-delay 1 --retry-connrefused -sf "$DISTR_HOST/ready" || { echo "Hub did not become ready in time"; exit 1; }
           curl $DISTR_HOST/docs/openapi.yaml -sf -o /dev/null || { echo "OpenAPI spec is not valid or not reachable at $DISTR_HOST/docs/openapi.yaml"; exit 1; }
           psql $DATABASE_URL -c "select version > 0, dirty from schema_migrations" --csv -t | grep "t,f"
+        env:
+          DATABASE_URL: postgres://test-user:test-password@localhost:5432/distr
+          JWT_SECRET: H4V7z6mEpe8/k5H/KyogT/iATJhNpEIUMd5cHF6mqF8=
+          DISTR_HOST: http://localhost:8080
+          USER_EMAIL_VERIFICATION_REQUIRED: 'false'
+          LICENSE_KEY: ${{ matrix.edition.name == 'enterprise' && (startsWith(github.ref, 'refs/tags/') && secrets.LICENSE_KEY || steps.ephemeral-license.outputs.license-key) || '' }}
+
+      - name: Run e2e smoke test
+        shell: bash
+        run: |
+          hack/e2e-smoke-test.mjs
           pkill -SIGTERM distr-amd64
           dist/distr-amd64 migrate --down
         env:
           DATABASE_URL: postgres://test-user:test-password@localhost:5432/distr
           JWT_SECRET: H4V7z6mEpe8/k5H/KyogT/iATJhNpEIUMd5cHF6mqF8=
           DISTR_HOST: http://localhost:8080
+          USER_EMAIL_VERIFICATION_REQUIRED: 'false'
           LICENSE_KEY: ${{ matrix.edition.name == 'enterprise' && (startsWith(github.ref, 'refs/tags/') && secrets.LICENSE_KEY || steps.ephemeral-license.outputs.license-key) || '' }}
 
       - name: Generate SBOM for frontend project
