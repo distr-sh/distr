@@ -13,7 +13,7 @@
 
 const BASE_URL = (process.env.DISTR_HOST ?? 'http://localhost:8080').replace(/\/$/, '');
 
-const TEST_EMAIL = 'e2e1@smoke.test';
+const TEST_EMAIL = 'e2e3@smoke.test';
 const TEST_PASSWORD = 'E2eSmoke123!';
 const TEST_NAME = 'E2E Smoke Test';
 
@@ -65,25 +65,37 @@ step('Verify organization exists');
 const org = await request('GET', '/api/v1/organization', {token});
 assert(org && org.name, 'organization must have a name');
 
-step('Trigger tutorial (agents/welcome/start)');
-const tutorialResult = await request('PUT', '/api/v1/tutorial-progress/agents', {
-  token,
-  body: {stepId: 'welcome', taskId: 'start'},
-});
-const tutorialEvent = tutorialResult?.events?.find((e) => e.stepId === 'welcome' && e.taskId === 'start');
-assert(tutorialEvent?.value?.deploymentTargetId, 'tutorial response must include an event with deploymentTargetId');
+let deploymentTargetId;
+let applicationId;
 
-step('Verify hello-distr application was created');
-const applications = await request('GET', '/api/v1/applications', {token});
-assert(
-  applications.some((a) => a.name === 'hello-distr'),
-  'hello-distr application must exist'
-);
+try {
+  step('Trigger tutorial (agents/welcome/start)');
+  const tutorialResult = await request('PUT', '/api/v1/tutorial-progress/agents', {
+    token,
+    body: {stepId: 'welcome', taskId: 'start'},
+  });
+  const tutorialEvent = tutorialResult?.events?.find((e) => e.stepId === 'welcome' && e.taskId === 'start');
+  assert(tutorialEvent?.value?.deploymentTargetId, 'tutorial response must include an event with deploymentTargetId');
+  deploymentTargetId = tutorialEvent.value.deploymentTargetId;
 
-step('Verify hello-distr-tutorial deployment target was created with a deployment');
-const targets = await request('GET', '/api/v1/deployment-targets', {token});
-const helloTarget = targets.find((t) => t.name === 'hello-distr-tutorial');
-assert(helloTarget, 'hello-distr-tutorial deployment target must exist');
-assert(helloTarget.deployments?.length > 0, 'hello-distr-tutorial must have at least one deployment');
+  step('Verify hello-distr application was created');
+  const applications = await request('GET', '/api/v1/applications', {token});
+  const helloApp = applications.find((a) => a.name === 'hello-distr');
+  assert(helloApp, 'hello-distr application must exist');
+  applicationId = helloApp.id;
 
-console.log(`\nAll ${stepNum} smoke test steps passed.`);
+  step('Verify hello-distr-tutorial deployment target was created with a deployment');
+  const targets = await request('GET', '/api/v1/deployment-targets', {token});
+  const helloTarget = targets.find((t) => t.name === 'hello-distr-tutorial');
+  assert(helloTarget, 'hello-distr-tutorial deployment target must exist');
+  assert(helloTarget.deployments?.length > 0, 'hello-distr-tutorial must have at least one deployment');
+
+  console.log(`\nAll ${stepNum} smoke test steps passed.`);
+} finally {
+  if (deploymentTargetId) {
+    await request('DELETE', `/api/v1/deployment-targets/${deploymentTargetId}`, {token});
+  }
+  if (applicationId) {
+    await request('DELETE', `/api/v1/applications/${applicationId}`, {token});
+  }
+}
