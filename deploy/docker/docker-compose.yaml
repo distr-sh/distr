@@ -17,7 +17,7 @@ services:
       retries: 6
       start_period: 30s
   hub:
-    image: ghcr.io/distr-sh/distr-ce:2.20.1 # x-release-please-version
+    image: ghcr.io/distr-sh/distr-ce:2.21.2 # x-release-please-version
     depends_on:
       postgres:
         condition: service_healthy
@@ -32,7 +32,7 @@ services:
   # If you don't want to use the OCI registry (REGISTRY_ENABLED=false) or want to use an external S3 provider,
   # you don't need to run the storage service.
   storage:
-    image: 'rustfs/rustfs:1.0.0-alpha.83'
+    image: 'rustfs/rustfs:1.0.0-beta.4'
     ports:
       - '127.0.0.1:9000:9000'
       - '127.0.0.1:9001:9001'
@@ -43,7 +43,7 @@ services:
       RUSTFS_SECRET_KEY: local
 
   artifact-blob-cleanup:
-    image: ghcr.io/distr-sh/distr-ce:2.20.1 # x-release-please-version
+    image: ghcr.io/distr-sh/distr-ce:2.21.2 # x-release-please-version
     command: [cleanup, ArtifactBlob, --timeout, 10m]
     depends_on:
       postgres:

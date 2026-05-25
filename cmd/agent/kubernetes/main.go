@@ -307,6 +307,23 @@ func runInstallOrUpgrade(
 		if err != nil {
 			logger.Error("upgrade error", zap.Error(err))
 			pushErrorStatus(ctx, deployment, fmt.Errorf("upgrade error: %w", err))
+			// When RollbackOnFailure is true, Helm creates a new revision after rollback.
+			// Sync the tracking secret so verifyLatestHelmRelease passes on the next iteration
+			// instead of entering an infinite "revision skew" bail-out loop.
+			if recovered, recoverErr := GetLatestHelmRelease(ctx, namespace, deployment); recoverErr == nil {
+				synced := NewAgentDeployment(deployment)
+				synced.State = StateFailed
+				synced.HelmRevision = util.PtrTo(recovered.Version())
+				if util.PtrEq(currentDeployment.HelmRevision, synced.HelmRevision) {
+					logger.Debug("tracking secret is already synced")
+				} else if saveErr := SaveDeployment(ctx, namespace, synced); saveErr != nil {
+					logger.Warn("could not sync tracking secret after rollback", zap.Error(saveErr))
+				} else {
+					logger.Info("synced tracking secret after rollback", zap.Int("helmRevision", recovered.Version()))
+				}
+			} else {
+				logger.Warn("could not get helm release after rollback", zap.Error(recoverErr))
+			}
 		} else {
 			logger.Info(successMessage)
 			pushRunningStatus(ctx, deployment, successMessage)

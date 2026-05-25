@@ -39,4 +39,5 @@ type HelmOptions struct {
 	WaitStrategy      string         `json:"waitStrategy"`
 	RollbackOnFailure bool           `json:"rollbackOnFailure"`
 	CleanupOnFailure  bool           `json:"cleanupOnFailure"`
+	ForceConflicts    bool           `json:"forceConflicts"`
 }

@@ -4,6 +4,7 @@ import {DeploymentTarget, DeploymentWithLatestRevision} from '@distr-sh/distr-sd
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleExclamation, faShip} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
+import {fromBase64} from '../../util/encoding';
 import {getFormDisplayedError} from '../../util/errors';
 import {AuthService} from '../services/auth.service';
 import {DeploymentTargetsService} from '../services/deployment-targets.service';
@@ -102,9 +103,9 @@ export class DeploymentModalComponent {
         applicationVersionId: this.versionId() ?? deployment?.applicationVersionId,
         applicationEntitlementId: deployment?.applicationEntitlementId,
         releaseName: deployment?.releaseName,
-        valuesYaml: deployment?.valuesYaml ? atob(deployment.valuesYaml) : undefined,
+        valuesYaml: deployment?.valuesYaml ? fromBase64(deployment.valuesYaml) : undefined,
         swarmMode: deployment?.dockerType === 'swarm',
-        envFileData: deployment?.envFileData ? atob(deployment.envFileData) : undefined,
+        envFileData: deployment?.envFileData ? fromBase64(deployment.envFileData) : undefined,
         helmOptions: deployment?.helmOptions,
       });
     });

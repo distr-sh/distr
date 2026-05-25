@@ -1,0 +1,1 @@
+DROP INDEX DeploymentRevisionStatus_created_at_single;

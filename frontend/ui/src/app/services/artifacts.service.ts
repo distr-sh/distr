@@ -42,7 +42,20 @@ export interface BaseArtifactVersion {
   name: string;
 }
 
-export interface Artifact extends BaseArtifact, HasDownloads {}
+export type UpstreamAuthType = 'basic' | 'aws_ecr';
+
+export interface ArtifactUpstreamAuth {
+  type: UpstreamAuthType;
+  username?: string;
+  password?: string;
+}
+
+export interface Artifact extends BaseArtifact, HasDownloads {
+  upstreamUrl?: string;
+  lastSyncedAt?: string;
+  lastSyncError?: string;
+  upstreamAuthType?: UpstreamAuthType;
+}
 
 export interface TaggedArtifactVersion extends HasDownloads {
   id: string;
@@ -81,7 +94,7 @@ export class ArtifactsService {
     return this.list().pipe(
       map((ls) => ls.find((a) => a.id === id)),
       switchMap((existing) => {
-        if ((existing?.versions ?? []).length > 0) {
+        if (existing?.versions !== undefined) {
           return of(existing);
         } else if (existing) {
           return this.http.get<ArtifactWithTags>(`${this.artifactsUrl}/${id}`).pipe(tap((a) => this.cache.save(a)));
@@ -104,6 +117,34 @@ export class ArtifactsService {
         this.cache.remove({id: artifactId} as ArtifactWithTags);
       })
     );
+  }
+
+  public createArtifact(
+    name: string,
+    upstreamUrl?: string,
+    upstreamAuth?: ArtifactUpstreamAuth
+  ): Observable<ArtifactWithTags> {
+    return this.http
+      .post<ArtifactWithTags>(this.artifactsUrl, {name, upstreamUrl, upstreamAuth})
+      .pipe(tap((it) => this.cache.save(it)));
+  }
+
+  public patchUpstreamURL(artifactId: string, upstreamUrl: string | null): Observable<ArtifactWithTags> {
+    return this.http
+      .patch<ArtifactWithTags>(`${this.artifactsUrl}/${artifactId}`, {upstreamUrl})
+      .pipe(tap((it) => this.cache.save(it)));
+  }
+
+  public patchUpstreamAuth(artifactId: string, auth: ArtifactUpstreamAuth | null): Observable<ArtifactWithTags> {
+    return this.http
+      .patch<ArtifactWithTags>(`${this.artifactsUrl}/${artifactId}`, {auth})
+      .pipe(tap((it) => this.cache.save(it)));
+  }
+
+  public syncArtifact(id: string): Observable<ArtifactWithTags> {
+    return this.http
+      .post<ArtifactWithTags>(`${this.artifactsUrl}/${id}/sync`, {})
+      .pipe(tap((it) => this.cache.save(it)));
   }
 
   public deleteArtifactTag(artifact: ArtifactWithTags, tagName: string) {

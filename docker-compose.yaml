@@ -17,7 +17,7 @@ services:
       - '1025:1025'
       - '8025:8025'
   storage:
-    image: 'rustfs/rustfs:1.0.0-alpha.83'
+    image: 'rustfs/rustfs:1.0.0-beta.4'
     ports:
       - '127.0.0.1:9000:9000'
       - '127.0.0.1:9001:9001'

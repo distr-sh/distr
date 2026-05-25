@@ -82,6 +82,17 @@
           </div>
         </form>
       </div>
+      @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
+        <div class="mt-3 md:mt-0 md:ms-4">
+          <button
+            (click)="openCreateModal(newArtifactModal)"
+            type="button"
+            class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+            <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
+            Add artifact
+          </button>
+        </div>
+      }
     </div>
 
     @if (filteredArtifacts(); as artifacts) {
@@ -102,13 +113,21 @@
                   </div>
                 }
                 <div class="flex-1 min-w-0 ms-4">
-                  <a
-                    class="font-semibold text-gray-900 truncate dark:text-white hover:underline hover:text-blue-600 dark:hover:text-blue-500"
-                    [routerLink]="artifact.id">
-                    {{ artifact.name }}
-                  </a>
-                  <p class="text-sm text-gray-500 truncate dark:text-gray-400 mt-1">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <a
+                      class="font-semibold text-gray-900 truncate dark:text-white hover:underline hover:text-blue-600 dark:hover:text-blue-500"
+                      [routerLink]="artifact.id">
+                      {{ artifact.name }}
+                    </a>
+                  </div>
+                  <p class="flex items-center gap-1 text-sm text-gray-500 truncate dark:text-gray-400 mt-1">
                     <app-uuid [uuid]="artifact.id" [small]="true" />
+                    @if (auth.isVendor() && artifact.upstreamUrl) {
+                      <span
+                        class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-blue-900 dark:text-blue-300">
+                        pull-through
+                      </span>
+                    }
                   </p>
                 </div>
                 <div class="flex flex-col items-end gap-1" *appRequireVendor>
@@ -122,9 +141,171 @@
       </div>
     } @else {
       <div class="flex justify-center items-center py-8 text-gray-500 dark:text-gray-400">
-        <fa-icon [icon]="faSpinner" class="animate-spin me-2" size="lg" />
+        <app-spinner class="size-6 me-2" />
         <span>Loading&hellip;</span>
       </div>
     }
   </div>
 </section>
+
+<ng-template #newArtifactModal>
+  @let formGroup = createForm;
+
+  <div
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top"
+    class="p-4 w-200 my-auto max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900">
+    <div class="relative w-full max-h-full">
+      <div class="relative rounded-lg">
+        <div
+          class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Add Artifact</h3>
+          <button
+            type="button"
+            class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+            (click)="hideCreateModal()">
+            <fa-icon [icon]="faXmark" />
+            <span class="sr-only">Close modal</span>
+          </button>
+        </div>
+
+        <div class="p-4 md:p-5">
+          <h4 class="text-base font-semibold text-gray-900 dark:text-white">Direct upload</h4>
+          <div class="text-sm text-gray-500 dark:text-gray-400">
+            Push artifacts to your registry using a personal access token and the Docker CLI or any other OCI-compliant
+            tool. Just make sure to tag your images with the correct registry URL and artifact name. For example:
+          </div>
+          <pre class="mt-1 select-all block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
+            docker tag SOURCE-IMAGE:TAG {{ registryHost$ | async }}/{{ registrySlug$ | async }}/ARTIFACT-NAME:TAG
+            docker push {{ registryHost$ | async }}/{{ registrySlug$ | async }}/ARTIFACT-NAME:TAG
+          </pre>
+
+          <hr class="my-4 border-gray-200 dark:border-gray-600" />
+
+          <form [formGroup]="formGroup" (ngSubmit)="createArtifact()">
+            <h4 class="text-base font-semibold text-gray-900 dark:text-white">Pull-through cache</h4>
+            <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">
+              Configure this artifact with an upstream OCI registry URL to automatically sync tags from.
+            </div>
+            <div class="space-y-4">
+              <div>
+                <label for="artifact-name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                  Artifact Name
+                  <span class="text-red-500">*</span>
+                </label>
+                <input
+                  formControlName="name"
+                  autotrim
+                  autocomplete="off"
+                  type="text"
+                  id="artifact-name"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                @if (formGroup.controls.name.invalid && formGroup.controls.name.touched) {
+                  <p class="mt-1 text-xs text-red-600 dark:text-red-500">Field is required.</p>
+                }
+              </div>
+
+              <div>
+                <label for="artifact-upstream-url" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                  Upstream URL
+                  <span class="text-red-500">*</span>
+                </label>
+                <input
+                  formControlName="upstreamUrl"
+                  autotrim
+                  autocomplete="off"
+                  type="text"
+                  id="artifact-upstream-url"
+                  placeholder="e.g. registry-1.docker.io/library/nginx"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Tags are automatically synced from the upstream OCI repository.
+                </p>
+                @if (formGroup.controls.upstreamUrl.invalid && formGroup.controls.upstreamUrl.touched) {
+                  <p class="mt-1 text-xs text-red-600 dark:text-red-500">Field is required.</p>
+                }
+              </div>
+
+              <div>
+                <label
+                  for="artifact-upstream-auth-type"
+                  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >Upstream Authentication</label
+                >
+                <select
+                  formControlName="upstreamAuthType"
+                  id="artifact-upstream-auth-type"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                  <option value="none">No authentication</option>
+                  <option value="basic">Basic (Username/Password)</option>
+                  <option value="aws_ecr">AWS ECR (IAM Access Key)</option>
+                </select>
+              </div>
+
+              @if (formGroup.controls.upstreamAuthType.value !== 'none') {
+                <div>
+                  <label
+                    for="artifact-upstream-username"
+                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                    @switch (formGroup.controls.upstreamAuthType.value) {
+                      @case ('basic') {
+                        Username
+                      }
+                      @case ('aws_ecr') {
+                        AWS Access Key ID
+                      }
+                    }
+                    <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    formControlName="upstreamUsername"
+                    autotrim
+                    autocomplete="off"
+                    type="text"
+                    id="artifact-upstream-username"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                  @if (formGroup.controls.upstreamUsername.invalid && formGroup.controls.upstreamUsername.touched) {
+                    <p class="mt-1 text-xs text-red-600 dark:text-red-500">Field is required.</p>
+                  }
+                </div>
+                <div>
+                  <label
+                    for="artifact-upstream-password"
+                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                    @switch (formGroup.controls.upstreamAuthType.value) {
+                      @case ('basic') {
+                        Password
+                      }
+                      @case ('aws_ecr') {
+                        AWS Secret Access Key
+                      }
+                    }
+                    <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    formControlName="upstreamPassword"
+                    autocomplete="new-password"
+                    type="password"
+                    id="artifact-upstream-password"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                  @if (formGroup.controls.upstreamPassword.invalid && formGroup.controls.upstreamPassword.touched) {
+                    <p class="mt-1 text-xs text-red-600 dark:text-red-500">Field is required.</p>
+                  }
+                </div>
+              }
+
+              <div class="flex justify-stretch sm:justify-end space-x-2.5">
+                <button
+                  type="submit"
+                  [disabled]="createFormLoading"
+                  class="flex-1 sm:flex-none items-center justify-center text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 disabled:opacity-60 disabled:cursor-not-allowed">
+                  Add Artifact
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</ng-template>

@@ -41,6 +41,7 @@ import (
 	"github.com/distr-sh/distr/internal/registry/blob/s3"
 	"github.com/distr-sh/distr/internal/registry/manifest"
 	"github.com/distr-sh/distr/internal/registry/manifest/db"
+	"github.com/distr-sh/distr/internal/registry/upstream"
 	"github.com/getsentry/sentry-go"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-mailx/mailx"
@@ -145,6 +146,7 @@ func NewDefault(
 		WithManifestHandler(db.NewManifestHandler()),
 		WithAuthorizer(authz.NewAuthorizer()),
 		WithAuditor(audit.NewAuditor()),
+		WithUpstreamFetcher(new(upstream.Syncer)),
 		WithMiddlewares(
 			chimiddleware.Recoverer,
 			chimiddleware.RequestID,
@@ -225,5 +227,11 @@ func WithAuthorizer(a authz.Authorizer) Option {
 func WithAuditor(a audit.ArtifactAuditor) Option {
 	return func(r *registry) {
 		r.manifests.audit = a
+	}
+}
+
+func WithUpstreamFetcher(fetcher UpstreamBlobFetcher) Option {
+	return func(r *registry) {
+		r.blobs.upstreamFetcher = fetcher
 	}
 }

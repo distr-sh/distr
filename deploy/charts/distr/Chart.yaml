@@ -14,8 +14,8 @@ icon: >-
   https://github.com/distr-sh/distr/raw/refs/heads/main/frontend/ui/public/distr-logo.svg
 home: https://distr.sh/docs/
 type: application
-version: 2.20.1
-appVersion: 2.20.1
+version: 2.21.2
+appVersion: 2.21.2
 dependencies:
   - name: postgresql
     repository: oci://registry-1.docker.io/bitnamicharts
@@ -23,5 +23,5 @@ dependencies:
     condition: postgresql.enabled
   - name: rustfs
     repository: https://charts.rustfs.com
-    version: 0.1.x
+    version: 0.4.x
     condition: rustfs.enabled

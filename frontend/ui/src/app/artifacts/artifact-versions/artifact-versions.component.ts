@@ -1,37 +1,57 @@
-import {OverlayModule} from '@angular/cdk/overlay';
+import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
-import {Component, computed, inject, resource, signal} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {Component, computed, inject, resource, signal, TemplateRef} from '@angular/core';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
+import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faBox,
+  faCheck,
   faEllipsisVertical,
+  faExclamationTriangle,
   faFileSignature,
-  faSpinner,
+  faKey,
+  faPen,
+  faRotate,
   faTrash,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import {catchError, distinctUntilChanged, filter, firstValueFrom, map, NEVER, switchMap, tap} from 'rxjs';
+import {
+  catchError,
+  distinctUntilChanged,
+  filter,
+  firstValueFrom,
+  lastValueFrom,
+  map,
+  NEVER,
+  startWith,
+  switchMap,
+  tap,
+} from 'rxjs';
 import {getRemoteEnvironment} from '../../../env/remote';
 import {RelativeDatePipe} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {BytesPipe} from '../../../util/units';
 import {ClipComponent} from '../../components/clip.component';
+import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {UuidComponent} from '../../components/uuid';
+import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {RequireVendorDirective} from '../../directives/required-role.directive';
 import {
   ArtifactsService,
+  ArtifactUpstreamAuth,
   ArtifactWithTags,
   HasDownloads,
   TaggedArtifactVersion,
+  UpstreamAuthType,
 } from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsCache} from '../../services/customer-organizations.service';
 import {ImageUploadService} from '../../services/image-upload.service';
 import {OrganizationService} from '../../services/organization.service';
-import {OverlayService} from '../../services/overlay.service';
+import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
 import {ArtifactsDownloadCountComponent, ArtifactsDownloadedByComponent, ArtifactsHashComponent} from '../components';
 
@@ -46,10 +66,13 @@ import {ArtifactsDownloadCountComponent, ArtifactsDownloadedByComponent, Artifac
     ArtifactsDownloadedByComponent,
     ArtifactsHashComponent,
     ClipComponent,
+    SpinnerComponent,
     BytesPipe,
     SecureImagePipe,
     RequireVendorDirective,
     OverlayModule,
+    ReactiveFormsModule,
+    AutotrimDirective,
   ],
   templateUrl: './artifact-versions.component.html',
   providers: [CustomerOrganizationsCache],
@@ -63,16 +86,51 @@ export class ArtifactVersionsComponent {
   private readonly overlay = inject(OverlayService);
   private readonly imageUploadService = inject(ImageUploadService);
   private readonly toast = inject(ToastService);
+  private readonly fb = inject(FormBuilder).nonNullable;
 
   protected readonly faBox = faBox;
   protected readonly faXmark = faXmark;
   protected readonly faTrash = faTrash;
   protected readonly faEllipsisVertical = faEllipsisVertical;
-  protected readonly faSpinner = faSpinner;
   protected readonly faFileSignature = faFileSignature;
+  protected readonly faRotate = faRotate;
+  protected readonly faPen = faPen;
+  protected readonly faKey = faKey;
+  protected readonly faCheck = faCheck;
+  protected readonly faExclamationTriangle = faExclamationTriangle;
+
+  protected readonly syncing = signal(false);
 
   protected readonly showDropdown = signal(false);
   protected readonly signatureOverlayDigest = signal<string | void>(undefined);
+
+  protected readonly upstreamURLForm = new FormGroup({
+    upstreamUrl: this.fb.control('', Validators.required),
+  });
+  protected upstreamURLFormLoading = false;
+  protected upstreamURLModalRef?: DialogRef;
+
+  protected readonly upstreamAuthForm = new FormGroup({
+    upstreamAuthType: this.fb.control<UpstreamAuthType | 'none'>('none', Validators.required),
+    upstreamUsername: this.fb.control('', Validators.required),
+    upstreamPassword: this.fb.control('', Validators.required),
+  });
+  protected upstreamAuthFormLoading = false;
+  protected upstreamAuthModalRef?: DialogRef;
+
+  constructor() {
+    this.upstreamAuthForm.controls.upstreamAuthType.valueChanges
+      .pipe(startWith(this.upstreamAuthForm.controls.upstreamAuthType.value), takeUntilDestroyed())
+      .subscribe((authType) => {
+        if (authType === 'none') {
+          this.upstreamAuthForm.controls.upstreamUsername.disable();
+          this.upstreamAuthForm.controls.upstreamPassword.disable();
+        } else {
+          this.upstreamAuthForm.controls.upstreamUsername.enable();
+          this.upstreamAuthForm.controls.upstreamPassword.enable();
+        }
+      });
+  }
 
   protected readonly artifact = toSignal(
     this.route.params.pipe(
@@ -165,6 +223,74 @@ export class ArtifactVersionsComponent {
     };
   }
 
+  openUpstreamURLModal(artifact: ArtifactWithTags, templateRef: TemplateRef<unknown>) {
+    this.upstreamURLForm.reset({upstreamUrl: artifact.upstreamUrl ?? ''});
+    this.upstreamURLModalRef?.close();
+    this.upstreamURLModalRef = this.overlay.showModal(templateRef, {
+      positionStrategy: new GlobalPositionStrategy().centerHorizontally().centerVertically(),
+    });
+  }
+
+  async saveUpstreamURL(artifact: ArtifactWithTags) {
+    this.upstreamURLForm.markAllAsTouched();
+    if (this.upstreamURLForm.invalid) {
+      return;
+    }
+    this.upstreamURLFormLoading = true;
+
+    try {
+      const {upstreamUrl} = this.upstreamURLForm.value;
+      await lastValueFrom(this.artifacts.patchUpstreamURL(artifact.id, upstreamUrl || null));
+      this.toast.success('Upstream URL updated');
+      this.upstreamURLModalRef?.close();
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) this.toast.error(msg);
+    } finally {
+      this.upstreamURLFormLoading = false;
+    }
+  }
+
+  openUpstreamAuthModal(artifact: ArtifactWithTags, templateRef: TemplateRef<unknown>) {
+    this.upstreamAuthForm.reset({
+      upstreamAuthType: artifact.upstreamAuthType ?? 'none',
+      upstreamUsername: '',
+      upstreamPassword: '',
+    });
+    this.upstreamAuthModalRef?.close();
+    this.upstreamAuthModalRef = this.overlay.showModal(templateRef, {
+      positionStrategy: new GlobalPositionStrategy().centerHorizontally().centerVertically(),
+    });
+  }
+
+  async saveUpstreamAuth(artifact: ArtifactWithTags) {
+    this.upstreamAuthForm.markAllAsTouched();
+    if (this.upstreamAuthForm.invalid) {
+      return;
+    }
+    this.upstreamAuthFormLoading = true;
+
+    try {
+      const {upstreamAuthType, upstreamUsername, upstreamPassword} = this.upstreamAuthForm.value;
+      let auth: ArtifactUpstreamAuth | null = null;
+      if (upstreamAuthType && upstreamAuthType !== 'none') {
+        auth = {
+          type: upstreamAuthType,
+          username: upstreamUsername || undefined,
+          password: upstreamPassword || undefined,
+        };
+      }
+      await lastValueFrom(this.artifacts.patchUpstreamAuth(artifact.id, auth));
+      this.toast.success('Upstream authentication updated');
+      this.upstreamAuthModalRef?.close();
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) this.toast.error(msg);
+    } finally {
+      this.upstreamAuthFormLoading = false;
+    }
+  }
+
   public async uploadImage(data: ArtifactWithTags) {
     const fileId = await firstValueFrom(this.imageUploadService.showDialog({imageUrl: data.imageUrl}));
     if (!fileId || data.imageUrl?.includes(fileId)) {
@@ -212,6 +338,24 @@ export class ArtifactVersionsComponent {
         tap(() => this.toast.success(`Tag "${tagName}" removed successfully`))
       )
       .subscribe();
+  }
+
+  public syncArtifact(artifact: ArtifactWithTags): void {
+    if (this.syncing()) return;
+    this.syncing.set(true);
+    this.artifacts
+      .syncArtifact(artifact.id)
+      .pipe(
+        catchError((e) => {
+          const msg = getFormDisplayedError(e);
+          if (msg) {
+            this.toast.error(msg);
+          }
+          return NEVER;
+        }),
+        tap(() => this.toast.success('Sync completed'))
+      )
+      .subscribe({complete: () => this.syncing.set(false)});
   }
 
   protected showSignatureOverlay(version: TaggedArtifactVersion) {

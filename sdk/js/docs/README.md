@@ -70,3 +70,8 @@
 - [UpdateAllDeploymentsUpdatedTarget](type-aliases/UpdateAllDeploymentsUpdatedTarget.md)
 - [UpdateDeploymentParams](type-aliases/UpdateDeploymentParams.md)
 - [UserRole](type-aliases/UserRole.md)
+
+## Functions
+
+- [fromBase64](functions/fromBase64.md)
+- [toBase64](functions/toBase64.md)

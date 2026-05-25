@@ -2,6 +2,7 @@
 title: Prometheus Integration
 description: Monitor your Distr instance with Prometheus by scraping built-in metrics for deployments, organizations, and Go runtime data.
 sidebar:
+  label: Prometheus Integration
   order: 6
 ---
 

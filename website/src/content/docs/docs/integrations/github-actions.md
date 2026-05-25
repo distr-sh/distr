@@ -3,6 +3,7 @@ title: Automatic Deployments from GitHub
 description: Automatically create new versions and update customer deployments whenever you push a release to GitHub using the Distr GitHub Action.
 slug: docs/integrations/github-actions
 sidebar:
+  label: Automatic Deployments from GitHub
   order: 1
 ---
 

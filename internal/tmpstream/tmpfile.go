@@ -18,7 +18,7 @@ func (t *tmpFileStream) Destroy() error {
 }
 
 // Get implements TmpStream.
-func (t *tmpFileStream) Get() (io.ReadSeekCloser, error) {
+func (t *tmpFileStream) Get() (ReadSeekAtCloser, error) {
 	if file, err := os.Open(t.fileName); err != nil {
 		return nil, fmt.Errorf("failed to open tempfile: %w", err)
 	} else {
