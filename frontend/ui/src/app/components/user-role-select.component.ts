@@ -1,20 +1,7 @@
 import {Component, computed, forwardRef, input, signal} from '@angular/core';
 import {ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR} from '@angular/forms';
 import {UserRole} from '@distr-sh/distr-sdk';
-
-const userRoleRank: Record<UserRole, number> = {
-  read_only: 0,
-  read_write: 1,
-  admin: 2,
-};
-
-export const ALL_USER_ROLES: UserRole[] = ['read_only', 'read_write', 'admin'];
-
-export const USER_ROLE_LABELS: Record<UserRole, string> = {
-  read_only: 'Viewer',
-  read_write: 'User',
-  admin: 'Administrator',
-};
+import {USER_ROLE_LABELS, userRolesAtOrBelow} from '../../util/user-role';
 
 @Component({
   selector: 'app-user-role-select',
@@ -22,6 +9,7 @@ export const USER_ROLE_LABELS: Record<UserRole, string> = {
   template: `
     <select
       [id]="id()"
+      [attr.aria-label]="ariaLabel()"
       [class]="selectClass()"
       [disabled]="isDisabled()"
       [ngModel]="value()"
@@ -41,20 +29,14 @@ export class UserRoleSelectComponent implements ControlValueAccessor {
   public readonly maxRole = input<UserRole>();
   public readonly selectClass = input<string>('');
   public readonly id = input<string>();
+  public readonly ariaLabel = input<string>();
   public readonly emptyOptionLabel = input<string>();
 
   protected readonly value = signal<UserRole | undefined>(undefined);
   protected readonly isDisabled = signal(false);
   protected readonly labels = USER_ROLE_LABELS;
 
-  protected readonly options = computed<UserRole[]>(() => {
-    const max = this.maxRole();
-    if (!max) {
-      return ALL_USER_ROLES;
-    }
-    const cap = userRoleRank[max];
-    return ALL_USER_ROLES.filter((r) => userRoleRank[r] <= cap);
-  });
+  protected readonly options = computed<UserRole[]>(() => userRolesAtOrBelow(this.maxRole()));
 
   writeValue(value: UserRole | undefined): void {
     this.value.set(value);

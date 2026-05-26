@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/distr-sh/distr/internal/util"
@@ -35,7 +36,9 @@ func ParseUserRole(value string) (UserRole, error) {
 }
 
 // userRoleRank orders the role hierarchy: admin > read_write > read_only.
-// Unknown roles rank below every valid role.
+// Unknown roles rank above every valid role so that LessOrEqualUserRole fails
+// closed — an invalid role compares as more privileged than any real one,
+// which makes authorization checks reject it.
 func userRoleRank(r UserRole) int {
 	switch r {
 	case UserRoleReadOnly:
@@ -45,7 +48,7 @@ func userRoleRank(r UserRole) int {
 	case UserRoleAdmin:
 		return 2
 	default:
-		return -1
+		return math.MaxInt
 	}
 }
 

@@ -24,7 +24,7 @@ On the top right corner, click on the **Create token** button.
 ![Personal Access Tokens](../../../../assets/docs/integrations/pat_create.png)
 
 You will be prompted to enter a name, an expiry date, and a role for the token.
-You can leave the name and expiry empty, but we recommend to set a descriptive label and an expiry date to keep your tokens organized and secure.
+You can leave the name and expiry empty, but we recommend setting a descriptive label and an expiry date to keep your tokens organized and secure.
 
 ![Personal Access Tokens](../../../../assets/docs/integrations/pat_details.png)
 

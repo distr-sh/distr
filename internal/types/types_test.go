@@ -71,10 +71,10 @@ func TestLessOrEqualUserRole(t *testing.T) {
 			To(Equal(tc.expected), "LessOrEqualUserRole(%q, %q)", tc.a, tc.b)
 	}
 
-	// Unknown roles rank below every valid role, so they are always ≤ a valid role
-	// and a valid role is never ≤ an unknown role.
-	g.Expect(LessOrEqualUserRole(UserRole("unknown"), UserRoleReadOnly)).To(BeTrue())
-	g.Expect(LessOrEqualUserRole(UserRoleReadOnly, UserRole("unknown"))).To(BeFalse())
+	// Unknown roles rank above every valid role so authorization fails closed:
+	// an invalid carried role is never ≤ a real role and never wins a min cap.
+	g.Expect(LessOrEqualUserRole(UserRole("unknown"), UserRoleAdmin)).To(BeFalse())
+	g.Expect(LessOrEqualUserRole(UserRoleAdmin, UserRole("unknown"))).To(BeTrue())
 }
 
 func TestDeploymentTypeParsing(t *testing.T) {
