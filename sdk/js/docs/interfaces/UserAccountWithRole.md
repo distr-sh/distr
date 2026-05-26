@@ -12,6 +12,12 @@
 
 ## Properties
 
+### accountRole
+
+> **accountRole**: [`AccountRole`](../type-aliases/AccountRole.md)
+
+---
+
 ### createdAt?
 
 > `optional` **createdAt?**: `string`
@@ -104,6 +110,11 @@
 
 ---
 
-### userRole
+### ~~userRole~~
 
 > **userRole**: [`AccountRole`](../type-aliases/AccountRole.md)
+
+#### Deprecated
+
+Use [accountRole](#accountrole). This field is a server-side alias kept for
+backwards compatibility and may be removed in a future release.
