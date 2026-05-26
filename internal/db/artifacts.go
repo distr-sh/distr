@@ -369,10 +369,18 @@ func GetOrCreateArtifact(ctx context.Context, orgID uuid.UUID, artifactName stri
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`INSERT INTO Artifact AS a (name, organization_id)
-		VALUES (@name, @orgId)
-		ON CONFLICT ON CONSTRAINT Artifact_unique_name DO UPDATE SET name = EXCLUDED.name
-		RETURNING `+artifactOutputExpr,
+		`WITH inserted AS (
+			INSERT INTO Artifact (name, organization_id)
+			VALUES (@name, @orgId)
+			ON CONFLICT ON CONSTRAINT Artifact_unique_name DO NOTHING
+			RETURNING *
+		)
+		SELECT`+artifactOutputExpr+`FROM inserted a
+		UNION ALL
+		SELECT`+artifactOutputExpr+`FROM Artifact a
+		WHERE a.organization_id = @orgId
+			AND a.name = @name
+			AND NOT EXISTS (SELECT 1 FROM inserted)`,
 		pgx.NamedArgs{
 			"name":  artifactName,
 			"orgId": orgID,
