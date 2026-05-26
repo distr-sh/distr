@@ -12,6 +12,7 @@ import {
   faAsterisk,
   faBox,
   faBoxesStacked,
+  faBuilding,
   faChevronDown,
   faCreditCard,
   faDashboard,
@@ -28,7 +29,11 @@ import {map, of, switchMap} from 'rxjs';
 import {GITHUB_URL} from '../../../constants';
 import {buildConfig} from '../../../data';
 import {environment} from '../../../env/env';
-import {RequireCustomerDirective, RequireVendorDirective} from '../../directives/required-role.directive';
+import {
+  RequireCustomerDirective,
+  RequirePartnerDirective,
+  RequireVendorDirective,
+} from '../../directives/required-role.directive';
 import {AuthService} from '../../services/auth.service';
 import {ContextService} from '../../services/context.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
@@ -49,6 +54,7 @@ import {TutorialsService} from '../../services/tutorials.service';
     NgTemplateOutlet,
     RequireVendorDirective,
     RequireCustomerDirective,
+    RequirePartnerDirective,
   ],
 })
 export class SideBarComponent {
@@ -72,6 +78,7 @@ export class SideBarComponent {
   protected readonly faUsers = faUsers;
   protected readonly faPalette = faPalette;
   protected readonly faAddressBook = faAddressBook;
+  protected readonly faBuilding = faBuilding;
   protected readonly faBox = faBox;
   protected readonly faCreditCard = faCreditCard;
   protected readonly faArrowRightLong = faArrowRightLong;

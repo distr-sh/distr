@@ -7,12 +7,13 @@ import (
 
 func CustomerOrganizationToAPI(customerOrganization types.CustomerOrganization) api.CustomerOrganization {
 	return api.CustomerOrganization{
-		ID:        customerOrganization.ID,
-		CreatedAt: customerOrganization.CreatedAt,
-		Name:      customerOrganization.Name,
-		ImageID:   customerOrganization.ImageID,
-		ImageURL:  CreateImageURL(customerOrganization.ImageID),
-		Features:  customerOrganization.Features,
+		ID:                    customerOrganization.ID,
+		CreatedAt:             customerOrganization.CreatedAt,
+		Name:                  customerOrganization.Name,
+		ImageID:               customerOrganization.ImageID,
+		ImageURL:              CreateImageURL(customerOrganization.ImageID),
+		Features:              customerOrganization.Features,
+		PartnerOrganizationID: customerOrganization.PartnerOrganizationID,
 	}
 }
 

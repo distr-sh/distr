@@ -15,6 +15,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -28,7 +29,7 @@ func ApplicationEntitlementsRouter(r chiopenapi.Router) {
 	r.Get("/", getApplicationEntitlements).
 		With(option.Description("List all application entitlements")).
 		With(option.Response(http.StatusOK, []types.ApplicationEntitlement{}))
-	r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
+	r.With(middleware.RequireVendorOrPartner, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 		Post("/", createApplicationEntitlement).
 		With(option.Description("Create a new application entitlement")).
 		With(option.Request(types.ApplicationEntitlementWithVersions{}))
@@ -41,7 +42,7 @@ func ApplicationEntitlementsRouter(r chiopenapi.Router) {
 			With(option.Description("Get an application entitlement")).
 			With(option.Request(ApplicationEntitlementRequest{})).
 			With(option.Response(http.StatusOK, types.ApplicationEntitlement{}))
-		r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
+		r.With(middleware.RequireVendorOrPartner, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 			Group(func(r chiopenapi.Router) {
 				r.Delete("/", deleteApplicationEntitlement).
 					With(option.Description("Delete an application entitlement")).
@@ -66,6 +67,18 @@ func createApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	entitlement.OrganizationID = *auth.CurrentOrgID()
+
+	if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
+		if entitlement.CustomerOrganizationID == nil {
+			http.Error(w, "customer organization is required", http.StatusBadRequest)
+			return
+		}
+		co, coErr := db.GetCustomerOrganizationByID(ctx, *entitlement.CustomerOrganizationID)
+		if coErr != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
+			http.Error(w, "customer is not assigned to your partner organization", http.StatusForbidden)
+			return
+		}
+	}
 
 	sanitizeRegistryInput(entitlement)
 
@@ -229,26 +242,28 @@ func getApplicationEntitlements(w http.ResponseWriter, r *http.Request) {
 			applicationId = &id
 		}
 	}
-	if auth.CurrentCustomerOrgID() == nil {
-		if entitlements, err := db.GetApplicationEntitlementsWithOrganizationID(
-			ctx, *auth.CurrentOrgID(), applicationId); err != nil {
-			internalctx.GetLogger(ctx).Error("failed to get entitlements", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			w.WriteHeader(http.StatusInternalServerError)
-		} else {
-			RespondJSON(w, entitlements)
-		}
-	} else {
-		if entitlements, err := db.GetApplicationEntitlementsWithCustomerOrganizationID(
+	var (
+		entitlements []types.ApplicationEntitlement
+		err          error
+	)
+	if auth.CurrentCustomerOrgID() != nil {
+		entitlements, err = db.GetApplicationEntitlementsWithCustomerOrganizationID(
 			ctx, *auth.CurrentCustomerOrgID(), *auth.CurrentOrgID(), applicationId,
-		); err != nil {
-			internalctx.GetLogger(ctx).Error("failed to get entitlements", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			w.WriteHeader(http.StatusInternalServerError)
-		} else {
-			RespondJSON(w, entitlements)
-		}
+		)
+	} else if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
+		entitlements, err = db.GetApplicationEntitlementsByPartnerOrgID(
+			ctx, *partnerOrgID, *auth.CurrentOrgID(), applicationId,
+		)
+	} else {
+		entitlements, err = db.GetApplicationEntitlementsWithOrganizationID(ctx, *auth.CurrentOrgID(), applicationId)
 	}
+	if err != nil {
+		internalctx.GetLogger(ctx).Error("failed to get entitlements", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	RespondJSON(w, entitlements)
 }
 
 func getApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
@@ -302,6 +317,12 @@ func canSeeEntitlement(auth authinfo.AuthInfo, entitlement *types.ApplicationEnt
 	}
 	if auth.CurrentCustomerOrgID() != nil {
 		if entitlement.CustomerOrganizationID == nil || *entitlement.CustomerOrganizationID != *auth.CurrentCustomerOrgID() {
+			return false
+		}
+	}
+	if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
+		if entitlement.CustomerOrganization == nil ||
+			!util.PtrEq(entitlement.CustomerOrganization.PartnerOrganizationID, partnerOrgID) {
 			return false
 		}
 	}

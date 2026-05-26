@@ -10,6 +10,7 @@ export interface CreateUserAccountRequest {
   name?: string;
   userRole: UserRole;
   customerOrganizationId?: string;
+  partnerOrganizationId?: string;
 }
 
 export interface PatchUserAccountRequest {

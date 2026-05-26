@@ -62,15 +62,16 @@ func GetDeploymentTargets(
 	ctx context.Context,
 	orgID uuid.UUID,
 	customerOrgID *uuid.UUID,
+	partnerOrgID *uuid.UUID,
 ) ([]types.DeploymentTargetFull, error) {
 	db := internalctx.GetDb(ctx)
-	isVendor := customerOrgID == nil
+	isVendor := customerOrgID == nil && partnerOrgID == nil
 	if rows, err := db.Query(ctx,
 		"SELECT"+deploymentTargetFullOutputExpr+"FROM"+deploymentTargetFromExpr+
 			"WHERE dt.organization_id = @orgId "+
-			"AND (@isVendor OR dt.customer_organization_id = @customerOrgId) "+
+			"AND (@isVendor OR dt.customer_organization_id = @customerOrgId OR co.partner_organization_id = @partnerOrgId) "+
 			"ORDER BY co.name, dt.name",
-		pgx.NamedArgs{"orgId": orgID, "customerOrgId": customerOrgID, "isVendor": isVendor},
+		pgx.NamedArgs{"orgId": orgID, "customerOrgId": customerOrgID, "isVendor": isVendor, "partnerOrgId": partnerOrgID},
 	); err != nil {
 		return nil, fmt.Errorf("failed to query DeploymentTargets: %w", err)
 	} else if result, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.DeploymentTargetFull]); err != nil {
@@ -113,16 +114,17 @@ func GetDeploymentTarget(
 	ctx context.Context,
 	id uuid.UUID,
 	orgID *uuid.UUID,
+	partnerOrgID *uuid.UUID,
 ) (*types.DeploymentTargetFull, error) {
 	db := internalctx.GetDb(ctx)
-	var args pgx.NamedArgs
 	query := "SELECT" + deploymentTargetFullOutputExpr + "FROM" + deploymentTargetFromExpr +
 		" WHERE dt.id = @id "
+	args := pgx.NamedArgs{"id": id, "orgId": orgID, "partnerOrgId": partnerOrgID}
 	if orgID != nil {
-		args = pgx.NamedArgs{"id": id, "orgId": *orgID, "checkOrg": true}
 		query += " AND dt.organization_id = @orgId"
-	} else {
-		args = pgx.NamedArgs{"id": id, "checkOrg": false}
+	}
+	if partnerOrgID != nil {
+		query += " AND co.partner_organization_id = @partnerOrgId"
 	}
 	rows, err := db.Query(ctx, query, args)
 	if err != nil {

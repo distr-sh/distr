@@ -20,6 +20,7 @@ import (
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/httprate"
 	"github.com/google/uuid"
@@ -89,6 +90,8 @@ func getUserAccountsHandler(w http.ResponseWriter, r *http.Request) {
 
 	if customerOrgID := auth.CurrentCustomerOrgID(); customerOrgID != nil {
 		userAccounts, err = db.GetUserAccountsByCustomerOrgID(ctx, *customerOrgID)
+	} else if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
+		userAccounts, err = db.GetUserAccountsByPartnerOrgID(ctx, *partnerOrgID)
 	} else {
 		userAccounts, err = db.GetUserAccountsByOrgID(ctx, *auth.CurrentOrgID())
 	}
@@ -121,33 +124,31 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if customerOrgID := auth.CurrentCustomerOrgID(); customerOrgID != nil {
-		if *auth.CurrentUserRole() != types.UserRoleAdmin {
-			http.Error(w, "must be admin to create users", http.StatusForbidden)
-			return
+	if err := validateCreateUserAccount(ctx, &body); err != nil {
+		if errors.Is(err, apierrors.ErrBadRequest) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else if errors.Is(err, apierrors.ErrForbidden) {
+			http.Error(w, err.Error(), http.StatusForbidden)
+		} else {
+			log.Error("create user validation error", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
-
-		body.CustomerOrganizationID = customerOrgID
-	} else if *auth.CurrentUserRole() != types.UserRoleAdmin && body.CustomerOrganizationID == nil {
-		http.Error(w, "user must be admin to create non-customer users", http.StatusForbidden)
 		return
 	}
 
 	var customerOrganization *types.CustomerOrganizationWithUsage
 	if body.CustomerOrganizationID != nil {
-		if co, err := db.GetCustomerOrganizationByID(
-			ctx,
-			*body.CustomerOrganizationID,
-		); errors.Is(err, apierrors.ErrNotFound) || (err == nil && co.OrganizationID != *auth.CurrentOrgID()) {
-			http.Error(w, "customer does not exist", http.StatusBadRequest)
+		customerOrganization, err = getVerifiedCustomerOrganization(ctx, *body.CustomerOrganizationID)
+		if err != nil {
+			if errors.Is(err, apierrors.ErrBadRequest) {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+			} else {
+				log.Error("create user getting customer organization error", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			}
 			return
-		} else if err != nil {
-			err = fmt.Errorf("failed to get customer: %w", err)
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		} else {
-			customerOrganization = co
 		}
 	}
 
@@ -172,29 +173,12 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		var limitReached bool
-		if customerOrganization != nil {
-			limitReached, err = subscription.IsCustomerUserAccountLimitReached(
-				organization.Organization,
-				*customerOrganization,
-			)
-			if err != nil {
-				err = fmt.Errorf("failed to check customer user account limit: %w", err)
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return err
-			}
-		} else {
-			limitReached, err = subscription.IsVendorUserAccountLimitReached(ctx, organization.Organization)
-			if err != nil {
-				err = fmt.Errorf("failed to check vendor user account limit: %w", err)
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return err
-			}
-		}
-
-		if limitReached {
+		if limitReached, err := checkUserCreationLimits(ctx, organization.Organization, customerOrganization); err != nil {
+			log.Error("limit check error", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return err
+		} else if limitReached {
 			err = errors.New("user limit reached")
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return err
@@ -224,6 +208,7 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 			organization.ID,
 			body.UserRole,
 			body.CustomerOrganizationID,
+			body.PartnerOrganizationID,
 		); errors.Is(err, apierrors.ErrAlreadyExists) {
 			http.Error(w, "user is already part of this organization", http.StatusBadRequest)
 			return err
@@ -261,9 +246,91 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	RespondJSON(w, api.CreateUserAccountResponse{
-		User:      userAccount.AsUserAccountWithRole(body.UserRole, body.CustomerOrganizationID, time.Now()),
+		User: userAccount.AsUserAccountWithRole(
+			body.UserRole, body.CustomerOrganizationID, body.PartnerOrganizationID, time.Now()),
 		InviteURL: inviteURL,
 	})
+}
+
+func validateCreateUserAccount(ctx context.Context, body *api.CreateUserAccountRequest) error {
+	auth := auth.Authentication.Require(ctx)
+
+	if customerOrgID := auth.CurrentCustomerOrgID(); customerOrgID != nil {
+		if *auth.CurrentUserRole() != types.UserRoleAdmin {
+			return apierrors.NewForbidden("must be admin to create users")
+		}
+		body.CustomerOrganizationID = customerOrgID
+	} else if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
+		if *auth.CurrentUserRole() != types.UserRoleAdmin {
+			return apierrors.NewForbidden("must be admin to create users")
+		}
+		// Partners can only create users in their own partner org or their assigned customers.
+		if body.PartnerOrganizationID != nil && *body.PartnerOrganizationID != *partnerOrgID {
+			return apierrors.NewForbidden("cannot create users for a different partner organization")
+		}
+		if body.CustomerOrganizationID == nil {
+			body.PartnerOrganizationID = partnerOrgID
+		}
+	} else if *auth.CurrentUserRole() != types.UserRoleAdmin &&
+		body.CustomerOrganizationID == nil && body.PartnerOrganizationID == nil {
+		return apierrors.NewForbidden("user must be admin to create non-customer users")
+	}
+
+	if body.CustomerOrganizationID != nil && body.PartnerOrganizationID != nil {
+		return apierrors.NewBadRequest("cannot assign user to both a customer and a partner organization")
+	}
+
+	if body.PartnerOrganizationID != nil && auth.CurrentPartnerOrgID() == nil {
+		err := db.ValidatePartnerOrgBelongsToOrg(ctx, *body.PartnerOrganizationID, *auth.CurrentOrgID())
+		if errors.Is(err, apierrors.ErrNotFound) {
+			return apierrors.NewBadRequest("partner organization does not exist")
+		} else if err != nil {
+			return fmt.Errorf("failed to validate partner org: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func getVerifiedCustomerOrganization(ctx context.Context, id uuid.UUID) (*types.CustomerOrganizationWithUsage, error) {
+	auth := auth.Authentication.Require(ctx)
+
+	co, err := db.GetCustomerOrganizationByID(ctx, id)
+	if errors.Is(err, apierrors.ErrNotFound) {
+		return nil, apierrors.NewBadRequest("customer does not exist")
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to get customer: %w", err)
+	} else if co.OrganizationID != *auth.CurrentOrgID() {
+		return nil, apierrors.NewBadRequest("customer does not exist")
+	}
+
+	// Partner users can only create users in customers assigned to their partner org.
+	partnerOrgID := auth.CurrentPartnerOrgID()
+	if partnerOrgID != nil && !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
+		return nil, apierrors.NewForbidden("customer is not assigned to your partner organization")
+	}
+
+	return co, nil
+}
+
+func checkUserCreationLimits(
+	ctx context.Context,
+	organization types.Organization,
+	customerOrganization *types.CustomerOrganizationWithUsage,
+) (bool, error) {
+	if customerOrganization != nil {
+		limitReached, err := subscription.IsCustomerUserAccountLimitReached(organization, *customerOrganization)
+		if err != nil {
+			return false, fmt.Errorf("failed to check customer user account limit: %w", err)
+		}
+		return limitReached, nil
+	}
+
+	limitReached, err := subscription.IsVendorUserAccountLimitReached(ctx, organization)
+	if err != nil {
+		return false, fmt.Errorf("failed to check vendor user account limit: %w", err)
+	}
+	return limitReached, nil
 }
 
 func patchUserAccountHandler() http.HandlerFunc {
@@ -274,12 +341,12 @@ func patchUserAccountHandler() http.HandlerFunc {
 		userAccount := internalctx.GetUserAccount(ctx)
 
 		if *auth.CurrentUserRole() != types.UserRoleAdmin {
-			if auth.CurrentCustomerOrgID() != nil {
+			if auth.CurrentCustomerOrgID() != nil || auth.CurrentPartnerOrgID() != nil {
 				http.Error(w, "admin role needed to patch user", http.StatusForbidden)
 				return
 			}
 
-			if userAccount.CustomerOrganizationID == nil {
+			if userAccount.CustomerOrganizationID == nil && userAccount.PartnerOrganizationID == nil {
 				http.Error(w, "admin role needed to patch non-customer user", http.StatusForbidden)
 				return
 			}
@@ -309,6 +376,7 @@ func patchUserAccountHandler() http.HandlerFunc {
 				*auth.CurrentOrgID(),
 				*body.UserRole,
 				userAccount.CustomerOrganizationID,
+				userAccount.PartnerOrganizationID,
 			)
 			if errors.Is(err, apierrors.ErrNotFound) {
 				http.NotFound(w, r)
@@ -334,6 +402,7 @@ func patchUserAccountHandler() http.HandlerFunc {
 			*userAccount = user.AsUserAccountWithRole(
 				userAccount.UserRole,
 				userAccount.CustomerOrganizationID,
+				userAccount.PartnerOrganizationID,
 				userAccount.JoinedOrgAt,
 			)
 		}
@@ -353,7 +422,8 @@ func resendUserInviteHandler() http.HandlerFunc {
 			return
 		}
 
-		userAccount, err := db.GetUserAccountWithRole(ctx, userAccountID, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID())
+		userAccount, err := db.GetUserAccountWithRole(
+			ctx, userAccountID, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
 		if errors.Is(err, apierrors.ErrNotFound) {
 			http.NotFound(w, r)
 			return
@@ -405,12 +475,12 @@ func deleteUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 	auth := auth.Authentication.Require(ctx)
 
 	if *auth.CurrentUserRole() != types.UserRoleAdmin {
-		if auth.CurrentCustomerOrgID() != nil {
+		if auth.CurrentCustomerOrgID() != nil || auth.CurrentPartnerOrgID() != nil {
 			http.Error(w, "admin role needed to delete user", http.StatusForbidden)
 			return
 		}
 
-		if userAccount.CustomerOrganizationID == nil {
+		if userAccount.CustomerOrganizationID == nil && userAccount.PartnerOrganizationID == nil {
 			http.Error(w, "admin role needed to delete non-customer user", http.StatusForbidden)
 			return
 		}
@@ -462,6 +532,7 @@ func userAccountMiddleware(h http.Handler) http.Handler {
 			userId,
 			*auth.CurrentOrgID(),
 			auth.CurrentCustomerOrgID(),
+			auth.CurrentPartnerOrgID(),
 		); err != nil {
 			if errors.Is(err, apierrors.ErrNotFound) {
 				http.NotFound(w, r)

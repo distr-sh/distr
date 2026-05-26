@@ -21,7 +21,8 @@ const (
 		co.organization_id,
 		co.image_id,
 		co.name,
-		co.features
+		co.features,
+		co.partner_organization_id
 	`
 	customerOrganizationWithUsageOutputExpr = customerOrganizationOutputExpr + `,
 		count(distinct(oua.user_account_id)) as user_count,
@@ -54,12 +55,13 @@ func ValidateCustomerOrgBelongsToOrg(ctx context.Context, customerOrgID uuid.UUI
 func CreateCustomerOrganization(ctx context.Context, customerOrg *types.CustomerOrganization) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		"INSERT INTO CustomerOrganization AS co (organization_id, image_id, name) "+
-			"VALUES (@organizationId, @imageId, @name) RETURNING "+customerOrganizationOutputExpr,
+		"INSERT INTO CustomerOrganization AS co (organization_id, image_id, name, partner_organization_id) "+
+			"VALUES (@organizationId, @imageId, @name, @partnerOrganizationId) RETURNING "+customerOrganizationOutputExpr,
 		pgx.NamedArgs{
-			"organizationId": customerOrg.OrganizationID,
-			"imageId":        customerOrg.ImageID,
-			"name":           customerOrg.Name,
+			"organizationId":        customerOrg.OrganizationID,
+			"imageId":               customerOrg.ImageID,
+			"name":                  customerOrg.Name,
+			"partnerOrganizationId": customerOrg.PartnerOrganizationID,
 		},
 	)
 	if err != nil {
@@ -177,6 +179,59 @@ func UpdateCustomerOrganization(ctx context.Context, customerOrg *types.Customer
 		*customerOrg = result
 		return nil
 	}
+}
+
+func GetCustomerOrganizationsByPartnerOrgID(
+	ctx context.Context,
+	partnerOrgID uuid.UUID,
+) ([]types.CustomerOrganizationWithUsage, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		fmt.Sprintf(
+			`SELECT %v
+			FROM CustomerOrganization co
+			LEFT JOIN Organization_UserAccount oua ON co.id = oua.customer_organization_id
+			LEFT JOIN DeploymentTarget dt ON co.id = dt.customer_organization_id
+			WHERE co.partner_organization_id = @partnerOrgId
+			GROUP BY %v
+			ORDER BY co.name`,
+			customerOrganizationWithUsageOutputExpr, customerOrganizationOutputExpr,
+		),
+		pgx.NamedArgs{"partnerOrgId": partnerOrgID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query CustomerOrganization: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.CustomerOrganizationWithUsage])
+	if err != nil {
+		return nil, fmt.Errorf("could not collect CustomerOrganization: %w", err)
+	}
+	return result, nil
+}
+
+func SetCustomerOrganizationPartner(
+	ctx context.Context,
+	customerOrgID uuid.UUID,
+	orgID uuid.UUID,
+	partnerOrgID *uuid.UUID,
+) error {
+	db := internalctx.GetDb(ctx)
+	cmd, err := db.Exec(ctx,
+		`UPDATE CustomerOrganization
+		SET partner_organization_id = @partnerOrgId
+		WHERE id = @customerOrgId AND organization_id = @orgId`,
+		pgx.NamedArgs{
+			"customerOrgId": customerOrgID,
+			"orgId":         orgID,
+			"partnerOrgId":  partnerOrgID,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("could not update CustomerOrganization partner: %w", err)
+	} else if cmd.RowsAffected() == 0 {
+		return apierrors.ErrNotFound
+	}
+	return nil
 }
 
 func DeleteCustomerOrganizationWithID(ctx context.Context, id uuid.UUID, organizationID uuid.UUID) error {

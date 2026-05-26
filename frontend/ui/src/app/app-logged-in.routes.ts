@@ -16,7 +16,9 @@ import {BillingSettingsComponent} from './billing/settings/billing-settings.comp
 import {CustomerOrganizationsComponent} from './components/customer-organizations/customer-organizations.component';
 import {DashboardComponent} from './components/dashboard/dashboard.component';
 import {HomeComponent} from './components/home/home.component';
+import {PartnerOrganizationsComponent} from './components/partner-organizations/partner-organizations.component';
 import {CustomerUsersComponent} from './components/users/customers/customer-users.component';
+import {PartnerUsersComponent} from './components/users/partners/partner-users.component';
 import {VendorUsersComponent} from './components/users/vendors/vendor-users.component';
 import {DeploymentTargetDetailComponent} from './deployments/deployment-target-details/deployment-target-detail.component';
 import {DeploymentTargetsComponent} from './deployments/deployment-targets.component';
@@ -63,6 +65,14 @@ const requireVendor: CanActivateFn = () => {
 
 const requireCustomer: CanActivateFn = () => {
   if (inject(AuthService).isCustomer()) {
+    return true;
+  }
+  return inject(Router).createUrlTree(['/']);
+};
+
+const requireVendorOrPartner: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  if (auth.isVendor() || auth.isPartner()) {
     return true;
   }
   return inject(Router).createUrlTree(['/']);
@@ -181,15 +191,28 @@ export const routes: Routes = [
       {
         path: 'customers',
         component: CustomerOrganizationsComponent,
-        canActivate: [requireVendor],
+        canActivate: [requireVendorOrPartner],
       },
       {
         path: 'customers/:customerOrganizationId',
-        canActivate: [requireVendor],
+        canActivate: [requireVendorOrPartner],
         children: [
           {path: 'users', component: CustomerUsersComponent},
           {path: 'secrets', component: CustomerSecretsPageComponent},
           {path: 'links', component: SidebarLinksPageComponent},
+          {path: '', pathMatch: 'full', redirectTo: 'users'},
+        ],
+      },
+      {
+        path: 'partners',
+        component: PartnerOrganizationsComponent,
+        canActivate: [requireVendor],
+      },
+      {
+        path: 'partners/:partnerOrganizationId',
+        canActivate: [requireVendor],
+        children: [
+          {path: 'users', component: PartnerUsersComponent},
           {path: '', pathMatch: 'full', redirectTo: 'users'},
         ],
       },
@@ -231,7 +254,7 @@ export const routes: Routes = [
       },
       {
         path: 'licenses',
-        canActivate: [requireVendor, licensingEnabledGuard()],
+        canActivate: [requireVendorOrPartner, licensingEnabledGuard()],
         data: {userRole: 'vendor'},
         children: [
           {

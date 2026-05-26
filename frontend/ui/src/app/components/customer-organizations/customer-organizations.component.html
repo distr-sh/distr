@@ -26,7 +26,6 @@
           <app-quota-limit [usage]="customerOrganizations()?.length" [limit]="limit()" #quota />
           @if (auth.hasAnyRole('read_write', 'admin')) {
             <button
-              *appRequireVendor
               (click)="showCreateDialog()"
               [disabled]="quota.isLimitReached()"
               [title]="quota.isLimitReached() ? 'Customer limit reached' : 'Create Customer'"

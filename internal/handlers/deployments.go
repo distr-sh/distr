@@ -216,7 +216,7 @@ func validateDeploymentRequest(
 		}
 	}
 
-	if target, err = db.GetDeploymentTarget(ctx, request.DeploymentTargetID, &orgId); err != nil {
+	if target, err = db.GetDeploymentTarget(ctx, request.DeploymentTargetID, &orgId, nil); err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
 			return badRequestError(w, "DeploymentTarget does not exist")
 		} else {

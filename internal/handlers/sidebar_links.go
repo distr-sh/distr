@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -20,7 +22,7 @@ import (
 
 func SidebarLinksRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Sidebar Links"))
-	r.Use(middleware.RequireVendor, middleware.RequireOrgAndRole)
+	r.Use(middleware.RequireVendorOrPartner, middleware.RequireOrgAndRole)
 
 	type customerOrganizationIDRequest struct {
 		CustomerOrganizationID uuid.UUID `path:"customerOrganizationId"`
@@ -63,6 +65,16 @@ func SidebarLinksRouter(r chiopenapi.Router) {
 	})
 }
 
+func validatePartnerAccessToCustomer(ctx context.Context, customerOrgID uuid.UUID) bool {
+	a := auth.Authentication.Require(ctx)
+	partnerOrgID := a.CurrentPartnerOrgID()
+	if partnerOrgID == nil {
+		return true
+	}
+	co, err := db.GetCustomerOrganizationByID(ctx, customerOrgID)
+	return err == nil && util.PtrEq(co.PartnerOrganizationID, partnerOrgID)
+}
+
 func getSidebarLinksHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -76,6 +88,10 @@ func getSidebarLinksHandler() http.HandlerFunc {
 		}
 
 		if err := db.ValidateCustomerOrgBelongsToOrg(ctx, customerOrgID, *auth.CurrentOrgID()); err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		if !validatePartnerAccessToCustomer(ctx, customerOrgID) {
 			http.NotFound(w, r)
 			return
 		}
@@ -104,6 +120,10 @@ func createSidebarLinkHandler() http.HandlerFunc {
 		}
 
 		if err := db.ValidateCustomerOrgBelongsToOrg(ctx, customerOrgID, *auth.CurrentOrgID()); err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		if !validatePartnerAccessToCustomer(ctx, customerOrgID) {
 			http.NotFound(w, r)
 			return
 		}
@@ -157,6 +177,10 @@ func updateSidebarLinkHandler() http.HandlerFunc {
 			http.NotFound(w, r)
 			return
 		}
+		if !validatePartnerAccessToCustomer(ctx, customerOrgID) {
+			http.NotFound(w, r)
+			return
+		}
 
 		body, err := JsonBody[api.CreateUpdateSidebarLinkRequest](w, r)
 		if err != nil {
@@ -207,6 +231,10 @@ func deleteSidebarLinkHandler() http.HandlerFunc {
 		}
 
 		if err := db.ValidateCustomerOrgBelongsToOrg(ctx, customerOrgID, *auth.CurrentOrgID()); err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		if !validatePartnerAccessToCustomer(ctx, customerOrgID) {
 			http.NotFound(w, r)
 			return
 		}

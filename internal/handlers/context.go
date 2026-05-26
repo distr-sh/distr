@@ -89,7 +89,7 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 
 	RespondJSON(w, api.ContextResponse{
 		User: mapping.UserAccountToAPI(
-			auth.CurrentUser().AsUserAccountWithRole(*userRole, customerOrgID, joinDate),
+			auth.CurrentUser().AsUserAccountWithRole(*userRole, customerOrgID, auth.CurrentPartnerOrgID(), joinDate),
 		),
 		Organization:         mapping.OrganizationToAPI(*auth.CurrentOrg()),
 		CustomerOrganization: customerOrg,

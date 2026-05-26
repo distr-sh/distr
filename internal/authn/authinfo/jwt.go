@@ -41,6 +41,15 @@ func FromUserJWT(token jwt.Token) (*SimpleAuthInfo, error) {
 		}
 	}
 
+	var partnerOrgIDStr string
+	if err := token.Get(authjwt.PartnerOrgIDKey, &partnerOrgIDStr); err == nil {
+		if partnerOrgID, err := uuid.Parse(partnerOrgIDStr); err != nil {
+			return nil, fmt.Errorf("%w: JWT partnerOrgId is invalid: %w", authn.ErrBadAuthentication, err)
+		} else {
+			result.partnerOrganizationID = &partnerOrgID
+		}
+	}
+
 	_ = token.Get(authjwt.UserEmailKey, &result.userEmail)
 	_ = token.Get(authjwt.UserEmailVerifiedKey, &result.emailVerified)
 	_ = token.Get(authjwt.SuperAdminKey, &result.isSuperAdmin)

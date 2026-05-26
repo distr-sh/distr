@@ -151,6 +151,24 @@ func RequireVendor(handler http.Handler) http.Handler {
 		}
 		if auth, err := auth.Authentication.Get(ctx); err != nil {
 			http.Error(w, err.Error(), http.StatusForbidden)
+		} else if auth.CurrentCustomerOrgID() != nil || auth.CurrentPartnerOrgID() != nil {
+			http.Error(w, "insufficient permissions", http.StatusForbidden)
+		} else {
+			handler.ServeHTTP(w, r)
+		}
+	}
+	return http.HandlerFunc(fn)
+}
+
+func RequireVendorOrPartner(handler http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		if isSuperAdmin(ctx) {
+			handler.ServeHTTP(w, r)
+			return
+		}
+		if auth, err := auth.Authentication.Get(ctx); err != nil {
+			http.Error(w, err.Error(), http.StatusForbidden)
 		} else if auth.CurrentCustomerOrgID() != nil {
 			http.Error(w, "insufficient permissions", http.StatusForbidden)
 		} else {

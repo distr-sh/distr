@@ -71,6 +71,8 @@ type OrganizationWithUserRole struct {
 	UserRole                 UserRole   `db:"user_role" json:"userRole"`
 	CustomerOrganizationID   *uuid.UUID `db:"customer_organization_id" json:"customerOrganizationId,omitempty"`
 	CustomerOrganizationName *string    `db:"customer_organization_name" json:"customerOrganizationName,omitempty"`
+	PartnerOrganizationID    *uuid.UUID `db:"partner_organization_id" json:"partnerOrganizationId,omitempty"`
+	PartnerOrganizationName  *string    `db:"partner_organization_name" json:"partnerOrganizationName,omitempty"`
 	JoinedOrgAt              time.Time  `db:"joined_org_at" json:"joinedOrgAt"`
 }
 
