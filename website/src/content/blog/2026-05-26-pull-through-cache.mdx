@@ -5,11 +5,11 @@ publishDate: 2026-05-26
 lastUpdated: 2026-05-26
 slug: 'container-registry-pull-through-cache'
 authors:
-  - name: 'Philip Miglinci'
+  - name: 'Louis Weston'
     role: 'Co-Founder'
-    image: '/src/assets/blog/authors/pmig.jpg'
-    linkedIn: https://www.linkedin.com/in/pmigat/
-    gitHub: https://github.com/pmig
+    image: '/src/assets/blog/authors/louis.jpg'
+    linkedIn: https://www.linkedin.com/in/louisnweston/
+    gitHub: https://github.com/thekubernaut
 image: '/src/assets/blog/2026-05-26-pull-through-cache/thumb.png'
 tags:
   - OCI Registry
@@ -69,7 +69,7 @@ Distr authenticates to your upstream registry on your behalf, including automati
 
 Before: "Can you add us to your ECR? We need to configure cross-account access, and our security team needs to review the IAM policy..."
 
-After: Here is your registry endpoint and a token.
+After: Your customer opens the Distr Customer Portal, creates a Personal Access Token, and uses the registry endpoint shown there.
 
 ```bash
 # Container images
@@ -79,7 +79,7 @@ docker pull registry.distr.sh/your-org/your-image:1.2.3
 helm pull oci://registry.distr.sh/your-org/your-chart --version 1.2.3
 ```
 
-That is the entire interaction. The credential you give them is scoped to the specific artifacts they are entitled to. When they churn, you revoke the token instead of hunting down their IAM user in your AWS account.
+That is the entire interaction. Customers can create, rotate, and revoke their own tokens for the users in their organization, while the token only grants access to the artifacts and versions they are entitled to. In Distr, [artifact entitlements](/docs/platform/artifact-entitlements/) can be scoped at the artifact and tag level, so one customer can pull `1.2.x` while another is limited to `1.1.x`. When a customer churns or their entitlement changes, you update access in Distr instead of hunting down their IAM user in your AWS account.
 
 ## What Changes for Your Engineering Team
 
