@@ -1,5 +1,34 @@
 # Changelog
 
+## [2.21.3](https://github.com/distr-sh/distr/compare/2.21.2...2.21.3) (2026-05-26)
+
+
+### Bug Fixes
+
+* **backend:** add catching various unhandled errors ([#2457](https://github.com/distr-sh/distr/issues/2457)) ([4edba17](https://github.com/distr-sh/distr/commit/4edba1780dbe9925592ed6ef4d8c478f8be5653c))
+* **backend:** reset inconsistent helm options values ([#2469](https://github.com/distr-sh/distr/issues/2469)) ([d9f5b77](https://github.com/distr-sh/distr/commit/d9f5b77fd2ec3859ca359b1d96fb52049fcd35fa))
+* **deps:** update module github.com/docker/compose/v5 to v5.1.4 ([#2448](https://github.com/distr-sh/distr/issues/2448)) ([34c2db6](https://github.com/distr-sh/distr/commit/34c2db6179c6483a3ae5904049b2adad794b2044))
+* **deps:** update website dependencies ([#2458](https://github.com/distr-sh/distr/issues/2458)) ([effe2a1](https://github.com/distr-sh/distr/commit/effe2a1d0ad5c1915ff776092ca3977db1cc2aa1))
+
+
+### Other
+
+* **deps:** bump github.com/containerd/containerd/v2 from 2.2.3 to 2.2.4 in the go_modules group across 1 directory ([#2465](https://github.com/distr-sh/distr/issues/2465)) ([94f42a2](https://github.com/distr-sh/distr/commit/94f42a2cd140d7973969acaf3e7143de18892343))
+* **deps:** update axllent/mailpit docker tag to v1.30.0 ([#2453](https://github.com/distr-sh/distr/issues/2453)) ([93394d8](https://github.com/distr-sh/distr/commit/93394d834ddb085fbc107b56ecf153463bd2d137))
+* **deps:** update dependency @codemirror/view to v6.43.0 ([#2454](https://github.com/distr-sh/distr/issues/2454)) ([5d87b69](https://github.com/distr-sh/distr/commit/5d87b69faa2d663e96c12e5601b342feeed996f3))
+* **deps:** update dependency dayjs to v1.11.21 ([#2474](https://github.com/distr-sh/distr/issues/2474)) ([a4c7aea](https://github.com/distr-sh/distr/commit/a4c7aeaea4de582e1c4cb60340b83159160b26e8))
+* **deps:** update dependency semver to v7.8.1 ([#2463](https://github.com/distr-sh/distr/issues/2463)) ([7682afc](https://github.com/distr-sh/distr/commit/7682afc22c2b27b01d6792f138f550b47fb7e8f7))
+* **deps:** update dependency stripe to v1.41.2 ([#2459](https://github.com/distr-sh/distr/issues/2459)) ([74f2027](https://github.com/distr-sh/distr/commit/74f202719e49562c000f5c8fa4d0ced779f499a2))
+* **deps:** update docker/build-push-action action to v7.2.0 ([#2466](https://github.com/distr-sh/distr/issues/2466)) ([d792c28](https://github.com/distr-sh/distr/commit/d792c2820d7513e6e152ca00299ca55c0cf39aed))
+* **deps:** update golangci-lint to v2.12.2 ([#2390](https://github.com/distr-sh/distr/issues/2390)) ([92ab6cb](https://github.com/distr-sh/distr/commit/92ab6cb46920126c19d145a3866cf97a75610e1e))
+* **deps:** update golangci/golangci-lint-action action to v9.2.1 ([#2475](https://github.com/distr-sh/distr/issues/2475)) ([65f3a1d](https://github.com/distr-sh/distr/commit/65f3a1d772ca3688a678b305e8afe88ccac90af7))
+* **deps:** update rustfs docker tag to v1.0.0-beta.4 ([#2460](https://github.com/distr-sh/distr/issues/2460)) ([8f3b0ad](https://github.com/distr-sh/distr/commit/8f3b0adecd87fedb7cea0d5a29164fdd26b19e5a))
+
+
+### Docs
+
+* **website:** add docs page for pull-through artifacts ([#2467](https://github.com/distr-sh/distr/issues/2467)) ([3754ae3](https://github.com/distr-sh/distr/commit/3754ae31fa8e45ee223c30946ab3583b1d3af37a))
+
 ## [2.21.2](https://github.com/distr-sh/distr/compare/2.21.1...2.21.2) (2026-05-21)
 
 
