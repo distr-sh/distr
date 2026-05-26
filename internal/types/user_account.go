@@ -70,13 +70,23 @@ type UserAccountWithRole struct {
 	MFAEnabledAt           *time.Time `db:"mfa_enabled_at" json:"-"`
 	IsSuperAdmin           bool       `db:"is_super_admin" json:"-"`
 	// not copy+pasted
-	AccountRole AccountRole `db:"account_role" json:"userRole"`
+	AccountRole AccountRole `db:"account_role" json:"accountRole"`
+	// UserRole is a deprecated alias for AccountRole. It is automatically mirrored from
+	// AccountRole on construction / after DB scans and only serialized for backwards
+	// compatibility. Do not set directly.
+	UserRole AccountRole `db:"-" json:"userRole" deprecated:"true"`
 	// not copy+pasted
 	JoinedOrgAt time.Time `db:"joined_org_at" json:"joinedOrgAt"`
 	// not copy+pasted
 	CustomerOrganizationID *uuid.UUID `db:"customer_organization_id" json:"customerOrganizationId,omitempty"`
 	Password               string     `db:"-" json:"-"`
 	// Remember to update AsUserAccount when adding fields!
+}
+
+// PopulateDeprecatedAliases mirrors AccountRole into the deprecated UserRole field so JSON
+// serialization includes both keys. Call after constructing the struct via a DB scan.
+func (u *UserAccountWithRole) PopulateDeprecatedAliases() {
+	u.UserRole = u.AccountRole
 }
 
 func (u *UserAccountWithRole) AsUserAccount() UserAccount {

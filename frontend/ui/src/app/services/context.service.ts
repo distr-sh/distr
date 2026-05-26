@@ -37,7 +37,8 @@ export class ContextService {
     return this.cache.pipe(
       map((ctx) => ({
         ...ctx.organization,
-        userRole: ctx.user.userRole,
+        accountRole: ctx.user.accountRole,
+        userRole: ctx.user.accountRole,
         joinedOrgAt: ctx.user.joinedOrgAt,
       }))
     );

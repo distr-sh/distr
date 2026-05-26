@@ -8,13 +8,13 @@ import {ContextService} from './context.service';
 export interface CreateUserAccountRequest {
   email: string;
   name?: string;
-  userRole: AccountRole;
+  accountRole: AccountRole;
   customerOrganizationId?: string;
 }
 
 export interface PatchUserAccountRequest {
   name?: string;
-  userRole?: AccountRole;
+  accountRole?: AccountRole;
 }
 
 export interface UserAccountInvitationResponse {

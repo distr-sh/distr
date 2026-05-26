@@ -114,7 +114,7 @@
                   <select
                     class="bg-gray-50 border border-gray-300 text-gray-900 text-sm w-32 rounded-s-lg focus:ring-blue-500 focus:border-blue-500 block px-2 py-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                     id="user-role-select"
-                    formControlName="userRole">
+                    formControlName="accountRole">
                     <option value="read_only">Viewer</option>
                     <option value="read_write">User</option>
                     <option value="admin">Administrator</option>
@@ -127,7 +127,7 @@
                   </button>
                 </form>
               } @else {
-                @switch (user.userRole) {
+                @switch (user.accountRole) {
                   @case ('read_only') {
                     Viewer
                   }
@@ -246,23 +246,23 @@
                 </div>
                 @if (isProSubscription()) {
                   <div class="space-y-2">
-                    <label for="userRole" class="block text-sm font-medium text-gray-900 dark:text-white">
+                    <label for="accountRole" class="block text-sm font-medium text-gray-900 dark:text-white">
                       User role <span class="text-red-500">*</span>
                     </label>
                     <select
-                      id="userRole"
-                      formControlName="userRole"
+                      id="accountRole"
+                      formControlName="accountRole"
                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
                       <option value="read_only">Viewer</option>
                       <option value="read_write">User</option>
                       <option value="admin">Administrator</option>
                     </select>
 
-                    @if (inviteForm.controls.userRole.invalid && inviteForm.controls.userRole.touched) {
+                    @if (inviteForm.controls.accountRole.invalid && inviteForm.controls.accountRole.touched) {
                       <div class="text-sm text-red-600">This field is required</div>
                     }
 
-                    @switch (inviteForm.controls.userRole.value) {
+                    @switch (inviteForm.controls.accountRole.value) {
                       @case ('read_only') {
                         <div class="text-sm text-gray-500">
                           Read-only users can view applications, deployments, artifacts and licenses.

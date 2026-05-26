@@ -12,3 +12,10 @@ func OrganizationToAPI(o types.Organization) api.OrganizationResponse {
 		SubscriptionLimits: subscription.GetSubscriptionLimits(o.SubscriptionType),
 	}
 }
+
+// OrganizationWithRoleToAPI returns the OrganizationWithRole with the deprecated UserRole alias
+// populated, ready to be serialized as JSON.
+func OrganizationWithRoleToAPI(o types.OrganizationWithRole) types.OrganizationWithRole {
+	o.PopulateDeprecatedAliases()
+	return o
+}

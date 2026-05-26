@@ -12,6 +12,11 @@ export interface UserAccount extends BaseModel {
 }
 
 export interface UserAccountWithRole extends UserAccount {
+  accountRole: AccountRole;
+  /**
+   * @deprecated Use {@link accountRole}. This field is a server-side alias kept for
+   * backwards compatibility and may be removed in a future release.
+   */
   userRole: AccountRole;
   customerOrganizationId?: string;
   joinedOrgAt: string;

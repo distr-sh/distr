@@ -286,7 +286,7 @@ export class BrandingTutorialComponent implements OnInit, OnDestroy {
           this.usersService.addUser({
             email,
             customerOrganizationId: this.customerOrganization?.id,
-            userRole: 'admin',
+            accountRole: 'admin',
           })
         );
         this.inviteFormGroup.controls.inviteDone.patchValue(true);

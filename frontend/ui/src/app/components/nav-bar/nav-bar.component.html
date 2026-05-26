@@ -71,7 +71,7 @@
                       </span>
                     } @else if (isVendorSomewhere()) {
                       <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
-                        {{ user.userRole | titlecase }}
+                        {{ user.accountRole | titlecase }}
                       </span>
                     }
                   </span>
@@ -116,7 +116,7 @@
                                     }
                                     &bull;
                                   }
-                                  @switch (org.userRole) {
+                                  @switch (org.accountRole) {
                                     @case ('admin') {
                                       Administrator
                                     }

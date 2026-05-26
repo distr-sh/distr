@@ -75,6 +75,7 @@ export class NavBarComponent implements OnInit {
           id: claims.sub,
           name: claims.name,
           email: claims.email,
+          accountRole: claims.role,
           userRole: claims.role,
           imageUrl: claims.image_url,
         });

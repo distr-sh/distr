@@ -89,7 +89,7 @@ export class UsersComponent {
   protected readonly inviteForm = this.fb.group({
     email: this.fb.control('', [Validators.required, Validators.email]),
     name: this.fb.control<string | undefined>(undefined),
-    userRole: this.fb.control<AccountRole>('admin', Validators.required),
+    accountRole: this.fb.control<AccountRole>('admin', Validators.required),
   });
   protected inviteUrl: string | null = null;
 
@@ -118,7 +118,7 @@ export class UsersComponent {
   protected readonly editRoleUserId = signal<string | null>(null);
   protected readonly editRoleFormLoading = signal(false);
   protected readonly editRoleForm = this.fb.group({
-    userRole: this.fb.control<AccountRole>('admin', Validators.required),
+    accountRole: this.fb.control<AccountRole>('admin', Validators.required),
   });
 
   public showInviteDialog(reset?: boolean): void {
@@ -177,15 +177,15 @@ export class UsersComponent {
     this.editRoleForm.markAllAsTouched();
 
     const userId = this.editRoleUserId();
-    const userRole = this.editRoleForm.value.userRole;
-    if (!userId || !userRole) {
+    const accountRole = this.editRoleForm.value.accountRole;
+    if (!userId || !accountRole) {
       return;
     }
 
     if (this.editRoleForm.valid) {
       this.editRoleFormLoading.set(true);
       try {
-        await firstValueFrom(this.usersService.patchUserAccount(userId, {userRole}));
+        await firstValueFrom(this.usersService.patchUserAccount(userId, {accountRole}));
         this.editRoleUserId.set(null);
         this.editRoleForm.reset();
         this.toast.success('User role has been updated');
@@ -209,7 +209,7 @@ export class UsersComponent {
           this.usersService.addUser({
             email: this.inviteForm.value.email!,
             name: this.inviteForm.value.name || undefined,
-            userRole: this.inviteForm.value.userRole ?? 'admin',
+            accountRole: this.inviteForm.value.accountRole ?? 'admin',
             customerOrganizationId: this.customerOrganizationId(),
           })
         );

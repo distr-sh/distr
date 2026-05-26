@@ -163,11 +163,11 @@ func createOrganization(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
 	} else {
-		RespondJSON(w, types.OrganizationWithRole{
+		RespondJSON(w, mapping.OrganizationWithRoleToAPI(types.OrganizationWithRole{
 			Organization: organization,
 			AccountRole:  types.AccountRoleAdmin,
 			JoinedOrgAt:  time.Now(),
-		})
+		}))
 	}
 }
 

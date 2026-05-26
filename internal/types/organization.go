@@ -68,10 +68,20 @@ func (org *Organization) HasActiveSubscriptionWithType(st SubscriptionType) bool
 
 type OrganizationWithRole struct {
 	Organization
-	AccountRole              AccountRole `db:"account_role" json:"userRole"`
+	AccountRole AccountRole `db:"account_role" json:"accountRole"`
+	// UserRole is a deprecated alias for AccountRole. It is automatically mirrored from
+	// AccountRole on construction / after DB scans and only serialized for backwards
+	// compatibility. Do not set directly.
+	UserRole                 AccountRole `db:"-" json:"userRole" deprecated:"true"`
 	CustomerOrganizationID   *uuid.UUID  `db:"customer_organization_id" json:"customerOrganizationId,omitempty"`
 	CustomerOrganizationName *string     `db:"customer_organization_name" json:"customerOrganizationName,omitempty"`
 	JoinedOrgAt              time.Time   `db:"joined_org_at" json:"joinedOrgAt"`
+}
+
+// PopulateDeprecatedAliases mirrors AccountRole into the deprecated UserRole field so JSON
+// serialization includes both keys. Call after constructing the struct via a DB scan.
+func (o *OrganizationWithRole) PopulateDeprecatedAliases() {
+	o.UserRole = o.AccountRole
 }
 
 type OrganizationWithBranding struct {

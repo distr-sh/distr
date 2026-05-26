@@ -9,7 +9,7 @@ import (
 type CreateUserAccountRequest struct {
 	Email                  string            `json:"email"`
 	Name                   string            `json:"name"`
-	AccountRole            types.AccountRole `json:"userRole"`
+	AccountRole            types.AccountRole `json:"accountRole"`
 	CustomerOrganizationID *uuid.UUID        `json:"customerOrganizationId,omitempty"`
 }
 
@@ -51,5 +51,5 @@ func (r UpdateUserAccountEmailRequest) Validate() error {
 
 type PatchUserAccountRequest struct {
 	Name        *string            `json:"name"`
-	AccountRole *types.AccountRole `json:"userRole"`
+	AccountRole *types.AccountRole `json:"accountRole"`
 }

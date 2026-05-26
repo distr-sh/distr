@@ -94,6 +94,6 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 		Organization:         mapping.OrganizationToAPI(*auth.CurrentOrg()),
 		CustomerOrganization: customerOrg,
 		SidebarLinks:         sidebarLinks,
-		AvailableContexts:    orgs,
+		AvailableContexts:    mapping.List(orgs, mapping.OrganizationWithRoleToAPI),
 	})
 }

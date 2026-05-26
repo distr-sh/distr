@@ -43,6 +43,11 @@ export interface Organization extends BaseModel, Named {
 }
 
 export interface OrganizationWithRole extends Organization {
+  accountRole: AccountRole;
+  /**
+   * @deprecated Use {@link accountRole}. This field is a server-side alias kept for
+   * backwards compatibility and may be removed in a future release.
+   */
   userRole: AccountRole;
   customerOrganizationId?: string;
   customerOrganizationName?: string;

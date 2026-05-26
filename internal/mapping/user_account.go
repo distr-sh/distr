@@ -6,6 +6,7 @@ import (
 )
 
 func UserAccountToAPI(u types.UserAccountWithRole) api.UserAccountResponse {
+	u.PopulateDeprecatedAliases()
 	return api.UserAccountResponse{
 		UserAccountWithRole: u,
 		ImageUrl:            CreateImageURL(u.ImageID),
