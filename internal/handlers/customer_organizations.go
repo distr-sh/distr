@@ -93,30 +93,23 @@ func createCustomerOrganizationHandler() http.HandlerFunc {
 
 		err = db.RunTx(ctx, func(ctx context.Context) error {
 			if limitReached, err := subscription.IsCustomerOrganizationLimitReached(ctx, *auth.CurrentOrg()); err != nil {
-				log.Error("failed to get customer orgs", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return err
 			} else if limitReached {
-				err = errors.New("customer limit reached")
-				http.Error(w, err.Error(), http.StatusForbidden)
-				return err
+				return apierrors.NewForbidden("customer limit reached")
 			}
-
-			if err := db.CreateCustomerOrganization(ctx, &customerOrganization); err != nil {
-				log.Error("failed to create customer org", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return err
-			}
-
-			return nil
+			return db.CreateCustomerOrganization(ctx, &customerOrganization)
 		})
 
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
+		if err == nil {
 			RespondJSON(w, mapping.CustomerOrganizationToAPI(customerOrganization))
+		} else if errors.Is(err, apierrors.ErrBadRequest) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else if errors.Is(err, apierrors.ErrForbidden) {
+			http.Error(w, err.Error(), http.StatusForbidden)
+		} else {
+			log.Error("failed to create customer org", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
 }

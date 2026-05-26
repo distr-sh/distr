@@ -359,6 +359,11 @@ func agentPutDeploymentTargetLogsHandler() http.HandlerFunc {
 		}
 
 		if err := db.SaveDeploymentTargetLogRecords(ctx, deploymentTarget.ID, records); err != nil {
+			if errors.Is(err, apierrors.ErrBadRequest) {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+
 			log.Error("error saving deployment target log records", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

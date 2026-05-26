@@ -2,9 +2,11 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -38,6 +40,9 @@ func DeleteOIDCState(ctx context.Context, id uuid.UUID) (string, time.Time, erro
 		CreatedAt        time.Time `db:"created_at"`
 	}])
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			err = apierrors.ErrNotFound
+		}
 		return "", time.Time{}, err
 	}
 	return r.PKCECodeVerifier, r.CreatedAt, nil

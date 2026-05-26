@@ -60,6 +60,11 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	pkceVerifier, err := verifyOIDCState(r)
 	if err != nil {
+		if errors.Is(err, apierrors.ErrBadRequest) {
+			http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
+			return
+		}
+
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		log.Warn("could not verify OIDC state", zap.Error(err))
 		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
@@ -68,7 +73,21 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	provider := oidc.Provider(r.PathValue("oidcProvider"))
 	log = log.With(zap.String("provider", string(provider)))
+
+	if oidcError := r.URL.Query().Get("error"); oidcError != "" {
+		log.Warn("OIDC provider returned error",
+			zap.String("error", oidcError),
+			zap.String("error_description", r.URL.Query().Get("error_description")))
+		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
+		return
+	}
+
 	code := r.URL.Query().Get("code")
+	if code == "" {
+		log.Warn("OIDC callback missing code parameter")
+		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
+		return
+	}
 
 	oidcer := internalctx.GetOIDCer(ctx)
 	email, emailVerified, err := oidcer.GetEmailForCode(ctx, provider, code, pkceVerifier, r)
@@ -133,15 +152,18 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 func verifyOIDCState(r *http.Request) (string, error) {
 	state, err := uuid.Parse(r.URL.Query().Get("state"))
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%w: %w", apierrors.ErrBadRequest, err)
 	}
 	pkceVerifier, createdAt, err := db.DeleteOIDCState(r.Context(), state)
 	if err != nil {
+		if errors.Is(err, apierrors.ErrNotFound) {
+			return "", apierrors.ErrBadRequest
+		}
 		return "", err
 	}
 	if createdAt.Before(time.Now().UTC().Add(-1 * time.Minute)) {
-		return "", fmt.Errorf("got an OIDC state that is too old: %v, created_at: %v, now: %v",
-			state, createdAt, time.Now().UTC())
+		return "", fmt.Errorf("%w: got an OIDC state that is too old: %v, created_at: %v, now: %v",
+			apierrors.ErrBadRequest, state, createdAt, time.Now().UTC())
 	}
 	return pkceVerifier, nil
 }

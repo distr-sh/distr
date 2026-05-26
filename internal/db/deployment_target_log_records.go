@@ -111,6 +111,10 @@ func SaveDeploymentTargetLogRecords(
 		}),
 	)
 
+	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.ForeignKeyViolation {
+		return apierrors.NewBadRequest("invalid deployment target ID")
+	}
+
 	return err
 }
 
