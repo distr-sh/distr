@@ -285,11 +285,14 @@ Distr itself is [fully open source on GitHub](https://github.com/distr-sh/distr/
 
 There's also a [customer portal](/docs/platform/customer-portal/) where end customers see available artifacts and generate access tokens to pull from the registry.
 
+For teams that already publish images or Helm charts to internal registries like ECR, GHCR, or GAR, Distr can also act as a [pull-through cache distribution layer](/blog/container-registry-pull-through-cache/) so those internal registries stay private while customers pull from one Distr endpoint.
+
 **Key features:**
 
 - Vendor and customer portals
 - OCI-formatted and OCI-compliant artifact support (Helm, Docker, etc.)
 - Built specifically for commercial self-managed deployment options for software and AI companies
+- Pull-through cache for serving artifacts from multiple upstream registries through one customer-facing endpoint
 - Advanced features: artifact tag restrictions, usage tracking, and granular access controls
 - Available as a managed service (SaaS) via [Get Started](/get-started/), or [self-managed](/docs/self-hosting/)
 - Open source and free to use

@@ -19,6 +19,8 @@ tags:
   - Software Distribution
 ---
 
+import {Aside} from '@astrojs/starlight/components';
+
 You have packaged your software as a container image or a Helm chart. Your customer wants to deploy it. Now comes the part nobody puts in the roadmap: figuring out how they actually pull it.
 
 The instinct is to add them to your registry. That instinct leads somewhere painful.
@@ -36,6 +38,12 @@ Giving a customer access to that registry means:
 - Exposure of your internal structure. Even a read-only token can reveal image names, chart versions, tag histories, and build artifacts you would rather keep internal.
 
 The traditional fix, standing up a separate customer-facing registry and pushing artifacts to it, solves the exposure problem but creates a synchronization problem. Now you are maintaining two registries and hoping they stay in sync.
+
+<Aside type="note">
+  Still evaluating registry options? We compared ECR, GHCR, GAR, Harbor, JFrog,
+  Docker Hub, and more in our [container registry
+  comparison](/blog/container-image-registry-comparison/).
+</Aside>
 
 ## Why AWS ECR Makes This Worse
 
@@ -84,6 +92,8 @@ That is the entire interaction. Customers can create, rotate, and revoke their o
 ## What Changes for Your Engineering Team
 
 Nothing. Your pipeline pushes to the same place it always has. The pull-through cache syncs in the background. No new CI steps, no artifact promotion workflows, no duplicate push targets.
+
+This also helps when artifacts are spread across multiple registries. One team can keep publishing images to ECR, another can keep using GHCR, and a third can keep Helm charts in GAR. Distr can sit in front of all of them and give customers one consistent place to pull from.
 
 ## What You Get Back
 
