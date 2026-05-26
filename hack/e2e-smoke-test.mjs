@@ -13,7 +13,9 @@
 
 const BASE_URL = (process.env.DISTR_HOST ?? 'http://localhost:8080').replace(/\/$/, '');
 
-const TEST_EMAIL = 'e2e3@smoke.test';
+const RUN_ID = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+const TEST_EMAIL = `e2e-${RUN_ID}@smoke.test`;
 const TEST_PASSWORD = 'E2eSmoke123!';
 const TEST_NAME = 'E2E Smoke Test';
 
