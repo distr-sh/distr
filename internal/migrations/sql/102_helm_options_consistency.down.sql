@@ -1,0 +1,1 @@
+ALTER TABLE DeploymentRevision DROP CONSTRAINT helm_options_all_or_none;
