@@ -88,8 +88,9 @@ try {
 
   step('Verify hello-distr-tutorial deployment target was created with a deployment');
   const targets = await request('GET', '/api/v1/deployment-targets', {token});
-  const helloTarget = targets.find((t) => t.name === 'hello-distr-tutorial');
-  assert(helloTarget, 'hello-distr-tutorial deployment target must exist');
+  const helloTarget = targets.find((t) => t.id === deploymentTargetId);
+  assert(helloTarget, `deployment target ${deploymentTargetId} must exist`);
+  assert(helloTarget.name === 'hello-distr-tutorial', 'deployment target must be named hello-distr-tutorial');
   assert(helloTarget.deployments?.length > 0, 'hello-distr-tutorial must have at least one deployment');
 
   console.log(`\nAll ${stepNum} smoke test steps passed.`);
