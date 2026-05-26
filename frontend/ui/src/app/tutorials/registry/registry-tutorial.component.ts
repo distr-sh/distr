@@ -24,6 +24,7 @@ import {getRemoteEnvironment} from '../../../env/remote';
 import {getFormDisplayedError} from '../../../util/errors';
 import {slugMaxLength, slugPattern} from '../../../util/slug';
 import {ClipComponent} from '../../components/clip.component';
+import {CreatedAccessTokenComponent} from '../../components/created-access-token.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AccessTokensService} from '../../services/access-tokens.service';
 import {OrganizationService} from '../../services/organization.service';
@@ -64,6 +65,7 @@ function helloDistrProxyUrl(base: string): string {
     CdkStepperPrevious,
     AutotrimDirective,
     ClipComponent,
+    CreatedAccessTokenComponent,
     RouterLink,
   ],
   templateUrl: './registry-tutorial.component.html',

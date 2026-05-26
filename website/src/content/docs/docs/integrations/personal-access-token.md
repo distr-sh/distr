@@ -23,12 +23,23 @@ On the top right corner, click on the **Create token** button.
 
 ![Personal Access Tokens](../../../../assets/docs/integrations/pat_create.png)
 
-You will be prompted to enter a name and an expiry date for the token.
-You can leave both empty, but we recommend to set a descriptive label and an expiry date to keep your tokens organized and secure.
+You will be prompted to enter a name, an expiry date, and a role for the token.
+You can leave the name and expiry empty, but we recommend to set a descriptive label and an expiry date to keep your tokens organized and secure.
 
 ![Personal Access Tokens](../../../../assets/docs/integrations/pat_details.png)
 
 After you have entered the details, click on the **Create** button. The token will be generated and displayed on top of the page.
+
+## Scoping a token's permissions
+
+By default, a Personal Access Token operates with the same role you have in the organization. You can lower this when creating the token: the role dropdown only lets you pick a role equal to or below your own (`admin`, `read_write`, `read_only`).
+
+The effective role on each request is the lower of the PAT's role and your current role in the organization. That means:
+
+- A `read_only` token issued by an `admin` user can only read — it cannot push artifacts to the registry or change deployments, even though the user could.
+- If your own role is later downgraded (for example from `admin` to `read_write`), every token you issued is automatically capped at the new lower role on the next request. You do not need to revoke and reissue tokens after a demotion.
+
+We recommend creating dedicated lower-privilege tokens for automation that does not need write access — for example, a `read_only` token for a CI job that only pulls artifacts from the registry.
 
 This is the only time the token will be shown to you. Make sure to copy it and store it in a secure place.
 Remember, anybody that has access to this token can authenticate with the Distr API on your behalf. Treat it like your password.

@@ -34,6 +34,44 @@ func ParseUserRole(value string) (UserRole, error) {
 	}
 }
 
+// userRoleRank orders the role hierarchy: admin > read_write > read_only.
+// An unknown role returns -1 so it never wins a max() comparison.
+func userRoleRank(r UserRole) int {
+	switch r {
+	case UserRoleReadOnly:
+		return 0
+	case UserRoleReadWrite:
+		return 1
+	case UserRoleAdmin:
+		return 2
+	default:
+		return -1
+	}
+}
+
+// LessOrEqualUserRole reports whether a is at most as privileged as b.
+func LessOrEqualUserRole(a, b UserRole) bool {
+	return userRoleRank(a) <= userRoleRank(b)
+}
+
+// MinUserRole returns the lower of the two roles. nil inputs are skipped; if
+// both are nil the empty string is returned (caller should treat that as an
+// authorization failure). The result is never nil.
+func MinUserRole(a, b *UserRole) UserRole {
+	switch {
+	case a == nil && b == nil:
+		return ""
+	case a == nil:
+		return *b
+	case b == nil:
+		return *a
+	}
+	if userRoleRank(*a) < userRoleRank(*b) {
+		return *a
+	}
+	return *b
+}
+
 func (ref *UserRole) UnmarshalJSON(data []byte) error {
 	var value string
 	if err := json.Unmarshal(data, &value); err != nil {

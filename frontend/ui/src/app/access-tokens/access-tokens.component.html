@@ -19,20 +19,7 @@
       </div>
 
       @if (createdToken; as t) {
-        <div
-          class="p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400"
-          role="alert">
-          <p>
-            Your Personal Access Token:
-            <code class="select-all" data-ph-mask-text="true">{{ t.key }}</code>
-            <app-clip class="mx-2" [clip]="t.key" />
-          </p>
-          <p>
-            <strong>Important:</strong>
-            This is the only time you will be able to see this token, so please make sure to note it down before closing
-            this page.
-          </p>
-        </div>
+        <app-created-access-token class="block mb-4" [tokenKey]="t.key" />
       }
       <div class="overflow-x-auto">
         <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
@@ -40,6 +27,7 @@
             class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
             <tr>
               <th scope="col" class="p-4">Label</th>
+              <th scope="col" class="p-4">Role</th>
               <th scope="col" class="p-4">Creation Date</th>
               <th scope="col" class="p-4">Expires</th>
               <th scope="col" class="p-4">Last Used</th>
@@ -50,6 +38,13 @@
             @for (token of accessTokens$ | async; track token.id) {
               <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
                 <td class="px-4 py-3">{{ token.label }}</td>
+                <td class="px-4 py-3">
+                  @if (token.userRole; as r) {
+                    {{ r | userRoleLabel }}
+                  } @else {
+                    <span class="text-gray-400 italic">inherits</span>
+                  }
+                </td>
                 <td class="px-4 py-3">{{ token.createdAt | date: 'medium' }}</td>
                 <td class="px-4 py-3">
                   @if (token.expiresAt; as d) {
@@ -127,6 +122,19 @@
             id="expiresAt"
             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
             placeholder="Label your PAT" />
+        </div>
+        <div>
+          <label for="userRole" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Role</label>
+          <app-user-role-select
+            id="userRole"
+            formControlName="userRole"
+            [maxRole]="currentUserRole()"
+            emptyOptionLabel="Inherit from my role"
+            selectClass="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Leave as "Inherit" to use your current role. The token's effective permissions are always capped by your own
+            role.
+          </p>
         </div>
 
         <div class="flex justify-center w-full pb-4 space-x-4 sm:mt-0">

@@ -9,6 +9,7 @@ import (
 	"github.com/distr-sh/distr/internal/authkey"
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/util"
 )
 
 func FromAuthKey(ctx context.Context, token authkey.Key) (AuthInfo, error) {
@@ -24,7 +25,7 @@ func FromAuthKey(ctx context.Context, token authkey.Key) (AuthInfo, error) {
 			emailVerified:          at.UserAccount.EmailVerifiedAt != nil,
 			organizationID:         &at.OrganizationID,
 			customerOrganizationID: at.CustomerOrganizationID,
-			userRole:               &at.UserRole,
+			userRole:               util.PtrTo(at.EffectiveUserRole()),
 			rawToken:               token,
 		}, nil
 	}

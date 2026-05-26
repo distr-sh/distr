@@ -1,5 +1,5 @@
 import {OverlayModule} from '@angular/cdk/overlay';
-import {AsyncPipe, TitleCasePipe} from '@angular/common';
+import {AsyncPipe} from '@angular/common';
 import {HttpErrorResponse} from '@angular/common/http';
 import {Component, computed, inject, input, OnInit, TemplateRef, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
@@ -25,6 +25,7 @@ import dayjs from 'dayjs';
 import {catchError, EMPTY, lastValueFrom, map, of} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
+import {UserRoleLabelPipe} from '../../../util/user-role';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {RequireCustomerDirective, RequireVendorDirective} from '../../directives/required-role.directive';
 import {AuthService} from '../../services/auth.service';
@@ -50,11 +51,11 @@ import {NavBarSubscriptionBannerComponent} from './nav-bar-subscription-banner/n
     RouterLink,
     SecureImagePipe,
     AsyncPipe,
-    TitleCasePipe,
     AutotrimDirective,
     ReactiveFormsModule,
     RequireVendorDirective,
     RequireCustomerDirective,
+    UserRoleLabelPipe,
   ],
 })
 export class NavBarComponent implements OnInit {

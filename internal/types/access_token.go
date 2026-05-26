@@ -16,6 +16,7 @@ type AccessToken struct {
 	Key            authkey.Key `db:"key"`
 	UserAccountID  uuid.UUID   `db:"user_account_id"`
 	OrganizationID uuid.UUID   `db:"organization_id"`
+	UserRole       *UserRole   `db:"token_user_role"`
 }
 
 func (tok AccessToken) HasExpired() bool {
@@ -27,4 +28,13 @@ type AccessTokenWithUserAccount struct {
 	UserAccount            UserAccount `db:"user_account"`
 	UserRole               UserRole    `db:"user_role"`
 	CustomerOrganizationID *uuid.UUID  `db:"customer_organization_id"`
+}
+
+// EffectiveUserRole returns the role this token may act under, capped at the
+// user's current role in the organization. If the token does not have an
+// explicit role, the user's current role is used as-is. The cap is re-applied
+// on every authenticated request, so demoting the user automatically lowers
+// the effective role of all their existing tokens.
+func (tok AccessTokenWithUserAccount) EffectiveUserRole() UserRole {
+	return MinUserRole(tok.AccessToken.UserRole, &tok.UserRole)
 }
