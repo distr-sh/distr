@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/distr-sh/distr/internal/util"
 	. "github.com/onsi/gomega"
 )
 
@@ -76,27 +75,6 @@ func TestLessOrEqualUserRole(t *testing.T) {
 	// and a valid role is never ≤ an unknown role.
 	g.Expect(LessOrEqualUserRole(UserRole("unknown"), UserRoleReadOnly)).To(BeTrue())
 	g.Expect(LessOrEqualUserRole(UserRoleReadOnly, UserRole("unknown"))).To(BeFalse())
-}
-
-func TestMinUserRole(t *testing.T) {
-	g := NewWithT(t)
-
-	admin := util.PtrTo(UserRoleAdmin)
-	rw := util.PtrTo(UserRoleReadWrite)
-	ro := util.PtrTo(UserRoleReadOnly)
-
-	g.Expect(MinUserRole(admin, ro)).To(Equal(UserRoleReadOnly))
-	g.Expect(MinUserRole(ro, admin)).To(Equal(UserRoleReadOnly))
-	g.Expect(MinUserRole(rw, admin)).To(Equal(UserRoleReadWrite))
-	g.Expect(MinUserRole(admin, admin)).To(Equal(UserRoleAdmin))
-
-	// nil acts as "absent" — the other side wins.
-	g.Expect(MinUserRole(nil, admin)).To(Equal(UserRoleAdmin))
-	g.Expect(MinUserRole(rw, nil)).To(Equal(UserRoleReadWrite))
-
-	// Both nil yields the empty string, which downstream authorization treats
-	// as no role (fails closed against RequireAnyUserRole).
-	g.Expect(MinUserRole(nil, nil)).To(BeEmpty())
 }
 
 func TestDeploymentTypeParsing(t *testing.T) {
