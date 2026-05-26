@@ -15,7 +15,7 @@ require (
 	github.com/coreos/go-oidc/v3 v3.18.0
 	github.com/docker/cli v29.5.1+incompatible
 	github.com/docker/compose/v5 v5.1.4
-	github.com/exaring/otelpgx v0.10.0
+	github.com/exaring/otelpgx v0.11.1
 	github.com/fsnotify/fsnotify v1.10.1
 	github.com/getsentry/sentry-go v0.46.2
 	github.com/getsentry/sentry-go/otel/otlp v0.46.2
