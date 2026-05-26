@@ -1,4 +1,7 @@
-UPDATE DeploymentRevision SET helm_options_force_conflicts = NULL WHERE helm_options_timeout IS NULL;
+UPDATE DeploymentRevision
+SET helm_options_force_conflicts = NULL
+WHERE helm_options_timeout IS NULL
+  AND helm_options_force_conflicts IS NOT NULL;
 
 ALTER TABLE DeploymentRevision
   ADD CONSTRAINT helm_options_all_or_none CHECK (
