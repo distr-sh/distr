@@ -49,32 +49,33 @@ func TestUserRoleParsing(t *testing.T) {
 	g.Expect(err).To(HaveOccurred())
 }
 
-func TestLessOrEqualUserRole(t *testing.T) {
+func TestUserRoleGreaterThan(t *testing.T) {
 	g := NewWithT(t)
 
 	cases := []struct {
 		a, b     UserRole
 		expected bool
 	}{
-		{UserRoleReadOnly, UserRoleReadOnly, true},
-		{UserRoleReadOnly, UserRoleReadWrite, true},
-		{UserRoleReadOnly, UserRoleAdmin, true},
-		{UserRoleReadWrite, UserRoleReadOnly, false},
-		{UserRoleReadWrite, UserRoleReadWrite, true},
-		{UserRoleReadWrite, UserRoleAdmin, true},
-		{UserRoleAdmin, UserRoleReadOnly, false},
-		{UserRoleAdmin, UserRoleReadWrite, false},
-		{UserRoleAdmin, UserRoleAdmin, true},
+		{UserRoleReadOnly, UserRoleReadOnly, false},
+		{UserRoleReadOnly, UserRoleReadWrite, false},
+		{UserRoleReadOnly, UserRoleAdmin, false},
+		{UserRoleReadWrite, UserRoleReadOnly, true},
+		{UserRoleReadWrite, UserRoleReadWrite, false},
+		{UserRoleReadWrite, UserRoleAdmin, false},
+		{UserRoleAdmin, UserRoleReadOnly, true},
+		{UserRoleAdmin, UserRoleReadWrite, true},
+		{UserRoleAdmin, UserRoleAdmin, false},
 	}
 	for _, tc := range cases {
-		g.Expect(LessOrEqualUserRole(tc.a, tc.b)).
-			To(Equal(tc.expected), "LessOrEqualUserRole(%q, %q)", tc.a, tc.b)
+		g.Expect(tc.a.GreaterThan(tc.b)).
+			To(Equal(tc.expected), "%q.GreaterThan(%q)", tc.a, tc.b)
 	}
+}
 
-	// Unknown roles rank above every valid role so authorization fails closed:
-	// an invalid carried role is never ≤ a real role and never wins a min cap.
-	g.Expect(LessOrEqualUserRole(UserRole("unknown"), UserRoleAdmin)).To(BeFalse())
-	g.Expect(LessOrEqualUserRole(UserRoleAdmin, UserRole("unknown"))).To(BeTrue())
+func TestUserRoleRankPanicsOnUnknown(t *testing.T) {
+	g := NewWithT(t)
+	g.Expect(func() { UserRole("bogus").Rank() }).To(Panic())
+	g.Expect(func() { UserRole("").Rank() }).To(Panic())
 }
 
 func TestDeploymentTypeParsing(t *testing.T) {

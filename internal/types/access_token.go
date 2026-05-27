@@ -36,7 +36,7 @@ type AccessTokenWithUserAccount struct {
 // on every authenticated request, so demoting the user automatically lowers
 // the effective role of all their existing tokens.
 func (tok AccessTokenWithUserAccount) EffectiveUserRole() UserRole {
-	if tok.AccessToken.UserRole != nil && LessOrEqualUserRole(*tok.AccessToken.UserRole, tok.UserRole) {
+	if tok.AccessToken.UserRole != nil && !tok.AccessToken.UserRole.GreaterThan(tok.UserRole) {
 		return *tok.AccessToken.UserRole
 	}
 	return tok.UserRole

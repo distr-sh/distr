@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"time"
 
 	"github.com/distr-sh/distr/internal/util"
@@ -35,11 +34,10 @@ func ParseUserRole(value string) (UserRole, error) {
 	}
 }
 
-// userRoleRank orders the role hierarchy: admin > read_write > read_only.
-// Unknown roles rank above every valid role so that LessOrEqualUserRole fails
-// closed — an invalid role compares as more privileged than any real one,
-// which makes authorization checks reject it.
-func userRoleRank(r UserRole) int {
+// Rank orders the role hierarchy: admin > read_write > read_only. It panics
+// for unknown roles — every role entering the codebase is validated via
+// ParseUserRole / UnmarshalJSON, so an invalid value at this point is a bug.
+func (r UserRole) Rank() int {
 	switch r {
 	case UserRoleReadOnly:
 		return 0
@@ -48,13 +46,13 @@ func userRoleRank(r UserRole) int {
 	case UserRoleAdmin:
 		return 2
 	default:
-		return math.MaxInt
+		panic(fmt.Sprintf("invalid user role: %q", string(r)))
 	}
 }
 
-// LessOrEqualUserRole reports whether a is at most as privileged as b.
-func LessOrEqualUserRole(a, b UserRole) bool {
-	return userRoleRank(a) <= userRoleRank(b)
+// GreaterThan reports whether r is more privileged than other.
+func (r UserRole) GreaterThan(other UserRole) bool {
+	return r.Rank() > other.Rank()
 }
 
 func (ref *UserRole) UnmarshalJSON(data []byte) error {

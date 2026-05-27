@@ -67,7 +67,7 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 					return nil, authn.ErrBadAuthentication
 				} else if err != nil {
 					return nil, err
-				} else if !types.LessOrEqualUserRole(*a.CurrentUserRole(), u.UserRole) {
+				} else if a.CurrentUserRole().GreaterThan(u.UserRole) {
 					// The role carried by the credential must never exceed the
 					// user's current role in the organization. Equal-or-below is
 					// fine (e.g. a PAT scoped to a lower role); above means the

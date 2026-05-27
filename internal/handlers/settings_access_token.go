@@ -43,7 +43,7 @@ func createAccessTokenHandler() http.HandlerFunc {
 
 		if request.UserRole != nil {
 			callerRole := auth.CurrentUserRole()
-			if callerRole == nil || !types.LessOrEqualUserRole(*request.UserRole, *callerRole) {
+			if callerRole == nil || request.UserRole.GreaterThan(*callerRole) {
 				http.Error(w, "token role cannot exceed your own role", http.StatusBadRequest)
 				return
 			}
