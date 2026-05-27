@@ -15,7 +15,8 @@ import (
 
 const (
 	accessTokenOutputExpr = `
-	tok.id, tok.created_at, tok.expires_at, tok.last_used_at, tok.label, tok.key, tok.user_account_id, tok.organization_id
+	tok.id, tok.created_at, tok.expires_at, tok.last_used_at, tok.label, tok.key,
+	tok.user_account_id, tok.organization_id, tok.user_role AS token_user_role
 `
 	accessTokenWithUserAccountOutputExpr = accessTokenOutputExpr + `,
 	(` + userAccountOutputExpr + `) AS user_account,
@@ -29,8 +30,8 @@ func CreateAccessToken(ctx context.Context, token *types.AccessToken) error {
 	rows, err := db.Query(
 		ctx,
 		fmt.Sprintf(
-			`INSERT INTO AccessToken AS tok (label, expires_at, key, user_account_id, organization_id)
-			VALUES (@label, @expiresAt, @key, @userAccountId, @orgId)
+			`INSERT INTO AccessToken AS tok (label, expires_at, key, user_account_id, organization_id, user_role)
+			VALUES (@label, @expiresAt, @key, @userAccountId, @orgId, @userRole)
 			RETURNING %v`,
 			accessTokenOutputExpr),
 		pgx.NamedArgs{
@@ -39,6 +40,7 @@ func CreateAccessToken(ctx context.Context, token *types.AccessToken) error {
 			"key":           token.Key[:],
 			"userAccountId": token.UserAccountID,
 			"orgId":         token.OrganizationID,
+			"userRole":      token.UserRole,
 		},
 	)
 	if err != nil {

@@ -9,7 +9,7 @@ x-shared-env: &shared-env
 
 services:
   postgres:
-    image: 'postgres:18.3-alpine3.23'
+    image: 'postgres:18.4-alpine3.23'
     environment:
       <<: *shared-env
       POSTGRES_USER: ${HELLO_DISTR_DB_USER:?error}
