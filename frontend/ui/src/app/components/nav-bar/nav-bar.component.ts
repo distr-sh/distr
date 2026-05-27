@@ -26,7 +26,6 @@ import {catchError, EMPTY, lastValueFrom, map, of} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
-import {RequireCustomerDirective, RequireVendorDirective} from '../../directives/required-role.directive';
 import {AuthService} from '../../services/auth.service';
 import {ContextService} from '../../services/context.service';
 import {OrganizationBrandingService} from '../../services/organization-branding.service';
@@ -35,9 +34,15 @@ import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {SidebarService} from '../../services/sidebar.service';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
-import {Organization} from '../../types/organization';
+import {Organization, OrganizationWithUserRole} from '../../types/organization';
 import {ColorSchemeSwitcherComponent} from '../color-scheme-switcher/color-scheme-switcher.component';
 import {NavBarSubscriptionBannerComponent} from './nav-bar-subscription-banner/nav-bar-subscription-banner.component';
+
+type OrganizationKind = 'customer' | 'partner' | 'vendor';
+
+function getOrganizationKind(org: OrganizationWithUserRole): OrganizationKind {
+  return org.customerOrganizationId ? 'customer' : org.partnerOrganizationId ? 'partner' : 'vendor';
+}
 
 @Component({
   selector: 'app-nav-bar',
@@ -53,8 +58,6 @@ import {NavBarSubscriptionBannerComponent} from './nav-bar-subscription-banner/n
     TitleCasePipe,
     AutotrimDirective,
     ReactiveFormsModule,
-    RequireVendorDirective,
-    RequireCustomerDirective,
   ],
 })
 export class NavBarComponent implements OnInit {
@@ -90,9 +93,10 @@ export class NavBarComponent implements OnInit {
   });
   protected readonly currentOrg = toSignal(this.ctx.getOrganization());
   protected readonly isVendorSomewhere = computed(() =>
-    this.allOrgs()
-      .filter((org) => org !== undefined)
-      .some((org) => org.customerOrganizationId === undefined)
+    this.allOrgs().some((org) => org.customerOrganizationId === undefined && org.partnerOrganizationId === undefined)
+  );
+  protected readonly isDifferntOrganizationKind = computed(
+    () => this.allOrgs().reduce((kinds, org) => kinds.add(getOrganizationKind(org)), new Set<string>()).size > 1
   );
   protected readonly isTrial = computed(() => this.currentOrg()?.subscriptionType === 'trial');
   protected readonly isSubscriptionExpired = computed(() => {

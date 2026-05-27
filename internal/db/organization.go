@@ -287,6 +287,24 @@ func CountAllOrganizations(ctx context.Context) (res int64, err error) {
 	return
 }
 
+func ExistsVendorOrganizationWithUserID(ctx context.Context, userID uuid.UUID) (res bool, err error) {
+	db := internalctx.GetDb(ctx)
+	err = db.QueryRow(
+		ctx,
+		`SELECT exists(
+			SELECT 1 FROM Organization_UserAccount
+			WHERE user_account_id = @id
+				AND customer_organization_id IS NULL
+				AND partner_organization_id IS NULL
+		)`,
+		pgx.NamedArgs{"id": userID},
+	).Scan(&res)
+	if err != nil {
+		err = fmt.Errorf("failed to check exists vendor organization: %w", err)
+	}
+	return
+}
+
 func GetOrganizationByID(ctx context.Context, orgID uuid.UUID) (*types.Organization, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,

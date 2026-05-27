@@ -6,6 +6,7 @@ type ContextResponse struct {
 	User                 UserAccountResponse              `json:"user"`
 	Organization         OrganizationResponse             `json:"organization"`
 	CustomerOrganization *CustomerOrganization            `json:"customerOrganization,omitempty"`
+	PartnerOrganization  *PartnerOrganization             `json:"partnerOrganization,omitempty"`
 	SidebarLinks         []SidebarLink                    `json:"sidebarLinks,omitempty"`
 	AvailableContexts    []types.OrganizationWithUserRole `json:"availableContexts,omitempty"`
 }

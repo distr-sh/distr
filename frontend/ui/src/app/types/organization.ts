@@ -46,5 +46,7 @@ export interface OrganizationWithUserRole extends Organization {
   userRole: UserRole;
   customerOrganizationId?: string;
   customerOrganizationName?: string;
+  partnerOrganizationId?: string;
+  partnerOrganizationName?: string;
   joinedOrgAt: string;
 }

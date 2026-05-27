@@ -1,6 +1,6 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
-import {CustomerOrganization, SidebarLink, UserAccountWithRole} from '@distr-sh/distr-sdk';
+import {CustomerOrganization, PartnerOrganization, SidebarLink, UserAccountWithRole} from '@distr-sh/distr-sdk';
 import posthog from 'posthog-js';
 import {map, Observable, shareReplay, startWith, Subject, switchMap, tap} from 'rxjs';
 import {Organization, OrganizationWithUserRole} from '../types/organization';
@@ -9,6 +9,7 @@ interface ContextResponse {
   user: UserAccountWithRole;
   organization: Organization;
   customerOrganization?: CustomerOrganization;
+  partnerOrganization?: PartnerOrganization;
   sidebarLinks?: SidebarLink[];
   availableContexts?: OrganizationWithUserRole[];
 }
@@ -38,6 +39,10 @@ export class ContextService {
       map((ctx) => ({
         ...ctx.organization,
         userRole: ctx.user.userRole,
+        customerOrganizationId: ctx.customerOrganization?.id,
+        customerOrganizationName: ctx.customerOrganization?.name,
+        partnerOrganizationId: ctx.partnerOrganization?.id,
+        partnerOrganizationName: ctx.partnerOrganization?.name,
         joinedOrgAt: ctx.user.joinedOrgAt,
       }))
     );
@@ -49,6 +54,10 @@ export class ContextService {
 
   public getCustomerOrganization(): Observable<CustomerOrganization | undefined> {
     return this.cache.pipe(map((ctx) => ctx.customerOrganization));
+  }
+
+  public getPartnerOrganization(): Observable<PartnerOrganization | undefined> {
+    return this.cache.pipe(map((ctx) => ctx.partnerOrganization));
   }
 
   public getSidebarLinks(): Observable<SidebarLink[]> {

@@ -49,6 +49,7 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 	var joinDate time.Time
 	var userRole *types.UserRole
 	var customerOrgID *uuid.UUID
+	var partnerOrgID *uuid.UUID
 
 	if auth.IsSuperAdmin() {
 		// Super admins: use current org's creation time as join date, no role
@@ -61,6 +62,7 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 				joinDate = org.JoinedOrgAt
 				userRole = &org.UserRole
 				customerOrgID = org.CustomerOrganizationID
+				partnerOrgID = org.PartnerOrganizationID
 				break
 			}
 		}
@@ -87,12 +89,24 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	var partnerOrg *api.PartnerOrganization
+	if partnerOrgID != nil {
+		if po, err := db.GetPartnerOrganizationByID(ctx, *partnerOrgID); err != nil {
+			log.Error("failed to get partner organization", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+		} else {
+			mapped := mapping.PartnerOrganizationToAPI(po.PartnerOrganization)
+			partnerOrg = &mapped
+		}
+	}
+
 	RespondJSON(w, api.ContextResponse{
 		User: mapping.UserAccountToAPI(
 			auth.CurrentUser().AsUserAccountWithRole(*userRole, customerOrgID, auth.CurrentPartnerOrgID(), joinDate),
 		),
 		Organization:         mapping.OrganizationToAPI(*auth.CurrentOrg()),
 		CustomerOrganization: customerOrg,
+		PartnerOrganization:  partnerOrg,
 		SidebarLinks:         sidebarLinks,
 		AvailableContexts:    orgs,
 	})

@@ -118,6 +118,7 @@ func authSwitchContextHandler() func(writer http.ResponseWriter, request *http.R
 			Organization:           *org,
 			UserRole:               user.UserRole,
 			CustomerOrganizationID: user.CustomerOrganizationID,
+			PartnerOrganizationID:  user.PartnerOrganizationID,
 		}); err != nil {
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			log.Error("failed to generate token", zap.Error(err))
