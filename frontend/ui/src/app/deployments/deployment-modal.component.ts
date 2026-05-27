@@ -1,11 +1,12 @@
-import {Component, effect, inject, input, output, signal} from '@angular/core';
-import {FormControl, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
+import {Component, effect, inject, input, output} from '@angular/core';
+import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {DeploymentTarget, DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleExclamation, faShip} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
 import {fromBase64} from '../../util/encoding';
 import {getFormDisplayedError} from '../../util/errors';
+import {validate} from '../../util/forms';
 import {AuthService} from '../services/auth.service';
 import {DeploymentTargetsService} from '../services/deployment-targets.service';
 import {ToastService} from '../services/toast.service';
@@ -47,7 +48,7 @@ import {
           </button>
         </div>
         <!-- Modal body -->
-        <form class="p-4 md:p-5" (ngSubmit)="saveDeployment()">
+        <form class="p-4 md:p-5" [formGroup]="form" (ngSubmit)="saveDeployment()">
           @if (deploymentTarget().customerOrganization !== undefined && auth.isVendor()) {
             <div
               class="flex items-center p-4 mb-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
@@ -61,13 +62,13 @@ import {
             </div>
           }
           <app-deployment-form
-            [formControl]="deployForm"
+            formControlName="deployment"
             [deploymentType]="deploymentTarget().type"
             [customerOrganizationId]="deploymentTarget().customerOrganization?.id"
             [deploymentTargetName]="deploymentTarget().name" />
           <button
             type="submit"
-            [disabled]="loading()"
+            [disabled]="form.disabled"
             class="text-white inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
             <fa-icon [icon]="faShip" class="h-5 w-5 mr-2 -ml-0.5 dark:text-gray-400" />
             Deploy
@@ -76,7 +77,7 @@ import {
       </div>
     </div>
   </div>`,
-  imports: [DeploymentFormComponent, FaIconComponent, FormsModule, ReactiveFormsModule],
+  imports: [DeploymentFormComponent, FaIconComponent, ReactiveFormsModule],
 })
 export class DeploymentModalComponent {
   public readonly deploymentTarget = input.required<DeploymentTarget>();
@@ -88,8 +89,9 @@ export class DeploymentModalComponent {
   private readonly toast = inject(ToastService);
   private readonly deploymentTargets = inject(DeploymentTargetsService);
 
-  protected readonly deployForm = new FormControl<DeploymentFormValue | undefined>(undefined, Validators.required);
-  protected readonly loading = signal(false);
+  protected readonly form = new FormGroup({
+    deployment: new FormControl<DeploymentFormValue | undefined>(undefined, Validators.required),
+  });
 
   protected readonly faShip = faShip;
   protected readonly faCircleExclamation = faCircleExclamation;
@@ -97,7 +99,7 @@ export class DeploymentModalComponent {
   constructor() {
     effect(() => {
       const deployment = this.deployment();
-      this.deployForm.reset({
+      this.form.controls.deployment.reset({
         deploymentId: deployment?.id,
         applicationId: deployment?.applicationId,
         applicationVersionId: this.versionId() ?? deployment?.applicationVersionId,
@@ -112,22 +114,20 @@ export class DeploymentModalComponent {
   }
 
   protected async saveDeployment() {
-    this.deployForm.markAllAsTouched();
-    if (this.deployForm.valid) {
-      this.loading.set(true);
-      const deployment = mapToDeploymentRequest(this.deployForm.value!, this.deploymentTarget().id!);
-      try {
-        await firstValueFrom(this.deploymentTargets.deploy(deployment));
-        this.toast.success('Deployment saved successfully');
-        this.closed.emit();
-      } catch (e) {
-        const msg = getFormDisplayedError(e);
-        if (msg) {
-          this.toast.error(msg);
-        }
-      } finally {
-        this.loading.set(false);
+    if (!validate(this.form)) return;
+    this.form.disable({emitEvent: false});
+    try {
+      const deployment = mapToDeploymentRequest(this.form.getRawValue().deployment!, this.deploymentTarget().id!);
+      await firstValueFrom(this.deploymentTargets.deploy(deployment));
+      this.toast.success('Deployment saved successfully');
+      this.closed.emit();
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
       }
+    } finally {
+      this.form.enable({emitEvent: false});
     }
   }
 }

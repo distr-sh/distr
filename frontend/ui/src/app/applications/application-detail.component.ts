@@ -1,7 +1,7 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe, NgOptimizedImage} from '@angular/common';
 import {Component, ElementRef, inject, OnDestroy, OnInit, signal, TemplateRef, viewChild} from '@angular/core';
-import {FormArray, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
+import {FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {Application, ApplicationVersion, ApplicationVersionResource, HelmChartType} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -36,7 +36,7 @@ import {
 } from 'rxjs';
 import {isArchived} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
-import {disableControlsWithoutEvent, enableControlsWithoutEvent} from '../../util/forms';
+import {disableControlsWithoutEvent, enableControlsWithoutEvent, validate} from '../../util/forms';
 import {SecureImagePipe} from '../../util/secureImage';
 import {EditorComponent} from '../components/editor.component';
 import {UuidComponent} from '../components/uuid';
@@ -66,7 +66,6 @@ import {
     DatePipe,
     EditorComponent,
     SecureImagePipe,
-    FormsModule,
     ApplicationVersionDetailModalComponent,
     InnerMarkdownDirective,
   ],
@@ -240,60 +239,59 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   }
 
   async createVersion(application: Application) {
-    this.newVersionForm.markAllAsTouched();
-    if (this.newVersionForm.valid && application) {
-      this.newVersionFormLoading.set(true);
-      let res;
-      const resources: ApplicationVersionResource[] = this.newVersionForm.controls.resources.controls
-        .map((g) => ({
-          name: g.controls.name.value,
-          content: g.controls.content.value,
-          visibleToCustomers: g.controls.visibleToCustomers.value,
-        }))
-        .filter((r) => r.name && r.content);
+    if (!validate(this.newVersionForm) || !application) return;
 
-      if (application.type === 'docker') {
-        res = this.applicationService.createApplicationVersionForDocker(
-          application,
-          {
-            name: this.newVersionForm.controls.versionName.value!,
-            linkTemplate: this.newVersionForm.controls.linkTemplate.value!,
-            resources,
-          },
-          this.newVersionForm.controls.docker.controls.compose.value!,
-          this.newVersionForm.controls.docker.controls.template.value
-        );
-      } else {
-        const versionFormVal = this.newVersionForm.controls.kubernetes.value;
-        res = this.applicationService.createApplicationVersionForKubernetes(
-          application,
-          {
-            name: this.newVersionForm.controls.versionName.value!,
-            linkTemplate: this.newVersionForm.controls.linkTemplate.value!,
-            chartType: versionFormVal.chartType!,
-            chartName: versionFormVal.chartName ?? undefined,
-            chartUrl: versionFormVal.chartUrl!,
-            chartVersion: versionFormVal.chartVersion!,
-            resources,
-          },
-          versionFormVal.baseValues,
-          versionFormVal.template
-        );
-      }
+    this.newVersionFormLoading.set(true);
+    const resources: ApplicationVersionResource[] = this.newVersionForm.controls.resources.controls
+      .map((g) => ({
+        name: g.controls.name.value,
+        content: g.controls.content.value,
+        visibleToCustomers: g.controls.visibleToCustomers.value,
+      }))
+      .filter((r) => r.name && r.content);
 
-      try {
-        const av = await firstValueFrom(res);
-        this.toast.success(`${av.name} created successfully`);
-        this.newVersionForm.reset();
-        this.enableTypeSpecificGroups(application);
-      } catch (e) {
-        const msg = getFormDisplayedError(e);
-        if (msg) {
-          this.toast.error(msg);
-        }
-      } finally {
-        this.newVersionFormLoading.set(false);
+    let res;
+    if (application.type === 'docker') {
+      res = this.applicationService.createApplicationVersionForDocker(
+        application,
+        {
+          name: this.newVersionForm.controls.versionName.value!,
+          linkTemplate: this.newVersionForm.controls.linkTemplate.value!,
+          resources,
+        },
+        this.newVersionForm.controls.docker.controls.compose.value!,
+        this.newVersionForm.controls.docker.controls.template.value
+      );
+    } else {
+      const versionFormVal = this.newVersionForm.controls.kubernetes.value;
+      res = this.applicationService.createApplicationVersionForKubernetes(
+        application,
+        {
+          name: this.newVersionForm.controls.versionName.value!,
+          linkTemplate: this.newVersionForm.controls.linkTemplate.value!,
+          chartType: versionFormVal.chartType!,
+          chartName: versionFormVal.chartName ?? undefined,
+          chartUrl: versionFormVal.chartUrl!,
+          chartVersion: versionFormVal.chartVersion!,
+          resources,
+        },
+        versionFormVal.baseValues,
+        versionFormVal.template
+      );
+    }
+
+    try {
+      const av = await firstValueFrom(res);
+      this.toast.success(`${av.name} created successfully`);
+      this.newVersionForm.reset();
+      this.enableTypeSpecificGroups(application);
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
       }
+    } finally {
+      this.newVersionFormLoading.set(false);
     }
   }
 
