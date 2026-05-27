@@ -46,6 +46,64 @@ func AuthRouter(r chiopenapi.Router) {
 	r.Post("/reset", authResetPasswordHandler)
 	r.With(middleware.SentryUser, auth.Authentication.Middleware, middleware.RequireOrgAndRole).
 		Post("/switch-context", authSwitchContextHandler())
+	r.Route("/verify", func(r chiopenapi.Router) {
+		r.Use(middleware.SentryUser, auth.UnverifiedEmailAuthentication.Middleware)
+
+		requestVerificationMailRateLimitPerUser := httprate.Limit(
+			3,
+			10*time.Minute,
+			httprate.WithKeyFuncs(middleware.RateLimitUserIDKey),
+		)
+		r.With(requestVerificationMailRateLimitPerUser, middleware.BlockSuperAdmin).
+			Post("/request", authVerifyRequestHandler)
+		r.Post("/confirm", authVerifyConfirmHandler)
+	})
+}
+
+func authVerifyRequestHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+	auth := auth.UnverifiedEmailAuthentication.Require(ctx)
+	userAccount := auth.CurrentUser()
+	if userAccount.EmailVerifiedAt != nil {
+		w.WriteHeader(http.StatusNoContent)
+	} else if err := mailsending.SendUserVerificationMail(ctx, *userAccount, *auth.CurrentOrg()); err != nil {
+		log.Error("failed to send verification mail", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+	} else {
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func authVerifyConfirmHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+	auth := auth.UnverifiedEmailAuthentication.Require(ctx)
+	userAccount := auth.CurrentUser()
+	if !auth.CurrentUserEmailVerified() {
+		http.Error(w, "token does not have verified claim", http.StatusForbidden)
+		return
+	}
+
+	if userAccount.Email != auth.CurrentUserEmail() {
+		userAccount.Email = auth.CurrentUserEmail()
+	} else if userAccount.EmailVerifiedAt != nil {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	if err := db.UpdateUserAccountEmailVerified(ctx, userAccount); err != nil {
+		if errors.Is(err, apierrors.ErrNotFound) {
+			http.Error(w, "could not update user", http.StatusBadRequest)
+		} else {
+			log.Error("could not update user", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, "could not update user", http.StatusInternalServerError)
+		}
+	} else {
+		w.WriteHeader(http.StatusNoContent)
+	}
 }
 
 func authSwitchContextHandler() func(writer http.ResponseWriter, request *http.Request) {

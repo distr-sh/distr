@@ -140,6 +140,14 @@ export class AuthService {
     return {token: null, claims: undefined};
   }
 
+  public requestEmailVerification(): Observable<void> {
+    return this.httpClient.post<void>(`${authBaseUrl}/verify/request`, undefined);
+  }
+
+  public confirmEmailVerification(): Observable<void> {
+    return this.httpClient.post<void>(`${authBaseUrl}/verify/confirm`, undefined);
+  }
+
   public switchContext(org: Organization): Observable<boolean> {
     return this.httpClient
       .post<TokenResponse | undefined>(`${authBaseUrl}/switch-context`, {organizationId: org.id})
@@ -192,7 +200,11 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
 };
 
 function authenticatedRoute(req: HttpRequest<unknown>): boolean {
-  return !req.url.startsWith(authBaseUrl) || req.url === `${authBaseUrl}/switch-context`;
+  return (
+    !req.url.startsWith(authBaseUrl) ||
+    req.url === `${authBaseUrl}/switch-context` ||
+    req.url.startsWith(`${authBaseUrl}/verify/`)
+  );
 }
 
 function removeJwtQueryParamAndRefresh(email?: string) {

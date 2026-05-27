@@ -3,6 +3,7 @@ package authinfo
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/authn"
@@ -26,6 +27,17 @@ func (a DbAuthInfo) CurrentOrg() *types.Organization {
 }
 
 func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganization] {
+	return dbAuthenticator(true)
+}
+
+// DbAuthenticatorAllowUnverifiedEmail is like [DbAuthenticator] but does not reject
+// callers whose email_verified claim is false. Use only for endpoints involved in the
+// email verification flow itself.
+func DbAuthenticatorAllowUnverifiedEmail() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganization] {
+	return dbAuthenticator(false)
+}
+
+func dbAuthenticator(requireEmailVerified bool) authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganization] {
 	fn := func(ctx context.Context, a AuthInfo) (AuthInfoWithUserAndOrganization, error) {
 		if a.CurrentOrgID() != nil {
 			// Super admins: skip membership check, just verify user and org exist
@@ -35,6 +47,9 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 					return nil, authn.ErrBadAuthentication
 				} else if err != nil {
 					return nil, err
+				}
+				if requireEmailVerified && user.EmailVerifiedAt == nil {
+					return nil, fmt.Errorf("%w: email not verified", authn.ErrBadAuthentication)
 				}
 				org, err := db.GetOrganizationByID(ctx, *a.CurrentOrgID())
 				if errors.Is(err, apierrors.ErrNotFound) {
@@ -69,6 +84,8 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 					return nil, err
 				} else if u.UserRole != *a.CurrentUserRole() {
 					return nil, authn.ErrBadAuthentication
+				} else if requireEmailVerified && u.EmailVerifiedAt == nil {
+					return nil, fmt.Errorf("%w: email not verified", authn.ErrBadAuthentication)
 				} else {
 					return &DbAuthInfo{
 						AuthInfo: &SimpleAuthInfo{
@@ -88,7 +105,9 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 			}
 			return nil, authn.ErrBadAuthentication
 		} else {
-			// some special tokens like password reset don't have an organization ID
+			// some special tokens like password reset don't have an organization ID;
+			// they intentionally bypass the email_verified check so the reset/verify
+			// flow can run before a user has confirmed their address.
 			if u, err := db.GetUserAccountByID(ctx, a.CurrentUserID()); errors.Is(err, apierrors.ErrNotFound) {
 				return nil, authn.ErrBadAuthentication
 			} else if err != nil {

@@ -38,16 +38,8 @@ export class SettingsService {
     return this.httpClient.post<UserAccount>(`${this.baseUrl}/user`, request).pipe(tap(() => this.ctx.reload()));
   }
 
-  public requestEmailVerification(email?: string) {
-    if (email) {
-      return this.httpClient.post<void>(`${this.baseUrl}/user/email`, {email});
-    } else {
-      return this.httpClient.post<void>(`${this.baseUrl}/verify/request`, undefined);
-    }
-  }
-
-  public confirmEmailVerification() {
-    return this.httpClient.post<void>(`${this.baseUrl}/verify/confirm`, undefined);
+  public requestEmailVerification(email: string): Observable<void> {
+    return this.httpClient.post<void>(`${this.baseUrl}/user/email`, {email});
   }
 
   public startMFASetup() {
