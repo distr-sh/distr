@@ -67,21 +67,26 @@ func GetDeployment(
 	userID uuid.UUID,
 	orgID uuid.UUID,
 	customerOrganizationID *uuid.UUID,
+	partnerOrganizationID *uuid.UUID,
 ) (*types.Deployment, error) {
 	db := internalctx.GetDb(ctx)
-	isVendor := customerOrganizationID == nil
+	isVendor := customerOrganizationID == nil && partnerOrganizationID == nil
 	rows, err := db.Query(ctx,
 		"SELECT"+deploymentOutputExpr+
 			"FROM Deployment d "+
 			"INNER JOIN DeploymentTarget dt ON d.deployment_target_id = dt.id "+
+			"LEFT JOIN CustomerOrganization co ON dt.customer_organization_id = co.id "+
 			"WHERE d.id = @id AND dt.organization_id = @orgId "+
-			"AND (@isVendor OR dt.customer_organization_id = @customerOrganizationId)",
+			"AND (@isVendor "+
+			"OR dt.customer_organization_id = @customerOrganizationId "+
+			"OR co.partner_organization_id = @partnerOrganizationId)",
 		pgx.NamedArgs{
 			"id":                     id,
 			"userId":                 userID,
 			"orgId":                  orgID,
 			"isVendor":               isVendor,
 			"customerOrganizationId": customerOrganizationID,
+			"partnerOrganizationId":  partnerOrganizationID,
 		})
 	if err != nil {
 		return nil, fmt.Errorf("failed to query Deployments: %w", err)

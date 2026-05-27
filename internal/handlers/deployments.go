@@ -114,6 +114,7 @@ func putDeployment(w http.ResponseWriter, r *http.Request) {
 				authInfo.CurrentUserID(),
 				*authInfo.CurrentOrgID(),
 				authInfo.CurrentCustomerOrgID(),
+				authInfo.CurrentPartnerOrgID(),
 			)
 			if err != nil {
 				log.Warn("could not get deployment", zap.Error(err))
@@ -216,7 +217,12 @@ func validateDeploymentRequest(
 		}
 	}
 
-	if target, err = db.GetDeploymentTarget(ctx, request.DeploymentTargetID, &orgId, nil); err != nil {
+	if target, err = db.GetDeploymentTarget(
+		ctx,
+		request.DeploymentTargetID,
+		&orgId,
+		auth.CurrentPartnerOrgID(),
+	); err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
 			return badRequestError(w, "DeploymentTarget does not exist")
 		} else {
@@ -503,6 +509,7 @@ func deploymentMiddleware(next http.Handler) http.Handler {
 			auth.CurrentUserID(),
 			*auth.CurrentOrgID(),
 			auth.CurrentCustomerOrgID(),
+			auth.CurrentPartnerOrgID(),
 		); errors.Is(err, apierrors.ErrNotFound) {
 			w.WriteHeader(http.StatusNotFound)
 		} else if err != nil {
