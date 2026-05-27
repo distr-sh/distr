@@ -8,6 +8,7 @@ import (
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 )
@@ -39,6 +40,7 @@ func DbAuthenticatorAllowUnverifiedEmail() authn.Authenticator[AuthInfo, AuthInf
 
 func dbAuthenticator(requireEmailVerified bool) authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganization] {
 	fn := func(ctx context.Context, a AuthInfo) (AuthInfoWithUserAndOrganization, error) {
+		requireEmailVerified := requireEmailVerified && env.UserEmailVerificationRequired()
 		if a.CurrentOrgID() != nil {
 			// Super admins: skip membership check, just verify user and org exist
 			if a.IsSuperAdmin() {
