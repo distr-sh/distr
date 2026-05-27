@@ -1,0 +1,110 @@
+---
+title: 'How to Give Customers Access to Your Container Images and Helm Charts Without Exposing Your Private Registry'
+description: 'Use a pull-through cache as a customer-facing distribution layer so customers get one clean endpoint while your internal registry stays private.'
+publishDate: 2026-05-26
+lastUpdated: 2026-05-26
+slug: 'container-registry-pull-through-cache'
+authors:
+  - name: 'Louis Weston'
+    role: 'Co-Founder'
+    image: '/src/assets/blog/authors/louis.jpg'
+    linkedIn: https://www.linkedin.com/in/louisnweston/
+    gitHub: https://github.com/thekubernaut
+image: '/src/assets/blog/2026-05-26-pull-through-cache/thumb.png'
+tags:
+  - OCI Registry
+  - Helm
+  - Kubernetes
+  - AWS ECR
+  - Software Distribution
+---
+
+import {Aside} from '@astrojs/starlight/components';
+
+You have packaged your software as a container image or a Helm chart. Your customer wants to deploy it. Now comes the part nobody puts in the roadmap: figuring out how they actually pull it.
+
+The instinct is to add them to your registry. That instinct leads somewhere painful.
+
+<hr />
+
+## The Registry Access Problem
+
+When you ship software as container images or Helm charts, your internal registry is the source of truth. Your CI/CD pipeline pushes to it. Your engineers reference it. It holds every artifact you have ever built, including things customers have no business seeing.
+
+Giving a customer access to that registry means:
+
+- Credential management at their end. They need to configure `imagePullSecrets` in Kubernetes for container images, or authenticate their Helm client for charts. When the credential expires or rotates, their deployments break and they file a support ticket blaming you.
+- Access sprawl at your end. How do you revoke access when a customer churns? How do you scope it so they can only see their licensed version? Most teams answer this with manual registry user management, which they inevitably forget to clean up.
+- Exposure of your internal structure. Even a read-only token can reveal image names, chart versions, tag histories, and build artifacts you would rather keep internal.
+
+The traditional fix, standing up a separate customer-facing registry and pushing artifacts to it, solves the exposure problem but creates a synchronization problem. Now you are maintaining two registries and hoping they stay in sync.
+
+<Aside type="note">
+  Still evaluating registry options? We compared ECR, GHCR, GAR, Harbor, JFrog,
+  Docker Hub, and more in our [container registry
+  comparison](/blog/container-image-registry-comparison/).
+</Aside>
+
+## Why AWS ECR Makes This Worse
+
+If your internal registry is Amazon ECR, the complexity compounds.
+
+AWS's own pull-through cache automatically provisions a service-linked IAM role, `AWSServiceRoleForECRPullThroughCache`, but your principals still need explicit policies granting `ecr:BatchImportUpstreamImage` and `ecr:CreateRepository`. Authenticated upstream registries require credentials stored in AWS Secrets Manager under a specific prefix. Cross-account setups, say your registry in one AWS account and your customer's environment in another, add another layer: IAM roles in the downstream account, resource policies in the upstream account, and the joy of debugging silent permission failures at pull time.
+
+This is a significant amount of infrastructure to configure just so a customer can run your software.
+
+## A Cleaner Model: Pull-Through Cache as a Distribution Layer
+
+A pull-through cache sits between your internal registry and your customers. Your engineers keep pushing to the same registry they have always used. Distr syncs tag metadata automatically every 30 minutes, or on demand via API, and serves blobs when a customer first requests them. After that first pull, subsequent pulls are served entirely from cache with no dependency on your internal registry at all.
+
+From your customer's perspective: one endpoint, one credential, and images and charts that appear as if they are hosted there natively.
+
+From your engineers' perspective: nothing changes.
+
+```text
+[Your CI/CD] -> [Internal ECR / GHCR / GAR]
+                            |
+                         (sync)
+                            |
+                   [Distr Pull-Through Cache]
+                            |
+             [Customer Kubernetes Cluster]
+```
+
+Distr authenticates to your upstream registry on your behalf, including automatically refreshing ECR's short-lived authorization tokens, which expire every 12 hours. Your customers authenticate only to Distr. They never interact with your internal registry, its IAM configuration, or its credential lifecycle.
+
+## What Changes for Your Customers
+
+Before: "Can you add us to your ECR? We need to configure cross-account access, and our security team needs to review the IAM policy..."
+
+After: Your customer opens the Distr Customer Portal, creates a Personal Access Token, and uses the registry endpoint shown there.
+
+```bash
+# Container images
+docker pull registry.distr.sh/your-org/your-image:1.2.3
+
+# Helm charts
+helm pull oci://registry.distr.sh/your-org/your-chart --version 1.2.3
+```
+
+That is the entire interaction. Customers can create, rotate, and revoke their own tokens for the users in their organization, while the token only grants access to the artifacts and versions they are entitled to. In Distr, [artifact entitlements](/docs/platform/artifact-entitlements/) can be scoped at the artifact and tag level, so one customer can pull `1.2.x` while another is limited to `1.1.x`. When a customer churns or their entitlement changes, you update access in Distr instead of hunting down their IAM user in your AWS account.
+
+## What Changes for Your Engineering Team
+
+Nothing. Your pipeline pushes to the same place it always has. The pull-through cache syncs in the background. No new CI steps, no artifact promotion workflows, no duplicate push targets.
+
+This also helps when artifacts are spread across multiple registries. One team can keep publishing images to ECR, another can keep using GHCR, and a third can keep Helm charts in GAR. Distr can sit in front of all of them and give customers one consistent place to pull from.
+
+## What You Get Back
+
+The real value is not the cache itself. It is what you can see through it. Because every pull flows through Distr, you get per-customer analytics: which versions are deployed where, who is still on an old release, and whether anyone has actually pulled the artifact since they bought.
+
+That data is invisible when customers pull directly from your internal registry.
+
+Combined with entitlement enforcement, where the token itself controls which artifacts a given customer can access, you have a distribution layer that handles both the ops problem of getting software to customers and the business problem of controlling who gets what.
+
+## Getting Started with Distr
+
+Distr's pull-through cache supports container images and Helm charts stored in OCI-compatible registries, with upstream authentication via basic auth, AWS ECR with automatic token refresh, or public registries with no credentials required. You configure it once per artifact, point it at your upstream repository URL, and customers immediately have a clean endpoint to pull from.
+
+[Read the Distr pull-through cache docs](/docs/registry/pull-through-cache/).
