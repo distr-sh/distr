@@ -271,6 +271,9 @@ func validateCreateUserAccount(ctx context.Context, body *api.CreateUserAccountR
 			}
 		}
 		if body.CustomerOrganizationID == nil {
+			if *auth.CurrentUserRole() != types.UserRoleAdmin {
+				return apierrors.NewForbidden("must be admin to create users in the given scope")
+			}
 			body.PartnerOrganizationID = partnerOrgID
 		}
 	} else if *auth.CurrentUserRole() != types.UserRoleAdmin &&

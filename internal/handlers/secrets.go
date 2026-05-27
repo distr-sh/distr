@@ -154,8 +154,7 @@ func updateSecretHandler() http.HandlerFunc {
 			return
 		}
 
-		// check if this user is authorized to update the secret
-		_, err = db.GetSecretByID(ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
+		existing, err := db.GetSecretByID(ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
 		if err != nil {
 			if errors.Is(err, apierrors.ErrNotFound) {
 				http.Error(w, "secret not found", http.StatusNotFound)
@@ -170,7 +169,7 @@ func updateSecretHandler() http.HandlerFunc {
 		secret, err := db.UpdateSecret(
 			ctx,
 			id,
-			auth.CurrentCustomerOrgID(),
+			existing.CustomerOrganizationID,
 			auth.CurrentUserID(),
 			body.Value,
 		)

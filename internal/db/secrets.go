@@ -264,13 +264,16 @@ func DeleteSecret(
 	db := internalctx.GetDb(ctx)
 	cmd, err := db.Exec(
 		ctx,
-		`DELETE s FROM Secret s
-		LEFT JOIN CustomerOrganization ON s.customer_organization_id = c.id
-		WHERE s.id = @id
-			AND s.organization_id = @organizationID
+		`DELETE FROM Secret
+		WHERE id = @id
+			AND organization_id = @organizationID
 			AND (@isVendor
-				OR s.customer_organization_id = @customerOrganizationID
-				OR c.partner_organization_id = @partnerOrganizationID)`,
+				OR customer_organization_id = @customerOrganizationID
+				OR EXISTS (
+					SELECT 1 FROM CustomerOrganization c
+					WHERE c.id = customer_organization_id
+					AND c.partner_organization_id = @partnerOrganizationID
+				))`,
 		pgx.NamedArgs{
 			"id":                     id,
 			"organizationID":         organizationID,
