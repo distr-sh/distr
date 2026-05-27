@@ -52,7 +52,7 @@ importers:
         version: 6.43.0
       '@distr-sh/distr-sdk':
         specifier: file:./sdk/js/src
-        version: src@file:sdk/js/src
+        version: file:sdk/js/src
       '@fontsource/inter':
         specifier: ^5.1.0
         version: 5.2.8
@@ -526,6 +526,9 @@ packages:
   '@csstools/css-tokenizer@4.0.0':
     resolution: {integrity: sha512-QxULHAm7cNu72w97JUNCBFODFaXpbDg+dP8b/oWFAZ2MTRppA3U00Y2L1HqaS4J6yBqxwa/Y3nMBaxVKbB/NsA==}
     engines: {node: '>=20.19.0'}
+
+  '@distr-sh/distr-sdk@file:sdk/js/src':
+    resolution: {directory: sdk/js/src, type: directory}
 
   '@emnapi/core@1.9.1':
     resolution: {integrity: sha512-mukuNALVsoix/w1BJwFzwXBN/dHeejQtuVzcDsfOEsdpCumXb/E9j8w11h5S54tT1xhifGfbbSm/ICrObRb3KA==}
@@ -3117,9 +3120,6 @@ packages:
   spdx-license-ids@3.0.23:
     resolution: {integrity: sha512-CWLcCCH7VLu13TgOH+r8p1O/Znwhqv/dbb6lqWy67G+pT1kHmeD/+V36AVb/vq8QMIQwVShJ6Ssl5FPh0fuSdw==}
 
-  src@file:sdk/js/src:
-    resolution: {directory: sdk/js/src, type: directory}
-
   ssri@13.0.1:
     resolution: {integrity: sha512-QUiRf1+u9wPTL/76GTYlKttDEBWV1ga9ZXW8BG6kfdeyyM8LGPix9gROyg9V2+P0xNyF3X2Go526xKFdMZrHSQ==}
     engines: {node: ^20.17.0 || >=22.9.0}
@@ -3930,6 +3930,8 @@ snapshots:
       css-tree: 3.2.1
 
   '@csstools/css-tokenizer@4.0.0': {}
+
+  '@distr-sh/distr-sdk@file:sdk/js/src': {}
 
   '@emnapi/core@1.9.1':
     dependencies:
@@ -6387,8 +6389,6 @@ snapshots:
       spdx-license-ids: 3.0.23
 
   spdx-license-ids@3.0.23: {}
-
-  src@file:sdk/js/src: {}
 
   ssri@13.0.1:
     dependencies:
