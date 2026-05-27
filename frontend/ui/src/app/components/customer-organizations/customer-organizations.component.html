@@ -47,6 +47,7 @@
               <th scope="col" class="p-4">Name</th>
               <th scope="col" class="p-4">Creation Date</th>
               <th scope="col" class="p-4">Features</th>
+              <th *appRequireVendor scope="col" class="p-4">Partner</th>
               <th scope="col" class="p-4 text-end"># of Users</th>
               <th scope="col" class="p-4 text-end"># of Deployments</th>
               <th scope="col" class="p-4"></th>
@@ -129,6 +130,21 @@
                     </div>
                   </ng-template>
                 </td>
+                @if (auth.isVendor()) {
+                  <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                    @if (getPartnerName(customer.partnerOrganizationId); as name) {
+                      {{ name }}
+                    } @else {
+                      <span class="text-gray-500">–</span>
+                    }
+
+                    @if (auth.hasAnyRole('read_write', 'admin')) {
+                      <button type="button" class="text-gray-400 ml-1" (click)="showPartnerAssignDialog(customer)">
+                        <fa-icon [icon]="faEdit" />
+                      </button>
+                    }
+                  </td>
+                }
                 <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white text-end">
                   {{ customer.userCount | number }}
                 </td>
@@ -258,6 +274,69 @@
           </form>
         </div>
       </section>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #partnerAssignDialog>
+  <div
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top"
+    class="p-4 w-full min-w-lg mt-12 max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-900 mt-32 xl:mt-80">
+    <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Assign Partner</h2>
+      <button
+        type="button"
+        (click)="closePartnerAssignDialog()"
+        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+        <fa-icon [icon]="faXmark" />
+        <span class="sr-only">Close modal</span>
+      </button>
+    </div>
+    <div class="p-4 md:p-5 space-y-4">
+      <fieldset class="space-y-2">
+        <legend class="block text-sm font-medium text-gray-900 dark:text-white">Partner</legend>
+        <ul
+          class="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden divide-y divide-gray-200 dark:divide-gray-600">
+          <li>
+            <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+              <input
+                type="radio"
+                [formControl]="partnerAssignControl"
+                value=""
+                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+              <span class="text-sm text-gray-900 dark:text-white">None</span>
+            </label>
+          </li>
+          @for (partner of partnerOrganizations(); track partner.id) {
+            <li>
+              <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+                <input
+                  type="radio"
+                  [formControl]="partnerAssignControl"
+                  [value]="partner.id"
+                  class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                <span class="text-sm text-gray-900 dark:text-white">{{ partner.name }}</span>
+              </label>
+            </li>
+          }
+        </ul>
+      </fieldset>
+      <div class="flex justify-end gap-2">
+        <button
+          type="button"
+          (click)="closePartnerAssignDialog()"
+          class="py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+          Cancel
+        </button>
+        <button
+          type="button"
+          (click)="submitPartnerAssign()"
+          [disabled]="partnerAssignLoading()"
+          class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 disabled:opacity-50 disabled:cursor-not-allowed">
+          Save
+        </button>
+      </div>
     </div>
   </div>
 </ng-template>

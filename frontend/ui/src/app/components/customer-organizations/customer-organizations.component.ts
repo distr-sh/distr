@@ -16,7 +16,7 @@ import {
   faTrash,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import {combineLatest, filter, firstValueFrom, map, startWith, Subject, switchMap} from 'rxjs';
+import {combineLatest, filter, firstValueFrom, map, of, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {RequireVendorDirective} from '../../directives/required-role.directive';
@@ -28,6 +28,7 @@ import {FeatureFlagService} from '../../services/feature-flag.service';
 import {ImageUploadService} from '../../services/image-upload.service';
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
+import {PartnerOrganizationsService} from '../../services/partner-organizations.service';
 import {ToastService} from '../../services/toast.service';
 import {QuotaLimitComponent} from '../quota-limit.component';
 
@@ -57,6 +58,7 @@ export class CustomerOrganizationsComponent {
   protected readonly faChevronDown = faChevronDown;
 
   private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
+  private readonly partnerOrganizationsService = inject(PartnerOrganizationsService);
   private readonly toast = inject(ToastService);
   private readonly imageUploadService = inject(ImageUploadService);
   private readonly overlay = inject(OverlayService);
@@ -115,6 +117,16 @@ export class CustomerOrganizationsComponent {
     return id ? this.customerOrganizations()?.find((it) => it.id === id) : undefined;
   });
   protected dropdownWidth = 0;
+
+  protected readonly partnerOrganizations = toSignal(
+    this.auth.isVendor() ? this.partnerOrganizationsService.getPartnerOrganizations() : of([])
+  );
+
+  private readonly partnerAssignDialog = viewChild.required<TemplateRef<unknown>>('partnerAssignDialog');
+  private partnerAssignModalRef?: DialogRef;
+  private readonly selectedCustomerForPartner = signal<CustomerOrganization | undefined>(undefined);
+  protected readonly partnerAssignControl = this.fb.control('');
+  protected partnerAssignLoading = signal(false);
 
   protected showCreateDialog() {
     this.closeCreateDialog();
@@ -267,5 +279,47 @@ export class CustomerOrganizationsComponent {
 
   protected hideCustomerFeaturesDropdown(): void {
     this.openCustomerFeaturesDropdownId.set(undefined);
+  }
+
+  protected getPartnerName(partnerId: string | undefined): string | undefined {
+    if (!partnerId) {
+      return undefined;
+    }
+    return this.partnerOrganizations()?.find((p) => p.id === partnerId)?.name;
+  }
+
+  protected showPartnerAssignDialog(customer: CustomerOrganization) {
+    this.selectedCustomerForPartner.set(customer);
+    this.partnerAssignControl.setValue(customer.partnerOrganizationId ?? '');
+    this.partnerAssignModalRef = this.overlay.showModal(this.partnerAssignDialog());
+  }
+
+  protected closePartnerAssignDialog() {
+    this.partnerAssignModalRef?.close();
+    this.selectedCustomerForPartner.set(undefined);
+    this.partnerAssignControl.reset();
+  }
+
+  protected async submitPartnerAssign() {
+    const customer = this.selectedCustomerForPartner();
+    if (!customer) {
+      return;
+    }
+    const partnerOrganizationId = this.partnerAssignControl.value || undefined;
+    this.partnerAssignLoading.set(true);
+    try {
+      await firstValueFrom(
+        this.partnerOrganizationsService.assignCustomerToPartner(customer.id, {partnerOrganizationId})
+      );
+      this.closePartnerAssignDialog();
+      this.refresh$.next();
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    } finally {
+      this.partnerAssignLoading.set(false);
+    }
   }
 }
