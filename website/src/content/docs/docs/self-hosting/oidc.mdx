@@ -1,0 +1,131 @@
+---
+title: OIDC Authentication
+description: Configure OAuth2/OIDC providers (Google, GitHub, Microsoft, or any generic OIDC issuer) to let users sign in and sign up on your self-hosted Distr instance.
+sidebar:
+  label: OIDC Authentication
+  order: 3
+---
+
+import {Aside} from '@astrojs/starlight/components';
+
+## What is OIDC?
+
+**OAuth 2.0** is an authorization framework that lets an application obtain limited access to a user's account on another service (the identity provider) without ever handling that user's password.
+**OpenID Connect (OIDC)** is a thin authentication layer built on top of OAuth 2.0: it standardizes how the identity provider returns information about the signed-in user (such as their email address) in a signed `id_token`, so applications can use OAuth 2.0 not just for authorization but to log users in.
+
+**SAML 2.0** is an older XML-based protocol that solves a similar problem — exchanging signed assertions about a user between an identity provider and a service. It is still common in enterprise IT, while OIDC has become the default for modern web and mobile applications.
+
+Distr currently supports OIDC (and therefore OAuth 2.0) for sign-in and sign-up. SAML is not supported. If you have an OIDC-compatible identity provider — including any modern IdP such as Okta, Auth0, Keycloak, Authentik, or Dex — you can plug it in through the [Generic OIDC](#generic-oidc) configuration described below.
+
+## Supported providers
+
+Distr supports four OIDC providers out of the box: **Google**, **GitHub**, **Microsoft (Entra ID)**, and a **Generic** OIDC issuer.
+Each provider can be enabled independently through environment variables.
+When enabled, the corresponding sign-in button appears on both the login and sign-up pages.
+
+## Automatic sign-up
+
+When a user signs in through an OIDC provider for the first time and no account with that email exists yet, Distr will create the account automatically:
+
+- A default organization named after the user's email is created, with the new user as **Admin**.
+- A secure random password is generated and hashed with Argon2id. The user can later set their own password through the standard password reset flow.
+- The email address is marked as verified, since it was authenticated by a trusted identity provider.
+
+If you don't want OIDC sign-in to create a new organization for the user, invite them to your existing organization first. The invite creates a user row tied to your organization, so when they later sign in via OIDC, Distr finds the existing account and skips the new-organization step.
+
+If you want to disable this behavior entirely, set `REGISTRATION=disabled`. In that mode, OIDC sign-ins for unknown emails are rejected and the user is redirected back to the login page with an explanatory message. Existing users can still sign in via OIDC.
+
+### Invited users signing in via OIDC
+
+If a user was previously invited but never accepted the invite (no password set, email not verified) and then signs in via OIDC with the same email address, Distr will reuse the existing account: the user keeps their organization membership and role, their email is marked as verified, and a session is started. The unused invite link is simply ignored. The user can later set a password via the password reset flow if they want to also sign in with email and password.
+
+<Aside type="note">
+  The callback URLs below assume `DISTR_HOST` is set correctly. The redirect URL
+  registered at each provider must match exactly, including scheme and trailing
+  path.
+</Aside>
+
+## Common configuration
+
+| Variable       | Required | Default   | Description                                                                                       |
+| -------------- | -------- | --------- | ------------------------------------------------------------------------------------------------- |
+| `REGISTRATION` | no       | `enabled` | One of `enabled`, `hidden`, `disabled`. Set to `disabled` to block both regular and OIDC sign-up. |
+| `DISTR_HOST`   | yes      | —         | Base URL of your Distr instance. Used to build OIDC callback URLs.                                |
+
+## Google
+
+| Variable                    | Required | Description                             |
+| --------------------------- | -------- | --------------------------------------- |
+| `OIDC_GOOGLE_ENABLED`       | yes      | Set to `true` to enable Google sign-in. |
+| `OIDC_GOOGLE_CLIENT_ID`     | yes      | OAuth 2.0 client ID from Google Cloud.  |
+| `OIDC_GOOGLE_CLIENT_SECRET` | yes      | OAuth 2.0 client secret.                |
+
+Callback URL: `{DISTR_HOST}/api/v1/auth/oidc/google/callback`
+
+Create the OAuth client in the [Google Cloud Console](https://console.cloud.google.com/apis/credentials), set the application type to **Web application**, and add the callback URL as an authorized redirect URI.
+
+## GitHub
+
+| Variable                    | Required | Description                             |
+| --------------------------- | -------- | --------------------------------------- |
+| `OIDC_GITHUB_ENABLED`       | yes      | Set to `true` to enable GitHub sign-in. |
+| `OIDC_GITHUB_CLIENT_ID`     | yes      | GitHub OAuth App client ID.             |
+| `OIDC_GITHUB_CLIENT_SECRET` | yes      | GitHub OAuth App client secret.         |
+
+Callback URL: `{DISTR_HOST}/api/v1/auth/oidc/github/callback`
+
+Register a new [OAuth application](https://github.com/settings/developers) on GitHub and set the **Authorization callback URL** to the value above.
+
+<Aside type="note">
+  Distr fetches the user's email list from the GitHub API and only accepts the
+  primary, verified email address. Users whose primary email is unverified on
+  GitHub cannot sign in.
+</Aside>
+
+## Microsoft (Entra ID)
+
+| Variable                       | Required | Description                                                         |
+| ------------------------------ | -------- | ------------------------------------------------------------------- |
+| `OIDC_MICROSOFT_ENABLED`       | yes      | Set to `true` to enable Microsoft sign-in.                          |
+| `OIDC_MICROSOFT_CLIENT_ID`     | yes      | Application (client) ID of the Entra ID app registration.           |
+| `OIDC_MICROSOFT_CLIENT_SECRET` | yes      | Client secret created for the app registration.                     |
+| `OIDC_MICROSOFT_TENANT_ID`     | yes      | Directory (tenant) ID, or `common` / `organizations` / `consumers`. |
+
+Callback URL: `{DISTR_HOST}/api/v1/auth/oidc/microsoft/callback`
+
+Create an app registration in the [Microsoft Entra admin center](https://entra.microsoft.com/) and add the callback URL as a **Web** redirect URI.
+
+## Generic OIDC
+
+Any OIDC-compliant identity provider can be configured with the generic options. The issuer must expose a `/.well-known/openid-configuration` discovery document.
+
+| Variable                     | Required | Default | Description                                                                         |
+| ---------------------------- | -------- | ------- | ----------------------------------------------------------------------------------- |
+| `OIDC_GENERIC_ENABLED`       | yes      | —       | Set to `true` to enable the generic provider.                                       |
+| `OIDC_GENERIC_ISSUER`        | yes      | —       | Issuer URL, e.g. `https://auth.example.com/`.                                       |
+| `OIDC_GENERIC_CLIENT_ID`     | yes      | —       | Client ID issued by the provider.                                                   |
+| `OIDC_GENERIC_CLIENT_SECRET` | yes      | —       | Client secret issued by the provider.                                               |
+| `OIDC_GENERIC_SCOPES`        | yes      | —       | Comma-separated scopes to request. Typically `openid,email,profile`.                |
+| `OIDC_GENERIC_PKCE_ENABLED`  | no       | `false` | Enable PKCE (`S256`). Recommended for public clients and providers that support it. |
+
+Callback URL: `{DISTR_HOST}/api/v1/auth/oidc/generic/callback`
+
+## Helm values example
+
+The Helm chart accepts the same environment variables under `hub.env`:
+
+```yaml
+hub:
+  env:
+    - name: OIDC_GOOGLE_ENABLED
+      value: 'true'
+    - name: OIDC_GOOGLE_CLIENT_ID
+      value: 'your-client-id'
+    - name: OIDC_GOOGLE_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: distr-oidc
+          key: google-client-secret
+```
+
+See [Self-Hosting Distr](/docs/self-hosting/getting-started/) for the basics of configuring `DISTR_HOST` and the rest of the deployment.

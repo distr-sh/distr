@@ -11,9 +11,12 @@ import (
 	"github.com/distr-sh/distr/internal/authjwt"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/handlerutil"
 	"github.com/distr-sh/distr/internal/oidc"
+	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -21,7 +24,10 @@ import (
 	"go.uber.org/zap"
 )
 
-const redirectToLoginOIDCFailed = "/login?reason=oidc-failed"
+const (
+	redirectToLoginOIDCFailed               = "/login?reason=oidc-failed"
+	redirectToLoginOIDCRegistrationDisabled = "/login?reason=oidc-registration-disabled"
+)
 
 func AuthOIDCRouter(r chiopenapi.Router) {
 	type OIDCRequest struct {
@@ -101,10 +107,16 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	err = db.RunTx(ctx, func(ctx context.Context) error {
 		user, err := db.GetUserAccountByEmail(ctx, email)
 		if errors.Is(err, apierrors.ErrNotFound) {
-			http.Redirect(w, r, "/register?reason=oidc-user-not-found&email="+email, http.StatusFound)
-			return nil
+			user, err = registerOIDCUser(ctx, email)
+			if err != nil {
+				return err
+			}
 		} else if err != nil {
 			return err
+		}
+		if user == nil {
+			http.Redirect(w, r, redirectToLoginOIDCRegistrationDisabled, http.StatusFound)
+			return nil
 		}
 		log = log.With(zap.Any("userId", user.ID))
 
@@ -147,6 +159,30 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		log.Warn("user login failed", zap.Error(err))
 		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
 	}
+}
+
+// registerOIDCUser creates a new user account for an OIDC-authenticated user.
+// Returns (nil, nil) if registration is administratively disabled.
+func registerOIDCUser(ctx context.Context, email string) (*types.UserAccount, error) {
+	if env.Registration() == env.RegistrationDisabled {
+		return nil, nil
+	}
+	password, err := security.GenerateAccessKey()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate password: %w", err)
+	}
+	userAccount := types.UserAccount{
+		Email:           email,
+		Password:        password,
+		EmailVerifiedAt: util.PtrTo(time.Now()),
+	}
+	if err := security.HashPassword(&userAccount); err != nil {
+		return nil, fmt.Errorf("failed to hash password: %w", err)
+	}
+	if _, err := db.CreateUserAccountWithOrganization(ctx, &userAccount); err != nil {
+		return nil, fmt.Errorf("failed to create OIDC user: %w", err)
+	}
+	return &userAccount, nil
 }
 
 func verifyOIDCState(r *http.Request) (string, error) {
