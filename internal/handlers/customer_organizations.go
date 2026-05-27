@@ -208,7 +208,13 @@ func assignCustomerToPartnerHandler() http.HandlerFunc {
 
 		if request.PartnerOrganizationID != nil {
 			if err := db.ValidatePartnerOrgBelongsToOrg(ctx, *request.PartnerOrganizationID, *auth.CurrentOrgID()); err != nil {
-				http.Error(w, "partner organization not found", http.StatusBadRequest)
+				if errors.Is(err, db.ErrPartnerOrgNotInOrg) {
+					http.Error(w, "partner organization not found", http.StatusBadRequest)
+				} else {
+					log.Error("failed to check partner in org", zap.Error(err))
+					sentry.GetHubFromContext(ctx).CaptureException(err)
+					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				}
 				return
 			}
 		}
@@ -219,13 +225,13 @@ func assignCustomerToPartnerHandler() http.HandlerFunc {
 		} else if err != nil {
 			log.Error("failed to assign partner to customer org", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		} else {
 			customerOrg, err := db.GetCustomerOrganizationByID(ctx, id)
 			if err != nil {
 				log.Error("failed to get customer org after partner assignment", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
 			RespondJSON(w, mapping.CustomerOrganizationToAPI(customerOrg.CustomerOrganization))

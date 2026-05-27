@@ -159,10 +159,18 @@ func deleteDeploymentHandler() http.HandlerFunc {
 			if err != nil {
 				log.Warn("could not get DeploymentTarget", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return err
 			}
-			if target.OrganizationID != orgId || !isDeploymentTargetVisible(auth, target.DeploymentTarget) {
+			if target.OrganizationID != orgId {
+				http.NotFound(w, r)
+				return apierrors.ErrNotFound
+			} else if ok, err := isDeploymentTargetVisible(ctx, target.DeploymentTarget); err != nil {
+				log.Warn("could not check deployment target visibility", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return err
+			} else if !ok {
 				http.NotFound(w, r)
 				return apierrors.ErrNotFound
 			}
@@ -170,7 +178,7 @@ func deleteDeploymentHandler() http.HandlerFunc {
 			if err := db.DeleteDeploymentWithID(ctx, deployment.ID); err != nil {
 				log.Warn("could not delete Deployment", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return err
 			}
 
@@ -376,9 +384,13 @@ func validateDeploymentRequestDeploymentTarget(
 	request api.DeploymentRequest,
 	target *types.DeploymentTargetFull,
 ) error {
-	auth := auth.Authentication.Require(ctx)
-
-	if !isDeploymentTargetVisible(auth, target.DeploymentTarget) {
+	if ok, err := isDeploymentTargetVisible(ctx, target.DeploymentTarget); err != nil {
+		log := internalctx.GetLogger(ctx)
+		log.Warn("failed to check deployment target visibility", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return err
+	} else if !ok {
 		err := errors.New("DeploymentTarget not found")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err

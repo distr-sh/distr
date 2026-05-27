@@ -11,7 +11,6 @@ import (
 	"github.com/distr-sh/distr/internal/agentconnect"
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
-	"github.com/distr-sh/distr/internal/authn/authinfo"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/middleware"
@@ -161,7 +160,7 @@ func createDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.Warn("could not check deployment target limit", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return err
 			} else if limitReached {
 				err = errors.New("deployment target limit reached")
@@ -178,7 +177,7 @@ func createDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 			); err != nil {
 				log.Warn("could not create DeploymentTarget", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return err
 			}
 
@@ -186,7 +185,7 @@ func createDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 		})
 
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		} else {
 			RespondJSON(w, dt)
@@ -233,12 +232,16 @@ func deleteDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 	auth := auth.Authentication.Require(ctx)
 	if dt.OrganizationID != *auth.CurrentOrgID() {
 		http.NotFound(w, r)
-	} else if !isDeploymentTargetVisible(auth, dt.DeploymentTarget) {
+	} else if ok, err := isDeploymentTargetVisible(ctx, dt.DeploymentTarget); err != nil {
+		log.Warn("error checking deployment target visibility", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	} else if !ok {
 		http.Error(w, "must be vendor or creator", http.StatusForbidden)
 	} else if err := db.DeleteDeploymentTargetWithID(ctx, dt.ID); err != nil {
 		log.Warn("error deleting deployment target", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	} else {
 		w.WriteHeader(http.StatusNoContent)
 	}
@@ -319,12 +322,16 @@ func deploymentTargetMiddleware(wh http.Handler) http.Handler {
 		deploymentTarget, err := db.GetDeploymentTarget(ctx, id, orgId, auth.CurrentPartnerOrgID())
 		if errors.Is(err, apierrors.ErrNotFound) {
 			w.WriteHeader(http.StatusNotFound)
-		} else if !isDeploymentTargetVisible(auth, deploymentTarget.DeploymentTarget) {
-			w.WriteHeader(http.StatusNotFound)
 		} else if err != nil {
 			internalctx.GetLogger(ctx).Error("failed to get DeploymentTarget", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		} else if ok, err := isDeploymentTargetVisible(ctx, deploymentTarget.DeploymentTarget); err != nil {
+			internalctx.GetLogger(ctx).Error("failed to check deployment target visibility", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		} else if !ok {
+			http.NotFound(w, r)
 		} else {
 			ctx = internalctx.WithDeploymentTarget(ctx, deploymentTarget)
 			wh.ServeHTTP(w, r.WithContext(ctx))
@@ -332,12 +339,27 @@ func deploymentTargetMiddleware(wh http.Handler) http.Handler {
 	})
 }
 
-func isDeploymentTargetVisible(auth authinfo.AuthInfo, target types.DeploymentTarget) bool {
+func isDeploymentTargetVisible(ctx context.Context, target types.DeploymentTarget) (bool, error) {
+	auth := auth.Authentication.Require(ctx)
+
 	if customerOrgID := auth.CurrentCustomerOrgID(); customerOrgID != nil {
-		return util.PtrEq(customerOrgID, target.CustomerOrganizationID)
+		return util.PtrEq(customerOrgID, target.CustomerOrganizationID), nil
 	}
-	if auth.CurrentPartnerOrgID() != nil {
-		return target.CustomerOrganizationID != nil
+
+	if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
+		if target.CustomerOrganizationID == nil {
+			return false, nil
+		} else if err := db.ValidateCustomerOrgBelongsToPartnerOrg(
+			ctx,
+			*target.CustomerOrganizationID,
+			*partnerOrgID,
+		); err != nil {
+			if errors.Is(err, db.ErrCustomerOrgNotInPartnerOrg) {
+				return false, nil
+			}
+			return false, fmt.Errorf("checking deployment visibility: %w", err)
+		}
 	}
-	return true
+
+	return true, nil
 }

@@ -27,7 +27,9 @@ const (
 	`
 )
 
-func ValidatePartnerOrgBelongsToOrg(ctx context.Context, partnerOrgID uuid.UUID, orgID uuid.UUID) error {
+var ErrPartnerOrgNotInOrg = errors.New("partner organization does not belong to organization")
+
+func ValidatePartnerOrgBelongsToOrg(ctx context.Context, partnerOrgID, orgID uuid.UUID) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		"SELECT EXISTS(SELECT 1 FROM PartnerOrganization WHERE id = @partnerOrgID AND organization_id = @orgID)",
@@ -44,7 +46,33 @@ func ValidatePartnerOrgBelongsToOrg(ctx context.Context, partnerOrgID uuid.UUID,
 		return fmt.Errorf("could not collect result: %w", err)
 	}
 	if !exists {
-		return fmt.Errorf("partner organization does not belong to organization")
+		return ErrPartnerOrgNotInOrg
+	}
+	return nil
+}
+
+var ErrCustomerOrgNotInPartnerOrg = errors.New("customer organization does not belong to partner organization")
+
+func ValidateCustomerOrgBelongsToPartnerOrg(ctx context.Context, customerOrgID, partnerOrgID uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT EXISTS(
+			SELECT 1 FROM CustomerOrganization WHERE id = @customerOrgID AND partner_organization_id = @partnerOrgID
+		)`,
+		pgx.NamedArgs{
+			"customerOrgID": customerOrgID,
+			"partnerOrgID":  partnerOrgID,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("could not validate CustomerOrganization belongs to PartnerOrganization: %w", err)
+	}
+	exists, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[bool])
+	if err != nil {
+		return fmt.Errorf("could not collect result: %w", err)
+	}
+	if !exists {
+		return ErrCustomerOrgNotInPartnerOrg
 	}
 	return nil
 }
