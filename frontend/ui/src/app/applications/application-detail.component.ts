@@ -36,7 +36,7 @@ import {
 } from 'rxjs';
 import {isArchived} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
-import {disableControlsWithoutEvent, enableControlsWithoutEvent, validate} from '../../util/forms';
+import {disableControlsWithoutEvent, enableControlsWithoutEvent} from '../../util/forms';
 import {SecureImagePipe} from '../../util/secureImage';
 import {EditorComponent} from '../components/editor.component';
 import {UuidComponent} from '../components/uuid';
@@ -239,59 +239,60 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   }
 
   async createVersion(application: Application) {
-    if (!validate(this.newVersionForm) || !application) return;
+    this.newVersionForm.markAllAsTouched();
+    if (this.newVersionForm.valid && application) {
+      this.newVersionFormLoading.set(true);
+      let res;
+      const resources: ApplicationVersionResource[] = this.newVersionForm.controls.resources.controls
+        .map((g) => ({
+          name: g.controls.name.value,
+          content: g.controls.content.value,
+          visibleToCustomers: g.controls.visibleToCustomers.value,
+        }))
+        .filter((r) => r.name && r.content);
 
-    this.newVersionFormLoading.set(true);
-    const resources: ApplicationVersionResource[] = this.newVersionForm.controls.resources.controls
-      .map((g) => ({
-        name: g.controls.name.value,
-        content: g.controls.content.value,
-        visibleToCustomers: g.controls.visibleToCustomers.value,
-      }))
-      .filter((r) => r.name && r.content);
-
-    let res;
-    if (application.type === 'docker') {
-      res = this.applicationService.createApplicationVersionForDocker(
-        application,
-        {
-          name: this.newVersionForm.controls.versionName.value!,
-          linkTemplate: this.newVersionForm.controls.linkTemplate.value!,
-          resources,
-        },
-        this.newVersionForm.controls.docker.controls.compose.value!,
-        this.newVersionForm.controls.docker.controls.template.value
-      );
-    } else {
-      const versionFormVal = this.newVersionForm.controls.kubernetes.value;
-      res = this.applicationService.createApplicationVersionForKubernetes(
-        application,
-        {
-          name: this.newVersionForm.controls.versionName.value!,
-          linkTemplate: this.newVersionForm.controls.linkTemplate.value!,
-          chartType: versionFormVal.chartType!,
-          chartName: versionFormVal.chartName ?? undefined,
-          chartUrl: versionFormVal.chartUrl!,
-          chartVersion: versionFormVal.chartVersion!,
-          resources,
-        },
-        versionFormVal.baseValues,
-        versionFormVal.template
-      );
-    }
-
-    try {
-      const av = await firstValueFrom(res);
-      this.toast.success(`${av.name} created successfully`);
-      this.newVersionForm.reset();
-      this.enableTypeSpecificGroups(application);
-    } catch (e) {
-      const msg = getFormDisplayedError(e);
-      if (msg) {
-        this.toast.error(msg);
+      if (application.type === 'docker') {
+        res = this.applicationService.createApplicationVersionForDocker(
+          application,
+          {
+            name: this.newVersionForm.controls.versionName.value!,
+            linkTemplate: this.newVersionForm.controls.linkTemplate.value!,
+            resources,
+          },
+          this.newVersionForm.controls.docker.controls.compose.value!,
+          this.newVersionForm.controls.docker.controls.template.value
+        );
+      } else {
+        const versionFormVal = this.newVersionForm.controls.kubernetes.value;
+        res = this.applicationService.createApplicationVersionForKubernetes(
+          application,
+          {
+            name: this.newVersionForm.controls.versionName.value!,
+            linkTemplate: this.newVersionForm.controls.linkTemplate.value!,
+            chartType: versionFormVal.chartType!,
+            chartName: versionFormVal.chartName ?? undefined,
+            chartUrl: versionFormVal.chartUrl!,
+            chartVersion: versionFormVal.chartVersion!,
+            resources,
+          },
+          versionFormVal.baseValues,
+          versionFormVal.template
+        );
       }
-    } finally {
-      this.newVersionFormLoading.set(false);
+
+      try {
+        const av = await firstValueFrom(res);
+        this.toast.success(`${av.name} created successfully`);
+        this.newVersionForm.reset();
+        this.enableTypeSpecificGroups(application);
+      } catch (e) {
+        const msg = getFormDisplayedError(e);
+        if (msg) {
+          this.toast.error(msg);
+        }
+      } finally {
+        this.newVersionFormLoading.set(false);
+      }
     }
   }
 
