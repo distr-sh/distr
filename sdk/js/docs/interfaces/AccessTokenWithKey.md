@@ -65,3 +65,13 @@
 #### Inherited from
 
 [`AccessToken`](AccessToken.md).[`lastUsedAt`](AccessToken.md#lastusedat)
+
+---
+
+### userRole?
+
+> `optional` **userRole?**: [`UserRole`](../type-aliases/UserRole.md)
+
+#### Inherited from
+
+[`AccessToken`](AccessToken.md).[`userRole`](AccessToken.md#userrole)
