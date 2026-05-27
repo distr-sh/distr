@@ -8,7 +8,7 @@ import {faClipboard, faMagnifyingGlass, faPlus, faTrash, faXmark} from '@fortawe
 import dayjs from 'dayjs';
 import {firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
 import {isExpired, RelativeDatePipe} from '../../util/dates';
-import {UserRoleLabelPipe} from '../../util/user-role';
+import {USER_ROLE_LABELS, UserRoleLabelPipe} from '../../util/user-role';
 import {CreatedAccessTokenComponent} from '../components/created-access-token.component';
 import {UserRoleSelectComponent} from '../components/user-role-select.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
@@ -54,6 +54,10 @@ export class AccessTokensComponent {
   protected drawer: DialogRef<void> | null = null;
 
   protected readonly currentUserRole = computed<UserRole | undefined>(() => this.auth.getClaims()?.role);
+  protected readonly inheritOptionLabel = computed(() => {
+    const role = this.currentUserRole();
+    return role ? `Inherit from my role (${USER_ROLE_LABELS[role]})` : 'Inherit from my role';
+  });
 
   protected readonly editForm = new FormGroup({
     label: new FormControl('', {nonNullable: true}),

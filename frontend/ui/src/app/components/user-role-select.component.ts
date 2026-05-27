@@ -1,20 +1,14 @@
-import {Component, computed, forwardRef, input, signal} from '@angular/core';
-import {ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR} from '@angular/forms';
+import {Component, computed, forwardRef, input} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {ControlValueAccessor, FormControl, NG_VALUE_ACCESSOR, ReactiveFormsModule} from '@angular/forms';
 import {UserRole} from '@distr-sh/distr-sdk';
 import {USER_ROLE_LABELS, userRolesAtOrBelow} from '../../util/user-role';
 
 @Component({
   selector: 'app-user-role-select',
-  imports: [FormsModule],
+  imports: [ReactiveFormsModule],
   template: `
-    <select
-      [id]="id()"
-      [attr.aria-label]="ariaLabel()"
-      [class]="selectClass()"
-      [disabled]="isDisabled()"
-      [ngModel]="value()"
-      (ngModelChange)="setValue($event)"
-      (blur)="onTouched()">
+    <select [id]="id()" [attr.aria-label]="ariaLabel()" [class]="selectClass()" [formControl]="control">
       @if (emptyOptionLabel(); as label) {
         <option [ngValue]="undefined">{{ label }}</option>
       }
@@ -32,14 +26,19 @@ export class UserRoleSelectComponent implements ControlValueAccessor {
   public readonly ariaLabel = input<string>();
   public readonly emptyOptionLabel = input<string>();
 
-  protected readonly value = signal<UserRole | undefined>(undefined);
-  protected readonly isDisabled = signal(false);
+  protected readonly control = new FormControl<UserRole | undefined>(undefined);
   protected readonly labels = USER_ROLE_LABELS;
-
   protected readonly options = computed<UserRole[]>(() => userRolesAtOrBelow(this.maxRole()));
 
+  constructor() {
+    this.control.valueChanges.pipe(takeUntilDestroyed()).subscribe((v) => {
+      this.onTouched();
+      this.onChange(v ?? undefined);
+    });
+  }
+
   writeValue(value: UserRole | undefined): void {
-    this.value.set(value);
+    this.control.setValue(value, {emitEvent: false});
   }
 
   registerOnChange(fn: (v: UserRole | undefined) => void): void {
@@ -51,14 +50,13 @@ export class UserRoleSelectComponent implements ControlValueAccessor {
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.isDisabled.set(isDisabled);
+    if (isDisabled) {
+      this.control.disable({emitEvent: false});
+    } else {
+      this.control.enable({emitEvent: false});
+    }
   }
 
-  protected setValue(v: UserRole | undefined): void {
-    this.value.set(v);
-    this.onChange(v);
-  }
-
-  protected onChange: (v: UserRole | undefined) => void = () => {};
-  protected onTouched: () => void = () => {};
+  private onChange: (v: UserRole | undefined) => void = () => {};
+  private onTouched: () => void = () => {};
 }
