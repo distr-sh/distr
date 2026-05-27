@@ -2,7 +2,7 @@
 title: Self-Hosting Distr
 description: Distr can be easily self-managed in your own environment to use it as an internal software distribution platform and artifact registry.
 sidebar:
-  label: Self-Hosting Distr
+  label: Introduction
   order: 0
 ---
 
@@ -10,7 +10,7 @@ While the easiest way to use Distr is to use our [hosted version](/get-started/)
 
 Find out more information about the inner workings of Distr at [`github.com/distr-sh/distr`](https://github.com/distr-sh/distr/).
 
-Or checkout or [Docker Compose](/docs/self-hosting/docker/) or [Kubernetes](/docs/self-hosting/kubernetes/) deployment options.
+Or check out our [Docker Compose](/docs/self-hosting/docker/) or [Kubernetes](/docs/self-hosting/kubernetes/) deployment options.
 
 ## Semantic Versioning
 
