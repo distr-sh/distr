@@ -42,7 +42,7 @@
                   @if (token.userRole; as r) {
                     {{ r | userRoleLabel }}
                   } @else {
-                    <span class="text-gray-400 italic">inherits ({{ currentUserRole() | userRoleLabel }})</span>
+                    <span class="text-gray-400 italic">{{ currentUserRole() | userRoleLabel }} (inherited)</span>
                   }
                 </td>
                 <td class="px-4 py-3">{{ token.createdAt | date: 'medium' }}</td>

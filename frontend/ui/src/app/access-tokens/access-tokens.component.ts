@@ -56,7 +56,7 @@ export class AccessTokensComponent {
   protected readonly currentUserRole = computed<UserRole | undefined>(() => this.auth.getClaims()?.role);
   protected readonly inheritOptionLabel = computed(() => {
     const role = this.currentUserRole();
-    return role ? `Inherit from my role (${USER_ROLE_LABELS[role]})` : 'Inherit from my role';
+    return role ? `Inherit (${USER_ROLE_LABELS[role]})` : 'Inherit from my role';
   });
 
   protected readonly editForm = new FormGroup({
