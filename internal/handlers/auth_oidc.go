@@ -14,7 +14,6 @@ import (
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/handlerutil"
 	"github.com/distr-sh/distr/internal/oidc"
-	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
@@ -162,22 +161,16 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // registerOIDCUser creates a new user account for an OIDC-authenticated user.
+// The account is created without a password; the user can set one later via the
+// password reset flow if they want to also sign in with email and password.
 // Returns (nil, nil) if registration is administratively disabled.
 func registerOIDCUser(ctx context.Context, email string) (*types.UserAccount, error) {
 	if env.Registration() == env.RegistrationDisabled {
 		return nil, nil
 	}
-	password, err := security.GenerateAccessKey()
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate password: %w", err)
-	}
 	userAccount := types.UserAccount{
 		Email:           email,
-		Password:        password,
 		EmailVerifiedAt: util.PtrTo(time.Now()),
-	}
-	if err := security.HashPassword(&userAccount); err != nil {
-		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 	if _, err := db.CreateUserAccountWithOrganization(ctx, &userAccount); err != nil {
 		return nil, fmt.Errorf("failed to create OIDC user: %w", err)

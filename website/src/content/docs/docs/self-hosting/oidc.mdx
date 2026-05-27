@@ -28,7 +28,7 @@ When enabled, the corresponding sign-in button appears on both the login and sig
 When a user signs in through an OIDC provider for the first time and no account with that email exists yet, Distr will create the account automatically:
 
 - A default organization named after the user's email is created, with the new user as **Admin**.
-- A secure random password is generated and hashed with Argon2id. The user can later set their own password through the standard password reset flow.
+- No password is set on the account. The user can only sign in via configured OIDC providers until they add a password through the standard password reset flow.
 - The email address is marked as verified, since it was authenticated by a trusted identity provider.
 
 If you don't want OIDC sign-in to create a new organization for the user, invite them to your existing organization first. The invite creates a user row tied to your organization, so when they later sign in via OIDC, Distr finds the existing account and skips the new-organization step.
