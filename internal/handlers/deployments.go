@@ -165,7 +165,7 @@ func deleteDeploymentHandler() http.HandlerFunc {
 			if target.OrganizationID != orgId {
 				http.NotFound(w, r)
 				return apierrors.ErrNotFound
-			} else if ok, err := isDeploymentTargetVisible(ctx, target.DeploymentTarget); err != nil {
+			} else if ok, err := isDeploymentTargetVisible(ctx, target); err != nil {
 				log.Warn("could not check deployment target visibility", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -384,7 +384,7 @@ func validateDeploymentRequestDeploymentTarget(
 	request api.DeploymentRequest,
 	target *types.DeploymentTargetFull,
 ) error {
-	if ok, err := isDeploymentTargetVisible(ctx, target.DeploymentTarget); err != nil {
+	if ok, err := isDeploymentTargetVisible(ctx, target); err != nil {
 		log := internalctx.GetLogger(ctx)
 		log.Warn("failed to check deployment target visibility", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
