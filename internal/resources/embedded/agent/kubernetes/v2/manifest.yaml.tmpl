@@ -1,0 +1,181 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: distr-agent-env
+data:
+  DISTR_TARGET_ID: "{{ .targetId }}"
+  DISTR_LOGIN_ENDPOINT: "{{ .loginEndpoint }}"
+  DISTR_MANIFEST_ENDPOINT: "{{ .manifestEndpoint }}"
+  DISTR_RESOURCE_ENDPOINT: "{{ .resourcesEndpoint }}"
+  DISTR_STATUS_ENDPOINT: "{{ .statusEndpoint }}"
+  DISTR_METRICS_ENDPOINT: "{{ .metricsEndpoint }}"
+  DISTR_LOGS_ENDPOINT: "{{ .logsEndpoint }}"
+  DISTR_AGENT_LOGS_ENDPOINT: "{{ .agentLogsEndpoint }}"
+  DISTR_INTERVAL: "{{ .agentInterval }}"
+  DISTR_AGENT_VERSION_ID: "{{ .agentVersionId }}"
+  {{- if .registryEnabled }}
+  DISTR_REGISTRY_HOST: "{{ .registryHost }}"
+  DISTR_REGISTRY_PLAIN_HTTP: "{{ .registryPlainHttp }}"
+  {{- end }}
+
+{{ if .targetSecret }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: distr-agent-auth
+type: Opaque
+stringData:
+  DISTR_TARGET_SECRET: "{{ .targetSecret }}"
+
+{{ end }}
+{{ if .agentDockerConfig }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: distr-agent-dockerconfig
+type: Opaque
+data:
+  config.json: {{ .agentDockerConfig }}
+
+{{ end }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: distr-agent
+
+{{ if eq .targetScope "namespace" }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: namespace-admin
+rules:
+  - apiGroups:
+      - "*"
+    resources:
+      - "*"
+    verbs:
+      - "*"
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: distr-agent
+subjects:
+  - kind: ServiceAccount
+    name: distr-agent
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: namespace-admin
+
+{{ else }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: distr-agent-{{ .targetNamespace }}
+subjects:
+  - kind: ServiceAccount
+    name: distr-agent
+    namespace: {{ .targetNamespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+
+{{ end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: distr-agent
+spec:
+  selector:
+    matchLabels:
+      app: distr-agent
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: distr-agent
+    spec:
+      serviceAccountName: distr-agent
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: distr-agent
+          image: "ghcr.io/distr-sh/distr/kubernetes-agent:{{ .agentVersion }}"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DOCKER_CONFIG
+              value: /opt/config/.docker/
+            - name: DISTR_AGENT_CONFIG_DIRS
+              value: |
+                /opt/config/.agent/env
+                /opt/config/.agent/auth
+          envFrom:
+            - secretRef:
+                name: distr-agent-auth
+            - configMapRef:
+                name: distr-agent-env
+          ports:
+            - containerPort: 8765
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8765
+            initialDelaySeconds: 10
+            periodSeconds: 60
+            failureThreshold: 2
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8765
+            initialDelaySeconds: 10
+            periodSeconds: 60
+            failureThreshold: 2
+          resources:
+            {{- if .targetResources }}
+            limits:
+              memory: "{{ .targetResources.MemoryLimit }}"
+              cpu: "{{ .targetResources.CPULimit }}"
+            requests:
+              memory: "{{ .targetResources.MemoryRequest }}"
+              cpu: "{{ .targetResources.CPURequest }}"
+            {{- else }}
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+            {{- end }}
+          volumeMounts:
+            - name: dockerconfig
+              mountPath: /opt/config/.docker/
+            - name: env
+              mountPath: /opt/config/.agent/env
+            - name: auth
+              mountPath: /opt/config/.agent/auth
+            - name: cache
+              mountPath: /.cache/
+      volumes:
+        - name: env
+          configMap:
+            name: distr-agent-env
+        - name: auth
+          secret:
+            secretName: distr-agent-auth
+        - name: dockerconfig
+          secret:
+            secretName: distr-agent-dockerconfig
+            optional: true
+        - name: cache
+          emptyDir: {}
