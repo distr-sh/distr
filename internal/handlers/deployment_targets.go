@@ -232,11 +232,7 @@ func deleteDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 	auth := auth.Authentication.Require(ctx)
 	if dt.OrganizationID != *auth.CurrentOrgID() {
 		http.NotFound(w, r)
-	} else if ok, err := isDeploymentTargetVisible(ctx, dt); err != nil {
-		log.Warn("error checking deployment target visibility", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	} else if !ok {
+	} else if !isDeploymentTargetVisible(ctx, dt) {
 		http.Error(w, "must be vendor or creator", http.StatusForbidden)
 	} else if err := db.DeleteDeploymentTargetWithID(ctx, dt.ID); err != nil {
 		log.Warn("error deleting deployment target", zap.Error(err))
@@ -326,11 +322,7 @@ func deploymentTargetMiddleware(wh http.Handler) http.Handler {
 			internalctx.GetLogger(ctx).Error("failed to get DeploymentTarget", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		} else if ok, err := isDeploymentTargetVisible(ctx, deploymentTarget); err != nil {
-			internalctx.GetLogger(ctx).Error("failed to check deployment target visibility", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		} else if !ok {
+		} else if !isDeploymentTargetVisible(ctx, deploymentTarget) {
 			http.NotFound(w, r)
 		} else {
 			ctx = internalctx.WithDeploymentTarget(ctx, deploymentTarget)
@@ -339,19 +331,19 @@ func deploymentTargetMiddleware(wh http.Handler) http.Handler {
 	})
 }
 
-func isDeploymentTargetVisible(ctx context.Context, target *types.DeploymentTargetFull) (bool, error) {
+func isDeploymentTargetVisible(ctx context.Context, target *types.DeploymentTargetFull) bool {
 	auth := auth.Authentication.Require(ctx)
 
 	if customerOrgID := auth.CurrentCustomerOrgID(); customerOrgID != nil {
-		return util.PtrEq(customerOrgID, target.CustomerOrganizationID), nil
+		return util.PtrEq(customerOrgID, target.CustomerOrganizationID)
 	}
 
 	if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
 		if target.CustomerOrganization == nil {
-			return false, nil
+			return false
 		}
-		return util.PtrEq(partnerOrgID, target.CustomerOrganization.PartnerOrganizationID), nil
+		return util.PtrEq(partnerOrgID, target.CustomerOrganization.PartnerOrganizationID)
 	}
 
-	return true, nil
+	return true
 }
