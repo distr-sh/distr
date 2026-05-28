@@ -2,7 +2,7 @@ import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
 import {AfterViewInit, Component, computed, effect, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
-import {FormControl, FormGroup, FormsModule, ReactiveFormsModule} from '@angular/forms';
+import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {
   ApplicationVersion,
@@ -46,7 +46,6 @@ const localStoragerCollapsedCustomerIds = 'collapsedCustomerIds';
   imports: [
     AsyncPipe,
     FaIconComponent,
-    FormsModule,
     ReactiveFormsModule,
     DeploymentWizardComponent,
     OverlayModule,

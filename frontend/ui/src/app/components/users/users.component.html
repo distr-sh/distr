@@ -111,14 +111,10 @@
             <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
               @if (editRoleUserId() === user.id) {
                 <form [formGroup]="editRoleForm" class="flex" (ngSubmit)="submitEditUserRoleForm()">
-                  <select
-                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm w-32 rounded-s-lg focus:ring-blue-500 focus:border-blue-500 block px-2 py-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    id="user-role-select"
-                    formControlName="userRole">
-                    <option value="read_only">Viewer</option>
-                    <option value="read_write">User</option>
-                    <option value="admin">Administrator</option>
-                  </select>
+                  <app-user-role-select
+                    ariaLabel="User role"
+                    formControlName="userRole"
+                    selectClass="bg-gray-50 border border-gray-300 text-gray-900 text-sm w-32 rounded-s-lg focus:ring-blue-500 focus:border-blue-500 block px-2 py-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
                   <button
                     type="submit"
                     [disabled]="editRoleFormLoading()"
@@ -127,17 +123,7 @@
                   </button>
                 </form>
               } @else {
-                @switch (user.userRole) {
-                  @case ('read_only') {
-                    Viewer
-                  }
-                  @case ('read_write') {
-                    User
-                  }
-                  @case ('admin') {
-                    Admin
-                  }
-                }
+                {{ user.userRole | userRoleLabel }}
                 @if (auth.hasRole('admin') || (auth.isVendor() && auth.hasRole('read_write'))) {
                   <button
                     type="button"
@@ -249,14 +235,10 @@
                     <label for="userRole" class="block text-sm font-medium text-gray-900 dark:text-white">
                       User role <span class="text-red-500">*</span>
                     </label>
-                    <select
+                    <app-user-role-select
                       id="userRole"
                       formControlName="userRole"
-                      class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                      <option value="read_only">Viewer</option>
-                      <option value="read_write">User</option>
-                      <option value="admin">Administrator</option>
-                    </select>
+                      selectClass="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
 
                     @if (inviteForm.controls.userRole.invalid && inviteForm.controls.userRole.touched) {
                       <div class="text-sm text-red-600">This field is required</div>

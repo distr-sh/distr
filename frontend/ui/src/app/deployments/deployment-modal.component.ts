@@ -1,5 +1,5 @@
 import {Component, effect, inject, input, output, signal} from '@angular/core';
-import {FormControl, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
+import {FormControl, ReactiveFormsModule, Validators} from '@angular/forms';
 import {DeploymentTarget, DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleExclamation, faShip} from '@fortawesome/free-solid-svg-icons';
@@ -76,7 +76,7 @@ import {
       </div>
     </div>
   </div>`,
-  imports: [DeploymentFormComponent, FaIconComponent, FormsModule, ReactiveFormsModule],
+  imports: [DeploymentFormComponent, FaIconComponent, ReactiveFormsModule],
 })
 export class DeploymentModalComponent {
   public readonly deploymentTarget = input.required<DeploymentTarget>();

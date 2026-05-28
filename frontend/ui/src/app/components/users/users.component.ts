@@ -21,6 +21,7 @@ import {catchError, filter, firstValueFrom, NEVER, switchMap, tap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
 import {SecureImagePipe} from '../../../util/secureImage';
+import {UserRoleLabelPipe} from '../../../util/user-role';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {RequireVendorDirective} from '../../directives/required-role.directive';
 import {AuthService} from '../../services/auth.service';
@@ -30,6 +31,7 @@ import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
 import {QuotaLimitComponent} from '../quota-limit.component';
+import {UserRoleSelectComponent} from '../user-role-select.component';
 
 @Component({
   selector: 'app-users',
@@ -42,6 +44,8 @@ import {QuotaLimitComponent} from '../quota-limit.component';
     AutotrimDirective,
     SecureImagePipe,
     QuotaLimitComponent,
+    UserRoleSelectComponent,
+    UserRoleLabelPipe,
   ],
   templateUrl: './users.component.html',
 })

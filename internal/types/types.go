@@ -34,6 +34,27 @@ func ParseUserRole(value string) (UserRole, error) {
 	}
 }
 
+// Rank orders the role hierarchy: admin > read_write > read_only. It panics
+// for unknown roles — every role entering the codebase is validated via
+// ParseUserRole / UnmarshalJSON, so an invalid value at this point is a bug.
+func (r UserRole) Rank() int {
+	switch r {
+	case UserRoleReadOnly:
+		return 0
+	case UserRoleReadWrite:
+		return 1
+	case UserRoleAdmin:
+		return 2
+	default:
+		panic(fmt.Sprintf("invalid user role: %q", string(r)))
+	}
+}
+
+// GreaterThan reports whether r is more privileged than other.
+func (r UserRole) GreaterThan(other UserRole) bool {
+	return r.Rank() > other.Rank()
+}
+
 func (ref *UserRole) UnmarshalJSON(data []byte) error {
 	var value string
 	if err := json.Unmarshal(data, &value); err != nil {

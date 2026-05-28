@@ -89,7 +89,7 @@
                           }
                           &bull;
                         }
-                        {{ user.userRole | titlecase }}
+                        {{ user.userRole | userRoleLabel }}
                       </span>
                     }
                   </span>
@@ -136,17 +136,7 @@
                                     }
                                     &bull;
                                   }
-                                  @switch (org.userRole) {
-                                    @case ('admin') {
-                                      Administrator
-                                    }
-                                    @case ('read_write') {
-                                      User
-                                    }
-                                    @case ('read_only') {
-                                      Viewer
-                                    }
-                                  }
+                                  {{ org.userRole | userRoleLabel }}
                                 }
                               </span>
                             </span>

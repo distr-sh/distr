@@ -12,5 +12,6 @@ func AccessTokenToDTO(model types.AccessToken) api.AccessToken {
 		ExpiresAt:  model.ExpiresAt,
 		LastUsedAt: model.LastUsedAt,
 		Label:      model.Label,
+		UserRole:   model.UserRole,
 	}
 }
