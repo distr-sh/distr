@@ -151,7 +151,7 @@ func getSupportBundlesHandler() http.HandlerFunc {
 		log := internalctx.GetLogger(ctx)
 		a := auth.Authentication.Require(ctx)
 
-		bundles, err := db.GetSupportBundles(ctx, *a.CurrentOrgID(), a.CurrentCustomerOrgID())
+		bundles, err := db.GetSupportBundles(ctx, *a.CurrentOrgID(), a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID())
 		if err != nil {
 			log.Error("failed to get support bundles", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -266,6 +266,18 @@ func getSupportBundleDetailHandler() http.HandlerFunc {
 			http.NotFound(w, r)
 			return
 		}
+		if partnerOrgID := a.CurrentPartnerOrgID(); partnerOrgID != nil {
+			err := db.ValidateCustomerOrgBelongsToPartnerOrg(ctx, bundle.CustomerOrganizationID, *partnerOrgID)
+			if errors.Is(err, db.ErrCustomerOrgNotInPartnerOrg) {
+				http.NotFound(w, r)
+				return
+			} else if err != nil {
+				log.Error("failed to validate customer org belongs to partner org", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
 
 		resources, err := db.GetSupportBundleResources(ctx, id)
 		if err != nil {
@@ -322,7 +334,7 @@ func updateSupportBundleStatusHandler() http.HandlerFunc {
 		switch status {
 		case types.SupportBundleStatusResolved:
 			if a.CurrentCustomerOrgID() != nil {
-				http.Error(w, "only vendors can resolve support bundles", http.StatusForbidden)
+				http.Error(w, "customers cannot resolve support bundles", http.StatusForbidden)
 				return
 			}
 			bundle := requireSupportBundle(w, r)
@@ -410,6 +422,19 @@ func requireSupportBundle(w http.ResponseWriter, r *http.Request) *types.Support
 	if a.CurrentCustomerOrgID() != nil && bundle.CustomerOrganizationID != *a.CurrentCustomerOrgID() {
 		http.NotFound(w, r)
 		return nil
+	}
+	if partnerOrgID := a.CurrentPartnerOrgID(); partnerOrgID != nil {
+		err := db.ValidateCustomerOrgBelongsToPartnerOrg(ctx, bundle.CustomerOrganizationID, *partnerOrgID)
+		if errors.Is(err, db.ErrCustomerOrgNotInPartnerOrg) {
+			http.NotFound(w, r)
+			return nil
+		} else if err != nil {
+			log := internalctx.GetLogger(ctx)
+			log.Error("failed to validate customer org belongs to partner org", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return nil
+		}
 	}
 
 	return bundle

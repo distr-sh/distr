@@ -69,7 +69,7 @@
                 class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
                 <tr>
                   <th scope="col" class="p-4">Title</th>
-                  @if (auth.isVendor()) {
+                  @if (auth.isVendor() || auth.isPartner()) {
                     <th scope="col" class="p-4">Customer</th>
                   }
                   <th scope="col" class="p-4">Status</th>
@@ -87,7 +87,7 @@
                     <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                       {{ bundle.title || bundle.id.substring(0, 8) }}
                     </td>
-                    @if (auth.isVendor()) {
+                    @if (auth.isVendor() || auth.isPartner()) {
                       <td class="px-4 py-3">{{ bundle.customerOrganizationName }}</td>
                     }
                     <td class="px-4 py-3">
@@ -116,6 +116,11 @@
           <div class="p-8 text-center text-gray-500 dark:text-gray-400">
             <p>No support bundles have been created yet.</p>
             <p class="text-sm mt-1">Customers with the support bundles feature enabled can create support bundles.</p>
+          </div>
+        } @else if (auth.isPartner()) {
+          <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+            <p>No support bundles yet.</p>
+            <p class="text-sm mt-1">Support bundles created by your assigned customers will appear here.</p>
           </div>
         } @else if (auth.isCustomer()) {
           <div class="p-8 text-center text-gray-500 dark:text-gray-400">

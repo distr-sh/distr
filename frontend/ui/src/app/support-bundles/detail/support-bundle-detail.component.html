@@ -30,7 +30,11 @@
                 Cancel
               </button>
             }
-            @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin') && bundle.status === 'created') {
+            @if (
+              (auth.isVendor() || auth.isPartner()) &&
+              auth.hasAnyRole('read_write', 'admin') &&
+              bundle.status === 'created'
+            ) {
               <button
                 type="button"
                 (click)="markAsResolved()"

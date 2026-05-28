@@ -332,7 +332,7 @@ export const routes: Routes = [
       },
       {
         path: 'support-bundles',
-        canActivate: [requireVendor, supportBundlesEnabledGuard()],
+        canActivate: [requireVendorOrPartner, supportBundlesEnabledGuard()],
         children: [
           {
             path: '',
@@ -342,7 +342,7 @@ export const routes: Routes = [
           {
             path: 'settings',
             component: SupportBundleSettingsComponent,
-            canActivate: [requiredRoleGuard('read_write', 'admin')],
+            canActivate: [requireVendor, requiredRoleGuard('read_write', 'admin')],
           },
           {
             path: ':supportBundleId',
