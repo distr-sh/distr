@@ -79,7 +79,7 @@
                       </span>
                     } @else {
                       <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
-                        @if (isDifferntOrganizationKind()) {
+                        @if (isDifferentOrganizationKind()) {
                           @if (currentOrg()?.customerOrganizationId) {
                             Customer
                           } @else if (currentOrg()?.partnerOrganizationId) {
@@ -126,7 +126,7 @@
                               {{ org.name }}
                               <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
                                 @if (!auth.isSuperAdmin()) {
-                                  @if (isDifferntOrganizationKind()) {
+                                  @if (isDifferentOrganizationKind()) {
                                     @if (org.customerOrganizationId) {
                                       Customer
                                     } @else if (org.partnerOrganizationId) {

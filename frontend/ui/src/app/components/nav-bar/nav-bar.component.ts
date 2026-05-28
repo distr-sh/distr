@@ -96,7 +96,7 @@ export class NavBarComponent implements OnInit {
   protected readonly isVendorSomewhere = computed(() =>
     this.allOrgs().some((org) => org.customerOrganizationId === undefined && org.partnerOrganizationId === undefined)
   );
-  protected readonly isDifferntOrganizationKind = computed(
+  protected readonly isDifferentOrganizationKind = computed(
     () => this.allOrgs().reduce((kinds, org) => kinds.add(getOrganizationKind(org)), new Set<string>()).size > 1
   );
   protected readonly isTrial = computed(() => this.currentOrg()?.subscriptionType === 'trial');
