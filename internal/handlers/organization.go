@@ -113,6 +113,7 @@ func createOrganization(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if !ok {
 		http.Error(w, "only vendors can create organizations", http.StatusForbidden)
+		return
 	}
 
 	body, err := JsonBody[api.CreateUpdateOrganizationRequest](w, r)
