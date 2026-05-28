@@ -35,17 +35,6 @@ var Authentication = authn.New(
 	),
 )
 
-// UnverifiedEmailAuthentication is like [Authentication] but skips the email_verified check
-// performed in authinfo.DbAuthenticator. Only the email verification endpoints should use it.
-var UnverifiedEmailAuthentication = authn.New(
-	authn.Chain4(
-		token.NewExtractor(token.WithExtractorFuncs(token.FromHeader("Bearer"))),
-		jwt.Authenticator(authjwt.JWTAuth),
-		authinfo.UserJWTAuthenticator(),
-		authinfo.DbAuthenticatorAllowUnverifiedEmail(),
-	),
-)
-
 // AgentAuthentication supports only Bearer JWT tokens
 var AgentAuthentication = authn.New(
 	authn.Chain3(
@@ -98,7 +87,6 @@ func handleUnknownError(w http.ResponseWriter, r *http.Request, err error) {
 
 func init() {
 	Authentication.SetUnknownErrorHandler(handleUnknownError)
-	UnverifiedEmailAuthentication.SetUnknownErrorHandler(handleUnknownError)
 	AgentAuthentication.SetUnknownErrorHandler(handleUnknownError)
 	ArtifactsAuthentication.SetUnknownErrorHandler(handleUnknownError)
 	SupportBundleAuthentication.SetUnknownErrorHandler(handleUnknownError)

@@ -14,6 +14,7 @@ import (
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/prometheus"
 	"github.com/distr-sh/distr/internal/types"
@@ -219,6 +220,27 @@ var RequireOrgAndRole = auth.Authentication.ValidatorMiddleware(
 		return nil
 	},
 )
+
+// RequireEmailVerified rejects requests with 403 when USER_EMAIL_VERIFICATION_REQUIRED is
+// enabled and the authenticated user's DB record has no EmailVerifiedAt. It must run after
+// auth.Authentication.Middleware so the DB-loaded user is available in the context.
+func RequireEmailVerified(handler http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		if !env.UserEmailVerificationRequired() {
+			handler.ServeHTTP(w, r)
+			return
+		}
+		ctx := r.Context()
+		if value, err := auth.Authentication.Get(ctx); err != nil {
+			http.Error(w, err.Error(), http.StatusForbidden)
+		} else if user := value.CurrentUser(); user == nil || user.EmailVerifiedAt == nil {
+			http.Error(w, "email not verified", http.StatusForbidden)
+		} else {
+			handler.ServeHTTP(w, r)
+		}
+	}
+	return http.HandlerFunc(fn)
+}
 
 func BlockSuperAdmin(handler http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {

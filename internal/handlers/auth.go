@@ -44,10 +44,14 @@ func AuthRouter(r chiopenapi.Router) {
 	r.Route("/oidc", AuthOIDCRouter)
 	r.Post("/register", authRegisterHandler)
 	r.Post("/reset", authResetPasswordHandler)
-	r.With(middleware.SentryUser, auth.Authentication.Middleware, middleware.RequireOrgAndRole).
-		Post("/switch-context", authSwitchContextHandler())
+	r.With(
+		middleware.SentryUser,
+		auth.Authentication.Middleware,
+		middleware.RequireEmailVerified,
+		middleware.RequireOrgAndRole,
+	).Post("/switch-context", authSwitchContextHandler())
 	r.Route("/verify", func(r chiopenapi.Router) {
-		r.Use(middleware.SentryUser, auth.UnverifiedEmailAuthentication.Middleware)
+		r.Use(middleware.SentryUser, auth.Authentication.Middleware)
 
 		requestVerificationMailRateLimitPerUser := httprate.Limit(
 			3,
@@ -63,7 +67,7 @@ func AuthRouter(r chiopenapi.Router) {
 func authVerifyRequestHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
-	auth := auth.UnverifiedEmailAuthentication.Require(ctx)
+	auth := auth.Authentication.Require(ctx)
 	userAccount := auth.CurrentUser()
 	if userAccount.EmailVerifiedAt != nil {
 		w.WriteHeader(http.StatusNoContent)
@@ -79,7 +83,7 @@ func authVerifyRequestHandler(w http.ResponseWriter, r *http.Request) {
 func authVerifyConfirmHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
-	auth := auth.UnverifiedEmailAuthentication.Require(ctx)
+	auth := auth.Authentication.Require(ctx)
 	userAccount := auth.CurrentUser()
 	if !auth.CurrentUserEmailVerified() {
 		http.Error(w, "token does not have verified claim", http.StatusForbidden)
