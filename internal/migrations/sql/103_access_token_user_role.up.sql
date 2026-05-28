@@ -1,0 +1,1 @@
+ALTER TABLE AccessToken ADD COLUMN user_role USER_ROLE;

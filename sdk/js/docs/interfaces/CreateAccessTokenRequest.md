@@ -17,3 +17,9 @@
 ### label?
 
 > `optional` **label?**: `string`
+
+---
+
+### userRole?
+
+> `optional` **userRole?**: [`UserRole`](../type-aliases/UserRole.md)
