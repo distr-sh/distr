@@ -350,34 +350,17 @@
 
       <ul class="space-y-1 font-medium flex-1" *appRequirePartner>
         <li>
-          <button
-            type="button"
-            (click)="toggle(agentsSubMenuOpen)"
-            class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
-            aria-controls="dropdown-example">
+          <a
+            (click)="sidebar.hide()"
+            routerLinkActive="bg-gray-100 dark:bg-gray-700"
+            routerLink="/deployments"
+            class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
             <fa-icon
               [icon]="faBoxesStacked"
               size="lg"
               class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
-            <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Agents</span>
-            <fa-icon
-              [icon]="faChevronDown"
-              [class.rotate-x-180]="agentsSubMenuOpen()"
-              class="transition duration-150 ease-in-out" />
-          </button>
-          @if (agentsSubMenuOpen()) {
-            <ul class="space-y-1">
-              <li>
-                <a
-                  (click)="sidebar.hide()"
-                  routerLinkActive="bg-gray-100 dark:bg-gray-700"
-                  routerLink="/deployments"
-                  class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                  <span class="">Deployments</span>
-                </a>
-              </li>
-            </ul>
-          }
+            <span class="ms-3">Deployments</span>
+          </a>
         </li>
 
         <li>
