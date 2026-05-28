@@ -111,7 +111,16 @@ export class PartnerOrganizationsComponent {
             partner.userCount > 0 || partner.customerOrganizationCount > 0
               ? {
                   type: 'warning',
-                  message: `Deleting this partner will remove its ${partner.userCount} user(s) from your organization and unassign its ${partner.customerOrganizationCount} customer(s).`,
+                  message: [
+                    partner.userCount > 0
+                      ? `Deleting this partner will remove its ${partner.userCount} user(s) from your organization.`
+                      : null,
+                    partner.customerOrganizationCount > 0
+                      ? `Its ${partner.customerOrganizationCount} customer(s) will not be deleted but will be unassigned.`
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' '),
                 }
               : undefined,
         },
