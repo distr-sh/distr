@@ -20,3 +20,5 @@ CREATE INDEX fk_Organization_UserAccount_partner_organization_id ON Organization
 ALTER TABLE Organization_UserAccount
   ADD CONSTRAINT partner_or_customer_org_exclusive
     CHECK (customer_organization_id IS NULL OR partner_organization_id IS NULL);
+
+ALTER TYPE FEATURE ADD VALUE IF NOT EXISTS 'partner_management';

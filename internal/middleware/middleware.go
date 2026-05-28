@@ -271,6 +271,7 @@ func FeatureFlagMiddleware(feature types.Feature) func(handler http.Handler) htt
 var (
 	LicensingFeatureFlagEnabledMiddleware = FeatureFlagMiddleware(types.FeatureLicensing)
 	VendorBillingFeatureMiddleware        = FeatureFlagMiddleware(types.FeatureVendorBilling)
+	PartnerManagementFeatureMiddleware    = FeatureFlagMiddleware(types.FeaturePartnerManagement)
 )
 
 func SetRequestPattern(next http.Handler) http.Handler {

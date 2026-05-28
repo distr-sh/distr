@@ -106,6 +106,13 @@ function vendorBillingEnabledGuard(): CanActivateFn {
   };
 }
 
+function partnerManagementEnabledGuard(): CanActivateFn {
+  return async () => {
+    const featureFlags = inject(FeatureFlagService);
+    return await firstValueFrom(featureFlags.isPartnerManagementEnabled$);
+  };
+}
+
 function registryHostSetOrRedirectGuard(redirectTo: string): CanActivateFn {
   return async () => {
     const router = inject(Router);
@@ -206,11 +213,11 @@ export const routes: Routes = [
       {
         path: 'partners',
         component: PartnerOrganizationsComponent,
-        canActivate: [requireVendor],
+        canActivate: [requireVendor, partnerManagementEnabledGuard()],
       },
       {
         path: 'partners/:partnerOrganizationId',
-        canActivate: [requireVendor],
+        canActivate: [requireVendor, partnerManagementEnabledGuard()],
         children: [
           {path: 'users', component: PartnerUsersComponent},
           {path: '', pathMatch: 'full', redirectTo: 'users'},

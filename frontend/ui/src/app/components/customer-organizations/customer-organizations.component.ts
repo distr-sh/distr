@@ -119,7 +119,9 @@ export class CustomerOrganizationsComponent {
   protected dropdownWidth = 0;
 
   protected readonly partnerOrganizations = toSignal(
-    this.auth.isVendor() ? this.partnerOrganizationsService.getPartnerOrganizations() : of([])
+    this.auth.isVendor() && this.featureFlags.isPartnerManagementEnabled()
+      ? this.partnerOrganizationsService.getPartnerOrganizations()
+      : of([])
   );
 
   private readonly partnerAssignDialog = viewChild.required<TemplateRef<unknown>>('partnerAssignDialog');

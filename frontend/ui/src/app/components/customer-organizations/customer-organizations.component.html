@@ -47,7 +47,9 @@
               <th scope="col" class="p-4">Name</th>
               <th scope="col" class="p-4">Creation Date</th>
               <th scope="col" class="p-4">Features</th>
-              <th *appRequireVendor scope="col" class="p-4">Partner</th>
+              @if (auth.isVendor() && featureFlags.isPartnerManagementEnabled()) {
+                <th scope="col" class="p-4">Partner</th>
+              }
               <th scope="col" class="p-4 text-end"># of Users</th>
               <th scope="col" class="p-4 text-end"># of Deployments</th>
               <th scope="col" class="p-4"></th>
@@ -130,7 +132,7 @@
                     </div>
                   </ng-template>
                 </td>
-                @if (auth.isVendor()) {
+                @if (auth.isVendor() && featureFlags.isPartnerManagementEnabled()) {
                   <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                     @if (getPartnerName(customer.partnerOrganizationId); as name) {
                       {{ name }}

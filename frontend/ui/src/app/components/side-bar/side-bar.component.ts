@@ -108,6 +108,7 @@ export class SideBarComponent {
   protected readonly isNotificationsFeatureEnabled = toSignal(this.featureFlags.isNotificationsEnabled$);
   protected readonly isSupportBundlesFeatureEnabled = toSignal(this.featureFlags.isSupportBundlesEnabled$);
   protected readonly isVendorBillingFeatureEnabled = this.featureFlags.isVendorBillingEnabled;
+  protected readonly isPartnerManagementEnabled = this.featureFlags.isPartnerManagementEnabled;
 
   public readonly isSubscriptionBannerVisible = input<boolean>();
   public readonly isSidebarVisible = input<boolean>();

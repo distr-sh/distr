@@ -6,7 +6,8 @@ export type Feature =
   | 'pre_post_scripts'
   | 'artifact_version_mutable'
   | 'vendor_billing'
-  | 'deployment_logs_after';
+  | 'deployment_logs_after'
+  | 'partner_management';
 
 export interface SubscriptionLimits {
   maxCustomerOrganizations: number;
