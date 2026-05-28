@@ -3,7 +3,7 @@ import {inject, Injectable} from '@angular/core';
 import {LoginResponse, TokenResponse, UserRole} from '@distr-sh/distr-sdk';
 import dayjs from 'dayjs';
 import {jwtDecode} from 'jwt-decode';
-import {catchError, map, Observable, of, tap, throwError} from 'rxjs';
+import {catchError, map, Observable, of, shareReplay, tap, throwError} from 'rxjs';
 import {Organization} from '../types/organization';
 
 const tokenStorageKey = 'cloud_token';
@@ -108,9 +108,10 @@ export class AuthService {
     return this.httpClient.post<void>(`${authBaseUrl}/reset`, {email});
   }
 
-  public loginConfig(): Observable<LoginConfig> {
-    return this.httpClient.get<LoginConfig>(`${authBaseUrl}/login/config`).pipe(catchError(() => of({})));
-  }
+  public readonly loginConfig$ = this.httpClient.get<LoginConfig>(`${authBaseUrl}/login/config`).pipe(
+    catchError(() => of({} as LoginConfig)),
+    shareReplay(1)
+  );
 
   public register(email: string, name: string | null | undefined, password: string): Observable<void> {
     let body: any = {email, password};
