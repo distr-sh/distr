@@ -65,14 +65,17 @@ func SidebarLinksRouter(r chiopenapi.Router) {
 	})
 }
 
-func validatePartnerAccessToCustomer(ctx context.Context, customerOrgID uuid.UUID) bool {
+func validatePartnerAccessToCustomer(ctx context.Context, customerOrgID uuid.UUID) (bool, error) {
 	a := auth.Authentication.Require(ctx)
 	partnerOrgID := a.CurrentPartnerOrgID()
 	if partnerOrgID == nil {
-		return true
+		return true, nil
 	}
 	co, err := db.GetCustomerOrganizationByID(ctx, customerOrgID)
-	return err == nil && util.PtrEq(co.PartnerOrganizationID, partnerOrgID)
+	if err != nil {
+		return false, err
+	}
+	return util.PtrEq(co.PartnerOrganizationID, partnerOrgID), nil
 }
 
 func getSidebarLinksHandler() http.HandlerFunc {
@@ -91,7 +94,12 @@ func getSidebarLinksHandler() http.HandlerFunc {
 			http.NotFound(w, r)
 			return
 		}
-		if !validatePartnerAccessToCustomer(ctx, customerOrgID) {
+		if ok, err := validatePartnerAccessToCustomer(ctx, customerOrgID); err != nil {
+			log.Error("failed to validate partner access", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		} else if !ok {
 			http.NotFound(w, r)
 			return
 		}
@@ -123,7 +131,12 @@ func createSidebarLinkHandler() http.HandlerFunc {
 			http.NotFound(w, r)
 			return
 		}
-		if !validatePartnerAccessToCustomer(ctx, customerOrgID) {
+		if ok, err := validatePartnerAccessToCustomer(ctx, customerOrgID); err != nil {
+			log.Error("failed to validate partner access", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		} else if !ok {
 			http.NotFound(w, r)
 			return
 		}
@@ -177,7 +190,12 @@ func updateSidebarLinkHandler() http.HandlerFunc {
 			http.NotFound(w, r)
 			return
 		}
-		if !validatePartnerAccessToCustomer(ctx, customerOrgID) {
+		if ok, err := validatePartnerAccessToCustomer(ctx, customerOrgID); err != nil {
+			log.Error("failed to validate partner access", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		} else if !ok {
 			http.NotFound(w, r)
 			return
 		}
@@ -234,7 +252,12 @@ func deleteSidebarLinkHandler() http.HandlerFunc {
 			http.NotFound(w, r)
 			return
 		}
-		if !validatePartnerAccessToCustomer(ctx, customerOrgID) {
+		if ok, err := validatePartnerAccessToCustomer(ctx, customerOrgID); err != nil {
+			log.Error("failed to validate partner access", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		} else if !ok {
 			http.NotFound(w, r)
 			return
 		}
