@@ -119,12 +119,14 @@ func GetDeploymentTarget(
 	db := internalctx.GetDb(ctx)
 	query := "SELECT" + deploymentTargetFullOutputExpr + "FROM" + deploymentTargetFromExpr +
 		" WHERE dt.id = @id "
-	args := pgx.NamedArgs{"id": id, "orgId": orgID, "partnerOrgId": partnerOrgID}
+	args := pgx.NamedArgs{"id": id}
 	if orgID != nil {
 		query += " AND dt.organization_id = @orgId"
+		args["orgId"] = *orgID
 	}
 	if partnerOrgID != nil {
 		query += " AND co.partner_organization_id = @partnerOrgId"
+		args["partnerOrgId"] = *partnerOrgID
 	}
 	rows, err := db.Query(ctx, query, args)
 	if err != nil {
