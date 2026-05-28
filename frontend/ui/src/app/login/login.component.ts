@@ -1,21 +1,18 @@
-import {AsyncPipe} from '@angular/common';
 import {Component, inject, OnInit, signal} from '@angular/core';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
-import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faGithub, faGoogle, faMicrosoft} from '@fortawesome/free-brands-svg-icons';
-import {faArrowRightToBracket} from '@fortawesome/free-solid-svg-icons';
 import {distinctUntilChanged, filter, lastValueFrom, map, take} from 'rxjs';
 import {WEBSITE_URL} from '../../constants';
 import {getFormDisplayedError} from '../../util/errors';
+import {OidcButtonsComponent} from '../components/oidc-buttons.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AuthService} from '../services/auth.service';
 import {ToastService} from '../services/toast.service';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink, AutotrimDirective, AsyncPipe, FaIconComponent],
+  imports: [ReactiveFormsModule, RouterLink, AutotrimDirective, OidcButtonsComponent],
   templateUrl: './login.component.html',
 })
 export class LoginComponent implements OnInit {
@@ -45,7 +42,7 @@ export class LoginComponent implements OnInit {
   protected readonly loading = signal(false);
   protected readonly errorMessage = signal<string | undefined>(undefined);
 
-  readonly loginConfig$ = this.auth.loginConfig();
+  readonly loginConfig = toSignal(this.auth.loginConfig$);
   readonly isJWTLogin = signal(false);
 
   constructor() {
@@ -79,6 +76,9 @@ export class LoginComponent implements OnInit {
         break;
       case 'oidc-failed':
         this.toast.error('Login with this provider failed unexpectedly.');
+        break;
+      case 'oidc-registration-disabled':
+        this.toast.error('Sign-up is disabled on this instance. Please contact your administrator.');
         break;
     }
 
@@ -132,14 +132,4 @@ export class LoginComponent implements OnInit {
     this.mfaRequired.set(false);
     this.errorMessage.set(undefined);
   }
-
-  protected getLoginURL(provider: string): string {
-    return `/api/v1/auth/oidc/${provider}`;
-  }
-
-  protected readonly faGoogle = faGoogle;
-  protected readonly faGithub = faGithub;
-  protected readonly faMicrosoft = faMicrosoft;
-  protected readonly faGeneric = faArrowRightToBracket;
-  protected readonly faArrowRightToBracket = faArrowRightToBracket;
 }
