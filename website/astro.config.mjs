@@ -267,7 +267,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               icon: 'laptop',
               items: [
                 {
-                  label: 'Self-Hosting',
+                  label: 'Overview',
                   items: [{autogenerate: {directory: 'docs/self-hosting'}}],
                 },
               ],
@@ -355,6 +355,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
     // Integration redirects
     '/docs/integrations/mcp/': '/docs/integrations/',
+
+    // Self-hosting redirects
+    '/docs/self-hosting/getting-started/': '/docs/self-hosting/',
 
     // Legacy blog redirects (content superseded by /compare/ pages)
     '/blog/distr-vs-replicated/': '/compare/replicated/',
