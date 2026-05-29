@@ -3,7 +3,6 @@ package middleware
 import (
 	"context"
 	"fmt"
-	"net"
 	"net/http"
 	"slices"
 	"strings"
@@ -42,11 +41,6 @@ func ContextInjectorMiddleware(
 			ctx = internalctx.WithDb(ctx, db)
 			ctx = internalctx.WithMailer(ctx, mailer)
 			ctx = internalctx.WithPrometheusCollector(ctx, prometheusCollector)
-			host, _, err := net.SplitHostPort(r.RemoteAddr)
-			if err != nil {
-				host = r.RemoteAddr
-			}
-			ctx = internalctx.WithRequestIPAddress(ctx, host)
 			ctx = internalctx.WithOIDCer(ctx, oidcer)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})

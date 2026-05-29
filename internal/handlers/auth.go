@@ -21,6 +21,7 @@ import (
 	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httprate"
 	"github.com/go-mailx/mailx"
 	"github.com/google/uuid"
@@ -35,7 +36,9 @@ func AuthRouter(r chiopenapi.Router) {
 	r.Use(httprate.Limit(
 		10,
 		1*time.Minute,
-		httprate.WithKeyFuncs(httprate.KeyByRealIP, httprate.KeyByEndpoint),
+		httprate.WithKeyFuncs(func(r *http.Request) (string, error) {
+			return chimiddleware.GetClientIP(r.Context()), nil
+		}, httprate.KeyByEndpoint),
 	))
 	r.Route("/login", func(r chiopenapi.Router) {
 		r.Post("/", authLoginHandler)

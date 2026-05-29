@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/distr-sh/distr/internal/auth"
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/registry/name"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 )
 
 type ArtifactAuditor interface {
@@ -31,7 +31,7 @@ func (a *auditor) AuditPull(ctx context.Context, nameStr string, reference strin
 			ctx,
 			digestVersion.ID,
 			auth.CurrentUserID(),
-			internalctx.GetRequestIPAddress(ctx),
+			chimiddleware.GetClientIP(ctx),
 			auth.CurrentCustomerOrgID(),
 		)
 	}

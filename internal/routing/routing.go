@@ -116,7 +116,8 @@ func ApiRouter(
 	return func(r chiopenapi.Router) {
 		r.Use(
 			chimiddleware.RequestID,
-			chimiddleware.RealIP,
+			chimiddleware.ClientIPFromRemoteAddr,
+			chimiddleware.ClientIPFromXFF(),
 			middleware.Sentry,
 			middleware.LoggerCtxMiddleware(logger),
 			middleware.LoggingMiddleware,
