@@ -277,12 +277,27 @@ jobs:
           context: .
           file: Dockerfile.hub
           push: ${{ startsWith(github.ref, 'refs/tags/') }}
+          load: ${{ matrix.edition.name == 'community' && !startsWith(github.ref, 'refs/tags/') }}
           sbom: true
           provenance: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Save Docker image for chart test
+        if: ${{ matrix.edition.name == 'community' && !startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          docker tag "${{ steps.build-push.outputs.imageid }}" ghcr.io/distr-sh/distr-ce:ci
+          docker save ghcr.io/distr-sh/distr-ce:ci | gzip > /tmp/distr-ce.tar.gz
+
+      - name: Upload Docker image artifact
+        if: ${{ matrix.edition.name == 'community' && !startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: distr-ce-image
+          path: /tmp/distr-ce.tar.gz
+          retention-days: 1
 
       - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
@@ -298,3 +313,52 @@ jobs:
             images+="${tag}@${DIGEST} "
           done
           cosign sign --yes ${images}
+
+  test-chart-install:
+    name: Test Helm chart install
+    needs: build
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: deploy/charts/distr
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: distr-ce-image
+          path: /tmp
+
+      - name: Load Docker image
+        run: docker load < /tmp/distr-ce.tar.gz
+
+      - name: Create kind cluster
+        uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # v1.14.0
+
+      - name: Load image into kind
+        run: kind load docker-image ghcr.io/distr-sh/distr-ce:ci --name chart-testing
+
+      - name: Build Helm chart dependencies
+        run: |
+          helm repo add rustfs https://charts.rustfs.com/
+          helm dependency build .
+
+      - name: Install Helm chart
+        run: |
+          helm upgrade --install distr . \
+            --set replicaCount=1 \
+            --set postgresql.enabled=true \
+            --set rustfs.enabled=true \
+            --set image.tag=ci \
+            --wait --timeout 5m
+
+      - name: Verify /ready endpoint
+        run: |
+          kubectl port-forward svc/distr 8080:8080 &
+          sleep 2
+          curl -sf http://localhost:8080/ready
