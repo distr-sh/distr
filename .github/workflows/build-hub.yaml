@@ -278,8 +278,8 @@ jobs:
           file: Dockerfile.hub
           push: ${{ startsWith(github.ref, 'refs/tags/') }}
           load: ${{ matrix.edition.name == 'community' && !startsWith(github.ref, 'refs/tags/') }}
-          sbom: true
-          provenance: true
+          sbom: ${{ startsWith(github.ref, 'refs/tags/') }}
+          provenance: ${{ startsWith(github.ref, 'refs/tags/') }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
