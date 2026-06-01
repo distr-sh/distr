@@ -68,11 +68,7 @@ export class LicensesOverviewComponent {
 
   protected readonly sourcesForCopy = computed(() => {
     const targetId = this.targetLicense()?.customerOrganization.id;
-    return this.allLicenses().filter(
-      (l) =>
-        l.customerOrganization.id !== targetId &&
-        (l.applicationEntitlements.length > 0 || l.artifactEntitlements.length > 0 || l.licenseKeys.length > 0)
-    );
+    return this.allLicenses().filter((l) => l.customerOrganization.id !== targetId && !this.hasNoLicenses(l));
   });
 
   protected hasNoLicenses(license: License): boolean {
@@ -85,9 +81,7 @@ export class LicensesOverviewComponent {
 
   protected canCopyFromAnotherCustomer(license: License): boolean {
     return this.allLicenses().some(
-      (l) =>
-        l.customerOrganization.id !== license.customerOrganization.id &&
-        (l.applicationEntitlements.length > 0 || l.artifactEntitlements.length > 0 || l.licenseKeys.length > 0)
+      (l) => l.customerOrganization.id !== license.customerOrganization.id && !this.hasNoLicenses(l)
     );
   }
 
