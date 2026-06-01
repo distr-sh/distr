@@ -51,6 +51,28 @@ func GetArtifactEntitlements(ctx context.Context, orgID uuid.UUID) ([]types.Arti
 	return result, nil
 }
 
+func GetArtifactEntitlementsByPartnerOrgID(
+	ctx context.Context, partnerOrgID, orgID uuid.UUID,
+) ([]types.ArtifactEntitlement, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx, `
+		SELECT `+artifactEntitlementOutExpr+`, `+artifactSelectionsOutExpor+`
+		FROM ArtifactEntitlement al
+		JOIN CustomerOrganization co ON al.customer_organization_id = co.id
+		WHERE al.organization_id = @orgId AND co.partner_organization_id = @partnerOrgId
+		ORDER BY al.name`,
+		pgx.NamedArgs{"orgId": orgID, "partnerOrgId": partnerOrgID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query ArtifactEntitlement: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.ArtifactEntitlement])
+	if err != nil {
+		return nil, fmt.Errorf("could not query ArtifactEntitlement: %w", err)
+	}
+	return result, nil
+}
+
 func CreateArtifactEntitlement(ctx context.Context, entitlement *types.ArtifactEntitlementBase) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `

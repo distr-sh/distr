@@ -17,6 +17,7 @@ import (
 	"github.com/distr-sh/distr/internal/licensekey"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -32,7 +33,7 @@ func LicenseKeysRouter(r chiopenapi.Router) {
 		With(option.Description("List all license keys")).
 		With(option.Response(http.StatusOK, []types.LicenseKey{}))
 
-	r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
+	r.With(middleware.RequireVendorOrPartner, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 		Post("/", createLicenseKey).
 		With(option.Description("Create a new license key")).
 		With(option.Request(api.CreateLicenseKeyRequest{})).
@@ -53,7 +54,7 @@ func LicenseKeysRouter(r chiopenapi.Router) {
 			With(option.Request(LicenseKeyIDRequest{})).
 			With(option.Response(http.StatusOK, []api.LicenseKeyRevision{}))
 
-		r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
+		r.With(middleware.RequireVendorOrPartner, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 			Group(func(r chiopenapi.Router) {
 				r.Put("/", updateLicenseKey).
 					With(option.Description("Update license key metadata and optionally create a new revision")).
@@ -72,27 +73,26 @@ func LicenseKeysRouter(r chiopenapi.Router) {
 func getLicenseKeys(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
-	auth := auth.Authentication.Require(ctx)
+	authCtx := auth.Authentication.Require(ctx)
 
-	if auth.CurrentCustomerOrgID() == nil {
-		if licenseKeys, err := db.GetLicenseKeys(ctx, *auth.CurrentOrgID()); err != nil {
-			log.Error("failed to get license keys", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		} else {
-			RespondJSON(w, licenseKeys)
-		}
+	var (
+		licenseKeys []types.LicenseKey
+		err         error
+	)
+	if authCtx.CurrentCustomerOrgID() != nil {
+		licenseKeys, err = db.GetLicenseKeysByCustomerOrgID(ctx, *authCtx.CurrentCustomerOrgID(), *authCtx.CurrentOrgID())
+	} else if partnerOrgID := authCtx.CurrentPartnerOrgID(); partnerOrgID != nil {
+		licenseKeys, err = db.GetLicenseKeysByPartnerOrgID(ctx, *partnerOrgID, *authCtx.CurrentOrgID())
 	} else {
-		if licenseKeys, err := db.GetLicenseKeysByCustomerOrgID(
-			ctx, *auth.CurrentCustomerOrgID(), *auth.CurrentOrgID(),
-		); err != nil {
-			log.Error("failed to get license keys", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		} else {
-			RespondJSON(w, licenseKeys)
-		}
+		licenseKeys, err = db.GetLicenseKeys(ctx, *authCtx.CurrentOrgID())
 	}
+	if err != nil {
+		log.Error("failed to get license keys", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	RespondJSON(w, licenseKeys)
 }
 
 func createLicenseKey(w http.ResponseWriter, r *http.Request) {
@@ -149,6 +149,18 @@ func createLicenseKey(w http.ResponseWriter, r *http.Request) {
 		licenseKey.Payload = body.Payload
 		licenseKey.NotBefore = &body.NotBefore
 		licenseKey.ExpiresAt = &body.ExpiresAt
+	}
+
+	if partnerOrgID := authCtx.CurrentPartnerOrgID(); partnerOrgID != nil {
+		if body.CustomerOrganizationID == nil {
+			http.Error(w, "customer organization is required", http.StatusBadRequest)
+			return
+		}
+		co, coErr := db.GetCustomerOrganizationByID(ctx, *body.CustomerOrganizationID)
+		if coErr != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
+			http.Error(w, "customer is not assigned to your partner organization", http.StatusForbidden)
+			return
+		}
 	}
 
 	if err := db.CreateLicenseKey(ctx, &licenseKey); errors.Is(err, apierrors.ErrConflict) {
@@ -360,23 +372,43 @@ func licenseKeyMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		authCtx := auth.Authentication.Require(ctx)
-		if licenseKeyID, err := uuid.Parse(r.PathValue("licenseKeyId")); err != nil {
+		licenseKeyID, err := uuid.Parse(r.PathValue("licenseKeyId"))
+		if err != nil {
 			http.Error(w, "licenseKeyId is not a valid UUID", http.StatusBadRequest)
-		} else if licenseKey, err := db.GetLicenseKeyByID(ctx, licenseKeyID); errors.Is(err, apierrors.ErrNotFound) {
+			return
+		}
+		licenseKey, err := db.GetLicenseKeyByID(ctx, licenseKeyID)
+		if errors.Is(err, apierrors.ErrNotFound) {
 			w.WriteHeader(http.StatusNotFound)
+			return
 		} else if err != nil {
 			internalctx.GetLogger(ctx).Error("failed to get license key", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			w.WriteHeader(http.StatusInternalServerError)
-		} else if licenseKey.OrganizationID != *authCtx.CurrentOrgID() {
+			return
+		}
+		if licenseKey.OrganizationID != *authCtx.CurrentOrgID() {
 			w.WriteHeader(http.StatusNotFound)
-		} else if authCtx.CurrentCustomerOrgID() != nil &&
+			return
+		}
+		if authCtx.CurrentCustomerOrgID() != nil &&
 			(licenseKey.CustomerOrganizationID == nil || *licenseKey.CustomerOrganizationID != *authCtx.CurrentCustomerOrgID()) {
 			w.WriteHeader(http.StatusNotFound)
-		} else {
-			ctx = internalctx.WithLicenseKey(ctx, licenseKey)
-			next.ServeHTTP(w, r.WithContext(ctx))
+			return
 		}
+		if partnerOrgID := authCtx.CurrentPartnerOrgID(); partnerOrgID != nil {
+			if licenseKey.CustomerOrganizationID == nil {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			co, coErr := db.GetCustomerOrganizationByID(ctx, *licenseKey.CustomerOrganizationID)
+			if coErr != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+		}
+		ctx = internalctx.WithLicenseKey(ctx, licenseKey)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 

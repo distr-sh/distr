@@ -3,7 +3,6 @@ package middleware
 import (
 	"context"
 	"fmt"
-	"net"
 	"net/http"
 	"slices"
 	"strings"
@@ -43,11 +42,6 @@ func ContextInjectorMiddleware(
 			ctx = internalctx.WithDb(ctx, db)
 			ctx = internalctx.WithMailer(ctx, mailer)
 			ctx = internalctx.WithPrometheusCollector(ctx, prometheusCollector)
-			host, _, err := net.SplitHostPort(r.RemoteAddr)
-			if err != nil {
-				host = r.RemoteAddr
-			}
-			ctx = internalctx.WithRequestIPAddress(ctx, host)
 			ctx = internalctx.WithOIDCer(ctx, oidcer)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -144,6 +138,24 @@ var ProFeature = RequireAnySubscriptionType(
 )
 
 func RequireVendor(handler http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		if isSuperAdmin(ctx) {
+			handler.ServeHTTP(w, r)
+			return
+		}
+		if auth, err := auth.Authentication.Get(ctx); err != nil {
+			http.Error(w, err.Error(), http.StatusForbidden)
+		} else if auth.CurrentCustomerOrgID() != nil || auth.CurrentPartnerOrgID() != nil {
+			http.Error(w, "insufficient permissions", http.StatusForbidden)
+		} else {
+			handler.ServeHTTP(w, r)
+		}
+	}
+	return http.HandlerFunc(fn)
+}
+
+func RequireVendorOrPartner(handler http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		if isSuperAdmin(ctx) {
@@ -275,6 +287,7 @@ func FeatureFlagMiddleware(feature types.Feature) func(handler http.Handler) htt
 var (
 	LicensingFeatureFlagEnabledMiddleware = FeatureFlagMiddleware(types.FeatureLicensing)
 	VendorBillingFeatureMiddleware        = FeatureFlagMiddleware(types.FeatureVendorBilling)
+	PartnerManagementFeatureMiddleware    = FeatureFlagMiddleware(types.FeaturePartnerManagement)
 )
 
 func SetRequestPattern(next http.Handler) http.Handler {

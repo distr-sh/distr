@@ -71,7 +71,7 @@ func RunDeploymentStatusNotifications(ctx context.Context) error {
 
 		for _, deploymentTargetID := range config.DeploymentTargetIDs {
 			log := log.With(zap.Stringer("deploymentTargetId", deploymentTargetID))
-			deploymentTarget, err := db.GetDeploymentTarget(ctx, deploymentTargetID, nil)
+			deploymentTarget, err := db.GetDeploymentTarget(ctx, deploymentTargetID, nil, nil)
 			if err != nil {
 				return fmt.Errorf("failed to get deployment target: %w", err)
 			}

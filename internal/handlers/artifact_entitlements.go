@@ -11,6 +11,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -20,7 +21,8 @@ import (
 
 func ArtifactEntitlementsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Artifacts", "Licensing"))
-	r.Use(middleware.RequireOrgAndRole, middleware.RequireVendor, middleware.LicensingFeatureFlagEnabledMiddleware)
+	r.Use(middleware.RequireOrgAndRole, middleware.RequireVendorOrPartner,
+		middleware.LicensingFeatureFlagEnabledMiddleware)
 	r.Get("/", getArtifactEntitlements).
 		With(option.Description("List all artifact entitlements")).
 		With(option.Response(http.StatusOK, []types.ArtifactEntitlement{}))
@@ -51,15 +53,24 @@ func ArtifactEntitlementsRouter(r chiopenapi.Router) {
 func getArtifactEntitlements(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
-	auth := auth.Authentication.Require(ctx)
+	authCtx := auth.Authentication.Require(ctx)
 
-	if entitlements, err := db.GetArtifactEntitlements(ctx, *auth.CurrentOrgID()); err != nil {
+	var (
+		entitlements []types.ArtifactEntitlement
+		err          error
+	)
+	if partnerOrgID := authCtx.CurrentPartnerOrgID(); partnerOrgID != nil {
+		entitlements, err = db.GetArtifactEntitlementsByPartnerOrgID(ctx, *partnerOrgID, *authCtx.CurrentOrgID())
+	} else {
+		entitlements, err = db.GetArtifactEntitlements(ctx, *authCtx.CurrentOrgID())
+	}
+	if err != nil {
 		log.Error("failed to get artifact entitlements", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	} else {
-		RespondJSON(w, entitlements)
+		return
 	}
+	RespondJSON(w, entitlements)
 }
 
 func createArtifactEntitlement(w http.ResponseWriter, r *http.Request) {
@@ -72,6 +83,18 @@ func createArtifactEntitlement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	entitlement.OrganizationID = *auth.CurrentOrgID()
+
+	if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
+		if entitlement.CustomerOrganizationID == nil {
+			http.Error(w, "customer organization is required", http.StatusBadRequest)
+			return
+		}
+		co, coErr := db.GetCustomerOrganizationByID(ctx, *entitlement.CustomerOrganizationID)
+		if coErr != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
+			http.Error(w, "customer is not assigned to your partner organization", http.StatusForbidden)
+			return
+		}
+	}
 
 	if err = validateEntitlementSelections(entitlement); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -216,22 +239,38 @@ func deleteArtifactEntitlement(w http.ResponseWriter, r *http.Request) {
 func artifactEntitlementMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		a := auth.Authentication.Require(ctx)
-		if entitlementId, err := uuid.Parse(r.PathValue("artifactEntitlementId")); err != nil {
+		authCtx := auth.Authentication.Require(ctx)
+		entitlementId, err := uuid.Parse(r.PathValue("artifactEntitlementId"))
+		if err != nil {
 			http.Error(w, "artifactEntitlementId is not a valid UUID", http.StatusBadRequest)
-		} else if entitlement, err := db.GetArtifactEntitlementByID(ctx, entitlementId); errors.Is(
-			err, apierrors.ErrNotFound,
-		) {
+			return
+		}
+		entitlement, err := db.GetArtifactEntitlementByID(ctx, entitlementId)
+		if errors.Is(err, apierrors.ErrNotFound) {
 			w.WriteHeader(http.StatusNotFound)
+			return
 		} else if err != nil {
-			internalctx.GetLogger(r.Context()).Error("failed to get entitlement", zap.Error(err))
+			internalctx.GetLogger(ctx).Error("failed to get entitlement", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			w.WriteHeader(http.StatusInternalServerError)
-		} else if entitlement.OrganizationID != *a.CurrentOrgID() {
-			w.WriteHeader(http.StatusNotFound)
-		} else {
-			ctx = internalctx.WithArtifactEntitlement(ctx, entitlement)
-			next.ServeHTTP(w, r.WithContext(ctx))
+			return
 		}
+		if entitlement.OrganizationID != *authCtx.CurrentOrgID() {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		if partnerOrgID := authCtx.CurrentPartnerOrgID(); partnerOrgID != nil {
+			if entitlement.CustomerOrganizationID == nil {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			co, coErr := db.GetCustomerOrganizationByID(ctx, *entitlement.CustomerOrganizationID)
+			if coErr != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+		}
+		ctx = internalctx.WithArtifactEntitlement(ctx, entitlement)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

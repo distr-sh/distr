@@ -14,5 +14,6 @@ export interface UserAccount extends BaseModel {
 export interface UserAccountWithRole extends UserAccount {
   userRole: UserRole;
   customerOrganizationId?: string;
+  partnerOrganizationId?: string;
   joinedOrgAt: string;
 }

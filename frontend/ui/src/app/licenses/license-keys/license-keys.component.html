@@ -22,7 +22,7 @@
         </div>
         <div
           class="w-full md:w-auto flex flex-col md:flex-row space-y-2 md:space-y-0 items-stretch md:items-center justify-end md:space-x-3 shrink-0">
-          @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
+          @if ((auth.isVendor() || auth.isPartner()) && auth.hasAnyRole('read_write', 'admin')) {
             <button
               (click)="openDrawer(manageLicenseDrawer)"
               type="button"
@@ -43,7 +43,7 @@
               }
               <th scope="col" class="p-4">Name</th>
               <th scope="col" class="p-4">Description</th>
-              @if (auth.isVendor()) {
+              @if (auth.isVendor() || auth.isPartner()) {
                 <th scope="col" class="p-4">Customer</th>
               }
               <th scope="col" class="p-4">Expires</th>
@@ -73,7 +73,7 @@
                     {{ license.description }}
                   </span>
                 </td>
-                @if (auth.isVendor()) {
+                @if (auth.isVendor() || auth.isPartner()) {
                   <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                     {{ getOwnerColumn(license.customerOrganizationId) | async }}
                   </td>
@@ -101,7 +101,7 @@
                     <fa-icon [icon]="faEye" class="h-4 w-4 mr-2 mb-1 text-gray-500 dark:text-gray-400" />
                     View License
                   </button>
-                  @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
+                  @if ((auth.isVendor() || auth.isPartner()) && auth.hasAnyRole('read_write', 'admin')) {
                     <button
                       type="button"
                       (click)="openDrawer(manageLicenseDrawer, license)"

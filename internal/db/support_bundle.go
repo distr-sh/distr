@@ -110,22 +110,25 @@ const supportBundleWithDetailsOutputExpr = `
 `
 
 func GetSupportBundles(
-	ctx context.Context, orgID uuid.UUID, customerOrgID *uuid.UUID,
+	ctx context.Context, orgID uuid.UUID, customerOrgID *uuid.UUID, partnerOrgID *uuid.UUID,
 ) ([]types.SupportBundleWithDetails, error) {
 	db := internalctx.GetDb(ctx)
+	isVendor := customerOrgID == nil && partnerOrgID == nil
 	query := fmt.Sprintf(`
 		SELECT %v
 		FROM SupportBundle sb
 		INNER JOIN UserAccount u ON sb.created_by_user_account_id = u.id
 		INNER JOIN CustomerOrganization co ON sb.customer_organization_id = co.id
 		LEFT JOIN UserAccount scu ON sb.status_changed_by_user_account_id = scu.id
-		WHERE sb.organization_id = @orgId`,
+		WHERE sb.organization_id = @orgId
+		AND (@isVendor OR sb.customer_organization_id = @customerOrgId OR co.partner_organization_id = @partnerOrgId)`,
 		supportBundleWithDetailsOutputExpr)
 
-	args := pgx.NamedArgs{"orgId": orgID}
-	if customerOrgID != nil {
-		query += ` AND sb.customer_organization_id = @customerOrgId`
-		args["customerOrgId"] = *customerOrgID
+	args := pgx.NamedArgs{
+		"orgId":         orgID,
+		"isVendor":      isVendor,
+		"customerOrgId": customerOrgID,
+		"partnerOrgId":  partnerOrgID,
 	}
 	query += ` ORDER BY sb.created_at DESC`
 

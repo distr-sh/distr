@@ -104,6 +104,12 @@
 
 ---
 
+### partnerOrganizationId?
+
+> `optional` **partnerOrganizationId?**: `string`
+
+---
+
 ### userRole
 
 > **userRole**: [`UserRole`](../type-aliases/UserRole.md)

@@ -20,7 +20,7 @@ func CreateAgentVersion(ctx context.Context) error {
 		ON CONFLICT (name) DO UPDATE SET
 			manifest_file_revision = @manifestRevision,
 			compose_file_revision = @composeRevision`,
-		pgx.NamedArgs{"name": buildconfig.Version(), "manifestRevision": "v1", "composeRevision": "v1"})
+		pgx.NamedArgs{"name": buildconfig.Version(), "manifestRevision": "v2", "composeRevision": "v1"})
 	return err
 }
 

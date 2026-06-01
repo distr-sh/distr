@@ -27,12 +27,13 @@ func (r *CreateUpdateCustomerOrganizationRequest) Validate() error {
 }
 
 type CustomerOrganization struct {
-	ID        uuid.UUID                           `json:"id"`
-	CreatedAt time.Time                           `json:"createdAt"`
-	Name      string                              `json:"name"`
-	ImageID   *uuid.UUID                          `json:"imageId,omitempty"`
-	ImageURL  *string                             `json:"imageUrl,omitempty"`
-	Features  []types.CustomerOrganizationFeature `json:"features"`
+	ID                    uuid.UUID                           `json:"id"`
+	CreatedAt             time.Time                           `json:"createdAt"`
+	Name                  string                              `json:"name"`
+	ImageID               *uuid.UUID                          `json:"imageId,omitempty"`
+	ImageURL              *string                             `json:"imageUrl,omitempty"`
+	Features              []types.CustomerOrganizationFeature `json:"features"`
+	PartnerOrganizationID *uuid.UUID                          `json:"partnerOrganizationId,omitempty"`
 }
 
 type CustomerOrganizationWithUsage struct {

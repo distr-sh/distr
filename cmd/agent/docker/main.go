@@ -14,6 +14,7 @@ import (
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/agentauth"
+	"github.com/distr-sh/distr/internal/agentcheck"
 	"github.com/distr-sh/distr/internal/agentclient"
 	"github.com/distr-sh/distr/internal/agentenv"
 	"github.com/distr-sh/distr/internal/buildconfig"
@@ -46,7 +47,7 @@ var (
 	client         = util.Require(agentclient.NewFromEnv(logger))
 	dockerCli      = util.Require(dockercommand.NewDockerCli())
 	composeService composeapi.Compose
-	health         = NewHealthcheckServer(time.Hour)
+	health         = agentcheck.NewServer(time.Hour)
 	logWatcher     = NewLogsWatcher(30 * time.Second)
 )
 

@@ -47,12 +47,13 @@ func (ref *CustomerOrganizationFeature) UnmarshalJSON(data []byte) error {
 }
 
 type CustomerOrganization struct {
-	ID             uuid.UUID                     `db:"id" json:"id"`
-	CreatedAt      time.Time                     `db:"created_at" json:"createdAt"`
-	OrganizationID uuid.UUID                     `db:"organization_id" json:"organizationId"`
-	ImageID        *uuid.UUID                    `db:"image_id" json:"imageId,omitempty"`
-	Name           string                        `db:"name" json:"name"`
-	Features       []CustomerOrganizationFeature `db:"features" json:"features"`
+	ID                    uuid.UUID                     `db:"id" json:"id"`
+	CreatedAt             time.Time                     `db:"created_at" json:"createdAt"`
+	OrganizationID        uuid.UUID                     `db:"organization_id" json:"organizationId"`
+	ImageID               *uuid.UUID                    `db:"image_id" json:"imageId,omitempty"`
+	Name                  string                        `db:"name" json:"name"`
+	Features              []CustomerOrganizationFeature `db:"features" json:"features"`
+	PartnerOrganizationID *uuid.UUID                    `db:"partner_organization_id" json:"partnerOrganizationId,omitempty"` //nolint:lll
 }
 
 type CustomerOrganizationWithUsage struct {

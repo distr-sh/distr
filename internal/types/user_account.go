@@ -24,12 +24,14 @@ type UserAccount struct {
 	MFAEnabledAt           *time.Time `db:"mfa_enabled_at" json:"-"`
 	IsSuperAdmin           bool       `db:"is_super_admin" json:"-"`
 	Password               string     `db:"-" json:"-"`
+
 	// Remember to update AsUserAccountWithRole when adding fields!
 }
 
 func (u *UserAccount) AsUserAccountWithRole(
 	role UserRole,
 	customerOrganizationID *uuid.UUID,
+	partnerOrganizationID *uuid.UUID,
 	joinedOrgAt time.Time,
 ) UserAccountWithUserRole {
 	return UserAccountWithUserRole{
@@ -49,12 +51,14 @@ func (u *UserAccount) AsUserAccountWithRole(
 		UserRole:               role,
 		JoinedOrgAt:            joinedOrgAt,
 		CustomerOrganizationID: customerOrganizationID,
+		PartnerOrganizationID:  partnerOrganizationID,
 		LastUsedOrganizationID: u.LastUsedOrganizationID,
 	}
 }
 
 type UserAccountWithUserRole struct {
 	// copy+pasted from UserAccount because pgx does not like embedded structs
+
 	ID                     uuid.UUID  `db:"id" json:"id"`
 	CreatedAt              time.Time  `db:"created_at" json:"createdAt"`
 	Email                  string     `db:"email" json:"email"`
@@ -69,13 +73,18 @@ type UserAccountWithUserRole struct {
 	MFAEnabled             bool       `db:"mfa_enabled" json:"mfaEnabled"`
 	MFAEnabledAt           *time.Time `db:"mfa_enabled_at" json:"-"`
 	IsSuperAdmin           bool       `db:"is_super_admin" json:"-"`
+
 	// not copy+pasted
-	UserRole UserRole `db:"user_role" json:"userRole"`
-	// not copy+pasted
-	JoinedOrgAt time.Time `db:"joined_org_at" json:"joinedOrgAt"`
-	// not copy+pasted
+
+	UserRole               UserRole   `db:"user_role" json:"userRole"`
+	JoinedOrgAt            time.Time  `db:"joined_org_at" json:"joinedOrgAt"`
 	CustomerOrganizationID *uuid.UUID `db:"customer_organization_id" json:"customerOrganizationId,omitempty"`
-	Password               string     `db:"-" json:"-"`
+	PartnerOrganizationID  *uuid.UUID `db:"partner_organization_id" json:"partnerOrganizationId,omitempty"`
+
+	// copy+pasted from UserAccount
+
+	Password string `db:"-" json:"-"`
+
 	// Remember to update AsUserAccount when adding fields!
 }
 

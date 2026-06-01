@@ -116,7 +116,8 @@ func ApiRouter(
 	return func(r chiopenapi.Router) {
 		r.Use(
 			chimiddleware.RequestID,
-			chimiddleware.RealIP,
+			chimiddleware.ClientIPFromRemoteAddr,
+			chimiddleware.ClientIPFromXFF(),
 			middleware.Sentry,
 			middleware.LoggerCtxMiddleware(logger),
 			middleware.LoggingMiddleware,
@@ -166,6 +167,8 @@ func ApiRouter(
 					r.Route("/billing", handlers.BillingRouter)
 					r.Route("/context", handlers.ContextRouter)
 					r.Route("/customer-organizations", handlers.CustomerOrganizationsRouter)
+					r.With(middleware.PartnerManagementFeatureMiddleware).
+						Route("/partner-organizations", handlers.PartnerOrganizationsRouter)
 					r.Route("/dashboard", handlers.DashboardRouter)
 					r.Route("/alert-configurations", handlers.AlertConfigurationsRouter)
 					r.Route("/deployment-target-metrics", handlers.DeploymentTargetMetricsRouter)
