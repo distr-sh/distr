@@ -80,6 +80,7 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 							userEmail:              a.CurrentUserEmail(),
 							organizationID:         a.CurrentOrgID(),
 							customerOrganizationID: u.CustomerOrganizationID,
+							partnerOrganizationID:  u.PartnerOrganizationID,
 							emailVerified:          a.CurrentUserEmailVerified(),
 							userRole:               a.CurrentUserRole(),
 							isSuperAdmin:           false,

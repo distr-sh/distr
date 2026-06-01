@@ -121,6 +121,7 @@ const (
 	FeatureArtifactVersionMutable Feature = "artifact_version_mutable"
 	FeatureVendorBilling          Feature = "vendor_billing"
 	FeatureDeploymentLogsAfter    Feature = "deployment_logs_after"
+	FeaturePartnerManagement      Feature = "partner_management"
 )
 
 type DeploymentStatusType string

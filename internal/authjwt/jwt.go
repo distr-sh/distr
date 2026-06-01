@@ -25,6 +25,7 @@ const (
 	UserImageURLKey      = "image_url"
 	OrgIdKey             = "org"
 	CustomerOrgIDKey     = "c_org"
+	PartnerOrgIDKey      = "p_org"
 	PasswordResetKey     = "password_reset"
 	SuperAdminKey        = "is_super_admin"
 
@@ -86,6 +87,9 @@ func generateUserToken(
 		}
 		if org.CustomerOrganizationID != nil {
 			claims[CustomerOrgIDKey] = org.CustomerOrganizationID.String()
+		}
+		if org.PartnerOrganizationID != nil {
+			claims[PartnerOrgIDKey] = org.PartnerOrganizationID.String()
 		}
 	}
 	maps.Copy(claims, extraClaims)

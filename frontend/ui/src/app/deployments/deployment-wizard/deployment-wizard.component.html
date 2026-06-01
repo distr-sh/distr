@@ -37,43 +37,48 @@
                     <!-- Vendor Only Option -->
                     @let org = currentOrganization$ | async;
                     @let deploymentLimit = org?.subscriptionLimits?.maxDeploymentsPerCustomerOrganization ?? -1;
-                    @if (org) {
-                      @let limitReached = deploymentLimit >= 0 && internalDeploymentCount() >= deploymentLimit;
-                      @let isSelected = customerForm.value.internal;
-                      <button
-                        type="button"
-                        [disabled]="limitReached"
-                        [title]="limitReached ? 'Maximum deployments reached' : ''"
-                        (click)="selectCustomer(null)"
-                        class="relative flex flex-col items-center py-4 px-2 rounded-lg border transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                        [class.border-primary-600]="isSelected"
-                        [class.bg-primary-50]="isSelected"
-                        [class.dark:bg-primary-900]="isSelected"
-                        [class.border-gray-200]="!isSelected"
-                        [class.bg-white]="!isSelected"
-                        [class.dark:border-gray-700]="!isSelected"
-                        [class.dark:bg-gray-800]="!isSelected">
-                        <!-- Vendor Logo -->
-                        @if (vendorBranding$ | async; as branding) {
-                          <img [src]="getVendorLogoUrl(branding)" [alt]="org.name" class="w-12 h-12 mb-2 rounded-lg" />
-                        }
+                    @if (!auth.isPartner()) {
+                      @if (org) {
+                        @let limitReached = deploymentLimit >= 0 && internalDeploymentCount() >= deploymentLimit;
+                        @let isSelected = customerForm.value.internal;
+                        <button
+                          type="button"
+                          [disabled]="limitReached"
+                          [title]="limitReached ? 'Maximum deployments reached' : ''"
+                          (click)="selectCustomer(null)"
+                          class="relative flex flex-col items-center py-4 px-2 rounded-lg border transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                          [class.border-primary-600]="isSelected"
+                          [class.bg-primary-50]="isSelected"
+                          [class.dark:bg-primary-900]="isSelected"
+                          [class.border-gray-200]="!isSelected"
+                          [class.bg-white]="!isSelected"
+                          [class.dark:border-gray-700]="!isSelected"
+                          [class.dark:bg-gray-800]="!isSelected">
+                          <!-- Vendor Logo -->
+                          @if (vendorBranding$ | async; as branding) {
+                            <img
+                              [src]="getVendorLogoUrl(branding)"
+                              [alt]="org.name"
+                              class="w-12 h-12 mb-2 rounded-lg" />
+                          }
 
-                        <!-- Vendor Name -->
-                        <div
-                          class="text-sm font-medium text-gray-900 dark:text-white text-center mb-1 max-w-full overflow-hidden text-ellipsis">
-                          {{ org.name }}
-                        </div>
-
-                        <!-- Description -->
-                        <div class="text-xs text-gray-500 dark:text-gray-400 text-center">Internal deployment</div>
-
-                        <!-- Selection Indicator -->
-                        @if (isSelected) {
-                          <div class="absolute top-2 left-2 text-primary-600 dark:text-primary-400">
-                            <fa-icon [icon]="faCheckCircle" class="w-6 h-6" />
+                          <!-- Vendor Name -->
+                          <div
+                            class="text-sm font-medium text-gray-900 dark:text-white text-center mb-1 max-w-full overflow-hidden text-ellipsis">
+                            {{ org.name }}
                           </div>
-                        }
-                      </button>
+
+                          <!-- Description -->
+                          <div class="text-xs text-gray-500 dark:text-gray-400 text-center">Internal deployment</div>
+
+                          <!-- Selection Indicator -->
+                          @if (isSelected) {
+                            <div class="absolute top-2 left-2 text-primary-600 dark:text-primary-400">
+                              <fa-icon [icon]="faCheckCircle" class="w-6 h-6" />
+                            </div>
+                          }
+                        </button>
+                      }
                     }
 
                     <!-- Customer Options -->

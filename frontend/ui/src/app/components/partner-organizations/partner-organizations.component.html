@@ -1,0 +1,143 @@
+<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
+  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
+    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+      <div
+        class="flex flex-col md:flex-row items-stretch md:items-center md:space-x-3 space-y-3 md:space-y-0 justify-between mx-4 py-4 dark:border-gray-700">
+        <div class="w-full md:w-1/2">
+          <form class="flex items-center" [formGroup]="filterForm">
+            <label for="partner-search" class="sr-only">Search</label>
+            <div class="relative w-full">
+              <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <fa-icon [icon]="faMagnifyingGlass" class="text-gray-500 dark:text-gray-400" />
+              </div>
+              <input
+                type="text"
+                id="partner-search"
+                placeholder="Filter partners"
+                [formControl]="filterForm.controls.search"
+                autotrim
+                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+            </div>
+          </form>
+        </div>
+        <div
+          class="w-full md:w-auto flex flex-col md:flex-row items-stretch md:items-center justify-end gap-4 flex-shrink-0 flex-grow">
+          <button
+            (click)="showCreateDialog()"
+            type="button"
+            class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+            <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
+            Create Partner
+          </button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+          <thead
+            class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
+            <tr>
+              <th scope="col" class="p-4">Name</th>
+              <th scope="col" class="p-4 text-end"># of Users</th>
+              <th scope="col" class="p-4 text-end"># of Customers</th>
+              <th scope="col" class="p-4"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (partner of partnerOrganizations(); track partner.id) {
+              <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <td
+                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-32 lg:max-w-64 xl:max-w-128 overflow-hidden text-ellipsis">
+                  <fa-icon [icon]="faBuilding" class="mr-2 text-gray-400" />
+                  {{ partner.name }}
+                  <button type="button" class="text-gray-400 ml-1" (click)="showUpdateDialog(partner)">
+                    <fa-icon [icon]="faEdit" />
+                  </button>
+                </td>
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white text-end">
+                  {{ partner.userCount | number }}
+                </td>
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white text-end">
+                  {{ partner.customerOrganizationCount | number }}
+                </td>
+                <td
+                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">
+                  <a
+                    [routerLink]="[partner.id, 'users']"
+                    class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                    Manage users
+                  </a>
+                  <button
+                    type="button"
+                    (click)="delete(partner)"
+                    class="py-2 px-3 flex items-center text-sm font-medium text-center text-red-700 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-red-500 dark:border-gray-600 dark:hover:bg-gray-700">
+                    <fa-icon [icon]="faTrash" />
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr class="border-t border-gray-200 dark:border-gray-600">
+                <td colspan="4" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                  No partner organizations yet.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<ng-template #createPartnerDialog>
+  <div
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top"
+    class="p-4 w-full mt-12 max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-900">
+    <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+        @if (createForm.value.id) {
+          Update Partner
+        } @else {
+          New Partner
+        }
+      </h2>
+      <button
+        type="button"
+        (click)="closeCreateDialog()"
+        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+        <fa-icon [icon]="faXmark" />
+        <span class="sr-only">Close modal</span>
+      </button>
+    </div>
+    <div class="p-4 md:p-5 space-y-4">
+      <section class="antialiased">
+        <div class="mx-auto max-w-screen-xl px-4 2xl:px-0">
+          <form class="mx-auto" (ngSubmit)="submitCreateForm()" [formGroup]="createForm">
+            <div class="flex flex-col space-y-5">
+              <div class="space-y-2">
+                <label for="partner-name" class="block text-sm font-medium text-gray-900 dark:text-white">Name</label>
+                <input
+                  type="text"
+                  id="partner-name"
+                  formControlName="name"
+                  autotrim
+                  autocomplete="off"
+                  placeholder="Acme Reseller Ltd."
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+                @if (createForm.controls.name.touched && createForm.controls.name.errors?.['required']) {
+                  <span class="text-red-500 text-xs">Name is required</span>
+                }
+              </div>
+              <button
+                type="submit"
+                [disabled]="createFormLoading()"
+                class="self-end text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 disabled:opacity-50 disabled:cursor-not-allowed">
+                Submit
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+</ng-template>

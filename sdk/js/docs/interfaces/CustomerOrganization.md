@@ -57,3 +57,9 @@
 ### name
 
 > **name**: `string`
+
+---
+
+### partnerOrganizationId?
+
+> `optional` **partnerOrganizationId?**: `string`

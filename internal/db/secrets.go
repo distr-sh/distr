@@ -33,21 +33,25 @@ const secretWithUpdatedByOutputExpr = secretOutputExpr + `,
 func GetSecrets(
 	ctx context.Context,
 	organizationID uuid.UUID,
-	customerOrganizationID *uuid.UUID,
+	customerOrganizationID,
+	partnerOrganizationID *uuid.UUID,
 ) ([]types.SecretWithUpdatedBy, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
 		`SELECT `+secretWithUpdatedByOutputExpr+` FROM Secret s
-		LEFT JOIN UserAccount u
-			ON s.updated_by_useraccount_id = u.id
-		WHERE s.organization_id = @organization_id
-			AND (@is_vendor OR s.customer_organization_id = @customer_organization_id)
+		LEFT JOIN UserAccount u ON s.updated_by_useraccount_id = u.id
+		LEFT JOIN CustomerOrganization c ON s.customer_organization_id = c.id
+		WHERE s.organization_id = @organizationID
+			AND (@isVendor
+				OR s.customer_organization_id = @customerOrganizationID
+				OR c.partner_organization_id = @partnerOrganizationID)
 		ORDER BY s.key ASC`,
 		pgx.NamedArgs{
-			"organization_id":          organizationID,
-			"customer_organization_id": customerOrganizationID,
-			"is_vendor":                customerOrganizationID == nil,
+			"organizationID":         organizationID,
+			"customerOrganizationID": customerOrganizationID,
+			"partnerOrganizationID":  partnerOrganizationID,
+			"isVendor":               customerOrganizationID == nil && partnerOrganizationID == nil,
 		},
 	)
 	if err != nil {
@@ -131,22 +135,25 @@ func GetSecretByID(
 	ctx context.Context,
 	id uuid.UUID,
 	orgID uuid.UUID,
-	customerOrgID *uuid.UUID,
+	customerOrganizationID, partnerOrganizationID *uuid.UUID,
 ) (*types.SecretWithUpdatedBy, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
 		`SELECT `+secretWithUpdatedByOutputExpr+` FROM Secret s
-		LEFT JOIN UserAccount u
-			ON s.updated_by_useraccount_id = u.id
+		LEFT JOIN UserAccount u ON s.updated_by_useraccount_id = u.id
+		LEFT JOIN CustomerOrganization c ON s.customer_organization_id = c.id
 		WHERE s.id = @id
-			AND s.organization_id = @org_id
-			AND (@is_vendor OR s.customer_organization_id = @customer_org_id)`,
+			AND s.organization_id = @organizationID
+			AND (@isVendor
+				OR s.customer_organization_id = @customerOrganizationID
+				OR c.partner_organization_id = @partnerOrganizationID)`,
 		pgx.NamedArgs{
-			"id":              id,
-			"org_id":          orgID,
-			"customer_org_id": customerOrgID,
-			"is_vendor":       customerOrgID == nil,
+			"id":                     id,
+			"organizationID":         orgID,
+			"customerOrganizationID": customerOrganizationID,
+			"partnerOrganizationID":  partnerOrganizationID,
+			"isVendor":               customerOrganizationID == nil && partnerOrganizationID == nil,
 		},
 	)
 	if err != nil {
@@ -252,20 +259,27 @@ func DeleteSecret(
 	ctx context.Context,
 	id uuid.UUID,
 	organizationID uuid.UUID,
-	customerOrganizationID *uuid.UUID,
+	customerOrganizationID, partnerOrganizationID *uuid.UUID,
 ) error {
 	db := internalctx.GetDb(ctx)
 	cmd, err := db.Exec(
 		ctx,
 		`DELETE FROM Secret
 		WHERE id = @id
-			AND organization_id = @organization_id
-			AND (@is_vendor OR  customer_organization_id = @customer_organization_id)`,
+			AND organization_id = @organizationID
+			AND (@isVendor
+				OR customer_organization_id = @customerOrganizationID
+				OR EXISTS (
+					SELECT 1 FROM CustomerOrganization c
+					WHERE c.id = customer_organization_id
+					AND c.partner_organization_id = @partnerOrganizationID
+				))`,
 		pgx.NamedArgs{
-			"id":                       id,
-			"organization_id":          organizationID,
-			"customer_organization_id": customerOrganizationID,
-			"is_vendor":                customerOrganizationID == nil,
+			"id":                     id,
+			"organizationID":         organizationID,
+			"customerOrganizationID": customerOrganizationID,
+			"partnerOrganizationID":  partnerOrganizationID,
+			"isVendor":               customerOrganizationID == nil && partnerOrganizationID == nil,
 		},
 	)
 	if err != nil {

@@ -121,6 +121,7 @@ func authSwitchContextHandler() func(writer http.ResponseWriter, request *http.R
 			Organization:           *org,
 			UserRole:               user.UserRole,
 			CustomerOrganizationID: user.CustomerOrganizationID,
+			PartnerOrganizationID:  user.PartnerOrganizationID,
 		}); err != nil {
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			log.Error("failed to generate token", zap.Error(err))
@@ -176,7 +177,7 @@ func authLoginHandler(w http.ResponseWriter, r *http.Request) {
 				if err := db.CreateOrganization(ctx, &org.Organization); err != nil {
 					return err
 				} else if err := db.CreateUserAccountOrganizationAssignment(
-					ctx, user.ID, org.ID, org.UserRole, org.CustomerOrganizationID); err != nil {
+					ctx, user.ID, org.ID, org.UserRole, org.CustomerOrganizationID, nil); err != nil {
 					return err
 				}
 			} else {

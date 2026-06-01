@@ -27,7 +27,7 @@ func LicensesRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Licensing"))
 	r.Use(
 		middleware.RequireOrgAndRole,
-		middleware.RequireVendor,
+		middleware.RequireVendorOrPartner,
 		middleware.LicensingFeatureFlagEnabledMiddleware,
 	)
 	r.Get("/", getLicenses).
@@ -41,7 +41,13 @@ func getLicenses(w http.ResponseWriter, r *http.Request) {
 	authInfo := auth.Authentication.Require(ctx)
 	orgID := *authInfo.CurrentOrgID()
 
-	customers, err := db.GetCustomerOrganizationsByOrganizationID(ctx, orgID)
+	var customers []types.CustomerOrganizationWithUsage
+	var err error
+	if partnerOrgID := authInfo.CurrentPartnerOrgID(); partnerOrgID != nil {
+		customers, err = db.GetCustomerOrganizationsByPartnerOrgID(ctx, *partnerOrgID)
+	} else {
+		customers, err = db.GetCustomerOrganizationsByOrganizationID(ctx, orgID)
+	}
 	if err != nil {
 		log.Error("failed to get customer organizations", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)

@@ -10,6 +10,7 @@ type SimpleAuthInfo struct {
 	userEmail              string
 	organizationID         *uuid.UUID
 	customerOrganizationID *uuid.UUID
+	partnerOrganizationID  *uuid.UUID
 	emailVerified          bool
 	userRole               *types.UserRole
 	isSuperAdmin           bool
@@ -21,6 +22,9 @@ func (i *SimpleAuthInfo) CurrentOrgID() *uuid.UUID { return i.organizationID }
 
 // CurrentCustomerOrgID implements AuthInfo.
 func (i *SimpleAuthInfo) CurrentCustomerOrgID() *uuid.UUID { return i.customerOrganizationID }
+
+// CurrentPartnerOrgID implements AuthInfo.
+func (i *SimpleAuthInfo) CurrentPartnerOrgID() *uuid.UUID { return i.partnerOrganizationID }
 
 // CurrentUserEmailVerified implements AuthInfo.
 func (i *SimpleAuthInfo) CurrentUserEmailVerified() bool { return i.emailVerified }

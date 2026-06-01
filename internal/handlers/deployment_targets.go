@@ -11,7 +11,6 @@ import (
 	"github.com/distr-sh/distr/internal/agentconnect"
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
-	"github.com/distr-sh/distr/internal/authn/authinfo"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/middleware"
@@ -99,6 +98,7 @@ func getDeploymentTargets(w http.ResponseWriter, r *http.Request) {
 		ctx,
 		*auth.CurrentOrgID(),
 		auth.CurrentCustomerOrgID(),
+		auth.CurrentPartnerOrgID(),
 	)
 	if err != nil {
 		internalctx.GetLogger(ctx).Error("failed to get DeploymentTargets", zap.Error(err))
@@ -128,6 +128,13 @@ func createDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
 		dt.AgentVersionID = &agentVersion.ID
+		if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
+			if dt.CustomerOrganization == nil || dt.CustomerOrganization.ID == uuid.Nil {
+				http.Error(w, "partner users must assign a deployment target to a customer", http.StatusForbidden)
+				return
+			}
+		}
+
 		err = db.RunTx(ctx, func(ctx context.Context) error {
 			customerOrgID := auth.CurrentCustomerOrgID()
 
@@ -136,6 +143,13 @@ func createDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 					err = errors.New("customer organization does not belong to organization")
 					http.Error(w, err.Error(), http.StatusForbidden)
 					return err
+				}
+				if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
+					co, err := db.GetCustomerOrganizationByID(ctx, dt.CustomerOrganization.ID)
+					if err != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
+						http.Error(w, "customer is not assigned to your partner organization", http.StatusForbidden)
+						return errors.New("customer not in partner org")
+					}
 				}
 				customerOrgID = &dt.CustomerOrganization.ID
 			}
@@ -146,7 +160,7 @@ func createDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.Warn("could not check deployment target limit", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return err
 			} else if limitReached {
 				err = errors.New("deployment target limit reached")
@@ -163,7 +177,7 @@ func createDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 			); err != nil {
 				log.Warn("could not create DeploymentTarget", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return err
 			}
 
@@ -171,7 +185,7 @@ func createDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 		})
 
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		} else {
 			RespondJSON(w, dt)
@@ -218,12 +232,12 @@ func deleteDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 	auth := auth.Authentication.Require(ctx)
 	if dt.OrganizationID != *auth.CurrentOrgID() {
 		http.NotFound(w, r)
-	} else if !isDeploymentTargetVisible(auth, dt.DeploymentTarget) {
+	} else if !isDeploymentTargetVisible(ctx, dt) {
 		http.Error(w, "must be vendor or creator", http.StatusForbidden)
 	} else if err := db.DeleteDeploymentTargetWithID(ctx, dt.ID); err != nil {
 		log.Warn("error deleting deployment target", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	} else {
 		w.WriteHeader(http.StatusNoContent)
 	}
@@ -301,14 +315,15 @@ func deploymentTargetMiddleware(wh http.Handler) http.Handler {
 		}
 		auth := auth.Authentication.Require(ctx)
 		orgId := auth.CurrentOrgID()
-		if deploymentTarget, err := db.GetDeploymentTarget(ctx, id, orgId); errors.Is(err, apierrors.ErrNotFound) {
-			w.WriteHeader(http.StatusNotFound)
-		} else if !isDeploymentTargetVisible(auth, deploymentTarget.DeploymentTarget) {
+		deploymentTarget, err := db.GetDeploymentTarget(ctx, id, orgId, auth.CurrentPartnerOrgID())
+		if errors.Is(err, apierrors.ErrNotFound) {
 			w.WriteHeader(http.StatusNotFound)
 		} else if err != nil {
 			internalctx.GetLogger(ctx).Error("failed to get DeploymentTarget", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		} else if !isDeploymentTargetVisible(ctx, deploymentTarget) {
+			http.NotFound(w, r)
 		} else {
 			ctx = internalctx.WithDeploymentTarget(ctx, deploymentTarget)
 			wh.ServeHTTP(w, r.WithContext(ctx))
@@ -316,6 +331,19 @@ func deploymentTargetMiddleware(wh http.Handler) http.Handler {
 	})
 }
 
-func isDeploymentTargetVisible(auth authinfo.AuthInfo, target types.DeploymentTarget) bool {
-	return auth.CurrentCustomerOrgID() == nil || util.PtrEq(auth.CurrentCustomerOrgID(), target.CustomerOrganizationID)
+func isDeploymentTargetVisible(ctx context.Context, target *types.DeploymentTargetFull) bool {
+	auth := auth.Authentication.Require(ctx)
+
+	if customerOrgID := auth.CurrentCustomerOrgID(); customerOrgID != nil {
+		return util.PtrEq(customerOrgID, target.CustomerOrganizationID)
+	}
+
+	if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
+		if target.CustomerOrganization == nil {
+			return false
+		}
+		return util.PtrEq(partnerOrgID, target.CustomerOrganization.PartnerOrganizationID)
+	}
+
+	return true
 }

@@ -13,7 +13,8 @@ const authBaseUrl = '/api/v1/auth';
 export interface JWTClaims {
   sub: string;
   org: string;
-  c_org: string;
+  c_org?: string;
+  p_org?: string;
   email: string;
   password_reset: boolean;
   email_verified: boolean;
@@ -70,11 +71,16 @@ export class AuthService {
   }
 
   public isVendor(): boolean {
-    return this.getClaims()?.c_org === undefined;
+    const claims = this.getClaims();
+    return claims?.c_org === undefined && claims?.p_org === undefined;
   }
 
   public isCustomer(): boolean {
     return this.getClaims()?.c_org !== undefined;
+  }
+
+  public isPartner(): boolean {
+    return this.getClaims()?.p_org !== undefined;
   }
 
   public isSuperAdmin(): boolean {

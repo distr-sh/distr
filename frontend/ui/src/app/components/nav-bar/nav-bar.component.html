@@ -39,10 +39,18 @@
           <a routerLink="/" class="flex ms-2 md:me-24">
             <img [src]="logoUrl" class="h-8 me-3" alt="" />
             <h1 class="font-display self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">
-              <ng-template appRequireVendor>Distr</ng-template>
+              @if (!auth.isCustomer()) {
+                Distr
+              }
+
               <small class="ms-2 font-semibold text-gray-500 dark:text-gray-400 hidden sm:inline">
-                <ng-template appRequireVendor>Vendor Portal</ng-template>
-                <ng-template appRequireCustomer>{{ customerSubtitle }}</ng-template>
+                @if (auth.isCustomer()) {
+                  {{ customerSubtitle }}
+                } @else if (auth.isPartner()) {
+                  Partner Portal
+                } @else {
+                  Vendor Portal
+                }
               </small>
             </h1>
           </a>
@@ -69,8 +77,18 @@
                       <span class="text-xs font-light text-amber-600 dark:text-amber-400" role="none">
                         Super Admin (Read-Only)
                       </span>
-                    } @else if (isVendorSomewhere()) {
+                    } @else {
                       <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
+                        @if (isDifferentOrganizationKind()) {
+                          @if (currentOrg()?.customerOrganizationId) {
+                            Customer
+                          } @else if (currentOrg()?.partnerOrganizationId) {
+                            Partner
+                          } @else {
+                            Vendor
+                          }
+                          &bull;
+                        }
                         {{ user.userRole | userRoleLabel }}
                       </span>
                     }
@@ -108,9 +126,11 @@
                               {{ org.name }}
                               <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
                                 @if (!auth.isSuperAdmin()) {
-                                  @if (isVendorSomewhere()) {
+                                  @if (isDifferentOrganizationKind()) {
                                     @if (org.customerOrganizationId) {
                                       Customer
+                                    } @else if (org.partnerOrganizationId) {
+                                      Partner
                                     } @else {
                                       Vendor
                                     }

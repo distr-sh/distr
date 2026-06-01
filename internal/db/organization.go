@@ -45,6 +45,8 @@ const (
 		j.user_role,
 		cu.id AS customer_organization_id,
 		cu.name AS customer_organization_name,
+		po.id AS partner_organization_id,
+		po.name AS partner_organization_name,
 		j.created_at as joined_org_at `
 )
 
@@ -214,6 +216,7 @@ func GetOrganizationsForUser(ctx context.Context, userID uuid.UUID) ([]types.Org
 			INNER JOIN Organization_UserAccount j ON u.id = j.user_account_id
 			INNER JOIN Organization o ON o.id = j.organization_id
 			LEFT JOIN CustomerOrganization cu ON cu.id = j.customer_organization_id
+			LEFT JOIN PartnerOrganization po ON po.id = j.partner_organization_id
 			WHERE u.id = @id
 				AND o.deleted_at IS NULL
 			ORDER BY o.name
@@ -236,6 +239,8 @@ func GetAllOrganizationsForSuperAdmin(ctx context.Context) ([]types.Organization
 			'admin' as user_role,
 			NULL::UUID as customer_organization_id,
 			NULL::TEXT as customer_organization_name,
+			NULL::UUID as partner_organization_id,
+			NULL::TEXT as partner_organization_name,
 			o.created_at as joined_org_at
 			FROM Organization o
 			WHERE o.deleted_at IS NULL
@@ -278,6 +283,24 @@ func CountAllOrganizations(ctx context.Context) (res int64, err error) {
 	err = db.QueryRow(ctx, "SELECT count(id) FROM Organization WHERE deleted_at IS NULL").Scan(&res)
 	if err != nil {
 		err = fmt.Errorf("failed to get organizations count: %w", err)
+	}
+	return
+}
+
+func ExistsVendorOrganizationWithUserID(ctx context.Context, userID uuid.UUID) (res bool, err error) {
+	db := internalctx.GetDb(ctx)
+	err = db.QueryRow(
+		ctx,
+		`SELECT exists(
+			SELECT 1 FROM Organization_UserAccount
+			WHERE user_account_id = @id
+				AND customer_organization_id IS NULL
+				AND partner_organization_id IS NULL
+		)`,
+		pgx.NamedArgs{"id": userID},
+	).Scan(&res)
+	if err != nil {
+		err = fmt.Errorf("failed to check exists vendor organization: %w", err)
 	}
 	return
 }
