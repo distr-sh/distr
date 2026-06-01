@@ -91,7 +91,7 @@
           <div class="p-4 flex items-center justify-center">
             <button
               type="button"
-              (click)="navigateToCustomer(license)"
+              (click)="$event.stopPropagation(); navigateToCustomer(license)"
               class="inline-flex items-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
               <fa-icon [icon]="faKey" />
               Manage licenses
