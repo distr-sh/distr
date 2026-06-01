@@ -68,11 +68,7 @@ export class LicensesOverviewComponent {
 
   protected readonly sourcesForCopy = computed(() => {
     const targetId = this.targetLicense()?.customerOrganization.id;
-    return this.allLicenses().filter(
-      (l) =>
-        l.customerOrganization.id !== targetId &&
-        (l.applicationEntitlements.length > 0 || l.artifactEntitlements.length > 0 || l.licenseKeys.length > 0)
-    );
+    return this.allLicenses().filter((l) => l.customerOrganization.id !== targetId && !this.hasNoLicenses(l));
   });
 
   protected hasNoLicenses(license: License): boolean {
@@ -80,6 +76,12 @@ export class LicensesOverviewComponent {
       license.applicationEntitlements.length === 0 &&
       license.artifactEntitlements.length === 0 &&
       license.licenseKeys.length === 0
+    );
+  }
+
+  protected canCopyFromAnotherCustomer(license: License): boolean {
+    return this.allLicenses().some(
+      (l) => l.customerOrganization.id !== license.customerOrganization.id && !this.hasNoLicenses(l)
     );
   }
 
@@ -133,7 +135,6 @@ export class LicensesOverviewComponent {
           this.artifactEntitlementsService.create({
             ...ae,
             id: undefined,
-            name: `${ae.name} (copy)`,
             customerOrganizationId: targetId,
           })
         ),
@@ -141,7 +142,6 @@ export class LicensesOverviewComponent {
           this.applicationEntitlementsService.create({
             ...ae,
             id: undefined,
-            name: `${ae.name} (copy)`,
             customerOrganizationId: targetId,
           })
         ),
@@ -149,7 +149,6 @@ export class LicensesOverviewComponent {
           this.licenseKeysService.create({
             ...lk,
             id: undefined,
-            name: `${lk.name} (copy)`,
             customerOrganizationId: targetId,
           })
         ),
