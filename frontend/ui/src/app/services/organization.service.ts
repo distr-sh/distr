@@ -2,7 +2,12 @@ import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {combineLatestWith, map, merge, Observable, shareReplay, Subject, tap} from 'rxjs';
-import {CreateUpdateOrganizationRequest, Organization, OrganizationWithUserRole} from '../types/organization';
+import {
+  CreateUpdateOrganizationRequest,
+  isSubscriptionExpired,
+  Organization,
+  OrganizationWithUserRole,
+} from '../types/organization';
 import {ContextService} from './context.service';
 
 @Injectable({
@@ -32,6 +37,10 @@ export class OrganizationService {
     ),
     {initialValue: false}
   );
+
+  public readonly isSubscriptionExpired = toSignal(this.organization$.pipe(map(isSubscriptionExpired)), {
+    initialValue: false,
+  });
 
   get(): Observable<OrganizationWithUserRole> {
     return this.organization$.pipe(shareReplay(1));

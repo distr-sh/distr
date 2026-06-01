@@ -471,6 +471,11 @@
             </div>
           </form>
         }
+
+        @if (isSubscriptionExpired() && (auth.hasAnyRole('admin') || auth.isSuperAdmin())) {
+          <h2 class="text-xl font-bold dark:text-white mt-8 mb-2">Danger Zone</h2>
+          <app-delete-organization />
+        }
       </div>
     </div>
   </div>

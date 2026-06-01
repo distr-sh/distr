@@ -1,7 +1,6 @@
 import {inject} from '@angular/core';
 import {CanActivateFn, Router, Routes} from '@angular/router';
 import {UserRole} from '@distr-sh/distr-sdk';
-import dayjs from 'dayjs';
 import {firstValueFrom, map} from 'rxjs';
 import {getRemoteEnvironment} from '../env/remote';
 import {AccessTokensComponent} from './access-tokens/access-tokens.component';
@@ -44,6 +43,7 @@ import {AgentsTutorialComponent} from './tutorials/agents/agents-tutorial.compon
 import {BrandingTutorialComponent} from './tutorials/branding/branding-tutorial.component';
 import {RegistryTutorialComponent} from './tutorials/registry/registry-tutorial.component';
 import {TutorialsComponent} from './tutorials/tutorials.component';
+import {isSubscriptionExpired} from './types/organization';
 import {UserSettingsComponent} from './user-settings/user-settings.component';
 
 function requiredRoleGuard(...userRole: UserRole[]): CanActivateFn {
@@ -135,13 +135,7 @@ function subscriptionGuard(): CanActivateFn {
       auth.isCustomer() ||
       organizationService
         .get()
-        .pipe(
-          map((org) =>
-            org.subscriptionType !== 'community' && dayjs(org.subscriptionEndsAt).isBefore()
-              ? router.createUrlTree(['/subscription'])
-              : true
-          )
-        )
+        .pipe(map((org) => (isSubscriptionExpired(org) ? router.createUrlTree(['/subscription']) : true)))
     );
   };
 }

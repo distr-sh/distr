@@ -21,7 +21,6 @@ import {
   faUserCircle,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import dayjs from 'dayjs';
 import {catchError, EMPTY, lastValueFrom, map, of} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
@@ -100,13 +99,7 @@ export class NavBarComponent implements OnInit {
     () => this.allOrgs().reduce((kinds, org) => kinds.add(getOrganizationKind(org)), new Set<string>()).size > 1
   );
   protected readonly isTrial = computed(() => this.currentOrg()?.subscriptionType === 'trial');
-  protected readonly isSubscriptionExpired = computed(() => {
-    const org = this.currentOrg();
-    if (org && org.subscriptionType !== 'community') {
-      return dayjs(org.subscriptionEndsAt).isBefore();
-    }
-    return false;
-  });
+  protected readonly isSubscriptionExpired = this.organizationService.isSubscriptionExpired;
 
   userOpened = false;
   organizationsOpened = false;
