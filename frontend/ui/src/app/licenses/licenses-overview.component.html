@@ -52,8 +52,8 @@
 
           @if (hasNoLicenses(license)) {
             <div class="p-4 flex-1 flex flex-col items-center justify-center gap-3 text-center">
-              <p class="text-sm text-gray-500 dark:text-gray-400">No licenses yet.</p>
-              @if (auth.hasAnyRole('read_write', 'admin')) {
+              <p class="text-sm text-gray-500 dark:text-gray-400">No licenses or entitlements yet.</p>
+              @if (auth.hasAnyRole('read_write', 'admin') && canCopyFromAnotherCustomer(license)) {
                 <button
                   type="button"
                   (click)="openCopyModal($event, license)"
@@ -85,6 +85,18 @@
               </div>
             </div>
           }
+
+          <hr class="border-gray-200 dark:border-gray-600" />
+
+          <div class="p-4 flex items-center justify-center">
+            <button
+              type="button"
+              (click)="navigateToCustomer(license)"
+              class="inline-flex items-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
+              <fa-icon [icon]="faKey" />
+              Manage licenses
+            </button>
+          </div>
         </div>
       } @empty {
         <div class="col-span-full text-center py-8 text-gray-500 dark:text-gray-400">No customers yet.</div>

@@ -83,6 +83,14 @@ export class LicensesOverviewComponent {
     );
   }
 
+  protected canCopyFromAnotherCustomer(license: License): boolean {
+    return this.allLicenses().some(
+      (l) =>
+        l.customerOrganization.id !== license.customerOrganization.id &&
+        (l.applicationEntitlements.length > 0 || l.artifactEntitlements.length > 0 || l.licenseKeys.length > 0)
+    );
+  }
+
   protected navigateToCustomer(license: License) {
     this.router.navigate(['/licenses', license.customerOrganization.id]);
   }
@@ -133,7 +141,6 @@ export class LicensesOverviewComponent {
           this.artifactEntitlementsService.create({
             ...ae,
             id: undefined,
-            name: `${ae.name} (copy)`,
             customerOrganizationId: targetId,
           })
         ),
@@ -141,7 +148,6 @@ export class LicensesOverviewComponent {
           this.applicationEntitlementsService.create({
             ...ae,
             id: undefined,
-            name: `${ae.name} (copy)`,
             customerOrganizationId: targetId,
           })
         ),
@@ -149,7 +155,6 @@ export class LicensesOverviewComponent {
           this.licenseKeysService.create({
             ...lk,
             id: undefined,
-            name: `${lk.name} (copy)`,
             customerOrganizationId: targetId,
           })
         ),
