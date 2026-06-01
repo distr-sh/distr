@@ -128,9 +128,8 @@ export class DeploymentWizardComponent implements OnInit {
   readonly connectForm = new FormGroup({});
 
   // State management
-  protected readonly customerOrganizations$ = this.auth.isVendor()
-    ? this.customerOrganizations.getCustomerOrganizations()
-    : of([]);
+  protected readonly customerOrganizations$ =
+    this.auth.isVendor() || this.auth.isPartner() ? this.customerOrganizations.getCustomerOrganizations() : of([]);
 
   protected readonly applications$ = this.applications.list();
   protected readonly allApplicationEntitlements$ = this.featureFlags.isLicensingEnabled$.pipe(
@@ -172,7 +171,7 @@ export class DeploymentWizardComponent implements OnInit {
 
   // Computed properties
   protected readonly showCustomerStep = computed(() => {
-    return this.auth.isVendor();
+    return this.auth.isVendor() || this.auth.isPartner();
   });
 
   protected readonly selectedDeploymentType = computed<DeploymentType>(() => {
@@ -239,8 +238,8 @@ export class DeploymentWizardComponent implements OnInit {
   }
 
   ngOnInit() {
-    // If user is a customer, set selectedCustomerOrganizationId from organization
-    if (!this.auth.isVendor()) {
+    // If user is a customer, auto-select their own customer organization
+    if (this.auth.isCustomer()) {
       this.currentOrganization$
         .pipe(take(1))
         .subscribe((org) => this.customerForm.controls.customerOrganizationId.setValue(org.customerOrganizationId!));
@@ -346,6 +345,9 @@ export class DeploymentWizardComponent implements OnInit {
   private continueFromCustomerStep() {
     this.customerForm.markAllAsTouched();
     if (!this.customerForm.value.customerOrganizationId && !this.customerForm.value.internal) {
+      return;
+    }
+    if (this.auth.isPartner() && !this.customerForm.value.customerOrganizationId) {
       return;
     }
     this.nextStep();

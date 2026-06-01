@@ -59,9 +59,19 @@ export class RequireCustomerDirective extends EmbeddedViewToggler implements OnI
   }
 }
 
+@Directive({selector: '[appRequirePartner]'})
+export class RequirePartnerDirective extends EmbeddedViewToggler implements OnInit {
+  private readonly auth = inject(AuthService);
+
+  public ngOnInit(): void {
+    this.toggleEmbeddedView(this.auth.isPartner());
+  }
+}
+
 export interface PermissionsInput {
   customer?: boolean;
   vendor?: boolean;
+  partner?: boolean;
   role?: UserRole | UserRole[];
 }
 
@@ -82,6 +92,10 @@ export class PermissionsDirective extends EmbeddedViewToggler {
     }
 
     if (permissions.vendor && !this.auth.isVendor()) {
+      return false;
+    }
+
+    if (permissions.partner && !this.auth.isPartner()) {
       return false;
     }
 

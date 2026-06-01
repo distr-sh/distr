@@ -7,6 +7,7 @@ export interface CustomerOrganization extends Required<BaseModel> {
   imageId?: string;
   imageUrl?: string;
   features: CustomerOrganizationFeature[];
+  partnerOrganizationId?: string;
 }
 
 export interface CustomerOrganizationWithUsage extends CustomerOrganization {

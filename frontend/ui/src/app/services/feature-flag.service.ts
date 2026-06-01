@@ -25,6 +25,11 @@ export class FeatureFlagService {
     {initialValue: false}
   );
 
+  public readonly isPartnerManagementEnabled$ = this.organizationService
+    .get()
+    .pipe(map((org) => org.features.includes('partner_management')));
+  public readonly isPartnerManagementEnabled = toSignal(this.isPartnerManagementEnabled$, {initialValue: false});
+
   public readonly isNotificationsEnabled$ = this.requireSubscriptionType('trial', 'pro', 'enterprise');
 
   public readonly isSupportBundlesEnabled$ = this.requireSubscriptionType('trial', 'pro', 'enterprise');

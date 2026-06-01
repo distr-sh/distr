@@ -105,6 +105,7 @@ hub:
       value: '500'
     # - name: CLEANUP_ARTIFACT_BLOB_MIN_AGE
     #   value: '24h'
+    # OIDC providers – see https://distr.sh/docs/self-hosting/oidc/
     # - name: OIDC_GITHUB_ENABLED
     #   value: 'true'
     # - name: OIDC_GITHUB_CLIENT_ID # required if OIDC_GITHUB_ENABLED

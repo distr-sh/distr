@@ -1,0 +1,7 @@
+ALTER TABLE Organization_UserAccount DROP CONSTRAINT partner_or_customer_org_exclusive;
+DROP INDEX fk_Organization_UserAccount_partner_organization_id;
+ALTER TABLE Organization_UserAccount DROP COLUMN partner_organization_id;
+DROP INDEX fk_CustomerOrganization_partner_organization_id;
+ALTER TABLE CustomerOrganization DROP COLUMN partner_organization_id;
+DROP INDEX fk_PartnerOrganization_organization_id;
+DROP TABLE PartnerOrganization;

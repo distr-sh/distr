@@ -92,6 +92,8 @@ const baseRouteRedirectGuard: CanActivateFn = () => {
   const router = inject(Router);
   if (auth.isVendor()) {
     return router.createUrlTree(['/dashboard']);
+  } else if (auth.isPartner()) {
+    return router.createUrlTree(['/deployments']);
   } else {
     return router.createUrlTree(['/home']);
   }

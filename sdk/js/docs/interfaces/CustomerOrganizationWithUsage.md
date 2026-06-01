@@ -78,6 +78,16 @@
 
 ---
 
+### partnerOrganizationId?
+
+> `optional` **partnerOrganizationId?**: `string`
+
+#### Inherited from
+
+[`CustomerOrganization`](CustomerOrganization.md).[`partnerOrganizationId`](CustomerOrganization.md#partnerorganizationid)
+
+---
+
 ### userCount
 
 > **userCount**: `number`

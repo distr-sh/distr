@@ -52,6 +52,7 @@ import {UserRoleSelectComponent} from '../user-role-select.component';
 export class UsersComponent {
   public readonly users = input.required<UserAccountWithRole[]>();
   public readonly customerOrganizationId = input<string>();
+  public readonly partnerOrganizationId = input<string>();
   public readonly refresh = output<void>();
 
   private readonly toast = inject(ToastService);
@@ -103,7 +104,9 @@ export class UsersComponent {
     const org = this.organization();
     return !org
       ? undefined
-      : this.auth.isVendor() && this.customerOrganizationId() === undefined
+      : this.auth.isVendor() &&
+          this.customerOrganizationId() === undefined &&
+          this.partnerOrganizationId() === undefined
         ? org.subscriptionUserAccountQuantity
         : org.subscriptionLimits.maxUsersPerCustomerOrganization;
   });
@@ -215,13 +218,18 @@ export class UsersComponent {
             name: this.inviteForm.value.name || undefined,
             userRole: this.inviteForm.value.userRole ?? 'admin',
             customerOrganizationId: this.customerOrganizationId(),
+            partnerOrganizationId: this.partnerOrganizationId(),
           })
         );
         this.inviteUrl = result.inviteUrl;
         if (!this.inviteUrl) {
-          this.toast.success(
-            `${result.user.customerOrganizationId === undefined ? 'User' : 'Customer'} has been added to the organization`
-          );
+          const label =
+            result.user.customerOrganizationId !== undefined
+              ? 'Customer'
+              : result.user.partnerOrganizationId !== undefined
+                ? 'Partner'
+                : 'User';
+          this.toast.success(`${label} has been added to the organization`);
           this.closeInviteDialog();
         }
         this.refresh.emit();

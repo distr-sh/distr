@@ -26,7 +26,6 @@ const (
 	ctxKeyUserAccount
 	ctxKeyApplicationEntitlement
 	ctxKeyArtifactEntitlement
-	ctxKeyIPAddress
 	ctxKeyOIDCer
 	ctxKeyLicenseKey
 	ctxKeyPrometheusCollector

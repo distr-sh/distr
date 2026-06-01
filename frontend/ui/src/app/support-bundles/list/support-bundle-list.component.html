@@ -2,7 +2,7 @@
   <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
     <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
       <div
-        class="flex flex-col md:flex-row items-stretch md:items-center md:space-x-3 space-y-3 md:space-y-0 justify-between mx-4 py-4 dark:border-gray-700">
+        class="flex flex-col md:flex-row items-stretch md:items-center md:space-x-3 space-y-3 md:space-y-0 justify-between m-4 dark:border-gray-700">
         <div class="w-full md:w-1/2">
           <form class="flex items-center" [formGroup]="filterForm">
             <label for="simple-search" class="sr-only">Search</label>
@@ -44,7 +44,7 @@
 
       @if (auth.isVendor() && !loading() && !configExists()) {
         <div
-          class="mx-4 p-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400 border border-blue-200 dark:border-blue-800 flex items-center justify-between gap-4"
+          class="m-4 p-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400 border border-blue-200 dark:border-blue-800 flex items-center justify-between gap-4"
           role="alert">
           <div>
             <p class="font-semibold mb-1">Support bundle configuration has not been set up yet.</p>
@@ -69,7 +69,7 @@
                 class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
                 <tr>
                   <th scope="col" class="p-4">Title</th>
-                  @if (auth.isVendor()) {
+                  @if (auth.isVendor() || auth.isPartner()) {
                     <th scope="col" class="p-4">Customer</th>
                   }
                   <th scope="col" class="p-4">Status</th>
@@ -87,7 +87,7 @@
                     <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                       {{ bundle.title || bundle.id.substring(0, 8) }}
                     </td>
-                    @if (auth.isVendor()) {
+                    @if (auth.isVendor() || auth.isPartner()) {
                       <td class="px-4 py-3">{{ bundle.customerOrganizationName }}</td>
                     }
                     <td class="px-4 py-3">
@@ -116,6 +116,11 @@
           <div class="p-8 text-center text-gray-500 dark:text-gray-400">
             <p>No support bundles have been created yet.</p>
             <p class="text-sm mt-1">Customers with the support bundles feature enabled can create support bundles.</p>
+          </div>
+        } @else if (auth.isPartner()) {
+          <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+            <p>No support bundles yet.</p>
+            <p class="text-sm mt-1">Support bundles created by your assigned customers will appear here.</p>
           </div>
         } @else if (auth.isCustomer()) {
           <div class="p-8 text-center text-gray-500 dark:text-gray-400">

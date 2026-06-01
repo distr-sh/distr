@@ -21,6 +21,7 @@ import (
 	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httprate"
 	"github.com/go-mailx/mailx"
 	"github.com/google/uuid"
@@ -35,7 +36,9 @@ func AuthRouter(r chiopenapi.Router) {
 	r.Use(httprate.Limit(
 		10,
 		1*time.Minute,
-		httprate.WithKeyFuncs(httprate.KeyByRealIP, httprate.KeyByEndpoint),
+		httprate.WithKeyFuncs(func(r *http.Request) (string, error) {
+			return chimiddleware.GetClientIP(r.Context()), nil
+		}, httprate.KeyByEndpoint),
 	))
 	r.Route("/login", func(r chiopenapi.Router) {
 		r.Post("/", authLoginHandler)
@@ -118,6 +121,7 @@ func authSwitchContextHandler() func(writer http.ResponseWriter, request *http.R
 			Organization:           *org,
 			UserRole:               user.UserRole,
 			CustomerOrganizationID: user.CustomerOrganizationID,
+			PartnerOrganizationID:  user.PartnerOrganizationID,
 		}); err != nil {
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			log.Error("failed to generate token", zap.Error(err))
@@ -173,7 +177,7 @@ func authLoginHandler(w http.ResponseWriter, r *http.Request) {
 				if err := db.CreateOrganization(ctx, &org.Organization); err != nil {
 					return err
 				} else if err := db.CreateUserAccountOrganizationAssignment(
-					ctx, user.ID, org.ID, org.UserRole, org.CustomerOrganizationID); err != nil {
+					ctx, user.ID, org.ID, org.UserRole, org.CustomerOrganizationID, nil); err != nil {
 					return err
 				}
 			} else {

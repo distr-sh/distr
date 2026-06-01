@@ -210,6 +210,22 @@
           </a>
         </li>
 
+        @if (isPartnerManagementEnabled()) {
+          <li>
+            <a
+              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+              routerLinkActive="bg-gray-100 dark:bg-gray-700"
+              (click)="sidebar.hide()"
+              routerLink="/partners">
+              <fa-icon
+                [icon]="faBuilding"
+                size="lg"
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+              <span class="ms-3">Partners</span>
+            </a>
+          </li>
+        }
+
         <li>
           @if (isSupportBundlesFeatureEnabled()) {
             <a
@@ -329,6 +345,100 @@
                 size="lg"
                 class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
               <span class="ms-3">Settings</span>
+            </a>
+          </li>
+        }
+      </ul>
+
+      <ul class="space-y-1 font-medium flex-1" *appRequirePartner>
+        <li>
+          <a
+            (click)="sidebar.hide()"
+            routerLinkActive="bg-gray-100 dark:bg-gray-700"
+            routerLink="/deployments"
+            class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+            <fa-icon
+              [icon]="faBoxesStacked"
+              size="lg"
+              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+            <span class="ms-3">Deployments</span>
+          </a>
+        </li>
+
+        <li>
+          <a
+            (click)="sidebar.hide()"
+            routerLinkActive="bg-gray-100 dark:bg-gray-700"
+            routerLink="/artifacts"
+            class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+            <fa-icon
+              [icon]="faBox"
+              size="lg"
+              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+            <span class="ms-3">Artifacts</span>
+          </a>
+        </li>
+
+        @if (isLicensingFeatureEnabled()) {
+          <li>
+            <a
+              (click)="sidebar.hide()"
+              routerLinkActive="bg-gray-100 dark:bg-gray-700"
+              routerLink="/licenses"
+              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              <fa-icon
+                [icon]="faKey"
+                size="lg"
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+              <span class="ms-3">Licenses</span>
+            </a>
+          </li>
+        }
+
+        @if (isSupportBundlesFeatureEnabled()) {
+          <li>
+            <a
+              (click)="sidebar.hide()"
+              routerLinkActive="bg-gray-100 dark:bg-gray-700"
+              routerLink="/support-bundles"
+              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              <fa-icon
+                [icon]="faLifeRing"
+                size="lg"
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+              <span class="ms-3">Support Bundles</span>
+            </a>
+          </li>
+        }
+
+        <hr class="border-gray-200 dark:border-gray-600 my-4" />
+
+        <li>
+          <a
+            class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+            routerLinkActive="bg-gray-100 dark:bg-gray-700"
+            (click)="sidebar.hide()"
+            routerLink="/customers">
+            <fa-icon
+              [icon]="faAddressBook"
+              size="lg"
+              class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+            <span class="ms-3">Customers</span>
+          </a>
+        </li>
+
+        @if (auth.hasRole('admin')) {
+          <li>
+            <a
+              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+              routerLinkActive="bg-gray-100 dark:bg-gray-700"
+              (click)="sidebar.hide()"
+              routerLink="/users">
+              <fa-icon
+                [icon]="faUsers"
+                size="lg"
+                class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+              <span class="ms-3">Users</span>
             </a>
           </li>
         }

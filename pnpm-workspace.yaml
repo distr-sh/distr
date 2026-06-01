@@ -1,0 +1,8 @@
+allowBuilds:
+  '@parcel/watcher': false
+  '@sentry/cli': false
+  core-js: false
+  esbuild: false
+  lmdb: false
+  msgpackr-extract: false
+  protobufjs: false

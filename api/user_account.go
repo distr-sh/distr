@@ -11,6 +11,7 @@ type CreateUserAccountRequest struct {
 	Name                   string         `json:"name"`
 	UserRole               types.UserRole `json:"userRole"`
 	CustomerOrganizationID *uuid.UUID     `json:"customerOrganizationId,omitempty"`
+	PartnerOrganizationID  *uuid.UUID     `json:"partnerOrganizationId,omitempty"`
 }
 
 type CreateUserAccountResponse struct {
