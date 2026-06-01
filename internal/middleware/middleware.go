@@ -235,17 +235,16 @@ var RequireOrgAndRole = auth.Authentication.ValidatorMiddleware(
 
 // RequireEmailVerified rejects requests with 403 when USER_EMAIL_VERIFICATION_REQUIRED is
 // enabled and the authenticated user's DB record has no EmailVerifiedAt. It must run after
-// auth.Authentication.Middleware so the DB-loaded user is available in the context.
+// auth.Authentication.Middleware so the DB-loaded user is available in the context; if
+// there is no authenticated user it panics, since that is a wiring bug.
 func RequireEmailVerified(handler http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		if !env.UserEmailVerificationRequired() {
 			handler.ServeHTTP(w, r)
 			return
 		}
-		ctx := r.Context()
-		if value, err := auth.Authentication.Get(ctx); err != nil {
-			http.Error(w, err.Error(), http.StatusForbidden)
-		} else if user := value.CurrentUser(); user == nil || user.EmailVerifiedAt == nil {
+		value := auth.Authentication.Require(r.Context())
+		if user := value.CurrentUser(); user == nil || user.EmailVerifiedAt == nil {
 			http.Error(w, "email not verified", http.StatusForbidden)
 		} else {
 			handler.ServeHTTP(w, r)
