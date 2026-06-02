@@ -111,7 +111,7 @@ func ApiRouter(
 	prometheusCollector *prometheus.DistrCollector,
 ) func(r chiopenapi.Router) {
 	requestSize1MiB := chimiddleware.RequestSize(1024 * 1024)
-	requestSize10MiB := chimiddleware.RequestSize(10 * 1024 * 1024)
+	requestSize25MiB := chimiddleware.RequestSize(25 * 1024 * 1024)
 
 	return func(r chiopenapi.Router) {
 		r.Use(
@@ -193,7 +193,7 @@ func ApiRouter(
 				r.Group(func(r chiopenapi.Router) {
 					r.Use(
 						middleware.OTEL(tracers.Agent()),
-						requestSize10MiB,
+						requestSize25MiB,
 					)
 					r.Route("/", handlers.AgentRouter)
 				})
