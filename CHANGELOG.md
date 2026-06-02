@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.22.2](https://github.com/distr-sh/distr/compare/2.22.1...2.22.2) (2026-06-02)
+
+
+### Bug Fixes
+
+* user status endpoint can also be called by unverified users ([#2543](https://github.com/distr-sh/distr/issues/2543)) ([7b392c9](https://github.com/distr-sh/distr/commit/7b392c9c8dd5c86dd70e058c026bdb87fa35c6d4))
+
 ## [2.22.1](https://github.com/distr-sh/distr/compare/2.22.0...2.22.1) (2026-06-02)
 
 
