@@ -105,6 +105,17 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
     return customerOrgId ? `/customers/${customerOrgId}/secrets` : '/secrets';
   });
 
+  /**
+   * Links to /license-keys for customers or /licenses/$customerOrgId for vendors/partners.
+   * For internal deployments (no customerOrgId) licenses are not available.
+   */
+  protected readonly licenseKeysUrl = computed(() => {
+    if (this.auth.isCustomer()) return '/license-keys';
+    const customerOrgId = this.customerOrganizationId();
+    if (customerOrgId) return `/licenses/${customerOrgId}`;
+    return null;
+  });
+
   protected readonly featureFlags = inject(FeatureFlagService);
   protected readonly auth = inject(AuthService);
   private readonly applications = inject(ApplicationsService);

@@ -11,12 +11,18 @@ type ValuesYAMLAccessor interface {
 	GetValuesYAML() []byte
 }
 
-func ParsedValuesFileReplaceSecrets(d ValuesYAMLAccessor, secrets []types.SecretWithUpdatedBy) (map[string]any, error) {
+func ParsedValuesFileReplaceSecrets(
+	d ValuesYAMLAccessor,
+	secrets []types.SecretWithUpdatedBy,
+	licenseKeys []types.LicenseKey,
+) (map[string]any, error) {
 	if data := d.GetValuesYAML(); data == nil {
 		return nil, nil
 	} else if tpl, err := parseTemplateBytes("valuesYaml", data); err != nil {
 		return nil, fmt.Errorf("deployment values file template parsing error: %w", err)
-	} else if data, err := executeTemplate(tpl, getTemplateData(secrets)); err != nil {
+	} else if td, err := getTemplateData(secrets, licenseKeys); err != nil {
+		return nil, fmt.Errorf("deployment values file template data error: %w", err)
+	} else if data, err := executeTemplate(tpl, td); err != nil {
 		return nil, fmt.Errorf("deployment values file template execution error: %w", err)
 	} else {
 		return parseDeploymentValuesYAML(data)

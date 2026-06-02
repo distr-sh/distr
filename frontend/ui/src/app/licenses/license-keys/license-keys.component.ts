@@ -9,6 +9,7 @@ import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observabl
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
+import {ClipComponent} from '../../components/clip.component';
 import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AuthService} from '../../services/auth.service';
@@ -32,6 +33,7 @@ import {ViewLicenseKeyModalComponent} from './view-license-key-modal.component';
     ViewLicenseKeyModalComponent,
     AutotrimDirective,
     UuidComponent,
+    ClipComponent,
   ],
   templateUrl: './license-keys.component.html',
 })
@@ -160,6 +162,10 @@ export class LicenseKeysComponent {
         })
       )
       .subscribe();
+  }
+
+  protected getLicenseKeyReference(name: string): string {
+    return `{{ .LicenseKeys.${name} }}`;
   }
 
   getOwnerColumn(customerOrganizationId?: string): Observable<string | undefined> {

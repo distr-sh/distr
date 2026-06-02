@@ -36,6 +36,16 @@ const licenseKeyLatestRevisionJoin = `
 		LIMIT 1
 	) lr ON true`
 
+func GetLicenseKeysForDeploymentTarget(
+	ctx context.Context,
+	dt types.DeploymentTarget,
+) ([]types.LicenseKey, error) {
+	if dt.CustomerOrganizationID != nil {
+		return GetLicenseKeysByCustomerOrgID(ctx, *dt.CustomerOrganizationID, dt.OrganizationID)
+	}
+	return nil, nil
+}
+
 func GetLicenseKeys(ctx context.Context, orgID uuid.UUID) ([]types.LicenseKey, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `

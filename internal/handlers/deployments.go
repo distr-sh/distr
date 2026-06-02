@@ -196,6 +196,7 @@ func validateDeploymentRequest(
 	var version *types.ApplicationVersion
 	var target *types.DeploymentTargetFull
 	var secrets []types.SecretWithUpdatedBy
+	var licenseKeys []types.LicenseKey
 
 	org := auth.CurrentOrg()
 	var err error
@@ -237,6 +238,12 @@ func validateDeploymentRequest(
 
 	if secrets, err = db.GetSecretsForDeploymentTarget(ctx, target.DeploymentTarget); err != nil {
 		log.Warn("could not get Secrets", zap.Error(err))
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return err
+	}
+
+	if licenseKeys, err = db.GetLicenseKeysForDeploymentTarget(ctx, target.DeploymentTarget); err != nil {
+		log.Warn("could not get LicenseKeys", zap.Error(err))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return err
 	}
@@ -305,7 +312,7 @@ func validateDeploymentRequest(
 		return err
 	} else if err = validateDeploymentRequestDeploymentTarget(ctx, w, request, target); err != nil {
 		return err
-	} else if err = validateDeploymentRequestValues(w, request, version, secrets); err != nil {
+	} else if err = validateDeploymentRequestValues(w, request, version, secrets, licenseKeys); err != nil {
 		return err
 	} else {
 		return nil
@@ -404,15 +411,17 @@ func validateDeploymentRequestValues(
 	deploymentRequest api.DeploymentRequest,
 	appVersion *types.ApplicationVersion,
 	secrets []types.SecretWithUpdatedBy,
+	licenseKeys []types.LicenseKey,
 ) error {
-	if deploymentValues, err := deploymentvalues.ParsedValuesFileReplaceSecrets(&deploymentRequest, secrets); err != nil {
+	deploymentValues, err := deploymentvalues.ParsedValuesFileReplaceSecrets(&deploymentRequest, secrets, licenseKeys)
+	if err != nil {
 		return badRequestError(w, fmt.Sprintf("invalid values: %v", err.Error()))
 	} else if appVersionValues, err := appVersion.ParsedValuesFile(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	} else if _, err := util.MergeAllRecursive(appVersionValues, deploymentValues); err != nil {
 		return badRequestError(w, fmt.Sprintf("values cannot be merged with base: %v", err))
-	} else if _, err := deploymentvalues.EnvFileReplaceSecrets(&deploymentRequest, secrets); err != nil {
+	} else if _, err := deploymentvalues.EnvFileReplaceSecrets(&deploymentRequest, secrets, licenseKeys); err != nil {
 		return badRequestError(w, fmt.Sprintf("invalid env file: %v", err.Error()))
 	}
 	return nil

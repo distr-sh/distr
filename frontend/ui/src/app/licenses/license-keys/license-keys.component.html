@@ -42,8 +42,9 @@
                 <th scope="col" class="p-4">ID</th>
               }
               <th scope="col" class="p-4">Name</th>
+              <th scope="col" class="p-4">Reference</th>
               <th scope="col" class="p-4">Description</th>
-              @if (auth.isVendor() || auth.isPartner()) {
+              @if ((auth.isVendor() || auth.isPartner()) && !customerOrganizationId()) {
                 <th scope="col" class="p-4">Customer</th>
               }
               <th scope="col" class="p-4">Expires</th>
@@ -68,12 +69,23 @@
                     </span>
                   </div>
                 </td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                  @if (license.name) {
+                    <div class="flex items-center gap-2">
+                      <code
+                        class="select-all px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600">
+                        {{ getLicenseKeyReference(license.name) }}
+                      </code>
+                      <app-clip [clip]="getLicenseKeyReference(license.name)" />
+                    </div>
+                  }
+                </td>
                 <td class="px-4 py-3 text-gray-900 dark:text-white">
                   <span class="max-w-48 overflow-hidden text-ellipsis block">
                     {{ license.description }}
                   </span>
                 </td>
-                @if (auth.isVendor() || auth.isPartner()) {
+                @if ((auth.isVendor() || auth.isPartner()) && !customerOrganizationId()) {
                   <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                     {{ getOwnerColumn(license.customerOrganizationId) | async }}
                   </td>

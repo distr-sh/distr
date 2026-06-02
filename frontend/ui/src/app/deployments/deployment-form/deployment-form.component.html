@@ -136,10 +136,13 @@
               Env File Syntax</a
             >.
             @if (auth.hasAnyRole('read_write', 'admin')) {
-              You can also
-              <a [routerLink]="secretsUrl()" target="_blank" class="text-primary-600 underline"
-                >configure and reference secrets</a
-              >.
+              You can also reference
+              <a [routerLink]="secretsUrl()" target="_blank" class="text-primary-600 underline">secrets</a>
+              @if (licenseKeysUrl(); as licenseKeysUrl) {
+                or
+                <a [routerLink]="licenseKeysUrl" target="_blank" class="text-primary-600 underline">license keys</a>
+              }
+              in your environment variables.
             }
           </div>
         }
@@ -160,13 +163,22 @@
             formControlName="valuesYaml" />
           @if (auth.hasAnyRole('read_write', 'admin')) {
             <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              You can
+              You can reference
               <a
                 [routerLink]="secretsUrl()"
                 target="_blank"
                 class="font-medium text-primary-600 hover:underline dark:text-primary-500"
-                >configure and reference secrets</a
+                >secrets</a
               >
+              @if (licenseKeysUrl(); as licenseKeysUrl) {
+                or
+                <a
+                  [routerLink]="licenseKeysUrl"
+                  target="_blank"
+                  class="font-medium text-primary-600 hover:underline dark:text-primary-500"
+                  >license keys</a
+                >
+              }
               in your Helm values.
             </div>
           }
