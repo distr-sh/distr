@@ -277,31 +277,8 @@ func validateDeploymentRequest(
 		}
 	}
 
-	if org.HasFeature(types.FeatureLicensing) {
-		if request.ApplicationEntitlementID != nil {
-			if entitlement, err = db.GetApplicationEntitlementByID(ctx, *request.ApplicationEntitlementID); err != nil {
-				if errors.Is(err, apierrors.ErrNotFound) {
-					return entitlementNotFoundError(w)
-				} else {
-					log.Error("could not get ApplicationEntitlement", zap.Error(err))
-					sentry.GetHubFromContext(ctx).CaptureException(err)
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-					return err
-				}
-			}
-		} else if auth.CurrentCustomerOrgID() != nil {
-			if entitlements, err := db.GetApplicationEntitlementsWithOrganizationID(ctx, orgId, nil); err != nil {
-				log.Error("could not get ApplicationEntitlement", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return err
-			} else if len(entitlements) > 0 {
-				// entitlement ID is required for customer but optional for vendor
-				return badRequestError(w, "applicationEntitlementId is required")
-			}
-		}
-	} else if request.ApplicationEntitlementID != nil {
-		return badRequestError(w, "unexpected applicationEntitlementId")
+	if entitlement, err = resolveDeploymentEntitlement(ctx, w, request, org); err != nil {
+		return err
 	}
 
 	if err = validateDeploymentRequestEntitlement(
@@ -317,6 +294,53 @@ func validateDeploymentRequest(
 	} else {
 		return nil
 	}
+}
+
+func resolveDeploymentEntitlement(
+	ctx context.Context,
+	w http.ResponseWriter,
+	request api.DeploymentRequest,
+	org *types.Organization,
+) (*types.ApplicationEntitlement, error) {
+	if !org.HasFeature(types.FeatureLicensing) {
+		if request.ApplicationEntitlementID != nil {
+			return nil, badRequestError(w, "unexpected applicationEntitlementId")
+		}
+		return nil, nil
+	}
+
+	log := internalctx.GetLogger(ctx)
+	authInfo := auth.Authentication.Require(ctx)
+
+	if request.ApplicationEntitlementID != nil {
+		entitlement, err := db.GetApplicationEntitlementByID(ctx, *request.ApplicationEntitlementID)
+		if err != nil {
+			if errors.Is(err, apierrors.ErrNotFound) {
+				return nil, entitlementNotFoundError(w)
+			}
+			log.Error("could not get ApplicationEntitlement", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return nil, err
+		}
+		return entitlement, nil
+	}
+
+	if authInfo.CurrentCustomerOrgID() != nil {
+		entitlements, err := db.GetApplicationEntitlementsWithOrganizationID(ctx, *authInfo.CurrentOrgID(), nil)
+		if err != nil {
+			log.Error("could not get ApplicationEntitlement", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return nil, err
+		}
+		if len(entitlements) > 0 {
+			// entitlement ID is required for customer but optional for vendor
+			return nil, badRequestError(w, "applicationEntitlementId is required")
+		}
+	}
+
+	return nil, nil
 }
 
 func badRequestError(w http.ResponseWriter, msg string) error {
