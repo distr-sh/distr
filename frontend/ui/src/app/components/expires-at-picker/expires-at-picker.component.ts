@@ -23,7 +23,7 @@ const PRESETS: ExpiresAtPreset[] = [
 })
 export class ExpiresAtPickerComponent implements ControlValueAccessor {
   public readonly allowNoExpiration = input(true);
-  public readonly id = input<string>();
+  public readonly inputId = input<string>();
 
   protected readonly presets = PRESETS;
   protected readonly control = new FormControl('', {nonNullable: true});
