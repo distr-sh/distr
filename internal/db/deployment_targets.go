@@ -96,6 +96,7 @@ func GetDeploymentTargetsByScope(
 		ctx,
 		`SELECT`+deploymentTargetOutputExprBase+`
 		FROM DeploymentTarget dt
+		JOIN Organization o ON o.id = dt.organization_id AND o.deleted_at IS NULL
 		WHERE (
 				@customerOrgID::uuid IS NOT NULL
 				AND dt.organization_id = @orgID
