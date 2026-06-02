@@ -24,6 +24,7 @@ type DeploymentRequest struct {
 	ForceRestart             bool              `json:"forceRestart"`
 	IgnoreRevisionSkew       bool              `json:"ignoreRevisionSkew"`
 	HelmOptions              *HelmOptions      `json:"helmOptions,omitempty"`
+	ValuesHash               []byte            `json:"-"`
 }
 
 func (d *DeploymentRequest) GetValuesYAML() []byte {

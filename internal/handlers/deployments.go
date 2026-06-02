@@ -92,7 +92,18 @@ func putDeployment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = db.RunTx(ctx, func(ctx context.Context) error {
-		if err := validateDeploymentRequest(ctx, w, deploymentRequest); err != nil {
+		validationResult, err := validateDeploymentRequest(ctx, w, deploymentRequest)
+		if err != nil {
+			return err
+		}
+		if err := setDeploymentRequestValuesHash(
+			&deploymentRequest,
+			validationResult.Secrets,
+			validationResult.LicenseKeys,
+		); err != nil {
+			log.Warn("could not hash deployment values", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return err
 		}
 
@@ -186,7 +197,7 @@ func validateDeploymentRequest(
 	ctx context.Context,
 	w http.ResponseWriter,
 	request api.DeploymentRequest,
-) error {
+) (*deploymentRequestValidationResult, error) {
 	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 	orgId := *auth.CurrentOrgID()
@@ -203,21 +214,21 @@ func validateDeploymentRequest(
 
 	if app, err = db.GetApplicationForApplicationVersionID(ctx, request.ApplicationVersionID, orgId); err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
-			return badRequestError(w, "Application does not exist")
+			return nil, badRequestError(w, "Application does not exist")
 		} else {
 			log.Warn("could not get Application", zap.Error(err))
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return err
+			return nil, err
 		}
 	}
 
 	if version, err = db.GetApplicationVersion(ctx, request.ApplicationVersionID); err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
-			return badRequestError(w, "ApplicationVersion does not exist")
+			return nil, badRequestError(w, "ApplicationVersion does not exist")
 		} else {
 			log.Warn("could not get ApplicationVersion", zap.Error(err))
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return err
+			return nil, err
 		}
 	}
 
@@ -228,24 +239,24 @@ func validateDeploymentRequest(
 		auth.CurrentPartnerOrgID(),
 	); err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
-			return badRequestError(w, "DeploymentTarget does not exist")
+			return nil, badRequestError(w, "DeploymentTarget does not exist")
 		} else {
 			log.Warn("could not get DeploymentTarget", zap.Error(err))
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return err
+			return nil, err
 		}
 	}
 
 	if secrets, err = db.GetSecretsForDeploymentTarget(ctx, target.DeploymentTarget); err != nil {
 		log.Warn("could not get Secrets", zap.Error(err))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return err
+		return nil, err
 	}
 
 	if licenseKeys, err = db.GetLicenseKeysForDeploymentTarget(ctx, target.DeploymentTarget); err != nil {
 		log.Warn("could not get LicenseKeys", zap.Error(err))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return err
+		return nil, err
 	}
 
 	var existingDeployment *types.DeploymentWithLatestRevision
@@ -257,7 +268,7 @@ func validateDeploymentRequest(
 			}
 		}
 		if existingDeployment == nil {
-			return badRequestError(w, "DeploymentTarget doesn't have Deployment with the specified ID")
+			return nil, badRequestError(w, "DeploymentTarget doesn't have Deployment with the specified ID")
 		}
 	}
 
@@ -269,31 +280,54 @@ func validateDeploymentRequest(
 		} else if existingDeployment.ApplicationEntitlementID == nil {
 			// Allow setting an entitlement once when the existing deployment has no entitlement but the request provides one.
 		} else if *request.ApplicationEntitlementID != *existingDeployment.ApplicationEntitlementID {
-			return badRequestError(w, "can not update entitlement")
+			return nil, badRequestError(w, "can not update entitlement")
 		}
 
 		if existingDeployment.Application.ID != app.ID {
-			return badRequestError(w, "can not change application of existing deployment")
+			return nil, badRequestError(w, "can not change application of existing deployment")
 		}
 	}
 
 	if entitlement, err = resolveDeploymentEntitlement(ctx, w, request, org); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err = validateDeploymentRequestEntitlement(
 		ctx, w, request, entitlement, app, target, existingDeployment,
 	); err != nil {
-		return err
+		return nil, err
 	} else if err = validateDeploymentRequestDeploymentType(w, target, app); err != nil {
-		return err
+		return nil, err
 	} else if err = validateDeploymentRequestDeploymentTarget(ctx, w, request, target); err != nil {
-		return err
+		return nil, err
 	} else if err = validateDeploymentRequestValues(ctx, w, request, version, secrets, licenseKeys); err != nil {
-		return err
+		return nil, err
 	} else {
-		return nil
+		return &deploymentRequestValidationResult{
+			Target:      target.DeploymentTarget,
+			Secrets:     secrets,
+			LicenseKeys: licenseKeys,
+		}, nil
 	}
+}
+
+type deploymentRequestValidationResult struct {
+	Target      types.DeploymentTarget
+	Secrets     []types.SecretWithUpdatedBy
+	LicenseKeys []types.LicenseKey
+}
+
+func setDeploymentRequestValuesHash(
+	request *api.DeploymentRequest,
+	secrets []types.SecretWithUpdatedBy,
+	licenseKeys []types.LicenseKey,
+) error {
+	hash, err := deploymentvalues.RenderAndHash(request, secrets, licenseKeys)
+	if err != nil {
+		return err
+	}
+	request.ValuesHash = hash[:]
+	return nil
 }
 
 func resolveDeploymentEntitlement(

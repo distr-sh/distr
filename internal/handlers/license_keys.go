@@ -63,7 +63,7 @@ func LicenseKeysRouter(r chiopenapi.Router) {
 						LicenseKeyIDRequest
 						api.UpdateLicenseKeyRequest
 					}{})).
-					With(option.Response(http.StatusOK, types.LicenseKey{}))
+					With(option.Response(http.StatusOK, api.UpdateLicenseKeyResponse{}))
 				r.Delete("/", deleteLicenseKey).
 					With(option.Description("Delete a license key")).
 					With(option.Request(LicenseKeyIDRequest{}))
@@ -281,6 +281,35 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	affected := []api.AffectedDeployment{}
+	if needsRevision && existing.CustomerOrganizationID != nil {
+		hypotheticalLicenseKey, err := updatedLicenseKeyForRequest(existing, body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		affected, err = findAffectedDeploymentsByLicenseKey(
+			ctx,
+			*authCtx.CurrentOrgID(),
+			*existing.CustomerOrganizationID,
+			hypotheticalLicenseKey,
+		)
+		if err != nil {
+			log.Warn("could not find affected deployments", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	if body.DryRun {
+		RespondJSON(w, api.UpdateLicenseKeyResponse{
+			LicenseKey:          *existing,
+			AffectedDeployments: affected,
+		})
+		return
+	}
+
 	var result *types.LicenseKey
 	var errorHandled bool
 	err = db.RunTx(ctx, func(ctx context.Context) error {
@@ -342,7 +371,7 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 			result.LastRevisedAt = &revision.CreatedAt
 		}
 
-		return nil
+		return triggerAffectedDeployments(ctx, affected)
 	})
 
 	if err != nil {
@@ -352,8 +381,46 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	} else {
-		RespondJSON(w, result)
+		RespondJSON(w, api.UpdateLicenseKeyResponse{
+			LicenseKey:          *result,
+			AffectedDeployments: affected,
+		})
 	}
+}
+
+func updatedLicenseKeyForRequest(
+	existing *types.LicenseKey,
+	body api.UpdateLicenseKeyRequest,
+) (types.LicenseKey, error) {
+	result := *existing
+	result.Name = body.Name
+	result.Description = body.Description
+	result.LicenseTemplateID = body.LicenseTemplateID
+
+	notBefore := body.NotBefore
+	if notBefore == nil {
+		notBefore = existing.NotBefore
+	}
+	expiresAt := body.ExpiresAt
+	if expiresAt == nil {
+		expiresAt = existing.ExpiresAt
+	}
+	var payload json.RawMessage
+	if body.Payload != nil {
+		payload = *body.Payload
+	} else {
+		payload = existing.Payload
+	}
+	if notBefore == nil || expiresAt == nil || payload == nil {
+		return types.LicenseKey{}, errors.New("notBefore, expiresAt and payload are required to create a revision")
+	}
+
+	revisedAt := time.Now().UTC().Truncate(time.Microsecond)
+	result.NotBefore = notBefore
+	result.ExpiresAt = expiresAt
+	result.Payload = payload
+	result.LastRevisedAt = &revisedAt
+	return result, nil
 }
 
 func deleteLicenseKey(w http.ResponseWriter, r *http.Request) {

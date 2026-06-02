@@ -18,6 +18,7 @@ import {FeatureFlagService} from '../../services/feature-flag.service';
 import {LicenseKeysService} from '../../services/license-keys.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
+import {AffectedDeployment} from '../../types/affected-deployment';
 import {LicenseKey} from '../../types/license-key';
 import {EditLicenseKeyComponent} from './edit-license-key.component';
 import {ViewLicenseKeyModalComponent} from './view-license-key-modal.component';
@@ -58,8 +59,10 @@ export class LicenseKeysComponent {
 
   protected readonly selectedLicense = signal<LicenseKey | undefined>(undefined);
   protected readonly selectedToken = signal<string | undefined>(undefined);
+  protected readonly affectedDeployments = signal<AffectedDeployment[]>([]);
   protected readonly viewLicenseLoading = signal(false);
   private readonly viewLicenseModalTemplate = viewChild.required<TemplateRef<unknown>>('viewLicenseModal');
+  private readonly affectedDeploymentsDialog = viewChild.required<TemplateRef<unknown>>('affectedDeploymentsDialog');
   private viewLicenseModalRef?: DialogRef;
 
   filterForm = new FormGroup({
@@ -118,9 +121,13 @@ export class LicenseKeysComponent {
     const {license} = this.editForm.value;
     if (this.editForm.valid && license) {
       this.editFormLoading = true;
-      const action = license.id ? this.licenseKeysService.update(license) : this.licenseKeysService.create(license);
       try {
-        const saved = await firstValueFrom(action);
+        const saved = license.id
+          ? await this.updateLicense(license)
+          : await firstValueFrom(this.licenseKeysService.create(license));
+        if (!saved) {
+          return;
+        }
         this.hideDrawer();
         if (!license.id && saved.licenseTemplateId) {
           this.toast.success(`${saved.name} saved successfully. Link the license key ID in your Stripe dashboard.`);
@@ -134,8 +141,28 @@ export class LicenseKeysComponent {
         }
       } finally {
         this.editFormLoading = false;
+        this.affectedDeployments.set([]);
       }
     }
+  }
+
+  private async updateLicense(license: LicenseKey): Promise<LicenseKey | undefined> {
+    const dryRun = await firstValueFrom(this.licenseKeysService.update(license, true));
+    if (dryRun.affectedDeployments.length > 0) {
+      this.affectedDeployments.set(dryRun.affectedDeployments);
+      const confirmed = await firstValueFrom(
+        this.overlay.confirm({
+          customTemplate: this.affectedDeploymentsDialog(),
+          confirmLabel: 'Update and redeploy',
+        })
+      );
+      if (!confirmed) {
+        return undefined;
+      }
+    }
+
+    const result = await firstValueFrom(this.licenseKeysService.update(license));
+    return result.licenseKey;
   }
 
   duplicateLicense(templateRef: TemplateRef<unknown>, license: LicenseKey) {

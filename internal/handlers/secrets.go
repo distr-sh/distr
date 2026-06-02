@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"regexp"
@@ -12,6 +13,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -40,7 +42,7 @@ func SecretsRouter(r chiopenapi.Router) {
 			r.Put("/", updateSecretHandler()).
 				With(option.Description("Update a secret")).
 				With(option.Request(api.UpdateSecretRequest{})).
-				With(option.Response(http.StatusOK, api.SecretWithoutValue{}))
+				With(option.Response(http.StatusOK, api.UpdateSecretResponse{}))
 
 			r.Delete("/", deleteSecretHandler()).
 				With(option.Description("Delete a secret")).
@@ -172,21 +174,53 @@ func updateSecretHandler() http.HandlerFunc {
 			return
 		}
 
-		secret, err := db.UpdateSecret(
+		affected, err := findAffectedDeploymentsBySecret(
 			ctx,
-			id,
-			existing.CustomerOrganizationID,
-			auth.CurrentUserID(),
+			*auth.CurrentOrgID(),
+			existing.Key,
 			body.Value,
+			existing.CustomerOrganizationID,
 		)
+		if err != nil {
+			internalctx.GetLogger(ctx).Error("failed to find affected deployments", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
 
+		if body.DryRun {
+			RespondJSON(w, api.UpdateSecretResponse{
+				Secret:              *mapping.SecretToAPI(*existing),
+				AffectedDeployments: affected,
+			})
+			return
+		}
+
+		var secret *types.SecretWithUpdatedBy
+		err = db.RunTx(ctx, func(ctx context.Context) error {
+			secret, err = db.UpdateSecret(
+				ctx,
+				id,
+				existing.CustomerOrganizationID,
+				auth.CurrentUserID(),
+				body.Value,
+			)
+			if err != nil {
+				return err
+			}
+			return triggerAffectedDeployments(ctx, affected)
+		})
 		if err != nil {
 			internalctx.GetLogger(ctx).Error("failed to update secret", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		} else {
-			RespondJSON(w, mapping.SecretToAPI(*secret))
+			return
 		}
+
+		RespondJSON(w, api.UpdateSecretResponse{
+			Secret:              *mapping.SecretToAPI(*secret),
+			AffectedDeployments: affected,
+		})
 	}
 }
 

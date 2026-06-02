@@ -86,6 +86,38 @@ func GetDeploymentTargets(
 	}
 }
 
+func GetDeploymentTargetsByScope(
+	ctx context.Context,
+	orgID uuid.UUID,
+	customerOrgID *uuid.UUID,
+) ([]types.DeploymentTarget, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`SELECT`+deploymentTargetOutputExprBase+`
+		FROM DeploymentTarget dt
+		WHERE (
+				@customerOrgID::uuid IS NOT NULL
+				AND dt.organization_id = @orgID
+				AND dt.customer_organization_id = @customerOrgID
+			) OR (
+				@customerOrgID::uuid IS NULL
+				AND dt.organization_id = @orgID
+				AND dt.customer_organization_id IS NULL
+			)
+		ORDER BY dt.name`,
+		pgx.NamedArgs{"orgID": orgID, "customerOrgID": customerOrgID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query DeploymentTargets: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.DeploymentTarget])
+	if err != nil {
+		return nil, fmt.Errorf("failed to get DeploymentTargets: %w", err)
+	}
+	return result, nil
+}
+
 func CountDeploymentTargets(ctx context.Context, orgID uuid.UUID, customerOrgID *uuid.UUID) (int64, error) {
 	db := internalctx.GetDb(ctx)
 

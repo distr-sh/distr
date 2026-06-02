@@ -1,5 +1,5 @@
 import {DatePipe} from '@angular/common';
-import {Component, computed, inject, input, output, TemplateRef, viewChild} from '@angular/core';
+import {Component, computed, inject, input, output, signal, TemplateRef, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute} from '@angular/router';
@@ -13,6 +13,7 @@ import {AuthService} from '../services/auth.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {SecretsService} from '../services/secrets.service';
 import {ToastService} from '../services/toast.service';
+import {AffectedDeployment} from '../types/affected-deployment';
 import {Secret} from '../types/secret';
 
 @Component({
@@ -42,7 +43,9 @@ export class SecretsComponent {
   protected readonly faPen = faPen;
 
   private readonly createUpdateDialog = viewChild.required<TemplateRef<unknown>>('createUpdateDialog');
+  private readonly affectedDeploymentsDialog = viewChild.required<TemplateRef<unknown>>('affectedDeploymentsDialog');
   private dialogRef?: DialogRef;
+  protected readonly affectedDeployments = signal<AffectedDeployment[]>([]);
 
   protected readonly filterForm = this.fb.group({
     search: '',
@@ -105,19 +108,37 @@ export class SecretsComponent {
         },
       });
     } else {
-      this.secretsService.update(id, value!).subscribe({
-        next: () => {
-          this.toast.success('Secret value has been updated. Restart workloads manually to apply changes.');
-          this.refresh.emit();
-          this.closeDialog();
-        },
-        error: (error) => {
-          const msg = getFormDisplayedError(error);
-          if (msg) {
-            this.toast.error(msg);
-          }
-        },
-      });
+      void this.updateSecret(id, value!);
+    }
+  }
+
+  private async updateSecret(id: string, value: string) {
+    try {
+      const dryRun = await firstValueFrom(this.secretsService.update(id, value, true));
+      if (dryRun.affectedDeployments.length > 0) {
+        this.affectedDeployments.set(dryRun.affectedDeployments);
+        const confirmed = await firstValueFrom(
+          this.overlay.confirm({
+            customTemplate: this.affectedDeploymentsDialog(),
+            confirmLabel: 'Update and redeploy',
+          })
+        );
+        if (!confirmed) {
+          return;
+        }
+      }
+
+      await firstValueFrom(this.secretsService.update(id, value));
+      this.toast.success('Secret value has been updated.');
+      this.refresh.emit();
+      this.closeDialog();
+    } catch (error) {
+      const msg = getFormDisplayedError(error);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    } finally {
+      this.affectedDeployments.set([]);
     }
   }
 
