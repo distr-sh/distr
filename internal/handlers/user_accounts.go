@@ -77,7 +77,6 @@ func UserAccountsRouter(r chiopenapi.Router) {
 				With(option.Response(http.StatusOK, api.CreateUserAccountResponse{}))
 		})
 	})
-	r.Get("/status", getUserAccountStatusHandler).With(option.Hidden(true))
 }
 
 func getUserAccountsHandler(w http.ResponseWriter, r *http.Request) {
@@ -103,15 +102,6 @@ func getUserAccountsHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		RespondJSON(w, mapping.List(userAccounts, mapping.UserAccountToAPI))
 	}
-}
-
-func getUserAccountStatusHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	auth := auth.Authentication.Require(ctx)
-	userAccount := auth.CurrentUser()
-	RespondJSON(w, map[string]any{
-		"active": userAccount.PasswordHash != nil,
-	})
 }
 
 func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {

@@ -53,20 +53,33 @@ func AuthRouter(r chiopenapi.Router) {
 		middleware.RequireEmailVerified,
 		middleware.RequireOrgAndRole,
 	).Post("/switch-context", authSwitchContextHandler())
-	r.Route("/verify", func(r chiopenapi.Router) {
-		r.Use(middleware.SentryUser, auth.Authentication.Middleware)
+	r.Group(func(r chiopenapi.Router) {
+		r.Use(auth.Authentication.Middleware, middleware.SentryUser)
 
-		requestVerificationMailRateLimitPerUser := httprate.Limit(
-			3,
-			10*time.Minute,
-			httprate.WithKeyFuncs(middleware.RateLimitUserIDKey),
-		)
-		r.With(
-			requestVerificationMailRateLimitPerUser,
-			middleware.BlockSuperAdmin,
-			middleware.RequireOrgAndRole,
-		).Post("/request", authVerifyRequestHandler)
-		r.Post("/confirm", authVerifyConfirmHandler)
+		r.Route("/verify", func(r chiopenapi.Router) {
+			requestVerificationMailRateLimitPerUser := httprate.Limit(
+				3,
+				10*time.Minute,
+				httprate.WithKeyFuncs(middleware.RateLimitUserIDKey),
+			)
+			r.With(
+				requestVerificationMailRateLimitPerUser,
+				middleware.BlockSuperAdmin,
+				middleware.RequireOrgAndRole,
+			).Post("/request", authVerifyRequestHandler)
+			r.Post("/confirm", authVerifyConfirmHandler)
+		})
+
+		r.Get("/status", authStatusHandler).With(option.Hidden(true))
+	})
+}
+
+func authStatusHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	userAccount := auth.CurrentUser()
+	RespondJSON(w, map[string]any{
+		"active": userAccount.PasswordHash != nil,
 	})
 }
 

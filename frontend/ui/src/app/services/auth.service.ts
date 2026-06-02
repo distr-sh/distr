@@ -155,6 +155,10 @@ export class AuthService {
     return this.httpClient.post<void>(`${authBaseUrl}/verify/confirm`, undefined);
   }
 
+  public getUserStatus(): Observable<{active: boolean}> {
+    return this.httpClient.get<{active: boolean}>(`${authBaseUrl}/status`);
+  }
+
   public switchContext(org: Organization): Observable<boolean> {
     return this.httpClient
       .post<TokenResponse | undefined>(`${authBaseUrl}/switch-context`, {organizationId: org.id})
@@ -210,6 +214,7 @@ function authenticatedRoute(req: HttpRequest<unknown>): boolean {
   return (
     !req.url.startsWith(authBaseUrl) ||
     req.url === `${authBaseUrl}/switch-context` ||
+    req.url === `${authBaseUrl}/status` ||
     req.url.startsWith(`${authBaseUrl}/verify/`)
   );
 }
