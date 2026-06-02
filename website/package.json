@@ -46,7 +46,7 @@
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-organize-imports": "^4.3.0"
   },
-  "packageManager": "pnpm@11.5.0",
+  "packageManager": "pnpm@11.5.1",
   "engines": {
     "node": ">=24"
   }
