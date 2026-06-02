@@ -84,7 +84,7 @@
           <button
             type="button"
             (click)="resetFilters()"
-            class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+            class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
             <fa-icon [icon]="faFilterCircleXmark" class="mr-2 text-gray-500 dark:text-gray-400" />
             Reset
           </button>
@@ -92,7 +92,7 @@
             type="button"
             (click)="exportCsv()"
             [disabled]="isExporting()"
-            class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+            class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary disabled:opacity-50 disabled:cursor-not-allowed">
             <fa-icon [icon]="faDownload" class="mr-2 text-gray-500 dark:text-gray-400" />
             @if (isExporting()) {
               Exporting...
@@ -103,9 +103,8 @@
         </div>
       </div>
       <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-          <thead
-            class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
+        <table class="distr-table">
+          <thead class="distr-table-head">
             <tr>
               <th scope="col" class="p-4">Date</th>
               <th scope="col" class="p-4">Customer</th>
@@ -117,7 +116,7 @@
           </thead>
           <tbody>
             @for (pull of pulls(); track pull.createdAt) {
-              <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <tr class="distr-table-row">
                 <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                   {{ pull.createdAt | date: 'short' }}
                 </td>
@@ -159,7 +158,7 @@
         <div class="flex justify-center px-2 py-4">
           <button
             type="button"
-            class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+            class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary"
             (click)="showMore()">
             Show more
           </button>

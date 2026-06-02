@@ -24,14 +24,14 @@
           <div class="space-y-4">
             <h2 class="text-xl font-bold dark:text-white">General</h2>
             <div>
-              <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name *</label>
+              <label for="name" class="distr-label">Name *</label>
               <input
                 formControlName="name"
                 autotrim
                 type="text"
                 name="name"
                 id="name"
-                class="bg-gray-50 border border-gray-300 text-sm text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                class="distr-input"
                 placeholder="Name"
                 required />
               <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
@@ -46,14 +46,14 @@
           <div class="space-y-4">
             <h2 class="text-xl font-bold dark:text-white">Artifact registry</h2>
             <div>
-              <label for="slug" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Slug</label>
+              <label for="slug" class="distr-label">Slug</label>
               <input
                 formControlName="slug"
                 autotrim
                 type="text"
                 name="slug"
                 id="slug"
-                class="bg-gray-50 border border-gray-300 text-sm text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                class="distr-input"
                 placeholder="slug" />
               <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
                 The slug will used as part of the url for artifact registry. It must start with a lower case letter or
@@ -70,7 +70,7 @@
                 formControlName="artifactVersionMutable"
                 id="artifactVersionMutable"
                 type="checkbox"
-                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                class="distr-checkbox" />
               <label for="artifactVersionMutable" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
                 Artifact versions are mutable
               </label>
@@ -84,7 +84,7 @@
                 formControlName="prePostScriptsEnabled"
                 id="prePostScriptsEnabled"
                 type="checkbox"
-                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                class="distr-checkbox" />
               <label for="prePostScriptsEnabled" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
                 Enable Pre- and Post-Connect Scripts (Pre-Flight Checks)
               </label>
@@ -136,7 +136,7 @@
                     formControlName="connectScriptIsSudo"
                     id="connectScriptIsSudo"
                     type="checkbox"
-                    class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                    class="distr-checkbox" />
                   <label for="connectScriptIsSudo" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
                     Script should be run with sudo
                   </label>
@@ -155,42 +155,36 @@
               Please contact Distr support if you are interested in configuration of the settings below.
             </div>
             <div>
-              <label for="appDomain" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                Custom app domain
-              </label>
+              <label for="appDomain" class="distr-label"> Custom app domain </label>
               <input
                 type="text"
                 id="appDomain"
                 formControlName="appDomain"
-                class="bg-gray-50 border border-gray-300 text-sm text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-60"
+                class="distr-input disabled:opacity-60"
                 placeholder="not configured" />
               <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
                 This is where users and customers in your organization are able to access the Distr web application.
               </p>
             </div>
             <div>
-              <label for="registryDomain" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                Custom registry domain
-              </label>
+              <label for="registryDomain" class="distr-label"> Custom registry domain </label>
               <input
                 type="text"
                 id="registryDomain"
                 formControlName="registryDomain"
-                class="bg-gray-50 border border-gray-300 text-sm text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-60"
+                class="distr-input disabled:opacity-60"
                 placeholder="not configured" />
               <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
                 This is where users and customers in your organization are able to access the Distr artifact registry.
               </p>
             </div>
             <div>
-              <label for="emailFromAddress" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                Custom e-mail sender address
-              </label>
+              <label for="emailFromAddress" class="distr-label"> Custom e-mail sender address </label>
               <input
                 type="text"
                 id="emailFromAddress"
                 formControlName="emailFromAddress"
-                class="bg-gray-50 border border-gray-300 text-sm text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-60"
+                class="distr-input disabled:opacity-60"
                 placeholder="not configured" />
               <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
                 This is the address used by Distr to send transactional e-mails to users and customers in your
@@ -204,7 +198,7 @@
               <button
                 type="submit"
                 [disabled]="formLoading() || form.invalid"
-                class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60 disabled:cursor-not-allowed">
+                class="text-white w-full inline-flex items-center justify-center distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
                 <fa-icon [icon]="faFloppyDisk" size="lg" class="h-4 w-4 mr-2 -ml-0.5 mb-1" />
                 Save
               </button>

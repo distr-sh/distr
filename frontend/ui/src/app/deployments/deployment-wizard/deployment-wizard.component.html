@@ -228,14 +228,12 @@
 
                 <!-- Deployment Name -->
                 <div>
-                  <label for="agent-name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                    Deployment Name
-                  </label>
+                  <label for="agent-name" class="distr-label"> Deployment Name </label>
                   <input
                     [formControl]="deploymentTargetForm.controls.name"
                     type="text"
                     id="agent-name"
-                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                    class="distr-input"
                     required
                     autotrim
                     autocomplete="off" />
@@ -252,7 +250,7 @@
                         id="autoheal-enabled"
                         type="checkbox"
                         [formControl]="deploymentTargetForm.controls.autohealEnabled"
-                        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                        class="distr-checkbox" />
                       <label for="autoheal-enabled" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
                         Enable autoheal for all containers
                       </label>
@@ -267,7 +265,7 @@
                       id="image-cleanup-enabled"
                       type="checkbox"
                       [formControl]="deploymentTargetForm.controls.imageCleanupEnabled"
-                      class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                      class="distr-checkbox" />
                     <label
                       for="image-cleanup-enabled"
                       class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
@@ -279,14 +277,12 @@
                 <!-- Kubernetes-specific Settings -->
                 @if (selectedDeploymentType() === 'kubernetes') {
                   <div>
-                    <label for="namespace" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                      Kubernetes Namespace
-                    </label>
+                    <label for="namespace" class="distr-label"> Kubernetes Namespace </label>
                     <input
                       [formControl]="deploymentTargetForm.controls.namespace"
                       type="text"
                       id="namespace"
-                      class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                      class="distr-input"
                       placeholder='A Kubernetes namespace (e.g. "default")'
                       required
                       autotrim
@@ -308,7 +304,7 @@
                       id="cluster-scope"
                       type="checkbox"
                       [formControl]="deploymentTargetForm.controls.clusterScope"
-                      class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                      class="distr-checkbox" />
                     <label for="cluster-scope" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
                       Enable cluster-scoped permissions
                     </label>
@@ -324,7 +320,7 @@
                       id="custom-resources"
                       type="checkbox"
                       [formControl]="deploymentTargetForm.controls.customResources"
-                      class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                      class="distr-checkbox" />
                     <label for="custom-resources" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
                       Set custom resource requirements for the Distr agent
                     </label>
@@ -335,14 +331,12 @@
 
                     <div class="grid grid-cols-2 gap-4 border border-gray-300 dark:border-gray-700 rounded-md p-4">
                       <div>
-                        <label for="cpu-request" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                          CPU Request
-                        </label>
+                        <label for="cpu-request" class="distr-label"> CPU Request </label>
                         <input
                           [formControl]="resourcesCtrl.controls.cpuRequest"
                           type="text"
                           id="cpu-request"
-                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                          class="distr-input"
                           placeholder="Enter a Kubernetes quantity"
                           required
                           autotrim
@@ -356,16 +350,12 @@
                       </div>
 
                       <div>
-                        <label
-                          for="memory-request"
-                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                          Memory Request
-                        </label>
+                        <label for="memory-request" class="distr-label"> Memory Request </label>
                         <input
                           [formControl]="resourcesCtrl.controls.memoryRequest"
                           type="text"
                           id="memory-request"
-                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                          class="distr-input"
                           placeholder="Enter a Kubernetes quantity"
                           required
                           autotrim
@@ -381,14 +371,12 @@
                       </div>
 
                       <div>
-                        <label for="cpu-limit" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                          CPU Limit
-                        </label>
+                        <label for="cpu-limit" class="distr-label"> CPU Limit </label>
                         <input
                           [formControl]="resourcesCtrl.controls.cpuLimit"
                           type="text"
                           id="cpu-limit"
-                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                          class="distr-input"
                           placeholder="Enter a Kubernetes quantity"
                           required
                           autotrim
@@ -402,14 +390,12 @@
                       </div>
 
                       <div>
-                        <label for="memory-limit" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                          Memory Limit
-                        </label>
+                        <label for="memory-limit" class="distr-label"> Memory Limit </label>
                         <input
                           [formControl]="resourcesCtrl.controls.memoryLimit"
                           type="text"
                           id="memory-limit"
-                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                          class="distr-input"
                           placeholder="Enter a Kubernetes quantity"
                           required
                           autotrim
@@ -431,7 +417,7 @@
                     id="logs-enabled"
                     type="checkbox"
                     [formControl]="deploymentTargetForm.controls.deploymentLogsEnabled"
-                    class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                    class="distr-checkbox" />
                   <label for="logs-enabled" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
                     Enable log collection
                   </label>

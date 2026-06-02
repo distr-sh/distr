@@ -63,9 +63,8 @@
       }
 
       <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-          <thead
-            class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
+        <table class="distr-table">
+          <thead class="distr-table-head">
             <tr>
               <th scope="col" class="p-4">Name</th>
               <th scope="col" class="p-4">Link</th>
@@ -75,7 +74,7 @@
           </thead>
           <tbody>
             @for (link of links(); track link.id) {
-              <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <tr class="distr-table-row">
                 <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">{{ link.name }}</td>
                 <td
                   class="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap max-w-96 overflow-hidden text-ellipsis">
@@ -95,7 +94,7 @@
                     <button
                       type="button"
                       (click)="showDialog(link)"
-                      class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                      class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
                       <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
                       Edit
                     </button>
@@ -103,7 +102,7 @@
                       type="button"
                       aria-label="Delete"
                       (click)="deleteLink(link)"
-                      class="py-2 px-3 text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900">
+                      class="py-2 px-3 distr-btn-danger">
                       <fa-icon [icon]="faTrash" class="h-4 w-4" />
                     </button>
                   }

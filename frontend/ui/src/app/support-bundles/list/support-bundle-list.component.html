@@ -64,9 +64,8 @@
       @if (!loading()) {
         @if (filteredBundles().length > 0) {
           <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-              <thead
-                class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
+            <table class="distr-table">
+              <thead class="distr-table-head">
                 <tr>
                   <th scope="col" class="p-4">Title</th>
                   @if (auth.isVendor() || auth.isPartner()) {
@@ -168,40 +167,33 @@
           <form [formGroup]="createForm" (ngSubmit)="createBundle()">
             <div class="space-y-4">
               <div>
-                <label for="title" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                  Title <span class="text-red-500">*</span>
-                </label>
+                <label for="title" class="distr-label"> Title <span class="text-red-500">*</span> </label>
                 <input
                   formControlName="title"
                   autotrim
                   type="text"
                   id="title"
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  class="distr-input"
                   placeholder="Title for this support bundle" />
               </div>
               <div>
-                <label for="description" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                  Description
-                </label>
+                <label for="description" class="distr-label"> Description </label>
                 <textarea
                   formControlName="description"
                   id="description"
                   rows="4"
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  class="distr-input"
                   placeholder="Optional description of the issue"></textarea>
               </div>
             </div>
             <div class="flex items-center justify-end pt-4 border-t border-gray-200 dark:border-gray-600 mt-4 gap-2">
-              <button
-                type="button"
-                (click)="closeDialog()"
-                class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+              <button type="button" (click)="closeDialog()" class="py-2.5 px-5 text-sm font-medium distr-btn-secondary">
                 Cancel
               </button>
               <button
                 type="submit"
                 [disabled]="createFormLoading || createForm.invalid"
-                class="text-white inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60 disabled:cursor-not-allowed">
+                class="text-white inline-flex items-center justify-center distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
                 <fa-icon [icon]="faPlus" class="me-2" />
                 Create
               </button>
