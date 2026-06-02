@@ -86,7 +86,7 @@
                 <div class="flex justify-stretch sm:justify-end space-x-2.5">
                   <a
                     [routerLink]="['/', 'tutorials', tutorial.id]"
-                    class="flex-1 sm:flex-none items-center justify-center text-white distr-btn-primary">
+                    class="flex-1 sm:flex-none inline-flex items-center justify-center text-white distr-btn-primary">
                     @if (tutorial?.progress?.completedAt) {
                       View
                     } @else if (tutorial?.progress?.createdAt) {
