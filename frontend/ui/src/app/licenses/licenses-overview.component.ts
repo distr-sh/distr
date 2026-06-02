@@ -1,5 +1,5 @@
 import {GlobalPositionStrategy} from '@angular/cdk/overlay';
-import {AsyncPipe} from '@angular/common';
+import {AsyncPipe, DatePipe} from '@angular/common';
 import {Component, computed, effect, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
@@ -26,6 +26,7 @@ import {License} from '../types/license';
   selector: 'app-licenses-overview',
   imports: [
     AsyncPipe,
+    DatePipe,
     ReactiveFormsModule,
     FaIconComponent,
     AutotrimDirective,
@@ -85,16 +86,82 @@ export class LicensesOverviewComponent {
     return id ? this.allLicenses().find((l) => l.customerOrganization.id === id) : undefined;
   });
 
+  protected readonly expiryOverrideIds = signal<ReadonlySet<string>>(new Set());
+  private readonly copyExpiry = toSignal(this.copyForm.controls.expiresAt.valueChanges, {
+    initialValue: this.copyForm.controls.expiresAt.value,
+  });
+  protected readonly isNever = computed(() => !this.copyExpiry());
+
+  // License keys cannot be set to "never", so they are not selectable while no date is chosen.
+  protected readonly selectableOverrideIds = computed<string[]>(() => {
+    const source = this.selectedCopySource();
+    if (!source) {
+      return [];
+    }
+    return [
+      ...source.applicationEntitlements,
+      ...source.artifactEntitlements,
+      ...(this.isNever() ? [] : source.licenseKeys),
+    ]
+      .map((item) => item.id)
+      .filter((id): id is string => id !== undefined);
+  });
+
+  protected readonly effectiveOverrideIds = computed<ReadonlySet<string>>(() => {
+    const selectable = new Set(this.selectableOverrideIds());
+    return new Set([...this.expiryOverrideIds()].filter((id) => selectable.has(id)));
+  });
+
+  protected readonly allOverrideSelected = computed(() => {
+    const selectable = this.selectableOverrideIds();
+    return selectable.length > 0 && selectable.every((id) => this.effectiveOverrideIds().has(id));
+  });
+
   protected readonly sourcesForCopy = computed(() => {
     const targetId = this.targetLicense()?.customerOrganization.id;
     return this.allLicenses().filter((l) => l.customerOrganization.id !== targetId && !this.hasNoLicenses(l));
   });
 
   constructor() {
-    // Prefill the expiry with the latest expiration date among the selected source's licenses.
+    // Prefill the expiry with the latest expiration date among the selected source's licenses and
+    // select every license for the override by default whenever the source changes.
     effect(() => {
-      this.copyForm.controls.expiresAt.setValue(this.largestExpiry(this.selectedCopySource()));
+      const source = this.selectedCopySource();
+      this.copyForm.controls.expiresAt.setValue(this.largestExpiry(source));
+      this.expiryOverrideIds.set(new Set(this.allLicenseIds(source)));
     });
+  }
+
+  private allLicenseIds(source: License | undefined): string[] {
+    if (!source) {
+      return [];
+    }
+    return [...source.licenseKeys, ...source.applicationEntitlements, ...source.artifactEntitlements]
+      .map((item) => item.id)
+      .filter((id): id is string => id !== undefined);
+  }
+
+  protected isOverrideSelected(id: string | undefined): boolean {
+    return !!id && this.effectiveOverrideIds().has(id);
+  }
+
+  protected toggleOverride(id: string | undefined, checked: boolean): void {
+    if (!id) {
+      return;
+    }
+    this.expiryOverrideIds.update((ids) => {
+      const next = new Set(ids);
+      if (checked) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
+      return next;
+    });
+  }
+
+  protected toggleAllOverrides(checked: boolean): void {
+    this.expiryOverrideIds.set(checked ? new Set(this.selectableOverrideIds()) : new Set());
   }
 
   private largestExpiry(source: License | undefined): string {
@@ -178,7 +245,7 @@ export class LicensesOverviewComponent {
             ...ae,
             id: undefined,
             customerOrganizationId: targetId,
-            expiresAt: entitlementExpiresAt,
+            ...(this.isOverrideSelected(ae.id) ? {expiresAt: entitlementExpiresAt} : {}),
           })
         ),
         ...source.applicationEntitlements.map((ae) =>
@@ -186,7 +253,7 @@ export class LicensesOverviewComponent {
             ...ae,
             id: undefined,
             customerOrganizationId: targetId,
-            expiresAt: entitlementExpiresAt,
+            ...(this.isOverrideSelected(ae.id) ? {expiresAt: entitlementExpiresAt} : {}),
           })
         ),
         ...source.licenseKeys.map((lk) =>
@@ -194,7 +261,7 @@ export class LicensesOverviewComponent {
             ...lk,
             id: undefined,
             customerOrganizationId: targetId,
-            expiresAt: licenseKeyExpiresAt,
+            ...(this.isOverrideSelected(lk.id) ? {expiresAt: licenseKeyExpiresAt} : {}),
           })
         ),
       ];
