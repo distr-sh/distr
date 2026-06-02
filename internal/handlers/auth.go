@@ -48,8 +48,8 @@ func AuthRouter(r chiopenapi.Router) {
 	r.Post("/register", authRegisterHandler)
 	r.Post("/reset", authResetPasswordHandler)
 	r.With(
-		middleware.SentryUser,
 		auth.Authentication.Middleware,
+		middleware.SentryUser,
 		middleware.RequireEmailVerified,
 		middleware.RequireOrgAndRole,
 	).Post("/switch-context", authSwitchContextHandler())

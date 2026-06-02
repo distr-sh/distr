@@ -179,12 +179,11 @@ func SentryUser(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		if hub := sentry.GetHubFromContext(ctx); hub != nil {
-			if auth, err := auth.Authentication.Get(ctx); err == nil {
-				hub.Scope().SetUser(sentry.User{
-					ID:    auth.CurrentUserID().String(),
-					Email: auth.CurrentUserEmail(),
-				})
-			}
+			auth := auth.Authentication.Require(ctx)
+			hub.Scope().SetUser(sentry.User{
+				ID:    auth.CurrentUserID().String(),
+				Email: auth.CurrentUserEmail(),
+			})
 		}
 		h.ServeHTTP(w, r)
 	})
@@ -194,11 +193,10 @@ func AgentSentryUser(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		if hub := sentry.GetHubFromContext(ctx); hub != nil {
-			if auth, err := auth.AgentAuthentication.Get(ctx); err == nil {
-				hub.Scope().SetUser(sentry.User{
-					ID: auth.CurrentDeploymentTargetID().String(),
-				})
-			}
+			auth := auth.AgentAuthentication.Require(ctx)
+			hub.Scope().SetUser(sentry.User{
+				ID: auth.CurrentDeploymentTargetID().String(),
+			})
 		}
 		h.ServeHTTP(w, r)
 	})
