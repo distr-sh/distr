@@ -1,6 +1,6 @@
 {
   "name": "@distr-sh/distr",
-  "version": "2.21.3",
+  "version": "2.22.0",
   "type": "module",
   "license": "Apache-2.0",
   "description": "Distr",
@@ -19,7 +19,7 @@
     "format": "prettier --write ."
   },
   "private": true,
-  "packageManager": "pnpm@11.4.0",
+  "packageManager": "pnpm@11.5.0",
   "dependencies": {
     "@angular/cdk": "^21.1.0",
     "@angular/common": "^21.1.0",

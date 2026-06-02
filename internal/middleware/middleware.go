@@ -264,6 +264,25 @@ func BlockSuperAdmin(handler http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
+func BlockSuperAdminUnlessOrganizationExpired(handler http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		if isSuperAdmin(ctx) {
+			org := auth.Authentication.Require(ctx).CurrentOrg()
+			if org == nil || org.HasActiveSubscription() {
+				http.Error(
+					w,
+					"super admins cannot delete an active organization",
+					http.StatusForbidden,
+				)
+				return
+			}
+		}
+		handler.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
+}
+
 func FeatureFlagMiddleware(feature types.Feature) func(handler http.Handler) http.Handler {
 	return func(handler http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {

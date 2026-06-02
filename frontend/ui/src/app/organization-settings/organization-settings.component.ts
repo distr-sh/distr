@@ -6,6 +6,7 @@ import {faFloppyDisk, faLightbulb} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, startWith} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {slugMaxLength, slugPattern} from '../../util/slug';
+import {DeleteOrganizationComponent} from '../components/delete-organization/delete-organization.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AuthService} from '../services/auth.service';
 import {OrganizationService} from '../services/organization.service';
@@ -16,7 +17,7 @@ import {Organization} from '../types/organization';
 @Component({
   selector: 'app-organization-settings',
   templateUrl: './organization-settings.component.html',
-  imports: [FaIconComponent, ReactiveFormsModule, AutotrimDirective],
+  imports: [FaIconComponent, ReactiveFormsModule, AutotrimDirective, DeleteOrganizationComponent],
 })
 export class OrganizationSettingsComponent implements OnInit {
   protected readonly faFloppyDisk = faFloppyDisk;
@@ -118,38 +119,6 @@ export class OrganizationSettingsComponent implements OnInit {
         }
       } finally {
         this.formLoading.set(false);
-      }
-    }
-  }
-
-  async deleteOrganization() {
-    try {
-      if (
-        await firstValueFrom(
-          this.overlayService.confirm({
-            message: {
-              message:
-                'Are you sure you want to delete this organization? ' +
-                'Afterwards, all user sessions (including the current one) will be invalidated ' +
-                'and users will be redirected to the login page.',
-              alert: {
-                type: 'danger',
-                message: 'This is a destructive action and cannot be undone!',
-              },
-            },
-            requiredConfirmInputText: `DELETE ${this.organization!.name.toUpperCase()}`,
-          })
-        )
-      ) {
-        const email = this.auth.getClaims()?.email;
-        await firstValueFrom(this.organizationService.delete());
-        await firstValueFrom(this.auth.logout());
-        location.assign(`/login?email=${encodeURIComponent(email ?? '')}`);
-      }
-    } catch (e) {
-      const msg = getFormDisplayedError(e);
-      if (msg) {
-        this.toast.error(msg);
       }
     }
   }

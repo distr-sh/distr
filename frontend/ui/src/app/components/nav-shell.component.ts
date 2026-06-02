@@ -1,7 +1,6 @@
 import {Component, computed, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {RouterOutlet} from '@angular/router';
-import dayjs from 'dayjs';
 import {map} from 'rxjs';
 import {AuthService} from '../services/auth.service';
 import {OrganizationService} from '../services/organization.service';
@@ -29,12 +28,7 @@ export class NavShellComponent {
 
   protected readonly organization$ = this.organizationService.get();
 
-  protected readonly isSubscriptionExpired = toSignal(
-    this.organization$.pipe(
-      map((org) => org.subscriptionType !== 'community' && dayjs(org.subscriptionEndsAt).isBefore())
-    ),
-    {initialValue: false}
-  );
+  protected readonly isSubscriptionExpired = this.organizationService.isSubscriptionExpired;
 
   private readonly isSubscriptionTrial = toSignal(
     this.organization$.pipe(map((org) => org.subscriptionType === 'trial')),

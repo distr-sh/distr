@@ -41,16 +41,16 @@ func OrganizationRouter(r chiopenapi.Router) {
 			With(option.Request(api.CreateUpdateOrganizationRequest{})).
 			With(option.Response(http.StatusOK, types.OrganizationWithUserRole{}))
 
-		r.With(middleware.RequireVendor, middleware.RequireAdmin).Group(func(r chiopenapi.Router) {
-			r.Put("/", updateOrganization).
-				With(option.Description("Update current organization")).
-				With(option.Request(api.CreateUpdateOrganizationRequest{})).
-				With(option.Response(http.StatusOK, types.Organization{}))
-
-			r.Delete("/", deleteOrganizationHandler()).
-				With(option.Description("Delete current organization"))
-		})
+		r.With(middleware.RequireVendor, middleware.RequireAdmin).
+			Put("/", updateOrganization).
+			With(option.Description("Update current organization")).
+			With(option.Request(api.CreateUpdateOrganizationRequest{})).
+			With(option.Response(http.StatusOK, types.Organization{}))
 	})
+
+	r.With(middleware.RequireVendor, middleware.RequireAdmin, middleware.BlockSuperAdminUnlessOrganizationExpired).
+		Delete("/", deleteOrganizationHandler()).
+		With(option.Description("Delete current organization"))
 
 	r.Route("/branding", OrganizationBrandingRouter)
 
