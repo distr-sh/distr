@@ -49,10 +49,6 @@ export class UsersService {
     return this.cache.get();
   }
 
-  public getUserStatus(): Observable<{active: boolean}> {
-    return this.httpClient.get<{active: boolean}>(`${this.baseUrl}/status`);
-  }
-
   public addUser(request: CreateUserAccountRequest): Observable<UserAccountInvitationResponse> {
     return this.httpClient
       .post<UserAccountInvitationResponse>(this.baseUrl, request)

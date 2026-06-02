@@ -15,7 +15,6 @@ import {PasswordResetComponent} from './password-reset/password-reset.component'
 import {RegisterComponent} from './register/register.component';
 import {AuthService} from './services/auth.service';
 import {ToastService} from './services/toast.service';
-import {UsersService} from './services/users.service';
 import {VerifyComponent} from './verify/verify.component';
 
 const emailVerificationGuard: CanActivateFn = async () => {
@@ -73,10 +72,9 @@ const jwtAuthGuard: CanActivateFn = (_: ActivatedRouteSnapshot, state: RouterSta
 
 const inviteComponentGuard: CanActivateFn = async () => {
   const auth = inject(AuthService);
-  const users = inject(UsersService);
   const router = inject(Router);
   try {
-    const {active} = await firstValueFrom(users.getUserStatus());
+    const {active} = await firstValueFrom(auth.getUserStatus());
     if (!active) {
       return true;
     }

@@ -68,6 +68,18 @@ func AuthRouter(r chiopenapi.Router) {
 		).Post("/request", authVerifyRequestHandler)
 		r.Post("/confirm", authVerifyConfirmHandler)
 	})
+	r.With(middleware.SentryUser, auth.Authentication.Middleware).
+		Get("/status", authStatusHandler).
+		With(option.Hidden(true))
+}
+
+func authStatusHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	userAccount := auth.CurrentUser()
+	RespondJSON(w, map[string]any{
+		"active": userAccount.PasswordHash != nil,
+	})
 }
 
 func authVerifyRequestHandler(w http.ResponseWriter, r *http.Request) {
