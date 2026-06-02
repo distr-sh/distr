@@ -61,8 +61,11 @@ func AuthRouter(r chiopenapi.Router) {
 			10*time.Minute,
 			httprate.WithKeyFuncs(middleware.RateLimitUserIDKey),
 		)
-		r.With(requestVerificationMailRateLimitPerUser, middleware.BlockSuperAdmin).
-			Post("/request", authVerifyRequestHandler)
+		r.With(
+			requestVerificationMailRateLimitPerUser,
+			middleware.BlockSuperAdmin,
+			middleware.RequireOrgAndRole,
+		).Post("/request", authVerifyRequestHandler)
 		r.Post("/confirm", authVerifyConfirmHandler)
 	})
 }
