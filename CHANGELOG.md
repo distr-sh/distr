@@ -1,5 +1,32 @@
 # Changelog
 
+## [2.22.1](https://github.com/distr-sh/distr/compare/2.22.0...2.22.1) (2026-06-02)
+
+
+### Bug Fixes
+
+* **deps:** update aws-sdk-go-v2 monorepo ([#2521](https://github.com/distr-sh/distr/issues/2521)) ([0e3ab0b](https://github.com/distr-sh/distr/commit/0e3ab0b85ed64d1fbebdf7b9899b18876f969ec9))
+* **deps:** update dependency @astrojs/mdx to v6 ([#2497](https://github.com/distr-sh/distr/issues/2497)) ([c547719](https://github.com/distr-sh/distr/commit/c5477191fcfa5e30512e24aab4153352c31dbf4d))
+* **deps:** update module github.com/shirou/gopsutil/v4 to v4.26.5 ([#2522](https://github.com/distr-sh/distr/issues/2522)) ([f865d5f](https://github.com/distr-sh/distr/commit/f865d5ff7bec90188f5520cd2bb2cf3f1f189348))
+* **deps:** update opentelemetry-go-contrib monorepo to v0.69.0 ([#2516](https://github.com/distr-sh/distr/issues/2516)) ([7eb29df](https://github.com/distr-sh/distr/commit/7eb29df41d97a620be2424a74d2e2a2d127556c0))
+* **deps:** update website dependencies ([#2484](https://github.com/distr-sh/distr/issues/2484)) ([2ab8fe2](https://github.com/distr-sh/distr/commit/2ab8fe2347a33c9903678081d88d06085c615e7f))
+* **frontend:** fix `ngSubmit` trigger in "update deployment" dialog ([#2533](https://github.com/distr-sh/distr/issues/2533)) ([be4aa40](https://github.com/distr-sh/distr/commit/be4aa40f4caadddb158c2ebb9a9589d61a7944ed))
+* validate email verfied in middleware ([#2501](https://github.com/distr-sh/distr/issues/2501)) ([df4f968](https://github.com/distr-sh/distr/commit/df4f968fe9358ae3c7e151c3f96dc3e1cf079019))
+
+
+### Other
+
+* add expiration at quick actions ([#2535](https://github.com/distr-sh/distr/issues/2535)) ([9aa45ee](https://github.com/distr-sh/distr/commit/9aa45ee153c9131f4d6b7b372eb7b80fd047d38f))
+* **backend:** change angent request body max size to 25MiB ([#2530](https://github.com/distr-sh/distr/issues/2530)) ([ab59943](https://github.com/distr-sh/distr/commit/ab599432ac4b299ebae2e9c8d623a449869186b8))
+* **deps:** update angular monorepo to v21.2.15 ([#2511](https://github.com/distr-sh/distr/issues/2511)) ([2a3ed65](https://github.com/distr-sh/distr/commit/2a3ed6541c24be16d89d2781ebd42aa2fb4d449f))
+* **deps:** update aws-actions/configure-aws-credentials action to v6.2.0 ([#2529](https://github.com/distr-sh/distr/issues/2529)) ([3665807](https://github.com/distr-sh/distr/commit/3665807e4c81a3cccc2a986121922b30129f6f12))
+* **deps:** update dependency vitest to v4.1.8 ([#2528](https://github.com/distr-sh/distr/issues/2528)) ([773e84c](https://github.com/distr-sh/distr/commit/773e84c32ef3f57fe9aaa79f593f2d24fd52f123))
+* **deps:** update github artifact actions (major) ([#2517](https://github.com/distr-sh/distr/issues/2517)) ([b29b002](https://github.com/distr-sh/distr/commit/b29b002d838b9877333c7c91527fcd41dcae2f5b))
+* **deps:** update helm release rustfs to 0.6.x ([#2519](https://github.com/distr-sh/distr/issues/2519)) ([b65c099](https://github.com/distr-sh/distr/commit/b65c0990dac74884ade6a9022976165e9259564f))
+* **deps:** update pnpm to v11.5.0 ([#2520](https://github.com/distr-sh/distr/issues/2520)) ([466496d](https://github.com/distr-sh/distr/commit/466496dffc2f5b49d8797705f9cc02c1b45f8540))
+* **deps:** update pnpm to v11.5.1 ([#2531](https://github.com/distr-sh/distr/issues/2531)) ([cc5d623](https://github.com/distr-sh/distr/commit/cc5d62370c99296ada6fe86010dc8e657d502614))
+* **deps:** update pnpm to v11.5.1 ([#2532](https://github.com/distr-sh/distr/issues/2532)) ([8c468cf](https://github.com/distr-sh/distr/commit/8c468cff9e459ae292be9ef7c671a8a1f1aeee5c))
+
 ## [2.22.0](https://github.com/distr-sh/distr/compare/2.21.3...2.22.0) (2026-06-01)
 
 

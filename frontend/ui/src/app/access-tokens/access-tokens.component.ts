@@ -10,6 +10,7 @@ import {firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
 import {isExpired, RelativeDatePipe} from '../../util/dates';
 import {USER_ROLE_LABELS, UserRoleLabelPipe} from '../../util/user-role';
 import {CreatedAccessTokenComponent} from '../components/created-access-token.component';
+import {ExpiresAtPickerComponent} from '../components/expires-at-picker/expires-at-picker.component';
 import {UserRoleSelectComponent} from '../components/user-role-select.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AccessTokensService} from '../services/access-tokens.service';
@@ -28,6 +29,7 @@ import {ToastService} from '../services/toast.service';
     OverlayModule,
     RelativeDatePipe,
     CreatedAccessTokenComponent,
+    ExpiresAtPickerComponent,
     UserRoleSelectComponent,
     UserRoleLabelPipe,
   ],

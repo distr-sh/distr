@@ -1,15 +1,17 @@
 import {GlobalPositionStrategy} from '@angular/cdk/overlay';
-import {AsyncPipe} from '@angular/common';
-import {Component, computed, inject, signal, TemplateRef, viewChild} from '@angular/core';
+import {AsyncPipe, DatePipe} from '@angular/common';
+import {Component, computed, effect, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faBuildingUser, faCopy, faKey, faMagnifyingGlass, faXmark} from '@fortawesome/free-solid-svg-icons';
+import dayjs from 'dayjs';
 import {firstValueFrom, forkJoin, startWith} from 'rxjs';
 import {isExpired} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
 import {SecureImagePipe} from '../../util/secureImage';
+import {ExpiresAtPickerComponent} from '../components/expires-at-picker/expires-at-picker.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {ApplicationEntitlementsService} from '../services/application-entitlements.service';
 import {ArtifactEntitlementsService} from '../services/artifact-entitlements.service';
@@ -22,7 +24,15 @@ import {License} from '../types/license';
 
 @Component({
   selector: 'app-licenses-overview',
-  imports: [AsyncPipe, ReactiveFormsModule, FaIconComponent, AutotrimDirective, SecureImagePipe],
+  imports: [
+    AsyncPipe,
+    DatePipe,
+    ReactiveFormsModule,
+    FaIconComponent,
+    AutotrimDirective,
+    SecureImagePipe,
+    ExpiresAtPickerComponent,
+  ],
   templateUrl: './licenses-overview.component.html',
 })
 export class LicensesOverviewComponent {
@@ -62,14 +72,110 @@ export class LicensesOverviewComponent {
   protected readonly targetLicense = signal<License | undefined>(undefined);
   protected readonly copyLicensesLoading = signal(false);
 
+  private readonly inOneYear = dayjs().add(1, 'year').startOf('day').format('YYYY-MM-DD');
   protected readonly copyForm = new FormGroup({
     sourceCustomerOrgId: new FormControl<string | null>(null, Validators.required),
+    expiresAt: new FormControl(this.inOneYear, {nonNullable: true}),
+  });
+
+  private readonly copySourceId = toSignal(this.copyForm.controls.sourceCustomerOrgId.valueChanges, {
+    initialValue: this.copyForm.controls.sourceCustomerOrgId.value,
+  });
+  protected readonly selectedCopySource = computed(() => {
+    const id = this.copySourceId();
+    return id ? this.allLicenses().find((l) => l.customerOrganization.id === id) : undefined;
+  });
+
+  protected readonly expiryOverrideIds = signal<ReadonlySet<string>>(new Set());
+  private readonly copyExpiry = toSignal(this.copyForm.controls.expiresAt.valueChanges, {
+    initialValue: this.copyForm.controls.expiresAt.value,
+  });
+  protected readonly isNever = computed(() => !this.copyExpiry());
+
+  // License keys cannot be set to "never", so they are not selectable while no date is chosen.
+  protected readonly selectableOverrideIds = computed<string[]>(() => {
+    const source = this.selectedCopySource();
+    if (!source) {
+      return [];
+    }
+    return [
+      ...source.applicationEntitlements,
+      ...source.artifactEntitlements,
+      ...(this.isNever() ? [] : source.licenseKeys),
+    ]
+      .map((item) => item.id)
+      .filter((id): id is string => id !== undefined);
+  });
+
+  protected readonly effectiveOverrideIds = computed<ReadonlySet<string>>(() => {
+    const selectable = new Set(this.selectableOverrideIds());
+    return new Set([...this.expiryOverrideIds()].filter((id) => selectable.has(id)));
+  });
+
+  protected readonly allOverrideSelected = computed(() => {
+    const selectable = this.selectableOverrideIds();
+    return selectable.length > 0 && selectable.every((id) => this.effectiveOverrideIds().has(id));
   });
 
   protected readonly sourcesForCopy = computed(() => {
     const targetId = this.targetLicense()?.customerOrganization.id;
     return this.allLicenses().filter((l) => l.customerOrganization.id !== targetId && !this.hasNoLicenses(l));
   });
+
+  constructor() {
+    // Prefill the expiry with the latest expiration date among the selected source's licenses and
+    // select every license for the override by default whenever the source changes.
+    effect(() => {
+      const source = this.selectedCopySource();
+      this.copyForm.controls.expiresAt.setValue(this.largestExpiry(source));
+      this.expiryOverrideIds.set(new Set(this.allLicenseIds(source)));
+    });
+  }
+
+  private allLicenseIds(source: License | undefined): string[] {
+    if (!source) {
+      return [];
+    }
+    return [...source.licenseKeys, ...source.applicationEntitlements, ...source.artifactEntitlements]
+      .map((item) => item.id)
+      .filter((id): id is string => id !== undefined);
+  }
+
+  protected isOverrideSelected(id: string | undefined): boolean {
+    return !!id && this.effectiveOverrideIds().has(id);
+  }
+
+  protected toggleOverride(id: string | undefined, checked: boolean): void {
+    if (!id) {
+      return;
+    }
+    this.expiryOverrideIds.update((ids) => {
+      const next = new Set(ids);
+      if (checked) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
+      return next;
+    });
+  }
+
+  protected toggleAllOverrides(checked: boolean): void {
+    this.expiryOverrideIds.set(checked ? new Set(this.selectableOverrideIds()) : new Set());
+  }
+
+  private largestExpiry(source: License | undefined): string {
+    const dates = [
+      ...(source?.licenseKeys ?? []).map((lk) => lk.expiresAt),
+      ...(source?.applicationEntitlements ?? []).map((ae) => ae.expiresAt),
+      ...(source?.artifactEntitlements ?? []).map((ae) => ae.expiresAt),
+    ].filter((value): value is string | Date => !!value);
+    if (dates.length === 0) {
+      return this.inOneYear;
+    }
+    const latest = dates.reduce((max, current) => (dayjs(current).isAfter(max) ? current : max));
+    return dayjs(latest).format('YYYY-MM-DD');
+  }
 
   protected hasNoLicenses(license: License): boolean {
     return (
@@ -128,6 +234,9 @@ export class LicensesOverviewComponent {
     if (!source) return;
 
     const targetId = target.customerOrganization.id;
+    const expiresAt = this.copyForm.controls.expiresAt.value;
+    const entitlementExpiresAt = expiresAt ? new Date(expiresAt) : undefined;
+    const licenseKeyExpiresAt = expiresAt ? dayjs(expiresAt).toISOString() : undefined;
     this.copyLicensesLoading.set(true);
     try {
       const creates = [
@@ -136,6 +245,7 @@ export class LicensesOverviewComponent {
             ...ae,
             id: undefined,
             customerOrganizationId: targetId,
+            ...(this.isOverrideSelected(ae.id) ? {expiresAt: entitlementExpiresAt} : {}),
           })
         ),
         ...source.applicationEntitlements.map((ae) =>
@@ -143,6 +253,7 @@ export class LicensesOverviewComponent {
             ...ae,
             id: undefined,
             customerOrganizationId: targetId,
+            ...(this.isOverrideSelected(ae.id) ? {expiresAt: entitlementExpiresAt} : {}),
           })
         ),
         ...source.licenseKeys.map((lk) =>
@@ -150,6 +261,7 @@ export class LicensesOverviewComponent {
             ...lk,
             id: undefined,
             customerOrganizationId: targetId,
+            ...(this.isOverrideSelected(lk.id) ? {expiresAt: licenseKeyExpiresAt} : {}),
           })
         ),
       ];

@@ -142,6 +142,116 @@
           @if (copyForm.controls.sourceCustomerOrgId.invalid && copyForm.controls.sourceCustomerOrgId.touched) {
             <p class="mt-1 text-sm text-red-600 dark:text-red-500">Please select a customer.</p>
           }
+
+          <div class="mt-4">
+            <label for="copyExpiresAt" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+              Expiration date
+            </label>
+            <app-expires-at-picker inputId="copyExpiresAt" formControlName="expiresAt" />
+          </div>
+
+          @if (selectedCopySource(); as source) {
+            <div class="mt-4">
+              <div class="mb-2 flex items-center justify-between">
+                <p class="text-sm font-medium text-gray-900 dark:text-white">Apply new expiration to</p>
+                <label class="flex items-center gap-2 text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <input
+                    type="checkbox"
+                    [checked]="allOverrideSelected()"
+                    (change)="toggleAllOverrides($any($event.target).checked)"
+                    class="size-4 text-base text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                  All
+                </label>
+              </div>
+              <div
+                class="max-h-48 space-y-3 overflow-y-auto rounded-lg border border-gray-200 p-3 dark:border-gray-600">
+                @if (source.licenseKeys.length) {
+                  <div>
+                    <div
+                      class="mb-1 flex items-center justify-between text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">
+                      <span>License Keys</span>
+                      <span>Expiration</span>
+                    </div>
+                    <ul class="space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                      @for (lk of source.licenseKeys; track lk.id) {
+                        <li class="flex items-center justify-between gap-2">
+                          <label class="flex min-w-0 items-center gap-2" [class.opacity-50]="isNever()">
+                            <input
+                              type="checkbox"
+                              [checked]="isOverrideSelected(lk.id)"
+                              [disabled]="isNever()"
+                              (change)="toggleOverride(lk.id, $any($event.target).checked)"
+                              class="size-4 shrink-0 text-base text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed" />
+                            <span class="truncate">{{ lk.name }}</span>
+                          </label>
+                          <span class="shrink-0 text-xs text-gray-400 dark:text-gray-500">{{
+                            lk.expiresAt ? (lk.expiresAt | date) : 'never'
+                          }}</span>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                }
+                @if (source.applicationEntitlements.length) {
+                  <div>
+                    <div
+                      class="mb-1 flex items-center justify-between text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">
+                      <span>Application Entitlements</span>
+                      <span>Expiration</span>
+                    </div>
+                    <ul class="space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                      @for (ae of source.applicationEntitlements; track ae.id) {
+                        <li class="flex items-center justify-between gap-2">
+                          <label class="flex min-w-0 items-center gap-2">
+                            <input
+                              type="checkbox"
+                              [checked]="isOverrideSelected(ae.id)"
+                              (change)="toggleOverride(ae.id, $any($event.target).checked)"
+                              class="size-4 shrink-0 text-base text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                            <span class="truncate">{{ ae.name }}</span>
+                          </label>
+                          <span class="shrink-0 text-xs text-gray-400 dark:text-gray-500">{{
+                            ae.expiresAt ? (ae.expiresAt | date) : 'never'
+                          }}</span>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                }
+                @if (source.artifactEntitlements.length) {
+                  <div>
+                    <div
+                      class="mb-1 flex items-center justify-between text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">
+                      <span>Artifact Entitlements</span>
+                      <span>Expiration</span>
+                    </div>
+                    <ul class="space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                      @for (ae of source.artifactEntitlements; track ae.id) {
+                        <li class="flex items-center justify-between gap-2">
+                          <label class="flex min-w-0 items-center gap-2">
+                            <input
+                              type="checkbox"
+                              [checked]="isOverrideSelected(ae.id)"
+                              (change)="toggleOverride(ae.id, $any($event.target).checked)"
+                              class="size-4 shrink-0 text-base text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                            <span class="truncate">{{ ae.name }}</span>
+                          </label>
+                          <span class="shrink-0 text-xs text-gray-400 dark:text-gray-500">{{
+                            ae.expiresAt ? (ae.expiresAt | date) : 'never'
+                          }}</span>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                }
+              </div>
+              @if (isNever()) {
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  License keys require an expiry date and can't be set to never.
+                </p>
+              }
+            </div>
+          }
         </form>
       </div>
       <div
