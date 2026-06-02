@@ -30,6 +30,7 @@ import dayjs from 'dayjs';
 import {distinctUntilChanged, first, firstValueFrom, of, Subject, switchMap, takeUntil} from 'rxjs';
 import {RelativeDatePipe} from '../../../util/dates';
 import {ArtifactsHashComponent} from '../../artifacts/components';
+import {ExpiresAtPickerComponent} from '../../components/expires-at-picker/expires-at-picker.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {ArtifactsService, ArtifactWithTags} from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
@@ -42,6 +43,7 @@ import {ArtifactEntitlement, ArtifactEntitlementSelection} from '../../types/art
   imports: [
     AsyncPipe,
     AutotrimDirective,
+    ExpiresAtPickerComponent,
     ReactiveFormsModule,
     CdkOverlayOrigin,
     CdkConnectedOverlay,

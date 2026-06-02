@@ -142,6 +142,56 @@
           @if (copyForm.controls.sourceCustomerOrgId.invalid && copyForm.controls.sourceCustomerOrgId.touched) {
             <p class="mt-1 text-sm text-red-600 dark:text-red-500">Please select a customer.</p>
           }
+
+          @if (selectedCopySource(); as source) {
+            <div class="mt-4">
+              <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Licenses to be copied</p>
+              <div
+                class="max-h-48 space-y-3 overflow-y-auto rounded-lg border border-gray-200 p-3 dark:border-gray-600">
+                @if (source.licenseKeys.length) {
+                  <div>
+                    <p class="mb-1 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">License Keys</p>
+                    <ul class="space-y-0.5 text-sm text-gray-700 dark:text-gray-300">
+                      @for (lk of source.licenseKeys; track lk.id) {
+                        <li>{{ lk.name }}</li>
+                      }
+                    </ul>
+                  </div>
+                }
+                @if (source.applicationEntitlements.length) {
+                  <div>
+                    <p class="mb-1 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">
+                      Application Entitlements
+                    </p>
+                    <ul class="space-y-0.5 text-sm text-gray-700 dark:text-gray-300">
+                      @for (ae of source.applicationEntitlements; track ae.id) {
+                        <li>{{ ae.name }}</li>
+                      }
+                    </ul>
+                  </div>
+                }
+                @if (source.artifactEntitlements.length) {
+                  <div>
+                    <p class="mb-1 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">
+                      Artifact Entitlements
+                    </p>
+                    <ul class="space-y-0.5 text-sm text-gray-700 dark:text-gray-300">
+                      @for (ae of source.artifactEntitlements; track ae.id) {
+                        <li>{{ ae.name }}</li>
+                      }
+                    </ul>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <div class="mt-4">
+            <label for="copyExpiresAt" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+              Expiration date for all copied licenses
+            </label>
+            <app-expires-at-picker id="copyExpiresAt" formControlName="expiresAt" [allowNoExpiration]="false" />
+          </div>
         </form>
       </div>
       <div

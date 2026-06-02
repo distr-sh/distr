@@ -14,6 +14,7 @@ import {faCircleInfo} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {jsonObjectValidator} from '../../../util/validation';
 import {EditorComponent} from '../../components/editor.component';
+import {ExpiresAtPickerComponent} from '../../components/expires-at-picker/expires-at-picker.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {LicenseTemplatesService} from '../../services/license-templates.service';
@@ -22,7 +23,7 @@ import {LicenseKey} from '../../types/license-key';
 @Component({
   selector: 'app-edit-license-key',
   templateUrl: './edit-license-key.component.html',
-  imports: [AutotrimDirective, EditorComponent, ReactiveFormsModule, FaIconComponent],
+  imports: [AutotrimDirective, EditorComponent, ExpiresAtPickerComponent, ReactiveFormsModule, FaIconComponent],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
