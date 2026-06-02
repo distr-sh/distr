@@ -159,7 +159,7 @@
                     type="checkbox"
                     [checked]="allOverrideSelected()"
                     (change)="toggleAllOverrides($any($event.target).checked)"
-                    class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-primary-500 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+                    class="size-4 text-base text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
                   All
                 </label>
               </div>
@@ -181,7 +181,7 @@
                               [checked]="isOverrideSelected(lk.id)"
                               [disabled]="isNever()"
                               (change)="toggleOverride(lk.id, $any($event.target).checked)"
-                              class="w-4 h-4 shrink-0 text-primary-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-primary-500 focus:ring-2 dark:bg-gray-600 dark:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed" />
+                              class="size-4 shrink-0 text-base text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed" />
                             <span class="truncate">{{ lk.name }}</span>
                           </label>
                           <span class="shrink-0 text-xs text-gray-400 dark:text-gray-500">{{
@@ -207,7 +207,7 @@
                               type="checkbox"
                               [checked]="isOverrideSelected(ae.id)"
                               (change)="toggleOverride(ae.id, $any($event.target).checked)"
-                              class="w-4 h-4 shrink-0 text-primary-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-primary-500 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+                              class="size-4 shrink-0 text-base text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
                             <span class="truncate">{{ ae.name }}</span>
                           </label>
                           <span class="shrink-0 text-xs text-gray-400 dark:text-gray-500">{{
@@ -233,7 +233,7 @@
                               type="checkbox"
                               [checked]="isOverrideSelected(ae.id)"
                               (change)="toggleOverride(ae.id, $any($event.target).checked)"
-                              class="w-4 h-4 shrink-0 text-primary-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-primary-500 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+                              class="size-4 shrink-0 text-base text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
                             <span class="truncate">{{ ae.name }}</span>
                           </label>
                           <span class="shrink-0 text-xs text-gray-400 dark:text-gray-500">{{
