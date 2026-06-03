@@ -17,10 +17,13 @@ import {
   ControlValueAccessor,
   FormArray,
   FormBuilder,
+  NG_VALIDATORS,
   NG_VALUE_ACCESSOR,
   NgControl,
   ReactiveFormsModule,
   TouchedChangeEvent,
+  ValidationErrors,
+  Validator,
   Validators,
 } from '@angular/forms';
 import {Application, ApplicationVersion} from '@distr-sh/distr-sdk';
@@ -63,9 +66,16 @@ import {ArtifactEntitlement} from '../../types/artifact-entitlement';
       useExisting: forwardRef(() => EditApplicationEntitlementComponent),
       multi: true,
     },
+    {
+      provide: NG_VALIDATORS,
+      useExisting: forwardRef(() => EditApplicationEntitlementComponent),
+      multi: true,
+    },
   ],
 })
-export class EditApplicationEntitlementComponent implements OnInit, OnDestroy, AfterViewInit, ControlValueAccessor {
+export class EditApplicationEntitlementComponent
+  implements OnInit, OnDestroy, AfterViewInit, ControlValueAccessor, Validator
+{
   private readonly injector = inject(Injector);
   private readonly destroyed$ = new Subject<void>();
   private readonly applicationsService = inject(ApplicationsService);
@@ -182,6 +192,7 @@ export class EditApplicationEntitlementComponent implements OnInit, OnDestroy, A
       } else {
         this.onChange(undefined);
       }
+      this.onValidatorChange();
     });
     this.editForm.controls.subjectId.valueChanges
       .pipe(
@@ -302,6 +313,15 @@ export class EditApplicationEntitlementComponent implements OnInit, OnDestroy, A
 
   private onChange: (l: ApplicationEntitlement | ArtifactEntitlement | undefined) => void = () => {};
   private onTouched: () => void = () => {};
+  private onValidatorChange: () => void = () => {};
+
+  validate(): ValidationErrors | null {
+    return this.editForm.disabled || this.editForm.valid ? null : {invalidEntitlement: true};
+  }
+
+  registerOnValidatorChange(fn: () => void): void {
+    this.onValidatorChange = fn;
+  }
 
   registerOnChange(fn: (l: ApplicationEntitlement | ArtifactEntitlement | undefined) => void): void {
     this.onChange = fn;

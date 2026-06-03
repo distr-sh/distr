@@ -12,9 +12,7 @@
         </h1>
         <form class="space-y-4 md:space-y-6" [formGroup]="form" (ngSubmit)="submit()">
           <div>
-            <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-              >Full name (optional)</label
-            >
+            <label for="name" class="distr-label mb-2">Full name (optional)</label>
             <input
               type="text"
               formControlName="name"
@@ -25,7 +23,7 @@
               placeholder="Michael Scott" />
           </div>
           <div>
-            <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Your email</label>
+            <label for="email" class="distr-label mb-2">Your email</label>
             <input
               type="email"
               formControlName="email"
@@ -40,7 +38,7 @@
             }
           </div>
           <div>
-            <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Password</label>
+            <label for="password" class="distr-label mb-2">Password</label>
             <input
               type="password"
               formControlName="password"
@@ -54,9 +52,7 @@
             }
           </div>
           <div>
-            <label for="confirm-password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-              >Confirm password</label
-            >
+            <label for="confirm-password" class="distr-label mb-2">Confirm password</label>
             <input
               type="password"
               formControlName="passwordConfirm"

@@ -41,9 +41,8 @@
         </div>
       </div>
       <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-          <thead
-            class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
+        <table class="distr-table">
+          <thead class="distr-table-head">
             <tr>
               <th scope="col" class="p-4">Name</th>
               <th scope="col" class="p-4">Enabled</th>
@@ -56,7 +55,7 @@
           </thead>
           <tbody>
             @for (config of filteredConfigs(); track config.id) {
-              <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <tr class="distr-table-row">
                 <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">{{ config.name }}</td>
                 <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap align-middle">
                   <label class="inline-flex items-center cursor-pointer my-1">
@@ -102,7 +101,7 @@
                     <button
                       type="button"
                       (click)="showDrawer(config)"
-                      class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                      class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
                       <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
                       Edit
                     </button>
@@ -110,7 +109,7 @@
                       type="button"
                       aria-label="Delete"
                       (click)="deleteConfig(config)"
-                      class="py-2 px-3 text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900">
+                      class="py-2 px-3 distr-btn-danger">
                       <fa-icon [icon]="faTrash" class="h-4 w-4" />
                     </button>
                   }
@@ -163,14 +162,14 @@
     <form [formGroup]="editConfigForm" (ngSubmit)="saveConfig()">
       <div class="mb-4 space-y-4">
         <div>
-          <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name</label>
+          <label for="name" class="distr-label mb-2">Name</label>
           <input
             formControlName="name"
             autotrim
             type="text"
             name="title"
             id="name"
-            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+            class="distr-input"
             value=""
             placeholder="Name" />
         </div>
@@ -303,7 +302,7 @@
                   <label class="flex items-center w-full">
                     <input
                       type="checkbox"
-                      class="size-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                      class="distr-checkbox"
                       [formControl]="editConfigForm.controls.deploymentTargetIds.controls[deploymentTarget.id!]" />
                     <span
                       class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 overflow-hidden text-ellipsis"
@@ -328,7 +327,7 @@
               <label class="flex items-center w-full">
                 <input
                   type="checkbox"
-                  class="size-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                  class="distr-checkbox"
                   [formControl]="editConfigForm.controls.userAccountIds.controls[user.id!]" />
                 <span class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 overflow-hidden text-ellipsis">{{
                   user.name || user.email
@@ -345,7 +344,7 @@
         <button
           type="submit"
           [disabled]="editFormLoading() || editConfigForm.invalid"
-          class="text-white w-full inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-50">
+          class="text-white w-full inline-flex items-center justify-center distr-btn-primary disabled:opacity-50">
           <fa-icon [icon]="faPen" class="mr-2" />
           Save
         </button>

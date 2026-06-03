@@ -153,7 +153,7 @@
                               [checked]="allVisibleResourcesSelected()"
                               [indeterminate]="someVisibleResourcesSelected()"
                               (change)="toggleResources(visibleResources())"
-                              class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-xs focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500 indeterminate:bg-[length:65%_65%]" />
+                              class="distr-checkbox indeterminate:bg-[length:65%_65%]" />
                             <label
                               for="resource-check-all"
                               class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
@@ -174,7 +174,7 @@
                               type="checkbox"
                               [checked]="selectedResources().includes(r)"
                               (change)="toggleResources([r])"
-                              class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-xs focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+                              class="distr-checkbox" />
                             <label
                               [for]="'resource-' + r"
                               class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
@@ -204,7 +204,7 @@
                                   type="checkbox"
                                   [checked]="selectedResources().includes(r)"
                                   (change)="toggleResources([r])"
-                                  class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-xs focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+                                  class="distr-checkbox" />
                                 <label
                                   [for]="'resource-archived-' + r"
                                   class="w-full py-3 ms-2 text-sm font-medium text-gray-400 dark:text-gray-500">
@@ -260,7 +260,7 @@
                 type="button"
                 title="Live"
                 (click)="resetDateFilters()"
-                class="p-2 leading-none flex items-center text-xs font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                class="p-2 leading-none flex items-center text-xs font-medium text-center distr-btn-secondary">
                 <fa-icon [icon]="faPlay" class="2xl:mr-2 text-gray-500 dark:text-gray-400" />
                 <span class="hidden 2xl:inline">Live</span>
               </button>
@@ -269,7 +269,7 @@
               type="button"
               title="Reset"
               (click)="resetAllFilters()"
-              class="p-2 leading-none flex items-center text-xs font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+              class="p-2 leading-none flex items-center text-xs font-medium text-center distr-btn-secondary">
               <fa-icon [icon]="faFilterCircleXmark" class="2xl:mr-2 text-gray-500 dark:text-gray-400" />
               <span class="hidden 2xl:inline">Reset</span>
             </button>
@@ -277,7 +277,7 @@
               type="button"
               [title]="newestFirst() ? 'Newest first' : 'Oldest first'"
               (click)="orderDirection.set(newestFirst() ? 'ASC' : 'DESC')"
-              class="p-2 leading-none flex items-center text-xs font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+              class="p-2 leading-none flex items-center text-xs font-medium text-center distr-btn-secondary">
               <fa-icon
                 [icon]="newestFirst() ? faArrowDownWideShort : faArrowUpShortWide"
                 class="2xl:mr-2 text-gray-500 dark:text-gray-400" />
@@ -287,7 +287,7 @@
               type="button"
               title="Export all"
               (click)="export()"
-              class="p-2 leading-none flex items-center text-xs font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+              class="p-2 leading-none flex items-center text-xs font-medium text-center distr-btn-secondary disabled:opacity-50 disabled:cursor-not-allowed">
               <fa-icon [icon]="faDownload" class="2xl:mr-2 text-gray-500 dark:text-gray-400" />
               <span class="hidden 2xl:inline">Export all</span>
             </button>

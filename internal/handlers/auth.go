@@ -48,13 +48,13 @@ func AuthRouter(r chiopenapi.Router) {
 	r.Post("/register", authRegisterHandler)
 	r.Post("/reset", authResetPasswordHandler)
 	r.With(
-		middleware.SentryUser,
 		auth.Authentication.Middleware,
+		middleware.SetSentryUserFromUserAuth,
 		middleware.RequireEmailVerified,
 		middleware.RequireOrgAndRole,
 	).Post("/switch-context", authSwitchContextHandler())
 	r.Group(func(r chiopenapi.Router) {
-		r.Use(auth.Authentication.Middleware, middleware.SentryUser)
+		r.Use(auth.Authentication.Middleware, middleware.SetSentryUserFromUserAuth)
 
 		// Accepting an invitation and confirming a password reset must not be behind RequireEmailVerified:
 		// the user's DB record may not be verified yet at this point. Both handlers set the password, verify

@@ -2,20 +2,14 @@
   <div class="space-y-4 mt-4">
     <div class="grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
       <div class="w-full">
-        <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name *</label>
-        <input
-          formControlName="name"
-          autotrim
-          type="text"
-          id="name"
-          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-          placeholder="License name" />
+        <label for="name" class="distr-label mb-2">Name *</label>
+        <input formControlName="name" autotrim type="text" id="name" class="distr-input" placeholder="License name" />
         @if (editForm.controls.name.invalid && editForm.controls.name.touched) {
           <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
         }
       </div>
       <div class="w-full">
-        <label for="expiresAt" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Expires At</label>
+        <label for="expiresAt" class="distr-label mb-2">Expires At</label>
         <app-expires-at-picker formControlName="expiresAt" inputId="expiresAt" />
       </div>
     </div>
@@ -24,10 +18,10 @@
       <div class="flex">
         <div class="flex-grow grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
           <div class="w-full">
-            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"> Artifact * </label>
+            <label class="distr-label mb-2"> Artifact * </label>
           </div>
           <div class="w-full">
-            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"> Artifact Tags * </label>
+            <label class="distr-label mb-2"> Artifact Tags * </label>
           </div>
         </div>
       </div>
@@ -90,7 +84,7 @@
                             id="all-versions-checkbox"
                             formControlName="includeAllTags"
                             type="checkbox"
-                            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-xs focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+                            class="distr-checkbox" />
                           <label
                             for="all-versions-checkbox"
                             class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
@@ -113,7 +107,7 @@
                                 type="checkbox"
                                 [formControlName]="tagsIdx"
                                 [value]="item"
-                                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-xs focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+                                class="distr-checkbox" />
                               <label
                                 for="version-checkbox-{{ tagsIdx }}"
                                 class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
@@ -193,7 +187,7 @@
 
   @if (editForm.getRawValue().customerOrganizationId) {
     <div>
-      <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Customer</label>
+      <label class="distr-label mb-2">Customer</label>
       @let customers = customers$ | async;
       <p class="text-sm text-gray-900 dark:text-white">
         {{ customers?.find((c) => c.id === editForm.getRawValue().customerOrganizationId)?.name ?? '—' }}

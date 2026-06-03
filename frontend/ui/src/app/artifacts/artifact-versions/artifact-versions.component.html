@@ -289,9 +289,7 @@
                   <div class="space-y-4">
                     <div>
                       <div>
-                        <label
-                          for="artifact-upstream-url"
-                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                        <label for="artifact-upstream-url" class="distr-label mb-2">
                           Upstream URL
                           <span class="text-red-500">*</span>
                         </label>
@@ -302,7 +300,7 @@
                           type="text"
                           id="artifact-upstream-url"
                           placeholder="e.g. registry-1.docker.io/library/nginx"
-                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                          class="distr-input" />
                         <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                           Tags are automatically synced from the upstream OCI repository.
                         </p>
@@ -357,11 +355,7 @@
                 <form [formGroup]="formGroup" (ngSubmit)="saveUpstreamAuth(artifact)">
                   <div class="space-y-4">
                     <div>
-                      <label
-                        for="artifact-upstream-auth-type"
-                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                        >Upstream Authentication</label
-                      >
+                      <label for="artifact-upstream-auth-type" class="distr-label mb-2">Upstream Authentication</label>
                       <select
                         formControlName="upstreamAuthType"
                         id="artifact-upstream-auth-type"
@@ -374,9 +368,7 @@
 
                     @if (formGroup.controls.upstreamAuthType.value !== 'none') {
                       <div>
-                        <label
-                          for="artifact-upstream-username"
-                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                        <label for="artifact-upstream-username" class="distr-label mb-2">
                           @switch (formGroup.controls.upstreamAuthType.value) {
                             @case ('basic') {
                               Username
@@ -393,7 +385,7 @@
                           autocomplete="off"
                           type="text"
                           id="artifact-upstream-username"
-                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                          class="distr-input" />
                         @if (
                           formGroup.controls.upstreamUsername.invalid && formGroup.controls.upstreamUsername.touched
                         ) {
@@ -401,9 +393,7 @@
                         }
                       </div>
                       <div>
-                        <label
-                          for="artifact-upstream-password"
-                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                        <label for="artifact-upstream-password" class="distr-label mb-2">
                           @switch (formGroup.controls.upstreamAuthType.value) {
                             @case ('basic') {
                               Password
@@ -419,7 +409,7 @@
                           autocomplete="new-password"
                           type="password"
                           id="artifact-upstream-password"
-                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                          class="distr-input" />
                         @if (
                           formGroup.controls.upstreamPassword.invalid && formGroup.controls.upstreamPassword.touched
                         ) {

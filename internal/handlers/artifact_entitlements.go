@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
@@ -84,6 +85,11 @@ func createArtifactEntitlement(w http.ResponseWriter, r *http.Request) {
 	}
 	entitlement.OrganizationID = *auth.CurrentOrgID()
 
+	if strings.TrimSpace(entitlement.Name) == "" {
+		http.Error(w, "name is required", http.StatusBadRequest)
+		return
+	}
+
 	if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
 		if entitlement.CustomerOrganizationID == nil {
 			http.Error(w, "customer organization is required", http.StatusBadRequest)
@@ -132,6 +138,11 @@ func updateArtifactEntitlement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	entitlement.OrganizationID = *auth.CurrentOrgID()
+
+	if strings.TrimSpace(entitlement.Name) == "" {
+		http.Error(w, "name is required", http.StatusBadRequest)
+		return
+	}
 
 	if err = validateEntitlementSelections(entitlement); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
