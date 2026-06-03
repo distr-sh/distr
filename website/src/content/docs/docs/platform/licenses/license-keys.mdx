@@ -146,39 +146,50 @@ To edit: open the license key from the customer's detail view and click the **ed
 
 To delete: open the license key and click the **delete** (trash) icon, then confirm.
 
-## How customers use the token in their application
+## Referencing license keys in deployments
 
-Once a customer has a license token, they need to make it available to their application at runtime. The exact mechanism depends on their deployment setup.
+When you deploy via Distr agents (Docker or Kubernetes), license keys assigned to the customer are automatically available as template variables in deployment environment files and Helm values. You don't need to copy or distribute tokens manually — Distr generates and injects them at deploy time.
 
-### Docker (via Distr deployment agents)
+### Finding the reference syntax
 
-For applications deployed via Distr agents using Docker Compose, the vendor can inject the token as an environment variable directly in the deployment configuration. In the application's Compose file, reference it as an environment variable:
+Each license key has a **Reference** column in the license keys list that shows the exact template variable to use:
+
+```
+{{ .LicenseKeys.my-key-name }}
+```
+
+Copy this reference directly from the UI and paste it into your deployment configuration.
+
+### Docker (env file)
+
+Reference a license key in the deployment's environment file using Go template syntax:
+
+```dotenv
+LICENSE_TOKEN={{ .LicenseKeys.my-license-key }}
+```
+
+In the application's Compose file, read the environment variable as usual:
 
 ```yaml
 services:
   app:
     image: your-app:latest
     environment:
-      LICENSE_KEY: '${LICENSE_KEY}'
+      - LICENSE_TOKEN
 ```
 
-The customer sets `LICENSE_KEY` as a [secret](/docs/agents/secrets/) in their Distr deployment target, or the vendor injects it via the deployment configuration. The application reads `process.env.LICENSE_KEY` (or the equivalent in your language) at startup and verifies it.
+The token is resolved at deploy time. The application reads `process.env.LICENSE_TOKEN` (or the equivalent in your language) at startup and verifies it.
 
-### Helm (via Distr deployment agents)
+### Helm (values YAML)
 
-For Helm-based deployments, pass the token as a Helm value or store it in a Kubernetes secret and reference it in your chart:
+Reference a license key in the deployment's Helm values:
 
 ```yaml
-# values.yaml
-licenseKey: ''
-
-# deployment.yaml
-env:
-  - name: LICENSE_KEY
-    value: {{.Values.licenseKey}}
+app:
+  licenseToken: {{ .LicenseKeys.my-license-key }}
 ```
 
-The customer sets the value in their Distr deployment configuration, or stores it as a Kubernetes secret and mounts it into the pod.
+The resolved token is passed into the chart at deploy time.
 
 ### Registry-only deployments
 

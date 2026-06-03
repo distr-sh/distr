@@ -24,11 +24,21 @@ As an end customer, you can view the license keys your vendor has issued to your
 
 Navigate to **Licenses** in the sidebar to see all license keys assigned to your organization. The list shows each key's name, description, and expiration date. Expired keys are marked with an **(expired)** label.
 
+## Referencing a license key in deployments
+
+If you deploy via Distr agents, the **Reference** column shows the template variable to use in your deployment's environment file or Helm values:
+
+```
+{{ .LicenseKeys.my-key-name }}
+```
+
+Distr resolves this to the signed JWT token automatically at deploy time — no manual copy-paste required. See [Referencing license keys in deployments](/docs/platform/license-keys/#referencing-license-keys-in-deployments) for full details.
+
 ## Getting the token
 
 Click **View License** on any key to view its signed JWT token. Copy the token and use it in your application environment. The token works offline — no callback to Distr is required at verification time.
 
-For details on how to inject the token into your application (via environment variables, Helm values, or secrets), see [How customers use the token](/docs/platform/license-keys/#how-customers-use-the-token-in-their-application).
+For details on how to inject the token into your application (via environment variables, Helm values, or secrets), see [Referencing license keys in deployments](/docs/platform/license-keys/#referencing-license-keys-in-deployments).
 
 <Aside type="note">
   Customers can view and copy license tokens but cannot create, edit, or delete
