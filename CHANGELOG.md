@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.21.4](https://github.com/distr-sh/distr/compare/2.21.3...2.21.4) (2026-06-03)
+
+
+### Bug Fixes
+
+* validate entitlement name requirement ([#2541](https://github.com/distr-sh/distr/issues/2541)) ([1bd08c6](https://github.com/distr-sh/distr/commit/1bd08c66902df03528a983aac4bd3f177f6fb8aa))
+
+
+### Other
+
+* **backend:** change angent request body max size to 25MiB ([#2530](https://github.com/distr-sh/distr/issues/2530)) ([90885e1](https://github.com/distr-sh/distr/commit/90885e1a83e9da104cbbef39e7c721a3cd466722))
+
 ## [2.21.3](https://github.com/distr-sh/distr/compare/2.21.2...2.21.3) (2026-05-26)
 
 
