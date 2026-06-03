@@ -26,11 +26,20 @@ const (
 	OrgIdKey             = "org"
 	CustomerOrgIDKey     = "c_org"
 	PartnerOrgIDKey      = "p_org"
-	PasswordResetKey     = "password_reset"
+	TokenScopeKey        = "scope"
 	SuperAdminKey        = "is_super_admin"
 
 	audienceUserValue  = "user"
 	audienceAgentValue = "agent"
+)
+
+// TokenScope identifies the purpose a special, unscoped user token was minted for, so that
+// endpoints which change account credentials only accept the token issued for them.
+type TokenScope string
+
+const (
+	TokenScopePasswordReset TokenScope = "password_reset"
+	TokenScopeInvite        TokenScope = "invite"
 )
 
 // JWTAuth is for generating/validating JWTs.
@@ -48,7 +57,7 @@ func GenerateDefaultToken(user types.UserAccount, org types.OrganizationWithUser
 
 func GenerateResetToken(user types.UserAccount) (jwt.Token, string, error) {
 	return generateUserToken(user, nil, env.ResetTokenValidDuration(), map[string]any{
-		PasswordResetKey:     true,
+		TokenScopeKey:        TokenScopePasswordReset,
 		UserEmailVerifiedKey: true,
 	})
 }
@@ -63,9 +72,9 @@ func GenerateVerificationTokenValidFor(user types.UserAccount) (jwt.Token, strin
 // via the API response) the email_verified claim is left to the default, so the invitee still has to verify their
 // email after accepting the invitation when verification is required, but is treated as verified when it is not.
 func GenerateInviteToken(user types.UserAccount, emailVerified bool) (jwt.Token, string, error) {
-	var extraClaims map[string]any
+	extraClaims := map[string]any{TokenScopeKey: TokenScopeInvite}
 	if emailVerified {
-		extraClaims = map[string]any{UserEmailVerifiedKey: true}
+		extraClaims[UserEmailVerifiedKey] = true
 	}
 	return generateUserToken(user, nil, env.InviteTokenValidDuration(), extraClaims)
 }

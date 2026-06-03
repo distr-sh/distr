@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/internal/auth"
+	"github.com/distr-sh/distr/internal/authjwt"
 	"github.com/distr-sh/distr/internal/authkey"
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
@@ -236,6 +237,20 @@ var RequireOrgAndRole = auth.Authentication.ValidatorMiddleware(
 		return nil
 	},
 )
+
+// RequireTokenScope rejects the request unless the authenticated credential was minted with the
+// given token scope. It restricts the password-setting endpoints to their dedicated special tokens:
+// regular login tokens, PATs and agent tokens carry the empty scope and are therefore rejected.
+func RequireTokenScope(scope authjwt.TokenScope) func(http.Handler) http.Handler {
+	return auth.Authentication.ValidatorMiddleware(
+		func(value authinfo.AuthInfoWithUserAndOrganization) error {
+			if value.TokenScope() != scope {
+				return authn.ErrBadAuthentication
+			}
+			return nil
+		},
+	)
+}
 
 // RequireEmailVerified rejects requests with 403 when USER_EMAIL_VERIFICATION_REQUIRED is
 // enabled and the authenticated user's DB record has no EmailVerifiedAt. It must run after

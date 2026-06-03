@@ -11,6 +11,7 @@
  *   - Invite via email link    (email_verified=true token → accept logs in directly, email already verified)
  *   - Invite via response URL  (email_verified=false token → accept sends a verification mail, then /verify)
  *   - Password reset           (reset token → /auth/reset/confirm sets password, verifies email, logs in)
+ *   - Token scope enforcement  (reset/confirm and invite/accept reject unscoped and mismatched tokens)
  *   - Resend invitation        (a second invitation mail is delivered)
  *
  * The script adapts to whether USER_EMAIL_VERIFICATION_REQUIRED is enabled (detected at runtime).
@@ -55,6 +56,24 @@ async function request(method, path, {body, token} = {}) {
     return null;
   }
   return res.json();
+}
+
+// Asserts that a request is refused. When `status` is given the response status must match exactly,
+// which distinguishes an auth/scope rejection (401) from a request-body validation error (400).
+async function expectRejected(method, path, {body, token, status} = {}) {
+  const headers = {'Content-Type': 'application/json'};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  assert(!res.ok, `${method} ${path} must be rejected, but got ${res.status}`);
+  if (status !== undefined) {
+    assert(res.status === status, `${method} ${path} expected status ${status}, got ${res.status}`);
+  }
 }
 
 function assert(condition, message) {
@@ -268,7 +287,7 @@ await step('password reset: confirm sets new password, verifies email, logs in',
   await request('POST', '/api/v1/auth/reset', {body: {email: addr}});
   const mail = await waitForEmail({to: addr, subject: RESET_SUBJECT});
   const claims = decodeJwt(extractJwt(mail.Text));
-  assert(claims.password_reset === true, 'reset token must carry password_reset=true');
+  assert(claims.scope === 'password_reset', 'reset token must carry scope=password_reset');
   assert(claims.email_verified === true, 'reset token must carry email_verified=true');
 
   const confirm = await request('POST', '/api/v1/auth/reset/confirm', {
@@ -288,6 +307,64 @@ await step('password reset: confirm sets new password, verifies email, logs in',
     oldLoginFailed = true;
   }
   assert(oldLoginFailed, 'login with the old password must fail');
+});
+
+await step('token scope: reset/invite endpoints reject unscoped and mismatched tokens', async () => {
+  // An unscoped, org-scoped login token (a regular session) must not be usable to change a password.
+  const loginAddr = email('scope-login');
+  const loginToken = await registerVerifiedUser(loginAddr);
+  assert(decodeJwt(loginToken).scope === undefined, 'a regular login token must not carry a scope claim');
+
+  // A password-reset-scoped token.
+  const resetAddr = email('scope-reset');
+  await registerVerifiedUser(resetAddr);
+  await request('POST', '/api/v1/auth/reset', {body: {email: resetAddr}});
+  const resetMail = await waitForEmail({to: resetAddr, subject: RESET_SUBJECT});
+  const resetToken = extractJwt(resetMail.Text);
+  assert(decodeJwt(resetToken).scope === 'password_reset', 'reset token must carry scope=password_reset');
+
+  // An invite-scoped token.
+  const inviteAddr = email('scope-invite');
+  const created = await invite(adminToken, inviteAddr, 'Scope Invitee');
+  const inviteToken = extractJwt(created.inviteUrl);
+  assert(decodeJwt(inviteToken).scope === 'invite', 'invite token must carry scope=invite');
+
+  // The unscoped login token is refused (401) by both password-setting endpoints.
+  await expectRejected('POST', '/api/v1/auth/reset/confirm', {
+    token: loginToken,
+    body: {password: NEW_PASSWORD},
+    status: 401,
+  });
+  await expectRejected('POST', '/api/v1/auth/invite/accept', {
+    token: loginToken,
+    body: {name: 'Scope Login', password: NEW_PASSWORD},
+    status: 401,
+  });
+
+  // A reset token cannot accept an invite, and an invite token cannot confirm a reset.
+  await expectRejected('POST', '/api/v1/auth/invite/accept', {
+    token: resetToken,
+    body: {name: 'Scope Reset', password: NEW_PASSWORD},
+    status: 401,
+  });
+  await expectRejected('POST', '/api/v1/auth/reset/confirm', {
+    token: inviteToken,
+    body: {password: NEW_PASSWORD},
+    status: 401,
+  });
+
+  // The correctly scoped tokens are still accepted by their own endpoints.
+  const accepted = await request('POST', '/api/v1/auth/invite/accept', {
+    token: inviteToken,
+    body: {name: 'Scope Invitee', password: PASSWORD},
+  });
+  assert(accepted?.token, 'invite token must be accepted by /auth/invite/accept');
+
+  const confirmed = await request('POST', '/api/v1/auth/reset/confirm', {
+    token: resetToken,
+    body: {password: NEW_PASSWORD},
+  });
+  assert(confirmed?.token, 'reset token must be accepted by /auth/reset/confirm');
 });
 
 await step('resend invitation: a second invitation mail is delivered', async () => {

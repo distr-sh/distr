@@ -60,9 +60,12 @@ func AuthRouter(r chiopenapi.Router) {
 		// Accepting an invitation and confirming a password reset must not be behind RequireEmailVerified:
 		// the user's DB record may not be verified yet at this point. Both handlers set the password, verify
 		// the email when the token carries a verified claim, and return a regular login token so the frontend
-		// can log the user in directly.
-		r.Post("/invite/accept", authAcceptInviteHandler)
-		r.Post("/reset/confirm", authResetConfirmHandler)
+		// can log the user in directly. RequireTokenScope pins each endpoint to its dedicated special token,
+		// so an org-scoped login token or a PAT cannot be used to change an account's password.
+		r.With(middleware.RequireTokenScope(authjwt.TokenScopeInvite)).
+			Post("/invite/accept", authAcceptInviteHandler)
+		r.With(middleware.RequireTokenScope(authjwt.TokenScopePasswordReset)).
+			Post("/reset/confirm", authResetConfirmHandler)
 
 		r.Route("/verify", func(r chiopenapi.Router) {
 			requestVerificationMailRateLimitPerUser := httprate.Limit(

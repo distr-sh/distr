@@ -1,6 +1,7 @@
 package authinfo
 
 import (
+	"github.com/distr-sh/distr/internal/authjwt"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 )
@@ -12,6 +13,7 @@ type SimpleAuthInfo struct {
 	customerOrganizationID *uuid.UUID
 	partnerOrganizationID  *uuid.UUID
 	emailVerified          bool
+	tokenScope             authjwt.TokenScope
 	userRole               *types.UserRole
 	isSuperAdmin           bool
 	rawToken               any
@@ -28,6 +30,9 @@ func (i *SimpleAuthInfo) CurrentPartnerOrgID() *uuid.UUID { return i.partnerOrga
 
 // CurrentUserEmailVerified implements AuthInfo.
 func (i *SimpleAuthInfo) CurrentUserEmailVerified() bool { return i.emailVerified }
+
+// TokenScope implements AuthInfo.
+func (i *SimpleAuthInfo) TokenScope() authjwt.TokenScope { return i.tokenScope }
 
 // CurrentUserID implements AuthInfo.
 func (i *SimpleAuthInfo) CurrentUserID() uuid.UUID { return i.userID }
