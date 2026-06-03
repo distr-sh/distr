@@ -33,6 +33,6 @@ type DeleteSecretRequest struct {
 }
 
 type UpdateSecretResponse struct {
-	Secret              SecretWithoutValue   `json:"secret"`
+	SecretWithoutValue
 	AffectedDeployments []AffectedDeployment `json:"affectedDeployments"`
 }

@@ -5,8 +5,7 @@ import {AffectedDeployment} from '../types/affected-deployment';
 import {LicenseKey, LicenseKeyRevision} from '../types/license-key';
 import {DefaultReactiveList, ReactiveList} from './cache';
 
-export interface UpdateLicenseKeyResponse {
-  licenseKey: LicenseKey;
+export interface UpdateLicenseKeyResponse extends LicenseKey {
   affectedDeployments: AffectedDeployment[];
 }
 
@@ -43,7 +42,7 @@ export class LicenseKeysService {
   update(request: LicenseKey, dryRun = false): Observable<UpdateLicenseKeyResponse> {
     return this.http
       .put<UpdateLicenseKeyResponse>(`${this.licenseKeysUrl}/${request.id}`, {...request, dryRun})
-      .pipe(tap((response) => this.cache.save(response.licenseKey)));
+      .pipe(tap((response) => this.cache.save(response)));
   }
 
   delete(request: LicenseKey): Observable<void> {

@@ -161,8 +161,7 @@ export class LicenseKeysComponent {
       }
     }
 
-    const result = await firstValueFrom(this.licenseKeysService.update(license));
-    return result.licenseKey;
+    return firstValueFrom(this.licenseKeysService.update(license));
   }
 
   duplicateLicense(templateRef: TemplateRef<unknown>, license: LicenseKey) {

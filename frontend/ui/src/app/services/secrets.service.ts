@@ -6,8 +6,7 @@ import {Secret} from '../types/secret';
 
 const baseUrl = '/api/v1/secrets';
 
-export interface UpdateSecretResponse {
-  secret: Secret;
+export interface UpdateSecretResponse extends Secret {
   affectedDeployments: AffectedDeployment[];
 }
 

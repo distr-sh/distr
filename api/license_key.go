@@ -35,6 +35,6 @@ type LicenseKeyRevision struct {
 }
 
 type UpdateLicenseKeyResponse struct {
-	LicenseKey          types.LicenseKey     `json:"licenseKey"`
+	types.LicenseKey
 	AffectedDeployments []AffectedDeployment `json:"affectedDeployments"`
 }

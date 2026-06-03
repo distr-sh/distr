@@ -190,7 +190,7 @@ func updateSecretHandler() http.HandlerFunc {
 
 		if body.DryRun {
 			RespondJSON(w, api.UpdateSecretResponse{
-				Secret:              *mapping.SecretToAPI(*existing),
+				SecretWithoutValue:  *mapping.SecretToAPI(*existing),
 				AffectedDeployments: affected,
 			})
 			return
@@ -218,7 +218,7 @@ func updateSecretHandler() http.HandlerFunc {
 		}
 
 		RespondJSON(w, api.UpdateSecretResponse{
-			Secret:              *mapping.SecretToAPI(*secret),
+			SecretWithoutValue:  *mapping.SecretToAPI(*secret),
 			AffectedDeployments: affected,
 		})
 	}
