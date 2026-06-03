@@ -4,7 +4,6 @@ import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AuthService} from '../services/auth.service';
-import {SettingsService} from '../services/settings.service';
 
 @Component({
   selector: 'app-invite',
@@ -13,7 +12,6 @@ import {SettingsService} from '../services/settings.service';
 })
 export class InviteComponent {
   private readonly auth = inject(AuthService);
-  private readonly settings = inject(SettingsService);
   private readonly claims = this.auth.getClaims();
   public readonly email = this.claims?.email;
 
@@ -33,28 +31,13 @@ export class InviteComponent {
     this.errorMessage = undefined;
     if (this.form.valid) {
       this.submitted = true;
-      let updateOk = false;
       try {
         const value = this.form.value;
-        await firstValueFrom(this.settings.updateUserSettings({name: value.name, password: value.password}));
-        updateOk = true;
+        await firstValueFrom(this.auth.acceptInvite(value.name, value.password!));
+        location.assign('/');
       } catch (e) {
         this.errorMessage = getFormDisplayedError(e);
-      } finally {
         this.submitted = false;
-      }
-
-      if (updateOk) {
-        try {
-          if (this.claims?.email_verified) {
-            await firstValueFrom(this.auth.confirmEmailVerification());
-          }
-        } catch (e) {
-          // ignore errors of confirmation (because password has already been set)
-        } finally {
-          this.auth.logout();
-          location.assign(`/login?email=${encodeURIComponent(this.email ?? '')}&inviteSuccess=true`);
-        }
       }
     }
   }

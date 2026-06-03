@@ -1,6 +1,6 @@
 import {Component, inject, OnInit} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {ActivatedRoute, Router, RouterLink} from '@angular/router';
+import {ActivatedRoute, RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {OidcButtonsComponent} from '../components/oidc-buttons.component';
@@ -14,7 +14,6 @@ import {AuthService} from '../services/auth.service';
 })
 export class RegisterComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
 
   errorMessage?: string;
@@ -44,10 +43,9 @@ export class RegisterComponent implements OnInit {
       const value = this.form.value;
       try {
         await firstValueFrom(this.auth.register(value.email!, value.name, value.password!));
-        await this.router.navigate(['/login'], {queryParams: {email: value.email!}});
+        location.assign('/');
       } catch (e) {
         this.errorMessage = getFormDisplayedError(e);
-      } finally {
         this.loading = false;
       }
     }

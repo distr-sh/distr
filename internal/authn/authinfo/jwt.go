@@ -54,6 +54,11 @@ func FromUserJWT(token jwt.Token) (*SimpleAuthInfo, error) {
 	_ = token.Get(authjwt.UserEmailVerifiedKey, &result.emailVerified)
 	_ = token.Get(authjwt.SuperAdminKey, &result.isSuperAdmin)
 
+	var scope string
+	if err := token.Get(authjwt.TokenScopeKey, &scope); err == nil {
+		result.tokenScope = authjwt.TokenScope(scope)
+	}
+
 	return &result, nil
 }
 

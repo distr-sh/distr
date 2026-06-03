@@ -20,6 +20,12 @@
           Since you don't have an account yet, please finish your setup by clicking
           <a href="{{ .InviteURL | UnsafeURL }}">here</a>.
         </p>
+
+        <p>Alternatively, you can copy and paste the following URL into your browser:</p>
+
+        <div style="overflow-wrap: break-word; word-break: break-all">
+          <code>{{ .InviteURL }}</code>
+        </div>
         {{ else }}
         <p>Log in with your existing account at <a href="{{ .Host }}/">{{ .Host }}</a>.</p>
         {{ end }}

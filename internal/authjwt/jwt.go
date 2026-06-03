@@ -26,11 +26,20 @@ const (
 	OrgIdKey             = "org"
 	CustomerOrgIDKey     = "c_org"
 	PartnerOrgIDKey      = "p_org"
-	PasswordResetKey     = "password_reset"
+	TokenScopeKey        = "scope"
 	SuperAdminKey        = "is_super_admin"
 
 	audienceUserValue  = "user"
 	audienceAgentValue = "agent"
+)
+
+// TokenScope identifies the purpose a special, unscoped user token was minted for, so that
+// endpoints which change account credentials only accept the token issued for them.
+type TokenScope string
+
+const (
+	TokenScopePasswordReset TokenScope = "password_reset"
+	TokenScopeInvite        TokenScope = "invite"
 )
 
 // JWTAuth is for generating/validating JWTs.
@@ -48,13 +57,26 @@ func GenerateDefaultToken(user types.UserAccount, org types.OrganizationWithUser
 
 func GenerateResetToken(user types.UserAccount) (jwt.Token, string, error) {
 	return generateUserToken(user, nil, env.ResetTokenValidDuration(), map[string]any{
-		PasswordResetKey:     true,
+		TokenScopeKey:        TokenScopePasswordReset,
 		UserEmailVerifiedKey: true,
 	})
 }
 
 func GenerateVerificationTokenValidFor(user types.UserAccount) (jwt.Token, string, error) {
 	return generateUserToken(user, nil, env.InviteTokenValidDuration(), map[string]any{UserEmailVerifiedKey: true})
+}
+
+// GenerateInviteToken generates a token for accepting an invitation. When emailVerified is true (the invite link
+// was delivered via email to the invitee's address) the resulting token carries a verified email claim, so the
+// invitee does not need to verify their email separately. When false (e.g. the invite URL was handed out manually
+// via the API response) the email_verified claim is left to the default, so the invitee still has to verify their
+// email after accepting the invitation when verification is required, but is treated as verified when it is not.
+func GenerateInviteToken(user types.UserAccount, emailVerified bool) (jwt.Token, string, error) {
+	extraClaims := map[string]any{TokenScopeKey: TokenScopeInvite}
+	if emailVerified {
+		extraClaims[UserEmailVerifiedKey] = true
+	}
+	return generateUserToken(user, nil, env.InviteTokenValidDuration(), extraClaims)
 }
 
 func generateUserToken(

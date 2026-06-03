@@ -57,7 +57,9 @@ const jwtAuthGuard: CanActivateFn = (_: ActivatedRouteSnapshot, state: RouterSta
         return router.createUrlTree(['/reset']);
       }
     } else if (!claims.email_verified) {
-      if (state.url === '/verify') {
+      // An invitee whose email is not yet verified (invite link shared manually instead of via email) still
+      // needs to reach the invite component to set their password before they can verify their email.
+      if (state.url === '/verify' || state.url.startsWith('/join')) {
         return true;
       } else {
         return router.createUrlTree(['/verify']);
