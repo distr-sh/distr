@@ -68,7 +68,7 @@ func AgentRouter(r chiopenapi.Router) {
 
 		r.With(
 			auth.AgentAuthentication.Middleware,
-			middleware.AgentSentryUser,
+			middleware.SetSentryUserFromAgentAuth,
 			agentAuthDeploymentTargetCtxMiddleware,
 			rateLimitPerDeploymentTargetID,
 		).Group(func(r chiopenapi.Router) {

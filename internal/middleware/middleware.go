@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/internal/auth"
+	"github.com/distr-sh/distr/internal/authjwt"
 	"github.com/distr-sh/distr/internal/authkey"
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
@@ -175,30 +176,34 @@ func RequireVendorOrPartner(handler http.Handler) http.Handler {
 
 var Sentry = sentryhttp.New(sentryhttp.Options{Repanic: true}).Handle
 
-func SentryUser(h http.Handler) http.Handler {
+// SetSentryUserFromUserAuth sets the authenticated user's identity on the Sentry scope. It
+// must run after auth.Authentication.Middleware so the user is available in the context; if
+// there is no authenticated user it panics, since that is a wiring bug.
+func SetSentryUserFromUserAuth(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		if hub := sentry.GetHubFromContext(ctx); hub != nil {
-			if auth, err := auth.Authentication.Get(ctx); err == nil {
-				hub.Scope().SetUser(sentry.User{
-					ID:    auth.CurrentUserID().String(),
-					Email: auth.CurrentUserEmail(),
-				})
-			}
+			auth := auth.Authentication.Require(ctx)
+			hub.Scope().SetUser(sentry.User{
+				ID:    auth.CurrentUserID().String(),
+				Email: auth.CurrentUserEmail(),
+			})
 		}
 		h.ServeHTTP(w, r)
 	})
 }
 
-func AgentSentryUser(h http.Handler) http.Handler {
+// SetSentryUserFromAgentAuth sets the authenticated agent's identity on the Sentry scope. It
+// must run after auth.AgentAuthentication.Middleware so the agent is available in the context;
+// if there is no authenticated agent it panics, since that is a wiring bug.
+func SetSentryUserFromAgentAuth(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		if hub := sentry.GetHubFromContext(ctx); hub != nil {
-			if auth, err := auth.AgentAuthentication.Get(ctx); err == nil {
-				hub.Scope().SetUser(sentry.User{
-					ID: auth.CurrentDeploymentTargetID().String(),
-				})
-			}
+			auth := auth.AgentAuthentication.Require(ctx)
+			hub.Scope().SetUser(sentry.User{
+				ID: auth.CurrentDeploymentTargetID().String(),
+			})
 		}
 		h.ServeHTTP(w, r)
 	})
@@ -232,6 +237,20 @@ var RequireOrgAndRole = auth.Authentication.ValidatorMiddleware(
 		return nil
 	},
 )
+
+// RequireTokenScope rejects the request unless the authenticated credential was minted with the
+// given token scope. It restricts the password-setting endpoints to their dedicated special tokens:
+// regular login tokens, PATs and agent tokens carry the empty scope and are therefore rejected.
+func RequireTokenScope(scope authjwt.TokenScope) func(http.Handler) http.Handler {
+	return auth.Authentication.ValidatorMiddleware(
+		func(value authinfo.AuthInfoWithUserAndOrganization) error {
+			if value.TokenScope() != scope {
+				return authn.ErrBadAuthentication
+			}
+			return nil
+		},
+	)
+}
 
 // RequireEmailVerified rejects requests with 403 when USER_EMAIL_VERIFICATION_REQUIRED is
 // enabled and the authenticated user's DB record has no EmailVerifiedAt. It must run after

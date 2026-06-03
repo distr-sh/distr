@@ -32,9 +32,8 @@
         </div>
       </div>
       <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-          <thead
-            class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
+        <table class="distr-table">
+          <thead class="distr-table-head">
             <tr>
               <th scope="col" class="p-4">Name</th>
               <th scope="col" class="p-4 text-end"># of Users</th>
@@ -44,7 +43,7 @@
           </thead>
           <tbody>
             @for (partner of partnerOrganizations(); track partner.id) {
-              <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <tr class="distr-table-row">
                 <td
                   class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-32 lg:max-w-64 xl:max-w-128 overflow-hidden text-ellipsis">
                   <fa-icon [icon]="faBuilding" class="mr-2 text-gray-400" />
@@ -63,7 +62,7 @@
                   class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">
                   <a
                     [routerLink]="[partner.id, 'users']"
-                    class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                    class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
                     Manage users
                   </a>
                   <button
@@ -115,7 +114,7 @@
           <form class="mx-auto" (ngSubmit)="submitCreateForm()" [formGroup]="createForm">
             <div class="flex flex-col space-y-5">
               <div class="space-y-2">
-                <label for="partner-name" class="block text-sm font-medium text-gray-900 dark:text-white">Name</label>
+                <label for="partner-name" class="distr-label">Name</label>
                 <input
                   type="text"
                   id="partner-name"

@@ -2,7 +2,7 @@ import {GlobalPositionStrategy} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {Component, inject, input, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
-import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
+import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCopy, faEye, faMagnifyingGlass, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, shareReplay, switchMap} from 'rxjs';
@@ -82,7 +82,6 @@ export class LicenseKeysComponent {
   editForm = new FormGroup({
     license: new FormControl<LicenseKey | undefined>(undefined, {
       nonNullable: true,
-      validators: Validators.required,
     }),
   });
   editFormLoading = false;

@@ -68,6 +68,15 @@ func createApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 	}
 	entitlement.OrganizationID = *auth.CurrentOrgID()
 
+	if strings.TrimSpace(entitlement.Name) == "" {
+		http.Error(w, "name is required", http.StatusBadRequest)
+		return
+	}
+	if entitlement.ApplicationID == uuid.Nil {
+		http.Error(w, "application is required", http.StatusBadRequest)
+		return
+	}
+
 	if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
 		if entitlement.CustomerOrganizationID == nil {
 			http.Error(w, "customer organization is required", http.StatusBadRequest)
@@ -125,6 +134,11 @@ func updateApplicationEntitlement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	entitlement.OrganizationID = *auth.CurrentOrgID()
+
+	if strings.TrimSpace(entitlement.Name) == "" {
+		http.Error(w, "name is required", http.StatusBadRequest)
+		return
+	}
 
 	existing := internalctx.GetApplicationEntitlement(ctx)
 	if entitlement.ID == uuid.Nil {

@@ -34,9 +34,8 @@
     </div>
   }
   <div class="overflow-x-auto">
-    <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-      <thead
-        class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
+    <table class="distr-table">
+      <thead class="distr-table-head">
         <tr>
           <th scope="col" class="p-4">Application</th>
           <th scope="col" class="p-4">Type</th>
@@ -49,7 +48,7 @@
       </thead>
       <tbody>
         @for (application of applications$ | async; track application.id) {
-          <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+          <tr class="distr-table-row">
             <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
               <a [routerLink]="['/', 'applications', application.id]">
                 <div class="flex items-center mr-3">
@@ -94,7 +93,7 @@
                 <a
                   *appRequireVendor
                   [routerLink]="['/', 'applications', application.id]"
-                  class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                  class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
                   <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
                   Details
                   <ng-template [appRequiredRole]="['admin', 'read_write']">/ Edit</ng-template>
@@ -132,9 +131,7 @@
             <div>
               <div class="space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
                 <div class="w-full">
-                  <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >Application Name *</label
-                  >
+                  <label for="name" class="distr-label mb-2">Application Name *</label>
                   <input
                     [formControl]="createApplicationForm.controls.name"
                     autotrim
@@ -142,7 +139,7 @@
                     type="text"
                     name="name"
                     id="name"
-                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                    class="distr-input" />
                   @if (createApplicationForm.controls.name.invalid && createApplicationForm.controls.name.touched) {
                     <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
                   }
@@ -150,9 +147,7 @@
               </div>
 
               <div class="mt-4">
-                <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >Application Type *</label
-                >
+                <label class="distr-label mb-2">Application Type *</label>
                 <div class="mb-2 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                   <div
                     class="rounded-lg border border-gray-200 bg-gray-50 p-4 ps-4 dark:border-gray-700 dark:bg-gray-800">
@@ -165,7 +160,7 @@
                           type="radio"
                           name="appType"
                           value="docker"
-                          class="h-4 w-4 border-gray-300 bg-gray-100 text-primary-700 focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-primary-600" />
+                          class="distr-radio" />
                       </div>
 
                       <div class="ms-4 text-sm">
@@ -192,7 +187,7 @@
                           type="radio"
                           name="appType"
                           value="kubernetes"
-                          class="h-4 w-4 border-gray-300 bg-gray-100 text-primary-700 focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-primary-600"
+                          class="distr-radio"
                           checked />
                       </div>
 
@@ -221,7 +216,7 @@
                 <button
                   type="submit"
                   [disabled]="createApplicationFormLoading"
-                  class="flex-1 sm:flex-none items-center justify-center text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                  class="flex-1 sm:flex-none inline-flex items-center justify-center text-white distr-btn-primary">
                   Create Application
                 </button>
               </div>

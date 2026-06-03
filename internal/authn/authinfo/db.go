@@ -49,6 +49,7 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 						organizationID:         a.CurrentOrgID(),
 						customerOrganizationID: nil,
 						emailVerified:          a.CurrentUserEmailVerified(),
+						tokenScope:             a.TokenScope(),
 						userRole:               nil, // Super admins don't have a role
 						isSuperAdmin:           true,
 						rawToken:               a.Token(),
@@ -82,6 +83,7 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 							customerOrganizationID: u.CustomerOrganizationID,
 							partnerOrganizationID:  u.PartnerOrganizationID,
 							emailVerified:          a.CurrentUserEmailVerified(),
+							tokenScope:             a.TokenScope(),
 							userRole:               a.CurrentUserRole(),
 							isSuperAdmin:           false,
 							rawToken:               a.Token(),

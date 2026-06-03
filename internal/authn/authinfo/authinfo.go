@@ -1,6 +1,7 @@
 package authinfo
 
 import (
+	"github.com/distr-sh/distr/internal/authjwt"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 )
@@ -13,6 +14,9 @@ type AuthInfo interface {
 	CurrentCustomerOrgID() *uuid.UUID
 	CurrentPartnerOrgID() *uuid.UUID
 	CurrentUserEmailVerified() bool
+	// TokenScope returns the purpose a special, unscoped token was minted for, or the empty
+	// scope for regular login tokens, PATs and agent tokens.
+	TokenScope() authjwt.TokenScope
 	IsSuperAdmin() bool
 	Token() any
 }

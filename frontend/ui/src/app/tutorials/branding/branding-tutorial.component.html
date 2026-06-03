@@ -63,7 +63,7 @@
                         id="titleDone"
                         type="checkbox"
                         [formControl]="brandingFormGroup.controls.titleDone"
-                        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+                        class="distr-checkbox" />
                     </span>
                     <label for="titleDone" class="text-lg font-medium leading-tight">Set Customer Portal Title</label>
                     <p class="mt-1 text-sm">The title will be shown in the header next to the logo.</p>
@@ -74,7 +74,7 @@
                         type="text"
                         name="title"
                         id="title"
-                        class="bg-gray-50 border border-gray-300 text-sm text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                        class="distr-input" />
                       @if (brandingFormGroup.controls.title.touched && brandingFormGroup.controls.title.errors) {
                         <div class="mt-2 text-sm text-red-500">Please enter this field.</div>
                       }
@@ -86,7 +86,7 @@
                         id="descriptionDone"
                         type="checkbox"
                         [formControl]="brandingFormGroup.controls.descriptionDone"
-                        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+                        class="distr-checkbox" />
                     </span>
                     <label for="descriptionDone" class="text-lg font-medium leading-tight"
                       >Write a short Welcome Page</label
@@ -101,7 +101,7 @@
                         rows="8"
                         name="description"
                         id="description"
-                        class="bg-gray-50 border border-gray-300 text-sm text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                        class="distr-input">
                       </textarea>
                       @if (
                         brandingFormGroup.controls.description.touched && brandingFormGroup.controls.description.errors
@@ -155,7 +155,7 @@
                         id="customerOrgDone"
                         type="checkbox"
                         [formControl]="inviteFormGroup.controls.customerCreateDone"
-                        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+                        class="distr-checkbox" />
                     </span>
                     <label for="inviteDone" class="text-lg font-medium leading-tight">Create a customer</label>
                     <p class="mt-1 text-sm">
@@ -193,7 +193,7 @@
                         id="inviteDone"
                         type="checkbox"
                         [formControl]="inviteFormGroup.controls.inviteDone"
-                        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+                        class="distr-checkbox" />
                     </span>
                     <label for="inviteDone" class="text-lg font-medium leading-tight"
                       >Send the customer invite mail (to yourself)</label
@@ -237,7 +237,7 @@
                         id="customerConfirmed"
                         type="checkbox"
                         [formControl]="inviteFormGroup.controls.customerConfirmed"
-                        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+                        class="distr-checkbox" />
                     </span>
                     <label for="customerConfirmed" class="text-lg font-medium leading-tight"
                       >Open the Customer Portal in a different browser</label

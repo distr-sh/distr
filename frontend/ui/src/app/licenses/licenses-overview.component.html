@@ -127,9 +127,7 @@
           >. You can edit the licenses afterwards.
         </p>
         <form [formGroup]="copyForm">
-          <label for="sourceCustomer" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-            >Source customer</label
-          >
+          <label for="sourceCustomer" class="distr-label mb-2">Source customer</label>
           <select
             formControlName="sourceCustomerOrgId"
             id="sourceCustomer"
@@ -144,9 +142,7 @@
           }
 
           <div class="mt-4">
-            <label for="copyExpiresAt" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-              Expiration date
-            </label>
+            <label for="copyExpiresAt" class="distr-label mb-2"> Expiration date </label>
             <app-expires-at-picker inputId="copyExpiresAt" formControlName="expiresAt" />
           </div>
 
@@ -266,7 +262,7 @@
           type="button"
           (click)="copyLicenses()"
           [disabled]="copyLicensesLoading()"
-          class="text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60">
+          class="text-white distr-btn-primary disabled:opacity-60">
           Copy licenses
         </button>
       </div>
