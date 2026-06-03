@@ -316,7 +316,7 @@ export class EditApplicationEntitlementComponent
   private onValidatorChange: () => void = () => {};
 
   validate(): ValidationErrors | null {
-    return this.editForm.valid ? null : {invalidEntitlement: true};
+    return this.editForm.disabled || this.editForm.valid ? null : {invalidEntitlement: true};
   }
 
   registerOnValidatorChange(fn: () => void): void {

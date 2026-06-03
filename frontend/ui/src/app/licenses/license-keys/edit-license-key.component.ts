@@ -146,7 +146,7 @@ export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAcces
   private onValidatorChange: () => void = () => {};
 
   validate(): ValidationErrors | null {
-    return this.editForm.valid ? null : {invalidLicenseKey: true};
+    return this.editForm.disabled || this.editForm.valid ? null : {invalidLicenseKey: true};
   }
 
   registerOnValidatorChange(fn: () => void): void {
