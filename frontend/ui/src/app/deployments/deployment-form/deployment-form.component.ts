@@ -182,7 +182,7 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
             .list(applicationId)
             .pipe(
               map((entitlements) =>
-                this.auth.isVendor()
+                this.auth.isVendor() || this.auth.isPartner()
                   ? entitlements.filter((l) => l.customerOrganizationId === customerOrgId)
                   : entitlements
               )
