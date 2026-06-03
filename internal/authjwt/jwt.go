@@ -57,6 +57,15 @@ func GenerateVerificationTokenValidFor(user types.UserAccount) (jwt.Token, strin
 	return generateUserToken(user, nil, env.InviteTokenValidDuration(), map[string]any{UserEmailVerifiedKey: true})
 }
 
+// GenerateInviteToken generates a token for accepting an invitation. When emailVerified is true (the invite link
+// was delivered via email to the invitee's address) the resulting token carries a verified email claim, so the
+// invitee does not need to verify their email separately. When false (e.g. the invite URL was handed out manually
+// via the API response) the invitee still has to verify their email after accepting the invitation.
+func GenerateInviteToken(user types.UserAccount, emailVerified bool) (jwt.Token, string, error) {
+	return generateUserToken(
+		user, nil, env.InviteTokenValidDuration(), map[string]any{UserEmailVerifiedKey: emailVerified})
+}
+
 func generateUserToken(
 	user types.UserAccount,
 	org *types.OrganizationWithUserRole,

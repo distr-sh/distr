@@ -1,9 +1,8 @@
 import {Component, inject} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {firstValueFrom, lastValueFrom} from 'rxjs';
+import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {AuthService} from '../services/auth.service';
-import {SettingsService} from '../services/settings.service';
 
 @Component({
   selector: 'app-password-reset',
@@ -11,7 +10,6 @@ import {SettingsService} from '../services/settings.service';
   templateUrl: './password-reset.component.html',
 })
 export class PasswordResetComponent {
-  private readonly settings = inject(SettingsService);
   private readonly auth = inject(AuthService);
 
   public readonly form = new FormGroup(
@@ -31,12 +29,10 @@ export class PasswordResetComponent {
     if (this.form.valid) {
       this.loading = true;
       try {
-        await lastValueFrom(this.settings.updateUserSettings({password: this.form.value.password!}));
-        await lastValueFrom(this.auth.logout());
-        location.assign(`/login?email=${encodeURIComponent(this.email ?? '')}&reason=password-reset`);
+        await firstValueFrom(this.auth.confirmPasswordReset(this.form.value.password!));
+        location.assign('/');
       } catch (e) {
         this.errorMessage = getFormDisplayedError(e);
-      } finally {
         this.loading = false;
       }
     }

@@ -104,8 +104,22 @@ export class AuthService {
     this.actionToken = null;
   }
 
+  public acceptInvite(name: string | undefined, password: string): Observable<void> {
+    return this.httpClient.post<TokenResponse>(`${authBaseUrl}/invite/accept`, {name, password}).pipe(
+      tap((r) => this.loginWithToken(r.token)),
+      map(() => undefined)
+    );
+  }
+
   public resetPassword(email: string): Observable<void> {
     return this.httpClient.post<void>(`${authBaseUrl}/reset`, {email});
+  }
+
+  public confirmPasswordReset(password: string): Observable<void> {
+    return this.httpClient.post<TokenResponse>(`${authBaseUrl}/reset/confirm`, {password}).pipe(
+      tap((r) => this.loginWithToken(r.token)),
+      map(() => undefined)
+    );
   }
 
   public readonly loginConfig$ = this.httpClient.get<LoginConfig>(`${authBaseUrl}/login/config`).pipe(
@@ -118,7 +132,10 @@ export class AuthService {
     if (name) {
       body = {...body, name};
     }
-    return this.httpClient.post<void>(`${authBaseUrl}/register`, body);
+    return this.httpClient.post<TokenResponse>(`${authBaseUrl}/register`, body).pipe(
+      tap((r) => this.loginWithToken(r.token)),
+      map(() => undefined)
+    );
   }
 
   public getClaims(): JWTClaims | undefined {
@@ -215,7 +232,9 @@ function authenticatedRoute(req: HttpRequest<unknown>): boolean {
     !req.url.startsWith(authBaseUrl) ||
     req.url === `${authBaseUrl}/switch-context` ||
     req.url === `${authBaseUrl}/status` ||
-    req.url.startsWith(`${authBaseUrl}/verify/`)
+    req.url.startsWith(`${authBaseUrl}/verify/`) ||
+    req.url.startsWith(`${authBaseUrl}/invite/`) ||
+    req.url === `${authBaseUrl}/reset/confirm`
   );
 }
 

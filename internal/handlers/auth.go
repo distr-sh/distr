@@ -56,6 +56,13 @@ func AuthRouter(r chiopenapi.Router) {
 	r.Group(func(r chiopenapi.Router) {
 		r.Use(auth.Authentication.Middleware, middleware.SentryUser)
 
+		// Accepting an invitation and confirming a password reset must not be behind RequireEmailVerified:
+		// the user's DB record may not be verified yet at this point. Both handlers set the password, verify
+		// the email when the token carries a verified claim, and return a regular login token so the frontend
+		// can log the user in directly.
+		r.Post("/invite/accept", authAcceptInviteHandler)
+		r.Post("/reset/confirm", authResetConfirmHandler)
+
 		r.Route("/verify", func(r chiopenapi.Router) {
 			requestVerificationMailRateLimitPerUser := httprate.Limit(
 				3,
@@ -102,21 +109,13 @@ func authVerifyRequestHandler(w http.ResponseWriter, r *http.Request) {
 func authVerifyConfirmHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
-	auth := auth.Authentication.Require(ctx)
-	userAccount := auth.CurrentUser()
-	if !auth.CurrentUserEmailVerified() {
+	authn := auth.Authentication.Require(ctx)
+	if !authn.CurrentUserEmailVerified() {
 		http.Error(w, "token does not have verified claim", http.StatusForbidden)
 		return
 	}
 
-	if userAccount.Email != auth.CurrentUserEmail() {
-		userAccount.Email = auth.CurrentUserEmail()
-	} else if userAccount.EmailVerifiedAt != nil {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-
-	if err := db.UpdateUserAccountEmailVerified(ctx, userAccount); err != nil {
+	if err := auth.VerifyUserEmail(ctx, authn.CurrentUser(), authn.CurrentUserEmail()); err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
 			http.Error(w, "could not update user", http.StatusBadRequest)
 		} else {
@@ -127,6 +126,83 @@ func authVerifyConfirmHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		w.WriteHeader(http.StatusNoContent)
 	}
+}
+
+func authAcceptInviteHandler(w http.ResponseWriter, r *http.Request) {
+	body, err := JsonBody[api.AuthAcceptInviteRequest](w, r)
+	if err != nil {
+		return
+	}
+	if err := body.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	setPasswordAndLogin(w, r, body.Password, body.Name)
+}
+
+func authResetConfirmHandler(w http.ResponseWriter, r *http.Request) {
+	body, err := JsonBody[api.AuthResetPasswordConfirmRequest](w, r)
+	if err != nil {
+		return
+	}
+	if err := body.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	setPasswordAndLogin(w, r, body.Password, nil)
+}
+
+// setPasswordAndLogin sets (and persists) the given password and optional name for the authenticated user,
+// verifies their email when the credential carries a verified email claim, and responds with a fresh login
+// token so the frontend can log the user in directly. It is shared by the invite-accept and reset-confirm flows.
+func setPasswordAndLogin(w http.ResponseWriter, r *http.Request, password string, name *string) {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+	authn := auth.Authentication.Require(ctx)
+	user := authn.CurrentUser()
+
+	var token string
+	err := db.RunTx(ctx, func(ctx context.Context) error {
+		if err := auth.SetUserPassword(ctx, user, password, name); err != nil {
+			return err
+		}
+		if authn.CurrentUserEmailVerified() {
+			if err := auth.VerifyUserEmail(ctx, user, authn.CurrentUserEmail()); err != nil {
+				return err
+			}
+		}
+		if err := db.UpdateUserAccountLastLoggedIn(ctx, user.ID); err != nil {
+			return err
+		}
+		var err error
+		token, err = auth.GenerateLoginToken(ctx, *user)
+		return err
+	})
+	if err != nil {
+		if errors.Is(err, apierrors.ErrNotFound) {
+			http.Error(w, "could not update user", http.StatusBadRequest)
+		} else {
+			log.Error("failed to set password", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// When the email could not be verified from the token (e.g. an invitation link shared manually instead of
+	// delivered via email) and verification is required, send the verification mail so the user receives it
+	// without having to request it manually after being redirected to the verification page.
+	if user.EmailVerifiedAt == nil && env.UserEmailVerificationRequired() {
+		if org, err := auth.PrimaryOrganization(ctx, *user); err != nil {
+			log.Warn("could not resolve organization for verification mail", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+		} else if err := mailsending.SendUserVerificationMail(ctx, *user, org.Organization); err != nil {
+			log.Warn("could not send verification mail", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+		}
+	}
+
+	RespondJSON(w, api.AuthLoginResponse{Token: token})
 }
 
 func authSwitchContextHandler() func(writer http.ResponseWriter, request *http.Request) {
@@ -370,6 +446,7 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 			Password: request.Password,
 		}
 		var org *types.Organization
+		var token string
 
 		if err := db.RunTx(ctx, func(ctx context.Context) error {
 			if err := security.HashPassword(&userAccount); err != nil {
@@ -384,6 +461,10 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusInternalServerError)
 				}
 				return err
+			} else if token, err = auth.GenerateLoginToken(ctx, userAccount); err != nil {
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return err
 			}
 			return nil
 		}); err != nil {
@@ -391,12 +472,17 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := mailsending.SendUserVerificationMail(ctx, userAccount, *org); err != nil {
-			log.Warn("could not send verification mail", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
+		// When email verification is required the user is redirected to the verification page after logging in,
+		// so they need the verification mail. When it is disabled they are logged in directly and the mail would
+		// be pointless.
+		if env.UserEmailVerificationRequired() {
+			if err := mailsending.SendUserVerificationMail(ctx, userAccount, *org); err != nil {
+				log.Warn("could not send verification mail", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+			}
 		}
 
-		w.WriteHeader(http.StatusNoContent)
+		RespondJSON(w, api.AuthLoginResponse{Token: token})
 	}
 }
 
