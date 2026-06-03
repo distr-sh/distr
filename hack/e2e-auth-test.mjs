@@ -302,6 +302,26 @@ await step('resend invitation: a second invitation mail is delivered', async () 
   assert(secondMail.ID !== firstMail.ID, 'resend must deliver a new invitation mail');
 });
 
+await step('password reset for an orphaned user (no org) resurrects them with a personal org', async () => {
+  // Create the user via invitation into the admin org, then remove them from it → the account persists with
+  // zero organizations. A reset must still succeed (mirroring regular login, which creates a personal org).
+  const addr = email('orphan');
+  const created = await invite(adminToken, addr, 'Orphan User');
+  await request('DELETE', `/api/v1/user-accounts/${created.user.id}`, {token: adminToken});
+
+  await request('POST', '/api/v1/auth/reset', {body: {email: addr}});
+  const mail = await waitForEmail({to: addr, subject: RESET_SUBJECT});
+  const confirm = await request('POST', '/api/v1/auth/reset/confirm', {
+    token: extractJwt(mail.Text),
+    body: {password: PASSWORD},
+  });
+  assert(confirm?.token, 'reset confirm must return a login token even when the user had no organization');
+  assert(decodeJwt(confirm.token).org, 'login token must be scoped to a (newly created) organization');
+
+  const login = await request('POST', '/api/v1/auth/login', {body: {email: addr, password: PASSWORD}});
+  assert(login?.token, 'orphaned user can log in after reset');
+});
+
 const failed = results.filter((r) => !r.ok);
 console.log(`\n${results.length - failed.length}/${results.length} steps passed.`);
 if (failed.length > 0) {
