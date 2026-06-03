@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/internal/apierrors"
+	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authjwt"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
@@ -119,22 +120,9 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		log = log.With(zap.Any("userId", user.ID))
 
-		var org types.OrganizationWithUserRole
-		orgs, err := db.GetOrganizationsForUser(ctx, user.ID)
+		org, err := auth.EnsurePrimaryOrganization(ctx, *user)
 		if err != nil {
 			return err
-		} else if len(orgs) < 1 {
-			// TODO deduplicate (regular login)
-			org.Name = user.Email
-			org.UserRole = types.UserRoleAdmin
-			if err := db.CreateOrganization(ctx, &org.Organization); err != nil {
-				return err
-			} else if err := db.CreateUserAccountOrganizationAssignment(
-				ctx, user.ID, org.ID, org.UserRole, org.CustomerOrganizationID, nil); err != nil {
-				return err
-			}
-		} else {
-			org = orgs[0]
 		}
 
 		if user.EmailVerifiedAt == nil && emailVerified {

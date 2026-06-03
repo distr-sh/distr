@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/authjwt"
@@ -58,10 +59,37 @@ func PrimaryOrganization(ctx context.Context, user types.UserAccount) (types.Org
 	return org, nil
 }
 
+// EnsurePrimaryOrganization returns the organization a login should default to, creating a personal organization
+// for the user when they are not part of any organization yet. This mirrors the behavior of a regular login, so
+// that a user who was removed from all of their organizations can still complete an invite or password reset.
+// A super admin without an organization is an unexpected state and results in an error.
+func EnsurePrimaryOrganization(ctx context.Context, user types.UserAccount) (types.OrganizationWithUserRole, error) {
+	if org, err := PrimaryOrganization(ctx, user); err == nil {
+		return org, nil
+	} else if !errors.Is(err, apierrors.ErrNotFound) {
+		return types.OrganizationWithUserRole{}, err
+	}
+
+	if user.IsSuperAdmin {
+		return types.OrganizationWithUserRole{}, errors.New("super admin has no organizations, this should never happen")
+	}
+
+	org := types.OrganizationWithUserRole{UserRole: types.UserRoleAdmin}
+	org.Name = user.Email
+	if err := db.CreateOrganization(ctx, &org.Organization); err != nil {
+		return types.OrganizationWithUserRole{}, err
+	}
+	if err := db.CreateUserAccountOrganizationAssignment(
+		ctx, user.ID, org.ID, org.UserRole, org.CustomerOrganizationID, nil); err != nil {
+		return types.OrganizationWithUserRole{}, err
+	}
+	return org, nil
+}
+
 // GenerateLoginToken generates a default login token scoped to the user's primary organization, the same kind
-// of token that is issued on a regular login.
+// of token that is issued on a regular login. A personal organization is created when the user has none.
 func GenerateLoginToken(ctx context.Context, user types.UserAccount) (string, error) {
-	org, err := PrimaryOrganization(ctx, user)
+	org, err := EnsurePrimaryOrganization(ctx, user)
 	if err != nil {
 		return "", err
 	}
