@@ -46,6 +46,8 @@ hub:
       value: pkg.distr.local
     - name: REGISTRY_S3_BUCKET
       value: distr
+    - name: REGISTRY_S3_CREATE_BUCKET=true
+      value: 'true'
     - name: REGISTRY_S3_REGION
       value: local
     - name: REGISTRY_S3_ENDPOINT
