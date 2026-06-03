@@ -49,12 +49,12 @@ func AuthRouter(r chiopenapi.Router) {
 	r.Post("/reset", authResetPasswordHandler)
 	r.With(
 		auth.Authentication.Middleware,
-		middleware.SentryUser,
+		middleware.SetSentryUserFromUserAuth,
 		middleware.RequireEmailVerified,
 		middleware.RequireOrgAndRole,
 	).Post("/switch-context", authSwitchContextHandler())
 	r.Group(func(r chiopenapi.Router) {
-		r.Use(auth.Authentication.Middleware, middleware.SentryUser)
+		r.Use(auth.Authentication.Middleware, middleware.SetSentryUserFromUserAuth)
 
 		r.Route("/verify", func(r chiopenapi.Router) {
 			requestVerificationMailRateLimitPerUser := httprate.Limit(

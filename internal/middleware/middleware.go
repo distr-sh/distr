@@ -175,7 +175,10 @@ func RequireVendorOrPartner(handler http.Handler) http.Handler {
 
 var Sentry = sentryhttp.New(sentryhttp.Options{Repanic: true}).Handle
 
-func SentryUser(h http.Handler) http.Handler {
+// SetSentryUserFromUserAuth sets the authenticated user's identity on the Sentry scope. It
+// must run after auth.Authentication.Middleware so the user is available in the context; if
+// there is no authenticated user it panics, since that is a wiring bug.
+func SetSentryUserFromUserAuth(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		if hub := sentry.GetHubFromContext(ctx); hub != nil {
@@ -189,7 +192,10 @@ func SentryUser(h http.Handler) http.Handler {
 	})
 }
 
-func AgentSentryUser(h http.Handler) http.Handler {
+// SetSentryUserFromAgentAuth sets the authenticated agent's identity on the Sentry scope. It
+// must run after auth.AgentAuthentication.Middleware so the agent is available in the context;
+// if there is no authenticated agent it panics, since that is a wiring bug.
+func SetSentryUserFromAgentAuth(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		if hub := sentry.GetHubFromContext(ctx); hub != nil {
