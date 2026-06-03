@@ -74,6 +74,9 @@ func NewRouter(
 	openapiRouter := chiopenapi.NewRouter(
 		baseRouter,
 		option.WithTitle("Distr API Reference"),
+		// Serve the spec as JSON: the library marshals YAML with single-quoted scalars, which do not
+		// interpret escape sequences, so multi-line descriptions would render with literal "\n" in the UI.
+		option.WithSpecPath("/docs/openapi.json"),
 		option.WithDescription(apiDescription),
 		option.WithVersion(buildconfig.Version()),
 		option.WithSecurity("bearer", option.SecurityHTTPBearer("Bearer")),
