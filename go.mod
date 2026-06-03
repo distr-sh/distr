@@ -25,8 +25,8 @@ require (
 	github.com/go-co-op/gocron/v2 v2.21.2
 	github.com/go-logr/zapr v1.3.0
 	github.com/go-mailx/mailx v1.0.2
-	github.com/go-mailx/mailx-ses v1.0.2
-	github.com/go-mailx/mailx-smtp v1.0.2
+	github.com/go-mailx/mailx-ses v1.0.3
+	github.com/go-mailx/mailx-smtp v1.0.3
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgerrcode v0.0.0-20250907135507-afb5586c32a6
@@ -102,7 +102,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/endpoint-discovery v1.12.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.27 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.27 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ses v1.34.24 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ses v1.34.28 // indirect
 	github.com/aws/aws-sdk-go-v2/service/signin v1.1.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sns v1.39.17 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.42.27 // indirect
@@ -293,7 +293,7 @@ require (
 	github.com/tonistiigi/units v0.0.0-20180711220420-6950e57a87ea // indirect
 	github.com/tonistiigi/vt100 v0.0.0-20240514184818-90bafcd6abab // indirect
 	github.com/valyala/fastjson v1.6.10 // indirect
-	github.com/wneessen/go-mail v0.7.2 // indirect
+	github.com/wneessen/go-mail v0.7.3 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xhit/go-str2duration/v2 v2.1.0 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
