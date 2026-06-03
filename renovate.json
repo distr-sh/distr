@@ -8,6 +8,12 @@
   ],
   "packageRules": [
     {
+      "matchPackageNames": [
+        "github.com/go-mailx/**"
+      ],
+      "groupName": "go-mailx dependencies"
+    },
+    {
       "extends": [
         "monorepo:opentelemetry-go"
       ],
