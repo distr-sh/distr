@@ -1,4 +1,4 @@
-package auth
+package userauth
 
 import (
 	"context"
@@ -37,10 +37,16 @@ func VerifyUserEmail(ctx context.Context, user *types.UserAccount, email string)
 }
 
 // PrimaryOrganization returns the organization a login should default to: the user's last used organization,
-// or the first one if none was used before. It returns apierrors.ErrNotFound when the user is not part of any
-// organization.
+// or the first one if none was used before. For super admins, who are not assigned to organizations, all
+// organizations are considered. It returns apierrors.ErrNotFound when there is no organization to default to.
 func PrimaryOrganization(ctx context.Context, user types.UserAccount) (types.OrganizationWithUserRole, error) {
-	orgs, err := db.GetOrganizationsForUser(ctx, user.ID)
+	var orgs []types.OrganizationWithUserRole
+	var err error
+	if user.IsSuperAdmin {
+		orgs, err = db.GetAllOrganizationsForSuperAdmin(ctx)
+	} else {
+		orgs, err = db.GetOrganizationsForUser(ctx, user.ID)
+	}
 	if err != nil {
 		return types.OrganizationWithUserRole{}, err
 	}

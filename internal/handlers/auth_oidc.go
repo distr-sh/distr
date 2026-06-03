@@ -8,14 +8,13 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/internal/apierrors"
-	"github.com/distr-sh/distr/internal/auth"
-	"github.com/distr-sh/distr/internal/authjwt"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/handlerutil"
 	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/userauth"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
@@ -120,17 +119,12 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		log = log.With(zap.Any("userId", user.ID))
 
-		org, err := auth.EnsurePrimaryOrganization(ctx, *user)
-		if err != nil {
-			return err
-		}
-
 		if user.EmailVerifiedAt == nil && emailVerified {
 			if err = db.UpdateUserAccountEmailVerified(ctx, user); err != nil {
 				return err
 			}
 		}
-		if _, tokenString, err := authjwt.GenerateDefaultToken(*user, org); err != nil {
+		if tokenString, err := userauth.GenerateLoginToken(ctx, *user); err != nil {
 			return fmt.Errorf("token creation failed: %w", err)
 		} else if err = db.UpdateUserAccountLastLoggedIn(ctx, user.ID); err != nil {
 			return err

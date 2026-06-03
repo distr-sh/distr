@@ -20,6 +20,7 @@ import (
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/userauth"
 	"github.com/getsentry/sentry-go"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httprate"
@@ -115,7 +116,7 @@ func authVerifyConfirmHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := auth.VerifyUserEmail(ctx, authn.CurrentUser(), authn.CurrentUserEmail()); err != nil {
+	if err := userauth.VerifyUserEmail(ctx, authn.CurrentUser(), authn.CurrentUserEmail()); err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
 			http.Error(w, "could not update user", http.StatusBadRequest)
 		} else {
@@ -163,11 +164,11 @@ func setPasswordAndLogin(w http.ResponseWriter, r *http.Request, password string
 
 	var token string
 	err := db.RunTx(ctx, func(ctx context.Context) error {
-		if err := auth.SetUserPassword(ctx, user, password, name); err != nil {
+		if err := userauth.SetUserPassword(ctx, user, password, name); err != nil {
 			return err
 		}
 		if authn.CurrentUserEmailVerified() {
-			if err := auth.VerifyUserEmail(ctx, user, authn.CurrentUserEmail()); err != nil {
+			if err := userauth.VerifyUserEmail(ctx, user, authn.CurrentUserEmail()); err != nil {
 				return err
 			}
 		}
@@ -175,7 +176,7 @@ func setPasswordAndLogin(w http.ResponseWriter, r *http.Request, password string
 			return err
 		}
 		var err error
-		token, err = auth.GenerateLoginToken(ctx, *user)
+		token, err = userauth.GenerateLoginToken(ctx, *user)
 		return err
 	})
 	if err != nil {
@@ -193,7 +194,7 @@ func setPasswordAndLogin(w http.ResponseWriter, r *http.Request, password string
 	// delivered via email) and verification is required, send the verification mail so the user receives it
 	// without having to request it manually after being redirected to the verification page.
 	if user.EmailVerifiedAt == nil && env.UserEmailVerificationRequired() {
-		if org, err := auth.PrimaryOrganization(ctx, *user); err != nil {
+		if org, err := userauth.PrimaryOrganization(ctx, *user); err != nil {
 			log.Warn("could not resolve organization for verification mail", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 		} else if err := mailsending.SendUserVerificationMail(ctx, *user, org.Organization); err != nil {
@@ -312,43 +313,6 @@ func authLoginHandler(w http.ResponseWriter, r *http.Request) {
 			return nil
 		}
 
-		var orgs []types.OrganizationWithUserRole
-		if user.IsSuperAdmin {
-			orgs, err = db.GetAllOrganizationsForSuperAdmin(ctx)
-		} else {
-			orgs, err = db.GetOrganizationsForUser(ctx, user.ID)
-		}
-
-		if err != nil {
-			return err
-		}
-
-		var org types.OrganizationWithUserRole
-		if len(orgs) == 0 {
-			if !user.IsSuperAdmin {
-				org.Name = user.Email
-				org.UserRole = types.UserRoleAdmin
-				if err := db.CreateOrganization(ctx, &org.Organization); err != nil {
-					return err
-				} else if err := db.CreateUserAccountOrganizationAssignment(
-					ctx, user.ID, org.ID, org.UserRole, org.CustomerOrganizationID, nil); err != nil {
-					return err
-				}
-			} else {
-				return errors.New("super admin has no organizations, this should never happen")
-			}
-		} else {
-			org = orgs[0]
-			if user.LastUsedOrganizationID != nil {
-				for _, o := range orgs {
-					if o.ID == *user.LastUsedOrganizationID {
-						org = o
-						break
-					}
-				}
-			}
-		}
-
 		if user.MFAEnabled {
 			if request.MFACode == nil {
 				RespondJSON(w, api.AuthLoginResponse{RequiresMFA: true})
@@ -390,7 +354,7 @@ func authLoginHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		if _, tokenString, err := authjwt.GenerateDefaultToken(*user, org); err != nil {
+		if tokenString, err := userauth.GenerateLoginToken(ctx, *user); err != nil {
 			return fmt.Errorf("token creation failed: %w", err)
 		} else if err = db.UpdateUserAccountLastLoggedIn(ctx, user.ID); err != nil {
 			return err
@@ -461,7 +425,7 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusInternalServerError)
 				}
 				return err
-			} else if token, err = auth.GenerateLoginToken(ctx, userAccount); err != nil {
+			} else if token, err = userauth.GenerateLoginToken(ctx, userAccount); err != nil {
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return err
