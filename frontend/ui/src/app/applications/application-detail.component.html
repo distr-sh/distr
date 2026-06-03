@@ -428,10 +428,7 @@
 
                     <div class="w-full">
                       <div class="mb-2">
-                        <label
-                          for="base_values_input"
-                          class="block text-sm font-medium text-gray-900 dark:text-white"
-                          aria-describedby="base-values-description"
+                        <label for="base_values_input" class="distr-label" aria-describedby="base-values-description"
                           >Base Values</label
                         >
                         <div id="base-values-description" class="text-xs text-gray-400 dark:text-gray-500">
@@ -449,10 +446,7 @@
 
                     <div class="w-full">
                       <div class="mb-2">
-                        <label
-                          for="template_input"
-                          class="block text-sm font-medium text-gray-900 dark:text-white"
-                          aria-describedby="values-template-description"
+                        <label for="template_input" class="distr-label" aria-describedby="values-template-description"
                           >Template for Customer Values</label
                         >
                         <div
@@ -505,7 +499,7 @@
                   </div>
                 }
                 <div class="space-y-4 mt-4">
-                  <label class="block text-sm font-medium text-gray-900 dark:text-white">Additional Resources</label>
+                  <label class="distr-label">Additional Resources</label>
                   @for (resource of newVersionForm.controls.resources.controls; track $index) {
                     <div
                       class="p-4 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 space-y-3">
@@ -521,7 +515,7 @@
                         </button>
                       </div>
                       <div>
-                        <label class="block mb-1 text-sm font-medium text-gray-900 dark:text-white">Name *</label>
+                        <label class="distr-label mb-1">Name *</label>
                         <input
                           type="text"
                           [formControl]="resource.controls.name"
@@ -532,9 +526,7 @@
                       </div>
                       <div>
                         <div class="flex items-end justify-between mb-1">
-                          <label class="block text-sm font-medium text-gray-900 dark:text-white"
-                            >Content (Markdown) *</label
-                          >
+                          <label class="distr-label">Content (Markdown) *</label>
                           <button
                             type="button"
                             class="py-1 px-2 text-xs font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"

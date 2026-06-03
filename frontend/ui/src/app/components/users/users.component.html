@@ -189,7 +189,7 @@
             <form class="mx-auto" (ngSubmit)="submitInviteForm()" [formGroup]="inviteForm">
               <div class="flex flex-col space-y-5">
                 <div class="space-y-2">
-                  <label for="name" class="block text-sm font-medium text-gray-900 dark:text-white">
+                  <label for="name" class="distr-label">
                     Full Name <span class="text-gray-500">(optional)</span>
                   </label>
                   <input
@@ -203,9 +203,7 @@
                 </div>
 
                 <div class="space-y-2">
-                  <label for="email" class="block text-sm font-medium text-gray-900 dark:text-white">
-                    E-Mail Address <span class="text-red-500">*</span>
-                  </label>
+                  <label for="email" class="distr-label"> E-Mail Address <span class="text-red-500">*</span> </label>
                   <input
                     type="email"
                     id="email"
@@ -227,9 +225,7 @@
                 </div>
                 @if (isProSubscription()) {
                   <div class="space-y-2">
-                    <label for="userRole" class="block text-sm font-medium text-gray-900 dark:text-white">
-                      User role <span class="text-red-500">*</span>
-                    </label>
+                    <label for="userRole" class="distr-label"> User role <span class="text-red-500">*</span> </label>
                     <app-user-role-select
                       id="userRole"
                       formControlName="userRole"

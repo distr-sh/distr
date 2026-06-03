@@ -152,9 +152,7 @@
           <form class="mx-auto" (ngSubmit)="submitForm()" [formGroup]="createUpdateForm">
             <div class="flex flex-col space-y-5">
               <div class="space-y-2">
-                <label for="linkName" class="block text-sm font-medium text-gray-900 dark:text-white">
-                  Name <span class="text-red-500">*</span>
-                </label>
+                <label for="linkName" class="distr-label"> Name <span class="text-red-500">*</span> </label>
                 <input
                   type="text"
                   id="linkName"
@@ -169,9 +167,7 @@
               </div>
 
               <div class="space-y-2">
-                <label for="linkUrl" class="block text-sm font-medium text-gray-900 dark:text-white">
-                  Link <span class="text-red-500">*</span>
-                </label>
+                <label for="linkUrl" class="distr-label"> Link <span class="text-red-500">*</span> </label>
                 <input
                   type="url"
                   id="linkUrl"

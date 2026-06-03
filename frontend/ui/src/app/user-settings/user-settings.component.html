@@ -10,7 +10,7 @@
         <div class="space-y-4">
           <h2 class="text-xl font-bold dark:text-white">General</h2>
           <div class="space-y-2">
-            <label for="name" class="block text-sm font-medium text-gray-900 dark:text-white">Name</label>
+            <label for="name" class="distr-label">Name</label>
             <input
               formControlName="name"
               autotrim
@@ -80,9 +80,7 @@
           </div>
 
           <div class="space-y-2">
-            <label for="email" class="block text-sm font-medium text-gray-900 dark:text-white">
-              New E-Mail Address
-            </label>
+            <label for="email" class="distr-label"> New E-Mail Address </label>
             <div class="flex gap-2">
               <input
                 formControlName="email"
@@ -284,7 +282,7 @@
           <form class="mx-auto" (ngSubmit)="disableMfaFinish()" [formGroup]="disableMfaForm">
             <div class="flex flex-col space-y-5">
               <div class="space-y-2">
-                <label for="name" class="block text-sm font-medium text-gray-900 dark:text-white"> Password </label>
+                <label for="name" class="distr-label"> Password </label>
                 <input
                   type="password"
                   id="password"
