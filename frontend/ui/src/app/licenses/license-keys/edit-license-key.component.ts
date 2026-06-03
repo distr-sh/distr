@@ -3,10 +3,13 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {
   ControlValueAccessor,
   FormBuilder,
+  NG_VALIDATORS,
   NG_VALUE_ACCESSOR,
   NgControl,
   ReactiveFormsModule,
   TouchedChangeEvent,
+  ValidationErrors,
+  Validator,
   Validators,
 } from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -29,9 +32,14 @@ import {LicenseKey} from '../../types/license-key';
       useExisting: forwardRef(() => EditLicenseKeyComponent),
       multi: true,
     },
+    {
+      provide: NG_VALIDATORS,
+      useExisting: forwardRef(() => EditLicenseKeyComponent),
+      multi: true,
+    },
   ],
 })
-export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAccessor {
+export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAccessor, Validator {
   private readonly injector = inject(Injector);
   private readonly customerOrganizationService = inject(CustomerOrganizationsService);
   private readonly licenseTemplatesService = inject(LicenseTemplatesService);
@@ -100,6 +108,7 @@ export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAcces
       } else {
         this.onChange(undefined);
       }
+      this.onValidatorChange();
     });
   }
 
@@ -133,6 +142,15 @@ export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAcces
 
   private onChange: (l: LicenseKey | undefined) => void = () => {};
   private onTouched: () => void = () => {};
+  private onValidatorChange: () => void = () => {};
+
+  validate(): ValidationErrors | null {
+    return this.editForm.disabled || this.editForm.valid ? null : {invalidLicenseKey: true};
+  }
+
+  registerOnValidatorChange(fn: () => void): void {
+    this.onValidatorChange = fn;
+  }
 
   registerOnChange(fn: (l: LicenseKey | undefined) => void): void {
     this.onChange = fn;

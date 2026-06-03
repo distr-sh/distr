@@ -18,10 +18,13 @@ import {
   FormArray,
   FormBuilder,
   FormControl,
+  NG_VALIDATORS,
   NG_VALUE_ACCESSOR,
   NgControl,
   ReactiveFormsModule,
   TouchedChangeEvent,
+  ValidationErrors,
+  Validator,
   Validators,
 } from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -55,9 +58,16 @@ import {ArtifactEntitlement, ArtifactEntitlementSelection} from '../../types/art
       useExisting: forwardRef(() => EditArtifactEntitlementComponent),
       multi: true,
     },
+    {
+      provide: NG_VALIDATORS,
+      useExisting: forwardRef(() => EditArtifactEntitlementComponent),
+      multi: true,
+    },
   ],
 })
-export class EditArtifactEntitlementComponent implements OnInit, OnDestroy, AfterViewInit, ControlValueAccessor {
+export class EditArtifactEntitlementComponent
+  implements OnInit, OnDestroy, AfterViewInit, ControlValueAccessor, Validator
+{
   private readonly injector = inject(Injector);
   protected readonly auth = inject(AuthService);
   private readonly destroyed$ = new Subject<void>();
@@ -112,6 +122,7 @@ export class EditArtifactEntitlementComponent implements OnInit, OnDestroy, Afte
       } else {
         this.onChange(undefined);
       }
+      this.onValidatorChange();
     });
   }
 
@@ -250,6 +261,15 @@ export class EditArtifactEntitlementComponent implements OnInit, OnDestroy, Afte
 
   private onChange: (l: ArtifactEntitlement | undefined) => void = () => {};
   private onTouched: () => void = () => {};
+  private onValidatorChange: () => void = () => {};
+
+  validate(): ValidationErrors | null {
+    return this.editForm.disabled || this.editForm.valid ? null : {invalidEntitlement: true};
+  }
+
+  registerOnValidatorChange(fn: () => void): void {
+    this.onValidatorChange = fn;
+  }
 
   registerOnChange(fn: (l: ArtifactEntitlement | undefined) => void): void {
     this.onChange = fn;

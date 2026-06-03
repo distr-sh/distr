@@ -1,7 +1,7 @@
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {Component, inject, input, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed, toObservable} from '@angular/core/rxjs-interop';
-import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
+import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
   faCircleExclamation,
@@ -68,7 +68,6 @@ export class ApplicationEntitlementsComponent {
   editForm = new FormGroup({
     entitlement: new FormControl<ApplicationEntitlement | undefined>(undefined, {
       nonNullable: true,
-      validators: Validators.required,
     }),
   });
 
