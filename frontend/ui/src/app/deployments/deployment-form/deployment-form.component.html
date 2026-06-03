@@ -1,6 +1,6 @@
 <div class="grid gap-4 mb-4 grid-cols-2" [formGroup]="deployForm">
   <div class="col-span-2 sm:col-span-1">
-    <label for="applicationId" class="distr-label"> Application </label>
+    <label for="applicationId" class="distr-label mb-2"> Application </label>
     <select
       id="applicationId"
       formControlName="applicationId"
@@ -14,7 +14,7 @@
     }
   </div>
   <div class="col-span-2 sm:col-span-1">
-    <label for="applicationVersion" class="distr-label">Version</label>
+    <label for="applicationVersion" class="distr-label mb-2">Version</label>
     <select
       id="applicationVersion"
       formControlName="applicationVersionId"
@@ -29,7 +29,7 @@
   </div>
   @if (licenseControlVisible$ | async) {
     <div class="col-span-2 sm:col-span-1">
-      <label for="applicationEntitlement" class="distr-label"> Select License </label>
+      <label for="applicationEntitlement" class="distr-label mb-2"> Select License </label>
       <select
         id="applicationEntitlement"
         formControlName="applicationEntitlementId"
@@ -47,7 +47,7 @@
   }
   @if (deployForm.controls.releaseName.enabled) {
     <div class="col-span-2">
-      <label for="release-name" class="distr-label"> Helm release name </label>
+      <label for="release-name" class="distr-label mb-2"> Helm release name </label>
       <input
         type="text"
         id="release-name"

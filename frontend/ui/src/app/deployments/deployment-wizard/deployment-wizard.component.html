@@ -228,7 +228,7 @@
 
                 <!-- Deployment Name -->
                 <div>
-                  <label for="agent-name" class="distr-label"> Deployment Name </label>
+                  <label for="agent-name" class="distr-label mb-2"> Deployment Name </label>
                   <input
                     [formControl]="deploymentTargetForm.controls.name"
                     type="text"
@@ -277,7 +277,7 @@
                 <!-- Kubernetes-specific Settings -->
                 @if (selectedDeploymentType() === 'kubernetes') {
                   <div>
-                    <label for="namespace" class="distr-label"> Kubernetes Namespace </label>
+                    <label for="namespace" class="distr-label mb-2"> Kubernetes Namespace </label>
                     <input
                       [formControl]="deploymentTargetForm.controls.namespace"
                       type="text"
@@ -331,7 +331,7 @@
 
                     <div class="grid grid-cols-2 gap-4 border border-gray-300 dark:border-gray-700 rounded-md p-4">
                       <div>
-                        <label for="cpu-request" class="distr-label"> CPU Request </label>
+                        <label for="cpu-request" class="distr-label mb-2"> CPU Request </label>
                         <input
                           [formControl]="resourcesCtrl.controls.cpuRequest"
                           type="text"
@@ -350,7 +350,7 @@
                       </div>
 
                       <div>
-                        <label for="memory-request" class="distr-label"> Memory Request </label>
+                        <label for="memory-request" class="distr-label mb-2"> Memory Request </label>
                         <input
                           [formControl]="resourcesCtrl.controls.memoryRequest"
                           type="text"
@@ -371,7 +371,7 @@
                       </div>
 
                       <div>
-                        <label for="cpu-limit" class="distr-label"> CPU Limit </label>
+                        <label for="cpu-limit" class="distr-label mb-2"> CPU Limit </label>
                         <input
                           [formControl]="resourcesCtrl.controls.cpuLimit"
                           type="text"
@@ -390,7 +390,7 @@
                       </div>
 
                       <div>
-                        <label for="memory-limit" class="distr-label"> Memory Limit </label>
+                        <label for="memory-limit" class="distr-label mb-2"> Memory Limit </label>
                         <input
                           [formControl]="resourcesCtrl.controls.memoryLimit"
                           type="text"

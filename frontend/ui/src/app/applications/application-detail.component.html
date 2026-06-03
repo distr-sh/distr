@@ -289,7 +289,7 @@
               <div>
                 <div class="space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
                   <div class="w-full">
-                    <label for="applicationVersion" class="distr-label">Version Name *</label>
+                    <label for="applicationVersion" class="distr-label mb-2">Version Name *</label>
                     <input
                       [formControl]="newVersionForm.controls.versionName"
                       autotrim
@@ -305,7 +305,7 @@
 
                 <div class="space-y-4 sm:flex sm:space-x-4 sm:space-y-0 mt-4">
                   <div class="w-full">
-                    <label for="applicationVersionLinkTemplate" class="distr-label">Link Template</label>
+                    <label for="applicationVersionLinkTemplate" class="distr-label mb-2">Link Template</label>
                     <input
                       [formControl]="newVersionForm.controls.linkTemplate"
                       autotrim
@@ -335,7 +335,7 @@
                   <div class="space-y-4 mt-4">
                     <div class="grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
                       <div class="w-full">
-                        <label for="chartTypeSelect" class="distr-label">Chart Type *</label>
+                        <label for="chartTypeSelect" class="distr-label mb-2">Chart Type *</label>
                         <select
                           [formControl]="newVersionForm.controls.kubernetes.controls.chartType"
                           id="chartTypeSelect"
@@ -352,7 +352,7 @@
                       </div>
                       <div class="w-full">
                         @if (newVersionForm.controls.kubernetes.controls.chartName.enabled) {
-                          <label for="kubernetesChartName" class="distr-label">Chart Name *</label>
+                          <label for="kubernetesChartName" class="distr-label mb-2">Chart Name *</label>
                           <input
                             [formControl]="newVersionForm.controls.kubernetes.controls.chartName"
                             autotrim
@@ -372,7 +372,7 @@
 
                     <div class="grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
                       <div class="w-full">
-                        <label for="kubernetesChartUrl" class="distr-label">Chart URL *</label>
+                        <label for="kubernetesChartUrl" class="distr-label mb-2">Chart URL *</label>
                         <input
                           [formControl]="newVersionForm.controls.kubernetes.controls.chartUrl"
                           autotrim
@@ -409,7 +409,7 @@
                         </div>
                       </div>
                       <div class="w-full">
-                        <label for="kubernetesChartVersion" class="distr-label">Chart Version *</label>
+                        <label for="kubernetesChartVersion" class="distr-label mb-2">Chart Version *</label>
                         <input
                           [formControl]="newVersionForm.controls.kubernetes.controls.chartVersion"
                           autotrim
@@ -472,7 +472,7 @@
                 } @else {
                   <div class="space-y-4 mt-4">
                     <div class="w-full">
-                      <label for="compose_input" class="distr-label">Docker Compose *</label>
+                      <label for="compose_input" class="distr-label mb-2">Docker Compose *</label>
                       <app-editor
                         id="compose_input"
                         language="yaml"
@@ -490,7 +490,7 @@
                     </div>
 
                     <div class="w-full">
-                      <label for="compose_template_input" class="distr-label">Template for Environment File</label>
+                      <label for="compose_template_input" class="distr-label mb-2">Template for Environment File</label>
                       <app-editor
                         id="compose_template_input"
                         class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"

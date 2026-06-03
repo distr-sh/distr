@@ -14,7 +14,7 @@
             </h1>
             <form class="space-y-4 md:space-y-6" [formGroup]="emailPasswordForm" (ngSubmit)="submit()">
               <div>
-                <label for="email" class="distr-label">Your email</label>
+                <label for="email" class="distr-label mb-2">Your email</label>
                 <input
                   type="email"
                   formControlName="email"
@@ -29,7 +29,7 @@
                 }
               </div>
               <div>
-                <label for="password" class="distr-label">Password</label>
+                <label for="password" class="distr-label mb-2">Password</label>
                 <input
                   type="password"
                   formControlName="password"
@@ -85,7 +85,7 @@
             </h1>
             <form class="space-y-4 md:space-y-6" [formGroup]="mfaCodeForm" (ngSubmit)="submit()">
               <div>
-                <label for="email" class="distr-label">Your email</label>
+                <label for="email" class="distr-label mb-2">Your email</label>
                 <input
                   type="email"
                   id="email"
@@ -94,7 +94,7 @@
                   class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 disabled:opacity-50" />
               </div>
               <div>
-                <label for="totp" class="distr-label">MFA Code</label>
+                <label for="totp" class="distr-label mb-2">MFA Code</label>
                 <!--
                 This input field is wrapped in a div in order to make autofill services ignore the help text below.
                 This is needed because some interpret the phrase "recovery code" as conflicting with the TOTP field name.

@@ -189,7 +189,7 @@
             </div>
             <div class="space-y-4">
               <div>
-                <label for="artifact-name" class="distr-label">
+                <label for="artifact-name" class="distr-label mb-2">
                   Artifact Name
                   <span class="text-red-500">*</span>
                 </label>
@@ -206,7 +206,7 @@
               </div>
 
               <div>
-                <label for="artifact-upstream-url" class="distr-label">
+                <label for="artifact-upstream-url" class="distr-label mb-2">
                   Upstream URL
                   <span class="text-red-500">*</span>
                 </label>
@@ -227,7 +227,7 @@
               </div>
 
               <div>
-                <label for="artifact-upstream-auth-type" class="distr-label">Upstream Authentication</label>
+                <label for="artifact-upstream-auth-type" class="distr-label mb-2">Upstream Authentication</label>
                 <select
                   formControlName="upstreamAuthType"
                   id="artifact-upstream-auth-type"
@@ -240,7 +240,7 @@
 
               @if (formGroup.controls.upstreamAuthType.value !== 'none') {
                 <div>
-                  <label for="artifact-upstream-username" class="distr-label">
+                  <label for="artifact-upstream-username" class="distr-label mb-2">
                     @switch (formGroup.controls.upstreamAuthType.value) {
                       @case ('basic') {
                         Username
@@ -263,7 +263,7 @@
                   }
                 </div>
                 <div>
-                  <label for="artifact-upstream-password" class="distr-label">
+                  <label for="artifact-upstream-password" class="distr-label mb-2">
                     @switch (formGroup.controls.upstreamAuthType.value) {
                       @case ('basic') {
                         Password

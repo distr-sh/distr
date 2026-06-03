@@ -167,7 +167,7 @@
           <form [formGroup]="createForm" (ngSubmit)="createBundle()">
             <div class="space-y-4">
               <div>
-                <label for="title" class="distr-label"> Title <span class="text-red-500">*</span> </label>
+                <label for="title" class="distr-label mb-2"> Title <span class="text-red-500">*</span> </label>
                 <input
                   formControlName="title"
                   autotrim
@@ -177,7 +177,7 @@
                   placeholder="Title for this support bundle" />
               </div>
               <div>
-                <label for="description" class="distr-label"> Description </label>
+                <label for="description" class="distr-label mb-2"> Description </label>
                 <textarea
                   formControlName="description"
                   id="description"

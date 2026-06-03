@@ -2,14 +2,14 @@
   <div class="space-y-4 mt-4">
     <div class="grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
       <div class="w-full">
-        <label for="name" class="distr-label">Name *</label>
+        <label for="name" class="distr-label mb-2">Name *</label>
         <input formControlName="name" autotrim type="text" id="name" class="distr-input" placeholder="License name" />
         @if (editForm.controls.name.invalid && editForm.controls.name.touched) {
           <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
         }
       </div>
       <div class="w-full">
-        <label for="expiresAt" class="distr-label">Expires At</label>
+        <label for="expiresAt" class="distr-label mb-2">Expires At</label>
         <app-expires-at-picker formControlName="expiresAt" inputId="expiresAt" />
       </div>
     </div>
@@ -18,10 +18,10 @@
       <div class="flex">
         <div class="flex-grow grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
           <div class="w-full">
-            <label class="distr-label"> Artifact * </label>
+            <label class="distr-label mb-2"> Artifact * </label>
           </div>
           <div class="w-full">
-            <label class="distr-label"> Artifact Tags * </label>
+            <label class="distr-label mb-2"> Artifact Tags * </label>
           </div>
         </div>
       </div>
@@ -187,7 +187,7 @@
 
   @if (editForm.getRawValue().customerOrganizationId) {
     <div>
-      <label class="distr-label">Customer</label>
+      <label class="distr-label mb-2">Customer</label>
       @let customers = customers$ | async;
       <p class="text-sm text-gray-900 dark:text-white">
         {{ customers?.find((c) => c.id === editForm.getRawValue().customerOrganizationId)?.name ?? '—' }}

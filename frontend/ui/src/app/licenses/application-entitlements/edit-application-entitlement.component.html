@@ -2,21 +2,21 @@
   <div class="space-y-4 mt-4">
     <div class="grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
       <div class="w-full">
-        <label for="name" class="distr-label">Name *</label>
+        <label for="name" class="distr-label mb-2">Name *</label>
         <input formControlName="name" autotrim type="text" id="name" class="distr-input" placeholder="License name" />
         @if (editForm.controls.name.invalid && editForm.controls.name.touched) {
           <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
         }
       </div>
       <div class="w-full">
-        <label for="expiresAt" class="distr-label">Expires At</label>
+        <label for="expiresAt" class="distr-label mb-2">Expires At</label>
         <app-expires-at-picker formControlName="expiresAt" inputId="expiresAt" />
       </div>
     </div>
 
     <div class="grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
       <div class="w-full">
-        <label for="subjectId" class="distr-label"> Application * </label>
+        <label for="subjectId" class="distr-label mb-2"> Application * </label>
         <select
           id="subjectId"
           formControlName="subjectId"
@@ -31,7 +31,7 @@
       </div>
 
       <div class="w-full">
-        <label class="distr-label"> Application Versions * </label>
+        <label class="distr-label mb-2"> Application Versions * </label>
         <button
           class="inline-flex w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
           type="button"
@@ -148,7 +148,7 @@
 
   @if (editForm.getRawValue().customerOrganizationId) {
     <div>
-      <label class="distr-label">Customer</label>
+      <label class="distr-label mb-2">Customer</label>
       @let customers = customers$ | async;
       <p class="text-sm text-gray-900 dark:text-white">
         {{ customers?.find((c) => c.id === editForm.getRawValue().customerOrganizationId)?.name ?? '—' }}
@@ -171,7 +171,7 @@
   </div>
 
   <div class="w-full">
-    <label for="registryUrl" class="distr-label">Registry URL</label>
+    <label for="registryUrl" class="distr-label mb-2">Registry URL</label>
     <input
       [formControl]="editForm.controls.registry.controls.url"
       autotrim
@@ -189,7 +189,7 @@
 
   <div class="grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
     <div class="w-full">
-      <label for="registryUsername" class="distr-label">Registry Username</label>
+      <label for="registryUsername" class="distr-label mb-2">Registry Username</label>
       <input
         [formControl]="editForm.controls.registry.controls.username"
         autotrim
@@ -206,7 +206,7 @@
     </div>
 
     <div class="w-full">
-      <label for="registryPassword" class="distr-label">Registry Password</label>
+      <label for="registryPassword" class="distr-label mb-2">Registry Password</label>
       <input
         [formControl]="editForm.controls.registry.controls.password"
         autotrim

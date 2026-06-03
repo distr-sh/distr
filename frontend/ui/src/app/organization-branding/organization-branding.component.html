@@ -15,7 +15,7 @@
             <div class="space-y-4">
               <h2 class="text-xl font-bold dark:text-white">Portal Header</h2>
               <div>
-                <label class="distr-label" for="branding_logo"> Company Logo </label>
+                <label class="distr-label mb-2" for="branding_logo"> Company Logo </label>
                 <div>
                   @if (logoSrc | async; as logo) {
                     <img class="h-8 mb-4" [src]="logo" alt="Logo" />
@@ -43,7 +43,7 @@
               </div>
 
               <div>
-                <label for="title" class="distr-label">Title</label>
+                <label for="title" class="distr-label mb-2">Title</label>
                 <input
                   formControlName="title"
                   autotrim

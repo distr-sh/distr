@@ -104,7 +104,7 @@
     <form [formGroup]="editForm" (ngSubmit)="createAccessToken()">
       <div class="space-y-4">
         <div>
-          <label for="label" class="distr-label">Label</label>
+          <label for="label" class="distr-label mb-2">Label</label>
           <input
             formControlName="label"
             autotrim
@@ -114,11 +114,11 @@
             placeholder="Label your PAT" />
         </div>
         <div>
-          <label for="expiresAt" class="distr-label">Expires At</label>
+          <label for="expiresAt" class="distr-label mb-2">Expires At</label>
           <app-expires-at-picker formControlName="expiresAt" inputId="expiresAt" />
         </div>
         <div>
-          <label for="userRole" class="distr-label">Role</label>
+          <label for="userRole" class="distr-label mb-2">Role</label>
           <app-user-role-select
             id="userRole"
             formControlName="userRole"

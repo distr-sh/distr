@@ -14,7 +14,7 @@
 
   <div class="space-y-4 mt-4">
     <div>
-      <label for="name" class="distr-label">Name *</label>
+      <label for="name" class="distr-label mb-2">Name *</label>
       <input formControlName="name" autotrim type="text" id="name" class="distr-input" placeholder="License name" />
       @if (editForm.controls.name.invalid && editForm.controls.name.touched) {
         <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
@@ -22,7 +22,7 @@
     </div>
 
     <div>
-      <label for="description" class="distr-label">Description</label>
+      <label for="description" class="distr-label mb-2">Description</label>
       <textarea
         formControlName="description"
         id="description"
@@ -40,7 +40,7 @@
       }
     } @else if (templates().length > 0) {
       <div>
-        <label for="licenseTemplateId" class="distr-label"> License Template </label>
+        <label for="licenseTemplateId" class="distr-label mb-2"> License Template </label>
         <select formControlName="licenseTemplateId" id="licenseTemplateId" class="distr-input">
           <option [ngValue]="undefined">— None (manual payload) —</option>
           @for (template of templates(); track template.id) {
@@ -58,14 +58,14 @@
     @if (!hasTemplate) {
       <div class="space-y-4">
         <div>
-          <label for="notBefore" class="distr-label">Not Before *</label>
+          <label for="notBefore" class="distr-label mb-2">Not Before *</label>
           <input formControlName="notBefore" type="date" id="notBefore" class="distr-input disabled:opacity-60" />
           @if (editForm.errors?.['notBeforeRequired'] && editForm.controls.notBefore.touched) {
             <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
           }
         </div>
         <div>
-          <label for="expiresAt" class="distr-label">Expires At *</label>
+          <label for="expiresAt" class="distr-label mb-2">Expires At *</label>
           <app-expires-at-picker formControlName="expiresAt" inputId="expiresAt" [allowNoExpiration]="false" />
           @if (editForm.errors?.['expiresAtRequired'] && editForm.controls.expiresAt.touched) {
             <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
@@ -79,7 +79,7 @@
       }
 
       <div>
-        <label for="payload" class="distr-label">Payload (JSON) *</label>
+        <label for="payload" class="distr-label mb-2">Payload (JSON) *</label>
         <app-editor
           formControlName="payload"
           language="json"

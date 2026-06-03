@@ -517,7 +517,7 @@
           </div>
         }
         <div>
-          <label for="name" class="distr-label">Name *</label>
+          <label for="name" class="distr-label mb-2">Name *</label>
           <input
             formControlName="name"
             autotrim
@@ -533,7 +533,7 @@
           }
         </div>
         <div>
-          <label for="category" class="distr-label">Type *</label>
+          <label for="category" class="distr-label mb-2">Type *</label>
           <select
             formControlName="type"
             id="category"
@@ -544,7 +544,7 @@
         </div>
         @if (editForm.controls.type.value === 'kubernetes') {
           <div>
-            <label for="namespace" class="distr-label"> Namespace </label>
+            <label for="namespace" class="distr-label mb-2"> Namespace </label>
             <input
               type="text"
               id="namespace"
@@ -552,7 +552,7 @@
               class="distr-input disabled:opacity-50 disabled:cursor-not-allowed disabled:select-none" />
           </div>
           <div>
-            <label for="scope" class="distr-label">Scope</label>
+            <label for="scope" class="distr-label mb-2">Scope</label>
             <input
               type="text"
               id="scope"
@@ -668,7 +668,7 @@
         @if (editForm.controls.resources.enabled) {
           <ng-container formGroupName="resources">
             <div>
-              <label for="cpuRequest" class="distr-label">CPU Request</label>
+              <label for="cpuRequest" class="distr-label mb-2">CPU Request</label>
               <input
                 type="text"
                 id="cpuRequest"
@@ -685,7 +685,7 @@
             </div>
 
             <div>
-              <label for="memoryRequest" class="distr-label">Memory Request</label>
+              <label for="memoryRequest" class="distr-label mb-2">Memory Request</label>
               <input
                 type="text"
                 id="memoryRequest"
@@ -702,7 +702,7 @@
             </div>
 
             <div>
-              <label for="cpuLimit" class="distr-label">CPU Limit</label>
+              <label for="cpuLimit" class="distr-label mb-2">CPU Limit</label>
               <input
                 type="text"
                 id="cpuLimit"
@@ -719,7 +719,7 @@
             </div>
 
             <div>
-              <label for="memoryLimit" class="distr-label">Memory Limit</label>
+              <label for="memoryLimit" class="distr-label mb-2">Memory Limit</label>
               <input
                 type="text"
                 id="memoryLimit"
