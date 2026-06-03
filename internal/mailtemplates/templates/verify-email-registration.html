@@ -12,7 +12,7 @@
         .Organization.Name .UserAccount.Email) }}
 
         <p>
-          Welcome to {{ if $isOwnAccount }}your Distr Account{{ else if and .Organization .Organization.Name }}{{
+          Welcome to {{ if $isOwnAccount }}Distr{{ else if and .Organization .Organization.Name }}{{
           .Organization.Name }}{{ else }}Distr{{ end }}! Please
           <a href="{{.Host}}/verify?jwt={{.Token | QueryEscape}}">click this link</a> to verify that this is your email
           address.
