@@ -289,7 +289,7 @@ func validateDeploymentRequest(
 		return err
 	} else if err = validateDeploymentRequestDeploymentTarget(ctx, w, request, target); err != nil {
 		return err
-	} else if err = validateDeploymentRequestValues(w, request, version, secrets, licenseKeys); err != nil {
+	} else if err = validateDeploymentRequestValues(ctx, w, request, version, secrets, licenseKeys); err != nil {
 		return err
 	} else {
 		return nil
@@ -431,6 +431,7 @@ func validateDeploymentRequestDeploymentTarget(
 }
 
 func validateDeploymentRequestValues(
+	ctx context.Context,
 	w http.ResponseWriter,
 	deploymentRequest api.DeploymentRequest,
 	appVersion *types.ApplicationVersion,
@@ -439,16 +440,25 @@ func validateDeploymentRequestValues(
 ) error {
 	deploymentValues, err := deploymentvalues.ParsedValuesFileReplaceSecrets(&deploymentRequest, secrets, licenseKeys)
 	if err != nil {
-		return badRequestError(w, fmt.Sprintf("invalid values: %v", err.Error()))
+		return deploymentValuesError(ctx, w, err, "invalid values")
 	} else if appVersionValues, err := appVersion.ParsedValuesFile(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	} else if _, err := util.MergeAllRecursive(appVersionValues, deploymentValues); err != nil {
 		return badRequestError(w, fmt.Sprintf("values cannot be merged with base: %v", err))
 	} else if _, err := deploymentvalues.EnvFileReplaceSecrets(&deploymentRequest, secrets, licenseKeys); err != nil {
-		return badRequestError(w, fmt.Sprintf("invalid env file: %v", err.Error()))
+		return deploymentValuesError(ctx, w, err, "invalid env file")
 	}
 	return nil
+}
+
+func deploymentValuesError(ctx context.Context, w http.ResponseWriter, err error, clientMsg string) error {
+	if errors.Is(err, deploymentvalues.ErrInvalidTemplate) {
+		return badRequestError(w, fmt.Sprintf("%s: %v", clientMsg, err.Error()))
+	}
+	sentry.GetHubFromContext(ctx).CaptureException(err)
+	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	return err
 }
 
 func getDeploymentStatus(w http.ResponseWriter, r *http.Request) {
