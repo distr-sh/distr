@@ -21,6 +21,7 @@ import (
 	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httprate"
 	"github.com/go-mailx/mailx"
 	"github.com/google/uuid"
@@ -35,7 +36,9 @@ func AuthRouter(r chiopenapi.Router) {
 	r.Use(httprate.Limit(
 		10,
 		1*time.Minute,
-		httprate.WithKeyFuncs(httprate.KeyByRealIP, httprate.KeyByEndpoint),
+		httprate.WithKeyFuncs(func(r *http.Request) (string, error) {
+			return chimiddleware.GetClientIP(r.Context()), nil
+		}, httprate.KeyByEndpoint),
 	))
 	r.Route("/login", func(r chiopenapi.Router) {
 		r.Post("/", authLoginHandler)
@@ -44,8 +47,86 @@ func AuthRouter(r chiopenapi.Router) {
 	r.Route("/oidc", AuthOIDCRouter)
 	r.Post("/register", authRegisterHandler)
 	r.Post("/reset", authResetPasswordHandler)
-	r.With(middleware.SentryUser, auth.Authentication.Middleware, middleware.RequireOrgAndRole).
-		Post("/switch-context", authSwitchContextHandler())
+	r.With(
+		middleware.SentryUser,
+		auth.Authentication.Middleware,
+		middleware.RequireEmailVerified,
+		middleware.RequireOrgAndRole,
+	).Post("/switch-context", authSwitchContextHandler())
+	r.Group(func(r chiopenapi.Router) {
+		r.Use(auth.Authentication.Middleware, middleware.SentryUser)
+
+		r.Route("/verify", func(r chiopenapi.Router) {
+			requestVerificationMailRateLimitPerUser := httprate.Limit(
+				3,
+				10*time.Minute,
+				httprate.WithKeyFuncs(middleware.RateLimitUserIDKey),
+			)
+			r.With(
+				requestVerificationMailRateLimitPerUser,
+				middleware.BlockSuperAdmin,
+				middleware.RequireOrgAndRole,
+			).Post("/request", authVerifyRequestHandler)
+			r.Post("/confirm", authVerifyConfirmHandler)
+		})
+
+		r.Get("/status", authStatusHandler).With(option.Hidden(true))
+	})
+}
+
+func authStatusHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	userAccount := auth.CurrentUser()
+	RespondJSON(w, map[string]any{
+		"active": userAccount.PasswordHash != nil,
+	})
+}
+
+func authVerifyRequestHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+	auth := auth.Authentication.Require(ctx)
+	userAccount := auth.CurrentUser()
+	if userAccount.EmailVerifiedAt != nil {
+		w.WriteHeader(http.StatusNoContent)
+	} else if err := mailsending.SendUserVerificationMail(ctx, *userAccount, *auth.CurrentOrg()); err != nil {
+		log.Error("failed to send verification mail", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+	} else {
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func authVerifyConfirmHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+	auth := auth.Authentication.Require(ctx)
+	userAccount := auth.CurrentUser()
+	if !auth.CurrentUserEmailVerified() {
+		http.Error(w, "token does not have verified claim", http.StatusForbidden)
+		return
+	}
+
+	if userAccount.Email != auth.CurrentUserEmail() {
+		userAccount.Email = auth.CurrentUserEmail()
+	} else if userAccount.EmailVerifiedAt != nil {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	if err := db.UpdateUserAccountEmailVerified(ctx, userAccount); err != nil {
+		if errors.Is(err, apierrors.ErrNotFound) {
+			http.Error(w, "could not update user", http.StatusBadRequest)
+		} else {
+			log.Error("could not update user", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, "could not update user", http.StatusInternalServerError)
+		}
+	} else {
+		w.WriteHeader(http.StatusNoContent)
+	}
 }
 
 func authSwitchContextHandler() func(writer http.ResponseWriter, request *http.Request) {
@@ -118,6 +199,7 @@ func authSwitchContextHandler() func(writer http.ResponseWriter, request *http.R
 			Organization:           *org,
 			UserRole:               user.UserRole,
 			CustomerOrganizationID: user.CustomerOrganizationID,
+			PartnerOrganizationID:  user.PartnerOrganizationID,
 		}); err != nil {
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			log.Error("failed to generate token", zap.Error(err))
@@ -173,7 +255,7 @@ func authLoginHandler(w http.ResponseWriter, r *http.Request) {
 				if err := db.CreateOrganization(ctx, &org.Organization); err != nil {
 					return err
 				} else if err := db.CreateUserAccountOrganizationAssignment(
-					ctx, user.ID, org.ID, org.UserRole, org.CustomerOrganizationID); err != nil {
+					ctx, user.ID, org.ID, org.UserRole, org.CustomerOrganizationID, nil); err != nil {
 					return err
 				}
 			} else {

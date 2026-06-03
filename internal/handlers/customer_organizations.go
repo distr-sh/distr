@@ -14,6 +14,7 @@ import (
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -23,7 +24,7 @@ import (
 
 func CustomerOrganizationsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Customers"))
-	r.With(middleware.RequireVendor, middleware.RequireOrgAndRole).Group(func(r chiopenapi.Router) {
+	r.With(middleware.RequireVendorOrPartner, middleware.RequireOrgAndRole).Group(func(r chiopenapi.Router) {
 		r.Get("/", getCustomerOrganizationsHandler()).
 			With(option.Description("List all customer organizations")).
 			With(option.Response(http.StatusOK, []api.CustomerOrganizationWithUsage{}))
@@ -35,12 +36,22 @@ func CustomerOrganizationsRouter(r chiopenapi.Router) {
 
 			r.Route("/links", SidebarLinksRouter)
 
-			r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
-				r.Put("/", updateCustomerOrganizationHandler()).
-					With(option.Description("Update a customer organization")).
+			r.With(middleware.RequireVendorOrPartner, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
+				Put("/", updateCustomerOrganizationHandler()).
+				With(option.Description("Update a customer organization")).
+				With(option.Request(struct {
+					CustomerOrganizationIDRequest
+					api.CreateUpdateCustomerOrganizationRequest
+				}{})).
+				With(option.Response(http.StatusOK, api.CustomerOrganization{}))
+
+			r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin,
+				middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
+				r.Put("/partner", assignCustomerToPartnerHandler()).
+					With(option.Description("Assign or unassign a partner organization for a customer organization")).
 					With(option.Request(struct {
 						CustomerOrganizationIDRequest
-						api.CreateUpdateCustomerOrganizationRequest
+						api.AssignCustomerToPartnerRequest
 					}{})).
 					With(option.Response(http.StatusOK, api.CustomerOrganization{}))
 				r.Delete("/", deleteCustomerOrganizationHandler()).
@@ -62,7 +73,16 @@ func getCustomerOrganizationsHandler() http.HandlerFunc {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
 		auth := auth.Authentication.Require(ctx)
-		if customerOrganizations, err := db.GetCustomerOrganizationsByOrganizationID(ctx, *auth.CurrentOrgID()); err != nil {
+
+		var customerOrganizations []types.CustomerOrganizationWithUsage
+		var err error
+		if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
+			customerOrganizations, err = db.GetCustomerOrganizationsByPartnerOrgID(ctx, *partnerOrgID)
+		} else {
+			customerOrganizations, err = db.GetCustomerOrganizationsByOrganizationID(ctx, *auth.CurrentOrgID())
+		}
+
+		if err != nil {
 			log.Error("failed to get customer orgs", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -86,37 +106,31 @@ func createCustomerOrganizationHandler() http.HandlerFunc {
 		}
 
 		customerOrganization := types.CustomerOrganization{
-			OrganizationID: *auth.CurrentOrgID(),
-			Name:           request.Name,
-			ImageID:        request.ImageID,
+			OrganizationID:        *auth.CurrentOrgID(),
+			Name:                  request.Name,
+			ImageID:               request.ImageID,
+			PartnerOrganizationID: auth.CurrentPartnerOrgID(),
 		}
 
 		err = db.RunTx(ctx, func(ctx context.Context) error {
 			if limitReached, err := subscription.IsCustomerOrganizationLimitReached(ctx, *auth.CurrentOrg()); err != nil {
-				log.Error("failed to get customer orgs", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return err
 			} else if limitReached {
-				err = errors.New("customer limit reached")
-				http.Error(w, err.Error(), http.StatusForbidden)
-				return err
+				return apierrors.NewForbidden("customer limit reached")
 			}
-
-			if err := db.CreateCustomerOrganization(ctx, &customerOrganization); err != nil {
-				log.Error("failed to create customer org", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return err
-			}
-
-			return nil
+			return db.CreateCustomerOrganization(ctx, &customerOrganization)
 		})
 
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
+		if err == nil {
 			RespondJSON(w, mapping.CustomerOrganizationToAPI(customerOrganization))
+		} else if errors.Is(err, apierrors.ErrBadRequest) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else if errors.Is(err, apierrors.ErrForbidden) {
+			http.Error(w, err.Error(), http.StatusForbidden)
+		} else {
+			log.Error("failed to create customer org", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
 }
@@ -138,6 +152,14 @@ func updateCustomerOrganizationHandler() http.HandlerFunc {
 		} else if err := request.Validate(); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
+		}
+
+		if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
+			co, coErr := db.GetCustomerOrganizationByID(ctx, id)
+			if coErr != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
+				http.Error(w, "customer is not assigned to your partner organization", http.StatusForbidden)
+				return
+			}
 		}
 
 		var features []types.CustomerOrganizationFeature
@@ -168,6 +190,56 @@ func updateCustomerOrganizationHandler() http.HandlerFunc {
 	}
 }
 
+func assignCustomerToPartnerHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := uuid.Parse(r.PathValue("customerOrganizationId"))
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+
+		ctx := r.Context()
+		log := internalctx.GetLogger(ctx)
+		auth := auth.Authentication.Require(ctx)
+		request, err := JsonBody[api.AssignCustomerToPartnerRequest](w, r)
+		if err != nil {
+			return
+		}
+
+		if request.PartnerOrganizationID != nil {
+			if err := db.ValidatePartnerOrgBelongsToOrg(ctx, *request.PartnerOrganizationID, *auth.CurrentOrgID()); err != nil {
+				if errors.Is(err, db.ErrPartnerOrgNotInOrg) {
+					http.Error(w, "partner organization not found", http.StatusBadRequest)
+				} else {
+					log.Error("failed to check partner in org", zap.Error(err))
+					sentry.GetHubFromContext(ctx).CaptureException(err)
+					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				}
+				return
+			}
+		}
+
+		err = db.SetCustomerOrganizationPartner(ctx, id, *auth.CurrentOrgID(), request.PartnerOrganizationID)
+		if errors.Is(err, apierrors.ErrNotFound) {
+			http.NotFound(w, r)
+		} else if err != nil {
+			log.Error("failed to assign partner to customer org", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		} else {
+			customerOrg, err := db.GetCustomerOrganizationByID(ctx, id)
+			if err != nil {
+				log.Error("failed to get customer org after partner assignment", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+			RespondJSON(w, mapping.CustomerOrganizationToAPI(customerOrg.CustomerOrganization))
+		}
+	}
+}
+
+//nolint:dupl
 func deleteCustomerOrganizationHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := uuid.Parse(r.PathValue("customerOrganizationId"))

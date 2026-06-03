@@ -3,7 +3,6 @@ package middleware
 import (
 	"context"
 	"fmt"
-	"net"
 	"net/http"
 	"slices"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/prometheus"
 	"github.com/distr-sh/distr/internal/types"
@@ -42,11 +42,6 @@ func ContextInjectorMiddleware(
 			ctx = internalctx.WithDb(ctx, db)
 			ctx = internalctx.WithMailer(ctx, mailer)
 			ctx = internalctx.WithPrometheusCollector(ctx, prometheusCollector)
-			host, _, err := net.SplitHostPort(r.RemoteAddr)
-			if err != nil {
-				host = r.RemoteAddr
-			}
-			ctx = internalctx.WithRequestIPAddress(ctx, host)
 			ctx = internalctx.WithOIDCer(ctx, oidcer)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -151,6 +146,24 @@ func RequireVendor(handler http.Handler) http.Handler {
 		}
 		if auth, err := auth.Authentication.Get(ctx); err != nil {
 			http.Error(w, err.Error(), http.StatusForbidden)
+		} else if auth.CurrentCustomerOrgID() != nil || auth.CurrentPartnerOrgID() != nil {
+			http.Error(w, "insufficient permissions", http.StatusForbidden)
+		} else {
+			handler.ServeHTTP(w, r)
+		}
+	}
+	return http.HandlerFunc(fn)
+}
+
+func RequireVendorOrPartner(handler http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		if isSuperAdmin(ctx) {
+			handler.ServeHTTP(w, r)
+			return
+		}
+		if auth, err := auth.Authentication.Get(ctx); err != nil {
+			http.Error(w, err.Error(), http.StatusForbidden)
 		} else if auth.CurrentCustomerOrgID() != nil {
 			http.Error(w, "insufficient permissions", http.StatusForbidden)
 		} else {
@@ -220,11 +233,50 @@ var RequireOrgAndRole = auth.Authentication.ValidatorMiddleware(
 	},
 )
 
+// RequireEmailVerified rejects requests with 403 when USER_EMAIL_VERIFICATION_REQUIRED is
+// enabled and the authenticated user's DB record has no EmailVerifiedAt. It must run after
+// auth.Authentication.Middleware so the DB-loaded user is available in the context; if
+// there is no authenticated user it panics, since that is a wiring bug.
+func RequireEmailVerified(handler http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		if !env.UserEmailVerificationRequired() {
+			handler.ServeHTTP(w, r)
+			return
+		}
+		value := auth.Authentication.Require(r.Context())
+		if user := value.CurrentUser(); user == nil || user.EmailVerifiedAt == nil {
+			http.Error(w, "email not verified", http.StatusForbidden)
+		} else {
+			handler.ServeHTTP(w, r)
+		}
+	}
+	return http.HandlerFunc(fn)
+}
+
 func BlockSuperAdmin(handler http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		if isSuperAdmin(r.Context()) {
 			http.Error(w, "super admins cannot modify resources", http.StatusForbidden)
 			return
+		}
+		handler.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
+}
+
+func BlockSuperAdminUnlessOrganizationExpired(handler http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		if isSuperAdmin(ctx) {
+			org := auth.Authentication.Require(ctx).CurrentOrg()
+			if org == nil || org.HasActiveSubscription() {
+				http.Error(
+					w,
+					"super admins cannot delete an active organization",
+					http.StatusForbidden,
+				)
+				return
+			}
 		}
 		handler.ServeHTTP(w, r)
 	}
@@ -253,6 +305,7 @@ func FeatureFlagMiddleware(feature types.Feature) func(handler http.Handler) htt
 var (
 	LicensingFeatureFlagEnabledMiddleware = FeatureFlagMiddleware(types.FeatureLicensing)
 	VendorBillingFeatureMiddleware        = FeatureFlagMiddleware(types.FeatureVendorBilling)
+	PartnerManagementFeatureMiddleware    = FeatureFlagMiddleware(types.FeaturePartnerManagement)
 )
 
 func SetRequestPattern(next http.Handler) http.Handler {

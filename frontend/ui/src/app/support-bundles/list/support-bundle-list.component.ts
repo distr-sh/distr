@@ -33,7 +33,7 @@ export class SupportBundleListComponent {
   protected readonly faPlus = faPlus;
   protected readonly faXmark = faXmark;
 
-  protected readonly routePrefix = this.auth.isVendor() ? '/support-bundles' : '/support';
+  protected readonly routePrefix = this.auth.isCustomer() ? '/support' : '/support-bundles';
 
   protected readonly configExists = toSignal(
     this.auth.isVendor() ? this.svc.getConfiguration().pipe(map((envVars) => envVars.length > 0)) : of(false),

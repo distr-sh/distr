@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: Mise Install
+
+on:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'mise.toml'
+      - '.github/workflows/mise.yaml'
+  pull_request:
+    paths:
+      - 'mise.toml'
+      - '.github/workflows/mise.yaml'
+
+jobs:
+  install:
+    name: Install
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Install mise
+        uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1

@@ -1,5 +1,5 @@
 import {Component, effect, inject, input, output, signal} from '@angular/core';
-import {FormControl, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
+import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {DeploymentTarget, DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleExclamation, faShip} from '@fortawesome/free-solid-svg-icons';
@@ -47,7 +47,7 @@ import {
           </button>
         </div>
         <!-- Modal body -->
-        <form class="p-4 md:p-5" (ngSubmit)="saveDeployment()">
+        <form class="p-4 md:p-5" [formGroup]="deployFormWrapper" (ngSubmit)="saveDeployment()">
           @if (deploymentTarget().customerOrganization !== undefined && auth.isVendor()) {
             <div
               class="flex items-center p-4 mb-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
@@ -76,7 +76,7 @@ import {
       </div>
     </div>
   </div>`,
-  imports: [DeploymentFormComponent, FaIconComponent, FormsModule, ReactiveFormsModule],
+  imports: [DeploymentFormComponent, FaIconComponent, ReactiveFormsModule],
 })
 export class DeploymentModalComponent {
   public readonly deploymentTarget = input.required<DeploymentTarget>();
@@ -89,6 +89,10 @@ export class DeploymentModalComponent {
   private readonly deploymentTargets = inject(DeploymentTargetsService);
 
   protected readonly deployForm = new FormControl<DeploymentFormValue | undefined>(undefined, Validators.required);
+  /**
+   * This is required because ngSubmit only works on forms with a form group attached
+   */
+  protected readonly deployFormWrapper = new FormGroup({deployment: this.deployForm});
   protected readonly loading = signal(false);
 
   protected readonly faShip = faShip;

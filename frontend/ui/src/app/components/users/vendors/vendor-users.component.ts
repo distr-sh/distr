@@ -23,7 +23,15 @@ export class VendorUsersComponent {
     this.refresh$.pipe(
       startWith(undefined),
       switchMap(() => this.usersService.getUsers()),
-      map((users) => (this.auth.isVendor() ? users.filter((user) => user.customerOrganizationId === undefined) : users))
+      map((users) =>
+        this.auth.isVendor()
+          ? users.filter(
+              (user) => user.customerOrganizationId === undefined && user.partnerOrganizationId === undefined
+            )
+          : this.auth.isPartner()
+            ? users.filter((user) => user.partnerOrganizationId !== undefined)
+            : users
+      )
     )
   );
 }

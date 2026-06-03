@@ -41,6 +41,14 @@ func createAccessTokenHandler() http.HandlerFunc {
 			return
 		}
 
+		if request.UserRole != nil {
+			callerRole := auth.CurrentUserRole()
+			if callerRole == nil || request.UserRole.GreaterThan(*callerRole) {
+				http.Error(w, "token role cannot exceed your own role", http.StatusBadRequest)
+				return
+			}
+		}
+
 		key, err := authkey.NewKey()
 		if err != nil {
 			log.Warn("error creating token", zap.Error(err))
@@ -55,6 +63,7 @@ func createAccessTokenHandler() http.HandlerFunc {
 			UserAccountID:  auth.CurrentUserID(),
 			Key:            key,
 			OrganizationID: *auth.CurrentOrgID(),
+			UserRole:       request.UserRole,
 		}
 		if err := db.CreateAccessToken(ctx, &token); err != nil {
 			log.Warn("error creating token", zap.Error(err))

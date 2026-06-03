@@ -126,14 +126,3 @@ func GetLicenseKey(ctx context.Context) *types.LicenseKey {
 func WithLicenseKey(ctx context.Context, licenseKey *types.LicenseKey) context.Context {
 	return context.WithValue(ctx, ctxKeyLicenseKey, licenseKey)
 }
-
-func GetRequestIPAddress(ctx context.Context) string {
-	if val, ok := ctx.Value(ctxKeyIPAddress).(string); ok {
-		return val
-	}
-	panic("no IP address in context")
-}
-
-func WithRequestIPAddress(ctx context.Context, address string) context.Context {
-	return context.WithValue(ctx, ctxKeyIPAddress, address)
-}

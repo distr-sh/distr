@@ -244,6 +244,36 @@ func GetApplicationEntitlementsWithCustomerOrganizationID(
 	}
 }
 
+func GetApplicationEntitlementsByPartnerOrgID(
+	ctx context.Context,
+	partnerOrgID, organizationID uuid.UUID,
+	applicationID *uuid.UUID,
+) ([]types.ApplicationEntitlement, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		"SELECT "+applicationEntitlementCompleteOutputExpr+
+			"FROM ApplicationEntitlement al "+
+			"LEFT JOIN Application a ON al.application_id = a.id "+
+			"JOIN CustomerOrganization co ON al.customer_organization_id = co.id "+
+			"WHERE al.organization_id = @organizationId AND co.partner_organization_id = @partnerOrgId "+
+			andApplicationIdMatchesOrEmpty(applicationID),
+		pgx.NamedArgs{
+			"organizationId": organizationID,
+			"partnerOrgId":   partnerOrgID,
+			"applicationId":  applicationID,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query ApplicationEntitlement: %w", err)
+	}
+	if result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.ApplicationEntitlement]); err != nil {
+		return nil, fmt.Errorf("could not collect ApplicationEntitlement: %w", err)
+	} else {
+		return result, nil
+	}
+}
+
 func GetApplicationEntitlementByID(ctx context.Context, id uuid.UUID) (*types.ApplicationEntitlement, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(

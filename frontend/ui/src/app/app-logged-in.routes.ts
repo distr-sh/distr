@@ -1,7 +1,6 @@
 import {inject} from '@angular/core';
 import {CanActivateFn, Router, Routes} from '@angular/router';
 import {UserRole} from '@distr-sh/distr-sdk';
-import dayjs from 'dayjs';
 import {firstValueFrom, map} from 'rxjs';
 import {getRemoteEnvironment} from '../env/remote';
 import {AccessTokensComponent} from './access-tokens/access-tokens.component';
@@ -16,7 +15,9 @@ import {BillingSettingsComponent} from './billing/settings/billing-settings.comp
 import {CustomerOrganizationsComponent} from './components/customer-organizations/customer-organizations.component';
 import {DashboardComponent} from './components/dashboard/dashboard.component';
 import {HomeComponent} from './components/home/home.component';
+import {PartnerOrganizationsComponent} from './components/partner-organizations/partner-organizations.component';
 import {CustomerUsersComponent} from './components/users/customers/customer-users.component';
+import {PartnerUsersComponent} from './components/users/partners/partner-users.component';
 import {VendorUsersComponent} from './components/users/vendors/vendor-users.component';
 import {DeploymentTargetDetailComponent} from './deployments/deployment-target-details/deployment-target-detail.component';
 import {DeploymentTargetsComponent} from './deployments/deployment-targets.component';
@@ -42,6 +43,7 @@ import {AgentsTutorialComponent} from './tutorials/agents/agents-tutorial.compon
 import {BrandingTutorialComponent} from './tutorials/branding/branding-tutorial.component';
 import {RegistryTutorialComponent} from './tutorials/registry/registry-tutorial.component';
 import {TutorialsComponent} from './tutorials/tutorials.component';
+import {isSubscriptionExpired} from './types/organization';
 import {UserSettingsComponent} from './user-settings/user-settings.component';
 
 function requiredRoleGuard(...userRole: UserRole[]): CanActivateFn {
@@ -63,6 +65,14 @@ const requireVendor: CanActivateFn = () => {
 
 const requireCustomer: CanActivateFn = () => {
   if (inject(AuthService).isCustomer()) {
+    return true;
+  }
+  return inject(Router).createUrlTree(['/']);
+};
+
+const requireVendorOrPartner: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  if (auth.isVendor() || auth.isPartner()) {
     return true;
   }
   return inject(Router).createUrlTree(['/']);
@@ -96,6 +106,13 @@ function vendorBillingEnabledGuard(): CanActivateFn {
   };
 }
 
+function partnerManagementEnabledGuard(): CanActivateFn {
+  return async () => {
+    const featureFlags = inject(FeatureFlagService);
+    return await firstValueFrom(featureFlags.isPartnerManagementEnabled$);
+  };
+}
+
 function registryHostSetOrRedirectGuard(redirectTo: string): CanActivateFn {
   return async () => {
     const router = inject(Router);
@@ -118,13 +135,7 @@ function subscriptionGuard(): CanActivateFn {
       auth.isCustomer() ||
       organizationService
         .get()
-        .pipe(
-          map((org) =>
-            org.subscriptionType !== 'community' && dayjs(org.subscriptionEndsAt).isBefore()
-              ? router.createUrlTree(['/subscription'])
-              : true
-          )
-        )
+        .pipe(map((org) => (isSubscriptionExpired(org) ? router.createUrlTree(['/subscription']) : true)))
     );
   };
 }
@@ -181,15 +192,28 @@ export const routes: Routes = [
       {
         path: 'customers',
         component: CustomerOrganizationsComponent,
-        canActivate: [requireVendor],
+        canActivate: [requireVendorOrPartner],
       },
       {
         path: 'customers/:customerOrganizationId',
-        canActivate: [requireVendor],
+        canActivate: [requireVendorOrPartner],
         children: [
           {path: 'users', component: CustomerUsersComponent},
           {path: 'secrets', component: CustomerSecretsPageComponent},
           {path: 'links', component: SidebarLinksPageComponent},
+          {path: '', pathMatch: 'full', redirectTo: 'users'},
+        ],
+      },
+      {
+        path: 'partners',
+        component: PartnerOrganizationsComponent,
+        canActivate: [requireVendor, partnerManagementEnabledGuard()],
+      },
+      {
+        path: 'partners/:partnerOrganizationId',
+        canActivate: [requireVendor, partnerManagementEnabledGuard()],
+        children: [
+          {path: 'users', component: PartnerUsersComponent},
           {path: '', pathMatch: 'full', redirectTo: 'users'},
         ],
       },
@@ -231,7 +255,7 @@ export const routes: Routes = [
       },
       {
         path: 'licenses',
-        canActivate: [requireVendor, licensingEnabledGuard()],
+        canActivate: [requireVendorOrPartner, licensingEnabledGuard()],
         data: {userRole: 'vendor'},
         children: [
           {
@@ -309,7 +333,7 @@ export const routes: Routes = [
       },
       {
         path: 'support-bundles',
-        canActivate: [requireVendor, supportBundlesEnabledGuard()],
+        canActivate: [requireVendorOrPartner, supportBundlesEnabledGuard()],
         children: [
           {
             path: '',
@@ -319,7 +343,7 @@ export const routes: Routes = [
           {
             path: 'settings',
             component: SupportBundleSettingsComponent,
-            canActivate: [requiredRoleGuard('read_write', 'admin')],
+            canActivate: [requireVendor, requiredRoleGuard('read_write', 'admin')],
           },
           {
             path: ':supportBundleId',

@@ -114,6 +114,7 @@ func putDeployment(w http.ResponseWriter, r *http.Request) {
 				authInfo.CurrentUserID(),
 				*authInfo.CurrentOrgID(),
 				authInfo.CurrentCustomerOrgID(),
+				authInfo.CurrentPartnerOrgID(),
 			)
 			if err != nil {
 				log.Warn("could not get deployment", zap.Error(err))
@@ -158,10 +159,13 @@ func deleteDeploymentHandler() http.HandlerFunc {
 			if err != nil {
 				log.Warn("could not get DeploymentTarget", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return err
 			}
-			if target.OrganizationID != orgId || !isDeploymentTargetVisible(auth, target.DeploymentTarget) {
+			if target.OrganizationID != orgId {
+				http.NotFound(w, r)
+				return apierrors.ErrNotFound
+			} else if !isDeploymentTargetVisible(ctx, target) {
 				http.NotFound(w, r)
 				return apierrors.ErrNotFound
 			}
@@ -169,7 +173,7 @@ func deleteDeploymentHandler() http.HandlerFunc {
 			if err := db.DeleteDeploymentWithID(ctx, deployment.ID); err != nil {
 				log.Warn("could not delete Deployment", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return err
 			}
 
@@ -216,7 +220,12 @@ func validateDeploymentRequest(
 		}
 	}
 
-	if target, err = db.GetDeploymentTarget(ctx, request.DeploymentTargetID, &orgId); err != nil {
+	if target, err = db.GetDeploymentTarget(
+		ctx,
+		request.DeploymentTargetID,
+		&orgId,
+		auth.CurrentPartnerOrgID(),
+	); err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
 			return badRequestError(w, "DeploymentTarget does not exist")
 		} else {
@@ -370,9 +379,7 @@ func validateDeploymentRequestDeploymentTarget(
 	request api.DeploymentRequest,
 	target *types.DeploymentTargetFull,
 ) error {
-	auth := auth.Authentication.Require(ctx)
-
-	if !isDeploymentTargetVisible(auth, target.DeploymentTarget) {
+	if !isDeploymentTargetVisible(ctx, target) {
 		err := errors.New("DeploymentTarget not found")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
@@ -503,6 +510,7 @@ func deploymentMiddleware(next http.Handler) http.Handler {
 			auth.CurrentUserID(),
 			*auth.CurrentOrgID(),
 			auth.CurrentCustomerOrgID(),
+			auth.CurrentPartnerOrgID(),
 		); errors.Is(err, apierrors.ErrNotFound) {
 			w.WriteHeader(http.StatusNotFound)
 		} else if err != nil {

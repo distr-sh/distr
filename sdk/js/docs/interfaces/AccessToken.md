@@ -51,3 +51,9 @@
 ### lastUsedAt?
 
 > `optional` **lastUsedAt?**: `string`
+
+---
+
+### userRole?
+
+> `optional` **userRole?**: [`UserRole`](../type-aliases/UserRole.md)

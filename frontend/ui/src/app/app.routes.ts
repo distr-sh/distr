@@ -14,19 +14,16 @@ import {LoginComponent} from './login/login.component';
 import {PasswordResetComponent} from './password-reset/password-reset.component';
 import {RegisterComponent} from './register/register.component';
 import {AuthService} from './services/auth.service';
-import {SettingsService} from './services/settings.service';
 import {ToastService} from './services/toast.service';
-import {UsersService} from './services/users.service';
 import {VerifyComponent} from './verify/verify.component';
 
 const emailVerificationGuard: CanActivateFn = async () => {
   const auth = inject(AuthService);
-  const settings = inject(SettingsService);
   const toast = inject(ToastService);
   const router = inject(Router);
   const claims = auth.getClaims();
   if (claims?.email_verified) {
-    await firstValueFrom(settings.confirmEmailVerification());
+    await firstValueFrom(auth.confirmEmailVerification());
     toast.success('Your email has been verified');
     await firstValueFrom(auth.logout());
     return router.createUrlTree(['/login'], {queryParams: {email: claims.email}});
@@ -75,10 +72,9 @@ const jwtAuthGuard: CanActivateFn = (_: ActivatedRouteSnapshot, state: RouterSta
 
 const inviteComponentGuard: CanActivateFn = async () => {
   const auth = inject(AuthService);
-  const users = inject(UsersService);
   const router = inject(Router);
   try {
-    const {active} = await firstValueFrom(users.getUserStatus());
+    const {active} = await firstValueFrom(auth.getUserStatus());
     if (!active) {
       return true;
     }
@@ -92,6 +88,8 @@ const baseRouteRedirectGuard: CanActivateFn = () => {
   const router = inject(Router);
   if (auth.isVendor()) {
     return router.createUrlTree(['/dashboard']);
+  } else if (auth.isPartner()) {
+    return router.createUrlTree(['/deployments']);
   } else {
     return router.createUrlTree(['/home']);
   }

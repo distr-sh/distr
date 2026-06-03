@@ -359,6 +359,11 @@ func agentPutDeploymentTargetLogsHandler() http.HandlerFunc {
 		}
 
 		if err := db.SaveDeploymentTargetLogRecords(ctx, deploymentTarget.ID, records); err != nil {
+			if errors.Is(err, apierrors.ErrBadRequest) {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+
 			log.Error("error saving deployment target log records", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -566,7 +571,8 @@ func agentAuthDeploymentTargetCtxMiddleware(next http.Handler) http.Handler {
 		orgId := auth.CurrentOrgID()
 		targetId := auth.CurrentDeploymentTargetID()
 
-		if deploymentTarget, err := db.GetDeploymentTarget(ctx, targetId, &orgId); errors.Is(err, apierrors.ErrNotFound) {
+		deploymentTarget, err := db.GetDeploymentTarget(ctx, targetId, &orgId, nil)
+		if errors.Is(err, apierrors.ErrNotFound) {
 			w.WriteHeader(http.StatusUnauthorized)
 		} else if err != nil {
 			log.Error("failed to get DeploymentTarget", zap.Error(err))
@@ -597,7 +603,7 @@ func getVerifiedDeploymentTarget(
 	targetID uuid.UUID,
 	targetSecret string,
 ) (*types.DeploymentTargetFull, error) {
-	if deploymentTarget, err := db.GetDeploymentTarget(ctx, targetID, nil); err != nil {
+	if deploymentTarget, err := db.GetDeploymentTarget(ctx, targetID, nil, nil); err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
 			return nil, fmt.Errorf("%w: %w", apierrors.ErrUnauthorized, err)
 		}

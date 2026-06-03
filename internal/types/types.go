@@ -34,6 +34,39 @@ func ParseUserRole(value string) (UserRole, error) {
 	}
 }
 
+// Rank orders the role hierarchy: admin > read_write > read_only. It panics
+// for unknown roles — every role entering the codebase is validated via
+// ParseUserRole / UnmarshalJSON, so an invalid value at this point is a bug.
+func (r UserRole) Rank() int {
+	switch r {
+	case UserRoleReadOnly:
+		return 0
+	case UserRoleReadWrite:
+		return 1
+	case UserRoleAdmin:
+		return 2
+	default:
+		panic(fmt.Sprintf("invalid user role: %q", string(r)))
+	}
+}
+
+// GreaterThan reports whether r is more privileged than other.
+func (r UserRole) GreaterThan(other UserRole) bool {
+	return r.Rank() > other.Rank()
+}
+
+func (ref *UserRole) UnmarshalJSON(data []byte) error {
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	} else if userRole, err := ParseUserRole(value); err != nil {
+		return err
+	} else {
+		*ref = userRole
+		return nil
+	}
+}
+
 type OrderDirection string
 
 const (
@@ -88,6 +121,7 @@ const (
 	FeatureArtifactVersionMutable Feature = "artifact_version_mutable"
 	FeatureVendorBilling          Feature = "vendor_billing"
 	FeatureDeploymentLogsAfter    Feature = "deployment_logs_after"
+	FeaturePartnerManagement      Feature = "partner_management"
 )
 
 type DeploymentStatusType string
@@ -137,8 +171,39 @@ func (ref *DeploymentStatusType) UnmarshalJSON(data []byte) error {
 	}
 }
 
+type DeploymentType string
+
+const (
+	DeploymentTypeDocker     DeploymentType = "docker"
+	DeploymentTypeKubernetes DeploymentType = "kubernetes"
+)
+
+var ErrInvalidDeploymentType = errors.New("invalid deployment type")
+
+func ParseDeploymentType(value string) (DeploymentType, error) {
+	switch value {
+	case string(DeploymentTypeDocker):
+		return DeploymentTypeDocker, nil
+	case string(DeploymentTypeKubernetes):
+		return DeploymentTypeKubernetes, nil
+	default:
+		return "", fmt.Errorf("%w: %v", ErrInvalidDeploymentType, value)
+	}
+}
+
+func (ref *DeploymentType) UnmarshalJSON(data []byte) error {
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	} else if deploymentType, err := ParseDeploymentType(value); err != nil {
+		return err
+	} else {
+		*ref = deploymentType
+		return nil
+	}
+}
+
 type (
-	DeploymentType        string
 	HelmChartType         string
 	DeploymentTargetScope string
 	DockerType            string
@@ -148,9 +213,6 @@ type (
 )
 
 const (
-	DeploymentTypeDocker     DeploymentType = "docker"
-	DeploymentTypeKubernetes DeploymentType = "kubernetes"
-
 	HelmChartTypeRepository HelmChartType = "repository"
 	HelmChartTypeOCI        HelmChartType = "oci"
 

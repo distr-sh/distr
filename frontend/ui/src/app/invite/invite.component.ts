@@ -47,7 +47,7 @@ export class InviteComponent {
       if (updateOk) {
         try {
           if (this.claims?.email_verified) {
-            await firstValueFrom(this.settings.confirmEmailVerification());
+            await firstValueFrom(this.auth.confirmEmailVerification());
           }
         } catch (e) {
           // ignore errors of confirmation (because password has already been set)

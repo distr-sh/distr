@@ -3,7 +3,7 @@ import {inject, Injectable} from '@angular/core';
 import {LoginResponse, TokenResponse, UserRole} from '@distr-sh/distr-sdk';
 import dayjs from 'dayjs';
 import {jwtDecode} from 'jwt-decode';
-import {catchError, map, Observable, of, tap, throwError} from 'rxjs';
+import {catchError, map, Observable, of, shareReplay, tap, throwError} from 'rxjs';
 import {Organization} from '../types/organization';
 
 const tokenStorageKey = 'cloud_token';
@@ -13,7 +13,8 @@ const authBaseUrl = '/api/v1/auth';
 export interface JWTClaims {
   sub: string;
   org: string;
-  c_org: string;
+  c_org?: string;
+  p_org?: string;
   email: string;
   password_reset: boolean;
   email_verified: boolean;
@@ -70,11 +71,16 @@ export class AuthService {
   }
 
   public isVendor(): boolean {
-    return this.getClaims()?.c_org === undefined;
+    const claims = this.getClaims();
+    return claims?.c_org === undefined && claims?.p_org === undefined;
   }
 
   public isCustomer(): boolean {
     return this.getClaims()?.c_org !== undefined;
+  }
+
+  public isPartner(): boolean {
+    return this.getClaims()?.p_org !== undefined;
   }
 
   public isSuperAdmin(): boolean {
@@ -102,9 +108,10 @@ export class AuthService {
     return this.httpClient.post<void>(`${authBaseUrl}/reset`, {email});
   }
 
-  public loginConfig(): Observable<LoginConfig> {
-    return this.httpClient.get<LoginConfig>(`${authBaseUrl}/login/config`).pipe(catchError(() => of({})));
-  }
+  public readonly loginConfig$ = this.httpClient.get<LoginConfig>(`${authBaseUrl}/login/config`).pipe(
+    catchError(() => of({} as LoginConfig)),
+    shareReplay(1)
+  );
 
   public register(email: string, name: string | null | undefined, password: string): Observable<void> {
     let body: any = {email, password};
@@ -138,6 +145,18 @@ export class AuthService {
       }
     }
     return {token: null, claims: undefined};
+  }
+
+  public requestEmailVerification(): Observable<void> {
+    return this.httpClient.post<void>(`${authBaseUrl}/verify/request`, undefined);
+  }
+
+  public confirmEmailVerification(): Observable<void> {
+    return this.httpClient.post<void>(`${authBaseUrl}/verify/confirm`, undefined);
+  }
+
+  public getUserStatus(): Observable<{active: boolean}> {
+    return this.httpClient.get<{active: boolean}>(`${authBaseUrl}/status`);
   }
 
   public switchContext(org: Organization): Observable<boolean> {
@@ -192,7 +211,12 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
 };
 
 function authenticatedRoute(req: HttpRequest<unknown>): boolean {
-  return !req.url.startsWith(authBaseUrl) || req.url === `${authBaseUrl}/switch-context`;
+  return (
+    !req.url.startsWith(authBaseUrl) ||
+    req.url === `${authBaseUrl}/switch-context` ||
+    req.url === `${authBaseUrl}/status` ||
+    req.url.startsWith(`${authBaseUrl}/verify/`)
+  );
 }
 
 function removeJwtQueryParamAndRefresh(email?: string) {

@@ -3,18 +3,17 @@ import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
+import {OidcButtonsComponent} from '../components/oidc-buttons.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AuthService} from '../services/auth.service';
-import {ToastService} from '../services/toast.service';
 
 @Component({
   selector: 'app-register',
-  imports: [RouterLink, ReactiveFormsModule, AutotrimDirective],
+  imports: [RouterLink, ReactiveFormsModule, AutotrimDirective, OidcButtonsComponent],
   templateUrl: './register.component.html',
 })
 export class RegisterComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
-  private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
 
@@ -31,12 +30,6 @@ export class RegisterComponent implements OnInit {
   );
 
   ngOnInit() {
-    const reason = this.route.snapshot.queryParamMap.get('reason');
-    switch (reason) {
-      case 'oidc-user-not-found':
-        this.toast.error('This email address is not associated with a Distr account yet. Please create it here first.');
-        break;
-    }
     const email = this.route.snapshot.queryParamMap.get('email');
     if (email) {
       this.form.patchValue({email});

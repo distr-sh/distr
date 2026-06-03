@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"path"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/agentauth"
+	"github.com/distr-sh/distr/internal/agentcheck"
 	"github.com/distr-sh/distr/internal/agentclient"
 	"github.com/distr-sh/distr/internal/agentenv"
 	"github.com/distr-sh/distr/internal/buildconfig"
@@ -48,6 +50,7 @@ var (
 		}),
 	))
 	agentClient      = util.Require(agentclient.NewFromEnv(logger))
+	health           = agentcheck.NewServer(time.Hour)
 	k8sConfigFlags   = genericclioptions.NewConfigFlags(true)
 	k8sClient        = util.Require(kubernetes.NewForConfig(util.Require(k8sConfigFlags.ToRESTConfig())))
 	metricsClientSet = util.Require(metricsv.NewForConfig(util.Require(k8sConfigFlags.ToRESTConfig())))
@@ -92,6 +95,12 @@ func main() {
 		zap.Bool("release", buildconfig.IsRelease()))
 
 	go func() {
+		if err := startHealthServer(); err != nil {
+			logger.Warn("health server error", zap.Error(err))
+		}
+	}()
+
+	go func() {
 		logger.Info("start config watch")
 		if err := watchConfigDirs(agentConfigDirs); err != nil {
 			logger.Error("config watch failed", zap.Error(err))
@@ -112,6 +121,8 @@ func main() {
 		case <-ctx.Done():
 			continue
 		}
+
+		health.Heartbeat()
 
 		if changed, err := agentClient.ReloadFromEnv(); err != nil {
 			logger.Error("agent client config reload failed", zap.Error(err))
@@ -433,6 +444,14 @@ func ensureImagePullSecret(ctx context.Context, namespace string, deployment api
 	)
 	if err != nil {
 		return fmt.Errorf("failed to apply secret resource %v: %w", secretName, err)
+	}
+	return nil
+}
+
+func startHealthServer() error {
+	err := http.ListenAndServe(":8765", health)
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return err
 	}
 	return nil
 }

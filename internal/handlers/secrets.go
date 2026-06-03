@@ -54,8 +54,7 @@ func getSecretsHandler() http.HandlerFunc {
 		ctx := r.Context()
 		auth := auth.Authentication.Require(ctx)
 
-		secrets, err := db.GetSecrets(ctx, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID())
-
+		secrets, err := db.GetSecrets(ctx, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
 		if err != nil {
 			internalctx.GetLogger(ctx).Error("failed to get secrets", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -90,12 +89,30 @@ func createSecretHandler() http.HandlerFunc {
 			http.Error(w, "value is required", http.StatusBadRequest)
 			return
 		}
+
 		if customerOrganizationID := auth.CurrentCustomerOrgID(); customerOrganizationID != nil {
 			if body.CustomerOrganizationID != nil && *body.CustomerOrganizationID != *customerOrganizationID {
-				http.Error(w, "customer organization ID mismatch", http.StatusBadRequest)
+				http.Error(w, "invalid customer organization ID", http.StatusBadRequest)
 				return
 			}
 			body.CustomerOrganizationID = customerOrganizationID
+		} else if partnerOrganizationID := auth.CurrentPartnerOrgID(); partnerOrganizationID != nil {
+			if body.CustomerOrganizationID == nil {
+				http.Error(w, "customer organization ID is required", http.StatusBadRequest)
+				return
+			}
+
+			err := db.ValidateCustomerOrgBelongsToPartnerOrg(ctx, *body.CustomerOrganizationID, *partnerOrganizationID)
+			if err != nil {
+				if errors.Is(err, db.ErrCustomerOrgNotInPartnerOrg) {
+					http.Error(w, "invalid customer organization ID", http.StatusBadRequest)
+				} else {
+					internalctx.GetLogger(ctx).Error("failed to check customer visibility", zap.Error(err))
+					sentry.GetHubFromContext(ctx).CaptureException(err)
+					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				}
+				return
+			}
 		}
 
 		secret, err := db.CreateSecret(
@@ -137,8 +154,13 @@ func updateSecretHandler() http.HandlerFunc {
 			return
 		}
 
-		// check if this user is authorized to update the secret
-		_, err = db.GetSecretByID(ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID())
+		existing, err := db.GetSecretByID(
+			ctx,
+			id,
+			*auth.CurrentOrgID(),
+			auth.CurrentCustomerOrgID(),
+			auth.CurrentPartnerOrgID(),
+		)
 		if err != nil {
 			if errors.Is(err, apierrors.ErrNotFound) {
 				http.Error(w, "secret not found", http.StatusNotFound)
@@ -153,7 +175,7 @@ func updateSecretHandler() http.HandlerFunc {
 		secret, err := db.UpdateSecret(
 			ctx,
 			id,
-			auth.CurrentCustomerOrgID(),
+			existing.CustomerOrganizationID,
 			auth.CurrentUserID(),
 			body.Value,
 		)
@@ -178,7 +200,7 @@ func deleteSecretHandler() http.HandlerFunc {
 			return
 		}
 
-		err = db.DeleteSecret(ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID())
+		err = db.DeleteSecret(ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
 		if err != nil {
 			if errors.Is(err, apierrors.ErrNotFound) {
 				http.Error(w, "secret not found", http.StatusNotFound)

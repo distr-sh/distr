@@ -1,4 +1,4 @@
-package main
+package agentcheck
 
 import (
 	"fmt"
@@ -7,33 +7,33 @@ import (
 	"time"
 )
 
-type healthcheckServer struct {
+type Server struct {
 	heartbeatTimestamp       *time.Time
 	heartbeatHealthyDuration time.Duration
 	mut                      sync.RWMutex
 }
 
-func NewHealthcheckServer(d time.Duration) *healthcheckServer {
-	return &healthcheckServer{heartbeatHealthyDuration: d}
+func NewServer(d time.Duration) *Server {
+	return &Server{heartbeatHealthyDuration: d}
 }
 
-func (h *healthcheckServer) Heartbeat() {
+func (h *Server) Heartbeat() {
 	h.HeartbeatAt(time.Now())
 }
 
-func (h *healthcheckServer) HeartbeatAt(t time.Time) {
+func (h *Server) HeartbeatAt(t time.Time) {
 	h.mut.Lock()
 	defer h.mut.Unlock()
 
 	h.heartbeatTimestamp = &t
 }
 
-func (h *healthcheckServer) IsStale() bool {
+func (h *Server) IsStale() bool {
 	return h.heartbeatTimestamp == nil || h.heartbeatTimestamp.Add(h.heartbeatHealthyDuration).Before(time.Now())
 }
 
 // ServeHTTP implements [http.Handler].
-func (h *healthcheckServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.mut.RLock()
 	defer h.mut.RUnlock()
 

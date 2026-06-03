@@ -111,12 +111,13 @@ func ApiRouter(
 	prometheusCollector *prometheus.DistrCollector,
 ) func(r chiopenapi.Router) {
 	requestSize1MiB := chimiddleware.RequestSize(1024 * 1024)
-	requestSize10MiB := chimiddleware.RequestSize(10 * 1024 * 1024)
+	requestSize25MiB := chimiddleware.RequestSize(25 * 1024 * 1024)
 
 	return func(r chiopenapi.Router) {
 		r.Use(
 			chimiddleware.RequestID,
-			chimiddleware.RealIP,
+			chimiddleware.ClientIPFromRemoteAddr,
+			chimiddleware.ClientIPFromXFF(),
 			middleware.Sentry,
 			middleware.LoggerCtxMiddleware(logger),
 			middleware.LoggingMiddleware,
@@ -148,6 +149,7 @@ func ApiRouter(
 					r.Use(
 						middleware.SentryUser,
 						auth.Authentication.Middleware,
+						middleware.RequireEmailVerified,
 						httprate.Limit(30, 1*time.Second, httprate.WithKeyFuncs(middleware.RateLimitUserIDKey)),
 						httprate.Limit(300, 1*time.Minute, httprate.WithKeyFuncs(middleware.RateLimitUserIDKey)),
 						httprate.Limit(2000, 1*time.Hour, httprate.WithKeyFuncs(middleware.RateLimitUserIDKey)),
@@ -165,6 +167,8 @@ func ApiRouter(
 					r.Route("/billing", handlers.BillingRouter)
 					r.Route("/context", handlers.ContextRouter)
 					r.Route("/customer-organizations", handlers.CustomerOrganizationsRouter)
+					r.With(middleware.PartnerManagementFeatureMiddleware).
+						Route("/partner-organizations", handlers.PartnerOrganizationsRouter)
 					r.Route("/dashboard", handlers.DashboardRouter)
 					r.Route("/alert-configurations", handlers.AlertConfigurationsRouter)
 					r.Route("/deployment-target-metrics", handlers.DeploymentTargetMetricsRouter)
@@ -190,7 +194,7 @@ func ApiRouter(
 				r.Group(func(r chiopenapi.Router) {
 					r.Use(
 						middleware.OTEL(tracers.Agent()),
-						requestSize10MiB,
+						requestSize25MiB,
 					)
 					r.Route("/", handlers.AgentRouter)
 				})

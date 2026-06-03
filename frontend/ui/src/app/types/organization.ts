@@ -1,4 +1,5 @@
 import {BaseModel, Named, UserRole} from '@distr-sh/distr-sdk';
+import dayjs from 'dayjs';
 import {SubscriptionType} from './subscription';
 
 export type Feature =
@@ -6,7 +7,8 @@ export type Feature =
   | 'pre_post_scripts'
   | 'artifact_version_mutable'
   | 'vendor_billing'
-  | 'deployment_logs_after';
+  | 'deployment_logs_after'
+  | 'partner_management';
 
 export interface SubscriptionLimits {
   maxCustomerOrganizations: number;
@@ -46,5 +48,11 @@ export interface OrganizationWithUserRole extends Organization {
   userRole: UserRole;
   customerOrganizationId?: string;
   customerOrganizationName?: string;
+  partnerOrganizationId?: string;
+  partnerOrganizationName?: string;
   joinedOrgAt: string;
+}
+
+export function isSubscriptionExpired(org: Organization): boolean {
+  return org.subscriptionType !== 'community' && dayjs(org.subscriptionEndsAt).isBefore();
 }

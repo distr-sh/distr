@@ -52,7 +52,7 @@
       @let customerOrgId = customerDeploymentTargets.customerOrganization?.id;
       @let isCollapsed = customerOrgId && collapsedCustomerIds().includes(customerOrgId);
 
-      @if (auth.isVendor() && customerDeploymentTargets.customerOrganization; as customer) {
+      @if ((auth.isVendor() || auth.isPartner()) && customerDeploymentTargets.customerOrganization; as customer) {
         <div class="flex flex-row gap-2 items-start mb-3 mt-6" [class.items-center]="isCollapsed">
           <button
             class="inline-flex items-center text-gray-900 text-xl dark:text-white"

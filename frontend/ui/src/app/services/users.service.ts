@@ -10,6 +10,7 @@ export interface CreateUserAccountRequest {
   name?: string;
   userRole: UserRole;
   customerOrganizationId?: string;
+  partnerOrganizationId?: string;
 }
 
 export interface PatchUserAccountRequest {
@@ -46,10 +47,6 @@ export class UsersService {
 
   public getUsers(): Observable<UserAccountWithRole[]> {
     return this.cache.get();
-  }
-
-  public getUserStatus(): Observable<{active: boolean}> {
-    return this.httpClient.get<{active: boolean}>(`${this.baseUrl}/status`);
   }
 
   public addUser(request: CreateUserAccountRequest): Observable<UserAccountInvitationResponse> {

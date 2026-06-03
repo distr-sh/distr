@@ -11,14 +11,12 @@ import (
 	"github.com/distr-sh/distr/internal/authjwt"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
-	"github.com/distr-sh/distr/internal/mailsending"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
-	"github.com/go-chi/httprate"
 	"github.com/go-mailx/mailx"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -39,21 +37,6 @@ func SettingsRouter(r chiopenapi.Router) {
 			With(option.Description("Update current user email address")).
 			With(option.Request(api.UpdateUserAccountEmailRequest{})).
 			With(option.Response(http.StatusAccepted, nil))
-	})
-
-	r.Route("/verify", func(r chiopenapi.Router) {
-		r.WithOptions(option.GroupHidden(true))
-
-		requestVerificationMailRateLimitPerUser := httprate.Limit(
-			3,
-			10*time.Minute,
-			httprate.WithKeyFuncs(middleware.RateLimitUserIDKey),
-		)
-
-		r.With(requestVerificationMailRateLimitPerUser, middleware.BlockSuperAdmin).
-			Post("/request", userSettingsVerifyRequestHandler)
-
-		r.Post("/confirm", userSettingsVerifyConfirmHandler)
 	})
 
 	r.Route("/mfa", func(r chiopenapi.Router) {
@@ -234,51 +217,5 @@ func userSettingsUpdateEmailHandler() http.HandlerFunc {
 		}
 
 		w.WriteHeader(http.StatusAccepted)
-	}
-}
-
-func userSettingsVerifyRequestHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
-	auth := auth.Authentication.Require(ctx)
-	userAccount := auth.CurrentUser()
-	if userAccount.EmailVerifiedAt != nil {
-		w.WriteHeader(http.StatusNoContent)
-	} else if err := mailsending.SendUserVerificationMail(ctx, *userAccount, *auth.CurrentOrg()); err != nil {
-		log.Error("failed to send verification mail", zap.Error(err))
-		w.WriteHeader(http.StatusInternalServerError)
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-	} else {
-		w.WriteHeader(http.StatusNoContent)
-	}
-}
-
-func userSettingsVerifyConfirmHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
-	auth := auth.Authentication.Require(ctx)
-	userAccount := auth.CurrentUser()
-	if !auth.CurrentUserEmailVerified() {
-		http.Error(w, "token does not have verified claim", http.StatusForbidden)
-		return
-	}
-
-	if userAccount.Email != auth.CurrentUserEmail() {
-		userAccount.Email = auth.CurrentUserEmail()
-	} else if userAccount.EmailVerifiedAt != nil {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-
-	if err := db.UpdateUserAccountEmailVerified(ctx, userAccount); err != nil {
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.Error(w, "could not update user", http.StatusBadRequest)
-		} else {
-			log.Error("could not update user", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, "could not update user", http.StatusInternalServerError)
-		}
-	} else {
-		w.WriteHeader(http.StatusNoContent)
 	}
 }

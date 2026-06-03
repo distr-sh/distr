@@ -9,7 +9,9 @@ import {firstValueFrom} from 'rxjs';
 import {WEBSITE_URL} from '../../constants';
 import {getFormDisplayedError} from '../../util/errors';
 import {never} from '../../util/exhaust';
+import {DeleteOrganizationComponent} from '../components/delete-organization/delete-organization.component';
 import {AuthService} from '../services/auth.service';
+import {OrganizationService} from '../services/organization.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {SubscriptionService} from '../services/subscription.service';
 import {ToastService} from '../services/toast.service';
@@ -19,7 +21,14 @@ import {PendingSubscriptionUpdate, SubscriptionUpdateModalComponent} from './sub
 @Component({
   selector: 'app-subscription',
   templateUrl: './subscription.component.html',
-  imports: [FaIconComponent, ReactiveFormsModule, CommonModule, OverlayModule, SubscriptionUpdateModalComponent],
+  imports: [
+    FaIconComponent,
+    ReactiveFormsModule,
+    CommonModule,
+    OverlayModule,
+    SubscriptionUpdateModalComponent,
+    DeleteOrganizationComponent,
+  ],
 })
 export class SubscriptionComponent implements OnInit {
   protected readonly faCheck = faCheck;
@@ -36,6 +45,8 @@ export class SubscriptionComponent implements OnInit {
   private readonly overlay = inject(OverlayService);
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly destroyRef = inject(DestroyRef);
+
+  protected readonly isSubscriptionExpired = inject(OrganizationService).isSubscriptionExpired;
 
   protected subscriptionInfo = signal<SubscriptionInfo | undefined>(undefined);
   protected pendingUpdate = signal<PendingSubscriptionUpdate | undefined>(undefined);

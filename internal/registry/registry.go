@@ -150,7 +150,8 @@ func NewDefault(
 		WithMiddlewares(
 			chimiddleware.Recoverer,
 			chimiddleware.RequestID,
-			chimiddleware.RealIP,
+			chimiddleware.ClientIPFromRemoteAddr,
+			chimiddleware.ClientIPFromXFF(),
 			middleware.OTEL(tracer),
 			middleware.Sentry,
 			middleware.LoggerCtxMiddleware(logger),

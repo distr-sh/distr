@@ -369,23 +369,27 @@ func GetOrCreateArtifact(ctx context.Context, orgID uuid.UUID, artifactName stri
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`SELECT `+artifactOutputExpr+`
-			FROM Artifact a
-			WHERE a.name = @name AND a.organization_id = @orgId`,
+		`WITH inserted AS (
+			INSERT INTO Artifact (name, organization_id)
+			VALUES (@name, @orgId)
+			ON CONFLICT ON CONSTRAINT Artifact_unique_name DO NOTHING
+			RETURNING *
+		)
+		SELECT`+artifactOutputExpr+`FROM inserted a
+		UNION ALL
+		SELECT`+artifactOutputExpr+`FROM Artifact a
+		WHERE a.organization_id = @orgId
+			AND a.name = @name
+			AND NOT EXISTS (SELECT 1 FROM inserted)`,
 		pgx.NamedArgs{
 			"name":  artifactName,
 			"orgId": orgID,
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("could not query artifact: %w", err)
+		return nil, fmt.Errorf("could not get or create artifact: %w", err)
 	}
 	if result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.Artifact]); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			artifact := &types.Artifact{Name: artifactName, OrganizationID: orgID}
-			err = CreateArtifact(ctx, artifact)
-			return artifact, err
-		}
 		return nil, fmt.Errorf("could not collect artifact: %w", err)
 	} else {
 		return &result, nil

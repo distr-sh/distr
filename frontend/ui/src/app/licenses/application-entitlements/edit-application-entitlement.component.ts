@@ -37,6 +37,7 @@ import {
 import dayjs from 'dayjs';
 import {combineLatestWith, filter, first, firstValueFrom, Subject, switchMap, takeUntil} from 'rxjs';
 import {isArchived} from '../../../util/dates';
+import {ExpiresAtPickerComponent} from '../../components/expires-at-picker/expires-at-picker.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {ApplicationsService} from '../../services/applications.service';
 import {AuthService} from '../../services/auth.service';
@@ -47,7 +48,15 @@ import {ArtifactEntitlement} from '../../types/artifact-entitlement';
 @Component({
   selector: 'app-edit-application-entitlement',
   templateUrl: './edit-application-entitlement.component.html',
-  imports: [AsyncPipe, AutotrimDirective, ReactiveFormsModule, CdkOverlayOrigin, CdkConnectedOverlay, FaIconComponent],
+  imports: [
+    AsyncPipe,
+    AutotrimDirective,
+    ExpiresAtPickerComponent,
+    ReactiveFormsModule,
+    CdkOverlayOrigin,
+    CdkConnectedOverlay,
+    FaIconComponent,
+  ],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
