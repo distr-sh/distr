@@ -3,7 +3,6 @@ package handlers
 import (
 	"errors"
 	"net/http"
-	"time"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
@@ -127,12 +126,6 @@ func userSettingsUpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 	if body.ImageID != nil && !util.PtrEq(user.ImageID, body.ImageID) {
 		user.ImageID = body.ImageID
-		isUpdateNeeded = true
-	}
-
-	if user.EmailVerifiedAt == nil && auth.CurrentUserEmailVerified() {
-		// because reset tokens can also verify the users email address
-		user.EmailVerifiedAt = util.PtrTo(time.Now())
 		isUpdateNeeded = true
 	}
 

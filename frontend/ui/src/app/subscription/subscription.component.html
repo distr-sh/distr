@@ -135,18 +135,14 @@
                     </p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label
-                          for="userAccountQuantity-update"
-                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                          Internal Users *
-                        </label>
+                        <label for="userAccountQuantity-update" class="distr-label mb-2"> Internal Users * </label>
                         <input
                           formControlName="userAccountQuantity"
                           type="number"
                           name="userAccountQuantity"
                           id="userAccountQuantity-update"
                           [min]="subscriptionInfoData.currentUserAccountCount"
-                          class="bg-gray-50 border border-gray-300 text-sm text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                          class="distr-input"
                           [placeholder]="subscriptionInfoData.currentUserAccountCount.toString()"
                           required />
                         <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
@@ -154,11 +150,7 @@
                         </p>
                       </div>
                       <div>
-                        <label
-                          for="customerOrganizationQuantity-update"
-                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                          Customers *
-                        </label>
+                        <label for="customerOrganizationQuantity-update" class="distr-label mb-2"> Customers * </label>
                         <input
                           formControlName="customerOrganizationQuantity"
                           type="number"
@@ -166,7 +158,7 @@
                           id="customerOrganizationQuantity-update"
                           [min]="subscriptionInfoData.currentCustomerOrganizationCount"
                           [max]="getCurrentPlanLimit('customerOrganizations')"
-                          class="bg-gray-50 border border-gray-300 text-sm text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                          class="distr-input"
                           [placeholder]="subscriptionInfoData.currentCustomerOrganizationCount.toString()"
                           required />
                         <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
@@ -368,19 +360,11 @@
                     <h2 class="text-xl font-bold dark:text-white">Billing Period</h2>
                     <div class="flex gap-4">
                       <label class="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          formControlName="subscriptionPeriod"
-                          value="monthly"
-                          class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                        <input type="radio" formControlName="subscriptionPeriod" value="monthly" class="distr-radio" />
                         <span class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Monthly</span>
                       </label>
                       <label class="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          formControlName="subscriptionPeriod"
-                          value="yearly"
-                          class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                        <input type="radio" formControlName="subscriptionPeriod" value="yearly" class="distr-radio" />
                         <span class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
                           Yearly
                           <span class="text-green-600 dark:text-green-400">(Save 20%)</span>
@@ -394,18 +378,14 @@
                     <h2 class="text-xl font-bold dark:text-white">Subscription Quantities</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label
-                          for="userAccountQuantity-checkout"
-                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                          Internal Users *
-                        </label>
+                        <label for="userAccountQuantity-checkout" class="distr-label mb-2"> Internal Users * </label>
                         <input
                           formControlName="userAccountQuantity"
                           type="number"
                           name="userAccountQuantity"
                           id="userAccountQuantity-checkout"
                           min="1"
-                          class="bg-gray-50 border border-gray-300 text-sm text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                          class="distr-input"
                           placeholder="1"
                           required />
                         <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
@@ -413,9 +393,7 @@
                         </p>
                       </div>
                       <div>
-                        <label
-                          for="customerOrganizationQuantity-checkout"
-                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                        <label for="customerOrganizationQuantity-checkout" class="distr-label mb-2">
                           Customers *
                         </label>
                         <input
@@ -424,7 +402,7 @@
                           name="customerOrganizationQuantity"
                           id="customerOrganizationQuantity-checkout"
                           min="0"
-                          class="bg-gray-50 border border-gray-300 text-sm text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                          class="distr-input"
                           placeholder="1"
                           required />
                         <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">

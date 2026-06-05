@@ -42,6 +42,23 @@ func (r *AuthResetPasswordRequest) Validate() error {
 	return nil
 }
 
+type AuthResetPasswordConfirmRequest struct {
+	Password string `json:"password"`
+}
+
+func (r *AuthResetPasswordConfirmRequest) Validate() error {
+	return validation.ValidatePassword(r.Password)
+}
+
 type AuthSwitchContextRequest struct {
 	OrganizationID uuid.UUID `json:"organizationId"`
+}
+
+type AuthAcceptInviteRequest struct {
+	Name     *string `json:"name"`
+	Password string  `json:"password"`
+}
+
+func (r *AuthAcceptInviteRequest) Validate() error {
+	return validation.ValidatePassword(r.Password)
 }

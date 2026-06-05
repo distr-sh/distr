@@ -146,7 +146,10 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 		Email: body.Email,
 		Name:  body.Name,
 	}
-	var inviteURL string
+	// The invite link delivered via email carries a verified email claim (the invitee proves ownership of the
+	// address by accessing their inbox), while the link returned in the API response does not, so an invitee
+	// reached through that manually shared link still has to verify their email after accepting the invitation.
+	var emailInviteURL, responseInviteURL string
 
 	if err := db.RunTx(ctx, func(ctx context.Context) error {
 		organization, err := db.GetOrganizationWithBranding(ctx, *auth.CurrentOrgID())
@@ -210,7 +213,12 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !userHasExisted || userAccount.EmailVerifiedAt == nil {
-			if inviteURL, err = generateUserInviteUrl(userAccount, organization.Organization); err != nil {
+			if emailInviteURL, err = generateUserInviteUrl(userAccount, organization.Organization, true); err != nil {
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return err
+			}
+			if responseInviteURL, err = generateUserInviteUrl(userAccount, organization.Organization, false); err != nil {
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return err
@@ -222,7 +230,7 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 			userAccount,
 			*organization,
 			body.CustomerOrganizationID,
-			inviteURL,
+			emailInviteURL,
 		); err != nil {
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -238,7 +246,7 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 	RespondJSON(w, api.CreateUserAccountResponse{
 		User: userAccount.AsUserAccountWithRole(
 			body.UserRole, body.CustomerOrganizationID, body.PartnerOrganizationID, time.Now()),
-		InviteURL: inviteURL,
+		InviteURL: responseInviteURL,
 	})
 }
 
@@ -439,7 +447,13 @@ func resendUserInviteHandler() http.HandlerFunc {
 			return
 		}
 
-		inviteURL, err := generateUserInviteUrl(userAccount.AsUserAccount(), organization.Organization)
+		emailInviteURL, err := generateUserInviteUrl(userAccount.AsUserAccount(), organization.Organization, true)
+		if err != nil {
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		responseInviteURL, err := generateUserInviteUrl(userAccount.AsUserAccount(), organization.Organization, false)
 		if err != nil {
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -451,14 +465,14 @@ func resendUserInviteHandler() http.HandlerFunc {
 			userAccount.AsUserAccount(),
 			*organization,
 			userAccount.CustomerOrganizationID,
-			inviteURL,
+			emailInviteURL,
 		); err != nil {
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		RespondJSON(w, api.CreateUserAccountResponse{User: *userAccount, InviteURL: inviteURL})
+		RespondJSON(w, api.CreateUserAccountResponse{User: *userAccount, InviteURL: responseInviteURL})
 	}
 }
 
@@ -552,9 +566,12 @@ func checkUserAccountWritability(ctx context.Context, userAccount types.UserAcco
 	return nil
 }
 
-func generateUserInviteUrl(userAccount types.UserAccount, organization types.Organization) (string, error) {
-	// TODO: Should probably use a different mechanism for invite tokens but for now this should work OK
-	if _, token, err := authjwt.GenerateVerificationTokenValidFor(userAccount); err != nil {
+func generateUserInviteUrl(
+	userAccount types.UserAccount,
+	organization types.Organization,
+	emailVerified bool,
+) (string, error) {
+	if _, token, err := authjwt.GenerateInviteToken(userAccount, emailVerified); err != nil {
 		return "", fmt.Errorf("failed to generate invite URL: %w", err)
 	} else {
 		return fmt.Sprintf(

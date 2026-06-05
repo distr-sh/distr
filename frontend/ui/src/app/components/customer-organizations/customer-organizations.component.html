@@ -39,9 +39,8 @@
         </div>
       </div>
       <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-          <thead
-            class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
+        <table class="distr-table">
+          <thead class="distr-table-head">
             <tr>
               <th scope="col" class="p-4"></th>
               <th scope="col" class="p-4">Name</th>
@@ -57,7 +56,7 @@
           </thead>
           <tbody>
             @for (customer of customerOrganizations(); track customer.id) {
-              <tr class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <tr class="distr-table-row">
                 <td class="pl-4">
                   <button
                     type="button"
@@ -86,7 +85,7 @@
                 </td>
                 <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                   <button
-                    class="flex gap-1 items-center py-2 px-3 text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+                    class="flex gap-1 items-center py-2 px-3 text-sm font-medium text-center distr-btn-secondary"
                     type="button"
                     cdkOverlayOrigin
                     #dropdownTriggerButton
@@ -121,7 +120,7 @@
                                 type="checkbox"
                                 [checked]="openCustomerFeaturesDropdownCustomer()?.features?.includes(f)"
                                 (change)="toggleFeature(customer, f)"
-                                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-xs focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500" />
+                                class="distr-checkbox" />
                               <span class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
                                 {{ getFeatureLabel(f) }}
                               </span>
@@ -157,7 +156,7 @@
                   class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">
                   <a
                     [routerLink]="[customer.id, 'users']"
-                    class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                    class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
                     @if (auth.hasAnyRole('read_write', 'admin')) {
                       Manage users
                     } @else {
@@ -166,7 +165,7 @@
                   </a>
                   <a
                     [routerLink]="[customer.id, 'secrets']"
-                    class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                    class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
                     @if (auth.hasAnyRole('read_write', 'admin')) {
                       Manage secrets
                     } @else {
@@ -175,7 +174,7 @@
                   </a>
                   <a
                     [routerLink]="[customer.id, 'links']"
-                    class="py-2 px-3 flex items-center text-sm font-medium text-center text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                    class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
                     @if (auth.hasAnyRole('read_write', 'admin')) {
                       Manage links
                     } @else {
@@ -188,7 +187,7 @@
                       type="button"
                       aria-label="Delete"
                       (click)="delete(customer)"
-                      class="py-2 px-3 text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900">
+                      class="py-2 px-3 distr-btn-danger">
                       <fa-icon [icon]="faTrash" class="h-4 w-4" />
                     </button>
                   }
@@ -252,7 +251,7 @@
           <form class="mx-auto" (ngSubmit)="submitCreateForm()" [formGroup]="createForm">
             <div class="flex flex-col space-y-5">
               <div class="space-y-2">
-                <label for="name" class="block text-sm font-medium text-gray-900 dark:text-white"> Name </label>
+                <label for="name" class="distr-label"> Name </label>
                 <input
                   type="text"
                   id="name"
@@ -302,22 +301,14 @@
           class="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden divide-y divide-gray-200 dark:divide-gray-600">
           <li>
             <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
-              <input
-                type="radio"
-                [formControl]="partnerAssignControl"
-                value=""
-                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+              <input type="radio" [formControl]="partnerAssignControl" value="" class="distr-radio" />
               <span class="text-sm text-gray-900 dark:text-white">None</span>
             </label>
           </li>
           @for (partner of partnerOrganizations(); track partner.id) {
             <li>
               <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
-                <input
-                  type="radio"
-                  [formControl]="partnerAssignControl"
-                  [value]="partner.id"
-                  class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                <input type="radio" [formControl]="partnerAssignControl" [value]="partner.id" class="distr-radio" />
                 <span class="text-sm text-gray-900 dark:text-white">{{ partner.name }}</span>
               </label>
             </li>
@@ -335,7 +326,7 @@
           type="button"
           (click)="submitPartnerAssign()"
           [disabled]="partnerAssignLoading()"
-          class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 disabled:opacity-50 disabled:cursor-not-allowed">
+          class="text-white distr-btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
           Save
         </button>
       </div>

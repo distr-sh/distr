@@ -6,6 +6,7 @@ import (
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
+	"github.com/distr-sh/distr/internal/authn/authinfo"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/registry/name"
 	"github.com/distr-sh/distr/internal/types"
@@ -32,21 +33,35 @@ func NewAuthorizer() Authorizer {
 	return &authorizer{}
 }
 
+// authorizeWrite verifies that the authenticated principal is allowed to perform write actions.
+// Customer and partner users may never write, and vendor users require a role other than read-only.
+func authorizeWrite(auth authinfo.AuthInfoWithOrganization) error {
+	if auth.CurrentCustomerOrgID() != nil {
+		return NewErrAccessDenied("customer user can not perform write action")
+	}
+
+	if auth.CurrentPartnerOrgID() != nil {
+		return NewErrAccessDenied("partner user can not perform write action")
+	}
+
+	if auth.CurrentUserRole() == nil {
+		return NewErrAccessDenied("user with no role can not perform write action")
+	}
+
+	if *auth.CurrentUserRole() == types.UserRoleReadOnly {
+		return NewErrAccessDenied("read-only user can not perform write action")
+	}
+
+	return nil
+}
+
 // Authorize implements ArtifactsAuthorizer.
 func (a *authorizer) Authorize(ctx context.Context, nameStr string, action Action) error {
 	auth := auth.ArtifactsAuthentication.Require(ctx)
 
 	if action == ActionWrite {
-		if auth.CurrentCustomerOrgID() != nil {
-			return NewErrAccessDenied("customer user can not perform write action")
-		}
-
-		if auth.CurrentUserRole() == nil {
-			return NewErrAccessDenied("user with no role can not perform write action")
-		}
-
-		if *auth.CurrentUserRole() == types.UserRoleReadOnly {
-			return NewErrAccessDenied("read-only user can not perform write action")
+		if err := authorizeWrite(auth); err != nil {
+			return err
 		}
 	}
 
@@ -78,16 +93,8 @@ func (a *authorizer) AuthorizeReference(ctx context.Context, nameStr string, ref
 	auth := auth.ArtifactsAuthentication.Require(ctx)
 
 	if action == ActionWrite {
-		if auth.CurrentCustomerOrgID() != nil {
-			return NewErrAccessDenied("customer user can not perform write action")
-		}
-
-		if auth.CurrentUserRole() == nil {
-			return NewErrAccessDenied("user with no role can not perform write action")
-		}
-
-		if *auth.CurrentUserRole() == types.UserRoleReadOnly {
-			return NewErrAccessDenied("read-only user can not perform write action")
+		if err := authorizeWrite(auth); err != nil {
+			return err
 		}
 	}
 
@@ -131,16 +138,8 @@ func (a *authorizer) AuthorizeBlob(ctx context.Context, digest digest.Digest, ac
 	auth := auth.ArtifactsAuthentication.Require(ctx)
 
 	if action == ActionWrite {
-		if auth.CurrentCustomerOrgID() != nil {
-			return NewErrAccessDenied("customer user can not perform write action")
-		}
-
-		if auth.CurrentUserRole() == nil {
-			return NewErrAccessDenied("user with no role can not perform write action")
-		}
-
-		if *auth.CurrentUserRole() == types.UserRoleReadOnly {
-			return NewErrAccessDenied("read-only user can not perform write action")
+		if err := authorizeWrite(auth); err != nil {
+			return err
 		}
 	}
 

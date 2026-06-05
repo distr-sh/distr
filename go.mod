@@ -5,11 +5,11 @@ go 1.26.2
 require (
 	github.com/Masterminds/semver/v3 v3.5.0
 	github.com/avast/retry-go/v5 v5.0.0
-	github.com/aws/aws-sdk-go-v2 v1.41.9
-	github.com/aws/aws-sdk-go-v2/config v1.32.20
-	github.com/aws/aws-sdk-go-v2/credentials v1.19.19
-	github.com/aws/aws-sdk-go-v2/service/ecr v1.58.0
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.102.2
+	github.com/aws/aws-sdk-go-v2 v1.41.11
+	github.com/aws/aws-sdk-go-v2/config v1.32.22
+	github.com/aws/aws-sdk-go-v2/credentials v1.19.21
+	github.com/aws/aws-sdk-go-v2/service/ecr v1.58.2
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.103.1
 	github.com/compose-spec/compose-go/v2 v2.11.0
 	github.com/containerd/log v0.1.0
 	github.com/coreos/go-oidc/v3 v3.18.0
@@ -25,12 +25,12 @@ require (
 	github.com/go-co-op/gocron/v2 v2.21.2
 	github.com/go-logr/zapr v1.3.0
 	github.com/go-mailx/mailx v1.0.2
-	github.com/go-mailx/mailx-ses v1.0.2
-	github.com/go-mailx/mailx-smtp v1.0.2
+	github.com/go-mailx/mailx-ses v1.0.3
+	github.com/go-mailx/mailx-smtp v1.0.3
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgerrcode v0.0.0-20250907135507-afb5586c32a6
-	github.com/jackc/pgx/v5 v5.9.2
+	github.com/jackc/pgx/v5 v5.10.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lestrrat-go/jwx/v3 v3.1.1
 	github.com/moby/moby/api v1.54.2
@@ -91,25 +91,25 @@ require (
 	github.com/ProtonMail/go-crypto v1.4.1 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
-	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.11 // indirect
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.25 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.25 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.25 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/v4a v1.4.26 // indirect
+	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.12 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.27 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.27 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.27 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/v4a v1.4.28 // indirect
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.57.4 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.10 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.9.18 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.11 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.9.20 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/endpoint-discovery v1.12.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.25 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.25 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ses v1.34.24 // indirect
-	github.com/aws/aws-sdk-go-v2/service/signin v1.1.1 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.27 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.27 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ses v1.34.28 // indirect
+	github.com/aws/aws-sdk-go-v2/service/signin v1.1.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sns v1.39.17 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.42.27 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sso v1.30.19 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.36.2 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sts v1.42.3 // indirect
-	github.com/aws/smithy-go v1.26.0
+	github.com/aws/aws-sdk-go-v2/service/sso v1.31.1 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.36.4 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.43.1 // indirect
+	github.com/aws/smithy-go v1.27.0
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
@@ -293,7 +293,7 @@ require (
 	github.com/tonistiigi/units v0.0.0-20180711220420-6950e57a87ea // indirect
 	github.com/tonistiigi/vt100 v0.0.0-20240514184818-90bafcd6abab // indirect
 	github.com/valyala/fastjson v1.6.10 // indirect
-	github.com/wneessen/go-mail v0.7.2 // indirect
+	github.com/wneessen/go-mail v0.7.3 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xhit/go-str2duration/v2 v2.1.0 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect

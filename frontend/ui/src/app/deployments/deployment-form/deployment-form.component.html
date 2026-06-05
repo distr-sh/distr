@@ -1,8 +1,6 @@
 <div class="grid gap-4 mb-4 grid-cols-2" [formGroup]="deployForm">
   <div class="col-span-2 sm:col-span-1">
-    <label for="applicationId" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-      Application
-    </label>
+    <label for="applicationId" class="distr-label mb-2"> Application </label>
     <select
       id="applicationId"
       formControlName="applicationId"
@@ -16,7 +14,7 @@
     }
   </div>
   <div class="col-span-2 sm:col-span-1">
-    <label for="applicationVersion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Version</label>
+    <label for="applicationVersion" class="distr-label mb-2">Version</label>
     <select
       id="applicationVersion"
       formControlName="applicationVersionId"
@@ -31,9 +29,7 @@
   </div>
   @if (licenseControlVisible$ | async) {
     <div class="col-span-2 sm:col-span-1">
-      <label for="applicationEntitlement" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-        Select License
-      </label>
+      <label for="applicationEntitlement" class="distr-label mb-2"> Select License </label>
       <select
         id="applicationEntitlement"
         formControlName="applicationEntitlementId"
@@ -51,9 +47,7 @@
   }
   @if (deployForm.controls.releaseName.enabled) {
     <div class="col-span-2">
-      <label for="release-name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-        Helm release name
-      </label>
+      <label for="release-name" class="distr-label mb-2"> Helm release name </label>
       <input
         type="text"
         id="release-name"
@@ -185,10 +179,7 @@
   @if (swarmModeVisible$ | async) {
     <div class="col-span-2">
       <label class="inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
-        <input
-          type="checkbox"
-          class="size-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-          formControlName="swarmMode" />
+        <input type="checkbox" class="distr-checkbox" formControlName="swarmMode" />
         <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Swarm mode</span>
       </label>
       @if (deployForm.controls.swarmMode.value) {
@@ -202,10 +193,7 @@
   @if (deployForm.controls.ignoreRevisionSkew.enabled) {
     <div class="col-span-2">
       <label class="inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
-        <input
-          type="checkbox"
-          class="size-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-          formControlName="ignoreRevisionSkew" />
+        <input type="checkbox" class="distr-checkbox" formControlName="ignoreRevisionSkew" />
         <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Ignore Helm revision skew</span>
       </label>
       <div class="text-xs text-gray-500">
@@ -217,10 +205,7 @@
   @if (deployForm.controls.forceRestart.enabled) {
     <div class="col-span-2">
       <label class="inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
-        <input
-          type="checkbox"
-          class="size-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-          formControlName="forceRestart" />
+        <input type="checkbox" class="distr-checkbox" formControlName="forceRestart" />
         <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Force restart</span>
       </label>
     </div>
@@ -229,10 +214,7 @@
   @if (deployForm.controls.helmOptionsEnabled.enabled) {
     <div class="col-span-2 space-y-2">
       <label class="inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
-        <input
-          type="checkbox"
-          class="size-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-          formControlName="helmOptionsEnabled" />
+        <input type="checkbox" class="distr-checkbox" formControlName="helmOptionsEnabled" />
         <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Customize Helm options</span>
       </label>
 
@@ -244,11 +226,7 @@
           <legend class="sr-only">Helm options</legend>
 
           <div>
-            <label
-              for="helm-options-wait-strategy"
-              class="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
-              Wait strategy
-            </label>
+            <label for="helm-options-wait-strategy" class="distr-label mb-1"> Wait strategy </label>
             <select
               id="helm-options-wait-strategy"
               formControlName="waitStrategy"
@@ -260,9 +238,7 @@
           </div>
 
           <div>
-            <label for="helm-options-timeout" class="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
-              Timeout
-            </label>
+            <label for="helm-options-timeout" class="distr-label mb-1"> Timeout </label>
             <input
               type="text"
               id="helm-options-timeout"
@@ -277,24 +253,15 @@
           </div>
 
           <label class="col-span-2 inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
-            <input
-              type="checkbox"
-              class="size-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-              formControlName="rollbackOnFailure" />
+            <input type="checkbox" class="distr-checkbox" formControlName="rollbackOnFailure" />
             <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Rollback on failure</span>
           </label>
           <label class="col-span-2 inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
-            <input
-              type="checkbox"
-              class="size-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-              formControlName="cleanupOnFailure" />
+            <input type="checkbox" class="distr-checkbox" formControlName="cleanupOnFailure" />
             <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Cleanup on failure</span>
           </label>
           <label class="col-span-2 inline-flex items-center has-disabled:opacity-60 not-has-disabled:cursor-pointer">
-            <input
-              type="checkbox"
-              class="size-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-              formControlName="forceConflicts" />
+            <input type="checkbox" class="distr-checkbox" formControlName="forceConflicts" />
             <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Force conflicts</span>
           </label>
 
