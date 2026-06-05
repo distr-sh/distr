@@ -16,14 +16,14 @@
     "format": "prettier --write ."
   },
   "dependencies": {
-    "@astrojs/mdx": "6.0.1",
-    "@astrojs/preact": "5.1.4",
+    "@astrojs/mdx": "6.0.2",
+    "@astrojs/preact": "5.1.5",
     "@astrojs/sitemap": "3.7.3",
-    "@astrojs/starlight": "0.39.2",
+    "@astrojs/starlight": "0.39.3",
     "@astrojs/starlight-tailwind": "5.0.0",
     "@iconify-json/lucide": "^1.2.105",
     "@tailwindcss/vite": "^4.2.4",
-    "astro": "6.4.2",
+    "astro": "6.4.4",
     "astro-icon": "^1.1.5",
     "astrojs-service-worker": "^2.0.0",
     "embla-carousel": "^8.6.0",
@@ -46,7 +46,7 @@
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-organize-imports": "^4.3.0"
   },
-  "packageManager": "pnpm@11.5.1",
+  "packageManager": "pnpm@11.5.2",
   "engines": {
     "node": ">=24"
   }
