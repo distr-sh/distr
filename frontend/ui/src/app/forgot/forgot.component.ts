@@ -1,4 +1,4 @@
-import {Component, inject, OnDestroy, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {distinctUntilChanged, filter, lastValueFrom, map, Subject, takeUntil} from 'rxjs';
@@ -9,6 +9,7 @@ import {AuthService} from '../services/auth.service';
 @Component({
   selector: 'app-forgot',
   imports: [ReactiveFormsModule, RouterLink, AutotrimDirective],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './forgot.component.html',
 })
 export class ForgotComponent implements OnInit, OnDestroy {

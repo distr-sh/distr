@@ -1,7 +1,7 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {TextFieldModule} from '@angular/cdk/text-field';
 import {AsyncPipe, NgOptimizedImage} from '@angular/common';
-import {Component, input} from '@angular/core';
+import {ChangeDetectionStrategy, Component, input} from '@angular/core';
 import {ReactiveFormsModule} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {DeploymentTarget} from '@distr-sh/distr-sdk';
@@ -16,6 +16,7 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
 @Component({
   selector: 'app-deployment-target-dashboard-card',
   templateUrl: './deployment-target-dashboard-card.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     NgOptimizedImage,
     FaIconComponent,

@@ -1,5 +1,5 @@
 import {AsyncPipe} from '@angular/common';
-import {Component, inject, OnDestroy, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, OnDestroy, signal} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faXmark} from '@fortawesome/free-solid-svg-icons';
@@ -18,6 +18,7 @@ export interface ImageUploadContext {
 
 @Component({
   imports: [FaIconComponent, ReactiveFormsModule, AsyncPipe],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './image-upload-dialog.component.html',
 })
 export class ImageUploadDialogComponent extends ClosableDialog<string> implements OnDestroy {

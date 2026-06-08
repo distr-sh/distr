@@ -1,5 +1,14 @@
 import {DatePipe} from '@angular/common';
-import {Component, computed, inject, Signal, signal, TemplateRef, viewChild} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  Signal,
+  signal,
+  TemplateRef,
+  viewChild,
+} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, FormControl, ReactiveFormsModule, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
@@ -28,6 +37,7 @@ import {AlertConfiguration, CreateUpdateAlertConfigurationRequest} from '../type
 
 @Component({
   templateUrl: './alert-configurations.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [FaIconComponent, ReactiveFormsModule, DatePipe, RouterLink],
 })
 export class AlertConfigurationsComponent {

@@ -1,6 +1,7 @@
 import {AsyncPipe} from '@angular/common';
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   Component,
   computed,
   forwardRef,
@@ -92,6 +93,7 @@ type DeploymentFormValueCallback = (v: DeploymentFormValue | undefined) => void;
       multi: true,
     },
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './deployment-form.component.html',
 })
 export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy, ControlValueAccessor {

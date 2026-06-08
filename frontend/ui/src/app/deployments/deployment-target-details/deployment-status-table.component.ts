@@ -1,4 +1,4 @@
-import {Component, computed, inject, input, viewChild} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject, input, viewChild} from '@angular/core';
 import {DeploymentRevisionStatus} from '@distr-sh/distr-sdk';
 import {map, Observable} from 'rxjs';
 import {
@@ -58,6 +58,7 @@ class LogsTimeseriesSource implements TimeseriesSource {
     [exporter]="exporter"
     [live]="live()"
     [orderDirection]="orderDirection()" />`,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [TimeseriesTableComponent],
 })
 export class DeploymentStatusTableComponent {

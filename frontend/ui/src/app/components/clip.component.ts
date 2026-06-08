@@ -1,4 +1,4 @@
-import {Component, Directive, inject, input, Signal, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, Directive, inject, input, Signal, signal} from '@angular/core';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faClipboard, faClipboardCheck} from '@fortawesome/free-solid-svg-icons';
 import {ToastService} from '../services/toast.service';
@@ -30,6 +30,7 @@ export class ClipDirective extends ClipBase {
 @Component({
   selector: 'app-clip',
   imports: [FaIconComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <button
       type="button"

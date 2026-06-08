@@ -1,4 +1,4 @@
-import {Component, forwardRef, input} from '@angular/core';
+import {ChangeDetectionStrategy, Component, forwardRef, input} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ControlValueAccessor, FormControl, NG_VALUE_ACCESSOR, ReactiveFormsModule} from '@angular/forms';
 import dayjs from 'dayjs';
@@ -19,6 +19,7 @@ const PRESETS: ExpiresAtPreset[] = [
   selector: 'app-expires-at-picker',
   imports: [ReactiveFormsModule],
   templateUrl: './expires-at-picker.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [{provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => ExpiresAtPickerComponent), multi: true}],
 })
 export class ExpiresAtPickerComponent implements ControlValueAccessor {

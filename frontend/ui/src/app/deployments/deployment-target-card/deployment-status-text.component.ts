@@ -1,5 +1,5 @@
 import {DatePipe} from '@angular/common';
-import {Component, computed, Directive, input} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, Directive, input} from '@angular/core';
 import {DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
 import {never} from '../../../util/exhaust';
 import {isStale, IsStalePipe} from '../../../util/model';
@@ -31,6 +31,7 @@ export class DeploymentStatusDotDirective extends AbstractStatusDotDirective {
 @Component({
   selector: 'app-deployment-status-text',
   imports: [DeploymentStatusDotDirective, IsStalePipe, DatePipe],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div class="flex gap-1 items-center" [title]="(deployment().latestStatus?.createdAt | date: 'short') ?? ''">
       <div class="size-3" appDeploymentStatusDot [deployment]="deployment()"></div>

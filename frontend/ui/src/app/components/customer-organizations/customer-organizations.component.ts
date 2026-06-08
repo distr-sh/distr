@@ -1,6 +1,6 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe, DecimalPipe} from '@angular/common';
-import {Component, computed, inject, signal, TemplateRef, viewChild} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
@@ -34,6 +34,7 @@ import {QuotaLimitComponent} from '../quota-limit.component';
 
 @Component({
   templateUrl: './customer-organizations.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     ReactiveFormsModule,
     FontAwesomeModule,

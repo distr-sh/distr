@@ -1,4 +1,4 @@
-import {Component, inject, input} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, input} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faGithub, faGoogle, faMicrosoft} from '@fortawesome/free-brands-svg-icons';
@@ -8,6 +8,7 @@ import {AuthService} from '../services/auth.service';
 @Component({
   selector: 'app-oidc-buttons',
   imports: [FaIconComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './oidc-buttons.component.html',
 })
 export class OidcButtonsComponent {

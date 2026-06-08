@@ -1,5 +1,5 @@
 import {NgTemplateOutlet} from '@angular/common';
-import {Component, inject, TemplateRef} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, TemplateRef} from '@angular/core';
 import {FormControl, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faXmark} from '@fortawesome/free-solid-svg-icons';
@@ -29,6 +29,7 @@ export interface ConfirmConfig {
 
 @Component({
   imports: [FaIconComponent, NgTemplateOutlet, AutotrimDirective, ReactiveFormsModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './confirm-dialog.component.html',
 })
 export class ConfirmDialogComponent extends ClosableDialog<boolean> {

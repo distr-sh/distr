@@ -1,6 +1,6 @@
 import {CdkStepper, CdkStepperModule} from '@angular/cdk/stepper';
 import {NgTemplateOutlet} from '@angular/common';
-import {Component} from '@angular/core';
+import {ChangeDetectionStrategy, Component} from '@angular/core';
 import {ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircle, faCircleCheck} from '@fortawesome/free-regular-svg-icons';
@@ -9,6 +9,7 @@ import {faCircle, faCircleCheck} from '@fortawesome/free-regular-svg-icons';
   selector: 'app-tutorial-stepper',
   templateUrl: './tutorial-stepper.component.html',
   providers: [{provide: CdkStepper, useExisting: TutorialStepperComponent}],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [CdkStepperModule, ReactiveFormsModule, FaIconComponent, NgTemplateOutlet],
 })
 export class TutorialStepperComponent extends CdkStepper {

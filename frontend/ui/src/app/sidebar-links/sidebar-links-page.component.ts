@@ -1,6 +1,15 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {DatePipe} from '@angular/common';
-import {Component, computed, ElementRef, inject, signal, TemplateRef, viewChild} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  signal,
+  TemplateRef,
+  viewChild,
+} from '@angular/core';
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
@@ -26,6 +35,7 @@ import {ToastService} from '../services/toast.service';
 
 @Component({
   templateUrl: './sidebar-links-page.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [RouterLink, FontAwesomeModule, OverlayModule, ReactiveFormsModule, DatePipe, AutotrimDirective],
 })
 export class SidebarLinksPageComponent {

@@ -1,6 +1,6 @@
 import {CdkConnectedOverlay, CdkOverlayOrigin} from '@angular/cdk/overlay';
 import {NgTemplateOutlet} from '@angular/common';
-import {Component, inject, input, signal, WritableSignal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, input, signal, WritableSignal} from '@angular/core';
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {RouterLink, RouterLinkActive} from '@angular/router';
 import {CustomerOrganization, SidebarLink} from '@distr-sh/distr-sdk';
@@ -45,6 +45,7 @@ import {TutorialsService} from '../../services/tutorials.service';
   selector: 'app-side-bar',
   standalone: true,
   templateUrl: './side-bar.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     RouterLink,
     FaIconComponent,

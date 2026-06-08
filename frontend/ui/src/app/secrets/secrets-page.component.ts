@@ -1,4 +1,4 @@
-import {Component, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {Subject, map, startWith, switchMap} from 'rxjs';
 import {AuthService} from '../services/auth.service';
@@ -13,6 +13,7 @@ import {SecretsComponent} from './secrets.component';
       </div>
     </div>
   </section>`,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [SecretsComponent],
 })
 export class SecretsPage {

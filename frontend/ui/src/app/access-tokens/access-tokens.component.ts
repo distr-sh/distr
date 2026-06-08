@@ -1,6 +1,6 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe} from '@angular/common';
-import {Component, computed, inject, TemplateRef} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject, TemplateRef} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {AccessToken, AccessTokenWithKey, CreateAccessTokenRequest, UserRole} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -33,6 +33,7 @@ import {ToastService} from '../services/toast.service';
     UserRoleSelectComponent,
     UserRoleLabelPipe,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './access-tokens.component.html',
 })
 export class AccessTokensComponent {

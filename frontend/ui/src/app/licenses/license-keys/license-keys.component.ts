@@ -1,6 +1,6 @@
 import {GlobalPositionStrategy} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe} from '@angular/common';
-import {Component, inject, input, signal, TemplateRef, viewChild} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, input, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -35,6 +35,7 @@ import {ViewLicenseKeyModalComponent} from './view-license-key-modal.component';
     UuidComponent,
     ClipComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './license-keys.component.html',
 })
 export class LicenseKeysComponent {

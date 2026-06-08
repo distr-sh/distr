@@ -1,6 +1,6 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
-import {Component, inject, TemplateRef} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
@@ -49,6 +49,7 @@ import {ArtifactsDownloadCountComponent, ArtifactsDownloadedByComponent} from '.
     SpinnerComponent,
   ],
   templateUrl: './artifacts.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [CustomerOrganizationsCache],
 })
 export class ArtifactsComponent {

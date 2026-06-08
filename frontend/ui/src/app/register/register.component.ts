@@ -1,4 +1,4 @@
-import {Component, inject, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, OnInit} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
@@ -10,6 +10,7 @@ import {AuthService} from '../services/auth.service';
 @Component({
   selector: 'app-register',
   imports: [RouterLink, ReactiveFormsModule, AutotrimDirective, OidcButtonsComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './register.component.html',
 })
 export class RegisterComponent implements OnInit {

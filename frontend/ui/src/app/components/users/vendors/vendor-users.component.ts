@@ -1,4 +1,4 @@
-import {Component, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {map, startWith, Subject, switchMap} from 'rxjs';
 import {AuthService} from '../../../services/auth.service';
@@ -13,6 +13,7 @@ import {UsersComponent} from '../users.component';
       </div>
     </div>
   </section>`,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [UsersComponent],
 })
 export class VendorUsersComponent {

@@ -1,4 +1,13 @@
-import {AfterViewInit, Component, computed, DestroyRef, forwardRef, inject, Injector} from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  forwardRef,
+  inject,
+  Injector,
+} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {
   ControlValueAccessor,
@@ -27,6 +36,7 @@ import {LicenseKey} from '../../types/license-key';
   selector: 'app-edit-license-key',
   templateUrl: './edit-license-key.component.html',
   imports: [AutotrimDirective, EditorComponent, ExpiresAtPickerComponent, ReactiveFormsModule, FaIconComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,

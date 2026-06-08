@@ -1,6 +1,6 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe, NgOptimizedImage} from '@angular/common';
-import {Component, inject, input, OnDestroy, TemplateRef} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, input, OnDestroy, TemplateRef} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
 import {Application, DeploymentType} from '@distr-sh/distr-sdk';
@@ -44,6 +44,7 @@ import {ToastService} from '../services/toast.service';
     RouterLink,
     SecureImagePipe,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './applications.component.html',
 })
 export class ApplicationsComponent implements OnDestroy {

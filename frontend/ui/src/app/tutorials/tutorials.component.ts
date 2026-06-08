@@ -1,5 +1,5 @@
 import {AsyncPipe} from '@angular/common';
-import {Component, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
 import {ReactiveFormsModule} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -10,6 +10,7 @@ import {TutorialsService} from '../services/tutorials.service';
 @Component({
   selector: 'app-tutorials',
   imports: [ReactiveFormsModule, FaIconComponent, RouterLink, AsyncPipe],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './tutorials.component.html',
 })
 export class TutorialsComponent {

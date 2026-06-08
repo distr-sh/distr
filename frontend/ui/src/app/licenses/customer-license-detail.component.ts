@@ -1,5 +1,5 @@
 import {OverlayModule} from '@angular/cdk/overlay';
-import {Component, computed, ElementRef, inject, signal, viewChild} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, ElementRef, inject, signal, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
@@ -19,6 +19,7 @@ import {LicenseKeysComponent} from './license-keys/license-keys.component';
     ApplicationEntitlementsComponent,
     ArtifactEntitlementsComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './customer-license-detail.component.html',
 })
 export class CustomerLicenseDetailComponent {

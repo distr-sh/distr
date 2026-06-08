@@ -1,7 +1,16 @@
 import {Platform} from '@angular/cdk/platform';
 import {CdkStep, CdkStepper, CdkStepperPrevious} from '@angular/cdk/stepper';
 import {HttpErrorResponse} from '@angular/common/http';
-import {AfterViewInit, Component, inject, OnDestroy, OnInit, signal, viewChild} from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -53,6 +62,7 @@ const releaseStepTaskRelease = 'release';
     AutotrimDirective,
     RouterLink,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './agents-tutorial.component.html',
 })
 export class AgentsTutorialComponent implements OnInit, AfterViewInit, OnDestroy {

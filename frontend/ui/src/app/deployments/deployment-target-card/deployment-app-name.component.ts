@@ -1,5 +1,5 @@
 import {AsyncPipe} from '@angular/common';
-import {Component, input} from '@angular/core';
+import {ChangeDetectionStrategy, Component, input} from '@angular/core';
 import {Application} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faShip} from '@fortawesome/free-solid-svg-icons';
@@ -8,6 +8,7 @@ import {SecureImagePipe} from '../../../util/secureImage';
 @Component({
   selector: 'app-deployment-app-name',
   imports: [FaIconComponent, SecureImagePipe, AsyncPipe],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div class="flex items-center gap-3">
       <div class="shrink-0">
