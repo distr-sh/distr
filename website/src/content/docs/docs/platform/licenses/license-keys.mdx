@@ -134,7 +134,8 @@ You can update the **name** and **description** of an existing license key at an
 
 If you need to change the **payload**, **Not Before**, or **Expires At**, Distr generates a new license key with the updated values — the original is not modified. You can view all previously generated license keys in the **Revisions** section of the edit view.
 
-Because tokens are stateless JWTs verified offline, existing deployments are not automatically updated. To use the new license key, re-fetch the token from the portal and apply it to the customer's deployment.
+If any active deployments reference this license key, Distr will show you which deployment targets are affected before saving.
+Confirming will save the new revision and automatically trigger a redeployment on those targets.
 
 To edit: open the license key from the customer's detail view and click the **edit** (pen) icon.
 
