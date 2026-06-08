@@ -32,14 +32,14 @@ const (
 )
 
 type CleanupOptions struct {
-	Type    string
+	Types   []string
 	Timeout time.Duration
 }
 
 func NewCleanupCommand() *cobra.Command {
 	var opts CleanupOptions
 	cmd := cobra.Command{
-		Use: "cleanup <type>",
+		Use: "cleanup <type> [type...]",
 		Long: fmt.Sprintf(
 			"type must be one of: %v, %v, %v, %v, %v, %v, %v",
 			deploymentRevisionStatus,
@@ -51,7 +51,7 @@ func NewCleanupCommand() *cobra.Command {
 			organization,
 		),
 		Short: "delete old data",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MinimumNArgs(1),
 		ValidArgs: []cobra.Completion{
 			deploymentRevisionStatus,
 			deploymentTargetMetrics,
@@ -63,7 +63,7 @@ func NewCleanupCommand() *cobra.Command {
 		},
 		PreRun: func(cmd *cobra.Command, args []string) { env.Initialize() },
 		Run: func(cmd *cobra.Command, args []string) {
-			opts.Type = args[0]
+			opts.Types = args
 			if err := runCleanup(cmd.Context(), opts); err != nil {
 				os.Exit(1)
 			}
@@ -79,34 +79,43 @@ func init() {
 	RootCommand.AddCommand(NewCleanupCommand())
 }
 
+func resolveCleanupFunc(cleanupType string, registry *svc.Registry) (func(context.Context) error, error) {
+	switch cleanupType {
+	case deploymentRevisionStatus:
+		return cleanup.RunDeploymentRevisionStatusCleanup, nil
+	case deploymentTargetMetrics:
+		return cleanup.RunDeploymentTargetMetricsCleanup, nil
+	case deploymentLogRecord:
+		return cleanup.RunDeploymentLogRecordCleanup, nil
+	case deploymentTargetLogRecord:
+		return cleanup.RunDeploymentTargetLogRecordCleanup, nil
+	case oidcState:
+		return cleanup.RunOIDCStateCleanup, nil
+	case artifactBlob:
+		if registry.GetS3Client() == nil {
+			return nil, errors.New("S3 client not configured; ensure the registry is enabled and S3 is configured")
+		}
+		return cleanup.RunArtifactBlobCleanup, nil
+	case organization:
+		return cleanup.RunOrganizationCleanup, nil
+	default:
+		return nil, fmt.Errorf("invalid cleanup type: %v", cleanupType)
+	}
+}
+
 func runCleanup(ctx context.Context, opts CleanupOptions) error {
 	registry := util.Require(svc.NewDefault(ctx))
 	defer func() { util.Must(registry.Shutdown(ctx)) }()
 	log := registry.GetLogger()
 
-	var cleanupFunc func(context.Context) error
-	switch opts.Type {
-	case deploymentRevisionStatus:
-		cleanupFunc = cleanup.RunDeploymentRevisionStatusCleanup
-	case deploymentTargetMetrics:
-		cleanupFunc = cleanup.RunDeploymentTargetMetricsCleanup
-	case deploymentLogRecord:
-		cleanupFunc = cleanup.RunDeploymentLogRecordCleanup
-	case deploymentTargetLogRecord:
-		cleanupFunc = cleanup.RunDeploymentTargetLogRecordCleanup
-	case oidcState:
-		cleanupFunc = cleanup.RunOIDCStateCleanup
-	case artifactBlob:
-		if registry.GetS3Client() == nil {
-			log.Error("S3 client not available; ensure the registry is enabled and S3 is configured")
-			return errors.New("S3 client not configured")
+	cleanupFuncs := make([]func(context.Context) error, 0, len(opts.Types))
+	for _, t := range opts.Types {
+		f, err := resolveCleanupFunc(t, registry)
+		if err != nil {
+			log.Error("failed to resolve cleanup type", zap.String("type", t), zap.Error(err))
+			return err
 		}
-		cleanupFunc = cleanup.RunArtifactBlobCleanup
-	case organization:
-		cleanupFunc = cleanup.RunOrganizationCleanup
-	default:
-		log.Sugar().Errorf("invalid cleanup type: %v", opts.Type)
-		return errors.New("invalid cleanup type")
+		cleanupFuncs = append(cleanupFuncs, f)
 	}
 
 	ctx, _ = signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
@@ -116,25 +125,30 @@ func runCleanup(ctx context.Context, opts CleanupOptions) error {
 		ctx = internalctx.WithS3Client(ctx, s3Client)
 	}
 
-	ctx, span := registry.GetTracers().Always().
-		Tracer("github.com/distr-sh/distr/cmd/hub/cmd", trace.WithInstrumentationVersion(buildconfig.Version())).
-		Start(ctx, fmt.Sprintf("cleanup_%v", opts.Type), trace.WithSpanKind(trace.SpanKindInternal))
-	defer span.End()
-
 	if opts.Timeout > 0 {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, opts.Timeout)
 		defer cancel()
 	}
 
-	log.Info("starting cleanup", zap.String("type", opts.Type), zap.Duration("timeout", opts.Timeout))
+	tracer := registry.GetTracers().Always().
+		Tracer("github.com/distr-sh/distr/cmd/hub/cmd", trace.WithInstrumentationVersion(buildconfig.Version()))
 
-	if err := cleanupFunc(ctx); err != nil {
-		log.Error("cleanup failed", zap.Error(err))
-		span.SetStatus(codes.Error, "cleanupFunc error")
-		span.RecordError(err)
-		return err
+	var errs []error
+	for i, cleanupType := range opts.Types {
+		log.Info("starting cleanup", zap.String("type", cleanupType), zap.Duration("timeout", opts.Timeout))
+
+		runCtx, span := tracer.Start(ctx, fmt.Sprintf("cleanup_%v", cleanupType), trace.WithSpanKind(trace.SpanKindInternal))
+		if err := cleanupFuncs[i](runCtx); err != nil {
+			log.Error("cleanup failed", zap.String("type", cleanupType), zap.Error(err))
+			span.SetStatus(codes.Error, "cleanupFunc error")
+			span.RecordError(err)
+			errs = append(errs, err)
+		} else {
+			span.SetStatus(codes.Ok, "cleanupFunc finished")
+		}
+		span.End()
 	}
-	span.SetStatus(codes.Ok, "cleanupFunc finished")
-	return nil
+
+	return errors.Join(errs...)
 }
