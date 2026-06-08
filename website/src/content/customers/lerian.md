@@ -41,7 +41,7 @@ Lerian adopted Distr to power their Lifecycle Management platform, transforming 
 - **One-click rollbacks:** Instant reversion to previous versions with automatic rollback in seconds, dramatically reducing Mean Time To Recovery (MTTR) and eliminating long investigation windows
 - **Token-protected distribution:** Secure access to Helm repositories and OCI images ensures deployment integrity across all customer environments
 
-By leveraging Distr's infrastructure, Lerian can focus on their core banking and financial services features while providing enterprise-grade deployment capabilities. Their [comprehensive documentation](https://docs.lerian.studio/en/lifecycle-management) demonstrates how customers can deploy, update, and manage Lerian services with the same ease as SaaS products—while maintaining complete control over their infrastructure.
+By leveraging Distr's infrastructure, Lerian can focus on their core banking and financial services features while providing enterprise-grade deployment capabilities. Their [comprehensive documentation](https://docs.lerian.studio/en/platform/lifecycle-management) demonstrates how customers can deploy, update, and manage Lerian services with the same ease as SaaS products—while maintaining complete control over their infrastructure.
 
 ## Result
 
@@ -55,4 +55,4 @@ Lerian's Lifecycle Management platform, powered by Distr, has transformed their 
 
 The solution has proven particularly valuable in the financial sector, where Lerian operates. Banking, messaging, and latency-sensitive services require precision, control, and efficiency in managing distributed applications. By adopting Distr, Lerian ensures infrastructure is no longer a barrier to innovation—instead, it's an enabler.
 
-Today, Lerian's customers benefit from the transparency, control, and collaboration that comes with open-source solutions, aligned with Lerian's philosophy of building trustworthy financial infrastructure. Learn more about how they implemented Lifecycle Management in their [documentation](https://docs.lerian.studio/en/lifecycle-management) and [user guides](https://docs.lerian.studio/en/using-lifecycle-management).
+Today, Lerian's customers benefit from the transparency, control, and collaboration that comes with open-source solutions, aligned with Lerian's philosophy of building trustworthy financial infrastructure. Learn more about how they implemented Lifecycle Management in their [documentation](https://docs.lerian.studio/en/platform/lifecycle-management) and [user guides](https://docs.lerian.studio/en/platform/using-lifecycle-management).
