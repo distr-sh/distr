@@ -46,6 +46,8 @@ hub:
       value: pkg.distr.local
     - name: REGISTRY_S3_BUCKET
       value: distr
+    # Set to true only for in-cluster S3-compatible storage (e.g. RustFS/MinIO) that requires bucket creation on startup.
+    # Requires s3:CreateBucket permission. Set to false if the bucket already exists or CreateBucket permission is unavailable.
     - name: REGISTRY_S3_CREATE_BUCKET
       value: 'true'
     - name: REGISTRY_S3_REGION
