@@ -4,7 +4,14 @@ import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faMagnifyingGlass, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {
+  faCircleExclamation,
+  faMagnifyingGlass,
+  faPen,
+  faPlus,
+  faTrash,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {ClipComponent} from '../components/clip.component';
@@ -41,9 +48,9 @@ export class SecretsComponent {
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;
   protected readonly faPen = faPen;
+  protected readonly faCircleExclamation = faCircleExclamation;
 
   private readonly createUpdateDialog = viewChild.required<TemplateRef<unknown>>('createUpdateDialog');
-  private readonly affectedDeploymentsDialog = viewChild.required<TemplateRef<unknown>>('affectedDeploymentsDialog');
   private dialogRef?: DialogRef;
   protected readonly affectedDeployments = signal<AffectedDeployment[]>([]);
 
@@ -67,6 +74,7 @@ export class SecretsComponent {
 
   protected closeDialog() {
     this.createUpdateForm.reset();
+    this.affectedDeployments.set([]);
     this.dialogRef?.close();
   }
 
@@ -114,31 +122,23 @@ export class SecretsComponent {
 
   private async updateSecret(id: string, value: string) {
     try {
-      const dryRun = await firstValueFrom(this.secretsService.update(id, value, true));
-      if (dryRun.affectedDeployments.length > 0) {
-        this.affectedDeployments.set(dryRun.affectedDeployments);
-        const confirmed = await firstValueFrom(
-          this.overlay.confirm({
-            customTemplate: this.affectedDeploymentsDialog(),
-            confirmLabel: 'Update and redeploy',
-          })
-        );
-        if (!confirmed) {
+      if (this.affectedDeployments().length === 0) {
+        const dryRun = await firstValueFrom(this.secretsService.update(id, value, true));
+        if (dryRun.affectedDeployments.length > 0) {
+          this.affectedDeployments.set(dryRun.affectedDeployments);
           return;
         }
       }
-
       await firstValueFrom(this.secretsService.update(id, value));
       this.toast.success('Secret value has been updated.');
       this.refresh.emit();
       this.closeDialog();
     } catch (error) {
+      this.affectedDeployments.set([]);
       const msg = getFormDisplayedError(error);
       if (msg) {
         this.toast.error(msg);
       }
-    } finally {
-      this.affectedDeployments.set([]);
     }
   }
 

@@ -4,7 +4,16 @@ import {Component, inject, input, signal, TemplateRef, viewChild} from '@angular
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCopy, faEye, faMagnifyingGlass, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {
+  faCircleExclamation,
+  faCopy,
+  faEye,
+  faMagnifyingGlass,
+  faPen,
+  faPlus,
+  faTrash,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, shareReplay, switchMap} from 'rxjs';
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
@@ -55,6 +64,7 @@ export class LicenseKeysComponent {
   protected readonly faXmark = faXmark;
   protected readonly faCopy = faCopy;
   protected readonly faEye = faEye;
+  protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly isExpired = isExpired;
 
   protected readonly selectedLicense = signal<LicenseKey | undefined>(undefined);
@@ -62,7 +72,6 @@ export class LicenseKeysComponent {
   protected readonly affectedDeployments = signal<AffectedDeployment[]>([]);
   protected readonly viewLicenseLoading = signal(false);
   private readonly viewLicenseModalTemplate = viewChild.required<TemplateRef<unknown>>('viewLicenseModal');
-  private readonly affectedDeploymentsDialog = viewChild.required<TemplateRef<unknown>>('affectedDeploymentsDialog');
   private viewLicenseModalRef?: DialogRef;
 
   filterForm = new FormGroup({
@@ -114,6 +123,7 @@ export class LicenseKeysComponent {
   hideDrawer() {
     this.manageLicenseDrawerRef?.close();
     this.editForm.reset({license: undefined});
+    this.affectedDeployments.set([]);
   }
 
   async saveLicense() {
@@ -135,32 +145,25 @@ export class LicenseKeysComponent {
           this.toast.success(`${saved.name} saved successfully`);
         }
       } catch (e) {
+        this.affectedDeployments.set([]);
         const msg = getFormDisplayedError(e);
         if (msg) {
           this.toast.error(msg);
         }
       } finally {
         this.editFormLoading = false;
-        this.affectedDeployments.set([]);
       }
     }
   }
 
   private async updateLicense(license: LicenseKey): Promise<LicenseKey | undefined> {
-    const dryRun = await firstValueFrom(this.licenseKeysService.update(license, true));
-    if (dryRun.affectedDeployments.length > 0) {
-      this.affectedDeployments.set(dryRun.affectedDeployments);
-      const confirmed = await firstValueFrom(
-        this.overlay.confirm({
-          customTemplate: this.affectedDeploymentsDialog(),
-          confirmLabel: 'Update and redeploy',
-        })
-      );
-      if (!confirmed) {
+    if (this.affectedDeployments().length === 0) {
+      const dryRun = await firstValueFrom(this.licenseKeysService.update(license, true));
+      if (dryRun.affectedDeployments.length > 0) {
+        this.affectedDeployments.set(dryRun.affectedDeployments);
         return undefined;
       }
     }
-
     return firstValueFrom(this.licenseKeysService.update(license));
   }
 

@@ -490,6 +490,7 @@ func deploymentValuesError(ctx context.Context, w http.ResponseWriter, err error
 	if errors.Is(err, deploymentvalues.ErrInvalidTemplate) {
 		return badRequestError(w, fmt.Sprintf("%s: %v", clientMsg, err.Error()))
 	}
+	internalctx.GetLogger(ctx).Warn("deployment values error", zap.Error(err))
 	sentry.GetHubFromContext(ctx).CaptureException(err)
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	return err

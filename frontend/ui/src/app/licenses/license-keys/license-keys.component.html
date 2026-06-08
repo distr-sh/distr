@@ -169,13 +169,28 @@
     <form [formGroup]="editForm" (ngSubmit)="saveLicense()">
       <div class="flex flex-col gap-4">
         <app-edit-license-key formControlName="license" />
+        @if (affectedDeployments().length > 0) {
+          <div
+            class="flex items-start p-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-600"
+            role="alert">
+            <fa-icon [icon]="faCircleExclamation" class="mt-0.5 shrink-0" />
+            <div class="ms-3 text-sm">
+              <p class="font-medium mb-2">Saving will trigger a redeployment on the following deployment targets:</p>
+              <ul class="list-disc list-inside space-y-1">
+                @for (d of affectedDeployments(); track d.deploymentId) {
+                  <li>{{ d.deploymentTargetName }}</li>
+                }
+              </ul>
+            </div>
+          </div>
+        }
         <div class="flex justify-center w-full pb-4 space-x-4 sm:mt-0">
           <button
             type="submit"
             [disabled]="editFormLoading"
             class="text-white w-full inline-flex items-center justify-center distr-btn-primary">
             <fa-icon [icon]="faPen" class="me-2" />
-            Save
+            {{ affectedDeployments().length > 0 ? 'Save and redeploy' : 'Save' }}
           </button>
         </div>
       </div>
@@ -187,20 +202,4 @@
   @if (selectedLicense(); as license) {
     <app-view-license-key-modal [license]="license" [token]="selectedToken()!" (closed)="hideViewLicenseModal()" />
   }
-</ng-template>
-
-<ng-template #affectedDeploymentsDialog>
-  <div class="space-y-4">
-    <p class="text-base leading-relaxed text-gray-500 dark:text-gray-200">
-      Updating this license key will redeploy workloads on these deployment targets.
-    </p>
-    <ul
-      class="max-h-64 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg">
-      @for (deployment of affectedDeployments(); track deployment.deploymentId) {
-        <li class="px-3 py-2 text-sm text-gray-900 dark:text-white">
-          {{ deployment.deploymentTargetName }}
-        </li>
-      }
-    </ul>
-  </div>
 </ng-template>
