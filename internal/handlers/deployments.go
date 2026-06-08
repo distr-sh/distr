@@ -101,10 +101,7 @@ func putDeployment(w http.ResponseWriter, r *http.Request) {
 			validationResult.Secrets,
 			validationResult.LicenseKeys,
 		); err != nil {
-			log.Warn("could not hash deployment values", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return err
+			return deploymentValuesError(ctx, w, err, "invalid deployment values")
 		}
 
 		if deploymentRequest.DeploymentID == nil {

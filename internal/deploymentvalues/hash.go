@@ -63,7 +63,7 @@ func writeRenderedTemplateHashPart(
 
 	tpl, err := parseTemplateBytes(name, data)
 	if err != nil {
-		return fmt.Errorf("%s template parsing error: %w", name, err)
+		return fmt.Errorf("%w: %s template parsing error: %w", ErrInvalidTemplate, name, err)
 	}
 	options := []templateDataOption{}
 	if valueInterceptor != nil {
@@ -75,7 +75,7 @@ func writeRenderedTemplateHashPart(
 	}
 	rendered, err := executeTemplate(tpl, td)
 	if err != nil {
-		return fmt.Errorf("%s template execution error: %w", name, err)
+		return fmt.Errorf("%w: %s template execution error: %w", ErrInvalidTemplate, name, err)
 	}
 	_, _ = h.Write(rendered)
 	_, _ = h.Write([]byte{0})
