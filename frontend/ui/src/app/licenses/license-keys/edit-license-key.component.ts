@@ -24,11 +24,13 @@ import {
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleInfo} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
+import {of, switchMap} from 'rxjs';
 import {jsonObjectValidator} from '../../../util/validation';
 import {EditorComponent} from '../../components/editor.component';
 import {ExpiresAtPickerComponent} from '../../components/expires-at-picker/expires-at-picker.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
+import {FeatureFlagService} from '../../services/feature-flag.service';
 import {LicenseTemplatesService} from '../../services/license-templates.service';
 import {LicenseKey} from '../../types/license-key';
 
@@ -54,8 +56,14 @@ export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAcces
   private readonly injector = inject(Injector);
   private readonly customerOrganizationService = inject(CustomerOrganizationsService);
   private readonly licenseTemplatesService = inject(LicenseTemplatesService);
+  private readonly featureFlags = inject(FeatureFlagService);
   protected readonly customers = toSignal(this.customerOrganizationService.getCustomerOrganizations());
-  protected readonly templates = toSignal(this.licenseTemplatesService.list(), {initialValue: []});
+  protected readonly templates = toSignal(
+    this.featureFlags.isVendorBillingEnabled$.pipe(
+      switchMap((enabled) => (enabled ? this.licenseTemplatesService.list() : of([])))
+    ),
+    {initialValue: []}
+  );
 
   protected readonly faCircleInfo = faCircleInfo;
 
