@@ -47,7 +47,8 @@ func CustomerOrganizationsRouter(r chiopenapi.Router) {
 
 			r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin,
 				middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
-				r.Put("/partner", assignCustomerToPartnerHandler()).
+				r.With(middleware.PartnerManagementFeatureMiddleware).
+					Put("/partner", assignCustomerToPartnerHandler()).
 					With(option.Description("Assign or unassign a partner organization for a customer organization")).
 					With(option.Request(struct {
 						CustomerOrganizationIDRequest
