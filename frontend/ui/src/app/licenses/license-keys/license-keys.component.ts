@@ -207,9 +207,7 @@ export class LicenseKeysComponent {
   }
 
   protected getLicenseKeyReference(name: string): string {
-    return /^[a-zA-Z_]\w*$/.test(name)
-      ? `{{ .LicenseKeys.${name} }}`
-      : `{{ index .LicenseKeys "${name}" }}`;
+    return /^[a-zA-Z_]\w*$/.test(name) ? `{{ .LicenseKeys.${name} }}` : `{{ index .LicenseKeys "${name}" }}`;
   }
 
   getOwnerColumn(customerOrganizationId?: string): Observable<string | undefined> {
