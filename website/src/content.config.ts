@@ -45,6 +45,33 @@ export const GlossaryEntryConfigSchema = z.object({
     .optional(),
 });
 
+export const CustomerConfigSchema = ({image}) =>
+  z.object({
+    company: z.string(),
+    person: z.object({
+      name: z.string(),
+      role: z.string(),
+      image: image(),
+    }),
+    quote: z.string(),
+    industry: z.string(),
+    useCase: z.string(),
+    // Homepage testimonial control
+    featured: z.boolean().default(false),
+    outcome: z.string().optional(), // short testimonial headline
+    // Present => rendered at /case-studies/<slug>
+    caseStudy: z
+      .object({
+        title: z.string().optional(), // defaults to company
+        logo: image(),
+        logoLight: image().optional(),
+        logoDark: image().optional(),
+        pageTitle: z.string(),
+        pageDescription: z.string(),
+      })
+      .optional(),
+  });
+
 export const collections = {
   docs: defineCollection({
     loader: docsLoader(),
@@ -62,7 +89,12 @@ export const collections = {
     loader: glob({pattern: '**/*.{md,mdx}', base: 'src/content/glossary'}),
     schema: GlossaryEntryConfigSchema,
   }),
+  customers: defineCollection({
+    loader: glob({pattern: '**/*.{md,mdx}', base: 'src/content/customers'}),
+    schema: CustomerConfigSchema,
+  }),
 };
 
 export type BlogPostConfig = z.output<ReturnType<typeof BlogPostConfigSchema>>;
 export type GlossaryEntryConfig = z.output<typeof GlossaryEntryConfigSchema>;
+export type CustomerConfig = z.output<ReturnType<typeof CustomerConfigSchema>>;

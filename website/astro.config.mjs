@@ -7,6 +7,7 @@ import tailwindcss from '@tailwindcss/vite';
 import icon from 'astro-icon';
 import {defineConfig, fontProviders} from 'astro/config';
 import serviceWorker from 'astrojs-service-worker';
+import rehypeExternalLinks from 'rehype-external-links';
 import rehypeMermaid from 'rehype-mermaid';
 import starlightLinksValidator from 'starlight-links-validator';
 import starlightSidebarTopics from 'starlight-sidebar-topics';
@@ -294,7 +295,13 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     mdx(),
   ],
   markdown: {
-    rehypePlugins: [[rehypeMermaid, {strategy: 'inline-svg'}]],
+    rehypePlugins: [
+      [rehypeMermaid, {strategy: 'inline-svg'}],
+      [
+        rehypeExternalLinks,
+        {target: '_blank', rel: ['noopener', 'noreferrer']},
+      ],
+    ],
   },
   vite: {
     plugins: [tailwindcss()],

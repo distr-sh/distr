@@ -44,7 +44,8 @@
     "baseline-browser-mapping": "^2.10.24",
     "prettier": "^3.8.3",
     "prettier-plugin-astro": "^0.14.1",
-    "prettier-plugin-organize-imports": "^4.3.0"
+    "prettier-plugin-organize-imports": "^4.3.0",
+    "rehype-external-links": "^3.0.0"
   },
   "packageManager": "pnpm@11.5.2",
   "engines": {
