@@ -186,7 +186,7 @@ Reference a license key in the deployment's Helm values:
 
 ```yaml
 app:
-  licenseToken: {{ .LicenseKeys.MY_LICENSE_KEY }}
+  licenseToken: {{.LicenseKeys.MY_LICENSE_KEY}}
 ```
 
 The resolved token is passed into the chart at deploy time.
