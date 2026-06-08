@@ -1,5 +1,5 @@
 import {DecimalPipe} from '@angular/common';
-import {Component, inject, signal, TemplateRef, viewChild} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
@@ -14,6 +14,7 @@ import {ToastService} from '../../services/toast.service';
 
 @Component({
   templateUrl: './partner-organizations.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [ReactiveFormsModule, FontAwesomeModule, DecimalPipe, RouterLink],
 })
 export class PartnerOrganizationsComponent {

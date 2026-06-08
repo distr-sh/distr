@@ -1,6 +1,6 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {PercentPipe} from '@angular/common';
-import {Component, computed, input, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, input, signal} from '@angular/core';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faExclamation, faHardDrive} from '@fortawesome/free-solid-svg-icons';
 import {BytesPipe} from '../../../util/units';
@@ -11,6 +11,7 @@ import {DeploymentTargetLatestMetrics} from '../../types/deployment-target-metri
   selector: 'app-deployment-target-metrics',
   templateUrl: './deployment-target-metrics.component.html',
   imports: [OverlayModule, BytesPipe, PercentPipe, FaIconComponent, StatusDotDirective],
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./deployment-target-metrics.component.scss'],
 })
 export class DeploymentTargetMetricsComponent {

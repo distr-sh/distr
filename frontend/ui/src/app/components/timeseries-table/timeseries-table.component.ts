@@ -1,6 +1,7 @@
 import {AsyncPipe, DatePipe, NgClass, NgTemplateOutlet} from '@angular/common';
 import {
   afterNextRender,
+  ChangeDetectionStrategy,
   Component,
   computed,
   ElementRef,
@@ -95,6 +96,7 @@ export interface TimeseriesExporter {
 @Component({
   selector: 'app-timeseries-table',
   templateUrl: './timeseries-table.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     DatePipe,
     AsyncPipe,

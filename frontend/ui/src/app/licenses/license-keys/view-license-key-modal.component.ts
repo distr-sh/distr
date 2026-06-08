@@ -1,5 +1,5 @@
 import {DatePipe} from '@angular/common';
-import {Component, computed, effect, inject, input, output, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal} from '@angular/core';
 import {rxResource} from '@angular/core/rxjs-interop';
 import {FormControl, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -13,6 +13,7 @@ import {LicenseKey} from '../../types/license-key';
 @Component({
   selector: 'app-view-license-key-modal',
   templateUrl: './view-license-key-modal.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [FaIconComponent, ReactiveFormsModule, EditorComponent, DatePipe, ClipComponent],
 })
 export class ViewLicenseKeyModalComponent {

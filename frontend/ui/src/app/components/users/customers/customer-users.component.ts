@@ -1,5 +1,5 @@
 import {OverlayModule} from '@angular/cdk/overlay';
-import {Component, computed, ElementRef, inject, signal, viewChild} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, ElementRef, inject, signal, viewChild} from '@angular/core';
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
@@ -11,6 +11,7 @@ import {UsersComponent} from '../users.component';
 
 @Component({
   templateUrl: './customer-users.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [UsersComponent, RouterLink, FontAwesomeModule, OverlayModule],
 })
 export class CustomerUsersComponent {

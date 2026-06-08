@@ -1,6 +1,6 @@
 import {CdkStep, CdkStepper, CdkStepperPrevious} from '@angular/cdk/stepper';
 import {HttpErrorResponse} from '@angular/common/http';
-import {Component, inject, OnDestroy, OnInit, signal, viewChild} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit, signal, viewChild} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router} from '@angular/router';
 import {CustomerOrganization, OrganizationBranding} from '@distr-sh/distr-sdk';
@@ -56,6 +56,7 @@ const customerTaskLogin = 'login';
     CdkStepperPrevious,
     AutotrimDirective,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './branding-tutorial.component.html',
 })
 export class BrandingTutorialComponent implements OnInit, OnDestroy {

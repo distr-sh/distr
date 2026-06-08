@@ -1,5 +1,5 @@
 import {AsyncPipe, DatePipe} from '@angular/common';
-import {Component, inject, input, TemplateRef} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, input, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed, toObservable} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -28,6 +28,7 @@ import {EditApplicationEntitlementComponent} from './edit-application-entitlemen
 @Component({
   selector: 'app-application-entitlements',
   templateUrl: './application-entitlements.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     AsyncPipe,
     AutotrimDirective,

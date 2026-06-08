@@ -1,4 +1,4 @@
-import {Component, computed, forwardRef, input} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, forwardRef, input} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ControlValueAccessor, FormControl, NG_VALUE_ACCESSOR, ReactiveFormsModule} from '@angular/forms';
 import {UserRole} from '@distr-sh/distr-sdk';
@@ -17,6 +17,7 @@ import {USER_ROLE_LABELS, userRolesAtOrBelow} from '../../util/user-role';
       }
     </select>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [{provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => UserRoleSelectComponent), multi: true}],
 })
 export class UserRoleSelectComponent implements ControlValueAccessor {

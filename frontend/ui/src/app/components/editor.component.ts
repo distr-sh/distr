@@ -1,4 +1,14 @@
-import {Component, computed, ElementRef, forwardRef, inject, input, OnDestroy, OnInit} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  forwardRef,
+  inject,
+  input,
+  OnDestroy,
+  OnInit,
+} from '@angular/core';
 import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
 import {defaultKeymap, history, historyKeymap, indentWithTab} from '@codemirror/commands';
 import {json} from '@codemirror/lang-json';
@@ -14,6 +24,7 @@ export type EditorLanguage = 'yaml' | 'json';
 @Component({
   selector: 'app-editor',
   template: '',
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,

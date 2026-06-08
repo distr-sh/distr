@@ -1,4 +1,4 @@
-import {Component, inject, OnInit, signal, TemplateRef, viewChild} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, OnInit, signal, TemplateRef, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -17,6 +17,7 @@ import {Organization} from '../types/organization';
 @Component({
   selector: 'app-organization-settings',
   templateUrl: './organization-settings.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [FaIconComponent, ReactiveFormsModule, AutotrimDirective, DeleteOrganizationComponent],
 })
 export class OrganizationSettingsComponent implements OnInit {

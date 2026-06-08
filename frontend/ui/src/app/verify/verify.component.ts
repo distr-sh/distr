@@ -1,4 +1,4 @@
-import {Component, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 import {AuthService} from '../services/auth.service';
 import {ToastService} from '../services/toast.service';
@@ -6,6 +6,7 @@ import {ToastService} from '../services/toast.service';
 @Component({
   selector: 'app-verify',
   templateUrl: './verify.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [],
 })
 export class VerifyComponent {

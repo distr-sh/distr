@@ -1,4 +1,4 @@
-import {Component, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faMoon, faSun} from '@fortawesome/free-solid-svg-icons';
 import {ColorSchemeService} from '../../services/color-scheme.service';
@@ -7,6 +7,7 @@ import {ColorSchemeService} from '../../services/color-scheme.service';
   selector: 'app-color-scheme-switcher',
   standalone: true,
   templateUrl: './color-scheme-switcher.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [FaIconComponent],
 })
 export class ColorSchemeSwitcherComponent {

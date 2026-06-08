@@ -1,4 +1,4 @@
-import {Component, input} from '@angular/core';
+import {ChangeDetectionStrategy, Component, input} from '@angular/core';
 
 import {NgClass} from '@angular/common';
 import {RouterLink} from '@angular/router';
@@ -7,6 +7,7 @@ import {SupportBundle, SupportBundleStatus} from '../../types/support-bundle';
 @Component({
   selector: 'app-support-bundle-dashboard-card',
   templateUrl: './support-bundle-dashboard-card.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [RouterLink, NgClass],
 })
 export class SupportBundleDashboardCardComponent {

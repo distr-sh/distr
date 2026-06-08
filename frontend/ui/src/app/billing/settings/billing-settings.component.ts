@@ -1,4 +1,4 @@
-import {Component, computed, inject, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
@@ -15,6 +15,7 @@ import {ToastService} from '../../services/toast.service';
 @Component({
   selector: 'app-billing-settings',
   templateUrl: './billing-settings.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [FaIconComponent, ReactiveFormsModule, ClipDirective, RouterLink],
 })
 export class BillingSettingsComponent {

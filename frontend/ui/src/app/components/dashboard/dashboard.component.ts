@@ -1,4 +1,4 @@
-import {Component, inject, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, OnInit} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -24,6 +24,7 @@ import {SupportBundle} from '../../types/support-bundle';
     FaIconComponent,
     SupportBundleDashboardCardComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit {

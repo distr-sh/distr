@@ -1,6 +1,16 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {CommonModule} from '@angular/common';
-import {Component, computed, DestroyRef, inject, OnInit, signal, TemplateRef, viewChild} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  OnInit,
+  signal,
+  TemplateRef,
+  viewChild,
+} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {NonNullableFormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -21,6 +31,7 @@ import {PendingSubscriptionUpdate, SubscriptionUpdateModalComponent} from './sub
 @Component({
   selector: 'app-subscription',
   templateUrl: './subscription.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     FaIconComponent,
     ReactiveFormsModule,

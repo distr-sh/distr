@@ -1,4 +1,4 @@
-import {Component, effect, inject, input, output, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, effect, inject, input, output, signal} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {DeploymentTarget, DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -73,6 +73,7 @@ import {
       </div>
     </div>
   </div>`,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [DeploymentFormComponent, FaIconComponent, ReactiveFormsModule],
 })
 export class DeploymentModalComponent {

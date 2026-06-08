@@ -1,4 +1,4 @@
-import {Component, computed, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {RouterOutlet} from '@angular/router';
 import {map} from 'rxjs';
@@ -20,6 +20,7 @@ import {SideBarComponent} from './side-bar/side-bar.component';
       <router-outlet />
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [NavBarComponent, SideBarComponent, RouterOutlet],
 })
 export class NavShellComponent {

@@ -2,6 +2,7 @@ import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {TextFieldModule} from '@angular/cdk/text-field';
 import {DatePipe, NgOptimizedImage} from '@angular/common';
 import {
+  ChangeDetectionStrategy,
   Component,
   computed,
   inject,
@@ -69,6 +70,7 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
 @Component({
   selector: 'app-deployment-target-card',
   templateUrl: './deployment-target-card.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     NgOptimizedImage,
     UuidComponent,

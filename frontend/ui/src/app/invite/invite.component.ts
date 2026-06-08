@@ -1,4 +1,4 @@
-import {Component, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
@@ -8,6 +8,7 @@ import {AuthService} from '../services/auth.service';
 @Component({
   selector: 'app-invite',
   imports: [ReactiveFormsModule, AutotrimDirective],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './invite.component.html',
 })
 export class InviteComponent {

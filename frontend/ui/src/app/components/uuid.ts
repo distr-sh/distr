@@ -1,5 +1,5 @@
 import {NgClass} from '@angular/common';
-import {Component, computed, input, viewChild} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, input, viewChild} from '@angular/core';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faClipboard} from '@fortawesome/free-regular-svg-icons';
 import {faClipboardCheck} from '@fortawesome/free-solid-svg-icons';
@@ -20,6 +20,7 @@ import {ClipDirective} from './clip.component';
       <fa-icon [icon]="clipIcon()" />
     </button>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [FaIconComponent, NgClass, ClipDirective],
 })
 export class UuidComponent {

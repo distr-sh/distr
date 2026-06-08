@@ -1,8 +1,9 @@
-import {Component, computed, input} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, input} from '@angular/core';
 import {UNLIMITED_QTY} from '../types/subscription';
 
 @Component({
   selector: 'app-quota-limit',
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     @let l = limit();
     @let p = percentage();

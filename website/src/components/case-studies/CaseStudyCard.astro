@@ -7,16 +7,15 @@ export interface Props {
   company: string;
   industry: string;
   useCase: string;
-  challenge: string;
-  solution: string;
-  result: string;
-  ctoQuote: string;
+  quote: string;
   logo: ImageMetadata;
   logoLight?: ImageMetadata;
   logoDark?: ImageMetadata;
-  ctoImage: ImageMetadata;
-  ctoName: string;
-  ctoTitle: string;
+  person: {
+    name: string;
+    role: string;
+    image: ImageMetadata;
+  };
   slug: string;
 }
 
@@ -24,16 +23,11 @@ const {
   company,
   industry,
   useCase,
-  challenge,
-  solution,
-  result,
-  ctoQuote,
+  quote,
   logo,
   logoLight,
   logoDark,
-  ctoImage,
-  ctoName,
-  ctoTitle,
+  person,
   slug,
 } = Astro.props;
 
@@ -98,40 +92,11 @@ const useThemedLogo = logoLight && logoDark;
           </div>
         </div>
       </div>
-      <!-- Challenge -->
-      <div>
-        <h3
-          class="text-lg font-semibold text-[#00b5eb] uppercase tracking-wide mb-3">
-          Challenge
-        </h3>
-        <div
-          class="text-base leading-relaxed text-gray-700 dark:text-gray-300 whitespace-pre-line"
-          set:html={challenge}
-        />
-      </div>
 
-      <!-- Solution -->
-      <div>
-        <h3
-          class="text-lg font-semibold text-[#00b5eb] uppercase tracking-wide mb-3">
-          Solution
-        </h3>
-        <div
-          class="text-base leading-relaxed text-gray-700 dark:text-gray-300 whitespace-pre-line"
-          set:html={solution}
-        />
-      </div>
-
-      <!-- Result -->
-      <div>
-        <h3
-          class="text-lg font-semibold text-[#00b5eb] uppercase tracking-wide mb-3">
-          Result
-        </h3>
-        <div
-          class="text-base leading-relaxed text-gray-700 dark:text-gray-300 whitespace-pre-line"
-          set:html={result}
-        />
+      <!-- Case study narrative (rendered from the customer markdown body) -->
+      <div
+        class="text-base leading-relaxed text-gray-700 dark:text-gray-300 [&>h2:first-child]:mt-0 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:text-[#00b5eb] [&_h2]:uppercase [&_h2]:tracking-wide [&_h2]:mt-8 [&_h2]:mb-3 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:list-inside [&_ul]:space-y-1 [&_ul]:mb-4 [&_a]:text-[#00b5eb] [&_a]:underline">
+        <slot />
       </div>
     </div>
 
@@ -142,25 +107,25 @@ const useThemedLogo = logoLight && logoDark;
         <!-- Quote -->
         <blockquote
           class="text-base md:text-lg leading-relaxed italic font-medium text-gray-700 dark:text-gray-300 mb-6">
-          "{ctoQuote}"
+          "{quote}"
         </blockquote>
 
-        <!-- CTO Info -->
+        <!-- Person Info -->
         <div
           class="flex items-center gap-4 pb-6 border-b border-gray-200 dark:border-gray-700">
           <Image
-            src={ctoImage}
-            alt={ctoName}
+            src={person.image}
+            alt={person.name}
             class="w-14 h-14 md:w-16 md:h-16 rounded-full object-cover flex-shrink-0"
             width={64}
             height={64}
           />
           <div>
             <div class="font-bold text-gray-900 dark:text-white">
-              {ctoName}
+              {person.name}
             </div>
             <div class="text-sm text-gray-600 dark:text-gray-400">
-              {ctoTitle}, {company}
+              {person.role}, {company}
             </div>
           </div>
         </div>

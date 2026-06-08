@@ -23,5 +23,5 @@ dependencies:
     condition: postgresql.enabled
   - name: rustfs
     repository: https://charts.rustfs.com
-    version: 0.6.x
+    version: 0.7.x
     condition: rustfs.enabled

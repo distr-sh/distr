@@ -1,5 +1,5 @@
 import {DatePipe} from '@angular/common';
-import {Component, DestroyRef, inject, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, DestroyRef, inject, signal} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {ActivatedRoute, Params, Router} from '@angular/router';
@@ -13,6 +13,7 @@ import {ToastService} from '../../services/toast.service';
 
 @Component({
   templateUrl: './artifact-pulls.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [DatePipe, ReactiveFormsModule, FaIconComponent],
 })
 export class ArtifactPullsComponent {

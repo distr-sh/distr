@@ -1,4 +1,4 @@
-import {Component, inject, input} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, input} from '@angular/core';
 import {takeUntilDestroyed, toObservable} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faCircleExclamation, faCircleInfo, faXmark} from '@fortawesome/free-solid-svg-icons';
@@ -52,6 +52,7 @@ const autoCloseDuration = 5000;
       </button>
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [FaIconComponent],
 })
 export class ToastComponent {

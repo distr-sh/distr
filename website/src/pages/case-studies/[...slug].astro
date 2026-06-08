@@ -1,25 +1,41 @@
 ---
+import {getCollection, render} from 'astro:content';
 import StarlightLayout from '~/layouts/StarlightLayout.astro';
 import CaseStudyCard from '~/components/case-studies/CaseStudyCard.astro';
 import SignUpCta from '~/components/cta/standalone/SignUpCta.astro';
 import NewsletterSection from '~/components/home/NewsletterSection.astro';
-import {caseStudies} from '~/data/caseStudies';
 
 export async function getStaticPaths() {
-  return caseStudies.map(caseStudy => ({
-    params: {slug: caseStudy.slug},
-    props: {caseStudy},
+  const customers = await getCollection('customers', c => !!c.data.caseStudy);
+  return customers.map(entry => ({
+    params: {slug: entry.id},
+    props: {entry},
   }));
 }
 
-const {caseStudy} = Astro.props;
-const {pageTitle, pageDescription} = caseStudy;
+const {entry} = Astro.props;
+const {company, person, quote, industry, useCase} = entry.data;
+const caseStudy = entry.data.caseStudy!;
+const {Content} = await render(entry);
 ---
 
-<StarlightLayout title={pageTitle} description={pageDescription}>
+<StarlightLayout
+  title={caseStudy.pageTitle}
+  description={caseStudy.pageDescription}>
   <section class="py-8 md:py-16 lg:py-24 bg-gray-50 dark:bg-gray-800">
     <div class="container mx-auto px-4">
-      <CaseStudyCard {...caseStudy} />
+      <CaseStudyCard
+        company={company}
+        industry={industry}
+        useCase={useCase}
+        quote={quote}
+        logo={caseStudy.logo}
+        logoLight={caseStudy.logoLight}
+        logoDark={caseStudy.logoDark}
+        person={person}
+        slug={entry.id}>
+        <Content />
+      </CaseStudyCard>
     </div>
   </section>
   <SignUpCta />
