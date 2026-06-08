@@ -178,7 +178,7 @@
               <p class="font-medium mb-2">Saving will trigger a redeployment on the following deployment targets:</p>
               <ul class="list-disc list-inside space-y-1">
                 @for (d of affectedDeployments(); track d.deploymentId) {
-                  <li>{{ d.deploymentTargetName }}</li>
+                  <li>{{ d.deploymentTargetName }} ({{ d.applicationName }})</li>
                 }
               </ul>
             </div>

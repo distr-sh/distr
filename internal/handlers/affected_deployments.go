@@ -97,6 +97,7 @@ func findAffectedDeployments(
 					DeploymentTargetID:   target.ID,
 					DeploymentTargetName: target.Name,
 					DeploymentID:         deployment.ID,
+					ApplicationName:      deployment.ApplicationName,
 				})
 			}
 		}
