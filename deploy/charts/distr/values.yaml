@@ -300,7 +300,7 @@ rustfs:
   secret:
     rustfs:
       access_key: 'distr'
-      secret_key: 'distr 123' # please change this
+      secret_key: 'distr123' # please change this
   mode:
     standalone:
       enabled: true
