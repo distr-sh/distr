@@ -39,9 +39,11 @@ export class LicenseKeysService {
     return this.http.post<LicenseKey>(this.licenseKeysUrl, request).pipe(tap((l) => this.cache.save(l)));
   }
 
-  update(request: LicenseKey, dryRun = false): Observable<UpdateLicenseKeyResponse> {
+  update(request: LicenseKey, confirm = false): Observable<UpdateLicenseKeyResponse> {
     return this.http
-      .put<UpdateLicenseKeyResponse>(`${this.licenseKeysUrl}/${request.id}`, {...request, dryRun})
+      .put<UpdateLicenseKeyResponse>(`${this.licenseKeysUrl}/${request.id}`, request, {
+        params: confirm ? {confirm: 'true'} : {},
+      })
       .pipe(tap((response) => this.cache.save(response)));
   }
 

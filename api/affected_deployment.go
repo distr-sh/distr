@@ -8,3 +8,7 @@ type AffectedDeployment struct {
 	DeploymentID         uuid.UUID `json:"deploymentId"`
 	ApplicationName      string    `json:"applicationName"`
 }
+
+type AffectedDeploymentsConflictResponse struct {
+	AffectedDeployments []AffectedDeployment `json:"affectedDeployments"`
+}

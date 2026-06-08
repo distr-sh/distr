@@ -42,7 +42,8 @@ func SecretsRouter(r chiopenapi.Router) {
 			r.Put("/", updateSecretHandler()).
 				With(option.Description("Update a secret")).
 				With(option.Request(api.UpdateSecretRequest{})).
-				With(option.Response(http.StatusOK, api.UpdateSecretResponse{}))
+				With(option.Response(http.StatusOK, api.UpdateSecretResponse{})).
+				With(option.Response(http.StatusConflict, api.AffectedDeploymentsConflictResponse{}))
 
 			r.Delete("/", deleteSecretHandler()).
 				With(option.Description("Delete a secret")).
@@ -188,11 +189,10 @@ func updateSecretHandler() http.HandlerFunc {
 			return
 		}
 
-		if body.DryRun {
-			RespondJSON(w, api.UpdateSecretResponse{
-				SecretWithoutValue:  *mapping.SecretToAPI(*existing),
-				AffectedDeployments: affected,
-			})
+		confirm := r.URL.Query().Get("confirm") == "true"
+		if !confirm && len(affected) > 0 {
+			RespondJSONWithStatus(w, http.StatusConflict,
+				api.AffectedDeploymentsConflictResponse{AffectedDeployments: affected})
 			return
 		}
 

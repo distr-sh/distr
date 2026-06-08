@@ -1,4 +1,5 @@
 import {DatePipe} from '@angular/common';
+import {HttpErrorResponse} from '@angular/common/http';
 import {Component, computed, inject, input, output, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
@@ -126,18 +127,16 @@ export class SecretsComponent {
 
   private async updateSecret(id: string, value: string) {
     try {
-      if (this.affectedDeployments().length === 0) {
-        const dryRun = await firstValueFrom(this.secretsService.update(id, value, true));
-        if (dryRun.affectedDeployments.length > 0) {
-          this.affectedDeployments.set(dryRun.affectedDeployments);
-          return;
-        }
-      }
-      await firstValueFrom(this.secretsService.update(id, value));
+      const confirm = this.affectedDeployments().length > 0;
+      await firstValueFrom(this.secretsService.update(id, value, confirm));
       this.toast.success('Secret value has been updated.');
       this.refresh.emit();
       this.closeDialog();
     } catch (error) {
+      if (error instanceof HttpErrorResponse && error.status === 409) {
+        this.affectedDeployments.set(error.error.affectedDeployments);
+        return;
+      }
       this.affectedDeployments.set([]);
       const msg = getFormDisplayedError(error);
       if (msg) {

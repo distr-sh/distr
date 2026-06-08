@@ -63,7 +63,8 @@ func LicenseKeysRouter(r chiopenapi.Router) {
 						LicenseKeyIDRequest
 						api.UpdateLicenseKeyRequest
 					}{})).
-					With(option.Response(http.StatusOK, api.UpdateLicenseKeyResponse{}))
+					With(option.Response(http.StatusOK, api.UpdateLicenseKeyResponse{})).
+					With(option.Response(http.StatusConflict, api.AffectedDeploymentsConflictResponse{}))
 				r.Delete("/", deleteLicenseKey).
 					With(option.Description("Delete a license key")).
 					With(option.Request(LicenseKeyIDRequest{}))
@@ -302,11 +303,10 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if body.DryRun {
-		RespondJSON(w, api.UpdateLicenseKeyResponse{
-			LicenseKey:          *existing,
-			AffectedDeployments: affected,
-		})
+	confirm := r.URL.Query().Get("confirm") == "true"
+	if !confirm && len(affected) > 0 {
+		RespondJSONWithStatus(w, http.StatusConflict,
+			api.AffectedDeploymentsConflictResponse{AffectedDeployments: affected})
 		return
 	}
 

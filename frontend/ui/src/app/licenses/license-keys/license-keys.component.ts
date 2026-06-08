@@ -1,5 +1,6 @@
 import {GlobalPositionStrategy} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe} from '@angular/common';
+import {HttpErrorResponse} from '@angular/common/http';
 import {Component, inject, input, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
@@ -139,9 +140,6 @@ export class LicenseKeysComponent {
         const saved = license.id
           ? await this.updateLicense(license)
           : await firstValueFrom(this.licenseKeysService.create(license));
-        if (!saved) {
-          return;
-        }
         this.hideDrawer();
         if (!license.id && saved.licenseTemplateId) {
           this.toast.success(`${saved.name} saved successfully. Link the license key ID in your Stripe dashboard.`);
@@ -149,6 +147,10 @@ export class LicenseKeysComponent {
           this.toast.success(`${saved.name} saved successfully`);
         }
       } catch (e) {
+        if (e instanceof HttpErrorResponse && e.status === 409) {
+          this.affectedDeployments.set(e.error.affectedDeployments);
+          return;
+        }
         this.affectedDeployments.set([]);
         const msg = getFormDisplayedError(e);
         if (msg) {
@@ -160,15 +162,9 @@ export class LicenseKeysComponent {
     }
   }
 
-  private async updateLicense(license: LicenseKey): Promise<LicenseKey | undefined> {
-    if (this.affectedDeployments().length === 0) {
-      const dryRun = await firstValueFrom(this.licenseKeysService.update(license, true));
-      if (dryRun.affectedDeployments.length > 0) {
-        this.affectedDeployments.set(dryRun.affectedDeployments);
-        return undefined;
-      }
-    }
-    return firstValueFrom(this.licenseKeysService.update(license));
+  private updateLicense(license: LicenseKey): Promise<LicenseKey> {
+    const confirm = this.affectedDeployments().length > 0;
+    return firstValueFrom(this.licenseKeysService.update(license, confirm));
   }
 
   duplicateLicense(templateRef: TemplateRef<unknown>, license: LicenseKey) {

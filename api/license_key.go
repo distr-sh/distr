@@ -25,7 +25,7 @@ type UpdateLicenseKeyRequest struct {
 	ExpiresAt         *time.Time       `json:"expiresAt,omitempty"`
 	Payload           *json.RawMessage `json:"payload,omitempty"`
 	LicenseTemplateID *uuid.UUID       `json:"licenseTemplateId,omitempty"`
-	DryRun            bool             `json:"dryRun"`
+	Confirm           bool             `query:"confirm"`
 }
 
 type LicenseKeyRevision struct {

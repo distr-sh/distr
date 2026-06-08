@@ -22,8 +22,14 @@ export class SecretsService {
     return this.httpClient.post<Secret>(baseUrl, {key, value, customerOrganizationId});
   }
 
-  public update(id: string, value: string, dryRun = false): Observable<UpdateSecretResponse> {
-    return this.httpClient.put<UpdateSecretResponse>(`${baseUrl}/${id}`, {value, dryRun});
+  public update(id: string, value: string, confirm = false): Observable<UpdateSecretResponse> {
+    return this.httpClient.put<UpdateSecretResponse>(
+      `${baseUrl}/${id}`,
+      {value},
+      {
+        params: confirm ? {confirm: 'true'} : {},
+      }
+    );
   }
 
   public delete(id: string): Observable<void> {
