@@ -106,25 +106,20 @@ func findAffectedDeployments(
 }
 
 func triggerAffectedDeployments(ctx context.Context, affected []api.AffectedDeployment) error {
-	for _, affectedDeployment := range affected {
-		target, err := db.GetDeploymentTarget(ctx, affectedDeployment.DeploymentTargetID, nil, nil)
-		if err != nil {
-			return err
-		}
-		deployments, err := db.GetDeploymentsForDeploymentTarget(ctx, affectedDeployment.DeploymentTargetID)
-		if err != nil {
-			return err
-		}
-		index := slices.IndexFunc(deployments, func(deployment types.DeploymentWithLatestRevision) bool {
-			return deployment.ID == affectedDeployment.DeploymentID
-		})
-		if index < 0 {
-			return fmt.Errorf("deployment %s not found for deployment target %s",
-				affectedDeployment.DeploymentID, affectedDeployment.DeploymentTargetID)
-		}
+	byTarget := make(map[uuid.UUID][]api.AffectedDeployment)
+	for _, ad := range affected {
+		byTarget[ad.DeploymentTargetID] = append(byTarget[ad.DeploymentTargetID], ad)
+	}
 
-		deployment := deployments[index]
-		request := deploymentRequestFromLatestRevision(deployment)
+	for targetID, affectedForTarget := range byTarget {
+		target, err := db.GetDeploymentTarget(ctx, targetID, nil, nil)
+		if err != nil {
+			return err
+		}
+		deployments, err := db.GetDeploymentsForDeploymentTarget(ctx, targetID)
+		if err != nil {
+			return err
+		}
 		secrets, err := db.GetSecretsForDeploymentTarget(ctx, target.DeploymentTarget)
 		if err != nil {
 			return err
@@ -133,11 +128,22 @@ func triggerAffectedDeployments(ctx context.Context, affected []api.AffectedDepl
 		if err != nil {
 			return err
 		}
-		if err := setDeploymentRequestValuesHash(&request, secrets, licenseKeys); err != nil {
-			return err
-		}
-		if _, err := db.CreateDeploymentRevision(ctx, &request); err != nil {
-			return err
+
+		for _, affectedDeployment := range affectedForTarget {
+			index := slices.IndexFunc(deployments, func(d types.DeploymentWithLatestRevision) bool {
+				return d.ID == affectedDeployment.DeploymentID
+			})
+			if index < 0 {
+				return fmt.Errorf("deployment %s not found for deployment target %s",
+					affectedDeployment.DeploymentID, affectedDeployment.DeploymentTargetID)
+			}
+			request := deploymentRequestFromLatestRevision(deployments[index])
+			if err := setDeploymentRequestValuesHash(&request, secrets, licenseKeys); err != nil {
+				return err
+			}
+			if _, err := db.CreateDeploymentRevision(ctx, &request); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
