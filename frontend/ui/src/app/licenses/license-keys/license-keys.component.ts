@@ -29,7 +29,7 @@ import {LicenseKeysService} from '../../services/license-keys.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
 import {AffectedDeployment} from '../../types/affected-deployment';
-import {LicenseKey} from '../../types/license-key';
+import {LicenseKey, UpdateLicenseKeyRequest} from '../../types/license-key';
 import {EditLicenseKeyComponent} from './edit-license-key.component';
 import {ViewLicenseKeyModalComponent} from './view-license-key-modal.component';
 
@@ -138,9 +138,22 @@ export class LicenseKeysComponent {
     if (this.editForm.valid && license) {
       this.editFormLoading = true;
       try {
+        const liecenseKeyFields = {
+          description: license.description,
+          payload: license.payload,
+          notBefore: license.notBefore,
+          expiresAt: license.expiresAt,
+          licenseTemplateId: license.licenseTemplateId,
+        };
         const saved = license.id
-          ? await this.updateLicense(license)
-          : await firstValueFrom(this.licenseKeysService.create(license));
+          ? await this.updateLicense(license.id, liecenseKeyFields)
+          : await firstValueFrom(
+              this.licenseKeysService.create({
+                ...liecenseKeyFields,
+                name: license.name!,
+                customerOrganizationId: license.customerOrganizationId,
+              })
+            );
         this.hideDrawer();
         if (!license.id && saved.licenseTemplateId) {
           this.toast.success(`${saved.name} saved successfully. Link the license key ID in your Stripe dashboard.`);
@@ -163,9 +176,9 @@ export class LicenseKeysComponent {
     }
   }
 
-  private updateLicense(license: LicenseKey): Promise<LicenseKey> {
+  private updateLicense(id: string, request: UpdateLicenseKeyRequest): Promise<LicenseKey> {
     const confirm = this.affectedDeployments().length > 0;
-    return firstValueFrom(this.licenseKeysService.update(license, confirm));
+    return firstValueFrom(this.licenseKeysService.update(id, request, confirm));
   }
 
   duplicateLicense(templateRef: TemplateRef<unknown>, license: LicenseKey) {

@@ -146,8 +146,14 @@ export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAcces
         customerOrganizationId: license.customerOrganizationId,
         licenseTemplateId: license.licenseTemplateId,
       });
+      if (license.id) {
+        this.editForm.controls.name.disable();
+      } else {
+        this.editForm.controls.name.enable();
+      }
     } else {
       this.editForm.reset({payload: '{}', notBefore: this.today, expiresAt: this.inOneYear});
+      this.editForm.controls.name.enable();
     }
   }
 

@@ -2,7 +2,7 @@ import {HttpClient} from '@angular/common/http';
 import {Injectable, inject} from '@angular/core';
 import {Observable, Subject, switchMap, tap} from 'rxjs';
 import {AffectedDeployment} from '../types/affected-deployment';
-import {LicenseKey, LicenseKeyRevision} from '../types/license-key';
+import {CreateLicenseKeyRequest, LicenseKey, LicenseKeyRevision, UpdateLicenseKeyRequest} from '../types/license-key';
 import {DefaultReactiveList, ReactiveList} from './cache';
 
 export interface UpdateLicenseKeyResponse extends LicenseKey {
@@ -35,13 +35,13 @@ export class LicenseKeysService {
     this.refresh$.next();
   }
 
-  create(request: LicenseKey): Observable<LicenseKey> {
+  create(request: CreateLicenseKeyRequest): Observable<LicenseKey> {
     return this.http.post<LicenseKey>(this.licenseKeysUrl, request).pipe(tap((l) => this.cache.save(l)));
   }
 
-  update(request: LicenseKey, confirm = false): Observable<UpdateLicenseKeyResponse> {
+  update(id: string, request: UpdateLicenseKeyRequest, confirm = false): Observable<UpdateLicenseKeyResponse> {
     return this.http
-      .put<UpdateLicenseKeyResponse>(`${this.licenseKeysUrl}/${request.id}`, request, {
+      .put<UpdateLicenseKeyResponse>(`${this.licenseKeysUrl}/${id}`, request, {
         params: confirm ? {confirm: 'true'} : {},
       })
       .pipe(tap((response) => this.cache.save(response)));

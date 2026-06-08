@@ -235,11 +235,6 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if strings.TrimSpace(body.Name) == "" {
-		http.Error(w, "name is required", http.StatusBadRequest)
-		return
-	}
-
 	authCtx := auth.Authentication.Require(ctx)
 
 	if body.LicenseTemplateID != nil {
@@ -312,7 +307,7 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 	var errorHandled bool
 	err = db.RunTx(ctx, func(ctx context.Context) error {
 		if r, err := db.UpdateLicenseKeyMetadata(
-			ctx, existing.ID, body.Name, body.Description, body.LicenseTemplateID,
+			ctx, existing.ID, body.Description, body.LicenseTemplateID,
 		); errors.Is(err, apierrors.ErrConflict) {
 			http.Error(w, "A license key with this name already exists", http.StatusBadRequest)
 			errorHandled = true
@@ -402,7 +397,6 @@ func updatedLicenseKeyForRequest(
 	body api.UpdateLicenseKeyRequest,
 ) (types.LicenseKey, error) {
 	result := *existing
-	result.Name = body.Name
 	result.Description = body.Description
 	result.LicenseTemplateID = body.LicenseTemplateID
 
