@@ -12,7 +12,7 @@
 
 </div>
 
-![Version: 1.11.0](https://img.shields.io/badge/Version-1.11.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.11.0](https://img.shields.io/badge/AppVersion-1.11.0-informational?style=flat-square)
+![Version: 2.22.3](https://img.shields.io/badge/Version-2.22.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.22.3](https://img.shields.io/badge/AppVersion-2.22.3-informational?style=flat-square)
 
 The easiest way to distribute enterprise software
 
@@ -41,7 +41,7 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 
 | Repository                               | Name       | Version |
 | ---------------------------------------- | ---------- | ------- |
-| https://charts.rustfs.com                | rustfs     | 0.0.x   |
+| https://charts.rustfs.com                | rustfs     | 0.6.x   |
 | oci://registry-1.docker.io/bitnamicharts | postgresql | 18.x.x  |
 
 ## Values
@@ -55,59 +55,94 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | autoscaling.targetCPUUtilizationPercentage | int    | `100`                                            |             |
 | cronJobs[0].args[0]                        | string | `"cleanup"`                                      |             |
 | cronJobs[0].args[1]                        | string | `"DeploymentLogRecord"`                          |             |
+| cronJobs[0].args[2]                        | string | `"--timeout"`                                    |             |
+| cronJobs[0].args[3]                        | string | `"10m"`                                          |             |
 | cronJobs[0].labels."distr.sh/job"          | string | `"deployment-log-record-cleanup"`                |             |
 | cronJobs[0].name                           | string | `"deployment-log-record-cleanup"`                |             |
 | cronJobs[1].args[0]                        | string | `"cleanup"`                                      |             |
-| cronJobs[1].args[1]                        | string | `"DeploymentRevisionStatus"`                     |             |
-| cronJobs[1].labels."distr.sh/job"          | string | `"deployment-revision-status-cleanup"`           |             |
-| cronJobs[1].name                           | string | `"deployment-revision-status-cleanup"`           |             |
+| cronJobs[1].args[1]                        | string | `"DeploymentTargetLogRecord"`                    |             |
+| cronJobs[1].args[2]                        | string | `"--timeout"`                                    |             |
+| cronJobs[1].args[3]                        | string | `"10m"`                                          |             |
+| cronJobs[1].labels."distr.sh/job"          | string | `"deployment-target-log-record-cleanup"`         |             |
+| cronJobs[1].name                           | string | `"deployment-target-log-record-cleanup"`         |             |
 | cronJobs[2].args[0]                        | string | `"cleanup"`                                      |             |
-| cronJobs[2].args[1]                        | string | `"DeploymentTargetMetrics"`                      |             |
-| cronJobs[2].labels."distr.sh/job"          | string | `"deployment-target-metrics-cleanup"`            |             |
-| cronJobs[2].name                           | string | `"deployment-target-metrics-cleanup"`            |             |
+| cronJobs[2].args[1]                        | string | `"DeploymentRevisionStatus"`                     |             |
+| cronJobs[2].args[2]                        | string | `"--timeout"`                                    |             |
+| cronJobs[2].args[3]                        | string | `"10m"`                                          |             |
+| cronJobs[2].labels."distr.sh/job"          | string | `"deployment-revision-status-cleanup"`           |             |
+| cronJobs[2].name                           | string | `"deployment-revision-status-cleanup"`           |             |
+| cronJobs[3].args[0]                        | string | `"cleanup"`                                      |             |
+| cronJobs[3].args[1]                        | string | `"DeploymentTargetMetrics"`                      |             |
+| cronJobs[3].args[2]                        | string | `"--timeout"`                                    |             |
+| cronJobs[3].args[3]                        | string | `"10m"`                                          |             |
+| cronJobs[3].labels."distr.sh/job"          | string | `"deployment-target-metrics-cleanup"`            |             |
+| cronJobs[3].name                           | string | `"deployment-target-metrics-cleanup"`            |             |
+| cronJobs[4].args[0]                        | string | `"cleanup"`                                      |             |
+| cronJobs[4].args[1]                        | string | `"OIDCState"`                                    |             |
+| cronJobs[4].args[2]                        | string | `"--timeout"`                                    |             |
+| cronJobs[4].args[3]                        | string | `"10m"`                                          |             |
+| cronJobs[4].labels."distr.sh/job"          | string | `"oidcstate-cleanup"`                            |             |
+| cronJobs[4].name                           | string | `"oidcstate-cleanup"`                            |             |
+| cronJobs[5].args[0]                        | string | `"cleanup"`                                      |             |
+| cronJobs[5].args[1]                        | string | `"ArtifactBlob"`                                 |             |
+| cronJobs[5].args[2]                        | string | `"--timeout"`                                    |             |
+| cronJobs[5].args[3]                        | string | `"10m"`                                          |             |
+| cronJobs[5].labels."distr.sh/job"          | string | `"artifact-blob-cleanup"`                        |             |
+| cronJobs[5].name                           | string | `"artifact-blob-cleanup"`                        |             |
+| cronJobs[6].args[0]                        | string | `"maintenance"`                                  |             |
+| cronJobs[6].args[1]                        | string | `"sync-artifacts-upstream"`                      |             |
+| cronJobs[6].args[2]                        | string | `"--timeout"`                                    |             |
+| cronJobs[6].args[3]                        | string | `"10m"`                                          |             |
+| cronJobs[6].labels."distr.sh/job"          | string | `"registry-upstream-sync"`                       |             |
+| cronJobs[6].name                           | string | `"registry-upstream-sync"`                       |             |
 | externalDatabase.existingSecret            | string | `""`                                             |             |
 | externalDatabase.existingSecretUriKey      | string | `"uri"`                                          |             |
 | externalDatabase.uri                       | string | `""`                                             |             |
 | fullnameOverride                           | string | `""`                                             |             |
+| global.security.allowInsecureImages        | bool   | `true`                                           |             |
 | hub.envFrom                                | list   | `[]`                                             |             |
 | hub.env[0].name                            | string | `"DISTR_HOST"`                                   |             |
 | hub.env[0].value                           | string | `"http://distr.local"`                           |             |
-| hub.env[10].name                           | string | `"JWT_SECRET"`                                   |             |
-| hub.env[10].value                          | string | `"WQrGMYx4tZdGwKlt0RTrhMzfQ+j1wr6z7oRWfmGlETk="` |             |
-| hub.env[11].name                           | string | `"MAILER_FROM_ADDRESS"`                          |             |
-| hub.env[11].value                          | string | `"My Distr <noreply@distr.local>"`               |             |
-| hub.env[12].name                           | string | `"MAILER_TYPE"`                                  |             |
-| hub.env[12].value                          | string | `"smtp"`                                         |             |
-| hub.env[13].name                           | string | `"MAILER_SMTP_HOST"`                             |             |
-| hub.env[13].value                          | string | `"smtp.example.local"`                           |             |
-| hub.env[14].name                           | string | `"MAILER_SMTP_PORT"`                             |             |
-| hub.env[14].value                          | string | `"25"`                                           |             |
-| hub.env[15].name                           | string | `"USER_EMAIL_VERIFICATION_REQUIRED"`             |             |
-| hub.env[15].value                          | string | `"false"`                                        |             |
-| hub.env[16].name                           | string | `"METRICS_ENTRIES_MAX_AGE"`                      |             |
-| hub.env[16].value                          | string | `"1h"`                                           |             |
-| hub.env[17].name                           | string | `"LOG_RECORD_ENTRIES_MAX_COUNT"`                 |             |
-| hub.env[17].value                          | string | `"500"`                                          |             |
+| hub.env[10].name                           | string | `"REGISTRY_S3_ALLOW_REDIRECT"`                   |             |
+| hub.env[10].value                          | string | `"false"`                                        |             |
+| hub.env[11].name                           | string | `"JWT_SECRET"`                                   |             |
+| hub.env[11].value                          | string | `"WQrGMYx4tZdGwKlt0RTrhMzfQ+j1wr6z7oRWfmGlETk="` |             |
+| hub.env[12].name                           | string | `"MAILER_FROM_ADDRESS"`                          |             |
+| hub.env[12].value                          | string | `"My Distr <noreply@distr.local>"`               |             |
+| hub.env[13].name                           | string | `"MAILER_TYPE"`                                  |             |
+| hub.env[13].value                          | string | `"smtp"`                                         |             |
+| hub.env[14].name                           | string | `"MAILER_SMTP_HOST"`                             |             |
+| hub.env[14].value                          | string | `"smtp.example.local"`                           |             |
+| hub.env[15].name                           | string | `"MAILER_SMTP_PORT"`                             |             |
+| hub.env[15].value                          | string | `"25"`                                           |             |
+| hub.env[16].name                           | string | `"USER_EMAIL_VERIFICATION_REQUIRED"`             |             |
+| hub.env[16].value                          | string | `"false"`                                        |             |
+| hub.env[17].name                           | string | `"METRICS_ENTRIES_MAX_AGE"`                      |             |
+| hub.env[17].value                          | string | `"1h"`                                           |             |
+| hub.env[18].name                           | string | `"LOG_RECORD_ENTRIES_MAX_COUNT"`                 |             |
+| hub.env[18].value                          | string | `"500"`                                          |             |
+| hub.env[19].name                           | string | `"METRICS_ENABLED"`                              |             |
+| hub.env[19].value                          | string | `"true"`                                         |             |
 | hub.env[1].name                            | string | `"REGISTRY_ENABLED"`                             |             |
 | hub.env[1].value                           | string | `"true"`                                         |             |
 | hub.env[2].name                            | string | `"REGISTRY_HOST"`                                |             |
 | hub.env[2].value                           | string | `"pkg.distr.local"`                              |             |
 | hub.env[3].name                            | string | `"REGISTRY_S3_BUCKET"`                           |             |
 | hub.env[3].value                           | string | `"distr"`                                        |             |
-| hub.env[4].name                            | string | `"REGISTRY_S3_REGION"`                           |             |
-| hub.env[4].value                           | string | `"local"`                                        |             |
-| hub.env[5].name                            | string | `"REGISTRY_S3_ENDPOINT"`                         |             |
-| hub.env[5].value                           | string | `"http://distr-registry-rustfs-svc:9000"`        |             |
-| hub.env[6].name                            | string | `"REGISTRY_S3_ACCESS_KEY_ID"`                    |             |
-| hub.env[6].value                           | string | `"distr"`                                        |             |
-| hub.env[7].name                            | string | `"REGISTRY_S3_SECRET_ACCESS_KEY"`                |             |
-| hub.env[7].value                           | string | `"distr123"`                                     |             |
-| hub.env[8].name                            | string | `"REGISTRY_S3_USE_PATH_STYLE"`                   |             |
-| hub.env[8].value                           | string | `"true"`                                         |             |
-| hub.env[9].name                            | string | `"REGISTRY_S3_ALLOW_REDIRECT"`                   |             |
-| hub.env[9].value                           | string | `"false"`                                        |             |
+| hub.env[4].name                            | string | `"REGISTRY_S3_CREATE_BUCKET"`                    |             |
+| hub.env[4].value                           | string | `"true"`                                         |             |
+| hub.env[5].name                            | string | `"REGISTRY_S3_REGION"`                           |             |
+| hub.env[5].value                           | string | `"local"`                                        |             |
+| hub.env[6].name                            | string | `"REGISTRY_S3_ENDPOINT"`                         |             |
+| hub.env[6].value                           | string | `"http://distr-registry-rustfs-svc:9000"`        |             |
+| hub.env[7].name                            | string | `"REGISTRY_S3_ACCESS_KEY_ID"`                    |             |
+| hub.env[7].value                           | string | `"distr"`                                        |             |
+| hub.env[8].name                            | string | `"REGISTRY_S3_SECRET_ACCESS_KEY"`                |             |
+| hub.env[8].value                           | string | `"distr123"`                                     |             |
+| hub.env[9].name                            | string | `"REGISTRY_S3_USE_PATH_STYLE"`                   |             |
+| hub.env[9].value                           | string | `"true"`                                         |             |
 | image.pullPolicy                           | string | `"IfNotPresent"`                                 |             |
-| image.repository                           | string | `"ghcr.io/distr-sh/distr"`                       |             |
+| image.repository                           | string | `"ghcr.io/distr-sh/distr-ce"`                    |             |
 | image.tag                                  | string | `""`                                             |             |
 | imagePullSecrets                           | list   | `[]`                                             |             |
 | ingress.annotations                        | object | `{}`                                             |             |
@@ -124,17 +159,6 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | ingress.tls                                | list   | `[]`                                             |             |
 | livenessProbe.httpGet.path                 | string | `"/"`                                            |             |
 | livenessProbe.httpGet.port                 | string | `"http"`                                         |             |
-| rustfs.enabled                             | bool   | `false`                                          |             |
-| rustfs.fullnameOverride                    | string | `"distr-registry-rustfs"`                        |             |
-| rustfs.ingress.enabled                     | bool   | `false`                                          |             |
-| rustfs.mode.distributed.enabled            | bool   | `false`                                          |             |
-| rustfs.mode.standalone.enabled             | bool   | `true`                                           |             |
-| rustfs.mode.standalone.strategy.type       | string | `"Recreate"`                                     |             |
-| rustfs.secret.rustfs.access_key            | string | `"distr"`                                        |             |
-| rustfs.secret.rustfs.secret_key            | string | `"distr 123"`                                    |             |
-| rustfs.storageclass.dataStorageSize        | string | `"20Gi"`                                         |             |
-| rustfs.storageclass.logStorageSize         | string | `"10Gi"`                                         |             |
-| rustfs.storageclass.name                   | string | `""`                                             |             |
 | nameOverride                               | string | `""`                                             |             |
 | nodeSelector                               | object | `{}`                                             |             |
 | podAnnotations                             | object | `{}`                                             |             |
@@ -146,13 +170,27 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | postgresql.auth.password                   | string | `""`                                             |             |
 | postgresql.auth.username                   | string | `"distr"`                                        |             |
 | postgresql.enabled                         | bool   | `false`                                          |             |
+| postgresql.image.repository                | string | `"bitnamilegacy/postgresql"`                     |             |
+| postgresql.image.tag                       | string | `"17.6.0"`                                       |             |
 | postgresql.service.ports.postgresql        | int    | `5432`                                           |             |
 | readinessProbe.httpGet.path                | string | `"/"`                                            |             |
 | readinessProbe.httpGet.port                | string | `"http"`                                         |             |
 | replicaCount                               | int    | `2`                                              |             |
 | resources                                  | object | `{}`                                             |             |
+| rustfs.enabled                             | bool   | `false`                                          |             |
+| rustfs.fullnameOverride                    | string | `"distr-registry-rustfs"`                        |             |
+| rustfs.ingress.enabled                     | bool   | `false`                                          |             |
+| rustfs.mode.distributed.enabled            | bool   | `false`                                          |             |
+| rustfs.mode.standalone.enabled             | bool   | `true`                                           |             |
+| rustfs.mode.standalone.strategy.type       | string | `"Recreate"`                                     |             |
+| rustfs.secret.rustfs.access_key            | string | `"distr"`                                        |             |
+| rustfs.secret.rustfs.secret_key            | string | `"distr 123"`                                    |             |
+| rustfs.storageclass.dataStorageSize        | string | `"20Gi"`                                         |             |
+| rustfs.storageclass.logStorageSize         | string | `"10Gi"`                                         |             |
+| rustfs.storageclass.name                   | string | `""`                                             |             |
 | securityContext                            | object | `{}`                                             |             |
 | service.artifactsPort                      | int    | `8585`                                           |             |
+| service.metricsPort                        | int    | `3000`                                           |             |
 | service.port                               | int    | `8080`                                           |             |
 | service.type                               | string | `"ClusterIP"`                                    |             |
 | serviceAccount.annotations                 | object | `{}`                                             |             |
