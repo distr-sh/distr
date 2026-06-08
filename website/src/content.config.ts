@@ -62,7 +62,6 @@ export const CustomerConfigSchema = ({image}) =>
     // Present => rendered at /case-studies/<slug>
     caseStudy: z
       .object({
-        title: z.string().optional(), // defaults to company
         logo: image(),
         logoLight: image().optional(),
         logoDark: image().optional(),

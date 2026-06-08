@@ -10,7 +10,6 @@ useCase: 'Lifecycle Management Platform'
 featured: true
 outcome: 'Manual operations become one-click workflows'
 caseStudy:
-  title: 'Lerian Studio'
   logo: '/src/assets/customers/lerian/logo.png'
   pageTitle: 'Lerian Studio Case Study'
   pageDescription: 'How Lerian uses Distr to power their Lifecycle Management platform for banking and financial infrastructure'

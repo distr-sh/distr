@@ -1,5 +1,6 @@
 ---
 import {getCollection} from 'astro:content';
+import {Image} from 'astro:assets';
 import {Icon} from 'astro-icon/components';
 
 const customers = (await getCollection('customers', c => c.data.featured)).sort(
@@ -42,6 +43,7 @@ const MIN_CARDS_PER_ROW = 10;
   <div class="space-y-6 md:space-y-8">
     {
       rows.map((row, rowIndex) => {
+        if (row.length === 0) return null;
         const copies = Math.max(2, Math.ceil(MIN_CARDS_PER_ROW / row.length));
         return (
           <div class="marquee overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]">
@@ -56,24 +58,22 @@ const MIN_CARDS_PER_ROW = 10;
                   aria-hidden={copyIndex !== 0 ? 'true' : undefined}>
                   {row.map(testimonial => (
                     <div class="shrink-0 w-[440px] md:w-[560px] ml-6 md:ml-8 bg-white dark:bg-gray-900 rounded-xl p-5 md:p-6 shadow-md flex flex-col h-full border border-gray-200 dark:border-gray-700 whitespace-normal">
-                      <p class="text-sm font-semibold uppercase tracking-wide text-accent-600 dark:text-accent-200 mb-2">
-                        {testimonial.outcome}
-                      </p>
+                      {testimonial.outcome && (
+                        <p class="text-sm font-semibold uppercase tracking-wide text-accent-600 dark:text-accent-200 mb-2">
+                          {testimonial.outcome}
+                        </p>
+                      )}
                       <p class="text-base md:text-lg mb-4 italic leading-relaxed text-gray-700 dark:text-gray-300 flex-grow">
                         "{testimonial.text}"
                       </p>
                       <div class="flex items-center gap-4 mt-auto">
-                        {testimonial.image ? (
-                          <img
-                            src={testimonial.image.src}
-                            alt={testimonial.name}
-                            class="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover flex-shrink-0"
-                          />
-                        ) : (
-                          <div class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-accent-600 text-white flex items-center justify-center font-bold flex-shrink-0">
-                            {testimonial.name.charAt(0)}
-                          </div>
-                        )}
+                        <Image
+                          src={testimonial.image}
+                          alt={testimonial.name}
+                          class="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover flex-shrink-0"
+                          width={56}
+                          height={56}
+                        />
                         <div class="flex-grow">
                           <p class="font-bold text-gray-900 dark:text-white">
                             {testimonial.name}
@@ -85,6 +85,7 @@ const MIN_CARDS_PER_ROW = 10;
                         {testimonial.caseStudyUrl && (
                           <a
                             href={testimonial.caseStudyUrl}
+                            tabindex={copyIndex === 0 ? undefined : -1}
                             class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-br from-[#00b5eb] to-[#63c5e3] text-white font-medium text-sm hover:shadow-lg transition-all duration-300 hover:scale-105 whitespace-nowrap">
                             Read case study
                             <Icon name="lucide:arrow-right" class="w-4 h-4" />

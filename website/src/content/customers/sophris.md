@@ -29,7 +29,7 @@ After evaluating multiple deployment solutions, Sophris chose Glasskube's Distr 
 
 "**We initially considered other solutions but found them overly complex and cost-prohibitive for our stage,**" Gupta explained. "**Distr was simple, intuitive, and exactly what we needed.**"
 
-With Distr, Sophris quickly standarized their deployment workflow. Instead of manual file transfers and troubleshooting deployment scripts, their engineers could now deploy software updates with a few clicks. Updates became significantly faster, enabling Sophris to iterate at a speed previously hard to achieve.
+With Distr, Sophris quickly standardized their deployment workflow. Instead of manual file transfers and troubleshooting deployment scripts, their engineers could now deploy software updates with a few clicks. Updates became significantly faster, enabling Sophris to iterate at a speed previously hard to achieve.
 
 "**Distr eliminated nearly all deployment headaches. Updates that used to take days now take minutes,**" Gupta added. "**This was especially crucial when we have limited access to client infrastructure.**"
 
