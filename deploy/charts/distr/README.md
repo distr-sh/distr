@@ -184,7 +184,7 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | rustfs.mode.standalone.enabled             | bool   | `true`                                           |             |
 | rustfs.mode.standalone.strategy.type       | string | `"Recreate"`                                     |             |
 | rustfs.secret.rustfs.access_key            | string | `"distr"`                                        |             |
-| rustfs.secret.rustfs.secret_key            | string | `"distr 123"`                                    |             |
+| rustfs.secret.rustfs.secret_key            | string | `"distr123"`                                     |             |
 | rustfs.storageclass.dataStorageSize        | string | `"20Gi"`                                         |             |
 | rustfs.storageclass.logStorageSize         | string | `"10Gi"`                                         |             |
 | rustfs.storageclass.name                   | string | `""`                                             |             |
