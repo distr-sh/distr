@@ -17,9 +17,12 @@ services:
       retries: 6
       start_period: 30s
   hub:
-    image: ghcr.io/distr-sh/distr-ce:2.22.2 # x-release-please-version
+    image: ghcr.io/distr-sh/distr-ce:2.22.3 # x-release-please-version
     depends_on:
       postgres:
+        condition: service_healthy
+      # Remove when using an external S3 provider
+      storage:
         condition: service_healthy
     env_file:
       - .env
@@ -41,9 +44,18 @@ services:
     environment:
       RUSTFS_ACCESS_KEY: local
       RUSTFS_SECRET_KEY: local
+    restart: unless-stopped
+    healthcheck:
+      # Production strict TLS example (SAN/FQDN aligned, no `-k`):
+      # curl -f --cacert /opt/tls/ca.crt --resolve rustfs-a.example.com:9000:127.0.0.1 https://rustfs-a.example.com:9000/health
+      test: ['CMD', 'sh', '-c', 'curl -f http://127.0.0.1:9000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   artifact-blob-cleanup:
-    image: ghcr.io/distr-sh/distr-ce:2.22.2 # x-release-please-version
+    image: ghcr.io/distr-sh/distr-ce:2.22.3 # x-release-please-version
     command: [cleanup, ArtifactBlob, --timeout, 10m]
     depends_on:
       postgres:

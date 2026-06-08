@@ -1,5 +1,37 @@
 # Changelog
 
+## [2.22.3](https://github.com/distr-sh/distr/compare/2.22.2...2.22.3) (2026-06-03)
+
+
+### Bug Fixes
+
+* **backend:** change middleware order to correctly enrich sentry context ([#2545](https://github.com/distr-sh/distr/issues/2545)) ([f53ed6b](https://github.com/distr-sh/distr/commit/f53ed6b21378ec7650523cb2609bd638f3991acd))
+* **deps:** update aws-sdk-go-v2 monorepo ([#2548](https://github.com/distr-sh/distr/issues/2548)) ([11ff766](https://github.com/distr-sh/distr/commit/11ff766aa5d53a3ab70469e8e2f12d70dd3f593c))
+* **deps:** update go-mailx dependencies to v1.0.3 ([#2567](https://github.com/distr-sh/distr/issues/2567)) ([b0b35fa](https://github.com/distr-sh/distr/commit/b0b35fa20ec6a4b593da22aeace5e26a915cfc13))
+* **deps:** update module github.com/jackc/pgx/v5 to v5.10.0 ([#2549](https://github.com/distr-sh/distr/issues/2549)) ([deb31ff](https://github.com/distr-sh/distr/commit/deb31ff36f1b34b3757a9be43cea88c8fe72b960))
+* partner user accounts are missing entitlements filter ([#2566](https://github.com/distr-sh/distr/issues/2566)) ([ededbfd](https://github.com/distr-sh/distr/commit/ededbfd2925ba73f87155b4c4e1921a094e11909))
+* **registry:** partner organization user accounts should not push artifacts ([#2554](https://github.com/distr-sh/distr/issues/2554)) ([da95a52](https://github.com/distr-sh/distr/commit/da95a524f306d87eaf075de877f5f7e1b1c4b995))
+* rework user invitation / registration / verification flow ([#2552](https://github.com/distr-sh/distr/issues/2552)) ([fa572a8](https://github.com/distr-sh/distr/commit/fa572a8cccf35d30fc36090cec3f3b7dcf1f5361))
+* validate entitlement name requirement ([#2541](https://github.com/distr-sh/distr/issues/2541)) ([2abafcb](https://github.com/distr-sh/distr/commit/2abafcb6f5520bef5ed88e339b381ec55297a8d5))
+
+
+### Other
+
+* **backend:** improve initial welcome verify email template ([#2551](https://github.com/distr-sh/distr/issues/2551)) ([bc73954](https://github.com/distr-sh/distr/commit/bc739543fd499cf7b5a3f9661643aa796d478301))
+* **deps:** update actions/checkout action to v6.0.3 ([#2538](https://github.com/distr-sh/distr/issues/2538)) ([7ace9ba](https://github.com/distr-sh/distr/commit/7ace9baec070973b3fe81c26d7871c6e9cb5e12f))
+* **deps:** update dependency go to v1.26.4 ([#2547](https://github.com/distr-sh/distr/issues/2547)) ([2194628](https://github.com/distr-sh/distr/commit/21946285c5914703e6794c4f6212cd2a26a93be7))
+* **frontend:** remove wrong for attribute ([#2559](https://github.com/distr-sh/distr/issues/2559)) ([f2437b9](https://github.com/distr-sh/distr/commit/f2437b94d6e7a70b698ff24d96d2cfe864e3cdb7))
+
+
+### Docs
+
+* switch from yaml to json for openapi docs ([#2553](https://github.com/distr-sh/distr/issues/2553)) ([c229f60](https://github.com/distr-sh/distr/commit/c229f60e27752ae9d2cbc180279d65874a1e0d18))
+
+
+### Refactoring
+
+* introduce tailwind components for unified styling ([#2542](https://github.com/distr-sh/distr/issues/2542)) ([3bd77a0](https://github.com/distr-sh/distr/commit/3bd77a072eac4fdb688b59339243caf213c80aea))
+
 ## [2.22.2](https://github.com/distr-sh/distr/compare/2.22.1...2.22.2) (2026-06-02)
 
 
