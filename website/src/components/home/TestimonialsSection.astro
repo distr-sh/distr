@@ -127,8 +127,18 @@ const MIN_CARDS_PER_ROW = 10;
   }
 
   @media (prefers-reduced-motion: reduce) {
+    /* Stop auto-scrolling and let users scroll the row manually instead. */
+    .marquee {
+      overflow-x: auto;
+    }
+
     .marquee-track {
       animation: none;
+    }
+
+    /* Drop the duplicated copies that only exist to make the loop seamless. */
+    .marquee-track[aria-hidden='true'] {
+      display: none;
     }
   }
 </style>
