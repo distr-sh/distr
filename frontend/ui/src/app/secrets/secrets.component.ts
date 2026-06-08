@@ -1,6 +1,6 @@
 import {DatePipe} from '@angular/common';
 import {Component, computed, inject, input, output, signal, TemplateRef, viewChild} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -71,6 +71,10 @@ export class SecretsComponent {
     key: this.fb.control('', [Validators.required, Validators.minLength(1), Validators.pattern('^[a-zA-Z][\\w_]*$')]),
     value: this.fb.control('', [Validators.required]),
   });
+
+  constructor() {
+    this.createUpdateForm.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.affectedDeployments.set([]));
+  }
 
   protected closeDialog() {
     this.createUpdateForm.reset();

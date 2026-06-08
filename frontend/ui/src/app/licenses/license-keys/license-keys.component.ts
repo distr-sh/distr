@@ -100,6 +100,10 @@ export class LicenseKeysComponent {
   });
   editFormLoading = false;
 
+  constructor() {
+    this.editForm.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.affectedDeployments.set([]));
+  }
+
   private manageLicenseDrawerRef?: DialogRef;
 
   private readonly customerOrganizations$ = this.customerOrganizationService
