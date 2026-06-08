@@ -96,6 +96,16 @@ func (r *Registry) createJobsScheduler() (*jobs.Scheduler, error) {
 		}
 	}
 
+	if cron := env.CleanupOrganizationCron(); cron != nil {
+		err = scheduler.RegisterCronJob(
+			*cron,
+			jobs.NewJob("OrganizationCleanup", cleanup.RunOrganizationCleanup, env.CleanupOrganizationTimeout()),
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	if cron := env.DeploymentStatusNotificationCron(); cron != nil {
 		err = scheduler.RegisterCronJob(
 			*cron,

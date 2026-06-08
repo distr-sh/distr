@@ -28,6 +28,7 @@ const (
 	deploymentTargetLogRecord = "DeploymentTargetLogRecord"
 	oidcState                 = "OIDCState"
 	artifactBlob              = "ArtifactBlob"
+	organization              = "Organization"
 )
 
 type CleanupOptions struct {
@@ -40,13 +41,14 @@ func NewCleanupCommand() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "cleanup <type>",
 		Long: fmt.Sprintf(
-			"type must be one of: %v, %v, %v, %v, %v, %v",
+			"type must be one of: %v, %v, %v, %v, %v, %v, %v",
 			deploymentRevisionStatus,
 			deploymentTargetMetrics,
 			deploymentLogRecord,
 			deploymentTargetLogRecord,
 			oidcState,
 			artifactBlob,
+			organization,
 		),
 		Short: "delete old data",
 		Args:  cobra.ExactArgs(1),
@@ -57,6 +59,7 @@ func NewCleanupCommand() *cobra.Command {
 			deploymentTargetLogRecord,
 			oidcState,
 			artifactBlob,
+			organization,
 		},
 		PreRun: func(cmd *cobra.Command, args []string) { env.Initialize() },
 		Run: func(cmd *cobra.Command, args []string) {
@@ -99,6 +102,8 @@ func runCleanup(ctx context.Context, opts CleanupOptions) error {
 			return errors.New("S3 client not configured")
 		}
 		cleanupFunc = cleanup.RunArtifactBlobCleanup
+	case organization:
+		cleanupFunc = cleanup.RunOrganizationCleanup
 	default:
 		log.Sugar().Errorf("invalid cleanup type: %v", opts.Type)
 		return errors.New("invalid cleanup type")
