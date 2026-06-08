@@ -152,11 +152,7 @@ When you deploy via Distr agents (Docker or Kubernetes), license keys assigned t
 
 ### Finding the reference syntax
 
-Each license key has a **Reference** column in the license keys list that shows the exact template variable to use:
-
-```
-{{ .LicenseKeys.my-key-name }}
-```
+Each license key has a **Reference** column in the license keys list that shows the exact template variable to use: `{{ .LicenseKeys.MY_LICENSE_KEY }}`
 
 Copy this reference directly from the UI and paste it into your deployment configuration.
 
@@ -165,7 +161,7 @@ Copy this reference directly from the UI and paste it into your deployment confi
 Reference a license key in the deployment's environment file using Go template syntax:
 
 ```dotenv
-LICENSE_TOKEN={{ .LicenseKeys.my-license-key }}
+LICENSE_TOKEN={{ .LicenseKeys.MY_LICENSE_KEY }}
 ```
 
 In the application's Compose file, read the environment variable as usual:
@@ -186,7 +182,7 @@ Reference a license key in the deployment's Helm values:
 
 ```yaml
 app:
-  licenseToken: {{.LicenseKeys.my-license-key}}
+  licenseToken: {{.LicenseKeys.MY_LICENSE_KEY}}
 ```
 
 The resolved token is passed into the chart at deploy time.
