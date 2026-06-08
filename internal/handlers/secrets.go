@@ -183,9 +183,7 @@ func updateSecretHandler() http.HandlerFunc {
 			existing.CustomerOrganizationID,
 		)
 		if err != nil {
-			internalctx.GetLogger(ctx).Error("failed to find affected deployments", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			_ = deploymentValuesError(ctx, w, err, "invalid deployment values")
 			return
 		}
 

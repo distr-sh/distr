@@ -296,9 +296,7 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 			hypotheticalLicenseKey,
 		)
 		if err != nil {
-			log.Warn("could not find affected deployments", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			_ = deploymentValuesError(ctx, w, err, "invalid deployment values")
 			return
 		}
 	}
