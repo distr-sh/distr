@@ -116,10 +116,6 @@ func triggerAffectedDeployments(ctx context.Context, affected []api.AffectedDepl
 		if err != nil {
 			return err
 		}
-		deployments, err := db.GetDeploymentsForDeploymentTarget(ctx, targetID)
-		if err != nil {
-			return err
-		}
 		secrets, err := db.GetSecretsForDeploymentTarget(ctx, target.DeploymentTarget)
 		if err != nil {
 			return err
@@ -130,14 +126,14 @@ func triggerAffectedDeployments(ctx context.Context, affected []api.AffectedDepl
 		}
 
 		for _, affectedDeployment := range affectedForTarget {
-			index := slices.IndexFunc(deployments, func(d types.DeploymentWithLatestRevision) bool {
+			index := slices.IndexFunc(target.Deployments, func(d types.DeploymentWithLatestRevision) bool {
 				return d.ID == affectedDeployment.DeploymentID
 			})
 			if index < 0 {
 				return fmt.Errorf("deployment %s not found for deployment target %s",
 					affectedDeployment.DeploymentID, affectedDeployment.DeploymentTargetID)
 			}
-			request := deploymentRequestFromLatestRevision(deployments[index])
+			request := deploymentRequestFromLatestRevision(target.Deployments[index])
 			if err := setDeploymentRequestValuesHash(&request, secrets, licenseKeys); err != nil {
 				return err
 			}
