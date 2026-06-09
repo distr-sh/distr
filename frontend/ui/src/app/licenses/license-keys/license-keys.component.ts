@@ -138,7 +138,7 @@ export class LicenseKeysComponent {
     if (this.editForm.valid && license) {
       this.editFormLoading = true;
       try {
-        const liecenseKeyFields = {
+        const licenseKeyFields = {
           description: license.description,
           payload: license.payload,
           notBefore: license.notBefore,
@@ -146,10 +146,10 @@ export class LicenseKeysComponent {
           licenseTemplateId: license.licenseTemplateId,
         };
         const saved = license.id
-          ? await this.updateLicense(license.id, liecenseKeyFields)
+          ? await this.updateLicense(license.id, licenseKeyFields)
           : await firstValueFrom(
               this.licenseKeysService.create({
-                ...liecenseKeyFields,
+                ...licenseKeyFields,
                 name: license.name!,
                 customerOrganizationId: license.customerOrganizationId,
               })
