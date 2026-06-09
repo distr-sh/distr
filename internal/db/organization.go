@@ -365,7 +365,6 @@ func SetOrganizationStripeWebhookSecret(ctx context.Context, orgID uuid.UUID, se
 }
 
 func DeleteOrganizationsOlderThan(ctx context.Context, minAge time.Duration) (int64, error) {
-	cutoff := time.Now().Add(-minAge)
 	var rowsAffected int64
 	err := RunTx(ctx, func(ctx context.Context) error {
 		db := internalctx.GetDb(ctx)
@@ -379,8 +378,8 @@ func DeleteOrganizationsOlderThan(ctx context.Context, minAge time.Duration) (in
 		}
 		result, err := db.Exec(
 			ctx,
-			"DELETE FROM Organization WHERE deleted_at IS NOT NULL AND deleted_at < @cutoff",
-			pgx.NamedArgs{"cutoff": cutoff},
+			"DELETE FROM Organization WHERE deleted_at IS NOT NULL AND now() - deleted_at > @minAge",
+			pgx.NamedArgs{"minAge": minAge},
 		)
 		if err != nil {
 			return fmt.Errorf("could not delete organizations: %w", err)
