@@ -266,12 +266,12 @@ export class LicensesOverviewComponent {
             ...(this.isOverrideSelected(ae.id) ? {expiresAt: entitlementExpiresAt} : {}),
           })
         ),
-        ...source.licenseKeys.map((lk) =>
+        ...source.licenseKeys.map(({id: _, name, ...lk}) =>
           this.licenseKeysService.create({
             ...lk,
-            id: undefined,
+            name: name!,
             customerOrganizationId: targetId,
-            ...(this.isOverrideSelected(lk.id) ? {expiresAt: licenseKeyExpiresAt} : {}),
+            ...(this.isOverrideSelected(_) ? {expiresAt: licenseKeyExpiresAt} : {}),
           })
         ),
       ];

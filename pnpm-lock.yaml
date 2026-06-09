@@ -60,8 +60,8 @@ importers:
         specifier: ^5.1.0
         version: 5.2.7
       '@fortawesome/angular-fontawesome':
-        specifier: ^4.0.0
-        version: 4.0.0(@angular/core@22.0.0(@angular/compiler@22.0.0)(rxjs@7.8.2)(zone.js@0.16.2))
+        specifier: ^5.0.0
+        version: 5.0.0(@angular/core@22.0.0(@angular/compiler@22.0.0)(rxjs@7.8.2)(zone.js@0.16.2))
       '@fortawesome/free-brands-svg-icons':
         specifier: ^7.0.0
         version: 7.2.0
@@ -136,8 +136,8 @@ importers:
         specifier: ^10.4.20
         version: 10.5.0(postcss@8.5.15)
       jasmine-core:
-        specifier: ~6.2.0
-        version: 6.2.0
+        specifier: ~6.3.0
+        version: 6.3.0
       jsdom:
         specifier: ^29.0.0
         version: 29.1.1
@@ -860,10 +860,10 @@ packages:
   '@fontsource/poppins@5.2.7':
     resolution: {integrity: sha512-6uQyPmseo4FgI97WIhA4yWRlNaoLk4vSDK/PyRwdqqZb5zAEuc+Kunt8JTMcsHYUEGYBtN15SNkMajMdqUSUmg==}
 
-  '@fortawesome/angular-fontawesome@4.0.0':
-    resolution: {integrity: sha512-TCqHqT5ovFY1A4RgMpoBUgS+RX3OVs39+CzHFgzDhbCPAopOa26J748TZJcuZwJAvGAk9tbWeVEmWuLByINAeg==}
+  '@fortawesome/angular-fontawesome@5.0.0':
+    resolution: {integrity: sha512-kxYOKI4DBz/Sl8xHVET1nJeAZYV8O+b6Gh6oY9JUBWIxlKWKyRlR9AqLl2QKpsW8n/NdRzUmz1UmKoIDuhhFAQ==}
     peerDependencies:
-      '@angular/core': ^21.0.0
+      '@angular/core': ^22.0.0
 
   '@fortawesome/fontawesome-common-types@7.2.0':
     resolution: {integrity: sha512-IpR0bER9FY25p+e7BmFH25MZKEwFHTfRAfhOyJubgiDnoJNsSvJ7nigLraHtp4VOG/cy8D7uiV0dLkHOne5Fhw==}
@@ -2665,8 +2665,8 @@ packages:
     resolution: {integrity: sha512-Vtgk7L/R2JHyyGW07spoFlB8/lpjiOLTjMdms6AFMraYt3BaJauod/NGrfnVG/y4Ix1JEuMRPDPEj2ua+zz1/Q==}
     engines: {node: '>=10'}
 
-  jasmine-core@6.2.0:
-    resolution: {integrity: sha512-b16WZG/pFEFj8qRW1ss7nDuNGYz9ji8BDGj7fJNrROauk5rj/diO3KPOuyIpcgUChdC+c0PfQ8iUk4nHE+EN4w==}
+  jasmine-core@6.3.0:
+    resolution: {integrity: sha512-eMm5qBovNjNoGOcgE/W207+wrcK5zrQv0Rg/rWGboUJUmZp0dFCpHTyjpuDAfCwRCqg7f9U2q2jtv/aUuzdCQg==}
 
   jiti@2.7.0:
     resolution: {integrity: sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==}
@@ -4262,7 +4262,7 @@ snapshots:
 
   '@fontsource/poppins@5.2.7': {}
 
-  '@fortawesome/angular-fontawesome@4.0.0(@angular/core@22.0.0(@angular/compiler@22.0.0)(rxjs@7.8.2)(zone.js@0.16.2))':
+  '@fortawesome/angular-fontawesome@5.0.0(@angular/core@22.0.0(@angular/compiler@22.0.0)(rxjs@7.8.2)(zone.js@0.16.2))':
     dependencies:
       '@angular/core': 22.0.0(@angular/compiler@22.0.0)(rxjs@7.8.2)(zone.js@0.16.2)
       '@fortawesome/fontawesome-svg-core': 7.2.0
@@ -5909,7 +5909,7 @@ snapshots:
       - supports-color
     optional: true
 
-  jasmine-core@6.2.0: {}
+  jasmine-core@6.3.0: {}
 
   jiti@2.7.0: {}
 

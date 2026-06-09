@@ -26,7 +26,7 @@ import {Icon} from '@astrojs/starlight/components';
     disconnectedCallback() {
       this.removeEventListener('click', this.handleClick);
     }
-    private handleClick(e: MouseEvent) {
+    private handleClick() {
       const currentTheme = localStorage.getItem('starlight-theme') || 'auto';
       let newTheme: string;
 

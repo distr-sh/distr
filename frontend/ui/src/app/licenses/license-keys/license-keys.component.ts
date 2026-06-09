@@ -1,10 +1,20 @@
 import {GlobalPositionStrategy} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe} from '@angular/common';
+import {HttpErrorResponse} from '@angular/common/http';
 import {ChangeDetectionStrategy, Component, inject, input, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCopy, faEye, faMagnifyingGlass, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {
+  faCircleExclamation,
+  faCopy,
+  faEye,
+  faMagnifyingGlass,
+  faPen,
+  faPlus,
+  faTrash,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, shareReplay, switchMap} from 'rxjs';
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
@@ -18,7 +28,8 @@ import {FeatureFlagService} from '../../services/feature-flag.service';
 import {LicenseKeysService} from '../../services/license-keys.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
-import {LicenseKey} from '../../types/license-key';
+import {AffectedDeployment} from '../../types/affected-deployment';
+import {LicenseKey, UpdateLicenseKeyRequest} from '../../types/license-key';
 import {EditLicenseKeyComponent} from './edit-license-key.component';
 import {ViewLicenseKeyModalComponent} from './view-license-key-modal.component';
 
@@ -55,10 +66,12 @@ export class LicenseKeysComponent {
   protected readonly faXmark = faXmark;
   protected readonly faCopy = faCopy;
   protected readonly faEye = faEye;
+  protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly isExpired = isExpired;
 
   protected readonly selectedLicense = signal<LicenseKey | undefined>(undefined);
   protected readonly selectedToken = signal<string | undefined>(undefined);
+  protected readonly affectedDeployments = signal<AffectedDeployment[]>([]);
   protected readonly viewLicenseLoading = signal(false);
   private readonly viewLicenseModalTemplate = viewChild.required<TemplateRef<unknown>>('viewLicenseModal');
   private viewLicenseModalRef?: DialogRef;
@@ -89,6 +102,10 @@ export class LicenseKeysComponent {
   });
   editFormLoading = false;
 
+  constructor() {
+    this.editForm.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.affectedDeployments.set([]));
+  }
+
   private manageLicenseDrawerRef?: DialogRef;
 
   private readonly customerOrganizations$ = this.customerOrganizationService
@@ -112,6 +129,7 @@ export class LicenseKeysComponent {
   hideDrawer() {
     this.manageLicenseDrawerRef?.close();
     this.editForm.reset({license: undefined});
+    this.affectedDeployments.set([]);
   }
 
   async saveLicense() {
@@ -119,9 +137,23 @@ export class LicenseKeysComponent {
     const {license} = this.editForm.value;
     if (this.editForm.valid && license) {
       this.editFormLoading = true;
-      const action = license.id ? this.licenseKeysService.update(license) : this.licenseKeysService.create(license);
       try {
-        const saved = await firstValueFrom(action);
+        const licenseKeyFields = {
+          description: license.description,
+          payload: license.payload,
+          notBefore: license.notBefore,
+          expiresAt: license.expiresAt,
+          licenseTemplateId: license.licenseTemplateId,
+        };
+        const saved = license.id
+          ? await this.updateLicense(license.id, licenseKeyFields)
+          : await firstValueFrom(
+              this.licenseKeysService.create({
+                ...licenseKeyFields,
+                name: license.name!,
+                customerOrganizationId: license.customerOrganizationId,
+              })
+            );
         this.hideDrawer();
         if (!license.id && saved.licenseTemplateId) {
           this.toast.success(`${saved.name} saved successfully. Link the license key ID in your Stripe dashboard.`);
@@ -129,6 +161,11 @@ export class LicenseKeysComponent {
           this.toast.success(`${saved.name} saved successfully`);
         }
       } catch (e) {
+        if (e instanceof HttpErrorResponse && e.status === 409) {
+          this.affectedDeployments.set(e.error.affectedDeployments);
+          return;
+        }
+        this.affectedDeployments.set([]);
         const msg = getFormDisplayedError(e);
         if (msg) {
           this.toast.error(msg);
@@ -137,6 +174,11 @@ export class LicenseKeysComponent {
         this.editFormLoading = false;
       }
     }
+  }
+
+  private updateLicense(id: string, request: UpdateLicenseKeyRequest): Promise<LicenseKey> {
+    const confirm = this.affectedDeployments().length > 0;
+    return firstValueFrom(this.licenseKeysService.update(id, request, confirm));
   }
 
   duplicateLicense(templateRef: TemplateRef<unknown>, license: LicenseKey) {
@@ -165,7 +207,7 @@ export class LicenseKeysComponent {
   }
 
   protected getLicenseKeyReference(name: string): string {
-    return `{{ .LicenseKeys.${name} }}`;
+    return /^[a-zA-Z_]\w*$/.test(name) ? `{{ .LicenseKeys.${name} }}` : `{{ index .LicenseKeys "${name}" }}`;
   }
 
   getOwnerColumn(customerOrganizationId?: string): Observable<string | undefined> {

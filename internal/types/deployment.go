@@ -29,6 +29,7 @@ type DeploymentWithLatestRevision struct {
 	ApplicationLink         string                    `db:"-" json:"applicationLink"`
 	ValuesYaml              []byte                    `db:"values_yaml" json:"valuesYaml,omitempty"`
 	EnvFileData             []byte                    `db:"env_file_data" json:"envFileData,omitempty"`
+	ValuesHash              []byte                    `db:"values_hash" json:"-"`
 	LatestStatus            *DeploymentRevisionStatus `db:"latest_status" json:"latestStatus,omitempty"`
 	ForceRestart            bool                      `db:"force_restart" json:"forceRestart"`
 	IgnoreRevisionSkew      bool                      `db:"ignore_revision_skew" json:"ignoreRevisionSkew"`

@@ -17,7 +17,7 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
-	"github.com/stripe/stripe-go/v85"
+	"github.com/stripe/stripe-go/v86"
 	"go.uber.org/zap"
 )
 
@@ -235,6 +235,15 @@ func validateSubscriptionQuantities(
 	userAccountQty int64,
 	usage *currentUsageCounts,
 ) error {
+	// Validate that at least one user account and one customer organization are requested
+	if userAccountQty < 1 {
+		return fmt.Errorf("user account quantity (%d) cannot be less than 1", userAccountQty)
+	}
+
+	if customerOrgQty < 1 {
+		return fmt.Errorf("customer quantity (%d) cannot be less than 1", customerOrgQty)
+	}
+
 	// Validate that requested quantities meet current usage minimums
 	if customerOrgQty < usage.customerOrganizationCount {
 		return fmt.Errorf(
@@ -369,7 +378,7 @@ type currentUsageCounts struct {
 // getCurrentUsageCounts retrieves the current usage counts for the given organization
 func getCurrentUsageCounts(ctx context.Context, orgID uuid.UUID) (*currentUsageCounts, error) {
 	// Get current user account count
-	userAccountCount, err := db.CountVendorUserAccountsByOrgID(ctx, orgID)
+	userAccountCount, err := db.CountBillableUserAccountsByOrgID(ctx, orgID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user accounts: %w", err)
 	}

@@ -6,8 +6,8 @@
       @if (editForm.value.licenseTemplateId) {
         This license key is configured with a license template. Manually changing the dates or payload is not supported.
       } @else {
-        Changing the dates or payload will create a new revision. The customer assignment cannot be changed after
-        creation.
+        Changing the dates or payload will create a new revision. The name and customer assignment cannot be changed
+        after creation.
       }
     </div>
   }
@@ -15,7 +15,13 @@
   <div class="space-y-4 mt-4">
     <div>
       <label for="name" class="distr-label mb-2">Name *</label>
-      <input formControlName="name" autotrim type="text" id="name" class="distr-input" placeholder="License name" />
+      <input
+        formControlName="name"
+        autotrim
+        type="text"
+        id="name"
+        class="distr-input disabled:opacity-60"
+        placeholder="License name" />
       @if (editForm.controls.name.invalid && editForm.controls.name.touched) {
         <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
       }

@@ -19,16 +19,21 @@ type CreateLicenseKeyRequest struct {
 }
 
 type UpdateLicenseKeyRequest struct {
-	Name              string           `json:"name"`
 	Description       *string          `json:"description,omitempty"`
 	NotBefore         *time.Time       `json:"notBefore,omitempty"`
 	ExpiresAt         *time.Time       `json:"expiresAt,omitempty"`
 	Payload           *json.RawMessage `json:"payload,omitempty"`
 	LicenseTemplateID *uuid.UUID       `json:"licenseTemplateId,omitempty"`
+	Confirm           bool             `query:"confirm"`
 }
 
 type LicenseKeyRevision struct {
 	types.LicenseKeyRevision
 
 	Token string `json:"token"`
+}
+
+type UpdateLicenseKeyResponse struct {
+	types.LicenseKey
+	AffectedDeployments []AffectedDeployment `json:"affectedDeployments"`
 }

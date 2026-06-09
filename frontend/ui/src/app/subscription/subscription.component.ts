@@ -21,6 +21,7 @@ import {getFormDisplayedError} from '../../util/errors';
 import {never} from '../../util/exhaust';
 import {DeleteOrganizationComponent} from '../components/delete-organization/delete-organization.component';
 import {AuthService} from '../services/auth.service';
+import {FeatureFlagService} from '../services/feature-flag.service';
 import {OrganizationService} from '../services/organization.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {SubscriptionService} from '../services/subscription.service';
@@ -58,6 +59,7 @@ export class SubscriptionComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly isSubscriptionExpired = inject(OrganizationService).isSubscriptionExpired;
+  protected readonly isPartnerManagementEnabled = inject(FeatureFlagService).isPartnerManagementEnabled;
 
   protected subscriptionInfo = signal<SubscriptionInfo | undefined>(undefined);
   protected pendingUpdate = signal<PendingSubscriptionUpdate | undefined>(undefined);
@@ -70,7 +72,7 @@ export class SubscriptionComponent implements OnInit {
     subscriptionType: this.fb.control<SubscriptionType>('pro', [Validators.required]),
     subscriptionPeriod: this.fb.control<SubscriptionPeriod>('monthly', [Validators.required]),
     userAccountQuantity: this.fb.control<number>(1, [Validators.required, Validators.min(1)]),
-    customerOrganizationQuantity: this.fb.control<number>(1, [Validators.required, Validators.min(0)]),
+    customerOrganizationQuantity: this.fb.control<number>(1, [Validators.required, Validators.min(1)]),
   });
 
   protected readonly formValues = toSignal(this.form.valueChanges, {initialValue: this.form.value});

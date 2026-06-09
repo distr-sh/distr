@@ -109,6 +109,8 @@ hub:
       value: '500'
     # - name: CLEANUP_ARTIFACT_BLOB_MIN_AGE
     #   value: '24h'
+    # - name: CLEANUP_ORGANIZATION_MIN_AGE
+    #   value: '720h'  # 30 days (default)
     # OIDC providers – see https://distr.sh/docs/self-hosting/oidc/
     # - name: OIDC_GITHUB_ENABLED
     #   value: 'true'
@@ -274,6 +276,10 @@ cronJobs:
     labels:
       distr.sh/job: artifact-blob-cleanup
     args: [cleanup, ArtifactBlob, --timeout, 10m]
+  # - name: organization-cleanup
+  #   labels:
+  #     distr.sh/job: organization-cleanup
+  #   args: [cleanup, Organization, --timeout, 10m]
   - name: registry-upstream-sync
     labels:
       distr.sh/job: registry-upstream-sync

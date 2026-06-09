@@ -179,13 +179,12 @@ func CreateLicenseKey(ctx context.Context, licenseKey *types.LicenseKey) error {
 }
 
 func UpdateLicenseKeyMetadata(
-	ctx context.Context, id uuid.UUID, name string, description *string, licenseTemplateID *uuid.UUID,
+	ctx context.Context, id uuid.UUID, description *string, licenseTemplateID *uuid.UUID,
 ) (*types.LicenseKey, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `
 		WITH updated AS (
 			UPDATE LicenseKey SET
-				name = @name,
 				description = @description,
 				license_template_id = @licenseTemplateId
 			WHERE id = @id RETURNING *
@@ -194,7 +193,6 @@ func UpdateLicenseKeyMetadata(
 		FROM updated lk`+licenseKeyLatestRevisionJoin,
 		pgx.NamedArgs{
 			"id":                id,
-			"name":              name,
 			"description":       description,
 			"licenseTemplateId": licenseTemplateID,
 		},

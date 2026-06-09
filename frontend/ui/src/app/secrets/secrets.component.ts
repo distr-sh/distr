@@ -1,4 +1,5 @@
 import {DatePipe} from '@angular/common';
+import {HttpErrorResponse} from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -6,14 +7,22 @@ import {
   inject,
   input,
   output,
+  signal,
   TemplateRef,
   viewChild,
 } from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faMagnifyingGlass, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {
+  faCircleExclamation,
+  faMagnifyingGlass,
+  faPen,
+  faPlus,
+  faTrash,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {ClipComponent} from '../components/clip.component';
@@ -22,6 +31,7 @@ import {AuthService} from '../services/auth.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {SecretsService} from '../services/secrets.service';
 import {ToastService} from '../services/toast.service';
+import {AffectedDeployment} from '../types/affected-deployment';
 import {Secret} from '../types/secret';
 
 @Component({
@@ -50,9 +60,11 @@ export class SecretsComponent {
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;
   protected readonly faPen = faPen;
+  protected readonly faCircleExclamation = faCircleExclamation;
 
   private readonly createUpdateDialog = viewChild.required<TemplateRef<unknown>>('createUpdateDialog');
   private dialogRef?: DialogRef;
+  protected readonly affectedDeployments = signal<AffectedDeployment[]>([]);
 
   protected readonly filterForm = this.fb.group({
     search: '',
@@ -72,8 +84,13 @@ export class SecretsComponent {
     value: this.fb.control('', [Validators.required]),
   });
 
+  constructor() {
+    this.createUpdateForm.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.affectedDeployments.set([]));
+  }
+
   protected closeDialog() {
     this.createUpdateForm.reset();
+    this.affectedDeployments.set([]);
     this.dialogRef?.close();
   }
 
@@ -115,19 +132,27 @@ export class SecretsComponent {
         },
       });
     } else {
-      this.secretsService.update(id, value!).subscribe({
-        next: () => {
-          this.toast.success('Secret value has been updated. Restart workloads manually to apply changes.');
-          this.refresh.emit();
-          this.closeDialog();
-        },
-        error: (error) => {
-          const msg = getFormDisplayedError(error);
-          if (msg) {
-            this.toast.error(msg);
-          }
-        },
-      });
+      void this.updateSecret(id, value!);
+    }
+  }
+
+  private async updateSecret(id: string, value: string) {
+    try {
+      const confirm = this.affectedDeployments().length > 0;
+      await firstValueFrom(this.secretsService.update(id, value, confirm));
+      this.toast.success('Secret value has been updated.');
+      this.refresh.emit();
+      this.closeDialog();
+    } catch (error) {
+      if (error instanceof HttpErrorResponse && error.status === 409) {
+        this.affectedDeployments.set(error.error.affectedDeployments);
+        return;
+      }
+      this.affectedDeployments.set([]);
+      const msg = getFormDisplayedError(error);
+      if (msg) {
+        this.toast.error(msg);
+      }
     }
   }
 

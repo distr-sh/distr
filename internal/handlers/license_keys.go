@@ -63,7 +63,8 @@ func LicenseKeysRouter(r chiopenapi.Router) {
 						LicenseKeyIDRequest
 						api.UpdateLicenseKeyRequest
 					}{})).
-					With(option.Response(http.StatusOK, types.LicenseKey{}))
+					With(option.Response(http.StatusOK, api.UpdateLicenseKeyResponse{})).
+					With(option.Response(http.StatusConflict, api.AffectedDeploymentsConflictResponse{}))
 				r.Delete("/", deleteLicenseKey).
 					With(option.Description("Delete a license key")).
 					With(option.Request(LicenseKeyIDRequest{}))
@@ -234,11 +235,6 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if strings.TrimSpace(body.Name) == "" {
-		http.Error(w, "name is required", http.StatusBadRequest)
-		return
-	}
-
 	authCtx := auth.Authentication.Require(ctx)
 
 	if body.LicenseTemplateID != nil {
@@ -281,16 +277,38 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	affected := []api.AffectedDeployment{}
+	if needsRevision && existing.CustomerOrganizationID != nil {
+		hypotheticalLicenseKey, err := updatedLicenseKeyForRequest(existing, body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		affected, err = findAffectedDeploymentsByLicenseKey(
+			ctx,
+			*authCtx.CurrentOrgID(),
+			*existing.CustomerOrganizationID,
+			hypotheticalLicenseKey,
+		)
+		if err != nil {
+			_ = deploymentValuesError(ctx, w, err, "invalid deployment values")
+			return
+		}
+	}
+
+	confirm := r.URL.Query().Get("confirm") == "true"
+	if !confirm && len(affected) > 0 {
+		RespondJSONWithStatus(w, http.StatusConflict,
+			api.AffectedDeploymentsConflictResponse{AffectedDeployments: affected})
+		return
+	}
+
 	var result *types.LicenseKey
 	var errorHandled bool
 	err = db.RunTx(ctx, func(ctx context.Context) error {
 		if r, err := db.UpdateLicenseKeyMetadata(
-			ctx, existing.ID, body.Name, body.Description, body.LicenseTemplateID,
-		); errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, "A license key with this name already exists", http.StatusBadRequest)
-			errorHandled = true
-			return err
-		} else if err != nil {
+			ctx, existing.ID, body.Description, body.LicenseTemplateID,
+		); err != nil {
 			log.Warn("could not update license key", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -301,48 +319,14 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if needsRevision {
-			notBefore := body.NotBefore
-			if notBefore == nil {
-				notBefore = existing.NotBefore
-			}
-			expiresAt := body.ExpiresAt
-			if expiresAt == nil {
-				expiresAt = existing.ExpiresAt
-			}
-			var payload json.RawMessage
-			if body.Payload != nil {
-				payload = *body.Payload
-			} else {
-				payload = existing.Payload
-			}
-
-			if notBefore == nil || expiresAt == nil || payload == nil {
-				http.Error(w, "notBefore, expiresAt and payload are required to create a revision", http.StatusBadRequest)
-				errorHandled = true
-				return errors.New("missing revision fields")
-			}
-
-			revision := types.LicenseKeyRevision{
-				LicenseKeyID: existing.ID,
-				NotBefore:    *notBefore,
-				ExpiresAt:    *expiresAt,
-				Payload:      payload,
-			}
-
-			if err := db.CreateLicenseKeyRevision(ctx, &revision); err != nil {
-				log.Warn("could not create license key revision", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				errorHandled = true
+			var handled bool
+			if handled, err = applyLicenseKeyRevision(ctx, w, log, existing, body, result); err != nil {
+				errorHandled = handled
 				return err
 			}
-			result.NotBefore = &revision.NotBefore
-			result.ExpiresAt = &revision.ExpiresAt
-			result.Payload = revision.Payload
-			result.LastRevisedAt = &revision.CreatedAt
 		}
 
-		return nil
+		return triggerAffectedDeployments(ctx, affected)
 	})
 
 	if err != nil {
@@ -352,8 +336,90 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	} else {
-		RespondJSON(w, result)
+		RespondJSON(w, api.UpdateLicenseKeyResponse{
+			LicenseKey:          *result,
+			AffectedDeployments: affected,
+		})
 	}
+}
+
+func applyLicenseKeyRevision(
+	ctx context.Context,
+	w http.ResponseWriter,
+	log *zap.Logger,
+	existing *types.LicenseKey,
+	body api.UpdateLicenseKeyRequest,
+	result *types.LicenseKey,
+) (errorHandled bool, err error) {
+	notBefore := body.NotBefore
+	if notBefore == nil {
+		notBefore = existing.NotBefore
+	}
+	expiresAt := body.ExpiresAt
+	if expiresAt == nil {
+		expiresAt = existing.ExpiresAt
+	}
+	var payload json.RawMessage
+	if body.Payload != nil {
+		payload = *body.Payload
+	} else {
+		payload = existing.Payload
+	}
+	if notBefore == nil || expiresAt == nil || payload == nil {
+		http.Error(w, "notBefore, expiresAt and payload are required to create a revision", http.StatusBadRequest)
+		return true, errors.New("missing revision fields")
+	}
+	revision := types.LicenseKeyRevision{
+		LicenseKeyID: existing.ID,
+		NotBefore:    *notBefore,
+		ExpiresAt:    *expiresAt,
+		Payload:      payload,
+	}
+	if err := db.CreateLicenseKeyRevision(ctx, &revision); err != nil {
+		log.Warn("could not create license key revision", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return true, err
+	}
+	result.NotBefore = &revision.NotBefore
+	result.ExpiresAt = &revision.ExpiresAt
+	result.Payload = revision.Payload
+	result.LastRevisedAt = &revision.CreatedAt
+	return false, nil
+}
+
+func updatedLicenseKeyForRequest(
+	existing *types.LicenseKey,
+	body api.UpdateLicenseKeyRequest,
+) (types.LicenseKey, error) {
+	result := *existing
+	result.Description = body.Description
+	result.LicenseTemplateID = body.LicenseTemplateID
+
+	notBefore := body.NotBefore
+	if notBefore == nil {
+		notBefore = existing.NotBefore
+	}
+	expiresAt := body.ExpiresAt
+	if expiresAt == nil {
+		expiresAt = existing.ExpiresAt
+	}
+	var payload json.RawMessage
+	if body.Payload != nil {
+		payload = *body.Payload
+	} else {
+		payload = existing.Payload
+	}
+	if notBefore == nil || expiresAt == nil || payload == nil {
+		return types.LicenseKey{}, errors.New("notBefore, expiresAt and payload are required to create a revision")
+	}
+
+	revisedAt := time.Now().UTC().Truncate(time.Microsecond)
+	result.NotBefore = notBefore
+	result.ExpiresAt = expiresAt
+	result.Payload = payload
+	result.LastRevisedAt = &revisedAt
+	return result, nil
 }
 
 func deleteLicenseKey(w http.ResponseWriter, r *http.Request) {

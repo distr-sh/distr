@@ -11,6 +11,7 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/deploymentvalues"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/resources"
 	"github.com/distr-sh/distr/internal/types"
@@ -200,9 +201,13 @@ func createHelloDistrDeploymentAndRevision(ctx context.Context, appVersionID uui
 	}
 	if err := db.CreateDeployment(ctx, deploymentRequest); err != nil {
 		return err
-	} else if _, err := db.CreateDeploymentRevision(ctx, deploymentRequest); err != nil {
+	} else if hash, err := deploymentvalues.RenderAndHash(deploymentRequest, nil, nil); err != nil {
 		return err
 	} else {
+		deploymentRequest.ValuesHash = hash[:]
+		if _, err := db.CreateDeploymentRevision(ctx, deploymentRequest); err != nil {
+			return err
+		}
 		return nil
 	}
 }

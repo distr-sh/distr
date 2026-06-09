@@ -1,0 +1,21 @@
+---
+import DemoButton from '~/components/buttons/DemoButton.astro';
+import SignupButton from '~/components/buttons/SignupButton.astro';
+---
+
+<section class="my-10">
+  <div
+    class="bg-gradient-to-br from-accent-400 to-accent-600 dark:from-accent-600 dark:to-accent-950 rounded-xl p-6 md:p-8 text-center shadow-lg">
+    <p class="text-[length:var(--sl-text-h4)] font-semibold text-white">
+      Turn self-hosted into a repeatable sales motion
+    </p>
+    <p class="text-[length:var(--sl-text-sm)] text-white/80 mt-1 mb-6">
+      Distr is the Open Source platform for distributing self-hosted software to
+      your customers.
+    </p>
+    <div class="flex flex-col sm:flex-row gap-3 justify-center">
+      <DemoButton class="w-full sm:w-auto" />
+      <SignupButton class="w-full sm:w-auto" />
+    </div>
+  </div>
+</section>

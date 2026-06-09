@@ -3,6 +3,7 @@ import StarlightLayout from '../layouts/StarlightLayout.astro';
 import PricingCalculator from '../components/pricing/PricingCalculator';
 import PricingComparisonTable from '../components/pricing/PricingComparisonTable.astro';
 import PricingFAQ from '../components/pricing/PricingFAQ.astro';
+import TestimonialsSection from '../components/home/TestimonialsSection.astro';
 import NewsletterSection from '../components/home/NewsletterSection.astro';
 
 const title = 'Pricing';
@@ -23,6 +24,8 @@ const description = 'Software Distribution Platform';
   <section class="py-8 md:py-16 bg-gray-50 dark:bg-gray-800">
     <PricingCalculator client:load />
   </section>
+
+  <TestimonialsSection />
 
   <div class="bg-gray-50 dark:bg-gray-800">
     <PricingComparisonTable />

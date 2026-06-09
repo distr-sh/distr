@@ -1,12 +1,16 @@
 import {HttpClient} from '@angular/common/http';
 import {Injectable, inject} from '@angular/core';
 import {Observable, Subject, switchMap, tap} from 'rxjs';
-import {LicenseKey, LicenseKeyRevision} from '../types/license-key';
+import {AffectedDeployment} from '../types/affected-deployment';
+import {CreateLicenseKeyRequest, LicenseKey, LicenseKeyRevision, UpdateLicenseKeyRequest} from '../types/license-key';
 import {DefaultReactiveList, ReactiveList} from './cache';
-import {CrudService} from './interfaces';
+
+export interface UpdateLicenseKeyResponse extends LicenseKey {
+  affectedDeployments: AffectedDeployment[];
+}
 
 @Injectable({providedIn: 'root'})
-export class LicenseKeysService implements CrudService<LicenseKey> {
+export class LicenseKeysService {
   private readonly http = inject(HttpClient);
 
   private readonly cache: ReactiveList<LicenseKey>;
@@ -31,14 +35,16 @@ export class LicenseKeysService implements CrudService<LicenseKey> {
     this.refresh$.next();
   }
 
-  create(request: LicenseKey): Observable<LicenseKey> {
+  create(request: CreateLicenseKeyRequest): Observable<LicenseKey> {
     return this.http.post<LicenseKey>(this.licenseKeysUrl, request).pipe(tap((l) => this.cache.save(l)));
   }
 
-  update(request: LicenseKey): Observable<LicenseKey> {
+  update(id: string, request: UpdateLicenseKeyRequest, confirm = false): Observable<UpdateLicenseKeyResponse> {
     return this.http
-      .put<LicenseKey>(`${this.licenseKeysUrl}/${request.id}`, request)
-      .pipe(tap((l) => this.cache.save(l)));
+      .put<UpdateLicenseKeyResponse>(`${this.licenseKeysUrl}/${id}`, request, {
+        params: confirm ? {confirm: 'true'} : {},
+      })
+      .pipe(tap((response) => this.cache.save(response)));
   }
 
   delete(request: LicenseKey): Observable<void> {

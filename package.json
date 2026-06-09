@@ -20,6 +20,9 @@
   },
   "private": true,
   "packageManager": "pnpm@11.5.2",
+  "engines": {
+    "node": "26.x"
+  },
   "dependencies": {
     "@angular/cdk": "^22.0.0",
     "@angular/common": "^22.0.0",
@@ -38,7 +41,7 @@
     "@distr-sh/distr-sdk": "file:./sdk/js/src",
     "@fontsource/inter": "^5.1.0",
     "@fontsource/poppins": "^5.1.0",
-    "@fortawesome/angular-fontawesome": "^4.0.0",
+    "@fortawesome/angular-fontawesome": "^5.0.0",
     "@fortawesome/free-brands-svg-icons": "^7.0.0",
     "@fortawesome/free-regular-svg-icons": "^7.0.0",
     "@fortawesome/free-solid-svg-icons": "^7.0.0",
@@ -65,7 +68,7 @@
     "@types/jasmine": "~6.0.0",
     "@types/semver": "^7.5.8",
     "autoprefixer": "^10.4.20",
-    "jasmine-core": "~6.2.0",
+    "jasmine-core": "~6.3.0",
     "jsdom": "^29.0.0",
     "postcss": "^8.5.3",
     "prettier": "^3.3.3",

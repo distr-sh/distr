@@ -5,7 +5,8 @@ import {
   CustomerOrganization,
   CustomerOrganizationWithUsage,
 } from '@distr-sh/distr-sdk';
-import {Observable, shareReplay} from 'rxjs';
+import {Observable, shareReplay, tap} from 'rxjs';
+import {ContextService} from './context.service';
 
 const baseUrl = '/api/v1/customer-organizations';
 
@@ -14,6 +15,7 @@ const baseUrl = '/api/v1/customer-organizations';
 })
 export class CustomerOrganizationsService {
   private readonly httpClient = inject(HttpClient);
+  private readonly contextService = inject(ContextService);
 
   public getCustomerOrganizations(): Observable<CustomerOrganizationWithUsage[]> {
     return this.httpClient.get<CustomerOrganizationWithUsage[]>(baseUrl);
@@ -26,7 +28,7 @@ export class CustomerOrganizationsService {
   public createCustomerOrganization(
     request: CreateUpdateCustomerOrganizationRequest
   ): Observable<CustomerOrganization> {
-    return this.httpClient.post<CustomerOrganization>(baseUrl, request);
+    return this.httpClient.post<CustomerOrganization>(baseUrl, request).pipe(tap(() => this.contextService.reload()));
   }
 
   public updateCustomerOrganization(
@@ -37,7 +39,7 @@ export class CustomerOrganizationsService {
   }
 
   public deleteCustomerOrganization(id: string): Observable<void> {
-    return this.httpClient.delete<void>(`${baseUrl}/${id}`);
+    return this.httpClient.delete<void>(`${baseUrl}/${id}`).pipe(tap(() => this.contextService.reload()));
   }
 }
 

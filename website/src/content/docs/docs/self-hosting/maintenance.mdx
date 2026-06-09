@@ -1,6 +1,6 @@
 ---
 title: Maintenance Jobs
-description: Configure automated cleanup jobs to prune metrics, logs, and registry blobs from your Distr database and storage.
+description: Configure automated cleanup jobs to prune metrics, logs, registry blobs, and deleted organizations from your Distr database and storage.
 slug: docs/self-hosting/maintenance
 sidebar:
   label: Maintenance Jobs
@@ -13,22 +13,23 @@ import {Aside} from '@astrojs/starlight/components';
 
 Distr includes built-in CLI tasks for database and storage pruning to prevent unbounded growth of resources such as metrics, logs, and status entries.
 
-The cleanup routine can be executed manually.
+The cleanup routine can be executed manually. One or more targets can be specified in a single invocation.
 
 ```shell
-distr cleanup $CLEANUP_TARGET
+distr cleanup $CLEANUP_TARGET...
 ```
 
 Available cleanup targets:
 
-| Target                      | Description                                                           |
-| --------------------------- | --------------------------------------------------------------------- |
-| `DeploymentLogRecord`       | Deployment log entries                                                |
-| `DeploymentTargetLogRecord` | Deployment target log entries                                         |
-| `DeploymentRevisionStatus`  | Deployment revision status entries                                    |
-| `DeploymentTargetMetrics`   | Deployment target metrics entries                                     |
-| `OIDCState`                 | Expired OIDC state entries                                            |
-| `ArtifactBlob`              | Unreferenced registry blobs from S3 (requires registry to be enabled) |
+| Target                      | Description                                                             |
+| --------------------------- | ----------------------------------------------------------------------- |
+| `DeploymentLogRecord`       | Deployment log entries                                                  |
+| `DeploymentTargetLogRecord` | Deployment target log entries                                           |
+| `DeploymentRevisionStatus`  | Deployment revision status entries                                      |
+| `DeploymentTargetMetrics`   | Deployment target metrics entries                                       |
+| `OIDCState`                 | Expired OIDC state entries                                              |
+| `ArtifactBlob`              | Unreferenced registry blobs from S3 (requires registry to be enabled)   |
+| `Organization`              | Permanently delete soft-deleted organizations past the retention period |
 
 For production deployments we recommend scheduling these jobs automatically, either using the built-in job scheduler for single instance deployments
 or using Kubernetes CronJobs for high-availability deployments.
@@ -62,6 +63,10 @@ CLEANUP_OIDC_STATE_CRON_TIMEOUT="10m"
 CLEANUP_ARTIFACT_BLOB_CRON="0 * * * *"
 CLEANUP_ARTIFACT_BLOB_TIMEOUT="10m"
 CLEANUP_ARTIFACT_BLOB_MIN_AGE="24h"
+# Cron interval for permanently deleting soft-deleted organizations older than CLEANUP_ORGANIZATION_MIN_AGE
+# CLEANUP_ORGANIZATION_CRON="0 0 * * *"
+# CLEANUP_ORGANIZATION_TIMEOUT="10m"
+# CLEANUP_ORGANIZATION_MIN_AGE="720h"
 ```
 
 If these variables are not set, no cleanup jobs are scheduled.
@@ -105,6 +110,10 @@ cronJobs:
     labels:
       distr.sh/job: artifact-blob-cleanup
     args: [cleanup, ArtifactBlob, --timeout, 10m]
+  # - name: organization-cleanup
+  #   labels:
+  #     distr.sh/job: organization-cleanup
+  #   args: [cleanup, Organization, --timeout, 10m]
 ```
 
 ## Additional configuration
@@ -116,12 +125,20 @@ STATUS_ENTRIES_MAX_AGE="24h"
 METRICS_ENTRIES_MAX_AGE="24h"
 LOG_RECORD_ENTRIES_MAX_COUNT="500"
 CLEANUP_ARTIFACT_BLOB_MIN_AGE="24h"
+CLEANUP_ORGANIZATION_MIN_AGE="720h"
 ```
 
 <Aside type="caution">
   `STATUS_ENTRIES_MAX_AGE`, `METRICS_ENTRIES_MAX_AGE` and
   `LOG_RECORD_ENTRIES_MAX_COUNT` do not have a default value. If unset, the
   cleanup routine for these targets will have no effect.
+</Aside>
+
+<Aside type="caution">
+  The `Organization` cleanup target permanently and irreversibly deletes
+  organizations and all their associated data. The default retention period is
+  30 days (`720h`). Only enable this job if you are sure you want to purge
+  soft-deleted organizations.
 </Aside>
 
 ## Upstream Tag Synchronization
