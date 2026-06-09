@@ -1,13 +1,7 @@
 ---
-
----
-
-<div
-  style="width:100%;height:100%;overflow:scroll"
-  id="my-cal-inline-demo"
-  aria-label="Schedule a demo">
-</div>
-<script type="text/javascript">
+// Third-party Cal.com embed loader. Injected as a raw string via `set:html` so
+// the type checker does not analyze the vendor snippet.
+const calEmbedScript = `
   (function (C, A, L) {
     let p = function (a, ar) {
       a.q.push(ar);
@@ -49,4 +43,12 @@
   });
 
   Cal.ns.demo('ui', {hideEventTypeDetails: false, layout: 'month_view'});
-</script>
+`;
+---
+
+<div
+  style="width:100%;height:100%;overflow:scroll"
+  id="my-cal-inline-demo"
+  aria-label="Schedule a demo">
+</div>
+<script is:inline set:html={calEmbedScript} />

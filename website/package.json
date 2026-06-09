@@ -7,11 +7,13 @@
     "predev": "pnpm copy-changelog",
     "prestart": "pnpm copy-changelog",
     "prebuild": "pnpm copy-changelog",
+    "precheck": "pnpm copy-changelog",
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
+    "check": "astro check",
     "lint": "prettier --check .",
     "format": "prettier --write ."
   },
@@ -42,10 +44,12 @@
     "tailwindcss": "^4.2.4"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.9",
     "baseline-browser-mapping": "^2.10.24",
     "prettier": "^3.8.3",
     "prettier-plugin-astro": "^0.14.1",
-    "prettier-plugin-organize-imports": "^4.3.0"
+    "prettier-plugin-organize-imports": "^4.3.0",
+    "typescript": "^6.0.3"
   },
   "packageManager": "pnpm@11.5.2",
   "engines": {

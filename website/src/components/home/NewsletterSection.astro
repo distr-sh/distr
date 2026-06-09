@@ -64,8 +64,6 @@ const reCaptchaKeyV2 = import.meta.env.RE_CAPTCHA_KEY_v2;
 </section>
 
 <script>
-  import {record} from 'astro:schema';
-
   // Load reCAPTCHA script
   function loadRecaptchaScript() {
     if (typeof window === 'undefined') return;

@@ -54,6 +54,8 @@ jobs:
         run: pnpm i
       - name: Lint with prettier
         run: pnpm run lint
+      - name: Check with astro
+        run: pnpm run check
       - name: Install playwright browser
         run: pnpm exec playwright install --only-shell
       - name: Build website

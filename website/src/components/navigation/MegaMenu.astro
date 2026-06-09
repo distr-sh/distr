@@ -78,10 +78,11 @@ const menuWidth = numericWidth * columns + gap * (columns - 1) + padding;
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    const wrappers = document.querySelectorAll('.mega-menu-wrapper');
+    const wrappers =
+      document.querySelectorAll<HTMLElement>('.mega-menu-wrapper');
 
     wrappers.forEach(wrapper => {
-      const trigger = wrapper.querySelector('.menu-trigger');
+      const trigger = wrapper.querySelector<HTMLElement>('.menu-trigger');
       const menu = wrapper.querySelector('.mega-menu');
       const menuItems = wrapper.querySelectorAll('.menu-item');
       const menuId = menu?.getAttribute('data-menu-id');
@@ -171,7 +172,7 @@ const menuWidth = numericWidth * columns + gap * (columns - 1) + padding;
         }
       });
 
-      trigger.addEventListener('keydown', e => {
+      trigger.addEventListener('keydown', (e: KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           if (isOpen) {
@@ -193,7 +194,7 @@ const menuWidth = numericWidth * columns + gap * (columns - 1) + padding;
       });
 
       // Close menu on focus out
-      wrapper.addEventListener('focusout', e => {
+      wrapper.addEventListener('focusout', (e: FocusEvent) => {
         // Check if the new focus target is outside the wrapper
         if (isOpen && !wrapper.contains(e.relatedTarget as Node)) {
           closeMenu();
