@@ -6,11 +6,11 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 )
 
-func OrganizationToAPI(o types.Organization, vendorUserCount, customerOrgCount int64) api.OrganizationResponse {
+func OrganizationToAPI(o types.Organization, billableUserCount, customerOrgCount int64) api.OrganizationResponse {
 	return api.OrganizationResponse{
 		Organization:                     o,
 		SubscriptionLimits:               subscription.GetSubscriptionLimits(o.SubscriptionType),
-		CurrentVendorUserAccountCount:    vendorUserCount,
+		CurrentBillableUserAccountCount:  billableUserCount,
 		CurrentCustomerOrganizationCount: customerOrgCount,
 	}
 }

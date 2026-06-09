@@ -126,7 +126,7 @@ export class UsersComponent {
     if (!org || this.customerOrganizationId() !== undefined || this.auth.isCustomer()) {
       return this.users().length;
     }
-    return org.currentVendorUserAccountCount;
+    return org.currentBillableUserAccountCount;
   });
 
   protected readonly isProSubscription = computed(() => {
