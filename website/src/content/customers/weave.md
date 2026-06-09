@@ -10,7 +10,7 @@ useCase: 'Self-Hosted Deployment'
 featured: true
 outcome: 'Self-hosted without the engineering tax'
 caseStudy:
-  logo: '/src/assets/customers/weave/logo.png'
+  logo: '/src/assets/customers/weave/logo.svg'
   pageTitle: 'Weave Case Study'
   pageDescription: 'How Weave delivers a fully self-hosted offering with Distr without it becoming a tax on every engineering decision'
 ---
