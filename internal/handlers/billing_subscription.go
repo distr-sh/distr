@@ -235,6 +235,15 @@ func validateSubscriptionQuantities(
 	userAccountQty int64,
 	usage *currentUsageCounts,
 ) error {
+	// Validate that at least one user account and one customer organization are requested
+	if userAccountQty < 1 {
+		return fmt.Errorf("user account quantity (%d) cannot be less than 1", userAccountQty)
+	}
+
+	if customerOrgQty < 1 {
+		return fmt.Errorf("customer quantity (%d) cannot be less than 1", customerOrgQty)
+	}
+
 	// Validate that requested quantities meet current usage minimums
 	if customerOrgQty < usage.customerOrganizationCount {
 		return fmt.Errorf(

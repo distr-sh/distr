@@ -70,7 +70,7 @@ export class SubscriptionComponent implements OnInit {
     subscriptionType: this.fb.control<SubscriptionType>('pro', [Validators.required]),
     subscriptionPeriod: this.fb.control<SubscriptionPeriod>('monthly', [Validators.required]),
     userAccountQuantity: this.fb.control<number>(1, [Validators.required, Validators.min(1)]),
-    customerOrganizationQuantity: this.fb.control<number>(1, [Validators.required, Validators.min(0)]),
+    customerOrganizationQuantity: this.fb.control<number>(1, [Validators.required, Validators.min(1)]),
   });
 
   protected readonly formValues = toSignal(this.form.valueChanges, {initialValue: this.form.value});
