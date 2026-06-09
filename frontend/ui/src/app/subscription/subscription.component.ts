@@ -21,6 +21,7 @@ import {getFormDisplayedError} from '../../util/errors';
 import {never} from '../../util/exhaust';
 import {DeleteOrganizationComponent} from '../components/delete-organization/delete-organization.component';
 import {AuthService} from '../services/auth.service';
+import {FeatureFlagService} from '../services/feature-flag.service';
 import {OrganizationService} from '../services/organization.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {SubscriptionService} from '../services/subscription.service';
@@ -58,6 +59,7 @@ export class SubscriptionComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly isSubscriptionExpired = inject(OrganizationService).isSubscriptionExpired;
+  protected readonly isPartnerManagementEnabled = inject(FeatureFlagService).isPartnerManagementEnabled;
 
   protected subscriptionInfo = signal<SubscriptionInfo | undefined>(undefined);
   protected pendingUpdate = signal<PendingSubscriptionUpdate | undefined>(undefined);

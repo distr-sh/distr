@@ -146,7 +146,11 @@
                           [placeholder]="subscriptionInfoData.currentUserAccountCount.toString()"
                           required />
                         <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-                          Number of internal team members (min: {{ subscriptionInfoData.currentUserAccountCount }})
+                          Number of internal team members
+                          @if (isPartnerManagementEnabled()) {
+                            and partner users
+                          }
+                          (min: {{ subscriptionInfoData.currentUserAccountCount }})
                         </p>
                       </div>
                       <div>
@@ -389,7 +393,11 @@
                           placeholder="1"
                           required />
                         <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-                          Number of internal team members accessing Distr
+                          Number of internal team members
+                          @if (isPartnerManagementEnabled()) {
+                            and partner users
+                          }
+                          accessing Distr
                         </p>
                       </div>
                       <div>
