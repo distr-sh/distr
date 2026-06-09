@@ -36,18 +36,24 @@ func CustomerOrganizationsRouter(r chiopenapi.Router) {
 
 			r.Route("/links", SidebarLinksRouter)
 
-			r.With(middleware.RequireVendorOrPartner, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
-				Put("/", updateCustomerOrganizationHandler()).
-				With(option.Description("Update a customer organization")).
-				With(option.Request(struct {
-					CustomerOrganizationIDRequest
-					api.CreateUpdateCustomerOrganizationRequest
-				}{})).
-				With(option.Response(http.StatusOK, api.CustomerOrganization{}))
+			r.With(middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
+				r.With(middleware.RequireVendorOrPartner).Group(func(r chiopenapi.Router) {
+					r.With(middleware.RequireReadWriteOrAdmin).
+						Put("/", updateCustomerOrganizationHandler()).
+						With(option.Description("Update a customer organization")).
+						With(option.Request(struct {
+							CustomerOrganizationIDRequest
+							api.CreateUpdateCustomerOrganizationRequest
+						}{})).
+						With(option.Response(http.StatusOK, api.CustomerOrganization{}))
 
-			r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin,
-				middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
-				r.With(middleware.PartnerManagementFeatureMiddleware).
+					r.With(middleware.RequireAdmin).
+						Delete("/", deleteCustomerOrganizationHandler()).
+						With(option.Description("Delete a customer organization")).
+						With(option.Request(CustomerOrganizationIDRequest{}))
+				})
+
+				r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.PartnerManagementFeatureMiddleware).
 					Put("/partner", assignCustomerToPartnerHandler()).
 					With(option.Description("Assign or unassign a partner organization for a customer organization")).
 					With(option.Request(struct {
@@ -55,9 +61,6 @@ func CustomerOrganizationsRouter(r chiopenapi.Router) {
 						api.AssignCustomerToPartnerRequest
 					}{})).
 					With(option.Response(http.StatusOK, api.CustomerOrganization{}))
-				r.Delete("/", deleteCustomerOrganizationHandler()).
-					With(option.Description("Delete a customer organization")).
-					With(option.Request(CustomerOrganizationIDRequest{}))
 			})
 		})
 
@@ -253,6 +256,22 @@ func deleteCustomerOrganizationHandler() http.HandlerFunc {
 		log := internalctx.GetLogger(ctx)
 		auth := auth.Authentication.Require(ctx)
 
+		if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
+			if co, coErr := db.GetCustomerOrganizationByID(ctx, id); err != nil {
+				if errors.Is(coErr, apierrors.ErrNotFound) {
+					http.NotFound(w, r)
+				} else {
+					log.Error("failed to get customer org", zap.Error(coErr))
+					sentry.GetHubFromContext(ctx).CaptureException(coErr)
+					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				}
+				return
+			} else if !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
+				http.NotFound(w, r)
+				return
+			}
+		}
+
 		if err := db.DeleteCustomerOrganizationWithID(ctx, id, *auth.CurrentOrgID()); errors.Is(err, apierrors.ErrNotFound) {
 			http.NotFound(w, r)
 		} else if errors.Is(err, apierrors.ErrConflict) {
@@ -260,7 +279,7 @@ func deleteCustomerOrganizationHandler() http.HandlerFunc {
 		} else if err != nil {
 			log.Error("failed to delete customer org", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		} else {
 			w.WriteHeader(http.StatusNoContent)
 		}

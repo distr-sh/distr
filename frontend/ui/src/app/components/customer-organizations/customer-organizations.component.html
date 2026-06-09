@@ -181,9 +181,8 @@
                       Show links
                     }
                   </a>
-                  @if (auth.hasAnyRole('read_write', 'admin')) {
+                  @if (auth.hasAnyRole('admin') && (auth.isVendor() || auth.isPartner())) {
                     <button
-                      *appRequireVendor
                       type="button"
                       aria-label="Delete"
                       (click)="delete(customer)"

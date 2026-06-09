@@ -19,7 +19,6 @@ import {
 import {combineLatest, filter, firstValueFrom, map, of, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
-import {RequireVendorDirective} from '../../directives/required-role.directive';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ArtifactEntitlementsService} from '../../services/artifact-entitlements.service';
 import {AuthService} from '../../services/auth.service';
@@ -43,7 +42,6 @@ import {QuotaLimitComponent} from '../quota-limit.component';
     AsyncPipe,
     DecimalPipe,
     RouterLink,
-    RequireVendorDirective,
     QuotaLimitComponent,
     OverlayModule,
   ],
