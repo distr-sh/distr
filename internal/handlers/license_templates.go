@@ -17,7 +17,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
-	"github.com/stripe/stripe-go/v85"
+	"github.com/stripe/stripe-go/v86"
 	"go.uber.org/zap"
 )
 

@@ -681,8 +681,8 @@ github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
-github.com/stripe/stripe-go/v85 v85.2.0 h1:LomL8ulv13+y+nIKtFP48Cn/pCIZmi4IBz5qjdDn+FY=
-github.com/stripe/stripe-go/v85 v85.2.0/go.mod h1:5P+HGFenpWgak27T5Is6JMsmDfUC1yJnjhhmquz7kXw=
+github.com/stripe/stripe-go/v86 v86.0.0 h1:CdyHmNj/QnFR222gpRy9wA4LUd71gUXnDFnUPqT0d6o=
+github.com/stripe/stripe-go/v86 v86.0.0/go.mod h1:Co7QRXCKGNOPTugAdvjgRo+KcMtd9hxy+pZMN0yThsQ=
 github.com/testcontainers/testcontainers-go v0.42.0 h1:He3IhTzTZOygSXLJPMX7n44XtK+qhjat1nI9cneBbUY=
 github.com/testcontainers/testcontainers-go v0.42.0/go.mod h1:vZjdY1YmUA1qEForxOIOazfsrdyORJAbhi0bp8plN30=
 github.com/tetratelabs/wabin v0.0.0-20230304001439-f6f874872834 h1:ZF+QBjOI+tILZjBaFj3HgFonKXUcwgJ4djLb6i42S3Q=

@@ -20,8 +20,8 @@ import (
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
-	"github.com/stripe/stripe-go/v85"
-	"github.com/stripe/stripe-go/v85/webhook"
+	"github.com/stripe/stripe-go/v86"
+	"github.com/stripe/stripe-go/v86/webhook"
 	"go.uber.org/zap"
 )
 

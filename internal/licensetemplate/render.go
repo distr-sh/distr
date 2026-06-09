@@ -8,7 +8,7 @@ import (
 	"text/template"
 
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/stripe/stripe-go/v85"
+	"github.com/stripe/stripe-go/v86"
 )
 
 func RenderPayload(tmpl types.LicenseTemplate, sub stripe.Subscription) (json.RawMessage, error) {

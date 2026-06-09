@@ -9,9 +9,9 @@ import (
 	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
-	"github.com/stripe/stripe-go/v85"
-	checkoutsession "github.com/stripe/stripe-go/v85/checkout/session"
-	"github.com/stripe/stripe-go/v85/subscription"
+	"github.com/stripe/stripe-go/v86"
+	checkoutsession "github.com/stripe/stripe-go/v86/checkout/session"
+	"github.com/stripe/stripe-go/v86/subscription"
 )
 
 func GetSubscriptionType(subscription stripe.Subscription) (*types.SubscriptionType, error) {

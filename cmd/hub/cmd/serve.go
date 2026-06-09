@@ -16,7 +16,7 @@ import (
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"github.com/spf13/cobra"
-	"github.com/stripe/stripe-go/v85"
+	"github.com/stripe/stripe-go/v86"
 )
 
 type ServeOptions struct{ Migrate bool }

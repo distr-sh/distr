@@ -45,7 +45,7 @@ require (
 	github.com/samber/slog-zap/v2 v2.7.0
 	github.com/shirou/gopsutil/v4 v4.26.5
 	github.com/spf13/cobra v1.10.2
-	github.com/stripe/stripe-go/v85 v85.2.0
+	github.com/stripe/stripe-go/v86 v86.0.0
 	go.opentelemetry.io/collector/component v1.59.0
 	go.opentelemetry.io/collector/confmap v1.59.0
 	go.opentelemetry.io/collector/consumer v1.59.0
@@ -69,12 +69,6 @@ require (
 	k8s.io/kubectl v0.36.1
 	k8s.io/metrics v0.36.1
 	oras.land/oras-go/v2 v2.6.1
-)
-
-require (
-	github.com/goccy/go-yaml v1.19.2 // indirect
-	go.opentelemetry.io/collector/consumer/xconsumer v0.153.0 // indirect
-	go.opentelemetry.io/collector/receiver/xreceiver v0.153.0 // indirect
 )
 
 require (
@@ -178,6 +172,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/goccy/go-json v0.10.6 // indirect
+	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/gofrs/flock v0.13.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
@@ -303,6 +298,7 @@ require (
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/collector/confmap/xconfmap v0.153.0 // indirect
 	go.opentelemetry.io/collector/consumer/consumererror v0.153.0 // indirect
+	go.opentelemetry.io/collector/consumer/xconsumer v0.153.0 // indirect
 	go.opentelemetry.io/collector/featuregate v1.59.0 // indirect
 	go.opentelemetry.io/collector/filter v0.153.0 // indirect
 	go.opentelemetry.io/collector/internal/componentalias v0.153.0 // indirect
@@ -310,6 +306,7 @@ require (
 	go.opentelemetry.io/collector/pipeline v1.59.0 // indirect
 	go.opentelemetry.io/collector/pipeline/xpipeline v0.153.0 // indirect
 	go.opentelemetry.io/collector/receiver/receiverhelper v0.153.0 // indirect
+	go.opentelemetry.io/collector/receiver/xreceiver v0.153.0 // indirect
 	go.opentelemetry.io/collector/scraper v0.153.0 // indirect
 	go.opentelemetry.io/collector/scraper/scraperhelper v0.153.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.65.0 // indirect
