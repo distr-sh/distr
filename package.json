@@ -20,6 +20,9 @@
   },
   "private": true,
   "packageManager": "pnpm@11.5.2",
+  "engines": {
+    "node": "26.x"
+  },
   "dependencies": {
     "@angular/cdk": "^22.0.0",
     "@angular/common": "^22.0.0",

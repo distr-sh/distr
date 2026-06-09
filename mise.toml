@@ -2,7 +2,7 @@
 env_shell_expand = false
 
 [tools]
-node = "24"
+node = "26"
 go = "1.26.4"
 golangci-lint = "2.12.2"
 helm-docs = "1.14.2"
