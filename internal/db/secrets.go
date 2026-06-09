@@ -83,6 +83,7 @@ func GetSecretsByScope(
 		return GetSecretsForOrganization(ctx, organizationID)
 	}
 }
+
 func GetSecretsForOrganization(
 	ctx context.Context,
 	organizationID uuid.UUID,

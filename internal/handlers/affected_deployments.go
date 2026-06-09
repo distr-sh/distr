@@ -15,7 +15,9 @@ import (
 	"github.com/google/uuid"
 )
 
-func updateSecretValuePatchFunc(secretKey string, newValue string) func([]types.SecretWithUpdatedBy) []types.SecretWithUpdatedBy {
+func updateSecretValuePatchFunc(
+	secretKey string, newValue string,
+) func([]types.SecretWithUpdatedBy) []types.SecretWithUpdatedBy {
 	return func(secrets []types.SecretWithUpdatedBy) []types.SecretWithUpdatedBy {
 		patched := slices.Clone(secrets)
 		for i := range patched {

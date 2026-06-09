@@ -233,7 +233,8 @@ func deleteSecretHandler() http.HandlerFunc {
 			return
 		}
 
-		existing, err := db.GetSecretByID(ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
+		existing, err := db.GetSecretByID(
+			ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
 		if err != nil {
 			if errors.Is(err, apierrors.ErrNotFound) {
 				http.Error(w, "secret not found", http.StatusNotFound)

@@ -430,7 +430,8 @@ func deleteLicenseKey(w http.ResponseWriter, r *http.Request) {
 	licenseKey := internalctx.GetLicenseKey(ctx)
 
 	if licenseKey.CustomerOrganizationID != nil {
-		referencing, err := findDeploymentsReferencingLicenseKey(ctx, *authCtx.CurrentOrgID(), *licenseKey.CustomerOrganizationID, licenseKey.ID)
+		referencing, err := findDeploymentsReferencingLicenseKey(
+			ctx, *authCtx.CurrentOrgID(), *licenseKey.CustomerOrganizationID, licenseKey.ID)
 		if err != nil {
 			log.Error("failed to check deployment references for license key", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
