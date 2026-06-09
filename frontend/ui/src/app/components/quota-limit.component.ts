@@ -5,39 +5,45 @@ import {UNLIMITED_QTY} from '../types/subscription';
   selector: 'app-quota-limit',
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
-    @let l = limit();
-    @let p = percentage();
-    @if (l !== undefined && p >= 50) {
-      <div class="text-gray-900 dark:text-white flex items-center gap-2 md:w-36">
-        <div class="bg-gray-200 rounded-full h-1.5 dark:bg-gray-700 flex-1">
-          <div
-            class="h-1.5 rounded-full"
-            [class.bg-green-600]="!isLimitDanger()"
-            [class.bg-blue-600]="isLimitDanger() && !isLimitCritical()"
-            [class.bg-yellow-400]="isLimitCritical() && !isLimitReached()"
-            [class.bg-red-600]="isLimitReached()"
-            [class.dark:bg-red-500]="isLimitReached()"
-            [style]="{width: p + '%'}"></div>
-        </div>
-        <span class="text-sm" [class.text-red-700]="isLimitReached()" [class.dark:text-red-500]="isLimitReached()">
-          {{ usage() ?? 0 }}/{{ l }}
-        </span>
-      </div>
+    @if (shouldShow()) {
+      <span
+        class="text-sm"
+        [class]="
+          isLimitReached()
+            ? ['text-red-700', 'dark:text-red-500']
+            : isLimitAlmostReached()
+              ? ['text-yellow-800', 'dark:text-yellow-300']
+              : ['text-gray-500', 'dark:text-gray-400']
+        ">
+        {{ remainingCount() }}{{ label() ? ' ' + label() : '' }} remaining
+      </span>
     }
   `,
 })
 export class QuotaLimitComponent {
   public readonly usage = input<number>();
   public readonly limit = input<number>();
-  protected readonly percentage = computed(() => {
-    const u = this.usage();
+  public readonly label = input<string>('');
+
+  protected readonly remainingCount = computed(() => {
+    const u = this.usage() ?? 0;
     const l = this.limit();
     if (l === undefined || l === UNLIMITED_QTY) {
-      return 0;
+      return undefined;
     }
-    return Math.min(100, Math.round(((u ?? 0) / l) * 100));
+    return Math.max(0, l - u);
   });
-  public isLimitDanger = computed(() => this.percentage() >= 75);
-  public isLimitCritical = computed(() => this.percentage() >= 85);
-  public isLimitReached = computed(() => this.percentage() >= 100);
+
+  protected readonly shouldShow = computed(() => {
+    const l = this.limit();
+    const r = this.remainingCount();
+    if (l === undefined || l === UNLIMITED_QTY || l === 0 || r === undefined) {
+      return false;
+    }
+    return r / l <= 0.5 || r <= 3;
+  });
+
+  public isLimitAlmostReached = computed(() => this.remainingCount() === 1);
+
+  public isLimitReached = computed(() => this.remainingCount() === 0);
 }

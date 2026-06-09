@@ -113,13 +113,20 @@ export class UsersComponent {
 
   protected readonly limit = computed(() => {
     const org = this.organization();
-    return !org
-      ? undefined
-      : this.auth.isVendor() &&
-          this.customerOrganizationId() === undefined &&
-          this.partnerOrganizationId() === undefined
-        ? org.subscriptionUserAccountQuantity
-        : org.subscriptionLimits.maxUsersPerCustomerOrganization;
+    if (!org) {
+      return undefined;
+    }
+    return this.customerOrganizationId() !== undefined || this.auth.isCustomer()
+      ? org.subscriptionLimits.maxUsersPerCustomerOrganization
+      : org.subscriptionUserAccountQuantity;
+  });
+
+  protected readonly effectiveUsage = computed(() => {
+    const org = this.organization();
+    if (!org || this.customerOrganizationId() !== undefined || this.auth.isCustomer()) {
+      return this.users().length;
+    }
+    return org.currentVendorUserAccountCount;
   });
 
   protected readonly isProSubscription = computed(() => {

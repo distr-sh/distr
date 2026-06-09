@@ -29,7 +29,7 @@
             </a>
           }
           @if (auth.hasAnyRole('read_write', 'admin')) {
-            <app-quota-limit [usage]="count()" [limit]="limit()" #quota />
+            <app-quota-limit [usage]="count()" [limit]="limit()" label="agents" #quota />
             <button
               (click)="openWizard()"
               [disabled]="auth.isCustomer() && quota.isLimitReached()"
@@ -74,7 +74,10 @@
 
               {{ customer.name }}
             </h2>
-            <app-quota-limit [usage]="customerDeploymentTargets.deploymentTargets.length" [limit]="limit()" />
+            <app-quota-limit
+              [usage]="customerDeploymentTargets.deploymentTargets.length"
+              [limit]="limit()"
+              label="agents" />
           </div>
         </div>
       }

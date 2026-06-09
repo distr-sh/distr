@@ -23,7 +23,7 @@
         </div>
         <div
           class="w-full md:w-auto flex flex-col md:flex-row items-stretch md:items-center justify-end gap-4 flex-shrink-0 flex-grow">
-          <app-quota-limit [usage]="customerOrganizations()?.length" [limit]="limit()" #quota />
+          <app-quota-limit [usage]="currentCustomerOrganizationCount()" [limit]="limit()" label="customers" #quota />
           @if (auth.hasAnyRole('read_write', 'admin')) {
             <button
               (click)="showCreateDialog()"

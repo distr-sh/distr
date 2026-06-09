@@ -38,6 +38,8 @@ export interface Organization extends BaseModel, Named {
   subscriptionEndsAt?: string;
   subscriptionCustomerOrganizationQuantity: number;
   subscriptionUserAccountQuantity: number;
+  currentVendorUserAccountCount: number;
+  currentCustomerOrganizationCount: number;
   preConnectScript?: string;
   postConnectScript?: string;
   connectScriptIsSudo: boolean;

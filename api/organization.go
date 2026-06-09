@@ -19,7 +19,9 @@ type CreateUpdateOrganizationRequest struct {
 
 type OrganizationResponse struct {
 	types.Organization
-	SubscriptionLimits SubscriptionLimits `json:"subscriptionLimits"`
+	SubscriptionLimits               SubscriptionLimits `json:"subscriptionLimits"`
+	CurrentVendorUserAccountCount    int64              `json:"currentVendorUserAccountCount"`
+	CurrentCustomerOrganizationCount int64              `json:"currentCustomerOrganizationCount"`
 }
 
 type OrganizationWebhookResponse struct {

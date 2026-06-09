@@ -72,6 +72,9 @@ export class CustomerOrganizationsComponent {
 
   private readonly organization = toSignal(this.organizationService.get());
   protected readonly limit = computed(() => this.organization()?.subscriptionCustomerOrganizationQuantity);
+  protected readonly currentCustomerOrganizationCount = computed(
+    () => this.organization()?.currentCustomerOrganizationCount
+  );
 
   protected readonly filterForm = this.fb.group({
     search: this.fb.control(''),

@@ -70,8 +70,24 @@ func OrganizationRouter(r chiopenapi.Router) {
 
 func getOrganization(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
-	RespondJSON(w, mapping.OrganizationToAPI(*auth.CurrentOrg()))
+	orgID := *auth.CurrentOrgID()
+	vendorUserCount, err := db.CountVendorUserAccountsByOrgID(ctx, orgID)
+	if err != nil {
+		log.Error("failed to count vendor user accounts", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	customerOrgCount, err := db.CountCustomerOrganizationsByOrganizationID(ctx, orgID)
+	if err != nil {
+		log.Error("failed to count customer organizations", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	RespondJSON(w, mapping.OrganizationToAPI(*auth.CurrentOrg(), vendorUserCount, customerOrgCount))
 }
 
 func updateOrganization(w http.ResponseWriter, r *http.Request) {

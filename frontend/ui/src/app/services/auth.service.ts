@@ -83,6 +83,10 @@ export class AuthService {
     return this.getClaims()?.p_org !== undefined;
   }
 
+  public getPartnerOrganizationId(): string | undefined {
+    return this.getClaims()?.p_org;
+  }
+
   public isSuperAdmin(): boolean {
     return this.getClaims()?.is_super_admin === true;
   }
