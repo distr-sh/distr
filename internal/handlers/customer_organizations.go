@@ -159,8 +159,10 @@ func updateCustomerOrganizationHandler() http.HandlerFunc {
 		}
 
 		if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
-			co, coErr := db.GetCustomerOrganizationByID(ctx, id)
-			if coErr != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
+			if co, coErr := db.GetCustomerOrganizationByID(ctx, id); errors.Is(coErr, apierrors.ErrNotFound) {
+				http.NotFound(w, r)
+				return
+			} else if coErr != nil || !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
 				http.Error(w, "customer is not assigned to your partner organization", http.StatusForbidden)
 				return
 			}
