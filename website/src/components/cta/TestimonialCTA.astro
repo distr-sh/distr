@@ -7,33 +7,21 @@ import SignupButton from '~/components/buttons/SignupButton.astro';
 
 interface Props {
   name?: string;
-  seed?: string;
 }
 
-const {name, seed} = Astro.props;
-
-// Stable string hash so a missing `name` resolves to a varied-but-reproducible
-// featured customer (seeded by the embedding page) instead of changing per build.
-const hashString = (value: string): number => {
-  let hash = 0;
-  for (let i = 0; i < value.length; i++) {
-    hash = (hash * 31 + value.charCodeAt(i)) | 0;
-  }
-  return Math.abs(hash);
-};
+const {name} = Astro.props;
 
 let customer = name ? await getEntry('customers', name) : undefined;
 if (!customer) {
   const featured = (
     await getCollection('customers', c => c.data.featured)
   ).sort((a, b) => a.id.localeCompare(b.id));
-  const index = seed ? hashString(seed) % featured.length : 0;
-  customer = featured[index];
+  customer = featured[0];
 }
 
 if (!customer) {
   throw new Error(
-    `TestimonialCTA could not resolve a customer (name=${name ?? 'undefined'}, seed=${seed ?? 'undefined'})`,
+    `TestimonialCTA could not resolve a customer (name=${name ?? 'undefined'})`,
   );
 }
 
