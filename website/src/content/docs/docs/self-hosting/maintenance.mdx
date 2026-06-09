@@ -110,10 +110,10 @@ cronJobs:
     labels:
       distr.sh/job: artifact-blob-cleanup
     args: [cleanup, ArtifactBlob, --timeout, 10m]
-  - name: organization-cleanup
-    labels:
-      distr.sh/job: organization-cleanup
-    args: [cleanup, Organization, --timeout, 10m]
+  # - name: organization-cleanup
+  #   labels:
+  #     distr.sh/job: organization-cleanup
+  #   args: [cleanup, Organization, --timeout, 10m]
 ```
 
 ## Additional configuration
