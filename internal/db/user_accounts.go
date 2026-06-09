@@ -325,7 +325,7 @@ func GetUserAccountsByOrgID(ctx context.Context, orgID uuid.UUID) (
 	}
 }
 
-func CountVendorUserAccountsByOrgID(ctx context.Context, orgID uuid.UUID) (int64, error) {
+func CountBillableUserAccountsByOrgID(ctx context.Context, orgID uuid.UUID) (int64, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		`SELECT count(*)

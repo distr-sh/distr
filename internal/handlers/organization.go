@@ -73,9 +73,9 @@ func getOrganization(w http.ResponseWriter, r *http.Request) {
 	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 	orgID := *auth.CurrentOrgID()
-	vendorUserCount, err := db.CountVendorUserAccountsByOrgID(ctx, orgID)
+	billableUserCount, err := db.CountBillableUserAccountsByOrgID(ctx, orgID)
 	if err != nil {
-		log.Error("failed to count vendor user accounts", zap.Error(err))
+		log.Error("failed to count billable user accounts", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -87,7 +87,7 @@ func getOrganization(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	RespondJSON(w, mapping.OrganizationToAPI(*auth.CurrentOrg(), vendorUserCount, customerOrgCount))
+	RespondJSON(w, mapping.OrganizationToAPI(*auth.CurrentOrg(), billableUserCount, customerOrgCount))
 }
 
 func updateOrganization(w http.ResponseWriter, r *http.Request) {

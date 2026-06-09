@@ -101,9 +101,9 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	orgID := *auth.CurrentOrgID()
-	vendorUserCount, err := db.CountVendorUserAccountsByOrgID(ctx, orgID)
+	billableUserCount, err := db.CountBillableUserAccountsByOrgID(ctx, orgID)
 	if err != nil {
-		log.Error("failed to count vendor user accounts", zap.Error(err))
+		log.Error("failed to count billable user accounts", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -120,7 +120,7 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 		User: mapping.UserAccountToAPI(
 			auth.CurrentUser().AsUserAccountWithRole(*userRole, customerOrgID, auth.CurrentPartnerOrgID(), joinDate),
 		),
-		Organization:         mapping.OrganizationToAPI(*auth.CurrentOrg(), vendorUserCount, customerOrgCount),
+		Organization:         mapping.OrganizationToAPI(*auth.CurrentOrg(), billableUserCount, customerOrgCount),
 		CustomerOrganization: customerOrg,
 		PartnerOrganization:  partnerOrg,
 		SidebarLinks:         sidebarLinks,
