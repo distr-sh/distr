@@ -10,7 +10,7 @@ importers:
     dependencies:
       semver:
         specifier: ^7.6.3
-        version: 7.8.1
+        version: 7.8.2
     devDependencies:
       '@types/semver':
         specifier: ^7.5.8
@@ -29,7 +29,7 @@ importers:
         version: 0.28.19(typescript@5.9.3)
       typedoc-plugin-markdown:
         specifier: ^4.5.0
-        version: 4.11.0(typedoc@0.28.19(typescript@5.9.3))
+        version: 4.12.0(typedoc@0.28.19(typescript@5.9.3))
       typescript:
         specifier: ^5.7.3
         version: 5.9.3
@@ -142,13 +142,13 @@ packages:
     engines: {node: 20 || >=22}
     hasBin: true
 
-  semver@7.8.1:
-    resolution: {integrity: sha512-rkVq3IXh+4FDGch+KwzX3aV9W3kO54GyEgpvBzSyctDA6Xtd7RJQV1xmXbeQp5v7+VzLOfVqiutSE6GICgPFvg==}
+  semver@7.8.2:
+    resolution: {integrity: sha512-c8jsqUZm3omBOI66G90z1Dyw5z622G8oLG+omfsHBJf3CWQTlOcwOjvOG6wtiNfW6anKm/eA39LMwMtMez2TiQ==}
     engines: {node: '>=10'}
     hasBin: true
 
-  typedoc-plugin-markdown@4.11.0:
-    resolution: {integrity: sha512-2iunh2ALyfyh204OF7h2u0kuQ84xB3jFZtFyUr01nThJkLvR8oGGSSDlyt2gyO4kXhvUxDcVbO0y43+qX+wFbw==}
+  typedoc-plugin-markdown@4.12.0:
+    resolution: {integrity: sha512-eJDEMAfxCmede22c/Jw7d0FA13ggAQv+KkwQYKYCdqI02cin6Rc9QRwbG/7XvvHWinuFejySnZVUWDtvGk3Vbg==}
     engines: {node: '>= 18'}
     peerDependencies:
       typedoc: 0.28.x
@@ -277,9 +277,9 @@ snapshots:
       glob: 13.0.3
       package-json-from-dist: 1.0.1
 
-  semver@7.8.1: {}
+  semver@7.8.2: {}
 
-  typedoc-plugin-markdown@4.11.0(typedoc@0.28.19(typescript@5.9.3)):
+  typedoc-plugin-markdown@4.12.0(typedoc@0.28.19(typescript@5.9.3)):
     dependencies:
       typedoc: 0.28.19(typescript@5.9.3)
 

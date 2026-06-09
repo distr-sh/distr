@@ -100,11 +100,27 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	orgID := *auth.CurrentOrgID()
+	billableUserCount, err := db.CountBillableUserAccountsByOrgID(ctx, orgID)
+	if err != nil {
+		log.Error("failed to count billable user accounts", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	customerOrgCount, err := db.CountCustomerOrganizationsByOrganizationID(ctx, orgID)
+	if err != nil {
+		log.Error("failed to count customer organizations", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	RespondJSON(w, api.ContextResponse{
 		User: mapping.UserAccountToAPI(
 			auth.CurrentUser().AsUserAccountWithRole(*userRole, customerOrgID, auth.CurrentPartnerOrgID(), joinDate),
 		),
-		Organization:         mapping.OrganizationToAPI(*auth.CurrentOrg()),
+		Organization:         mapping.OrganizationToAPI(*auth.CurrentOrg(), billableUserCount, customerOrgCount),
 		CustomerOrganization: customerOrg,
 		PartnerOrganization:  partnerOrg,
 		SidebarLinks:         sidebarLinks,

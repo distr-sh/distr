@@ -41,8 +41,9 @@
                 <th scope="col" class="p-4">ID</th>
               }
               <th scope="col" class="p-4">Name</th>
+              <th scope="col" class="p-4">Reference</th>
               <th scope="col" class="p-4">Description</th>
-              @if (auth.isVendor() || auth.isPartner()) {
+              @if ((auth.isVendor() || auth.isPartner()) && !customerOrganizationId()) {
                 <th scope="col" class="p-4">Customer</th>
               }
               <th scope="col" class="p-4">Expires</th>
@@ -67,12 +68,23 @@
                     </span>
                   </div>
                 </td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                  @if (license.name) {
+                    <div class="flex items-center gap-2">
+                      <code
+                        class="select-all px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600">
+                        {{ getLicenseKeyReference(license.name) }}
+                      </code>
+                      <app-clip [clip]="getLicenseKeyReference(license.name)" />
+                    </div>
+                  }
+                </td>
                 <td class="px-4 py-3 text-gray-900 dark:text-white">
                   <span class="max-w-48 overflow-hidden text-ellipsis block">
                     {{ license.description }}
                   </span>
                 </td>
-                @if (auth.isVendor() || auth.isPartner()) {
+                @if ((auth.isVendor() || auth.isPartner()) && !customerOrganizationId()) {
                   <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                     {{ getOwnerColumn(license.customerOrganizationId) | async }}
                   </td>
@@ -157,13 +169,28 @@
     <form [formGroup]="editForm" (ngSubmit)="saveLicense()">
       <div class="flex flex-col gap-4">
         <app-edit-license-key formControlName="license" />
+        @if (affectedDeployments().length > 0) {
+          <div
+            class="flex items-start p-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-600"
+            role="alert">
+            <fa-icon [icon]="faCircleExclamation" class="mt-0.5 shrink-0" />
+            <div class="ms-3 text-sm">
+              <p class="font-medium mb-2">Saving will trigger a redeployment on the following deployment targets:</p>
+              <ul class="list-disc list-inside space-y-1">
+                @for (d of affectedDeployments(); track d.deploymentId) {
+                  <li>{{ d.deploymentTargetName }} ({{ d.applicationName }})</li>
+                }
+              </ul>
+            </div>
+          </div>
+        }
         <div class="flex justify-center w-full pb-4 space-x-4 sm:mt-0">
           <button
             type="submit"
             [disabled]="editFormLoading"
             class="text-white w-full inline-flex items-center justify-center distr-btn-primary">
             <fa-icon [icon]="faPen" class="me-2" />
-            Save
+            {{ affectedDeployments().length > 0 ? 'Save and redeploy' : 'Save' }}
           </button>
         </div>
       </div>

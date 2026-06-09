@@ -1,6 +1,16 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
-import {AfterViewInit, Component, computed, effect, inject, signal, TemplateRef, viewChild} from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  TemplateRef,
+  viewChild,
+} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
@@ -55,6 +65,7 @@ const localStoragerCollapsedCustomerIds = 'collapsedCustomerIds';
     QuotaLimitComponent,
     RouterLink,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './deployment-targets.component.html',
 })
 export class DeploymentTargetsComponent implements AfterViewInit {

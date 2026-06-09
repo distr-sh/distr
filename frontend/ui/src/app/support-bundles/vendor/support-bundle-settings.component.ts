@@ -1,4 +1,4 @@
-import {Component, inject, signal, TemplateRef} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, signal, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -50,6 +50,7 @@ function uniqueNamesValidator(): ValidatorFn {
 @Component({
   selector: 'app-support-bundle-settings',
   templateUrl: './support-bundle-settings.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective, RouterLink],
 })
 export class SupportBundleSettingsComponent {

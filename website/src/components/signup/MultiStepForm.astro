@@ -4,7 +4,6 @@ import distrBrandLogo from '~/assets/distr-brand.svg';
 import CalComIFrame from '~/components/booking/CalComIFrame.astro';
 
 const formsServerBaseUrl = import.meta.env.FORMS_SERVER;
-const reCaptchaKey = import.meta.env.RE_CAPTCHA_KEY;
 const reCaptchaKeyV2 = import.meta.env.RE_CAPTCHA_KEY_v2;
 
 interface Props {
@@ -914,17 +913,13 @@ const signupSteps = [
   </div>
 </div>
 
-<script
-  define:vars={{flowType, requirePassword, formsServerBaseUrl, reCaptchaKey}}
->
+<script is:inline define:vars={{flowType, requirePassword, formsServerBaseUrl}}>
   // Store user data across steps
   let userData = {};
-  let currentStep = 1;
   let reCaptchaToken = '';
 
   // Determine API endpoints based on flowType
   const apiPath = `/distr/${flowType}`;
-  const initEndpoint = `${formsServerBaseUrl}${apiPath}/init`;
   const submitEndpoint = `${formsServerBaseUrl}${apiPath}/submit`;
   const telemetryEndpoint = `${formsServerBaseUrl}${apiPath}/telemetry`;
 
@@ -968,7 +963,6 @@ const signupSteps = [
     }
 
     updateStepIndicators(step);
-    currentStep = step;
     updateURL(step);
   }
 
@@ -1012,7 +1006,7 @@ const signupSteps = [
     if (stepParam) {
       const step = parseInt(stepParam, 10);
       if (step >= 1 && step <= 5) {
-        currentStep = step;
+        showStep(step);
       }
     }
   }
@@ -1081,26 +1075,6 @@ const signupSteps = [
     }
   });
 
-  /**
-   * Creates a ReCAPTCHA Token
-   *
-   * @param action should be one of the following: init, submit, telemetry
-   * @returns {Promise<String>}
-   */
-  async function recaptchaToken(action) {
-    if (typeof grecaptcha === 'undefined') {
-      return '';
-    }
-
-    return new Promise(resolve => {
-      grecaptcha.enterprise.ready(() => {
-        grecaptcha.enterprise.execute(reCaptchaKey, {action}).then(token => {
-          resolve(token);
-        });
-      });
-    });
-  }
-
   // Global callback for reCAPTCHA v2
   window.reCaptchaSubmit = token => {
     reCaptchaToken = token;
@@ -1111,24 +1085,8 @@ const signupSteps = [
     }
   };
 
-  // Initialize tracking when page loads
-  async function initTracking() {
-    // let token = await recaptchaToken('init');
-
-    try {
-      const url = new URL(initEndpoint);
-      if (token) {
-        url.searchParams.set('token', token);
-      }
-      await fetch(url.toString());
-    } catch (error) {
-      console.error('Init tracking error:', error);
-    }
-  }
-
   document.addEventListener('DOMContentLoaded', () => {
     initializeFromURL();
-    // initTracking();
 
     // Step 1: Basic signup
     const signupForm = document.getElementById('signup');

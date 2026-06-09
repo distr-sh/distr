@@ -1,4 +1,4 @@
-import {Component, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {AuthService} from '../../services/auth.service';
@@ -8,6 +8,7 @@ import {ToastService} from '../../services/toast.service';
 
 @Component({
   selector: 'app-delete-organization',
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './delete-organization.component.html',
 })
 export class DeleteOrganizationComponent {

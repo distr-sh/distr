@@ -46,6 +46,10 @@ hub:
       value: pkg.distr.local
     - name: REGISTRY_S3_BUCKET
       value: distr
+    # Set to true only for in-cluster S3-compatible storage (e.g. RustFS/MinIO) that requires bucket creation on startup.
+    # Requires s3:CreateBucket permission. Set to false if the bucket already exists or CreateBucket permission is unavailable.
+    - name: REGISTRY_S3_CREATE_BUCKET
+      value: 'true'
     - name: REGISTRY_S3_REGION
       value: local
     - name: REGISTRY_S3_ENDPOINT
@@ -105,6 +109,8 @@ hub:
       value: '500'
     # - name: CLEANUP_ARTIFACT_BLOB_MIN_AGE
     #   value: '24h'
+    # - name: CLEANUP_ORGANIZATION_MIN_AGE
+    #   value: '720h'  # 30 days (default)
     # OIDC providers – see https://distr.sh/docs/self-hosting/oidc/
     # - name: OIDC_GITHUB_ENABLED
     #   value: 'true'
@@ -270,6 +276,10 @@ cronJobs:
     labels:
       distr.sh/job: artifact-blob-cleanup
     args: [cleanup, ArtifactBlob, --timeout, 10m]
+  # - name: organization-cleanup
+  #   labels:
+  #     distr.sh/job: organization-cleanup
+  #   args: [cleanup, Organization, --timeout, 10m]
   - name: registry-upstream-sync
     labels:
       distr.sh/job: registry-upstream-sync
@@ -296,7 +306,7 @@ rustfs:
   secret:
     rustfs:
       access_key: 'distr'
-      secret_key: 'distr 123' # please change this
+      secret_key: 'distr123' # please change this
   mode:
     standalone:
       enabled: true

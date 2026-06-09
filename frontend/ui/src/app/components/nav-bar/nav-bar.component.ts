@@ -1,7 +1,16 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
 import {HttpErrorResponse} from '@angular/common/http';
-import {Component, computed, inject, input, OnInit, TemplateRef, viewChild} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  OnInit,
+  TemplateRef,
+  viewChild,
+} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
@@ -47,6 +56,7 @@ function getOrganizationKind(org: OrganizationWithUserRole): OrganizationKind {
 @Component({
   selector: 'app-nav-bar',
   templateUrl: './nav-bar.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     ColorSchemeSwitcherComponent,
     NavBarSubscriptionBannerComponent,

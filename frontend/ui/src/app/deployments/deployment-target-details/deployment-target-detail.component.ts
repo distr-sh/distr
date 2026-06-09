@@ -1,5 +1,14 @@
 import {OverlayModule} from '@angular/cdk/overlay';
-import {Component, computed, effect, ElementRef, inject, signal, viewChild} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
@@ -29,6 +38,7 @@ const ORDER_DIRECTION_KEY = 'logViewer.orderDirection';
 @Component({
   selector: 'app-deployment-target-detail',
   templateUrl: './deployment-target-detail.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     DeploymentAppNameComponent,
     DeploymentLogsTableComponent,

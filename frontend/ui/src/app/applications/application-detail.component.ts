@@ -1,6 +1,16 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe, NgOptimizedImage} from '@angular/common';
-import {Component, ElementRef, inject, OnDestroy, OnInit, signal, TemplateRef, viewChild} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+  TemplateRef,
+  viewChild,
+} from '@angular/core';
 import {FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {Application, ApplicationVersion, ApplicationVersionResource, HelmChartType} from '@distr-sh/distr-sdk';
@@ -69,6 +79,7 @@ import {
     ApplicationVersionDetailModalComponent,
     InnerMarkdownDirective,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './application-detail.component.html',
 })
 export class ApplicationDetailComponent implements OnInit, OnDestroy {

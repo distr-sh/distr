@@ -50,9 +50,12 @@ export class UsersService {
   }
 
   public addUser(request: CreateUserAccountRequest): Observable<UserAccountInvitationResponse> {
-    return this.httpClient
-      .post<UserAccountInvitationResponse>(this.baseUrl, request)
-      .pipe(tap((it) => this.cache.save(it.user)));
+    return this.httpClient.post<UserAccountInvitationResponse>(this.baseUrl, request).pipe(
+      tap((it) => {
+        this.cache.save(it.user);
+        this.contextService.reload();
+      })
+    );
   }
 
   public resendInvitation(user: UserAccountWithRole): Observable<UserAccountInvitationResponse> {
@@ -62,7 +65,12 @@ export class UsersService {
   }
 
   public delete(user: UserAccountWithRole): Observable<void> {
-    return this.httpClient.delete<void>(`${this.baseUrl}/${user.id}`).pipe(tap(() => this.cache.remove(user)));
+    return this.httpClient.delete<void>(`${this.baseUrl}/${user.id}`).pipe(
+      tap(() => {
+        this.cache.remove(user);
+        this.contextService.reload();
+      })
+    );
   }
 
   public patchImage(userId: string, imageId: string) {

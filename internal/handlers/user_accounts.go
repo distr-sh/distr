@@ -329,7 +329,7 @@ func checkUserCreationLimits(
 		return limitReached, nil
 	}
 
-	limitReached, err := subscription.IsVendorUserAccountLimitReached(ctx, organization)
+	limitReached, err := subscription.IsBillableUserAccountLimitReached(ctx, organization)
 	if err != nil {
 		return false, fmt.Errorf("failed to check vendor user account limit: %w", err)
 	}

@@ -1,4 +1,4 @@
-import {Component, effect, inject, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, Component, effect, inject, OnInit} from '@angular/core';
 import {Event, NavigationEnd, Router, RouterOutlet} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import * as Sentry from '@sentry/angular';
@@ -15,6 +15,7 @@ import {OverlayService} from './services/overlay.service';
   standalone: true,
   imports: [RouterOutlet, FontAwesomeModule, ToastContainerComponent],
   providers: [OverlayService, ImageUploadService],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `<router-outlet /><app-toast-container />`,
 })
 export class AppComponent implements OnInit {

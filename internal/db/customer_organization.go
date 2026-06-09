@@ -104,7 +104,9 @@ func GetCustomerOrganizationByID(
 		return nil, fmt.Errorf("could not query CustomerOrganization: %w", err)
 	}
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.CustomerOrganizationWithUsage])
-	if err != nil {
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, apierrors.ErrNotFound
+	} else if err != nil {
 		return nil, fmt.Errorf("could not collect CustomerOrganization: %w", err)
 	}
 	return &result, nil

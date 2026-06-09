@@ -1,5 +1,5 @@
 import {DatePipe} from '@angular/common';
-import {Component, inject, input} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, input} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleInfo, faExclamationTriangle} from '@fortawesome/free-solid-svg-icons';
@@ -10,6 +10,7 @@ import {Organization} from '../../../types/organization';
 @Component({
   selector: 'app-nav-bar-subscription-banner',
   imports: [FaIconComponent, DatePipe, RouterLink],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './nav-bar-subscription-banner.component.html',
 })
 export class NavBarSubscriptionBannerComponent {

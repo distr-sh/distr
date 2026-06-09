@@ -1,6 +1,16 @@
 import {CdkStep, CdkStepper, CdkStepperPrevious} from '@angular/cdk/stepper';
 import {HttpErrorResponse} from '@angular/common/http';
-import {AfterViewInit, Component, computed, inject, OnDestroy, OnInit, signal, viewChild} from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
@@ -68,6 +78,7 @@ function helloDistrProxyUrl(base: string): string {
     CreatedAccessTokenComponent,
     RouterLink,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './registry-tutorial.component.html',
 })
 export class RegistryTutorialComponent implements OnInit, AfterViewInit, OnDestroy {

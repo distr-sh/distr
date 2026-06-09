@@ -1,5 +1,15 @@
 import {AsyncPipe, DatePipe} from '@angular/common';
-import {Component, computed, inject, input, output, signal, TemplateRef, viewChild} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+  TemplateRef,
+  viewChild,
+} from '@angular/core';
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {UserAccountWithRole, UserRole} from '@distr-sh/distr-sdk';
@@ -47,6 +57,7 @@ import {UserRoleSelectComponent} from '../user-role-select.component';
     UserRoleSelectComponent,
     UserRoleLabelPipe,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './users.component.html',
 })
 export class UsersComponent {
@@ -102,13 +113,20 @@ export class UsersComponent {
 
   protected readonly limit = computed(() => {
     const org = this.organization();
-    return !org
-      ? undefined
-      : this.auth.isVendor() &&
-          this.customerOrganizationId() === undefined &&
-          this.partnerOrganizationId() === undefined
-        ? org.subscriptionUserAccountQuantity
-        : org.subscriptionLimits.maxUsersPerCustomerOrganization;
+    if (!org) {
+      return undefined;
+    }
+    return this.customerOrganizationId() !== undefined || this.auth.isCustomer()
+      ? org.subscriptionLimits.maxUsersPerCustomerOrganization
+      : org.subscriptionUserAccountQuantity;
+  });
+
+  protected readonly effectiveUsage = computed(() => {
+    const org = this.organization();
+    if (!org || this.customerOrganizationId() !== undefined || this.auth.isCustomer()) {
+      return this.users().length;
+    }
+    return org.currentBillableUserAccountCount;
   });
 
   protected readonly isProSubscription = computed(() => {

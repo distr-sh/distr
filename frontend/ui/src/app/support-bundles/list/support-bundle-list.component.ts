@@ -1,5 +1,5 @@
 import {DatePipe, NgClass} from '@angular/common';
-import {Component, computed, inject, signal, TemplateRef} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
@@ -20,6 +20,7 @@ import {SupportBundle, SupportBundleStatus} from '../../types/support-bundle';
 @Component({
   selector: 'app-support-bundle-list',
   templateUrl: './support-bundle-list.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [DatePipe, NgClass, ReactiveFormsModule, RouterLink, FaIconComponent, ClipComponent, AutotrimDirective],
 })
 export class SupportBundleListComponent {

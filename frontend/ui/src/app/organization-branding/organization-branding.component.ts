@@ -1,6 +1,6 @@
 import {AsyncPipe} from '@angular/common';
 import {HttpErrorResponse} from '@angular/common/http';
-import {Component, inject, OnInit, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, OnInit, signal} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {OrganizationBranding} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -17,6 +17,7 @@ import {ToastService} from '../services/toast.service';
 @Component({
   selector: 'app-organization-branding',
   templateUrl: './organization-branding.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [FaIconComponent, ReactiveFormsModule, AsyncPipe, AutotrimDirective, InnerMarkdownDirective],
 })
 export class OrganizationBrandingComponent implements OnInit {

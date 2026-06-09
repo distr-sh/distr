@@ -5,7 +5,7 @@ import (
 
 	"github.com/distr-sh/distr/internal/types"
 	. "github.com/onsi/gomega"
-	"github.com/stripe/stripe-go/v85"
+	"github.com/stripe/stripe-go/v86"
 )
 
 func subscriptionWithItems(items ...*stripe.SubscriptionItem) stripe.Subscription {

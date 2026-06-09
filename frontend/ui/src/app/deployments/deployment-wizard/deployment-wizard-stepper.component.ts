@@ -1,6 +1,6 @@
 import {CdkStepper, CdkStepperModule} from '@angular/cdk/stepper';
 import {NgTemplateOutlet} from '@angular/common';
-import {Component, input, output} from '@angular/core';
+import {ChangeDetectionStrategy, Component, input, output} from '@angular/core';
 import {FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faDocker} from '@fortawesome/free-brands-svg-icons';
@@ -18,6 +18,7 @@ import {
   selector: 'app-deployment-wizard-stepper',
   templateUrl: './deployment-wizard-stepper.component.html',
   providers: [{provide: CdkStepper, useExisting: DeploymentWizardStepperComponent}],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [CdkStepperModule, ReactiveFormsModule, FaIconComponent, NgTemplateOutlet],
 })
 export class DeploymentWizardStepperComponent extends CdkStepper {

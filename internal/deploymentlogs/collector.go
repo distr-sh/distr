@@ -37,8 +37,8 @@ type collector struct {
 }
 
 const (
-	defaultFlushLimit      = 500
-	defaultBufferSizeLimit = 1000
+	defaultFlushLimit      = 1000
+	defaultBufferSizeLimit = 2000
 )
 
 func NewCollector(exporter Exporter, log *zap.Logger) Collector {

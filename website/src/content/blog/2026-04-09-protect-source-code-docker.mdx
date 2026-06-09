@@ -18,7 +18,7 @@ tags:
   - Kubernetes
 ---
 
-import EmbeddedWhitePaperCta from '~/components/cta/embedded/EmbeddedWhitePaperCta.astro';
+import TestimonialCTA from '~/components/cta/TestimonialCTA.astro';
 
 The question comes up in almost every onboarding call we have with software vendors moving to [on-prem delivery](/glossary/on-premises-definition/): "If we ship our application as a Docker image or Helm chart, can the customer just extract our source code?"
 
@@ -105,7 +105,7 @@ Minimal base images are the next thing to get right:
 
 One thing to be clear about: neither approach prevents someone from running `docker save` or `ctr image export` and extracting files from the layers. What they do is block casual inspection (no shell to poke around in), cut the CVE surface dramatically, and show enterprise security teams that you take image hygiene seriously.
 
-<EmbeddedWhitePaperCta />
+<TestimonialCTA name="weave" />
 
 ## What your Compose file and Helm chart reveal about your architecture
 

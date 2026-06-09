@@ -10,6 +10,7 @@ type DeploymentRevision struct {
 	ApplicationVersionID uuid.UUID    `db:"application_version_id" json:"applicationVersionId"`
 	ValuesYaml           []byte       `db:"-" json:"valuesYaml,omitempty"`
 	EnvFileData          []byte       `db:"-" json:"-"`
+	ValuesHash           []byte       `db:"values_hash" json:"-"`
 	ForceRestart         bool         `db:"force_restart" json:"forceRestart"`
 	IgnoreRevisionSkew   bool         `db:"ignore_revision_skew" json:"ignoreRevisionSkew"`
 	HelmOptions          *HelmOptions `db:"helm_options" json:"helmOptions,omitempty"`

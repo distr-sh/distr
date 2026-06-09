@@ -1,11 +1,12 @@
 ---
-import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
-import type {StarlightPageFrontmatter} from '@astrojs/starlight/types';
+import StarlightPage, {
+  type StarlightPageProps,
+} from '@astrojs/starlight/components/StarlightPage.astro';
 
 export interface Props {
   title: string;
   description: string;
-  head?: StarlightPageFrontmatter['head'];
+  head?: StarlightPageProps['frontmatter']['head'];
 }
 
 const {title, description, head} = Astro.props;

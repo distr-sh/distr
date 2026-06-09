@@ -1,4 +1,4 @@
-import {Component, computed, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject} from '@angular/core';
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
@@ -10,6 +10,7 @@ import {UsersComponent} from '../users.component';
 
 @Component({
   templateUrl: './partner-users.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [UsersComponent, RouterLink, FontAwesomeModule],
 })
 export class PartnerUsersComponent {

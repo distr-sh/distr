@@ -1,6 +1,6 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe, DecimalPipe} from '@angular/common';
-import {Component, computed, inject, signal, TemplateRef, viewChild} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
@@ -19,7 +19,6 @@ import {
 import {combineLatest, filter, firstValueFrom, map, of, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
-import {RequireVendorDirective} from '../../directives/required-role.directive';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ArtifactEntitlementsService} from '../../services/artifact-entitlements.service';
 import {AuthService} from '../../services/auth.service';
@@ -34,6 +33,7 @@ import {QuotaLimitComponent} from '../quota-limit.component';
 
 @Component({
   templateUrl: './customer-organizations.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     ReactiveFormsModule,
     FontAwesomeModule,
@@ -42,7 +42,6 @@ import {QuotaLimitComponent} from '../quota-limit.component';
     AsyncPipe,
     DecimalPipe,
     RouterLink,
-    RequireVendorDirective,
     QuotaLimitComponent,
     OverlayModule,
   ],
@@ -71,6 +70,9 @@ export class CustomerOrganizationsComponent {
 
   private readonly organization = toSignal(this.organizationService.get());
   protected readonly limit = computed(() => this.organization()?.subscriptionCustomerOrganizationQuantity);
+  protected readonly currentCustomerOrganizationCount = computed(
+    () => this.organization()?.currentCustomerOrganizationCount
+  );
 
   protected readonly filterForm = this.fb.group({
     search: this.fb.control(''),

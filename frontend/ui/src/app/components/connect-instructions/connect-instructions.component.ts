@@ -1,4 +1,4 @@
-import {Component, computed, inject, input} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject, input} from '@angular/core';
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {DeploymentTarget} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -12,6 +12,7 @@ import {ToastService} from '../../services/toast.service';
 @Component({
   selector: 'app-connect-instructions',
   templateUrl: './connect-instructions.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [FaIconComponent],
 })
 export class ConnectInstructionsComponent {

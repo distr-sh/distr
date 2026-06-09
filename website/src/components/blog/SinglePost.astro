@@ -10,7 +10,7 @@ export interface Props {
 
 const {post} = Astro.props;
 
-const {Content, headings, remarkPluginFrontmatter} = await post.rendered;
+const {Content} = await post.rendered;
 
 // const readingTime = renderPost.metadata.frontmatter.minutesRead;
 const readingTime = 5;
@@ -183,7 +183,7 @@ const formatDate = (date: Date) => {
   </article>
 </section>
 
-<script set:inline>
+<script is:inline>
   function copyToClipboard() {
     navigator.clipboard.writeText(window.location.href).then(() => {
       const button = document.getElementById('copy-button');

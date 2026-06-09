@@ -5,7 +5,10 @@
   "license": "Apache-2.0",
   "description": "Distr SDK",
   "homepage": "https://distr.sh",
-  "packageManager": "pnpm@11.5.1",
+  "packageManager": "pnpm@11.5.2",
+  "engines": {
+    "node": "26.x"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/distr-sh/distr.git",

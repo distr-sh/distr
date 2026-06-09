@@ -1,10 +1,11 @@
 ---
 import {getCollection, render} from 'astro:content';
 import Layout from '~/layouts/StarlightLayout.astro';
-import WhitePaperCta from '~/components/cta/standalone/WhitePaperCta.astro';
+import SignUpCta from '~/components/cta/standalone/SignUpCta.astro';
+import TestimonialsSection from '~/components/home/TestimonialsSection.astro';
 import FAQ from '~/components/common/FAQ.astro';
 import type {GlossaryEntryConfig} from '~/content.config';
-import type {StarlightPageFrontmatter} from '@astrojs/starlight/types';
+import type {StarlightPageProps} from '@astrojs/starlight/components/StarlightPage.astro';
 import {marked} from 'marked';
 
 export async function getStaticPaths() {
@@ -30,7 +31,7 @@ const {
 
 const canonicalUrl = new URL(`/glossary/${slug}/`, Astro.site).toString();
 const glossaryIndexUrl = new URL('/glossary/', Astro.site).toString();
-const head: StarlightPageFrontmatter['head'] = [];
+const head: StarlightPageProps['frontmatter']['head'] = [];
 
 const faqRendered =
   faq?.map(({question, answer}) => ({
@@ -142,5 +143,6 @@ if (term) {
     </div>
   </div>
   {faqRendered.length > 0 && <FAQ faqs={faqRendered} />}
-  <WhitePaperCta />
+  <SignUpCta bgClass="bg-[var(--sl-color-bg)]" />
+  <TestimonialsSection />
 </Layout>

@@ -240,6 +240,13 @@ func agentResourcesHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			licenseKeys, err := db.GetLicenseKeysForDeploymentTarget(ctx, deploymentTarget.DeploymentTarget)
+			if err != nil {
+				log.Error("failed to get license keys from DB", zap.Error(err))
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
 			if deploymentTarget.Type == types.DeploymentTypeDocker {
 				if composeYaml, err := appVersion.ParsedComposeFile(); err != nil {
 					log.Warn("parse error", zap.Error(err))
@@ -249,7 +256,7 @@ func agentResourcesHandler(w http.ResponseWriter, r *http.Request) {
 					log.Warn("failed to patch project name", zap.Error(err))
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
-				} else if envFile, err := deploymentvalues.EnvFileReplaceSecrets(&deployment, secrets); err != nil {
+				} else if envFile, err := deploymentvalues.EnvFileReplaceSecrets(&deployment, secrets, licenseKeys); err != nil {
 					log.Warn("failed to replace secrets", zap.Error(err))
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
@@ -270,6 +277,7 @@ func agentResourcesHandler(w http.ResponseWriter, r *http.Request) {
 				} else if deploymentValues, err := deploymentvalues.ParsedValuesFileReplaceSecrets(
 					&deployment,
 					secrets,
+					licenseKeys,
 				); err != nil {
 					log.Warn("parse error", zap.Error(err))
 					http.Error(w, err.Error(), http.StatusInternalServerError)

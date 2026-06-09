@@ -10,6 +10,24 @@ export interface LicenseKey extends BaseModel, Named {
   licenseTemplateId?: string;
 }
 
+export interface CreateLicenseKeyRequest {
+  name: string;
+  description?: string;
+  payload?: Record<string, unknown>;
+  notBefore?: string;
+  expiresAt?: string;
+  customerOrganizationId?: string;
+  licenseTemplateId?: string;
+}
+
+export interface UpdateLicenseKeyRequest {
+  description?: string;
+  payload?: Record<string, unknown>;
+  notBefore?: string;
+  expiresAt?: string;
+  licenseTemplateId?: string;
+}
+
 export interface LicenseKeyRevision extends BaseModel {
   notBefore: string;
   expiresAt: string;

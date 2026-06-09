@@ -23,10 +23,16 @@ type CreateSecretRequest struct {
 }
 
 type UpdateSecretRequest struct {
-	ID    uuid.UUID `path:"secretId"`
-	Value string    `json:"value"`
+	ID      uuid.UUID `path:"secretId"`
+	Confirm bool      `query:"confirm"`
+	Value   string    `json:"value"`
 }
 
 type DeleteSecretRequest struct {
 	ID uuid.UUID `path:"secretId"`
+}
+
+type UpdateSecretResponse struct {
+	SecretWithoutValue
+	AffectedDeployments []AffectedDeployment `json:"affectedDeployments"`
 }

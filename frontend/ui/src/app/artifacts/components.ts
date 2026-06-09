@@ -1,5 +1,5 @@
 import {AsyncPipe} from '@angular/common';
-import {Component, computed, inject, input, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject, input, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faDownload, faEllipsis, faUserCircle} from '@fortawesome/free-solid-svg-icons';
@@ -16,6 +16,7 @@ import {UsersService} from '../services/users.service';
       {{ source().downloadsTotal }}
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [FaIconComponent],
 })
 export class ArtifactsDownloadCountComponent {
@@ -60,6 +61,7 @@ export class ArtifactsDownloadCountComponent {
       }
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [AsyncPipe, SecureImagePipe, FaIconComponent],
 })
 export class ArtifactsDownloadedByComponent {
@@ -109,6 +111,7 @@ export class ArtifactsDownloadedByComponent {
       </button>
     }
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [FaIconComponent],
 })
 export class ArtifactsHashComponent {

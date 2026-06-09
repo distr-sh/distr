@@ -364,6 +364,32 @@ func SetOrganizationStripeWebhookSecret(ctx context.Context, orgID uuid.UUID, se
 	return nil
 }
 
+func DeleteOrganizationsOlderThan(ctx context.Context, minAge time.Duration) (int64, error) {
+	var rowsAffected int64
+	err := RunTx(ctx, func(ctx context.Context) error {
+		db := internalctx.GetDb(ctx)
+		if _, err := db.Exec(
+			ctx,
+			"SET CONSTRAINTS "+
+				"deployment_application_entitlement_id_fkey, "+
+				"deploymentrevision_application_version_id_fkey DEFERRED",
+		); err != nil {
+			return fmt.Errorf("could not defer constraints: %w", err)
+		}
+		result, err := db.Exec(
+			ctx,
+			"DELETE FROM Organization WHERE deleted_at IS NOT NULL AND now() - deleted_at > @minAge",
+			pgx.NamedArgs{"minAge": minAge},
+		)
+		if err != nil {
+			return fmt.Errorf("could not delete organizations: %w", err)
+		}
+		rowsAffected = result.RowsAffected()
+		return nil
+	})
+	return rowsAffected, err
+}
+
 func SetOrganizationDeletedAtNow(ctx context.Context, orgID uuid.UUID) error {
 	db := internalctx.GetDb(ctx)
 	_, err := db.Exec(

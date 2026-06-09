@@ -1,6 +1,6 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
-import {Component, inject, input} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, input} from '@angular/core';
 import {ReactiveFormsModule} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {CustomerOrganization} from '@distr-sh/distr-sdk';
@@ -25,6 +25,7 @@ import {DashboardArtifact} from '../../services/dashboard.service';
 @Component({
   selector: 'app-artifacts-by-customer-card',
   templateUrl: './artifacts-by-customer-card.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [FaIconComponent, OverlayModule, ReactiveFormsModule, AsyncPipe, SecureImagePipe, RouterLink],
 })
 export class ArtifactsByCustomerCardComponent {

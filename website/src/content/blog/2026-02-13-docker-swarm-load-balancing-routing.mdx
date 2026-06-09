@@ -21,7 +21,7 @@ tags:
 ---
 
 import {Aside, Code} from '@astrojs/starlight/components';
-import EmbeddedWhitePaperCta from '~/components/cta/embedded/EmbeddedWhitePaperCta.astro';
+import TestimonialCTA from '~/components/cta/TestimonialCTA.astro';
 import approach1Arch from '~/assets/blog/2026-02-13-docker-swarm-load-balancing-routing/approach-1-architecture.svg';
 import approach2Arch from '~/assets/blog/2026-02-13-docker-swarm-load-balancing-routing/approach-2-architecture.svg';
 import approach1Compose from './2026-02-13-docker-swarm-load-balancing-routing/approach-1/docker-compose.yaml?raw';
@@ -136,7 +136,7 @@ However, for anything facing the public internet, you'll quickly need SSL certif
   tables and requires careful testing.
 </Aside>
 
-<EmbeddedWhitePaperCta />
+<TestimonialCTA name="lerian" />
 
 ## Approach 2: Integrate Traefik with Docker Swarm
 
@@ -226,7 +226,7 @@ The `tasks.traefik` DNS name resolves to all Traefik task IPs in the swarm, so P
 
 For a complete monitoring stack example including pre-built Grafana dashboards, see [vegasbrianc/docker-traefik-prometheus](https://github.com/vegasbrianc/docker-traefik-prometheus).
 
-<EmbeddedWhitePaperCta />
+<TestimonialCTA name="sophris" />
 
 ## Alternatives to Traefik
 

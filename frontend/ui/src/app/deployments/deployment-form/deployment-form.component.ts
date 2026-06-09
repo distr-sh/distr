@@ -1,6 +1,7 @@
 import {AsyncPipe} from '@angular/common';
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   Component,
   computed,
   forwardRef,
@@ -92,6 +93,7 @@ type DeploymentFormValueCallback = (v: DeploymentFormValue | undefined) => void;
       multi: true,
     },
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './deployment-form.component.html',
 })
 export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy, ControlValueAccessor {
@@ -103,6 +105,17 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
   protected readonly secretsUrl = computed(() => {
     const customerOrgId = this.customerOrganizationId();
     return customerOrgId ? `/customers/${customerOrgId}/secrets` : '/secrets';
+  });
+
+  /**
+   * Links to /license-keys for customers or /licenses/$customerOrgId for vendors/partners.
+   * For internal deployments (no customerOrgId) licenses are not available.
+   */
+  protected readonly licenseKeysUrl = computed(() => {
+    if (this.auth.isCustomer()) return '/license-keys';
+    const customerOrgId = this.customerOrganizationId();
+    if (customerOrgId) return `/licenses/${customerOrgId}`;
+    return null;
   });
 
   protected readonly featureFlags = inject(FeatureFlagService);

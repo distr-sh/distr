@@ -20,7 +20,7 @@ tags:
 ---
 
 import {Aside, Code} from '@astrojs/starlight/components';
-import EmbeddedWhitePaperCta from '~/components/cta/embedded/EmbeddedWhitePaperCta.astro';
+import TestimonialCTA from '~/components/cta/TestimonialCTA.astro';
 import postgresConfigsCompose from './2026-04-15-docker-compose-postgres-config-file/docker-compose.yaml?raw';
 import postgresBindMountCompose from './2026-04-15-docker-compose-postgres-config-file/docker-compose-bind-mount.yaml?raw';
 
@@ -88,7 +88,7 @@ This works fine on a developer laptop where everything lives in a single git che
 
 Bind mounts are fine for local development, internal deployments where the Compose file and the config file travel together in a git checkout, and one-off installations where the operator is comfortable touching host paths. They are the wrong choice when the Compose file is itself the artifact you distribute.
 
-<EmbeddedWhitePaperCta />
+<TestimonialCTA name="artifact" />
 
 ## Approach 2: Baking postgresql.conf Into a Custom Image
 
@@ -250,7 +250,7 @@ POSTGRES_PASSWORD={{ .Secrets.POSTGRES_PASSWORD }}
 
 Rotation happens in the Distr UI, not in git. Scoping is vendor-level or customer-specific, so the same Compose file can be delivered to every customer with different credentials rendered into it. See the [Secrets Management documentation](/docs/agents/secrets/) for the full template syntax and scoping rules.
 
-<EmbeddedWhitePaperCta />
+<TestimonialCTA name="basedash" />
 
 ## Three practical notes before you use Compose `configs` in production
 

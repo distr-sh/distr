@@ -1,6 +1,15 @@
 import {GlobalPositionStrategy} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe} from '@angular/common';
-import {Component, computed, effect, inject, signal, TemplateRef, viewChild} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  TemplateRef,
+  viewChild,
+} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router} from '@angular/router';
@@ -33,6 +42,7 @@ import {License} from '../types/license';
     SecureImagePipe,
     ExpiresAtPickerComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './licenses-overview.component.html',
 })
 export class LicensesOverviewComponent {
@@ -256,12 +266,12 @@ export class LicensesOverviewComponent {
             ...(this.isOverrideSelected(ae.id) ? {expiresAt: entitlementExpiresAt} : {}),
           })
         ),
-        ...source.licenseKeys.map((lk) =>
+        ...source.licenseKeys.map(({id: _, name, ...lk}) =>
           this.licenseKeysService.create({
             ...lk,
-            id: undefined,
+            name: name!,
             customerOrganizationId: targetId,
-            ...(this.isOverrideSelected(lk.id) ? {expiresAt: licenseKeyExpiresAt} : {}),
+            ...(this.isOverrideSelected(_) ? {expiresAt: licenseKeyExpiresAt} : {}),
           })
         ),
       ];

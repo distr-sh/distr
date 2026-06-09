@@ -1,4 +1,13 @@
-import {AfterViewInit, Component, computed, DestroyRef, forwardRef, inject, Injector} from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  forwardRef,
+  inject,
+  Injector,
+} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {
   ControlValueAccessor,
@@ -15,11 +24,13 @@ import {
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleInfo} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
+import {of, switchMap} from 'rxjs';
 import {jsonObjectValidator} from '../../../util/validation';
 import {EditorComponent} from '../../components/editor.component';
 import {ExpiresAtPickerComponent} from '../../components/expires-at-picker/expires-at-picker.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
+import {FeatureFlagService} from '../../services/feature-flag.service';
 import {LicenseTemplatesService} from '../../services/license-templates.service';
 import {LicenseKey} from '../../types/license-key';
 
@@ -27,6 +38,7 @@ import {LicenseKey} from '../../types/license-key';
   selector: 'app-edit-license-key',
   templateUrl: './edit-license-key.component.html',
   imports: [AutotrimDirective, EditorComponent, ExpiresAtPickerComponent, ReactiveFormsModule, FaIconComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -44,8 +56,14 @@ export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAcces
   private readonly injector = inject(Injector);
   private readonly customerOrganizationService = inject(CustomerOrganizationsService);
   private readonly licenseTemplatesService = inject(LicenseTemplatesService);
+  private readonly featureFlags = inject(FeatureFlagService);
   protected readonly customers = toSignal(this.customerOrganizationService.getCustomerOrganizations());
-  protected readonly templates = toSignal(this.licenseTemplatesService.list(), {initialValue: []});
+  protected readonly templates = toSignal(
+    this.featureFlags.isVendorBillingEnabled$.pipe(
+      switchMap((enabled) => (enabled ? this.licenseTemplatesService.list() : of([])))
+    ),
+    {initialValue: []}
+  );
 
   protected readonly faCircleInfo = faCircleInfo;
 
@@ -136,8 +154,14 @@ export class EditLicenseKeyComponent implements AfterViewInit, ControlValueAcces
         customerOrganizationId: license.customerOrganizationId,
         licenseTemplateId: license.licenseTemplateId,
       });
+      if (license.id) {
+        this.editForm.controls.name.disable();
+      } else {
+        this.editForm.controls.name.enable();
+      }
     } else {
       this.editForm.reset({payload: '{}', notBefore: this.today, expiresAt: this.inOneYear});
+      this.editForm.controls.name.enable();
     }
   }
 

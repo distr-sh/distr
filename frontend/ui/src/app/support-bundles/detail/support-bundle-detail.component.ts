@@ -1,5 +1,5 @@
 import {AsyncPipe, DatePipe, NgClass} from '@angular/common';
-import {Component, inject, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
@@ -26,6 +26,7 @@ import {SupportBundleDetail, SupportBundleStatus} from '../../types/support-bund
 @Component({
   selector: 'app-support-bundle-detail',
   templateUrl: './support-bundle-detail.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     AsyncPipe,
     DatePipe,

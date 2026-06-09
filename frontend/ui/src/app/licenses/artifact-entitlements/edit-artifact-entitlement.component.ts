@@ -2,6 +2,7 @@ import {CdkConnectedOverlay, CdkOverlayOrigin} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   Component,
   ElementRef,
   forwardRef,
@@ -54,6 +55,7 @@ import {ArtifactEntitlement, ArtifactEntitlementSelection} from '../../types/art
     ArtifactsHashComponent,
     RelativeDatePipe,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,

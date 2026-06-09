@@ -9,15 +9,15 @@ import (
 	"github.com/google/uuid"
 )
 
-func IsVendorUserAccountLimitReached(ctx context.Context, org types.Organization) (bool, error) {
+func IsBillableUserAccountLimitReached(ctx context.Context, org types.Organization) (bool, error) {
 	if !org.HasActiveSubscription() {
 		return true, nil
 	} else if org.SubscriptionUserAccountQty.IsUnlimited() {
 		return false, nil
-	} else if vendorCount, err := db.CountVendorUserAccountsByOrgID(ctx, org.ID); err != nil {
+	} else if count, err := db.CountBillableUserAccountsByOrgID(ctx, org.ID); err != nil {
 		return true, err
 	} else {
-		return org.SubscriptionUserAccountQty.IsReached(vendorCount), nil
+		return org.SubscriptionUserAccountQty.IsReached(count), nil
 	}
 }
 
