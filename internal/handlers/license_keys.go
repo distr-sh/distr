@@ -308,11 +308,7 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 	err = db.RunTx(ctx, func(ctx context.Context) error {
 		if r, err := db.UpdateLicenseKeyMetadata(
 			ctx, existing.ID, body.Description, body.LicenseTemplateID,
-		); errors.Is(err, apierrors.ErrConflict) {
-			http.Error(w, "A license key with this name already exists", http.StatusBadRequest)
-			errorHandled = true
-			return err
-		} else if err != nil {
+		); err != nil {
 			log.Warn("could not update license key", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
