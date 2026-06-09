@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"slices"
 
@@ -14,6 +15,19 @@ import (
 	"github.com/google/uuid"
 )
 
+func updateSecretValuePatchFunc(secretKey string, newValue string) func([]types.SecretWithUpdatedBy) []types.SecretWithUpdatedBy {
+	return func(secrets []types.SecretWithUpdatedBy) []types.SecretWithUpdatedBy {
+		patched := slices.Clone(secrets)
+		for i := range patched {
+			if patched[i].Key == secretKey {
+				patched[i].Value = newValue
+				break
+			}
+		}
+		return patched
+	}
+}
+
 func findAffectedDeploymentsBySecret(
 	ctx context.Context,
 	orgID uuid.UUID,
@@ -21,19 +35,20 @@ func findAffectedDeploymentsBySecret(
 	newValue string,
 	customerOrgID *uuid.UUID,
 ) ([]api.AffectedDeployment, error) {
-	return findAffectedDeployments(ctx, orgID, customerOrgID, func(
-		secrets []types.SecretWithUpdatedBy,
-		licenseKeys []types.LicenseKey,
-	) ([]types.SecretWithUpdatedBy, []types.LicenseKey) {
-		patchedSecrets := slices.Clone(secrets)
-		for i := range patchedSecrets {
-			if patchedSecrets[i].Key == secretKey {
-				patchedSecrets[i].Value = newValue
+	return findAffectedDeployments(ctx, orgID, customerOrgID, updateSecretValuePatchFunc(secretKey, newValue), nil)
+}
+
+func updateLicenseKeyPatchFunc(updatedLicenseKey types.LicenseKey) func([]types.LicenseKey) []types.LicenseKey {
+	return func(licenseKeys []types.LicenseKey) []types.LicenseKey {
+		patched := slices.Clone(licenseKeys)
+		for i := range patched {
+			if patched[i].ID == updatedLicenseKey.ID {
+				patched[i] = updatedLicenseKey
 				break
 			}
 		}
-		return patchedSecrets, licenseKeys
-	})
+		return patched
+	}
 }
 
 func findAffectedDeploymentsByLicenseKey(
@@ -42,30 +57,31 @@ func findAffectedDeploymentsByLicenseKey(
 	customerOrgID uuid.UUID,
 	updatedLicenseKey types.LicenseKey,
 ) ([]api.AffectedDeployment, error) {
-	return findAffectedDeployments(ctx, orgID, &customerOrgID, func(
-		secrets []types.SecretWithUpdatedBy,
-		licenseKeys []types.LicenseKey,
-	) ([]types.SecretWithUpdatedBy, []types.LicenseKey) {
-		patchedLicenseKeys := slices.Clone(licenseKeys)
-		for i := range patchedLicenseKeys {
-			if patchedLicenseKeys[i].ID == updatedLicenseKey.ID {
-				patchedLicenseKeys[i] = updatedLicenseKey
-				break
-			}
-		}
-		return secrets, patchedLicenseKeys
-	})
+	return findAffectedDeployments(ctx, orgID, &customerOrgID, nil, updateLicenseKeyPatchFunc(updatedLicenseKey))
 }
 
 func findAffectedDeployments(
 	ctx context.Context,
 	orgID uuid.UUID,
 	customerOrgID *uuid.UUID,
-	patch func([]types.SecretWithUpdatedBy, []types.LicenseKey) ([]types.SecretWithUpdatedBy, []types.LicenseKey),
+	patchSecrets func([]types.SecretWithUpdatedBy) []types.SecretWithUpdatedBy,
+	patchLicenseKeys func([]types.LicenseKey) []types.LicenseKey,
 ) ([]api.AffectedDeployment, error) {
 	targets, err := db.GetDeploymentTargetsByScope(ctx, orgID, customerOrgID)
 	if err != nil {
 		return nil, err
+	}
+	secrets, err := db.GetSecretsByScope(ctx, orgID, customerOrgID)
+	if err != nil {
+		return nil, err
+	} else if patchSecrets != nil {
+		secrets = patchSecrets(secrets)
+	}
+	licenseKeys, err := db.GetLicenseKeysByScope(ctx, orgID, customerOrgID)
+	if err != nil {
+		return nil, err
+	} else if patchLicenseKeys != nil {
+		licenseKeys = patchLicenseKeys(licenseKeys)
 	}
 
 	affected := make([]api.AffectedDeployment, 0)
@@ -74,21 +90,12 @@ func findAffectedDeployments(
 		if err != nil {
 			return nil, err
 		}
-		secrets, err := db.GetSecretsForDeploymentTarget(ctx, target)
-		if err != nil {
-			return nil, err
-		}
-		licenseKeys, err := db.GetLicenseKeysForDeploymentTarget(ctx, target)
-		if err != nil {
-			return nil, err
-		}
 
-		patchedSecrets, patchedLicenseKeys := patch(secrets, licenseKeys)
 		for _, deployment := range deployments {
 			if len(deployment.ValuesHash) != sha256.Size {
 				continue
 			}
-			newHash, err := deploymentvalues.RenderAndHash(&deployment, patchedSecrets, patchedLicenseKeys)
+			newHash, err := deploymentvalues.RenderAndHash(&deployment, secrets, licenseKeys)
 			if err != nil {
 				return nil, err
 			}
@@ -102,7 +109,91 @@ func findAffectedDeployments(
 			}
 		}
 	}
+
 	return affected, nil
+}
+
+func deleteSecretPatchFunc(secretID uuid.UUID) func([]types.SecretWithUpdatedBy) []types.SecretWithUpdatedBy {
+	return func(secrets []types.SecretWithUpdatedBy) []types.SecretWithUpdatedBy {
+		return slices.DeleteFunc(slices.Clone(secrets), func(s types.SecretWithUpdatedBy) bool {
+			return s.ID == secretID
+		})
+	}
+}
+
+func findDeploymentsReferencingSecret(
+	ctx context.Context,
+	orgID uuid.UUID,
+	secretID uuid.UUID,
+	customerOrgID *uuid.UUID,
+) ([]api.AffectedDeployment, error) {
+	return findReferencingDeployments(ctx, orgID, customerOrgID, deleteSecretPatchFunc(secretID), nil)
+}
+
+func deleteLicenseKeyPatchFunc(licenseKeyID uuid.UUID) func([]types.LicenseKey) []types.LicenseKey {
+	return func(licenseKeys []types.LicenseKey) []types.LicenseKey {
+		return slices.DeleteFunc(slices.Clone(licenseKeys), func(lk types.LicenseKey) bool {
+			return lk.ID == licenseKeyID
+		})
+	}
+}
+
+func findDeploymentsReferencingLicenseKey(
+	ctx context.Context,
+	orgID uuid.UUID,
+	customerOrgID uuid.UUID,
+	licenseKeyID uuid.UUID,
+) ([]api.AffectedDeployment, error) {
+	return findReferencingDeployments(ctx, orgID, &customerOrgID, nil, deleteLicenseKeyPatchFunc(licenseKeyID))
+}
+
+func findReferencingDeployments(
+	ctx context.Context,
+	orgID uuid.UUID,
+	customerOrgID *uuid.UUID,
+	patchSecrets func([]types.SecretWithUpdatedBy) []types.SecretWithUpdatedBy,
+	patchLicenseKeys func([]types.LicenseKey) []types.LicenseKey,
+) ([]api.AffectedDeployment, error) {
+	targets, err := db.GetDeploymentTargetsByScope(ctx, orgID, customerOrgID)
+	if err != nil {
+		return nil, err
+	}
+	secrets, err := db.GetSecretsByScope(ctx, orgID, customerOrgID)
+	if err != nil {
+		return nil, err
+	} else if patchSecrets != nil {
+		secrets = patchSecrets(secrets)
+	}
+	licenseKeys, err := db.GetLicenseKeysByScope(ctx, orgID, customerOrgID)
+	if err != nil {
+		return nil, err
+	} else if patchLicenseKeys != nil {
+		licenseKeys = patchLicenseKeys(licenseKeys)
+	}
+
+	referencing := make([]api.AffectedDeployment, 0)
+	for _, target := range targets {
+		deployments, err := db.GetDeploymentsForDeploymentTarget(ctx, target.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, deployment := range deployments {
+			_, err := deploymentvalues.RenderAndHash(&deployment, secrets, licenseKeys)
+			if errors.Is(err, deploymentvalues.ErrInvalidTemplate) {
+				referencing = append(referencing, api.AffectedDeployment{
+					DeploymentTargetID:   target.ID,
+					DeploymentTargetName: target.Name,
+					DeploymentID:         deployment.ID,
+					ApplicationName:      deployment.Application.Name,
+				})
+			} else if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return referencing, nil
 }
 
 func triggerAffectedDeployments(ctx context.Context, affected []api.AffectedDeployment) error {

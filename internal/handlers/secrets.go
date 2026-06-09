@@ -47,7 +47,8 @@ func SecretsRouter(r chiopenapi.Router) {
 
 			r.Delete("/", deleteSecretHandler()).
 				With(option.Description("Delete a secret")).
-				With(option.Request(api.DeleteSecretRequest{}))
+				With(option.Request(api.DeleteSecretRequest{})).
+				With(option.Response(http.StatusConflict, api.AffectedDeploymentsConflictResponse{}))
 		})
 	})
 }
@@ -229,6 +230,31 @@ func deleteSecretHandler() http.HandlerFunc {
 		id, err := uuid.Parse(r.PathValue("secretId"))
 		if err != nil {
 			http.Error(w, "invalid secret ID", http.StatusBadRequest)
+			return
+		}
+
+		existing, err := db.GetSecretByID(ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
+		if err != nil {
+			if errors.Is(err, apierrors.ErrNotFound) {
+				http.Error(w, "secret not found", http.StatusNotFound)
+			} else {
+				internalctx.GetLogger(ctx).Error("failed to get secret", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			}
+			return
+		}
+
+		referencing, err := findDeploymentsReferencingSecret(ctx, *auth.CurrentOrgID(), id, existing.CustomerOrganizationID)
+		if err != nil {
+			internalctx.GetLogger(ctx).Error("failed to check deployment references for secret", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		if len(referencing) > 0 {
+			RespondJSONWithStatus(w, http.StatusConflict,
+				api.AffectedDeploymentsConflictResponse{AffectedDeployments: referencing})
 			return
 		}
 

@@ -40,8 +40,16 @@ func GetLicenseKeysForDeploymentTarget(
 	ctx context.Context,
 	dt types.DeploymentTarget,
 ) ([]types.LicenseKey, error) {
-	if dt.CustomerOrganizationID != nil {
-		return GetLicenseKeysByCustomerOrgID(ctx, *dt.CustomerOrganizationID, dt.OrganizationID)
+	return GetLicenseKeysByScope(ctx, dt.OrganizationID, dt.CustomerOrganizationID)
+}
+
+func GetLicenseKeysByScope(
+	ctx context.Context,
+	organizationID uuid.UUID,
+	customerOrganizationID *uuid.UUID,
+) ([]types.LicenseKey, error) {
+	if customerOrganizationID != nil {
+		return GetLicenseKeysByCustomerOrgID(ctx, organizationID, *customerOrganizationID)
 	}
 	return nil, nil
 }
