@@ -257,12 +257,12 @@ func deleteCustomerOrganizationHandler() http.HandlerFunc {
 		auth := auth.Authentication.Require(ctx)
 
 		if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
-			if co, coErr := db.GetCustomerOrganizationByID(ctx, id); err != nil {
-				if errors.Is(coErr, apierrors.ErrNotFound) {
+			if co, err := db.GetCustomerOrganizationByID(ctx, id); err != nil {
+				if errors.Is(err, apierrors.ErrNotFound) {
 					http.NotFound(w, r)
 				} else {
-					log.Error("failed to get customer org", zap.Error(coErr))
-					sentry.GetHubFromContext(ctx).CaptureException(coErr)
+					log.Error("failed to get customer org", zap.Error(err))
+					sentry.GetHubFromContext(ctx).CaptureException(err)
 					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				}
 				return
