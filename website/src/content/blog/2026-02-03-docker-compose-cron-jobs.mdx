@@ -19,7 +19,7 @@ tags:
 ---
 
 import {Aside, Code, TabItem, Tabs} from '@astrojs/starlight/components';
-import WhitePaperCta from '~/components/cta/WhitePaperCta.astro';
+import TestimonialCTA from '~/components/cta/TestimonialCTA.astro';
 import approach1Arch from '~/assets/blog/2026-02-03-docker-compose-cron-jobs/approach-1-architecture.svg';
 import approach2Arch from '~/assets/blog/2026-02-03-docker-compose-cron-jobs/approach-2-architecture.svg';
 import approach3Arch from '~/assets/blog/2026-02-03-docker-compose-cron-jobs/approach-3-architecture.svg';
@@ -116,7 +116,7 @@ Additionally, memory usage remains stable, as no additional containers are spawn
 
 **Choose Option 2 (Volume Mount)** during development or when your cron schedules need to change frequently without rebuilding images. This is also useful when the same base image needs different cron configurations across environments—simply mount different crontab files.
 
-<WhitePaperCta embedded />
+<TestimonialCTA name="artifact" />
 
 ## Approach 2: Integrate Cron Jobs into your Backend Container
 
@@ -166,7 +166,7 @@ this is the best approach without requiring extensive refactoring inside your ap
 One of the disadvantages is that if your application requires significant resources, this resource usage is doubled.
 This can be especially disadvantageous for JVM-based applications that require substantial memory to start up.
 
-<WhitePaperCta embedded />
+<TestimonialCTA name="basedash" />
 
 ## Approach 3: Dedicated Job Launcher
 

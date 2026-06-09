@@ -20,6 +20,7 @@ tags:
 ---
 
 import {Aside} from '@astrojs/starlight/components';
+import TestimonialCTA from '~/components/cta/TestimonialCTA.astro';
 
 You have packaged your software as a container image or a Helm chart. Your customer wants to deploy it. Now comes the part nobody puts in the roadmap: figuring out how they actually pull it.
 
@@ -88,6 +89,8 @@ helm pull oci://registry.distr.sh/your-org/your-chart --version 1.2.3
 ```
 
 That is the entire interaction. Customers can create, rotate, and revoke their own tokens for the users in their organization, while the token only grants access to the artifacts and versions they are entitled to. In Distr, [artifact entitlements](/docs/platform/artifact-entitlements/) can be scoped at the artifact and tag level, so one customer can pull `1.2.x` while another is limited to `1.1.x`. When a customer churns or their entitlement changes, you update access in Distr instead of hunting down their IAM user in your AWS account.
+
+<TestimonialCTA name="artifact" />
 
 ## What Changes for Your Engineering Team
 

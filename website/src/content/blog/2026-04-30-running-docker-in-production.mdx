@@ -21,7 +21,7 @@ tags:
 ---
 
 import {Aside} from '@astrojs/starlight/components';
-import WhitePaperCta from '~/components/cta/WhitePaperCta.astro';
+import TestimonialCTA from '~/components/cta/TestimonialCTA.astro';
 
 I am Philip—an engineer working at Distr, which helps software and AI companies distribute their applications to self-managed environments.
 Our Open Source Software Distribution platform is available on GitHub ([`github.com/distr-sh/distr`](https://github.com/distr-sh/distr)) and orchestrates both Docker Compose and Docker Swarm deployments on customer hosts every day.
@@ -137,7 +137,7 @@ There are three answers to this:
 
 Whichever path you pick, the takeaway is the same: a `HEALTHCHECK` without something acting on it is a status light, not a self-healing system.
 
-<WhitePaperCta embedded />
+<TestimonialCTA name="lerian" />
 
 ## Pinning Docker Images by Digest Instead of `:latest`
 
@@ -204,7 +204,7 @@ The pattern is not unique—Kubernetes operators and GitOps tools do the same th
 
 The other thing worth noting: recurring scheduled jobs alongside the application have no native Compose answer either. If your stack includes anything like a nightly cleanup, a periodic report, or a heartbeat-style task, the in-app scheduler is one option, but you eventually run into the cases it can't cover (cross-service jobs, jobs that should outlive a single container). For the three patterns I have seen survive customer deployments, check out our guide on [Compose cron jobs](/blog/docker-compose-cron-jobs/).
 
-<WhitePaperCta embedded />
+<TestimonialCTA name="sophris" />
 
 ## Outgrowing Docker Compose: Kubernetes vs Swarm
 

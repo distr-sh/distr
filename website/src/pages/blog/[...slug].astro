@@ -2,7 +2,8 @@
 import {getImage} from 'astro:assets';
 import Layout from '~/layouts/StarlightLayout.astro';
 import SinglePost from '~/components/blog/SinglePost.astro';
-import WhitePaperCta from '~/components/cta/WhitePaperCta.astro';
+import SignUpCta from '~/components/cta/standalone/SignUpCta.astro';
+import TestimonialsSection from '~/components/home/TestimonialsSection.astro';
 import {getSortedPosts} from '~/utils/blog';
 import type {Post} from '~/types';
 
@@ -43,5 +44,6 @@ const ogImageUrl = new URL(optimizedImage.src, Astro.site).href;
   <div class="mx-auto max-w-7xl px-1 sm:px-8 lg:px-10">
     <SinglePost post={post} url={slug} />
   </div>
-  <WhitePaperCta />
+  <SignUpCta bgClass="bg-[var(--sl-color-bg)]" />
+  <TestimonialsSection />
 </Layout>
