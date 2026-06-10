@@ -17,7 +17,7 @@ caseStudy:
 
 ## Challenge
 
-[Weave](https://workweave.dev) is an engineering intelligence platform that measures the impact of AI on software teams, analyzing pull requests, reviews and deployments to show organizations exactly where AI is accelerating delivery and where it's adding complexity. With 20,000+ engineers across 500+ organizations, including Fortune 100 companies, many of Weave's customers require the platform to run inside their own infrastructure for security and compliance.
+[Weave](https://workweave.dev) is an engineering intelligence platform that measures the impact of AI on software teams, analyzing pull requests, reviews and deployments to show organizations exactly where AI is accelerating delivery and where it's adding complexity. With 20,000+ engineers across 500+ organizations, including Fortune 100 companies like Robinhood, many of Weave's customers require the platform to run inside their own infrastructure for security and compliance.
 
 That meant building a fully self-hosted offering, a path Weave nearly avoided altogether.
 
@@ -33,13 +33,14 @@ The team's concern was threefold:
 
 Weave runs as a microservice architecture on Google Cloud Platform. To make self-hosting viable without maintaining a parallel product, the team packaged those same services into a single Docker Compose deployment that customers run on one VM, then used Distr to manage it.
 
-"**A customer spins up a VM, runs a setup command, configures their keys, and from there we can manage almost everything through our platform,**" says Churchill. "**We can see logs, debug issues, ship improvements, and they can control what version they're running. There's no SSHing into random machines that one person set up and nobody remembers how to access.**"
+"**A customer spins up a VM, runs a setup command, configures their keys, and from there we can manage almost everything through our platform,**" says Churchill. "**We can see logs, debug issues, ship improvements, and they can control what version they're running.**"
 
 **How they use Distr:**
 
 - **One setup for every self-hosted customer:** Rather than tailoring each deployment to individual customer requirements, Weave ships a single standardized setup. Customers provision a VM and run one setup command. The Distr agent then takes over deployment and reporting.
 - **Metrics and logs, without data leaving:** The Distr agent collects metrics and logs to give Weave the visibility they need to debug issues, while no stored customer data ever leaves the customer's environment.
 - **Continuous delivery from one platform:** Weave uses the [Distr GitHub Action](/docs/integrations/gh-action/) to continuously push new commits and artifacts to Distr, so every customer fetches the latest version from a single platform, while still deciding for themselves which version they run.
+- **Zero-downtime deploys:** The Distr agent rolls out updates to self-hosted customers without taking their environment offline, so on-prem deployments stay current without planned maintenance windows.
 
 Just as important was keeping self-hosted from slowing the team down. By deploying the same services in both environments, Weave avoided a parallel codebase.
 
@@ -47,9 +48,10 @@ Just as important was keeping self-hosted from slowing the team down. By deployi
 
 ## Result
 
-Weave shipped a fully self-hosted offering that behaves like a managed product for both their customers and their own engineers, without the operational drag that pushed other founders to regret going on-prem.
+Weave shipped a fully self-hosted offering that behaves like a managed product for both their customers and their own engineers, without the operational drag that pushed other founders to regret going on-prem. They couldn't have closed Robinhood without Distr.
 
-- **A real unlock, not a tax:** Self-hosted opened the door to security- and compliance-sensitive customers without becoming a burden on every engineering decision.
+- **Zero-downtime deploys:** Self-hosted customers get updates without downtime or maintenance windows.
+- **Enterprise deals unlocked:** Self-hosted opened the door to security- and compliance-sensitive customers like Robinhood without becoming a burden on every engineering decision.
 - **Self-hosted that keeps pace with SaaS:** Continuous pushes through the GitHub Action mean on-prem customers get new commits and artifacts as fast as cloud users, instead of waiting on manual release cycles.
 - **Central management:** Logs, debugging and improvements all flow through one platform instead of ad-hoc server access.
 - **Customer autonomy:** Customers stay in control of their environment and the version they run.
