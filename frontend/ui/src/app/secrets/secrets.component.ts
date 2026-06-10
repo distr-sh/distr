@@ -175,8 +175,19 @@ export class SecretsComponent {
       try {
         await firstValueFrom(this.secretsService.delete(secret.id));
         this.refresh.emit();
-      } catch (error) {
-        const msg = getFormDisplayedError(error);
+      } catch (e) {
+        if (e instanceof HttpErrorResponse && e.status === 409) {
+          const affected: AffectedDeployment[] = e.error?.affectedDeployments ?? [];
+          if (affected.length > 0) {
+            const names = affected.map((a) => a.deploymentTargetName).join(', ');
+            this.toast.error(
+              `Cannot delete: this secret is referenced by ${names}. Remove the reference from the deployment config first.`
+            );
+            return;
+          }
+        }
+
+        const msg = getFormDisplayedError(e);
         if (msg) {
           this.toast.error(msg);
         }
