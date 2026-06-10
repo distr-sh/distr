@@ -181,7 +181,7 @@ export class SecretsComponent {
           if (affected.length > 0) {
             const names = affected.map((a) => a.deploymentTargetName).join(', ');
             this.toast.error(
-              `Cannot delete: this license key is referenced by ${names}. Remove the reference from the deployment config first.`
+              `Cannot delete: this secret is referenced by ${names}. Remove the reference from the deployment config first.`
             );
             return;
           }
