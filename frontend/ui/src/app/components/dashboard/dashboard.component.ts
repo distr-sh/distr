@@ -3,10 +3,11 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faSpinner} from '@fortawesome/free-solid-svg-icons';
-import {catchError, combineLatestWith, first, map, of, shareReplay, switchMap} from 'rxjs';
+import {catchError, combineLatest, combineLatestWith, first, map, of, shareReplay, switchMap} from 'rxjs';
 import {ArtifactsByCustomerCardComponent} from '../../artifacts/artifacts-by-customer-card/artifacts-by-customer-card.component';
 import {DeploymentTargetDashboardCardComponent} from '../../deployments/deployment-target-card/deployment-target-dashboard-card.component';
 import {DeploymentTargetViewData} from '../../deployments/deployment-targets.component';
+import {AuthService} from '../../services/auth.service';
 import {DashboardService} from '../../services/dashboard.service';
 import {DeploymentTargetsMetricsService} from '../../services/deployment-target-metrics.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
@@ -30,6 +31,7 @@ import {SupportBundle} from '../../types/support-bundle';
 export class DashboardComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly dashboardService = inject(DashboardService);
   private readonly featureFlags = inject(FeatureFlagService);
@@ -87,13 +89,12 @@ export class DashboardComponent implements OnInit {
   protected readonly faSpinner = faSpinner;
 
   ngOnInit() {
-    if (this.route.snapshot.queryParams?.['from'] === 'login') {
-      this.artifactsByCustomer$
+    if (this.route.snapshot.queryParams?.['from'] === 'login' && this.auth.isVendor()) {
+      combineLatest([this.artifactsByCustomer$, this.deploymentTargetsService.list()])
         .pipe(
-          combineLatestWith(this.deploymentTargetsService.list()),
           first(),
-          switchMap(([artifacts, dts]) => {
-            if (artifacts.length === 0 && dts.length === 0) {
+          switchMap(([artifacts, deploymentTargets]) => {
+            if (artifacts.length === 0 && deploymentTargets.length === 0) {
               return this.router.navigate(['tutorials']);
             } else {
               return this.router.navigate([this.router.url]);
@@ -101,6 +102,8 @@ export class DashboardComponent implements OnInit {
           })
         )
         .subscribe();
+    } else if (this.route.snapshot.queryParams?.['from'] === 'login') {
+      this.router.navigate([this.router.url]);
     } else if (this.route.snapshot.queryParams?.['from'] === 'new-org') {
       this.toast.success('New organization created successfully');
       this.router.navigate([this.router.url]);

@@ -30,9 +30,10 @@ func GetLatestDeploymentTargetMetrics(
 	ctx context.Context,
 	orgID uuid.UUID,
 	customerOrganizationID *uuid.UUID,
+	partnerOrganizationID *uuid.UUID,
 ) ([]types.DeploymentTargetMetrics, error) {
 	db := internalctx.GetDb(ctx)
-	isVendorUser := customerOrganizationID == nil
+	isVendorUser := customerOrganizationID == nil && partnerOrganizationID == nil
 
 	rows, err := db.Query(ctx,
 		`SELECT `+deploymentTargetMetricsOutputExpr+` FROM DeploymentTarget dt
@@ -48,12 +49,19 @@ func GetLatestDeploymentTargetMetrics(
 		LEFT JOIN DeploymentTargetDiskMetrics dtdm
 			ON dtm.id = dtdm.deployment_target_metrics_id
 		WHERE dt.organization_id = @orgId
-		AND (@isVendorUser OR dt.customer_organization_id = @customerOrganizationId)
+		AND (@isVendorUser
+			OR dt.customer_organization_id = @customerOrganizationId
+			OR co.partner_organization_id = @partnerOrganizationId)
 		AND dt.metrics_enabled = true
 		GROUP BY dtm.id, dtm.deployment_target_id, dtm.cpu_cores_millis, dtm.cpu_usage, dtm.memory_bytes, dtm.memory_usage,
 			co.name, dt.name
 		ORDER BY co.name, dt.name`,
-		pgx.NamedArgs{"orgId": orgID, "customerOrganizationId": customerOrganizationID, "isVendorUser": isVendorUser},
+		pgx.NamedArgs{
+			"orgId":                  orgID,
+			"customerOrganizationId": customerOrganizationID,
+			"partnerOrganizationId":  partnerOrganizationID,
+			"isVendorUser":           isVendorUser,
+		},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query DeploymentTargets: %w", err)

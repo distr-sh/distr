@@ -21,7 +21,7 @@ import (
 
 func DashboardRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupHidden(true))
-	r.With(middleware.RequireVendor, middleware.RequireOrgAndRole).Group(func(r chiopenapi.Router) {
+	r.With(middleware.RequireVendorOrPartner, middleware.RequireOrgAndRole).Group(func(r chiopenapi.Router) {
 		r.Get("/artifacts-by-customer", getArtifactsByCustomer)
 	})
 }
@@ -30,7 +30,14 @@ func getArtifactsByCustomer(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
-	if customers, err := db.GetCustomerOrganizationsByOrganizationID(ctx, *auth.CurrentOrgID()); err != nil {
+	var customers []types.CustomerOrganizationWithUsage
+	var err error
+	if partnerOrgID := auth.CurrentPartnerOrgID(); partnerOrgID != nil {
+		customers, err = db.GetCustomerOrganizationsByPartnerOrgID(ctx, *partnerOrgID)
+	} else {
+		customers, err = db.GetCustomerOrganizationsByOrganizationID(ctx, *auth.CurrentOrgID())
+	}
+	if err != nil {
 		log.Error("failed to get customers", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

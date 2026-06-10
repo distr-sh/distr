@@ -148,7 +148,7 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         component: DashboardComponent,
-        canActivate: [requireVendor],
+        canActivate: [requireVendorOrPartner],
       },
       {
         path: 'home',
