@@ -187,7 +187,7 @@ export const routes: Routes = [
       {
         path: 'artifact-pulls',
         component: ArtifactPullsComponent,
-        canActivate: [requireVendor],
+        canActivate: [requireVendorOrPartner],
       },
       {
         path: 'customers',

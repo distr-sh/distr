@@ -844,22 +844,31 @@ func EnsureArtifactTagLimitForInsert(ctx context.Context, orgID uuid.UUID) (bool
 func GetArtifactVersionPullFilterOptions(
 	ctx context.Context,
 	orgID uuid.UUID,
+	partnerOrganizationID *uuid.UUID,
 ) (*types.ArtifactVersionPullFilterOptions, error) {
 	db := internalctx.GetDb(ctx)
 	result := &types.ArtifactVersionPullFilterOptions{}
 
-	pullBaseJoin := ` FROM ArtifactVersionPull p
-		JOIN ArtifactVersion v ON v.id = p.artifact_version_id
-		JOIN Artifact a ON a.id = v.artifact_id`
-	args := pgx.NamedArgs{"orgId": orgID}
+	baseFromExpr := ` ArtifactVersionPull p` +
+		` JOIN ArtifactVersion v ON v.id = p.artifact_version_id` +
+		` JOIN Artifact a ON a.id = v.artifact_id `
+	baseWhereExpr := ` a.organization_id = @orgId AND (@isVendor OR co.partner_organization_id = @partnerOrgId) `
+
+	args := pgx.NamedArgs{
+		"orgId":        orgID,
+		"isVendor":     partnerOrganizationID == nil,
+		"partnerOrgId": partnerOrganizationID,
+	}
 
 	// Customer organizations
-	rows, err := db.Query(ctx,
-		`SELECT co.id, co.name`+pullBaseJoin+`
-			JOIN CustomerOrganization co ON co.id = p.customer_organization_id
-		WHERE a.organization_id = @orgId
-		GROUP BY co.id, co.name
-		ORDER BY co.name`, args)
+	rows, err := db.Query(
+		ctx,
+		`SELECT co.id, co.name FROM `+baseFromExpr+
+			` JOIN CustomerOrganization co ON co.id = p.customer_organization_id`+
+			` WHERE `+baseWhereExpr+
+			` GROUP BY co.id, co.name ORDER BY co.name`,
+		args,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("could not query customer organizations for filter options: %w", err)
 	}
@@ -868,12 +877,15 @@ func GetArtifactVersionPullFilterOptions(
 	}
 
 	// User accounts
-	rows, err = db.Query(ctx,
-		`SELECT u.id, COALESCE(NULLIF(u.name, ''), u.email) AS name`+pullBaseJoin+`
-			JOIN UserAccount u ON u.id = p.useraccount_id
-		WHERE a.organization_id = @orgId
-		GROUP BY u.id, u.name, u.email
-		ORDER BY name`, args)
+	rows, err = db.Query(
+		ctx,
+		`SELECT u.id, COALESCE(NULLIF(u.name, ''), u.email) AS name FROM `+baseFromExpr+
+			` JOIN UserAccount u ON u.id = p.useraccount_id`+
+			` LEFT JOIN CustomerOrganization co ON co.id = p.customer_organization_id`+
+			` WHERE `+baseWhereExpr+
+			` GROUP BY u.id, u.name, u.email ORDER BY name`,
+		args,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("could not query user accounts for filter options: %w", err)
 	}
@@ -882,12 +894,14 @@ func GetArtifactVersionPullFilterOptions(
 	}
 
 	// Remote addresses
-	rows, err = db.Query(ctx,
-		`SELECT p.remote_address`+pullBaseJoin+`
-		WHERE a.organization_id = @orgId
-			AND p.remote_address IS NOT NULL
-		GROUP BY p.remote_address
-		ORDER BY p.remote_address`, args)
+	rows, err = db.Query(
+		ctx,
+		`SELECT p.remote_address FROM `+baseFromExpr+
+			` LEFT JOIN CustomerOrganization co ON co.id = p.customer_organization_id`+
+			` WHERE `+baseWhereExpr+` AND p.remote_address IS NOT NULL`+
+			` GROUP BY p.remote_address ORDER BY p.remote_address`,
+		args,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("could not query remote addresses for filter options: %w", err)
 	}
@@ -896,11 +910,14 @@ func GetArtifactVersionPullFilterOptions(
 	}
 
 	// Artifacts
-	rows, err = db.Query(ctx,
-		`SELECT a.id, a.name`+pullBaseJoin+`
-		WHERE a.organization_id = @orgId
-		GROUP BY a.id, a.name
-		ORDER BY a.name`, args)
+	rows, err = db.Query(
+		ctx,
+		`SELECT a.id, a.name FROM `+baseFromExpr+
+			` LEFT JOIN CustomerOrganization co ON co.id = p.customer_organization_id`+
+			` WHERE `+baseWhereExpr+
+			` GROUP BY a.id, a.name ORDER BY a.name`,
+		args,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("could not query artifacts for filter options: %w", err)
 	}
@@ -915,6 +932,7 @@ func GetArtifactVersionPullVersionOptions(
 	ctx context.Context,
 	orgID uuid.UUID,
 	artifactID uuid.UUID,
+	partnerOrganizationID *uuid.UUID,
 ) ([]types.FilterOption, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
@@ -922,11 +940,18 @@ func GetArtifactVersionPullVersionOptions(
 		FROM ArtifactVersionPull p
 			JOIN ArtifactVersion v ON v.id = p.artifact_version_id
 			JOIN Artifact a ON a.id = v.artifact_id
+			LEFT JOIN CustomerOrganization co ON co.id = p.customer_organization_id
 		WHERE a.organization_id = @orgId
 			AND a.id = @artifactId
+			AND (@isVendor OR co.partner_organization_id = @partnerOrgId)
 		GROUP BY v.id, v.name
 		ORDER BY v.name`,
-		pgx.NamedArgs{"orgId": orgID, "artifactId": artifactID})
+		pgx.NamedArgs{
+			"orgId":        orgID,
+			"artifactId":   artifactID,
+			"isVendor":     partnerOrganizationID == nil,
+			"partnerOrgId": partnerOrganizationID,
+		})
 	if err != nil {
 		return nil, fmt.Errorf("could not query artifact version options: %w", err)
 	}
@@ -946,11 +971,14 @@ func GetArtifactVersionPulls(
 	conditions := []string{
 		"a.organization_id = @orgId",
 		"p.created_at < @before",
+		"(@isVendor OR co.partner_organization_id = @partnerOrgId)",
 	}
 	args := pgx.NamedArgs{
-		"orgId":  filter.OrgID,
-		"before": filter.Before,
-		"count":  filter.Count,
+		"orgId":        filter.OrgID,
+		"before":       filter.Before,
+		"count":        filter.Count,
+		"isVendor":     filter.PartnerOrganizationID == nil,
+		"partnerOrgId": filter.PartnerOrganizationID,
 	}
 
 	if !filter.After.IsZero() {

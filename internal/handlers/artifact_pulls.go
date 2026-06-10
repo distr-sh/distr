@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/csv"
 	"errors"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/api"
+	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
@@ -28,7 +30,7 @@ func ArtifactPullsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Artifacts"))
 	r.Use(
 		middleware.RequireOrgAndRole,
-		middleware.RequireVendor,
+		middleware.RequireVendorOrPartner,
 	)
 	r.Get("/", getArtifactPullsHandler()).
 		With(option.Description("List artifact version pulls")).
@@ -57,17 +59,23 @@ func ArtifactPullsRouter(r chiopenapi.Router) {
 		With(option.Response(http.StatusOK, []byte{}))
 }
 
-func parseArtifactPullFilters(r *http.Request, orgID uuid.UUID) (types.ArtifactVersionPullFilter, error) {
+func parseArtifactPullFilters(w http.ResponseWriter, r *http.Request) (types.ArtifactVersionPullFilter, error) {
+	ctx := r.Context()
+	authInfo := auth.Authentication.Require(ctx)
 	filter := types.ArtifactVersionPullFilter{
-		OrgID:  orgID,
+		OrgID:  *authInfo.CurrentOrgID(),
 		Before: time.Now(),
 		Count:  50,
+	}
+	fail := func(err error) (types.ArtifactVersionPullFilter, error) {
+		respondArtifactPullFilterError(w, ctx, err)
+		return filter, err
 	}
 
 	if before, err := QueryParam(r, "before", ParseTimeFunc(time.RFC3339Nano)); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return filter, fmt.Errorf("before must be a valid date")
+		return fail(apierrors.NewBadRequest("before must be a valid date"))
 	} else {
 		filter.Before = before
 	}
@@ -75,7 +83,7 @@ func parseArtifactPullFilters(r *http.Request, orgID uuid.UUID) (types.ArtifactV
 	if after, err := QueryParam(r, "after", ParseTimeFunc(time.RFC3339Nano)); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return filter, fmt.Errorf("after must be a valid date")
+		return fail(apierrors.NewBadRequest("after must be a valid date"))
 	} else {
 		filter.After = after
 	}
@@ -83,9 +91,9 @@ func parseArtifactPullFilters(r *http.Request, orgID uuid.UUID) (types.ArtifactV
 	if count, err := QueryParam(r, "count", strconv.Atoi); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return filter, fmt.Errorf("count must be a number")
+		return fail(apierrors.NewBadRequest("count must be a number"))
 	} else if count < 1 || count > 1000 {
-		return filter, fmt.Errorf("count must be between 1 and 1000")
+		return fail(apierrors.NewBadRequest("count must be between 1 and 1000"))
 	} else {
 		filter.Count = count
 	}
@@ -93,7 +101,7 @@ func parseArtifactPullFilters(r *http.Request, orgID uuid.UUID) (types.ArtifactV
 	if id, err := QueryParam(r, "customerOrganizationId", uuid.Parse); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return filter, fmt.Errorf("customerOrganizationId must be a valid UUID")
+		return fail(apierrors.NewBadRequest("customerOrganizationId must be a valid UUID"))
 	} else {
 		filter.CustomerOrganizationID = &id
 	}
@@ -101,7 +109,7 @@ func parseArtifactPullFilters(r *http.Request, orgID uuid.UUID) (types.ArtifactV
 	if id, err := QueryParam(r, "userAccountId", uuid.Parse); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return filter, fmt.Errorf("userAccountId must be a valid UUID")
+		return fail(apierrors.NewBadRequest("userAccountId must be a valid UUID"))
 	} else {
 		filter.UserAccountID = &id
 	}
@@ -113,7 +121,7 @@ func parseArtifactPullFilters(r *http.Request, orgID uuid.UUID) (types.ArtifactV
 	if id, err := QueryParam(r, "artifactId", uuid.Parse); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return filter, fmt.Errorf("artifactId must be a valid UUID")
+		return fail(apierrors.NewBadRequest("artifactId must be a valid UUID"))
 	} else {
 		filter.ArtifactID = &id
 	}
@@ -121,23 +129,51 @@ func parseArtifactPullFilters(r *http.Request, orgID uuid.UUID) (types.ArtifactV
 	if id, err := QueryParam(r, "artifactVersionId", uuid.Parse); errors.Is(err, ErrParamNotDefined) {
 		// use default
 	} else if err != nil {
-		return filter, fmt.Errorf("artifactVersionId must be a valid UUID")
+		return fail(apierrors.NewBadRequest("artifactVersionId must be a valid UUID"))
 	} else {
 		filter.ArtifactVersionID = &id
 	}
 
+	if partnerOrgID := authInfo.CurrentPartnerOrgID(); partnerOrgID != nil {
+		filter.PartnerOrganizationID = partnerOrgID
+		if filter.CustomerOrganizationID != nil {
+			co, err := db.GetCustomerOrganizationByID(ctx, *filter.CustomerOrganizationID)
+			if err != nil {
+				if errors.Is(err, apierrors.ErrNotFound) {
+					return fail(apierrors.NewForbidden("customer is not assigned to your partner organization"))
+				}
+				return fail(err)
+			}
+			if !util.PtrEq(co.PartnerOrganizationID, partnerOrgID) {
+				return fail(apierrors.NewForbidden("customer is not assigned to your partner organization"))
+			}
+		}
+	}
+
 	return filter, nil
+}
+
+func respondArtifactPullFilterError(w http.ResponseWriter, ctx context.Context, err error) {
+	log := internalctx.GetLogger(ctx)
+	switch {
+	case errors.Is(err, apierrors.ErrBadRequest):
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	case errors.Is(err, apierrors.ErrForbidden):
+		http.Error(w, err.Error(), http.StatusForbidden)
+	default:
+		log.Warn("could not parse artifact pull filters", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
 }
 
 func getArtifactPullsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
-		authInfo := auth.Authentication.Require(ctx)
 
-		filter, err := parseArtifactPullFilters(r, *authInfo.CurrentOrgID())
+		filter, err := parseArtifactPullFilters(w, r)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
@@ -159,7 +195,7 @@ func getArtifactPullFilterOptionsHandler() http.HandlerFunc {
 		log := internalctx.GetLogger(ctx)
 		authInfo := auth.Authentication.Require(ctx)
 
-		opts, err := db.GetArtifactVersionPullFilterOptions(ctx, *authInfo.CurrentOrgID())
+		opts, err := db.GetArtifactVersionPullFilterOptions(ctx, *authInfo.CurrentOrgID(), authInfo.CurrentPartnerOrgID())
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -183,7 +219,12 @@ func getArtifactPullVersionOptionsHandler() http.HandlerFunc {
 			return
 		}
 
-		versions, err := db.GetArtifactVersionPullVersionOptions(ctx, *authInfo.CurrentOrgID(), artifactID)
+		versions, err := db.GetArtifactVersionPullVersionOptions(
+			ctx,
+			*authInfo.CurrentOrgID(),
+			artifactID,
+			authInfo.CurrentPartnerOrgID(),
+		)
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -202,9 +243,8 @@ func exportArtifactPullsHandler() http.HandlerFunc {
 		authInfo := auth.Authentication.Require(ctx)
 		org := authInfo.CurrentOrg()
 
-		filter, err := parseArtifactPullFilters(r, *authInfo.CurrentOrgID())
+		filter, err := parseArtifactPullFilters(w, r)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
