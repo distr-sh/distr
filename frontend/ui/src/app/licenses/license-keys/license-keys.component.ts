@@ -196,6 +196,17 @@ export class LicenseKeysComponent {
         filter((result) => result === true),
         switchMap(() => this.licenseKeysService.delete(license)),
         catchError((e) => {
+          if (e instanceof HttpErrorResponse && e.status === 409) {
+            const affected: AffectedDeployment[] = e.error?.affectedDeployments ?? [];
+            if (affected.length > 0) {
+              const names = affected.map((a) => a.deploymentTargetName).join(', ');
+              this.toast.error(
+                `Cannot delete: this license key is referenced by ${names}. Remove the reference from the deployment config first.`
+              );
+              return EMPTY;
+            }
+          }
+
           const msg = getFormDisplayedError(e);
           if (msg) {
             this.toast.error(msg);

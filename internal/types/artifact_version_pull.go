@@ -29,6 +29,7 @@ type ArtifactVersionPullFilterOptions struct {
 
 type ArtifactVersionPullFilter struct {
 	OrgID                  uuid.UUID
+	PartnerOrganizationID  *uuid.UUID
 	Before                 time.Time
 	After                  time.Time
 	Count                  int

@@ -10,17 +10,17 @@ importers:
     dependencies:
       semver:
         specifier: ^7.6.3
-        version: 7.8.2
+        version: 7.8.3
     devDependencies:
       '@types/semver':
         specifier: ^7.5.8
         version: 7.7.1
       prettier:
         specifier: ^3.5.3
-        version: 3.8.3
+        version: 3.8.4
       prettier-plugin-organize-imports:
         specifier: ^4.3.0
-        version: 4.3.0(prettier@3.8.3)(typescript@5.9.3)
+        version: 4.3.0(prettier@3.8.4)(typescript@5.9.3)
       rimraf:
         specifier: ^6.0.1
         version: 6.1.3
@@ -128,8 +128,8 @@ packages:
       vue-tsc:
         optional: true
 
-  prettier@3.8.3:
-    resolution: {integrity: sha512-7igPTM53cGHMW8xWuVTydi2KO233VFiTNyF5hLJqpilHfmn8C8gPf+PS7dUT64YcXFbiMGZxS9pCSxL/Dxm/Jw==}
+  prettier@3.8.4:
+    resolution: {integrity: sha512-N2MylSdi48+5N/6S5j+maeHbUSIzzZ5uOcX5Hm4QpV8Dkb1HFjfAKTKX6yNPJQD9AhcT3ifHNB66tWTTJDi11Q==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -142,8 +142,8 @@ packages:
     engines: {node: 20 || >=22}
     hasBin: true
 
-  semver@7.8.2:
-    resolution: {integrity: sha512-c8jsqUZm3omBOI66G90z1Dyw5z622G8oLG+omfsHBJf3CWQTlOcwOjvOG6wtiNfW6anKm/eA39LMwMtMez2TiQ==}
+  semver@7.8.3:
+    resolution: {integrity: sha512-wnilbGyMxzbY7dNOl7jpKbLSjcfeweJWU5j4+u5qW+6/wuGD9KzIGOyZnQVSBM9E7DtWaaH3CyHkppYrKYoxwg==}
     engines: {node: '>=10'}
     hasBin: true
 
@@ -263,12 +263,12 @@ snapshots:
       lru-cache: 11.2.6
       minipass: 7.1.2
 
-  prettier-plugin-organize-imports@4.3.0(prettier@3.8.3)(typescript@5.9.3):
+  prettier-plugin-organize-imports@4.3.0(prettier@3.8.4)(typescript@5.9.3):
     dependencies:
-      prettier: 3.8.3
+      prettier: 3.8.4
       typescript: 5.9.3
 
-  prettier@3.8.3: {}
+  prettier@3.8.4: {}
 
   punycode.js@2.3.1: {}
 
@@ -277,7 +277,7 @@ snapshots:
       glob: 13.0.3
       package-json-from-dist: 1.0.1
 
-  semver@7.8.2: {}
+  semver@7.8.3: {}
 
   typedoc-plugin-markdown@4.12.0(typedoc@0.28.19(typescript@5.9.3)):
     dependencies:

@@ -67,7 +67,8 @@ func LicenseKeysRouter(r chiopenapi.Router) {
 					With(option.Response(http.StatusConflict, api.AffectedDeploymentsConflictResponse{}))
 				r.Delete("/", deleteLicenseKey).
 					With(option.Description("Delete a license key")).
-					With(option.Request(LicenseKeyIDRequest{}))
+					With(option.Request(LicenseKeyIDRequest{})).
+					With(option.Response(http.StatusConflict, api.AffectedDeploymentsConflictResponse{}))
 			})
 	})
 }
@@ -425,7 +426,24 @@ func updatedLicenseKeyForRequest(
 func deleteLicenseKey(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
+	authCtx := auth.Authentication.Require(ctx)
 	licenseKey := internalctx.GetLicenseKey(ctx)
+
+	if licenseKey.CustomerOrganizationID != nil {
+		referencing, err := findDeploymentsReferencingLicenseKey(
+			ctx, *authCtx.CurrentOrgID(), *licenseKey.CustomerOrganizationID, licenseKey.ID)
+		if err != nil {
+			log.Error("failed to check deployment references for license key", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		if len(referencing) > 0 {
+			RespondJSONWithStatus(w, http.StatusConflict,
+				api.AffectedDeploymentsConflictResponse{AffectedDeployments: referencing})
+			return
+		}
+	}
 
 	if err := db.DeleteLicenseKeyWithID(ctx, licenseKey.ID); err != nil {
 		log.Warn("error deleting license key", zap.Error(err))

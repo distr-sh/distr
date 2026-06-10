@@ -31,6 +31,7 @@ func getLatestDeploymentTargetMetrics(w http.ResponseWriter, r *http.Request) {
 		ctx,
 		*auth.CurrentOrgID(),
 		auth.CurrentCustomerOrgID(),
+		auth.CurrentPartnerOrgID(),
 	); err != nil {
 		internalctx.GetLogger(ctx).Error("failed to get deployment target metrics", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
