@@ -49,7 +49,7 @@ func GetLicenseKeysByScope(
 	customerOrganizationID *uuid.UUID,
 ) ([]types.LicenseKey, error) {
 	if customerOrganizationID != nil {
-		return GetLicenseKeysByCustomerOrgID(ctx, organizationID, *customerOrganizationID)
+		return GetLicenseKeysByCustomerOrgID(ctx, *customerOrganizationID, organizationID)
 	}
 	return nil, nil
 }
