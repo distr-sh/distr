@@ -1,5 +1,64 @@
 # Changelog
 
+## [2.23.0](https://github.com/distr-sh/distr/compare/2.22.3...2.23.0) (2026-06-10)
+
+
+### Features
+
+* add referencing license keys in deployment ([#2534](https://github.com/distr-sh/distr/issues/2534)) ([8b885bd](https://github.com/distr-sh/distr/commit/8b885bd4ab24629c45d454b33b04bfdd1bccb540))
+* **backend:** add cleanup routine for soft-deleted organization  ([#2592](https://github.com/distr-sh/distr/issues/2592)) ([07f2d55](https://github.com/distr-sh/distr/commit/07f2d5521c357153610c586d21d4de12f4930cb9))
+* update deployment on secret/license key update ([#2537](https://github.com/distr-sh/distr/issues/2537)) ([adc9c0b](https://github.com/distr-sh/distr/commit/adc9c0ba5bdb41d03c97b7c0bea5e6a52bc01b2d))
+
+
+### Bug Fixes
+
+* add correct partner user billing ([#2596](https://github.com/distr-sh/distr/issues/2596)) ([63177c9](https://github.com/distr-sh/distr/commit/63177c976445f5a983dad185279e9051882c9630))
+* **agent:** increase default deployment log flush limit to 1000 ([#2602](https://github.com/distr-sh/distr/issues/2602)) ([f7bea9a](https://github.com/distr-sh/distr/commit/f7bea9a5b97315cde9cffa27bf61156bab740a14))
+* **backend:** add missing feature gate ([#2589](https://github.com/distr-sh/distr/issues/2589)) ([d1687dd](https://github.com/distr-sh/distr/commit/d1687dd04668c866ce3daa3975925dbb2f2a8c8f))
+* **backend:** prevent deleting a referenced secret or license key ([#2601](https://github.com/distr-sh/distr/issues/2601)) ([23aeb73](https://github.com/distr-sh/distr/commit/23aeb73619e51eb527b49dda727c7e2411d3ff9e))
+* customer deletion requires admin role, partner can delete customer ([#2595](https://github.com/distr-sh/distr/issues/2595)) ([c6e6afa](https://github.com/distr-sh/distr/commit/c6e6afaa931f41a787a9321d785163eaa05faa01))
+* **deps:** update aws-sdk-go-v2 monorepo ([#2580](https://github.com/distr-sh/distr/issues/2580)) ([4484eb7](https://github.com/distr-sh/distr/commit/4484eb750995777186590066d23903359d1dbf59))
+* **deps:** update aws-sdk-go-v2 monorepo ([#2607](https://github.com/distr-sh/distr/issues/2607)) ([ccdbc42](https://github.com/distr-sh/distr/commit/ccdbc42e727a5fc472a6f54e4d5157048d207d16))
+* **deps:** update font awesome to v5 ([#2588](https://github.com/distr-sh/distr/issues/2588)) ([b2e3b97](https://github.com/distr-sh/distr/commit/b2e3b97b320d72d0981c5c656dde1cc385185748))
+* **deps:** update module github.com/aws/smithy-go to v1.27.2 ([#2539](https://github.com/distr-sh/distr/issues/2539)) ([62d54cd](https://github.com/distr-sh/distr/commit/62d54cd02eb3fe57fb88fc883a1813c9fb657a3d))
+* **deps:** update module github.com/docker/cli to v29.5.3+incompatible ([#2573](https://github.com/distr-sh/distr/issues/2573)) ([b58a44c](https://github.com/distr-sh/distr/commit/b58a44c6d48796fcdf1f7ed3bdc449ef1ba93028))
+* **deps:** update module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver to v0.154.0 ([#2611](https://github.com/distr-sh/distr/issues/2611)) ([bd1ac0c](https://github.com/distr-sh/distr/commit/bd1ac0cf0c43f7daeaa863fe909ebdcecf7afbaf))
+* **deps:** update module golang.org/x/crypto to v0.53.0 ([#2604](https://github.com/distr-sh/distr/issues/2604)) ([aa433aa](https://github.com/distr-sh/distr/commit/aa433aad31a86906edef4e19915582a5b0da32d9))
+* **deps:** update module golang.org/x/sync to v0.21.0 ([#2586](https://github.com/distr-sh/distr/issues/2586)) ([fff1d99](https://github.com/distr-sh/distr/commit/fff1d99a0d4c29c7a592c45853b26a3d4301d967))
+* **deps:** update module oras.land/oras-go/v2 to v2.6.1 ([#2593](https://github.com/distr-sh/distr/issues/2593)) ([3fe4949](https://github.com/distr-sh/distr/commit/3fe4949fde45b7b6568131c0b8b2b1242d3313c8))
+* **deps:** update website dependencies ([#2536](https://github.com/distr-sh/distr/issues/2536)) ([f98fd4e](https://github.com/distr-sh/distr/commit/f98fd4e4d700be9543f8e009acd45094817ee991))
+* **frontend:** add missing condition on license template request ([#2587](https://github.com/distr-sh/distr/issues/2587)) ([8bc480f](https://github.com/distr-sh/distr/commit/8bc480f7533f0a3da2aa69cf2efc5f00e35ffd2d))
+* **subscription:** require at least 1 for customer/user quantities so stripe products get applied ([#2599](https://github.com/distr-sh/distr/issues/2599)) ([79597c8](https://github.com/distr-sh/distr/commit/79597c8df50a413012c75a4c1db884be6efb0a87))
+
+
+### Other
+
+* add creating s3 bucket by default in compose file and chart ([#2569](https://github.com/distr-sh/distr/issues/2569)) ([d1534cd](https://github.com/distr-sh/distr/commit/d1534cdc051d1226615e1eb085ebd0d557575335))
+* change default S3 endpoint in deploy/docker to "storage" ([#2550](https://github.com/distr-sh/distr/issues/2550)) ([0f43340](https://github.com/distr-sh/distr/commit/0f433404b20ca6eb31d57c5ff2b54ac74c765cdc))
+* **deploy/docker:** add health check to RustFS service ([#2472](https://github.com/distr-sh/distr/issues/2472)) ([e92f5d8](https://github.com/distr-sh/distr/commit/e92f5d86880fb2e5a9c4d03e64adf44381b1067f))
+* **deps:** update codemirror to v6.43.1 ([#2613](https://github.com/distr-sh/distr/issues/2613)) ([22fef27](https://github.com/distr-sh/distr/commit/22fef27c6b34cd267dd09ab4b52f9cf1c40e071c))
+* **deps:** update dependency marked to v18.0.5 ([#2575](https://github.com/distr-sh/distr/issues/2575)) ([59e9879](https://github.com/distr-sh/distr/commit/59e987992ad5479ab4f6c3eade64a1773e020c80))
+* **deps:** update dependency semver to v7.8.2 ([#2576](https://github.com/distr-sh/distr/issues/2576)) ([def59da](https://github.com/distr-sh/distr/commit/def59dafc22d31c256ecc23a1fb21e38b97566ae))
+* **deps:** update dependency semver to v7.8.3 ([#2603](https://github.com/distr-sh/distr/issues/2603)) ([276e269](https://github.com/distr-sh/distr/commit/276e2691cd9bfe080c6c69657630bf12da5c3dd0))
+* **deps:** update dependency typedoc-plugin-markdown to v4.12.0 ([#2563](https://github.com/distr-sh/distr/issues/2563)) ([e60b13a](https://github.com/distr-sh/distr/commit/e60b13a538e2d5ab3d1f81a7e9abadada6dc9a25))
+* **deps:** update docker docker tag to v29.5.3 ([#2577](https://github.com/distr-sh/distr/issues/2577)) ([f083304](https://github.com/distr-sh/distr/commit/f083304c9e7d36749f78d447eef028ed85087a88))
+* **deps:** update helm release rustfs to 0.7.x ([#2581](https://github.com/distr-sh/distr/issues/2581)) ([e5e01b9](https://github.com/distr-sh/distr/commit/e5e01b92635f07e3763055ef5e169505ab6e107f))
+* **deps:** update jasmine monorepo to ~6.3.0 ([#2583](https://github.com/distr-sh/distr/issues/2583)) ([ee0adfe](https://github.com/distr-sh/distr/commit/ee0adfed54c209aa21416e36ee281929365f99cb))
+* **deps:** update jdx/mise-action action to v4.1.0 ([#2584](https://github.com/distr-sh/distr/issues/2584)) ([e23e251](https://github.com/distr-sh/distr/commit/e23e251be865b77b2377d528ba6e413b6430fb2b))
+* **deps:** update pnpm to v11.5.2 ([#2578](https://github.com/distr-sh/distr/issues/2578)) ([2b1974d](https://github.com/distr-sh/distr/commit/2b1974d80523c48339e48fe668995e26daefeeac))
+* **deps:** upgrade Angular to v22 ([#2582](https://github.com/distr-sh/distr/issues/2582)) ([ec7badf](https://github.com/distr-sh/distr/commit/ec7badfafe2e30b4453e7b6fa0f9b16335a1c3e6))
+* **deps:** upgrade stripe-go to v86 ([#2597](https://github.com/distr-sh/distr/issues/2597)) ([cad6387](https://github.com/distr-sh/distr/commit/cad6387e965f7ebf629774d4018aa50e6d9bd403))
+* **deps:** upgrade to node 26 ([#2598](https://github.com/distr-sh/distr/issues/2598)) ([5451522](https://github.com/distr-sh/distr/commit/5451522a0df411b836d75f6bc2538d591e0a79ee))
+
+
+### Docs
+
+* clarify license key revision behavior ([#2574](https://github.com/distr-sh/distr/issues/2574)) ([523705d](https://github.com/distr-sh/distr/commit/523705df1aaeb1d0229944bc0f8f09c03b79f511))
+* **website:** document referencing license keys ([#2564](https://github.com/distr-sh/distr/issues/2564)) ([df7a00c](https://github.com/distr-sh/distr/commit/df7a00cab71abc792e6f6537796fc40394755330))
+* **website:** fix lerian docs url ([#2591](https://github.com/distr-sh/distr/issues/2591)) ([7bfbe46](https://github.com/distr-sh/distr/commit/7bfbe464ee2c1918dfb1c1dfea801f15ee2abfbd))
+* **website:** refactor case studies and testimonials ([#2579](https://github.com/distr-sh/distr/issues/2579)) ([33028cb](https://github.com/distr-sh/distr/commit/33028cb79bd38960e443b4e82b817cfe98aee656))
+* **website:** testimonial ctas ([#2600](https://github.com/distr-sh/distr/issues/2600)) ([dd65776](https://github.com/distr-sh/distr/commit/dd657761ee6db0dbe8270ed174d3874d34c8158f))
+
 ## [2.22.3](https://github.com/distr-sh/distr/compare/2.22.2...2.22.3) (2026-06-03)
 
 
