@@ -70,6 +70,7 @@ var (
 	cleanupOrganizationMinAge               time.Duration
 	deploymentStatusNotificationCron        *string
 	deploymentStatusNotificationTimeout     time.Duration
+	notificationEmailHourlyQuota            int
 	oidcGithubEnabled                       bool
 	oidcGithubClientID                      *string
 	oidcGithubClientSecret                  *string
@@ -230,6 +231,8 @@ func Initialize() {
 	deploymentStatusNotificationCron = envutil.GetEnvOrNil("DEPLOYMENT_STATUS_NOTIFICATION_CRON")
 	deploymentStatusNotificationTimeout = envutil.GetEnvParsedOrDefault("DEPLOYMENT_STATUS_NOTIFICATION_TIMEOUT",
 		envparse.PositiveDuration, 0)
+	notificationEmailHourlyQuota = envutil.GetEnvParsedOrDefault("NOTIFICATION_EMAIL_HOURLY_QUOTA",
+		envparse.NonNegativeNumber, 120)
 
 	oidcGithubEnabled = envutil.GetEnvParsedOrDefault("OIDC_GITHUB_ENABLED", strconv.ParseBool, false)
 	if oidcGithubEnabled {
@@ -458,6 +461,12 @@ func DeploymentStatusNotificationCron() *string {
 
 func DeploymentStatusNotificationTimeout() time.Duration {
 	return deploymentStatusNotificationTimeout
+}
+
+// NotificationEmailHourlyQuota is the maximum number of status/metrics notification
+// emails sent to a single email address per hour. 0 means unlimited.
+func NotificationEmailHourlyQuota() int {
+	return notificationEmailHourlyQuota
 }
 
 func CleanupOIDCStateCron() *string {
