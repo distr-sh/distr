@@ -123,7 +123,10 @@ export class PartnerOrganizationsComponent {
                     .filter(Boolean)
                     .join(' '),
                 }
-              : undefined,
+              : {
+                  type: 'info',
+                  message: 'This partner has no associated users or customers.',
+                },
         },
         requiredConfirmInputText: partner.name,
       })
