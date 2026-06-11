@@ -63,6 +63,10 @@
       @apply whitespace-pre;
     }
 
+    pre code {
+      @apply whitespace-pre-wrap;
+    }
+
     code:not(pre *) {
       @apply rounded-sm;
       @apply px-1;
