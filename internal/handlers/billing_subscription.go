@@ -399,9 +399,14 @@ func getCurrentUsageCounts(ctx context.Context, orgID uuid.UUID) (*currentUsageC
 		return nil, fmt.Errorf("failed to get artifact entitlements: %w", err)
 	}
 
+	// The deployment targets per customer limit also applies to internal deployment targets
+	maxDeploymentTargetsPerCustomer, err := db.CountDeploymentTargets(ctx, orgID, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count internal deployment targets: %w", err)
+	}
+
 	// Find the maximum user count and deployment target count across all customer organizations
 	var maxUsersPerCustomer int64
-	var maxDeploymentTargetsPerCustomer int64
 	for _, customerOrg := range customerOrgs {
 		if customerOrg.UserCount > maxUsersPerCustomer {
 			maxUsersPerCustomer = customerOrg.UserCount
