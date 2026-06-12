@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/go-mailx/mailx"
@@ -18,8 +17,7 @@ func DeploymentStatusNotificationError(
 	deployment types.DeploymentWithLatestRevision,
 	currentStatus types.DeploymentRevisionStatus,
 ) error {
-	mailer := internalctx.GetMailer(ctx)
-	return mailer.Send(ctx,
+	return sendNotificationWithQuota(ctx, user.Email,
 		mailx.Subject(getDeploymentStatusNotificationSubject(
 			"Error",
 			organization,
@@ -31,7 +29,6 @@ func DeploymentStatusNotificationError(
 			deployment,
 			currentStatus,
 		)),
-		mailx.To(user.Email),
 	)
 }
 
@@ -43,8 +40,7 @@ func DeploymentStatusNotificationStale(
 	deployment types.DeploymentWithLatestRevision,
 	previousStatus types.DeploymentRevisionStatus,
 ) error {
-	mailer := internalctx.GetMailer(ctx)
-	return mailer.Send(ctx,
+	return sendNotificationWithQuota(ctx, user.Email,
 		mailx.Subject(getDeploymentStatusNotificationSubject(
 			"Stale",
 			organization,
@@ -56,7 +52,6 @@ func DeploymentStatusNotificationStale(
 			deployment,
 			previousStatus,
 		)),
-		mailx.To(user.Email),
 	)
 }
 
@@ -68,8 +63,7 @@ func DeploymentStatusNotificationRecovered(
 	deployment types.DeploymentWithLatestRevision,
 	currentStatus types.DeploymentRevisionStatus,
 ) error {
-	mailer := internalctx.GetMailer(ctx)
-	return mailer.Send(ctx,
+	return sendNotificationWithQuota(ctx, user.Email,
 		mailx.Subject(getDeploymentStatusNotificationSubject(
 			"Recovered",
 			organization,
@@ -81,7 +75,6 @@ func DeploymentStatusNotificationRecovered(
 			deployment,
 			currentStatus,
 		)),
-		mailx.To(user.Email),
 	)
 }
 

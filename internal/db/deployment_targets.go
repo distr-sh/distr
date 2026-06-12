@@ -122,15 +122,17 @@ func GetDeploymentTargetsByScope(
 func CountDeploymentTargets(ctx context.Context, orgID uuid.UUID, customerOrgID *uuid.UUID) (int64, error) {
 	db := internalctx.GetDb(ctx)
 
-	customerOwned := customerOrgID == nil
-
 	rows, err := db.Query(ctx,
 		`SELECT count(*)
 		FROM DeploymentTarget
 		WHERE organization_id = @orgId
 			AND (customer_organization_id = @customerOrgId
-		    OR ( @customerOwned AND customer_organization_id is null))`,
-		pgx.NamedArgs{"orgId": orgID, "customerOrgId": customerOrgID, "customerOwned": customerOwned},
+		    OR (@vendorOwned AND customer_organization_id is null))`,
+		pgx.NamedArgs{
+			"orgId":         orgID,
+			"customerOrgId": customerOrgID,
+			"vendorOwned":   customerOrgID == nil,
+		},
 	)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count DeploymentTargets: %w", err)

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/go-mailx/mailx"
@@ -21,13 +20,11 @@ func DeploymentTargetMetricsNotificationAlert(
 	threshold int,
 	usagePercent int64,
 ) error {
-	mailer := internalctx.GetMailer(ctx)
-	return mailer.Send(ctx,
+	return sendNotificationWithQuota(ctx, user.Email,
 		mailx.Subject(getDeploymentTargetMetricsNotificationSubject("Alert", metricType, organization, deploymentTarget)),
 		mailx.HtmlBodyTemplate(mailtemplates.DeploymentTargetMetricsNotificationAlert(
 			deploymentTarget, metricType, diskDevice, diskPath, threshold, usagePercent,
 		)),
-		mailx.To(user.Email),
 	)
 }
 
@@ -42,13 +39,11 @@ func DeploymentTargetMetricsNotificationResolved(
 	threshold int,
 	usagePercent int64,
 ) error {
-	mailer := internalctx.GetMailer(ctx)
-	return mailer.Send(ctx,
+	return sendNotificationWithQuota(ctx, user.Email,
 		mailx.Subject(getDeploymentTargetMetricsNotificationSubject("Resolved", metricType, organization, deploymentTarget)),
 		mailx.HtmlBodyTemplate(mailtemplates.DeploymentTargetMetricsNotificationResolved(
 			deploymentTarget, metricType, diskDevice, diskPath, threshold, usagePercent,
 		)),
-		mailx.To(user.Email),
 	)
 }
 
