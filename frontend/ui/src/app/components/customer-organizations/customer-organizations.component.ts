@@ -203,7 +203,10 @@ export class CustomerOrganizationsComponent {
                   type: 'warning',
                   message: `Deleting this customer will also delete its associated users (${target.userCount}) and deployment targets (${target.deploymentTargetCount}) from your organization.`,
                 }
-              : undefined,
+              : {
+                  type: 'info',
+                  message: 'This customer has no associated users or deployment targets.',
+                },
         },
         requiredConfirmInputText: target.name,
       })

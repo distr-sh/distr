@@ -12,7 +12,7 @@ export interface Message {
 }
 
 export interface Alert extends Message {
-  type: 'warning' | 'danger';
+  type: 'info' | 'warning' | 'danger';
 }
 
 export interface ConfirmMessage extends Message {
@@ -37,12 +37,16 @@ export class ConfirmDialogComponent extends ClosableDialog<boolean> {
   protected readonly data = inject(OverlayData) as ConfirmConfig;
   protected readonly confirmInput = new FormControl<string>('');
 
-  protected readonly alertClass = [
-    'p-4',
-    'text-sm',
-    'rounded-lg',
-    ...(this.data.message?.alert?.type === 'warning'
-      ? ['text-yellow-800', 'dark:text-yellow-300', 'bg-yellow-50', 'dark:bg-gray-800']
-      : ['text-red-800', 'dark:text-red-400', 'bg-red-50', 'dark:bg-gray-800']),
-  ];
+  protected readonly alertClass = ['p-4', 'text-sm', 'rounded-lg', ...this.alertColorClasses()];
+
+  private alertColorClasses(): string[] {
+    switch (this.data.message?.alert?.type) {
+      case 'warning':
+        return ['text-yellow-800', 'dark:text-yellow-300', 'bg-yellow-50', 'dark:bg-gray-800'];
+      case 'info':
+        return ['text-blue-800', 'dark:text-blue-300', 'bg-blue-50', 'dark:bg-gray-800'];
+      default:
+        return ['text-red-800', 'dark:text-red-400', 'bg-red-50', 'dark:bg-gray-800'];
+    }
+  }
 }
