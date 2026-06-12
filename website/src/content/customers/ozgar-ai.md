@@ -19,7 +19,7 @@ caseStudy:
 
 ## Challenge
 
-[Ozgar AI](https://ozgar.ai) is an enterprise code intelligence platform that helps engineering teams understand, document and explore complex applications. When teams are navigating hundreds of thousands of lines of code across multiple services, Ozgar AI helps engineers explore unfamiliar codebases, trace dependencies and generate documentation, without spending days reading through source files.
+[Ozgar AI](https://ozgar.ai) helps teams and AI tools understand complex applications through trusted, source-linked context. Built for IBM i, IBM z, and other complex enterprise environments, Ozgar connects code, data, documentation, jobs, and business logic into a unified knowledge layer that improves understanding, accelerates change, and reduces risk. When teams are navigating hundreds of thousands of lines of code across multiple services, Ozgar AI helps engineers explore unfamiliar codebases, trace dependencies and generate documentation, without spending days reading through source files.
 
 Because Ozgar AI works directly with source code, the customers who want it most are often the ones who cannot send that code anywhere. Enterprise engineering teams with internal security requirements, compliance obligations and large proprietary codebases need the platform to run inside their own infrastructure. From the start, the deployment experience was going to be part of the product experience.
 
