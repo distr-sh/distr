@@ -7,7 +7,7 @@ services:
       - app-network
 
   jobs:
-    image: alpine:3.23
+    image: alpine:3.24
     command: crond -f -L /dev/stdout
     volumes:
       - ./crontab:/etc/crontabs/root:ro

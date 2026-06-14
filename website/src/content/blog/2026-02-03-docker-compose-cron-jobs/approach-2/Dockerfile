@@ -9,7 +9,7 @@ COPY main.go job.go ./
 RUN CGO_ENABLED=0 GOOS=linux go build -o app main.go
 RUN CGO_ENABLED=0 GOOS=linux go build -o job job.go
 
-FROM alpine:3.23
+FROM alpine:3.24
 
 WORKDIR /app
 
