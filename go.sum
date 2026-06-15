@@ -550,8 +550,8 @@ github.com/oklog/ulid/v2 v2.1.1/go.mod h1:rcEKHmBBKfef9DhnvX7y1HZBYxjXb0cP5ExxNs
 github.com/onsi/ginkgo v1.16.5 h1:8xi0RTUf59SOSfEtZMvwTvXYMzG4gV23XVHOZiXNtnE=
 github.com/onsi/ginkgo/v2 v2.28.1 h1:S4hj+HbZp40fNKuLUQOYLDgZLwNUVn19N3Atb98NCyI=
 github.com/onsi/ginkgo/v2 v2.28.1/go.mod h1:CLtbVInNckU3/+gC8LzkGUb9oF+e8W8TdUsxPwvdOgE=
-github.com/onsi/gomega v1.41.0 h1:OwKp4pXNgVxf6sCplzYo794OFNuoL2q2SBMU5NSWOjA=
-github.com/onsi/gomega v1.41.0/go.mod h1:M/Uqpu/8qTjtzCLUA2zJHX9Iilrau25x1PdoSRbWh5A=
+github.com/onsi/gomega v1.42.0 h1:CJby8u36xb7v34W78F8WKvqTQP7PCMIPB78IVDB73l4=
+github.com/onsi/gomega v1.42.0/go.mod h1:M/Uqpu/8qTjtzCLUA2zJHX9Iilrau25x1PdoSRbWh5A=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal v0.154.0 h1:puudXWPJHyDmDXXXB+fO39yFtlMTX+187nvCeJeJzys=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal v0.154.0/go.mod h1:8z8HOBhVnR/uDmR3vkoQZg0dYfyKRGuOgQQgXuInAL8=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter v0.154.0 h1:Herj4tsnKOUmqc+nnLmASUXBkXBPQpc9vKoxa3z+kz8=
