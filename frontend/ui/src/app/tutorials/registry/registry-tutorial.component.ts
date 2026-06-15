@@ -59,7 +59,7 @@ const usageStepTaskTag = 'tag';
 const usageStepTaskPush = 'push';
 const usageStepTaskExplore = 'explore';
 
-const helloDistrTag = '0.4.4'; // renovate: datasource=github-releases depName=distr-sh/hello-distr
+const helloDistrTag = '0.4.5'; // renovate: datasource=github-releases depName=distr-sh/hello-distr
 
 function helloDistrProxyUrl(base: string): string {
   return `${base}/hello-distr/proxy:${helloDistrTag}`;
