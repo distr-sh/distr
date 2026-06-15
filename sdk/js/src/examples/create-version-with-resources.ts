@@ -7,7 +7,7 @@ const appId = '<docker-application-id>';
 const composeFile = `
 services:
   my-postgres:
-    image: 'postgres:17.2-alpine3.20'
+    image: 'postgres:18.4-alpine3.23'
     ports:
       - '5434:5432'
     environment:
@@ -21,7 +21,7 @@ volumes:
   postgres-data:
 `;
 
-await distr.createDockerApplicationVersion(appId, '17.2-alpine3.20+3', {
+await distr.createDockerApplicationVersion(appId, '18.4-alpine3.23+3', {
   composeFile,
   resources: [
     {
@@ -32,7 +32,7 @@ await distr.createDockerApplicationVersion(appId, '17.2-alpine3.20+3', {
     },
     {
       name: 'Internal Notes',
-      content: '# Internal Notes\n\nThis version uses PostgreSQL 17.2 on Alpine 3.20.',
+      content: '# Internal Notes\n\nThis version uses PostgreSQL 18.4 on Alpine 3.23.',
       visibleToCustomers: false,
     },
   ],

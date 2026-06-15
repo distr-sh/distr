@@ -7,7 +7,7 @@ const appId = '<docker-application-id>';
 const composeFile = `
 services:
   my-postgres:
-    image: 'postgres:17.2-alpine3.20'
+    image: 'postgres:18.4-alpine3.23'
     ports:
       - '5434:5432'
     environment:
@@ -26,7 +26,7 @@ POSTGRES_USER=some-user # REPLACE THIS
 POSTGRES_PASSWORD=some-password # REPLACE THIS
 POSTGRES_DB=some-db # REPLACE THIS`;
 
-await distr.createDockerApplicationVersion(appId, '17.2-alpine3.20+2', {
+await distr.createDockerApplicationVersion(appId, '18.4-alpine3.23+2', {
   composeFile,
   templateFile,
 });
