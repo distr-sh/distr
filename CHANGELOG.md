@@ -1,5 +1,48 @@
 # Changelog
 
+## [2.24.0](https://github.com/distr-sh/distr/compare/2.23.0...2.24.0) (2026-06-15)
+
+
+### Features
+
+* **backend:** add hourly notification quota ([#2623](https://github.com/distr-sh/distr/issues/2623)) ([401765f](https://github.com/distr-sh/distr/commit/401765f231312c8b194429c3310fe74ea62ea1fa))
+
+
+### Bug Fixes
+
+* **backend:** include internal DeploymentTargets in usage counts ([#2625](https://github.com/distr-sh/distr/issues/2625)) ([28a9c22](https://github.com/distr-sh/distr/commit/28a9c22fbd78603895cdbdfce7d9e3925bb9e6d2))
+* **deps:** update aws-sdk-go-v2 monorepo to v1.19.24 ([#2633](https://github.com/distr-sh/distr/issues/2633)) ([56cb478](https://github.com/distr-sh/distr/commit/56cb478241f9546fe982d9a188c81ce8bd67290f))
+* **deps:** update module helm.sh/helm/v4 to v4.2.1 ([#2634](https://github.com/distr-sh/distr/issues/2634)) ([4f2d1de](https://github.com/distr-sh/distr/commit/4f2d1de5a1c225484b69df279acabfc005347033))
+* **deps:** update website dependencies ([#2618](https://github.com/distr-sh/distr/issues/2618)) ([cb19ccd](https://github.com/distr-sh/distr/commit/cb19ccd823478e455c67af6b2d7099a1b8cfe592))
+* **frontend:** fix support bundle text overflow on dashboard page ([#2616](https://github.com/distr-sh/distr/issues/2616)) ([22e04eb](https://github.com/distr-sh/distr/commit/22e04eb98e8f183ed4ce2b422b31d2e7d320579e))
+* **frontend:** prevent text overflow inside markdown code blocks ([#2628](https://github.com/distr-sh/distr/issues/2628)) ([3680f80](https://github.com/distr-sh/distr/commit/3680f8064c9204605c4366312302e42d5d5b8f15))
+
+
+### Other
+
+* add dashboard page for users of a partner organization ([#2615](https://github.com/distr-sh/distr/issues/2615)) ([f989d79](https://github.com/distr-sh/distr/commit/f989d795a61213043110c79831f8826705f63372))
+* **backend:** bump hello-distr template ([#2632](https://github.com/distr-sh/distr/issues/2632)) ([c609b19](https://github.com/distr-sh/distr/commit/c609b192a509d41f878daef663443d3a5a524092))
+* **deps:** update alpine docker tag to v3.24.0 ([#2622](https://github.com/distr-sh/distr/issues/2622)) ([d50b692](https://github.com/distr-sh/distr/commit/d50b6923dd1da123ddfd52df08c21f4b2862d6c2))
+* **deps:** update angular monorepo to v22.0.1 ([#2629](https://github.com/distr-sh/distr/issues/2629)) ([3e99782](https://github.com/distr-sh/distr/commit/3e99782924ea78ac01023993f9be7e1be1178693))
+* **deps:** update angular-cli monorepo to v22.0.1 ([#2630](https://github.com/distr-sh/distr/issues/2630)) ([8e11630](https://github.com/distr-sh/distr/commit/8e1163027291010ff65f6a77e83cb96f3f793a21))
+* **deps:** update angularmaterial monorepo to v22.0.1 ([#2631](https://github.com/distr-sh/distr/issues/2631)) ([649f2a7](https://github.com/distr-sh/distr/commit/649f2a7cad046165096675fb6868081a4b40b1a9))
+* **deps:** update dependency prettier to v3.8.4 ([#2617](https://github.com/distr-sh/distr/issues/2617)) ([366956b](https://github.com/distr-sh/distr/commit/366956bcf2514dd441c92112ec043a011c583ffd))
+* **deps:** update dependency semver to v7.8.4 ([#2621](https://github.com/distr-sh/distr/issues/2621)) ([7977117](https://github.com/distr-sh/distr/commit/79771177ce8ed3533c62b827597c40a90a22f8ea))
+* **deps:** update dependency stripe to v1.42.11 ([#2620](https://github.com/distr-sh/distr/issues/2620)) ([efb9b38](https://github.com/distr-sh/distr/commit/efb9b3896f2ab0248e4dd8097d033c25f6f7e70b))
+* **deps:** update dependency stripe to v1.42.13 ([#2636](https://github.com/distr-sh/distr/issues/2636)) ([057168e](https://github.com/distr-sh/distr/commit/057168efbae712cf985cb1f37cdb672d6a4606af))
+* **deps:** update distr-sh/hello-distr to v0.4.5 ([#2635](https://github.com/distr-sh/distr/issues/2635)) ([ec2a34e](https://github.com/distr-sh/distr/commit/ec2a34e7de5182683040b37ba8c3e215003a61f3))
+* **deps:** update helm release rustfs to 0.8.x ([#2626](https://github.com/distr-sh/distr/issues/2626)) ([7d81e4a](https://github.com/distr-sh/distr/commit/7d81e4a89aa13a0cb9add28c0687a7d06d57a175))
+* **deps:** update pnpm to v11.6.0 ([#2624](https://github.com/distr-sh/distr/issues/2624)) ([a5d92b8](https://github.com/distr-sh/distr/commit/a5d92b8ec0b5400a70007e30e3cac93bf906c896))
+* **deps:** update tailwindcss monorepo to v4.3.1 ([#2637](https://github.com/distr-sh/distr/issues/2637)) ([e62712b](https://github.com/distr-sh/distr/commit/e62712b2da322d590a55ac9fed3f50ea887fbf68))
+* **frontend:** show info when customer/partner to delete is empty ([#2627](https://github.com/distr-sh/distr/issues/2627)) ([d45525f](https://github.com/distr-sh/distr/commit/d45525fe41c621f59bd34794af153312fbf6499e))
+
+
+### Docs
+
+* **website:** add Ozgar AI case study ([#2608](https://github.com/distr-sh/distr/issues/2608)) ([06944e7](https://github.com/distr-sh/distr/commit/06944e7e67dd071745a46806963b520535944391))
+* **website:** add weave case study ([#2594](https://github.com/distr-sh/distr/issues/2594)) ([900f6df](https://github.com/distr-sh/distr/commit/900f6dfa75e627cadc970ccdb82bdb8ffaeca6f0))
+* **website:** Update website product screenshots ([#2606](https://github.com/distr-sh/distr/issues/2606)) ([4af7aca](https://github.com/distr-sh/distr/commit/4af7aca79cb7ebc077e687d97f0b02c476334876))
+
 ## [2.23.0](https://github.com/distr-sh/distr/compare/2.22.3...2.23.0) (2026-06-10)
 
 
