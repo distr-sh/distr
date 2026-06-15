@@ -19,7 +19,7 @@
     "format": "prettier --write ."
   },
   "private": true,
-  "packageManager": "pnpm@11.5.2",
+  "packageManager": "pnpm@11.6.0",
   "engines": {
     "node": "26.x"
   },
