@@ -32,7 +32,7 @@ import (
 	registryerror "github.com/distr-sh/distr/internal/registry/error"
 	"github.com/distr-sh/distr/internal/registry/name"
 	"github.com/distr-sh/distr/internal/registry/verify"
-	"github.com/distr-sh/distr/internal/tmpstream"
+	"github.com/glasskube/pkg/seekbuf"
 	"github.com/google/uuid"
 	"github.com/opencontainers/go-digest"
 	"go.uber.org/zap"
@@ -41,12 +41,12 @@ import (
 // UpstreamBlobFetcher fetches a blob from an upstream registry and stores it locally.
 type UpstreamBlobFetcher interface {
 	// FetchAndStoreBlob fetches the blob identified by d from the upstream registry
-	// for repo, stores it via bph, and returns a TmpStream for serving the content
-	// directly to the client. The caller must call TmpStream.Destroy() after use.
+	// for repo, stores it via bph, and returns a Buffer for serving the content
+	// directly to the client. The caller must call Buffer.Destroy() after use.
 	// Returns apierrors.ErrNotFound if repo has no upstream configured.
 	FetchAndStoreBlob(
 		ctx context.Context, repo string, d digest.Digest, bph blob.BlobPutHandler,
-	) (tmpstream.TmpStream, int64, error)
+	) (seekbuf.Buffer, int64, error)
 }
 
 const (
@@ -253,7 +253,7 @@ func (b *blobs) handleGet(resp http.ResponseWriter, req *http.Request, repo, tar
 
 	var size int64
 	var r io.Reader
-	var upstreamTmp tmpstream.TmpStream
+	var upstreamTmp seekbuf.Buffer
 	if bsh, ok := b.blobHandler.(blob.BlobStatHandler); ok {
 		size, err = bsh.Stat(req.Context(), repo, h)
 		if errors.Is(err, blob.ErrNotFound) {
@@ -374,7 +374,7 @@ func (b *blobs) handleGet(resp http.ResponseWriter, req *http.Request, repo, tar
 
 func (b *blobs) fetchFromUpstream(
 	ctx context.Context, repo string, h digest.Digest,
-) (tmpstream.TmpStream, int64, error) {
+) (seekbuf.Buffer, int64, error) {
 	if b.upstreamFetcher == nil {
 		return nil, 0, blob.ErrNotFound
 	}

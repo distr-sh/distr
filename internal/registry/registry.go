@@ -34,6 +34,7 @@ import (
 	awss3 "github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authn/authinfo"
+	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/registry/audit"
 	"github.com/distr-sh/distr/internal/registry/authz"
@@ -43,6 +44,7 @@ import (
 	"github.com/distr-sh/distr/internal/registry/manifest/db"
 	"github.com/distr-sh/distr/internal/registry/upstream"
 	"github.com/getsentry/sentry-go"
+	"github.com/glasskube/pkg/seekbuf"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-mailx/mailx"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -138,6 +140,10 @@ func NewDefault(
 	blobHandler, err := s3.NewBlobHandler(ctx, s3Client)
 	if err != nil {
 		return nil, err
+	}
+
+	if dir := env.RegistryScratchDir(); dir != nil {
+		seekbuf.SetDefault(&seekbuf.FileBufferFactory{Dir: *dir})
 	}
 
 	reg := New(

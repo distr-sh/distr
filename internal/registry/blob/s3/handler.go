@@ -13,8 +13,8 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/registry/blob"
-	"github.com/distr-sh/distr/internal/tmpstream"
 	"github.com/distr-sh/distr/internal/util"
+	"github.com/glasskube/pkg/seekbuf"
 	"github.com/google/uuid"
 	"github.com/opencontainers/go-digest"
 	"go.uber.org/zap"
@@ -138,7 +138,7 @@ func (handler *blobHandler) Put(
 
 	// The AWS S3 SDK requires a io.ReadSeeker event though the interface only specifies io.Reader
 	if _, ok := r.(io.Seeker); !ok {
-		if s, err := tmpstream.New(r); err != nil {
+		if s, err := seekbuf.New(r); err != nil {
 			return err
 		} else {
 			defer func() {
@@ -226,9 +226,9 @@ func (handler *blobHandler) PutChunk(ctx context.Context, id string, r io.Reader
 		return 0, blob.NewErrBadUpload("range is not as expected")
 	}
 
-	s, err := tmpstream.New(r)
+	s, err := seekbuf.New(r)
 	if err != nil {
-		return 0, fmt.Errorf("failed to create tmp stream: %w", err)
+		return 0, fmt.Errorf("failed to create buffer: %w", err)
 	}
 	defer func() {
 		if err := s.Destroy(); err != nil {
@@ -238,7 +238,7 @@ func (handler *blobHandler) PutChunk(ctx context.Context, id string, r io.Reader
 
 	sr, err := s.Get()
 	if err != nil {
-		return 0, fmt.Errorf("failed to get tmp stream reader: %w", err)
+		return 0, fmt.Errorf("failed to get buffer reader: %w", err)
 	}
 	defer sr.Close()
 
