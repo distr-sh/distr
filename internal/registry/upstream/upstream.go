@@ -12,9 +12,9 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/registry/blob"
 	"github.com/distr-sh/distr/internal/registry/name"
-	"github.com/distr-sh/distr/internal/tmpstream"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
+	"github.com/glasskube/pkg/seekbuf"
 	godigest "github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.uber.org/zap"
@@ -251,15 +251,15 @@ func extractBlobsAndSubManifests(
 }
 
 // FetchAndStoreBlob fetches a blob from the upstream registry for the given repo,
-// stores it in the blob handler, and returns a TmpStream that can be used to serve
-// the blob content to the client. The caller must call TmpStream.Destroy() after use.
+// stores it in the blob handler, and returns a Buffer that can be used to serve
+// the blob content to the client. The caller must call Buffer.Destroy() after use.
 // Returns apierrors.ErrNotFound if the artifact has no upstream configured.
 func (s *Syncer) FetchAndStoreBlob(
 	ctx context.Context,
 	repoStr string,
 	d godigest.Digest,
 	bph blob.BlobPutHandler,
-) (tmpstream.TmpStream, int64, error) {
+) (seekbuf.Buffer, int64, error) {
 	n, err := name.Parse(repoStr)
 	if err != nil {
 		return nil, 0, apierrors.ErrNotFound
@@ -284,7 +284,7 @@ func (s *Syncer) FetchAndStoreBlob(
 	}
 	defer rc.Close()
 
-	tmp, err := tmpstream.New(rc)
+	tmp, err := seekbuf.New(rc)
 	if err != nil {
 		return nil, 0, fmt.Errorf("buffering blob: %w", err)
 	}

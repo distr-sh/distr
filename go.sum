@@ -248,6 +248,8 @@ github.com/getsentry/sentry-go v0.46.2 h1:1jhYwrKGa3sIpo/y5iDNXS5wDoT7I1KNzMHrnK
 github.com/getsentry/sentry-go v0.46.2/go.mod h1:evVbw2qotNUdYG8KxXbAdjOQWWvWIwKxpjdZZIvcIPw=
 github.com/getsentry/sentry-go/otel/otlp v0.46.2 h1:hcI8gThICeWXhZ30zE0NbFH8ruUcwCx6mR4NwvRtk64=
 github.com/getsentry/sentry-go/otel/otlp v0.46.2/go.mod h1:0dK3brWRyY/Mc5k3H/FobepVgvQ0+hfYAbdwuretB/c=
+github.com/glasskube/pkg/seekbuf v0.1.1 h1:nUdyZS6XEkjkjploYIsmtGD60o/giGUI7Kiz9jqBFHM=
+github.com/glasskube/pkg/seekbuf v0.1.1/go.mod h1:JXcnhJNn6GxanHkWOkF45wK3CxUgrAwEeManYxTgySs=
 github.com/go-chi/chi/v5 v5.3.0 h1:halUjDxhshgXHMrao5bB8eNBXo/rnzwr8m5m36glehM=
 github.com/go-chi/chi/v5 v5.3.0/go.mod h1:R+tYY2hNuVUUjxoPtqUdgBqevM9s9njzkTLutVsOCto=
 github.com/go-chi/httprate v0.15.0 h1:j54xcWV9KGmPf/X4H32/aTH+wBlrvxL7P+SdnRqxh5g=
@@ -550,8 +552,8 @@ github.com/oklog/ulid/v2 v2.1.1/go.mod h1:rcEKHmBBKfef9DhnvX7y1HZBYxjXb0cP5ExxNs
 github.com/onsi/ginkgo v1.16.5 h1:8xi0RTUf59SOSfEtZMvwTvXYMzG4gV23XVHOZiXNtnE=
 github.com/onsi/ginkgo/v2 v2.28.1 h1:S4hj+HbZp40fNKuLUQOYLDgZLwNUVn19N3Atb98NCyI=
 github.com/onsi/ginkgo/v2 v2.28.1/go.mod h1:CLtbVInNckU3/+gC8LzkGUb9oF+e8W8TdUsxPwvdOgE=
-github.com/onsi/gomega v1.41.0 h1:OwKp4pXNgVxf6sCplzYo794OFNuoL2q2SBMU5NSWOjA=
-github.com/onsi/gomega v1.41.0/go.mod h1:M/Uqpu/8qTjtzCLUA2zJHX9Iilrau25x1PdoSRbWh5A=
+github.com/onsi/gomega v1.42.0 h1:CJby8u36xb7v34W78F8WKvqTQP7PCMIPB78IVDB73l4=
+github.com/onsi/gomega v1.42.0/go.mod h1:M/Uqpu/8qTjtzCLUA2zJHX9Iilrau25x1PdoSRbWh5A=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal v0.154.0 h1:puudXWPJHyDmDXXXB+fO39yFtlMTX+187nvCeJeJzys=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal v0.154.0/go.mod h1:8z8HOBhVnR/uDmR3vkoQZg0dYfyKRGuOgQQgXuInAL8=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter v0.154.0 h1:Herj4tsnKOUmqc+nnLmASUXBkXBPQpc9vKoxa3z+kz8=

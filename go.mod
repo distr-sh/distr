@@ -19,6 +19,7 @@ require (
 	github.com/fsnotify/fsnotify v1.10.1
 	github.com/getsentry/sentry-go v0.46.2
 	github.com/getsentry/sentry-go/otel/otlp v0.46.2
+	github.com/glasskube/pkg/seekbuf v0.1.1
 	github.com/go-chi/chi/v5 v5.3.0
 	github.com/go-chi/httprate v0.15.0
 	github.com/go-chi/jwtauth/v5 v5.4.0
@@ -38,7 +39,7 @@ require (
 	github.com/oaswrap/spec v0.5.1
 	github.com/oaswrap/spec-ui v0.2.0
 	github.com/oaswrap/spec/adapter/chiopenapi v0.5.1
-	github.com/onsi/gomega v1.41.0
+	github.com/onsi/gomega v1.42.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.154.0
 	github.com/pquerna/otp v1.5.0
 	github.com/prometheus/client_golang v1.23.2
