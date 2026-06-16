@@ -6545,7 +6545,6 @@ snapshots:
       '@rollup/rollup-win32-x64-gnu': 4.60.4
       '@rollup/rollup-win32-x64-msvc': 4.60.4
       fsevents: 2.3.3
-    optional: true
 
   router@2.2.0:
     dependencies:
@@ -6823,8 +6822,8 @@ snapshots:
       fdir: 6.5.0(picomatch@4.0.4)
       picomatch: 4.0.4
       postcss: 8.5.15
-      rollup: 4.60.2
-      tinyglobby: 0.2.16
+      rollup: 4.60.4
+      tinyglobby: 0.2.17
     optionalDependencies:
       '@types/node': 25.6.2
       fsevents: 2.3.3
