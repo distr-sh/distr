@@ -21,6 +21,8 @@ func Parse(encoded string) (Key, error) {
 		return Key{}, ErrInvalidAccessKey
 	} else if decoded, err := hex.DecodeString(strings.TrimPrefix(encoded, keyPrefix)); err != nil {
 		return Key{}, fmt.Errorf("%w: %w", ErrInvalidAccessKey, err)
+	} else if len(decoded) != 16 {
+		return Key{}, ErrInvalidAccessKey
 	} else {
 		return Key(decoded), nil
 	}
