@@ -16,20 +16,20 @@
           <li>
             <strong>Event type:</strong>
             {{ if eq .EventType "error" }}
-            <span class="text-danger">ERROR</span>
+              <span class="text-danger">ERROR</span>
             {{ else if eq .EventType "stale" }}
-            <span class="text-warning">STALE</span>
+              <span class="text-warning">STALE</span>
             {{ else if eq .EventType "recovered" }}
-            <span class="text-success">RECOVERED</span>
+              <span class="text-success">RECOVERED</span>
             {{ else }}
-            <span>{{ .EventType }}</span>
+              <span>{{ .EventType }}</span>
             {{ end }}
           </li>
           {{ with .DeploymentTarget.CustomerOrganization }}
-          <li>
-            <strong>Affected customer:</strong>
-            {{ .Name }}
-          </li>
+            <li>
+              <strong>Affected customer:</strong>
+              {{ .Name }}
+            </li>
           {{ end }}
           <li>
             <strong>Affected deployment:</strong>
@@ -40,27 +40,27 @@
             {{ .Deployment.Application.Name }}@{{ .Deployment.ApplicationVersionName }}
           </li>
           {{ if or (eq .EventType "error") (eq .EventType "recovered") }}
-          <li>
-            <strong>Timestamp:</strong>
-            {{ .CurrentStatus.CreatedAt }}
-          </li>
-          <li>
-            <strong>Message:</strong>
-            {{ .CurrentStatus.Message }}
-          </li>
+            <li>
+              <strong>Timestamp:</strong>
+              {{ .CurrentStatus.CreatedAt }}
+            </li>
+            <li>
+              <strong>Message:</strong>
+              {{ .CurrentStatus.Message }}
+            </li>
           {{ else if eq .EventType "stale" }}
-          <li>
-            <strong>Last status update:</strong>
-            {{ .PreviousStatus.CreatedAt }}
-          </li>
+            <li>
+              <strong>Last status update:</strong>
+              {{ .PreviousStatus.CreatedAt }}
+            </li>
           {{ end }}
         </ul>
 
         <p>This is an automated alert.</p>
 
-        <p>{{template "fragments/signature.html" . }}</p>
+        <p>{{ template "fragments/signature.html" . }}</p>
       </main>
-      {{template "fragments/footer.html" . }}
+      {{ template "fragments/footer.html" . }}
     </div>
   </body>
 </html>

@@ -17,9 +17,10 @@ type AuthLoginResponse struct {
 }
 
 type AuthRegistrationRequest struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Name             string `json:"name"`
+	OrganizationName string `json:"organizationName"`
+	Email            string `json:"email"`
+	Password         string `json:"password"`
 }
 
 func (r *AuthRegistrationRequest) Validate() error {

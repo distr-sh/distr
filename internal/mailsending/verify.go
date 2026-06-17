@@ -15,7 +15,12 @@ import (
 	"go.uber.org/zap"
 )
 
-func SendUserVerificationMail(ctx context.Context, userAccount types.UserAccount, org types.Organization) error {
+func SendUserVerificationMail(
+	ctx context.Context,
+	userAccount types.UserAccount,
+	org types.Organization,
+	greetWithOrgName bool,
+) error {
 	mailer := internalctx.GetMailer(ctx)
 	log := internalctx.GetLogger(ctx)
 
@@ -34,7 +39,7 @@ func SendUserVerificationMail(ctx context.Context, userAccount types.UserAccount
 		if err := mailer.Send(ctx,
 			mailx.To(userAccount.Email),
 			mailx.Subject("Verify your Distr account"),
-			mailx.HtmlBodyTemplate(mailtemplates.VerifyEmail(userAccount, owb, token)),
+			mailx.HtmlBodyTemplate(mailtemplates.VerifyEmail(userAccount, owb, token, greetWithOrgName)),
 		); err != nil {
 			log.Error(
 				"could not send verification mail",

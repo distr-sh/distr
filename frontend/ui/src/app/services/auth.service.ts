@@ -131,10 +131,18 @@ export class AuthService {
     shareReplay(1)
   );
 
-  public register(email: string, name: string | null | undefined, password: string): Observable<void> {
+  public register(
+    email: string,
+    name: string | null | undefined,
+    organizationName: string | null | undefined,
+    password: string
+  ): Observable<void> {
     let body: any = {email, password};
     if (name) {
       body = {...body, name};
+    }
+    if (organizationName) {
+      body = {...body, organizationName};
     }
     return this.httpClient.post<TokenResponse>(`${authBaseUrl}/register`, body).pipe(
       tap((r) => this.loginWithToken(r.token)),

@@ -3,9 +3,17 @@
  * @type {import("prettier").Config}
  */
 const config = {
+  plugins: ['prettier-plugin-organize-imports', 'prettier-plugin-go-template'],
+  overrides: [
+    {
+      files: ['internal/**/*.html'],
+      options: {
+        parser: 'go-template',
+      },
+    },
+  ],
   bracketSameLine: true,
   bracketSpacing: false,
-  plugins: ['prettier-plugin-organize-imports'],
   printWidth: 120,
   semi: true,
   singleQuote: true,

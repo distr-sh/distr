@@ -8,31 +8,33 @@
     <div class="message-container">
       {{ template "fragments/header.html" . }}
       <main>
-        {{template "fragments/greeting.html" . }}
+        {{ template "fragments/greeting.html" . }}
+
 
         <p>
           {{ if .InvitingUser.Name }}{{ .InvitingUser.Name }}{{ else }}{{ .InvitingUser.Email }}{{ end }} invited you to
-          the <strong>{{.TargetOrgName}}</strong> organization on <a href="{{.Host}}/">{{.Host}}</a>.
+          the <strong>{{ .TargetOrgName }}</strong> organization on <a href="{{ .Host }}/">{{ .Host }}</a>.
         </p>
 
         {{ if .InviteURL }}
-        <p>
-          Since you don't have an account yet, please finish your setup by clicking
-          <a href="{{ .InviteURL | UnsafeURL }}">here</a>.
-        </p>
+          <p>
+            Since you don't have an account yet, please finish your setup by clicking
+            <a href="{{ .InviteURL | UnsafeURL }}">here</a>.
+          </p>
 
-        <p>Alternatively, you can copy and paste the following URL into your browser:</p>
+          <p>Alternatively, you can copy and paste the following URL into your browser:</p>
 
-        <div style="overflow-wrap: break-word; word-break: break-all">
-          <code>{{ .InviteURL }}</code>
-        </div>
+          <div style="overflow-wrap: break-word; word-break: break-all">
+            <code>{{ .InviteURL }}</code>
+          </div>
         {{ else }}
-        <p>Log in with your existing account at <a href="{{ .Host }}/">{{ .Host }}</a>.</p>
+          <p>Log in with your existing account at <a href="{{ .Host }}/">{{ .Host }}</a>.</p>
         {{ end }}
 
-        <p>{{template "fragments/signature.html" . }}</p>
+
+        <p>{{ template "fragments/signature.html" . }}</p>
       </main>
-      {{template "fragments/footer.html" . }}
+      {{ template "fragments/footer.html" . }}
     </div>
   </body>
 </html>
