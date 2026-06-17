@@ -8,28 +8,22 @@
     <div class="message-container">
       {{ template "fragments/header.html" . }}
       <main>
-        {{template "fragments/greeting.html" . }} {{ $isOwnAccount := and .Organization .Organization.Name (eq
-        .Organization.Name .UserAccount.Email) }}
-
+        {{ template "fragments/greeting.html" . }}
         <p>
-          Welcome to {{ if $isOwnAccount }}Distr{{ else if and .Organization .Organization.Name }}{{ .Organization.Name
-          }}{{ else }}Distr{{ end }}! Please
-          <a href="{{.Host}}/verify?jwt={{.Token | QueryEscape}}">click this link</a> to verify that this is your email
-          address.
+          Welcome to {{ .Signature }}! Please
+          <a href="{{ .Host }}/verify?jwt={{ .Token | QueryEscape }}">click this link</a> to verify that this is your
+          email address.
         </p>
 
         <p>Alternatively, you can copy and paste the following URL into your browser:</p>
 
         <div style="overflow-wrap: break-word; word-break: break-all">
-          <code>{{.Host}}/verify?jwt={{.Token | QueryEscape}}</code>
+          <code>{{ .Host }}/verify?jwt={{ .Token | QueryEscape }}</code>
         </div>
 
-        <p>
-          {{ if $isOwnAccount }}Best regards,<br />
-          the Distr Team!{{ else }}{{ template "fragments/signature.html" . }}{{ end }}
-        </p>
+        <p>{{ template "fragments/signature.html" . }}</p>
       </main>
-      {{template "fragments/footer.html" . }}
+      {{ template "fragments/footer.html" . }}
     </div>
   </body>
 </html>

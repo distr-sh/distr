@@ -74,10 +74,17 @@ func VerifyEmail(
 	userAccount types.UserAccount,
 	org types.OrganizationWithBranding,
 	token string,
+	greetWithOrgName bool,
 ) (*template.Template, any) {
+	signature := "Distr"
+	if greetWithOrgName && org.Name != "" && org.Name != userAccount.Email {
+		signature = org.Name
+	}
+
 	return templates.Lookup("verify-email-registration.html"), map[string]any{
 		"UserAccount":  userAccount,
 		"Organization": org,
+		"Signature":    signature,
 		"Host":         customdomains.AppDomainOrDefault(org.Organization),
 		"Token":        token,
 	}

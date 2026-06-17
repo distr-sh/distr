@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/api"
@@ -101,7 +102,7 @@ func authVerifyRequestHandler(w http.ResponseWriter, r *http.Request) {
 	userAccount := auth.CurrentUser()
 	if userAccount.EmailVerifiedAt != nil {
 		w.WriteHeader(http.StatusNoContent)
-	} else if err := mailsending.SendUserVerificationMail(ctx, *userAccount, *auth.CurrentOrg()); err != nil {
+	} else if err := mailsending.SendUserVerificationMail(ctx, *userAccount, *auth.CurrentOrg(), true); err != nil {
 		log.Error("failed to send verification mail", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -200,7 +201,7 @@ func setPasswordAndLogin(w http.ResponseWriter, r *http.Request, password string
 		if org, err := userauth.PrimaryOrganization(ctx, *user); err != nil {
 			log.Warn("could not resolve organization for verification mail", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
-		} else if err := mailsending.SendUserVerificationMail(ctx, *user, org.Organization); err != nil {
+		} else if err := mailsending.SendUserVerificationMail(ctx, *user, org.Organization, true); err != nil {
 			log.Warn("could not send verification mail", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 		}
@@ -412,7 +413,9 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 			Email:    request.Email,
 			Password: request.Password,
 		}
-		var org *types.Organization
+		org := types.Organization{
+			Name: strings.TrimSpace(request.OrganizationName),
+		}
 		var token string
 
 		if err := db.RunTx(ctx, func(ctx context.Context) error {
@@ -420,7 +423,7 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return err
-			} else if org, err = db.CreateUserAccountWithOrganization(ctx, &userAccount); err != nil {
+			} else if err = db.CreateUserAccountWithOrganization(ctx, &userAccount, &org); err != nil {
 				if errors.Is(err, apierrors.ErrAlreadyExists) {
 					w.WriteHeader(http.StatusBadRequest)
 				} else {
@@ -443,7 +446,7 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		// so they need the verification mail. When it is disabled they are logged in directly and the mail would
 		// be pointless.
 		if env.UserEmailVerificationRequired() {
-			if err := mailsending.SendUserVerificationMail(ctx, userAccount, *org); err != nil {
+			if err := mailsending.SendUserVerificationMail(ctx, userAccount, org, false); err != nil {
 				log.Warn("could not send verification mail", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 			}

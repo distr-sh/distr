@@ -154,7 +154,7 @@ func registerOIDCUser(ctx context.Context, email string) (*types.UserAccount, er
 		Email:           email,
 		EmailVerifiedAt: util.PtrTo(time.Now()),
 	}
-	if _, err := db.CreateUserAccountWithOrganization(ctx, &userAccount); err != nil {
+	if err := db.CreateUserAccountWithOrganization(ctx, &userAccount, &types.Organization{}); err != nil {
 		return nil, fmt.Errorf("failed to create OIDC user: %w", err)
 	}
 	return &userAccount, nil

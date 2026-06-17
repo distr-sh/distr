@@ -38,25 +38,25 @@ const (
 func CreateUserAccountWithOrganization(
 	ctx context.Context,
 	userAccount *types.UserAccount,
-) (*types.Organization, error) {
-	org := types.Organization{
-		Name: userAccount.Email,
+	organization *types.Organization,
+) error {
+	if organization.Name == "" {
+		organization.Name = userAccount.Email
 	}
+
 	if err := CreateUserAccount(ctx, userAccount); err != nil {
-		return nil, err
-	} else if err := CreateOrganization(ctx, &org); err != nil {
-		return nil, err
-	} else if err := CreateUserAccountOrganizationAssignment(
-		ctx,
-		userAccount.ID,
-		org.ID,
-		types.UserRoleAdmin,
-		nil,
-		nil,
-	); err != nil {
-		return nil, err
+		return err
+	} else if err := CreateOrganization(ctx, organization); err != nil {
+		return err
 	} else {
-		return &org, nil
+		return CreateUserAccountOrganizationAssignment(
+			ctx,
+			userAccount.ID,
+			organization.ID,
+			types.UserRoleAdmin,
+			nil,
+			nil,
+		)
 	}
 }
 

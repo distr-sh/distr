@@ -23,6 +23,7 @@ export class RegisterComponent implements OnInit {
     {
       email: new FormControl('', [Validators.required, Validators.email]),
       name: new FormControl<string | undefined>(undefined),
+      organizationName: new FormControl<string | undefined>(undefined),
       password: new FormControl('', [Validators.required, Validators.minLength(8)]),
       passwordConfirm: new FormControl('', [Validators.required]),
     },
@@ -43,7 +44,7 @@ export class RegisterComponent implements OnInit {
       this.loading = true;
       const value = this.form.value;
       try {
-        await firstValueFrom(this.auth.register(value.email!, value.name, value.password!));
+        await firstValueFrom(this.auth.register(value.email!, value.name, value.organizationName, value.password!));
         location.assign('/');
       } catch (e) {
         this.errorMessage = getFormDisplayedError(e);

@@ -1,2 +1,10 @@
 Best regards,<br />
-the {{ if and .Organization .Organization.Name }}{{ .Organization.Name }}{{ else }}Distr{{ end }} Team!
+the
+{{ if .Signature }}
+  {{ .Signature }}
+{{ else if and .Organization .Organization.Name }}
+  {{ .Organization.Name }}
+{{ else }}
+  Distr
+{{ end }}
+Team!
