@@ -47,7 +47,7 @@ export class DashboardComponent implements OnInit {
       switchMap((enabled) => (enabled ? this.supportBundlesService.list() : of([]))),
       map((bundles) => {
         const grouped = new Map<string, {customerName: string; bundles: SupportBundle[]}>();
-        for (const bundle of bundles) {
+        for (const bundle of bundles.filter((b) => b.status !== 'resolved')) {
           const existing = grouped.get(bundle.customerOrganizationId);
           if (existing) {
             existing.bundles.push(bundle);
