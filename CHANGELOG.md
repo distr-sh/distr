@@ -1,5 +1,28 @@
 # Changelog
 
+## [2.24.1](https://github.com/distr-sh/distr/compare/2.24.0...2.24.1) (2026-06-18)
+
+
+### Bug Fixes
+
+* **backend:** check authkey length before type conversion ([#2647](https://github.com/distr-sh/distr/issues/2647)) ([b0fd971](https://github.com/distr-sh/distr/commit/b0fd97150bc844cc8bf7fc3272a5a4083d72fbdd))
+* **backend:** migrate internal/tmpstream to seekbuf ([#2643](https://github.com/distr-sh/distr/issues/2643)) ([1f518e1](https://github.com/distr-sh/distr/commit/1f518e1c2ce4f2bf365ace9a4898dd3917ff6414))
+* **deps:** update aws-sdk-go-v2 monorepo to v1.104.0 ([#2654](https://github.com/distr-sh/distr/issues/2654)) ([aba2c92](https://github.com/distr-sh/distr/commit/aba2c92f4c9ae4325e9807fdf9dab0de28b3a50e))
+* **deps:** update aws-sdk-go-v2 monorepo to v1.32.25 ([#2638](https://github.com/distr-sh/distr/issues/2638)) ([7e01fe0](https://github.com/distr-sh/distr/commit/7e01fe0ca301b7f9a1d1ad25fe383e1168fe0cc2))
+* **deps:** update kubernetes monorepo to v0.36.2 ([#2639](https://github.com/distr-sh/distr/issues/2639)) ([c660e29](https://github.com/distr-sh/distr/commit/c660e29009390a5e8f6821b6dc57002cadad3435))
+* **deps:** update module github.com/getsentry/sentry-go/otel/otlp to v0.47.0 ([#2652](https://github.com/distr-sh/distr/issues/2652)) ([ca62b17](https://github.com/distr-sh/distr/commit/ca62b17049c410b449cd8dfd53e0dc967b46f8ca))
+* **deps:** update website dependencies ([#2644](https://github.com/distr-sh/distr/issues/2644)) ([6cc8235](https://github.com/distr-sh/distr/commit/6cc8235d20ca2ccdca226a384660776335cbbe10))
+
+
+### Other
+
+* add setting organization name on registration ([#2650](https://github.com/distr-sh/distr/issues/2650)) ([3912822](https://github.com/distr-sh/distr/commit/391282206458b3cd61ca3786ed0965d61a6c18f9))
+* **deps:** update alpine docker tag to v3.24.1 ([#2648](https://github.com/distr-sh/distr/issues/2648)) ([8ec0ac2](https://github.com/distr-sh/distr/commit/8ec0ac27da19c33960ed30ce1a7b5609759bc387))
+* **deps:** update pnpm to v11.7.0 ([#2642](https://github.com/distr-sh/distr/issues/2642)) ([30dc18b](https://github.com/distr-sh/distr/commit/30dc18b0765f7336b180af696579ca5c90f9d147))
+* **deps:** update pnpm/action-setup action to v6.0.9 ([#2646](https://github.com/distr-sh/distr/issues/2646)) ([ca13103](https://github.com/distr-sh/distr/commit/ca1310317df6711b22439700de1c6b7f594f88be))
+* **deps:** update vitest monorepo to v4.1.9 ([#2641](https://github.com/distr-sh/distr/issues/2641)) ([c7bc6c6](https://github.com/distr-sh/distr/commit/c7bc6c685d2b9e6ef5f9773c2d66ffcda3e95044))
+* **frontend:** hide resolved support bundles on dashboard ([#2653](https://github.com/distr-sh/distr/issues/2653)) ([fd8d365](https://github.com/distr-sh/distr/commit/fd8d365b87f5f888cea96599f256d6f9c193a34c))
+
 ## [2.24.0](https://github.com/distr-sh/distr/compare/2.23.0...2.24.0) (2026-06-15)
 
 
