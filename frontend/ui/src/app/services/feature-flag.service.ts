@@ -50,7 +50,9 @@ export class FeatureFlagService {
     return this.experimentalFeatureFlags$;
   }
 
-	isExperimentalFeatureEnabled$(key: ExperimentalFeatureFlagKey): Observable<boolean> {
+  public readonly isEnvironmentsEnabled$ = this.isExperimentalFeatureEnabled$('environments');
+
+  isExperimentalFeatureEnabled$(key: ExperimentalFeatureFlagKey): Observable<boolean> {
     return this.getExperimentalFeatureFlags().pipe(
       map((flags) => flags.some((flag) => flag.key === key && flag.enabled))
     );
