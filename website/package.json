@@ -26,7 +26,7 @@
     "@astrojs/starlight-tailwind": "5.0.0",
     "@iconify-json/lucide": "^1.2.105",
     "@tailwindcss/vite": "^4.2.4",
-    "astro": "6.4.7",
+    "astro": "6.4.8",
     "astro-icon": "^1.1.5",
     "astrojs-service-worker": "^2.0.0",
     "embla-carousel": "^8.6.0",
@@ -52,7 +52,7 @@
     "prettier-plugin-organize-imports": "^4.3.0",
     "typescript": "^6.0.3"
   },
-  "packageManager": "pnpm@11.7.0",
+  "packageManager": "pnpm@11.8.0",
   "engines": {
     "node": "26.x"
   }
