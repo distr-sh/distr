@@ -95,6 +95,60 @@
             </div>
           </div>
 
+          <div class="space-y-4">
+            <h2 class="text-xl font-bold dark:text-white">Experimental features</h2>
+            @let flags = experimentalFeatureFlags();
+            @if (experimentalFeatureFlagsError()) {
+              <div
+                class="p-3 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-700 dark:text-red-300"
+                role="alert">
+                {{ experimentalFeatureFlagsError() }}
+              </div>
+            } @else if (!flags) {
+              <div class="text-sm text-gray-500 dark:text-gray-400">Loading feature flags...</div>
+            } @else if (flags.length === 0) {
+              <div class="text-sm text-gray-500 dark:text-gray-400">No experimental feature flags are registered.</div>
+            } @else {
+              <div class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+                <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                  <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-300">
+                    <tr>
+                      <th scope="col" class="px-4 py-3">Feature</th>
+                      <th scope="col" class="px-4 py-3">Milestone</th>
+                      <th scope="col" class="px-4 py-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (flag of flags; track flag.key) {
+                      <tr class="border-t border-gray-200 dark:border-gray-700">
+                        <td class="px-4 py-3">
+                          <div class="font-medium text-gray-900 dark:text-white">{{ flag.label }}</div>
+                          <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ flag.description }}</div>
+                          <code class="mt-2 inline-block text-xs text-gray-500 dark:text-gray-400">{{ flag.key }}</code>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">{{ flag.milestone }}</td>
+                        <td class="px-4 py-3">
+                          <span
+                            class="inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-sm"
+                            [class.bg-green-100]="flag.enabled"
+                            [class.text-green-800]="flag.enabled"
+                            [class.dark:bg-green-900]="flag.enabled"
+                            [class.dark:text-green-300]="flag.enabled"
+                            [class.bg-gray-100]="!flag.enabled"
+                            [class.text-gray-800]="!flag.enabled"
+                            [class.dark:bg-gray-700]="!flag.enabled"
+                            [class.dark:text-gray-300]="!flag.enabled">
+                            {{ flag.enabled ? 'Enabled' : 'Disabled' }}
+                          </span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+
           @if (isPrePostScriptEnabled()) {
             <div class="space-y-4">
               <h2 class="text-xl font-bold dark:text-white">Pre-/post-connect scripts</h2>

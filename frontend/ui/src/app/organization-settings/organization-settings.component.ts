@@ -3,15 +3,17 @@ import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faFloppyDisk, faLightbulb} from '@fortawesome/free-solid-svg-icons';
-import {firstValueFrom, startWith} from 'rxjs';
+import {catchError, firstValueFrom, of, startWith} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {slugMaxLength, slugPattern} from '../../util/slug';
 import {DeleteOrganizationComponent} from '../components/delete-organization/delete-organization.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AuthService} from '../services/auth.service';
+import {FeatureFlagService} from '../services/feature-flag.service';
 import {OrganizationService} from '../services/organization.service';
 import {OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
+import {ExperimentalFeatureFlag} from '../types/feature-flags';
 import {Organization} from '../types/organization';
 
 @Component({
@@ -28,6 +30,7 @@ export class OrganizationSettingsComponent implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly overlayService = inject(OverlayService);
+  private readonly featureFlags = inject(FeatureFlagService);
   protected readonly auth = inject(AuthService);
 
   private readonly preflightConfirmTemplate = viewChild.required<TemplateRef<unknown>>('preflightConfirmTemplate');
@@ -47,6 +50,18 @@ export class OrganizationSettingsComponent implements OnInit {
     prePostScriptsEnabled: this.fb.control<boolean>(false),
   });
   formLoading = signal(false);
+  protected readonly experimentalFeatureFlagsError = signal<string | undefined>(undefined);
+  protected readonly experimentalFeatureFlags = toSignal(
+    this.featureFlags.getExperimentalFeatureFlags().pipe(
+      catchError((e) => {
+        this.experimentalFeatureFlagsError.set(
+          getFormDisplayedError(e) ?? 'Could not load experimental feature flags.'
+        );
+        return of([] as ExperimentalFeatureFlag[]);
+      })
+    ),
+    {initialValue: undefined}
+  );
 
   protected readonly isPrePostScriptEnabled = toSignal(
     this.form.controls.prePostScriptsEnabled.valueChanges.pipe(

@@ -177,6 +177,7 @@ func ApiRouter(
 					r.Route("/deployment-target-metrics", handlers.DeploymentTargetMetricsRouter)
 					r.Route("/deployment-targets", handlers.DeploymentTargetsRouter)
 					r.Route("/deployments", handlers.DeploymentsRouter)
+					r.Route("/experimental-feature-flags", handlers.ExperimentalFeatureFlagsRouter)
 					r.Route("/files", handlers.FileRouter)
 					r.Route("/notification-records", handlers.NotificationRecordsRouter)
 					r.Route("/organization", handlers.OrganizationRouter)

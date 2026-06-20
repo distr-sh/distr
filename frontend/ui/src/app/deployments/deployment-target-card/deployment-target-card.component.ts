@@ -44,7 +44,7 @@ import dayjs from 'dayjs';
 import {EMPTY, filter, firstValueFrom, lastValueFrom, switchMap} from 'rxjs';
 import {SemVer} from 'semver';
 import {GITHUB_URL, WEBSITE_URL} from '../../../constants';
-import {agentChangelog} from '../../../data';
+import {agentChangelog, AgentChangelogRelease} from '../../../data';
 import {maxBy} from '../../../util/arrays';
 import {dateTimeLocalToISO, isArchived, isoToDateTimeLocal} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
@@ -194,7 +194,7 @@ export class DeploymentTargetCardComponent {
 
   protected readonly agentUpdateFromVersion = signal<string | undefined>(undefined);
   protected readonly agentUpdateToVersion = signal<string | undefined>(undefined);
-  protected readonly agentUpdateChangelogReleases = signal<typeof agentChangelog.releases>([]);
+  protected readonly agentUpdateChangelogReleases = signal<AgentChangelogRelease[]>([]);
 
   protected readonly isUndeploySupported = this.isAgentVersionAtLeast('1.3.0');
   protected readonly isMultiDeploymentSupported = this.isAgentVersionAtLeast('1.6.0');
@@ -473,7 +473,11 @@ export class DeploymentTargetCardComponent {
     }
   }
 
-  private loadChangelogReleases(fromVersion: string | undefined, toVersion: string, type: DeploymentType) {
+  private loadChangelogReleases(
+    fromVersion: string | undefined,
+    toVersion: string,
+    type: DeploymentType
+  ): AgentChangelogRelease[] {
     const allowedScopes = new Set(['agent', `${type}-agent`]);
     return agentChangelog.releases
       .filter((release) => {

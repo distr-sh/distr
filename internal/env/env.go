@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/distr-sh/distr/internal/envparse"
 	"github.com/distr-sh/distr/internal/envutil"
+	"github.com/distr-sh/distr/internal/featureflags"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/joho/godotenv"
 )
@@ -96,6 +98,7 @@ var (
 	metricsEnabled                          bool
 	metricsAddr                             string
 	metricsBearerToken                      *string
+	experimentalFeatureFlags                []featureflags.Key
 )
 
 func Initialize() {
@@ -277,6 +280,11 @@ func Initialize() {
 	metricsEnabled = envutil.GetEnvParsedOrDefault("METRICS_ENABLED", strconv.ParseBool, false)
 	metricsAddr = envutil.GetEnvOrDefault("METRICS_ADDR", ":3000", envutil.GetEnvOpts{})
 	metricsBearerToken = envutil.GetEnvOrNil("METRICS_BEARER_TOKEN")
+	experimentalFeatureFlags = envutil.GetEnvParsedOrDefault(
+		"DISTR_EXPERIMENTAL_FEATURE_FLAGS",
+		featureflags.ParseEnabledKeys,
+		nil,
+	)
 }
 
 func DatabaseUrl() string {
@@ -597,4 +605,8 @@ func MetricsAddr() string {
 
 func MetricsBearerToken() *string {
 	return metricsBearerToken
+}
+
+func ExperimentalFeatureFlags() []featureflags.Key {
+	return slices.Clone(experimentalFeatureFlags)
 }
