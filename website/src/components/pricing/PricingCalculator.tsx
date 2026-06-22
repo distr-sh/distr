@@ -239,7 +239,8 @@ export default function PricingCalculator() {
             <div class="w-full min-h-[4rem] flex flex-col justify-start mb-5">
               <h3 class="mb-1 text-lg leading-tight">Customers</h3>
               <p class="mb-0 text-sm text-gray-600 dark:text-gray-400 leading-snug">
-                Select how many customer organizations you have &ndash; each can have unlimited users
+                Select how many customer organizations you have &ndash; each can
+                have unlimited users
               </p>
             </div>
             <div class="flex items-center justify-start gap-3 w-full">
