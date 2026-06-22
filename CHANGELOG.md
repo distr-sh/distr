@@ -1,5 +1,27 @@
 # Changelog
 
+## [2.24.2](https://github.com/distr-sh/distr/compare/2.24.1...2.24.2) (2026-06-22)
+
+
+### Bug Fixes
+
+* **backend:** improve organization error message ([#2668](https://github.com/distr-sh/distr/issues/2668)) ([3ca9a06](https://github.com/distr-sh/distr/commit/3ca9a067c6aeb8fdeade83a50b153d6be9366779))
+* **deps:** update module github.com/coreos/go-oidc/v3 to v3.19.0 ([#2662](https://github.com/distr-sh/distr/issues/2662)) ([8ab757c](https://github.com/distr-sh/distr/commit/8ab757c39ba6c5090456e08fd8bf02f64c24da29))
+* **deps:** update module helm.sh/helm/v4 to v4.2.2 ([#2657](https://github.com/distr-sh/distr/issues/2657)) ([85e2825](https://github.com/distr-sh/distr/commit/85e2825345a87d56fcdbcac555b71a1a6cc2fdfb))
+* **deps:** update website dependencies ([#2649](https://github.com/distr-sh/distr/issues/2649)) ([cea3b5a](https://github.com/distr-sh/distr/commit/cea3b5a6a1c903f412816640042b9b62dd5e3090))
+* **registry:** prevent "no rows" error on concurrent uploads ([#2664](https://github.com/distr-sh/distr/issues/2664)) ([0bbc981](https://github.com/distr-sh/distr/commit/0bbc981b3a1dfab594ac8be89324a46665c75634))
+
+
+### Other
+
+* **deps:** update angular-cli monorepo to v22.0.3 ([#2656](https://github.com/distr-sh/distr/issues/2656)) ([9e9d984](https://github.com/distr-sh/distr/commit/9e9d984142db5b3549b7766fd63152cd3a1a9abb))
+* **deps:** update angularmaterial monorepo to v22.0.2 ([#2659](https://github.com/distr-sh/distr/issues/2659)) ([657cdce](https://github.com/distr-sh/distr/commit/657cdced0153c38079118b0c389048dbc3955894))
+* **deps:** update axllent/mailpit docker tag to v1.30.2 ([#2655](https://github.com/distr-sh/distr/issues/2655)) ([073e5ef](https://github.com/distr-sh/distr/commit/073e5ef9321d31b60ea7fed95e3471844e9ab0ff))
+* **deps:** update dependency semver to v7.8.5 ([#2666](https://github.com/distr-sh/distr/issues/2666)) ([48bc177](https://github.com/distr-sh/distr/commit/48bc1775fb36540e791f538cbc2630a5a0d8d14e))
+* **deps:** update dependency stripe to v1.42.14 ([#2667](https://github.com/distr-sh/distr/issues/2667)) ([a1fffbb](https://github.com/distr-sh/distr/commit/a1fffbbe99b69c1df1db3f5fb275c5582b810073))
+* **deps:** update jdx/mise-action action to v4.2.0 ([#2660](https://github.com/distr-sh/distr/issues/2660)) ([8eda939](https://github.com/distr-sh/distr/commit/8eda939fc232b1b8042b7ad8efd892ee09e35df3))
+* **deps:** update pnpm to v11.8.0 ([#2661](https://github.com/distr-sh/distr/issues/2661)) ([92c5175](https://github.com/distr-sh/distr/commit/92c51754e04cf933aa15fedb1b28f95e34daf2f8))
+
 ## [2.24.1](https://github.com/distr-sh/distr/compare/2.24.0...2.24.1) (2026-06-18)
 
 
