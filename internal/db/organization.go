@@ -316,7 +316,7 @@ func GetOrganizationByID(ctx context.Context, orgID uuid.UUID) (*types.Organizat
 	}
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByPos[types.Organization])
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, apierrors.ErrNotFound
+		return nil, fmt.Errorf("%w: organization %v", apierrors.ErrNotFound, orgID)
 	} else if err != nil {
 		return nil, err
 	} else {
