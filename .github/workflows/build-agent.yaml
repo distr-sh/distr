@@ -43,7 +43,7 @@ jobs:
       REGISTRY_IMAGE: ghcr.io/distr-sh/distr/${{ matrix.agent }}
     steps:
       - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Generate commit hash
         id: generate
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
