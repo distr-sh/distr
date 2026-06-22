@@ -408,7 +408,7 @@ const signupSteps = [
                 <label
                   for="installations"
                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Number of self-hosted installations*
+                  How many customer installations do you expect?*
                 </label>
                 <select
                   id="installations"
@@ -426,52 +426,83 @@ const signupSteps = [
               </div>
               <div>
                 <div
-                  class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Deployment Types:
+                  class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Where do your customers want to deploy your solution?
                 </div>
-                <div class="grid grid-cols-2 gap-2">
-                  <label class="flex items-center space-x-2 cursor-pointer">
+                <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                  Select all that apply &mdash; you can change this later.
+                </div>
+                <div class="space-y-2">
+                  <label class="flex items-start space-x-2 cursor-pointer">
                     <input
                       type="checkbox"
                       name="target"
-                      value="docker"
-                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                      value="aws"
+                      class="w-4 h-4 mt-0.5 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                     />
                     <span class="text-sm text-gray-700 dark:text-gray-300">
-                      Docker
+                      Amazon Web Services (AWS)
                     </span>
                   </label>
-                  <label class="flex items-center space-x-2 cursor-pointer">
+                  <label class="flex items-start space-x-2 cursor-pointer">
                     <input
                       type="checkbox"
                       name="target"
-                      value="kubernetes"
-                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                      value="gcp"
+                      class="w-4 h-4 mt-0.5 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                     />
                     <span class="text-sm text-gray-700 dark:text-gray-300">
-                      Kubernetes
+                      Google Cloud (GCP)
                     </span>
                   </label>
-                  <label class="flex items-center space-x-2 cursor-pointer">
+                  <label class="flex items-start space-x-2 cursor-pointer">
                     <input
                       type="checkbox"
                       name="target"
-                      value="airGapped"
-                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                      value="azure"
+                      class="w-4 h-4 mt-0.5 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                     />
                     <span class="text-sm text-gray-700 dark:text-gray-300">
-                      Air-gapped
+                      Microsoft Azure
                     </span>
                   </label>
-                  <label class="flex items-center space-x-2 cursor-pointer">
+                  <label class="flex items-start space-x-2 cursor-pointer">
                     <input
                       type="checkbox"
                       name="target"
                       value="onPremise"
-                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                      class="w-4 h-4 mt-0.5 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                     />
                     <span class="text-sm text-gray-700 dark:text-gray-300">
-                      On-Premises
+                      On-premises
+                      <span class="text-gray-500 dark:text-gray-400">
+                        &mdash; customer's own servers or data center
+                      </span>
+                    </span>
+                  </label>
+                  <label class="flex items-start space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="target"
+                      value="airGapped"
+                      class="w-4 h-4 mt-0.5 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                    />
+                    <span class="text-sm text-gray-700 dark:text-gray-300">
+                      Air-gapped
+                      <span class="text-gray-500 dark:text-gray-400">
+                        &mdash; isolated network with no internet access
+                      </span>
+                    </span>
+                  </label>
+                  <label class="flex items-start space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="target"
+                      value="notSure"
+                      class="w-4 h-4 mt-0.5 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                    />
+                    <span class="text-sm text-gray-700 dark:text-gray-300">
+                      Not sure yet / depends on the customer
                     </span>
                   </label>
                 </div>
