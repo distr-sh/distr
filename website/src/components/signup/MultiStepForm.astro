@@ -32,9 +32,10 @@ const {
 const signupSteps = [
   {step: 1, label: 'Basic'},
   {step: 2, label: 'Details'},
-  {step: 3, label: 'Experience'},
-  {step: 4, label: 'Discovery'},
-  {step: 5, label: 'Timeline'},
+  {step: 3, label: 'Application'},
+  {step: 4, label: 'Experience'},
+  {step: 5, label: 'Discovery'},
+  {step: 6, label: 'Timeline'},
 ];
 ---
 
@@ -537,8 +538,131 @@ const signupSteps = [
             </form>
           </div>
 
-          <!-- Step 3: Experience -->
+          <!-- Step 3: Application -->
           <div id="step3" class="step-content hidden">
+            <div class="mb-6 text-center">
+              <h3 class="mb-2 text-gray-900 dark:text-white">
+                Tell us about your application
+              </h3>
+              <div class="text-gray-600 dark:text-gray-400">
+                This helps us tailor the right deployment path for you
+              </div>
+            </div>
+            <form id="application" class="space-y-4">
+              <div>
+                <label
+                  for="containerized"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Is your application already containerized?*
+                </label>
+                <select
+                  id="containerized"
+                  name="containerized"
+                  required
+                  class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600">
+                  <option value="">Select...</option>
+                  <option value="fully">Yes, fully</option>
+                  <option value="partially">Partially, in progress</option>
+                  <option value="no">No</option>
+                  <option value="not-sure">Not sure</option>
+                </select>
+              </div>
+              <div>
+                <label
+                  for="dockerCompose"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Do you already have a complete Docker Compose file?*
+                </label>
+                <select
+                  id="dockerCompose"
+                  name="dockerCompose"
+                  required
+                  class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600">
+                  <option value="">Select...</option>
+                  <option value="fully">Yes, fully</option>
+                  <option value="partially">Partially, in progress</option>
+                  <option value="no">No</option>
+                  <option value="not-sure">Not sure</option>
+                </select>
+              </div>
+              <div>
+                <label
+                  for="helmChart"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Do you already have a Helm chart?*
+                </label>
+                <select
+                  id="helmChart"
+                  name="helmChart"
+                  required
+                  class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600">
+                  <option value="">Select...</option>
+                  <option value="fully">Yes, fully</option>
+                  <option value="partially">Partially, in progress</option>
+                  <option value="no">No</option>
+                  <option value="not-sure">Not sure</option>
+                </select>
+              </div>
+              <div>
+                <label
+                  for="externalServices"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Do your services rely on external SaaS providers (e.g.
+                  Supabase, Clerk, OpenAI) that would need refactoring for
+                  self-managed deployments?*
+                </label>
+                <select
+                  id="externalServices"
+                  name="externalServices"
+                  required
+                  class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600">
+                  <option value="">Select...</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="not-sure">Not sure</option>
+                </select>
+                <div id="external-services-input" class="hidden mt-2">
+                  <label
+                    for="externalServicesText"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Which external services? Please list them*
+                  </label>
+                  <textarea
+                    id="externalServicesText"
+                    name="externalServicesText"
+                    rows="3"
+                    placeholder="e.g. Supabase (auth + database), Clerk (auth), OpenAI API..."
+                    class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"
+                  ></textarea>
+                </div>
+              </div>
+              <div>
+                <label
+                  for="architecture"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Describe your application architecture*
+                </label>
+                <textarea
+                  id="architecture"
+                  name="architecture"
+                  rows="4"
+                  placeholder="e.g. a React frontend, a Go API, a Python worker, a message queue, a Postgres database and a Redis cache..."
+                  required
+                  class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"
+                ></textarea>
+              </div>
+              <button
+                type="submit"
+                id="submit-application"
+                class="w-full py-3 px-6 bg-accent-600 hover:bg-accent-900 disabled:bg-gray-400 text-white font-semibold rounded-md transition-colors cursor-pointer">
+                <span id="application-text">Continue</span>
+                <span id="application-loading" class="hidden">Saving...</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Step 4: Experience -->
+          <div id="step4" class="step-content hidden">
             <div class="mb-6 text-center">
               <h3 class="mb-2 text-gray-900 dark:text-white">
                 Tell us about yourself
@@ -681,8 +805,8 @@ const signupSteps = [
             </form>
           </div>
 
-          <!-- Step 4: Discovery -->
-          <div id="step4" class="step-content hidden">
+          <!-- Step 5: Discovery -->
+          <div id="step5" class="step-content hidden">
             <div class="mb-6 text-center">
               <h3 class="mb-2 text-gray-900 dark:text-white">
                 How did you discover us?
@@ -829,8 +953,8 @@ const signupSteps = [
             </form>
           </div>
 
-          <!-- Step 5: Timeline -->
-          <div id="step5" class="step-content hidden">
+          <!-- Step 6: Timeline -->
+          <div id="step6" class="step-content hidden">
             <div class="mb-6 text-center">
               <h3 class="mb-2 text-gray-900 dark:text-white">
                 When do you want to get started?
@@ -1058,7 +1182,7 @@ const signupSteps = [
 
     if (stepParam) {
       const step = parseInt(stepParam, 10);
-      if (step >= 1 && step <= 5) {
+      if (step >= 1 && step <= 6) {
         showStep(step);
       }
     }
@@ -1275,7 +1399,92 @@ const signupSteps = [
       showStep(3);
     });
 
-    // Step 3: Experience
+    // Step 3: Application
+    const applicationForm = document.getElementById('application');
+    const externalServicesSelect = document.getElementById('externalServices');
+    const externalServicesInput = document.getElementById(
+      'external-services-input',
+    );
+    const externalServicesText = document.getElementById(
+      'externalServicesText',
+    );
+    externalServicesSelect?.addEventListener('change', () => {
+      const showDetails = externalServicesSelect.value === 'yes';
+      externalServicesInput?.classList.toggle('hidden', !showDetails);
+      if (externalServicesText) {
+        externalServicesText.required = showDetails;
+        if (!showDetails) {
+          externalServicesText.value = '';
+        }
+      }
+    });
+
+    applicationForm?.addEventListener('submit', async e => {
+      e.preventDefault();
+
+      const formData = new FormData(applicationForm);
+      const containerized = formData.get('containerized');
+      const dockerCompose = formData.get('dockerCompose');
+      const helmChart = formData.get('helmChart');
+      const externalServices = formData.get('externalServices');
+      const architecture = formData.get('architecture')?.trim();
+
+      if (!containerized) {
+        showError('Please tell us if your application is containerized');
+        return;
+      }
+
+      if (!dockerCompose) {
+        showError('Please tell us about your Docker Compose file');
+        return;
+      }
+
+      if (!helmChart) {
+        showError('Please tell us about your Helm chart');
+        return;
+      }
+
+      if (!externalServices) {
+        showError('Please tell us about external SaaS services');
+        return;
+      }
+
+      const externalServicesDetail =
+        formData.get('externalServicesText')?.trim() || '';
+
+      if (externalServices === 'yes' && !externalServicesDetail) {
+        showError('Please describe the external services you rely on');
+        return;
+      }
+
+      if (!architecture) {
+        showError('Please describe your application architecture');
+        return;
+      }
+
+      const data = {
+        containerized,
+        dockerCompose,
+        helmChart,
+        externalServices,
+        externalServicesText: externalServicesDetail,
+        architecture,
+      };
+
+      userData = {...userData, ...data};
+
+      trackEvent('signup_step_3_completed');
+
+      setLoadingState('application', true);
+
+      // Send telemetry
+      await sendTelemetry(data);
+
+      setLoadingState('application', false);
+      showStep(4);
+    });
+
+    // Step 4: Experience
     const experienceForm = document.getElementById('experience');
     experienceForm?.addEventListener('submit', async e => {
       e.preventDefault();
@@ -1309,7 +1518,7 @@ const signupSteps = [
 
       userData = {...userData, ...data};
 
-      trackEvent('signup_step_3_completed');
+      trackEvent('signup_step_4_completed');
 
       setLoadingState('experience', true);
 
@@ -1317,7 +1526,7 @@ const signupSteps = [
       await sendTelemetry(data);
 
       setLoadingState('experience', false);
-      showStep(4);
+      showStep(5);
     });
 
     // Handle "Other" checkbox for discovery
@@ -1354,7 +1563,7 @@ const signupSteps = [
     setupCheckboxGroupRequired(experienceForm, 'expertise');
     setupCheckboxGroupRequired(discoveryForm, 'discovery');
 
-    // Step 4: Discovery
+    // Step 5: Discovery
     discoveryForm?.addEventListener('submit', async e => {
       e.preventDefault();
 
@@ -1384,7 +1593,7 @@ const signupSteps = [
 
       userData = {...userData, ...data};
 
-      trackEvent('signup_step_4_completed');
+      trackEvent('signup_step_5_completed');
 
       setLoadingState('discovery', true);
 
@@ -1392,10 +1601,10 @@ const signupSteps = [
       await sendTelemetry(data);
 
       setLoadingState('discovery', false);
-      showStep(5);
+      showStep(6);
     });
 
-    // Step 5: Timeline
+    // Step 6: Timeline
     const timelineForm = document.getElementById('timeline');
     timelineForm?.addEventListener('submit', async e => {
       e.preventDefault();
@@ -1413,7 +1622,7 @@ const signupSteps = [
 
       userData = {...userData, ...data};
 
-      trackEvent('signup_step_5_completed', {
+      trackEvent('signup_step_6_completed', {
         flow_type: flowType,
       });
 
@@ -1433,7 +1642,7 @@ const signupSteps = [
       document.getElementById('successMessage').classList.remove('hidden');
       document.getElementById('stepIndicators').classList.add('hidden');
 
-      // Hide left column on step 5 for onboarding flow
+      // Hide left column on the final step for onboarding flow
       const leftColumn = document.getElementById('leftColumn');
       const rightColumn = document.getElementById('rightColumn');
 
