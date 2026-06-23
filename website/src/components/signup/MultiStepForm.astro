@@ -2,6 +2,7 @@
 import {Icon} from 'astro-icon/components';
 import distrBrandLogo from '~/assets/distr-brand.svg';
 import CalComIFrame from '~/components/booking/CalComIFrame.astro';
+import {metrics} from '~/data/metrics';
 
 const formsServerBaseUrl = import.meta.env.FORMS_SERVER;
 const reCaptchaKeyV2 = import.meta.env.RE_CAPTCHA_KEY_v2;
@@ -183,6 +184,24 @@ const signupSteps = [
               <p class="text-gray-600 dark:text-gray-400 text-sm m-0">
                 Programmatically integrate external systems or embed Distr into
                 your own application.
+              </p>
+            </div>
+          </li>
+          <li class="flex gap-3">
+            <Icon
+              name="lucide:check-circle"
+              class="w-6 h-6 text-green-600 flex-shrink-0 mt-1"
+            />
+            <div class="flex flex-col">
+              <h6 class="font-semibold text-gray-900 dark:text-white m-0">
+                Trusted by teams worldwide
+              </h6>
+              <p class="text-gray-600 dark:text-gray-400 text-sm m-0">
+                {
+                  metrics
+                    .map(metric => `${metric.value} ${metric.label}`)
+                    .join(', ')
+                }
               </p>
             </div>
           </li>
