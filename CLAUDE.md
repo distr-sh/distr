@@ -204,6 +204,7 @@ When adding new routes, ensure the OpenAPI spec remains valid. The `chiopenapi` 
 ## General rules
 
 - Always ensure this file is up-to-date.
+- Before starting new work (especially when creating a new branch or starting a new agent session), always pull the latest changes from `main` first (e.g. `git fetch origin main` and update your base branch), so that work is always based on the newest code.
 - Don't write any unnecessary comments that just explain the functionality below, if there is nothing special about it.
 - If a user requests you to do something differently, add the difference to a new rule / convention in this file
 - If you read code that doesn't follow these rules, please fix it.
