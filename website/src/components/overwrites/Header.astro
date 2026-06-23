@@ -9,9 +9,10 @@ import {links} from '~/data/navigation';
 import {megaMenuConfigs} from '~/data/megaMenuConfig';
 
 const slug = Astro.locals.starlightRoute.entry.id;
+const isLanding = !slug.startsWith('docs');
 ---
 
-<div class="header sl-flex">
+<div class:list={['header', 'sl-flex', {landing: isLanding}]}>
   <div class="sl-flex left-group">
     <SiteTitle />
     <div class="search-wrapper">
@@ -112,6 +113,15 @@ const slug = Astro.locals.starlightRoute.entry.id;
     justify-content: space-between;
     align-items: center;
     height: 100%;
+  }
+  .header.landing {
+    background-color: transparent;
+    padding-inline-end: calc(var(--sl-nav-gap) + var(--sl-nav-pad-x));
+  }
+  @media (min-width: 50rem) {
+    .header.landing {
+      padding-inline-end: var(--sl-nav-pad-y);
+    }
   }
   .left-group {
     gap: 1rem;
@@ -248,32 +258,14 @@ const slug = Astro.locals.starlightRoute.entry.id;
   body[data-mobile-menu-expanded] header {
     background-color: var(--sl-color-bg);
   }
+  @media (min-width: 50rem) {
+    header:has(.header.landing) {
+      background-color: transparent !important;
+      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(16px);
+    }
+  }
 </style>
-
-{
-  /* prettier-ignore */
-  !slug.startsWith('docs') && <>
-    <style>
-      .header {
-        background-color: transparent;
-        -webkit-backdrop-filter: blur(16px);
-        backdrop-filter: blur(16px);
-        padding-inline-end: calc(var(--sl-nav-gap) + var(--sl-nav-pad-x));
-      }
-
-      @media (min-width: 50rem) {
-        header {
-          background-color: transparent !important;
-        }
-      }
-      @media (min-width: 50rem) {
-        .header {
-          padding-inline-end: var(--sl-nav-pad-y);
-        }
-      }
-    </style>
-  </>
-}
 
 <style>
   .desktop {

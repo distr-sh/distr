@@ -1,4 +1,5 @@
 // @ts-check
+import {unified} from '@astrojs/markdown-remark';
 import mdx from '@astrojs/mdx';
 import preact from '@astrojs/preact';
 import sitemap from '@astrojs/sitemap';
@@ -295,13 +296,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     mdx(),
   ],
   markdown: {
-    rehypePlugins: [
-      [rehypeMermaid, {strategy: 'inline-svg'}],
-      [
-        rehypeExternalLinks,
-        {target: '_blank', rel: ['noopener', 'noreferrer']},
+    processor: unified({
+      rehypePlugins: [
+        [rehypeMermaid, {strategy: 'inline-svg'}],
+        [
+          rehypeExternalLinks,
+          {target: '_blank', rel: ['noopener', 'noreferrer']},
+        ],
       ],
-    ],
+    }),
   },
   vite: {
     plugins: [tailwindcss()],
