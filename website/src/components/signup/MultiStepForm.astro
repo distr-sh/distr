@@ -1180,12 +1180,12 @@ const signupSteps = [
       }
 
       const data = {
-        firstName: formData.get('firstName'),
-        lastName: formData.get('lastName'),
-        jobTitle: formData.get('jobTitle'),
-        companyName: formData.get('companyName'),
-        email: formData.get('email'),
-        phone: formData.get('phone'),
+        firstName,
+        lastName,
+        jobTitle,
+        companyName,
+        email,
+        phone: formData.get('phone')?.trim(),
         ...(requirePassword && {password: formData.get('password')}),
         type: formData.get('type'),
         // reCaptchaToken: reCaptchaToken,
