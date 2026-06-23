@@ -13,7 +13,7 @@ require (
 	github.com/compose-spec/compose-go/v2 v2.11.0
 	github.com/containerd/log v0.1.0
 	github.com/coreos/go-oidc/v3 v3.19.0
-	github.com/docker/cli v29.5.3+incompatible
+	github.com/docker/cli v29.6.0+incompatible
 	github.com/docker/compose/v5 v5.1.4
 	github.com/exaring/otelpgx v0.11.1
 	github.com/fsnotify/fsnotify v1.10.1
@@ -34,7 +34,7 @@ require (
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lestrrat-go/jwx/v3 v3.1.1
-	github.com/moby/moby/api v1.54.2
+	github.com/moby/moby/api v1.55.0
 	github.com/moby/moby/client v0.4.1
 	github.com/oaswrap/spec v0.5.1
 	github.com/oaswrap/spec-ui v0.2.0

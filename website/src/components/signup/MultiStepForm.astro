@@ -408,7 +408,7 @@ const signupSteps = [
                 <label
                   for="installations"
                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Number of self-hosted installations*
+                  How many customer installations do you expect?*
                 </label>
                 <select
                   id="installations"
@@ -426,52 +426,89 @@ const signupSteps = [
               </div>
               <div>
                 <div
-                  class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Deployment Types:
+                  class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Where do your customers want to deploy your software?*
                 </div>
-                <div class="grid grid-cols-2 gap-2">
-                  <label class="flex items-center space-x-2 cursor-pointer">
+                <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                  Select all that apply &mdash; you can change this later.
+                </div>
+                <div class="space-y-2">
+                  <label class="flex items-start space-x-2 cursor-pointer">
                     <input
                       type="checkbox"
                       name="target"
-                      value="docker"
-                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                      value="aws"
+                      required
+                      class="w-4 h-4 mt-0.5 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                     />
                     <span class="text-sm text-gray-700 dark:text-gray-300">
-                      Docker
+                      Amazon Web Services (AWS)
                     </span>
                   </label>
-                  <label class="flex items-center space-x-2 cursor-pointer">
+                  <label class="flex items-start space-x-2 cursor-pointer">
                     <input
                       type="checkbox"
                       name="target"
-                      value="kubernetes"
-                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                      value="gcp"
+                      required
+                      class="w-4 h-4 mt-0.5 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                     />
                     <span class="text-sm text-gray-700 dark:text-gray-300">
-                      Kubernetes
+                      Google Cloud (GCP)
                     </span>
                   </label>
-                  <label class="flex items-center space-x-2 cursor-pointer">
+                  <label class="flex items-start space-x-2 cursor-pointer">
                     <input
                       type="checkbox"
                       name="target"
-                      value="airGapped"
-                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                      value="azure"
+                      required
+                      class="w-4 h-4 mt-0.5 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                     />
                     <span class="text-sm text-gray-700 dark:text-gray-300">
-                      Air-gapped
+                      Microsoft Azure
                     </span>
                   </label>
-                  <label class="flex items-center space-x-2 cursor-pointer">
+                  <label class="flex items-start space-x-2 cursor-pointer">
                     <input
                       type="checkbox"
                       name="target"
                       value="onPremise"
-                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                      required
+                      class="w-4 h-4 mt-0.5 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                     />
                     <span class="text-sm text-gray-700 dark:text-gray-300">
-                      On-Premises
+                      On-premises
+                      <span class="text-gray-500 dark:text-gray-400">
+                        &mdash; customer's own servers or data center
+                      </span>
+                    </span>
+                  </label>
+                  <label class="flex items-start space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="target"
+                      value="airGapped"
+                      required
+                      class="w-4 h-4 mt-0.5 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                    />
+                    <span class="text-sm text-gray-700 dark:text-gray-300">
+                      Air-gapped
+                      <span class="text-gray-500 dark:text-gray-400">
+                        &mdash; isolated network with no internet access
+                      </span>
+                    </span>
+                  </label>
+                  <label class="flex items-start space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="target"
+                      value="notSure"
+                      required
+                      class="w-4 h-4 mt-0.5 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
+                    />
+                    <span class="text-sm text-gray-700 dark:text-gray-300">
+                      Not sure yet / depends on the customer
                     </span>
                   </label>
                 </div>
@@ -480,12 +517,13 @@ const signupSteps = [
                 <label
                   for="use-case"
                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Use case
+                  Use case*
                 </label>
                 <textarea
                   id="use-case"
                   name="use-case"
                   rows="4"
+                  required
                   class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"
                 ></textarea>
               </div>
@@ -543,6 +581,7 @@ const signupSteps = [
                       type="checkbox"
                       name="expertise"
                       value="software-engineer"
+                      required
                       class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                     />
                     <span class="text-sm text-gray-700 dark:text-gray-300">
@@ -554,6 +593,7 @@ const signupSteps = [
                       type="checkbox"
                       name="expertise"
                       value="product-manager"
+                      required
                       class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                     />
                     <span class="text-sm text-gray-700 dark:text-gray-300">
@@ -565,6 +605,7 @@ const signupSteps = [
                       type="checkbox"
                       name="expertise"
                       value="marketing-growth"
+                      required
                       class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                     />
                     <span class="text-sm text-gray-700 dark:text-gray-300">
@@ -576,6 +617,7 @@ const signupSteps = [
                       type="checkbox"
                       name="expertise"
                       value="sales-bd"
+                      required
                       class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                     />
                     <span class="text-sm text-gray-700 dark:text-gray-300">
@@ -587,6 +629,7 @@ const signupSteps = [
                       type="checkbox"
                       name="expertise"
                       value="data-scientist"
+                      required
                       class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                     />
                     <span class="text-sm text-gray-700 dark:text-gray-300">
@@ -598,6 +641,7 @@ const signupSteps = [
                       type="checkbox"
                       name="expertise"
                       value="operations-admin"
+                      required
                       class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                     />
                     <span class="text-sm text-gray-700 dark:text-gray-300">
@@ -655,6 +699,7 @@ const signupSteps = [
                     type="checkbox"
                     name="discovery"
                     value="google"
+                    required
                     class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                   />
                   <span class="text-sm text-gray-700 dark:text-gray-300">
@@ -667,6 +712,7 @@ const signupSteps = [
                     type="checkbox"
                     name="discovery"
                     value="reddit"
+                    required
                     class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                   />
                   <span class="text-sm text-gray-700 dark:text-gray-300">
@@ -679,6 +725,7 @@ const signupSteps = [
                     type="checkbox"
                     name="discovery"
                     value="hackernews"
+                    required
                     class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                   />
                   <span class="text-sm text-gray-700 dark:text-gray-300">
@@ -691,6 +738,7 @@ const signupSteps = [
                     type="checkbox"
                     name="discovery"
                     value="linkedin"
+                    required
                     class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                   />
                   <span class="text-sm text-gray-700 dark:text-gray-300">
@@ -703,6 +751,7 @@ const signupSteps = [
                     type="checkbox"
                     name="discovery"
                     value="twitter"
+                    required
                     class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                   />
                   <span class="text-sm text-gray-700 dark:text-gray-300">
@@ -715,6 +764,7 @@ const signupSteps = [
                     type="checkbox"
                     name="discovery"
                     value="recommendation"
+                    required
                     class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                   />
                   <span class="text-sm text-gray-700 dark:text-gray-300">
@@ -727,6 +777,7 @@ const signupSteps = [
                     type="checkbox"
                     name="discovery"
                     value="llms"
+                    required
                     class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                   />
                   <span class="text-sm text-gray-700 dark:text-gray-300">
@@ -739,6 +790,7 @@ const signupSteps = [
                     type="checkbox"
                     name="discovery"
                     value="offline-events"
+                    required
                     class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                   />
                   <span class="text-sm text-gray-700 dark:text-gray-300">
@@ -751,6 +803,7 @@ const signupSteps = [
                     type="checkbox"
                     name="discovery"
                     value="other"
+                    required
                     class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
                   />
                   <span class="text-sm text-gray-700 dark:text-gray-300">
@@ -1095,9 +1148,25 @@ const signupSteps = [
 
       const formData = new FormData(signupForm);
 
+      const firstName = formData.get('firstName')?.trim();
+      const lastName = formData.get('lastName')?.trim();
+      const jobTitle = formData.get('jobTitle')?.trim();
+      const companyName = formData.get('companyName')?.trim();
+      const email = formData.get('email')?.trim();
+
+      if (!firstName || !lastName || !jobTitle || !companyName || !email) {
+        showError('Please fill in all required fields');
+        return;
+      }
+
       if (requirePassword) {
         const password = formData.get('password');
         const confirmPassword = formData.get('confirmPassword');
+
+        if (!password || !confirmPassword) {
+          showError('Please fill in all required fields');
+          return;
+        }
 
         if (password !== confirmPassword) {
           showError('Passwords do not match');
@@ -1111,12 +1180,12 @@ const signupSteps = [
       }
 
       const data = {
-        firstName: formData.get('firstName'),
-        lastName: formData.get('lastName'),
-        jobTitle: formData.get('jobTitle'),
-        companyName: formData.get('companyName'),
-        email: formData.get('email'),
-        phone: formData.get('phone'),
+        firstName,
+        lastName,
+        jobTitle,
+        companyName,
+        email,
+        phone: formData.get('phone')?.trim(),
         ...(requirePassword && {password: formData.get('password')}),
         type: formData.get('type'),
         // reCaptchaToken: reCaptchaToken,
@@ -1170,10 +1239,26 @@ const signupSteps = [
       );
       const targets = Array.from(targetBoxes).map(cb => cb.value);
 
+      if (!formData.get('installations')) {
+        showError('Please select the number of customer installations');
+        return;
+      }
+
+      if (targets.length === 0) {
+        showError('Please select at least one deployment target');
+        return;
+      }
+
+      const useCase = formData.get('use-case')?.trim();
+      if (!useCase) {
+        showError('Please describe your use case');
+        return;
+      }
+
       const data = {
         installations: formData.get('installations'),
         target: targets,
-        useCase: formData.get('use-case'),
+        useCase: useCase,
         type: formData.get('type'),
       };
 
@@ -1201,8 +1286,18 @@ const signupSteps = [
       );
       const expertise = Array.from(expertiseBoxes).map(cb => cb.value);
 
+      if (!formData.get('role')) {
+        showError('Please select what describes you best');
+        return;
+      }
+
       if (expertise.length === 0) {
         showError('Please select at least one area of expertise');
+        return;
+      }
+
+      if (!formData.get('companySize')) {
+        showError('Please select your company size');
         return;
       }
 
@@ -1242,6 +1337,22 @@ const signupSteps = [
         });
       }
     });
+
+    // Keep native "at least one" validation in sync for checkbox groups:
+    // require all boxes while none are checked, clear once any is checked.
+    function setupCheckboxGroupRequired(form, name) {
+      const boxes = form?.querySelectorAll(`input[name="${name}"]`);
+      if (!boxes || boxes.length === 0) return;
+      const sync = () => {
+        const anyChecked = Array.from(boxes).some(cb => cb.checked);
+        boxes.forEach(cb => (cb.required = !anyChecked));
+      };
+      boxes.forEach(cb => cb.addEventListener('change', sync));
+      sync();
+    }
+    setupCheckboxGroupRequired(detailsForm, 'target');
+    setupCheckboxGroupRequired(experienceForm, 'expertise');
+    setupCheckboxGroupRequired(discoveryForm, 'discovery');
 
     // Step 4: Discovery
     discoveryForm?.addEventListener('submit', async e => {
@@ -1290,6 +1401,12 @@ const signupSteps = [
       e.preventDefault();
 
       const formData = new FormData(timelineForm);
+
+      if (!formData.get('timeline')) {
+        showError('Please select when you want to get started');
+        return;
+      }
+
       const data = {
         timeline: formData.get('timeline'),
       };
