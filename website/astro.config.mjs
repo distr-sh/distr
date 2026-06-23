@@ -1,8 +1,8 @@
 // @ts-check
+import {unified} from '@astrojs/markdown-remark';
 import mdx from '@astrojs/mdx';
 import preact from '@astrojs/preact';
 import sitemap from '@astrojs/sitemap';
-import {unified} from '@astrojs/markdown-remark';
 import starlight from '@astrojs/starlight';
 import tailwindcss from '@tailwindcss/vite';
 import icon from 'astro-icon';
