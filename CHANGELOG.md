@@ -1,5 +1,28 @@
 # Changelog
 
+## [2.24.3](https://github.com/distr-sh/distr/compare/2.24.2...2.24.3) (2026-06-23)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/docker/cli to v29.6.0+incompatible ([#2670](https://github.com/distr-sh/distr/issues/2670)) ([9d19fd3](https://github.com/distr-sh/distr/commit/9d19fd3688ef820741e462f1f91346e26d2ae45d))
+* **deps:** update module github.com/moby/moby/api to v1.55.0 ([#2671](https://github.com/distr-sh/distr/issues/2671)) ([52c2687](https://github.com/distr-sh/distr/commit/52c268700e2dcb85e6e3e44f967936e81643f4ce))
+* **deps:** update website dependencies (major) ([#2674](https://github.com/distr-sh/distr/issues/2674)) ([d73f333](https://github.com/distr-sh/distr/commit/d73f3334e9608e0d064e894c433298adf1856a21))
+* **docker-agent:** make self-updates single-flight and more robust ([#2678](https://github.com/distr-sh/distr/issues/2678)) ([76a6e19](https://github.com/distr-sh/distr/commit/76a6e199fd8d1f26960adfd8c4e43e4d66418460))
+
+
+### Other
+
+* **deps:** update actions/checkout action to v7 ([#2673](https://github.com/distr-sh/distr/issues/2673)) ([e41fdd4](https://github.com/distr-sh/distr/commit/e41fdd49fff63021b6363da1137e73ee46280ba1))
+* **deps:** update angular monorepo to v22.0.2 ([#2658](https://github.com/distr-sh/distr/issues/2658)) ([ebaf635](https://github.com/distr-sh/distr/commit/ebaf635dfbbd440c548dfb78f48c138ec87f2eea))
+* **deps:** update docker docker tag to v29.6.0 ([#2669](https://github.com/distr-sh/distr/issues/2669)) ([363dc20](https://github.com/distr-sh/distr/commit/363dc20384bd6086f00a9c337676a3af425028a4))
+
+
+### Docs
+
+* **website:** clarify deployment question in signup form ([#2677](https://github.com/distr-sh/distr/issues/2677)) ([060d62d](https://github.com/distr-sh/distr/commit/060d62d394a129d33471071edfebdc2fbcbdbc98))
+* **website:** clarify user pricing ([#2676](https://github.com/distr-sh/distr/issues/2676)) ([6682e47](https://github.com/distr-sh/distr/commit/6682e47ebddcf0d52d9238594d39c74291bec536))
+
 ## [2.24.2](https://github.com/distr-sh/distr/compare/2.24.1...2.24.2) (2026-06-22)
 
 
