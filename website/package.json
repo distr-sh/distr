@@ -16,7 +16,7 @@
     "check": "astro check",
     "screenshots:homepage": "node scripts/capture-homepage-screenshots.mjs",
     "lint": "prettier --check .",
-    "format": "prettier --write ."
+    "format": "prettier --write --list-different ."
   },
   "dependencies": {
     "@astrojs/mdx": "6.0.3",
