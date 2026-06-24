@@ -33,9 +33,8 @@ const signupSteps = [
   {step: 1, label: 'Basic'},
   {step: 2, label: 'Details'},
   {step: 3, label: 'Application'},
-  {step: 4, label: 'Experience'},
-  {step: 5, label: 'Discovery'},
-  {step: 6, label: 'Timeline'},
+  {step: 4, label: 'Discovery'},
+  {step: 5, label: 'Timeline'},
 ];
 ---
 
@@ -661,152 +660,8 @@ const signupSteps = [
             </form>
           </div>
 
-          <!-- Step 4: Experience -->
+          <!-- Step 4: Discovery -->
           <div id="step4" class="step-content hidden">
-            <div class="mb-6 text-center">
-              <h3 class="mb-2 text-gray-900 dark:text-white">
-                Tell us about yourself
-              </h3>
-              <div class="text-gray-600 dark:text-gray-400">
-                Help us understand your background
-              </div>
-            </div>
-            <form id="experience" class="space-y-4">
-              <div>
-                <label
-                  for="role"
-                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  What describes you best? *
-                </label>
-                <select
-                  id="role"
-                  name="role"
-                  required
-                  class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600">
-                  <option value="">Select your role...</option>
-                  <option value="founder">Founder / Co-Founder</option>
-                  <option value="executive">Executive (C-Level / VP)</option>
-                  <option value="director">Director / Head of Department</option
-                  >
-                  <option value="senior">Senior (5+ years experience)</option>
-                  <option value="mid">Mid-Level (2-5 years experience)</option>
-                  <option value="junior">Junior / Entry Level</option>
-                  <option value="intern">Intern / Student</option>
-                </select>
-              </div>
-              <div>
-                <div
-                  class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Area of expertise *
-                </div>
-                <div class="space-y-2">
-                  <label class="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="expertise"
-                      value="software-engineer"
-                      required
-                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
-                    />
-                    <span class="text-sm text-gray-700 dark:text-gray-300">
-                      Software Engineer / Developer
-                    </span>
-                  </label>
-                  <label class="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="expertise"
-                      value="product-manager"
-                      required
-                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
-                    />
-                    <span class="text-sm text-gray-700 dark:text-gray-300">
-                      Product Manager
-                    </span>
-                  </label>
-                  <label class="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="expertise"
-                      value="marketing-growth"
-                      required
-                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
-                    />
-                    <span class="text-sm text-gray-700 dark:text-gray-300">
-                      Marketing / Growth
-                    </span>
-                  </label>
-                  <label class="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="expertise"
-                      value="sales-bd"
-                      required
-                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
-                    />
-                    <span class="text-sm text-gray-700 dark:text-gray-300">
-                      Sales / Business Development
-                    </span>
-                  </label>
-                  <label class="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="expertise"
-                      value="data-scientist"
-                      required
-                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
-                    />
-                    <span class="text-sm text-gray-700 dark:text-gray-300">
-                      Data Scientist / Analyst
-                    </span>
-                  </label>
-                  <label class="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="expertise"
-                      value="operations-admin"
-                      required
-                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
-                    />
-                    <span class="text-sm text-gray-700 dark:text-gray-300">
-                      Operations / Admin
-                    </span>
-                  </label>
-                </div>
-              </div>
-              <div>
-                <label
-                  for="companySize"
-                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Company Size *
-                </label>
-                <select
-                  id="companySize"
-                  name="companySize"
-                  required
-                  class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600">
-                  <option value="">Select company size...</option>
-                  <option value="2000+">2,000+ employees</option>
-                  <option value="501-2000">501-2,000 employees</option>
-                  <option value="201-500">201-500 employees</option>
-                  <option value="51-200">51-200 employees</option>
-                  <option value="11-50">11-50 employees</option>
-                  <option value="2-10">2-10 employees</option>
-                  <option value="solo">Just me / Solo</option>
-                </select>
-              </div>
-              <button
-                type="submit"
-                id="submit-experience"
-                class="w-full py-3 px-6 bg-accent-600 hover:bg-accent-900 disabled:bg-gray-400 text-white font-semibold rounded-md transition-colors cursor-pointer">
-                <span id="experience-text">Continue</span>
-                <span id="experience-loading" class="hidden">Saving...</span>
-              </button>
-            </form>
-          </div>
-
-          <!-- Step 5: Discovery -->
-          <div id="step5" class="step-content hidden">
             <div class="mb-6 text-center">
               <h3 class="mb-2 text-gray-900 dark:text-white">
                 How did you discover us?
@@ -953,8 +808,8 @@ const signupSteps = [
             </form>
           </div>
 
-          <!-- Step 6: Timeline -->
-          <div id="step6" class="step-content hidden">
+          <!-- Step 5: Timeline -->
+          <div id="step5" class="step-content hidden">
             <div class="mb-6 text-center">
               <h3 class="mb-2 text-gray-900 dark:text-white">
                 When do you want to get started?
@@ -1182,7 +1037,7 @@ const signupSteps = [
 
     if (stepParam) {
       const step = parseInt(stepParam, 10);
-      if (step >= 1 && step <= 6) {
+      if (step >= 1 && step <= 5) {
         showStep(step);
       }
     }
@@ -1227,7 +1082,7 @@ const signupSteps = [
     errorMessage?.classList.add('hidden');
   }
 
-  // Send telemetry for steps 2-5
+  // Send telemetry for steps 2-4
   async function sendTelemetry(stepData) {
     try {
       await fetch(telemetryEndpoint, {
@@ -1484,51 +1339,6 @@ const signupSteps = [
       showStep(4);
     });
 
-    // Step 4: Experience
-    const experienceForm = document.getElementById('experience');
-    experienceForm?.addEventListener('submit', async e => {
-      e.preventDefault();
-
-      const formData = new FormData(experienceForm);
-      const expertiseBoxes = experienceForm.querySelectorAll(
-        'input[name="expertise"]:checked',
-      );
-      const expertise = Array.from(expertiseBoxes).map(cb => cb.value);
-
-      if (!formData.get('role')) {
-        showError('Please select what describes you best');
-        return;
-      }
-
-      if (expertise.length === 0) {
-        showError('Please select at least one area of expertise');
-        return;
-      }
-
-      if (!formData.get('companySize')) {
-        showError('Please select your company size');
-        return;
-      }
-
-      const data = {
-        role: formData.get('role'),
-        expertise: expertise,
-        companySize: formData.get('companySize'),
-      };
-
-      userData = {...userData, ...data};
-
-      trackEvent('signup_step_4_completed');
-
-      setLoadingState('experience', true);
-
-      // Send telemetry
-      await sendTelemetry(data);
-
-      setLoadingState('experience', false);
-      showStep(5);
-    });
-
     // Handle "Other" checkbox for discovery
     const discoveryForm = document.getElementById('discovery');
     const discoveryCheckboxes = discoveryForm?.querySelectorAll(
@@ -1560,10 +1370,9 @@ const signupSteps = [
       sync();
     }
     setupCheckboxGroupRequired(detailsForm, 'target');
-    setupCheckboxGroupRequired(experienceForm, 'expertise');
     setupCheckboxGroupRequired(discoveryForm, 'discovery');
 
-    // Step 5: Discovery
+    // Step 4: Discovery
     discoveryForm?.addEventListener('submit', async e => {
       e.preventDefault();
 
@@ -1593,7 +1402,7 @@ const signupSteps = [
 
       userData = {...userData, ...data};
 
-      trackEvent('signup_step_5_completed');
+      trackEvent('signup_step_4_completed');
 
       setLoadingState('discovery', true);
 
@@ -1601,10 +1410,10 @@ const signupSteps = [
       await sendTelemetry(data);
 
       setLoadingState('discovery', false);
-      showStep(6);
+      showStep(5);
     });
 
-    // Step 6: Timeline
+    // Step 5: Timeline
     const timelineForm = document.getElementById('timeline');
     timelineForm?.addEventListener('submit', async e => {
       e.preventDefault();
@@ -1622,7 +1431,7 @@ const signupSteps = [
 
       userData = {...userData, ...data};
 
-      trackEvent('signup_step_6_completed', {
+      trackEvent('signup_step_5_completed', {
         flow_type: flowType,
       });
 
