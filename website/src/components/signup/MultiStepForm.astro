@@ -33,7 +33,7 @@ const {
 const signupSteps = [
   {step: 1, label: 'Basic'},
   {step: 2, label: 'Details'},
-  {step: 3, label: 'Experience'},
+  {step: 3, label: 'Application'},
   {step: 4, label: 'Discovery'},
   {step: 5, label: 'Timeline'},
 ];
@@ -556,146 +556,125 @@ const signupSteps = [
             </form>
           </div>
 
-          <!-- Step 3: Experience -->
+          <!-- Step 3: Application -->
           <div id="step3" class="step-content hidden">
             <div class="mb-6 text-center">
               <h3 class="mb-2 text-gray-900 dark:text-white">
-                Tell us about yourself
+                Tell us about your application
               </h3>
               <div class="text-gray-600 dark:text-gray-400">
-                Help us understand your background
+                This helps us tailor the right deployment path for you
               </div>
             </div>
-            <form id="experience" class="space-y-4">
+            <form id="application" class="space-y-4">
               <div>
                 <label
-                  for="role"
+                  for="containerized"
                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  What describes you best? *
+                  Is your application already containerized?*
                 </label>
                 <select
-                  id="role"
-                  name="role"
+                  id="containerized"
+                  name="containerized"
                   required
                   class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600">
-                  <option value="">Select your role...</option>
-                  <option value="founder">Founder / Co-Founder</option>
-                  <option value="executive">Executive (C-Level / VP)</option>
-                  <option value="director">Director / Head of Department</option
-                  >
-                  <option value="senior">Senior (5+ years experience)</option>
-                  <option value="mid">Mid-Level (2-5 years experience)</option>
-                  <option value="junior">Junior / Entry Level</option>
-                  <option value="intern">Intern / Student</option>
+                  <option value="">Select...</option>
+                  <option value="fully">Yes, fully</option>
+                  <option value="partially">Partially, in progress</option>
+                  <option value="no">No</option>
+                  <option value="not-sure">Not sure</option>
                 </select>
               </div>
               <div>
-                <div
-                  class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Area of expertise *
-                </div>
-                <div class="space-y-2">
-                  <label class="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="expertise"
-                      value="software-engineer"
-                      required
-                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
-                    />
-                    <span class="text-sm text-gray-700 dark:text-gray-300">
-                      Software Engineer / Developer
-                    </span>
+                <label
+                  for="dockerCompose"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Do you already have a complete Docker Compose file?*
+                </label>
+                <select
+                  id="dockerCompose"
+                  name="dockerCompose"
+                  required
+                  class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600">
+                  <option value="">Select...</option>
+                  <option value="fully">Yes, fully</option>
+                  <option value="partially">Partially, in progress</option>
+                  <option value="no">No</option>
+                  <option value="not-sure">Not sure</option>
+                </select>
+              </div>
+              <div>
+                <label
+                  for="helmChart"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Do you already have a Helm chart?*
+                </label>
+                <select
+                  id="helmChart"
+                  name="helmChart"
+                  required
+                  class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600">
+                  <option value="">Select...</option>
+                  <option value="fully">Yes, fully</option>
+                  <option value="partially">Partially, in progress</option>
+                  <option value="no">No</option>
+                  <option value="not-sure">Not sure</option>
+                </select>
+              </div>
+              <div>
+                <label
+                  for="externalServices"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Do your services rely on external SaaS providers (e.g.
+                  Supabase, Clerk, OpenAI) that would need refactoring for
+                  self-managed deployments?*
+                </label>
+                <select
+                  id="externalServices"
+                  name="externalServices"
+                  required
+                  class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600">
+                  <option value="">Select...</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="not-sure">Not sure</option>
+                </select>
+                <div id="external-services-input" class="hidden mt-2">
+                  <label
+                    for="externalServicesText"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Which external services? Please list them*
                   </label>
-                  <label class="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="expertise"
-                      value="product-manager"
-                      required
-                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
-                    />
-                    <span class="text-sm text-gray-700 dark:text-gray-300">
-                      Product Manager
-                    </span>
-                  </label>
-                  <label class="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="expertise"
-                      value="marketing-growth"
-                      required
-                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
-                    />
-                    <span class="text-sm text-gray-700 dark:text-gray-300">
-                      Marketing / Growth
-                    </span>
-                  </label>
-                  <label class="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="expertise"
-                      value="sales-bd"
-                      required
-                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
-                    />
-                    <span class="text-sm text-gray-700 dark:text-gray-300">
-                      Sales / Business Development
-                    </span>
-                  </label>
-                  <label class="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="expertise"
-                      value="data-scientist"
-                      required
-                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
-                    />
-                    <span class="text-sm text-gray-700 dark:text-gray-300">
-                      Data Scientist / Analyst
-                    </span>
-                  </label>
-                  <label class="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="expertise"
-                      value="operations-admin"
-                      required
-                      class="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-600"
-                    />
-                    <span class="text-sm text-gray-700 dark:text-gray-300">
-                      Operations / Admin
-                    </span>
-                  </label>
+                  <textarea
+                    id="externalServicesText"
+                    name="externalServicesText"
+                    rows="3"
+                    placeholder="e.g. Supabase (auth + database), Clerk (auth), OpenAI API..."
+                    class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"
+                  ></textarea>
                 </div>
               </div>
               <div>
                 <label
-                  for="companySize"
+                  for="architecture"
                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Company Size *
+                  Describe your application architecture*
                 </label>
-                <select
-                  id="companySize"
-                  name="companySize"
+                <textarea
+                  id="architecture"
+                  name="architecture"
+                  rows="4"
+                  placeholder="e.g. a React frontend, a Go API, a Python worker, a message queue, a Postgres database and a Redis cache..."
                   required
-                  class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600">
-                  <option value="">Select company size...</option>
-                  <option value="2000+">2,000+ employees</option>
-                  <option value="501-2000">501-2,000 employees</option>
-                  <option value="201-500">201-500 employees</option>
-                  <option value="51-200">51-200 employees</option>
-                  <option value="11-50">11-50 employees</option>
-                  <option value="2-10">2-10 employees</option>
-                  <option value="solo">Just me / Solo</option>
-                </select>
+                  class="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-600"
+                ></textarea>
               </div>
               <button
                 type="submit"
-                id="submit-experience"
+                id="submit-application"
                 class="w-full py-3 px-6 bg-accent-600 hover:bg-accent-900 disabled:bg-gray-400 text-white font-semibold rounded-md transition-colors cursor-pointer">
-                <span id="experience-text">Continue</span>
-                <span id="experience-loading" class="hidden">Saving...</span>
+                <span id="application-text">Continue</span>
+                <span id="application-loading" class="hidden">Saving...</span>
               </button>
             </form>
           </div>
@@ -1122,7 +1101,7 @@ const signupSteps = [
     errorMessage?.classList.add('hidden');
   }
 
-  // Send telemetry for steps 2-5
+  // Send telemetry for steps 2-4
   async function sendTelemetry(stepData) {
     try {
       await fetch(telemetryEndpoint, {
@@ -1294,48 +1273,88 @@ const signupSteps = [
       showStep(3);
     });
 
-    // Step 3: Experience
-    const experienceForm = document.getElementById('experience');
-    experienceForm?.addEventListener('submit', async e => {
+    // Step 3: Application
+    const applicationForm = document.getElementById('application');
+    const externalServicesSelect = document.getElementById('externalServices');
+    const externalServicesInput = document.getElementById(
+      'external-services-input',
+    );
+    const externalServicesText = document.getElementById(
+      'externalServicesText',
+    );
+    externalServicesSelect?.addEventListener('change', () => {
+      const showDetails = externalServicesSelect.value === 'yes';
+      externalServicesInput?.classList.toggle('hidden', !showDetails);
+      if (externalServicesText) {
+        externalServicesText.required = showDetails;
+        if (!showDetails) {
+          externalServicesText.value = '';
+        }
+      }
+    });
+
+    applicationForm?.addEventListener('submit', async e => {
       e.preventDefault();
 
-      const formData = new FormData(experienceForm);
-      const expertiseBoxes = experienceForm.querySelectorAll(
-        'input[name="expertise"]:checked',
-      );
-      const expertise = Array.from(expertiseBoxes).map(cb => cb.value);
+      const formData = new FormData(applicationForm);
+      const containerized = formData.get('containerized');
+      const dockerCompose = formData.get('dockerCompose');
+      const helmChart = formData.get('helmChart');
+      const externalServices = formData.get('externalServices');
+      const architecture = formData.get('architecture')?.trim();
 
-      if (!formData.get('role')) {
-        showError('Please select what describes you best');
+      if (!containerized) {
+        showError('Please tell us if your application is containerized');
         return;
       }
 
-      if (expertise.length === 0) {
-        showError('Please select at least one area of expertise');
+      if (!dockerCompose) {
+        showError('Please tell us about your Docker Compose file');
         return;
       }
 
-      if (!formData.get('companySize')) {
-        showError('Please select your company size');
+      if (!helmChart) {
+        showError('Please tell us about your Helm chart');
+        return;
+      }
+
+      if (!externalServices) {
+        showError('Please tell us about external SaaS services');
+        return;
+      }
+
+      const externalServicesDetail =
+        formData.get('externalServicesText')?.trim() || '';
+
+      if (externalServices === 'yes' && !externalServicesDetail) {
+        showError('Please describe the external services you rely on');
+        return;
+      }
+
+      if (!architecture) {
+        showError('Please describe your application architecture');
         return;
       }
 
       const data = {
-        role: formData.get('role'),
-        expertise: expertise,
-        companySize: formData.get('companySize'),
+        containerized,
+        dockerCompose,
+        helmChart,
+        externalServices,
+        externalServicesText: externalServicesDetail,
+        architecture,
       };
 
       userData = {...userData, ...data};
 
       trackEvent('signup_step_3_completed');
 
-      setLoadingState('experience', true);
+      setLoadingState('application', true);
 
       // Send telemetry
       await sendTelemetry(data);
 
-      setLoadingState('experience', false);
+      setLoadingState('application', false);
       showStep(4);
     });
 
@@ -1370,7 +1389,6 @@ const signupSteps = [
       sync();
     }
     setupCheckboxGroupRequired(detailsForm, 'target');
-    setupCheckboxGroupRequired(experienceForm, 'expertise');
     setupCheckboxGroupRequired(discoveryForm, 'discovery');
 
     // Step 4: Discovery
@@ -1452,7 +1470,7 @@ const signupSteps = [
       document.getElementById('successMessage').classList.remove('hidden');
       document.getElementById('stepIndicators').classList.add('hidden');
 
-      // Hide left column on step 5 for onboarding flow
+      // Hide left column on the final step for onboarding flow
       const leftColumn = document.getElementById('leftColumn');
       const rightColumn = document.getElementById('rightColumn');
 
