@@ -33,4 +33,12 @@ func TestEffectiveUserRole(t *testing.T) {
 	// Equal roles return the role unchanged.
 	g.Expect(mk(new(UserRoleReadWrite), UserRoleReadWrite).EffectiveUserRole()).
 		To(Equal(UserRoleReadWrite))
+
+	// Super admins always act under a read-only role, regardless of the token or
+	// (absent) organization role.
+	superAdmin := AccessTokenWithUserAccount{
+		AccessToken: AccessToken{UserRole: new(UserRoleAdmin)},
+		UserAccount: UserAccount{IsSuperAdmin: true},
+	}
+	g.Expect(superAdmin.EffectiveUserRole()).To(Equal(UserRoleReadOnly))
 }

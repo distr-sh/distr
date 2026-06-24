@@ -35,7 +35,13 @@ type AccessTokenWithUserAccount struct {
 // explicit role, the user's current role is used as-is. The cap is re-applied
 // on every authenticated request, so demoting the user automatically lowers
 // the effective role of all their existing tokens.
+//
+// Super admins always act under a read-only role and must not modify
+// organization resources through a token, regardless of their membership role.
 func (tok AccessTokenWithUserAccount) EffectiveUserRole() UserRole {
+	if tok.UserAccount.IsSuperAdmin {
+		return UserRoleReadOnly
+	}
 	if tok.AccessToken.UserRole != nil && !tok.AccessToken.UserRole.GreaterThan(tok.UserRole) {
 		return *tok.AccessToken.UserRole
 	}
