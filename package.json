@@ -30,7 +30,6 @@
     "@angular/core": "^22.0.0",
     "@angular/forms": "^22.0.0",
     "@angular/platform-browser": "^22.0.0",
-    "@angular/platform-browser-dynamic": "^22.0.0",
     "@angular/router": "^22.0.0",
     "@codemirror/commands": "^6.8.0",
     "@codemirror/lang-json": "^6.0.2",
