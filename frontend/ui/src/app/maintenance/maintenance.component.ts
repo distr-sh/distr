@@ -2,7 +2,7 @@ import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core'
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faScrewdriverWrench} from '@fortawesome/free-solid-svg-icons';
-import {interval} from 'rxjs';
+import {timer} from 'rxjs';
 import {WEBSITE_URL} from '../../constants';
 import {MaintenanceService} from '../services/maintenance.service';
 
@@ -22,7 +22,7 @@ export class MaintenanceComponent {
   protected readonly checking = signal(false);
 
   constructor() {
-    interval(POLL_INTERVAL_MS)
+    timer(0, POLL_INTERVAL_MS)
       .pipe(takeUntilDestroyed())
       .subscribe(() => this.check());
   }
