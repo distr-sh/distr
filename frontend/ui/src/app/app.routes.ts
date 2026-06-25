@@ -11,6 +11,7 @@ import {firstValueFrom} from 'rxjs';
 import {ForgotComponent} from './forgot/forgot.component';
 import {InviteComponent} from './invite/invite.component';
 import {LoginComponent} from './login/login.component';
+import {MaintenanceComponent} from './maintenance/maintenance.component';
 import {PasswordResetComponent} from './password-reset/password-reset.component';
 import {RegisterComponent} from './register/register.component';
 import {AuthService} from './services/auth.service';
@@ -96,6 +97,7 @@ const baseRouteRedirectGuard: CanActivateFn = () => {
 };
 
 export const routes: Routes = [
+  {path: 'maintenance', component: MaintenanceComponent},
   {path: 'login', component: LoginComponent},
   {path: 'register', component: RegisterComponent},
   {path: 'forgot', component: ForgotComponent},
