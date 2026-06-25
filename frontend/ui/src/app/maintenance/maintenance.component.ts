@@ -32,14 +32,12 @@ export class MaintenanceComponent {
       return;
     }
     this.checking.set(true);
-    setTimeout(async () => {
-      try {
-        if (await this.maintenance.checkReady()) {
-          this.maintenance.recover();
-        }
-      } finally {
-        this.checking.set(false);
+    try {
+      if (await this.maintenance.checkReady()) {
+        this.maintenance.recover();
       }
-    }, 500);
+    } finally {
+      this.checking.set(false);
+    }
   }
 }
