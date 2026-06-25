@@ -1,7 +1,7 @@
 import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faRotate, faScrewdriverWrench} from '@fortawesome/free-solid-svg-icons';
+import {faScrewdriverWrench} from '@fortawesome/free-solid-svg-icons';
 import {interval} from 'rxjs';
 import {WEBSITE_URL} from '../../constants';
 import {MaintenanceService} from '../services/maintenance.service';
@@ -18,7 +18,6 @@ export class MaintenanceComponent {
   private readonly maintenance = inject(MaintenanceService);
 
   protected readonly websiteUrl = WEBSITE_URL;
-  protected readonly faRotate = faRotate;
   protected readonly faScrewdriverWrench = faScrewdriverWrench;
   protected readonly checking = signal(false);
 
