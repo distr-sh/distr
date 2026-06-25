@@ -25,9 +25,12 @@ func (tok AccessToken) HasExpired() bool {
 
 type AccessTokenWithUserAccount struct {
 	AccessToken
-	UserAccount            UserAccount `db:"user_account"`
-	UserRole               UserRole    `db:"user_role"`
-	CustomerOrganizationID *uuid.UUID  `db:"customer_organization_id"`
+	UserAccount UserAccount `db:"user_account"`
+	// UserRole is the role the user currently holds in the token's organization.
+	// It is nil when the user is not a member of that organization, which is the
+	// case for super-admin-owned tokens (super admins are not org members).
+	UserRole               *UserRole  `db:"user_role"`
+	CustomerOrganizationID *uuid.UUID `db:"customer_organization_id"`
 }
 
 // EffectiveUserRole returns the role this token may act under, capped at the
@@ -36,14 +39,20 @@ type AccessTokenWithUserAccount struct {
 // on every authenticated request, so demoting the user automatically lowers
 // the effective role of all their existing tokens.
 //
-// Super admins always act under a read-only role and must not modify
-// organization resources through a token, regardless of their membership role.
+// When the user has no membership in the token's organization (e.g. a
+// super-admin-owned token), there is no role to cap against and the token's own
+// role is authoritative.
+//
+// Super admins are never organization members and must only ever act under a
+// read-only role through a token, regardless of the token's stored role. A nil
+// membership role can otherwise only occur for a non-member whose token is
+// rejected by DbAuthenticator anyway, so read-only is a safe floor for it too.
 func (tok AccessTokenWithUserAccount) EffectiveUserRole() UserRole {
-	if tok.UserAccount.IsSuperAdmin {
+	if tok.UserAccount.IsSuperAdmin || tok.UserRole == nil {
 		return UserRoleReadOnly
 	}
-	if tok.AccessToken.UserRole != nil && !tok.AccessToken.UserRole.GreaterThan(tok.UserRole) {
+	if tok.AccessToken.UserRole != nil && !tok.AccessToken.UserRole.GreaterThan(*tok.UserRole) {
 		return *tok.AccessToken.UserRole
 	}
-	return tok.UserRole
+	return *tok.UserRole
 }

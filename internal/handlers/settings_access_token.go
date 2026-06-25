@@ -1,11 +1,9 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authkey"
 	internalctx "github.com/distr-sh/distr/internal/context"
@@ -44,25 +42,8 @@ func createAccessTokenHandler() http.HandlerFunc {
 		}
 
 		if auth.IsSuperAdmin() {
-			// Super admins may only create tokens in an organization they are a
-			// member of, and those tokens are always read-only.
-			if _, _, err := db.GetUserAccountAndOrg(
-				ctx,
-				auth.CurrentUserID(),
-				*auth.CurrentOrgID(),
-			); errors.Is(err, apierrors.ErrNotFound) {
-				http.Error(
-					w,
-					"super admins can only create tokens in an organization they are a member of",
-					http.StatusForbidden,
-				)
-				return
-			} else if err != nil {
-				log.Warn("error checking organization membership", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
+			// Super admins are not organization members, so they may only ever
+			// create read-only tokens regardless of what was requested.
 			request.UserRole = new(types.UserRoleReadOnly)
 		} else if request.UserRole != nil {
 			callerRole := auth.CurrentUserRole()

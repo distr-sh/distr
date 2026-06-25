@@ -74,9 +74,8 @@ func SettingsRouter(r chiopenapi.Router) {
 			With(option.Description("List all access tokens")).
 			With(option.Response(http.StatusOK, []api.AccessToken{}))
 
-		// Personal access tokens are scoped to the current user, so super admins are
-		// allowed to manage their own tokens despite being read-only otherwise. This is
-		// similar to the organization deletion exception.
+		// Super admins are allowed to create personal access tokens, but those are
+		// always forced to read-only at creation (see createAccessTokenHandler).
 		r.Post("/", createAccessTokenHandler()).
 			With(option.Description("Create a new access token")).
 			With(option.Request(api.CreateAccessTokenRequest{})).

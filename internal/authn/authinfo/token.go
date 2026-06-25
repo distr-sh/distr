@@ -18,12 +18,10 @@ func FromAuthKey(ctx context.Context, token authkey.Key) (AuthInfo, error) {
 		}
 		return nil, err
 	} else {
-		// A token issued by a super admin carries the super admin identity, so it
-		// has the same read access as an interactive super admin session (it can
-		// read all organizations). Write access is still blocked for super admins
-		// (BlockSuperAdmin), and EffectiveUserRole caps the role to read-only.
-		// Such tokens can only be created in an organization the super admin is a
-		// member of (enforced at creation).
+		// isSuperAdmin signals to DbAuthenticator that this token's user is a super
+		// admin, who has no organization membership. DbAuthenticator uses the
+		// presence of a role (always read-only here) to treat it as a plain
+		// read-only credential without super-admin privileges.
 		role := at.EffectiveUserRole()
 		return &SimpleAuthInfo{
 			userID:                 at.UserAccount.ID,
