@@ -12,7 +12,6 @@ export class MaintenanceService {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
 
-  private inMaintenance = false;
   private checking = false;
 
   async checkReady(): Promise<boolean> {
@@ -25,7 +24,7 @@ export class MaintenanceService {
   }
 
   async handleServerError(): Promise<void> {
-    if (this.inMaintenance || this.checking) {
+    if (this.checking || this.isOnMaintenancePage()) {
       return;
     }
     this.checking = true;
@@ -41,22 +40,21 @@ export class MaintenanceService {
   }
 
   private enterMaintenance(): void {
-    if (this.inMaintenance) {
+    if (this.isOnMaintenancePage()) {
       return;
     }
-    this.inMaintenance = true;
-    const url = this.router.url;
-    if (!url.startsWith('/maintenance')) {
-      // Persisted so that a full browser reload while on the maintenance page can still recover.
-      sessionStorage.setItem(REDIRECT_URL_STORAGE_KEY, url);
-    }
+    // Persisted so that a full browser reload while on the maintenance page can still recover.
+    sessionStorage.setItem(REDIRECT_URL_STORAGE_KEY, this.router.url);
     this.router.navigateByUrl('/maintenance');
   }
 
   recover(): void {
-    this.inMaintenance = false;
     const target = sessionStorage.getItem(REDIRECT_URL_STORAGE_KEY) ?? '/';
     sessionStorage.removeItem(REDIRECT_URL_STORAGE_KEY);
     this.router.navigateByUrl(target);
+  }
+
+  private isOnMaintenancePage(): boolean {
+    return this.router.url.startsWith('/maintenance');
   }
 }
