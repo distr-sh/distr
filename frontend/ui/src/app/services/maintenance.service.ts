@@ -2,7 +2,6 @@ import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {Router} from '@angular/router';
 import {firstValueFrom, timeout} from 'rxjs';
-import {ToastService} from './toast.service';
 
 const REDIRECT_URL_STORAGE_KEY = 'maintenance.redirectUrl';
 const READY_CHECK_TIMEOUT_MS = 10000;
@@ -11,7 +10,6 @@ const READY_CHECK_TIMEOUT_MS = 10000;
 export class MaintenanceService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
-  private readonly toast = inject(ToastService);
 
   private checking = false;
 
@@ -28,14 +26,14 @@ export class MaintenanceService {
   }
 
   async handleServerError(): Promise<void> {
+    // The checking flag only deduplicates the readiness probe; it never gates user-facing error
+    // feedback (the interceptor toasts independently), so a slow probe can't blackout 5xx feedback.
     if (this.checking || this.isOnMaintenancePage()) {
       return;
     }
     this.checking = true;
     try {
-      if (await this.checkReady()) {
-        this.toast.error('An unexpected technical error occurred');
-      } else {
+      if (!(await this.checkReady())) {
         this.enterMaintenance();
       }
     } finally {

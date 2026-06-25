@@ -21,11 +21,10 @@ export const errorToastInterceptor: HttpInterceptorFn = (req, next) => {
           captureException(err);
         }
 
-        // A 5xx might mean the database is down. Let the maintenance service verify against the
-        // readiness probe and either show the maintenance page or fall back to a toast.
+        // A 5xx might mean the database is down: probe readiness (deduplicated) and show the maintenance
+        // page if so. This runs independently of the toast below so every failure still gets feedback.
         if (err instanceof HttpErrorResponse && err.status >= 500) {
           maintenance.handleServerError();
-          return;
         }
 
         const msg = getToastDisplayedError(err);
