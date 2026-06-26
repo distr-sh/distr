@@ -1,7 +1,7 @@
 import {inject} from '@angular/core';
 import {CanActivateFn, Router, Routes} from '@angular/router';
 import {UserRole} from '@distr-sh/distr-sdk';
-import {firstValueFrom, map} from 'rxjs';
+import {catchError, firstValueFrom, map, of} from 'rxjs';
 import {getRemoteEnvironment} from '../env/remote';
 import {AccessTokensComponent} from './access-tokens/access-tokens.component';
 import {AlertConfigurationsComponent} from './alert-configurations/alert-configurations.component';
@@ -21,6 +21,7 @@ import {PartnerUsersComponent} from './components/users/partners/partner-users.c
 import {VendorUsersComponent} from './components/users/vendors/vendor-users.component';
 import {DeploymentTargetDetailComponent} from './deployments/deployment-target-details/deployment-target-detail.component';
 import {DeploymentTargetsComponent} from './deployments/deployment-targets.component';
+import {EnvironmentsComponent} from './environments/environments.component';
 import {CustomerLicenseDetailComponent} from './licenses/customer-license-detail.component';
 import {LicenseKeysComponent} from './licenses/license-keys/license-keys.component';
 import {LicensesOverviewComponent} from './licenses/licenses-overview.component';
@@ -43,6 +44,7 @@ import {AgentsTutorialComponent} from './tutorials/agents/agents-tutorial.compon
 import {BrandingTutorialComponent} from './tutorials/branding/branding-tutorial.component';
 import {RegistryTutorialComponent} from './tutorials/registry/registry-tutorial.component';
 import {TutorialsComponent} from './tutorials/tutorials.component';
+import {ExperimentalFeatureFlagKey} from './types/feature-flags';
 import {isSubscriptionExpired} from './types/organization';
 import {UserSettingsComponent} from './user-settings/user-settings.component';
 
@@ -96,6 +98,17 @@ function supportBundlesEnabledGuard(): CanActivateFn {
   return async () => {
     const featureFlags = inject(FeatureFlagService);
     return await firstValueFrom(featureFlags.isSupportBundlesEnabled$);
+  };
+}
+
+function experimentalFeatureEnabledGuard(key: ExperimentalFeatureFlagKey): CanActivateFn {
+  return async () => {
+    const featureFlags = inject(FeatureFlagService);
+    const router = inject(Router);
+    const enabled = await firstValueFrom(
+      featureFlags.isExperimentalFeatureEnabled$(key).pipe(catchError(() => of(false)))
+    );
+    return enabled ? true : router.createUrlTree(['/']);
   };
 }
 
@@ -176,6 +189,11 @@ export const routes: Routes = [
           {path: '', pathMatch: 'full', component: DeploymentTargetsComponent},
           {path: ':deploymentTargetId', component: DeploymentTargetDetailComponent},
         ],
+      },
+      {
+        path: 'environments',
+        component: EnvironmentsComponent,
+        canActivate: [requireVendor, requiredRoleGuard('admin'), experimentalFeatureEnabledGuard('environments')],
       },
       {
         path: 'artifacts',

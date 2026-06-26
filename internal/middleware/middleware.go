@@ -15,6 +15,7 @@ import (
 	"github.com/distr-sh/distr/internal/authn/authinfo"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/env"
+	"github.com/distr-sh/distr/internal/featureflags"
 	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/prometheus"
 	"github.com/distr-sh/distr/internal/types"
@@ -326,6 +327,20 @@ var (
 	VendorBillingFeatureMiddleware        = FeatureFlagMiddleware(types.FeatureVendorBilling)
 	PartnerManagementFeatureMiddleware    = FeatureFlagMiddleware(types.FeaturePartnerManagement)
 )
+
+func ExperimentalFeatureFlagMiddleware(feature featureflags.Key) func(handler http.Handler) http.Handler {
+	return func(handler http.Handler) http.Handler {
+		fn := func(w http.ResponseWriter, r *http.Request) {
+			registry := featureflags.NewRegistry(env.ExperimentalFeatureFlags())
+			if !registry.IsEnabled(feature) {
+				http.Error(w, fmt.Sprintf("experimental feature flag %q not enabled", feature), http.StatusForbidden)
+				return
+			}
+			handler.ServeHTTP(w, r)
+		}
+		return http.HandlerFunc(fn)
+	}
+}
 
 func SetRequestPattern(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

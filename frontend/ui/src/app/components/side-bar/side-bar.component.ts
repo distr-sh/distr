@@ -20,6 +20,7 @@ import {
   faHandHoldingDollar,
   faHome,
   faKey,
+  faLayerGroup,
   faLifeRing,
   faLightbulb,
   faPalette,
@@ -75,6 +76,7 @@ export class SideBarComponent {
   protected readonly faBoxesStacked = faBoxesStacked;
   protected readonly faLightbulb = faLightbulb;
   protected readonly faKey = faKey;
+  protected readonly faLayerGroup = faLayerGroup;
   protected readonly faGear = faGear;
   protected readonly faUsers = faUsers;
   protected readonly faPalette = faPalette;
@@ -110,6 +112,10 @@ export class SideBarComponent {
   protected readonly isSupportBundlesFeatureEnabled = toSignal(this.featureFlags.isSupportBundlesEnabled$);
   protected readonly isVendorBillingFeatureEnabled = this.featureFlags.isVendorBillingEnabled;
   protected readonly isPartnerManagementEnabled = this.featureFlags.isPartnerManagementEnabled;
+  protected readonly isEnvironmentsFeatureEnabled =
+    this.auth.isVendor() && this.auth.hasRole('admin')
+      ? toSignal(this.featureFlags.isEnvironmentsEnabled$, {initialValue: false})
+      : signal(false);
 
   public readonly isSubscriptionBannerVisible = input<boolean>();
   public readonly isSidebarVisible = input<boolean>();
