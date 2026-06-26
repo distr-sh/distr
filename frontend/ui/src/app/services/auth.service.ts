@@ -240,6 +240,10 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
 };
 
 function authenticatedRoute(req: HttpRequest<unknown>): boolean {
+  if (req.url.startsWith('/ready')) {
+    return false;
+  }
+
   return (
     !req.url.startsWith(authBaseUrl) ||
     req.url === `${authBaseUrl}/switch-context` ||
