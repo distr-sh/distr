@@ -18,6 +18,7 @@ import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/
 import {RouterLink} from '@angular/router';
 import {
   ApplicationVersion,
+  DeploymentRevisionResponse,
   DeploymentTarget,
   DeploymentTargetScope,
   DeploymentType,
@@ -28,6 +29,7 @@ import {
   faArrowUpRightFromSquare,
   faBinoculars,
   faCircleExclamation,
+  faClockRotateLeft,
   faComment,
   faEllipsisVertical,
   faGear,
@@ -63,6 +65,8 @@ import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
 import {DeploymentTargetLatestMetrics} from '../../types/deployment-target-metrics';
 import {DeploymentModalComponent} from '../deployment-modal.component';
+import {DeploymentRevisionDetailsComponent} from '../deployment-revisions/deployment-revision-details.component';
+import {DeploymentRevisionsTimelineComponent} from '../deployment-revisions/deployment-revisions-timeline.component';
 import {DeploymentAppNameComponent} from './deployment-app-name.component';
 import {DeploymentStatusTextComponent} from './deployment-status-text.component';
 import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.component';
@@ -84,6 +88,8 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
     TextFieldModule,
     DeploymentAppNameComponent,
     DeploymentStatusTextComponent,
+    DeploymentRevisionsTimelineComponent,
+    DeploymentRevisionDetailsComponent,
     AutotrimDirective,
     RouterLink,
     SpinnerComponent,
@@ -114,6 +120,8 @@ export class DeploymentTargetCardComponent {
     viewChild.required<TemplateRef<unknown>>('manageDeploymentTargetDrawer');
   protected readonly deploymentTargetNotesDrawer =
     viewChild.required<TemplateRef<unknown>>('deploymentTargetNotesDrawer');
+  protected readonly revisionsDrawer = viewChild.required<TemplateRef<unknown>>('revisionsDrawer');
+  protected readonly revisionDetailsModal = viewChild.required<TemplateRef<unknown>>('revisionDetailsModal');
   protected readonly deleteDeploymentProgressModal = viewChild.required<TemplateRef<unknown>>(
     'deleteDeploymentProgressModal'
   );
@@ -124,6 +132,7 @@ export class DeploymentTargetCardComponent {
   protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faComment = faComment;
   protected readonly faBinoculars = faBinoculars;
+  protected readonly faClockRotateLeft = faClockRotateLeft;
   protected readonly faEllipsisVertical = faEllipsisVertical;
   protected readonly faGear = faGear;
   protected readonly faHeartPulse = faHeartPulse;
@@ -140,6 +149,8 @@ export class DeploymentTargetCardComponent {
 
   protected readonly selectedDeploymentTarget = signal<DeploymentTarget | undefined>(undefined);
   protected readonly selectedDeployment = signal<DeploymentWithLatestRevision | undefined>(undefined);
+  protected readonly revisionsDeploymentId = signal<string | undefined>(undefined);
+  protected readonly selectedRevision = signal<DeploymentRevisionResponse | undefined>(undefined);
 
   protected readonly showDeploymentTargetDropdown = signal(false);
   protected readonly showDeploymentDropdownForId = signal<string | undefined>(undefined);
@@ -187,6 +198,7 @@ export class DeploymentTargetCardComponent {
 
   private modal?: DialogRef;
   private drawerRef?: DialogRef;
+  private revisionDetailsRef?: DialogRef;
 
   protected readonly agentVersions = resource({
     loader: () => firstValueFrom(this.agentVersionsSvc.list()),
@@ -554,6 +566,25 @@ export class DeploymentTargetCardComponent {
     this.drawerRef?.close();
     this.resetEditForm();
     this.notesForm.reset();
+  }
+
+  protected openRevisionsDrawer(deployment: DeploymentWithLatestRevision) {
+    if (!deployment.id) return;
+    this.hideDrawer();
+    this.revisionsDeploymentId.set(deployment.id);
+    this.drawerRef = this.overlay.showDrawer(this.revisionsDrawer());
+  }
+
+  protected openRevisionDetails(revision: DeploymentRevisionResponse) {
+    this.revisionDetailsRef?.close();
+    this.selectedRevision.set(revision);
+    this.revisionDetailsRef = this.overlay.showModal(this.revisionDetailsModal(), {
+      positionStrategy: new GlobalPositionStrategy().centerHorizontally().centerVertically(),
+    });
+  }
+
+  protected hideRevisionDetails() {
+    this.revisionDetailsRef?.close();
   }
 
   protected setDeploymentLogsAfterNow() {

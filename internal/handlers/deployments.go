@@ -48,6 +48,10 @@ func DeploymentsRouter(r chiopenapi.Router) {
 			Resource string `query:"resource"`
 		}
 
+		r.Get("/revisions", getDeploymentRevisions).
+			With(option.Description("Get deployment revisions")).
+			With(option.Request(DeploymentIDRequest{})).
+			With(option.Response(http.StatusOK, []api.DeploymentRevisionResponse{}))
 		r.Get("/status", getDeploymentStatus).
 			With(option.Description("Get deployment status")).
 			With(option.Request(DeploymentTimeseriesRequest{})).
@@ -141,6 +145,9 @@ func putDeployment(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
+
+		createdByUserID := auth.Authentication.Require(ctx).CurrentUserID()
+		deploymentRequest.CreatedByUserAccountID = &createdByUserID
 
 		if _, err := db.CreateDeploymentRevision(ctx, &deploymentRequest); err != nil {
 			log.Warn("could not create deployment revision", zap.Error(err))
@@ -491,6 +498,18 @@ func deploymentValuesError(ctx context.Context, w http.ResponseWriter, err error
 	sentry.GetHubFromContext(ctx).CaptureException(err)
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	return err
+}
+
+func getDeploymentRevisions(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	deployment := internalctx.GetDeployment(ctx)
+	if revisions, err := db.GetDeploymentRevisions(ctx, deployment.ID); err != nil {
+		internalctx.GetLogger(ctx).Error("failed to get deployment revisions", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	} else {
+		RespondJSON(w, mapping.List(revisions, mapping.DeploymentRevisionToAPI))
+	}
 }
 
 func getDeploymentStatus(w http.ResponseWriter, r *http.Request) {
