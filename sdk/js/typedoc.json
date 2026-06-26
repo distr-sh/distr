@@ -5,6 +5,6 @@
   "readme": "none",
   "typeDeclarationVisibility": "verbose",
   "formatWithPrettier": true,
-  "prettierConfigFile": "../../.prettierrc.json",
+  "prettierConfigFile": "./.prettierrc.json",
   "disableSources": true
 }
