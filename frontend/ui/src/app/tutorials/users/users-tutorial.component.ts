@@ -77,7 +77,7 @@ export class UsersTutorialComponent {
     if (this.users.length > 1) {
       this.users.removeAt(index);
     } else {
-      this.users.at(index).reset({userRole: 'read_write'});
+      this.users.setControl(index, userFormGroup());
     }
   }
 

@@ -48,7 +48,9 @@
                 <div class="flex-1 min-w-0 ms-4">
                   <a
                     class="font-medium text-gray-900 truncate dark:text-white hover:underline hover:text-blue-600 dark:hover:text-blue-500"
-                    [routerLink]="['/', 'tutorials', tutorial.id]">
+                    [routerLink]="
+                      tutorial?.progress?.completedAt ? tutorial.completedRoute : ['/', 'tutorials', tutorial.id]
+                    ">
                     {{ tutorial.name }}
                   </a>
                   @if (tutorial?.progress?.createdAt && !tutorial?.progress?.completedAt) {

@@ -99,7 +99,9 @@ export class TutorialsService {
   );
 
   public readonly allStarted$ = this.tutorialsProgress$.pipe(
-    map((tutorials) => tutorials.every((t) => t.progress?.createdAt))
+    // The users tutorial has no "in progress" state, so it must never block this
+    // indicator — only its completion is meaningful (tracked via allCompleted$).
+    map((tutorials) => tutorials.every((t) => t.id === 'users' || t.progress?.createdAt))
   );
 
   public readonly allCompleted$ = this.tutorialsProgress$.pipe(
