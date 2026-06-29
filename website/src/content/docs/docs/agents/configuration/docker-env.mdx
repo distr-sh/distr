@@ -73,9 +73,11 @@ docker compose --env-file .prod.env up
 ## Referencing environment variables in multiple services
 
 <Aside type="caution">
-  The Distr agent **does not** mount the `.env` file as a file into your
-  containers, but provides the variables separately, so you have fine control
-  over which service is able to access which env variable.
+  The Distr agent **does not** inject the environment variables into your
+  containers automatically. By default the variables are only available for
+  interpolation (e.g. `${MY_VARIABLE}`) inside the `docker-compose.yaml` file,
+  so you have fine control over which service is able to access which env
+  variable.
 </Aside>
 
 You need to pass the environment variables to the services in the `docker-compose.yaml` file.
@@ -110,3 +112,24 @@ When running the Docker Compose file you will be able to see the following outpu
     <Code code={threeJson} lang="json" title="http://localhost:3003/env" />
   </TabItem>
 </Tabs>
+
+## Injecting the whole environment file into a service
+
+When applying a deployment, the Distr agent writes the configured environment as a `.env` file next to the
+`docker-compose.yaml`. This means you can use the standard Docker Compose
+[`env_file`](https://docs.docker.com/reference/compose-file/services/#env_file) directive to inject the
+entire environment file into a service, instead of listing every variable individually under `environment`:
+
+```yaml
+services:
+  webserver:
+    image: nginx
+    env_file:
+      - .env
+```
+
+<Aside type="caution">
+  Using `env_file` injects **every** variable from the environment file into the
+  service. Prefer an explicit `environment` block when a service should only
+  receive a subset of the variables.
+</Aside>
