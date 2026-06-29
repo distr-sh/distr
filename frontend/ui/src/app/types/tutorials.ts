@@ -1,4 +1,4 @@
-export type Tutorial = 'branding' | 'agents' | 'registry';
+export type Tutorial = 'users' | 'branding' | 'agents' | 'registry';
 
 export interface TutorialProgressEvent {
   stepId: string;

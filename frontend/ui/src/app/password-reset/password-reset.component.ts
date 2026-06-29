@@ -1,6 +1,7 @@
 import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {firstValueFrom} from 'rxjs';
+import {PLACEHOLDER_EMAIL} from '../../constants';
 import {getFormDisplayedError} from '../../util/errors';
 import {AuthService} from '../services/auth.service';
 
@@ -23,6 +24,7 @@ export class PasswordResetComponent {
   public readonly email = this.auth.getClaims()?.email;
   public errorMessage?: string;
   loading = false;
+  protected readonly placeholderEmail = PLACEHOLDER_EMAIL;
 
   public async submit() {
     this.form.markAllAsTouched();

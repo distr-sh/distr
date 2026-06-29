@@ -2,6 +2,7 @@ import {ChangeDetectionStrategy, Component, inject, OnInit} from '@angular/core'
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
+import {PLACEHOLDER_EMAIL, PLACEHOLDER_NAME} from '../../constants';
 import {getFormDisplayedError} from '../../util/errors';
 import {OidcButtonsComponent} from '../components/oidc-buttons.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
@@ -19,6 +20,8 @@ export class RegisterComponent implements OnInit {
 
   errorMessage?: string;
   loading = false;
+  protected readonly placeholderName = PLACEHOLDER_NAME;
+  protected readonly placeholderEmail = PLACEHOLDER_EMAIL;
   public readonly form = new FormGroup(
     {
       email: new FormControl('', [Validators.required, Validators.email]),

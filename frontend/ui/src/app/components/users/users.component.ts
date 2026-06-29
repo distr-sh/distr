@@ -28,6 +28,7 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import {catchError, filter, firstValueFrom, NEVER, switchMap, tap} from 'rxjs';
+import {PLACEHOLDER_EMAIL, PLACEHOLDER_NAME} from '../../../constants';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
 import {SecureImagePipe} from '../../../util/secureImage';
@@ -85,6 +86,8 @@ export class UsersComponent {
   protected readonly faTrash = faTrash;
   protected readonly faUserCircle = faUserCircle;
   protected readonly faXmark = faXmark;
+  protected readonly placeholderName = PLACEHOLDER_NAME;
+  protected readonly placeholderEmail = PLACEHOLDER_EMAIL;
 
   protected readonly filterForm = this.fb.group({
     search: this.fb.control(''),

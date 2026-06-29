@@ -1,0 +1,164 @@
+<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
+  <div class="mx-auto max-w-screen-lg px-4">
+    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+      <div class="overflow-x-auto">
+        <app-tutorial-stepper #stepper class="mx-auto max-w-5xl space-y-6 lg:space-y-8">
+          <cdk-step label="Welcome" [stepControl]="welcomeFormGroup">
+            <div class="px-20 py-8 w-full">
+              <h3 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">Invite your teammates</h3>
+
+              <div class="text-gray-900 dark:text-white mb-12">
+                <p>
+                  Distr is better with your team. In this tutorial you will invite your colleagues so you can manage
+                  your software distribution together.
+                </p>
+                <p class="mt-8">
+                  You can find additional resources on this topic in our
+                  <a [href]="rbacDocsUrl" class="text-primary-600 underline" target="_blank">docs</a>.
+                </p>
+              </div>
+
+              <div class="gap-4 sm:flex sm:items-center sm:justify-between">
+                <button
+                  (click)="navigateToOverviewPage()"
+                  type="button"
+                  class="distr-btn-secondary flex-1 sm:flex-none inline-flex items-center justify-center w-full sm:w-auto px-5 py-2.5 text-sm font-medium">
+                  Exit Tutorial
+                </button>
+                <button
+                  (click)="continueFromWelcome()"
+                  [disabled]="loading()"
+                  type="button"
+                  class="distr-btn-primary text-white flex w-full sm:w-auto items-center justify-center">
+                  Let's Go
+                  <fa-icon class="ml-2" [icon]="faArrowRight" />
+                </button>
+              </div>
+            </div>
+          </cdk-step>
+          <cdk-step label="Invite your team" [stepControl]="inviteFormGroup">
+            <div class="p-8 w-full">
+              <form [formGroup]="inviteFormGroup" (ngSubmit)="inviteAndComplete()">
+                <ol
+                  class="ml-4 relative text-gray-900 dark:text-white mb-12 border-s border-gray-200 dark:border-gray-700">
+                  <li class="mb-10 ms-8">
+                    <span
+                      class="absolute flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full -start-4 dark:bg-gray-700">
+                      <fa-icon [icon]="faLightbulb" />
+                    </span>
+                    <h3 class="text-lg font-medium leading-tight mt-1">Understand the roles</h3>
+                    <p class="text-sm mt-2">
+                      Every teammate is assigned a role that defines what they can do in Distr:
+                    </p>
+                    <ul class="mt-3 space-y-2 text-sm">
+                      <li>
+                        <b>Viewer</b> &ndash; read-only access. Can see applications, deployments and artifacts, but
+                        cannot make any changes.
+                      </li>
+                      <li>
+                        <b>User</b> &ndash; read and write access. Can create and manage applications, deployments and
+                        artifacts.
+                      </li>
+                      <li>
+                        <b>Administrator</b> &ndash; full access. Can do everything a User can, plus manage organization
+                        settings and invite or remove teammates.
+                      </li>
+                    </ul>
+                    <p class="text-sm mt-3">
+                      Learn more about roles and permissions in our
+                      <a [href]="rbacDocsUrl" class="text-primary-600 underline" target="_blank">RBAC documentation</a>.
+                    </p>
+                  </li>
+
+                  <li class="mb-10 ms-8">
+                    <span
+                      class="absolute flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full -start-4 dark:bg-gray-700">
+                      <fa-icon [icon]="faUserGroup" />
+                    </span>
+                    <h3 class="text-lg font-medium leading-tight mt-1">Add your teammates</h3>
+                    <p class="text-sm mt-2">
+                      Enter the name (optional), email and role of each colleague you want to invite, then send the
+                      invite. Each teammate will receive an email with a link to join your organization.
+                    </p>
+
+                    <div class="mt-4" formArrayName="users">
+                      <div class="grid grid-cols-[1fr_1fr_12rem_auto] gap-3 mb-2 text-sm font-medium">
+                        <div>Name</div>
+                        <div>Email</div>
+                        <div>Role</div>
+                        <div></div>
+                      </div>
+                      @for (user of users.controls; track $index) {
+                        <div
+                          [formGroupName]="$index"
+                          class="grid grid-cols-[1fr_1fr_12rem_auto] gap-3 mb-3 items-start">
+                          <div>
+                            <input
+                              formControlName="name"
+                              autotrim
+                              type="text"
+                              [attr.aria-label]="'Teammate name'"
+                              [placeholder]="placeholderName"
+                              class="distr-input" />
+                          </div>
+                          <div>
+                            <input
+                              formControlName="email"
+                              autotrim
+                              type="email"
+                              [attr.aria-label]="'Teammate email'"
+                              [placeholder]="placeholderEmail"
+                              class="distr-input" />
+                            @if (user.get('email')?.touched && user.get('email')?.errors) {
+                              <div class="mt-1 text-sm text-red-500">Please enter a valid email address.</div>
+                            }
+                          </div>
+                          <div>
+                            <app-user-role-select formControlName="userRole" selectClass="distr-input" />
+                          </div>
+                          <div class="flex items-center gap-2">
+                            <button
+                              type="button"
+                              (click)="removeUser($index)"
+                              aria-label="Remove teammate"
+                              class="distr-btn-secondary flex items-center justify-center px-3 py-2 text-sm font-medium">
+                              <fa-icon [icon]="faTrash" />
+                            </button>
+                          </div>
+                        </div>
+                      }
+
+                      <button
+                        type="button"
+                        (click)="addUser()"
+                        class="mt-2 inline-flex items-center text-sm font-medium text-primary-600 hover:underline">
+                        <fa-icon class="mr-2" [icon]="faPlus" />
+                        Add another teammate
+                      </button>
+                    </div>
+                  </li>
+                </ol>
+
+                <div class="gap-4 sm:flex sm:items-center sm:justify-between">
+                  <button
+                    cdkStepperPrevious
+                    type="button"
+                    class="distr-btn-secondary flex-1 sm:flex-none inline-flex items-center justify-center w-full sm:w-auto px-5 py-2.5 text-sm font-medium">
+                    Back
+                  </button>
+                  <button
+                    [disabled]="loading()"
+                    type="submit"
+                    class="distr-btn-primary text-white flex w-full sm:w-auto items-center justify-center">
+                    <fa-icon class="mr-2" [icon]="faCheck" />
+                    Invite and Complete
+                  </button>
+                </div>
+              </form>
+            </div>
+          </cdk-step>
+        </app-tutorial-stepper>
+      </div>
+    </div>
+  </div>
+</section>

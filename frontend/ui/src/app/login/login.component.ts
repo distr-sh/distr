@@ -3,7 +3,7 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {distinctUntilChanged, filter, lastValueFrom, map, take} from 'rxjs';
-import {WEBSITE_URL} from '../../constants';
+import {PLACEHOLDER_EMAIL, WEBSITE_URL} from '../../constants';
 import {getFormDisplayedError} from '../../util/errors';
 import {OidcButtonsComponent} from '../components/oidc-buttons.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
@@ -24,6 +24,7 @@ export class LoginComponent implements OnInit {
   private readonly fb = inject(FormBuilder).nonNullable;
 
   protected readonly websiteUrl = WEBSITE_URL;
+  protected readonly placeholderEmail = PLACEHOLDER_EMAIL;
 
   protected readonly emailPasswordForm = this.fb.group({
     email: this.fb.control('', [Validators.required, Validators.email]),

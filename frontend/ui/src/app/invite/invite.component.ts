@@ -1,6 +1,7 @@
 import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {firstValueFrom} from 'rxjs';
+import {PLACEHOLDER_NAME} from '../../constants';
 import {getFormDisplayedError} from '../../util/errors';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AuthService} from '../services/auth.service';
@@ -15,6 +16,7 @@ export class InviteComponent {
   private readonly auth = inject(AuthService);
   private readonly claims = this.auth.getClaims();
   public readonly email = this.claims?.email;
+  protected readonly placeholderName = PLACEHOLDER_NAME;
 
   public readonly form = new FormGroup(
     {
