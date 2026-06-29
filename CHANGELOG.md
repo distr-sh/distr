@@ -1,5 +1,49 @@
 # Changelog
 
+## [2.24.4](https://github.com/distr-sh/distr/compare/2.24.3...2.24.4) (2026-06-29)
+
+
+### Bug Fixes
+
+* **deps:** revert "chore(deps): update codemirror ([#2689](https://github.com/distr-sh/distr/issues/2689))" ([#2719](https://github.com/distr-sh/distr/issues/2719)) ([ed64e6e](https://github.com/distr-sh/distr/commit/ed64e6e0563e826423f585f95ee5d9c65335c65f))
+* **deps:** update module github.com/aws/smithy-go to v1.27.3 ([#2713](https://github.com/distr-sh/distr/issues/2713)) ([26f2559](https://github.com/distr-sh/distr/commit/26f255906d100c1b23b20d1eb9b4729c5539a94b))
+* **deps:** update module github.com/compose-spec/compose-go/v2 to v2.12.1 ([#2684](https://github.com/distr-sh/distr/issues/2684)) ([875cd6a](https://github.com/distr-sh/distr/commit/875cd6aeefc39901739f3baf4ce168caf5d3aa6a))
+* **deps:** update module github.com/docker/cli to v29.6.1+incompatible ([#2708](https://github.com/distr-sh/distr/issues/2708)) ([46209a1](https://github.com/distr-sh/distr/commit/46209a1574cb088086f6ee239e021ff65b21c8e3))
+* **deps:** update module github.com/docker/compose/v5 to v5.2.0 ([#2688](https://github.com/distr-sh/distr/issues/2688)) ([7820e29](https://github.com/distr-sh/distr/commit/7820e29428ea73643dbc586973de418bc5cd9cf7))
+* **deps:** update module github.com/onsi/gomega to v1.42.1 ([#2693](https://github.com/distr-sh/distr/issues/2693)) ([d2a4c71](https://github.com/distr-sh/distr/commit/d2a4c719e197a0a34ed0238d8457810feaea85e0))
+* **deps:** update module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver to v0.155.0 ([#2694](https://github.com/distr-sh/distr/issues/2694)) ([d02edcb](https://github.com/distr-sh/distr/commit/d02edcb46399be5e97c827b68709a9d85bfbcc2d))
+* **deps:** update module github.com/stripe/stripe-go/v86 to v86.1.0 ([#2702](https://github.com/distr-sh/distr/issues/2702)) ([2811f43](https://github.com/distr-sh/distr/commit/2811f435cac7f588e89ab1412f68099750f8eb6f))
+* **deps:** update website dependencies ([#2679](https://github.com/distr-sh/distr/issues/2679)) ([63f1051](https://github.com/distr-sh/distr/commit/63f10516f319c9f32791e01f159f454d70b72034))
+
+
+### Other
+
+* **deps:** remove not needed deprecated @angular/platform-browser-dynamic ([#2687](https://github.com/distr-sh/distr/issues/2687)) ([8ed73be](https://github.com/distr-sh/distr/commit/8ed73be7ccf78802dc154cc48d304e9181e03cca))
+* **deps:** update actions/cache action to v6 ([#2705](https://github.com/distr-sh/distr/issues/2705)) ([6f9f854](https://github.com/distr-sh/distr/commit/6f9f854eb7a8345f27dec262f0f934e8033f5579))
+* **deps:** update actions/cache action to v6.1.0 ([#2714](https://github.com/distr-sh/distr/issues/2714)) ([71ad724](https://github.com/distr-sh/distr/commit/71ad724e4dbabdec0623e4ebd90f68747094cbbb))
+* **deps:** update actions/setup-go action to v6.5.0 ([#2699](https://github.com/distr-sh/distr/issues/2699)) ([d0bb26a](https://github.com/distr-sh/distr/commit/d0bb26a34281465168f582e3fcc576da40a0a5e1))
+* **deps:** update angular monorepo to v22.0.4 ([#2707](https://github.com/distr-sh/distr/issues/2707)) ([c546656](https://github.com/distr-sh/distr/commit/c5466566c94f64536c7417bd6bf7eceea6148e07))
+* **deps:** update angular-cli monorepo to v22.0.4 ([#2697](https://github.com/distr-sh/distr/issues/2697)) ([ac7c15d](https://github.com/distr-sh/distr/commit/ac7c15d68c578227a5c82e7102bbd5bcc2766566))
+* **deps:** update aws-actions/configure-aws-credentials action to v6.2.1 ([#2711](https://github.com/distr-sh/distr/issues/2711)) ([5a0f243](https://github.com/distr-sh/distr/commit/5a0f24326feb41b4ca5f0d4b46db2a955fe97b24))
+* **deps:** update azure/setup-helm action to v5.0.1 ([#2691](https://github.com/distr-sh/distr/issues/2691)) ([3efb717](https://github.com/distr-sh/distr/commit/3efb717e9ce5c4084b4e8fcdc02299d700c54edc))
+* **deps:** update codemirror ([#2689](https://github.com/distr-sh/distr/issues/2689)) ([99130f6](https://github.com/distr-sh/distr/commit/99130f635ce09995f2a40edf70a85201559c36c7))
+* **deps:** update dependency autoprefixer to v10.5.2 ([#2692](https://github.com/distr-sh/distr/issues/2692)) ([e317371](https://github.com/distr-sh/distr/commit/e3173712bb0f5c7bceba6283b502329342c90352))
+* **deps:** update dependency stripe to v1.42.15 ([#2683](https://github.com/distr-sh/distr/issues/2683)) ([d736330](https://github.com/distr-sh/distr/commit/d7363300c7c862a6d65c92771c43158dcf0b1af7))
+* **deps:** update dependency stripe to v1.43.2 ([#2700](https://github.com/distr-sh/distr/issues/2700)) ([0e03e2b](https://github.com/distr-sh/distr/commit/0e03e2b495f40e1c9224fa78bc29162733c5476f))
+* **deps:** update docker docker tag to v29.6.1 ([#2712](https://github.com/distr-sh/distr/issues/2712)) ([ff94f0e](https://github.com/distr-sh/distr/commit/ff94f0eab9bf71075f5a12a283b1ec71fda3b9f7))
+* **deps:** update font awesome to v7.3.0 ([#2709](https://github.com/distr-sh/distr/issues/2709)) ([9c44d07](https://github.com/distr-sh/distr/commit/9c44d07178083f562964d7293b913322964e2260))
+* **deps:** update module go:github.com/go-delve/delve/cmd/dlv to v1.27.0 ([#2701](https://github.com/distr-sh/distr/issues/2701)) ([efe8916](https://github.com/distr-sh/distr/commit/efe8916ab8b74386a8c14f30558259535cc87048))
+* **deps:** update pnpm to v11.9.0 ([#2690](https://github.com/distr-sh/distr/issues/2690)) ([2c7caba](https://github.com/distr-sh/distr/commit/2c7caba69c378b6e87af13ae3d111d7424386e20))
+* **deps:** update sentry-javascript monorepo to v10.60.0 ([#2695](https://github.com/distr-sh/distr/issues/2695)) ([0ce0550](https://github.com/distr-sh/distr/commit/0ce05509620e71b1dfc4ebcc3f00ee784fe305fc))
+* **frontend:** add automatic maintenance page ([#2696](https://github.com/distr-sh/distr/issues/2696)) ([5b74ce9](https://github.com/distr-sh/distr/commit/5b74ce9cbf6c3a50142c549233e939a0f1aa64b4))
+
+
+### Docs
+
+* **website:** add an additional trust & metrics bullet ([#2681](https://github.com/distr-sh/distr/issues/2681)) ([f1817bd](https://github.com/distr-sh/distr/commit/f1817bde34c2a5b1f5ebb28cd8ebd5b9e16abc64))
+* **website:** add an addtional onboarding step ([#2680](https://github.com/distr-sh/distr/issues/2680)) ([7c76a56](https://github.com/distr-sh/distr/commit/7c76a56b2f53a9c3d6da333d4d49a667acb01504))
+* **website:** license key name is not editable ([#2698](https://github.com/distr-sh/distr/issues/2698)) ([222124b](https://github.com/distr-sh/distr/commit/222124b759928276f1f90fb4482905199bd9675e))
+
 ## [2.24.3](https://github.com/distr-sh/distr/compare/2.24.2...2.24.3) (2026-06-23)
 
 
