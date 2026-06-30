@@ -42,21 +42,26 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 				} else if err != nil {
 					return nil, err
 				}
-				return &DbAuthInfo{
-					AuthInfo: &SimpleAuthInfo{
-						userID:                 a.CurrentUserID(),
-						userEmail:              a.CurrentUserEmail(),
-						organizationID:         a.CurrentOrgID(),
-						customerOrganizationID: nil,
-						emailVerified:          a.CurrentUserEmailVerified(),
-						tokenScope:             a.TokenScope(),
-						userRole:               nil, // Super admins don't have a role
-						isSuperAdmin:           true,
-						rawToken:               a.Token(),
-					},
-					user: user,
-					org:  org,
-				}, nil
+				info := &SimpleAuthInfo{
+					userID:                 a.CurrentUserID(),
+					userEmail:              a.CurrentUserEmail(),
+					organizationID:         a.CurrentOrgID(),
+					customerOrganizationID: nil,
+					emailVerified:          a.CurrentUserEmailVerified(),
+					tokenScope:             a.TokenScope(),
+					userRole:               nil, // Interactive super admins don't have a role
+					isSuperAdmin:           true,
+					rawToken:               a.Token(),
+				}
+				// A super-admin-owned PAT carries an explicit (read-only) role,
+				// unlike an interactive super-admin session. It acts as a plain
+				// read-only credential scoped to the token's organization, with no
+				// super-admin privileges and without requiring a membership.
+				if role := a.CurrentUserRole(); role != nil {
+					info.userRole = role
+					info.isSuperAdmin = false
+				}
+				return &DbAuthInfo{AuthInfo: info, user: user, org: org}, nil
 			}
 			// Regular users: require org membership and validate role
 			if a.CurrentUserRole() != nil {
