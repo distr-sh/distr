@@ -46,7 +46,7 @@ The size you need depends on the size of the artifacts you push and the number o
 We also highly recommend backing the registry with S3-compatible object storage.
 On top of being more scalable and durable, it lets the registry serve blob (layer) downloads via **pre-signed URLs**: instead of streaming the layer through the Hub, the registry responds with an HTTP `307 Temporary Redirect` to a short-lived pre-signed URL, so clients download layers directly from the object storage.
 This offloads pull bandwidth from the Hub and keeps its CPU and memory footprint low even under heavy pull load.
-This behaviour is enabled by default and can be controlled via `REGISTRY_S3_ALLOW_REDIRECT`.
+This behavior is enabled by default and can be controlled via `REGISTRY_S3_ALLOW_REDIRECT`.
 
 ## Networking & ports
 
