@@ -1,5 +1,11 @@
 name: distr
 
+x-logging: &default-logging
+  driver: 'json-file'
+  options:
+    max-size: '10m'
+    max-file: '3'
+
 services:
   postgres:
     image: 'postgres:18.4-alpine3.23'
@@ -10,6 +16,7 @@ services:
     volumes:
       - 'postgres:/var/lib/postgresql/'
     restart: always
+    logging: *default-logging
     healthcheck:
       test: pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}
       start_interval: 1s
@@ -31,6 +38,7 @@ services:
       - '8080:8080'
       - '8585:8585'
     restart: always
+    logging: *default-logging
 
   # The OCI registry of distr can use any S3 compatible storage to store OCI images.
   # If you don't want to use the OCI registry (REGISTRY_ENABLED=false) or want to use an external S3 provider,
@@ -43,6 +51,7 @@ services:
       RUSTFS_ACCESS_KEY: ${REGISTRY_S3_ACCESS_KEY_ID}
       RUSTFS_SECRET_KEY: ${REGISTRY_S3_SECRET_ACCESS_KEY}
     restart: unless-stopped
+    logging: *default-logging
     healthcheck:
       # Production strict TLS example (SAN/FQDN aligned, no `-k`):
       # curl -f --cacert /opt/tls/ca.crt --resolve rustfs-a.example.com:9000:127.0.0.1 https://rustfs-a.example.com:9000/health
