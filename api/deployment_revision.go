@@ -8,10 +8,12 @@ import (
 )
 
 type DeploymentRevisionCreator struct {
+	ID                     *uuid.UUID `json:"id,omitempty"`
 	Name                   string     `json:"name,omitempty"`
-	Email                  string     `json:"email"`
+	Email                  string     `json:"email,omitempty"`
 	CustomerOrganizationID *uuid.UUID `json:"customerOrganizationId,omitempty"`
 	PartnerOrganizationID  *uuid.UUID `json:"partnerOrganizationId,omitempty"`
+	Deleted                bool       `json:"deleted,omitempty"`
 }
 
 type DeploymentRevisionResponse struct {

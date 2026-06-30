@@ -22,12 +22,18 @@
             }
           </div>
           @if (revision.createdBy; as createdBy) {
-            @let kind = createdBy | organizationKind;
+            @let createdByKind = createdBy | organizationKind;
             @let targetKind = deploymentTarget() | organizationKind;
-            <div class="flex gap-1 text-xs">
-              <span class="text-gray-600 dark:text-gray-300">{{ createdBy.name || createdBy.email }}</span>
-              @if (targetKind !== kind) {
-                <span class="capitalize text-gray-500 dark:text-gray-400">({{ kind }})</span>
+            <div class="flex gap-1 text-xs text-gray-600 dark:text-gray-300">
+              @if (createdBy.name || createdBy.email) {
+                {{ createdBy.name || createdBy.email }}
+                @if (createdBy.deleted) {
+                  <span class="text-gray-500 dark:text-gray-400">(deleted)</span>
+                } @else if (targetKind !== createdByKind) {
+                  <span class="capitalize text-gray-500 dark:text-gray-400">({{ createdByKind }})</span>
+                }
+              } @else {
+                <span class="capitalize">{{ createdByKind }}</span>
               }
             </div>
           }

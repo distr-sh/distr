@@ -42,8 +42,10 @@ type DeploymentRevisionWithCreator struct {
 	ForceRestart                    bool         `db:"force_restart"`
 	IgnoreRevisionSkew              bool         `db:"ignore_revision_skew"`
 	HelmOptions                     *HelmOptions `db:"helm_options"`
+	CreatedByID                     *uuid.UUID   `db:"created_by_id"`
 	CreatedByName                   *string      `db:"created_by_name"`
 	CreatedByEmail                  *string      `db:"created_by_email"`
 	CreatedByCustomerOrganizationID *uuid.UUID   `db:"created_by_customer_organization_id"`
 	CreatedByPartnerOrganizationID  *uuid.UUID   `db:"created_by_partner_organization_id"`
+	CreatedByDeleted                bool         `db:"created_by_deleted"`
 }

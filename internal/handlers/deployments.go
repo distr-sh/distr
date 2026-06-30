@@ -503,12 +503,16 @@ func deploymentValuesError(ctx context.Context, w http.ResponseWriter, err error
 func getDeploymentRevisions(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	deployment := internalctx.GetDeployment(ctx)
+	authInfo := auth.Authentication.Require(ctx)
 	if revisions, err := db.GetDeploymentRevisions(ctx, deployment.ID); err != nil {
 		internalctx.GetLogger(ctx).Error("failed to get deployment revisions", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	} else {
-		RespondJSON(w, mapping.List(revisions, mapping.DeploymentRevisionToAPI))
+		RespondJSON(w, mapping.List(revisions, mapping.DeploymentRevisionToAPI(
+			authInfo.CurrentCustomerOrgID(),
+			authInfo.CurrentPartnerOrgID(),
+		)))
 	}
 }
 

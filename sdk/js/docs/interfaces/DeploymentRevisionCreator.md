@@ -14,9 +14,21 @@
 
 ---
 
-### email
+### deleted?
 
-> **email**: `string`
+> `optional` **deleted?**: `boolean`
+
+---
+
+### email?
+
+> `optional` **email?**: `string`
+
+---
+
+### id?
+
+> `optional` **id?**: `string`
 
 ---
 

@@ -422,10 +422,13 @@ func GetDeploymentRevisions(
 					dr.helm_options_cleanup_on_failure,
 					dr.helm_options_force_conflicts
 				) END AS helm_options,
+				u.id AS created_by_id,
 				u.name AS created_by_name,
 				u.email AS created_by_email,
 				j.customer_organization_id AS created_by_customer_organization_id,
-				j.partner_organization_id AS created_by_partner_organization_id
+				j.partner_organization_id AS created_by_partner_organization_id,
+				(dr.created_by_user_account_id IS NOT NULL AND j.user_account_id IS NULL)
+					AS created_by_deleted
 			FROM DeploymentRevision dr
 				JOIN Deployment d ON dr.deployment_id = d.id
 				JOIN DeploymentTarget dt ON d.deployment_target_id = dt.id

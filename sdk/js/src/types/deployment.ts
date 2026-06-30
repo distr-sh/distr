@@ -57,10 +57,12 @@ export interface DeploymentRevisionStatus extends BaseModel {
 }
 
 export interface DeploymentRevisionCreator {
+  id?: string;
   name?: string;
-  email: string;
+  email?: string;
   customerOrganizationId?: string;
   partnerOrganizationId?: string;
+  deleted?: boolean;
 }
 
 export interface DeploymentRevisionResponse {

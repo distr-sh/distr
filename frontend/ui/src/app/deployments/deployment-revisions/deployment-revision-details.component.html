@@ -12,7 +12,20 @@
     @if (rev.createdBy; as createdBy) {
       <div>
         <span class="block text-xs text-gray-500 dark:text-gray-400">Created by</span>
-        <p>{{ createdBy.name || createdBy.email }}</p>
+        <p>
+          @let createdByKind = createdBy | organizationKind;
+          @let targetKind = deploymentTarget() | organizationKind;
+          @if (createdBy.name || createdBy.email) {
+            {{ createdBy.name || createdBy.email }}
+            @if (createdBy.deleted) {
+              <span class="text-gray-500 dark:text-gray-400">(deleted)</span>
+            } @else if (createdByKind !== targetKind) {
+              <span class="capitalize text-gray-500 dark:text-gray-400">({{ createdByKind }})</span>
+            }
+          } @else {
+            <span class="capitalize">{{ createdByKind }}</span>
+          }
+        </p>
       </div>
     }
     @if (isKubernetes()) {
