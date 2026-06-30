@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.24.5](https://github.com/distr-sh/distr/compare/2.24.4...2.24.5) (2026-06-29)
+
+
+### Bug Fixes
+
+* **frontend:** add missing dropdown animations and simplify transform CSS ([#2721](https://github.com/distr-sh/distr/issues/2721)) ([5878be8](https://github.com/distr-sh/distr/commit/5878be8800d9a16f4822470f451bfa43114de548))
+
+
+### Other
+
+* **deps:** update axllent/mailpit docker tag to v1.30.3 ([#2715](https://github.com/distr-sh/distr/issues/2715)) ([64d1837](https://github.com/distr-sh/distr/commit/64d1837f2d71087d405bad16b6e3ac8c98553fd0))
+* **deps:** update dependency @sentry/cli to v3.6.0 ([#2717](https://github.com/distr-sh/distr/issues/2717)) ([2ac701e](https://github.com/distr-sh/distr/commit/2ac701eb6472120d9c989d47359d75c70319e34c))
+* **deps:** update dependency posthog-js to v1.395.0 ([#2718](https://github.com/distr-sh/distr/issues/2718)) ([aaee466](https://github.com/distr-sh/distr/commit/aaee466cc4e3c3eb77d30b6dc8ecf802bd36439d))
+* **docker-agent:** use MkdirTemp for temporary compose/env files ([#2723](https://github.com/distr-sh/distr/issues/2723)) ([984dddb](https://github.com/distr-sh/distr/commit/984dddb95bbdb1beec7d02fb5534066d2f78d7da))
+
+
+### Docs
+
+* update docker agent environment documentation ([#2724](https://github.com/distr-sh/distr/issues/2724)) ([85d860e](https://github.com/distr-sh/distr/commit/85d860e91a02168258357b770d6e89fb84f4a6d2))
+
 ## [2.24.4](https://github.com/distr-sh/distr/compare/2.24.3...2.24.4) (2026-06-29)
 
 
