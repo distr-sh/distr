@@ -3,16 +3,16 @@
   <div class="grid grid-cols-2 gap-4">
     <div>
       <span class="block text-xs text-gray-500 dark:text-gray-400">Application version</span>
-      <p>{{ rev.applicationVersionName }}</p>
+      <div>{{ rev.applicationVersionName }}</div>
     </div>
     <div>
       <span class="block text-xs text-gray-500 dark:text-gray-400">Created</span>
-      <p>{{ rev.createdAt | date: 'medium' }}</p>
+      <div>{{ rev.createdAt | date: 'medium' }}</div>
     </div>
     @if (rev.createdBy; as createdBy) {
       <div>
         <span class="block text-xs text-gray-500 dark:text-gray-400">Created by</span>
-        <p>
+        <div>
           @let createdByKind = createdBy | organizationKind;
           @let targetKind = deploymentTarget() | organizationKind;
           @if (createdBy.name || createdBy.email) {
@@ -28,18 +28,18 @@
           } @else {
             <span class="capitalize">{{ createdByKind }}</span>
           }
-        </p>
+        </div>
       </div>
     }
     @if (isKubernetes()) {
       <div>
         <span class="block text-xs text-gray-500 dark:text-gray-400">Release name</span>
-        <p>{{ rev.releaseName }}</p>
+        <div>{{ rev.releaseName }}</div>
       </div>
     } @else {
       <div>
         <span class="block text-xs text-gray-500 dark:text-gray-400">Mode</span>
-        <p class="capitalize">{{ rev.dockerType ?? 'compose' }}</p>
+        <div class="capitalize">{{ rev.dockerType ?? 'compose' }}</div>
       </div>
     }
   </div>
@@ -59,11 +59,11 @@
         <div class="grid grid-cols-2 gap-2 border border-gray-200 dark:border-gray-600 rounded-lg p-2">
           <div>
             <span class="block text-xs text-gray-500 dark:text-gray-400">Timeout</span>
-            <p>{{ helmOptions.timeout }}</p>
+            <div>{{ helmOptions.timeout }}</div>
           </div>
           <div>
             <span class="block text-xs text-gray-500 dark:text-gray-400">Wait strategy</span>
-            <p class="capitalize">{{ helmOptions.waitStrategy }}</p>
+            <div class="capitalize">{{ helmOptions.waitStrategy }}</div>
           </div>
           <div>
             <div class="flex items-center gap-2">
