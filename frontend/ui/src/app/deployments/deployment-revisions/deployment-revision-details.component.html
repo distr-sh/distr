@@ -9,16 +9,12 @@
       <span class="block text-xs text-gray-500 dark:text-gray-400">Created</span>
       <p>{{ rev.createdAt | date: 'medium' }}</p>
     </div>
-    <div>
-      <span class="block text-xs text-gray-500 dark:text-gray-400">Created by</span>
-      <p>
-        @if (rev.createdBy; as createdBy) {
-          {{ createdBy.name || createdBy.email }}
-        } @else {
-          <span class="text-gray-500 dark:text-gray-400">Unknown user</span>
-        }
-      </p>
-    </div>
+    @if (rev.createdBy; as createdBy) {
+      <div>
+        <span class="block text-xs text-gray-500 dark:text-gray-400">Created by</span>
+        <p>{{ createdBy.name || createdBy.email }}</p>
+      </div>
+    }
     @if (isKubernetes()) {
       <div>
         <span class="block text-xs text-gray-500 dark:text-gray-400">Release name</span>

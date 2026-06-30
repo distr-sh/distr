@@ -19,19 +19,17 @@
               <span class="text-gray-500 dark:text-gray-400">(current)</span>
             }
           </div>
-          <div class="flex gap-1 text-xs">
-            @if (revision.createdBy; as createdBy) {
-              @let kind = createdBy | organizationKind;
-              @let targetKind = deploymentTarget() | organizationKind;
+          @if (revision.createdBy; as createdBy) {
+            @let kind = createdBy | organizationKind;
+            @let targetKind = deploymentTarget() | organizationKind;
+            <div class="flex gap-1 text-xs">
               <span class="text-gray-600 dark:text-gray-300">{{ createdBy.name || createdBy.email }}</span>
               @if (targetKind !== kind) {
                 <span class="capitalize text-gray-500 dark:text-gray-400">({{ kind }})</span>
               }
-            } @else {
-              <span class="text-gray-500 dark:text-gray-400">Unknown user</span>
-            }
-          </div>
-          <time class="block text-xs font-normal text-gray-400 dark:text-gray-500">
+            </div>
+          }
+          <time [attr.datetime]="revision.createdAt" class="block text-xs font-normal text-gray-400 dark:text-gray-500">
             {{ revision.createdAt | date: 'short' }}
           </time>
         </button>
