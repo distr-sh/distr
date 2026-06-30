@@ -50,7 +50,7 @@ services:
     environment:
       RUSTFS_ACCESS_KEY: ${REGISTRY_S3_ACCESS_KEY_ID}
       RUSTFS_SECRET_KEY: ${REGISTRY_S3_SECRET_ACCESS_KEY}
-    restart: unless-stopped
+    restart: always
     logging: *default-logging
     healthcheck:
       # Production strict TLS example (SAN/FQDN aligned, no `-k`):
