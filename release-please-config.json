@@ -10,6 +10,7 @@
       "extra-files": [
         "README.md",
         "deploy/docker/docker-compose.yaml",
+        "deploy/docker-ssl/docker-compose.yaml",
         "deploy/helm/distr/README.md",
         "deploy/helm/distr/README.md.gotmpl",
         {
