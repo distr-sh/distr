@@ -50,8 +50,9 @@ func DeploymentRevisionToAPI(
 		if r.CreatedByID != nil {
 			creatorRank := organizationKindRank(r.CreatedByCustomerOrganizationID, r.CreatedByPartnerOrganizationID)
 			showIdentity := creatorRank >= viewerRank
-			// Deleted users are hidden entirely (nil) from non-vendor viewers. Otherwise a creator
-			// is always represented, with the identity withheld when the viewer is not allowed to see it.
+			// A deleted creator is hidden entirely (CreatedBy stays nil) when the viewer is not
+			// allowed to see its identity. Otherwise the creator is always represented, with the
+			// identity withheld when the viewer is not allowed to see it.
 			if !r.CreatedByDeleted || showIdentity {
 				creator := &api.DeploymentRevisionCreator{
 					CustomerOrganizationID: r.CreatedByCustomerOrganizationID,
