@@ -27,7 +27,7 @@ import {
   faUserCircle,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import {catchError, filter, firstValueFrom, NEVER, switchMap, tap} from 'rxjs';
+import {catchError, filter, firstValueFrom, NEVER, Observable, switchMap, tap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
 import {SecureImagePipe} from '../../../util/secureImage';
@@ -40,6 +40,7 @@ import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
+import {InlineEditComponent} from '../inline-edit.component';
 import {QuotaLimitComponent} from '../quota-limit.component';
 import {UserRoleSelectComponent} from '../user-role-select.component';
 
@@ -56,6 +57,7 @@ import {UserRoleSelectComponent} from '../user-role-select.component';
     QuotaLimitComponent,
     UserRoleSelectComponent,
     UserRoleLabelPipe,
+    InlineEditComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './users.component.html',
@@ -134,12 +136,6 @@ export class UsersComponent {
     return subscriptionType && ['trial', 'pro', 'enterprise'].includes(subscriptionType);
   });
 
-  protected readonly editNameUserId = signal<string | null>(null);
-  protected readonly editNameFormLoading = signal(false);
-  protected readonly editNameForm = this.fb.group({
-    name: this.fb.control(''),
-  });
-
   protected readonly editRoleUserId = signal<string | null>(null);
   protected readonly editRoleFormLoading = signal(false);
   protected readonly editRoleForm = this.fb.group({
@@ -151,41 +147,9 @@ export class UsersComponent {
     this.modalRef = this.overlay.showModal(this.inviteUserDialog());
   }
 
-  protected editUserName(user: UserAccountWithRole): void {
-    if (!user.id) {
-      return;
-    }
-    this.editNameFormLoading.set(false);
-    this.editNameUserId.set(user.id);
-    this.editRoleUserId.set(null);
-    this.editNameForm.reset(user);
-  }
-
-  protected async submitEditUserNameForm(): Promise<void> {
-    this.editNameForm.markAllAsTouched();
-
-    const userId = this.editNameUserId();
-    const name = this.editNameForm.value.name;
-    if (!userId || !name) {
-      return;
-    }
-
-    if (this.editNameForm.valid) {
-      this.editNameFormLoading.set(true);
-      try {
-        await firstValueFrom(this.usersService.patchUserAccount(userId, {name}));
-        this.editNameUserId.set(null);
-        this.editNameForm.reset();
-        this.toast.success('User has been updated');
-      } catch (e) {
-        const msg = getFormDisplayedError(e);
-        if (msg) {
-          this.toast.error(msg);
-        }
-      } finally {
-        this.editNameFormLoading.set(false);
-      }
-    }
+  protected updateUserName(user: UserAccountWithRole): (name: string) => Observable<unknown> {
+    return (name) =>
+      this.usersService.patchUserAccount(user.id!, {name}).pipe(tap(() => this.toast.success('User has been updated')));
   }
 
   protected editUserRole(user: UserAccountWithRole): void {
@@ -194,7 +158,6 @@ export class UsersComponent {
     }
     this.editRoleFormLoading.set(false);
     this.editRoleUserId.set(user.id);
-    this.editNameUserId.set(null);
     this.editRoleForm.reset(user);
   }
 

@@ -278,6 +278,8 @@ func UpdateApplicationVersion(ctx context.Context, applicationVersion *types.App
 	} else if updated, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ApplicationVersion]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			err = apierrors.ErrNotFound
+		} else if pgerr := (*pgconn.PgError)(nil); errors.As(err, &pgerr) && pgerr.Code == pgerrcode.UniqueViolation {
+			err = apierrors.ErrAlreadyExists
 		}
 		return fmt.Errorf("could not scan ApplicationVersion: %w", err)
 	} else {

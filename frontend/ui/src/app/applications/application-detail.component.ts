@@ -19,14 +19,11 @@ import {
   faArchive,
   faBox,
   faBoxesStacked,
-  faCheck,
   faChevronDown,
-  faEdit,
   faEye,
   faMagnifyingGlass,
   faPlus,
   faTrash,
-  faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import {
   catchError,
@@ -49,6 +46,7 @@ import {getFormDisplayedError} from '../../util/errors';
 import {disableControlsWithoutEvent, enableControlsWithoutEvent} from '../../util/forms';
 import {SecureImagePipe} from '../../util/secureImage';
 import {EditorComponent} from '../components/editor.component';
+import {InlineEditComponent} from '../components/inline-edit.component';
 import {UuidComponent} from '../components/uuid';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
@@ -75,6 +73,7 @@ import {
     AutotrimDirective,
     DatePipe,
     EditorComponent,
+    InlineEditComponent,
     SecureImagePipe,
     ApplicationVersionDetailModalComponent,
     InnerMarkdownDirective,
@@ -105,9 +104,7 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
     combineLatestWith(this.applications$),
     map(([id, applications]) => applications.find((a) => a.id === id)),
     tap((app) => {
-      this.editForm.disable();
       if (app) {
-        this.editForm.patchValue({name: app.name});
         this.enableTypeSpecificGroups(app);
       }
     })
@@ -162,10 +159,6 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
     >([]),
   });
   newVersionFormLoading = signal(false);
-  editForm = new FormGroup({
-    name: new FormControl('', Validators.required),
-  });
-  editFormLoading = signal(false);
 
   protected readonly versionDetail = signal<ApplicationVersionDetail | undefined>(undefined);
   protected readonly versionDetailsModal = viewChild.required<TemplateRef<unknown>>('versionDetailsModal');
@@ -173,9 +166,6 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
 
   protected readonly faBoxesStacked = faBoxesStacked;
   protected readonly faChevronDown = faChevronDown;
-  protected readonly faEdit = faEdit;
-  protected readonly faCheck = faCheck;
-  protected readonly faXmark = faXmark;
   protected readonly faTrash = faTrash;
   protected readonly faArchive = faArchive;
   protected readonly faMagnifyingGlass = faMagnifyingGlass;
@@ -190,7 +180,6 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   readonly isVersionFormExpanded = signal(false);
   breadcrumbDropdownWidth: number = 0;
   protected readonly dropdownTriggerButton = viewChild.required<ElementRef<HTMLElement>>('dropdownTriggerButton');
-  protected readonly nameInputElem = viewChild<ElementRef<HTMLInputElement>>('nameInput');
 
   ngOnInit() {
     this.route.url.subscribe(() => this.breadcrumbDropdown.set(false));
@@ -218,35 +207,15 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
     }
   }
 
-  enableApplicationEdit(application: Application) {
-    this.editForm.enable();
-    this.editForm.patchValue({name: application.name});
-    setTimeout(() => this.nameInputElem()?.nativeElement.focus(), 10);
+  protected updateApplicationName(application: Application): (name: string) => Observable<unknown> {
+    return (name) => this.applicationService.update({...application, name});
   }
 
-  cancelApplicationEdit() {
-    this.editForm.disable();
-  }
-
-  async saveApplication(application: Application) {
-    if (this.editForm.valid) {
-      this.editFormLoading.set(true);
-      try {
-        await lastValueFrom(
-          this.applicationService.update({
-            ...application,
-            name: this.editForm.value.name!.trim(),
-          })
-        );
-      } catch (e) {
-        const msg = getFormDisplayedError(e);
-        if (msg) {
-          this.toast.error(msg);
-        }
-      } finally {
-        this.editFormLoading.set(false);
-      }
-    }
+  protected updateVersionName(
+    application: Application,
+    version: ApplicationVersion
+  ): (name: string) => Observable<unknown> {
+    return (name) => this.applicationService.updateApplicationVersion(application, {...version, name});
   }
 
   async createVersion(application: Application) {
