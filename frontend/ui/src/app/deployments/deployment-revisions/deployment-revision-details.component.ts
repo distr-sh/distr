@@ -7,12 +7,13 @@ import {faCheck, faTriangleExclamation, faXmark} from '@fortawesome/free-solid-s
 import {fromBase64} from '../../../util/encoding';
 import {OrganizationKindPipe} from '../../../util/organization-kind';
 import {EditorComponent} from '../../components/editor.component';
+import {UserAvatarComponent} from '../../components/user-avatar.component';
 
 @Component({
   selector: 'app-deployment-revision-details',
   templateUrl: './deployment-revision-details.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [ReactiveFormsModule, EditorComponent, FaIconComponent, DatePipe, OrganizationKindPipe],
+  imports: [ReactiveFormsModule, EditorComponent, FaIconComponent, DatePipe, OrganizationKindPipe, UserAvatarComponent],
 })
 export class DeploymentRevisionDetailsComponent {
   public readonly revision = input.required<DeploymentRevisionResponse>();
