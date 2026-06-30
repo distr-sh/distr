@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -64,23 +63,14 @@ func DockerEngineApply(
 func ApplyComposeFile(ctx context.Context, deployment api.AgentDeployment, updateStatus func(string)) error {
 	updateStatus("initializing compose service")
 
-	var composeFileName string
-	if f, err := WriteTempFile("distr-compose-*.yaml", deployment.ComposeFile); err != nil {
-		return fmt.Errorf("failed to write compose file: %w", err)
-	} else {
-		composeFileName = string(f)
-		defer f.Destroy()
+	// Write the compose file and the env file into a dedicated working directory using their canonical
+	// names. This anchors relative paths (most importantly service-level "env_file: - .env" directives)
+	// to a known location so that they resolve during project loading.
+	workDir, cleanup, err := WriteComposeWorkingDir(deployment)
+	if err != nil {
+		return err
 	}
-
-	var envFileName string
-	if deployment.EnvFile != nil {
-		if f, err := WriteTempFile("distr-*.env", deployment.EnvFile); err != nil {
-			return fmt.Errorf("failed to write env file: %w", err)
-		} else {
-			envFileName = string(f)
-			defer f.Destroy()
-		}
-	}
+	defer cleanup()
 
 	eventProcessor := NewEventProcessor(updateStatus)
 	composeService, err := ComposeServiceForDeployment(deployment, compose.WithEventProcessor(eventProcessor))
@@ -88,9 +78,12 @@ func ApplyComposeFile(ctx context.Context, deployment api.AgentDeployment, updat
 		return fmt.Errorf("failed to initialize compose service: %w", err)
 	}
 
-	loadOpts := composeapi.ProjectLoadOptions{ConfigPaths: []string{composeFileName}}
-	if envFileName != "" {
-		loadOpts.EnvFiles = []string{envFileName}
+	loadOpts := composeapi.ProjectLoadOptions{
+		WorkingDir:  workDir.Path,
+		ConfigPaths: []string{workDir.ComposeFile},
+	}
+	if workDir.EnvFile != "" {
+		loadOpts.EnvFiles = []string{workDir.EnvFile}
 	}
 
 	project, err := composeService.LoadProject(ctx, loadOpts)
@@ -137,11 +130,22 @@ func ApplyComposeFileSwarm(
 		return "", err
 	}
 
+	// Write the compose file and the env file into a dedicated working directory using their canonical
+	// names so that relative paths (most importantly service-level "env_file: - .env" directives) resolve
+	// when "docker stack deploy" reads the project from disk.
+	workDir, cleanup, err := WriteComposeWorkingDir(
+		api.AgentDeployment{ComposeFile: cleanedComposeFile, EnvFile: deployment.EnvFile},
+	)
+	if err != nil {
+		return "", err
+	}
+	defer cleanup()
+
 	// Construct environment variables
 	envVars := os.Environ()
 	envVars = append(envVars, DockerConfigEnv(deployment)...)
 
-	// // If an env file is provided, load its values
+	// If an env file is provided, load its values so that variable interpolation in the compose file works.
 	if deployment.EnvFile != nil {
 		parsedEnv, err := dotenv.UnmarshalBytesWithLookup(deployment.EnvFile, nil)
 		if err != nil {
@@ -157,13 +161,13 @@ func ApplyComposeFileSwarm(
 	// Deploy the stack
 	composeArgs := []string{
 		"stack", "deploy",
-		"--compose-file", "-",
+		"--compose-file", workDir.ComposeFile,
 		"--with-registry-auth",
 		"--detach=true",
 		projectName,
 	}
 	cmd := exec.CommandContext(ctx, "docker", composeArgs...)
-	cmd.Stdin = bytes.NewReader(cleanedComposeFile)
+	cmd.Dir = workDir.Path
 	cmd.Env = envVars // Ensure the same env variables are used
 
 	// Execute the command and capture output
