@@ -45,6 +45,7 @@ type DeploymentRevisionWithCreator struct {
 	CreatedByID                     *uuid.UUID   `db:"created_by_id"`
 	CreatedByName                   *string      `db:"created_by_name"`
 	CreatedByEmail                  *string      `db:"created_by_email"`
+	CreatedByImageID                *uuid.UUID   `db:"created_by_image_id"`
 	CreatedByCustomerOrganizationID *uuid.UUID   `db:"created_by_customer_organization_id"`
 	CreatedByPartnerOrganizationID  *uuid.UUID   `db:"created_by_partner_organization_id"`
 	CreatedByDeleted                bool         `db:"created_by_deleted"`

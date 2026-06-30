@@ -60,6 +60,7 @@ func DeploymentRevisionToAPI(
 				}
 				if showIdentity {
 					creator.ID = r.CreatedByID
+					creator.ImageID = r.CreatedByImageID
 					if r.CreatedByEmail != nil {
 						creator.Email = *r.CreatedByEmail
 					}

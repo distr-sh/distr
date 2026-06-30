@@ -60,6 +60,7 @@ export interface DeploymentRevisionCreator {
   id?: string;
   name?: string;
   email?: string;
+  imageId?: string;
   customerOrganizationId?: string;
   partnerOrganizationId?: string;
   deleted?: boolean;

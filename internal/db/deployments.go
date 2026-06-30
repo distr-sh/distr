@@ -425,6 +425,7 @@ func GetDeploymentRevisions(
 				u.id AS created_by_id,
 				u.name AS created_by_name,
 				u.email AS created_by_email,
+				u.image_id AS created_by_image_id,
 				j.customer_organization_id AS created_by_customer_organization_id,
 				j.partner_organization_id AS created_by_partner_organization_id,
 				(dr.created_by_user_account_id IS NOT NULL AND j.user_account_id IS NULL)

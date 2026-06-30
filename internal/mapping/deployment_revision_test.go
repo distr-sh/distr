@@ -13,6 +13,7 @@ func TestDeploymentRevisionToAPI_CreatorVisibility(t *testing.T) {
 	customerOrg := uuid.New()
 	partnerOrg := uuid.New()
 	creatorID := uuid.New()
+	creatorImageID := uuid.New()
 	creatorName := "Jane Doe"
 	creatorEmail := "jane@acme.com"
 
@@ -28,6 +29,7 @@ func TestDeploymentRevisionToAPI_CreatorVisibility(t *testing.T) {
 			CreatedByID:      &creatorID,
 			CreatedByName:    &creatorName,
 			CreatedByEmail:   &creatorEmail,
+			CreatedByImageID: &creatorImageID,
 			CreatedByDeleted: deleted,
 		}
 		switch kind {
@@ -158,10 +160,12 @@ func TestDeploymentRevisionToAPI_CreatorVisibility(t *testing.T) {
 			g.Expect(result.CreatedBy).NotTo(BeNil())
 			if tt.wantIdentity {
 				expectUUIDPtr(g, result.CreatedBy.ID, &creatorID)
+				expectUUIDPtr(g, result.CreatedBy.ImageID, &creatorImageID)
 				g.Expect(result.CreatedBy.Name).To(Equal(creatorName))
 				g.Expect(result.CreatedBy.Email).To(Equal(creatorEmail))
 			} else {
 				g.Expect(result.CreatedBy.ID).To(BeNil())
+				g.Expect(result.CreatedBy.ImageID).To(BeNil())
 				g.Expect(result.CreatedBy.Name).To(BeEmpty())
 				g.Expect(result.CreatedBy.Email).To(BeEmpty())
 			}
