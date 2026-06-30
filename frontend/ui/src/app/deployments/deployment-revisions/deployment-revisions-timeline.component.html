@@ -1,0 +1,52 @@
+@let items = revisionsResource.value();
+@if (revisionsResource.isLoading()) {
+  <div class="text-sm text-gray-500 dark:text-gray-400">Loading revisions&hellip;</div>
+} @else if (revisionsResource.error()) {
+  <div class="text-sm text-red-500 dark:text-red-400">Failed to load revisions.</div>
+} @else if (!items || items.length === 0) {
+  <div class="text-sm text-gray-500 dark:text-gray-400">No revisions found.</div>
+} @else {
+  <ol class="border-s border-gray-300 dark:border-gray-700 ms-2 space-y-1">
+    @for (revision of items; track revision.id) {
+      <li class="ms-2 relative">
+        <div
+          class="absolute mt-2.5 -start-3.5 size-3 rounded-full border border-white dark:border-gray-800 bg-gray-300 dark:bg-gray-600"></div>
+        <button
+          type="button"
+          (click)="revisionSelected.emit(revision)"
+          class="text-start w-full rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700">
+          <div class="flex gap-2 text-sm">
+            <span class="font-semibold text-gray-900 dark:text-white">{{ revision.applicationVersionName }}</span>
+            @if (revision.id === currentRevisionId()) {
+              <span class="text-gray-500 dark:text-gray-400">(current)</span>
+            }
+          </div>
+          @if (revision.createdBy; as createdBy) {
+            @let createdByKind = createdBy | organizationKind;
+            @let targetKind = deploymentTarget() | organizationKind;
+            <div class="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 mt-1 mb-0.5">
+              @if (createdBy.name || createdBy.email) {
+                <app-user-avatar
+                  [image]="createdBy.imageId"
+                  [name]="createdBy.name || createdBy.email"
+                  initialsClass="text-[0.5rem]"
+                  class="size-4" />
+                <span>{{ createdBy.name || createdBy.email }}</span>
+                @if (createdBy.deleted) {
+                  <span class="text-gray-500 dark:text-gray-400">(deleted)</span>
+                } @else if (targetKind !== createdByKind) {
+                  <span class="capitalize text-gray-500 dark:text-gray-400">({{ createdByKind }})</span>
+                }
+              } @else {
+                <span class="capitalize">{{ createdByKind }}</span>
+              }
+            </div>
+          }
+          <time [attr.datetime]="revision.createdAt" class="block text-xs font-normal text-gray-400 dark:text-gray-500">
+            {{ revision.createdAt | date: 'short' }}
+          </time>
+        </button>
+      </li>
+    }
+  </ol>
+}

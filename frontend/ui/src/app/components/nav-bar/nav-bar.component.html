@@ -79,14 +79,8 @@
                       </span>
                     } @else {
                       <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
-                        @if (isDifferentOrganizationKind()) {
-                          @if (currentOrg()?.customerOrganizationId) {
-                            Customer
-                          } @else if (currentOrg()?.partnerOrganizationId) {
-                            Partner
-                          } @else {
-                            Vendor
-                          }
+                        @if (isDifferentOrganizationKind() && currentOrg(); as currentOrganization) {
+                          <span class="capitalize">{{ currentOrganization | organizationKind }}</span>
                           &bull;
                         }
                         {{ user.userRole | userRoleLabel }}
@@ -127,13 +121,7 @@
                               <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
                                 @if (!auth.isSuperAdmin()) {
                                   @if (isDifferentOrganizationKind()) {
-                                    @if (org.customerOrganizationId) {
-                                      Customer
-                                    } @else if (org.partnerOrganizationId) {
-                                      Partner
-                                    } @else {
-                                      Vendor
-                                    }
+                                    <span class="capitalize">{{ org | organizationKind }}</span>
                                     &bull;
                                   }
                                   {{ org.userRole | userRoleLabel }}
