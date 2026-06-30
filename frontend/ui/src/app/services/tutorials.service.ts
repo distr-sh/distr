@@ -66,6 +66,9 @@ export class TutorialsService {
   private readonly usersTutorialCompleted$ = this.usersService.getUsers().pipe(
     map((users) => {
       const currentUserId = this.auth.getClaims()?.sub;
+      if (!currentUserId) {
+        return false;
+      }
       return users.some(
         (u) => u.customerOrganizationId === undefined && u.partnerOrganizationId === undefined && u.id !== currentUserId
       );
