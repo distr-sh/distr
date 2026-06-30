@@ -1,0 +1,69 @@
+---
+title: System Requirements
+description: Distr is written in Go and highly resource efficient. Learn about the required software and recommended resources for self-hosting the Hub, the registry, and the all-in-one Docker Compose setup.
+sidebar:
+  label: System Requirements
+  order: 3
+---
+
+Distr is written in [Go](https://go.dev/) and highly resource efficient.
+Our hosted offering serves thousands of requests every second with just two app servers at **30 MB / 50m CPU** each and a PostgreSQL database at **1 GB / 200m CPU** (excluding read replicas).
+This means you can run a self-hosted Distr instance comfortably on modest hardware.
+
+## Required software
+
+To run the all-in-one [Docker Compose](/docs/self-hosting/docker/) setup you need:
+
+- **Docker Engine** ≥ v29
+- **Docker Compose** ≥ v5 (the `docker compose` plugin)
+- **curl** (to download the deployment manifest)
+
+## Minimum resource requirements
+
+The following table lists the minimum CPU and memory per component. These values match the footprint of our staging environments and are a good starting point for a small self-hosted instance — scale them up based on your request volume and artifact sizes.
+
+| Component               | Min. CPU    | Min. RAM  |
+| ----------------------- | ----------- | --------- |
+| Distr                   | 50m         | 128 MB    |
+| PostgreSQL (database)   | 200m        | 512 MB    |
+| RustFS (object storage) | 100m        | 256 MB    |
+| Caddy (reverse proxy)   | 50m         | 64 MB     |
+| **Total**               | **0.5 CPU** | **~1 GB** |
+
+:::tip
+These minimum requirements are averages for Distr itself and do not include the operating system, Docker, or other system services. The workloads can also burst beyond these values.
+
+We therefore recommend provisioning a VM with a **minimum of 4 GB RAM and 2 CPUs**.
+:::
+
+## Registry
+
+For the optional registry, a scratch volume is recommended (up to 128 GB).
+OCI registry uploads are buffered while they are being received: with a scratch volume in place, Distr buffers the upload to disk instead of holding it in memory.
+Without it, large layer uploads are buffered to RAM, which can significantly increase the memory footprint of the Hub.
+The size you need depends on the size of the artifacts you push and the number of concurrent uploads.
+
+We also highly recommend backing the registry with S3-compatible object storage.
+On top of being more scalable and durable, it lets the registry serve blob (layer) downloads via **pre-signed URLs**: instead of streaming the layer through the Hub, the registry responds with an HTTP `307 Temporary Redirect` to a short-lived pre-signed URL, so clients download layers directly from the object storage.
+This offloads pull bandwidth from the Hub and keeps its CPU and memory footprint low even under heavy pull load.
+This behaviour is enabled by default and can be controlled via `REGISTRY_S3_ALLOW_REDIRECT`.
+
+## Networking & ports
+
+Distr exposes two HTTP endpoints — the **app** (web UI and API) and the **registry** (OCI artifacts) — which are typically served under separate hostnames and put behind a TLS-terminating reverse proxy (Caddy in our Docker Compose setup, an Ingress controller in Kubernetes).
+
+Regardless of how you deploy, make sure the following is in place:
+
+- **Public domain names** for the app and the registry, configured and pointed to the public IP of your VM (or load balancer).
+- **Port `443`** publicly reachable for HTTPS traffic.
+- **Port `80`** publicly reachable as well if you let the reverse proxy (e.g. Caddy) obtain and renew TLS certificates automatically via ACME / Let's Encrypt.
+
+## Production recommendations
+
+For production use, we recommend the following:
+
+- **Externally managed PostgreSQL and object storage.** This lets you scale, upgrade, and operate these stateful components independently of the Distr Hub, and keeps the Hub itself stateless and easy to upgrade.
+- **A highly available (HA) architecture.** Run multiple Hub replicas behind a load balancer so the control plane stays available during upgrades and node failures. Our [Helm chart](/docs/self-hosting/kubernetes/) supports this via `replicaCount` and `autoscaling`.
+- **An external job trigger** for maintenance jobs instead of the Hub's built-in scheduler. The Helm chart ships these as Kubernetes `CronJob`s (see `cronJobs` in the chart values), which is the recommended way to run [maintenance jobs](/docs/self-hosting/maintenance/) in production.
+- **Regular backups** of your PostgreSQL database and object storage. The Distr Hub itself is stateless, so all persistent state lives in these two components — back them up regularly and test your restore procedure.
+- **External secret management.** Store sensitive configuration such as the database credentials, `JWT_SECRET`, and object storage keys in a dedicated secret manager (e.g. a Kubernetes `Secret`, Vault, or your cloud provider's secret store) instead of plain-text environment files.
