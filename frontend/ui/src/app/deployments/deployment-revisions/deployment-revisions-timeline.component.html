@@ -1,7 +1,9 @@
-@let items = revisions();
-@if (items === undefined) {
+@let items = revisionsResource.value();
+@if (revisionsResource.isLoading()) {
   <div class="text-sm text-gray-500 dark:text-gray-400">Loading revisions&hellip;</div>
-} @else if (items.length === 0) {
+} @else if (revisionsResource.error()) {
+  <div class="text-sm text-red-500 dark:text-red-400">Failed to load revisions.</div>
+} @else if (!items || items.length === 0) {
   <div class="text-sm text-gray-500 dark:text-gray-400">No revisions found.</div>
 } @else {
   <ol class="border-s border-gray-300 dark:border-gray-700 ms-2 space-y-1">

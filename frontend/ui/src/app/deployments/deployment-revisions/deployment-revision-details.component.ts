@@ -23,8 +23,8 @@ export class DeploymentRevisionDetailsComponent {
 
   protected readonly isKubernetes = computed(() => this.deploymentType() === 'kubernetes');
 
-  protected readonly valuesControl = new FormControl<string>({value: '', disabled: true});
-  protected readonly envControl = new FormControl<string>({value: '', disabled: true});
+  protected readonly valuesControl = new FormControl({value: '', disabled: true});
+  protected readonly envControl = new FormControl({value: '', disabled: true});
 
   constructor() {
     effect(() => {

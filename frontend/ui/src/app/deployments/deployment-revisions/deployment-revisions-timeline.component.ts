@@ -1,8 +1,7 @@
 import {DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, inject, input, output} from '@angular/core';
-import {toObservable, toSignal} from '@angular/core/rxjs-interop';
+import {rxResource} from '@angular/core/rxjs-interop';
 import {DeploymentRevisionResponse, DeploymentTarget} from '@distr-sh/distr-sdk';
-import {of, switchMap} from 'rxjs';
 import {OrganizationKindPipe} from '../../../util/organization-kind';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
 
@@ -20,9 +19,8 @@ export class DeploymentRevisionsTimelineComponent {
 
   private readonly deploymentTargets = inject(DeploymentTargetsService);
 
-  protected readonly revisions = toSignal(
-    toObservable(this.deploymentId).pipe(
-      switchMap((id) => (id ? this.deploymentTargets.getRevisions(id) : of<DeploymentRevisionResponse[]>([])))
-    )
-  );
+  protected readonly revisionsResource = rxResource({
+    params: () => ({deploymentId: this.deploymentId()}),
+    stream: ({params}) => this.deploymentTargets.getRevisions(params.deploymentId),
+  });
 }
