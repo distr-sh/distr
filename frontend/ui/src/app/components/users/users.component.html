@@ -72,7 +72,8 @@
               [editable]="auth.hasRole('admin') || (auth.isVendor() && auth.hasRole('read_write'))"
               placeholder="Enter a name&hellip;"
               emptyLabel="&ndash;"
-              [onSave]="updateUserName(user)" />
+              [loading]="savingUserId() === user.id"
+              (save)="updateUserName(user, $event)" />
           </td>
           <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
             {{ user.email }}

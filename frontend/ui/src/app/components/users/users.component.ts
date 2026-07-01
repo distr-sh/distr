@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   inject,
   input,
   output,
@@ -10,7 +11,7 @@ import {
   TemplateRef,
   viewChild,
 } from '@angular/core';
-import {toObservable, toSignal} from '@angular/core/rxjs-interop';
+import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {UserAccountWithRole, UserRole} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -27,7 +28,7 @@ import {
   faUserCircle,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import {catchError, filter, firstValueFrom, NEVER, Observable, switchMap, tap} from 'rxjs';
+import {catchError, filter, firstValueFrom, NEVER, switchMap, tap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
 import {SecureImagePipe} from '../../../util/secureImage';
@@ -70,6 +71,7 @@ export class UsersComponent {
 
   private readonly toast = inject(ToastService);
   private readonly usersService = inject(UsersService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly organizationService = inject(OrganizationService);
   private readonly overlay = inject(OverlayService);
   private readonly imageUploadService = inject(ImageUploadService);
@@ -147,9 +149,23 @@ export class UsersComponent {
     this.modalRef = this.overlay.showModal(this.inviteUserDialog());
   }
 
-  protected updateUserName(user: UserAccountWithRole): (name: string) => Observable<unknown> {
-    return (name) =>
-      this.usersService.patchUserAccount(user.id!, {name}).pipe(tap(() => this.toast.success('User has been updated')));
+  protected readonly savingUserId = signal<string | undefined>(undefined);
+
+  protected updateUserName(user: UserAccountWithRole, name: string): void {
+    this.savingUserId.set(user.id);
+    this.usersService
+      .patchUserAccount(user.id!, {name})
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.toast.success('User has been updated'),
+        error: (e) => {
+          const msg = getFormDisplayedError(e);
+          if (msg) {
+            this.toast.error(msg);
+          }
+        },
+      })
+      .add(() => this.savingUserId.set(undefined));
   }
 
   protected editUserRole(user: UserAccountWithRole): void {

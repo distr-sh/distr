@@ -245,11 +245,11 @@ func CreateApplicationVersion(ctx context.Context, applicationVersion *types.App
 			av.application_id`,
 		args)
 	if err != nil {
-		return fmt.Errorf("can not create ApplicationVersion: %w", err)
+		return fmt.Errorf("cannot create ApplicationVersion: %w", err)
 	} else if result, err := pgx.CollectExactlyOneRow(row, pgx.RowToStructByName[types.ApplicationVersion]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			err = apierrors.ErrNotFound
-		} else if pgerr := (*pgconn.PgError)(nil); errors.As(err, &pgerr) && pgerr.Code == pgerrcode.UniqueViolation {
+		} else if pgerr, ok := errors.AsType[*pgconn.PgError](err); ok && pgerr.Code == pgerrcode.UniqueViolation {
 			err = apierrors.ErrAlreadyExists
 		}
 		return fmt.Errorf("could not scan ApplicationVersion: %w", err)
@@ -271,14 +271,14 @@ func UpdateApplicationVersion(ctx context.Context, applicationVersion *types.App
 			"archivedAt": applicationVersion.ArchivedAt,
 		})
 	if err != nil {
-		if pgerr := (*pgconn.PgError)(nil); errors.As(err, &pgerr) && pgerr.Code == pgerrcode.UniqueViolation {
+		if pgerr, ok := errors.AsType[*pgconn.PgError](err); ok && pgerr.Code == pgerrcode.UniqueViolation {
 			err = apierrors.ErrAlreadyExists
 		}
-		return fmt.Errorf("can not update ApplicationVersion: %w", err)
+		return fmt.Errorf("cannot update ApplicationVersion: %w", err)
 	} else if updated, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.ApplicationVersion]); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			err = apierrors.ErrNotFound
-		} else if pgerr := (*pgconn.PgError)(nil); errors.As(err, &pgerr) && pgerr.Code == pgerrcode.UniqueViolation {
+		} else if pgerr, ok := errors.AsType[*pgconn.PgError](err); ok && pgerr.Code == pgerrcode.UniqueViolation {
 			err = apierrors.ErrAlreadyExists
 		}
 		return fmt.Errorf("could not scan ApplicationVersion: %w", err)

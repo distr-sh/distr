@@ -411,7 +411,7 @@ func createApplicationVersion(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, apierrors.ErrNotFound) {
 			http.NotFound(w, r)
 		} else if errors.Is(err, apierrors.ErrAlreadyExists) {
-			http.Error(w, "Application version can not be created because a version with this name already exists.",
+			http.Error(w, "Application version cannot be created because a version with this name already exists.",
 				http.StatusBadRequest)
 		} else {
 			log.Warn("could not create applicationversion", zap.Error(err))
@@ -455,7 +455,7 @@ func updateApplicationVersion(w http.ResponseWriter, r *http.Request) {
 
 	if err := db.UpdateApplicationVersion(ctx, &applicationVersion); err != nil {
 		if errors.Is(err, apierrors.ErrAlreadyExists) {
-			http.Error(w, "Application version can not be updated because a version with this name already exists.",
+			http.Error(w, "Application version cannot be updated because a version with this name already exists.",
 				http.StatusBadRequest)
 		} else {
 			log.Warn("could not update applicationversion", zap.Error(err))

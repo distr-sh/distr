@@ -207,15 +207,41 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
     }
   }
 
-  protected updateApplicationName(application: Application): (name: string) => Observable<unknown> {
-    return (name) => this.applicationService.update({...application, name});
+  protected readonly savingApplicationName = signal(false);
+  protected readonly savingVersionId = signal<string | undefined>(undefined);
+
+  protected updateApplicationName(application: Application, name: string): void {
+    this.savingApplicationName.set(true);
+    this.applicationService
+      .update({...application, name})
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe({
+        next: () => this.toast.success('Application has been updated'),
+        error: (e) => {
+          const msg = getFormDisplayedError(e);
+          if (msg) {
+            this.toast.error(msg);
+          }
+        },
+      })
+      .add(() => this.savingApplicationName.set(false));
   }
 
-  protected updateVersionName(
-    application: Application,
-    version: ApplicationVersion
-  ): (name: string) => Observable<unknown> {
-    return (name) => this.applicationService.updateApplicationVersion(application, {...version, name});
+  protected updateVersionName(application: Application, version: ApplicationVersion, name: string): void {
+    this.savingVersionId.set(version.id);
+    this.applicationService
+      .updateApplicationVersion(application, {...version, name})
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe({
+        next: () => this.toast.success('Version has been updated'),
+        error: (e) => {
+          const msg = getFormDisplayedError(e);
+          if (msg) {
+            this.toast.error(msg);
+          }
+        },
+      })
+      .add(() => this.savingVersionId.set(undefined));
   }
 
   async createVersion(application: Application) {

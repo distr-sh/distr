@@ -1,11 +1,9 @@
-import {ChangeDetectionStrategy, Component, effect, ElementRef, inject, input, signal, viewChild} from '@angular/core';
+import {ChangeDetectionStrategy, Component, effect, input, output, signal} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faPen} from '@fortawesome/free-solid-svg-icons';
-import {lastValueFrom, Observable} from 'rxjs';
-import {getFormDisplayedError} from '../../util/errors';
+import {AutofocusDirective} from '../directives/autofocus.directive';
 import {AutotrimDirective} from '../directives/autotrim.directive';
-import {ToastService} from '../services/toast.service';
 
 export type InlineEditSize = 'sm' | 'lg';
 export type InlineEditDisplayTag = 'span' | 'h3';
@@ -13,21 +11,24 @@ export type InlineEditDisplayTag = 'span' | 'h3';
 @Component({
   selector: 'app-inline-edit',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective],
+  imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective, AutofocusDirective],
   template: `
     @if (editing()) {
       <form class="flex" [formGroup]="form" (ngSubmit)="submit()">
         <input
           formControlName="value"
           autotrim
-          #valueInput
+          autofocus
           type="text"
           [placeholder]="placeholder()"
+          (keydown.escape)="cancel()"
+          (blur)="cancel()"
           class="distr-input rounded-none rounded-s-lg"
           [class]="size() === 'lg' ? 'w-48' : 'w-32'" />
         <button
           type="submit"
           [disabled]="loading()"
+          (mousedown)="$event.preventDefault()"
           class="distr-btn-primary text-white rounded-none rounded-e-lg"
           [class]="size() === 'lg' ? 'px-4' : 'px-3'">
           <fa-icon [icon]="faCheck" />
@@ -54,24 +55,22 @@ export type InlineEditDisplayTag = 'span' | 'h3';
   `,
 })
 export class InlineEditComponent {
-  private readonly toast = inject(ToastService);
-
   readonly value = input.required<string>();
-  readonly onSave = input.required<(value: string) => Observable<unknown>>();
   readonly placeholder = input('');
   readonly editable = input(true);
   readonly required = input(true);
+  readonly loading = input(false);
   readonly textClass = input('');
   readonly emptyLabel = input('');
   readonly size = input<InlineEditSize>('sm');
   readonly tag = input<InlineEditDisplayTag>('span');
 
+  readonly save = output<string>();
+
   protected readonly editing = signal(false);
-  protected readonly loading = signal(false);
   protected readonly form = new FormGroup({
     value: new FormControl('', {nonNullable: true}),
   });
-  private readonly valueInput = viewChild<ElementRef<HTMLInputElement>>('valueInput');
 
   protected readonly faCheck = faCheck;
   protected readonly faPen = faPen;
@@ -81,30 +80,34 @@ export class InlineEditComponent {
       this.form.controls.value.setValidators(this.required() ? [Validators.required] : []);
       this.form.controls.value.updateValueAndValidity({emitEvent: false});
     });
+    // Exit edit mode when the bound value changes externally (e.g. navigating to another
+    // entity on the same route, or a successful save) so a pending edit can never be saved
+    // against the wrong entity.
+    effect(() => {
+      this.value();
+      this.editing.set(false);
+    });
   }
 
   protected enable() {
     this.form.reset({value: this.value()});
     this.editing.set(true);
-    setTimeout(() => this.valueInput()?.nativeElement.focus(), 10);
   }
 
-  protected async submit() {
+  protected cancel() {
+    this.editing.set(false);
+  }
+
+  protected submit() {
     this.form.markAllAsTouched();
     if (this.form.invalid) {
       return;
     }
-    this.loading.set(true);
-    try {
-      await lastValueFrom(this.onSave()(this.form.controls.value.value.trim()));
+    const newValue = this.form.controls.value.value.trim();
+    if (newValue === this.value()) {
       this.editing.set(false);
-    } catch (e) {
-      const msg = getFormDisplayedError(e);
-      if (msg) {
-        this.toast.error(msg);
-      }
-    } finally {
-      this.loading.set(false);
+      return;
     }
+    this.save.emit(newValue);
   }
 }

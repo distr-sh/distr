@@ -22,7 +22,11 @@
                   #dropdownTriggerButton
                   (click)="toggleBreadcrumbDropdown()"
                   class="inline-flex items-center px-3 py-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
-                  {{ application.name }}
+                  <span
+                    class="block max-w-64 overflow-hidden text-ellipsis whitespace-nowrap"
+                    [title]="application.name">
+                    {{ application.name }}
+                  </span>
                   <fa-icon class="ml-2" [icon]="faChevronDown" />
                 </button>
                 <ng-template
@@ -36,13 +40,16 @@
                   <div
                     animate.enter="animate-flip-in-top"
                     animate.leave="animate-flip-out-top"
-                    class="z-10 w-full bg-white divide-y divide-gray-100 rounded-lg shadow-xs dark:bg-gray-700 origin-top">
+                    class="z-10 w-full max-w-80 bg-white divide-y divide-gray-100 rounded-lg shadow-xs dark:bg-gray-700 origin-top">
                     <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownDefault">
                       @for (app of applications$ | async; track app.id) {
                         <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
-                          <a class="px-4 flex items-stretch" [routerLink]="['/', 'applications', app.id]">{{
-                            app.name
-                          }}</a>
+                          <a
+                            class="px-4 flex items-stretch overflow-hidden text-ellipsis whitespace-nowrap"
+                            [routerLink]="['/', 'applications', app.id]"
+                            [title]="app.name"
+                            >{{ app.name }}</a
+                          >
                         </li>
                       }
                     </ul>
@@ -75,8 +82,9 @@
                   [editable]="auth.hasAnyRole('read_write', 'admin')"
                   placeholder="Application name"
                   size="lg"
-                  textClass="text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
-                  [onSave]="updateApplicationName(application)" />
+                  textClass="block max-w-lg overflow-hidden text-ellipsis whitespace-nowrap text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
+                  [loading]="savingApplicationName()"
+                  (save)="updateApplicationName(application, $event)" />
                 @if (application.id) {
                   <app-uuid class="mr-2" [uuid]="application.id" [small]="true" />
                 }
@@ -180,8 +188,9 @@
                           [value]="version.name"
                           [editable]="auth.hasAnyRole('read_write', 'admin')"
                           placeholder="Version name"
-                          textClass="max-w-64 overflow-hidden text-ellipsis"
-                          [onSave]="updateVersionName(application, version)" />
+                          textClass="block max-w-64 overflow-hidden text-ellipsis whitespace-nowrap"
+                          [loading]="savingVersionId() === version.id"
+                          (save)="updateVersionName(application, version, $event)" />
                       </th>
                       @if (application.type === 'kubernetes') {
                         <td class="px-6 py-4">
