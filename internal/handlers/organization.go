@@ -160,7 +160,6 @@ func createOrganization(w http.ResponseWriter, r *http.Request) {
 		PostConnectScript:   body.PostConnectScript,
 		ConnectScriptIsSudo: body.ConnectScriptIsSudo,
 		PageTitle:           body.PageTitle,
-		FaviconImageID:      body.FaviconImageID,
 	}
 
 	if buildconfig.IsCommunityEdition() {
@@ -220,6 +219,23 @@ func validateOrganizationUpdate(body api.CreateUpdateOrganizationRequest, org ty
 		}
 	}
 
+	return nil
+}
+
+// validateOrganizationFile ensures the referenced file exists and belongs to the organization, and optionally
+// that it is public (e.g. when it must be served via the public file API). This prevents referencing a missing
+// file or inadvertently exposing another organization's asset.
+func validateOrganizationFile(ctx context.Context, orgID uuid.UUID, fileID uuid.UUID, mustBePublic bool) error {
+	file, err := db.GetFileWithID(ctx, fileID)
+	if errors.Is(err, apierrors.ErrNotFound) {
+		return fmt.Errorf("%w: file not found", apierrors.ErrBadRequest)
+	} else if err != nil {
+		return err
+	} else if mustBePublic && !file.Public {
+		return fmt.Errorf("%w: file must be public", apierrors.ErrBadRequest)
+	} else if file.OrganizationID == nil || *file.OrganizationID != orgID {
+		return fmt.Errorf("%w: file not found", apierrors.ErrBadRequest)
+	}
 	return nil
 }
 
@@ -284,6 +300,11 @@ func handleUpdateOrganization(
 		}
 
 		if !util.PtrEq(org.FaviconImageID, request.FaviconImageID) {
+			if request.FaviconImageID != nil {
+				if err := validateOrganizationFile(ctx, id, *request.FaviconImageID, true); err != nil {
+					return err
+				}
+			}
 			org.FaviconImageID = request.FaviconImageID
 			needsUpdate = true
 		}
