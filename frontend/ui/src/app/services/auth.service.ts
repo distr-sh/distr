@@ -240,7 +240,7 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
 };
 
 function authenticatedRoute(req: HttpRequest<unknown>): boolean {
-  if (req.url.startsWith('/ready')) {
+  if (req.url.startsWith('/ready') || req.url.startsWith('/api/public/')) {
     return false;
   }
 
