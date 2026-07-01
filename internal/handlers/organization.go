@@ -222,7 +222,7 @@ func validateOrganizationUpdate(body api.UpdateOrganizationRequest, org types.Or
 // that it is public (e.g. when it must be served via the public file API). This prevents referencing a missing
 // file or inadvertently exposing another organization's asset.
 func validateOrganizationFile(ctx context.Context, orgID uuid.UUID, fileID uuid.UUID, mustBePublic bool) error {
-	file, err := db.GetFileWithID(ctx, fileID)
+	file, err := db.GetFileMetadataWithID(ctx, fileID)
 	if errors.Is(err, apierrors.ErrNotFound) {
 		return fmt.Errorf("%w: file not found", apierrors.ErrBadRequest)
 	} else if err != nil {

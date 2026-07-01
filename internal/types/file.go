@@ -16,3 +16,9 @@ type File struct {
 	FileSize       int64      `db:"file_size" json:"fileSize"`
 	Public         bool       `db:"public" json:"public"`
 }
+
+// FileMetadata holds the ownership and visibility of a file without loading its data blob.
+type FileMetadata struct {
+	OrganizationID *uuid.UUID `db:"organization_id"`
+	Public         bool       `db:"public"`
+}

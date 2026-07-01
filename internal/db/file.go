@@ -62,6 +62,26 @@ func GetFileWithID(ctx context.Context, id uuid.UUID) (*types.File, error) {
 	}
 }
 
+// GetFileMetadataWithID loads only the ownership and visibility of a file, avoiding the data blob.
+func GetFileMetadataWithID(ctx context.Context, id uuid.UUID) (*types.FileMetadata, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		"SELECT f.organization_id, f.public FROM File f WHERE f.id = @id",
+		pgx.NamedArgs{"id": id},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query file metadata: %w", err)
+	} else if metadata, err := pgx.CollectExactlyOneRow[types.FileMetadata](rows, pgx.RowToStructByName); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, apierrors.ErrNotFound
+		} else {
+			return nil, fmt.Errorf("could not map file metadata: %w", err)
+		}
+	} else {
+		return &metadata, nil
+	}
+}
+
 func DeleteFileWithID(ctx context.Context, id uuid.UUID) error {
 	db := internalctx.GetDb(ctx)
 	cmd, err := db.Exec(ctx, `DELETE FROM file WHERE id = @id`, pgx.NamedArgs{"id": id})
