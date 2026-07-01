@@ -30,6 +30,8 @@
 - [CustomerOrganizationWithUsage](interfaces/CustomerOrganizationWithUsage.md)
 - [Deployment](interfaces/Deployment.md)
 - [DeploymentRequest](interfaces/DeploymentRequest.md)
+- [DeploymentRevisionCreator](interfaces/DeploymentRevisionCreator.md)
+- [DeploymentRevisionResponse](interfaces/DeploymentRevisionResponse.md)
 - [DeploymentRevisionStatus](interfaces/DeploymentRevisionStatus.md)
 - [DeploymentTarget](interfaces/DeploymentTarget.md)
 - [DeploymentTargetAccessResponse](interfaces/DeploymentTargetAccessResponse.md)

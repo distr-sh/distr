@@ -1,6 +1,7 @@
 import {ChangeDetectionStrategy, Component, computed, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {startWith, Subject, switchMap} from 'rxjs';
+import {organizationKind} from '../../../../util/organization-kind';
 import {AuthService} from '../../../services/auth.service';
 import {UsersService} from '../../../services/users.service';
 import {UsersComponent} from '../users.component';
@@ -31,9 +32,7 @@ export class VendorUsersComponent {
   protected readonly users = computed(() => {
     const all = this.allUsers() ?? [];
     if (this.auth.isVendor()) {
-      return all.filter(
-        (user) => user.customerOrganizationId === undefined && user.partnerOrganizationId === undefined
-      );
+      return all.filter((user) => organizationKind(user) === 'vendor');
     } else if (this.auth.isPartner()) {
       const partnerOrgId = this.auth.getPartnerOrganizationId();
       return all.filter((user) => user.partnerOrganizationId === partnerOrgId);

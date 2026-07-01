@@ -25,6 +25,7 @@ type DeploymentRequest struct {
 	IgnoreRevisionSkew       bool              `json:"ignoreRevisionSkew"`
 	HelmOptions              *HelmOptions      `json:"helmOptions,omitempty"`
 	ValuesHash               []byte            `json:"-"`
+	CreatedByUserAccountID   *uuid.UUID        `json:"-"`
 }
 
 func (d *DeploymentRequest) GetValuesYAML() []byte {

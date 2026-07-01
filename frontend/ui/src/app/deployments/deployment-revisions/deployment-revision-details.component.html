@@ -1,0 +1,116 @@
+@let rev = revision();
+<div class="space-y-4 text-sm text-gray-900 dark:text-white">
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <span class="block text-xs text-gray-500 dark:text-gray-400">Application version</span>
+      <div>{{ rev.applicationVersionName }}</div>
+    </div>
+    <div>
+      <span class="block text-xs text-gray-500 dark:text-gray-400">Created</span>
+      <div>{{ rev.createdAt | date: 'medium' }}</div>
+    </div>
+    @if (rev.createdBy; as createdBy) {
+      <div>
+        <span class="block text-xs text-gray-500 dark:text-gray-400">Created by</span>
+        <div>
+          @let createdByKind = createdBy | organizationKind;
+          @let targetKind = deploymentTarget() | organizationKind;
+          @if (createdBy.name || createdBy.email) {
+            <div class="flex items-center gap-1 mt-0.5">
+              <app-user-avatar [image]="createdBy.imageId" [name]="createdBy.name || createdBy.email" class="size-5" />
+              <span>{{ createdBy.name || createdBy.email }}</span>
+              @if (createdBy.deleted) {
+                <span class="text-gray-500 dark:text-gray-400">(deleted)</span>
+              } @else if (createdByKind !== targetKind) {
+                <span class="capitalize text-gray-500 dark:text-gray-400">({{ createdByKind }})</span>
+              }
+            </div>
+          } @else {
+            <span class="capitalize">{{ createdByKind }}</span>
+          }
+        </div>
+      </div>
+    }
+    @if (isKubernetes()) {
+      <div>
+        <span class="block text-xs text-gray-500 dark:text-gray-400">Release name</span>
+        <div>{{ rev.releaseName }}</div>
+      </div>
+    } @else {
+      <div>
+        <span class="block text-xs text-gray-500 dark:text-gray-400">Mode</span>
+        <div class="capitalize">{{ rev.dockerType ?? 'compose' }}</div>
+      </div>
+    }
+  </div>
+
+  @if (isKubernetes()) {
+    <div>
+      <span class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Values</span>
+      <app-editor
+        [formControl]="valuesControl"
+        language="yaml"
+        class="block border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden max-h-80 overflow-y-auto" />
+    </div>
+
+    @if (rev.helmOptions; as helmOptions) {
+      <div>
+        <span class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Helm options</span>
+        <div class="grid grid-cols-2 gap-2 border border-gray-200 dark:border-gray-600 rounded-lg p-2">
+          <div>
+            <span class="block text-xs text-gray-500 dark:text-gray-400">Timeout</span>
+            <div>{{ helmOptions.timeout }}</div>
+          </div>
+          <div>
+            <span class="block text-xs text-gray-500 dark:text-gray-400">Wait strategy</span>
+            <div class="capitalize">{{ helmOptions.waitStrategy }}</div>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <fa-icon
+                [icon]="helmOptions.rollbackOnFailure ? faCheck : faXmark"
+                [class]="helmOptions.rollbackOnFailure ? 'text-green-600' : 'text-gray-400'" />
+              <span>Rollback on failure</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <fa-icon
+                [icon]="helmOptions.cleanupOnFailure ? faCheck : faXmark"
+                [class]="helmOptions.cleanupOnFailure ? 'text-green-600' : 'text-gray-400'" />
+              <span>Cleanup on failure</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <fa-icon
+                [icon]="helmOptions.forceConflicts ? faCheck : faXmark"
+                [class]="helmOptions.forceConflicts ? 'text-green-600' : 'text-gray-400'" />
+              <span>Force conflicts</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  } @else {
+    <div>
+      <span class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Environment</span>
+      <app-editor
+        [formControl]="envControl"
+        class="block border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden max-h-80 overflow-y-auto" />
+    </div>
+  }
+
+  @if (rev.forceRestart || (isKubernetes() && rev.ignoreRevisionSkew)) {
+    <div class="flex gap-6">
+      @if (rev.forceRestart) {
+        <div class="flex items-center gap-2">
+          <fa-icon [icon]="faTriangleExclamation" class="text-yellow-400" />
+          <span>Force restart</span>
+        </div>
+      }
+      @if (isKubernetes() && rev.ignoreRevisionSkew) {
+        <div class="flex items-center gap-2">
+          <fa-icon [icon]="faTriangleExclamation" class="text-yellow-400" />
+          <span>Ignore revision skew</span>
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -317,13 +317,14 @@ func DeleteDeploymentWithID(ctx context.Context, id uuid.UUID) error {
 func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentRequest) (*types.DeploymentRevision, error) {
 	db := internalctx.GetDb(ctx)
 	args := pgx.NamedArgs{
-		"deploymentId":         request.DeploymentID,
-		"applicationVersionId": request.ApplicationVersionID,
-		"valuesYaml":           request.ValuesYaml,
-		"envFileData":          request.EnvFileData,
-		"valuesHash":           request.ValuesHash,
-		"forceRestart":         request.ForceRestart,
-		"ignoreRevisionSkew":   request.IgnoreRevisionSkew,
+		"deploymentId":           request.DeploymentID,
+		"applicationVersionId":   request.ApplicationVersionID,
+		"valuesYaml":             request.ValuesYaml,
+		"envFileData":            request.EnvFileData,
+		"valuesHash":             request.ValuesHash,
+		"forceRestart":           request.ForceRestart,
+		"ignoreRevisionSkew":     request.IgnoreRevisionSkew,
+		"createdByUserAccountId": request.CreatedByUserAccountID,
 	}
 
 	if request.HelmOptions != nil {
@@ -350,7 +351,8 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 			helm_options_wait_strategy,
 			helm_options_rollback_on_failure,
 			helm_options_cleanup_on_failure,
-			helm_options_force_conflicts
+			helm_options_force_conflicts,
+			created_by_user_account_id
 		) VALUES (
 		 	@deploymentId,
 			@applicationVersionId,
@@ -363,7 +365,8 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 			@helmOptionsWaitStrategy,
 			@helmOptionsRollbackOnFailure,
 			@helmOptionsCleanupOnFailure,
-			@helmOptionsForceConflicts
+			@helmOptionsForceConflicts,
+			@createdByUserAccountId
 		) RETURNING
 		 	dr.id,
 			dr.created_at,
@@ -372,6 +375,7 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 			dr.values_hash,
 			dr.force_restart,
 			dr.ignore_revision_skew,
+			dr.created_by_user_account_id,
 			CASE WHEN dr.helm_options_timeout IS NOT NULL THEN (
 				dr.helm_options_timeout,
 				dr.helm_options_wait_strategy,
@@ -391,6 +395,62 @@ func CreateDeploymentRevision(ctx context.Context, request *api.DeploymentReques
 	} else {
 		return &result, nil
 	}
+}
+
+func GetDeploymentRevisions(
+	ctx context.Context,
+	deploymentID uuid.UUID,
+) ([]types.DeploymentRevisionWithCreator, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`SELECT
+				dr.id,
+				dr.created_at,
+				dr.application_version_id,
+				av.name AS application_version_name,
+				d.release_name AS release_name,
+				d.docker_type AS docker_type,
+				dr.values_yaml AS values_yaml,
+				dr.env_file_data AS env_file_data,
+				dr.force_restart AS force_restart,
+				dr.ignore_revision_skew AS ignore_revision_skew,
+				CASE WHEN dr.helm_options_timeout IS NOT NULL THEN (
+					dr.helm_options_timeout,
+					dr.helm_options_wait_strategy,
+					dr.helm_options_rollback_on_failure,
+					dr.helm_options_cleanup_on_failure,
+					dr.helm_options_force_conflicts
+				) END AS helm_options,
+				u.id AS created_by_id,
+				u.name AS created_by_name,
+				u.email AS created_by_email,
+				u.image_id AS created_by_image_id,
+				j.customer_organization_id AS created_by_customer_organization_id,
+				j.partner_organization_id AS created_by_partner_organization_id,
+				(dr.created_by_user_account_id IS NOT NULL AND j.user_account_id IS NULL)
+					AS created_by_deleted
+			FROM DeploymentRevision dr
+				JOIN Deployment d ON dr.deployment_id = d.id
+				JOIN DeploymentTarget dt ON d.deployment_target_id = dt.id
+				JOIN ApplicationVersion av ON dr.application_version_id = av.id
+				LEFT JOIN UserAccount u ON dr.created_by_user_account_id = u.id
+				LEFT JOIN Organization_UserAccount j
+					ON j.user_account_id = u.id AND j.organization_id = dt.organization_id
+			WHERE dr.deployment_id = @deploymentId
+			ORDER BY dr.created_at DESC`,
+		pgx.NamedArgs{"deploymentId": deploymentID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query DeploymentRevisions: %w", err)
+	}
+
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.DeploymentRevisionWithCreator])
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan DeploymentRevisions: %w", err)
+	}
+
+	return result, nil
 }
 
 func GetDeploymentIDForRevisionID(ctx context.Context, revisionID uuid.UUID) (uuid.UUID, error) {
