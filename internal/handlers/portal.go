@@ -35,6 +35,8 @@ func getPortalHandler(w http.ResponseWriter, r *http.Request) {
 		response.FaviconUrl = mapping.CreatePublicImageURL(faviconImageID)
 	}
 
+	// Branding is resolved from the request Host, so shared caches/CDNs must key on it.
+	w.Header().Set("Vary", "Host")
 	w.Header().Set("Cache-Control", "public, max-age=60")
 	RespondJSON(w, response)
 }
