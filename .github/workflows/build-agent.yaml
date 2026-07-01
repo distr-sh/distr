@@ -76,7 +76,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           sbom: true
-          provenance: true
+          provenance: mode=max
       - name: Prepare for export
         run: |
           platform=${{ matrix.platform.arch }}
