@@ -38,13 +38,13 @@ func OrganizationRouter(r chiopenapi.Router) {
 	r.With(middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
 		r.Post("/", createOrganization).
 			With(option.Description("Create a new organization")).
-			With(option.Request(api.CreateUpdateOrganizationRequest{})).
+			With(option.Request(api.CreateOrganizationRequest{})).
 			With(option.Response(http.StatusOK, types.OrganizationWithUserRole{}))
 
 		r.With(middleware.RequireVendor, middleware.RequireAdmin).
 			Put("/", updateOrganization).
 			With(option.Description("Update current organization")).
-			With(option.Request(api.CreateUpdateOrganizationRequest{})).
+			With(option.Request(api.UpdateOrganizationRequest{})).
 			With(option.Response(http.StatusOK, types.Organization{}))
 	})
 
@@ -94,10 +94,10 @@ func updateOrganization(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 
-	body, err := JsonBody[api.CreateUpdateOrganizationRequest](w, r)
+	body, err := JsonBody[api.UpdateOrganizationRequest](w, r)
 	if err != nil {
 		return
-	} else if ok := validateOrganizationRequest(w, body); !ok {
+	} else if ok := validateOrganizationRequest(w, body.Name, body.Slug); !ok {
 		return
 	}
 
@@ -132,10 +132,10 @@ func createOrganization(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := JsonBody[api.CreateUpdateOrganizationRequest](w, r)
+	body, err := JsonBody[api.CreateOrganizationRequest](w, r)
 	if err != nil {
 		return
-	} else if ok := validateOrganizationRequest(w, body); !ok {
+	} else if ok := validateOrganizationRequest(w, body.Name, body.Slug); !ok {
 		return
 	}
 
@@ -152,14 +152,10 @@ func createOrganization(w http.ResponseWriter, r *http.Request) {
 	}
 
 	organization := types.Organization{
-		Name:                body.Name,
-		Slug:                body.Slug,
-		SubscriptionType:    types.SubscriptionTypeTrial,
-		Features:            subscription.ProFeatures,
-		PreConnectScript:    body.PreConnectScript,
-		PostConnectScript:   body.PostConnectScript,
-		ConnectScriptIsSudo: body.ConnectScriptIsSudo,
-		PageTitle:           body.PageTitle,
+		Name:             body.Name,
+		Slug:             body.Slug,
+		SubscriptionType: types.SubscriptionTypeTrial,
+		Features:         subscription.ProFeatures,
 	}
 
 	if buildconfig.IsCommunityEdition() {
@@ -193,18 +189,18 @@ func createOrganization(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func validateOrganizationRequest(w http.ResponseWriter, organization api.CreateUpdateOrganizationRequest) bool {
-	if organization.Name == "" {
+func validateOrganizationRequest(w http.ResponseWriter, name string, slug *string) bool {
+	if name == "" {
 		http.Error(w, "name is required", http.StatusBadRequest)
 		return false
 	}
-	if organization.Slug != nil {
+	if slug != nil {
 		slugPattern := "^[a-z0-9]+((\\.|_|__|-+)[a-z0-9]+)*$"
 		slugMaxLength := 64
-		if matched, _ := regexp.MatchString(slugPattern, *organization.Slug); !matched {
+		if matched, _ := regexp.MatchString(slugPattern, *slug); !matched {
 			http.Error(w, "Slug is invalid", http.StatusBadRequest)
 			return false
-		} else if len(*organization.Slug) > slugMaxLength {
+		} else if len(*slug) > slugMaxLength {
 			http.Error(w, "Slug too long (max 64 chars)", http.StatusBadRequest)
 			return false
 		}
@@ -212,7 +208,7 @@ func validateOrganizationRequest(w http.ResponseWriter, organization api.CreateU
 	return true
 }
 
-func validateOrganizationUpdate(body api.CreateUpdateOrganizationRequest, org types.Organization) error {
+func validateOrganizationUpdate(body api.UpdateOrganizationRequest, org types.Organization) error {
 	if org.Slug != nil && *org.Slug != "" {
 		if body.Slug == nil || *body.Slug == "" {
 			return fmt.Errorf("%w: slug can not get unset", apierrors.ErrBadRequest)
@@ -242,7 +238,7 @@ func validateOrganizationFile(ctx context.Context, orgID uuid.UUID, fileID uuid.
 func handleUpdateOrganization(
 	ctx context.Context,
 	id uuid.UUID,
-	request api.CreateUpdateOrganizationRequest,
+	request api.UpdateOrganizationRequest,
 ) (*types.Organization, error) {
 	var org *types.Organization
 

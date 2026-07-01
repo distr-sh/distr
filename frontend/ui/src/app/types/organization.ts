@@ -16,7 +16,7 @@ export interface SubscriptionLimits {
   maxDeploymentsPerCustomerOrganization: number;
 }
 
-export interface CreateUpdateOrganizationRequest {
+export interface UpdateOrganizationRequest {
   name: string;
   slug?: string;
   preConnectScript?: string;

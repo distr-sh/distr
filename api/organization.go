@@ -8,7 +8,14 @@ import (
 	"github.com/google/uuid"
 )
 
-type CreateUpdateOrganizationRequest struct {
+// CreateOrganizationRequest only exposes the fields that are actually persisted when an organization is
+// created. Other settings (scripts, portal customization, etc.) are configured afterwards via an update.
+type CreateOrganizationRequest struct {
+	Name string  `json:"name"`
+	Slug *string `json:"slug"`
+}
+
+type UpdateOrganizationRequest struct {
 	Name                   string     `json:"name"`
 	Slug                   *string    `json:"slug"`
 	PreConnectScript       *string    `json:"preConnectScript"`
