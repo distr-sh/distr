@@ -80,14 +80,17 @@ func DeploymentTargetsRouter(r chiopenapi.Router) {
 				}{})).
 				With(option.Response(http.StatusOK, api.DeploymentTargetNotes{}))
 		})
-		r.Get("/logs", getDeploymentTargetLogRecordsHandler()).
-			With(option.Description("Get logs for this deployment target")).
-			With(option.Request(DeploymentTargetTimeseriesRequest{})).
-			With(option.Response(http.StatusOK, []api.DeploymentTargetLogRecord{}))
-		r.Get("/logs/export", exportDeploymentTargetLogRecordsHandler()).
-			With(option.Description("Get logs for this deployment target")).
-			With(option.Request(DeploymentTargetIDRequest{})).
-			With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
+		// These are read-only, agent-pushed logs that are safe to serve from the read-only db.
+		r.With(middleware.UseReadonlyDB).Group(func(r chiopenapi.Router) {
+			r.Get("/logs", getDeploymentTargetLogRecordsHandler()).
+				With(option.Description("Get logs for this deployment target")).
+				With(option.Request(DeploymentTargetTimeseriesRequest{})).
+				With(option.Response(http.StatusOK, []api.DeploymentTargetLogRecord{}))
+			r.Get("/logs/export", exportDeploymentTargetLogRecordsHandler()).
+				With(option.Description("Get logs for this deployment target")).
+				With(option.Request(DeploymentTargetIDRequest{})).
+				With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
+		})
 	})
 }
 

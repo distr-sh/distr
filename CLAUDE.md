@@ -174,6 +174,17 @@ err := db.BeginFunc(ctx, func(tx pgx.Tx) error {
 })
 ```
 
+#### Read-only Database
+
+An optional read-only database (e.g. a replica) can be configured via `DATABASE_READONLY_URL` (and `DATABASE_READONLY_MAX_CONNS`). When unset, no read-only pool is created and everything uses the primary. When set, it is injected into the request context by `ContextInjectorMiddleware` via `WithReadonlyDb` (the primary is always injected via `WithDb`).
+
+To serve an endpoint from the read-only db, apply the `middleware.UseReadonlyDB` middleware to its route. It swaps the context's active db to the read-only pool so all `db.*` calls in the handler use it, and is a **noop** when no read-only db is configured. Rules:
+
+- Only use it for routes that perform **exclusively read-only** queries.
+- Never use it for routes that are part of an update-and-refetch loop in the frontend (the read-only db may lag behind the primary). Good candidates are logs, analytics, dashboards, metrics, and status timeseries.
+- Place it **after** authentication/authorization middleware so those lookups keep hitting the primary. Applying it at the router mount (`r.With(middleware.UseReadonlyDB).Route(...)`) is fine when the whole router is read-only; otherwise wrap only the relevant read routes in a group.
+- Do not use it for read-after-write workloads. In particular, the OCI registry always uses the primary: container clients rely on immediate consistency (push then pull/HEAD, multi-arch index push, signing), which a lagging replica would break.
+
 ### Batch Inserts
 
 Use `pgx.CopyFrom` with `pgx.CopyFromSlice` for inserting multiple rows. Never use individual `INSERT` statements in a loop.

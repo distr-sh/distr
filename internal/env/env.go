@@ -18,6 +18,8 @@ import (
 var (
 	databaseUrl                             string
 	databaseMaxConns                        *int
+	databaseReadonlyUrl                     *string
+	databaseReadonlyMaxConns                *int
 	jwtSecret                               []byte
 	host                                    string
 	registryHost                            string
@@ -112,6 +114,8 @@ func Initialize() {
 
 	databaseUrl = envutil.RequireEnv("DATABASE_URL")
 	databaseMaxConns = envutil.GetEnvParsedOrNil("DATABASE_MAX_CONNS", strconv.Atoi)
+	databaseReadonlyUrl = envutil.GetEnvOrNil("DATABASE_READONLY_URL")
+	databaseReadonlyMaxConns = envutil.GetEnvParsedOrNil("DATABASE_READONLY_MAX_CONNS", strconv.Atoi)
 	jwtSecret = envutil.RequireEnvParsed("JWT_SECRET", base64.StdEncoding.DecodeString)
 	host = envutil.RequireEnv("DISTR_HOST")
 	agentInterval = envutil.GetEnvParsedOrDefault("AGENT_INTERVAL", envparse.PositiveDuration, 5*time.Second)
@@ -289,6 +293,19 @@ func DatabaseUrl() string {
 // (like this: postgresql://...?pool_max_conns=10), but it doesn't work for some reason.
 func DatabaseMaxConns() *int {
 	return databaseMaxConns
+}
+
+// DatabaseReadonlyUrl returns the connection string for an optional read-only database (e.g. a replica).
+//
+// When set, expensive read-only queries (logs, analytics, dashboards, metrics, status) are
+// routed to this database instead of the primary. When nil, those queries use the primary.
+func DatabaseReadonlyUrl() *string {
+	return databaseReadonlyUrl
+}
+
+// DatabaseReadonlyMaxConns allows to override the MaxConns parameter of the read-only pgx pool config.
+func DatabaseReadonlyMaxConns() *int {
+	return databaseReadonlyMaxConns
 }
 
 func JWTSecret() []byte {
