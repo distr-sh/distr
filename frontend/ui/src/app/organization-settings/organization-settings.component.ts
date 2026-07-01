@@ -160,8 +160,8 @@ export class OrganizationSettingsComponent implements OnInit {
         public: true,
         showSuccessNotification: false,
         imageUrl: this.faviconImageUrl(),
-        accept: 'image/svg+xml,image/png,image/gif,image/x-icon,image/vnd.microsoft.icon,.ico',
-        acceptDescription: 'SVG, PNG, GIF or ICO (recommended size 64px x 64px - square)',
+        accept: 'image/png,image/gif,image/x-icon,image/vnd.microsoft.icon,.ico',
+        acceptDescription: 'PNG, GIF or ICO (recommended size 64px x 64px - square)',
       })
     );
     if (!fileId || this.faviconImageUrl()?.includes(fileId)) {
