@@ -48,7 +48,6 @@ export interface Organization extends BaseModel, Named {
   stripeWebhookSecretConfigured: boolean;
   pageTitle?: string;
   faviconImageId?: string;
-  faviconImageUrl?: string;
 }
 
 export interface OrganizationWithUserRole extends Organization {

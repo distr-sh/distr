@@ -32,7 +32,6 @@ type OrganizationResponse struct {
 	SubscriptionLimits               SubscriptionLimits `json:"subscriptionLimits"`
 	CurrentBillableUserAccountCount  int64              `json:"currentBillableUserAccountCount"`
 	CurrentCustomerOrganizationCount int64              `json:"currentCustomerOrganizationCount"`
-	FaviconImageUrl                  *string            `json:"faviconImageUrl,omitempty"`
 }
 
 type OrganizationWebhookResponse struct {
