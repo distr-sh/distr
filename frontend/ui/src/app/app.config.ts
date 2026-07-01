@@ -24,7 +24,10 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(withInterceptors([tokenInterceptor, errorToastInterceptor])),
     provideAppInitializer(async () => inject(Sentry.TraceService)),
-    provideAppInitializer(async () => inject(PortalBrandingService).apply()),
+    provideAppInitializer(() => {
+      // Branding is best-effort and must not block bootstrap on a slow/hung request.
+      void inject(PortalBrandingService).apply();
+    }),
     {provide: OVERLAY_DEFAULT_CONFIG, useValue: {usePopover: false}},
   ],
 };
