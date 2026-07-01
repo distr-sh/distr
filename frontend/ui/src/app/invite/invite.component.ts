@@ -3,11 +3,12 @@ import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {AutotrimDirective} from '../directives/autotrim.directive';
+import {PlaceholderDirective} from '../directives/placeholder.directive';
 import {AuthService} from '../services/auth.service';
 
 @Component({
   selector: 'app-invite',
-  imports: [ReactiveFormsModule, AutotrimDirective],
+  imports: [ReactiveFormsModule, AutotrimDirective, PlaceholderDirective],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './invite.component.html',
 })

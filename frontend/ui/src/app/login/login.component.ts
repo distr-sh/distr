@@ -7,12 +7,13 @@ import {WEBSITE_URL} from '../../constants';
 import {getFormDisplayedError} from '../../util/errors';
 import {OidcButtonsComponent} from '../components/oidc-buttons.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
+import {PlaceholderDirective} from '../directives/placeholder.directive';
 import {AuthService} from '../services/auth.service';
 import {ToastService} from '../services/toast.service';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink, AutotrimDirective, OidcButtonsComponent],
+  imports: [ReactiveFormsModule, RouterLink, AutotrimDirective, PlaceholderDirective, OidcButtonsComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './login.component.html',
 })
