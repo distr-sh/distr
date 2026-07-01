@@ -13,9 +13,9 @@ import {Aside} from '@astrojs/starlight/components';
 **OAuth 2.0** is an authorization framework that lets an application obtain limited access to a user's account on another service (the identity provider) without ever handling that user's password.
 **OpenID Connect (OIDC)** is a thin authentication layer built on top of OAuth 2.0: it standardizes how the identity provider returns information about the signed-in user (such as their email address) in a signed `id_token`, so applications can use OAuth 2.0 not just for authorization but to log users in.
 
-**SAML 2.0** is an older XML-based protocol that solves a similar problem — exchanging signed assertions about a user between an identity provider and a service. It is still common in enterprise IT, while OIDC has become the default for modern web and mobile applications.
+**SAML 2.0** is an older XML-based protocol that solves a similar problem: exchanging signed assertions about a user between an identity provider and a service. It is still common in enterprise IT, while OIDC has become the default for modern web and mobile applications.
 
-Distr currently supports OIDC (and therefore OAuth 2.0) for sign-in and sign-up. SAML is not supported. If you have an OIDC-compatible identity provider — including any modern IdP such as Okta, Auth0, Keycloak, Authentik, or Dex — you can plug it in through the [Generic OIDC](#generic-oidc) configuration described below.
+Distr currently supports OIDC (and therefore OAuth 2.0) for sign-in and sign-up. SAML is not supported. If you have an OIDC-compatible identity provider (including any modern IdP such as Okta, Auth0, Keycloak, Authentik, or Dex), you can plug it in through the [Generic OIDC](#generic-oidc) configuration described below.
 
 ## Supported providers
 
@@ -50,7 +50,7 @@ If a user was previously invited but never accepted the invite (no password set,
 | Variable       | Required | Default   | Description                                                                                       |
 | -------------- | -------- | --------- | ------------------------------------------------------------------------------------------------- |
 | `REGISTRATION` | no       | `enabled` | One of `enabled`, `hidden`, `disabled`. Set to `disabled` to block both regular and OIDC sign-up. |
-| `DISTR_HOST`   | yes      | —         | Base URL of your Distr instance. Used to build OIDC callback URLs.                                |
+| `DISTR_HOST`   | yes      | (none)    | Base URL of your Distr instance. Used to build OIDC callback URLs.                                |
 
 ## Google
 
@@ -101,11 +101,11 @@ Any OIDC-compliant identity provider can be configured with the generic options.
 
 | Variable                     | Required | Default | Description                                                                         |
 | ---------------------------- | -------- | ------- | ----------------------------------------------------------------------------------- |
-| `OIDC_GENERIC_ENABLED`       | yes      | —       | Set to `true` to enable the generic provider.                                       |
-| `OIDC_GENERIC_ISSUER`        | yes      | —       | Issuer URL, e.g. `https://auth.example.com/`.                                       |
-| `OIDC_GENERIC_CLIENT_ID`     | yes      | —       | Client ID issued by the provider.                                                   |
-| `OIDC_GENERIC_CLIENT_SECRET` | yes      | —       | Client secret issued by the provider.                                               |
-| `OIDC_GENERIC_SCOPES`        | yes      | —       | Comma-separated scopes to request. Typically `openid,email,profile`.                |
+| `OIDC_GENERIC_ENABLED`       | yes      | (none)  | Set to `true` to enable the generic provider.                                       |
+| `OIDC_GENERIC_ISSUER`        | yes      | (none)  | Issuer URL, e.g. `https://auth.example.com/`.                                       |
+| `OIDC_GENERIC_CLIENT_ID`     | yes      | (none)  | Client ID issued by the provider.                                                   |
+| `OIDC_GENERIC_CLIENT_SECRET` | yes      | (none)  | Client secret issued by the provider.                                               |
+| `OIDC_GENERIC_SCOPES`        | yes      | (none)  | Comma-separated scopes to request. Typically `openid,email,profile`.                |
 | `OIDC_GENERIC_PKCE_ENABLED`  | no       | `false` | Enable PKCE (`S256`). Recommended for public clients and providers that support it. |
 
 Callback URL: `{DISTR_HOST}/api/v1/auth/oidc/generic/callback`

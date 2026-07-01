@@ -16,7 +16,7 @@ The metrics endpoint is configured via environment variables:
 | ---------------------- | ------- | ---------------------------------------------------------------------------------- |
 | `METRICS_ENABLED`      | `false` | Enable the metrics HTTP server                                                     |
 | `METRICS_ADDR`         | `:3000` | Address and port the metrics server listens on                                     |
-| `METRICS_BEARER_TOKEN` | —       | If set, requires an `Authorization: Bearer <token>` header on every scrape request |
+| `METRICS_BEARER_TOKEN` | (none)  | If set, requires an `Authorization: Bearer <token>` header on every scrape request |
 
 ### Docker Compose
 
@@ -65,7 +65,7 @@ These custom metrics are exposed under the `distr` namespace and provide insight
 
 | Metric                                      | Type  | Labels                                                                                                                    | Description                                                                                             |
 | ------------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `distr_organizations_total`                 | Gauge | —                                                                                                                         | Current number of organizations                                                                         |
+| `distr_organizations_total`                 | Gauge | (none)                                                                                                                    | Current number of organizations                                                                         |
 | `distr_deployment_status`                   | Gauge | `organization`, `customerorganization`, `deploymenttarget`, `deploymentid`, `application`, `applicationversion`, `status` | Whether a deployment is in a given status (`1`) or not (`0`). One time series per deployment per status |
 | `distr_deployment_status_timestamp_seconds` | Gauge | `organization`, `customerorganization`, `deploymenttarget`, `deploymentid`, `application`, `applicationversion`           | Unix timestamp of the most recent status update for a deployment                                        |
 

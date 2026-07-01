@@ -11,7 +11,7 @@ import ThemedImage from '~/components/util/ThemedImage.astro';
 import hubLight from '~/assets/docs/product/vendor-portal/hub-light.png';
 import hubDark from '~/assets/docs/product/vendor-portal/hub-dark.png';
 
-The Vendor Portal serves as the control plane for vendors, providing access to all Distr features, including [application creation](/docs/agents/application/), [artifact registry](/docs/registry/configuration/) management, and monitoring of end-customer deployment states. In contrast, the [Customer Portal](/docs/platform/customer-portal/) offers a simplified interface for end customers, allowing them to configure and manage their deployments while centralizing release information and helpful instructions for operating the vendor’s software.
+The Vendor Portal is the control plane for vendors. It gives you access to all Distr features, including [application creation](/docs/agents/application/), [artifact registry](/docs/registry/configuration/) management, and monitoring of end-customer deployment states. The [Customer Portal](/docs/platform/customer-portal/) gives end customers a simpler interface where they configure and manage their deployments. It also centralizes release information and instructions for operating the vendor's software.
 
 <ThemedImage
   lightSrc={hubLight}
@@ -25,7 +25,7 @@ The Vendor Portal serves as the control plane for vendors, providing access to a
 2. **Agents**: Add applications, create and manage deployments, set up [alerts](/docs/agents/alerts/), monitor deployment health, and view deployment logs. See the [Agents](/docs/agents/) section for details.
 3. **Registry**: Browse and view consumption metrics of your [artifacts](/docs/registry/) in the _Registry_ section.
 4. **Licenses**: Manage entitlements and license keys per customer. Application Entitlements control which application versions customers can deploy, Artifact Entitlements control registry access, and License Keys let you issue signed tokens your application can use to enforce usage limits and feature access.
-5. **Customers**: Create and manage customer organizations, invite users, manage secrets, and control features per customer. See the [Customer Management](/docs/platform/customer-management/) guide for a deep dive; to invite users and assign roles, see [RBAC — Inviting Customer Organization Users](/docs/platform/rbac/#inviting-customer-organization-users).
+5. **Customers**: Create and manage customer organizations, invite users, manage secrets, and control features per customer. See the [Customer Management](/docs/platform/customer-management/) guide for a detailed walkthrough; to invite users and assign roles, see [RBAC: Inviting Customer Organization Users](/docs/platform/rbac/#inviting-customer-organization-users).
 6. **Support Bundles**: Receive and review diagnostic data from customers. Customers run a one-time collection script on their host; the collected environment variables and container logs appear here for review and discussion. See [Support Bundles](/docs/platform/support-bundles/) for details.
 7. **Users**: Add and manage internal team members for your Distr vendor account.
 8. **Secrets**: Manage sensitive configuration values and credentials that can be securely shared with customer deployments.
