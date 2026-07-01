@@ -31,6 +31,7 @@ import (
 
 type Registry struct {
 	dbPool            *pgxpool.Pool
+	dbReadonlyPool    *pgxpool.Pool
 	logger            *zap.Logger
 	mailer            *mailx.Mailer
 	execDbMigrations  bool
@@ -94,6 +95,12 @@ func newRegistry(ctx context.Context, reg *Registry) (*Registry, error) {
 		reg.dbPool = db
 	}
 
+	if dbReadonly, err := reg.createDBReadonlyPool(ctx); err != nil {
+		return nil, err
+	} else {
+		reg.dbReadonlyPool = dbReadonly
+	}
+
 	if env.RegistryEnabled() {
 		reg.s3Client = newS3Client(ctx)
 	}
@@ -125,6 +132,9 @@ func (r *Registry) Shutdown(ctx context.Context) error {
 	}
 
 	r.logger.Warn("shutting down database connections")
+	if r.dbReadonlyPool != nil {
+		r.dbReadonlyPool.Close()
+	}
 	r.dbPool.Close()
 
 	if err := r.tracers.Shutdown(ctx); err != nil {
@@ -154,6 +164,7 @@ func (r *Registry) GetRouter() http.Handler {
 	return routing.NewRouter(
 		r.GetLogger(),
 		r.GetDbPool(),
+		r.GetDbReadonlyPool(),
 		r.GetMailer(),
 		r.GetTracers(),
 		r.GetOIDCer(),

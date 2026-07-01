@@ -52,32 +52,35 @@ func DeploymentsRouter(r chiopenapi.Router) {
 			With(option.Description("Get deployment revisions")).
 			With(option.Request(DeploymentIDRequest{})).
 			With(option.Response(http.StatusOK, []api.DeploymentRevisionResponse{}))
-		r.Get("/status", getDeploymentStatus).
-			With(option.Description("Get deployment status")).
-			With(option.Request(DeploymentTimeseriesRequest{})).
-			With(option.Response(http.StatusOK, []api.DeploymentRevisionStatus{}))
-		r.Get("/status/export", exportDeploymentStatusHandler()).
-			With(option.Description("Export deployment status")).
-			With(option.Request(DeploymentIDRequest{})).
-			With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
-		r.Get("/logs", getDeploymentLogsHandler()).
-			With(option.Description("Get deployment logs")).
-			With(option.Request(struct {
-				DeploymentTimeseriesRequest
-				ResourceRequest
-			}{})).
-			With(option.Response(http.StatusOK, []api.DeploymentLogRecord{}))
-		r.Get("/logs/resources", getDeploymentLogsResourcesHandler()).
-			With(option.Description("Get deployment log resources")).
-			With(option.Request(DeploymentIDRequest{})).
-			With(option.Response(http.StatusOK, api.DeploymentLogRecordResourcesResponse{}))
-		r.Get("/logs/export", exportDeploymentLogsHandler()).
-			With(option.Description("Export deployment logs")).
-			With(option.Request(struct {
-				DeploymentIDRequest
-				ResourceRequest
-			}{})).
-			With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
+		// These are read-only, agent-pushed timeseries that are safe to serve from the read-only db.
+		r.With(middleware.UseReadonlyDB).Group(func(r chiopenapi.Router) {
+			r.Get("/status", getDeploymentStatus).
+				With(option.Description("Get deployment status")).
+				With(option.Request(DeploymentTimeseriesRequest{})).
+				With(option.Response(http.StatusOK, []api.DeploymentRevisionStatus{}))
+			r.Get("/status/export", exportDeploymentStatusHandler()).
+				With(option.Description("Export deployment status")).
+				With(option.Request(DeploymentIDRequest{})).
+				With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
+			r.Get("/logs", getDeploymentLogsHandler()).
+				With(option.Description("Get deployment logs")).
+				With(option.Request(struct {
+					DeploymentTimeseriesRequest
+					ResourceRequest
+				}{})).
+				With(option.Response(http.StatusOK, []api.DeploymentLogRecord{}))
+			r.Get("/logs/resources", getDeploymentLogsResourcesHandler()).
+				With(option.Description("Get deployment log resources")).
+				With(option.Request(DeploymentIDRequest{})).
+				With(option.Response(http.StatusOK, api.DeploymentLogRecordResourcesResponse{}))
+			r.Get("/logs/export", exportDeploymentLogsHandler()).
+				With(option.Description("Export deployment logs")).
+				With(option.Request(struct {
+					DeploymentIDRequest
+					ResourceRequest
+				}{})).
+				With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
+		})
 		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
 			r.Delete("/", deleteDeploymentHandler()).
 				With(option.Description("Delete a deployment")).

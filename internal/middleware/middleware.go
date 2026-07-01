@@ -33,6 +33,7 @@ import (
 
 func ContextInjectorMiddleware(
 	db *pgxpool.Pool,
+	dbReadonly *pgxpool.Pool,
 	mailer *mailx.Mailer,
 	oidcer *oidc.OIDCer,
 	prometheusCollector *prometheus.DistrCollector,
@@ -41,12 +42,32 @@ func ContextInjectorMiddleware(
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 			ctx = internalctx.WithDb(ctx, db)
+			if dbReadonly != nil {
+				ctx = internalctx.WithReadonlyDB(ctx, dbReadonly)
+			}
 			ctx = internalctx.WithMailer(ctx, mailer)
 			ctx = internalctx.WithPrometheusCollector(ctx, prometheusCollector)
 			ctx = internalctx.WithOIDCer(ctx, oidcer)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+// UseReadonlyDB swaps the request's active db to the read-only database for the wrapped handlers.
+// It is a noop when no read-only database is configured (the primary keeps being used).
+//
+// It must only be applied to routes that perform exclusively read-only queries and that are not part
+// of an update-and-refetch loop in the frontend, since the read-only database may lag behind the
+// primary. Place it after authentication/authorization middleware so those lookups keep using the
+// primary.
+func UseReadonlyDB(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		if readonlyDB := internalctx.GetReadonlyDB(ctx); readonlyDB != nil {
+			ctx = internalctx.WithDb(ctx, readonlyDB)
+		}
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
 
 func LoggerCtxMiddleware(logger *zap.Logger) func(next http.Handler) http.Handler {
