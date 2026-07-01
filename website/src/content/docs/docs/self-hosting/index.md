@@ -12,9 +12,9 @@ Distr comes as a statically compiled Go binary, packaged as a container image an
 - A PostgreSQL database
 - An S3 compatible object storage (only if you want to use the Distr artifacts registry)
 
-Check out our [Docker Compose](/docs/self-hosting/docker/) or [Kubernetes](/docs/self-hosting/kubernetes/) deployment options, or find out more information about the inner workings of Distr at [`github.com/distr-sh/distr`](https://github.com/distr-sh/distr/).
-
 Before you get started, review the [System Requirements](/docs/self-hosting/system-requirements/) to make sure your environment is sized correctly.
+
+Check out our [Docker Compose](/docs/self-hosting/docker/) or [Kubernetes](/docs/self-hosting/kubernetes/) deployment options, or find out more information about the inner workings of Distr at [`github.com/distr-sh/distr`](https://github.com/distr-sh/distr/).
 
 ## Semantic Versioning
 

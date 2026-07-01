@@ -3,7 +3,7 @@ title: System Requirements
 description: Distr is written in Go and highly resource efficient. Learn about the required software and recommended resources for self-hosting the Hub, the registry, and the all-in-one Docker Compose setup.
 sidebar:
   label: System Requirements
-  order: 3
+  order: 1
 ---
 
 Distr is written in [Go](https://go.dev/) and highly resource efficient.
