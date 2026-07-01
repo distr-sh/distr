@@ -159,6 +159,8 @@ func createOrganization(w http.ResponseWriter, r *http.Request) {
 		PreConnectScript:    body.PreConnectScript,
 		PostConnectScript:   body.PostConnectScript,
 		ConnectScriptIsSudo: body.ConnectScriptIsSudo,
+		PageTitle:           body.PageTitle,
+		FaviconImageID:      body.FaviconImageID,
 	}
 
 	if buildconfig.IsCommunityEdition() {
@@ -273,6 +275,16 @@ func handleUpdateOrganization(
 
 		if request.PrePostScriptsEnabled != org.HasFeature(types.FeaturePrePostScripts) {
 			org.SetFeature(types.FeaturePrePostScripts, request.PrePostScriptsEnabled)
+			needsUpdate = true
+		}
+
+		if !util.PtrEq(org.PageTitle, request.PageTitle) {
+			org.PageTitle = request.PageTitle
+			needsUpdate = true
+		}
+
+		if !util.PtrEq(org.FaviconImageID, request.FaviconImageID) {
+			org.FaviconImageID = request.FaviconImageID
 			needsUpdate = true
 		}
 

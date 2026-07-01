@@ -24,6 +24,8 @@ export interface CreateUpdateOrganizationRequest {
   connectScriptIsSudo: boolean;
   artifactVersionMutable: boolean;
   prePostScriptsEnabled: boolean;
+  pageTitle?: string;
+  faviconImageId?: string;
 }
 
 export interface Organization extends BaseModel, Named {
@@ -44,6 +46,9 @@ export interface Organization extends BaseModel, Named {
   postConnectScript?: string;
   connectScriptIsSudo: boolean;
   stripeWebhookSecretConfigured: boolean;
+  pageTitle?: string;
+  faviconImageId?: string;
+  faviconImageUrl?: string;
 }
 
 export interface OrganizationWithUserRole extends Organization {

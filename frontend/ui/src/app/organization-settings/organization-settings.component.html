@@ -189,6 +189,55 @@
             </div>
           </div>
 
+          @if (form.controls.pageTitle.enabled) {
+            <div class="space-y-4">
+              <div>
+                <h3 class="text-lg font-bold dark:text-white">Portal Customization</h3>
+                <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
+                  The page title and favicon are shown in the browser tab for everyone visiting your custom app domain.
+                </p>
+              </div>
+              <div>
+                <label for="pageTitle" class="distr-label mb-2">Page title</label>
+                <input
+                  formControlName="pageTitle"
+                  autotrim
+                  type="text"
+                  name="pageTitle"
+                  id="pageTitle"
+                  class="distr-input"
+                  placeholder="Distr" />
+              </div>
+              <div>
+                <label class="distr-label mb-2">Favicon</label>
+                <div class="inline-block relative">
+                  <img
+                    [src]="faviconImageUrl() || '/favicon.svg'"
+                    alt="Favicon"
+                    class="size-24 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 object-contain p-6" />
+                  <div class="absolute -bottom-2 -right-0.5 space-x-1">
+                    <button
+                      type="button"
+                      class="rounded-full size-6 text-sm text-gray-900 focus:outline-none bg-white border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+                      (click)="editFavicon()">
+                      <span class="sr-only">Edit favicon</span>
+                      <fa-icon [icon]="faPen" size="sm" />
+                    </button>
+                    @if (faviconImageUrl()) {
+                      <button
+                        type="button"
+                        class="rounded-full size-6 text-sm text-gray-900 focus:outline-none bg-white border border-gray-200 hover:bg-gray-100 hover:text-red-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+                        (click)="removeFavicon()">
+                        <span class="sr-only">Remove favicon</span>
+                        <fa-icon [icon]="faTrashCan" size="sm" />
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+
           @if (!auth.isSuperAdmin()) {
             <div class="flex justify-center w-full space-x-4 mt-8 sm:mt-0">
               <button

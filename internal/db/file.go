@@ -15,14 +15,14 @@ import (
 )
 
 const (
-	fileOutputExpr = "f.id, f.organization_id, f.created_at, f.content_type, f.data, f.file_name, f.file_size"
+	fileOutputExpr = "f.id, f.organization_id, f.created_at, f.content_type, f.data, f.file_name, f.file_size, f.public"
 )
 
 func CreateFile(ctx context.Context, organizationID *uuid.UUID, file *types.File) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		"INSERT INTO File AS f (organization_id, content_type, data, file_name, file_size) "+
-			"VALUES (@organization_id, @content_type, @data, @file_name, @file_size) "+
+		"INSERT INTO File AS f (organization_id, content_type, data, file_name, file_size, public) "+
+			"VALUES (@organization_id, @content_type, @data, @file_name, @file_size, @public) "+
 			"RETURNING "+fileOutputExpr,
 		pgx.NamedArgs{
 			"organization_id": organizationID,
@@ -30,6 +30,7 @@ func CreateFile(ctx context.Context, organizationID *uuid.UUID, file *types.File
 			"data":            file.Data,
 			"file_name":       file.FileName,
 			"file_size":       file.FileSize,
+			"public":          file.Public,
 		},
 	)
 	if err != nil {

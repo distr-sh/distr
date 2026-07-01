@@ -12,5 +12,6 @@ func OrganizationToAPI(o types.Organization, billableUserCount, customerOrgCount
 		SubscriptionLimits:               subscription.GetSubscriptionLimits(o.SubscriptionType),
 		CurrentBillableUserAccountCount:  billableUserCount,
 		CurrentCustomerOrganizationCount: customerOrgCount,
+		FaviconImageUrl:                  CreatePublicImageURL(o.FaviconImageID),
 	}
 }

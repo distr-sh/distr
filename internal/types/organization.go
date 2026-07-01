@@ -32,6 +32,8 @@ type Organization struct {
 	ConnectScriptIsSudo                 bool               `db:"connect_script_is_sudo" json:"connectScriptIsSudo"`
 	StripeWebhookSecret                 *string            `db:"stripe_webhook_secret"            json:"-"`
 	StripeWebhookSecretConfigured       bool               `db:"stripe_webhook_secret_configured" json:"stripeWebhookSecretConfigured"` //nolint:lll
+	PageTitle                           *string            `db:"page_title" json:"pageTitle"`
+	FaviconImageID                      *uuid.UUID         `db:"favicon_image_id" json:"faviconImageId,omitempty"`
 }
 
 func (org *Organization) HasFeature(feature Feature) bool {

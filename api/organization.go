@@ -5,16 +5,19 @@ import (
 
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/validation"
+	"github.com/google/uuid"
 )
 
 type CreateUpdateOrganizationRequest struct {
-	Name                   string  `json:"name"`
-	Slug                   *string `json:"slug"`
-	PreConnectScript       *string `json:"preConnectScript"`
-	PostConnectScript      *string `json:"postConnectScript"`
-	ConnectScriptIsSudo    bool    `json:"connectScriptIsSudo"`
-	ArtifactVersionMutable bool    `json:"artifactVersionMutable"`
-	PrePostScriptsEnabled  bool    `json:"prePostScriptsEnabled"`
+	Name                   string     `json:"name"`
+	Slug                   *string    `json:"slug"`
+	PreConnectScript       *string    `json:"preConnectScript"`
+	PostConnectScript      *string    `json:"postConnectScript"`
+	ConnectScriptIsSudo    bool       `json:"connectScriptIsSudo"`
+	ArtifactVersionMutable bool       `json:"artifactVersionMutable"`
+	PrePostScriptsEnabled  bool       `json:"prePostScriptsEnabled"`
+	PageTitle              *string    `json:"pageTitle"`
+	FaviconImageID         *uuid.UUID `json:"faviconImageId"`
 }
 
 type OrganizationResponse struct {
@@ -22,10 +25,18 @@ type OrganizationResponse struct {
 	SubscriptionLimits               SubscriptionLimits `json:"subscriptionLimits"`
 	CurrentBillableUserAccountCount  int64              `json:"currentBillableUserAccountCount"`
 	CurrentCustomerOrganizationCount int64              `json:"currentCustomerOrganizationCount"`
+	FaviconImageUrl                  *string            `json:"faviconImageUrl,omitempty"`
 }
 
 type OrganizationWebhookResponse struct {
 	Configured bool `json:"configured"`
+}
+
+// PortalResponse contains the host-resolved portal branding (browser tab title and favicon) that applies to
+// everyone visiting an organization's custom app domain, regardless of authentication.
+type PortalResponse struct {
+	PageTitle  *string `json:"pageTitle,omitempty"`
+	FaviconUrl *string `json:"faviconUrl,omitempty"`
 }
 
 type UpdateOrganizationWebhookRequest struct {

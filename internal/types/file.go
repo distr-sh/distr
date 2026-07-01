@@ -14,4 +14,5 @@ type File struct {
 	Data           []byte     `db:"data" json:"data"`
 	FileName       string     `db:"file_name" json:"fileName"`
 	FileSize       int64      `db:"file_size" json:"fileSize"`
+	Public         bool       `db:"public" json:"public"`
 }

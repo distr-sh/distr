@@ -61,6 +61,43 @@ func getFileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func PublicFileRouter(r chiopenapi.Router) {
+	r.WithOptions(option.GroupTags("Files"))
+	type FileIDRequest struct {
+		FileID uuid.UUID `path:"fileId"`
+	}
+	r.Get("/{fileId}", getPublicFileHandler).
+		With(option.Description("Get a public file by ID")).
+		With(option.Request(FileIDRequest{})).
+		With(option.Response(http.StatusOK, nil))
+}
+
+func getPublicFileHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+
+	if fileID, err := uuid.Parse(r.PathValue("fileId")); err != nil {
+		http.NotFound(w, r)
+	} else if file, err := db.GetFileWithID(ctx, fileID); err != nil {
+		if errors.Is(err, apierrors.ErrNotFound) {
+			http.NotFound(w, r)
+		} else {
+			log.Error("error getting public file", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+	} else if !file.Public {
+		http.NotFound(w, r)
+	} else {
+		w.Header().Set("Content-Type", file.ContentType)
+		w.Header().Set("Cache-Control", "max-age=604800, public")
+		if _, err := w.Write(file.Data); err != nil {
+			log.Warn("failed to write file to response", zap.Error(err))
+			http.Error(w, "failed to write file to response", http.StatusInternalServerError)
+		}
+	}
+}
+
 func deleteFileHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
@@ -110,7 +147,7 @@ func getFileFromRequest(r *http.Request) (*types.File, error) {
 		return nil, fmt.Errorf("failed to parse form: %w", err)
 	}
 
-	file := types.File{}
+	file := types.File{Public: r.FormValue("public") == "true"}
 
 	if multiPartFile, fileHeader, err := r.FormFile("file"); err != nil {
 		return nil, errors.New("file not found")

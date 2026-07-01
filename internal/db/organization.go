@@ -39,7 +39,9 @@ const (
 		o.post_connect_script,
 		o.connect_script_is_sudo,
 		o.stripe_webhook_secret,
-		(o.stripe_webhook_secret IS NOT NULL)
+		(o.stripe_webhook_secret IS NOT NULL),
+		o.page_title,
+		o.favicon_image_id
 	`
 	organizationWithUserRoleOutputExpr = organizationOutputExpr + `,
 		j.user_role,
@@ -110,7 +112,9 @@ func UpdateOrganization(ctx context.Context, org *types.Organization) error {
 			pre_connect_script = @pre_connect_script,
 			post_connect_script = @post_connect_script,
 			connect_script_is_sudo = @connect_script_is_sudo,
-			stripe_webhook_secret = @stripe_webhook_secret
+			stripe_webhook_secret = @stripe_webhook_secret,
+			page_title = @page_title,
+			favicon_image_id = @favicon_image_id
 		WHERE id = @id
 		RETURNING `+organizationOutputExpr,
 		pgx.NamedArgs{
@@ -129,6 +133,8 @@ func UpdateOrganization(ctx context.Context, org *types.Organization) error {
 			"post_connect_script":                         org.PostConnectScript,
 			"connect_script_is_sudo":                      org.ConnectScriptIsSudo,
 			"stripe_webhook_secret":                       org.StripeWebhookSecret,
+			"page_title":                                  org.PageTitle,
+			"favicon_image_id":                            org.FaviconImageID,
 		},
 	)
 	if err != nil {
@@ -350,6 +356,30 @@ func GetOrganizationWithBranding(ctx context.Context, orgID uuid.UUID) (*types.O
 	} else {
 		return &result, nil
 	}
+}
+
+// GetOrganizationPortalByAppDomain resolves the page title and favicon image for the organization whose
+// app_domain matches the given host. The host must be normalized (lower-case, without scheme or port) by
+// the caller. It returns nil values when no organization matches.
+func GetOrganizationPortalByAppDomain(
+	ctx context.Context,
+	host string,
+) (pageTitle *string, faviconImageID *uuid.UUID, err error) {
+	db := internalctx.GetDb(ctx)
+	row := db.QueryRow(ctx,
+		`SELECT o.page_title, o.favicon_image_id
+		FROM Organization o
+		WHERE o.deleted_at IS NULL
+			AND o.app_domain IS NOT NULL
+			AND lower(regexp_replace(o.app_domain, '^https?://', '')) = @host`,
+		pgx.NamedArgs{"host": host},
+	)
+	if err := row.Scan(&pageTitle, &faviconImageID); errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil, nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("could not get organization portal by app domain: %w", err)
+	}
+	return pageTitle, faviconImageID, nil
 }
 
 func SetOrganizationStripeWebhookSecret(ctx context.Context, orgID uuid.UUID, secret *string) error {
