@@ -32,6 +32,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import {catchError, EMPTY, lastValueFrom, map, of} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
+import {organizationKind, OrganizationKindPipe} from '../../../util/organization-kind';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {UserRoleLabelPipe} from '../../../util/user-role';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
@@ -43,15 +44,9 @@ import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {SidebarService} from '../../services/sidebar.service';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
-import {Organization, OrganizationWithUserRole} from '../../types/organization';
+import {Organization} from '../../types/organization';
 import {ColorSchemeSwitcherComponent} from '../color-scheme-switcher/color-scheme-switcher.component';
 import {NavBarSubscriptionBannerComponent} from './nav-bar-subscription-banner/nav-bar-subscription-banner.component';
-
-type OrganizationKind = 'customer' | 'partner' | 'vendor';
-
-function getOrganizationKind(org: OrganizationWithUserRole): OrganizationKind {
-  return org.customerOrganizationId ? 'customer' : org.partnerOrganizationId ? 'partner' : 'vendor';
-}
 
 @Component({
   selector: 'app-nav-bar',
@@ -68,6 +63,7 @@ function getOrganizationKind(org: OrganizationWithUserRole): OrganizationKind {
     AutotrimDirective,
     ReactiveFormsModule,
     UserRoleLabelPipe,
+    OrganizationKindPipe,
   ],
 })
 export class NavBarComponent implements OnInit {
@@ -103,10 +99,10 @@ export class NavBarComponent implements OnInit {
   });
   protected readonly currentOrg = toSignal(this.ctx.getOrganization());
   protected readonly isVendorSomewhere = computed(() =>
-    this.allOrgs().some((org) => org.customerOrganizationId === undefined && org.partnerOrganizationId === undefined)
+    this.allOrgs().some((org) => organizationKind(org) === 'vendor')
   );
   protected readonly isDifferentOrganizationKind = computed(
-    () => this.allOrgs().reduce((kinds, org) => kinds.add(getOrganizationKind(org)), new Set<string>()).size > 1
+    () => this.allOrgs().reduce((kinds, org) => kinds.add(organizationKind(org)), new Set<string>()).size > 1
   );
   protected readonly isTrial = computed(() => this.currentOrg()?.subscriptionType === 'trial');
   protected readonly isSubscriptionExpired = this.organizationService.isSubscriptionExpired;

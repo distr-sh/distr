@@ -56,6 +56,31 @@ export interface DeploymentRevisionStatus extends BaseModel {
   message: string;
 }
 
+export interface DeploymentRevisionCreator {
+  id?: string;
+  name?: string;
+  email?: string;
+  imageId?: string;
+  customerOrganizationId?: string;
+  partnerOrganizationId?: string;
+  deleted?: boolean;
+}
+
+export interface DeploymentRevisionResponse {
+  id: string;
+  createdAt: string;
+  applicationVersionId: string;
+  applicationVersionName: string;
+  releaseName?: string;
+  dockerType?: DockerType;
+  valuesYaml?: string;
+  envFileData?: string;
+  forceRestart: boolean;
+  ignoreRevisionSkew: boolean;
+  helmOptions?: HelmOptions;
+  createdBy?: DeploymentRevisionCreator;
+}
+
 export type DeploymentType = 'docker' | 'kubernetes';
 
 export type HelmChartType = 'repository' | 'oci';

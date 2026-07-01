@@ -304,7 +304,9 @@ export class DeploymentFormComponent implements OnInit, AfterViewInit, OnDestroy
     combineLatest([this.deployForm.valueChanges, this.deployForm.statusChanges])
       .pipe(takeUntil(this.destroyed$))
       .subscribe(([value, status]) => {
-        const callbackArg = status === 'VALID' ? value : undefined;
+        // value omits the applicationId control while it's disabled, so add it back to stay lossless.
+        const callbackArg =
+          status === 'VALID' ? {...value, applicationId: this.deployForm.getRawValue().applicationId} : undefined;
         this.onChange?.(callbackArg);
         this.onTouched?.(callbackArg);
       });

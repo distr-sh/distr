@@ -521,7 +521,11 @@ func CheckEntitlementForArtifact(
 	}
 
 	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(
+	// referenceExists tells us whether the reference resolves to any ArtifactVersion at all, so that a
+	// non-existent reference (e.g. an OCI referrers fallback tag "sha256-<digest>" that was never pushed)
+	// results in a 404 further down the line instead of being misreported as a missing entitlement.
+	var referenceExists, entitled bool
+	err = db.QueryRow(
 		ctx,
 		`WITH RECURSIVE ArtifactVersionAggregate (id, artifact_id, manifest_blob_digest) AS (
 			SELECT av.id, av.artifact_id, av.manifest_blob_digest
@@ -538,30 +542,28 @@ func CheckEntitlementForArtifact(
 				JOIN ArtifactVersionPart avp ON av.id = avp.artifact_version_id
 				JOIN ArtifactVersionAggregate agg ON avp.artifact_blob_digest = agg.manifest_blob_digest
 		)
-		SELECT exists(
-			SELECT *
-				FROM ArtifactVersionAggregate av
-				JOIN ArtifactEntitlement_Artifact ala
-					ON av.artifact_id = ala.artifact_id
-						AND (ala.artifact_version_id IS NULL OR ala.artifact_version_id = av.id)
-				JOIN ArtifactEntitlement al ON ala.artifact_entitlement_id = al.id
-				WHERE al.customer_organization_id = @customerOrganizationId
-					AND (al.expires_at IS NULL OR al.expires_at > now())
-		)`,
+		SELECT
+			exists(SELECT 1 FROM ArtifactVersionAggregate),
+			exists(
+				SELECT 1
+					FROM ArtifactVersionAggregate av
+					JOIN ArtifactEntitlement_Artifact ala
+						ON av.artifact_id = ala.artifact_id
+							AND (ala.artifact_version_id IS NULL OR ala.artifact_version_id = av.id)
+					JOIN ArtifactEntitlement al ON ala.artifact_entitlement_id = al.id
+					WHERE al.customer_organization_id = @customerOrganizationId
+						AND (al.expires_at IS NULL OR al.expires_at > now())
+			)`,
 		pgx.NamedArgs{
 			"orgName":                orgName,
 			"name":                   name,
 			"reference":              reference,
 			"customerOrganizationId": customerOrganizationID,
 		},
-	)
+	).Scan(&referenceExists, &entitled)
 	if err != nil {
 		return fmt.Errorf("could not query ArtifactVersion: %w", err)
-	}
-	exists, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[bool])
-	if err != nil {
-		return fmt.Errorf("could not query ArtifactVersion: %w", err)
-	} else if !exists {
+	} else if referenceExists && !entitled {
 		return apierrors.ErrForbidden
 	}
 	return nil
@@ -580,6 +582,11 @@ func CheckEntitlementForArtifactBlob(ctx context.Context, digest string,
 
 	db := internalctx.GetDb(ctx)
 
+	// NOTE: Unlike CheckEntitlementForArtifact, this check must NOT treat an unknown digest as "not found
+	// and therefore allowed". The digest is not scoped to a repo here, and for pull-through cache artifacts
+	// the blob handler fetches unknown blobs from upstream on demand. Allowing an unresolved digest would
+	// let a licensed customer without an entitlement trigger such a fetch and receive the blob. We therefore
+	// deny whenever the digest does not resolve to an entitled ArtifactVersion.
 	rows, err := db.Query(
 		ctx,
 		`WITH RECURSIVE ArtifactVersionAggregate (id, artifact_id, manifest_blob_digest) AS (

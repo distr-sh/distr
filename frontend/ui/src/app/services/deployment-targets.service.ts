@@ -1,6 +1,11 @@
 import {HttpClient, HttpErrorResponse} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
-import {DeploymentRequest, DeploymentTarget, DeploymentTargetAccessResponse} from '@distr-sh/distr-sdk';
+import {
+  DeploymentRequest,
+  DeploymentRevisionResponse,
+  DeploymentTarget,
+  DeploymentTargetAccessResponse,
+} from '@distr-sh/distr-sdk';
 import {EMPTY, merge, Observable, retry, shareReplay, Subject, switchMap, tap, timer} from 'rxjs';
 import {ReactiveList} from './cache';
 import {CrudService} from './interfaces';
@@ -85,6 +90,10 @@ export class DeploymentTargetsService implements CrudService<DeploymentTarget> {
 
   undeploy(id: string): Observable<void> {
     return this.httpClient.delete<void>(`${this.deploymentsBaseUrl}/${id}`).pipe(tap(() => this.pollRefresh$.next()));
+  }
+
+  public getRevisions(deploymentId: string): Observable<DeploymentRevisionResponse[]> {
+    return this.httpClient.get<DeploymentRevisionResponse[]>(`${this.deploymentsBaseUrl}/${deploymentId}/revisions`);
   }
 
   public getNotes(deploymentTargetId: string) {
