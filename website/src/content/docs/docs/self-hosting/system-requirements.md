@@ -10,7 +10,6 @@ Distr is written in [Go](https://go.dev/) and highly resource efficient.
 Our hosted offering serves thousands of requests every second with just two app servers at **30 MB / 50m CPU** each and a PostgreSQL database at **1 GB / 200m CPU** (excluding read replicas).
 This means you can run a self-hosted Distr instance comfortably on modest hardware.
 
-
 :::tip
 CPU values on this page use the Kubernetes notation of CPU millicores (`m`), where `1000m` equals one full CPU core. So `50m` means 5% of a single core and `200m` means 20% of a single core.
 :::
@@ -25,7 +24,7 @@ To run the all-in-one [Docker Compose](/docs/self-hosting/docker/) setup you nee
 
 ## Average resource consumption
 
-The following table lists the average CPU and memory per component. These values match the footprint of our staging environments and are a good starting point for a small self-hosted instance — scale them up based on your request volume and artifact sizes.
+The following table lists the average CPU and memory per component. These values match the footprint of our staging environments and are a good starting point for a small self-hosted instance. Scale them up based on your request volume and artifact sizes.
 
 | Component               | CPU          | RAM       |
 | ----------------------- | ------------ | --------- |
@@ -54,13 +53,13 @@ OCI registry uploads are buffered while they are being received: with a scratch 
 Without it, large layer uploads are buffered to RAM, which can significantly increase the memory footprint of the Hub.
 
 We also highly recommend backing the registry with an external S3-compatible object storage like AWS S3.
-On top of being more scalable and durable then a single local RustFS container, it lets the registry serve blob (layer) downloads via **pre-signed URLs**: instead of streaming the layer through the Hub, the registry responds with an HTTP `307 Temporary Redirect` to a short-lived pre-signed URL, so clients download layers directly from the object storage.
+On top of being more scalable and durable than a single local RustFS container, it lets the registry serve blob (layer) downloads via **pre-signed URLs**: instead of streaming the layer through the Hub, the registry responds with an HTTP `307 Temporary Redirect` to a short-lived pre-signed URL, so clients download layers directly from the object storage.
 This offloads pull bandwidth from the Hub and keeps its CPU and memory footprint low even under heavy pull load.
 This behavior is enabled by default and can be controlled via `REGISTRY_S3_ALLOW_REDIRECT`.
 
 ## Networking & ports
 
-Distr exposes two HTTP endpoints — the **app** (web UI and API) and the **registry** (OCI artifacts) — which are typically served under separate hostnames and put behind a TLS-terminating reverse proxy (Caddy in our Docker Compose setup, an Ingress controller in Kubernetes).
+Distr exposes two HTTP endpoints: the app (web UI and API) and the registry (OCI artifacts). Both are typically served under separate hostnames and put behind a TLS-terminating reverse proxy (Caddy in our Docker Compose setup, an Ingress controller in Kubernetes).
 
 Regardless of how you deploy, make sure the following is in place:
 
@@ -75,5 +74,5 @@ For production use, we recommend the following:
 - **Externally managed PostgreSQL and object storage.** This lets you scale, upgrade, and operate these stateful components independently of the Distr Hub, and keeps the Hub itself stateless and easy to upgrade.
 - **A highly available (HA) architecture.** Run multiple Hub replicas behind a load balancer so the control plane stays available during upgrades and node failures. Our [Helm chart](/docs/self-hosting/kubernetes/) supports this via `replicaCount` and `autoscaling`.
 - **An external job trigger** for maintenance jobs instead of the Hub's built-in scheduler. The Helm chart ships these as Kubernetes `CronJob`s (see `cronJobs` in the chart values), which is the recommended way to run [maintenance jobs](/docs/self-hosting/maintenance/) in production.
-- **Regular backups** of your PostgreSQL database and object storage. The Distr Hub itself is stateless, so all persistent state lives in these two components — back them up regularly and test your restore procedure.
+- **Regular backups** of your PostgreSQL database and object storage. The Distr Hub itself is stateless, so all persistent state lives in these two components. Back them up regularly and test your restore procedure.
 - **External secret management.** Store sensitive configuration such as the database credentials, `JWT_SECRET`, and object storage keys in a dedicated secret manager (e.g. a Kubernetes `Secret`, Vault, or your cloud provider's secret store) instead of plain-text environment files.
