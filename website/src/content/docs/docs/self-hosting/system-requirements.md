@@ -10,6 +10,11 @@ Distr is written in [Go](https://go.dev/) and highly resource efficient.
 Our hosted offering serves thousands of requests every second with just two app servers at **30 MB / 50m CPU** each and a PostgreSQL database at **1 GB / 200m CPU** (excluding read replicas).
 This means you can run a self-hosted Distr instance comfortably on modest hardware.
 
+
+:::tip
+CPU values on this page use the Kubernetes notation of CPU millicores (`m`), where `1000m` equals one full CPU core. So `50m` means 5% of a single core and `200m` means 20% of a single core.
+:::
+
 ## Required software
 
 To run the all-in-one [Docker Compose](/docs/self-hosting/docker/) setup you need:
@@ -18,33 +23,38 @@ To run the all-in-one [Docker Compose](/docs/self-hosting/docker/) setup you nee
 - **Docker Compose** ≥ v5 (the `docker compose` plugin)
 - **curl** (to download the deployment manifest)
 
-## Minimum resource requirements
+## Average resource consumption
 
-The following table lists the minimum CPU and memory per component. These values match the footprint of our staging environments and are a good starting point for a small self-hosted instance — scale them up based on your request volume and artifact sizes.
+The following table lists the average CPU and memory per component. These values match the footprint of our staging environments and are a good starting point for a small self-hosted instance — scale them up based on your request volume and artifact sizes.
 
-| Component               | Min. CPU    | Min. RAM  |
-| ----------------------- | ----------- | --------- |
-| Distr                   | 50m         | 128 MB    |
-| PostgreSQL (database)   | 200m        | 512 MB    |
-| RustFS (object storage) | 100m        | 256 MB    |
-| Caddy (reverse proxy)   | 50m         | 64 MB     |
-| **Total**               | **0.5 CPU** | **~1 GB** |
+| Component               | CPU          | RAM       |
+| ----------------------- | ------------ | --------- |
+| Distr                   | 100m         | 128 MB    |
+| PostgreSQL (database)   | 250m         | 512 MB    |
+| RustFS (object storage) | 100m         | 256 MB    |
+| Caddy (reverse proxy)   | 50m          | 64 MB     |
+| **Total**               | **~0.5 CPU** | **~1 GB** |
 
-:::tip
-These minimum requirements are averages for Distr itself and do not include the operating system, Docker, or other system services. The workloads can also burst beyond these values.
+&nbsp;
 
-We therefore recommend provisioning a VM with a **minimum of 4 GB RAM and 2 CPUs**.
+:::note
+The average values are per-component footprints for Distr itself and do not include the operating system, Docker, or other system services. The workloads will also burst beyond these values on certain operations.
+
+We therefore recommend provisioning a VM with a **minimum of 2 CPUs and 4 GB RAM**.
 :::
+
+## Persistence
+
+Distr itself does not require any persistent volumes. All state is stored in the PostgreSQL database and the environment configuration.
 
 ## Registry
 
-For the optional registry, a scratch volume is recommended (up to 128 GB).
+For the optional registry, a scratch volume is recommended (sized by concurrently uploading image sizes).
 OCI registry uploads are buffered while they are being received: with a scratch volume in place, Distr buffers the upload to disk instead of holding it in memory.
 Without it, large layer uploads are buffered to RAM, which can significantly increase the memory footprint of the Hub.
-The size you need depends on the size of the artifacts you push and the number of concurrent uploads.
 
-We also highly recommend backing the registry with S3-compatible object storage.
-On top of being more scalable and durable, it lets the registry serve blob (layer) downloads via **pre-signed URLs**: instead of streaming the layer through the Hub, the registry responds with an HTTP `307 Temporary Redirect` to a short-lived pre-signed URL, so clients download layers directly from the object storage.
+We also highly recommend backing the registry with an external S3-compatible object storage like AWS S3.
+On top of being more scalable and durable then a single local RustFS container, it lets the registry serve blob (layer) downloads via **pre-signed URLs**: instead of streaming the layer through the Hub, the registry responds with an HTTP `307 Temporary Redirect` to a short-lived pre-signed URL, so clients download layers directly from the object storage.
 This offloads pull bandwidth from the Hub and keeps its CPU and memory footprint low even under heavy pull load.
 This behavior is enabled by default and can be controlled via `REGISTRY_S3_ALLOW_REDIRECT`.
 
@@ -54,7 +64,7 @@ Distr exposes two HTTP endpoints — the **app** (web UI and API) and the **regi
 
 Regardless of how you deploy, make sure the following is in place:
 
-- **Public domain names** for the app and the registry, configured and pointed to the public IP of your VM (or load balancer).
+- **Public domain names** for the app, registry and [metrics](/docs/self-hosting/prometheus/) configured and pointed to the public IP of your VM (or load balancer).
 - **Port `443`** publicly reachable for HTTPS traffic.
 - **Port `80`** publicly reachable as well if you let the reverse proxy (e.g. Caddy) obtain and renew TLS certificates automatically via ACME / Let's Encrypt.
 
