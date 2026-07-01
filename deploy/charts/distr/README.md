@@ -12,7 +12,7 @@
 
 </div>
 
-![Version: 2.22.3](https://img.shields.io/badge/Version-2.22.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.22.3](https://img.shields.io/badge/AppVersion-2.22.3-informational?style=flat-square)
+![Version: 2.24.5](https://img.shields.io/badge/Version-2.24.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.24.5](https://img.shields.io/badge/AppVersion-2.24.5-informational?style=flat-square)
 
 The easiest way to distribute enterprise software
 
@@ -41,7 +41,7 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 
 | Repository                               | Name       | Version |
 | ---------------------------------------- | ---------- | ------- |
-| https://charts.rustfs.com                | rustfs     | 0.6.x   |
+| https://charts.rustfs.com                | rustfs     | 0.8.x   |
 | oci://registry-1.docker.io/bitnamicharts | postgresql | 18.x.x  |
 
 ## Values
@@ -141,6 +141,11 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | hub.env[8].value                           | string | `"distr123"`                                     |             |
 | hub.env[9].name                            | string | `"REGISTRY_S3_USE_PATH_STYLE"`                   |             |
 | hub.env[9].value                           | string | `"true"`                                         |             |
+| hub.scratch.accessModes[0]                 | string | `"ReadWriteOnce"`                                |             |
+| hub.scratch.enabled                        | bool   | `false`                                          |             |
+| hub.scratch.mountPath                      | string | `"/scratch"`                                     |             |
+| hub.scratch.size                           | string | `"10Gi"`                                         |             |
+| hub.scratch.storageClassName               | string | `""`                                             |             |
 | image.pullPolicy                           | string | `"IfNotPresent"`                                 |             |
 | image.repository                           | string | `"ghcr.io/distr-sh/distr-ce"`                    |             |
 | image.tag                                  | string | `""`                                             |             |
