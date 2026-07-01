@@ -98,7 +98,7 @@
                               autotrim
                               type="text"
                               [attr.aria-label]="'Teammate name'"
-                              [placeholder]="placeholderName"
+                              appPlaceholder="name"
                               class="distr-input" />
                           </div>
                           <div>
@@ -107,7 +107,7 @@
                               autotrim
                               type="email"
                               [attr.aria-label]="'Teammate email'"
-                              [placeholder]="placeholderEmail"
+                              appPlaceholder="email"
                               class="distr-input" />
                             @if (user.get('email')?.touched && user.get('email')?.errors) {
                               <div class="mt-1 text-sm text-red-500">Please enter a valid email address.</div>
@@ -116,15 +116,13 @@
                           <div>
                             <app-user-role-select formControlName="userRole" selectClass="distr-input" />
                           </div>
-                          <div class="flex items-center gap-2">
-                            <button
-                              type="button"
-                              (click)="removeUser($index)"
-                              aria-label="Remove teammate"
-                              class="distr-btn-secondary flex items-center justify-center px-3 py-2 text-sm font-medium">
-                              <fa-icon [icon]="faTrash" />
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            (click)="removeUser($index)"
+                            aria-label="Remove teammate"
+                            class="distr-btn-secondary flex items-center justify-center p-2.5 text-sm font-medium">
+                            <fa-icon [icon]="faXmark" />
+                          </button>
                         </div>
                       }
 

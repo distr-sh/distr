@@ -5,12 +5,13 @@ import {Router} from '@angular/router';
 import {UserRole} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleCheck} from '@fortawesome/free-regular-svg-icons';
-import {faArrowRight, faCheck, faLightbulb, faPlus, faTrash, faUserGroup} from '@fortawesome/free-solid-svg-icons';
+import {faArrowRight, faCheck, faLightbulb, faPlus, faUserGroup, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {lastValueFrom} from 'rxjs';
-import {PLACEHOLDER_EMAIL, PLACEHOLDER_NAME, WEBSITE_URL} from '../../../constants';
+import {WEBSITE_URL} from '../../../constants';
 import {getFormDisplayedError} from '../../../util/errors';
 import {UserRoleSelectComponent} from '../../components/user-role-select.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
+import {PlaceholderDirective} from '../../directives/placeholder.directive';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
 import {TutorialStepperComponent} from '../stepper/tutorial-stepper.component';
@@ -32,6 +33,7 @@ function userFormGroup() {
     FaIconComponent,
     CdkStepperPrevious,
     AutotrimDirective,
+    PlaceholderDirective,
     UserRoleSelectComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -40,14 +42,12 @@ function userFormGroup() {
 export class UsersTutorialComponent {
   loading = signal(false);
   protected readonly rbacDocsUrl = `${WEBSITE_URL}/docs/platform/rbac/`;
-  protected readonly placeholderName = PLACEHOLDER_NAME;
-  protected readonly placeholderEmail = PLACEHOLDER_EMAIL;
   protected readonly faArrowRight = faArrowRight;
   protected readonly faCheck = faCheck;
   protected readonly faCircleCheck = faCircleCheck;
   protected readonly faLightbulb = faLightbulb;
   protected readonly faPlus = faPlus;
-  protected readonly faTrash = faTrash;
+  protected readonly faXmark = faXmark;
   protected readonly faUserGroup = faUserGroup;
 
   private readonly stepper = viewChild.required<CdkStepper>('stepper');

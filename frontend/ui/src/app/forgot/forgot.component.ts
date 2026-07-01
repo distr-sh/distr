@@ -2,14 +2,14 @@ import {ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit} from '@an
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {distinctUntilChanged, filter, lastValueFrom, map, Subject, takeUntil} from 'rxjs';
-import {PLACEHOLDER_EMAIL} from '../../constants';
 import {getFormDisplayedError} from '../../util/errors';
 import {AutotrimDirective} from '../directives/autotrim.directive';
+import {PlaceholderDirective} from '../directives/placeholder.directive';
 import {AuthService} from '../services/auth.service';
 
 @Component({
   selector: 'app-forgot',
-  imports: [ReactiveFormsModule, RouterLink, AutotrimDirective],
+  imports: [ReactiveFormsModule, RouterLink, AutotrimDirective, PlaceholderDirective],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './forgot.component.html',
 })
@@ -20,7 +20,6 @@ export class ForgotComponent implements OnInit, OnDestroy {
   public errorMessage?: string;
   public success = false;
   loading = false;
-  protected readonly placeholderEmail = PLACEHOLDER_EMAIL;
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyed$ = new Subject<void>();
