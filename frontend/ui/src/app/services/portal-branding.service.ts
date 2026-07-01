@@ -1,5 +1,5 @@
 import {DOCUMENT} from '@angular/common';
-import {HttpClient} from '@angular/common/http';
+import {HttpBackend, HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {Title} from '@angular/platform-browser';
 import {firstValueFrom} from 'rxjs';
@@ -15,7 +15,9 @@ interface PortalResponse {
  */
 @Injectable({providedIn: 'root'})
 export class PortalBrandingService {
-  private readonly httpClient = inject(HttpClient);
+  // Bypass global interceptors (auth, error toasts, maintenance-mode probe) so this best-effort
+  // call stays silent and can never surface a toast or flip the app into maintenance mode.
+  private readonly httpClient = new HttpClient(inject(HttpBackend));
   private readonly title = inject(Title);
   private readonly document = inject(DOCUMENT);
 
