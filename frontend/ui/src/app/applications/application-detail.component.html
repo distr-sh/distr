@@ -22,7 +22,11 @@
                   #dropdownTriggerButton
                   (click)="toggleBreadcrumbDropdown()"
                   class="inline-flex items-center px-3 py-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
-                  {{ application.name }}
+                  <span
+                    class="block max-w-64 overflow-hidden text-ellipsis whitespace-nowrap"
+                    [title]="application.name">
+                    {{ application.name }}
+                  </span>
                   <fa-icon class="ml-2" [icon]="faChevronDown" />
                 </button>
                 <ng-template
@@ -36,13 +40,16 @@
                   <div
                     animate.enter="animate-flip-in-top"
                     animate.leave="animate-flip-out-top"
-                    class="z-10 w-full bg-white divide-y divide-gray-100 rounded-lg shadow-xs dark:bg-gray-700 origin-top">
+                    class="z-10 w-full max-w-80 bg-white divide-y divide-gray-100 rounded-lg shadow-xs dark:bg-gray-700 origin-top">
                     <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownDefault">
                       @for (app of applications$ | async; track app.id) {
                         <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
-                          <a class="px-4 flex items-stretch" [routerLink]="['/', 'applications', app.id]">{{
-                            app.name
-                          }}</a>
+                          <a
+                            class="px-4 flex items-stretch overflow-hidden text-ellipsis whitespace-nowrap"
+                            [routerLink]="['/', 'applications', app.id]"
+                            [title]="app.name"
+                            >{{ app.name }}</a
+                          >
                         </li>
                       }
                     </ul>
@@ -68,53 +75,16 @@
                 }
               </button>
               <div>
-                @if (editForm.enabled) {
-                  <form [formGroup]="editForm" (ngSubmit)="saveApplication(application)">
-                    <div class="inline-flex">
-                      <div>
-                        <input
-                          formControlName="name"
-                          autotrim
-                          autofocus
-                          #nameInput
-                          type="text"
-                          id="name"
-                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                          value=""
-                          placeholder="Application name"
-                          required />
-                      </div>
-                      <button
-                        type="submit"
-                        [disabled]="editFormLoading()"
-                        class="cursor-pointer ml-2 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm p-2 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                        <fa-icon [icon]="faCheck" class="mr-2" />
-                        Save
-                      </button>
-                      <button
-                        type="button"
-                        (click)="cancelApplicationEdit()"
-                        class="cursor-pointer ml-2 font-medium rounded-lg text-sm p-2 text-gray-900 focus:outline-none bg-white border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                        <fa-icon [icon]="faXmark" class="mr-2" />
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
-                } @else {
-                  <div class="flex">
-                    <h3 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                      {{ application.name }}
-                    </h3>
-                    @if (auth.hasAnyRole('read_write', 'admin')) {
-                      <button
-                        type="button"
-                        (click)="enableApplicationEdit(application)"
-                        class="cursor-pointer ml-2 text-sm py-1 px-2 text-gray-900 bg-white border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700">
-                        <fa-icon [icon]="faEdit" />
-                      </button>
-                    }
-                  </div>
-                }
+                <app-inline-edit
+                  class="block"
+                  tag="h3"
+                  [value]="application.name ?? ''"
+                  [editable]="auth.hasAnyRole('read_write', 'admin')"
+                  placeholder="Application name"
+                  size="lg"
+                  textClass="block max-w-lg overflow-hidden text-ellipsis whitespace-nowrap text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
+                  [loading]="savingApplicationName()"
+                  (save)="updateApplicationName(application, $event)" />
                 @if (application.id) {
                   <app-uuid class="mr-2" [uuid]="application.id" [small]="true" />
                 }
@@ -212,9 +182,15 @@
                         scope="row"
                         [class.text-gray-900]="!archived"
                         [class.dark:text-white]="!archived"
-                        class="px-6 py-4 font-medium whitespace-nowrap max-w-64 overflow-hidden text-ellipsis"
+                        class="px-6 py-4 font-medium whitespace-nowrap max-w-64"
                         [title]="version.name">
-                        {{ version.name }}
+                        <app-inline-edit
+                          [value]="version.name"
+                          [editable]="auth.hasAnyRole('read_write', 'admin')"
+                          placeholder="Version name"
+                          textClass="block max-w-64 overflow-hidden text-ellipsis whitespace-nowrap"
+                          [loading]="savingVersionId() === version.id"
+                          (save)="updateVersionName(application, version, $event)" />
                       </th>
                       @if (application.type === 'kubernetes') {
                         <td class="px-6 py-4">
