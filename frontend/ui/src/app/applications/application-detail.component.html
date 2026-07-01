@@ -69,6 +69,8 @@
               </button>
               <div>
                 <app-inline-edit
+                  class="block"
+                  tag="h3"
                   [value]="application.name ?? ''"
                   [editable]="auth.hasAnyRole('read_write', 'admin')"
                   placeholder="Application name"
