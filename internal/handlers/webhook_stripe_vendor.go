@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/billing"
 	internalctx "github.com/distr-sh/distr/internal/context"
@@ -172,12 +173,35 @@ func handleVendorStripeSubscription(ctx context.Context, orgID uuid.UUID, sub st
 		Payload:      payload,
 	}
 
+	// Determine which deployments reference this license key and would render
+	// differently with the new revision, so they can be restarted. There is no
+	// authenticated user in the webhook context, so the resulting deployment
+	// revisions are created without a "created by" user.
+	var affected []api.AffectedDeployment
+	if licenseKey.CustomerOrganizationID != nil {
+		updatedLicenseKey := *licenseKey
+		updatedLicenseKey.NotBefore = &revision.NotBefore
+		updatedLicenseKey.ExpiresAt = &revision.ExpiresAt
+		updatedLicenseKey.Payload = revision.Payload
+		affected, err = findAffectedDeploymentsByLicenseKey(
+			ctx, orgID, *licenseKey.CustomerOrganizationID, updatedLicenseKey)
+		if err != nil {
+			return err
+		}
+	}
+
 	log.Info("creating license key revision from vendor stripe subscription",
 		zap.Stringer("licenseKeyId", licenseKeyID),
 		zap.Time("expiresAt", expiresAt),
+		zap.Int("affectedDeployments", len(affected)),
 	)
 
-	if err := db.CreateLicenseKeyRevision(ctx, &revision); err != nil {
+	if err := db.RunTx(ctx, func(ctx context.Context) error {
+		if err := db.CreateLicenseKeyRevision(ctx, &revision); err != nil {
+			return err
+		}
+		return triggerAffectedDeployments(ctx, affected, nil)
+	}); err != nil {
 		return err
 	}
 
