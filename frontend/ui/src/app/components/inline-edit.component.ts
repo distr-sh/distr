@@ -1,4 +1,15 @@
-import {ChangeDetectionStrategy, Component, effect, ElementRef, inject, input, output, signal} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faPen} from '@fortawesome/free-solid-svg-icons';
@@ -26,9 +37,9 @@ export type InlineEditDisplayTag = 'span' | 'h3';
           [class]="size() === 'lg' ? 'min-w-48 max-w-md' : 'min-w-32 max-w-xs'" />
         <button
           type="submit"
-          [disabled]="loading()"
+          [disabled]="loading() || saveDisabled()"
           (pointerdown)="$event.preventDefault()"
-          class="distr-btn-primary text-white rounded-none rounded-e-lg"
+          class="distr-btn-primary text-white rounded-none rounded-e-lg disabled:opacity-60 disabled:cursor-not-allowed"
           [class]="size() === 'lg' ? 'px-4' : 'px-3'">
           <fa-icon [icon]="faCheck" />
         </button>
@@ -72,6 +83,14 @@ export class InlineEditComponent {
   protected readonly form = new FormGroup({
     value: new FormControl('', {nonNullable: true}),
   });
+  private readonly currentValue = toSignal(this.form.controls.value.valueChanges, {initialValue: ''});
+  protected readonly saveDisabled = computed(() => {
+    const trimmed = this.currentValue().trim();
+    if (this.required() && trimmed === '') {
+      return true;
+    }
+    return trimmed === this.value();
+  });
 
   protected readonly faCheck = faCheck;
   protected readonly faPen = faPen;
@@ -114,11 +133,10 @@ export class InlineEditComponent {
     if (this.form.invalid) {
       return;
     }
-    const newValue = this.form.controls.value.value.trim();
-    if (newValue === this.value()) {
+    if (this.saveDisabled()) {
       this.editing.set(false);
       return;
     }
-    this.save.emit(newValue);
+    this.save.emit(this.currentValue().trim());
   }
 }
