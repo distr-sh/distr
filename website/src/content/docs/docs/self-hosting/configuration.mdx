@@ -1,0 +1,197 @@
+---
+title: Configuration Reference
+description: Complete reference of all environment variables used to configure a self-hosted Distr Hub instance, grouped by area.
+slug: docs/self-hosting/configuration
+sidebar:
+  label: Configuration Reference
+  order: 7
+---
+
+import {Aside} from '@astrojs/starlight/components';
+
+This page lists all environment variables used to configure a self-hosted Distr Hub.
+Variables marked as **required** must be set for the Hub to start (some are only required when a related feature is enabled).
+Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use standard cron syntax (e.g. `0 * * * *`).
+
+<Aside type="tip">
+  When `DISTR_ENV` is set, Distr loads the referenced dotenv file and an
+  optional `<DISTR_ENV>.secret` file on startup, in addition to variables
+  already present in the environment.
+</Aside>
+
+## General
+
+| Variable                           | Required | Default   | Description                                                                                     |
+| ---------------------------------- | -------- | --------- | ----------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                     | yes      | —         | PostgreSQL connection string (e.g. `postgres://user:pass@host:5432/distr`).                     |
+| `DATABASE_MAX_CONNS`               | no       | —         | Overrides the maximum number of connections in the pgx pool.                                    |
+| `JWT_SECRET`                       | yes      | —         | Base64-encoded secret used to sign JWTs. Generate with `openssl rand -base64 32`.               |
+| `DISTR_HOST`                       | yes      | —         | Base URL of your Distr instance. Used for links, callbacks and email content.                   |
+| `DISTR_ENV`                        | no       | —         | Path to a dotenv file to load on startup (a matching `.secret` file is also loaded if present). |
+| `REGISTRATION`                     | no       | `enabled` | Sign-up mode: `enabled`, `hidden` or `disabled`.                                                |
+| `USER_EMAIL_VERIFICATION_REQUIRED` | no       | `true`    | Whether new users must verify their email address before signing in.                            |
+| `SERVER_SHUTDOWN_DELAY_DURATION`   | no       | —         | Delay between receiving a shutdown signal and stopping the server (useful for rolling deploys). |
+| `ENABLE_QUERY_LOGGING`             | no       | `false`   | Logs all database queries. Intended for debugging only.                                         |
+
+## Tokens & Sessions
+
+| Variable                         | Required | Default | Description                                                       |
+| -------------------------------- | -------- | ------- | ----------------------------------------------------------------- |
+| `INVITE_TOKEN_VALID_DURATION`    | no       | `24h`   | How long user invite links remain valid.                          |
+| `RESET_TOKEN_VALID_DURATION`     | no       | `1h`    | How long password reset links remain valid.                       |
+| `AGENT_TOKEN_MAX_VALID_DURATION` | no       | `24h`   | Maximum validity of an agent access token before it is refreshed. |
+
+## Agents
+
+| Variable              | Required | Default | Description                                                                              |
+| --------------------- | -------- | ------- | ---------------------------------------------------------------------------------------- |
+| `AGENT_INTERVAL`      | no       | `5s`    | Interval at which agents poll the Hub for updates.                                       |
+| `AGENT_DOCKER_CONFIG` | no       | —       | Base64-encoded Docker config JSON provided to Docker agents for registry authentication. |
+
+## Mailer
+
+Email sending is disabled unless `MAILER_TYPE` is set.
+`MAILER_SMTP_*` values only apply when `MAILER_TYPE=smtp`.
+
+| Variable                          | Required          | Default | Description                                                                                       |
+| --------------------------------- | ----------------- | ------- | ------------------------------------------------------------------------------------------------- |
+| `MAILER_TYPE`                     | no                | —       | Mailer backend: `smtp`, `ses` or empty (disabled).                                                |
+| `MAILER_FROM_ADDRESS`             | if mailer enabled | —       | Sender address used for outgoing emails.                                                          |
+| `MAILER_SMTP_HOST`                | no                | —       | SMTP server hostname.                                                                             |
+| `MAILER_SMTP_PORT`                | if `smtp`         | —       | SMTP server port.                                                                                 |
+| `MAILER_SMTP_USERNAME`            | no                | —       | SMTP username.                                                                                    |
+| `MAILER_SMTP_PASSWORD`            | no                | —       | SMTP password.                                                                                    |
+| `MAILER_SMTP_IMPLICIT_TLS`        | no                | `false` | Use implicit TLS instead of STARTTLS (typically required on port 465).                            |
+| `NOTIFICATION_EMAIL_HOURLY_QUOTA` | no                | `120`   | Max status/metrics notification emails sent to a single address per hour. `0` disables the limit. |
+
+## OCI Registry
+
+Registry variables are only read when `REGISTRY_ENABLED=true`.
+See [Registry Configuration](/docs/registry/configuration/) for a feature overview.
+
+| Variable                                   | Required            | Default | Description                                                                        |
+| ------------------------------------------ | ------------------- | ------- | ---------------------------------------------------------------------------------- |
+| `REGISTRY_ENABLED`                         | no                  | `false` | Enables the built-in OCI-compatible artifact registry.                             |
+| `REGISTRY_HOST`                            | if registry enabled | —       | Host (and optional port) clients use to reach the registry.                        |
+| `REGISTRY_S3_BUCKET`                       | if registry enabled | —       | S3 bucket used to store registry blobs.                                            |
+| `REGISTRY_S3_REGION`                       | if registry enabled | —       | S3 region of the bucket.                                                           |
+| `REGISTRY_S3_CREATE_BUCKET`                | no                  | `false` | Creates the bucket on startup (requires `s3:CreateBucket`).                        |
+| `REGISTRY_S3_ENDPOINT`                     | no                  | —       | Custom S3 endpoint (for MinIO or other S3-compatible storage).                     |
+| `REGISTRY_S3_ACCESS_KEY_ID`                | no                  | —       | S3 access key ID (falls back to the default AWS credential chain if unset).        |
+| `REGISTRY_S3_SECRET_ACCESS_KEY`            | no                  | —       | S3 secret access key.                                                              |
+| `REGISTRY_S3_USE_PATH_STYLE`               | no                  | `false` | Use path-style bucket addressing (required by most non-AWS S3 implementations).    |
+| `REGISTRY_S3_ALLOW_REDIRECT`               | no                  | `true`  | Allow redirecting blob downloads directly to S3.                                   |
+| `REGISTRY_S3_REQUEST_CHECKSUM_CALCULATION` | no                  | `false` | Only calculate request checksums when required (compatibility with some backends). |
+| `REGISTRY_S3_RESPONSE_CHECKSUM_VALIDATION` | no                  | `false` | Only validate response checksums when required.                                    |
+| `REGISTRY_RESIGN_FOR_GCP`                  | no                  | `false` | Re-sign requests for Google Cloud Storage compatibility.                           |
+| `REGISTRY_SCRATCH_DIR`                     | no                  | —       | Directory used for temporary files during uploads.                                 |
+| `ARTIFACT_TAGS_DEFAULT_LIMIT_PER_ORG`      | no                  | `0`     | Default maximum number of artifact tags per organization. `0` means unlimited.     |
+| `REGISTRY_UPSTREAM_SYNC_CRON`              | no                  | —       | Cron schedule for syncing tags from upstream registries (pull-through cache).      |
+| `REGISTRY_UPSTREAM_SYNC_TIMEOUT`           | no                  | `10m`   | Timeout for a single upstream sync run.                                            |
+
+## Scheduled Jobs & Retention
+
+These control the built-in job scheduler and retention limits.
+See [Maintenance Jobs](/docs/self-hosting/maintenance/) for details and Kubernetes CronJob alternatives.
+If a `*_CRON` variable is unset, the corresponding job is not scheduled. A `*_TIMEOUT` of `0` means no timeout.
+
+| Variable                                       | Required | Default | Description                                                                 |
+| ---------------------------------------------- | -------- | ------- | --------------------------------------------------------------------------- |
+| `STATUS_ENTRIES_MAX_AGE`                       | no       | —       | Max age of deployment revision status entries before cleanup removes them.  |
+| `METRICS_ENTRIES_MAX_AGE`                      | no       | —       | Max age of deployment target metrics entries before cleanup removes them.   |
+| `LOG_RECORD_ENTRIES_MAX_COUNT`                 | no       | —       | Max number of log entries to keep per deployment/target before pruning.     |
+| `CLEANUP_DEPLOYMENT_REVISION_STATUS_CRON`      | no       | —       | Cron schedule for pruning deployment revision status entries.               |
+| `CLEANUP_DEPLOYMENT_REVISION_STATUS_TIMEOUT`   | no       | `0`     | Timeout for the revision status cleanup run.                                |
+| `CLEANUP_DEPLOYMENT_TARGET_METRICS_CRON`       | no       | —       | Cron schedule for pruning deployment target metrics.                        |
+| `CLEANUP_DEPLOYMENT_TARGET_METRICS_TIMEOUT`    | no       | `0`     | Timeout for the metrics cleanup run.                                        |
+| `CLEANUP_DEPLOYMENT_LOG_RECORD_CRON`           | no       | —       | Cron schedule for pruning deployment log entries.                           |
+| `CLEANUP_DEPLOYMENT_LOG_RECORD_TIMEOUT`        | no       | `0`     | Timeout for the deployment log cleanup run.                                 |
+| `CLEANUP_DEPLOYMENT_TARGET_LOG_RECORD_CRON`    | no       | —       | Cron schedule for pruning deployment target log entries.                    |
+| `CLEANUP_DEPLOYMENT_TARGET_LOG_RECORD_TIMEOUT` | no       | `0`     | Timeout for the deployment target log cleanup run.                          |
+| `CLEANUP_OIDC_STATE_CRON`                      | no       | —       | Cron schedule for pruning expired OIDC state entries.                       |
+| `CLEANUP_OIDC_STATE_CRON_TIMEOUT`              | no       | `0`     | Timeout for the OIDC state cleanup run.                                     |
+| `CLEANUP_ARTIFACT_BLOB_CRON`                   | no       | —       | Cron schedule for pruning unreferenced registry blobs from S3.              |
+| `CLEANUP_ARTIFACT_BLOB_TIMEOUT`                | no       | `0`     | Timeout for the artifact blob cleanup run.                                  |
+| `CLEANUP_ARTIFACT_BLOB_MIN_AGE`                | no       | `24h`   | Minimum age of an unreferenced blob before it is eligible for deletion.     |
+| `CLEANUP_ORGANIZATION_CRON`                    | no       | —       | Cron schedule for permanently deleting soft-deleted organizations.          |
+| `CLEANUP_ORGANIZATION_TIMEOUT`                 | no       | `0`     | Timeout for the organization cleanup run.                                   |
+| `CLEANUP_ORGANIZATION_MIN_AGE`                 | no       | `720h`  | Retention period before a soft-deleted organization is permanently deleted. |
+| `DEPLOYMENT_STATUS_NOTIFICATION_CRON`          | no       | —       | Cron schedule for sending deployment status notification emails.            |
+| `DEPLOYMENT_STATUS_NOTIFICATION_TIMEOUT`       | no       | `0`     | Timeout for the deployment status notification run.                         |
+
+## OIDC Authentication
+
+Each provider is enabled independently and its credentials are only required when it is enabled.
+See [OIDC Authentication](/docs/self-hosting/oidc/) for setup instructions and callback URLs.
+
+| Variable                                        | Required           | Default | Description                                                                       |
+| ----------------------------------------------- | ------------------ | ------- | --------------------------------------------------------------------------------- |
+| `OIDC_GITHUB_ENABLED`                           | no                 | `false` | Enables GitHub sign-in.                                                           |
+| `OIDC_GITHUB_CLIENT_ID`                         | if GitHub enabled  | —       | GitHub OAuth App client ID.                                                       |
+| `OIDC_GITHUB_CLIENT_SECRET`                     | if GitHub enabled  | —       | GitHub OAuth App client secret.                                                   |
+| `OIDC_GOOGLE_ENABLED`                           | no                 | `false` | Enables Google sign-in.                                                           |
+| `OIDC_GOOGLE_CLIENT_ID`                         | if Google enabled  | —       | Google OAuth 2.0 client ID.                                                       |
+| `OIDC_GOOGLE_CLIENT_SECRET`                     | if Google enabled  | —       | Google OAuth 2.0 client secret.                                                   |
+| `OIDC_MICROSOFT_ENABLED`                        | no                 | `false` | Enables Microsoft (Entra ID) sign-in.                                             |
+| `OIDC_MICROSOFT_CLIENT_ID`                      | if MS enabled      | —       | Entra ID application (client) ID.                                                 |
+| `OIDC_MICROSOFT_CLIENT_SECRET`                  | if MS enabled      | —       | Entra ID client secret.                                                           |
+| `OIDC_MICROSOFT_TENANT_ID`                      | if MS enabled      | —       | Directory (tenant) ID, or `common`/`organizations`/`consumers`.                   |
+| `OIDC_GENERIC_ENABLED`                          | no                 | `false` | Enables a generic OIDC provider.                                                  |
+| `OIDC_GENERIC_CLIENT_ID`                        | if generic enabled | —       | Client ID issued by the provider.                                                 |
+| `OIDC_GENERIC_CLIENT_SECRET`                    | if generic enabled | —       | Client secret issued by the provider.                                             |
+| `OIDC_GENERIC_ISSUER`                           | if generic enabled | —       | Issuer URL exposing `/.well-known/openid-configuration`.                          |
+| `OIDC_GENERIC_SCOPES`                           | if generic enabled | —       | Comma- or space-separated scopes (e.g. `openid,email,profile`).                   |
+| `OIDC_GENERIC_PKCE_ENABLED`                     | no                 | `false` | Enables PKCE (`S256`) for the generic provider.                                   |
+| `WELLKNOWN_MICROSOFT_IDENTITY_ASSOCIATION_JSON` | no                 | —       | Base64-encoded JSON served at `/.well-known/microsoft-identity-association.json`. |
+
+## Observability
+
+Tracing and error reporting via Sentry and OpenTelemetry.
+Sampler variables accept `always_on`, `always_off`, `traceidratio`, `parentbased_always_on`, `parentbased_always_off` or `parentbased_traceidratio`.
+
+| Variable                       | Required | Default | Description                                                                          |
+| ------------------------------ | -------- | ------- | ------------------------------------------------------------------------------------ |
+| `SENTRY_DSN`                   | no       | —       | Sentry DSN for backend error reporting.                                              |
+| `SENTRY_DEBUG`                 | no       | `false` | Enables Sentry debug logging.                                                        |
+| `SENTRY_ENVIRONMENT`           | no       | —       | Environment name reported to Sentry (e.g. `production`).                             |
+| `OTEL_EXPORTER_SENTRY_ENABLED` | no       | `false` | Exports OpenTelemetry traces to Sentry.                                              |
+| `OTEL_EXPORTER_OTLP_ENABLED`   | no       | `false` | Exports OpenTelemetry traces via OTLP (configured with standard `OTEL_*` variables). |
+| `OTEL_AGENT_SAMPLER`           | no       | —       | Trace sampler used for agent requests.                                               |
+| `OTEL_AGENT_SAMPLER_ARG`       | no       | `1.0`   | Argument for the agent sampler (e.g. ratio for `traceidratio`).                      |
+| `OTEL_REGISTRY_SAMPLER`        | no       | —       | Trace sampler used for registry requests.                                            |
+| `OTEL_REGISTRY_SAMPLER_ARG`    | no       | `1.0`   | Argument for the registry sampler.                                                   |
+
+## Prometheus Metrics
+
+Exposes an internal Prometheus metrics endpoint.
+See [Prometheus Integration](/docs/self-hosting/prometheus/) for details.
+
+| Variable               | Required | Default | Description                                                   |
+| ---------------------- | -------- | ------- | ------------------------------------------------------------- |
+| `METRICS_ENABLED`      | no       | `false` | Enables the Prometheus metrics endpoint.                      |
+| `METRICS_ADDR`         | no       | `:3000` | Address the metrics endpoint listens on.                      |
+| `METRICS_BEARER_TOKEN` | no       | —       | Bearer token required to scrape the metrics endpoint, if set. |
+
+## Frontend
+
+These values are injected into the compiled frontend at runtime.
+
+| Variable                            | Required | Default | Description                                       |
+| ----------------------------------- | -------- | ------- | ------------------------------------------------- |
+| `FRONTEND_SENTRY_DSN`               | no       | —       | Sentry DSN for frontend error reporting.          |
+| `FRONTEND_SENTRY_TRACE_SAMPLE_RATE` | no       | —       | Frontend trace sample rate (`0.0`–`1.0`).         |
+| `FRONTEND_POSTHOG_TOKEN`            | no       | —       | PostHog project API token for frontend analytics. |
+| `FRONTEND_POSTHOG_API_HOST`         | no       | —       | PostHog API host.                                 |
+| `FRONTEND_POSTHOG_UI_HOST`          | no       | —       | PostHog UI host.                                  |
+
+## Licensing & Billing
+
+Options relevant to Distr Pro and hosted billing.
+
+| Variable                                   | Required | Default | Description                                                   |
+| ------------------------------------------ | -------- | ------- | ------------------------------------------------------------- |
+| `LICENSE_KEY`                              | no       | —       | Distr Pro license key enabling enterprise features.           |
+| `LICENSE_KEY_PRIVATE_KEY`                  | no       | —       | PEM-encoded private key used to sign customer license keys.   |
+| `STRIPE_API_KEY`                           | no       | —       | Stripe API key for billing integration.                       |
+| `STRIPE_WEBHOOK_SECRET`                    | no       | —       | Secret used to verify incoming Stripe webhooks.               |
+| `STRIPE_WEBHOOK_VERSION_MISMATCH_BEHAVIOR` | no       | `error` | Behavior on Stripe API version mismatch: `error` or `ignore`. |
