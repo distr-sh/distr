@@ -176,7 +176,7 @@ err := db.BeginFunc(ctx, func(tx pgx.Tx) error {
 
 #### Read-only Database
 
-An optional read-only database (e.g. a replica) can be configured via `DATABASE_READONLY_URL` (and `DATABASE_READONLY_MAX_CONNS`). When unset, no read-only pool is created and everything uses the primary. When set, it is injected into the request context by `ContextInjectorMiddleware` via `WithReadonlyDb` (the primary is always injected via `WithDb`).
+An optional read-only database (e.g. a replica) can be configured via `DATABASE_READONLY_URL` (and `DATABASE_READONLY_MAX_CONNS`). When unset, no read-only pool is created and everything uses the primary. When set, it is injected into the request context by `ContextInjectorMiddleware` via `WithReadonlyDB` (the primary is always injected via `WithDb`).
 
 To serve an endpoint from the read-only db, apply the `middleware.UseReadonlyDB` middleware to its route. It swaps the context's active db to the read-only pool so all `db.*` calls in the handler use it, and is a **noop** when no read-only db is configured. Rules:
 
