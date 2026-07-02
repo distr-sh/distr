@@ -3,7 +3,7 @@ title: Kubernetes
 description: Deploy Distr in your Kubernetes cluster using our Helm chart with built-in PostgreSQL and RustFS storage.
 sidebar:
   label: Kubernetes
-  order: 2
+  order: 3
 ---
 
 Distr is available as a [Helm chart](/glossary/helm-chart/) distributed via ghcr.io.

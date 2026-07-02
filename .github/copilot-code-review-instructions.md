@@ -6,6 +6,9 @@ This file provides additional context to the code review instructions.
 
 - When changes Distr are made, make sure the website (website/) which contains the documentation in (website/docs/)
   doesn't get out-of-sync
+- When environment variables in `internal/env/env.go` are added, removed, or changed (name, default, required/optional
+  status, or accepted values), check that the configuration reference page at
+  `website/src/content/docs/docs/self-hosting/configuration.mdx` is updated accordingly and stays complete and accurate.
 
 ## Stay focused on the pull request diff
 

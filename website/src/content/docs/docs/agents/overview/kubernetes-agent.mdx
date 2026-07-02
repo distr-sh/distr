@@ -1,6 +1,6 @@
 ---
 title: Kubernetes Agent
-description: How the Distr Kubernetes agent works — installation, core loop, OCI registry authentication, self-updates, migrating existing releases, and uninstallation.
+description: 'How the Distr Kubernetes agent works: installation, core loop, OCI registry authentication, self-updates, migrating existing releases, and uninstallation.'
 slug: docs/agents/kubernetes-agent
 sidebar:
   label: Kubernetes Agent
@@ -19,7 +19,7 @@ The agent is installed by applying manifests fetched directly from the Distr Hub
 kubectl apply -n <namespace> -f "https://<distr-hub>/api/v1/connect?targetId=<targetId>&targetSecret=<targetSecret>"
 ```
 
-The namespace must already exist. The `targetId` and `targetSecret` ensure the agent can only fetch deployments for one specific deployment target. The secret is shown once and never stored by the Hub — it can only be verified.
+The namespace must already exist. The `targetId` and `targetSecret` ensure the agent can only fetch deployments for one specific deployment target. The secret is shown once and never stored by the Hub. It can only be verified.
 
 The fetched manifests contain the `distr-agent` Deployment:
 
@@ -85,7 +85,7 @@ spec:
           emptyDir: {}
 ```
 
-The agent can be cluster-scoped or namespace-scoped — this cannot be changed after creation. Cluster-scoped agents get a `ClusterRoleBinding` to the built-in [`cluster-admin`](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#user-facing-roles) role. Namespace-scoped agents get a `RoleBinding` to a `namespace-admin` role limited to that namespace.
+The agent can be cluster-scoped or namespace-scoped. This cannot be changed after creation. Cluster-scoped agents get a `ClusterRoleBinding` to the built-in [`cluster-admin`](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#user-facing-roles) role. Namespace-scoped agents get a `RoleBinding` to a `namespace-admin` role limited to that namespace.
 
 The `distr-agent-env` ConfigMap contains all agent environment variables (same as the Docker agent). The `distr-agent-auth` Secret contains `targetId` and `targetSecret`.
 
@@ -112,7 +112,7 @@ The Kubernetes agent uses the Helm API to manage releases, similar to how the [F
 
 ## Authentication with OCI Registries
 
-If a deployment uses images from the Distr registry, the agent authenticates automatically — no extra steps needed for the customer.
+If a deployment uses images from the Distr registry, the agent authenticates automatically, so the customer needs no extra steps.
 
 To reference Distr registry images in your Helm chart, see [Configuring Helm Charts for Distr Artifacts](/docs/agents/helm-registry-auth/).
 
@@ -128,7 +128,7 @@ The Kubernetes agent only manages releases it knows about. If you already have a
 
 <Aside type="caution">
   After migration, the Distr agent will manage the release. Do not run `helm
-  upgrade` or `helm rollback` manually — this will cause the agent to stop
+  upgrade` or `helm rollback` manually. This will cause the agent to stop
   reconciling. See [Altering the Helm Release](#altering-the-helm-release) for
   details.
 </Aside>
@@ -158,7 +158,7 @@ kubectl label secret "sh.distr.agent.v1.<release-name>" \
 ```
 
 <Aside type="tip">
-  The placeholder UUIDs (`00000000-...`) are fine — the agent matches by
+  The placeholder UUIDs (`00000000-...`) are fine. The agent matches by
   `releaseName` and updates the IDs on the next reconciliation.
 </Aside>
 

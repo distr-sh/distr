@@ -7,7 +7,7 @@ sidebar:
   order: 1
 ---
 
-In this guide, you'll learn how to set up a fully automated deployment pipeline that creates new application versions in Distr and automatically updates all your customer deployments whenever you push a new release to GitHub.
+This guide sets up a fully automated deployment pipeline that creates new application versions in Distr and updates all your customer deployments whenever you push a new release to GitHub.
 
 By the end of this guide, you'll have:
 
