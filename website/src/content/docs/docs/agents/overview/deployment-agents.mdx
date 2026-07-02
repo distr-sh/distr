@@ -1,6 +1,6 @@
 ---
 title: Deployment Agents
-description: Overview of Distr deployment agents — what they are, how they work, and how to manage them from the Vendor Portal.
+description: 'Overview of Distr deployment agents: what they are, how they work, and how to manage them from the Vendor Portal.'
 slug: docs/agents
 sidebar:
   label: Deployment Agents
@@ -14,7 +14,7 @@ import agentApplicationsDark from '~/assets/docs/agents/overview/deployment-agen
 import agentDeploymentLight from '~/assets/docs/agents/overview/deployment-agents/agent-deployment-light.png';
 import agentDeploymentDark from '~/assets/docs/agents/overview/deployment-agents/agent-deployment-dark.png';
 
-Deployment Agents are a core component of the Distr platform, designed to run within customer environments alongside vendor applications. These lightweight agents bridge the gap between the Distr Hub and deployment targets, enabling comprehensive lifecycle management while requiring minimal access to customer infrastructure.
+Deployment agents run inside customer environments alongside vendor applications. They connect the Distr Hub to deployment targets and manage the full deployment lifecycle while requiring minimal access to customer infrastructure.
 
 <Aside type="note">
   Deployment agents are the key components that enable the [Assisted
@@ -24,9 +24,9 @@ Deployment Agents are a core component of the Distr platform, designed to run wi
 
 Distr provides two production-ready agents and one in development:
 
-- **[Docker Agent](/docs/agents/docker-agent/)** — manages Docker Compose deployments on any Linux host. Handles updates, environment variables, container health, and supports Docker Swarm mode.
-- **[Kubernetes Agent](/docs/agents/kubernetes-agent/)** — manages Helm chart deployments in Kubernetes clusters. Supports cluster- and namespace-scoped permissions, value overrides, and migration of existing releases.
-- **Terraform Agent** _(coming soon)_ — designed for [BYOC](/glossary/byoc-definition/) deployments.
+- **[Docker Agent](/docs/agents/docker-agent/)**: manages Docker Compose deployments on any Linux host. Handles updates, environment variables, container health, and supports Docker Swarm mode.
+- **[Kubernetes Agent](/docs/agents/kubernetes-agent/)**: manages Helm chart deployments in Kubernetes clusters. Supports cluster- and namespace-scoped permissions, value overrides, and migration of existing releases.
+- **Terraform Agent** _(coming soon)_: designed for [BYOC](/glossary/byoc-definition/) deployments.
 
 <Aside>
   We are also working on a read-only version of the Distr agent that will
@@ -46,10 +46,10 @@ The Agents section of the Vendor Portal has two parts.
   alt="Applications interface"
 />
 
-The Applications section is where you define your software offerings — Docker Compose files or Helm charts, environment variable templates, and application versions. This is the foundation for all deployments.
+The Applications section is where you define your software offerings: Docker Compose files or Helm charts, environment variable templates, and application versions. This is the foundation for all deployments.
 
-- [Create an Application](/docs/agents/application/) — set up Docker and Helm applications
-- [Create a Deployment](/docs/agents/deployment/) — deploy applications to customer environments
+- [Create an Application](/docs/agents/application/): set up Docker and Helm applications
+- [Create a Deployment](/docs/agents/deployment/): deploy applications to customer environments
 
 ### Deployments
 
@@ -67,9 +67,9 @@ For status indicators, log collection, and metrics, see [Logs & Metrics](/docs/a
 
 Each deployment target card has a **⋮** (vertical ellipsis) menu in its top-right corner:
 
-- **Edit** — rename the target or change its configuration
-- **Update Agent** — apply a pending agent version update (only shown when an update is available)
-- **Notes** — add internal notes visible to your team
-- **Agent Logs** — open the agent log viewer. See [Logs & Metrics](/docs/agents/logs-and-metrics/#agent-logs) for details.
-- **Reconnect** — generate a new connection command (only shown when the agent has connected at least once). See [Reconnect](/docs/agents/logs-and-metrics/#reconnect) for details.
-- **Delete** — remove the deployment target
+- **Edit**: rename the target or change its configuration
+- **Update Agent**: apply a pending agent version update (only shown when an update is available)
+- **Notes**: add internal notes visible to your team
+- **Agent Logs**: open the agent log viewer. See [Logs & Metrics](/docs/agents/logs-and-metrics/#agent-logs) for details.
+- **Reconnect**: generate a new connection command (only shown when the agent has connected at least once). See [Reconnect](/docs/agents/logs-and-metrics/#reconnect) for details.
+- **Delete**: remove the deployment target

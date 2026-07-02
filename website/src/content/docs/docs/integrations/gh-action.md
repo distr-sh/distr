@@ -47,7 +47,7 @@ jobs:
 
 ### Complete Setup Guide
 
-For a comprehensive step-by-step guide including:
+For a step-by-step guide covering:
 
 - Creating your application in Distr
 - Setting up Personal Access Tokens
