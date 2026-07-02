@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, effect, input, output, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, effect, ElementRef, inject, input, output, signal} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faPen} from '@fortawesome/free-solid-svg-icons';
@@ -14,7 +14,7 @@ export type InlineEditDisplayTag = 'span' | 'h3';
   imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective, AutofocusDirective],
   template: `
     @if (editing()) {
-      <form class="flex" [formGroup]="form" (ngSubmit)="submit()">
+      <form class="flex" [formGroup]="form" (ngSubmit)="submit()" (focusout)="onFocusOut($event)">
         <input
           formControlName="value"
           autotrim
@@ -22,13 +22,12 @@ export type InlineEditDisplayTag = 'span' | 'h3';
           type="text"
           [placeholder]="placeholder()"
           (keydown.escape)="cancel()"
-          (blur)="cancel()"
           class="distr-input rounded-none rounded-s-lg"
           [class]="size() === 'lg' ? 'w-48' : 'w-32'" />
         <button
           type="submit"
           [disabled]="loading()"
-          (mousedown)="$event.preventDefault()"
+          (pointerdown)="$event.preventDefault()"
           class="distr-btn-primary text-white rounded-none rounded-e-lg"
           [class]="size() === 'lg' ? 'px-4' : 'px-3'">
           <fa-icon [icon]="faCheck" />
@@ -55,6 +54,8 @@ export type InlineEditDisplayTag = 'span' | 'h3';
   `,
 })
 export class InlineEditComponent {
+  private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+
   readonly value = input.required<string>();
   readonly placeholder = input('');
   readonly editable = input(true);
@@ -96,6 +97,16 @@ export class InlineEditComponent {
 
   protected cancel() {
     this.editing.set(false);
+  }
+
+  // Exit edit mode when focus leaves the component entirely. Focus moving to the submit button
+  // (via keyboard tab or touch) stays within the host, so the pending edit is not discarded
+  // before it can be saved.
+  protected onFocusOut(event: FocusEvent) {
+    const nextTarget = event.relatedTarget as Node | null;
+    if (!nextTarget || !this.elementRef.nativeElement.contains(nextTarget)) {
+      this.cancel();
+    }
   }
 
   protected submit() {
