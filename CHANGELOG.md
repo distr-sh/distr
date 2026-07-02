@@ -1,5 +1,43 @@
 # Changelog
 
+## [2.25.0](https://github.com/distr-sh/distr/compare/2.24.5...2.25.0) (2026-07-02)
+
+
+### Features
+
+* add deployment revision timeline ([#2706](https://github.com/distr-sh/distr/issues/2706)) ([fc7495b](https://github.com/distr-sh/distr/commit/fc7495b412e91d8ed8954b7b57f07d6275f0b7d7))
+
+
+### Bug Fixes
+
+* **deps:** update aws-sdk-go-v2 monorepo ([#2735](https://github.com/distr-sh/distr/issues/2735)) ([27a91d5](https://github.com/distr-sh/distr/commit/27a91d519ecf2e9f2a1e36ab661ecc13bb099ab7))
+* **deps:** update module github.com/compose-spec/compose-go/v2 to v2.13.0 ([#2737](https://github.com/distr-sh/distr/issues/2737)) ([4dee4eb](https://github.com/distr-sh/distr/commit/4dee4eb278ec0cbd17c7888fcf352bcce3ff347e))
+* **deps:** update module github.com/go-mailx/mailx-ses to v1.0.4 ([#2739](https://github.com/distr-sh/distr/issues/2739)) ([70d136e](https://github.com/distr-sh/distr/commit/70d136ea684c1748eacd6f0948bf7b777974b481))
+* **frontend:** fix deployment wizard applicationId not preserved ([#2732](https://github.com/distr-sh/distr/issues/2732)) ([a9cdf10](https://github.com/distr-sh/distr/commit/a9cdf10a6a2fb56a93ace0fc36def128f73a2e19))
+* **kubernetes-agent:** fix swapped replica counts in ReplicasError for StatefulSet ([#2733](https://github.com/distr-sh/distr/issues/2733)) ([2b6e458](https://github.com/distr-sh/distr/commit/2b6e458055a42d6b200e157cd794e1c6968b0a60))
+* **registry:** respond with 404 if manifest or blob not found ([#2738](https://github.com/distr-sh/distr/issues/2738)) ([993d053](https://github.com/distr-sh/distr/commit/993d053366233b4f22ca3e08a919b7d5fdb4ae73))
+
+
+### Other
+
+* **backend:** add missing query params in OpenAPI spec ([#2749](https://github.com/distr-sh/distr/issues/2749)) ([2288150](https://github.com/distr-sh/distr/commit/2288150dc3417c0ed863005a096e69996b3b7fcf))
+* **deploy:** add docker deployment with caddy proxy for auto ssl ([#2727](https://github.com/distr-sh/distr/issues/2727)) ([37837f8](https://github.com/distr-sh/distr/commit/37837f819e4155c02e51d154a0c72a86dddc5485))
+* **deps:** update golangci/golangci-lint-action action to v9.3.0 ([#2736](https://github.com/distr-sh/distr/issues/2736)) ([1646c51](https://github.com/distr-sh/distr/commit/1646c512150b520323567134bb4afb6387f78fa4))
+* **deps:** update tailwindcss monorepo to v4.3.2 ([#2734](https://github.com/distr-sh/distr/issues/2734)) ([0b2559b](https://github.com/distr-sh/distr/commit/0b2559b497154e775c9767c5321c066600261d49))
+
+
+### Docs
+
+* add system requirements for self-hosting ([#2731](https://github.com/distr-sh/distr/issues/2731)) ([64a0915](https://github.com/distr-sh/distr/commit/64a0915f8187af050924829100008af4685a134b))
+* **deploy/chart:** fix version not auto-updated ([#2746](https://github.com/distr-sh/distr/issues/2746)) ([4606784](https://github.com/distr-sh/distr/commit/460678415e20cb32d63fbcc8cf0817065ec1e68c))
+* **website:** add configuration reference page ([#2748](https://github.com/distr-sh/distr/issues/2748)) ([e5744d9](https://github.com/distr-sh/distr/commit/e5744d9f1e9635cc6f5127a0d80b62fef6ba13ba))
+* **website:** improve website text formatting and consistency ([#2743](https://github.com/distr-sh/distr/issues/2743)) ([d9a5e49](https://github.com/distr-sh/distr/commit/d9a5e49b574a54e06415dccf09eb3c1f772af3ff))
+
+
+### Refactoring
+
+* **deploy/docker:** cleanup compose and env file ([#2722](https://github.com/distr-sh/distr/issues/2722)) ([41a340d](https://github.com/distr-sh/distr/commit/41a340dbf2c73c794be67ca10fb9592b8b86ff53))
+
 ## [2.24.5](https://github.com/distr-sh/distr/compare/2.24.4...2.24.5) (2026-06-29)
 
 
