@@ -13,9 +13,9 @@ import pullThroughCacheDialogLight from '~/assets/docs/registry/overview/pull-th
 import pullThroughCacheDialogDark from '~/assets/docs/registry/overview/pull-through-cache-dialog-dark.png';
 
 The Distr registry can act as a pull-through cache for any OCI-compatible upstream registry.
-Configure an artifact with an upstream URL and Distr will sync tags from the upstream and serve blobs to your customers on demand — no direct upstream access required.
+Configure an artifact with an upstream URL and Distr will sync tags from the upstream and serve blobs to your customers on demand, with no direct upstream access required.
 
-This lets you consolidate all image pulls through a single registry endpoint with unified access control, download analytics, and entitlement enforcement — regardless of where the images are originally hosted.
+This lets you consolidate all image pulls through a single registry endpoint with unified access control, download analytics, and entitlement enforcement, regardless of where the images are originally hosted.
 
 ## How it works
 
@@ -58,7 +58,7 @@ If the upstream requires authentication, select one of the supported auth types.
 | Basic   | Username and password                   |
 | AWS ECR | AWS Access Key ID and Secret Access Key |
 
-Public repositories do not require authentication — select "No authentication".
+Public repositories do not require authentication. Select "No authentication".
 
 ### AWS ECR
 
@@ -123,7 +123,7 @@ Clients must [authenticate with a Personal Access Token](/docs/integrations/pers
 Distr runs a background sync job to keep the local tag list in sync with the upstream repository.
 The sync fetches all tags and their manifest metadata, making them available for HEAD requests and entitlement enforcement without requiring an actual pull.
 On Distr Cloud, the sync runs twice per hour (at :15 and :45).
-For self-hosted instances, the schedule is controlled by the `REGISTRY_UPSTREAM_SYNC_CRON` environment variable — see [Upstream Tag Synchronization](/docs/self-hosting/maintenance#upstream-tag-synchronization).
+For self-hosted instances, the schedule is controlled by the `REGISTRY_UPSTREAM_SYNC_CRON` environment variable. See [Upstream Tag Synchronization](/docs/self-hosting/maintenance#upstream-tag-synchronization).
 
 You can also trigger a manual sync at any time from the artifact details page or via the API:
 
@@ -136,7 +136,7 @@ curl -X POST https://app.distr.sh/api/v1/artifacts/<artifactId>/sync \
 
 The artifact details page shows:
 
-- **Last synced at** — when the most recent sync completed successfully.
-- **Last sync error** — the error message from the most recent failed sync, if any.
+- **Last synced at**: when the most recent sync completed successfully.
+- **Last sync error**: the error message from the most recent failed sync, if any.
 
 If the sync error field is populated, verify that the upstream URL is correct and that the configured credentials have not expired or been revoked.

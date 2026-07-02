@@ -36,10 +36,10 @@ By default, a Personal Access Token operates with the same role you have in the 
 
 The effective role on each request is the lower of the PAT's role and your current role in the organization. That means:
 
-- A `read_only` token issued by an `admin` user can only read — it cannot push artifacts to the registry or change deployments, even though the user could.
+- A `read_only` token issued by an `admin` user can only read. It cannot push artifacts to the registry or change deployments, even though the user could.
 - If your own role is later downgraded (for example from `admin` to `read_write`), every token you issued is automatically capped at the new lower role on the next request. You do not need to revoke and reissue tokens after a demotion.
 
-We recommend creating dedicated lower-privilege tokens for automation that does not need write access — for example, a `read_only` token for a CI job that only pulls artifacts from the registry.
+We recommend creating dedicated lower-privilege tokens for automation that does not need write access, for example a `read_only` token for a CI job that only pulls artifacts from the registry.
 
 This is the only time the token will be shown to you. Make sure to copy it and store it in a secure place.
 Remember, anybody that has access to this token can authenticate with the Distr API on your behalf. Treat it like your password.

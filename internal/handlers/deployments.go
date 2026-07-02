@@ -67,6 +67,7 @@ func DeploymentsRouter(r chiopenapi.Router) {
 				With(option.Request(struct {
 					DeploymentTimeseriesRequest
 					ResourceRequest
+					Filter *string `query:"filter"`
 				}{})).
 				With(option.Response(http.StatusOK, []api.DeploymentLogRecord{}))
 			r.Get("/logs/resources", getDeploymentLogsResourcesHandler()).

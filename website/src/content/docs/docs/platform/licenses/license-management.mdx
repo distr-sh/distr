@@ -23,9 +23,9 @@ License Management gives you granular control over what your customers can acces
 
 Distr's License Management system has three components:
 
-1. **Application Entitlements** — Control which application versions each customer can deploy via Distr agents
-2. **Artifact Entitlements** — Control which artifacts and tags each customer can pull from your registry
-3. **License Keys** — Issue signed JWT tokens your application can verify to enforce usage limits and resource constraints
+1. **Application Entitlements**: Control which application versions each customer can deploy via Distr agents
+2. **Artifact Entitlements**: Control which artifacts and tags each customer can pull from your registry
+3. **License Keys**: Issue signed JWT tokens your application can verify to enforce usage limits and resource constraints
 
 Entitlements and license keys are separate tools for different purposes. Entitlements control access at the Distr platform level. License keys carry arbitrary claims that your application reads and enforces independently of Distr.
 
@@ -33,7 +33,7 @@ Entitlements and license keys are separate tools for different purposes. Entitle
 
 In the Vendor Portal sidebar, click **Licenses** to open the overview. The overview lists all your customer organizations, each showing a summary of their active entitlements and license keys.
 
-Click any customer to open their detail view, which shows all three types — Application Entitlements, Artifact Entitlements, and License Keys — for that customer in one place.
+Click any customer to open their detail view, which shows all three types (Application Entitlements, Artifact Entitlements, and License Keys) for that customer in one place.
 
 ## Application Entitlements
 
@@ -67,10 +67,10 @@ License Keys let you issue signed tokens that your application can verify to enf
 
 A license key contains:
 
-- **Name** — A unique identifier within your organization
-- **Description** — Optional, for your own reference
-- **Payload** — A JSON object with arbitrary custom claims (e.g. `{"seats": 10, "plan": "pro", "feature_x": true}`)
-- **Validity window** — A `notBefore` and `expiresAt` date
+- **Name**: A unique identifier within your organization
+- **Description**: Optional, for your own reference
+- **Payload**: A JSON object with arbitrary custom claims (e.g. `{"seats": 10, "plan": "pro", "feature_x": true}`)
+- **Validity window**: A `notBefore` and `expiresAt` date
 
 License keys can optionally be scoped to a specific customer, or left unscoped for organization-wide use.
 
@@ -78,31 +78,31 @@ License keys can optionally be scoped to a specific customer, or left unscoped f
 
 When you request a token for a license key, Distr generates a signed JWT. The token includes your payload as custom claims alongside standard JWT fields (issuer, subject, audience, issued-at, not-before, expiration). It is signed with an Ed25519 private key configured on your Distr instance.
 
-Your application verifies the token using the corresponding public key — no call back to Distr required. This makes license key verification fast and works in air-gapped or offline environments.
+Your application verifies the token using the corresponding public key, with no call back to Distr required. This makes verification fast and lets it work in air-gapped or offline environments.
 
 <Aside type="note">
   **Payload and dates are immutable after creation.** Once a license key is
   created, only the description can be changed. If you need different claims or
-  dates, Distr creates a new license key — the original remains unchanged. You
-  can view all previously generated license keys in the revision history.
+  dates, Distr creates a new license key, and the original remains unchanged.
+  You can view all previously generated license keys in the revision history.
 </Aside>
 
 <Aside type="note">
-  **Deleting a license key does not revoke issued tokens.** JWTs are stateless —
+  **Deleting a license key does not revoke issued tokens.** JWTs are stateless:
   a token remains valid until its `expiresAt` date, regardless of whether the
   key still exists in Distr.
 </Aside>
 
-Learn how to create and manage License Keys — including how customers inject them into Docker, Helm, and registry-only deployments — in the [License Keys guide](/docs/platform/license-keys/).
+Learn how to create and manage License Keys, including how customers inject them into Docker, Helm, and registry-only deployments, in the [License Keys guide](/docs/platform/license-keys/).
 
 ## Use cases
 
-- **Tiered pricing** — Grant different application versions or artifact sets based on subscription tier
-- **Targeted updates** — Deliver hotfixes or patches to specific customers only
-- **Early access** — Provide access to pre-release versions for premium customers
-- **Seat enforcement** — Embed seat or instance limits in a license key; your app reads and enforces them
-- **Feature flags** — Encode which product features a customer's plan includes in the key payload
-- **Offline validation** — Customers in air-gapped environments can verify license tokens without contacting Distr
+- **Tiered pricing**: Grant different application versions or artifact sets based on subscription tier
+- **Targeted updates**: Deliver hotfixes or patches to specific customers only
+- **Early access**: Provide access to pre-release versions for premium customers
+- **Seat enforcement**: Embed seat or instance limits in a license key; your app reads and enforces them
+- **Feature flags**: Encode which product features a customer's plan includes in the key payload
+- **Offline validation**: Customers in air-gapped environments can verify license tokens without contacting Distr
 
 ## Getting started
 

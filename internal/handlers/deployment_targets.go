@@ -84,7 +84,10 @@ func DeploymentTargetsRouter(r chiopenapi.Router) {
 		r.With(middleware.UseReadonlyDB).Group(func(r chiopenapi.Router) {
 			r.Get("/logs", getDeploymentTargetLogRecordsHandler()).
 				With(option.Description("Get logs for this deployment target")).
-				With(option.Request(DeploymentTargetTimeseriesRequest{})).
+				With(option.Request(struct {
+					DeploymentTargetTimeseriesRequest
+					Filter *string `query:"filter"`
+				}{})).
 				With(option.Response(http.StatusOK, []api.DeploymentTargetLogRecord{}))
 			r.Get("/logs/export", exportDeploymentTargetLogRecordsHandler()).
 				With(option.Description("Get logs for this deployment target")).

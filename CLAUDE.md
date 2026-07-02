@@ -215,6 +215,7 @@ When adding new routes, ensure the OpenAPI spec remains valid. The `chiopenapi` 
 ## General rules
 
 - Always ensure this file is up-to-date.
+- When you add, remove, or change an environment variable in `internal/env/env.go` (name, default, required/optional status, or accepted values), update the configuration reference page at `website/src/content/docs/docs/self-hosting/configuration.mdx` in the same change so it stays complete and accurate.
 - Don't write any unnecessary comments that just explain the functionality below, if there is nothing special about it.
 - If a user requests you to do something differently, add the difference to a new rule / convention in this file
 - If you read code that doesn't follow these rules, please fix it.

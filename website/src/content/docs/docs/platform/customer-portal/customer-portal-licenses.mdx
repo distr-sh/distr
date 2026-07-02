@@ -28,11 +28,11 @@ Navigate to **Licenses** in the sidebar to see all license keys assigned to your
 
 If you deploy via Distr agents, the **Reference** column shows the template variable to use in your deployment's environment file or Helm values: `{{ .LicenseKeys.MY_LICENSE_KEY }}`
 
-Distr resolves this to the signed JWT token automatically at deploy time — no manual copy-paste required. See [Referencing license keys in deployments](/docs/platform/license-keys/#referencing-license-keys-in-deployments) for full details.
+Distr resolves this to the signed JWT token automatically at deploy time, so you do not need to copy and paste anything by hand. See [Referencing license keys in deployments](/docs/platform/license-keys/#referencing-license-keys-in-deployments) for full details.
 
 ## Getting the token
 
-Click **View License** on any key to view its signed JWT token. Copy the token and use it in your application environment. The token works offline — no callback to Distr is required at verification time.
+Click **View License** on any key to view its signed JWT token. Copy the token and use it in your application environment. The token works offline and requires no callback to Distr at verification time.
 
 For details on how to inject the token into your application (via environment variables, Helm values, or secrets), see [Referencing license keys in deployments](/docs/platform/license-keys/#referencing-license-keys-in-deployments).
 
