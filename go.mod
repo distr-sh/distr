@@ -14,7 +14,7 @@ require (
 	github.com/containerd/log v0.1.0
 	github.com/coreos/go-oidc/v3 v3.19.0
 	github.com/docker/cli v29.6.1+incompatible
-	github.com/docker/compose/v5 v5.2.0
+	github.com/docker/compose/v5 v5.3.0
 	github.com/exaring/otelpgx v0.11.1
 	github.com/fsnotify/fsnotify v1.10.1
 	github.com/getsentry/sentry-go v0.47.0
@@ -44,7 +44,7 @@ require (
 	github.com/pquerna/otp v1.5.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/samber/slog-zap/v2 v2.7.0
-	github.com/shirou/gopsutil/v4 v4.26.5
+	github.com/shirou/gopsutil/v4 v4.26.6
 	github.com/spf13/cobra v1.10.2
 	github.com/stripe/stripe-go/v86 v86.1.0
 	go.opentelemetry.io/collector/component v1.61.0
