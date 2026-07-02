@@ -196,6 +196,11 @@ func handleVendorStripeSubscription(ctx context.Context, orgID uuid.UUID, sub st
 		zap.Int("affectedDeployments", len(affected)),
 	)
 
+	// Run the license key revision creation and deployment triggers in a single
+	// transaction, so that if the deployment triggers fail, the license key
+	// revision is not created.
+	// We respond to the webhook with 500 if the transaction fails, so that Stripe
+	// will retry the webhook.
 	if err := db.RunTx(ctx, func(ctx context.Context) error {
 		if err := db.CreateLicenseKeyRevision(ctx, &revision); err != nil {
 			return err
