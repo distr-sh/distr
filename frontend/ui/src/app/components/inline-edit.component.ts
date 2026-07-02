@@ -22,8 +22,8 @@ export type InlineEditDisplayTag = 'span' | 'h3';
           type="text"
           [placeholder]="placeholder()"
           (keydown.escape)="cancel()"
-          class="distr-input rounded-none rounded-s-lg"
-          [class]="size() === 'lg' ? 'w-48' : 'w-32'" />
+          class="distr-input rounded-none rounded-s-lg field-sizing-content"
+          [class]="size() === 'lg' ? 'min-w-48 max-w-md' : 'min-w-32 max-w-xs'" />
         <button
           type="submit"
           [disabled]="loading()"
