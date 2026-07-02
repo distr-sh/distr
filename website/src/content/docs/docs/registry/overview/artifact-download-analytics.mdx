@@ -1,6 +1,6 @@
 ---
 title: Artifact Download Analytics
-description: Track and analyze artifact pulls across your customer base with filtering by customer, user, IP address, artifact, and version — plus CSV export for reporting.
+description: Track and analyze artifact pulls across your customer base with filtering by customer, user, IP address, artifact, and version, plus CSV export for reporting.
 slug: docs/registry/analytics
 sidebar:
   label: Artifact Download Analytics
@@ -35,7 +35,7 @@ Each pull event records:
 | **Version**  | The tag or digest that was pulled (e.g. `v1.2.0`, `sha256:d2b712d...`) |
 
 <Aside type="note">
-  Pulls are recorded for all authenticated users — both vendor team members and
+  Pulls are recorded for all authenticated users, both vendor team members and
   end customers. If a pull is performed by a customer user, the customer
   organization name is shown. Vendor-internal pulls show the user name without a
   customer organization.
@@ -45,12 +45,12 @@ Each pull event records:
 
 The filter bar at the top of the Downloads page lets you narrow results by any combination of:
 
-- **Date range** — Set a **From** and **To** date to limit results to a specific time window
-- **Customer** — Select a specific customer organization
-- **User** — Select a specific user account
-- **Address** — Select a specific IP address
-- **Artifact** — Select a specific artifact
-- **Version** — When an artifact is selected, filter further by a specific tag or digest
+- **Date range**: Set a **From** and **To** date to limit results to a specific time window
+- **Customer**: Select a specific customer organization
+- **User**: Select a specific user account
+- **Address**: Select a specific IP address
+- **Artifact**: Select a specific artifact
+- **Version**: When an artifact is selected, filter further by a specific tag or digest
 
 All filters are combined and applied in real time. Click **Reset** to clear all filters at once.
 
@@ -93,8 +93,8 @@ The Downloads page loads 50 pull records at a time. If more records match your f
 
 ## Use cases for download analytics
 
-- **Audit customer usage** — Filter by customer to see exactly which artifacts and versions they have pulled and when
-- **Detect unusual activity** — Filter by IP address to spot pulls from unexpected locations
-- **Track adoption** — Filter by a new artifact version to see how quickly customers are pulling it after release
-- **Generate compliance reports** — Export filtered pull data as CSV for security audits or license compliance reviews
-- **Debug access issues** — If a customer reports problems pulling an artifact, check whether their pulls appear in the log and from which IP address
+- **Audit customer usage**: Filter by customer to see exactly which artifacts and versions they have pulled and when
+- **Detect unusual activity**: Filter by IP address to spot pulls from unexpected locations
+- **Track adoption**: Filter by a new artifact version to see how quickly customers are pulling it after release
+- **Generate compliance reports**: Export filtered pull data as CSV for security audits or license compliance reviews
+- **Debug access issues**: If a customer reports problems pulling an artifact, check whether their pulls appear in the log and from which IP address

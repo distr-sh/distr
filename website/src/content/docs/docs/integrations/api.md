@@ -1,6 +1,6 @@
 ---
 title: Distr API
-description: Using the Distr REST API, you can programmatically manage every aspect of your software distribution, from publishing artifacts and creating customers to triggering deployment updates. Using the same API that's behind the Vendor and Customer Portals.
+description: The Distr REST API lets you manage your software distribution programmatically, from publishing artifacts and creating customers to triggering deployment updates. It's the same API that powers the Vendor and Customer Portals.
 slug: docs/integrations/api
 sidebar:
   label: Distr API
@@ -42,4 +42,4 @@ The following limits apply to the Distr API:
 
 If these limits are exceeded, the API will respond with a `429 Too Many Requests` status code.
 
-Additionally, the API rejects request bodies larger than 1MiB.
+The API also rejects request bodies larger than 1MiB.

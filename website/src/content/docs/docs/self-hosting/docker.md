@@ -3,7 +3,7 @@ title: Docker Compose
 description: Deploy Distr in minutes using Docker Compose with minimal configuration and automatic database setup.
 sidebar:
   label: Docker Compose
-  order: 1
+  order: 2
 ---
 
 The easiest way to get started hosting your own Distr Hub instance is with Docker Compose.

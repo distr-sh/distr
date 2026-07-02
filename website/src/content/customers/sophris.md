@@ -17,7 +17,7 @@ caseStudy:
 
 ## Challenge
 
-[Sophris](https://www.sophris.ai/) uses AI to automate error detection in circuit board schematics. Their platform automates what traditionally is a highly manual and error-prone process of verifying hundreds of intricate components against complex data sheets.
+[Sophris](https://www.sophris.ai/) uses AI to automate error detection in circuit board schematics. Their platform automates what traditionally is a highly manual and error-prone process of verifying hundreds of components against complex data sheets.
 
 Initially, Sophris deployed their software directly onto virtual machines within customer environments, which quickly proved challenging. Deployments relied heavily on customers' internal IT teams, resulting in delays, misconfigurations, and slow iterations. Their engineering team often spent valuable hours troubleshooting simple file transfer and deployment issues. Sophris needed a smoother, more efficient deployment solution to maintain agility, guarantee customer success, and reduce reliance on slow-moving customer IT teams.
 
@@ -25,7 +25,7 @@ Initially, Sophris deployed their software directly onto virtual machines within
 
 ## Solution
 
-After evaluating multiple deployment solutions, Sophris chose Glasskube's Distr platform. Distr provided a straightforward yet powerful alternative, simplifying on-premises software distribution through an intuitive Docker Compose-based approach.
+After evaluating multiple deployment solutions, Sophris chose Glasskube's Distr platform. Distr gave them a simpler alternative for on-premises software distribution, based on Docker Compose.
 
 "**We initially considered other solutions but found them overly complex and cost-prohibitive for our stage,**" Gupta explained. "**Distr was simple, intuitive, and exactly what we needed.**"
 
@@ -37,4 +37,4 @@ With Distr, Sophris quickly standardized their deployment workflow. Instead of m
 
 Distr significantly reduced Sophris's deployment time, enabling them to rapidly iterate and deliver continuous improvements to their clients. Sophris went from tedious, manual deployments dependent on external IT teams to seamless, self-managed updates.
 
-By choosing Distr, Sophris improved their on-premises distribution experience, simplified updates, and freed up valuable engineering time, allowing them to focus on innovating and enhancing their core offering.
+By choosing Distr, Sophris improved their on-premises distribution, simplified updates, and freed up engineering time so they could focus on improving their core product.

@@ -12,7 +12,11 @@
 
 </div>
 
-![Version: 2.24.5](https://img.shields.io/badge/Version-2.24.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.24.5](https://img.shields.io/badge/AppVersion-2.24.5-informational?style=flat-square)
+<!-- x-release-please-start-version -->
+
+![Version: 2.25.0](https://img.shields.io/badge/Version-2.25.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.25.0](https://img.shields.io/badge/AppVersion-2.25.0-informational?style=flat-square)
+
+<!-- x-release-please-end -->
 
 The easiest way to distribute enterprise software
 
@@ -31,7 +35,7 @@ To install Distr in Kubernetes, simply run:
 
 ```shell
 helm upgrade --install --wait --namespace distr --create-namespace \
-  distr oci://ghcr.io/distr-sh/charts/distr --version 1.11.0 \
+  distr oci://ghcr.io/distr-sh/charts/distr --version 2.25.0 \
   --set postgresql.enabled=true --set rustfs.enabled=true
 ```
 
