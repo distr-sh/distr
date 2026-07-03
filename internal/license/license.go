@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/internal/env"
+	"github.com/distr-sh/distr/internal/licensekey"
 	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/go-viper/mapstructure/v2"
@@ -44,6 +45,30 @@ var (
 )
 
 const licenseDataClaimName = "ld"
+
+var (
+	// organizationID, when set at build time via -ldflags, restricts this build to license
+	// keys that were issued for the given Distr organization. When empty, organization
+	// scoping is disabled and any otherwise valid license key is accepted.
+	organizationID string
+
+	// organizationScopeCutoff, when set at build time via -ldflags, is a yyyy-mm-dd date.
+	// Only license keys with an "issued at" claim newer than this date are validated
+	// against organizationID; keys issued at or before it are exempt for backwards
+	// compatibility with license keys minted before organization scoping was introduced.
+	organizationScopeCutoff string
+)
+
+var cachedOrgScopeCutoff = sync.OnceValues(func() (time.Time, error) {
+	if organizationScopeCutoff == "" {
+		return time.Time{}, nil
+	}
+	t, err := time.Parse(time.DateOnly, organizationScopeCutoff)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid organization scope cutoff %q: %w", organizationScopeCutoff, err)
+	}
+	return t, nil
+})
 
 // LicenseData is the parsed private claims from the license key JWT.
 type LicenseData struct {
@@ -111,6 +136,15 @@ func parseAndValidate(pubKeySrc func() (jwk.Key, error), licenseKey string) (*Li
 		return nil, fmt.Errorf("invalid license key: %w", err)
 	}
 
+	cutoff, err := cachedOrgScopeCutoff()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := validateOrganizationScope(token, organizationID, cutoff); err != nil {
+		return nil, err
+	}
+
 	var licenseDataMap map[string]any
 	if err := token.Get(licenseDataClaimName, &licenseDataMap); err != nil {
 		return nil, fmt.Errorf("invalid license key: %w", err)
@@ -128,4 +162,28 @@ func parseAndValidate(pubKeySrc func() (jwk.Key, error), licenseKey string) (*Li
 	}
 
 	return &licenseData, nil
+}
+
+// validateOrganizationScope ensures the license key was issued for the organization this build
+// is licensed to. It is a noop when no organization ID was configured at build time or when the
+// license key was issued at or before the configured cutoff (i.e. before organization scoping
+// was introduced).
+func validateOrganizationScope(token jwt.Token, expectedOrgID string, cutoff time.Time) error {
+	if expectedOrgID == "" {
+		return nil
+	}
+
+	issuedAt, ok := token.IssuedAt()
+	if !ok || !issuedAt.After(cutoff) {
+		return nil
+	}
+
+	var orgID string
+	if err := token.Get(licensekey.OrganizationIDClaimName, &orgID); err != nil {
+		return fmt.Errorf("invalid license key: missing organization ID claim")
+	} else if orgID != expectedOrgID {
+		return fmt.Errorf("invalid license key: organization ID mismatch")
+	}
+
+	return nil
 }

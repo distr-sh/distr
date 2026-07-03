@@ -175,6 +175,7 @@ jobs:
             -X github.com/distr-sh/distr/internal/buildconfig.version=${{ github.ref_name }}
             -X github.com/distr-sh/distr/internal/buildconfig.commit=${{ steps.hash.outputs.sha_short }}
             -X github.com/distr-sh/distr/internal/buildconfig.edition=${{ matrix.edition.name }}
+            ${{ (matrix.edition.name == 'enterprise' && startsWith(github.ref, 'refs/tags/')) && format('-X github.com/distr-sh/distr/internal/license.organizationID={0} -X github.com/distr-sh/distr/internal/license.organizationScopeCutoff={1}', secrets.LICENSE_ORGANIZATION_ID, secrets.LICENSE_ORGANIZATION_SCOPE_CUTOFF) || '' }}
 
       - name: Build application (arm64)
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
@@ -187,6 +188,7 @@ jobs:
             -X github.com/distr-sh/distr/internal/buildconfig.version=${{ github.ref_name }}
             -X github.com/distr-sh/distr/internal/buildconfig.commit=${{ steps.hash.outputs.sha_short }}
             -X github.com/distr-sh/distr/internal/buildconfig.edition=${{ matrix.edition.name }}
+            ${{ matrix.edition.name == 'enterprise' && format('-X github.com/distr-sh/distr/internal/license.organizationID={0} -X github.com/distr-sh/distr/internal/license.organizationScopeCutoff={1}', secrets.LICENSE_ORGANIZATION_ID, secrets.LICENSE_ORGANIZATION_SCOPE_CUTOFF) || '' }}
 
       - name: Generate ephemeral license JWT (non-tag enterprise only)
         id: ephemeral-license
