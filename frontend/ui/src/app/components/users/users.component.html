@@ -67,38 +67,13 @@
           </td>
           <td
             class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-32 lg:max-w-64 xl:max-w-128 overflow-hidden text-ellipsis">
-            @if (editNameUserId() === user.id) {
-              <form [formGroup]="editNameForm" class="flex" (ngSubmit)="submitEditUserNameForm()">
-                <input
-                  type="text"
-                  id="user-name"
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm w-32 rounded-s-lg focus:ring-blue-500 focus:border-blue-500 block px-2 py-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  placeholder="Enter a name&hellip;"
-                  formControlName="name" />
-                <button
-                  type="submit"
-                  [disabled]="editNameFormLoading()"
-                  class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-e-lg text-sm px-3 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
-                  <fa-icon [icon]="faCheck" />
-                </button>
-              </form>
-            } @else {
-              @if (user.name) {
-                {{ user.name }}
-              } @else {
-                <span class="text-gray-500">&ndash;</span>
-              }
-
-              @if (auth.hasRole('admin') || (auth.isVendor() && auth.hasRole('read_write'))) {
-                <button
-                  type="button"
-                  aria-label="Edit User Name"
-                  (click)="editUserName(user)"
-                  class="text-gray-900 dark:text-gray-400 ms-1">
-                  <fa-icon [icon]="faPen" />
-                </button>
-              }
-            }
+            <app-inline-edit
+              [value]="user.name ?? ''"
+              [editable]="auth.hasRole('admin') || (auth.isVendor() && auth.hasRole('read_write'))"
+              placeholder="Enter a name&hellip;"
+              emptyLabel="&ndash;"
+              [loading]="savingUserId() === user.id"
+              (save)="updateUserName(user, $event)" />
           </td>
           <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
             {{ user.email }}

@@ -28,7 +28,13 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "distr.serviceAccountName" . }}
-      {{- with .Values.podSecurityContext }}
+      {{- /* The hub image runs as UID/GID 65532. Default fsGroup so the scratch
+             ephemeral volume, provisioned root-owned by the CSI driver, is writable. */}}
+      {{- $podSecurityContext := deepCopy (.Values.podSecurityContext | default dict) }}
+      {{- if .Values.hub.scratch.enabled }}
+      {{- $podSecurityContext = merge $podSecurityContext (dict "fsGroup" 65532) }}
+      {{- end }}
+      {{- with $podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -62,9 +68,15 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.volumeMounts }}
+          {{- if or .Values.volumeMounts .Values.hub.scratch.enabled }}
           volumeMounts:
+            {{- with .Values.volumeMounts }}
             {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- if .Values.hub.scratch.enabled }}
+            - name: scratch
+              mountPath: {{ .Values.hub.scratch.mountPath | quote }}
+            {{- end }}
           {{- end }}
           {{- with .Values.hub.envFrom }}
           envFrom:
@@ -72,9 +84,32 @@ spec:
           {{- end }}
           env:
             {{- include "distr.hubEnv" . | nindent 12 }}
-      {{- with .Values.volumes }}
+            {{- if .Values.hub.scratch.enabled }}
+            - name: REGISTRY_SCRATCH_DIR
+              value: {{ .Values.hub.scratch.mountPath | quote }}
+            {{- end }}
+      {{- if or .Values.volumes .Values.hub.scratch.enabled }}
       volumes:
+        {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if .Values.hub.scratch.enabled }}
+        - name: scratch
+          ephemeral:
+            volumeClaimTemplate:
+              metadata:
+                labels:
+                  {{- include "distr.labels" . | nindent 18 }}
+              spec:
+                accessModes:
+                  {{- toYaml .Values.hub.scratch.accessModes | nindent 18 }}
+                {{- with .Values.hub.scratch.storageClassName }}
+                storageClassName: {{ . | quote }}
+                {{- end }}
+                resources:
+                  requests:
+                    storage: {{ .Values.hub.scratch.size | quote }}
+        {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

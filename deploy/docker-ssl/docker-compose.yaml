@@ -1,0 +1,125 @@
+name: distr
+
+x-logging: &default-logging
+  driver: 'json-file'
+  options:
+    max-size: '10m'
+    max-file: '3'
+
+services:
+  # Caddy terminates TLS and automatically obtains/renews certificates for the
+  # distr app and registry hostnames via ACME. It only joins the "proxy" network
+  # and therefore has no route to postgres or the storage (rustfs) service.
+  caddy:
+    image: 'caddy:2.11.4-alpine'
+    depends_on:
+      - hub
+    environment:
+      DISTR_APP_HOSTNAME: ${DISTR_APP_HOSTNAME}
+      DISTR_REGISTRY_HOSTNAME: ${DISTR_REGISTRY_HOSTNAME}
+      CADDY_ACME_EMAIL: ${CADDY_ACME_EMAIL}
+    # The Caddyfile is written inline on startup instead of being mounted, because
+    # the distr agent does not support mounting files via volumes. The hostnames and
+    # ACME email remain Caddy env placeholders ({$VAR}) that are resolved at runtime.
+    entrypoint:
+      - sh
+      - -c
+      - |
+        cat > /etc/caddy/Caddyfile <<'EOF'
+        {
+        	email {$$CADDY_ACME_EMAIL}
+        }
+
+        {$$DISTR_APP_HOSTNAME} {
+        	reverse_proxy hub:8080
+        }
+
+        {$$DISTR_REGISTRY_HOSTNAME} {
+        	reverse_proxy hub:8585
+        }
+        EOF
+        exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+    volumes:
+      - 'caddy_data:/data'
+      - 'caddy_config:/config'
+    ports:
+      - '80:80'
+      - '443:443'
+    networks:
+      - proxy
+    restart: always
+    logging: *default-logging
+
+  postgres:
+    image: 'postgres:18.4-alpine3.23'
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - 'postgres:/var/lib/postgresql/'
+    networks:
+      - internal
+    restart: always
+    logging: *default-logging
+    healthcheck:
+      test: pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+      start_interval: 1s
+      interval: 5s
+      retries: 6
+      start_period: 30s
+
+  hub:
+    image: ghcr.io/distr-sh/distr-ce:2.25.0 # x-release-please-version
+    depends_on:
+      postgres:
+        condition: service_healthy
+      # Remove when using an external S3 provider
+      storage:
+        condition: service_healthy
+    env_file:
+      - .env
+    # No ports are exposed on the host. The hub is only reachable through the
+    # caddy reverse proxy on the "proxy" network.
+    networks:
+      - proxy
+      - internal
+    restart: always
+    logging: *default-logging
+
+  # The OCI registry of distr can use any S3 compatible storage to store OCI images.
+  # If you don't want to use the OCI registry (REGISTRY_ENABLED=false) or want to use an external S3 provider,
+  # you don't need to run the storage service.
+  storage:
+    image: 'rustfs/rustfs:1.0.0-beta.8'
+    volumes:
+      - 'rustfs:/data/'
+    environment:
+      RUSTFS_ACCESS_KEY: ${REGISTRY_S3_ACCESS_KEY_ID}
+      RUSTFS_SECRET_KEY: ${REGISTRY_S3_SECRET_ACCESS_KEY}
+    networks:
+      - internal
+    restart: always
+    logging: *default-logging
+    healthcheck:
+      # Production strict TLS example (SAN/FQDN aligned, no `-k`):
+      # curl -f --cacert /opt/tls/ca.crt --resolve rustfs-a.example.com:9000:127.0.0.1 https://rustfs-a.example.com:9000/health
+      test: ['CMD', 'sh', '-c', 'curl -f http://127.0.0.1:9000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  # Public-facing network shared by caddy and the hub only.
+  proxy:
+  # Private network for the hub and its backing services (database, storage).
+  # caddy is intentionally not attached here.
+  internal:
+    internal: true
+
+volumes:
+  postgres:
+  rustfs:
+  caddy_data:
+  caddy_config:

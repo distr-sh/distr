@@ -20,13 +20,13 @@ Distr gives you observability for every deployment target via **logs** that let 
 
 Each deployment within a target also has its own colored dot and status label. This tells you whether the application itself is healthy, not just whether the agent is reachable:
 
-- ⚫ **No status** — The agent has not reported anything for this deployment yet.
-- 🔴 **Error** — Something is wrong. Healthchecks are failing or the deployment encountered an error.
-- 🟡 **Stale** — The agent has not reported this deployment's health in the last 60 seconds.
-- 🔵 **Progressing** — The agent is installing or upgrading the deployment, or containers are still starting up.
+- ⚫ **No status**: The agent has not reported anything for this deployment yet.
+- 🔴 **Error**: Something is wrong. Healthchecks are failing or the deployment encountered an error.
+- 🟡 **Stale**: The agent has not reported this deployment's health in the last 60 seconds.
+- 🔵 **Progressing**: The agent is installing or upgrading the deployment, or containers are still starting up.
 - <strong class="text-green-500 text-xl leading-none ml-0.5">O</strong>
-  **Running** — The deployment is running but no healthchecks are configured.
-- 🟢 **Healthy** — The deployment is running and all healthchecks are passing.
+  **Running**: The deployment is running but no healthchecks are configured.
+- 🟢 **Healthy**: The deployment is running and all healthchecks are passing.
 
 Clicking the status label (e.g. "Running") opens the [log viewer](#log-viewer) with the full status history for that deployment.
 
@@ -48,9 +48,9 @@ The log viewer is a dedicated page for inspecting all log data associated with a
 
 Once open, use the breadcrumb dropdowns to switch between deployment targets and views. The view dropdown lets you choose what to inspect:
 
-- **Deployment Status** — The history of status transitions for the selected deployment.
-- **Agent Logs** — Raw output from the Distr agent process: connection events, reconciliation cycles, errors. Always available.
-- **Container resources** — Application container logs (e.g. `backend-1`, `proxy-1`). Only available when [log collection is enabled](#container-logs).
+- **Deployment Status**: The history of status transitions for the selected deployment.
+- **Agent Logs**: Raw output from the Distr agent process: connection events, reconciliation cycles, errors. Always available.
+- **Container resources**: Application container logs (e.g. `backend-1`, `proxy-1`). Only available when [log collection is enabled](#container-logs).
 
 <ThemedImage
   lightSrc={logViewerResourceDropdownLight}
@@ -58,18 +58,18 @@ Once open, use the breadcrumb dropdowns to switch between deployment targets and
   alt="Log viewer with view dropdown showing Deployment Status, Agent Logs, and container resources"
 />
 
-The log viewer auto-refreshes every 10 seconds. Use the **From** and **To** fields to view a specific time window, or the **Filter** field to search with plain text or a regular expression. You can pin any log entry by clicking the thumbtack icon on hover — the row stays sticky while you scroll, making it easy to compare entries.
+The log viewer auto-refreshes every 10 seconds. Use the **From** and **To** fields to view a specific time window, or the **Filter** field to search with plain text or a regular expression. You can pin any log entry by clicking the thumbtack icon on hover. The row stays sticky while you scroll, making it easy to compare entries.
 
 ### Agent Logs
 
-Agent logs show the raw output from the Distr agent process itself — connection events, deployment reconciliation cycles, errors, and status reports. These logs belong to the deployment target, not to any individual deployment, and are always available without any setup.
+Agent logs show the raw output from the Distr agent process itself: connection events, deployment reconciliation cycles, errors, and status reports. These logs belong to the deployment target, not to any individual deployment, and are always available without any setup.
 
 ### Container Logs
 
 Container logs show the output from your application containers. Log collection can be configured in two places:
 
-- **When creating a deployment** — The deployment form includes an **Enable log collection** toggle in the configuration step. It is enabled by default.
-- **After deployment** — Click the **⋮** menu on the deployment to enable or disable log collection at any time.
+- **When creating a deployment**: The deployment form includes an **Enable log collection** toggle in the configuration step. It is enabled by default.
+- **After deployment**: Click the **⋮** menu on the deployment to enable or disable log collection at any time.
 
 <ThemedImage
   lightSrc={enableContLogsLight}
@@ -89,8 +89,8 @@ The first logs should appear within 30 seconds. To disable, open the same menu a
 
 The view dropdown separates container resources into **active** and **archived**:
 
-- **Active** — The resource has produced logs in one of the five most recent deployment revisions.
-- **Archived** — The resource only has logs from older revisions, typically because a container was renamed or removed during an update.
+- **Active**: The resource has produced logs in one of the five most recent deployment revisions.
+- **Archived**: The resource only has logs from older revisions, typically because a container was renamed or removed during an update.
 
 Click **Show archived** at the bottom of the dropdown to reveal archived resources.
 
@@ -143,7 +143,7 @@ Reconnect generates a new connection command for a deployment target. Use it whe
 To reconnect:
 
 1. Click the **⋮** menu on the deployment target and select **Reconnect**.
-2. Review the warning and confirm. **The previous credentials are invalidated the moment you confirm** — there is no undo.
+2. Review the warning and confirm. **The previous credentials are invalidated the moment you confirm.** There is no undo.
 3. Copy the new command and run it on the deployment host.
 
 Reconnecting does not affect your running deployments. If your application was running before the reconnect, it continues running. The agent only manages the connection back to Distr, not the application lifecycle.
@@ -153,16 +153,16 @@ Reconnecting does not affect your running deployments. If your application was r
   agent will lose its ability to authenticate until the new command is run on
   the host.
 
-If you use an automated bootstrap script — for example, a cloud-init script,
+If you use an automated bootstrap script (for example, a cloud-init script,
 an EC2 Auto Scaling launch template, or any script that runs the agent install
-command on startup — you must update that script with the new command before
+command on startup), you must update that script with the new command before
 new instances launch. Instances using the old command will fail to connect.
 
 </Aside>
 
 ## Troubleshooting: Stale Status
 
-A **Stale** deployment target means the agent was previously connected but has not reported its health in the last 60 seconds. It does **not** mean your deployment is broken — your application may still be running normally. Distr has simply lost contact with the agent.
+A **Stale** deployment target means the agent was previously connected but has not reported its health in the last 60 seconds. It does **not** mean your deployment is broken. Your application may still be running normally. Distr has simply lost contact with the agent.
 
 **Step 1: Check the Agent Logs**
 

@@ -8,17 +8,17 @@ sidebar:
 ---
 
 Pre-flight checks are validation scripts that run **before** your application is deployed to a customer environment.
-They verify that the target system meets the minimum requirements — such as the correct Docker version, sufficient CPU, memory, and disk space — and prevent deployments from proceeding when critical conditions are not met.
+They verify that the target system meets the minimum requirements (the correct Docker version, sufficient CPU, memory, and disk space) and prevent deployments from proceeding when critical conditions are not met.
 
 ## Why Pre-Flight Checks Matter
 
 Deploying software to customer-managed infrastructure means you don't control the environment.
 Without pre-flight checks, deployments can fail silently or produce hard-to-diagnose issues:
 
-- **Docker version mismatches** — A customer runs an outdated Docker CLI that doesn't support features your Compose file relies on (e.g., `docker compose` v2 syntax, health check options, or specific network drivers).
-- **Insufficient resources** — The target machine doesn't have enough CPU cores, RAM, or free disk space to run your application, leading to OOM kills, slow performance, or failed container starts.
-- **Missing dependencies** — Required tools, kernel modules, or system libraries are not installed.
-- **Network issues** — The target machine cannot reach required endpoints such as container registries or external APIs.
+- **Docker version mismatches**: A customer runs an outdated Docker CLI that doesn't support features your Compose file relies on (e.g., `docker compose` v2 syntax, health check options, or specific network drivers).
+- **Insufficient resources**: The target machine doesn't have enough CPU cores, RAM, or free disk space to run your application, leading to OOM kills, slow performance, or failed container starts.
+- **Missing dependencies**: Required tools, kernel modules, or system libraries are not installed.
+- **Network issues**: The target machine cannot reach required endpoints such as container registries or external APIs.
 
 Pre-flight checks catch these problems **before** deployment begins, giving customers clear, actionable error messages instead of cryptic container failures.
 
@@ -32,13 +32,13 @@ When pre-flight checks are enabled for your organization, the connect instructio
   2. Reports any failing checks with clear error messages.
   3. Only proceeds with `docker compose up` if all checks pass.
 
-This approach is transparent to customers — they run a single command and get immediate feedback if their environment doesn't meet requirements.
+This approach is transparent to customers: they run a single command and get immediate feedback if their environment doesn't meet requirements.
 
 You can configure pre-flight check scripts in the **Organization Settings** under **Agents**.
 
-> **Tip:** Pre-flight check scripts are not limited to validation. You can also use them to install or update software on the target machine — for example, ensuring a specific package is installed or upgrading a dependency to a compatible version before the deployment starts.
+> **Tip:** Pre-flight check scripts are not limited to validation. You can also use them to install or update software on the target machine. For example, you can ensure a specific package is installed or upgrade a dependency to a compatible version before the deployment starts.
 
-> **Note:** Pre-flight check scripts are only executed during the initial connect or a reconnect. A reconnect will not delete any existing deployment — it re-runs the connect scripts and then resumes the deployment.
+> **Note:** Pre-flight check scripts are only executed during the initial connect or a reconnect. A reconnect will not delete any existing deployment. It re-runs the connect scripts and then resumes the deployment.
 
 ## Example Pre-Flight Check Scripts
 
@@ -220,13 +220,13 @@ echo "All pre-flight checks passed."
 
 When writing custom pre-flight check scripts, follow these conventions:
 
-- **Exit with a non-zero status** on failure — this signals Distr to abort the deployment.
+- **Exit with a non-zero status** on failure. This signals Distr to abort the deployment.
 - **Print clear messages** prefixed with `FAIL:` or `OK:` so customers understand what went wrong.
-- **Keep scripts idempotent and safe** — if they install or update software or otherwise change system state, they must be safe to run multiple times and avoid destructive side effects.
-- **Test on the target OS** — Linux distributions may differ in available commands (e.g., `nproc` vs `sysctl`). Include fallbacks where possible.
-- **Set reasonable thresholds** — document your minimums and explain why they are required.
+- **Keep scripts idempotent and safe**: if they install or update software or otherwise change system state, they must be safe to run multiple times and avoid destructive side effects.
+- **Test on the target OS**: Linux distributions may differ in available commands (e.g., `nproc` vs `sysctl`). Include fallbacks where possible.
+- **Set reasonable thresholds**: document your minimums and explain why they are required.
 
 ## Next Steps
 
-- **[Deployment Agents](/docs/agents/)** — Learn how Distr agents manage deployments on customer infrastructure
-- **[Automatic Deployments from GitHub](/docs/integrations/github-actions/)** — Automate your CI/CD pipeline with the Distr GitHub Action
+- **[Deployment Agents](/docs/agents/)**: Learn how Distr agents manage deployments on customer infrastructure
+- **[Automatic Deployments from GitHub](/docs/integrations/github-actions/)**: Automate your CI/CD pipeline with the Distr GitHub Action

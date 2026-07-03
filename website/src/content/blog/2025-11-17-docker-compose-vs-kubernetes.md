@@ -24,7 +24,7 @@ Your first enterprise customer wants the software on-premise. Now you have to pi
 
 ## TL;DR: The 80/20 rule
 
-Pick Docker Compose if you have fewer than 20 customers, the app fits into 1–5 containers, your customer base has mixed technical skills, and you need to ship this week. The question usually answers itself once you look at your install base.
+Pick Docker Compose if you have fewer than 20 customers, the app fits into 1 to 5 containers, your customer base has mixed technical skills, and you need to ship this week. The question usually answers itself once you look at your install base.
 
 Go Kubernetes-first when every deal is an enterprise with a platform team, the application genuinely needs complex orchestration, and buyers expect "cloud-native" as table stakes. You probably already have DevOps headcount to support it.
 

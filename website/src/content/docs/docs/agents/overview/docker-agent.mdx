@@ -1,6 +1,6 @@
 ---
 title: Docker Agent
-description: How the Distr Docker Compose agent works — installation, core loop, OCI registry authentication, self-updates, Docker Swarm support, and uninstallation.
+description: 'How the Distr Docker Compose agent works: installation, core loop, OCI registry authentication, self-updates, Docker Swarm support, and uninstallation.'
 slug: docs/agents/docker-agent
 sidebar:
   label: Docker Agent
@@ -31,7 +31,7 @@ The agent is installed by running a single command that fetches a Docker Compose
 curl "https://<distr-hub>/api/v1/connect?targetId=<targetId>&targetSecret=<targetSecret>" | docker compose -f - up -d
 ```
 
-The `targetId` and `targetSecret` ensure the agent can only fetch deployments for one specific deployment target. The secret is shown once and never stored by the Hub — it can only be verified.
+The `targetId` and `targetSecret` ensure the agent can only fetch deployments for one specific deployment target. The secret is shown once and never stored by the Hub. It can only be verified.
 
 The fetched Compose file runs the agent container:
 
@@ -83,7 +83,7 @@ Each deployment maps to one Docker Compose project on the host, named `distr-<sh
 
 ## Authentication with OCI Registries
 
-If a deployment uses images from the Distr registry, the agent authenticates automatically — no extra steps needed for the customer. The authentication secret is stored in a temporary directory inside the agent container.
+If a deployment uses images from the Distr registry, the agent authenticates automatically, so the customer needs no extra steps. The authentication secret is stored in a temporary directory inside the agent container.
 
 For any other authenticated OCI registry, the agent mounts the host's Docker config directory so existing credentials are reused. Any registry accessible from the host is also accessible to the agent.
 

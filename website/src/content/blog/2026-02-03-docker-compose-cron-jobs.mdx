@@ -31,14 +31,14 @@ import approach2Crontab from './2026-02-03-docker-compose-cron-jobs/approach-2/c
 import approach2Compose from './2026-02-03-docker-compose-cron-jobs/approach-2/docker-compose.yaml?raw';
 import approach3Compose from './2026-02-03-docker-compose-cron-jobs/approach-3/docker-compose.yaml?raw';
 
-I am Philip—an engineer working at Distr, which helps software and AI companies distribute their applications to self-managed environments.
+I am Philip, an engineer working at Distr, which helps software and AI companies distribute their applications to self-managed environments.
 Our Open Source Software Distribution platform is available on GitHub ([`github.com/distr-sh/distr`](https://github.com/distr-sh/distr)).
 
 [Docker Compose](https://docs.docker.com/compose/) is a great orchestration tool for easily deploying multi-container applications.
 However, Docker Compose doesn't natively support scheduled jobs.
 Although this sounds like a complicated problem at first, possible solutions are actually quite simple.
 
-Cron jobs are one of several Compose gaps worth knowing about—I have collected the rest in [Should I Run Plain Docker Compose in Production?](/blog/running-docker-in-production/).
+Cron jobs are one of several Compose gaps worth knowing about. I have collected the rest in [Should I Run Plain Docker Compose in Production?](/blog/running-docker-in-production/).
 
 <hr />
 
@@ -114,7 +114,7 @@ Additionally, memory usage remains stable, as no additional containers are spawn
 
 **Choose Option 1 (Custom Dockerfile)** when you want your cron schedule to be version-controlled alongside your application code, or when deploying to production environments where immutable infrastructure is preferred. The crontab becomes part of your deployment artifact.
 
-**Choose Option 2 (Volume Mount)** during development or when your cron schedules need to change frequently without rebuilding images. This is also useful when the same base image needs different cron configurations across environments—simply mount different crontab files.
+**Choose Option 2 (Volume Mount)** during development or when your cron schedules need to change frequently without rebuilding images. This is also useful when the same base image needs different cron configurations across environments: simply mount different crontab files.
 
 <TestimonialCTA name="artifact" />
 
@@ -175,7 +175,7 @@ This approach requires that you give the job launcher access to the Docker socke
 
 <Aside type="note">
   Ofelia is used here as an example of a Docker socket-based scheduler. I am not
-  affiliated with this project—it simply demonstrates the dedicated launcher
+  affiliated with this project. It simply demonstrates the dedicated launcher
   pattern well.
 </Aside>
 
@@ -234,11 +234,11 @@ Each approach has its place depending on your specific requirements:
 
 **Choose Approach 1 (Lightweight Scheduler)** if you value simplicity and minimal resource overhead. This is ideal when your backend already exposes HTTP endpoints for job triggers, and you're comfortable keeping job logic within your main application. It's particularly well-suited for applications running multiple replicas where you need guaranteed single execution.
 
-**Choose Approach 2 (Integrated Solution)** when your jobs need direct access to your application's codebase, database connections, or internal APIs. This works best for applications with CLI tools or separate job executables. Be mindful of the doubled resource consumption—this approach might not be suitable for memory-intensive applications like Java services with large startup overhead.
+**Choose Approach 2 (Integrated Solution)** when your jobs need direct access to your application's codebase, database connections, or internal APIs. This works best for applications with CLI tools or separate job executables. Be mindful of the doubled resource consumption. This approach might not be suitable for memory-intensive applications like Java services with large startup overhead.
 
 **Choose Approach 3 (Dedicated Launcher)** when you need maximum flexibility and job isolation. If your jobs require different runtime environments, programming languages, or heavy isolation from your main application, the additional complexity and security considerations of Docker socket access become worthwhile trade-offs.
 
-For most production deployments I've worked on, Approach 1 proves to be the sweet spot—it's simple, resource-efficient, and aligns well with container best practices. However, the "right" choice always depends on your specific application architecture and operational requirements.
+For most production deployments I've worked on, Approach 1 proves to be the sweet spot: it's simple, resource-efficient, and fits well with container best practices. However, the "right" choice always depends on your specific application architecture and operational requirements.
 
 **Important scheduling tip:** Avoid scheduling multiple jobs at minute zero of the hour. Distribute your cron schedules across the hour (e.g., `5 * * * *`, `15 * * * *`, `30 * * * *`) to prevent resource spikes. While this is generally recommended for any cron setup, it's particularly critical for Docker Compose deployments with non-dynamic resource allocation where simultaneous job execution can cause memory exhaustion or container crashes.
 

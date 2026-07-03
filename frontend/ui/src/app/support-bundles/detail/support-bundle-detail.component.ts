@@ -1,4 +1,4 @@
-import {AsyncPipe, DatePipe, NgClass} from '@angular/common';
+import {DatePipe, NgClass} from '@angular/common';
 import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
@@ -15,8 +15,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
-import {SecureImagePipe} from '../../../util/secureImage';
 import {ClipComponent} from '../../components/clip.component';
+import {UserAvatarComponent} from '../../components/user-avatar.component';
 import {AuthService} from '../../services/auth.service';
 import {OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService} from '../../services/support-bundles.service';
@@ -27,16 +27,7 @@ import {SupportBundleDetail, SupportBundleStatus} from '../../types/support-bund
   selector: 'app-support-bundle-detail',
   templateUrl: './support-bundle-detail.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [
-    AsyncPipe,
-    DatePipe,
-    NgClass,
-    ReactiveFormsModule,
-    RouterLink,
-    FaIconComponent,
-    ClipComponent,
-    SecureImagePipe,
-  ],
+  imports: [DatePipe, NgClass, ReactiveFormsModule, RouterLink, FaIconComponent, ClipComponent, UserAvatarComponent],
 })
 export class SupportBundleDetailComponent {
   private readonly route = inject(ActivatedRoute);
@@ -123,15 +114,6 @@ export class SupportBundleDetailComponent {
   }
 
   protected readonly backRoute = this.auth.isCustomer() ? '/support' : '/support-bundles';
-
-  protected userInitials(name: string): string {
-    return name
-      .split(' ')
-      .map((part) => part.charAt(0))
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
-  }
 
   protected async markAsResolved(): Promise<void> {
     const bundle = this.bundle();

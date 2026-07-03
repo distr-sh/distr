@@ -29,7 +29,7 @@ func CheckStatus(ctx context.Context, namespace string, resource *unstructured.U
 			Get(ctx, resource.GetName(), metav1.GetOptions{}); err != nil {
 			return err
 		} else if daemonSet.Status.NumberUnavailable > 0 {
-			return ReplicasError(resource, daemonSet.Status.DesiredNumberScheduled, daemonSet.Status.NumberReady)
+			return ReplicasError(resource, daemonSet.Status.NumberReady, daemonSet.Status.DesiredNumberScheduled)
 		}
 	}
 	return nil
