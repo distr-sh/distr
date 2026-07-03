@@ -14,7 +14,7 @@
 
 <!-- x-release-please-start-version -->
 
-![Version: 2.25.0](https://img.shields.io/badge/Version-2.24.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.24.5](https://img.shields.io/badge/AppVersion-2.24.5-informational?style=flat-square)
+![Version: 2.25.0](https://img.shields.io/badge/Version-2.25.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.25.0](https://img.shields.io/badge/AppVersion-2.25.0-informational?style=flat-square)
 
 <!-- x-release-please-end -->
 
@@ -145,6 +145,11 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | hub.env[8].value                           | string | `"distr123"`                                     |             |
 | hub.env[9].name                            | string | `"REGISTRY_S3_USE_PATH_STYLE"`                   |             |
 | hub.env[9].value                           | string | `"true"`                                         |             |
+| hub.scratch.accessModes[0]                 | string | `"ReadWriteOnce"`                                |             |
+| hub.scratch.enabled                        | bool   | `false`                                          |             |
+| hub.scratch.mountPath                      | string | `"/scratch"`                                     |             |
+| hub.scratch.size                           | string | `"10Gi"`                                         |             |
+| hub.scratch.storageClassName               | string | `""`                                             |             |
 | image.pullPolicy                           | string | `"IfNotPresent"`                                 |             |
 | image.repository                           | string | `"ghcr.io/distr-sh/distr-ce"`                    |             |
 | image.tag                                  | string | `""`                                             |             |
