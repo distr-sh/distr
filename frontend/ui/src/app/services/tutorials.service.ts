@@ -2,11 +2,9 @@ import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {IconDefinition} from '@fortawesome/angular-fontawesome';
 import {faBox, faBoxesStacked, faPalette, faUserGroup} from '@fortawesome/free-solid-svg-icons';
-import {combineLatest, firstValueFrom, map, Observable, shareReplay, startWith, Subject, switchMap} from 'rxjs';
+import {firstValueFrom, map, Observable, shareReplay, startWith, Subject, switchMap} from 'rxjs';
 import {getExistingTask} from '../tutorials/utils';
 import {Tutorial, TutorialProgress, TutorialProgressRequest} from '../types/tutorials';
-import {AuthService} from './auth.service';
-import {UsersService} from './users.service';
 
 interface TutorialView {
   id: Tutorial;
@@ -25,8 +23,6 @@ export class TutorialsService {
   protected readonly faUserGroup = faUserGroup;
   private readonly baseUrl = '/api/v1/tutorial-progress';
   private readonly httpClient = inject(HttpClient);
-  private readonly usersService = inject(UsersService);
-  private readonly auth = inject(AuthService);
 
   protected readonly tutorials: TutorialView[] = [
     {
@@ -61,60 +57,25 @@ export class TutorialsService {
 
   private readonly refresh$ = new Subject<void>();
 
-  // The users tutorial does not store its own progress. It is considered completed
-  // as soon as the organization has at least one other vendor user besides the current one.
-  private readonly usersTutorialCompleted$ = this.usersService.getUsers().pipe(
-    map((users) => {
-      const currentUserId = this.auth.getClaims()?.sub;
-      if (!currentUserId) {
-        return false;
-      }
-      return users.some(
-        (u) => u.customerOrganizationId === undefined && u.partnerOrganizationId === undefined && u.id !== currentUserId
-      );
-    })
-  );
-
-  public readonly tutorialsProgress$ = combineLatest([
-    this.refresh$.pipe(
-      startWith(undefined),
-      switchMap(() => this.list())
-    ),
-    this.usersTutorialCompleted$,
-  ]).pipe(
-    map(([progresses, usersTutorialCompleted]) => {
-      return this.tutorials.map((t) => {
-        if (t.id === 'users') {
-          return usersTutorialCompleted ? {...t, progress: this.completedProgress('users')} : t;
-        }
+  public readonly tutorialsProgress$ = this.refresh$.pipe(
+    startWith(undefined),
+    switchMap(() => this.list()),
+    map((progresses) =>
+      this.tutorials.map((t) => {
         const progress = progresses.find((p) => p.tutorial === t.id);
-        if (progress) {
-          return {
-            ...t,
-            progress,
-          };
-        } else {
-          return t;
-        }
-      });
-    }),
+        return progress ? {...t, progress} : t;
+      })
+    ),
     shareReplay(1)
   );
 
   public readonly allStarted$ = this.tutorialsProgress$.pipe(
-    // The users tutorial has no "in progress" state, so it must never block this
-    // indicator — only its completion is meaningful (tracked via allCompleted$).
-    map((tutorials) => tutorials.every((t) => t.id === 'users' || t.progress?.createdAt))
+    map((tutorials) => tutorials.every((t) => t.progress?.createdAt))
   );
 
   public readonly allCompleted$ = this.tutorialsProgress$.pipe(
     map((tutorials) => tutorials.every((t) => t.progress?.completedAt))
   );
-
-  private completedProgress(tutorial: Tutorial): TutorialProgress {
-    const now = new Date().toISOString();
-    return {tutorial, createdAt: now, completedAt: now};
-  }
 
   private list(): Observable<TutorialProgress[]> {
     return this.httpClient.get<TutorialProgress[]>(`${this.baseUrl}`);

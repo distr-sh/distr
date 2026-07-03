@@ -1,5 +1,6 @@
 import {CdkStep, CdkStepper, CdkStepperPrevious} from '@angular/cdk/stepper';
-import {ChangeDetectionStrategy, Component, inject, signal, viewChild} from '@angular/core';
+import {HttpErrorResponse} from '@angular/common/http';
+import {ChangeDetectionStrategy, Component, inject, OnInit, signal, viewChild} from '@angular/core';
 import {FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router} from '@angular/router';
 import {UserRole} from '@distr-sh/distr-sdk';
@@ -13,8 +14,16 @@ import {UserRoleSelectComponent} from '../../components/user-role-select.compone
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {PlaceholderDirective} from '../../directives/placeholder.directive';
 import {ToastService} from '../../services/toast.service';
+import {TutorialsService} from '../../services/tutorials.service';
 import {UsersService} from '../../services/users.service';
+import {TutorialProgress} from '../../types/tutorials';
 import {TutorialStepperComponent} from '../stepper/tutorial-stepper.component';
+
+const tutorialId = 'users';
+const welcomeStep = 'welcome';
+const welcomeTaskStart = 'start';
+const inviteStep = 'invite';
+const inviteTaskSend = 'send';
 
 function userFormGroup() {
   return new FormGroup({
@@ -39,7 +48,7 @@ function userFormGroup() {
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './users-tutorial.component.html',
 })
-export class UsersTutorialComponent {
+export class UsersTutorialComponent implements OnInit {
   loading = signal(false);
   protected readonly rbacDocsUrl = `${WEBSITE_URL}/docs/platform/rbac/`;
   protected readonly faArrowRight = faArrowRight;
@@ -55,7 +64,9 @@ export class UsersTutorialComponent {
   private readonly router = inject(Router);
   protected readonly toast = inject(ToastService);
   protected readonly usersService = inject(UsersService);
+  protected readonly tutorialsService = inject(TutorialsService);
 
+  protected progress?: TutorialProgress;
   protected readonly welcomeFormGroup = new FormGroup({});
   protected readonly inviteFormGroup = new FormGroup({
     users: new FormArray([userFormGroup()]),
@@ -65,8 +76,47 @@ export class UsersTutorialComponent {
     return this.inviteFormGroup.controls.users;
   }
 
-  protected continueFromWelcome() {
-    this.stepper().next();
+  async ngOnInit() {
+    try {
+      this.progress = await lastValueFrom(this.tutorialsService.get(tutorialId));
+      if (this.progress.createdAt) {
+        if (!this.progress.completedAt) {
+          this.stepper().next();
+        } else {
+          this.stepper().steps.forEach((s) => (s.completed = true));
+        }
+      }
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg && e instanceof HttpErrorResponse && e.status !== 404) {
+        // it's a valid use case for a tutorial progress not to exist yet
+        this.toast.error(msg);
+      }
+    }
+  }
+
+  protected async continueFromWelcome() {
+    if (this.progress) {
+      this.stepper().next();
+      return;
+    }
+    this.loading.set(true);
+    try {
+      this.progress = await lastValueFrom(
+        this.tutorialsService.save(tutorialId, {
+          stepId: welcomeStep,
+          taskId: welcomeTaskStart,
+        })
+      );
+      this.stepper().next();
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   protected addUser() {
@@ -96,35 +146,72 @@ export class UsersTutorialComponent {
       return;
     }
 
+    const seenEmails = new Set<string>();
+    const toInvite = pending.filter((group) => {
+      const email = (group.get('email')!.value as string).trim().toLowerCase();
+      if (seenEmails.has(email)) {
+        return false;
+      }
+      seenEmails.add(email);
+      return true;
+    });
+
     this.loading.set(true);
-    const invited: FormGroup[] = [];
+    const invitedEmails: string[] = [];
+    const failedEmails: string[] = [];
+    let firstError: unknown;
     try {
-      for (const group of pending) {
+      for (const group of toInvite) {
         const email = group.get('email')!.value as string;
         const name = (group.get('name')!.value as string) || undefined;
         const userRole = group.get('userRole')!.value as UserRole;
-        await lastValueFrom(this.usersService.addUser({email, name, userRole}));
-        invited.push(group);
-      }
-
-      this.toast.success('Your teammates have been invited. Good job!');
-      this.navigateToOverviewPage();
-    } catch (e) {
-      // drop already-invited rows so a retry does not invite them twice
-      for (const group of invited) {
-        const idx = this.users.controls.indexOf(group);
-        if (idx >= 0) {
-          this.users.removeAt(idx);
+        try {
+          await lastValueFrom(this.usersService.addUser({email, name, userRole}));
+          invitedEmails.push(email);
+          const idx = this.users.controls.indexOf(group);
+          if (idx >= 0) {
+            this.users.removeAt(idx);
+          }
+        } catch (e) {
+          failedEmails.push(email);
+          firstError ??= e;
         }
       }
+
+      if (invitedEmails.length === 0) {
+        const msg = getFormDisplayedError(firstError);
+        if (msg) {
+          this.toast.error(msg);
+        }
+        return;
+      }
+
+      try {
+        this.progress = await lastValueFrom(
+          this.tutorialsService.save(tutorialId, {
+            stepId: inviteStep,
+            taskId: inviteTaskSend,
+            value: invitedEmails,
+            markCompleted: true,
+          })
+        );
+      } catch (e) {
+        const msg = getFormDisplayedError(e);
+        if (msg) {
+          this.toast.error(msg);
+        }
+      }
+
+      if (failedEmails.length > 0) {
+        this.toast.error(`Some invites could not be sent: ${failedEmails.join(', ')}`);
+      } else {
+        this.toast.success('Your teammates have been invited. Good job!');
+      }
+      this.navigateToOverviewPage();
+    } finally {
       if (this.users.length === 0) {
         this.addUser();
       }
-      const msg = getFormDisplayedError(e);
-      if (msg) {
-        this.toast.error(msg);
-      }
-    } finally {
       this.loading.set(false);
     }
   }
