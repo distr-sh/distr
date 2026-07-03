@@ -12,6 +12,12 @@
 
 ## Properties
 
+### appDomain?
+
+> `optional` **appDomain?**: `string`
+
+---
+
 ### createdAt?
 
 > `optional` **createdAt?**: `string`
@@ -28,6 +34,12 @@
 
 ---
 
+### emailFromAddress?
+
+> `optional` **emailFromAddress?**: `string`
+
+---
+
 ### id?
 
 > `optional` **id?**: `string`
@@ -38,21 +50,15 @@
 
 ---
 
-### logo?
+### logoImageId?
 
-> `optional` **logo?**: `string`
-
----
-
-### logoContentType?
-
-> `optional` **logoContentType?**: `string`
+> `optional` **logoImageId?**: `string`
 
 ---
 
-### logoFileName?
+### registryDomain?
 
-> `optional` **logoFileName?**: `string`
+> `optional` **registryDomain?**: `string`
 
 ---
 

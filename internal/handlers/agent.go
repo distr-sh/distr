@@ -93,7 +93,7 @@ func connectHandler() http.HandlerFunc {
 		log := internalctx.GetLogger(ctx)
 		deploymentTarget := internalctx.GetDeploymentTarget(ctx)
 
-		org, err := db.GetOrganizationByID(ctx, deploymentTarget.OrganizationID)
+		org, err := db.GetOrganizationWithBranding(ctx, deploymentTarget.OrganizationID)
 		if err != nil {
 			log.Error("could not get organization for deployment target", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -122,7 +122,7 @@ func preConnectHandler() http.HandlerFunc {
 		log := internalctx.GetLogger(ctx)
 		deploymentTarget := internalctx.GetDeploymentTarget(ctx)
 
-		org, err := db.GetOrganizationByID(ctx, deploymentTarget.OrganizationID)
+		org, err := db.GetOrganizationWithBranding(ctx, deploymentTarget.OrganizationID)
 		if err != nil {
 			log.Error("could not get organization for deployment target", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -558,7 +558,7 @@ func agentManifestHandler() http.HandlerFunc {
 		ctx := r.Context()
 		deploymentTarget := internalctx.GetDeploymentTarget(ctx)
 		log := internalctx.GetLogger(ctx).With(zap.String("deploymentTargetId", deploymentTarget.ID.String()))
-		if org, err := db.GetOrganizationByID(ctx, deploymentTarget.OrganizationID); err != nil {
+		if org, err := db.GetOrganizationWithBranding(ctx, deploymentTarget.OrganizationID); err != nil {
 			log.Error("could not get org for deployment target", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)

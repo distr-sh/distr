@@ -1,114 +1,213 @@
 <section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
-  <div class="mx-auto max-w-screen-md px-4">
-    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
-      <div class="justify-between mx-4 pt-4 dark:border-gray-700">
-        <h1 class="mb-4 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl dark:text-white">
-          Branding
-        </h1>
-        <p class="text-gray-500 dark:text-gray-400">
-          Customize your organization's branding by uploading a logo and setting a title and description for your
-          organization. Your customers will see this information when they access their customer Portal.
-        </p>
+  <div class="mx-auto max-w-screen-lg px-4">
+    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden p-10">
+      <h1 class="mb-2 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl dark:text-white">
+        Branding
+      </h1>
+      <p class="text-gray-500 dark:text-gray-400">
+        Customize how Distr looks for your team and your customers. Upload a logo, set a customer portal name and a
+        welcome page. Custom domains are configured by Distr support.
+      </p>
 
-        <form [formGroup]="form" (ngSubmit)="save()">
-          <div class="grid gap-4 mb-4 sm:mb-6 mt-6">
-            <div class="space-y-4">
-              <h2 class="text-xl font-bold dark:text-white">Portal Header</h2>
-              <div>
-                <label class="distr-label mb-2" for="branding_logo"> Company Logo </label>
-                <div>
-                  @if (logoSrc | async; as logo) {
-                    <img class="h-8 mb-4" [src]="logo" alt="Logo" />
-                    <button
-                      type="button"
-                      (click)="deleteLogo()"
-                      class="px-3 py-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                      Delete
-                    </button>
-                  } @else {
-                    <input
-                      accept="image/svg+xml,image/png,image/jpeg,image/gif"
-                      (change)="onLogoChange($event)"
-                      class="w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
-                      aria-describedby="branding_logo_help"
-                      id="branding_logo"
-                      type="file" />
-                  }
-                </div>
+      <div class="grid gap-4 mt-6 sm:grid-cols-2">
+        <div>
+          <span class="distr-label mb-1 block">Vendor navbar preview</span>
+          <div
+            class="flex items-center px-4 py-3 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
+            <img src="/distr-logo.svg" class="h-8 me-3" alt="Distr logo" />
+            <span class="font-display self-center text-xl font-semibold whitespace-nowrap dark:text-white">
+              Distr
+              <small class="ms-2 font-semibold text-gray-500 dark:text-gray-400">Vendor Portal</small>
+            </span>
+          </div>
+        </div>
+        <div>
+          <span class="distr-label mb-1 block">Customer navbar preview</span>
+          <div
+            class="flex items-center px-4 py-3 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
+            @if (logoImageId(); as logoId) {
+              <img [src]="(logoId | secureImage | async) ?? '/distr-logo.svg'" class="h-8 me-3" alt="Customer logo" />
+            } @else {
+              <img src="/distr-logo.svg" class="h-8 me-3" alt="Customer logo" />
+            }
+            <span class="font-display self-center text-xl font-semibold whitespace-nowrap dark:text-white">
+              <small class="font-semibold text-gray-500 dark:text-gray-400">{{ customerPortalName() }}</small>
+            </span>
+          </div>
+        </div>
+      </div>
 
-                <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400" id="branding_logo_help">
-                  SVG, PNG, JPG or GIF (recommended height 32px). If not set, the Distr logo will be shown.
-                </p>
-                <div class="flex items-center space-x-2.5"></div>
-              </div>
+      <form [formGroup]="form" (ngSubmit)="save()" class="mt-8 space-y-4">
+        <div>
+          <h2 class="text-xl font-bold dark:text-white">White-label</h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            These settings replace Distr's branding across the application for users and customers of your organization.
+          </p>
+        </div>
 
-              <div>
-                <label for="title" class="distr-label mb-2">Title</label>
-                <input
-                  formControlName="title"
-                  autotrim
-                  type="text"
-                  name="title"
-                  id="title"
-                  class="distr-input"
-                  placeholder="Customer Portal" />
-                <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
-                  The title will be shown in the header next to the logo.
-                </p>
-              </div>
-
-              <h2 class="text-xl font-bold dark:text-white mt-8">Welcome Page</h2>
-
-              <div>
-                <div class="flex items-end pb-1">
-                  <label for="description" class="distr-label flex-grow mb-2">Markdown Description</label>
-                  <div class="inline-flex rounded-base shadow-xs -space-x-px">
-                    <button
-                      type="button"
-                      class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary"
-                      (click)="markdownPreviewMode = !markdownPreviewMode">
-                      @if (markdownPreviewMode) {
-                        Write
-                      } @else {
-                        Preview
-                      }
-                    </button>
-                  </div>
-                </div>
-                @if (markdownPreviewMode) {
-                  <div
-                    class="markdown bg-gray-50 dark:bg-gray-900 p-2 -mx-2 rounded-sm border border-gray-200 dark:border-gray-600"
-                    [innerMarkdown]="form.value.description ?? ''"></div>
-                } @else {
-                  <div
-                    class="mb-4 w-full bg-gray-100 rounded-lg border border-gray-200 dark:bg-gray-600 dark:border-gray-600">
-                    <div class="py-2 px-4 bg-gray-50 rounded-b-lg dark:bg-gray-700">
-                      <textarea
-                        formControlName="description"
-                        id="description"
-                        rows="8"
-                        class="block px-0 w-full text-sm text-gray-800 bg-gray-50 border-0 dark:bg-gray-700 focus:ring-0 dark:text-white dark:placeholder-gray-400"
-                        placeholder="# Welcome"></textarea>
-                    </div>
-                  </div>
-                }
-              </div>
-
-              @if (!auth.isSuperAdmin()) {
-                <div class="mt-8 flex justify-center w-full pb-4 space-x-4 sm:mt-0">
-                  <button
-                    type="submit"
-                    [disabled]="formLoading()"
-                    class="text-white w-full inline-flex items-center justify-center distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
-                    <fa-icon [icon]="faFloppyDisk" size="lg" class="h-4 w-4 mr-2 -ml-0.5 mb-1" />
-                    Save
-                  </button>
-                </div>
+        <div>
+          <label class="distr-label mb-1">Portal Logo</label>
+          <div class="inline-block relative">
+            @if (logoImageId(); as logoId) {
+              <img
+                [src]="(logoId | secureImage | async) ?? '/distr-logo.svg'"
+                alt="Logo"
+                class="size-24 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 object-contain p-4" />
+            } @else {
+              <img
+                src="/distr-logo.svg"
+                alt="Logo"
+                class="size-24 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 object-contain p-4" />
+            }
+            <div class="absolute -bottom-2 -right-0.5 space-x-1">
+              <button
+                type="button"
+                class="rounded-full size-6 text-sm text-gray-900 focus:outline-none bg-white border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+                (click)="editLogo()">
+                <span class="sr-only">Edit logo</span>
+                <fa-icon [icon]="faPen" size="sm" />
+              </button>
+              @if (logoImageId()) {
+                <button
+                  type="button"
+                  class="rounded-full size-6 text-sm text-gray-900 focus:outline-none bg-white border border-gray-200 hover:bg-gray-100 hover:text-red-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+                  (click)="removeLogo()">
+                  <span class="sr-only">Remove logo</span>
+                  <fa-icon [icon]="faTrashCan" size="sm" />
+                </button>
               }
             </div>
           </div>
-        </form>
-      </div>
+          <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+            Shown in the navigation bar of the customer portal. SVG, PNG, JPG or GIF (recommended height 32px). If not
+            set, the Distr logo will be shown.
+          </p>
+        </div>
+
+        @if (hasCustomDomains()) {
+          <div>
+            <h3 class="text-lg font-bold dark:text-white mt-6">Custom Domains</h3>
+            <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+              Custom domains are configured by Distr support. Please contact us if you want to change these settings.
+            </p>
+          </div>
+
+          <div>
+            <label for="appDomain" class="distr-label mb-1">Custom app domain</label>
+            <input
+              type="text"
+              id="appDomain"
+              [value]="appDomain() ?? ''"
+              disabled
+              class="distr-input disabled:opacity-60 disabled:cursor-not-allowed"
+              placeholder="not configured" />
+            <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+              Where users and customers access the Distr web application.
+            </p>
+          </div>
+
+          <div>
+            <label for="registryDomain" class="distr-label mb-1">Custom registry domain</label>
+            <input
+              type="text"
+              id="registryDomain"
+              [value]="registryDomain() ?? ''"
+              disabled
+              class="distr-input disabled:opacity-60 disabled:cursor-not-allowed"
+              placeholder="not configured" />
+            <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+              Where users and customers access the Distr artifact registry.
+            </p>
+          </div>
+
+          <div>
+            <label for="emailFromAddress" class="distr-label mb-1">Custom e-mail sender address</label>
+            <input
+              type="text"
+              id="emailFromAddress"
+              [value]="emailFromAddress() ?? ''"
+              disabled
+              class="distr-input disabled:opacity-60 disabled:cursor-not-allowed"
+              placeholder="not configured" />
+            <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+              The address used to send transactional e-mails to your users and customers.
+            </p>
+          </div>
+        } @else {
+          <div class="p-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400" role="alert">
+            Custom domains can be configured by Distr support. Please contact us if you are interested.
+          </div>
+        }
+
+        <div>
+          <h2 class="mt-8 text-xl font-bold dark:text-white">Customer Portal</h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Configure what your customers see when they log in to their portal.
+          </p>
+        </div>
+
+        <div>
+          <label for="title" class="distr-label mb-1">Customer Portal Override</label>
+          <input
+            formControlName="title"
+            autotrim
+            type="text"
+            name="title"
+            id="title"
+            class="distr-input"
+            placeholder="Customer Portal" />
+          <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
+            Replaces "Customer Portal" next to the logo in the customer navigation bar.
+          </p>
+        </div>
+
+        <div>
+          <div class="flex items-end pb-1">
+            <label for="description" class="distr-label flex-grow mb-1">Welcome Page</label>
+            <div class="inline-flex rounded-base shadow-xs -space-x-px">
+              <button
+                type="button"
+                class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary"
+                (click)="markdownPreviewMode = !markdownPreviewMode">
+                @if (markdownPreviewMode) {
+                  Write
+                } @else {
+                  Preview
+                }
+              </button>
+            </div>
+          </div>
+          @if (markdownPreviewMode) {
+            <div
+              class="markdown bg-gray-50 dark:bg-gray-900 p-2 -mx-2 rounded-sm border border-gray-200 dark:border-gray-600"
+              [innerMarkdown]="form.value.description ?? ''"></div>
+          } @else {
+            <div class="w-full bg-gray-100 rounded-lg border border-gray-200 dark:bg-gray-600 dark:border-gray-600">
+              <div class="py-2 px-4 bg-gray-50 rounded-b-lg dark:bg-gray-700">
+                <textarea
+                  formControlName="description"
+                  id="description"
+                  rows="8"
+                  class="block px-0 w-full text-sm text-gray-800 bg-gray-50 border-0 dark:bg-gray-700 focus:ring-0 dark:text-white dark:placeholder-gray-400"
+                  placeholder="# Welcome"></textarea>
+              </div>
+            </div>
+          }
+          <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
+            Markdown content shown to your customers on the home page of their portal.
+          </p>
+        </div>
+
+        @if (!auth.isSuperAdmin()) {
+          <button
+            type="submit"
+            [disabled]="formLoading()"
+            class="w-full mt-8 sm:mt-0 flex items-center justify-center distr-btn-primary text-white disabled:opacity-60 disabled:cursor-not-allowed">
+            <fa-icon [icon]="faFloppyDisk" size="lg" class="h-4 w-4 mr-2 -ml-0.5 mb-1" />
+            Save
+          </button>
+        }
+      </form>
     </div>
   </div>
 </section>

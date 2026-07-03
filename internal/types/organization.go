@@ -1,13 +1,10 @@
 package types
 
 import (
-	"encoding/base64"
-	"fmt"
 	"slices"
 	"time"
 
 	"github.com/distr-sh/distr/internal/limit"
-	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 )
 
@@ -17,9 +14,6 @@ type Organization struct {
 	Name                                string             `db:"name" json:"name"`
 	Slug                                *string            `db:"slug" json:"slug"`
 	Features                            []Feature          `db:"features" json:"features"`
-	AppDomain                           *string            `db:"app_domain" json:"appDomain"`
-	RegistryDomain                      *string            `db:"registry_domain" json:"registryDomain"`
-	EmailFromAddress                    *string            `db:"email_from_address" json:"emailFromAddress"`
 	SubscriptionType                    SubscriptionType   `db:"subscription_type" json:"subscriptionType"`
 	SubscriptionPeriod                  SubscriptionPeriod `db:"subscription_period" json:"subscriptionPeriod"`
 	SubscriptionEndsAt                  time.Time          `db:"subscription_ends_at" json:"subscriptionEndsAt"`
@@ -89,19 +83,8 @@ type OrganizationBranding struct {
 	UpdatedByUserAccountID *uuid.UUID `db:"updated_by_user_account_id" json:"-"`
 	Title                  *string    `db:"title" json:"title"`
 	Description            *string    `db:"description" json:"description"`
-	Logo                   []byte     `db:"logo" json:"logo"`
-	LogoFileName           *string    `db:"logo_file_name" json:"logoFileName"`
-	LogoContentType        *string    `db:"logo_content_type" json:"logoContentType"`
-}
-
-func (b *OrganizationBranding) LogoDataUrl() *string {
-	if b.Logo != nil && b.LogoContentType != nil {
-		return util.PtrTo(fmt.Sprintf(
-			"data:%s;base64,%s",
-			*b.LogoContentType,
-			base64.StdEncoding.EncodeToString(b.Logo),
-		))
-	} else {
-		return nil
-	}
+	LogoImageID            *uuid.UUID `db:"logo_image_id" json:"logoImageId"`
+	AppDomain              *string    `db:"app_domain" json:"appDomain"`
+	RegistryDomain         *string    `db:"registry_domain" json:"registryDomain"`
+	EmailFromAddress       *string    `db:"email_from_address" json:"emailFromAddress"`
 }

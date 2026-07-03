@@ -30,9 +30,6 @@ export interface Organization extends BaseModel, Named {
   name: string;
   slug?: string;
   features: Feature[];
-  appDomain?: string;
-  registryDomain?: string;
-  emailFromAddress?: string;
   subscriptionType: SubscriptionType;
   subscriptionLimits: SubscriptionLimits;
   subscriptionEndsAt?: string;

@@ -213,12 +213,12 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !userHasExisted || userAccount.EmailVerifiedAt == nil {
-			if emailInviteURL, err = generateUserInviteUrl(userAccount, organization.Organization, true); err != nil {
+			if emailInviteURL, err = generateUserInviteUrl(userAccount, organization.Branding, true); err != nil {
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return err
 			}
-			if responseInviteURL, err = generateUserInviteUrl(userAccount, organization.Organization, false); err != nil {
+			if responseInviteURL, err = generateUserInviteUrl(userAccount, organization.Branding, false); err != nil {
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return err
@@ -447,13 +447,13 @@ func resendUserInviteHandler() http.HandlerFunc {
 			return
 		}
 
-		emailInviteURL, err := generateUserInviteUrl(userAccount.AsUserAccount(), organization.Organization, true)
+		emailInviteURL, err := generateUserInviteUrl(userAccount.AsUserAccount(), organization.Branding, true)
 		if err != nil {
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		responseInviteURL, err := generateUserInviteUrl(userAccount.AsUserAccount(), organization.Organization, false)
+		responseInviteURL, err := generateUserInviteUrl(userAccount.AsUserAccount(), organization.Branding, false)
 		if err != nil {
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -568,7 +568,7 @@ func checkUserAccountWritability(ctx context.Context, userAccount types.UserAcco
 
 func generateUserInviteUrl(
 	userAccount types.UserAccount,
-	organization types.Organization,
+	branding *types.OrganizationBranding,
 	emailVerified bool,
 ) (string, error) {
 	if _, token, err := authjwt.GenerateInviteToken(userAccount, emailVerified); err != nil {
@@ -576,7 +576,7 @@ func generateUserInviteUrl(
 	} else {
 		return fmt.Sprintf(
 			"%v/join?jwt=%v",
-			customdomains.AppDomainOrDefault(organization),
+			customdomains.AppDomainOrDefault(branding),
 			url.QueryEscape(token),
 		), nil
 	}

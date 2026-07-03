@@ -141,54 +141,6 @@
             </div>
           }
 
-          <div class="space-y-4">
-            <h2 class="text-xl font-bold dark:text-white">Custom Domains</h2>
-            <div
-              class="flex items-center p-2 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400"
-              role="alert">
-              <fa-icon [icon]="faLightbulb" class="me-2" />
-              <span class="sr-only">Info</span>
-              Please contact Distr support if you are interested in configuration of the settings below.
-            </div>
-            <div>
-              <label for="appDomain" class="distr-label mb-2"> Custom app domain </label>
-              <input
-                type="text"
-                id="appDomain"
-                formControlName="appDomain"
-                class="distr-input disabled:opacity-60"
-                placeholder="not configured" />
-              <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
-                This is where users and customers in your organization are able to access the Distr web application.
-              </p>
-            </div>
-            <div>
-              <label for="registryDomain" class="distr-label mb-2"> Custom registry domain </label>
-              <input
-                type="text"
-                id="registryDomain"
-                formControlName="registryDomain"
-                class="distr-input disabled:opacity-60"
-                placeholder="not configured" />
-              <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
-                This is where users and customers in your organization are able to access the Distr artifact registry.
-              </p>
-            </div>
-            <div>
-              <label for="emailFromAddress" class="distr-label mb-2"> Custom e-mail sender address </label>
-              <input
-                type="text"
-                id="emailFromAddress"
-                formControlName="emailFromAddress"
-                class="distr-input disabled:opacity-60"
-                placeholder="not configured" />
-              <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
-                This is the address used by Distr to send transactional e-mails to users and customers in your
-                organization.
-              </p>
-            </div>
-          </div>
-
           @if (!auth.isSuperAdmin()) {
             <div class="flex justify-center w-full space-x-4 mt-8 sm:mt-0">
               <button

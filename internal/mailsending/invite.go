@@ -25,7 +25,7 @@ func SendUserInviteMail(
 	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 
-	from, err := customdomains.EmailFromAddressParsedOrDefault(organization.Organization)
+	from, err := customdomains.EmailFromAddressParsedOrDefault(organization.Branding)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,9 @@ func SendUserInviteMail(
 		mailx.Bcc(currentUser.Email),
 		mailx.ReplyTo(currentUser.Email),
 		mailx.Subject(subject),
-		mailx.HtmlBodyTemplate(mailtemplates.InviteUser(userAccount, organization, *currentUser, targetOrgName, inviteURL)),
+		mailx.HtmlBodyTemplate(
+			mailtemplates.InviteUser(ctx, userAccount, organization, *currentUser, targetOrgName, inviteURL),
+		),
 	); err != nil {
 		log.Error(
 			"could not send invite mail",

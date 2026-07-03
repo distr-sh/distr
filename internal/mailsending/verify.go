@@ -39,7 +39,7 @@ func SendUserVerificationMail(
 		if err := mailer.Send(ctx,
 			mailx.To(userAccount.Email),
 			mailx.Subject("Verify your Distr account"),
-			mailx.HtmlBodyTemplate(mailtemplates.VerifyEmail(userAccount, owb, token, greetWithOrgName)),
+			mailx.HtmlBodyTemplate(mailtemplates.VerifyEmail(ctx, userAccount, owb, token, greetWithOrgName)),
 		); err != nil {
 			log.Error(
 				"could not send verification mail",

@@ -221,11 +221,8 @@ export class DeploymentWizardComponent implements OnInit {
     return adjustedIndex === 3;
   });
 
-  protected getVendorLogoUrl(branding: {logo?: string; logoContentType?: string} | null): string {
-    if (branding?.logo && branding?.logoContentType) {
-      return `data:${branding.logoContentType};base64,${branding.logo}`;
-    }
-    return '/distr-logo.svg';
+  protected getVendorLogoUrl(branding: {logoImageId?: string} | null): string {
+    return branding?.logoImageId ?? '/distr-logo.svg';
   }
 
   private loading = false;

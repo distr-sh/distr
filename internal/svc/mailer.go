@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/distr-sh/distr/internal/auth"
+	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/go-mailx/mailx"
 	ses "github.com/go-mailx/mailx-ses"
@@ -20,8 +21,10 @@ func createMailer(ctx context.Context) (*mailx.Mailer, error) {
 	config := env.GetMailerConfig()
 	authOrgOverrideFromAddress := func(ctx context.Context, mail mailx.Mail) string {
 		if auth, err := auth.Authentication.Get(ctx); err == nil {
-			if org := auth.CurrentOrg(); org != nil && org.EmailFromAddress != nil {
-				return *org.EmailFromAddress
+			if orgID := auth.CurrentOrgID(); orgID != nil {
+				if branding, err := db.GetOrganizationBranding(ctx, *orgID); err == nil && branding.EmailFromAddress != nil {
+					return *branding.EmailFromAddress
+				}
 			}
 		}
 		return ""

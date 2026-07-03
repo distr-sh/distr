@@ -11,9 +11,9 @@ import (
 
 var urlSchemeRegex = regexp.MustCompile("^https?://")
 
-func AppDomainOrDefault(o types.Organization) string {
-	if o.AppDomain != nil {
-		d := *o.AppDomain
+func AppDomainOrDefault(b *types.OrganizationBranding) string {
+	if b != nil && b.AppDomain != nil {
+		d := *b.AppDomain
 		if urlSchemeRegex.MatchString(d) {
 			return d
 		} else {
@@ -28,17 +28,17 @@ func AppDomainOrDefault(o types.Organization) string {
 	}
 }
 
-func RegistryDomainOrDefault(o types.Organization) string {
-	if o.RegistryDomain != nil {
-		return *o.RegistryDomain
+func RegistryDomainOrDefault(b *types.OrganizationBranding) string {
+	if b != nil && b.RegistryDomain != nil {
+		return *b.RegistryDomain
 	} else {
 		return env.RegistryHost()
 	}
 }
 
-func EmailFromAddressParsedOrDefault(o types.Organization) (*mail.Address, error) {
-	if o.EmailFromAddress != nil {
-		return mail.ParseAddress(*o.EmailFromAddress)
+func EmailFromAddressParsedOrDefault(b *types.OrganizationBranding) (*mail.Address, error) {
+	if b != nil && b.EmailFromAddress != nil {
+		return mail.ParseAddress(*b.EmailFromAddress)
 	} else {
 		return util.PtrTo(env.GetMailerConfig().FromAddress), nil
 	}

@@ -3,11 +3,10 @@ package handlers
 import (
 	"context"
 	"errors"
-	"fmt"
-	"io"
 	"net/http"
 	"time"
 
+	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
@@ -30,11 +29,11 @@ func OrganizationBrandingRouter(r chiopenapi.Router) {
 		Group(func(r chiopenapi.Router) {
 			r.Post("/", createOrganizationBranding).
 				With(option.Description("Create organization branding")).
-				With(option.Request(nil, option.ContentType("multipart/formdata"))).
+				With(option.Request(api.CreateOrUpdateOrganizationBrandingRequest{})).
 				With(option.Response(http.StatusOK, types.OrganizationBranding{}))
 			r.Put("/", updateOrganizationBranding).
 				With(option.Description("Update organization branding")).
-				With(option.Request(nil, option.ContentType("multipart/formdata"))).
+				With(option.Request(api.CreateOrUpdateOrganizationBrandingRequest{})).
 				With(option.Response(http.StatusOK, types.OrganizationBranding{}))
 		})
 }
@@ -60,9 +59,11 @@ func createOrganizationBranding(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 
-	if organizationBranding, err := getOrganizationBrandingFromRequest(r); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-	} else if err := setMetadataForOrganizationBranding(ctx, organizationBranding); err != nil {
+	organizationBranding, err := getOrganizationBrandingFromRequest(w, r)
+	if err != nil {
+		return
+	}
+	if err := setMetadataForOrganizationBranding(ctx, organizationBranding); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	} else if err = db.CreateOrganizationBranding(r.Context(), organizationBranding); err != nil {
 		log.Warn("could not create organizationBranding", zap.Error(err))
@@ -77,12 +78,14 @@ func updateOrganizationBranding(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 
-	if organizationBranding, err := getOrganizationBrandingFromRequest(r); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-	} else if err := setMetadataForOrganizationBranding(ctx, organizationBranding); err != nil {
+	organizationBranding, err := getOrganizationBrandingFromRequest(w, r)
+	if err != nil {
+		return
+	}
+	if err := setMetadataForOrganizationBranding(ctx, organizationBranding); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	} else if err = db.UpdateOrganizationBranding(r.Context(), organizationBranding); err != nil {
-		log.Warn("could not create organizationBranding", zap.Error(err))
+		log.Warn("could not update organizationBranding", zap.Error(err))
 		sentry.GetHubFromContext(r.Context()).CaptureException(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
@@ -90,35 +93,16 @@ func updateOrganizationBranding(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getOrganizationBrandingFromRequest(r *http.Request) (*types.OrganizationBranding, error) {
-	if err := r.ParseMultipartForm(102400); err != nil {
-		return nil, fmt.Errorf("failed to parse form: %w", err)
-	}
-	organizationBranding := types.OrganizationBranding{
-		Title:       util.PtrTo(r.Form.Get("title")),
-		Description: util.PtrTo(r.Form.Get("description")),
-	}
-
-	if file, head, err := r.FormFile("logo"); err != nil {
-		if !errors.Is(err, http.ErrMissingFile) {
-			return nil, err
-		} else {
-			// no logo uploaded
-			organizationBranding.Logo = nil
-			organizationBranding.LogoFileName = nil
-			organizationBranding.LogoContentType = nil
-		}
-	} else if head.Size > 102400 {
-		return nil, errors.New("file too large (max 100 KiB)")
-	} else if data, err := io.ReadAll(file); err != nil {
+func getOrganizationBrandingFromRequest(w http.ResponseWriter, r *http.Request) (*types.OrganizationBranding, error) {
+	body, err := JsonBody[api.CreateOrUpdateOrganizationBrandingRequest](w, r)
+	if err != nil {
 		return nil, err
-	} else {
-		organizationBranding.Logo = data
-		organizationBranding.LogoFileName = &head.Filename
-		organizationBranding.LogoContentType = util.PtrTo(head.Header.Get("Content-Type"))
 	}
-
-	return &organizationBranding, nil
+	return &types.OrganizationBranding{
+		Title:       body.Title,
+		Description: body.Description,
+		LogoImageID: body.LogoImageID,
+	}, nil
 }
 
 func setMetadataForOrganizationBranding(ctx context.Context, t *types.OrganizationBranding) error {

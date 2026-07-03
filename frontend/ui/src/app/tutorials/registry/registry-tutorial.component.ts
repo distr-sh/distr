@@ -37,6 +37,7 @@ import {ClipComponent} from '../../components/clip.component';
 import {CreatedAccessTokenComponent} from '../../components/created-access-token.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AccessTokensService} from '../../services/access-tokens.service';
+import {OrganizationBrandingService} from '../../services/organization-branding.service';
 import {OrganizationService} from '../../services/organization.service';
 import {ToastService} from '../../services/toast.service';
 import {TutorialsService} from '../../services/tutorials.service';
@@ -94,6 +95,7 @@ export class RegistryTutorialComponent implements OnInit, AfterViewInit, OnDestr
   private readonly router = inject(Router);
   protected readonly toast = inject(ToastService);
   protected readonly organizationService = inject(OrganizationService);
+  protected readonly organizationBrandingService = inject(OrganizationBrandingService);
   protected readonly tutorialsService = inject(TutorialsService);
   protected readonly tokenService = inject(AccessTokensService);
   protected createdToken?: AccessTokenWithKey;
@@ -120,8 +122,8 @@ export class RegistryTutorialComponent implements OnInit, AfterViewInit, OnDestr
 
   private readonly slug = toSignal(this.organizationService.get().pipe(map((o) => o.slug)));
   protected readonly host = toSignal(
-    combineLatest([fromPromise(getRemoteEnvironment()), this.organizationService.get()]).pipe(
-      map(([env, org]) => org.registryDomain ?? env.registryHost)
+    combineLatest([fromPromise(getRemoteEnvironment()), this.organizationBrandingService.registryDomain()]).pipe(
+      map(([env, registryDomain]) => registryDomain ?? env.registryHost)
     )
   );
   protected readonly proxyGhcrUrl = helloDistrProxyUrl('ghcr.io/distr-sh');

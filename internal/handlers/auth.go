@@ -277,7 +277,7 @@ func authSwitchContextHandler() func(writer http.ResponseWriter, request *http.R
 			log.Error("context switch failed", zap.Error(err))
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		} else if _, tokenString, err := authjwt.GenerateDefaultToken(user.AsUserAccount(), types.OrganizationWithUserRole{
-			Organization:           *org,
+			Organization:           org.Organization,
 			UserRole:               user.UserRole,
 			CustomerOrganizationID: user.CustomerOrganizationID,
 			PartnerOrganizationID:  user.PartnerOrganizationID,
@@ -498,13 +498,13 @@ func authResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 				organization = result
 			}
 
-			if from, err := customdomains.EmailFromAddressParsedOrDefault(organization.Organization); err == nil {
+			if from, err := customdomains.EmailFromAddressParsedOrDefault(organization.Branding); err == nil {
 				mailOpts = append(mailOpts, mailx.From(*from))
 			} else {
 				log.Warn("error parsing custom from address", zap.Error(err))
 			}
 		}
-		mailOpts = append(mailOpts, mailx.HtmlBodyTemplate(mailtemplates.PasswordReset(*user, organization, token)))
+		mailOpts = append(mailOpts, mailx.HtmlBodyTemplate(mailtemplates.PasswordReset(ctx, *user, organization, token)))
 		if err := mailer.Send(ctx, mailOpts...); err != nil {
 			log.Warn("could not send reset mail", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)

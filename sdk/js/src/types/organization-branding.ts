@@ -3,7 +3,8 @@ import {BaseModel} from './base';
 export interface OrganizationBranding extends BaseModel {
   title?: string;
   description?: string;
-  logo?: string;
-  logoFileName?: string;
-  logoContentType?: string;
+  logoImageId?: string;
+  appDomain?: string;
+  registryDomain?: string;
+  emailFromAddress?: string;
 }

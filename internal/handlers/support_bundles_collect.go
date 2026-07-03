@@ -61,7 +61,7 @@ func getCollectScriptHandler() http.HandlerFunc {
 
 		bundleSecret := r.URL.Query().Get("bundleSecret")
 
-		org, err := db.GetOrganizationByID(ctx, bundle.OrganizationID)
+		org, err := db.GetOrganizationWithBranding(ctx, bundle.OrganizationID)
 		if err != nil {
 			log.Error("failed to get organization", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -69,7 +69,7 @@ func getCollectScriptHandler() http.HandlerFunc {
 			return
 		}
 
-		baseURL := customdomains.AppDomainOrDefault(*org)
+		baseURL := customdomains.AppDomainOrDefault(org.Branding)
 
 		envVars, err := db.GetSupportBundleConfigurationEnvVars(ctx, bundle.OrganizationID)
 		if err != nil {

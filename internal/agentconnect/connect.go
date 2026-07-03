@@ -10,8 +10,13 @@ import (
 	"github.com/google/uuid"
 )
 
-func buildURL(targetID uuid.UUID, org types.Organization, targetSecret string, preConnect bool) (string, error) {
-	u, err := url.Parse(customdomains.AppDomainOrDefault(org))
+func buildURL(
+	targetID uuid.UUID,
+	org types.OrganizationWithBranding,
+	targetSecret string,
+	preConnect bool,
+) (string, error) {
+	u, err := url.Parse(customdomains.AppDomainOrDefault(org.Branding))
 	if err != nil {
 		return "", err
 	}
@@ -28,15 +33,19 @@ func buildURL(targetID uuid.UUID, org types.Organization, targetSecret string, p
 	return u.String(), nil
 }
 
-func BuildConnectURL(targetID uuid.UUID, org types.Organization, targetSecret string) (string, error) {
+func BuildConnectURL(targetID uuid.UUID, org types.OrganizationWithBranding, targetSecret string) (string, error) {
 	return buildURL(targetID, org, targetSecret, false)
 }
 
-func BuildPreConnectURL(targetID uuid.UUID, org types.Organization, targetSecret string) (string, error) {
+func BuildPreConnectURL(targetID uuid.UUID, org types.OrganizationWithBranding, targetSecret string) (string, error) {
 	return buildURL(targetID, org, targetSecret, true)
 }
 
-func GenerateConnectScript(targetID uuid.UUID, org types.Organization, targetSecret string) (string, error) {
+func GenerateConnectScript(
+	targetID uuid.UUID,
+	org types.OrganizationWithBranding,
+	targetSecret string,
+) (string, error) {
 	connectURL, err := BuildConnectURL(targetID, org, targetSecret)
 	if err != nil {
 		return "", fmt.Errorf("failed to build connect URL: %w", err)
@@ -81,7 +90,7 @@ func generateKubernetesConnectCommand(namespace string, connectURL string) strin
 
 func GenerateConnectCommand(
 	deploymentTarget types.DeploymentTarget,
-	org types.Organization,
+	org types.OrganizationWithBranding,
 	targetSecret string,
 ) (string, error) {
 	if deploymentTarget.Type == types.DeploymentTypeDocker && org.HasFeature(types.FeaturePrePostScripts) {
