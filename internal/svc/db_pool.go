@@ -33,8 +33,28 @@ func (r *Registry) GetDbPool() *pgxpool.Pool {
 	return r.dbPool
 }
 
+func (r *Registry) GetDbReadonlyPool() *pgxpool.Pool {
+	return r.dbReadonlyPool
+}
+
 func (reg *Registry) createDBPool(ctx context.Context) (*pgxpool.Pool, error) {
-	config, err := pgxpool.ParseConfig(env.DatabaseUrl())
+	return reg.createDBPoolFor(ctx, env.DatabaseUrl(), env.DatabaseMaxConns())
+}
+
+// createDBReadonlyPool creates a connection pool for the optional read-only database. When no
+// read-only URL is configured, it returns nil and callers should keep using the primary pool.
+func (reg *Registry) createDBReadonlyPool(ctx context.Context) (*pgxpool.Pool, error) {
+	readonlyUrl := env.DatabaseReadonlyUrl()
+	if readonlyUrl == nil {
+		reg.logger.Info("no read-only database configured, using primary db pool for all queries")
+		return nil, nil
+	}
+	reg.logger.Info("setting up read-only db pool")
+	return reg.createDBPoolFor(ctx, *readonlyUrl, env.DatabaseReadonlyMaxConns())
+}
+
+func (reg *Registry) createDBPoolFor(ctx context.Context, url string, maxConns *int) (*pgxpool.Pool, error) {
+	config, err := pgxpool.ParseConfig(url)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +82,7 @@ func (reg *Registry) createDBPool(ctx context.Context) (*pgxpool.Pool, error) {
 		}
 		return nil
 	}
-	if maxConns := env.DatabaseMaxConns(); maxConns != nil {
+	if maxConns != nil {
 		config.MaxConns = int32(*maxConns)
 	}
 	if env.EnableQueryLogging() {
