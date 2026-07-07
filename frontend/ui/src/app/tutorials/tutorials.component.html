@@ -8,9 +8,6 @@
         <div>
           <div class="font-medium">
             <p><b>Congratulations!</b> You have successfully completed all the tutorials.</p>
-            <p class="mt-2">
-              You are now eligible for a swag pack. Reach out to support&commat;glasskube.com for more information.
-            </p>
           </div>
         </div>
       </div>
@@ -37,18 +34,6 @@
           </div>
         </div>
       </div>
-
-      <div
-        class="flex p-4 mb-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400"
-        role="alert">
-        <fa-icon [icon]="faLightbulb" class="me-4" />
-        <div>
-          <div class="font-medium">
-            After completing all 3 tutorials you are eligible for a Distr swag pack, including Socks, T-Shirt, stickers
-            and much more!
-          </div>
-        </div>
-      </div>
     }
 
     <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
@@ -63,7 +48,9 @@
                 <div class="flex-1 min-w-0 ms-4">
                   <a
                     class="font-medium text-gray-900 truncate dark:text-white hover:underline hover:text-blue-600 dark:hover:text-blue-500"
-                    [routerLink]="['/', 'tutorials', tutorial.id]">
+                    [routerLink]="
+                      tutorial?.progress?.completedAt ? tutorial.completedRoute : ['/', 'tutorials', tutorial.id]
+                    ">
                     {{ tutorial.name }}
                   </a>
                   @if (tutorial?.progress?.createdAt && !tutorial?.progress?.completedAt) {
@@ -84,18 +71,25 @@
                   <div></div>
                 </div>
                 <div class="flex justify-stretch sm:justify-end space-x-2.5">
-                  <a
-                    [routerLink]="['/', 'tutorials', tutorial.id]"
-                    class="flex-1 sm:flex-none inline-flex items-center justify-center text-white distr-btn-primary">
-                    @if (tutorial?.progress?.completedAt) {
+                  @if (tutorial?.progress?.completedAt) {
+                    <a
+                      [routerLink]="tutorial.completedRoute"
+                      class="flex-1 sm:flex-none inline-flex items-center justify-center text-white distr-btn-primary">
                       View
-                    } @else if (tutorial?.progress?.createdAt) {
-                      Resume Tutorial
-                    } @else {
-                      Start Tutorial
-                    }
-                    <fa-icon class="ml-2" [icon]="faArrowRight" />
-                  </a>
+                      <fa-icon class="ml-2" [icon]="faArrowRight" />
+                    </a>
+                  } @else {
+                    <a
+                      [routerLink]="['/', 'tutorials', tutorial.id]"
+                      class="flex-1 sm:flex-none inline-flex items-center justify-center text-white distr-btn-primary">
+                      @if (tutorial?.progress?.createdAt) {
+                        Resume Tutorial
+                      } @else {
+                        Start Tutorial
+                      }
+                      <fa-icon class="ml-2" [icon]="faArrowRight" />
+                    </a>
+                  }
                 </div>
               </div>
             </li>

@@ -34,6 +34,7 @@ import {filteredByFormControl} from '../../../util/filter';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {UserRoleLabelPipe} from '../../../util/user-role';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
+import {PlaceholderDirective} from '../../directives/placeholder.directive';
 import {RequireVendorDirective} from '../../directives/required-role.directive';
 import {AuthService} from '../../services/auth.service';
 import {ImageUploadService} from '../../services/image-upload.service';
@@ -54,6 +55,7 @@ import {UserRoleSelectComponent} from '../user-role-select.component';
     ReactiveFormsModule,
     RequireVendorDirective,
     AutotrimDirective,
+    PlaceholderDirective,
     SecureImagePipe,
     QuotaLimitComponent,
     UserRoleSelectComponent,

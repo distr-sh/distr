@@ -43,6 +43,7 @@ import {AgentsTutorialComponent} from './tutorials/agents/agents-tutorial.compon
 import {BrandingTutorialComponent} from './tutorials/branding/branding-tutorial.component';
 import {RegistryTutorialComponent} from './tutorials/registry/registry-tutorial.component';
 import {TutorialsComponent} from './tutorials/tutorials.component';
+import {UsersTutorialComponent} from './tutorials/users/users-tutorial.component';
 import {isSubscriptionExpired} from './types/organization';
 import {UserSettingsComponent} from './user-settings/user-settings.component';
 
@@ -301,6 +302,10 @@ export const routes: Routes = [
             path: '',
             pathMatch: 'full',
             component: TutorialsComponent,
+          },
+          {
+            path: 'users',
+            component: UsersTutorialComponent,
           },
           {
             path: 'agents',
