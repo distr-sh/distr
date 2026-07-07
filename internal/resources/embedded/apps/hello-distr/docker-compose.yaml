@@ -31,7 +31,7 @@ services:
       - app_network
 
   backend:
-    image: ghcr.io/distr-sh/hello-distr/backend:0.4.5 # x-release-please-version
+    image: ghcr.io/distr-sh/hello-distr/backend:0.4.6 # x-release-please-version
     logging: *default-logging
     environment:
       <<: *shared-env
@@ -52,7 +52,7 @@ services:
       - app_network
 
   frontend:
-    image: ghcr.io/distr-sh/hello-distr/frontend:0.4.5 # x-release-please-version
+    image: ghcr.io/distr-sh/hello-distr/frontend:0.4.6 # x-release-please-version
     logging: *default-logging
     environment:
       <<: *shared-env
@@ -69,7 +69,7 @@ services:
       - app_network
 
   proxy:
-    image: ghcr.io/distr-sh/hello-distr/proxy:0.4.5 # x-release-please-version
+    image: ghcr.io/distr-sh/hello-distr/proxy:0.4.6 # x-release-please-version
     logging: *default-logging
     environment:
       <<: *shared-env
@@ -89,7 +89,7 @@ services:
       - app_network
 
   jobs:
-    image: ghcr.io/distr-sh/hello-distr/jobs:0.4.5 # x-release-please-version
+    image: ghcr.io/distr-sh/hello-distr/jobs:0.4.6 # x-release-please-version
     logging: *default-logging
     depends_on:
       backend:
