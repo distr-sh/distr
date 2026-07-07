@@ -1,5 +1,40 @@
 # Changelog
 
+## [2.25.1](https://github.com/distr-sh/distr/compare/2.25.0...2.25.1) (2026-07-07)
+
+
+### Bug Fixes
+
+* **deps:** update aws-sdk-go-v2 monorepo ([#2758](https://github.com/distr-sh/distr/issues/2758)) ([e320dec](https://github.com/distr-sh/distr/commit/e320dec7519c21392b089e6d25f8b198acf7b5c0))
+* **deps:** update go-mailx dependencies ([#2765](https://github.com/distr-sh/distr/issues/2765)) ([3f1011b](https://github.com/distr-sh/distr/commit/3f1011b4f3845917004ec005724aead7dd2868e0))
+* **deps:** update module github.com/docker/compose/v5 to v5.3.0 ([#2751](https://github.com/distr-sh/distr/issues/2751)) ([d462755](https://github.com/distr-sh/distr/commit/d4627553cad4cab42b28a62e7fc53878883bf868))
+* **deps:** update module github.com/go-chi/chi/v5 to v5.3.1 ([#2766](https://github.com/distr-sh/distr/issues/2766)) ([c01fde8](https://github.com/distr-sh/distr/commit/c01fde841bdacf980c2a365a7350d848bc5eb4fb))
+* **deps:** update module github.com/shirou/gopsutil/v4 to v4.26.6 ([#2742](https://github.com/distr-sh/distr/issues/2742)) ([9d644d8](https://github.com/distr-sh/distr/commit/9d644d83c6eb76d569782dd5bbb0548718ebf03d))
+* **deps:** update website dependencies ([#2729](https://github.com/distr-sh/distr/issues/2729)) ([bef6ccd](https://github.com/distr-sh/distr/commit/bef6ccd4688a38aa35c6313a7c89275aab92f8a5))
+
+
+### Other
+
+* allow application version renaming ([#2730](https://github.com/distr-sh/distr/issues/2730)) ([3829e49](https://github.com/distr-sh/distr/commit/3829e49453d2a9982cd1b262e978339e33b07d27))
+* **deploy/chart:** add scratch volume for file buffering ([#2745](https://github.com/distr-sh/distr/issues/2745)) ([bee59f2](https://github.com/distr-sh/distr/commit/bee59f296d8784ddfbbc5da76c03cba5b995db95))
+* **deps:** update angular monorepo to v22.0.5 ([#2759](https://github.com/distr-sh/distr/issues/2759)) ([cca0e13](https://github.com/distr-sh/distr/commit/cca0e13385cded78a43deb48cb8688cb22637225))
+* **deps:** update angular-cli monorepo to v22.0.5 ([#2750](https://github.com/distr-sh/distr/issues/2750)) ([89e312e](https://github.com/distr-sh/distr/commit/89e312e945724f23aa4893232eb33297c584ccd5))
+* **deps:** update codemirror ([#2716](https://github.com/distr-sh/distr/issues/2716)) ([045cca8](https://github.com/distr-sh/distr/commit/045cca85f81679b37982c0ea1cca20139b4bedec))
+* **deps:** update dependency @angular/cdk to v22.0.3 ([#2757](https://github.com/distr-sh/distr/issues/2757)) ([cea73f9](https://github.com/distr-sh/distr/commit/cea73f9db002d7decd7ebfc5e9fbd664bdbb1bb9))
+* **deps:** update dependency @fortawesome/angular-fontawesome to v5.1.0 ([#2767](https://github.com/distr-sh/distr/issues/2767)) ([4b2c225](https://github.com/distr-sh/distr/commit/4b2c2251cdff68b1a07c539413bc725d9a8f5a09))
+* **deps:** update dependency distr-sh/hello-distr to v0.4.6 ([#2755](https://github.com/distr-sh/distr/issues/2755)) ([0908f21](https://github.com/distr-sh/distr/commit/0908f2155094014b18b23438466993b76cc91c83))
+* **deps:** update dependency postcss to v8.5.16 ([#2726](https://github.com/distr-sh/distr/issues/2726)) ([24af988](https://github.com/distr-sh/distr/commit/24af988b999fa84ab961c19561ccaf1abd4fffad))
+* **deps:** update dependency stripe to v1.43.6 ([#2760](https://github.com/distr-sh/distr/issues/2760)) ([16f0ecd](https://github.com/distr-sh/distr/commit/16f0ecdfeeb8b681a4ef9a608f233a75cdf67876))
+* **deps:** update dependency typedoc to v0.28.20 ([#2762](https://github.com/distr-sh/distr/issues/2762)) ([e1e4ff8](https://github.com/distr-sh/distr/commit/e1e4ff8940471a923aa342bbf806d313141fed59))
+* **deps:** update dependency vitest to v4.1.10 ([#2763](https://github.com/distr-sh/distr/issues/2763)) ([cff3499](https://github.com/distr-sh/distr/commit/cff349995ba658caf0b5cb6c7bdea44e8d121fac))
+* **deps:** update distr-sh/hello-distr to v0.4.6 ([#2764](https://github.com/distr-sh/distr/issues/2764)) ([bc38f28](https://github.com/distr-sh/distr/commit/bc38f28c47e2c8442a3d7de975cc9c95e7bdbeea))
+* **deps:** update docker/build-push-action action to v7.3.0 ([#2756](https://github.com/distr-sh/distr/issues/2756)) ([5db78ca](https://github.com/distr-sh/distr/commit/5db78ca669fd14f73657a9645d70e0b8086931c3))
+
+
+### Performance
+
+* **backend:** add option to offload some requests to a readonly/replica DB ([#2747](https://github.com/distr-sh/distr/issues/2747)) ([19379bd](https://github.com/distr-sh/distr/commit/19379bd6ecc8efe0ac2fb8a66be0bac483174ceb))
+
 ## [2.25.0](https://github.com/distr-sh/distr/compare/2.24.5...2.25.0) (2026-07-02)
 
 
