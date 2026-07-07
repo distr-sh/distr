@@ -58,8 +58,8 @@ github.com/aws/aws-sdk-go-v2/internal/v4a v1.4.31 h1:3GUprIsfmGcC5SACIyB0e7E0BM1
 github.com/aws/aws-sdk-go-v2/internal/v4a v1.4.31/go.mod h1:7PuV1yl5e2xnUbm+RqvVg5i2iBM8EyijZNoI9wsOoOc=
 github.com/aws/aws-sdk-go-v2/service/dynamodb v1.57.4 h1:0E3bfw1Va3vfCrmtATvKRnGojY4oIlLl0u0xRDDUgfY=
 github.com/aws/aws-sdk-go-v2/service/dynamodb v1.57.4/go.mod h1:dFPU89qDDGgQbXyzQ5ZY6zcjjKPVW+1M63axOw887JE=
-github.com/aws/aws-sdk-go-v2/service/ecr v1.58.6 h1:EHQUIj2cTRnKlrIJZp+vn2jZPd6yukdxKyCPmHv3hCc=
-github.com/aws/aws-sdk-go-v2/service/ecr v1.58.6/go.mod h1:UzfjIuiQOpusteIHBCLIikQpxh8ctmdQCvSWWzbcYYI=
+github.com/aws/aws-sdk-go-v2/service/ecr v1.59.0 h1:H1dHU54MQVblAmsvlIfMdJmXyDKFSKnHrCmaWqwQ0Vs=
+github.com/aws/aws-sdk-go-v2/service/ecr v1.59.0/go.mod h1:UzfjIuiQOpusteIHBCLIikQpxh8ctmdQCvSWWzbcYYI=
 github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.13 h1:mbRIur/BiHK6SKPjoBIXSE/hJ6g6JGRLuxQy1jGjlN4=
 github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.13/go.mod h1:ITg9em2KbJx1s0y4aqRX5OYWG6HBZ5TVR//OdpEZ2CQ=
 github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.9.23 h1:9Fjh6fi/U5JEStVZijmaMpUwE/gvBJj7x2B/PjbO9To=
@@ -72,8 +72,8 @@ github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.31 h1:uao4A3QZ5UmB3
 github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.31/go.mod h1:I/1+z0VwL1GhQyLgkoHDlygpUZ+iTAwOQ/NsftiUL2I=
 github.com/aws/aws-sdk-go-v2/service/route53 v1.62.7 h1:twRRMmtSITnt/rrp+D7UDLzE5pKMZe759aalkUdN+OY=
 github.com/aws/aws-sdk-go-v2/service/route53 v1.62.7/go.mod h1:ztM1lr+sRoCAI8336ZUvlRPbToue0d3gE/wd6jomSJ8=
-github.com/aws/aws-sdk-go-v2/service/s3 v1.104.2 h1:bAY6O/TDv1HQnvylh9E247IyIKsUWUt2G965S7qX110=
-github.com/aws/aws-sdk-go-v2/service/s3 v1.104.2/go.mod h1:zdmCoFO/dSI7GlrwsPqFJI+WlFnSU4Tc8TJnlXrM1Do=
+github.com/aws/aws-sdk-go-v2/service/s3 v1.105.0 h1:XptwLL+UHXgafYMIHTy59IRovLbhz3znkxY2uS/pbXU=
+github.com/aws/aws-sdk-go-v2/service/s3 v1.105.0/go.mod h1:zdmCoFO/dSI7GlrwsPqFJI+WlFnSU4Tc8TJnlXrM1Do=
 github.com/aws/aws-sdk-go-v2/service/ses v1.36.0 h1:NpL14KNz9c7dEN7Zwxby0Ul1SkiGFJrb6UR5kBAG0nA=
 github.com/aws/aws-sdk-go-v2/service/ses v1.36.0/go.mod h1:gPF1BzIpaekunlf/3dr0nBFVZPp6iTbsyHtiWSCgDBE=
 github.com/aws/aws-sdk-go-v2/service/signin v1.3.0 h1:i0+tbB9QBnzL5NrF2WR/zk8q2s+1N+RaDYr2627E8UI=
