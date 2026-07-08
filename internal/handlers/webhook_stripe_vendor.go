@@ -153,13 +153,13 @@ func handleVendorStripeSubscription(ctx context.Context, orgID uuid.UUID, sub st
 		notBefore = expiresAt
 	}
 
-	if licenseKey.NotBefore != nil && licenseKey.ExpiresAt != nil && licenseKey.Payload != nil {
+	// don't check notBefore because it is always time.Now()
+	if licenseKey.ExpiresAt != nil && licenseKey.Payload != nil {
 		payloadEqual, err := payloadsEqual(licenseKey.Payload, payload)
 		if err != nil {
 			return err
 		}
 		if payloadEqual &&
-			licenseKey.NotBefore.Equal(notBefore.UTC().Truncate(time.Second)) &&
 			licenseKey.ExpiresAt.Equal(expiresAt.UTC().Truncate(time.Second)) {
 			log.Info("license key revision unchanged, skipping", zap.Stringer("licenseKeyId", licenseKeyID))
 			return nil
