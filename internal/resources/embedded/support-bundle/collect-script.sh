@@ -241,10 +241,10 @@ if [ -n "$INCLUDED_CONTAINERS" ]; then
   echo "Collecting and uploading container logs..."
   while IFS="$(printf '\t')" read -r CID CNAME; do
     [ -z "$CID" ] && continue
-    CONTAINER_LOGS=$(docker logs --tail 1000 "$CID" 2>&1 || true)
+    CONTAINER_LOGS=$(docker logs --tail {{.LogTailLines}} "$CID" 2>&1 || true)
     if [ -n "$CONTAINER_LOGS" ]; then
       upload_resource "${CNAME}-container-logs" "$CONTAINER_LOGS"
-      echo "  Uploaded logs for $CNAME (last 1000 lines)"
+      echo "  Uploaded logs for $CNAME (last {{.LogTailLines}} lines)"
     else
       echo "  No logs available for $CNAME"
     fi

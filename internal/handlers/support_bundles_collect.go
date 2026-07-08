@@ -10,6 +10,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/supportbundle"
 	"github.com/distr-sh/distr/internal/types"
@@ -78,7 +79,9 @@ func getCollectScriptHandler() http.HandlerFunc {
 			return
 		}
 
-		script, err := supportbundle.GenerateCollectScript(baseURL, bundle.ID, bundleSecret, envVars)
+		script, err := supportbundle.GenerateCollectScript(
+			baseURL, bundle.ID, bundleSecret, envVars, env.SupportBundleLogTailLines(),
+		)
 		if err != nil {
 			log.Error("failed to generate collect script", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -104,7 +107,7 @@ func uploadSupportBundleResourceHandler() http.HandlerFunc {
 			return
 		}
 
-		r.Body = http.MaxBytesReader(w, r.Body, 1<<20) // 1 MiB
+		// The request body size is limited by the requestSize middleware on the route.
 		if err := r.ParseMultipartForm(1 << 20); err != nil {
 			http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
 			return
