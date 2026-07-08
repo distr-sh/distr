@@ -11,10 +11,20 @@ import {Aside} from '@astrojs/starlight/components';
 import ThemedImage from '~/components/util/ThemedImage.astro';
 import featuresLight from '~/assets/docs/platform/customers/customer-management/customer-features-dropdown-light.png';
 import featuresDark from '~/assets/docs/platform/customers/customer-management/customer-features-dropdown-dark.png';
+import customerManagementLight from '~/assets/docs/platform/customers/customer-management/customer-management-light.png';
+import customerManagementDark from '~/assets/docs/platform/customers/customer-management/customer-management-dark.png';
+import manageLinksLight from '~/assets/docs/platform/customers/customer-management/manage-links-light.png';
+import manageLinksDark from '~/assets/docs/platform/customers/customer-management/manage-links-dark.png';
+import portalLinksLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-links-light.png';
+import portalLinksDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-links-dark.png';
 
-The **Customers** section in the [Vendor Portal](/docs/vendor-portal/) is where you create and manage customer accounts, invite customer users, manage customer-specific secrets, and control which features each customer can use. This guide walks you through the customer management interface and common tasks.
+The **Customers** section in the [Vendor Portal](/docs/vendor-portal/) is where you create and manage customer accounts, invite customer users, manage customer-specific secrets, configure links, and control which features each customer can use. This guide walks you through the customer management interface and common tasks.
 
-![Customers section in the Vendor Portal](../../../../../assets/docs/platform/customers/customer-management/customer-management.png)
+<ThemedImage
+  lightSrc={customerManagementLight}
+  darkSrc={customerManagementDark}
+  alt="Customers section in the Vendor Portal"
+/>
 
 ## Overview
 
@@ -23,6 +33,7 @@ From the Customers page you can:
 - **Create customers** and give them a name
 - **Invite customer users** (name, email, and [role](/docs/platform/rbac/)) and manage access per customer
 - **Manage secrets** for a specific customer—see [Manage Secrets](/docs/agents/secrets/) for how secrets work
+- **Manage links** that appear in that customer's [Customer Portal](/docs/platform/customer-portal/) sidebar
 - **Enable or disable features** per customer: Deployments, [Alerts](/docs/agents/alerts/), Artifacts, and [Support Bundles](/docs/platform/support-bundles/)
 
 Use the **Filter customers** search bar to find customers, and **+ Create Customer** to add a new one.
@@ -60,6 +71,30 @@ For each customer you can manage secrets that are only available to that custome
 2. Click **Manage secrets** for that customer.
 
 For how to create, edit, and use secrets (including customer-specific secrets), see [Manage Secrets](/docs/agents/secrets/).
+
+## Managing links per customer
+
+You can add links for each customer, for example to your documentation, a support page, or a status page. They are shown at the bottom of the sidebar in that customer's [Customer Portal](/docs/platform/customer-portal/) and open in a new tab.
+
+To add a link:
+
+1. In the **Customers** list, find the customer.
+2. Click **Manage links** for that customer.
+3. Click **+ Create Link** and enter a **name** and the **URL**.
+
+<ThemedImage
+  lightSrc={manageLinksLight}
+  darkSrc={manageLinksDark}
+  alt="Manage links page for a customer with a configured Documentation link"
+/>
+
+Existing links can be edited or deleted at any time, and changes are visible to the customer immediately. This is how a configured link shows up in the Customer Portal sidebar:
+
+<ThemedImage
+  lightSrc={portalLinksLight}
+  darkSrc={portalLinksDark}
+  alt="Customer Portal with a vendor-configured Documentation link at the bottom of the sidebar"
+/>
 
 ## Enabling and disabling features per customer
 
