@@ -22,5 +22,20 @@ A compatible Distr license key can be generated using the following JSON as a te
 
 After error-free initialization, a [LicenseData] object can be obtained via [GetLicenseData].
 If no public key is set at compile time, [GetLicenseData] always returns the default values for all limits.
+
+# Organization scoping
+
+A build can additionally be restricted to license keys that were issued for a specific Distr
+organization. This is controlled by two variables that are injected at compile time via -ldflags
+(similar to the internal/buildconfig variables):
+
+	-X github.com/distr-sh/distr/internal/license.organizationID=<organization uuid>
+	-X github.com/distr-sh/distr/internal/license.organizationScopeCutoff=<yyyy-mm-dd date>
+
+When organizationID is set, [Initialize] additionally verifies that the license key carries a
+matching organization ID claim (see licensekey.OrganizationIDClaimName). To stay backwards
+compatible with license keys minted before organization scoping was introduced, this check only
+applies to license keys whose "issued at" claim is newer than organizationScopeCutoff. When
+organizationID is empty, organization scoping is disabled.
 */
 package license

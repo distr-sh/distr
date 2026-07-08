@@ -71,7 +71,7 @@ Example payloads:
 }
 ```
 
-The payload must be a JSON object (not an array or primitive). The following field names are reserved by the JWT spec and cannot be used: `exp`, `nbf`, `iss`, `sub`, `aud`, `iat`.
+The payload must be a JSON object (not an array or primitive). The following field names are reserved and cannot be used: the JWT-standard claims `exp`, `nbf`, `iss`, `sub`, `aud`, `iat`, as well as the Distr-specific claim `org`.
 
 ## Getting the token
 
@@ -93,6 +93,7 @@ The token contains:
 - `iat`: issued at (when the key was created in Distr)
 - `nbf`: not before
 - `exp`: expiration
+- `org`: the UUID of your Distr organization that issued the license key
 - All fields from your payload as top-level claims
 
 ### Retrieving the public key
