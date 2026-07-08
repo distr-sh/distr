@@ -155,9 +155,9 @@ func ApiRouter(
 						auth.Authentication.Middleware,
 						middleware.SetSentryUserFromUserAuth,
 						middleware.RequireEmailVerified,
-						httprate.Limit(30, 1*time.Second, httprate.WithKeyFuncs(middleware.RateLimitUserIDKey)),
-						httprate.Limit(300, 1*time.Minute, httprate.WithKeyFuncs(middleware.RateLimitUserIDKey)),
-						httprate.Limit(2000, 1*time.Hour, httprate.WithKeyFuncs(middleware.RateLimitUserIDKey)),
+						httprate.LimitBy(30, 1*time.Second, middleware.RateLimitUserIDKey),
+						httprate.LimitBy(300, 1*time.Minute, middleware.RateLimitUserIDKey),
+						httprate.LimitBy(2000, 1*time.Hour, middleware.RateLimitUserIDKey),
 
 						// TODO (low-prio) in the future, additionally check token audience and require it to be "api"/"user",
 						// such that agents cant access anything here (they also can't now, because their tokens will not
