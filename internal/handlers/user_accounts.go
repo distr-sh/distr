@@ -45,10 +45,10 @@ func UserAccountsRouter(r chiopenapi.Router) {
 				UserId string `json:"-" path:"userId"`
 			}
 
-			inviteUserRateLimiter := httprate.Limit(
+			inviteUserRateLimiter := httprate.LimitBy(
 				3,
 				10*time.Minute,
-				httprate.WithKeyFuncs(middleware.RateLimitUserIDKey, middleware.RateLimitPathValueKey("userId")),
+				httprate.JoinKeys(middleware.RateLimitUserIDKey, middleware.RateLimitPathValueKey("userId")),
 			)
 
 			r.Use(userAccountMiddleware)

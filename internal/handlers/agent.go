@@ -39,10 +39,10 @@ import (
 )
 
 func AgentRouter(r chiopenapi.Router) {
-	rateLimitPerDeploymentTargetID := httprate.Limit(
+	rateLimitPerDeploymentTargetID := httprate.LimitBy(
 		500,
 		1*time.Minute,
-		httprate.WithKeyFuncs(middleware.RateLimitCurrentDeploymentTargetIdKeyFunc),
+		middleware.RateLimitCurrentDeploymentTargetIdKeyFunc,
 	)
 
 	// pre-connect and connect only read (org + deployment target) to render the agent manifest. The
