@@ -225,6 +225,7 @@ const (
 	TutorialBranding      Tutorial  = "branding"
 	TutorialAgents        Tutorial  = "agents"
 	TutorialRegistry      Tutorial  = "registry"
+	TutorialUsers         Tutorial  = "users"
 	FileScopePlatform     FileScope = "platform"
 	FileScopeOrganization FileScope = "organization"
 

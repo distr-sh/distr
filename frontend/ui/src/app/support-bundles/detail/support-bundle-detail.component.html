@@ -130,17 +130,7 @@
           <div class="space-y-4 mb-6">
             @for (comment of bundle.comments; track comment.id) {
               <div class="flex gap-3">
-                @if (comment.userImageUrl) {
-                  <img
-                    [attr.src]="comment.userImageUrl | secureImage | async"
-                    [alt]="comment.userName"
-                    class="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-                } @else {
-                  <div
-                    class="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 flex items-center justify-center text-xs font-medium flex-shrink-0">
-                    {{ userInitials(comment.userName) }}
-                  </div>
-                }
+                <app-user-avatar [image]="comment.userImageUrl" [name]="comment.userName" class="size-8" />
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-1">
                     <span class="text-sm font-medium text-gray-900 dark:text-white">{{ comment.userName }}</span>

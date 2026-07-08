@@ -1,6 +1,6 @@
 {
   "name": "@distr-sh/distr",
-  "version": "2.24.5",
+  "version": "2.25.1",
   "type": "module",
   "license": "Apache-2.0",
   "description": "Distr",
@@ -14,12 +14,13 @@
     "build:enterprise": "pnpm buildconfig && pnpm agent-changelog && ng build --configuration=production-enterprise",
     "build:dev": "pnpm buildconfig && pnpm agent-changelog && ng build --configuration=development",
     "watch": "pnpm buildconfig && pnpm agent-changelog && ng build --watch --configuration=development",
-    "test": "pnpm buildconfig && ng test",
+    "test": "pnpm buildconfig && ng test --watch=false",
+    "test:watch": "pnpm buildconfig && ng test --watch=true",
     "lint": "prettier --check .",
     "format": "prettier --write --list-different ."
   },
   "private": true,
-  "packageManager": "pnpm@11.9.0",
+  "packageManager": "pnpm@11.10.0",
   "engines": {
     "node": "26.x"
   },

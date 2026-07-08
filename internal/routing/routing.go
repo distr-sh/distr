@@ -60,6 +60,7 @@ Read more about Distr and our use cases at https://distr.sh/docs/
 func NewRouter(
 	logger *zap.Logger,
 	db *pgxpool.Pool,
+	dbReadonly *pgxpool.Pool,
 	mailer *mailx.Mailer,
 	tracers *tracers.Tracers,
 	oidcer *oidc.OIDCer,
@@ -94,7 +95,7 @@ func NewRouter(
 			Layout:      "responsive",
 		}),
 	)
-	openapiRouter.Route("/api", ApiRouter(logger, db, mailer, tracers, oidcer, prometheusCollector))
+	openapiRouter.Route("/api", ApiRouter(logger, db, dbReadonly, mailer, tracers, oidcer, prometheusCollector))
 
 	baseRouter.Mount("/internal", InternalRouter())
 	baseRouter.Mount("/status", StatusRouter())
@@ -108,6 +109,7 @@ func NewRouter(
 func ApiRouter(
 	logger *zap.Logger,
 	db *pgxpool.Pool,
+	dbReadonly *pgxpool.Pool,
 	mailer *mailx.Mailer,
 	tracers *tracers.Tracers,
 	oidcer *oidc.OIDCer,
@@ -124,7 +126,7 @@ func ApiRouter(
 			middleware.Sentry,
 			middleware.LoggerCtxMiddleware(logger),
 			middleware.LoggingMiddleware,
-			middleware.ContextInjectorMiddleware(db, mailer, oidcer, prometheusCollector),
+			middleware.ContextInjectorMiddleware(db, dbReadonly, mailer, oidcer, prometheusCollector),
 		)
 
 		r.Route("/public/v1", PublicRouter(tracers))
@@ -153,9 +155,9 @@ func ApiRouter(
 						auth.Authentication.Middleware,
 						middleware.SetSentryUserFromUserAuth,
 						middleware.RequireEmailVerified,
-						httprate.Limit(30, 1*time.Second, httprate.WithKeyFuncs(middleware.RateLimitUserIDKey)),
-						httprate.Limit(300, 1*time.Minute, httprate.WithKeyFuncs(middleware.RateLimitUserIDKey)),
-						httprate.Limit(2000, 1*time.Hour, httprate.WithKeyFuncs(middleware.RateLimitUserIDKey)),
+						httprate.LimitBy(30, 1*time.Second, middleware.RateLimitUserIDKey),
+						httprate.LimitBy(300, 1*time.Minute, middleware.RateLimitUserIDKey),
+						httprate.LimitBy(2000, 1*time.Hour, middleware.RateLimitUserIDKey),
 
 						// TODO (low-prio) in the future, additionally check token audience and require it to be "api"/"user",
 						// such that agents cant access anything here (they also can't now, because their tokens will not
@@ -165,20 +167,21 @@ func ApiRouter(
 					r.Route("/application-entitlements", handlers.ApplicationEntitlementsRouter)
 					r.Route("/applications", handlers.ApplicationsRouter)
 					r.Route("/artifact-entitlements", handlers.ArtifactEntitlementsRouter)
-					r.Route("/artifact-pulls", handlers.ArtifactPullsRouter)
+					r.With(middleware.UseReadonlyDB).Route("/artifact-pulls", handlers.ArtifactPullsRouter)
 					r.Route("/artifacts", handlers.ArtifactsRouter)
 					r.Route("/billing", handlers.BillingRouter)
 					r.Route("/context", handlers.ContextRouter)
 					r.Route("/customer-organizations", handlers.CustomerOrganizationsRouter)
 					r.With(middleware.PartnerManagementFeatureMiddleware).
 						Route("/partner-organizations", handlers.PartnerOrganizationsRouter)
-					r.Route("/dashboard", handlers.DashboardRouter)
+					r.With(middleware.UseReadonlyDB).Route("/dashboard", handlers.DashboardRouter)
 					r.Route("/alert-configurations", handlers.AlertConfigurationsRouter)
-					r.Route("/deployment-target-metrics", handlers.DeploymentTargetMetricsRouter)
+					r.With(middleware.UseReadonlyDB).
+						Route("/deployment-target-metrics", handlers.DeploymentTargetMetricsRouter)
 					r.Route("/deployment-targets", handlers.DeploymentTargetsRouter)
 					r.Route("/deployments", handlers.DeploymentsRouter)
 					r.Route("/files", handlers.FileRouter)
-					r.Route("/notification-records", handlers.NotificationRecordsRouter)
+					r.With(middleware.UseReadonlyDB).Route("/notification-records", handlers.NotificationRecordsRouter)
 					r.Route("/organization", handlers.OrganizationRouter)
 					r.Route("/organizations", handlers.OrganizationsRouter)
 					r.Route("/secrets", handlers.SecretsRouter)

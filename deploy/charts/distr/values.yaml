@@ -149,6 +149,19 @@ hub:
     # - name: METRICS_BEARER_TOKEN
     #   value: '...'
   envFrom: []
+  # The OCI registry can buffer request bodies to temporary files instead of holding
+  # them in memory. When enabled, this provisions a generic ephemeral volume (a per-pod
+  # PVC that is created and deleted together with the pod) and points REGISTRY_SCRATCH_DIR
+  # at its mount path. Requires Kubernetes >= 1.23.
+  scratch:
+    enabled: false
+    mountPath: /scratch
+    # Size requested for the ephemeral volume.
+    size: 10Gi
+    # StorageClass for the ephemeral volume. An empty string uses the cluster default.
+    storageClassName: ''
+    accessModes:
+      - ReadWriteOnce
 
 # This is for setting Kubernetes Annotations to a Pod.
 # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/

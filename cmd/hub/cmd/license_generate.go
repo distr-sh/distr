@@ -53,8 +53,11 @@ func NewGenerateLicenseKeyCommand() *cobra.Command {
 	cmd.Flags().StringVar(&opts.ValidPeriod, "valid-period", "8760h", "Validity period")
 	cmd.Flags().BoolVar(&opts.NoSave, "no-save", false, "Skip saving the license key to the database")
 	cmd.MarkFlagsMutuallyExclusive("expires-at", "valid-period")
-	cmd.MarkFlagsRequiredTogether("organization-id", "customer-id", "name")
-	for _, f := range []string{"organization-id", "customer-id", "name"} {
+	// customer-id and name are only meaningful when the license key is persisted, so they are
+	// mutually exclusive with --no-save. organization-id may be used with --no-save to scope an
+	// ephemeral license key to an organization.
+	cmd.MarkFlagsRequiredTogether("customer-id", "name")
+	for _, f := range []string{"customer-id", "name"} {
 		cmd.MarkFlagsOneRequired("no-save", f)
 		cmd.MarkFlagsMutuallyExclusive("no-save", f)
 	}
@@ -89,13 +92,25 @@ func runGenerateLicenseKey(ctx context.Context, opts GenerateLicenseKeyOptions) 
 		}
 	}
 
+	var orgID uuid.UUID
+	if opts.OrgID != "" {
+		if p, err := uuid.Parse(opts.OrgID); err != nil {
+			return fmt.Errorf("invalid organization-id: %w", err)
+		} else {
+			orgID = p
+		}
+	} else if !opts.NoSave {
+		return fmt.Errorf("organization-id is required unless --no-save is set")
+	}
+
 	if opts.NoSave {
 		data := licensekey.LicenseKeyData{
-			LicenseKeyID: uuid.New(),
-			IssuedAt:     time.Now(),
-			NotBefore:    notBefore,
-			ExpiresAt:    expiresAt,
-			Payload:      json.RawMessage(opts.Payload),
+			LicenseKeyID:   uuid.New(),
+			OrganizationID: orgID,
+			IssuedAt:       time.Now(),
+			NotBefore:      notBefore,
+			ExpiresAt:      expiresAt,
+			Payload:        json.RawMessage(opts.Payload),
 		}
 		token, err := licensekey.GenerateToken(data, env.Host())
 		if err != nil {
@@ -120,12 +135,7 @@ func runGenerateLicenseKey(ctx context.Context, opts GenerateLicenseKeyOptions) 
 		license.Description = &opts.Description
 	}
 
-	if p, err := uuid.Parse(opts.OrgID); err != nil {
-		log.Error("invalid organization-id", zap.Error(err))
-		return err
-	} else {
-		license.OrganizationID = p
-	}
+	license.OrganizationID = orgID
 
 	if p, err := uuid.Parse(opts.CustomerOrgID); err != nil {
 		log.Error("invalid customer-id", zap.Error(err))

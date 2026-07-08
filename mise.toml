@@ -7,8 +7,8 @@ go = "1.26.4"
 golangci-lint = "2.12.2"
 helm-docs = "1.14.2"
 watchexec = "2.5.1"
-pnpm = "11.9.0"
-stripe = "1.43.2"
+pnpm = "11.10.0"
+stripe = "1.43.6"
 "go:github.com/go-delve/delve/cmd/dlv" = "1.27.0"
 git-lfs = "3.7.1"
 
@@ -87,8 +87,13 @@ run = 'go test ./...'
 depends = ["go-tidy"]
 description = 'Run all Go tests'
 
+[tasks."test:frontend"]
+run = 'pnpm test'
+depends = ["frontend-deps"]
+description = 'Run all frontend tests'
+
 [tasks.test]
-run = { tasks = ["test:go"] }
+run = { tasks = ["test:go", "test:frontend"] }
 
 [tasks."format:go"]
 run = 'golangci-lint run --fix'

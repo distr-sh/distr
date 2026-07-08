@@ -48,32 +48,40 @@ func DeploymentsRouter(r chiopenapi.Router) {
 			Resource string `query:"resource"`
 		}
 
-		r.Get("/status", getDeploymentStatus).
-			With(option.Description("Get deployment status")).
-			With(option.Request(DeploymentTimeseriesRequest{})).
-			With(option.Response(http.StatusOK, []api.DeploymentRevisionStatus{}))
-		r.Get("/status/export", exportDeploymentStatusHandler()).
-			With(option.Description("Export deployment status")).
+		r.Get("/revisions", getDeploymentRevisions).
+			With(option.Description("Get deployment revisions")).
 			With(option.Request(DeploymentIDRequest{})).
-			With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
-		r.Get("/logs", getDeploymentLogsHandler()).
-			With(option.Description("Get deployment logs")).
-			With(option.Request(struct {
-				DeploymentTimeseriesRequest
-				ResourceRequest
-			}{})).
-			With(option.Response(http.StatusOK, []api.DeploymentLogRecord{}))
-		r.Get("/logs/resources", getDeploymentLogsResourcesHandler()).
-			With(option.Description("Get deployment log resources")).
-			With(option.Request(DeploymentIDRequest{})).
-			With(option.Response(http.StatusOK, api.DeploymentLogRecordResourcesResponse{}))
-		r.Get("/logs/export", exportDeploymentLogsHandler()).
-			With(option.Description("Export deployment logs")).
-			With(option.Request(struct {
-				DeploymentIDRequest
-				ResourceRequest
-			}{})).
-			With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
+			With(option.Response(http.StatusOK, []api.DeploymentRevisionResponse{}))
+		// These are read-only, agent-pushed timeseries that are safe to serve from the read-only db.
+		r.With(middleware.UseReadonlyDB).Group(func(r chiopenapi.Router) {
+			r.Get("/status", getDeploymentStatus).
+				With(option.Description("Get deployment status")).
+				With(option.Request(DeploymentTimeseriesRequest{})).
+				With(option.Response(http.StatusOK, []api.DeploymentRevisionStatus{}))
+			r.Get("/status/export", exportDeploymentStatusHandler()).
+				With(option.Description("Export deployment status")).
+				With(option.Request(DeploymentIDRequest{})).
+				With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
+			r.Get("/logs", getDeploymentLogsHandler()).
+				With(option.Description("Get deployment logs")).
+				With(option.Request(struct {
+					DeploymentTimeseriesRequest
+					ResourceRequest
+					Filter *string `query:"filter"`
+				}{})).
+				With(option.Response(http.StatusOK, []api.DeploymentLogRecord{}))
+			r.Get("/logs/resources", getDeploymentLogsResourcesHandler()).
+				With(option.Description("Get deployment log resources")).
+				With(option.Request(DeploymentIDRequest{})).
+				With(option.Response(http.StatusOK, api.DeploymentLogRecordResourcesResponse{}))
+			r.Get("/logs/export", exportDeploymentLogsHandler()).
+				With(option.Description("Export deployment logs")).
+				With(option.Request(struct {
+					DeploymentIDRequest
+					ResourceRequest
+				}{})).
+				With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
+		})
 		r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
 			r.Delete("/", deleteDeploymentHandler()).
 				With(option.Description("Delete a deployment")).
@@ -141,6 +149,9 @@ func putDeployment(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
+
+		createdByUserID := auth.Authentication.Require(ctx).CurrentUserID()
+		deploymentRequest.CreatedByUserAccountID = &createdByUserID
 
 		if _, err := db.CreateDeploymentRevision(ctx, &deploymentRequest); err != nil {
 			log.Warn("could not create deployment revision", zap.Error(err))
@@ -491,6 +502,22 @@ func deploymentValuesError(ctx context.Context, w http.ResponseWriter, err error
 	sentry.GetHubFromContext(ctx).CaptureException(err)
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	return err
+}
+
+func getDeploymentRevisions(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	deployment := internalctx.GetDeployment(ctx)
+	authInfo := auth.Authentication.Require(ctx)
+	if revisions, err := db.GetDeploymentRevisions(ctx, deployment.ID); err != nil {
+		internalctx.GetLogger(ctx).Error("failed to get deployment revisions", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	} else {
+		RespondJSON(w, mapping.List(revisions, mapping.DeploymentRevisionToAPI(
+			authInfo.CurrentCustomerOrgID(),
+			authInfo.CurrentPartnerOrgID(),
+		)))
+	}
 }
 
 func getDeploymentStatus(w http.ResponseWriter, r *http.Request) {

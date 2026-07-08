@@ -147,6 +147,19 @@ Simply navigate to the **Deployments** section and click on the **+ Deploy App**
 
 This will show you the same flow as above, where you can select your application and version to deploy, configure the deployment settings, and get the command to install both the agent and application.
 
+## Deployment History
+
+Distr keeps a full history of every deployment. Each time a deployment's version or configuration changes, a new revision is recorded, so you can always see what was deployed, when, and by whom.
+
+On the **Deployments** page, open the actions menu on a deployment and select **Deployment history**. A timeline opens listing every revision, newest first, with the application version, the user or organization that made the change, and the timestamp. The active revision is marked **(current)**.
+
+Select any revision to inspect its full configuration:
+
+- **Docker**: the environment variables and deployment mode used for that revision.
+- **Helm**: the values file, release name, and Helm options (wait strategy, rollback on failure, cleanup on failure, and force conflicts).
+
+This makes it easy to review how a customer's deployment was configured in the past and to troubleshoot changes over time.
+
 ## Related Guides
 
 - [Create an Application](/docs/agents/application/) - Learn how to create Docker and Helm applications

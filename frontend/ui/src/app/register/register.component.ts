@@ -5,11 +5,12 @@ import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {OidcButtonsComponent} from '../components/oidc-buttons.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
+import {PlaceholderDirective} from '../directives/placeholder.directive';
 import {AuthService} from '../services/auth.service';
 
 @Component({
   selector: 'app-register',
-  imports: [RouterLink, ReactiveFormsModule, AutotrimDirective, OidcButtonsComponent],
+  imports: [RouterLink, ReactiveFormsModule, AutotrimDirective, PlaceholderDirective, OidcButtonsComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './register.component.html',
 })

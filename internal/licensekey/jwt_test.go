@@ -64,6 +64,57 @@ func TestGenerateToken(t *testing.T) {
 	g.Expect(plan).To(Equal("enterprise"))
 }
 
+func TestGenerateToken_OrganizationClaim(t *testing.T) {
+	g := NewWithT(t)
+	key := testKey(t)
+	now := time.Now().Truncate(time.Second)
+	expiresAt := now.Add(24 * time.Hour)
+	orgID := uuid.New()
+	licenseKey := types.LicenseKey{
+		ID:             uuid.New(),
+		OrganizationID: orgID,
+		CreatedAt:      now,
+		LastRevisedAt:  &now,
+		NotBefore:      &now,
+		ExpiresAt:      &expiresAt,
+		Payload:        json.RawMessage(`{}`),
+	}
+
+	token, err := generateToken(key, FromLicenseKey(licenseKey), "test-issuer")
+	g.Expect(err).ToNot(HaveOccurred())
+
+	pubKey, _ := key.PublicKey()
+	parsed, err := jwt.Parse([]byte(token), jwt.WithKey(jwa.EdDSA(), pubKey))
+	g.Expect(err).ToNot(HaveOccurred())
+
+	var org string
+	g.Expect(parsed.Get(OrganizationIDClaimName, &org)).To(Succeed())
+	g.Expect(org).To(Equal(orgID.String()))
+}
+
+func TestGenerateToken_NoOrganizationClaimWhenUnset(t *testing.T) {
+	g := NewWithT(t)
+	key := testKey(t)
+	now := time.Now().Truncate(time.Second)
+	expiresAt := now.Add(24 * time.Hour)
+
+	token, err := generateToken(key, LicenseKeyData{
+		LicenseKeyID: uuid.New(),
+		IssuedAt:     now,
+		NotBefore:    now,
+		ExpiresAt:    expiresAt,
+		Payload:      json.RawMessage(`{}`),
+	}, "test-issuer")
+	g.Expect(err).ToNot(HaveOccurred())
+
+	pubKey, _ := key.PublicKey()
+	parsed, err := jwt.Parse([]byte(token), jwt.WithKey(jwa.EdDSA(), pubKey))
+	g.Expect(err).ToNot(HaveOccurred())
+
+	var org string
+	g.Expect(parsed.Get(OrganizationIDClaimName, &org)).ToNot(Succeed())
+}
+
 func TestGenerateToken_ReservedClaimsStripped(t *testing.T) {
 	g := NewWithT(t)
 	key := testKey(t)

@@ -35,10 +35,10 @@ import (
 
 func AuthRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupHidden(true))
-	r.Use(httprate.Limit(
+	r.Use(httprate.LimitBy(
 		10,
 		1*time.Minute,
-		httprate.WithKeyFuncs(func(r *http.Request) (string, error) {
+		httprate.JoinKeys(func(r *http.Request) (string, error) {
 			return chimiddleware.GetClientIP(r.Context()), nil
 		}, httprate.KeyByEndpoint),
 	))
@@ -69,10 +69,10 @@ func AuthRouter(r chiopenapi.Router) {
 			Post("/reset/confirm", authResetConfirmHandler)
 
 		r.Route("/verify", func(r chiopenapi.Router) {
-			requestVerificationMailRateLimitPerUser := httprate.Limit(
+			requestVerificationMailRateLimitPerUser := httprate.LimitBy(
 				3,
 				10*time.Minute,
-				httprate.WithKeyFuncs(middleware.RateLimitUserIDKey),
+				middleware.RateLimitUserIDKey,
 			)
 			r.With(
 				requestVerificationMailRateLimitPerUser,

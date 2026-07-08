@@ -39,13 +39,15 @@ import (
 )
 
 func AgentRouter(r chiopenapi.Router) {
-	rateLimitPerDeploymentTargetID := httprate.Limit(
+	rateLimitPerDeploymentTargetID := httprate.LimitBy(
 		500,
 		1*time.Minute,
-		httprate.WithKeyFuncs(middleware.RateLimitCurrentDeploymentTargetIdKeyFunc),
+		middleware.RateLimitCurrentDeploymentTargetIdKeyFunc,
 	)
 
-	r.With(queryAuthDeploymentTargetCtxMiddleware).Group(func(r chiopenapi.Router) {
+	// pre-connect and connect only read (org + deployment target) to render the agent manifest. The
+	// query-auth middleware runs first on the primary, then reads are served from the read-only db.
+	r.With(queryAuthDeploymentTargetCtxMiddleware, middleware.UseReadonlyDB).Group(func(r chiopenapi.Router) {
 		r.WithOptions(option.GroupTags("Agents"))
 
 		type AgentConnectRequest struct {
@@ -72,9 +74,11 @@ func AgentRouter(r chiopenapi.Router) {
 			agentAuthDeploymentTargetCtxMiddleware,
 			rateLimitPerDeploymentTargetID,
 		).Group(func(r chiopenapi.Router) {
-			// agent routes, authenticated via token
-			r.Get("/manifest", agentManifestHandler())
-			r.Get("/resources", agentResourcesHandler)
+			// agent routes, authenticated via token.
+			// manifest and resources are read-only and served from the read-only db. The auth
+			// middleware above (which may write the reported agent version) stays on the primary.
+			r.With(middleware.UseReadonlyDB).Get("/manifest", agentManifestHandler())
+			r.With(middleware.UseReadonlyDB).Get("/resources", agentResourcesHandler)
 			r.Post("/status", agentPostStatusHandler)
 			r.Post("/metrics", agentPostMetricsHander)
 			r.Put("/logs", agentPutDeploymentLogsHandler())

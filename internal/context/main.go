@@ -30,6 +30,7 @@ const (
 	ctxKeyLicenseKey
 	ctxKeyPrometheusCollector
 	ctxKeyS3Client
+	ctxKeyReadonlyDb
 )
 
 func GetDb(ctx context.Context) queryable.Queryable {
@@ -45,6 +46,19 @@ func GetDb(ctx context.Context) queryable.Queryable {
 func WithDb(ctx context.Context, db queryable.Queryable) context.Context {
 	ctx = context.WithValue(ctx, ctxKeyDb, db)
 	return ctx
+}
+
+// GetReadonlyDB returns the read-only queryable from the context, or nil when no read-only
+// database is configured. Callers should fall back to the primary db in that case.
+func GetReadonlyDB(ctx context.Context) queryable.Queryable {
+	if db, ok := ctx.Value(ctxKeyReadonlyDb).(queryable.Queryable); ok {
+		return db
+	}
+	return nil
+}
+
+func WithReadonlyDB(ctx context.Context, db queryable.Queryable) context.Context {
+	return context.WithValue(ctx, ctxKeyReadonlyDb, db)
 }
 
 func GetLogger(ctx context.Context) *zap.Logger {

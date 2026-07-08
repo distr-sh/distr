@@ -23,7 +23,7 @@ This guide walks you through how to use License Keys to issue cryptographically 
 
 ## What license keys are for
 
-License Keys are different from [Application Entitlements](/docs/platform/application-entitlements/) and [Artifact Entitlements](/docs/platform/artifact-entitlements/). Entitlements control what a customer can access within Distr. License keys carry arbitrary data — seat counts, plan tier, feature flags — that your _application_ reads and enforces independently of Distr.
+License Keys are different from [Application Entitlements](/docs/platform/application-entitlements/) and [Artifact Entitlements](/docs/platform/artifact-entitlements/). Entitlements control what a customer can access within Distr. License keys carry arbitrary data (seat counts, plan tier, feature flags) that your _application_ reads and enforces independently of Distr.
 
 When you request a token for a license key, Distr generates a signed JWT. Your application verifies it using the public key you generate and distribute. No call back to Distr is needed at verification time, which means license key validation works in air-gapped and offline environments.
 
@@ -33,12 +33,12 @@ When you request a token for a license key, Distr generates a signed JWT. Your a
 2. Click the customer you want to create a license key for
 3. Select the **License Keys** tab and click **"Create License Key"**
 4. Fill in the form:
-   - **Name** (required) — must be unique within your organization
+   - **Name** (required): must be unique within your organization
    - **Description** (optional)
-   - **Not Before** — the date from which the token is valid (defaults to today)
-   - **Expires At** — the date the token expires (defaults to one year from today)
-   - **Payload** — a JSON object with your custom claims (see [Payload](#payload) below)
-5. **Save** — the key is created immediately
+   - **Not Before**: the date from which the token is valid (defaults to today)
+   - **Expires At**: the date the token expires (defaults to one year from today)
+   - **Payload**: a JSON object with your custom claims (see [Payload](#payload) below)
+5. **Save**: the key is created immediately
 
 <ThemedImage
   lightSrc={licenseKeyFormLight}
@@ -49,13 +49,13 @@ When you request a token for a license key, Distr generates a signed JWT. Your a
 <Aside type="note">
   The description can be updated at any time. The name is set at creation and
   cannot be changed. If you need to change the payload or dates, Distr generates
-  a new revision — the original is not modified. See [Editing a license
+  a new revision; the original is not modified. See [Editing a license
   key](#editing-a-license-key).
 </Aside>
 
 ## Payload
 
-The payload is a JSON object containing the custom claims you want to embed in the token. You define what these mean — Distr treats them as opaque data.
+The payload is a JSON object containing the custom claims you want to embed in the token. You define what these mean. Distr treats them as opaque data.
 
 Example payloads:
 
@@ -71,13 +71,13 @@ Example payloads:
 }
 ```
 
-The payload must be a JSON object (not an array or primitive). The following field names are reserved by the JWT spec and cannot be used: `exp`, `nbf`, `iss`, `sub`, `aud`, `iat`.
+The payload must be a JSON object (not an array or primitive). The following field names are reserved and cannot be used: the JWT-standard claims `exp`, `nbf`, `iss`, `sub`, `aud`, `iat`, as well as the Distr-specific claim `org`.
 
 ## Getting the token
 
 Once a license key exists, you can retrieve the signed JWT at any time:
 
-**Vendor:** Open the license key from the customer's detail view and click the **view** (eye) icon. Distr generates the token and displays it — copy it to deliver to your customer.
+**Vendor:** Open the license key from the customer's detail view and click the **view** (eye) icon. Distr generates the token and displays it, so you can copy it to deliver to your customer.
 
 **Customer:** In the customer portal, navigate to **Licenses** and click the key. The token is available there directly. Customers can copy and use it in their environment.
 
@@ -87,12 +87,13 @@ The token is a standard JWT signed with EdDSA (Ed25519). Use any JWT library tha
 
 The token contains:
 
-- `iss` -- your Distr host URL
-- `sub` -- the license key UUID
-- `aud` -- `["license-key"]`
-- `iat` -- issued at (when the key was created in Distr)
-- `nbf` -- not before
-- `exp` -- expiration
+- `iss`: your Distr host URL
+- `sub`: the license key UUID
+- `aud`: `["license-key"]`
+- `iat`: issued at (when the key was created in Distr)
+- `nbf`: not before
+- `exp`: expiration
+- `org`: the UUID of your Distr organization that issued the license key
 - All fields from your payload as top-level claims
 
 ### Retrieving the public key
@@ -133,7 +134,7 @@ Your application is responsible for deciding what to do when verification fails 
 
 You can update the **description** of an existing license key at any time. The name is set at creation and cannot be changed.
 
-If you need to change the **payload**, **Not Before**, or **Expires At**, Distr generates a new license key with the updated values — the original is not modified. You can view all previously generated license keys in the **Revisions** section of the edit view.
+If you need to change the **payload**, **Not Before**, or **Expires At**, Distr generates a new license key with the updated values; the original is not modified. You can view all previously generated license keys in the **Revisions** section of the edit view.
 
 If any active deployments reference this license key, Distr will show you which deployment targets are affected before saving.
 Confirming will save the new revision and automatically trigger a redeployment on those targets.
@@ -154,7 +155,7 @@ To delete: open the license key and click the **delete** (trash) icon, then conf
 
 ## Referencing license keys in deployments
 
-When you deploy via Distr agents (Docker or Kubernetes), license keys assigned to the customer are automatically available as template variables in deployment environment files and Helm values. You don't need to copy or distribute tokens manually — Distr generates and injects them at deploy time.
+When you deploy via Distr agents (Docker or Kubernetes), license keys assigned to the customer are automatically available as template variables in deployment environment files and Helm values. You don't need to copy or distribute tokens manually. Distr generates and injects them at deploy time.
 
 ### Finding the reference syntax
 
@@ -195,7 +196,7 @@ The resolved token is passed into the chart at deploy time.
 
 ### Registry-only deployments
 
-For customers who pull artifacts directly from your Distr registry without using deployment agents, provide them with the token out-of-band. The customer is responsible for injecting it into their own deployment pipeline — typically as an environment variable, a mounted secret file, or a Kubernetes secret.
+For customers who pull artifacts directly from your Distr registry without using deployment agents, provide them with the token out-of-band. The customer is responsible for injecting it into their own deployment pipeline, typically as an environment variable, a mounted secret file, or a Kubernetes secret.
 
 ## Customer portal view
 

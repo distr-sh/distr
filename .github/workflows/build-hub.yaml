@@ -45,7 +45,7 @@ jobs:
       - name: Run go tests
         run: go test ./...
       - name: Lint with golangci-lint
-        uses: golangci/golangci-lint-action@82606bf257cbaff209d206a39f5134f0cfbfd2ee # v9.2.1
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: 'v2.12.2' # renovate: datasource=github-releases depName=golangci/golangci-lint
 
@@ -175,6 +175,7 @@ jobs:
             -X github.com/distr-sh/distr/internal/buildconfig.version=${{ github.ref_name }}
             -X github.com/distr-sh/distr/internal/buildconfig.commit=${{ steps.hash.outputs.sha_short }}
             -X github.com/distr-sh/distr/internal/buildconfig.edition=${{ matrix.edition.name }}
+            ${{ (matrix.edition.name == 'enterprise' && startsWith(github.ref, 'refs/tags/')) && format('-X github.com/distr-sh/distr/internal/license.organizationID={0} -X github.com/distr-sh/distr/internal/license.organizationScopeCutoff={1}', secrets.LICENSE_ORGANIZATION_ID, secrets.LICENSE_ORGANIZATION_SCOPE_CUTOFF) || '' }}
 
       - name: Build application (arm64)
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
@@ -187,6 +188,7 @@ jobs:
             -X github.com/distr-sh/distr/internal/buildconfig.version=${{ github.ref_name }}
             -X github.com/distr-sh/distr/internal/buildconfig.commit=${{ steps.hash.outputs.sha_short }}
             -X github.com/distr-sh/distr/internal/buildconfig.edition=${{ matrix.edition.name }}
+            ${{ matrix.edition.name == 'enterprise' && format('-X github.com/distr-sh/distr/internal/license.organizationID={0} -X github.com/distr-sh/distr/internal/license.organizationScopeCutoff={1}', secrets.LICENSE_ORGANIZATION_ID, secrets.LICENSE_ORGANIZATION_SCOPE_CUTOFF) || '' }}
 
       - name: Generate ephemeral license JWT (non-tag enterprise only)
         id: ephemeral-license
@@ -236,7 +238,7 @@ jobs:
 
       - name: Login to GitHub Container Registry (tag only)
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -244,18 +246,18 @@ jobs:
 
       - name: Login to Distr Registry (tag only)
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
         with:
           registry: registry.distr.sh
           username: ${{ github.actor }}
           password: ${{ secrets.DISTR_TOKEN }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
 
       - name: Generate Docker Metadata
         id: meta
-        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ${{ matrix.edition.images }}
           tags: |
@@ -268,7 +270,7 @@ jobs:
             org.opencontainers.image.vendor=Glasskube
 
       - name: Docker build (push on tag only)
-        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         id: build-push
         with:
           platforms: ${{ startsWith(github.ref, 'refs/tags/') && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
@@ -277,7 +279,7 @@ jobs:
           push: ${{ startsWith(github.ref, 'refs/tags/') }}
           load: ${{ matrix.edition.name == 'community' && !startsWith(github.ref, 'refs/tags/') }}
           sbom: ${{ startsWith(github.ref, 'refs/tags/') }}
-          provenance: ${{ startsWith(github.ref, 'refs/tags/') }}
+          provenance: ${{ startsWith(github.ref, 'refs/tags/') && 'mode=max' || 'false' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
