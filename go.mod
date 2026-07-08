@@ -50,7 +50,7 @@ require (
 	go.opentelemetry.io/collector/component v1.61.0
 	go.opentelemetry.io/collector/confmap v1.61.0
 	go.opentelemetry.io/collector/consumer v1.61.0
-	go.opentelemetry.io/collector/pdata v1.61.0
+	go.opentelemetry.io/collector/pdata v1.62.0
 	go.opentelemetry.io/collector/receiver v1.61.0
 	go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws v0.69.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.69.0
@@ -304,7 +304,7 @@ require (
 	go.opentelemetry.io/collector/confmap/xconfmap v0.155.0 // indirect
 	go.opentelemetry.io/collector/consumer/consumererror v0.155.0 // indirect
 	go.opentelemetry.io/collector/consumer/xconsumer v0.155.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.61.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.62.0 // indirect
 	go.opentelemetry.io/collector/filter v0.155.0 // indirect
 	go.opentelemetry.io/collector/internal/componentalias v0.155.0 // indirect
 	go.opentelemetry.io/collector/pdata/pprofile v0.155.0 // indirect
@@ -335,7 +335,7 @@ require (
 	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260526163538-3dc84a4a5aaa // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
-	google.golang.org/grpc v1.81.1 // indirect
+	google.golang.org/grpc v1.82.0 // indirect
 	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
