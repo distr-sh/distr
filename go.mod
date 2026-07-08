@@ -48,7 +48,7 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/stripe/stripe-go/v86 v86.1.0
 	go.opentelemetry.io/collector/component v1.62.0
-	go.opentelemetry.io/collector/confmap v1.61.0
+	go.opentelemetry.io/collector/confmap v1.62.0
 	go.opentelemetry.io/collector/consumer v1.62.0
 	go.opentelemetry.io/collector/pdata v1.62.0
 	go.opentelemetry.io/collector/receiver v1.62.0
