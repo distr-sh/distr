@@ -80,6 +80,40 @@ echo "=== Distr Support Bundle Collector ==="
 echo "Bundle ID: ${BUNDLE_ID}"
 echo ""
 
+# Docker is the only part of this script that needs elevated privileges: the
+# daemon socket is usually owned by root:docker. If the docker CLI is installed
+# but we cannot reach the daemon because of a permission error (and we are not
+# already root), collecting container data would be silently skipped. Exit early
+# with a copy-pasteable command to re-run the collector with sudo instead.
+if command -v docker >/dev/null 2>&1 && [ "$(id -u 2>/dev/null)" != "0" ]; then
+  DOCKER_ERR=$(docker ps 2>&1 >/dev/null)
+  if echo "$DOCKER_ERR" | grep -qi "permission denied"; then
+    echo "Error: accessing the Docker daemon requires elevated privileges." >&2
+    echo "Please re-run the collector with sudo:" >&2
+    echo "" >&2
+    echo "  curl -fsSL '${BASE_URL}/collect-script?bundleSecret=${BUNDLE_SECRET}' | sudo sh" >&2
+    echo "" >&2
+    exit 1
+  fi
+fi
+
+# Probe the Docker daemon once, up front. Whether the daemon is reachable is
+# critical diagnostic information (it may be installed but not running), so the
+# status is always included with the system information below. The container
+# list is captured here and reused for the log/env collection further down.
+DOCKER_STATUS="Docker CLI not found in PATH"
+CONTAINERS=""
+if command -v docker >/dev/null 2>&1; then
+  if CONTAINERS=$(docker ps -a --format "{{`{{.ID}}`}}	{{`{{.Names}}`}}	{{`{{.Status}}`}}	{{`{{.Image}}`}}" 2>/dev/null); then
+    DOCKER_STATUS="daemon reachable
+$(docker version 2>&1 || true)"
+  else
+    CONTAINERS=""
+    DOCKER_STATUS="daemon unavailable
+$(docker version 2>&1 || true)"
+  fi
+fi
+
 # Collect system information
 echo "Collecting system information..."
 SYSTEM_INFO="whoami: $(whoami 2>/dev/null || echo 'unknown')
@@ -87,10 +121,15 @@ uname: $(uname -a 2>/dev/null || echo 'unknown')
 hostname: $(hostname 2>/dev/null || echo 'unknown')
 date: $(date 2>/dev/null || echo 'unknown')
 uptime: $(uptime 2>/dev/null || echo 'unknown')
+
 df:
 $(df -h 2>/dev/null || echo 'unavailable')
+
 memory:
-$(free -h 2>/dev/null || echo 'unavailable')"
+$(free -h 2>/dev/null || echo 'unavailable')
+
+docker:
+$DOCKER_STATUS"
 
 echo ""
 echo "System information to upload:"
@@ -110,15 +149,15 @@ case "$SYSINFO_CONFIRM" in
     ;;
 esac
 
-# Detect Docker containers and build included container list
+# Detect Docker containers and build included container list (reusing the list
+# captured during the Docker probe above)
 echo ""
 echo "Detecting Docker containers..."
-CONTAINERS=$(docker ps -a --format "{{`{{.ID}}`}}	{{`{{.Names}}`}}	{{`{{.Status}}`}}	{{`{{.Image}}`}}" 2>/dev/null || true)
 
 CONTAINER_COUNT=0
 INCLUDED_CONTAINERS=""
 if [ -z "$CONTAINERS" ]; then
-  echo "  No Docker containers found (docker may not be available)"
+  echo "  No Docker containers found (see Docker status in system information)"
 else
   echo ""
   echo "Available containers:"
