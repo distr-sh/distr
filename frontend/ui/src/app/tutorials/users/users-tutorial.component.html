@@ -81,8 +81,8 @@
                       invite. Each teammate will receive an email with a link to join your organization.
                     </p>
 
-                    <div class="mt-4" formArrayName="users">
-                      <div class="grid grid-cols-[1fr_1fr_12rem_auto] gap-3 mb-2 text-sm font-medium">
+                    <div class="mt-4 grid grid-cols-[1fr_1fr_12rem_auto] gap-x-3" formArrayName="users">
+                      <div class="col-span-full grid grid-cols-subgrid gap-x-3 mb-2 text-sm font-medium">
                         <div>Name</div>
                         <div>Email</div>
                         <div>Role</div>
@@ -91,7 +91,7 @@
                       @for (user of users.controls; track user) {
                         <div
                           [formGroupName]="$index"
-                          class="grid grid-cols-[1fr_1fr_12rem_auto] gap-3 mb-3 items-start">
+                          class="col-span-full grid grid-cols-subgrid gap-x-3 mb-3 items-start">
                           <div>
                             <input
                               formControlName="name"
