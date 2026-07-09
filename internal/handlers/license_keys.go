@@ -327,7 +327,7 @@ func updateLicenseKey(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		return triggerAffectedDeployments(ctx, affected)
+		return triggerAffectedDeployments(ctx, affected, new(authCtx.CurrentUserID()))
 	})
 
 	if err != nil {
