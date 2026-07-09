@@ -1,5 +1,42 @@
 # Changelog
 
+## [2.25.2](https://github.com/distr-sh/distr/compare/2.25.1...2.25.2) (2026-07-09)
+
+
+### Bug Fixes
+
+* **backend:** add encoding organization ID in license key JWT  ([#2754](https://github.com/distr-sh/distr/issues/2754)) ([a2f6328](https://github.com/distr-sh/distr/commit/a2f632877e2930ae6c788ec5566af0b6327b03a8))
+* **backend:** add restarting affected deployments on template-based license key updates ([#2753](https://github.com/distr-sh/distr/issues/2753)) ([9a4ebe6](https://github.com/distr-sh/distr/commit/9a4ebe6ce72bc5b5e9714ae5b2fa95bee0076652))
+* **backend:** add role check on updateApplicationVersion endpoint ([#2784](https://github.com/distr-sh/distr/issues/2784)) ([6a9d9a9](https://github.com/distr-sh/distr/commit/6a9d9a962316ae333de47770bfb25334ec068558))
+* **deps:** update aws-sdk-go-v2 monorepo ([#2774](https://github.com/distr-sh/distr/issues/2774)) ([f6c677d](https://github.com/distr-sh/distr/commit/f6c677d7b393f9a09f7f8217947f85d596c6164b))
+* **deps:** update module github.com/docker/compose/v5 to v5.3.1 ([#2787](https://github.com/distr-sh/distr/issues/2787)) ([a345c0e](https://github.com/distr-sh/distr/commit/a345c0e1b457f115473f37b60d014504adff24d2))
+* **deps:** update module github.com/go-chi/httprate to v0.16.0 ([#2775](https://github.com/distr-sh/distr/issues/2775)) ([28bd660](https://github.com/distr-sh/distr/commit/28bd660e23b97402387f019e9556fe248d6a0726))
+* **deps:** update module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver to v0.156.0 ([#2789](https://github.com/distr-sh/distr/issues/2789)) ([f174e15](https://github.com/distr-sh/distr/commit/f174e1587119e606d08eb7d2e2841c85a32b61dd))
+* **deps:** update module go.opentelemetry.io/collector/receiver to v1.62.0 ([#2780](https://github.com/distr-sh/distr/issues/2780)) ([562666a](https://github.com/distr-sh/distr/commit/562666af0028de24ebaa785a3c410d3c2b46ed64))
+* **deps:** update module golang.org/x/sync to v0.22.0 ([#2792](https://github.com/distr-sh/distr/issues/2792)) ([38831fb](https://github.com/distr-sh/distr/commit/38831fb43dd8831a70a92bfddbab75518f470e85))
+* **frontend:** add showing deployment revision history button for `read_only` users ([#2788](https://github.com/distr-sh/distr/issues/2788)) ([d0061ca](https://github.com/distr-sh/distr/commit/d0061cab36772dafe5f5bf5069799bf42db64cf4))
+
+
+### Other
+
+* add users tutorial ([#2725](https://github.com/distr-sh/distr/issues/2725)) ([65e7a5d](https://github.com/distr-sh/distr/commit/65e7a5dcbe57161150ddcc1a650891e8057d7d27))
+* **backend:** add configurable limit for support bundle log limit ([#2790](https://github.com/distr-sh/distr/issues/2790)) ([3ebec47](https://github.com/distr-sh/distr/commit/3ebec47825c21fba78be94233cf63f6ba1387d20))
+* **backend:** add docker info to support bundles ([#2791](https://github.com/distr-sh/distr/issues/2791)) ([edb9a05](https://github.com/distr-sh/distr/commit/edb9a056879abaa23464f12a7aed6b007b6465b8))
+* **deps:** update aws-actions/configure-aws-credentials action to v6.2.2 ([#2793](https://github.com/distr-sh/distr/issues/2793)) ([6c5f268](https://github.com/distr-sh/distr/commit/6c5f268a4886370c41a18a688fe0ce031c6cb5f4))
+* **deps:** update dependency posthog-js to v1.398.0 ([#2782](https://github.com/distr-sh/distr/issues/2782)) ([198122f](https://github.com/distr-sh/distr/commit/198122f26248cea926a039559f2c3f73ca85ff2b))
+* **deps:** update docker/login-action action to v4.4.0 ([#2768](https://github.com/distr-sh/distr/issues/2768)) ([b18886d](https://github.com/distr-sh/distr/commit/b18886def84542a15f4882b1e13772194c026f95))
+* **deps:** update docker/metadata-action action to v6.2.0 ([#2769](https://github.com/distr-sh/distr/issues/2769)) ([9327f10](https://github.com/distr-sh/distr/commit/9327f10711735cd80eba29962a79f3e1f188c410))
+* **deps:** update docker/setup-buildx-action action to v4.2.0 ([#2771](https://github.com/distr-sh/distr/issues/2771)) ([cdd219a](https://github.com/distr-sh/distr/commit/cdd219a2ea247e793b4d64b419bc3e46fc4cc08c))
+* **deps:** update gcr.io/distroless/static-debian12:nonroot docker digest to b7bb25d ([#2796](https://github.com/distr-sh/distr/issues/2796)) ([2feba9d](https://github.com/distr-sh/distr/commit/2feba9d22d9bdb082de90ca5e1de1f7ed946dd82))
+* **deps:** update pnpm to v11.10.0 ([#2772](https://github.com/distr-sh/distr/issues/2772)) ([1024e42](https://github.com/distr-sh/distr/commit/1024e42d8604016db1cb8161ae2b754bc314675d))
+* **deps:** update sentry-javascript monorepo to v10.63.0 ([#2783](https://github.com/distr-sh/distr/issues/2783)) ([78e872e](https://github.com/distr-sh/distr/commit/78e872e2038cf0736802860c3fbb712ad95db09d))
+
+
+### Docs
+
+* **website:** document customer sidebar links ([#2794](https://github.com/distr-sh/distr/issues/2794)) ([dfabe64](https://github.com/distr-sh/distr/commit/dfabe6480b862516f27ca634088f89a16e4fc94d))
+* **website:** document deployment history and version renaming ([#2773](https://github.com/distr-sh/distr/issues/2773)) ([7d6d47f](https://github.com/distr-sh/distr/commit/7d6d47f597879fc9008b65a8e59d965ac501c3a0))
+
 ## [2.25.1](https://github.com/distr-sh/distr/compare/2.25.0...2.25.1) (2026-07-07)
 
 
