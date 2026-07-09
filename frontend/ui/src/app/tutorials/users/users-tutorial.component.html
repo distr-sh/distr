@@ -126,13 +126,15 @@
                         </div>
                       }
 
-                      <button
-                        type="button"
-                        (click)="addUser()"
-                        class="mt-2 inline-flex items-center text-sm font-medium text-primary-600 hover:underline">
-                        <fa-icon class="mr-2" [icon]="faPlus" />
-                        Add another teammate
-                      </button>
+                      <div class="col-span-full">
+                        <button
+                          type="button"
+                          (click)="addUser()"
+                          class="py-2 flex items-center text-sm font-medium text-primary-600 hover:underline">
+                          <fa-icon class="mr-2" [icon]="faPlus" />
+                          Add another teammate
+                        </button>
+                      </div>
                     </div>
                   </li>
                 </ol>
