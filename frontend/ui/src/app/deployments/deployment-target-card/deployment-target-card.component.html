@@ -250,44 +250,46 @@
                           <span class="rounded-full size-2 bg-blue-400 absolute -bottom-0.5 -right-0.5"></span>
                         }
                       </button>
+                    }
 
-                      <button
-                        type="button"
-                        aria-label="More actions"
-                        class="p-1 flex items-center text-sm font-medium text-center distr-btn-secondary"
-                        cdkOverlayOrigin
-                        #dropdownTrigger="cdkOverlayOrigin"
-                        (click)="showDeploymentDropdownForId.set(deployment.id)">
-                        <fa-icon [icon]="faEllipsisVertical" class="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                      </button>
+                    <button
+                      type="button"
+                      aria-label="More actions"
+                      class="p-1 flex items-center text-sm font-medium text-center distr-btn-secondary"
+                      cdkOverlayOrigin
+                      #dropdownTrigger="cdkOverlayOrigin"
+                      (click)="showDeploymentDropdownForId.set(deployment.id)">
+                      <fa-icon [icon]="faEllipsisVertical" class="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                    </button>
 
-                      <ng-template
-                        cdkConnectedOverlay
-                        [cdkConnectedOverlayHasBackdrop]="true"
-                        (backdropClick)="showDeploymentDropdownForId.set(undefined)"
-                        (detach)="showDeploymentDropdownForId.set(undefined)"
-                        [cdkConnectedOverlayBackdropClass]="'transparent'"
-                        [cdkConnectedOverlayOrigin]="dropdownTrigger"
-                        [cdkConnectedOverlayPositions]="[
-                          {originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top'},
-                        ]"
-                        [cdkConnectedOverlayOpen]="showDeploymentDropdownForId() === deployment.id">
-                        <div
-                          animate.enter="animate-flip-in-top"
-                          animate.leave="animate-flip-out-top"
-                          class="origin-top my-2 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600">
-                          <ul class="py-1" role="none">
-                            <li>
-                              <button
-                                type="button"
-                                class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
-                                (click)="showDeploymentDropdownForId.set(undefined); openRevisionsDrawer(deployment)">
-                                <fa-icon
-                                  [icon]="faClockRotateLeft"
-                                  class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
-                                Deployment history
-                              </button>
-                            </li>
+                    <ng-template
+                      cdkConnectedOverlay
+                      [cdkConnectedOverlayHasBackdrop]="true"
+                      (backdropClick)="showDeploymentDropdownForId.set(undefined)"
+                      (detach)="showDeploymentDropdownForId.set(undefined)"
+                      [cdkConnectedOverlayBackdropClass]="'transparent'"
+                      [cdkConnectedOverlayOrigin]="dropdownTrigger"
+                      [cdkConnectedOverlayPositions]="[
+                        {originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top'},
+                      ]"
+                      [cdkConnectedOverlayOpen]="showDeploymentDropdownForId() === deployment.id">
+                      <div
+                        animate.enter="animate-flip-in-top"
+                        animate.leave="animate-flip-out-top"
+                        class="origin-top my-2 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600">
+                        <ul class="py-1" role="none">
+                          <li>
+                            <button
+                              type="button"
+                              class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                              (click)="showDeploymentDropdownForId.set(undefined); openRevisionsDrawer(deployment)">
+                              <fa-icon
+                                [icon]="faClockRotateLeft"
+                                class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
+                              Deployment history
+                            </button>
+                          </li>
+                          @if (auth.hasAnyRole('read_write', 'admin')) {
                             <li>
                               <button
                                 type="button"
@@ -357,10 +359,10 @@
                                 </div>
                               </ng-template>
                             </li>
-                          </ul>
-                        </div>
-                      </ng-template>
-                    }
+                          }
+                        </ul>
+                      </div>
+                    </ng-template>
                   </div>
                 </div>
                 <div class="flex items-center justify-between gap-3">
