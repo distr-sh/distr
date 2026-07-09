@@ -65,6 +65,8 @@ func createOrganizationBranding(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := setMetadataForOrganizationBranding(ctx, organizationBranding); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+	} else if err := verifyLogoImageBelongsToOrganization(ctx, organizationBranding); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	} else if err = db.CreateOrganizationBranding(r.Context(), organizationBranding); err != nil {
 		log.Warn("could not create organizationBranding", zap.Error(err))
 		sentry.GetHubFromContext(r.Context()).CaptureException(err)
@@ -83,6 +85,8 @@ func updateOrganizationBranding(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := setMetadataForOrganizationBranding(ctx, organizationBranding); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	} else if err := verifyLogoImageBelongsToOrganization(ctx, organizationBranding); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	} else if err = db.UpdateOrganizationBranding(r.Context(), organizationBranding); err != nil {
 		log.Warn("could not update organizationBranding", zap.Error(err))
@@ -103,6 +107,24 @@ func getOrganizationBrandingFromRequest(w http.ResponseWriter, r *http.Request) 
 		Description: body.Description,
 		LogoImageID: body.LogoImageID,
 	}, nil
+}
+
+// verifyLogoImageBelongsToOrganization ensures the referenced logo image belongs to the current
+// organization. Without this check a user could reference an arbitrary File (e.g. from another
+// organization), whose bytes are then embedded into outbound e-mail content.
+func verifyLogoImageBelongsToOrganization(ctx context.Context, t *types.OrganizationBranding) error {
+	if t.LogoImageID == nil {
+		return nil
+	}
+	file, err := db.GetFileWithID(ctx, *t.LogoImageID)
+	if errors.Is(err, apierrors.ErrNotFound) {
+		return errors.New("logo image does not exist")
+	} else if err != nil {
+		return err
+	} else if file.OrganizationID == nil || *file.OrganizationID != t.OrganizationID {
+		return errors.New("logo image does not belong to the organization")
+	}
+	return nil
 }
 
 func setMetadataForOrganizationBranding(ctx context.Context, t *types.OrganizationBranding) error {
