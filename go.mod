@@ -14,7 +14,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.105.0
 	github.com/compose-spec/compose-go/v2 v2.13.0
 	github.com/containerd/log v0.1.0
-	github.com/coreos/go-oidc/v3 v3.19.0
+	github.com/coreos/go-oidc/v3 v3.20.0
 	github.com/docker/cli v29.6.1+incompatible
 	github.com/docker/compose/v5 v5.3.1
 	github.com/exaring/otelpgx v0.11.1
