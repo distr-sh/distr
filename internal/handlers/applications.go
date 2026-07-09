@@ -84,7 +84,7 @@ func ApplicationsRouter(r chiopenapi.Router) {
 			r.With(applicationMiddleware).
 				Group(func(r chiopenapi.Router) {
 					r.With(middleware.RequireVendor).
-						With(middleware.RequireAnyUserRole(types.UserRoleReadWrite, types.UserRoleAdmin)).
+						With(middleware.RequireReadWriteOrAdmin).
 						With(middleware.BlockSuperAdmin).
 						Post("/", createApplicationVersion).
 						With(option.Description("Create a new application version")).
@@ -104,7 +104,10 @@ func ApplicationsRouter(r chiopenapi.Router) {
 					With(option.Description("Get an application version")).
 					With(option.Request(ApplicationVersionRequest{})).
 					With(option.Response(http.StatusOK, types.ApplicationVersion{}))
-				r.With(middleware.RequireVendor, middleware.BlockSuperAdmin, applicationMiddleware).
+				r.With(middleware.RequireVendor).
+					With(middleware.RequireReadWriteOrAdmin).
+					With(middleware.BlockSuperAdmin).
+					With(applicationMiddleware).
 					Put("/", updateApplicationVersion).
 					With(option.Description("Update an application version")).
 					With(option.Request(struct {
