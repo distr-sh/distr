@@ -89,6 +89,12 @@ See [Registry Configuration](/docs/registry/configuration/) for a feature overvi
 | `REGISTRY_UPSTREAM_SYNC_CRON`              | no                  | —       | Cron schedule for syncing tags from upstream registries (pull-through cache).      |
 | `REGISTRY_UPSTREAM_SYNC_TIMEOUT`           | no                  | `10m`   | Timeout for a single upstream sync run.                                            |
 
+## Support Bundles
+
+| Variable                        | Required | Default | Description                                                                                   |
+| ------------------------------- | -------- | ------- | --------------------------------------------------------------------------------------------- |
+| `SUPPORT_BUNDLE_LOG_TAIL_LINES` | no       | `1000`  | Number of container log lines (per container) collected by the support bundle collect script. |
+
 ## Scheduled Jobs & Retention
 
 These control the built-in job scheduler and retention limits.

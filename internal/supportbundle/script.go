@@ -15,14 +15,16 @@ func GenerateCollectScript(
 	bundleID uuid.UUID,
 	bundleSecret string,
 	envVars []types.SupportBundleConfigurationEnvVar,
+	logTailLines int,
 ) (string, error) {
 	apiBase := fmt.Sprintf("%s/api/v1/support-bundle-collect/%s", baseURL, bundleID.String())
 
 	data := map[string]any{
-		"BundleID": bundleID.String(),
-		"BaseURL":  apiBase,
-		"Token":    bundleSecret,
-		"EnvVars":  envVars,
+		"BundleID":     bundleID.String(),
+		"BaseURL":      apiBase,
+		"Token":        bundleSecret,
+		"EnvVars":      envVars,
+		"LogTailLines": logTailLines,
 	}
 
 	tmpl, err := resources.GetTemplate("support-bundle/collect-script.sh")

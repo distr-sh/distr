@@ -116,6 +116,7 @@ func ApiRouter(
 	prometheusCollector *prometheus.DistrCollector,
 ) func(r chiopenapi.Router) {
 	requestSize1MiB := chimiddleware.RequestSize(1024 * 1024)
+	requestSize10MiB := chimiddleware.RequestSize(10 * 1024 * 1024)
 	requestSize50MiB := chimiddleware.RequestSize(50 * 1024 * 1024)
 
 	return func(r chiopenapi.Router) {
@@ -208,7 +209,9 @@ func ApiRouter(
 				r.Group(func(r chiopenapi.Router) {
 					r.Use(
 						middleware.OTEL(tracers.Default()),
-						requestSize1MiB,
+						// Container logs (up to SUPPORT_BUNDLE_LOG_TAIL_LINES per container) can be sizeable,
+						// so allow a larger request body than the default.
+						requestSize10MiB,
 					)
 					r.Route("/support-bundle-collect", handlers.SupportBundleScriptRouter)
 				})

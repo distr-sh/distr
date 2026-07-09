@@ -35,6 +35,14 @@ func NonNegativeNumber(value string) (int, error) {
 	return parsed, err
 }
 
+func PositiveNumber(value string) (int, error) {
+	parsed, err := strconv.Atoi(value)
+	if err == nil && parsed <= 0 {
+		err = errors.New("number must be positive")
+	}
+	return parsed, err
+}
+
 func Float(value string) (float64, error) {
 	return strconv.ParseFloat(value, 64)
 }

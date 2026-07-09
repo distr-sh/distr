@@ -98,6 +98,7 @@ var (
 	metricsEnabled                          bool
 	metricsAddr                             string
 	metricsBearerToken                      *string
+	supportBundleLogTailLines               int
 )
 
 func Initialize() {
@@ -281,6 +282,9 @@ func Initialize() {
 	metricsEnabled = envutil.GetEnvParsedOrDefault("METRICS_ENABLED", strconv.ParseBool, false)
 	metricsAddr = envutil.GetEnvOrDefault("METRICS_ADDR", ":3000", envutil.GetEnvOpts{})
 	metricsBearerToken = envutil.GetEnvOrNil("METRICS_BEARER_TOKEN")
+	supportBundleLogTailLines = envutil.GetEnvParsedOrDefault(
+		"SUPPORT_BUNDLE_LOG_TAIL_LINES", envparse.PositiveNumber, 1000,
+	)
 }
 
 func DatabaseUrl() string {
@@ -614,4 +618,10 @@ func MetricsAddr() string {
 
 func MetricsBearerToken() *string {
 	return metricsBearerToken
+}
+
+// SupportBundleLogTailLines is the number of container log lines (per container)
+// collected by the support bundle collect script.
+func SupportBundleLogTailLines() int {
+	return supportBundleLogTailLines
 }
