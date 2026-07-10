@@ -145,52 +145,31 @@
 
         @if (hasCustomDomains()) {
           <div>
-            <h3 class="text-lg font-bold dark:text-white mt-6">Custom Domains</h3>
+            <h3 class="text-lg font-bold dark:text-white">Custom Domains</h3>
             <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
               Custom domains are configured by Distr support. Please contact us if you want to change these settings.
             </p>
           </div>
 
-          <div>
-            <label for="appDomain" class="distr-label mb-1">Custom app domain</label>
-            <input
-              type="text"
-              id="appDomain"
-              [value]="appDomain() ?? ''"
-              disabled
-              class="distr-input disabled:opacity-60 disabled:cursor-not-allowed"
-              placeholder="not configured" />
-            <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-              Where users and customers access the Distr web application.
-            </p>
-          </div>
-
-          <div>
-            <label for="registryDomain" class="distr-label mb-1">Custom registry domain</label>
-            <input
-              type="text"
-              id="registryDomain"
-              [value]="registryDomain() ?? ''"
-              disabled
-              class="distr-input disabled:opacity-60 disabled:cursor-not-allowed"
-              placeholder="not configured" />
-            <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-              Where users and customers access the Distr artifact registry.
-            </p>
-          </div>
-
-          <div>
-            <label for="emailFromAddress" class="distr-label mb-1">Custom e-mail sender address</label>
-            <input
-              type="text"
-              id="emailFromAddress"
-              [value]="emailFromAddress() ?? ''"
-              disabled
-              class="distr-input disabled:opacity-60 disabled:cursor-not-allowed"
-              placeholder="not configured" />
-            <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-              The address used to send transactional e-mails to your users and customers.
-            </p>
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            @for (item of customDomainsData(); track item.label) {
+              <div class="flex gap-2 min-w-0">
+                <fa-icon
+                  [icon]="item.value ? faCheck : faCircleXmark"
+                  class="mt-1 ms-1"
+                  [class]="item.value ? 'text-green-600 dark:text-green-500' : 'text-gray-400 dark:text-gray-500'" />
+                <span class="sr-only">{{ item.value ? 'configured' : 'not configured' }}</span>
+                <div class="min-w-0">
+                  <div class="text-xs text-gray-500 dark:text-gray-400">{{ item.label }}</div>
+                  @if (item.value; as value) {
+                    <div class="text-sm dark:text-white truncate" [title]="value">{{ value }}</div>
+                  } @else {
+                    <div class="text-sm italic text-gray-500 dark:text-gray-400">not configured</div>
+                  }
+                  <div class="text-xs text-gray-500 dark:text-gray-400">{{ item.description }}</div>
+                </div>
+              </div>
+            }
           </div>
         } @else {
           <div class="p-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400" role="alert">

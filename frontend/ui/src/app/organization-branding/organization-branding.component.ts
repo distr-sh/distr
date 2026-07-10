@@ -5,7 +5,7 @@ import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {OrganizationBranding} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faFloppyDisk, faPen, faTrashCan} from '@fortawesome/free-solid-svg-icons';
+import {faCheck, faCircleXmark, faFloppyDisk, faPen, faTrashCan} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, lastValueFrom, map, startWith} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {SecureImagePipe} from '../../util/secureImage';
@@ -33,6 +33,8 @@ export class OrganizationBrandingComponent implements OnInit {
   protected readonly faFloppyDisk = faFloppyDisk;
   protected readonly faPen = faPen;
   protected readonly faTrashCan = faTrashCan;
+  protected readonly faCheck = faCheck;
+  protected readonly faCircleXmark = faCircleXmark;
 
   protected readonly auth = inject(AuthService);
   private readonly organizationBrandingService = inject(OrganizationBrandingService);
@@ -50,6 +52,23 @@ export class OrganizationBrandingComponent implements OnInit {
   protected readonly hasCustomDomains = computed(
     () => !!(this.appDomain() || this.registryDomain() || this.emailFromAddress())
   );
+  protected readonly customDomainsData = computed(() => [
+    {
+      label: 'App domain',
+      value: this.appDomain(),
+      description: 'Where users and customers access the Distr web application.',
+    },
+    {
+      label: 'Registry domain',
+      value: this.registryDomain(),
+      description: 'Where users and customers access the Distr artifact registry.',
+    },
+    {
+      label: 'E-mail sender address',
+      value: this.emailFromAddress(),
+      description: 'The address used to send transactional e-mails to your users and customers.',
+    },
+  ]);
 
   protected readonly form = new FormGroup({
     title: new FormControl(''),
