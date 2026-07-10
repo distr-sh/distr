@@ -37,9 +37,68 @@
         </div>
       </div>
 
-      <form [formGroup]="form" (ngSubmit)="save()" class="mt-8 space-y-4">
+      <form [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
         <div>
-          <h2 class="text-xl font-bold dark:text-white">White-label</h2>
+          <h2 class="mt-8 text-xl font-bold dark:text-white">Customer Portal</h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Configure what your customers see when they log in to their portal.
+          </p>
+        </div>
+
+        <div>
+          <label for="title" class="distr-label mb-1">Customer Portal Override</label>
+          <input
+            formControlName="title"
+            autotrim
+            type="text"
+            name="title"
+            id="title"
+            class="distr-input"
+            placeholder="Customer Portal" />
+          <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
+            Replaces "Customer Portal" next to the logo in the customer navigation bar.
+          </p>
+        </div>
+
+        <div>
+          <div class="flex items-end pb-1">
+            <label for="description" class="distr-label flex-grow mb-1">Welcome Page</label>
+            <div class="inline-flex rounded-base shadow-xs -space-x-px">
+              <button
+                type="button"
+                class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary"
+                (click)="markdownPreviewMode = !markdownPreviewMode">
+                @if (markdownPreviewMode) {
+                  Write
+                } @else {
+                  Preview
+                }
+              </button>
+            </div>
+          </div>
+          @if (markdownPreviewMode) {
+            <div
+              class="markdown bg-gray-50 dark:bg-gray-900 p-2 -mx-2 rounded-sm border border-gray-200 dark:border-gray-600"
+              [innerMarkdown]="form.value.description ?? ''"></div>
+          } @else {
+            <div class="w-full bg-gray-100 rounded-lg border border-gray-200 dark:bg-gray-600 dark:border-gray-600">
+              <div class="py-2 px-4 bg-gray-50 rounded-b-lg dark:bg-gray-700">
+                <textarea
+                  formControlName="description"
+                  id="description"
+                  rows="8"
+                  class="block px-0 w-full text-sm text-gray-800 bg-gray-50 border-0 dark:bg-gray-700 focus:ring-0 dark:text-white dark:placeholder-gray-400"
+                  placeholder="# Welcome"></textarea>
+              </div>
+            </div>
+          }
+          <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
+            Markdown content shown to your customers on the home page of their portal.
+          </p>
+        </div>
+
+        <div>
+          <h2 class="mt-8 text-xl font-bold dark:text-white">White-label</h2>
           <p class="text-sm text-gray-500 dark:text-gray-400">
             These settings replace Distr's branding across the application for users and customers of your organization.
           </p>
@@ -139,70 +198,11 @@
           </div>
         }
 
-        <div>
-          <h2 class="mt-8 text-xl font-bold dark:text-white">Customer Portal</h2>
-          <p class="text-sm text-gray-500 dark:text-gray-400">
-            Configure what your customers see when they log in to their portal.
-          </p>
-        </div>
-
-        <div>
-          <label for="title" class="distr-label mb-1">Customer Portal Override</label>
-          <input
-            formControlName="title"
-            autotrim
-            type="text"
-            name="title"
-            id="title"
-            class="distr-input"
-            placeholder="Customer Portal" />
-          <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
-            Replaces "Customer Portal" next to the logo in the customer navigation bar.
-          </p>
-        </div>
-
-        <div>
-          <div class="flex items-end pb-1">
-            <label for="description" class="distr-label flex-grow mb-1">Welcome Page</label>
-            <div class="inline-flex rounded-base shadow-xs -space-x-px">
-              <button
-                type="button"
-                class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary"
-                (click)="markdownPreviewMode = !markdownPreviewMode">
-                @if (markdownPreviewMode) {
-                  Write
-                } @else {
-                  Preview
-                }
-              </button>
-            </div>
-          </div>
-          @if (markdownPreviewMode) {
-            <div
-              class="markdown bg-gray-50 dark:bg-gray-900 p-2 -mx-2 rounded-sm border border-gray-200 dark:border-gray-600"
-              [innerMarkdown]="form.value.description ?? ''"></div>
-          } @else {
-            <div class="w-full bg-gray-100 rounded-lg border border-gray-200 dark:bg-gray-600 dark:border-gray-600">
-              <div class="py-2 px-4 bg-gray-50 rounded-b-lg dark:bg-gray-700">
-                <textarea
-                  formControlName="description"
-                  id="description"
-                  rows="8"
-                  class="block px-0 w-full text-sm text-gray-800 bg-gray-50 border-0 dark:bg-gray-700 focus:ring-0 dark:text-white dark:placeholder-gray-400"
-                  placeholder="# Welcome"></textarea>
-              </div>
-            </div>
-          }
-          <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
-            Markdown content shown to your customers on the home page of their portal.
-          </p>
-        </div>
-
         @if (!auth.isSuperAdmin()) {
           <button
             type="submit"
             [disabled]="formLoading()"
-            class="w-full mt-8 sm:mt-0 flex items-center justify-center distr-btn-primary text-white disabled:opacity-60 disabled:cursor-not-allowed">
+            class="w-full mt-8 flex items-center justify-center distr-btn-primary text-white disabled:opacity-60 disabled:cursor-not-allowed">
             <fa-icon [icon]="faFloppyDisk" size="lg" class="h-4 w-4 mr-2 -ml-0.5 mb-1" />
             Save
           </button>
