@@ -55,7 +55,7 @@
                           <!-- Vendor Logo -->
                           @if (vendorBranding$ | async; as branding) {
                             <img
-                              [src]="getVendorLogoUrl(branding)"
+                              [src]="(getVendorLogoUrl(branding) | secureImage | async) ?? '/distr-logo.svg'"
                               [alt]="org.name"
                               class="w-12 h-12 mb-2 rounded-lg" />
                           }

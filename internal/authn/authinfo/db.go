@@ -14,7 +14,7 @@ import (
 type DbAuthInfo struct {
 	AuthInfo
 	user *types.UserAccount
-	org  *types.Organization
+	org  *types.OrganizationWithBranding
 }
 
 func (a DbAuthInfo) CurrentUser() *types.UserAccount {
@@ -22,6 +22,13 @@ func (a DbAuthInfo) CurrentUser() *types.UserAccount {
 }
 
 func (a DbAuthInfo) CurrentOrg() *types.Organization {
+	if a.org == nil {
+		return nil
+	}
+	return &a.org.Organization
+}
+
+func (a DbAuthInfo) CurrentOrgWithBranding() *types.OrganizationWithBranding {
 	return a.org
 }
 
@@ -36,7 +43,7 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 				} else if err != nil {
 					return nil, err
 				}
-				org, err := db.GetOrganizationByID(ctx, *a.CurrentOrgID())
+				org, err := db.GetOrganizationWithBranding(ctx, *a.CurrentOrgID())
 				if errors.Is(err, apierrors.ErrNotFound) {
 					return nil, authn.ErrBadAuthentication
 				} else if err != nil {
@@ -110,10 +117,17 @@ func DbAuthenticator() authn.Authenticator[AuthInfo, AuthInfoWithUserAndOrganiza
 
 type agentDBAuthInfo struct {
 	AuthInfo
-	org *types.Organization
+	org *types.OrganizationWithBranding
 }
 
 func (a agentDBAuthInfo) CurrentOrg() *types.Organization {
+	if a.org == nil {
+		return nil
+	}
+	return &a.org.Organization
+}
+
+func (a agentDBAuthInfo) CurrentOrgWithBranding() *types.OrganizationWithBranding {
 	return a.org
 }
 

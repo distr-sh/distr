@@ -189,19 +189,11 @@ func userSettingsUpdateEmailHandler() http.HandlerFunc {
 		}
 		user.Email = oldEmail
 
-		branding, err := db.GetOrganizationBranding(ctx, *auth.CurrentOrgID())
-		if err != nil && !errors.Is(err, apierrors.ErrNotFound) {
-			log.Error("failed to get organization branding", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		owb := types.OrganizationWithBranding{Organization: *auth.CurrentOrg(), Branding: branding}
+		owb := *auth.CurrentOrgWithBranding()
 		if err := mailer.Send(ctx,
 			mailx.To(body.Email),
 			mailx.Subject("[Action required] Distr E-Mail address change"),
-			mailx.HtmlBodyTemplate(mailtemplates.UpdateEmail(*user, owb, token)),
+			mailx.HtmlBodyTemplate(mailtemplates.UpdateEmail(ctx, *user, owb, token)),
 		); err != nil {
 			log.Error("failed to send email verification", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)

@@ -30,6 +30,7 @@ type AgentAuthInfo interface {
 type AuthInfoWithOrganization interface {
 	AuthInfo
 	CurrentOrg() *types.Organization
+	CurrentOrgWithBranding() *types.OrganizationWithBranding
 }
 
 type AuthInfoWithUserAndOrganization interface {

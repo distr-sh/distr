@@ -136,8 +136,8 @@ export class NavBarComponent implements OnInit {
     if (this.auth.isCustomer()) {
       try {
         const branding = await lastValueFrom(this.organizationBranding.get());
-        if (branding.logo) {
-          this.logoUrl = `data:${branding.logoContentType};base64,${branding.logo}`;
+        if (branding.logoImageId) {
+          this.logoUrl = branding.logoImageId;
         }
         if (branding.title) {
           this.customerSubtitle = branding.title;

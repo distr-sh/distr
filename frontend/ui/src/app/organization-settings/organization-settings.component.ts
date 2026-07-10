@@ -2,7 +2,7 @@ import {ChangeDetectionStrategy, Component, inject, OnInit, signal, TemplateRef,
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faFloppyDisk, faLightbulb} from '@fortawesome/free-solid-svg-icons';
+import {faFloppyDisk} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, startWith} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {slugMaxLength, slugPattern} from '../../util/slug';
@@ -22,7 +22,6 @@ import {Organization} from '../types/organization';
 })
 export class OrganizationSettingsComponent implements OnInit {
   protected readonly faFloppyDisk = faFloppyDisk;
-  protected readonly faLightbulb = faLightbulb;
 
   private readonly organizationService = inject(OrganizationService);
   private readonly toast = inject(ToastService);
@@ -37,9 +36,6 @@ export class OrganizationSettingsComponent implements OnInit {
   protected readonly form = this.fb.group({
     name: this.fb.control('', [Validators.required]),
     slug: this.fb.control('', [Validators.pattern(slugPattern), Validators.maxLength(slugMaxLength)]),
-    appDomain: this.fb.control<string | undefined>({value: undefined, disabled: true}),
-    registryDomain: this.fb.control<string | undefined>({value: undefined, disabled: true}),
-    emailFromAddress: this.fb.control<string | undefined>({value: undefined, disabled: true}),
     preConnectScript: this.fb.control<string | undefined>(undefined),
     postConnectScript: this.fb.control<string | undefined>(undefined),
     connectScriptIsSudo: this.fb.control<boolean>(false),

@@ -15,7 +15,7 @@ import (
 const (
 	organizationBrandingOutputExpr = `
 		b.id, b.created_at, b.organization_id, b.updated_at, b.updated_by_user_account_id, b.title, b.description,
-		b.logo, b.logo_file_name, b.logo_content_type
+		b.logo_image_id, b.app_domain, b.registry_domain, b.email_from_address
 	`
 )
 
@@ -44,10 +44,8 @@ func CreateOrganizationBranding(ctx context.Context, b *types.OrganizationBrandi
 	rows, err := db.Query(
 		ctx,
 		`INSERT INTO OrganizationBranding AS b
-			(organization_id, updated_at, updated_by_user_account_id, title, description,
-			 logo, logo_file_name, logo_content_type)
-			VALUES (@organization_id, @updated_at, @updated_by_user_account_id, @title, @description,
-			        @logo, @logo_file_name, @logo_content_type)
+			(organization_id, updated_at, updated_by_user_account_id, title, description, logo_image_id)
+			VALUES (@organization_id, @updated_at, @updated_by_user_account_id, @title, @description, @logo_image_id)
 			RETURNING `+organizationBrandingOutputExpr,
 		pgx.NamedArgs{
 			"organization_id":            b.OrganizationID,
@@ -55,9 +53,7 @@ func CreateOrganizationBranding(ctx context.Context, b *types.OrganizationBrandi
 			"updated_by_user_account_id": b.UpdatedByUserAccountID,
 			"title":                      b.Title,
 			"description":                b.Description,
-			"logo":                       b.Logo,
-			"logo_file_name":             b.LogoFileName,
-			"logo_content_type":          b.LogoContentType,
+			"logo_image_id":              b.LogoImageID,
 		},
 	)
 	if err != nil {
@@ -81,9 +77,7 @@ func UpdateOrganizationBranding(ctx context.Context, b *types.OrganizationBrandi
 			updated_by_user_account_id = @updated_by_user_account_id,
 			title = @title,
 			description = @description,
-			logo = @logo,
-			logo_file_name = @logo_file_name,
-			logo_content_type = @logo_content_type
+			logo_image_id = @logo_image_id
 		WHERE organization_id = @organization_id
 		RETURNING `+organizationBrandingOutputExpr,
 		pgx.NamedArgs{
@@ -92,9 +86,7 @@ func UpdateOrganizationBranding(ctx context.Context, b *types.OrganizationBrandi
 			"updated_by_user_account_id": b.UpdatedByUserAccountID,
 			"title":                      b.Title,
 			"description":                b.Description,
-			"logo":                       b.Logo,
-			"logo_file_name":             b.LogoFileName,
-			"logo_content_type":          b.LogoContentType,
+			"logo_image_id":              b.LogoImageID,
 		},
 	)
 	if err != nil {

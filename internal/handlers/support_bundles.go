@@ -192,7 +192,7 @@ func createSupportBundleHandler() http.HandlerFunc {
 			return
 		}
 
-		org, err := db.GetOrganizationByID(ctx, *a.CurrentOrgID())
+		org, err := db.GetOrganizationWithBranding(ctx, *a.CurrentOrgID())
 		if err != nil {
 			log.Error("failed to get organization", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -200,7 +200,7 @@ func createSupportBundleHandler() http.HandlerFunc {
 			return
 		}
 
-		baseURL := customdomains.AppDomainOrDefault(*org)
+		baseURL := customdomains.AppDomainOrDefault(org.Branding)
 
 		expiresAt := time.Now().UTC().Add(24 * time.Hour)
 		bundle := types.SupportBundle{
@@ -301,14 +301,14 @@ func getSupportBundleDetailHandler() http.HandlerFunc {
 			Comments:      mapping.List(comments, mapping.SupportBundleCommentToAPI),
 		}
 		if bundle.Status == types.SupportBundleStatusInitialized && bundle.BundleSecretExpiresAt != nil {
-			org, err := db.GetOrganizationByID(ctx, bundle.OrganizationID)
+			org, err := db.GetOrganizationWithBranding(ctx, bundle.OrganizationID)
 			if err != nil {
 				log.Error("failed to get organization", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			baseURL := customdomains.AppDomainOrDefault(*org)
+			baseURL := customdomains.AppDomainOrDefault(org.Branding)
 			cmd := fmt.Sprintf(
 				"curl -fsSL '%s/api/v1/support-bundle-collect/%s/collect-script?bundleSecret=%s' | sh",
 				baseURL, bundle.ID.String(), bundle.BundleSecret,

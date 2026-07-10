@@ -1,7 +1,7 @@
 import {HttpClient} from '@angular/common/http';
-import {Injectable, inject} from '@angular/core';
+import {inject, Injectable} from '@angular/core';
 import {OrganizationBranding} from '@distr-sh/distr-sdk';
-import {Observable, of, tap} from 'rxjs';
+import {catchError, map, Observable, of, tap} from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -21,15 +21,22 @@ export class OrganizationBrandingService {
       .pipe(tap((branding) => (this.cache = branding)));
   }
 
-  create(organizationBranding: FormData): Observable<OrganizationBranding> {
+  create(organizationBranding: Partial<OrganizationBranding>): Observable<OrganizationBranding> {
     return this.httpClient
       .post<OrganizationBranding>(this.organizationBrandingUrl, organizationBranding)
       .pipe(tap((obj) => (this.cache = obj)));
   }
 
-  update(organizationBranding: FormData): Observable<OrganizationBranding> {
+  update(organizationBranding: Partial<OrganizationBranding>): Observable<OrganizationBranding> {
     return this.httpClient
       .put<OrganizationBranding>(this.organizationBrandingUrl, organizationBranding)
       .pipe(tap((obj) => (this.cache = obj)));
+  }
+
+  registryDomain(): Observable<string | undefined> {
+    return this.get().pipe(
+      map((branding) => branding.registryDomain),
+      catchError(() => of(undefined))
+    );
   }
 }

@@ -280,7 +280,7 @@ func createAccessForDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org := auth.CurrentOrg()
+	org := auth.CurrentOrgWithBranding()
 	connectUrl, err := agentconnect.BuildConnectURL(deploymentTarget.ID, *org, targetSecret)
 	if err != nil {
 		log.Error("could not create connecturl", zap.Error(err))

@@ -177,16 +177,18 @@ export class BrandingTutorialComponent implements OnInit, OnDestroy {
       if (this.brandingFormGroup.dirty) {
         this.loading.set(true);
         const formVal = this.brandingFormGroup.getRawValue();
-        const formData = new FormData();
-        formData.set('title', formVal.title);
-        formData.set('description', formVal.description);
+        const payload: Partial<OrganizationBranding> = {
+          title: formVal.title,
+          description: formVal.description,
+          logoImageId: this.organizationBranding?.logoImageId,
+        };
 
         const id = this.organizationBranding?.id;
         let req: Observable<OrganizationBranding>;
         if (id) {
-          req = this.brandingService.update(formData);
+          req = this.brandingService.update(payload);
         } else {
-          req = this.brandingService.create(formData);
+          req = this.brandingService.create(payload);
         }
 
         try {

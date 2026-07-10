@@ -26,6 +26,7 @@ import {RequireCustomerDirective, RequireVendorDirective} from '../../directives
 import {ArtifactsService, ArtifactUpstreamAuth, UpstreamAuthType} from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsCache} from '../../services/customer-organizations.service';
+import {OrganizationBrandingService} from '../../services/organization-branding.service';
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
@@ -93,11 +94,12 @@ export class ArtifactsComponent {
   );
 
   private readonly organizationService = inject(OrganizationService);
+  private readonly organizationBrandingService = inject(OrganizationBrandingService);
   protected readonly registrySlug$ = this.organizationService.get().pipe(map((org) => org.slug));
   protected readonly registryHost$ = combineLatest([
     fromPromise(getRemoteEnvironment()),
-    this.organizationService.get(),
-  ]).pipe(map(([env, org]) => org.registryDomain ?? env.registryHost));
+    this.organizationBrandingService.registryDomain(),
+  ]).pipe(map(([env, registryDomain]) => registryDomain ?? env.registryHost));
 
   protected readonly auth = inject(AuthService);
   protected readonly hasNoSubscription = this.organizationService.hasNoSubscription;

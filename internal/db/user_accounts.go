@@ -475,16 +475,18 @@ func GetUserAccountWithRole(
 
 func GetUserAccountAndOrg(ctx context.Context, userID, orgID uuid.UUID) (
 	*types.UserAccountWithUserRole,
-	*types.Organization,
+	*types.OrganizationWithBranding,
 	error,
 ) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		"SELECT ("+userAccountWithRoleOutputExpr+`),
-					(`+organizationOutputExpr+`)
+					(`+organizationOutputExpr+`),
+					CASE WHEN b.id IS NOT NULL THEN (`+organizationBrandingOutputExpr+`) END AS branding
 			FROM UserAccount u
 			INNER JOIN Organization_UserAccount j ON u.id = j.user_account_id
 			INNER JOIN Organization o ON o.id = j.organization_id
+			LEFT JOIN OrganizationBranding b ON b.organization_id = o.id
 			WHERE u.id = @id
 				AND j.organization_id = @orgId
 				AND o.deleted_at IS NULL`,
@@ -497,8 +499,9 @@ func GetUserAccountAndOrg(ctx context.Context, userID, orgID uuid.UUID) (
 		return nil, nil, err
 	}
 	res, err := pgx.CollectExactlyOneRow[struct {
-		User types.UserAccountWithUserRole
-		Org  types.Organization
+		User     types.UserAccountWithUserRole
+		Org      types.Organization
+		Branding *types.OrganizationBranding
 	}](rows, pgx.RowToStructByPos)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -507,22 +510,24 @@ func GetUserAccountAndOrg(ctx context.Context, userID, orgID uuid.UUID) (
 			return nil, nil, fmt.Errorf("could not map user or org: %w", err)
 		}
 	} else {
-		return &res.User, &res.Org, nil
+		return &res.User, &types.OrganizationWithBranding{Organization: res.Org, Branding: res.Branding}, nil
 	}
 }
 
 func GetCustomerAndOrgForDeploymentTarget(
 	ctx context.Context,
 	id uuid.UUID,
-) (*types.CustomerOrganization, *types.Organization, error) {
+) (*types.CustomerOrganization, *types.OrganizationWithBranding, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		`SELECT
 			CASE WHEN co.id IS NOT NULL THEN (`+customerOrganizationOutputExpr+`) END AS customer_organization,
-				(`+organizationOutputExpr+`) AS organization
+				(`+organizationOutputExpr+`) AS organization,
+				CASE WHEN b.id IS NOT NULL THEN (`+organizationBrandingOutputExpr+`) END AS branding
 			FROM DeploymentTarget dt
 			JOIN Organization o ON o.id = dt.organization_id
 			LEFT JOIN CustomerOrganization co ON co.id = dt.customer_organization_id
+			LEFT JOIN OrganizationBranding b ON b.organization_id = o.id
 			WHERE dt.id = @id`,
 		pgx.NamedArgs{"id": id},
 	)
@@ -532,6 +537,7 @@ func GetCustomerAndOrgForDeploymentTarget(
 	res, err := pgx.CollectExactlyOneRow[struct {
 		CustomerOrganization *types.CustomerOrganization
 		Org                  types.Organization
+		Branding             *types.OrganizationBranding
 	}](rows, pgx.RowToStructByPos)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -540,7 +546,8 @@ func GetCustomerAndOrgForDeploymentTarget(
 			return nil, nil, fmt.Errorf("could not map customer or org: %w", err)
 		}
 	} else {
-		return res.CustomerOrganization, &res.Org, nil
+		return res.CustomerOrganization,
+			&types.OrganizationWithBranding{Organization: res.Org, Branding: res.Branding}, nil
 	}
 }
 
