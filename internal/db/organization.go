@@ -9,6 +9,7 @@ import (
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/buildconfig"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/license"
 	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
@@ -51,9 +52,24 @@ const (
 )
 
 func CreateOrganization(ctx context.Context, org *types.Organization) error {
+	// Defaults matching the database column defaults for a fresh organization.
+	org.SubscriptionPeriod = types.SubscriptionPeriodMonthly
+	org.SubscriptionEndsAt = time.Now().AddDate(0, 1, 0)
+	org.SubscriptionCustomerOrganizationQty = limit.Unlimited
+	org.SubscriptionUserAccountQty = limit.Unlimited
+
 	if buildconfig.IsCommunityEdition() {
 		org.SubscriptionType = types.SubscriptionTypeCommunity
 		org.Features = []types.Feature{}
+	} else if licenseData := license.GetLicenseData(); licenseData.EnforceLimitsOnStartup {
+		// When limits are enforced on startup, all organizations are set to the enterprise
+		// subscription type, so new organizations must reflect the same subscription.
+		org.SubscriptionType = types.SubscriptionTypeEnterprise
+		org.Features = []types.Feature{types.FeatureLicensing}
+		org.SubscriptionPeriod = licenseData.Period
+		org.SubscriptionEndsAt = licenseData.ExpirationDate
+		org.SubscriptionCustomerOrganizationQty = licenseData.MaxCustomersPerOrganization
+		org.SubscriptionUserAccountQty = licenseData.MaxUsersPerOrganization
 	} else {
 		org.SubscriptionType = types.SubscriptionTypeTrial
 		org.Features = []types.Feature{types.FeatureLicensing}
@@ -61,14 +77,36 @@ func CreateOrganization(ctx context.Context, org *types.Organization) error {
 
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		`INSERT INTO Organization AS o (name, slug, subscription_type, features)
-		VALUES (@name, @slug, @subscription_type, @features)
+		`INSERT INTO Organization AS o (
+			name,
+			slug,
+			subscription_type,
+			features,
+			subscription_period,
+			subscription_ends_at,
+			subscription_customer_organization_quantity,
+			subscription_user_account_quantity
+		)
+		VALUES (
+			@name,
+			@slug,
+			@subscription_type,
+			@features,
+			@subscription_period,
+			@subscription_ends_at,
+			@subscription_customer_organization_quantity,
+			@subscription_user_account_quantity
+		)
 		RETURNING `+organizationOutputExpr,
 		pgx.NamedArgs{
-			"name":              org.Name,
-			"slug":              org.Slug,
-			"subscription_type": org.SubscriptionType,
-			"features":          org.Features,
+			"name":                 org.Name,
+			"slug":                 org.Slug,
+			"subscription_type":    org.SubscriptionType,
+			"features":             org.Features,
+			"subscription_period":  org.SubscriptionPeriod,
+			"subscription_ends_at": org.SubscriptionEndsAt.UTC(),
+			"subscription_customer_organization_quantity": org.SubscriptionCustomerOrganizationQty,
+			"subscription_user_account_quantity":          org.SubscriptionUserAccountQty,
 		},
 	)
 	if err != nil {
