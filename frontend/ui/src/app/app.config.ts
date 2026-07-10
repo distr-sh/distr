@@ -12,6 +12,7 @@ import * as Sentry from '@sentry/angular';
 import {routes} from './app.routes';
 import {tokenInterceptor} from './services/auth.service';
 import {errorToastInterceptor} from './services/error-toast.interceptor';
+import {PortalBrandingService} from './services/portal-branding.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -23,6 +24,10 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(withInterceptors([tokenInterceptor, errorToastInterceptor])),
     provideAppInitializer(async () => inject(Sentry.TraceService)),
+    provideAppInitializer(() => {
+      // Branding is best-effort and must not block bootstrap on a slow/hung request.
+      void inject(PortalBrandingService).apply();
+    }),
     {provide: OVERLAY_DEFAULT_CONFIG, useValue: {usePopover: false}},
   ],
 };

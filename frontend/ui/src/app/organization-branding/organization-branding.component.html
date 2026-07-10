@@ -105,6 +105,22 @@
         </div>
 
         <div>
+          <label for="pageTitle" class="distr-label mb-1">Portal Title</label>
+          <input
+            formControlName="pageTitle"
+            autotrim
+            type="text"
+            name="pageTitle"
+            id="pageTitle"
+            class="distr-input"
+            placeholder="Distr" />
+          <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+            Shown as the browser tab title for users and customers of your organization. If not set, the default Distr
+            title is used.
+          </p>
+        </div>
+
+        <div>
           <label class="distr-label mb-1">Portal Logo</label>
           <div class="inline-block relative">
             @if (logoImageId(); as logoId) {
@@ -140,6 +156,38 @@
           <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
             Shown in the navigation bar of the customer portal. SVG, PNG, JPG or GIF (recommended height 32px). If not
             set, the Distr logo will be shown.
+          </p>
+        </div>
+
+        <div>
+          <label class="distr-label mb-1">Fav-icon</label>
+          <div class="inline-block relative">
+            <img
+              [src]="faviconImageUrl() ?? '/favicon.svg'"
+              alt="Favicon"
+              class="size-24 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 object-contain p-6" />
+            <div class="absolute -bottom-2 -right-0.5 space-x-1">
+              <button
+                type="button"
+                class="rounded-full size-6 text-sm text-gray-900 focus:outline-none bg-white border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+                (click)="editFavicon()">
+                <span class="sr-only">Edit favicon</span>
+                <fa-icon [icon]="faPen" size="sm" />
+              </button>
+              @if (faviconImageId()) {
+                <button
+                  type="button"
+                  class="rounded-full size-6 text-sm text-gray-900 focus:outline-none bg-white border border-gray-200 hover:bg-gray-100 hover:text-red-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+                  (click)="removeFavicon()">
+                  <span class="sr-only">Remove favicon</span>
+                  <fa-icon [icon]="faTrashCan" size="sm" />
+                </button>
+              }
+            </div>
+          </div>
+          <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+            Shown in the browser tab for users and customers of your organization. PNG, GIF or ICO (recommended size
+            64px x 64px - square). If not set, the Distr favicon will be shown.
           </p>
         </div>
 

@@ -87,4 +87,6 @@ type OrganizationBranding struct {
 	AppDomain              *string    `db:"app_domain" json:"appDomain"`
 	RegistryDomain         *string    `db:"registry_domain" json:"registryDomain"`
 	EmailFromAddress       *string    `db:"email_from_address" json:"emailFromAddress"`
+	PageTitle              *string    `db:"page_title" json:"pageTitle"`
+	FaviconImageID         *uuid.UUID `db:"favicon_image_id" json:"faviconImageId"`
 }

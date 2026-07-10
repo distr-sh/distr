@@ -40,6 +40,12 @@
 
 ---
 
+### faviconImageId?
+
+> `optional` **faviconImageId?**: `string`
+
+---
+
 ### id?
 
 > `optional` **id?**: `string`
@@ -53,6 +59,12 @@
 ### logoImageId?
 
 > `optional` **logoImageId?**: `string`
+
+---
+
+### pageTitle?
+
+> `optional` **pageTitle?**: `string`
 
 ---
 

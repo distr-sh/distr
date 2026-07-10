@@ -257,6 +257,8 @@ func PublicRouter(tracers *tracers.Tracers) func(r chiopenapi.Router) {
 		r.Use(middleware.OTEL(tracers.Default()))
 
 		r.Route("/license-keys", handlers.PublicLicenseKeysRouter)
+		r.Route("/files", handlers.PublicFileRouter)
+		r.Route("/portal", handlers.PublicPortalRouter)
 	}
 }
 

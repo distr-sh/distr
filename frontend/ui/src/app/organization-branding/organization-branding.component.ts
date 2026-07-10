@@ -46,6 +46,11 @@ export class OrganizationBrandingComponent implements OnInit {
   protected markdownPreviewMode = false;
 
   protected readonly logoImageId = signal<string | undefined>(undefined);
+  protected readonly faviconImageId = signal<string | undefined>(undefined);
+  protected readonly faviconImageUrl = computed(() => {
+    const id = this.faviconImageId();
+    return id ? `/api/public/v1/files/${id}` : undefined;
+  });
   protected readonly appDomain = signal<string | undefined>(undefined);
   protected readonly registryDomain = signal<string | undefined>(undefined);
   protected readonly emailFromAddress = signal<string | undefined>(undefined);
@@ -73,6 +78,7 @@ export class OrganizationBrandingComponent implements OnInit {
   protected readonly form = new FormGroup({
     title: new FormControl(''),
     description: new FormControl(''),
+    pageTitle: new FormControl(''),
   });
   formLoading = signal(false);
   protected readonly customerPortalName = toSignal(
@@ -87,12 +93,14 @@ export class OrganizationBrandingComponent implements OnInit {
     try {
       this.organizationBranding = await lastValueFrom(this.organizationBrandingService.get());
       this.logoImageId.set(this.organizationBranding.logoImageId);
+      this.faviconImageId.set(this.organizationBranding.faviconImageId);
       this.appDomain.set(this.organizationBranding.appDomain);
       this.registryDomain.set(this.organizationBranding.registryDomain);
       this.emailFromAddress.set(this.organizationBranding.emailFromAddress);
       this.form.patchValue({
         title: this.organizationBranding.title,
         description: this.organizationBranding.description,
+        pageTitle: this.organizationBranding.pageTitle,
       });
     } catch (e) {
       const msg = getFormDisplayedError(e);
@@ -118,6 +126,28 @@ export class OrganizationBrandingComponent implements OnInit {
     this.logoImageId.set(undefined);
   }
 
+  async editFavicon() {
+    const fileId = await firstValueFrom(
+      this.imageUploadService.showDialog({
+        scope: 'organization',
+        public: true,
+        showSuccessNotification: false,
+        imageUrl: this.faviconImageUrl(),
+        accept: 'image/png,image/gif,image/x-icon,image/vnd.microsoft.icon,.ico',
+        acceptDescription: 'PNG, GIF or ICO (recommended size 64px x 64px - square)',
+      })
+    );
+    if (!fileId || this.faviconImageId() === fileId) {
+      return;
+    }
+    // Stage the uploaded file: it is only attached to the branding when the form is saved.
+    this.faviconImageId.set(fileId);
+  }
+
+  removeFavicon() {
+    this.faviconImageId.set(undefined);
+  }
+
   async save() {
     this.form.markAllAsTouched();
     if (this.form.valid) {
@@ -126,15 +156,14 @@ export class OrganizationBrandingComponent implements OnInit {
         title: this.form.value.title ?? undefined,
         description: this.form.value.description ?? undefined,
         logoImageId: this.logoImageId(),
+        pageTitle: this.form.value.pageTitle?.trim() || undefined,
+        faviconImageId: this.faviconImageId(),
       };
 
-      const req = this.organizationBranding?.id
-        ? this.organizationBrandingService.update(payload)
-        : this.organizationBrandingService.create(payload);
-
       try {
-        this.organizationBranding = await lastValueFrom(req);
+        this.organizationBranding = await lastValueFrom(this.organizationBrandingService.upsert(payload));
         this.logoImageId.set(this.organizationBranding.logoImageId);
+        this.faviconImageId.set(this.organizationBranding.faviconImageId);
         this.toast.success('Branding saved successfully');
       } catch (e) {
         const msg = getFormDisplayedError(e);
