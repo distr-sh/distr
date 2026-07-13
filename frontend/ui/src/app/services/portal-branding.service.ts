@@ -28,11 +28,22 @@ export class PortalBrandingService {
   private readonly auth = inject(AuthService);
   private readonly organizationBrandingService = inject(OrganizationBrandingService);
 
+  // Captured before any branding is applied so cleared/absent fields can be reset to the app defaults instead
+  // of leaking a previously applied source's values.
+  private readonly defaultTitle = this.title.getTitle();
+  private readonly defaultIconLinks = Array.from(
+    this.document.head.querySelectorAll<HTMLLinkElement>("link[rel~='icon']")
+  ).map((link) => link.cloneNode(true) as HTMLLinkElement);
+
   async apply(): Promise<void> {
-    // Host-based branding applies to everyone on a custom app domain, including the (unauthenticated) login page.
+    // The current organization's branding takes full precedence once the user is logged in, so it fully
+    // replaces (never merges with) any host-based branding to avoid mixing two organizations' branding.
+    if (await this.applyContextBranding()) {
+      return;
+    }
+    // Otherwise fall back to host-based branding, which applies to everyone on a custom app domain, including
+    // the (unauthenticated) login page.
     await this.applyHostBranding();
-    // The current organization's branding takes precedence once the user is logged in.
-    await this.applyContextBranding();
   }
 
   private async applyHostBranding(): Promise<void> {
@@ -44,26 +55,28 @@ export class PortalBrandingService {
     }
   }
 
-  private async applyContextBranding(): Promise<void> {
+  private async applyContextBranding(): Promise<boolean> {
     if (!this.auth.getClaims()) {
-      return;
+      return false;
     }
     try {
       const branding = await firstValueFrom(this.organizationBrandingService.get());
       // The favicon is loaded by the browser as a plain resource (no auth), so it is served via the public API.
       const faviconUrl = branding.faviconImageId ? `/api/public/v1/files/${branding.faviconImageId}` : undefined;
       this.applyBranding(branding.pageTitle, faviconUrl);
+      return true;
     } catch (e) {
       // best-effort: e.g. 404 when the organization has no branding configured
+      return false;
     }
   }
 
   private applyBranding(pageTitle?: string, faviconUrl?: string): void {
-    if (pageTitle) {
-      this.title.setTitle(pageTitle);
-    }
+    this.title.setTitle(pageTitle || this.defaultTitle);
     if (faviconUrl) {
       this.setFavicon(faviconUrl);
+    } else {
+      this.restoreDefaultFavicon();
     }
   }
 
@@ -74,5 +87,11 @@ export class PortalBrandingService {
     link.rel = 'icon';
     link.href = url;
     head.appendChild(link);
+  }
+
+  private restoreDefaultFavicon(): void {
+    const head = this.document.head;
+    head.querySelectorAll("link[rel~='icon']").forEach((link) => link.remove());
+    this.defaultIconLinks.forEach((link) => head.appendChild(link.cloneNode(true)));
   }
 }
