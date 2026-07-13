@@ -152,7 +152,7 @@ export class OrganizationBrandingComponent implements OnInit {
     this.form.markAllAsTouched();
     if (this.form.valid) {
       this.formLoading.set(true);
-      const payload: Partial<OrganizationBranding> = {
+      const payload: OrganizationBranding = {
         title: this.form.value.title ?? undefined,
         description: this.form.value.description ?? undefined,
         logoImageId: this.logoImageId(),

@@ -21,7 +21,7 @@ export class OrganizationBrandingService {
       .pipe(tap((branding) => (this.cache = branding)));
   }
 
-  upsert(organizationBranding: Partial<OrganizationBranding>): Observable<OrganizationBranding> {
+  upsert(organizationBranding: OrganizationBranding): Observable<OrganizationBranding> {
     return this.httpClient
       .put<OrganizationBranding>(this.organizationBrandingUrl, organizationBranding)
       .pipe(tap((obj) => (this.cache = obj)));

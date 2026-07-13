@@ -177,10 +177,12 @@ export class BrandingTutorialComponent implements OnInit, OnDestroy {
       if (this.brandingFormGroup.dirty) {
         this.loading.set(true);
         const formVal = this.brandingFormGroup.getRawValue();
-        const payload: Partial<OrganizationBranding> = {
+        const payload: OrganizationBranding = {
           title: formVal.title,
           description: formVal.description,
           logoImageId: this.organizationBranding?.logoImageId,
+          pageTitle: this.organizationBranding?.pageTitle,
+          faviconImageId: this.organizationBranding?.faviconImageId,
         };
 
         try {
