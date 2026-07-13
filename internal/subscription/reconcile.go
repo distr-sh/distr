@@ -16,7 +16,7 @@ import (
 func ensureProFeatures(ctx context.Context) error {
 	log := internalctx.GetLogger(ctx)
 	log.Info("ensuring pro features for all organizations")
-	updated, err := db.EnsureOrganizationFeatures(ctx, ProFeatures)
+	updated, err := db.EnsureOrganizationFeatures(ctx, types.ProFeatures)
 	if err != nil {
 		return err
 	}
