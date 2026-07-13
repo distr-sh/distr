@@ -136,8 +136,11 @@ func (handler *blobHandler) Put(
 		defer rc.Close()
 	}
 
-	// The AWS S3 SDK requires a io.ReadSeeker event though the interface only specifies io.Reader
-	if _, ok := r.(io.Seeker); !ok {
+	// The AWS S3 SDK requires an io.ReadSeeker even though the interface only specifies io.Reader.
+	// We additionally need an io.ReaderAt so that large blobs can be uploaded via multipart upload
+	// using io.SectionReader without buffering any part in memory.
+	rsa, ok := r.(seekbuf.ReadSeekAt)
+	if !ok {
 		if s, err := seekbuf.New(r); err != nil {
 			return err
 		} else {
@@ -150,26 +153,131 @@ func (handler *blobHandler) Put(
 				return err
 			} else {
 				defer sr.Close()
-				r = sr
+				rsa = sr
 			}
 		}
+	}
+
+	size, err := rsa.Seek(0, io.SeekEnd)
+	if err != nil {
+		return fmt.Errorf("failed to measure blob size: %w", err)
+	}
+	if _, err := rsa.Seek(0, io.SeekStart); err != nil {
+		return fmt.Errorf("failed to rewind blob: %w", err)
+	}
+
+	// S3 PutObject is limited to 5 GiB. Larger blobs must be uploaded via multipart upload.
+	if size > maxS3PartSize {
+		return handler.putMultipart(ctx, key, contentType, rsa, size)
 	}
 
 	input := s3.PutObjectInput{
 		Bucket: &handler.bucket,
 		Key:    &key,
-		Body:   r,
+		Body:   rsa,
 	}
 
 	if contentType != "" {
 		input.ContentType = &contentType
 	}
 
-	_, err := handler.s3Client.PutObject(ctx, &input)
-	if err != nil {
+	if _, err := handler.s3Client.PutObject(ctx, &input); err != nil {
 		return convertErrNotFound(err)
 	}
 	return nil
+}
+
+// putMultipart uploads r to key using an S3 multipart upload, splitting it into parts of at most
+// splitPartSize. Each part is served via io.SectionReader over the seekable source so that no part
+// is buffered in memory.
+func (handler *blobHandler) putMultipart(
+	ctx context.Context,
+	key, contentType string,
+	r io.ReaderAt,
+	size int64,
+) error {
+	createInput := &s3.CreateMultipartUploadInput{
+		Bucket: &handler.bucket,
+		Key:    &key,
+	}
+	if contentType != "" {
+		createInput.ContentType = &contentType
+	}
+	upload, err := handler.s3Client.CreateMultipartUpload(ctx, createInput)
+	if err != nil {
+		return err
+	}
+
+	completed := false
+	abort := func() {
+		if completed {
+			return
+		}
+
+		_, err = handler.s3Client.AbortMultipartUpload(context.WithoutCancel(ctx), &s3.AbortMultipartUploadInput{
+			Bucket:   &handler.bucket,
+			Key:      &key,
+			UploadId: upload.UploadId,
+		})
+	}
+
+	completedParts, err := handler.uploadParts(ctx, key, upload.UploadId, 1, r, size)
+	if err != nil {
+		abort()
+		return err
+	}
+
+	if _, err := handler.s3Client.CompleteMultipartUpload(ctx, &s3.CompleteMultipartUploadInput{
+		Bucket:          &handler.bucket,
+		Key:             &key,
+		UploadId:        upload.UploadId,
+		MultipartUpload: &s3types.CompletedMultipartUpload{Parts: completedParts},
+	}); err != nil {
+		abort()
+		return err
+	}
+
+	completed = true
+
+	return nil
+}
+
+// uploadParts uploads size bytes of r to key as a series of UploadPart calls, each of at most
+// splitPartSize bytes, numbering parts sequentially starting at startPartNumber. The final part
+// absorbs any remainder so that no non-final part is smaller than splitPartSize (keeping every
+// part well above the S3 5 MiB minimum). Parts are served via io.SectionReader so none are
+// buffered in memory. The returned parts can be passed to CompleteMultipartUpload.
+func (handler *blobHandler) uploadParts(
+	ctx context.Context,
+	key string,
+	uploadID *string,
+	startPartNumber int32,
+	r io.ReaderAt,
+	size int64,
+) ([]s3types.CompletedPart, error) {
+	numParts := max(int64(1), size/splitPartSize)
+	completedParts := make([]s3types.CompletedPart, numParts)
+	for i := range numParts {
+		partNumber := startPartNumber + int32(i)
+		offset := i * splitPartSize
+		partSize := splitPartSize
+		if i == numParts-1 {
+			partSize = size - offset
+		}
+		result, err := handler.s3Client.UploadPart(ctx, &s3.UploadPartInput{
+			Bucket:        &handler.bucket,
+			Key:           &key,
+			UploadId:      uploadID,
+			PartNumber:    &partNumber,
+			Body:          io.NewSectionReader(r, offset, partSize),
+			ContentLength: &partSize,
+		})
+		if err != nil {
+			return nil, err
+		}
+		completedParts[i] = s3types.CompletedPart{PartNumber: &partNumber, ETag: result.ETag}
+	}
+	return completedParts, nil
 }
 
 func (handler *blobHandler) StartSession(ctx context.Context, repo string) (string, error) {
@@ -248,26 +356,8 @@ func (handler *blobHandler) PutChunk(ctx context.Context, id string, r io.Reader
 	}
 	size += chunkSize
 
-	// Split the chunk into 1 GiB parts. The last part absorbs any remainder so that
-	// no non-final part is smaller than the S3 minimum (5 MiB).
-	numParts := max(int64(1), chunkSize/splitPartSize)
-	for i := range numParts {
-		pn := partNumber + int32(i)
-		offset := i * splitPartSize
-		partSize := splitPartSize
-		if i == numParts-1 {
-			partSize = chunkSize - offset
-		}
-		if _, err := handler.s3Client.UploadPart(ctx, &s3.UploadPartInput{
-			Bucket:        &handler.bucket,
-			Key:           &uploadKey,
-			UploadId:      uploadID,
-			PartNumber:    &pn,
-			Body:          io.NewSectionReader(sr, offset, partSize),
-			ContentLength: &partSize,
-		}); err != nil {
-			return 0, err
-		}
+	if _, err := handler.uploadParts(ctx, uploadKey, uploadID, partNumber, sr, chunkSize); err != nil {
+		return 0, err
 	}
 
 	return size, nil
