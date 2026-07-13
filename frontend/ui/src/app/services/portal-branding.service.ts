@@ -1,12 +1,18 @@
 import {DOCUMENT} from '@angular/common';
 import {HttpBackend, HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {Title} from '@angular/platform-browser';
-import {firstValueFrom} from 'rxjs';
+import {catchError, map, Observable, of, Subject, switchMap} from 'rxjs';
 import {AuthService} from './auth.service';
 import {OrganizationBrandingService} from './organization-branding.service';
 
 interface PortalResponse {
+  pageTitle?: string;
+  faviconUrl?: string;
+}
+
+interface ResolvedBranding {
   pageTitle?: string;
   faviconUrl?: string;
 }
@@ -35,43 +41,52 @@ export class PortalBrandingService {
     this.document.head.querySelectorAll<HTMLLinkElement>("link[rel~='icon']")
   ).map((link) => link.cloneNode(true) as HTMLLinkElement);
 
-  async apply(): Promise<void> {
+  // switchMap cancels any in-flight resolution when a newer apply() is triggered, so a slow request from an
+  // earlier invocation can never overwrite branding applied by a later one (e.g. host branding started at
+  // bootstrap resolving after the authenticated organization's branding was applied on login).
+  private readonly applyTrigger = new Subject<void>();
+
+  constructor() {
+    this.applyTrigger
+      .pipe(
+        switchMap(() => this.resolveBranding()),
+        takeUntilDestroyed()
+      )
+      .subscribe((branding) => this.applyBranding(branding));
+  }
+
+  apply(): void {
+    this.applyTrigger.next();
+  }
+
+  private resolveBranding(): Observable<ResolvedBranding> {
     // The current organization's branding takes full precedence once the user is logged in, so it fully
-    // replaces (never merges with) any host-based branding to avoid mixing two organizations' branding.
-    if (await this.applyContextBranding()) {
-      return;
-    }
-    // Otherwise fall back to host-based branding, which applies to everyone on a custom app domain, including
-    // the (unauthenticated) login page.
-    await this.applyHostBranding();
-  }
-
-  private async applyHostBranding(): Promise<void> {
-    try {
-      const portal = await firstValueFrom(this.httpClient.get<PortalResponse | null>('/api/public/v1/portal'));
-      this.applyBranding(portal?.pageTitle, portal?.faviconUrl);
-    } catch (e) {
-      // best-effort: keep the default title and favicon
-    }
-  }
-
-  private async applyContextBranding(): Promise<boolean> {
+    // replaces (never merges with) any host-based branding to avoid mixing two organizations' branding. When
+    // it is unavailable (logged out, or no branding configured) we fall back to host-based branding, which
+    // applies to everyone on a custom app domain, including the (unauthenticated) login page.
     if (!this.auth.getClaims()) {
-      return false;
+      return this.resolveHostBranding();
     }
-    try {
-      const branding = await firstValueFrom(this.organizationBrandingService.get());
-      // The favicon is loaded by the browser as a plain resource (no auth), so it is served via the public API.
-      const faviconUrl = branding.faviconImageId ? `/api/public/v1/files/${branding.faviconImageId}` : undefined;
-      this.applyBranding(branding.pageTitle, faviconUrl);
-      return true;
-    } catch (e) {
+    return this.organizationBrandingService.get().pipe(
+      map((branding) => ({
+        pageTitle: branding.pageTitle,
+        // The favicon is loaded by the browser as a plain resource (no auth), so it is served via the public API.
+        faviconUrl: branding.faviconImageId ? `/api/public/v1/files/${branding.faviconImageId}` : undefined,
+      })),
       // best-effort: e.g. 404 when the organization has no branding configured
-      return false;
-    }
+      catchError(() => this.resolveHostBranding())
+    );
   }
 
-  private applyBranding(pageTitle?: string, faviconUrl?: string): void {
+  private resolveHostBranding(): Observable<ResolvedBranding> {
+    return this.httpClient.get<PortalResponse | null>('/api/public/v1/portal').pipe(
+      map((portal) => ({pageTitle: portal?.pageTitle, faviconUrl: portal?.faviconUrl})),
+      // best-effort: keep the default title and favicon
+      catchError(() => of<ResolvedBranding>({}))
+    );
+  }
+
+  private applyBranding({pageTitle, faviconUrl}: ResolvedBranding): void {
     this.title.setTitle(pageTitle || this.defaultTitle);
     if (faviconUrl) {
       this.setFavicon(faviconUrl);

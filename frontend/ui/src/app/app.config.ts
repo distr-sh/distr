@@ -25,8 +25,8 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([tokenInterceptor, errorToastInterceptor])),
     provideAppInitializer(async () => inject(Sentry.TraceService)),
     provideAppInitializer(() => {
-      // Branding is best-effort and must not block bootstrap on a slow/hung request.
-      void inject(PortalBrandingService).apply();
+      // Branding is best-effort and resolves asynchronously, so it never blocks bootstrap.
+      inject(PortalBrandingService).apply();
     }),
     {provide: OVERLAY_DEFAULT_CONFIG, useValue: {usePopover: false}},
   ],

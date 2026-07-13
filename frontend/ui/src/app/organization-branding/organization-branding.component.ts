@@ -167,7 +167,7 @@ export class OrganizationBrandingComponent implements OnInit {
         this.logoImageId.set(this.organizationBranding.logoImageId);
         this.faviconImageId.set(this.organizationBranding.faviconImageId);
         // Reflect the saved page title and favicon in the browser tab immediately, without a reload.
-        void this.portalBranding.apply();
+        this.portalBranding.apply();
         this.toast.success('Branding saved successfully');
       } catch (e) {
         const msg = getFormDisplayedError(e);

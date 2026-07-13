@@ -121,7 +121,7 @@ export class LoginComponent implements OnInit {
       } else {
         // Re-apply branding now that the user is authenticated, since this SPA navigation does not
         // reload the app and re-run the bootstrap initializer.
-        void this.portalBranding.apply();
+        this.portalBranding.apply();
         if (this.auth.isCustomer()) {
           await this.router.navigate(['/home']);
         } else {
