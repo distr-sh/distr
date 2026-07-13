@@ -11,13 +11,11 @@ import (
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
-	"github.com/distr-sh/distr/internal/buildconfig"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/license"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
-	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
@@ -154,16 +152,9 @@ func createOrganization(w http.ResponseWriter, r *http.Request) {
 	organization := types.Organization{
 		Name:                body.Name,
 		Slug:                body.Slug,
-		SubscriptionType:    types.SubscriptionTypeTrial,
-		Features:            subscription.ProFeatures,
 		PreConnectScript:    body.PreConnectScript,
 		PostConnectScript:   body.PostConnectScript,
 		ConnectScriptIsSudo: body.ConnectScriptIsSudo,
-	}
-
-	if buildconfig.IsCommunityEdition() {
-		organization.SubscriptionType = types.SubscriptionTypeCommunity
-		organization.Features = []types.Feature{}
 	}
 
 	if err := db.RunTx(ctx, func(ctx context.Context) error {
