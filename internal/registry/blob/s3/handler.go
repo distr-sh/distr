@@ -196,6 +196,8 @@ func (handler *blobHandler) putMultipart(
 	r io.ReaderAt,
 	size int64,
 ) error {
+	log := internalctx.GetLogger(ctx)
+
 	createInput := &s3.CreateMultipartUploadInput{
 		Bucket: &handler.bucket,
 		Key:    &key,
@@ -214,11 +216,13 @@ func (handler *blobHandler) putMultipart(
 			return
 		}
 
-		_, err = handler.s3Client.AbortMultipartUpload(context.WithoutCancel(ctx), &s3.AbortMultipartUploadInput{
+		if _, abortErr := handler.s3Client.AbortMultipartUpload(context.WithoutCancel(ctx), &s3.AbortMultipartUploadInput{
 			Bucket:   &handler.bucket,
 			Key:      &key,
 			UploadId: upload.UploadId,
-		})
+		}); abortErr != nil {
+			log.Warn("failed to abort multipart upload", zap.Error(abortErr))
+		}
 	}
 
 	completedParts, err := handler.uploadParts(ctx, key, upload.UploadId, 1, r, size)
