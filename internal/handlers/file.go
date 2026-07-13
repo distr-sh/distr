@@ -15,7 +15,6 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -174,10 +173,14 @@ func getFileFromRequest(r *http.Request) (*types.File, error) {
 		file.Data = data
 		file.FileSize = fileHeader.Size
 		file.FileName = fileHeader.Filename
-		if contentType := util.PtrTo(fileHeader.Header.Get("Content-Type")); contentType != nil {
-			file.ContentType = *contentType
+		// Browsers may report a generic content type (e.g. application/octet-stream for .ico files on systems
+		// without a matching MIME mapping). Sniff the actual type in that case so the file can later be served
+		// via the public file API, which only delivers real image content types.
+		if contentType := fileHeader.Header.Get("Content-Type"); contentType != "" &&
+			contentType != "application/octet-stream" {
+			file.ContentType = contentType
 		} else {
-			file.ContentType = "application/octet-stream"
+			file.ContentType = http.DetectContentType(data)
 		}
 	}
 

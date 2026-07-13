@@ -20,5 +20,6 @@ type File struct {
 // FileMetadata holds the ownership and visibility of a file without loading its data blob.
 type FileMetadata struct {
 	OrganizationID *uuid.UUID `db:"organization_id"`
+	ContentType    string     `db:"content_type"`
 	Public         bool       `db:"public"`
 }

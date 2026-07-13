@@ -110,6 +110,10 @@ func verifyFaviconImageBelongsToOrganization(ctx context.Context, t types.Organi
 		return errors.New("favicon image does not belong to the organization")
 	} else if !file.Public {
 		return errors.New("favicon image must be public")
+	} else if !isPublicServableContentType(file.ContentType) {
+		// The favicon is loaded by the browser via the public file API, which only serves image content
+		// types. Reject non-servable types here to fail loudly instead of ending up with a broken favicon.
+		return errors.New("favicon image must be an image (SVG is not supported)")
 	}
 	return nil
 }

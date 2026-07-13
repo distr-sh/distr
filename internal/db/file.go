@@ -66,7 +66,7 @@ func GetFileWithID(ctx context.Context, id uuid.UUID) (*types.File, error) {
 func GetFileMetadataWithID(ctx context.Context, id uuid.UUID) (*types.FileMetadata, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		"SELECT f.organization_id, f.public FROM File f WHERE f.id = @id",
+		"SELECT f.organization_id, f.content_type, f.public FROM File f WHERE f.id = @id",
 		pgx.NamedArgs{"id": id},
 	)
 	if err != nil {
