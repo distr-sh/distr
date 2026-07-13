@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.25.3](https://github.com/distr-sh/distr/compare/2.25.2...2.25.3) (2026-07-13)
+
+
+### Bug Fixes
+
+* **registry:** add blob chunking if needed ([#2816](https://github.com/distr-sh/distr/issues/2816)) ([58aab29](https://github.com/distr-sh/distr/commit/58aab290c1f05ede21733bf1afc5a3dece08b1d2))
+
 ## [2.25.2](https://github.com/distr-sh/distr/compare/2.25.1...2.25.2) (2026-07-09)
 
 
