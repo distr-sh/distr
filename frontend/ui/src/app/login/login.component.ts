@@ -9,6 +9,7 @@ import {OidcButtonsComponent} from '../components/oidc-buttons.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {PlaceholderDirective} from '../directives/placeholder.directive';
 import {AuthService} from '../services/auth.service';
+import {PortalBrandingService} from '../services/portal-branding.service';
 import {ToastService} from '../services/toast.service';
 
 @Component({
@@ -22,6 +23,7 @@ export class LoginComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly toast = inject(ToastService);
+  private readonly portalBranding = inject(PortalBrandingService);
   private readonly fb = inject(FormBuilder).nonNullable;
 
   protected readonly websiteUrl = WEBSITE_URL;
@@ -116,10 +118,15 @@ export class LoginComponent implements OnInit {
       const response = await lastValueFrom(this.auth.login(email, password, mfaCode));
       if (response.requiresMfa) {
         this.mfaRequired.set(true);
-      } else if (this.auth.isCustomer()) {
-        await this.router.navigate(['/home']);
       } else {
-        await this.router.navigate(['/dashboard'], {queryParams: {from: 'login'}});
+        // Re-apply branding now that the user is authenticated, since this SPA navigation does not
+        // reload the app and re-run the bootstrap initializer.
+        void this.portalBranding.apply();
+        if (this.auth.isCustomer()) {
+          await this.router.navigate(['/home']);
+        } else {
+          await this.router.navigate(['/dashboard'], {queryParams: {from: 'login'}});
+        }
       }
     } catch (e) {
       this.errorMessage.set(getFormDisplayedError(e));

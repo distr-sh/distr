@@ -14,6 +14,7 @@ import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
 import {AuthService} from '../services/auth.service';
 import {ImageUploadService} from '../services/image-upload.service';
 import {OrganizationBrandingService} from '../services/organization-branding.service';
+import {PortalBrandingService} from '../services/portal-branding.service';
 import {ToastService} from '../services/toast.service';
 
 @Component({
@@ -39,6 +40,7 @@ export class OrganizationBrandingComponent implements OnInit {
   protected readonly auth = inject(AuthService);
   private readonly organizationBrandingService = inject(OrganizationBrandingService);
   private readonly imageUploadService = inject(ImageUploadService);
+  private readonly portalBranding = inject(PortalBrandingService);
   private readonly toast = inject(ToastService);
 
   private organizationBranding?: OrganizationBranding;
@@ -164,6 +166,8 @@ export class OrganizationBrandingComponent implements OnInit {
         this.organizationBranding = await lastValueFrom(this.organizationBrandingService.upsert(payload));
         this.logoImageId.set(this.organizationBranding.logoImageId);
         this.faviconImageId.set(this.organizationBranding.faviconImageId);
+        // Reflect the saved page title and favicon in the browser tab immediately, without a reload.
+        void this.portalBranding.apply();
         this.toast.success('Branding saved successfully');
       } catch (e) {
         const msg = getFormDisplayedError(e);
