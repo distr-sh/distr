@@ -72,26 +72,25 @@ export class PortalBrandingService {
   }
 
   private resolveBranding(): Observable<ResolvedBranding> {
-    // The current organization's branding takes full precedence once the user is logged in, so it fully
-    // replaces (never merges with) any host-based branding to avoid mixing two organizations' branding. When
-    // it is unavailable (logged out, or no branding configured) we fall back to host-based branding, which
-    // applies to everyone on a custom app domain, including the (unauthenticated) login page.
-    if (!this.auth.getClaims()) {
-      return this.resolveHostBranding();
-    }
-    return this.organizationBrandingService.get().pipe(
-      map((branding) => ({
-        pageTitle: branding.pageTitle,
-        // The favicon is loaded by the browser as a plain resource (no auth), so it is served via the public API.
-        faviconUrl: branding.faviconImageId ? `/api/public/v1/files/${branding.faviconImageId}` : undefined,
-        // The logo and custom-domain flag are host-based and only rendered on the unauthenticated login/related
-        // pages. Preserve the values already resolved from the host so logging in does not briefly revert the
-        // login-page logo to the default Distr logo before the redirect.
-        logoUrl: this.logoUrlSignal(),
-        customDomain: this.customDomainSignal(),
-      })),
-      // best-effort: e.g. 404 when the organization has no branding configured
-      catchError(() => this.resolveHostBranding())
+    // Logo and custom-domain flag are always host-based, so resolve the host first regardless of auth state.
+    return this.resolveHostBranding().pipe(
+      switchMap((host) => {
+        // Once logged in, the organization's title and favicon fully replace the host's (never merged).
+        if (!this.auth.getClaims()) {
+          return of(host);
+        }
+        return this.organizationBrandingService.get().pipe(
+          map((branding) => ({
+            pageTitle: branding.pageTitle,
+            // Served via the public API since the browser loads the favicon without auth.
+            faviconUrl: branding.faviconImageId ? `/api/public/v1/files/${branding.faviconImageId}` : undefined,
+            logoUrl: host.logoUrl,
+            customDomain: host.customDomain,
+          })),
+          // best-effort: e.g. 404 when the organization has no branding configured
+          catchError(() => of(host))
+        );
+      })
     );
   }
 
