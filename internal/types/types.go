@@ -124,6 +124,11 @@ const (
 	FeaturePartnerManagement      Feature = "partner_management"
 )
 
+// ProFeatures is the set of features granted to organizations with a paid (pro) subscription.
+var ProFeatures = []Feature{
+	FeatureLicensing,
+}
+
 type DeploymentStatusType string
 
 const (

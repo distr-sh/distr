@@ -173,9 +173,9 @@ func handleStripeSubscription(ctx context.Context, sub stripe.Subscription) erro
 		}
 
 		if org.SubscriptionType == types.SubscriptionTypeStarter {
-			org.RemoveFeatures(subscription.ProFeatures...)
+			org.RemoveFeatures(types.ProFeatures...)
 		} else {
-			org.AddFeatures(subscription.ProFeatures...)
+			org.AddFeatures(types.ProFeatures...)
 		}
 
 		log.Info("updated organization subscription",
