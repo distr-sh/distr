@@ -66,17 +66,22 @@ func upsertOrganizationBranding(w http.ResponseWriter, r *http.Request) {
 	organizationBranding.UpdatedByUserAccountID = util.PtrTo(auth.CurrentUserID())
 
 	orgID := organizationBranding.OrganizationID
-	if err := verifyPublicImageBelongsToOrganization(ctx, organizationBranding.LogoImageID, orgID); err != nil {
+	if err := verifyPublicImageBelongsToOrganization(ctx, organizationBranding.LogoImageID, orgID, "logo"); err != nil {
 		if errors.Is(err, apierrors.ErrBadRequest) {
-			http.Error(w, fmt.Sprintf("invalid logo image ID: %s", errors.Unwrap(err)), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 		} else {
 			log.Warn("could not verify logo image", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-	} else if err := verifyPublicImageBelongsToOrganization(ctx, organizationBranding.FaviconImageID, orgID); err != nil {
+	} else if err := verifyPublicImageBelongsToOrganization(
+		ctx,
+		organizationBranding.FaviconImageID,
+		orgID,
+		"favicon",
+	); err != nil {
 		if errors.Is(err, apierrors.ErrBadRequest) {
-			http.Error(w, fmt.Sprintf("invalid favicon image ID: %s", errors.Unwrap(err)), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 		} else {
 			log.Warn("could not verify favicon image", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -93,11 +98,13 @@ func upsertOrganizationBranding(w http.ResponseWriter, r *http.Request) {
 
 // verifyPublicImageBelongsToOrganization ensures the referenced branding image (logo or favicon) belongs to the
 // given organization and is a public, servable image, since these images are served unauthenticated via the
-// public file API. A nil imageID is valid (image not set). Validation failures are returned as ErrBadRequest.
+// public file API. A nil imageID is valid (image not set). The imageType (e.g. "logo" or "favicon") is included
+// in validation messages so clients can tell which image failed. Validation failures are returned as ErrBadRequest.
 func verifyPublicImageBelongsToOrganization(
 	ctx context.Context,
 	imageID *uuid.UUID,
 	organizationID uuid.UUID,
+	imageType string,
 ) error {
 	if imageID == nil {
 		return nil
@@ -105,15 +112,15 @@ func verifyPublicImageBelongsToOrganization(
 
 	fileMeta, err := db.GetFileMetadataWithID(ctx, *imageID)
 	if errors.Is(err, apierrors.ErrNotFound) {
-		return apierrors.NewBadRequest("file does not exist")
+		return apierrors.NewBadRequest(fmt.Sprintf("%s file does not exist", imageType))
 	} else if err != nil {
 		return err
 	} else if fileMeta.OrganizationID == nil || *fileMeta.OrganizationID != organizationID {
-		return apierrors.NewBadRequest("file does not exist")
+		return apierrors.NewBadRequest(fmt.Sprintf("%s file does not exist", imageType))
 	} else if !fileMeta.Public {
-		return apierrors.NewBadRequest("file must be public")
+		return apierrors.NewBadRequest(fmt.Sprintf("%s file must be public", imageType))
 	} else if !isServableImageContentType(fileMeta.ContentType) {
-		return apierrors.NewBadRequest("file must be an image")
+		return apierrors.NewBadRequest(fmt.Sprintf("%s file must be an image", imageType))
 	}
 
 	return nil
