@@ -372,14 +372,17 @@ export default function PricingCalculator() {
             </div>
             <hr class="mb-0 border-gray-200 dark:border-gray-700" />
             <div class="p-6 flex-grow">
-              <h4 class="text-lg font-semibold mb-2 mt-0">
-                Everything to distribute and operate customer installs
-              </h4>
-              <p class="text-sm leading-relaxed mb-6 mt-0 text-gray-700 dark:text-gray-300">
-                Ship through Docker, Helm/Kubernetes, or your artifact registry
-                — with licensing, alerting, and access control built in.
-              </p>
-              <ul class="list-none pl-0 mt-4 mb-0">
+              <div class="min-h-[8rem]">
+                <h4 class="text-lg font-semibold mb-2 mt-0">
+                  Everything to distribute and operate customer installs
+                </h4>
+                <p class="text-sm leading-relaxed mb-0 mt-0 text-gray-700 dark:text-gray-300">
+                  Ship through Docker, Helm/Kubernetes, or your artifact
+                  registry — with licensing, alerting, and access control built
+                  in.
+                </p>
+              </div>
+              <ul class="list-none pl-0 mt-0 mb-0">
                 <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
                   Docker + Kubernetes deployment agents
                 </li>
@@ -420,7 +423,7 @@ export default function PricingCalculator() {
 
           {/* Business Plan */}
           <div
-            class={`mt-5 flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg border-2 border-accent-600 relative pt-4 transition-all ${
+            class={`mt-6 flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg border-2 border-accent-600 relative pt-4 transition-all ${
               shouldBlurBusiness ? 'opacity-50 blur-sm pointer-events-none' : ''
             }`}>
             <div class="absolute top-0 left-0 right-0 bg-accent-600 text-white py-1.5 text-base font-medium z-10 shadow-md text-center w-full">
@@ -459,14 +462,16 @@ export default function PricingCalculator() {
             </div>
             <hr class="mb-0 border-gray-200 dark:border-gray-700" />
             <div class="p-6 flex-grow">
-              <h4 class="text-lg font-semibold mb-2 mt-0">
-                For vendors distributing at scale
-              </h4>
-              <p class="text-sm leading-relaxed mb-6 mt-0 text-gray-700 dark:text-gray-300">
-                Run your entire distribution operation on Distr — partners,
-                license templates, and a fully white-labeled experience.
-              </p>
-              <ul class="list-none pl-0 mt-4 mb-0">
+              <div class="min-h-[8rem]">
+                <h4 class="text-lg font-semibold mb-2 mt-0">
+                  For vendors distributing at scale
+                </h4>
+                <p class="text-sm leading-relaxed mb-0 mt-0 text-gray-700 dark:text-gray-300">
+                  Run your entire distribution operation on Distr — partners,
+                  license templates, and a fully white-labeled experience.
+                </p>
+              </div>
+              <ul class="list-none pl-0 mt-0 mb-0">
                 <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
                   Everything in Pro
                 </li>
@@ -494,6 +499,9 @@ export default function PricingCalculator() {
                 <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
                   Priority support
                 </li>
+                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                  White Glove Onboarding
+                </li>
               </ul>
             </div>
             <div class="p-6 pt-0">
@@ -514,19 +522,21 @@ export default function PricingCalculator() {
             </div>
             <hr class="mb-0 border-gray-200 dark:border-gray-700" />
             <div class="p-6 flex-grow">
-              <h4 class="text-lg font-semibold mb-2 mt-0">
-                Custom scale, isolation, and contracts
-              </h4>
-              <p class="text-sm leading-relaxed mb-6 mt-0 text-gray-700 dark:text-gray-300">
-                Dedicated infrastructure, custom limits, and the contractual
-                guarantees your procurement team asks for.
-              </p>
-              <ul class="list-none pl-0 mt-4 mb-0">
+              <div class="min-h-[8rem]">
+                <h4 class="text-lg font-semibold mb-2 mt-0">
+                  Custom scale, isolation, and contracts
+                </h4>
+                <p class="text-sm leading-relaxed mb-0 mt-0 text-gray-700 dark:text-gray-300">
+                  Dedicated infrastructure, custom limits, and the contractual
+                  guarantees your procurement team asks for.
+                </p>
+              </div>
+              <ul class="list-none pl-0 mt-0 mb-0">
                 <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
                   Everything in Business
                 </li>
                 <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  Unlimited deployments, users & registry storage
+                  Custom limits for deployments, users & registry storage
                 </li>
                 <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
                   Dedicated infrastructure
