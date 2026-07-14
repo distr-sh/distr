@@ -405,7 +405,7 @@ export default function PricingCalculator() {
                   7-day log retention
                 </li>
                 <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  White glove onboarding + private Slack
+                  Free Onboarding Call + Private Slack
                 </li>
               </ul>
             </div>
