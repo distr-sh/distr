@@ -398,10 +398,10 @@ const cellClass = (value: Cell) =>
             {
               sections.map(section => (
                 <>
-                  <tr class="bg-gray-100 dark:bg-gray-800/30 border-t-2 border-b-2 border-gray-300 dark:border-gray-700">
+                  <tr class="section-row bg-gray-100 border-t-2 border-b-2 border-gray-300 dark:border-gray-700">
                     <td
                       colspan="5"
-                      class="font-bold text-left p-4 text-gray-900 dark:text-gray-200 uppercase tracking-wider text-sm">
+                      class="font-bold text-left p-4 text-gray-900 uppercase tracking-wider text-sm">
                       {section.title}
                     </td>
                   </tr>
@@ -434,6 +434,13 @@ const cellClass = (value: Cell) =>
 </section>
 
 <style>
+  /* Section header rows: solid backgrounds so the sticky first column works */
+  :global([data-theme='dark']) tr.section-row,
+  :global([data-theme='dark']) tr.section-row td {
+    background-color: rgb(31, 41, 55);
+    color: white;
+  }
+
   /* Mobile responsive adjustments */
   @media (max-width: 768px) {
     th:first-child,
@@ -445,25 +452,26 @@ const cellClass = (value: Cell) =>
       box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
     }
 
-    :global(.dark) th:first-child,
-    :global(.dark) td:first-child {
+    :global([data-theme='dark']) th:first-child,
+    :global([data-theme='dark']) td:first-child {
       background-color: rgb(17, 24, 39);
+      color: white;
     }
 
-    tr:where(.bg-gray-100) td:first-child {
-      background-color: rgb(243, 244, 246) !important;
+    tr.section-row td:first-child {
+      background-color: rgb(243, 244, 246);
     }
 
-    :global(.dark) tr:where(.bg-gray-800\\/30) td:first-child {
-      background-color: rgba(31, 41, 55, 0.3) !important;
+    :global([data-theme='dark']) tr.section-row td:first-child {
+      background-color: rgb(31, 41, 55);
     }
   }
 
-  tr:not(:where(.bg-gray-100, .dark\\:bg-gray-800\\/30)):hover {
+  tr:not(.section-row):hover {
     background-color: rgba(0, 0, 0, 0.01);
   }
 
-  :global(.dark) tr:not(:where(.bg-gray-100, .dark\\:bg-gray-800\\/30)):hover {
+  :global([data-theme='dark']) tr:not(.section-row):hover {
     background-color: rgba(255, 255, 255, 0.03);
   }
 </style>
