@@ -35,6 +35,7 @@
         <table class="distr-table">
           <thead class="distr-table-head">
             <tr>
+              <th scope="col" class="p-4 w-12"></th>
               <th scope="col" class="p-4">Name</th>
               <th scope="col" class="p-4 text-end"># of Users</th>
               <th scope="col" class="p-4 text-end"># of Customers</th>
@@ -44,13 +45,19 @@
           <tbody>
             @for (partner of partnerOrganizations(); track partner.id) {
               <tr class="distr-table-row">
+                <td class="pl-4 w-12">
+                  <div
+                    class="size-8 rounded-sm bg-gray-900 dark:bg-gray-400 text-white dark:text-gray-800 flex items-center justify-center">
+                    <fa-icon [icon]="faBuilding" size="lg" />
+                  </div>
+                </td>
                 <td
                   class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-32 lg:max-w-64 xl:max-w-128 overflow-hidden text-ellipsis">
-                  <fa-icon [icon]="faBuilding" class="mr-2 text-gray-400" />
-                  {{ partner.name }}
-                  <button type="button" class="text-gray-400 ml-1" (click)="showUpdateDialog(partner)">
-                    <fa-icon [icon]="faEdit" />
-                  </button>
+                  <app-inline-edit
+                    [value]="partner.name"
+                    placeholder="Enter a name&hellip;"
+                    [loading]="savingPartnerId() === partner.id"
+                    (save)="updatePartnerName(partner, $event)" />
                 </td>
                 <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white text-end">
                   {{ partner.userCount | number }}
@@ -75,7 +82,7 @@
               </tr>
             } @empty {
               <tr class="border-t border-gray-200 dark:border-gray-600">
-                <td colspan="4" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                <td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                   No partner organizations yet.
                 </td>
               </tr>
@@ -93,13 +100,7 @@
     animate.leave="animate-fly-out-top"
     class="p-4 w-full mt-12 max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-900">
     <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
-      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-        @if (createForm.value.id) {
-          Update Partner
-        } @else {
-          New Partner
-        }
-      </h2>
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">New Partner</h2>
       <button
         type="button"
         (click)="closeCreateDialog()"
