@@ -73,13 +73,13 @@ func getPublicFileHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	} else if !file.Public {
 		http.NotFound(w, r)
-	} else if !isPublicServableContentType(file.ContentType) {
-		// Only serve safe image types publicly to avoid hosting executable content
-		// (e.g. text/html or image/svg+xml) on the application's own origin.
+	} else if !isServableImageContentType(file.ContentType) {
+		// Only serve image types publicly to avoid hosting executable content (e.g. text/html) on the
+		// application's own origin. SVGs are allowed but served with script-blocking headers below.
 		http.NotFound(w, r)
 	} else {
-		w.Header().Set("Content-Type", file.ContentType)
-		w.Header().Set("X-Content-Type-Options", "nosniff")
+		// SVGs are served with a sandboxing CSP so embedded scripts cannot execute in the app's origin.
+		writeSafeImageHeaders(w, file.ContentType)
 		w.Header().Set("Cache-Control", "max-age=604800, public")
 		if _, err := w.Write(file.Data); err != nil {
 			log.Warn("failed to write file to response", zap.Error(err))
@@ -88,13 +88,29 @@ func getPublicFileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// isPublicServableContentType reports whether a file may be served via the public
-// file endpoint. Only image types are allowed, and image/svg+xml is excluded
-// because SVGs can contain scripts and would execute in the app's origin.
-func isPublicServableContentType(contentType string) bool {
+const mediaTypeSVG = "image/svg+xml"
+
+func parseMediaType(contentType string) string {
 	mediaType, _, _ := strings.Cut(contentType, ";")
-	mediaType = strings.ToLower(strings.TrimSpace(mediaType))
-	return strings.HasPrefix(mediaType, "image/") && mediaType != "image/svg+xml"
+	return strings.ToLower(strings.TrimSpace(mediaType))
+}
+
+// isServableImageContentType reports whether a file is an image that may be served to browsers. It also allows
+// image/svg+xml, which callers must serve with script-blocking headers (see writeSafeImageHeaders) so embedded
+// scripts cannot execute when the file is opened directly.
+func isServableImageContentType(contentType string) bool {
+	return strings.HasPrefix(parseMediaType(contentType), "image/")
+}
+
+// writeSafeImageHeaders sets the content type and hardening headers for serving a (potentially untrusted) image.
+// For SVGs it adds a sandboxing Content-Security-Policy so any embedded scripts cannot run when the file is opened
+// as a top-level document; scripts never run when the image is loaded via <img>, which is how logos are displayed.
+func writeSafeImageHeaders(w http.ResponseWriter, contentType string) {
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	if parseMediaType(contentType) == mediaTypeSVG {
+		w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox")
+	}
 }
 
 func getFileHandler(w http.ResponseWriter, r *http.Request) {

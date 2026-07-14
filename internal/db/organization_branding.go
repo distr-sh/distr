@@ -79,24 +79,25 @@ func UpsertOrganizationBranding(ctx context.Context, b *types.OrganizationBrandi
 	}
 }
 
-// GetOrganizationBrandingPortalByAppDomain resolves the page title and favicon image for the organization whose
-// branding app_domain matches the given host. Both the stored app_domain and the given host must be normalized
-// (lower-case, without scheme or port). It returns nil values when no organization matches.
-func GetOrganizationBrandingPortalByAppDomain(
-	ctx context.Context,
-	host string,
-) (pageTitle *string, faviconImageID *uuid.UUID, err error) {
+// GetOrganizationBrandingByAppDomain resolves the branding for the organization whose branding app_domain matches
+// the given host. Both the stored app_domain and the given host must be normalized (lower-case, without scheme or
+// port). It returns nil when no organization matches the host.
+func GetOrganizationBrandingByAppDomain(ctx context.Context, host string) (*types.OrganizationBranding, error) {
 	db := internalctx.GetDb(ctx)
-	row := db.QueryRow(ctx,
-		`SELECT b.page_title, b.favicon_image_id
-		FROM OrganizationBranding b
-		WHERE b.app_domain = @host`,
+	rows, err := db.Query(ctx,
+		"SELECT"+organizationBrandingOutputExpr+"FROM OrganizationBranding b WHERE b.app_domain = @host",
 		pgx.NamedArgs{"host": host},
 	)
-	if err := row.Scan(&pageTitle, &faviconImageID); errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil, nil
-	} else if err != nil {
-		return nil, nil, fmt.Errorf("could not get organization branding portal by app domain: %w", err)
+	if err != nil {
+		return nil, fmt.Errorf("could not query organization branding by app domain: %w", err)
 	}
-	return pageTitle, faviconImageID, nil
+
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.OrganizationBranding])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("could not get organization branding by app domain: %w", err)
+	}
+
+	return &result, nil
 }

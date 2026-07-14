@@ -1,6 +1,6 @@
 import {DOCUMENT} from '@angular/common';
 import {HttpBackend, HttpClient} from '@angular/common/http';
-import {inject, Injectable} from '@angular/core';
+import {inject, Injectable, signal} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {Title} from '@angular/platform-browser';
 import {catchError, map, Observable, of, Subject, switchMap} from 'rxjs';
@@ -10,11 +10,16 @@ import {OrganizationBrandingService} from './organization-branding.service';
 interface PortalResponse {
   pageTitle?: string;
   faviconUrl?: string;
+  logoUrl?: string;
 }
 
 interface ResolvedBranding {
   pageTitle?: string;
   faviconUrl?: string;
+  logoUrl?: string;
+  // Whether the request host matches a custom app domain. Used to drop Distr-specific branding (logo, website
+  // links) on custom domains, even when no branding assets are configured.
+  customDomain: boolean;
 }
 
 /**
@@ -46,6 +51,13 @@ export class PortalBrandingService {
   // bootstrap resolving after the authenticated organization's branding was applied on login).
   private readonly applyTrigger = new Subject<void>();
 
+  // Host-resolved portal logo and custom-domain flag for the (unauthenticated) login and related pages, so they
+  // can replace the Distr logo and drop links to the Distr website on custom domains.
+  private readonly logoUrlSignal = signal<string | undefined>(undefined);
+  readonly logoUrl = this.logoUrlSignal.asReadonly();
+  private readonly customDomainSignal = signal(false);
+  readonly customDomain = this.customDomainSignal.asReadonly();
+
   constructor() {
     this.applyTrigger
       .pipe(
@@ -72,6 +84,11 @@ export class PortalBrandingService {
         pageTitle: branding.pageTitle,
         // The favicon is loaded by the browser as a plain resource (no auth), so it is served via the public API.
         faviconUrl: branding.faviconImageId ? `/api/public/v1/files/${branding.faviconImageId}` : undefined,
+        // The logo and custom-domain flag are host-based and only rendered on the unauthenticated login/related
+        // pages. Preserve the values already resolved from the host so logging in does not briefly revert the
+        // login-page logo to the default Distr logo before the redirect.
+        logoUrl: this.logoUrlSignal(),
+        customDomain: this.customDomainSignal(),
       })),
       // best-effort: e.g. 404 when the organization has no branding configured
       catchError(() => this.resolveHostBranding())
@@ -80,19 +97,27 @@ export class PortalBrandingService {
 
   private resolveHostBranding(): Observable<ResolvedBranding> {
     return this.httpClient.get<PortalResponse | null>('/api/public/v1/portal').pipe(
-      map((portal) => ({pageTitle: portal?.pageTitle, faviconUrl: portal?.faviconUrl})),
-      // best-effort: keep the default title and favicon
-      catchError(() => of<ResolvedBranding>({}))
+      // A response is only returned for a custom app domain, so its presence indicates a custom domain.
+      map((portal) => ({
+        pageTitle: portal?.pageTitle,
+        faviconUrl: portal?.faviconUrl,
+        logoUrl: portal?.logoUrl,
+        customDomain: portal != null,
+      })),
+      // best-effort: keep the default title, favicon and logo
+      catchError(() => of<ResolvedBranding>({customDomain: false}))
     );
   }
 
-  private applyBranding({pageTitle, faviconUrl}: ResolvedBranding): void {
+  private applyBranding({pageTitle, faviconUrl, logoUrl, customDomain}: ResolvedBranding): void {
     this.title.setTitle(pageTitle || this.defaultTitle);
     if (faviconUrl) {
       this.setFavicon(faviconUrl);
     } else {
       this.restoreDefaultFavicon();
     }
+    this.logoUrlSignal.set(logoUrl);
+    this.customDomainSignal.set(customDomain);
   }
 
   private setFavicon(url: string): void {
