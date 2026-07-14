@@ -64,10 +64,11 @@
       "matchPackageNames": [
         "posthog-js",
         "@sentry/*",
-        "@fontsource/*"
+        "@fontsource/*",
+        "postcss"
       ],
       "schedule": [
-        "* 6-9 * * 1"
+        "before 9am on monday"
       ]
     },
     {
