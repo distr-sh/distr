@@ -1,23 +1,25 @@
 import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
-import {Subject, map, startWith, switchMap} from 'rxjs';
+import {RouterLink} from '@angular/router';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
+import {faArrowRight, faAsterisk} from '@fortawesome/free-solid-svg-icons';
+import {map, of, startWith, Subject, switchMap} from 'rxjs';
 import {AuthService} from '../services/auth.service';
+import {CustomerOrganizationsService} from '../services/customer-organizations.service';
 import {SecretsService} from '../services/secrets.service';
 import {SecretsComponent} from './secrets.component';
 
 @Component({
-  template: `<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
-    <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
-      <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
-        <app-secrets [secrets]="secrets() ?? []" (refresh)="refresh$.next()" />
-      </div>
-    </div>
-  </section>`,
+  templateUrl: './secrets-page.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [SecretsComponent],
+  imports: [SecretsComponent, RouterLink, FaIconComponent],
 })
 export class SecretsPage {
+  protected readonly faArrowRight = faArrowRight;
+  protected readonly faAsterisk = faAsterisk;
+
   private readonly secretsService = inject(SecretsService);
+  private readonly customerOrganizationsService = inject(CustomerOrganizationsService);
   private readonly auth = inject(AuthService);
   protected readonly refresh$ = new Subject<void>();
   protected readonly secrets = toSignal(
@@ -28,5 +30,9 @@ export class SecretsPage {
         this.auth.isVendor() ? secrets.filter((secret) => secret.customerOrganizationId === undefined) : secrets
       )
     )
+  );
+
+  protected readonly customerOrganizations = toSignal(
+    this.auth.isVendor() ? this.customerOrganizationsService.getCustomerOrganizations() : of([])
   );
 }
