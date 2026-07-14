@@ -15,7 +15,7 @@ import (
 const (
 	organizationBrandingOutputExpr = `
 		b.id, b.created_at, b.organization_id, b.updated_at, b.updated_by_user_account_id, b.title, b.description,
-		b.logo_image_id, b.app_domain, b.registry_domain, b.email_from_address
+		b.logo_image_id, b.app_domain, b.registry_domain, b.email_from_address, b.page_title, b.favicon_image_id
 	`
 )
 
@@ -39,25 +39,36 @@ func GetOrganizationBranding(ctx context.Context, organizationID uuid.UUID) (*ty
 	}
 }
 
-func CreateOrganizationBranding(ctx context.Context, b *types.OrganizationBranding) error {
+func UpsertOrganizationBranding(ctx context.Context, b *types.OrganizationBranding) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
 		`INSERT INTO OrganizationBranding AS b
-			(organization_id, updated_at, updated_by_user_account_id, title, description, logo_image_id)
-			VALUES (@organization_id, @updated_at, @updated_by_user_account_id, @title, @description, @logo_image_id)
+			(organization_id, updated_at, updated_by_user_account_id, title, description, logo_image_id,
+				page_title, favicon_image_id)
+			VALUES (@organization_id, now(), @updated_by_user_account_id, @title, @description, @logo_image_id,
+				@page_title, @favicon_image_id)
+			ON CONFLICT (organization_id) DO UPDATE SET
+				updated_at = now(),
+				updated_by_user_account_id = @updated_by_user_account_id,
+				title = @title,
+				description = @description,
+				logo_image_id = @logo_image_id,
+				page_title = @page_title,
+				favicon_image_id = @favicon_image_id
 			RETURNING `+organizationBrandingOutputExpr,
 		pgx.NamedArgs{
 			"organization_id":            b.OrganizationID,
-			"updated_at":                 b.UpdatedAt,
 			"updated_by_user_account_id": b.UpdatedByUserAccountID,
 			"title":                      b.Title,
 			"description":                b.Description,
 			"logo_image_id":              b.LogoImageID,
+			"page_title":                 b.PageTitle,
+			"favicon_image_id":           b.FaviconImageID,
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("failed to create OrganizationBranding: %w", err)
+		return fmt.Errorf("failed to upsert OrganizationBranding: %w", err)
 	}
 	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.OrganizationBranding])
 	if err != nil {
@@ -68,35 +79,24 @@ func CreateOrganizationBranding(ctx context.Context, b *types.OrganizationBrandi
 	}
 }
 
-func UpdateOrganizationBranding(ctx context.Context, b *types.OrganizationBranding) error {
+// GetOrganizationBrandingPortalByAppDomain resolves the page title and favicon image for the organization whose
+// branding app_domain matches the given host. Both the stored app_domain and the given host must be normalized
+// (lower-case, without scheme or port). It returns nil values when no organization matches.
+func GetOrganizationBrandingPortalByAppDomain(
+	ctx context.Context,
+	host string,
+) (pageTitle *string, faviconImageID *uuid.UUID, err error) {
 	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(
-		ctx,
-		`UPDATE OrganizationBranding AS b
-		SET updated_at = @updated_at,
-			updated_by_user_account_id = @updated_by_user_account_id,
-			title = @title,
-			description = @description,
-			logo_image_id = @logo_image_id
-		WHERE organization_id = @organization_id
-		RETURNING `+organizationBrandingOutputExpr,
-		pgx.NamedArgs{
-			"organization_id":            b.OrganizationID,
-			"updated_at":                 b.UpdatedAt,
-			"updated_by_user_account_id": b.UpdatedByUserAccountID,
-			"title":                      b.Title,
-			"description":                b.Description,
-			"logo_image_id":              b.LogoImageID,
-		},
+	row := db.QueryRow(ctx,
+		`SELECT b.page_title, b.favicon_image_id
+		FROM OrganizationBranding b
+		WHERE b.app_domain = @host`,
+		pgx.NamedArgs{"host": host},
 	)
-	if err != nil {
-		return fmt.Errorf("failed to update OrganizationBranding: %w", err)
+	if err := row.Scan(&pageTitle, &faviconImageID); errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil, nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("could not get organization branding portal by app domain: %w", err)
 	}
-	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.OrganizationBranding])
-	if err != nil {
-		return fmt.Errorf("could not save OrganizationBranding: %w", err)
-	} else {
-		*b = result
-		return nil
-	}
+	return pageTitle, faviconImageID, nil
 }

@@ -17,7 +17,7 @@ import {
   faPalette,
   faRightToBracket,
 } from '@fortawesome/free-solid-svg-icons';
-import {firstValueFrom, lastValueFrom, Observable, Subject} from 'rxjs';
+import {firstValueFrom, lastValueFrom, Subject} from 'rxjs';
 import {WEBSITE_URL} from '../../../constants';
 import {getFormDisplayedError} from '../../../util/errors';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
@@ -177,22 +177,16 @@ export class BrandingTutorialComponent implements OnInit, OnDestroy {
       if (this.brandingFormGroup.dirty) {
         this.loading.set(true);
         const formVal = this.brandingFormGroup.getRawValue();
-        const payload: Partial<OrganizationBranding> = {
+        const payload: OrganizationBranding = {
           title: formVal.title,
           description: formVal.description,
           logoImageId: this.organizationBranding?.logoImageId,
+          pageTitle: this.organizationBranding?.pageTitle,
+          faviconImageId: this.organizationBranding?.faviconImageId,
         };
 
-        const id = this.organizationBranding?.id;
-        let req: Observable<OrganizationBranding>;
-        if (id) {
-          req = this.brandingService.update(payload);
-        } else {
-          req = this.brandingService.create(payload);
-        }
-
         try {
-          this.organizationBranding = await lastValueFrom(req);
+          this.organizationBranding = await lastValueFrom(this.brandingService.upsert(payload));
           this.brandingFormGroup.markAsPristine();
           this.progress = await lastValueFrom(
             this.tutorialsService.save(tutorialId, {

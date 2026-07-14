@@ -7,4 +7,6 @@ export interface OrganizationBranding extends BaseModel {
   appDomain?: string;
   registryDomain?: string;
   emailFromAddress?: string;
+  pageTitle?: string;
+  faviconImageId?: string;
 }

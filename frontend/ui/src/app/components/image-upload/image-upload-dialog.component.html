@@ -35,7 +35,7 @@
                   } @else {
                     <label class="distr-label mb-2" for="file_input"> Image </label>
                     <input
-                      accept="image/svg+xml,image/png,image/jpeg,image/gif"
+                      [accept]="accept"
                       (change)="onImageChange($event)"
                       class="w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
                       aria-describedby="file_input_help"
@@ -45,7 +45,7 @@
                 </div>
 
                 <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400" id="file_input_help">
-                  SVG, PNG, JPG or GIF (recommended size 64px x 64px - square)
+                  {{ acceptDescription }}
                 </p>
                 <div class="flex items-center space-x-2.5"></div>
               </div>
