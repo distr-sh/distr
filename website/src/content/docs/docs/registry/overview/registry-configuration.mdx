@@ -71,7 +71,7 @@ Replace slug with your configured registry slug, and 1.0.0 with your desired ver
 
 - Use the Distr dashboard to view artifact pull counts, customer usage, and download analytics.
 - Use the Downloads panel to view a chronological list of all downloaded artifacts, including which user downloaded them and from which IP address.
-- The registry only supports immutable tags, once pushed, a tag cannot be changed.
+- By default, the registry uses immutable tags, so once pushed, a tag cannot be changed. Immutable tags are a safer and more secure default. If you need to overwrite existing tags, mutable tags can be enabled on the organization settings page ("Artifact versions are mutable").
 
 <ThemedImage
   lightSrc={dashboardArtifactViewLight}
