@@ -524,11 +524,12 @@ export default function PricingCalculator() {
             <div class="p-6 flex-grow">
               <div class="min-h-[8rem]">
                 <h4 class="text-lg font-semibold mb-2 mt-0">
-                  Custom scale, isolation, and contracts
+                  Built for regulated and high-security environments
                 </h4>
                 <p class="text-sm leading-relaxed mb-0 mt-0 text-gray-700 dark:text-gray-300">
-                  Dedicated infrastructure, custom limits, and the contractual
-                  guarantees your procurement team asks for.
+                  For security-first vendors serving regulated industries.
+                  Dedicated infrastructure, custom contracts, SLAs, and
+                  dedicated support included.
                 </p>
               </div>
               <ul class="list-none pl-0 mt-0 mb-0">
