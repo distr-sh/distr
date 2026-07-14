@@ -10,9 +10,9 @@ export async function getStaticPaths() {
     {
       params: {slug: 'replicated'},
       props: {
-        title: 'Replicated Alternative 2026: Distr (Open Source, $40/mo)',
+        title: 'Replicated Alternative 2026: Distr (Open Source, $80/mo)',
         description:
-          "Distr is the open-source Replicated alternative. Supports Docker Compose + Kubernetes. Starts at $40/mo vs Replicated's $2,000/mo. Full feature comparison.",
+          "Distr is the open-source Replicated alternative. Supports Docker Compose + Kubernetes. Starts at $80/mo vs Replicated's $2,000/mo. Full feature comparison.",
         competitor: 'Replicated',
         heroImage: comparisonThumbnail,
       },
@@ -281,7 +281,7 @@ const {title, description, heroImage} = Astro.props;
               </tr>
               <tr>
                 <td><strong>Pricing (Starts at)</strong></td>
-                <td>$40/month</td>
+                <td>$80/month</td>
                 <td>$2000/month</td>
               </tr>
             </tbody>
@@ -421,8 +421,11 @@ const {title, description, heroImage} = Astro.props;
           </p>
           <ul>
             <li>Open-source self-hosted option (free forever)</li>
-            <li>Cloud starter tier for initial deployments</li>
-            <li>Pro tier with advanced features like artifact entitlements</li>
+            <li>Pro tier with license management and artifact entitlements</li>
+            <li>
+              Business tier with unlimited customers, partner management, and
+              full white label
+            </li>
             <li>Enterprise tier with custom pricing and SLAs</li>
           </ul>
           <p>
