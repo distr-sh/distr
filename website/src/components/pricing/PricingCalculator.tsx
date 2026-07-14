@@ -321,7 +321,7 @@ export default function PricingCalculator() {
             class={`mt-10 flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 transition-all ${
               shouldBlurPro ? 'opacity-50 blur-sm pointer-events-none' : ''
             }`}>
-            <div class="flex justify-center items-center flex-col p-6 text-center min-h-[14rem]">
+            <div class="flex justify-start items-center flex-col p-6 text-center min-h-[15rem]">
               <h3 class="text-xl font-semibold">Pro</h3>
               <div class="text-4xl font-bold my-2">
                 {currency}
@@ -372,7 +372,7 @@ export default function PricingCalculator() {
             </div>
             <hr class="mb-0 border-gray-200 dark:border-gray-700" />
             <div class="p-6 flex-grow">
-              <div class="min-h-[8rem]">
+              <div class="min-h-[8.5rem] mb-5">
                 <h4 class="text-lg font-semibold mb-2 mt-0">
                   Everything to distribute and operate customer installs
                 </h4>
@@ -415,7 +415,7 @@ export default function PricingCalculator() {
             <div class="p-6 pt-0">
               <a
                 href="/onboarding/"
-                class="inline-block w-full px-6 py-3 bg-accent-600 hover:bg-accent-700 border-2 border-accent-600 text-white font-medium rounded-lg text-center transition-colors no-underline">
+                class="inline-block w-full px-6 py-3 bg-accent-600 hover:bg-accent-700 text-white font-medium rounded-lg text-center transition-colors no-underline">
                 Start free trial →
               </a>
             </div>
@@ -429,7 +429,7 @@ export default function PricingCalculator() {
             <div class="absolute top-0 left-0 right-0 bg-accent-600 text-white py-1.5 text-base font-medium z-10 shadow-md text-center w-full">
               Most popular
             </div>
-            <div class="flex justify-center items-center flex-col p-6 text-center min-h-[14rem] pt-8">
+            <div class="flex justify-start items-center flex-col p-6 text-center min-h-[15rem]">
               <h3 class="text-xl font-semibold">Business</h3>
               <div class="text-4xl font-bold my-2">
                 {currency}
@@ -462,7 +462,7 @@ export default function PricingCalculator() {
             </div>
             <hr class="mb-0 border-gray-200 dark:border-gray-700" />
             <div class="p-6 flex-grow">
-              <div class="min-h-[8rem]">
+              <div class="min-h-[8.5rem] mb-5">
                 <h4 class="text-lg font-semibold mb-2 mt-0">
                   For vendors distributing at scale
                 </h4>
@@ -515,14 +515,14 @@ export default function PricingCalculator() {
 
           {/* Enterprise Plan */}
           <div class="mt-10 flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
-            <div class="flex justify-center items-center flex-col p-6 text-center min-h-[14rem]">
+            <div class="flex justify-start items-center flex-col p-6 text-center min-h-[15rem]">
               <h3 class="text-xl font-semibold">Enterprise</h3>
               <div class="text-4xl font-bold my-2">Book Demo</div>
               <p class="mb-0 mt-2 text-sm"></p>
             </div>
             <hr class="mb-0 border-gray-200 dark:border-gray-700" />
             <div class="p-6 flex-grow">
-              <div class="min-h-[8rem]">
+              <div class="min-h-[8.5rem] mb-5">
                 <h4 class="text-lg font-semibold mb-2 mt-0">
                   Built for regulated and high-security environments
                 </h4>
