@@ -473,10 +473,6 @@ export default function PricingCalculator() {
                     organization
                   </>
                 )}
-                <br />
-                <span class="text-xs text-gray-600 dark:text-gray-400 font-normal">
-                  Unlimited customer organizations
-                </span>
               </p>
               <p class="mb-0 mt-2 text-sm">
                 {internalUsers}{' '}
