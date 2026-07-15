@@ -21,9 +21,11 @@ export default function PricingCalculator() {
   const businessInternalUserPriceYearly = 32;
   const businessExternalCustomerPriceYearly = 128;
 
-  // Tiered pricing for Pro customer organizations (51+ licenses)
+  // Tiered pricing for customer organizations (51+ licenses)
   const proExternalCustomerPriceMonthlyTier2 = 48;
   const proExternalCustomerPriceYearlyTier2 = 39;
+  const businessExternalCustomerPriceMonthlyTier2 = 109;
+  const businessExternalCustomerPriceYearlyTier2 = 89;
 
   // Current prices based on billing cycle
   const proInternalUserPrice =
@@ -84,10 +86,21 @@ export default function PricingCalculator() {
   };
 
   const calculateBusinessMonthlyPrice = () => {
-    return (
-      businessInternalUserPrice * internalUsers +
-      businessExternalCustomerPrice * externalCustomers
-    );
+    // First 50 customer organizations at tier 1, remaining at tier 2
+    let externalCustomerCost = 0;
+    if (externalCustomers <= 50) {
+      externalCustomerCost = businessExternalCustomerPrice * externalCustomers;
+    } else {
+      const tier2Price =
+        billingCycle === 'monthly'
+          ? businessExternalCustomerPriceMonthlyTier2
+          : businessExternalCustomerPriceYearlyTier2;
+      externalCustomerCost =
+        businessExternalCustomerPrice * 50 +
+        tier2Price * (externalCustomers - 50);
+    }
+
+    return businessInternalUserPrice * internalUsers + externalCustomerCost;
   };
 
   const proMonthlyPrice = calculateProMonthlyPrice();
@@ -438,10 +451,28 @@ export default function PricingCalculator() {
               </div>
               <p class="mb-0 mt-2 text-sm">
                 {currency}
-                {formatPrice(businessInternalUserPrice)}/internal user +{' '}
-                {currency}
-                {formatPrice(businessExternalCustomerPrice)}/customer
-                organization
+                {formatPrice(businessInternalUserPrice)}/internal user
+                {externalCustomers > 50 ? (
+                  <>
+                    <br />
+                    {currency}
+                    {formatPrice(businessExternalCustomerPrice)}/customer
+                    organization (first 50) + {currency}
+                    {formatPrice(
+                      billingCycle === 'monthly'
+                        ? businessExternalCustomerPriceMonthlyTier2
+                        : businessExternalCustomerPriceYearlyTier2,
+                    )}
+                    /customer organization (51+)
+                  </>
+                ) : (
+                  <>
+                    {' '}
+                    + {currency}
+                    {formatPrice(businessExternalCustomerPrice)}/customer
+                    organization
+                  </>
+                )}
                 <br />
                 <span class="text-xs text-gray-600 dark:text-gray-400 font-normal">
                   Unlimited customer organizations
