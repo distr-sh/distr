@@ -48,7 +48,7 @@ export const PricingFAQs: PricingFAQ[] = [
     id: 'how-long-to-integrate',
     question: 'How long does it take to integrate Distr?',
     answer:
-      'Most teams ship their first customer install right after our onboarding. We support GitHub release automation, pre/post install scripts, and agent based distributions out of the box. To make sure you get unlocked fast — Pro includes a free onboarding call, and Business and Enterprise include white glove onboarding.',
+      'Most teams ship their first customer install right after our onboarding. We support GitHub release automation, pre/post install scripts, and agent-based distributions out of the box. To make sure you get unlocked fast — Pro includes a free onboarding call, and Business and Enterprise include white-glove onboarding.',
   },
   {
     id: 'self-hosting',
