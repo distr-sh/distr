@@ -3,9 +3,9 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {distinctUntilChanged, filter, lastValueFrom, map, take} from 'rxjs';
-import {WEBSITE_URL} from '../../constants';
 import {getFormDisplayedError} from '../../util/errors';
 import {OidcButtonsComponent} from '../components/oidc-buttons.component';
+import {PortalLogoComponent} from '../components/portal-logo/portal-logo.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {PlaceholderDirective} from '../directives/placeholder.directive';
 import {AuthService} from '../services/auth.service';
@@ -14,7 +14,14 @@ import {ToastService} from '../services/toast.service';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink, AutotrimDirective, PlaceholderDirective, OidcButtonsComponent],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    AutotrimDirective,
+    PlaceholderDirective,
+    OidcButtonsComponent,
+    PortalLogoComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './login.component.html',
 })
@@ -25,8 +32,6 @@ export class LoginComponent implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly portalBranding = inject(PortalBrandingService);
   private readonly fb = inject(FormBuilder).nonNullable;
-
-  protected readonly websiteUrl = WEBSITE_URL;
 
   protected readonly emailPasswordForm = this.fb.group({
     email: this.fb.control('', [Validators.required, Validators.email]),

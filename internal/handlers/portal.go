@@ -18,10 +18,11 @@ import (
 func PublicPortalRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Portal"))
 	r.Get("/", getPortalHandler).
-		With(option.Description("Get host-resolved portal branding (browser tab title and favicon)")).
+		With(option.Description("Get host-resolved portal branding (browser tab title, favicon and logo)")).
 		With(option.Response(http.StatusOK, api.PortalResponse{})).
 		With(option.Response(http.StatusNoContent, nil,
-			option.ContentDescription("No custom branding available. Clients are instructed to apply default branding.")))
+			option.ContentDescription("The host did not resolve to a custom app domain, or branding could not be "+
+				"resolved. Clients are instructed to apply default branding.")))
 }
 
 func getPortalHandler(w http.ResponseWriter, r *http.Request) {
@@ -30,15 +31,13 @@ func getPortalHandler(w http.ResponseWriter, r *http.Request) {
 	host := normalizeHost(r.Host)
 
 	var response *api.PortalResponse
-	if pageTitle, faviconImageID, err := db.GetOrganizationBrandingPortalByAppDomain(ctx, host); err != nil {
+	if branding, err := db.GetOrganizationBrandingByAppDomain(ctx, host); err != nil {
 		// Portal branding is best-effort: log the error but still respond with the defaults so the app boots.
 		internalctx.GetLogger(ctx).Warn("failed to resolve portal branding", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
-	} else if pageTitle != nil || faviconImageID != nil {
-		response = &api.PortalResponse{
-			PageTitle:  pageTitle,
-			FaviconUrl: mapping.CreatePublicImageURL(faviconImageID),
-		}
+	} else if branding != nil {
+		resp := mapping.OrganizationBrandingToPortalResponse(*branding)
+		response = &resp
 	}
 
 	// Branding is resolved from the request Host, so shared caches/CDNs must key on it.

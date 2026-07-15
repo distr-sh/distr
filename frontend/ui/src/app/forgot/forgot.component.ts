@@ -3,13 +3,14 @@ import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {distinctUntilChanged, filter, lastValueFrom, map, Subject, takeUntil} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
+import {PortalLogoComponent} from '../components/portal-logo/portal-logo.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {PlaceholderDirective} from '../directives/placeholder.directive';
 import {AuthService} from '../services/auth.service';
 
 @Component({
   selector: 'app-forgot',
-  imports: [ReactiveFormsModule, RouterLink, AutotrimDirective, PlaceholderDirective],
+  imports: [ReactiveFormsModule, RouterLink, AutotrimDirective, PlaceholderDirective, PortalLogoComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './forgot.component.html',
 })

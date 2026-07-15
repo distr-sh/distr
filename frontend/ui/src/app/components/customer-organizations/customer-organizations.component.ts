@@ -1,7 +1,16 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe, DatePipe, DecimalPipe} from '@angular/common';
-import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRef, viewChild} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  signal,
+  TemplateRef,
+  viewChild,
+} from '@angular/core';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {CustomerOrganization, CustomerOrganizationFeature, CustomerOrganizationWithUsage} from '@distr-sh/distr-sdk';
@@ -29,6 +38,7 @@ import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {PartnerOrganizationsService} from '../../services/partner-organizations.service';
 import {ToastService} from '../../services/toast.service';
+import {InlineEditComponent} from '../inline-edit.component';
 import {QuotaLimitComponent} from '../quota-limit.component';
 
 @Component({
@@ -44,6 +54,7 @@ import {QuotaLimitComponent} from '../quota-limit.component';
     RouterLink,
     QuotaLimitComponent,
     OverlayModule,
+    InlineEditComponent,
   ],
 })
 export class CustomerOrganizationsComponent {
@@ -62,6 +73,7 @@ export class CustomerOrganizationsComponent {
   private readonly imageUploadService = inject(ImageUploadService);
   private readonly overlay = inject(OverlayService);
   private readonly fb = inject(FormBuilder).nonNullable;
+  private readonly destroyRef = inject(DestroyRef);
   private readonly organizationService = inject(OrganizationService);
   private readonly artifactEntitlementsService = inject(ArtifactEntitlementsService);
   private readonly applicationEntitlementsService = inject(ApplicationEntitlementsService);
@@ -100,11 +112,10 @@ export class CustomerOrganizationsComponent {
   private readonly createCustomerDialog = viewChild.required<TemplateRef<unknown>>('createCustomerDialog');
   private modalRef?: DialogRef;
   protected readonly createForm = this.fb.group({
-    id: this.fb.control(''),
     name: this.fb.control('', [Validators.required]),
-    imageId: this.fb.control(''),
   });
   protected createFormLoading = false;
+  protected readonly savingCustomerId = signal<string | undefined>(undefined);
 
   protected readonly allCustomerFeatures: readonly CustomerOrganizationFeature[] = [
     'deployment_targets',
@@ -137,12 +148,6 @@ export class CustomerOrganizationsComponent {
     this.modalRef = this.overlay.showModal(this.createCustomerDialog());
   }
 
-  protected showUpdateDialog(value: CustomerOrganization) {
-    this.closeCreateDialog();
-    this.createForm.patchValue(value);
-    this.modalRef = this.overlay.showModal(this.createCustomerDialog());
-  }
-
   protected closeCreateDialog(reset: boolean = true): void {
     this.modalRef?.close();
 
@@ -160,25 +165,38 @@ export class CustomerOrganizationsComponent {
 
     this.createFormLoading = true;
 
-    const request = {
-      name: this.createForm.value.name!,
-      imageId: this.createForm.value.imageId || undefined,
-    };
-
     try {
-      if (this.createForm.value.id) {
-        await firstValueFrom(
-          this.customerOrganizationsService.updateCustomerOrganization(this.createForm.value.id, request)
-        );
-      } else {
-        await firstValueFrom(this.customerOrganizationsService.createCustomerOrganization(request));
-      }
+      await firstValueFrom(
+        this.customerOrganizationsService.createCustomerOrganization({
+          name: this.createForm.value.name!,
+        })
+      );
 
       this.closeCreateDialog();
       this.refresh$.next();
     } finally {
       this.createFormLoading = false;
     }
+  }
+
+  protected updateCustomerName(customer: CustomerOrganization, name: string): void {
+    this.savingCustomerId.set(customer.id);
+    this.customerOrganizationsService
+      .updateCustomerOrganization(customer.id, {...customer, name})
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.toast.success('Customer has been updated');
+          this.refresh$.next();
+        },
+        error: (e) => {
+          const msg = getFormDisplayedError(e);
+          if (msg) {
+            this.toast.error(msg);
+          }
+        },
+      })
+      .add(() => this.savingCustomerId.set(undefined));
   }
 
   protected async uploadImage(value: CustomerOrganization): Promise<void> {

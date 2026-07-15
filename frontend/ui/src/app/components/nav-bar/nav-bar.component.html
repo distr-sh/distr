@@ -1,4 +1,4 @@
-<nav class="sticky top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+<nav class="fixed top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
   @let organization = currentOrg();
   @if (isSubscriptionBannerVisible() && organization) {
     <app-nav-bar-subscription-banner
@@ -37,15 +37,15 @@
             </button>
           }
           <a routerLink="/" class="flex ms-2 md:me-24">
-            <img [src]="(logoUrl | secureImage | async) ?? '/distr-logo.svg'" class="h-8 me-3" alt="" />
+            <img [src]="(logoUrl() | secureImage | async) ?? '/distr-logo.svg'" class="h-8 me-3" alt="" />
             <h1 class="font-display self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">
-              @if (!auth.isCustomer()) {
+              @if (!auth.isCustomer() && !hasCustomLogo()) {
                 Distr
               }
 
               <small class="ms-2 font-semibold text-gray-500 dark:text-gray-400 hidden sm:inline">
                 @if (auth.isCustomer()) {
-                  {{ customerSubtitle }}
+                  {{ customerSubtitle() }}
                 } @else if (auth.isPartner()) {
                   Partner Portal
                 } @else {
