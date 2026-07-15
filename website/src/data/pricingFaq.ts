@@ -41,7 +41,7 @@ export const PricingFAQs: PricingFAQ[] = [
     id: 'customer-organization',
     question: 'What is a customer?',
     answer:
-      'A customer represents one of your end customers organizations who will install and use your software in their own environment. Each customer organization gets access to their own Customer Portal where they can view deployments, download artifacts, and manage their installation. Each customer organization can have multiple users with role-based access control. Learn more about <a href="/docs/platform/rbac/" class="text-[#00b5eb] hover:underline">customer roles and user management</a>.',
+      'A customer represents one of your end customer organizations who will install and use your software in their own environment. Each customer organization gets access to their own Customer Portal where they can view deployments, download artifacts, and manage their installation. Each customer organization can have multiple users with role-based access control. Learn more about <a href="/docs/platform/rbac/" class="text-[#00b5eb] hover:underline">customer roles and user management</a>.',
   },
 
   {
