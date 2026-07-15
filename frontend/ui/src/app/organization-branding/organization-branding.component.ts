@@ -115,7 +115,7 @@ export class OrganizationBrandingComponent implements OnInit {
 
   async editLogo() {
     const fileId = await firstValueFrom(
-      this.imageUploadService.showDialog({scope: 'organization', showSuccessNotification: false})
+      this.imageUploadService.showDialog({scope: 'organization', public: true, showSuccessNotification: false})
     );
     if (!fileId || this.logoImageId() === fileId) {
       return;
@@ -135,8 +135,8 @@ export class OrganizationBrandingComponent implements OnInit {
         public: true,
         showSuccessNotification: false,
         imageUrl: this.faviconImageUrl(),
-        accept: 'image/png,image/gif,image/x-icon,image/vnd.microsoft.icon,.ico',
-        acceptDescription: 'PNG, GIF or ICO (recommended size 64px x 64px - square)',
+        accept: 'image/svg+xml,image/png,image/gif,image/x-icon,image/vnd.microsoft.icon,.ico',
+        acceptDescription: 'SVG, PNG, GIF or ICO (recommended size 64px x 64px - square)',
       })
     );
     if (!fileId || this.faviconImageId() === fileId) {
