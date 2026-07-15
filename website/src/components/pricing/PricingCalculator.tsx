@@ -485,7 +485,7 @@ export default function PricingCalculator() {
                   Custom Domains (Full White Label)
                 </li>
                 <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  Bring-your-own OIDC for your customers
+                  Bring-your-own OIDC (vendors & customers)
                 </li>
                 <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
                   5TB container registry with FGAC
@@ -514,8 +514,17 @@ export default function PricingCalculator() {
           <div class="mt-10 flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
             <div class="flex justify-start items-center flex-col p-6 text-center min-h-[15rem]">
               <h3 class="text-xl font-semibold">Enterprise</h3>
-              <div class="text-4xl font-bold my-2">Book Demo</div>
-              <p class="mb-0 mt-2 text-sm"></p>
+              <div class="text-4xl font-bold my-2">
+                $59,000
+                <span class="text-base font-normal">/year</span>
+              </div>
+              <p class="mb-0 mt-2 text-sm">
+                Flat rate with unlimited usage
+                <br />
+                <span class="text-xs text-gray-600 dark:text-gray-400 font-normal">
+                  Starting price • Billed yearly
+                </span>
+              </p>
             </div>
             <hr class="mb-0 border-gray-200 dark:border-gray-700" />
             <div class="p-6 flex-grow">
@@ -531,10 +540,13 @@ export default function PricingCalculator() {
               </div>
               <ul class="list-none pl-0 mt-0 mb-0">
                 <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  Everything in Business
+                  Unlimited customers
                 </li>
                 <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  Custom limits for deployments, users & registry storage
+                  Unlimited users
+                </li>
+                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                  Business features available as add-ons
                 </li>
                 <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
                   Dedicated infrastructure
