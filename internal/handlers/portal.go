@@ -21,7 +21,8 @@ func PublicPortalRouter(r chiopenapi.Router) {
 		With(option.Description("Get host-resolved portal branding (browser tab title, favicon and logo)")).
 		With(option.Response(http.StatusOK, api.PortalResponse{})).
 		With(option.Response(http.StatusNoContent, nil,
-			option.ContentDescription("No custom branding available. Clients are instructed to apply default branding.")))
+			option.ContentDescription("The host did not resolve to a custom app domain, or branding could not be "+
+				"resolved. Clients are instructed to apply default branding.")))
 }
 
 func getPortalHandler(w http.ResponseWriter, r *http.Request) {
