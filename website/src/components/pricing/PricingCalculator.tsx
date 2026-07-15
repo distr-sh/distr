@@ -323,6 +323,7 @@ export default function PricingCalculator() {
             }`}>
             <div class="flex justify-start items-center flex-col p-6 text-center min-h-[15rem]">
               <h3 class="text-xl font-semibold">Pro</h3>
+              <p class="mb-0 mt-1 text-sm invisible">starting at</p>
               <div class="text-4xl font-bold my-2">
                 {currency}
                 {formatPrice(proMonthlyPrice)}
@@ -431,6 +432,7 @@ export default function PricingCalculator() {
             </div>
             <div class="flex justify-start items-center flex-col p-6 text-center min-h-[15rem]">
               <h3 class="text-xl font-semibold">Business</h3>
+              <p class="mb-0 mt-1 text-sm invisible">starting at</p>
               <div class="text-4xl font-bold my-2">
                 {currency}
                 {formatPrice(businessMonthlyPrice)}
