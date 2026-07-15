@@ -508,13 +508,22 @@ export default function PricingCalculator() {
           <div class="mt-10 flex flex-col lg:grid lg:grid-rows-subgrid lg:row-span-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
             <div class="flex justify-start items-center flex-col px-6 pt-12 pb-6 text-center">
               <h3 class="text-xl font-semibold">Enterprise</h3>
-              <p class="mb-0 mt-1 text-sm text-gray-600 dark:text-gray-400">
-                starting at
-              </p>
-              <div class="text-4xl font-bold my-2">
-                $59,000
-                <span class="text-base font-normal">/year</span>
-              </div>
+              {currency === '$' ? (
+                <>
+                  <p class="mb-0 mt-1 text-sm text-gray-600 dark:text-gray-400">
+                    starting at
+                  </p>
+                  <div class="text-4xl font-bold my-2">
+                    $59,000
+                    <span class="text-base font-normal">/year</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p class="mb-0 mt-1 text-sm invisible">starting at</p>
+                  <div class="text-4xl font-bold my-2">Book Demo</div>
+                </>
+              )}
               <p class="mb-0 mt-2 text-sm">
                 Flat rate with unlimited usage
                 <br />
