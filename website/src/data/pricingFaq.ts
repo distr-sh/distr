@@ -16,13 +16,13 @@ export const PricingFAQs: PricingFAQ[] = [
     question: 'Which plan should I choose?',
     answer: `
     <strong>Pro</strong><br/>
-    Choose Pro to distribute and operate customer installs in production. Deployments run through Docker, Kubernetes/Helm, or artifact-based distribution. You get version visibility, license enforcement, deployment alerts, and role-based access control across both your team and your customers' teams.<br/><br/>
+    Choose Pro to ship your application to self-hosted customers. It comes with all the essentials: Docker and Kubernetes deployment agents, logs, metrics, and alerts from every deployment, license management, role-based access control across both your team and your customers' teams, and a branded Customer Portal.<br/><br/>
 
     <strong>Business</strong><br/>
-    Choose Business when you distribute at scale. There is no customer limit, and you get reseller/partner organizations, license templates, custom domains for a fully white-labeled customer experience, enterprise SSO (bring your own OIDC provider for you and your customers), 30-day log retention, and priority support.<br/><br/>
+    Choose Business when you integrate Distr deeper into your operation and scale it up. You can fully white-label the entire experience with custom domains, white-label emails, and your own OIDC provider — for you and your customers. On top you get reseller and distribution partner organizations, license templates, 30-day log retention, and priority support.<br/><br/>
 
     <strong>Enterprise</strong><br/>
-    Choose Enterprise when Distr becomes your entire commercial self-hosted delivery suite. You're not just distributing software anymore — but also documentation, support portals, public images, automated workflows, usage-based billing and more — all inside one platform. Enterprise includes dedicated infrastructure isolation, custom contracts, and SLA guarantees.
+    Choose Enterprise if you're a security-first vendor serving regulated and high-security customers. Enterprise comes at a flat yearly rate with unlimited usage, and you can customize it with add-ons from the Business plan. It includes dedicated infrastructure, SAML SSO, custom roles, custom contracts, SLA guarantees, and a dedicated support engineer.
     `,
   },
   {
