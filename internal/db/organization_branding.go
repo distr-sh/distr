@@ -22,8 +22,8 @@ const (
 func GetOrganizationBranding(ctx context.Context, organizationID uuid.UUID) (*types.OrganizationBranding, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		"SELECT"+organizationBrandingOutputExpr+
-			"FROM OrganizationBranding b "+
+		"SELECT "+organizationBrandingOutputExpr+
+			" FROM OrganizationBranding b "+
 			"WHERE b.organization_id = @organizationId",
 		pgx.NamedArgs{"organizationId": organizationID})
 	if err != nil {
@@ -85,7 +85,7 @@ func UpsertOrganizationBranding(ctx context.Context, b *types.OrganizationBrandi
 func GetOrganizationBrandingByAppDomain(ctx context.Context, host string) (*types.OrganizationBranding, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		"SELECT"+organizationBrandingOutputExpr+"FROM OrganizationBranding b WHERE b.app_domain = @host",
+		"SELECT "+organizationBrandingOutputExpr+" FROM OrganizationBranding b WHERE b.app_domain = @host",
 		pgx.NamedArgs{"host": host},
 	)
 	if err != nil {
