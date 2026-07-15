@@ -51,12 +51,12 @@
                     <fa-icon [icon]="faBuilding" size="lg" />
                   </div>
                 </td>
-                <td
-                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-32 lg:max-w-64 xl:max-w-128 overflow-hidden text-ellipsis">
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                   <app-inline-edit
                     [value]="partner.name"
                     [editable]="auth.hasAnyRole('read_write', 'admin')"
                     placeholder="Enter a name&hellip;"
+                    textClass="truncate block max-w-32 lg:max-w-64 xl:max-w-128"
                     [loading]="savingPartnerId() === partner.id"
                     (save)="updatePartnerName(partner, $event)" />
                 </td>
