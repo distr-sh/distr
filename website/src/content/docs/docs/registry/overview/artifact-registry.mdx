@@ -91,8 +91,12 @@ The artifact details page gives you a complete view of all tags associated with 
 />
 
 <Aside type="note">
-  The Distr artifact registry only supports immutable tags. This means that once
-  a tag is pushed to the registry it can't be associated with another digest.
+  By default, the Distr artifact registry uses immutable tags. This means that
+  once a tag is pushed to the registry it can't be associated with another
+  digest. We believe immutable tags are a safer and more secure default, as they
+  guarantee that a given tag always refers to the exact same content. If you
+  need to overwrite existing tags, mutable tags can be enabled on the
+  organization settings page ("Artifact versions are mutable").
 </Aside>
 
 ## Global Dashboard Artifact View
