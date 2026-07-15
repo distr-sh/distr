@@ -1,21 +1,23 @@
 import {DecimalPipe} from '@angular/common';
-import {ChangeDetectionStrategy, Component, inject, signal, TemplateRef, viewChild} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {ChangeDetectionStrategy, Component, DestroyRef, inject, signal, TemplateRef, viewChild} from '@angular/core';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {PartnerOrganizationWithUsage} from '@distr-sh/distr-sdk';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
-import {faBuilding, faEdit, faMagnifyingGlass, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faBuilding, faMagnifyingGlass, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {filter, firstValueFrom, map, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
+import {AuthService} from '../../services/auth.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {PartnerOrganizationsService} from '../../services/partner-organizations.service';
 import {ToastService} from '../../services/toast.service';
+import {InlineEditComponent} from '../inline-edit.component';
 
 @Component({
   templateUrl: './partner-organizations.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [ReactiveFormsModule, FontAwesomeModule, DecimalPipe, RouterLink],
+  imports: [ReactiveFormsModule, FontAwesomeModule, DecimalPipe, RouterLink, InlineEditComponent],
 })
 export class PartnerOrganizationsComponent {
   protected readonly faMagnifyingGlass = faMagnifyingGlass;
@@ -23,11 +25,12 @@ export class PartnerOrganizationsComponent {
   protected readonly faBuilding = faBuilding;
   protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
-  protected readonly faEdit = faEdit;
 
+  protected readonly auth = inject(AuthService);
   private readonly partnerOrganizationsService = inject(PartnerOrganizationsService);
   private readonly toast = inject(ToastService);
   private readonly overlay = inject(OverlayService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly fb = inject(FormBuilder).nonNullable;
 
   protected readonly filterForm = this.fb.group({
@@ -53,19 +56,13 @@ export class PartnerOrganizationsComponent {
   private readonly createPartnerDialog = viewChild.required<TemplateRef<unknown>>('createPartnerDialog');
   private modalRef?: DialogRef;
   protected readonly createForm = this.fb.group({
-    id: this.fb.control(''),
     name: this.fb.control('', [Validators.required]),
   });
   protected createFormLoading = signal(false);
+  protected readonly savingPartnerId = signal<string | undefined>(undefined);
 
   protected showCreateDialog() {
     this.closeCreateDialog();
-    this.modalRef = this.overlay.showModal(this.createPartnerDialog());
-  }
-
-  protected showUpdateDialog(partner: PartnerOrganizationWithUsage) {
-    this.closeCreateDialog();
-    this.createForm.patchValue(partner);
     this.modalRef = this.overlay.showModal(this.createPartnerDialog());
   }
 
@@ -83,14 +80,9 @@ export class PartnerOrganizationsComponent {
     }
     this.createFormLoading.set(true);
     try {
-      const name = this.createForm.value.name!;
-      if (this.createForm.value.id) {
-        await firstValueFrom(
-          this.partnerOrganizationsService.updatePartnerOrganization(this.createForm.value.id, {name})
-        );
-      } else {
-        await firstValueFrom(this.partnerOrganizationsService.createPartnerOrganization({name}));
-      }
+      await firstValueFrom(
+        this.partnerOrganizationsService.createPartnerOrganization({name: this.createForm.value.name!})
+      );
       this.closeCreateDialog();
       this.refresh$.next();
     } catch (e) {
@@ -101,6 +93,26 @@ export class PartnerOrganizationsComponent {
     } finally {
       this.createFormLoading.set(false);
     }
+  }
+
+  protected updatePartnerName(partner: PartnerOrganizationWithUsage, name: string): void {
+    this.savingPartnerId.set(partner.id);
+    this.partnerOrganizationsService
+      .updatePartnerOrganization(partner.id, {name})
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.toast.success('Partner has been updated');
+          this.refresh$.next();
+        },
+        error: (e) => {
+          const msg = getFormDisplayedError(e);
+          if (msg) {
+            this.toast.error(msg);
+          }
+        },
+      })
+      .add(() => this.savingPartnerId.set(undefined));
   }
 
   protected delete(partner: PartnerOrganizationWithUsage) {

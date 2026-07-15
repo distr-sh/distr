@@ -73,12 +73,14 @@
                     }
                   </button>
                 </td>
-                <td
-                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-32 lg:max-w-64 xl:max-w-128 overflow-hidden text-ellipsis">
-                  {{ customer.name }}
-                  <button type="button" class="text-gray-900 dark:text-gray-400" (click)="showUpdateDialog(customer)">
-                    <fa-icon [icon]="faEdit" />
-                  </button>
+                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                  <app-inline-edit
+                    [value]="customer.name"
+                    [editable]="auth.hasAnyRole('read_write', 'admin')"
+                    placeholder="Enter a name&hellip;"
+                    textClass="truncate block max-w-32 lg:max-w-64 xl:max-w-128"
+                    [loading]="savingCustomerId() === customer.id"
+                    (save)="updateCustomerName(customer, $event)" />
                 </td>
                 <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                   {{ customer.createdAt | date: 'short' }}
@@ -206,13 +208,7 @@
     class="p-4 w-full mt-12 max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-900">
     <!-- Modal header -->
     <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
-      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-        @if (createForm.value.id) {
-          Update Customer
-        } @else {
-          New Customer
-        }
-      </h2>
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">New Customer</h2>
       <button
         type="button"
         (click)="closeCreateDialog()"
@@ -226,24 +222,22 @@
       <section class="antialiased">
         <div class="mx-auto max-w-screen-xl px-4 2xl:px-0">
           @if (featureFlags.isLicensingEnabled$ | async) {
-            @if (!createForm.value.id) {
-              <div
-                class="flex items-center p-4 mb-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
-                role="alert">
-                <fa-icon [icon]="faCircleExclamation" />
-                <span class="sr-only">Info</span>
-                <div class="ms-3 text-sm font-medium">
-                  <p>
-                    As long as no entitlements for application or artifacts is created,<br />
-                    customers will see all artifacts & applications.
-                  </p>
-                  <p>
-                    Afterwards, please make sure to assign a license to the new customer afterwards,<br />
-                    so that the customer will see the desired artifacts & applications.
-                  </p>
-                </div>
+            <div
+              class="flex items-center p-4 mb-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
+              role="alert">
+              <fa-icon [icon]="faCircleExclamation" />
+              <span class="sr-only">Info</span>
+              <div class="ms-3 text-sm font-medium">
+                <p>
+                  As long as no entitlements for application or artifacts is created,<br />
+                  customers will see all artifacts & applications.
+                </p>
+                <p>
+                  Afterwards, please make sure to assign a license to the new customer afterwards,<br />
+                  so that the customer will see the desired artifacts & applications.
+                </p>
               </div>
-            }
+            </div>
           }
 
           <form class="mx-auto" (ngSubmit)="submitCreateForm()" [formGroup]="createForm">
