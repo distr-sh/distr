@@ -41,14 +41,14 @@ export const PricingFAQs: PricingFAQ[] = [
     id: 'customer-organization',
     question: 'What is a customer?',
     answer:
-      'A customer represents one of your end customers organizations who will install and use your software in their own environment. Each customer organization gets access to their own Customer Portal where they can view deployments, download artifacts, and manage their installation. Each customer organization can have multiple users with role-based access control. Learn more about <a href="/docs/platform/rbac/" class="text-[#00b5eb] hover:underline">customer roles and user management</a>.',
+      'A customer represents one of your end customer organizations who will install and use your software in their own environment. Each customer organization gets access to their own Customer Portal where they can view deployments, download artifacts, and manage their installation. Each customer organization can have multiple users with role-based access control. Learn more about <a href="/docs/platform/rbac/" class="text-[#00b5eb] hover:underline">customer roles and user management</a>.',
   },
 
   {
     id: 'how-long-to-integrate',
     question: 'How long does it take to integrate Distr?',
     answer:
-      'Most teams ship their first customer install right after our onboarding. We support GitHub release automation, pre/post install scripts, and agent based distributions out of the box. To make sure you get unlocked fast — Pro includes a free onboarding call, and Business and Enterprise include white glove onboarding.',
+      'Most teams ship their first customer install right after our onboarding. We support GitHub release automation, pre/post install scripts, and agent-based distributions out of the box. To make sure you get unlocked fast — Pro includes a free onboarding call, and Business and Enterprise include white-glove onboarding.',
   },
   {
     id: 'self-hosting',
