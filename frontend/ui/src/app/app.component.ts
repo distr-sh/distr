@@ -12,7 +12,6 @@ import {OverlayService} from './services/overlay.service';
 
 @Component({
   selector: 'app-root',
-  standalone: true,
   imports: [RouterOutlet, FontAwesomeModule, ToastContainerComponent],
   providers: [OverlayService, ImageUploadService],
   changeDetection: ChangeDetectionStrategy.Eager,
