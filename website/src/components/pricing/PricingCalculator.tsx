@@ -95,9 +95,9 @@ export default function PricingCalculator() {
   const proYearlyTotal = proMonthlyPrice * 12;
   const businessYearlyTotal = businessMonthlyPrice * 12;
 
-  // Helper function to round up and format price without commas
+  // Round up and format with thousands separators for consistency
   const formatPrice = (price: number) => {
-    return Math.ceil(price);
+    return Math.ceil(price).toLocaleString('en-US');
   };
 
   const decrementInternalUsers = () => {
@@ -514,6 +514,9 @@ export default function PricingCalculator() {
           <div class="mt-10 flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
             <div class="flex justify-start items-center flex-col p-6 text-center min-h-[15rem]">
               <h3 class="text-xl font-semibold">Enterprise</h3>
+              <p class="mb-0 mt-1 text-sm text-gray-600 dark:text-gray-400">
+                starting at
+              </p>
               <div class="text-4xl font-bold my-2">
                 $59,000
                 <span class="text-base font-normal">/year</span>
@@ -522,7 +525,7 @@ export default function PricingCalculator() {
                 Flat rate with unlimited usage
                 <br />
                 <span class="text-xs text-gray-600 dark:text-gray-400 font-normal">
-                  Starting price • Billed yearly
+                  Billed yearly
                 </span>
               </p>
             </div>
