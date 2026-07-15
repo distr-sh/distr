@@ -52,6 +52,8 @@ export default function PricingCalculator() {
   // Check if plans should be blurred based on currency or customer count
   const shouldBlurPro = !isProAvailable || currency === '€';
   const shouldBlurBusiness = currency === '€';
+  // Enterprise is billed yearly only
+  const shouldBlurEnterprise = billingCycle === 'monthly';
 
   // Force yearly billing when EUR is selected
   const shouldForceYearly = currency === '€';
@@ -505,7 +507,12 @@ export default function PricingCalculator() {
           </div>
 
           {/* Enterprise Plan */}
-          <div class="mt-10 flex flex-col lg:grid lg:grid-rows-subgrid lg:row-span-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+          <div
+            class={`mt-10 flex flex-col lg:grid lg:grid-rows-subgrid lg:row-span-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 transition-all ${
+              shouldBlurEnterprise
+                ? 'opacity-50 blur-sm pointer-events-none'
+                : ''
+            }`}>
             <div class="flex justify-start items-center flex-col px-6 pt-12 pb-6 text-center">
               <h3 class="text-xl font-semibold">Enterprise</h3>
               {currency === '$' ? (
