@@ -113,7 +113,6 @@ export class CustomerOrganizationsComponent {
   private modalRef?: DialogRef;
   protected readonly createForm = this.fb.group({
     name: this.fb.control('', [Validators.required]),
-    imageId: this.fb.control(''),
   });
   protected createFormLoading = false;
   protected readonly savingCustomerId = signal<string | undefined>(undefined);
@@ -170,7 +169,6 @@ export class CustomerOrganizationsComponent {
       await firstValueFrom(
         this.customerOrganizationsService.createCustomerOrganization({
           name: this.createForm.value.name!,
-          imageId: this.createForm.value.imageId || undefined,
         })
       );
 
