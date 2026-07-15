@@ -19,7 +19,7 @@ export const PricingFAQs: PricingFAQ[] = [
     Choose Pro to distribute and operate customer installs in production. Deployments run through Docker, Kubernetes/Helm, or artifact-based distribution. You get version visibility, license enforcement, deployment alerts, and SSO/RBAC access control across both your team and your customers' teams.<br/><br/>
 
     <strong>Business</strong><br/>
-    Choose Business when you distribute at scale. There is no customer limit, and you get reseller/partner organizations, license templates, release channels, custom domains for a fully white-labeled customer experience, bring-your-own OIDC for your customers, 30-day log retention, and priority support.<br/><br/>
+    Choose Business when you distribute at scale. There is no customer limit, and you get reseller/partner organizations, license templates, custom domains for a fully white-labeled customer experience, bring-your-own OIDC for your customers, 30-day log retention, and priority support.<br/><br/>
 
     <strong>Enterprise</strong><br/>
     Choose Enterprise when Distr becomes your entire commercial self-hosted delivery suite. You're not just distributing software anymore — but also documentation, support portals, public images, automated workflows, usage-based billing and more — all inside one platform. Enterprise includes dedicated infrastructure isolation, custom contracts, and SLA guarantees.

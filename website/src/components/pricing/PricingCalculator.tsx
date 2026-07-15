@@ -488,9 +488,6 @@ export default function PricingCalculator() {
                   Bring-your-own OIDC for your customers
                 </li>
                 <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  Release Channels
-                </li>
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
                   5TB container registry with FGAC
                 </li>
                 <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
