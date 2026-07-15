@@ -604,6 +604,7 @@ Now that you have automatic deployments set up, consider:
 
 - **[Application Entitlements](/docs/platform/application-entitlements/)** - Control which customers receive automatic updates
 - **[Application Links](/docs/agents/application-links/)** - Create dynamic links for customers to access their deployments
+- **[Air-Gapped Deployments with Zarf](/docs/integrations/zarf/)** - Extend your release pipeline to publish self-contained Zarf packages for air-gapped clusters
 - **[Distr SDK](/docs/integrations/sdk/)** - Build custom automation and integrations
 - **[Distr API](/docs/integrations/api/)** - Explore advanced API capabilities
 

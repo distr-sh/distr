@@ -1,0 +1,238 @@
+---
+title: Air-Gapped Deployments with Zarf
+description: Package your application, Helm chart, and all container images into a single Zarf package, publish it to the Distr registry as an OCI artifact, and let customers deploy it into air-gapped Kubernetes clusters.
+slug: docs/integrations/zarf
+sidebar:
+  label: Air-Gapped Deployments with Zarf
+  order: 3
+---
+
+[Zarf](https://zarf.dev) is an open-source tool for delivering software into air-gapped and disconnected environments.
+A Zarf package bundles everything a Kubernetes application needs (Helm charts, container images, and manifests) into a single archive that can be deployed without any access to external registries.
+
+Zarf packages are published as standard [OCI artifacts](/glossary/oci-container-artifact-registry/), so the [Distr Artifact Registry](/docs/registry/) can host them like any other artifact.
+You publish packages from your CI pipeline, decide which customer gets access to which package with [artifact entitlements](/docs/platform/artifact-entitlements/), and see per-customer download analytics.
+Your customers pull a package once and can then deploy it into clusters that have no internet access at all.
+
+By the end of this guide, you'll have:
+
+- A `zarf.yaml` package definition for your Helm-based application
+- A GitHub Actions job that builds and publishes a multi-architecture Zarf package to the Distr registry on every release
+- A deployment flow your customers can use to install the package in connected or fully air-gapped clusters
+
+This guide follows the setup of the [hello-distr](https://github.com/distr-sh/hello-distr) example application. If you haven't read it yet, the [Automatic Deployments from GitHub](/docs/integrations/github-actions/) guide covers the surrounding release automation in detail.
+
+## Prerequisites
+
+Before starting, ensure you have:
+
+1. A Distr account with a [registry slug configured](/docs/registry/configuration/)
+2. A [Personal Access Token](/docs/integrations/personal-access-token/) for pushing to the registry
+3. A Helm chart for your application, with all container images published to a registry
+4. The [Zarf CLI](https://docs.zarf.dev/getting-started/install/) installed locally for testing
+
+## How the Integration Works
+
+The delivery pipeline looks like this:
+
+1. Your release workflow builds and pushes your container images and Helm chart
+2. `zarf package create` reads your `zarf.yaml`, pulls the chart and all referenced images, and writes a single `.tar.zst` archive that also includes SBOMs for every image
+3. `zarf package publish` pushes the archive to the Distr registry as an OCI artifact
+4. Your customers deploy directly from the registry with `zarf package deploy oci://...`, or download the package once and carry it across the air gap
+
+Once published, the package shows up in your Distr registry UI like any other artifact, including tags, size, and per-customer pull analytics.
+
+## Step 1: Create the Zarf Package Definition
+
+Create a `zarf.yaml` next to your deployment files (hello-distr keeps it in `deploy/zarf/`):
+
+```yaml
+kind: ZarfPackageConfig
+metadata:
+  name: hello-distr
+  description: A sample multi-service application for the Distr platform
+  version: '###ZARF_PKG_TMPL_VERSION###'
+  url: https://github.com/distr-sh/hello-distr
+
+components:
+  - name: hello-distr
+    required: true
+    description: Deploys the Hello Distr Helm chart together with all required images
+    charts:
+      - name: hello-distr
+        namespace: hello-distr
+        version: '###ZARF_PKG_TMPL_VERSION###'
+        localPath: ../charts/hello-distr
+    images:
+      - 'ghcr.io/distr-sh/hello-distr/backend:###ZARF_PKG_TMPL_VERSION###'
+      - 'ghcr.io/distr-sh/hello-distr/frontend:###ZARF_PKG_TMPL_VERSION###'
+      - 'ghcr.io/distr-sh/hello-distr/proxy:###ZARF_PKG_TMPL_VERSION###'
+      - 'ghcr.io/distr-sh/hello-distr/jobs:###ZARF_PKG_TMPL_VERSION###'
+      - 'docker.io/postgres:18.4-alpine3.23'
+```
+
+Key points:
+
+- `###ZARF_PKG_TMPL_VERSION###` is a Zarf package template. Its value is provided at build time with `--set VERSION=...`, so the package version, chart version, and image tags all stay in sync with your release tag.
+- `charts[].version` is required, also for `localPath` charts. It must match the `version` in your `Chart.yaml`. If you use [Release Please](https://github.com/googleapis/release-please) as described in the [GitHub guide](/docs/integrations/github-actions/), both are bumped from the same release tag automatically.
+- `images` must list every image your chart deploys, including dependency images such as the PostgreSQL database. Zarf pushes these into the target cluster's internal registry at deploy time, so nothing is pulled from the internet.
+
+You can validate the definition at any time:
+
+```shell
+zarf dev lint deploy/zarf --set VERSION=1.0.0
+```
+
+## Step 2: Build and Test Locally
+
+Build the chart dependencies and create the package:
+
+```shell
+helm dependency build deploy/charts/hello-distr
+zarf package create deploy/zarf --set VERSION=1.0.0 -o build --confirm
+```
+
+This produces `build/zarf-package-hello-distr-<arch>-1.0.0.tar.zst` containing the chart, all images, and generated SBOMs.
+
+To test it against a local cluster (for example minikube) that has been initialized with `zarf init`:
+
+```shell
+zarf package deploy build/zarf-package-hello-distr-*-1.0.0.tar.zst --confirm
+```
+
+Zarf pushes the bundled images into the cluster's internal registry, rewrites the image references, and installs the Helm chart. This is exactly what will happen later in your customer's environment.
+
+## Step 3: Publish to the Distr Registry
+
+Log in to the Distr registry with your Personal Access Token (no username required):
+
+```shell
+zarf tools registry login registry.distr.sh -u - -p "YOUR-ACCESS-TOKEN"
+```
+
+Then publish the package. The OCI reference is your registry hostname plus your organization's registry slug:
+
+```shell
+zarf package publish build/zarf-package-hello-distr-*.tar.zst oci://registry.distr.sh/your-slug
+```
+
+The package is now available at `oci://registry.distr.sh/your-slug/hello-distr:1.0.0` and appears in the Distr registry UI, where you can license it to customers via [artifact entitlements](/docs/platform/artifact-entitlements/).
+
+## Step 4: Automate with GitHub Actions
+
+Add a job to your release workflow that creates and publishes the Zarf package for every release tag. This is the `build-zarf` job from the [hello-distr workflow](https://github.com/distr-sh/hello-distr/blob/main/.github/workflows/hello-distr.yaml):
+
+```yaml
+build-zarf:
+  name: Build Zarf package
+  needs: build # wait until all container images are pushed
+  if: startsWith(github.ref, 'refs/tags/')
+  runs-on: ubuntu-latest
+  permissions:
+    contents: read
+    packages: read
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v7
+    - name: Setup helm
+      uses: azure/setup-helm@v5
+    - name: Build helm dependencies
+      run: helm dependency build deploy/charts/hello-distr
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v4
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Login to Distr Registry
+      uses: docker/login-action@v4
+      with:
+        registry: registry.distr.sh
+        username: ${{ github.actor }}
+        password: ${{ secrets.DISTR_TOKEN }}
+    - name: Setup Zarf
+      uses: zarf-dev/setup-zarf@v1
+      with:
+        version: v0.81.0
+    - name: Create Zarf package
+      run: |
+        zarf package create deploy/zarf -a amd64 --set VERSION="${{ github.ref_name }}" --confirm
+        zarf package create deploy/zarf -a arm64 --set VERSION="${{ github.ref_name }}" --confirm
+    - name: Publish Zarf package to Distr registry
+      run: |
+        for pkg in zarf-package-hello-distr-*.tar.zst; do
+          zarf package publish "$pkg" oci://registry.distr.sh/your-slug
+        done
+```
+
+Notes on this job:
+
+- `needs: build` ensures the container images exist in the source registry before Zarf tries to pull them into the package.
+- `DISTR_TOKEN` is a repository secret containing your Distr [Personal Access Token](/docs/integrations/personal-access-token/).
+- The job builds one package per CPU architecture (`-a amd64` and `-a arm64`). Publishing both to the same OCI reference creates a multi-arch index, so `zarf package deploy` automatically selects the right package for the target cluster.
+- `--set VERSION="${{ github.ref_name }}"` wires the release tag into the `###ZARF_PKG_TMPL_VERSION###` template.
+
+## Step 5: Customer Deployment
+
+Customers authenticate with their own [Personal Access Token](/docs/integrations/personal-access-token/) and can only access packages they are licensed for.
+
+### Connected Clusters
+
+For clusters that can reach the Distr registry, customers deploy directly from the OCI reference:
+
+```shell
+zarf tools registry login registry.distr.sh -u - -p "CUSTOMER-ACCESS-TOKEN"
+zarf init --confirm
+zarf package deploy oci://registry.distr.sh/your-slug/hello-distr:1.0.0 --confirm
+```
+
+### Fully Air-Gapped Clusters
+
+For environments without any internet access, customers pull the package on a connected machine, transfer it across the air gap, and deploy from the local file:
+
+```shell
+# On a machine with registry access
+zarf package pull oci://registry.distr.sh/your-slug/hello-distr:1.0.0
+
+# Transfer zarf-package-hello-distr-*.tar.zst across the air gap, then:
+zarf init --confirm
+zarf package deploy zarf-package-hello-distr-amd64-1.0.0.tar.zst --confirm
+```
+
+In both cases, `zarf init` sets up Zarf's in-cluster registry once per cluster. Every subsequent package deployment pushes its bundled images there, so the cluster never has to pull an image from an external registry.
+
+## Troubleshooting
+
+### Package Creation Fails with "must include a chart version"
+
+Zarf requires an explicit `version` on every chart entry, including charts referenced via `localPath`. Add `version: '###ZARF_PKG_TMPL_VERSION###'` (or the concrete chart version) to the chart definition in your `zarf.yaml`.
+
+### Deployed Pods Fail with "ImagePullBackOff"
+
+An image referenced by your Helm chart is missing from the `images` list in `zarf.yaml`. Render your chart and compare against the package definition:
+
+```shell
+helm template test deploy/charts/hello-distr | grep 'image:'
+```
+
+Every image in the output (including subchart images) must be listed in `zarf.yaml`.
+
+### Deployment Fails with "no package found for architecture"
+
+The published package doesn't include a build for the target cluster's CPU architecture. Build and publish one package per architecture as shown in [Step 4](#step-4-automate-with-github-actions).
+
+## Next Steps
+
+- **[Artifact Entitlements](/docs/platform/artifact-entitlements/)** - License Zarf packages to specific customers
+- **[Artifact Registry](/docs/registry/)** - Learn more about the Distr registry and download analytics
+- **[Automatic Deployments from GitHub](/docs/integrations/github-actions/)** - Set up the surrounding release automation
+
+## Additional Resources
+
+- [Zarf Documentation](https://docs.zarf.dev) - Official Zarf documentation
+- [hello-distr Example Application](https://github.com/distr-sh/hello-distr) - Complete example including the Zarf package definition and CI workflow
+- [Distr Community Forum](https://github.com/distr-sh/distr/discussions)
+
+---
+
+Have questions? [Get help](https://github.com/distr-sh/distr/discussions) in our community forum or check out the [FAQs](/docs/faqs/).
