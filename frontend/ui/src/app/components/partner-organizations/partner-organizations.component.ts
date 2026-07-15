@@ -8,6 +8,7 @@ import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faBuilding, faMagnifyingGlass, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {filter, firstValueFrom, map, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
+import {AuthService} from '../../services/auth.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {PartnerOrganizationsService} from '../../services/partner-organizations.service';
 import {ToastService} from '../../services/toast.service';
@@ -25,6 +26,7 @@ export class PartnerOrganizationsComponent {
   protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
 
+  protected readonly auth = inject(AuthService);
   private readonly partnerOrganizationsService = inject(PartnerOrganizationsService);
   private readonly toast = inject(ToastService);
   private readonly overlay = inject(OverlayService);
