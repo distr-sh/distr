@@ -388,7 +388,7 @@ export default function PricingCalculator() {
                 Customer Portal with installation instructions
               </li>
               <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                SSO + RBAC
+                RBAC + Login with Google, GitHub & Microsoft
               </li>
               <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
                 License Management
@@ -480,7 +480,7 @@ export default function PricingCalculator() {
                 Custom Domains (Full White Label)
               </li>
               <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                Bring-your-own OIDC (vendors & customers)
+                Enterprise SSO (bring-your-own OIDC)
               </li>
               <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
                 5TB container registry with FGAC
@@ -547,6 +547,9 @@ export default function PricingCalculator() {
               </li>
               <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
                 Custom Roles
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                SAML SSO
               </li>
               <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
                 Customer Billing
