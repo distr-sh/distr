@@ -293,6 +293,29 @@ func RequireEmailVerified(handler http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
+// RejectAccessToken blocks requests authenticated with a personal access token (PAT). It guards
+// session- and account-management endpoints (e.g. the authenticated /auth/* routes), which are
+// meant for interactive JWT sessions only. A PAT is deliberately scoped to a single organization
+// and a capped role, so it must not be exchangeable for a different or more privileged session
+// (e.g. a super admin's read-only PAT minting a super-admin JWT via switch-context). It must run
+// after the authentication middleware.
+func RejectAccessToken(handler http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		if a, err := auth.Authentication.Get(r.Context()); err == nil {
+			if _, ok := a.Token().(authkey.Key); ok {
+				http.Error(
+					w,
+					"this endpoint cannot be used with a personal access token",
+					http.StatusForbidden,
+				)
+				return
+			}
+		}
+		handler.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
+}
+
 func BlockSuperAdmin(handler http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		if isSuperAdmin(r.Context()) {

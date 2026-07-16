@@ -18,6 +18,10 @@ func FromAuthKey(ctx context.Context, token authkey.Key) (AuthInfo, error) {
 		}
 		return nil, err
 	} else {
+		// isSuperAdmin signals to DbAuthenticator that this token's user is a super
+		// admin, who has no organization membership. DbAuthenticator uses the
+		// presence of a role (always read-only here) to treat it as a plain
+		// read-only credential without super-admin privileges.
 		role := at.EffectiveUserRole()
 		return &SimpleAuthInfo{
 			userID:                 at.UserAccount.ID,
@@ -26,6 +30,7 @@ func FromAuthKey(ctx context.Context, token authkey.Key) (AuthInfo, error) {
 			organizationID:         &at.OrganizationID,
 			customerOrganizationID: at.CustomerOrganizationID,
 			userRole:               &role,
+			isSuperAdmin:           at.UserAccount.IsSuperAdmin,
 			rawToken:               token,
 		}, nil
 	}

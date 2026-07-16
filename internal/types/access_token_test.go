@@ -12,7 +12,7 @@ func TestEffectiveUserRole(t *testing.T) {
 	mk := func(tokenRole *UserRole, orgRole UserRole) AccessTokenWithUserAccount {
 		return AccessTokenWithUserAccount{
 			AccessToken: AccessToken{UserRole: tokenRole},
-			UserRole:    orgRole,
+			UserRole:    &orgRole,
 		}
 	}
 
@@ -33,4 +33,17 @@ func TestEffectiveUserRole(t *testing.T) {
 	// Equal roles return the role unchanged.
 	g.Expect(mk(new(UserRoleReadWrite), UserRoleReadWrite).EffectiveUserRole()).
 		To(Equal(UserRoleReadWrite))
+
+	// No membership role (non-member, about to be rejected): read-only floor.
+	g.Expect(AccessTokenWithUserAccount{
+		AccessToken: AccessToken{UserRole: new(UserRoleAdmin)},
+		UserRole:    nil,
+	}.EffectiveUserRole()).To(Equal(UserRoleReadOnly))
+
+	// Super admins are always clamped to read-only, regardless of the token's
+	// stored role.
+	g.Expect(AccessTokenWithUserAccount{
+		AccessToken: AccessToken{UserRole: new(UserRoleAdmin)},
+		UserAccount: UserAccount{IsSuperAdmin: true},
+	}.EffectiveUserRole()).To(Equal(UserRoleReadOnly))
 }
