@@ -20,7 +20,7 @@
   --font-sans: var(--font-inter), 'system-ui', 'sans-serif';
   --font-display:
     var(--font-poppins), var(--font-inter), 'system-ui', 'sans-serif';
-  --font-mono: 'monospace';
+  --font-mono: monospace;
 
   /* Distr.sh color palette - Accent colors */
   --color-accent-200: #92d1fe;

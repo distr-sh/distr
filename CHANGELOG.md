@@ -1,5 +1,62 @@
 # Changelog
 
+## [2.26.0](https://github.com/distr-sh/distr/compare/2.25.2...2.26.0) (2026-07-15)
+
+
+### Features
+
+* add page title and favicon customization ([#2741](https://github.com/distr-sh/distr/issues/2741)) ([4063f5f](https://github.com/distr-sh/distr/commit/4063f5f43a40b55901b8c2aa79bd78dd9b7818f2))
+* add showing logo for all users and on login page ([#2827](https://github.com/distr-sh/distr/issues/2827)) ([85f2ce1](https://github.com/distr-sh/distr/commit/85f2ce11377c5431255ddf2de4bbcfedefffa16e))
+
+
+### Bug Fixes
+
+* **backend:** add subscription type enforcement on organization creation ([#2807](https://github.com/distr-sh/distr/issues/2807)) ([899dfa7](https://github.com/distr-sh/distr/commit/899dfa753b91eef2b31b70bd71c05b1731aeb200))
+* **deps:** update aws-sdk-go-v2 monorepo ([#2803](https://github.com/distr-sh/distr/issues/2803)) ([72a8c3e](https://github.com/distr-sh/distr/commit/72a8c3ea9a55178fcf324015532d14e6456bb639))
+* **deps:** update aws-sdk-go-v2 monorepo ([#2832](https://github.com/distr-sh/distr/issues/2832)) ([2a6850d](https://github.com/distr-sh/distr/commit/2a6850d9a819122e94f1ddc3319c305a0c9c90f4))
+* **deps:** update go-mailx dependencies ([#2812](https://github.com/distr-sh/distr/issues/2812)) ([606182b](https://github.com/distr-sh/distr/commit/606182b29b9c57d20e7694b75ca4614c5378222e))
+* **deps:** update module github.com/coreos/go-oidc/v3 to v3.20.0 ([#2800](https://github.com/distr-sh/distr/issues/2800)) ([42c2cdc](https://github.com/distr-sh/distr/commit/42c2cdc2d812d1a4456645b0dbcca7d78344dcc1))
+* **deps:** update module github.com/go-co-op/gocron/v2 to v2.22.0 ([#2814](https://github.com/distr-sh/distr/issues/2814)) ([cfb4820](https://github.com/distr-sh/distr/commit/cfb48205ec6507ec5714b869e679d1ed5cf70078))
+* **deps:** update module golang.org/x/crypto to v0.54.0 ([#2801](https://github.com/distr-sh/distr/issues/2801)) ([8435905](https://github.com/distr-sh/distr/commit/84359055bd638a2f6611732c16c9f51205f04644))
+* **deps:** update module helm.sh/helm/v4 to v4.2.3 ([#2809](https://github.com/distr-sh/distr/issues/2809)) ([a5f730f](https://github.com/distr-sh/distr/commit/a5f730f83c0f9bb7371602941e3c8588423a25bd))
+* **deps:** update module oras.land/oras-go/v2 to v2.6.2 ([#2818](https://github.com/distr-sh/distr/issues/2818)) ([65b4011](https://github.com/distr-sh/distr/commit/65b4011cca4aa5eac7a010f63cbfdac582efc60c))
+* **deps:** update website dependencies ([#2786](https://github.com/distr-sh/distr/issues/2786)) ([bd0bc8a](https://github.com/distr-sh/distr/commit/bd0bc8a43fe184b8dd241ec4509d3dfe333f084b))
+* **frontend:** fix form label alignment on users tutorial page ([#2799](https://github.com/distr-sh/distr/issues/2799)) ([3f968a8](https://github.com/distr-sh/distr/commit/3f968a8171698a3f541ab3a9ff9e35c675932b3a))
+* **frontend:** fix tutorial icon outline color ([#2819](https://github.com/distr-sh/distr/issues/2819)) ([198a3dd](https://github.com/distr-sh/distr/commit/198a3dd486098157e600ba88ff24aa7b6413c709))
+* **frontend:** prevent navbar scrolling artifacts ([#2837](https://github.com/distr-sh/distr/issues/2837)) ([7298719](https://github.com/distr-sh/distr/commit/7298719bf6481a961306e8d2cefb4955b6bca0c5))
+* **registry:** add blob chunking if needed ([#2816](https://github.com/distr-sh/distr/issues/2816)) ([d1165eb](https://github.com/distr-sh/distr/commit/d1165ebaedc0b9a10ec83b048440ac62757b5e79))
+
+
+### Other
+
+* **deps:** update actions/setup-node action to v6.5.0 ([#2835](https://github.com/distr-sh/distr/issues/2835)) ([7696402](https://github.com/distr-sh/distr/commit/7696402bff86fb9d6a8ca78550cec9cfbe4ca37f))
+* **deps:** update actions/setup-node action to v7 ([#2836](https://github.com/distr-sh/distr/issues/2836)) ([22868ea](https://github.com/distr-sh/distr/commit/22868ea6614e17693a31dca52b5dd4797a4690a9))
+* **deps:** update angular monorepo to v22.0.6 ([#2802](https://github.com/distr-sh/distr/issues/2802)) ([1c5bf32](https://github.com/distr-sh/distr/commit/1c5bf32d17b82dc8f1ae28d4e31033bc1a3bd2f5))
+* **deps:** update angular-cli monorepo to v22.0.6 ([#2806](https://github.com/distr-sh/distr/issues/2806)) ([99bcd2b](https://github.com/distr-sh/distr/commit/99bcd2bdb9895da63bb22894316d593031a1d186))
+* **deps:** update axllent/mailpit docker tag to v1.30.4 ([#2804](https://github.com/distr-sh/distr/issues/2804)) ([090ffce](https://github.com/distr-sh/distr/commit/090ffce616b5971ea4fbd7e3b8f37e87aca0f9f4))
+* **deps:** update dependency @angular/cdk to v22.0.4 ([#2797](https://github.com/distr-sh/distr/issues/2797)) ([7a47115](https://github.com/distr-sh/distr/commit/7a47115c10883ed9aed4896eb91bcb526b8770e4))
+* **deps:** update dependency go to v1.26.5 ([#2795](https://github.com/distr-sh/distr/issues/2795)) ([6f9bb2e](https://github.com/distr-sh/distr/commit/6f9bb2ea0f5b06c29940ab64354f53ee3b5d3f32))
+* **deps:** update dependency marked to v18.0.6 ([#2808](https://github.com/distr-sh/distr/issues/2808)) ([c8e6ee7](https://github.com/distr-sh/distr/commit/c8e6ee79a6e1a6771c813141f4c82bfe25e4ab00))
+* **deps:** update dependency postcss to v8.5.17 ([#2817](https://github.com/distr-sh/distr/issues/2817)) ([c83a348](https://github.com/distr-sh/distr/commit/c83a348ec51813d66e4b70bb85c105e0ebe4ce6e))
+* **deps:** update dependency postcss to v8.5.18 ([#2823](https://github.com/distr-sh/distr/issues/2823)) ([91618e8](https://github.com/distr-sh/distr/commit/91618e83fd45728c56e4fb9d83d34e91dcd18cbd))
+* **deps:** update dependency postcss to v8.5.19 ([#2828](https://github.com/distr-sh/distr/issues/2828)) ([7ffb020](https://github.com/distr-sh/distr/commit/7ffb0209017a902709ed460bf4a8a6f320b892eb))
+* **deps:** update dependency stripe to v1.43.7 ([#2810](https://github.com/distr-sh/distr/issues/2810)) ([310e0b4](https://github.com/distr-sh/distr/commit/310e0b4916ebf156dc0f11821a55bffb784e84f3))
+* **deps:** update dependency stripe to v1.43.8 ([#2834](https://github.com/distr-sh/distr/issues/2834)) ([a75fe77](https://github.com/distr-sh/distr/commit/a75fe77282b08a46866bb31149dd9b0ce2deb83f))
+* **deps:** update gcr.io/distroless/static-debian12:nonroot docker digest to aef9602 ([#2831](https://github.com/distr-sh/distr/issues/2831)) ([8ef51cc](https://github.com/distr-sh/distr/commit/8ef51cc9745e9a7cb88d4e2d35bed442e59ab90c))
+* **deps:** update pnpm to v11.13.0 ([#2813](https://github.com/distr-sh/distr/issues/2813)) ([7f47cb6](https://github.com/distr-sh/distr/commit/7f47cb64b6d498b8393f4b289619094f36f7262c))
+* **frontend:** add customer crosslink to vendor secrets/users pages ([#2830](https://github.com/distr-sh/distr/issues/2830)) ([87b48ce](https://github.com/distr-sh/distr/commit/87b48ce50d1e7099c1567cb56d15e68c2da153ff))
+* **frontend:** consistently use inline name edit ([#2825](https://github.com/distr-sh/distr/issues/2825)) ([c27c838](https://github.com/distr-sh/distr/commit/c27c838216f4cf7b261ab32d7377d58732de94bb))
+
+
+### Docs
+
+* **website:** update registry docs regarding tag mutability ([#2824](https://github.com/distr-sh/distr/issues/2824)) ([bdcf501](https://github.com/distr-sh/distr/commit/bdcf501ae364f0882941b6915ed30883f22901e6))
+
+
+### Refactoring
+
+* move custom domains to branding ([#2761](https://github.com/distr-sh/distr/issues/2761)) ([5e90905](https://github.com/distr-sh/distr/commit/5e909057d88941ca4d472fb96eb7bf7b2d7b2c3e))
+
 ## [2.25.2](https://github.com/distr-sh/distr/compare/2.25.1...2.25.2) (2026-07-09)
 
 

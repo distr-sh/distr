@@ -2,12 +2,13 @@ import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
+import {PortalLogoComponent} from '../components/portal-logo/portal-logo.component';
 import {PlaceholderDirective} from '../directives/placeholder.directive';
 import {AuthService} from '../services/auth.service';
 
 @Component({
   selector: 'app-password-reset',
-  imports: [ReactiveFormsModule, PlaceholderDirective],
+  imports: [ReactiveFormsModule, PlaceholderDirective, PortalLogoComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './password-reset.component.html',
 })

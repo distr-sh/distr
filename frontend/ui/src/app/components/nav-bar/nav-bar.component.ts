@@ -109,8 +109,12 @@ export class NavBarComponent implements OnInit {
 
   userOpened = false;
   organizationsOpened = false;
-  logoUrl = '/distr-logo.svg';
-  customerSubtitle = 'Customer Portal';
+
+  // Derived from the branding service's reactive stream so the navbar updates live when the logo/title is saved.
+  private readonly branding = toSignal(this.organizationBranding.branding$);
+  protected readonly logoUrl = computed(() => this.branding()?.logoImageId ?? '/distr-logo.svg');
+  protected readonly hasCustomLogo = computed(() => !!this.branding()?.logoImageId);
+  protected readonly customerSubtitle = computed(() => this.branding()?.title || 'Customer Portal');
 
   protected readonly faBarsStaggered = faBarsStaggered;
   protected readonly tutorial = toSignal(this.route.queryParams.pipe(map((params) => params['tutorial'])));
@@ -125,28 +129,13 @@ export class NavBarComponent implements OnInit {
   });
 
   public async ngOnInit() {
+    // Trigger the initial load; the template updates reactively via the branding service's stream.
     try {
-      await this.initBranding();
+      await lastValueFrom(this.organizationBranding.get());
     } catch (e) {
-      console.error(e);
-    }
-  }
-
-  private async initBranding() {
-    if (this.auth.isCustomer()) {
-      try {
-        const branding = await lastValueFrom(this.organizationBranding.get());
-        if (branding.logoImageId) {
-          this.logoUrl = branding.logoImageId;
-        }
-        if (branding.title) {
-          this.customerSubtitle = branding.title;
-        }
-      } catch (e) {
-        const msg = getFormDisplayedError(e);
-        if (msg && e instanceof HttpErrorResponse && e.status !== 404) {
-          this.toast.error(msg);
-        }
+      const msg = getFormDisplayedError(e);
+      if (msg && e instanceof HttpErrorResponse && e.status !== 404) {
+        this.toast.error(msg);
       }
     }
   }

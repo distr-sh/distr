@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/distr-sh/distr/api"
@@ -15,6 +16,7 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
+	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
 	"go.uber.org/zap"
@@ -63,10 +65,28 @@ func upsertOrganizationBranding(w http.ResponseWriter, r *http.Request) {
 	organizationBranding.OrganizationID = *auth.CurrentOrgID()
 	organizationBranding.UpdatedByUserAccountID = util.PtrTo(auth.CurrentUserID())
 
-	if err := verifyLogoImageBelongsToOrganization(ctx, organizationBranding); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-	} else if err := verifyFaviconImageBelongsToOrganization(ctx, organizationBranding); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	orgID := organizationBranding.OrganizationID
+	if err := verifyPublicImageBelongsToOrganization(ctx, organizationBranding.LogoImageID, orgID, "logo"); err != nil {
+		if errors.Is(err, apierrors.ErrBadRequest) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else {
+			log.Warn("could not verify logo image", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	} else if err := verifyPublicImageBelongsToOrganization(
+		ctx,
+		organizationBranding.FaviconImageID,
+		orgID,
+		"favicon",
+	); err != nil {
+		if errors.Is(err, apierrors.ErrBadRequest) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else {
+			log.Warn("could not verify favicon image", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	} else if err = db.UpsertOrganizationBranding(ctx, &organizationBranding); err != nil {
 		log.Warn("could not save organizationBranding", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -76,44 +96,32 @@ func upsertOrganizationBranding(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// verifyLogoImageBelongsToOrganization ensures the referenced logo image belongs to the current
-// organization. Without this check a user could reference an arbitrary File (e.g. from another
-// organization), whose bytes are then embedded into outbound e-mail content.
-func verifyLogoImageBelongsToOrganization(ctx context.Context, t types.OrganizationBranding) error {
-	if t.LogoImageID == nil {
+// verifyPublicImageBelongsToOrganization ensures the referenced branding image (logo or favicon) belongs to the
+// given organization and is a public, servable image, since these images are served unauthenticated via the
+// public file API. A nil imageID is valid (image not set). The imageType (e.g. "logo" or "favicon") is included
+// in validation messages so clients can tell which image failed. Validation failures are returned as ErrBadRequest.
+func verifyPublicImageBelongsToOrganization(
+	ctx context.Context,
+	imageID *uuid.UUID,
+	organizationID uuid.UUID,
+	imageType string,
+) error {
+	if imageID == nil {
 		return nil
 	}
-	file, err := db.GetFileWithID(ctx, *t.LogoImageID)
-	if errors.Is(err, apierrors.ErrNotFound) {
-		return errors.New("logo image does not exist")
-	} else if err != nil {
-		return err
-	} else if file.OrganizationID == nil || *file.OrganizationID != t.OrganizationID {
-		return errors.New("logo image does not belong to the organization")
-	}
-	return nil
-}
 
-// verifyFaviconImageBelongsToOrganization ensures the referenced favicon image belongs to the current
-// organization and is public. The favicon is served without authentication via the public file API (the
-// browser loads it as a plain resource), so it must be public and must not leak another organization's asset.
-func verifyFaviconImageBelongsToOrganization(ctx context.Context, t types.OrganizationBranding) error {
-	if t.FaviconImageID == nil {
-		return nil
-	}
-	file, err := db.GetFileMetadataWithID(ctx, *t.FaviconImageID)
+	fileMeta, err := db.GetFileMetadataWithID(ctx, *imageID)
 	if errors.Is(err, apierrors.ErrNotFound) {
-		return errors.New("favicon image does not exist")
+		return apierrors.NewBadRequest(fmt.Sprintf("%s file does not exist", imageType))
 	} else if err != nil {
 		return err
-	} else if file.OrganizationID == nil || *file.OrganizationID != t.OrganizationID {
-		return errors.New("favicon image does not belong to the organization")
-	} else if !file.Public {
-		return errors.New("favicon image must be public")
-	} else if !isPublicServableContentType(file.ContentType) {
-		// The favicon is loaded by the browser via the public file API, which only serves image content
-		// types. Reject non-servable types here to fail loudly instead of ending up with a broken favicon.
-		return errors.New("favicon image must be an image (SVG is not supported)")
+	} else if fileMeta.OrganizationID == nil || *fileMeta.OrganizationID != organizationID {
+		return apierrors.NewBadRequest(fmt.Sprintf("%s file does not exist", imageType))
+	} else if !fileMeta.Public {
+		return apierrors.NewBadRequest(fmt.Sprintf("%s file must be public", imageType))
+	} else if !isServableImageContentType(fileMeta.ContentType) {
+		return apierrors.NewBadRequest(fmt.Sprintf("%s file must be an image", imageType))
 	}
+
 	return nil
 }

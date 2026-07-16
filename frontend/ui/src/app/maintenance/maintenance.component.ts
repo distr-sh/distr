@@ -3,21 +3,20 @@ import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faScrewdriverWrench} from '@fortawesome/free-solid-svg-icons';
 import {timer} from 'rxjs';
-import {WEBSITE_URL} from '../../constants';
+import {PortalLogoComponent} from '../components/portal-logo/portal-logo.component';
 import {MaintenanceService} from '../services/maintenance.service';
 
 const POLL_INTERVAL_MS = 5000;
 
 @Component({
   selector: 'app-maintenance',
-  imports: [FaIconComponent],
+  imports: [FaIconComponent, PortalLogoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './maintenance.component.html',
 })
 export class MaintenanceComponent {
   private readonly maintenance = inject(MaintenanceService);
 
-  protected readonly websiteUrl = WEBSITE_URL;
   protected readonly faScrewdriverWrench = faScrewdriverWrench;
   protected readonly checking = signal(false);
 

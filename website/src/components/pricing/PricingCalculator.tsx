@@ -10,82 +10,57 @@ export default function PricingCalculator() {
 
   // Base pricing per internal user and customer organization
   // Monthly billing prices
-  const starterInternalUserPriceMonthly = 19;
-  const starterExternalCustomerPriceMonthly = 29;
   const proInternalUserPriceMonthly = 29;
   const proExternalCustomerPriceMonthly = 69;
+  const businessInternalUserPriceMonthly = 39;
+  const businessExternalCustomerPriceMonthly = 159;
 
   // Yearly billing prices (billed monthly when on yearly plan)
-  const starterInternalUserPriceYearly = 16;
-  const starterExternalCustomerPriceYearly = 24;
   const proInternalUserPriceYearly = 24;
   const proExternalCustomerPriceYearly = 56;
+  const businessInternalUserPriceYearly = 32;
+  const businessExternalCustomerPriceYearly = 128;
 
-  // Tiered pricing for Pro customer organizations (51+ licenses)
+  // Tiered pricing for customer organizations (51+ licenses)
   const proExternalCustomerPriceMonthlyTier2 = 48;
   const proExternalCustomerPriceYearlyTier2 = 39;
-
-  // Get current prices based on billing cycle
-  const getStarterInternalUserPrice = () => {
-    return billingCycle === 'monthly'
-      ? starterInternalUserPriceMonthly
-      : starterInternalUserPriceYearly;
-  };
-
-  const getStarterExternalCustomerPrice = () => {
-    return billingCycle === 'monthly'
-      ? starterExternalCustomerPriceMonthly
-      : starterExternalCustomerPriceYearly;
-  };
-
-  const getProInternalUserPrice = () => {
-    return billingCycle === 'monthly'
-      ? proInternalUserPriceMonthly
-      : proInternalUserPriceYearly;
-  };
-
-  const getProExternalCustomerPrice = () => {
-    return billingCycle === 'monthly'
-      ? proExternalCustomerPriceMonthly
-      : proExternalCustomerPriceYearly;
-  };
+  const businessExternalCustomerPriceMonthlyTier2 = 109;
+  const businessExternalCustomerPriceYearlyTier2 = 89;
 
   // Current prices based on billing cycle
-  const starterInternalUserPrice = getStarterInternalUserPrice();
-  const starterExternalCustomerPrice = getStarterExternalCustomerPrice();
-  const proInternalUserPrice = getProInternalUserPrice();
-  const proExternalCustomerPrice = getProExternalCustomerPrice();
+  const proInternalUserPrice =
+    billingCycle === 'monthly'
+      ? proInternalUserPriceMonthly
+      : proInternalUserPriceYearly;
+  const proExternalCustomerPrice =
+    billingCycle === 'monthly'
+      ? proExternalCustomerPriceMonthly
+      : proExternalCustomerPriceYearly;
+  const businessInternalUserPrice =
+    billingCycle === 'monthly'
+      ? businessInternalUserPriceMonthly
+      : businessInternalUserPriceYearly;
+  const businessExternalCustomerPrice =
+    billingCycle === 'monthly'
+      ? businessExternalCustomerPriceMonthly
+      : businessExternalCustomerPriceYearly;
 
   // Plan limits
-  const starterMaxExternalCustomers = 3;
   const proMaxExternalCustomers = 100;
 
   // Check if plans are within limits
-  const isStarterAvailable = externalCustomers <= starterMaxExternalCustomers;
   const isProAvailable = externalCustomers <= proMaxExternalCustomers;
 
-  // Check if more than 100 customers (Enterprise only)
-  const isEnterpriseOnly = externalCustomers > proMaxExternalCustomers;
-
   // Check if plans should be blurred based on currency or customer count
-  const shouldBlurStarter = !isStarterAvailable || currency === '€';
-  const shouldBlurPro = !isProAvailable || currency === '€' || isEnterpriseOnly;
+  const shouldBlurPro = !isProAvailable || currency === '€';
+  const shouldBlurBusiness = currency === '€';
+  // Enterprise is billed yearly only
+  const shouldBlurEnterprise = billingCycle === 'monthly';
 
-  // Force yearly billing when Enterprise only (more than 100 customers) or EUR selected
-  const shouldForceYearly = isEnterpriseOnly || currency === '€';
+  // Force yearly billing when EUR is selected
+  const shouldForceYearly = currency === '€';
 
   // Calculate total monthly prices (capped at plan limits)
-  const calculateStarterMonthlyPrice = () => {
-    const cappedCustomers = Math.min(
-      externalCustomers,
-      starterMaxExternalCustomers,
-    );
-    return (
-      starterInternalUserPrice * internalUsers +
-      starterExternalCustomerPrice * cappedCustomers
-    );
-  };
-
   const calculateProMonthlyPrice = () => {
     const cappedCustomers = Math.min(
       externalCustomers,
@@ -110,16 +85,34 @@ export default function PricingCalculator() {
     return proInternalUserPrice * internalUsers + externalCustomerCost;
   };
 
-  const starterMonthlyPrice = calculateStarterMonthlyPrice();
+  const calculateBusinessMonthlyPrice = () => {
+    // First 50 customer organizations at tier 1, remaining at tier 2
+    let externalCustomerCost = 0;
+    if (externalCustomers <= 50) {
+      externalCustomerCost = businessExternalCustomerPrice * externalCustomers;
+    } else {
+      const tier2Price =
+        billingCycle === 'monthly'
+          ? businessExternalCustomerPriceMonthlyTier2
+          : businessExternalCustomerPriceYearlyTier2;
+      externalCustomerCost =
+        businessExternalCustomerPrice * 50 +
+        tier2Price * (externalCustomers - 50);
+    }
+
+    return businessInternalUserPrice * internalUsers + externalCustomerCost;
+  };
+
   const proMonthlyPrice = calculateProMonthlyPrice();
+  const businessMonthlyPrice = calculateBusinessMonthlyPrice();
 
   // Calculate yearly total (monthly price * 12)
-  const starterYearlyTotal = starterMonthlyPrice * 12;
   const proYearlyTotal = proMonthlyPrice * 12;
+  const businessYearlyTotal = businessMonthlyPrice * 12;
 
-  // Helper function to round up and format price without commas
+  // Round up and format with thousands separators for consistency
   const formatPrice = (price: number) => {
-    return Math.ceil(price);
+    return Math.ceil(price).toLocaleString('en-US');
   };
 
   const decrementInternalUsers = () => {
@@ -169,10 +162,6 @@ export default function PricingCalculator() {
     const numValue = parseInt(value, 10);
     if (!isNaN(numValue) && numValue >= 1) {
       setExternalCustomers(numValue);
-      // Auto-switch to yearly when more than 100 customers
-      if (numValue > proMaxExternalCustomers) {
-        setBillingCycle('yearly');
-      }
     }
   };
 
@@ -192,12 +181,12 @@ export default function PricingCalculator() {
     }
   };
 
-  // Auto-switch to yearly when customer count exceeds Pro limit
+  // Keep yearly billing enforced while EUR is selected
   useEffect(() => {
-    if (isEnterpriseOnly && billingCycle === 'monthly') {
+    if (shouldForceYearly && billingCycle === 'monthly') {
       setBillingCycle('yearly');
     }
-  }, [isEnterpriseOnly, billingCycle]);
+  }, [shouldForceYearly, billingCycle]);
 
   return (
     <section>
@@ -239,8 +228,8 @@ export default function PricingCalculator() {
             <div class="w-full min-h-[4rem] flex flex-col justify-start mb-5">
               <h3 class="mb-1 text-lg leading-tight">Customers</h3>
               <p class="mb-0 text-sm text-gray-600 dark:text-gray-400 leading-snug">
-                Select how many customer organizations you have &ndash; each can
-                have unlimited users
+                Select how many customer organizations you have. Each can have
+                unlimited users
               </p>
             </div>
             <div class="flex items-center justify-start gap-3 w-full">
@@ -340,96 +329,17 @@ export default function PricingCalculator() {
           </div>
         </div>
 
-        {/* Pricing cards */}
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Starter Plan */}
-          <div
-            class={`mt-10 min-h-[50rem] flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 transition-all ${
-              shouldBlurStarter ? 'opacity-50 blur-sm pointer-events-none' : ''
-            }`}>
-            <div class="flex justify-center items-center flex-col p-6 text-center min-h-[18rem]">
-              <h3 class="text-xl font-semibold">Starter</h3>
-              <div class="text-4xl font-bold my-2">
-                {currency}
-                {formatPrice(starterMonthlyPrice)}
-                <span class="text-base font-normal">/month</span>
-              </div>
-              <p class="mb-0 mt-2 text-sm">
-                {currency}
-                {formatPrice(starterInternalUserPrice)}/internal user +{' '}
-                {currency}
-                {formatPrice(starterExternalCustomerPrice)}/customer
-                organization
-                <br />
-                <span class="text-xs text-gray-600 dark:text-gray-400 font-normal">
-                  Up to {starterMaxExternalCustomers} customer organizations
-                </span>
-              </p>
-              <p class="mb-0 mt-2 text-sm">
-                {internalUsers}{' '}
-                {internalUsers === 1 ? 'internal user' : 'internal users'} •{' '}
-                {externalCustomers}{' '}
-                {externalCustomers === 1
-                  ? 'customer organization'
-                  : 'customer organizations'}{' '}
-                •
-                {billingCycle === 'monthly'
-                  ? ' Billed monthly'
-                  : ` ${currency}${formatPrice(starterYearlyTotal)} billed yearly`}
-              </p>
-            </div>
-            <hr class="mb-0 border-gray-200 dark:border-gray-700" />
-            <div class="p-6 flex-grow">
-              <h4 class="text-lg font-semibold mb-2 mt-0">
-                First POCs + market validation
-              </h4>
-              <p class="text-sm leading-relaxed mb-6 mt-0 text-gray-700 dark:text-gray-300">
-                Docker + agent installs to ship fast, iterate fast, and get
-                customers updated instantly.
-              </p>
-              <ul class="list-none pl-0 mt-4 mb-0">
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  Up to 3 customer installs
-                </li>
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  1 deployment per customer
-                </li>
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  1 user per customer
-                </li>
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  Pre & Post install scripts
-                </li>
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  Customer Portal with installation instructions
-                </li>
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  Basic email support + onboarding
-                </li>
-              </ul>
-              <div class="mt-6 mb-0 p-3 bg-gray-100 dark:bg-accent-600/15 border-l-4 border-accent-600 rounded text-sm leading-snug text-gray-800 dark:text-gray-200 font-medium italic">
-                Fastest route to validate customer-install GTM
-              </div>
-            </div>
-            <div class="p-6 pt-0">
-              <a
-                href="/onboarding/"
-                class="inline-block w-full px-6 py-3 bg-accent-600 hover:bg-accent-700 border-2 border-accent-600 text-white font-medium rounded-lg text-center transition-colors no-underline">
-                Start free trial →
-              </a>
-            </div>
-          </div>
-
+        {/* Pricing cards: subgrid keeps headers, dividers, descriptions,
+            bullet lists, and CTAs aligned across all three cards */}
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-y-0">
           {/* Pro Plan */}
           <div
-            class={`mt-5 min-h-[55rem] flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg border-2 border-accent-600 relative pt-4 transition-all ${
+            class={`mt-10 flex flex-col lg:grid lg:grid-rows-subgrid lg:row-span-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 transition-all ${
               shouldBlurPro ? 'opacity-50 blur-sm pointer-events-none' : ''
             }`}>
-            <div class="absolute top-0 left-0 right-0 bg-accent-600 text-white py-1.5 text-base font-medium z-10 shadow-md text-center w-full">
-              Most popular
-            </div>
-            <div class="flex justify-center items-center flex-col p-6 text-center min-h-[9rem] pt-8">
+            <div class="flex justify-start items-center flex-col px-6 pt-12 pb-6 text-center">
               <h3 class="text-xl font-semibold">Pro</h3>
+              <p class="mb-0 mt-1 text-sm invisible">starting at</p>
               <div class="text-4xl font-bold my-2">
                 {currency}
                 {formatPrice(proMonthlyPrice)}
@@ -461,7 +371,7 @@ export default function PricingCalculator() {
                 )}
                 <br />
                 <span class="text-xs text-gray-600 dark:text-gray-400 font-normal">
-                  Up to {proMaxExternalCustomers} total customer organizations
+                  Up to {proMaxExternalCustomers} customer organizations
                 </span>
               </p>
               <p class="mb-0 mt-2 text-sm">
@@ -477,50 +387,144 @@ export default function PricingCalculator() {
                   : ` ${currency}${formatPrice(proYearlyTotal)} billed yearly`}
               </p>
             </div>
-            <hr class="mb-0 border-gray-200 dark:border-gray-700" />
-            <div class="p-6 flex-grow">
-              <h4 class="text-lg font-semibold mb-2 mt-0">
-                Rollout + operational scaling
-              </h4>
-              <p class="text-sm leading-relaxed mb-6 mt-0 text-gray-700 dark:text-gray-300">
-                Platform teams deploy through Helm/Kubernetes. Version
-                visibility, governance, and license control.
-              </p>
-              <ul class="list-none pl-0 mt-4 mb-0">
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  Up to 100 customer installs
-                </li>
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  3 deployments per customer
-                </li>
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  Up to 10 users per customer
-                </li>
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  SSO + RBAC
-                </li>
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  License Management
-                </li>
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  Deployment Alerts
-                </li>
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  1TB container registry with FGAC
-                </li>
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  White Label
-                </li>
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  White glove onboarding + private Slack
-                </li>
-              </ul>
-              <div class="mt-6 mb-0 p-3 bg-gray-100 dark:bg-accent-600/15 border-l-4 border-accent-600 rounded text-sm leading-snug text-gray-800 dark:text-gray-200 font-medium italic">
-                Production-grade rollout engine — version control + identity
-                control at scale
-              </div>
+            <hr class="my-0 border-gray-200 dark:border-gray-700" />
+            <h4 class="text-lg font-semibold mt-0 mb-0 px-6 pt-6">
+              Everything to distribute and operate customer installs
+            </h4>
+            <p class="text-sm leading-relaxed mt-2 mb-0 px-6 text-gray-700 dark:text-gray-300">
+              Ship through Docker, Helm/Kubernetes, or your artifact registry,
+              with licensing, alerting, and access control built in.
+            </p>
+            <ul class="list-none px-6 pt-5 mt-0 mb-0">
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                Docker + Kubernetes deployment agents
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                Customer Portal with installation instructions
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                RBAC + Login with Google, GitHub & Microsoft
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                License Management
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                Deployment Alerts
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                1TB container registry with FGAC
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                Custom Branding for your Customer Portal
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                7-day log retention
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                Free Onboarding Call + Private Slack
+              </li>
+            </ul>
+            <div class="p-6 pt-2 self-end w-full">
+              <a
+                href="/onboarding/"
+                class="inline-block w-full px-6 py-3 bg-accent-600 hover:bg-accent-700 text-white font-medium rounded-lg text-center transition-colors no-underline">
+                Start free trial →
+              </a>
             </div>
-            <div class="p-6 pt-0">
+          </div>
+
+          {/* Business Plan */}
+          <div
+            class={`mt-5 flex flex-col lg:grid lg:grid-rows-subgrid lg:row-span-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg border-2 border-accent-600 relative transition-all ${
+              shouldBlurBusiness ? 'opacity-50 blur-sm pointer-events-none' : ''
+            }`}>
+            <div class="absolute top-0 left-0 right-0 bg-accent-600 text-white pt-1.5 pb-3.5 text-base font-medium shadow-md text-center w-full rounded-t-md">
+              Most popular
+            </div>
+            <div class="relative mt-9 rounded-t-lg bg-white dark:bg-gray-900 flex justify-start items-center flex-col px-6 pt-3 pb-6 text-center">
+              <h3 class="text-xl font-semibold">Business</h3>
+              <p class="mb-0 mt-1 text-sm invisible">starting at</p>
+              <div class="text-4xl font-bold my-2">
+                {currency}
+                {formatPrice(businessMonthlyPrice)}
+                <span class="text-base font-normal">/month</span>
+              </div>
+              <p class="mb-0 mt-2 text-sm">
+                {currency}
+                {formatPrice(businessInternalUserPrice)}/internal user
+                {externalCustomers > 50 ? (
+                  <>
+                    <br />
+                    {currency}
+                    {formatPrice(businessExternalCustomerPrice)}/customer
+                    organization (first 50) + {currency}
+                    {formatPrice(
+                      billingCycle === 'monthly'
+                        ? businessExternalCustomerPriceMonthlyTier2
+                        : businessExternalCustomerPriceYearlyTier2,
+                    )}
+                    /customer organization (51+)
+                  </>
+                ) : (
+                  <>
+                    {' '}
+                    + {currency}
+                    {formatPrice(businessExternalCustomerPrice)}/customer
+                    organization
+                  </>
+                )}
+              </p>
+              <p class="mb-0 mt-2 text-sm">
+                {internalUsers}{' '}
+                {internalUsers === 1 ? 'internal user' : 'internal users'} •{' '}
+                {externalCustomers}{' '}
+                {externalCustomers === 1
+                  ? 'customer organization'
+                  : 'customer organizations'}{' '}
+                •
+                {billingCycle === 'monthly'
+                  ? ' Billed monthly'
+                  : ` ${currency}${formatPrice(businessYearlyTotal)} billed yearly`}
+              </p>
+            </div>
+            <hr class="my-0 border-gray-200 dark:border-gray-700" />
+            <h4 class="text-lg font-semibold mt-0 mb-0 px-6 pt-6">
+              For vendors distributing at scale
+            </h4>
+            <p class="text-sm leading-relaxed mt-2 mb-0 px-6 text-gray-700 dark:text-gray-300">
+              Run your entire distribution operation on Distr: partners, license
+              templates, and a fully white-labeled experience.
+            </p>
+            <ul class="list-none px-6 pt-5 mt-0 mb-0">
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                Everything in Pro
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                Reseller / Partner Organizations
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                License Templates
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                Custom Domains (Full White Label)
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                Enterprise SSO (bring-your-own OIDC)
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                5TB container registry with FGAC
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                30-day log retention
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                Priority support
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                White Glove Onboarding
+              </li>
+            </ul>
+            <div class="p-6 pt-2 self-end w-full">
               <a
                 href="/onboarding/"
                 class="inline-block w-full px-6 py-3 bg-accent-600 hover:bg-accent-700 text-white font-medium rounded-lg text-center transition-colors no-underline">
@@ -530,49 +534,79 @@ export default function PricingCalculator() {
           </div>
 
           {/* Enterprise Plan */}
-          <div class="mt-10 min-h-[50rem] flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
-            <div class="flex justify-center items-center flex-col p-6 text-center min-h-[18rem]">
+          <div
+            class={`mt-10 flex flex-col lg:grid lg:grid-rows-subgrid lg:row-span-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 transition-all ${
+              shouldBlurEnterprise
+                ? 'opacity-50 blur-sm pointer-events-none'
+                : ''
+            }`}>
+            <div class="flex justify-start items-center flex-col px-6 pt-12 pb-6 text-center">
               <h3 class="text-xl font-semibold">Enterprise</h3>
-              <div class="text-4xl font-bold my-2">Book Demo</div>
-              <p class="mb-0 mt-2 text-sm"></p>
-            </div>
-            <hr class="mb-0 border-gray-200 dark:border-gray-700" />
-            <div class="p-6 flex-grow">
-              <h4 class="text-lg font-semibold mb-2 mt-0">
-                Entire self-hosted lifecycle
-              </h4>
-              <p class="text-sm leading-relaxed mb-6 mt-0 text-gray-700 dark:text-gray-300">
-                Distribute software, docs, support, workflows, licensing &
-                billing — all in one platform.
+              {currency === '$' ? (
+                <>
+                  <p class="mb-0 mt-1 text-sm text-gray-600 dark:text-gray-400">
+                    starting at
+                  </p>
+                  <div class="text-4xl font-bold my-2">
+                    $59,000
+                    <span class="text-base font-normal">/year</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p class="mb-0 mt-1 text-sm invisible">starting at</p>
+                  <div class="text-4xl font-bold my-2">Book Demo</div>
+                </>
+              )}
+              <p class="mb-0 mt-2 text-sm">
+                Flat rate with unlimited usage
+                <br />
+                <span class="text-xs text-gray-600 dark:text-gray-400 font-normal">
+                  Billed yearly
+                </span>
               </p>
-              <ul class="list-none pl-0 mt-4 mb-0">
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  Unlimited customer installs
-                </li>
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  Unlimited deployments
-                </li>
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  Unlimited internal users
-                </li>
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  Dedicated infrastructure + Full White Label
-                </li>
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  Reseller / Partner Organizations
-                </li>
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  Automated workflows + advanced governance
-                </li>
-                <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
-                  SLA + Dedicated Support Engineer
-                </li>
-              </ul>
-              <div class="mt-6 mb-0 p-3 bg-gray-100 dark:bg-accent-600/15 border-l-4 border-accent-600 rounded text-sm leading-snug text-gray-800 dark:text-gray-200 font-medium italic">
-                End-to-end commercial distribution suite — unified platform
-              </div>
             </div>
-            <div class="p-6 pt-0">
+            <hr class="my-0 border-gray-200 dark:border-gray-700" />
+            <h4 class="text-lg font-semibold mt-0 mb-0 px-6 pt-6">
+              Built for regulated and high-security environments
+            </h4>
+            <p class="text-sm leading-relaxed mt-2 mb-0 px-6 text-gray-700 dark:text-gray-300">
+              Serve security-first customers with dedicated infrastructure,
+              custom contracts, SLAs, and a dedicated support engineer.
+            </p>
+            <ul class="list-none px-6 pt-5 mt-0 mb-0">
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                Unlimited customers
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                Unlimited users
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                Business features available as add-ons
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                Dedicated infrastructure
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                Custom Roles
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                SAML SSO
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                Customer Billing
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                Custom log retention
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                Custom contracts & procurement support
+              </li>
+              <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
+                SLA + Dedicated Support Engineer
+              </li>
+            </ul>
+            <div class="p-6 pt-2 self-end w-full">
               <a
                 href="/contact/"
                 class="inline-block w-full px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-medium rounded-lg text-center transition-colors no-underline">
@@ -582,22 +616,22 @@ export default function PricingCalculator() {
           </div>
         </div>
 
-        {/* Self-Hosting Info Box */}
+        {/* Community Edition Info Box */}
         <div class="mt-20 w-2/3 mx-auto p-6 bg-gradient-to-r from-accent-600/10 to-accent-900/10 dark:from-accent-600/20 dark:to-accent-900/20 rounded-lg border-2 border-accent-600/30 dark:border-accent-600/50">
           <h3 class="text-2xl font-bold mb-3 text-gray-900 dark:text-white">
-            Self-Hosting Distr?
+            Just getting started? Try our Community Edition
           </h3>
           <p class="text-base leading-relaxed text-gray-700 dark:text-gray-300 mb-0">
-            Use our{' '}
+            Distr is Open Source. Self-host our free{' '}
             <a
               href="https://github.com/distr-sh/distr"
               target="_blank"
               rel="noopener noreferrer"
               class="text-accent-600 hover:text-accent-900 dark:text-accent-600 dark:hover:text-accent-200 font-medium underline">
-              community edition
+              Community Edition
             </a>{' '}
-            with unlimited users and customer organizations for free with all
-            Starter features included. For self-hosting our Pro edition, please{' '}
+            to run your first customer installs. For self-hosting a paid edition
+            with Pro or Business features, please{' '}
             <a
               href="/contact/"
               class="text-accent-600 hover:text-accent-900 dark:text-accent-600 dark:hover:text-accent-200 font-medium underline">

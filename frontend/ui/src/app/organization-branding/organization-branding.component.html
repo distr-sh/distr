@@ -14,10 +14,16 @@
           <span class="distr-label mb-1 block">Vendor navbar preview</span>
           <div
             class="flex items-center px-4 py-3 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
-            <img src="/distr-logo.svg" class="h-8 me-3" alt="Distr logo" />
+            @if (logoImageId(); as logoId) {
+              <img [src]="(logoId | secureImage | async) ?? '/distr-logo.svg'" class="h-8 me-3" alt="Vendor logo" />
+            } @else {
+              <img src="/distr-logo.svg" class="h-8 me-3" alt="Vendor logo" />
+            }
             <span class="font-display self-center text-xl font-semibold whitespace-nowrap dark:text-white">
-              Distr
-              <small class="ms-2 font-semibold text-gray-500 dark:text-gray-400">Vendor Portal</small>
+              @if (!logoImageId()) {
+                <span class="me-2">Distr</span>
+              }
+              <small class="font-semibold text-gray-500 dark:text-gray-400">Vendor Portal</small>
             </span>
           </div>
         </div>
@@ -78,7 +84,7 @@
           </div>
           @if (markdownPreviewMode) {
             <div
-              class="markdown bg-gray-50 dark:bg-gray-900 p-2 -mx-2 rounded-sm border border-gray-200 dark:border-gray-600"
+              class="markdown bg-gray-50 dark:bg-gray-900 p-2 -mx-2 min-h-48 rounded-sm border border-gray-200 dark:border-gray-600"
               [innerMarkdown]="form.value.description ?? ''"></div>
           } @else {
             <div class="w-full bg-gray-100 rounded-lg border border-gray-200 dark:bg-gray-600 dark:border-gray-600">
@@ -127,7 +133,7 @@
               <img
                 [src]="(logoId | secureImage | async) ?? '/distr-logo.svg'"
                 alt="Logo"
-                class="size-24 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 object-contain p-4" />
+                class="h-24 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 object-contain p-4" />
             } @else {
               <img
                 src="/distr-logo.svg"
@@ -154,8 +160,11 @@
             </div>
           </div>
           <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-            Shown in the navigation bar of the customer portal. SVG, PNG, JPG or GIF (recommended height 32px). If not
-            set, the Distr logo will be shown.
+            Shown in the navigation bar for users and customers of your organization
+            @if (appDomain()) {
+              , and on the login page of your custom domain
+            }
+            . SVG, PNG, JPG or GIF (recommended height 64px). If not set, the Distr logo will be shown.
           </p>
         </div>
 
@@ -165,7 +174,7 @@
             <img
               [src]="faviconImageUrl() ?? '/favicon.svg'"
               alt="Favicon"
-              class="size-24 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 object-contain p-6" />
+              class="size-24 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 object-contain p-8" />
             <div class="absolute -bottom-2 -right-0.5 space-x-1">
               <button
                 type="button"
@@ -186,8 +195,8 @@
             </div>
           </div>
           <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-            Shown in the browser tab for users and customers of your organization. PNG, GIF or ICO (recommended size
-            64px x 64px - square). If not set, the Distr favicon will be shown.
+            Shown in the browser tab for users and customers of your organization. SVG, PNG, GIF or ICO (recommended
+            size 64px x 64px - square). If not set, the Distr favicon will be shown.
           </p>
         </div>
 
