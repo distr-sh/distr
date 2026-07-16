@@ -9,6 +9,7 @@ import (
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/frontend"
 	"github.com/distr-sh/distr/internal/handlers"
+	"github.com/distr-sh/distr/internal/logstore"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/prometheus"
@@ -65,6 +66,7 @@ func NewRouter(
 	tracers *tracers.Tracers,
 	oidcer *oidc.OIDCer,
 	prometheusCollector *prometheus.DistrCollector,
+	logStore logstore.LogStore,
 ) http.Handler {
 	baseRouter := chi.NewRouter()
 	baseRouter.Use(
@@ -95,7 +97,7 @@ func NewRouter(
 			Layout:      "responsive",
 		}),
 	)
-	openapiRouter.Route("/api", ApiRouter(logger, db, dbReadonly, mailer, tracers, oidcer, prometheusCollector))
+	openapiRouter.Route("/api", ApiRouter(logger, db, dbReadonly, mailer, tracers, oidcer, prometheusCollector, logStore))
 
 	baseRouter.Mount("/internal", InternalRouter())
 	baseRouter.Mount("/status", StatusRouter())
@@ -114,6 +116,7 @@ func ApiRouter(
 	tracers *tracers.Tracers,
 	oidcer *oidc.OIDCer,
 	prometheusCollector *prometheus.DistrCollector,
+	logStore logstore.LogStore,
 ) func(r chiopenapi.Router) {
 	requestSize1MiB := chimiddleware.RequestSize(1024 * 1024)
 	requestSize10MiB := chimiddleware.RequestSize(10 * 1024 * 1024)
@@ -127,7 +130,7 @@ func ApiRouter(
 			middleware.Sentry,
 			middleware.LoggerCtxMiddleware(logger),
 			middleware.LoggingMiddleware,
-			middleware.ContextInjectorMiddleware(db, dbReadonly, mailer, oidcer, prometheusCollector),
+			middleware.ContextInjectorMiddleware(db, dbReadonly, mailer, oidcer, prometheusCollector, logStore),
 		)
 
 		r.Route("/public/v1", PublicRouter(tracers))

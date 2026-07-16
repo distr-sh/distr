@@ -21,15 +21,13 @@ distr cleanup $CLEANUP_TARGET...
 
 Available cleanup targets:
 
-| Target                      | Description                                                             |
-| --------------------------- | ----------------------------------------------------------------------- |
-| `DeploymentLogRecord`       | Deployment log entries                                                  |
-| `DeploymentTargetLogRecord` | Deployment target log entries                                           |
-| `DeploymentRevisionStatus`  | Deployment revision status entries                                      |
-| `DeploymentTargetMetrics`   | Deployment target metrics entries                                       |
-| `OIDCState`                 | Expired OIDC state entries                                              |
-| `ArtifactBlob`              | Unreferenced registry blobs from S3 (requires registry to be enabled)   |
-| `Organization`              | Permanently delete soft-deleted organizations past the retention period |
+| Target                     | Description                                                             |
+| -------------------------- | ------------------------------------------------------------------------ |
+| `DeploymentRevisionStatus` | Deployment revision status entries                                      |
+| `DeploymentTargetMetrics`  | Deployment target metrics entries                                       |
+| `OIDCState`                | Expired OIDC state entries                                              |
+| `ArtifactBlob`             | Unreferenced registry blobs from S3 (requires registry to be enabled)   |
+| `Organization`             | Permanently delete soft-deleted organizations past the retention period |
 
 For production deployments we recommend scheduling these jobs automatically, either using the built-in job scheduler for single instance deployments
 or using Kubernetes CronJobs for high-availability deployments.
@@ -50,12 +48,6 @@ CLEANUP_DEPLOYMENT_REVISION_STATUS_TIMEOUT="10m"
 # Cron interval for cleaning metrics older than METRICS_ENTRIES_MAX_AGE
 CLEANUP_DEPLOYMENT_TARGET_METRICS_CRON="0 * * * *"
 CLEANUP_DEPLOYMENT_TARGET_METRICS_TIMEOUT="10m"
-# Cron interval for cleaning deployment log entries exceeding LOG_RECORD_ENTRIES_MAX_COUNT
-CLEANUP_DEPLOYMENT_LOG_RECORD_CRON="0 * * * *"
-CLEANUP_DEPLOYMENT_LOG_RECORD_TIMEOUT="10m"
-# Cron interval for cleaning deployment target log entries
-CLEANUP_DEPLOYMENT_TARGET_LOG_RECORD_CRON="0 * * * *"
-CLEANUP_DEPLOYMENT_TARGET_LOG_RECORD_TIMEOUT="10m"
 # Cron interval for cleaning expired OIDC state entries
 CLEANUP_OIDC_STATE_CRON="0 * * * *"
 CLEANUP_OIDC_STATE_CRON_TIMEOUT="10m"
@@ -86,14 +78,6 @@ An example configuration can be found in
 
 ```yaml
 cronJobs:
-  - name: deployment-log-record-cleanup
-    labels:
-      distr.sh/job: deployment-log-record-cleanup
-    args: [cleanup, DeploymentLogRecord, --timeout, 10m]
-  - name: deployment-target-log-record-cleanup
-    labels:
-      distr.sh/job: deployment-target-log-record-cleanup
-    args: [cleanup, DeploymentTargetLogRecord, --timeout, 10m]
   - name: deployment-revision-status-cleanup
     labels:
       distr.sh/job: deployment-revision-status-cleanup
@@ -123,15 +107,13 @@ Some cleanup targets allow for additional customization using the following envi
 ```dotenv
 STATUS_ENTRIES_MAX_AGE="24h"
 METRICS_ENTRIES_MAX_AGE="24h"
-LOG_RECORD_ENTRIES_MAX_COUNT="500"
 CLEANUP_ARTIFACT_BLOB_MIN_AGE="24h"
 CLEANUP_ORGANIZATION_MIN_AGE="720h"
 ```
 
 <Aside type="caution">
-  `STATUS_ENTRIES_MAX_AGE`, `METRICS_ENTRIES_MAX_AGE` and
-  `LOG_RECORD_ENTRIES_MAX_COUNT` do not have a default value. If unset, the
-  cleanup routine for these targets will have no effect.
+  `STATUS_ENTRIES_MAX_AGE` and `METRICS_ENTRIES_MAX_AGE` do not have a default
+  value. If unset, the cleanup routine for these targets will have no effect.
 </Aside>
 
 <Aside type="caution">
@@ -161,6 +143,22 @@ Tags are still fetched on demand when a client pulls an image, but the tag list 
 </Aside>
 
 ## Removed features
+
+### Deployment & Deployment Target Log Cleanup (removed in v3.0.0)
+
+Prior to v3.0.0, deployment and deployment target logs were stored in PostgreSQL and pruned
+by the `DeploymentLogRecord` and `DeploymentTargetLogRecord` cleanup targets, keeping the
+newest `LOG_RECORD_ENTRIES_MAX_COUNT` entries per deployment resource or deployment target
+(count-based retention).
+
+Logs are now stored in [Grafana Loki](https://grafana.com/oss/loki/) and retention is
+time-based, managed entirely by the Loki configuration (the shipped default is 30 days via
+`limits_config.retention_period`). The cleanup targets, their cron environment variables
+(`CLEANUP_DEPLOYMENT_LOG_RECORD_*`, `CLEANUP_DEPLOYMENT_TARGET_LOG_RECORD_*`), and
+`LOG_RECORD_ENTRIES_MAX_COUNT` have been removed.
+
+Existing log records stored in PostgreSQL are **not** migrated: they are deleted when
+upgrading to v3.0.0.
 
 ### Deployment Target Status (removed in v2.20.0)
 

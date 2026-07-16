@@ -15,6 +15,7 @@ import (
 	"github.com/distr-sh/distr/internal/authn/authinfo"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/env"
+	"github.com/distr-sh/distr/internal/logstore"
 	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/prometheus"
 	"github.com/distr-sh/distr/internal/types"
@@ -37,6 +38,7 @@ func ContextInjectorMiddleware(
 	mailer *mailx.Mailer,
 	oidcer *oidc.OIDCer,
 	prometheusCollector *prometheus.DistrCollector,
+	logStore logstore.LogStore,
 ) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -48,6 +50,9 @@ func ContextInjectorMiddleware(
 			ctx = internalctx.WithMailer(ctx, mailer)
 			ctx = internalctx.WithPrometheusCollector(ctx, prometheusCollector)
 			ctx = internalctx.WithOIDCer(ctx, oidcer)
+			if logStore != nil {
+				ctx = internalctx.WithLogStore(ctx, logStore)
+			}
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

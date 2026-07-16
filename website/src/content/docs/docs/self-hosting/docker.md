@@ -7,7 +7,7 @@ sidebar:
 ---
 
 The easiest way to get started hosting your own Distr Hub instance is with Docker Compose.
-For this, you need a working installation of Docker, as well as the Docker Compose plugin.
+For this, you need a working installation of Docker, as well as the Docker Compose plugin **version 5.3.0 or later** (the log storage setup uses `pre_start` lifecycle hooks introduced in Compose v5.3.0, see below for an alternative if you cannot upgrade yet).
 
 First, download and unpack the Distr Docker Compose deployment manifest from the latest release:
 
@@ -25,3 +25,32 @@ docker compose up -d
 ```
 
 > If you are using the legacy standalone distribution of Docker Compose, you may need to use `docker-compose up -d` instead.
+
+## Older Docker Compose versions
+
+The shipped `docker-compose.yaml` provisions the object storage bucket for the Loki log storage with a `pre_start` lifecycle hook on the `loki` service, which requires Docker Compose ≥ 5.3.0.
+If you cannot upgrade Docker Compose yet, replace the `pre_start` hook with a one-shot service and let the `loki` service depend on its successful completion:
+
+```yaml
+services:
+  create-loki-bucket:
+    image: 'rclone/rclone:1.74.4'
+    restart: 'no'
+    environment:
+      RCLONE_CONFIG_STORAGE_TYPE: s3
+      RCLONE_CONFIG_STORAGE_PROVIDER: Other
+      RCLONE_CONFIG_STORAGE_ENDPOINT: 'http://storage:9000'
+      RCLONE_CONFIG_STORAGE_ACCESS_KEY_ID: '${REGISTRY_S3_ACCESS_KEY_ID}'
+      RCLONE_CONFIG_STORAGE_SECRET_ACCESS_KEY: '${REGISTRY_S3_SECRET_ACCESS_KEY}'
+    command: ['mkdir', 'storage:loki']
+    depends_on:
+      storage:
+        condition: service_healthy
+
+  loki:
+    # ... keep the shipped service definition, but remove the pre_start section
+    # and replace depends_on with:
+    depends_on:
+      create-loki-bucket:
+        condition: service_completed_successfully
+```

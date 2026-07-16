@@ -26,7 +26,95 @@ services:
     environment:
       RUSTFS_ACCESS_KEY: local
       RUSTFS_SECRET_KEY: local
+    healthcheck:
+      test: ['CMD', 'sh', '-c', 'curl -f http://127.0.0.1:9000/health']
+      start_interval: 1s
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Loki stores deployment and deployment target log records. It runs in monolithic
+  # (single-binary) mode and persists chunks + TSDB index in the rustfs "loki" bucket.
+  # The bucket is created by a pre_start init container (requires Docker Compose >= 5.3.0).
+  loki:
+    image: 'grafana/loki:3.7.3'
+    command: ['-config.file=/etc/loki/distr-config.yaml']
+    configs:
+      - source: loki-config
+        target: /etc/loki/distr-config.yaml
+    ports:
+      - '127.0.0.1:3100:3100'
+    volumes:
+      - 'loki:/loki'
+    depends_on:
+      storage:
+        condition: service_healthy
+    pre_start:
+      - image: 'rclone/rclone:1.74.4'
+        environment:
+          RCLONE_CONFIG_STORAGE_TYPE: s3
+          RCLONE_CONFIG_STORAGE_PROVIDER: Other
+          RCLONE_CONFIG_STORAGE_ENDPOINT: 'http://storage:9000'
+          RCLONE_CONFIG_STORAGE_ACCESS_KEY_ID: local
+          RCLONE_CONFIG_STORAGE_SECRET_ACCESS_KEY: local
+        command: ['mkdir', 'storage:loki']
+
+configs:
+  loki-config:
+    content: |
+      auth_enabled: true
+
+      server:
+        http_listen_port: 3100
+        # Long-range queries (e.g. log exports) can exceed the 30s defaults.
+        http_server_read_timeout: 10m
+        http_server_write_timeout: 10m
+
+      common:
+        path_prefix: /loki
+        replication_factor: 1
+        ring:
+          kvstore:
+            store: inmemory
+
+      schema_config:
+        configs:
+          - from: "2024-01-01"
+            store: tsdb
+            object_store: s3
+            schema: v13
+            index:
+              prefix: index_
+              period: 24h
+
+      storage_config:
+        aws:
+          endpoint: http://storage:9000
+          region: local
+          access_key_id: local
+          secret_access_key: local
+          bucketnames: loki
+          s3forcepathstyle: true
+
+      compactor:
+        retention_enabled: true
+        delete_request_store: s3
+        working_directory: /loki/compactor
+
+      limits_config:
+        retention_period: 720h
+        increment_duplicate_timestamp: true
+        allow_structured_metadata: true
+        max_global_streams_per_user: 25000
+        # Queries over the full 7d window on cold storage can exceed the 1m default.
+        query_timeout: 5m
+        # Raised from the 4/6 MB defaults so the log generator dev tool
+        # (cmd/hub/generate/logs) can bulk-ingest without excessive throttling.
+        ingestion_rate_mb: 64
+        ingestion_burst_size_mb: 128
 
 volumes:
   postgres:
   rustfs:
+  loki:

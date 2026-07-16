@@ -5,6 +5,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/distr-sh/distr/internal/db/queryable"
+	"github.com/distr-sh/distr/internal/logstore"
 	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/prometheus"
 	"github.com/go-mailx/mailx"
@@ -31,6 +32,7 @@ const (
 	ctxKeyPrometheusCollector
 	ctxKeyS3Client
 	ctxKeyReadonlyDb
+	ctxKeyLogStore
 )
 
 func GetDb(ctx context.Context) queryable.Queryable {
@@ -119,6 +121,19 @@ func WithPrometheusCollector(ctx context.Context, collector *prometheus.DistrCol
 	}
 
 	return context.WithValue(ctx, ctxKeyPrometheusCollector, collector)
+}
+
+func GetLogStore(ctx context.Context) logstore.LogStore {
+	if store, ok := ctx.Value(ctxKeyLogStore).(logstore.LogStore); ok {
+		if store != nil {
+			return store
+		}
+	}
+	panic("log store not contained in context")
+}
+
+func WithLogStore(ctx context.Context, store logstore.LogStore) context.Context {
+	return context.WithValue(ctx, ctxKeyLogStore, store)
 }
 
 func GetS3Client(ctx context.Context) *s3.Client {

@@ -105,8 +105,17 @@ hub:
       value: 'false'
     - name: METRICS_ENTRIES_MAX_AGE
       value: '1h'
-    - name: LOG_RECORD_ENTRIES_MAX_COUNT
-      value: '500'
+    # Loki stores deployment and deployment target log records (see the "loki" section below).
+    - name: LOKI_URL
+      value: http://distr-loki:3100
+    # - name: LOKI_BEARER_TOKEN
+    #   value: '...'
+    # - name: LOKI_BASIC_AUTH_USERNAME
+    #   value: '...'
+    # - name: LOKI_BASIC_AUTH_PASSWORD
+    #   value: '...'
+    # - name: LOKI_REQUEST_TIMEOUT
+    #   value: '5m'
     # - name: CLEANUP_ARTIFACT_BLOB_MIN_AGE
     #   value: '24h'
     # - name: CLEANUP_ORGANIZATION_MIN_AGE
@@ -265,14 +274,6 @@ tolerations: []
 affinity: {}
 
 cronJobs:
-  - name: deployment-log-record-cleanup
-    labels:
-      distr.sh/job: deployment-log-record-cleanup
-    args: [cleanup, DeploymentLogRecord, --timeout, 10m]
-  - name: deployment-target-log-record-cleanup
-    labels:
-      distr.sh/job: deployment-target-log-record-cleanup
-    args: [cleanup, DeploymentTargetLogRecord, --timeout, 10m]
   - name: deployment-revision-status-cleanup
     labels:
       distr.sh/job: deployment-revision-status-cleanup
@@ -333,6 +334,89 @@ rustfs:
     logStorageSize: 10Gi
   ingress:
     enabled: false
+
+# Loki stores deployment and deployment target log records (default retention: 30 days).
+# It runs in monolithic mode with a single replica and persists chunks + TSDB index in
+# an S3-compatible object storage bucket (by default the in-cluster rustfs, using a
+# dedicated "loki" bucket that is provisioned by an init container).
+# Set loki.enabled to false to use an externally managed Loki instance instead and point
+# LOKI_URL (and the optional LOKI_* auth variables) in hub.env at it.
+loki:
+  enabled: true
+  fullnameOverride: distr-loki
+  deploymentMode: Monolithic
+  loki:
+    auth_enabled: true
+    commonConfig:
+      replication_factor: 1
+    schemaConfig:
+      configs:
+        - from: '2024-01-01'
+          store: tsdb
+          object_store: s3
+          schema: v13
+          index:
+            prefix: index_
+            period: 24h
+    storage:
+      type: s3
+      bucketNames:
+        chunks: loki
+        ruler: loki
+        admin: loki
+      s3:
+        endpoint: http://distr-registry-rustfs-svc:9000
+        region: local
+        accessKeyId: distr
+        secretAccessKey: distr123 # please change this (must match rustfs.secret.rustfs)
+        s3ForcePathStyle: true
+    compactor:
+      retention_enabled: true
+      delete_request_store: s3
+    limits_config:
+      retention_period: 720h # 30 days
+      increment_duplicate_timestamp: true
+      allow_structured_metadata: true
+      max_global_streams_per_user: 25000
+      # Queries over the full 7d window on cold storage can exceed the 1m default.
+      query_timeout: 5m
+  singleBinary:
+    replicas: 1
+    persistence:
+      size: 5Gi
+    initContainers:
+      - name: create-loki-bucket
+        image: rclone/rclone:1.74.4
+        command: [rclone, mkdir, 'storage:loki']
+        env:
+          - name: RCLONE_CONFIG_STORAGE_TYPE
+            value: s3
+          - name: RCLONE_CONFIG_STORAGE_PROVIDER
+            value: Other
+          - name: RCLONE_CONFIG_STORAGE_ENDPOINT
+            value: http://distr-registry-rustfs-svc:9000
+          - name: RCLONE_CONFIG_STORAGE_ACCESS_KEY_ID
+            value: distr
+          - name: RCLONE_CONFIG_STORAGE_SECRET_ACCESS_KEY
+            value: distr123
+  gateway:
+    enabled: false
+  lokiCanary:
+    enabled: false
+  test:
+    enabled: false
+  chunksCache:
+    enabled: false
+  resultsCache:
+    enabled: false
+  memcached:
+    enabled: false
+  backend:
+    replicas: 0
+  read:
+    replicas: 0
+  write:
+    replicas: 0
 
 externalDatabase:
   uri: ''

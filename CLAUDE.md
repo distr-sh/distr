@@ -53,7 +53,8 @@ When working with the SDK:
 - **Router**: chi/v5 with middleware-based architecture
 - **Authentication**: JWT-based with support for OIDC, API keys, and agent tokens
 - **OCI Registry**: Adapted from google/go-containerregistry for serving Docker images, Helm charts, and other artifacts
-- **Storage**: S3-compatible object storage (MinIO for dev) for registry blobs
+- **Storage**: S3-compatible object storage (rustfs for dev) for registry blobs and Loki log chunks
+- **Log storage**: Deployment and deployment target log records are stored in Grafana Loki (not PostgreSQL), accessed through the `internal/logstore` package (`LogStore` interface, Loki implementation, in-memory fake for tests). The log record types (`logstore.DeploymentLogRecord`, `logstore.DeploymentTargetLogRecord`) live in this package, not in `internal/types`, since they are not database entities. The org ID is passed explicitly to every store method and maps to the Loki tenant (`X-Scope-OrgID`). Log retention is time-based and managed by the Loki config (shipped default: 30 days); read queries are limited to a subscription-dependent query window (`subscription.GetLogQueryWindow`, currently 7 days)
 - **Migrations**: SQL migrations in `internal/migrations/sql/` managed by golang-migrate
 - **Database queries**: All database interactions are in `internal/db/` with transaction support
 
@@ -63,6 +64,7 @@ Key internal packages:
 - `internal/routing/`: Route configuration and middleware setup
 - `internal/authn/`: Authentication providers (JWT, API keys, agent tokens)
 - `internal/db/`: Database queries and models
+- `internal/logstore/`: Log record storage (Loki-backed, with in-memory fake for tests)
 - `internal/registry/`: OCI registry implementation
 - `internal/middleware/`: HTTP middleware (logging, auth, Sentry, etc.)
 - `internal/svc/`: Business logic services
@@ -94,7 +96,6 @@ The database schema is managed through SQL migrations in `internal/migrations/sq
 - `deployment_targets`: Customer environments (agents)
 - `artifacts`: Software artifacts (Docker images, Helm charts)
 - `applications`: Artifact collections
-- `deployment_log_records`: Logs from deployments
 - `licensekey`: License keys that vendors can generate for its customers
 - `application_entitlements` & `artifact_entitlements`: Access entitlements for applications and artifacts
 

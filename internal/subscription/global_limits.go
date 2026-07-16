@@ -2,6 +2,7 @@ package subscription
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/license"
@@ -29,6 +30,8 @@ const (
 	MaxLogExportRowsStarter   limit.Limit = 100
 	MaxLogExportRowsPro       limit.Limit = 10_000
 	MaxLogExportRowsTrial     limit.Limit = 10_000
+
+	LogQueryWindowDefault = 7 * 24 * time.Hour
 )
 
 func GetCustomersPerOrganizationLimit(st types.SubscriptionType) limit.Limit {
@@ -97,6 +100,13 @@ func GetLogExportRowsLimit(st types.SubscriptionType) limit.Limit {
 	default:
 		panic(fmt.Sprintf("invalid subscription type: %v", st))
 	}
+}
+
+// GetLogQueryWindow returns how far back log read queries may reach. It is currently
+// fixed at 7 days for all subscription types; a planned "business" subscription type
+// will extend it up to the full Loki retention period (30 days).
+func GetLogQueryWindow(types.SubscriptionType) time.Duration {
+	return LogQueryWindowDefault
 }
 
 func GetSubscriptionLimits(st types.SubscriptionType) api.SubscriptionLimits {

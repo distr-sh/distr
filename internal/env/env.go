@@ -16,89 +16,89 @@ import (
 )
 
 var (
-	databaseUrl                             string
-	databaseMaxConns                        *int
-	databaseReadonlyUrl                     *string
-	databaseReadonlyMaxConns                *int
-	jwtSecret                               []byte
-	host                                    string
-	registryHost                            string
-	mailerConfig                            MailerConfig
-	inviteTokenValidDuration                time.Duration
-	resetTokenValidDuration                 time.Duration
-	agentTokenMaxValidDuration              time.Duration
-	agentInterval                           time.Duration
-	statusEntriesMaxAge                     *time.Duration
-	metricsEntriesMaxAge                    *time.Duration
-	logRecordEntriesMaxCount                *int
-	sentryDSN                               string
-	sentryDebug                             bool
-	sentryEnvironment                       string
-	otelAgentSampler                        *SamplerConfig
-	otelRegistrySampler                     *SamplerConfig
-	otelExporterSentryEnabled               bool
-	otelExporterOtlpEnabled                 bool
-	enableQueryLogging                      bool
-	agentDockerConfig                       []byte
-	frontendSentryDSN                       *string
-	frontendSentryTraceSampleRate           *float64
-	frontendPosthogToken                    *string
-	frontendPosthogAPIHost                  *string
-	frontendPosthogUIHost                   *string
-	userEmailVerificationRequired           bool
-	serverShutdownDelayDuration             *time.Duration
-	registration                            RegistrationMode
-	registryEnabled                         bool
-	registryS3Config                        S3Config
-	registryScratchDir                      *string
-	artifactTagsDefaultLimitPerOrg          int
-	registryUpstreamSyncCron                *string
-	registryUpstreamSyncTimeout             time.Duration
-	cleanupDeploymentRevisionStatusCron     *string
-	cleanupDeploymentRevisionStatusTimeout  time.Duration
-	cleanupDeploymentTargetMetricsCron      *string
-	cleanupDeploymentTargetMetricsTimeout   time.Duration
-	cleanupDeploymentLogRecordCron          *string
-	cleanupDeploymentLogRecordTimeout       time.Duration
-	cleanupDeploymentTargetLogRecordCron    *string
-	cleanupDeploymentTargetLogRecordTimeout time.Duration
-	cleanupOIDCStateCron                    *string
-	cleanupOIDCStateCronTimeout             time.Duration
-	cleanupArtifactBlobCron                 *string
-	cleanupArtifactBlobTimeout              time.Duration
-	cleanupArtifactBlobMinAge               time.Duration
-	cleanupOrganizationCron                 *string
-	cleanupOrganizationTimeout              time.Duration
-	cleanupOrganizationMinAge               time.Duration
-	deploymentStatusNotificationCron        *string
-	deploymentStatusNotificationTimeout     time.Duration
-	notificationEmailHourlyQuota            int
-	oidcGithubEnabled                       bool
-	oidcGithubClientID                      *string
-	oidcGithubClientSecret                  *string
-	oidcGoogleEnabled                       bool
-	oidcGoogleClientID                      *string
-	oidcGoogleClientSecret                  *string
-	oidcMicrosoftEnabled                    bool
-	oidcMicrosoftClientID                   *string
-	oidcMicrosoftClientSecret               *string
-	oidcMicrosoftTenantID                   *string
-	oidcGenericEnabled                      bool
-	oidcGenericClientID                     *string
-	oidcGenericClientSecret                 *string
-	oidcGenericIssuer                       *string
-	oidcGenericScopes                       *string
-	oidcGenericPKCEEnabled                  bool
-	wellKnownMicrosoftIdentityAssociation   []byte
-	stripeWebhookSecret                     *string
-	stripeWebhookVersionMismatchBehavior    StripeWebhookVersionMismatchBehaviorType
-	stripeAPIKey                            *string
-	licenseKeyPrivateKeyPEM                 []byte
-	licenseKey                              string
-	metricsEnabled                          bool
-	metricsAddr                             string
-	metricsBearerToken                      *string
-	supportBundleLogTailLines               int
+	databaseUrl                            string
+	databaseMaxConns                       *int
+	databaseReadonlyUrl                    *string
+	databaseReadonlyMaxConns               *int
+	jwtSecret                              []byte
+	host                                   string
+	registryHost                           string
+	mailerConfig                           MailerConfig
+	inviteTokenValidDuration               time.Duration
+	resetTokenValidDuration                time.Duration
+	agentTokenMaxValidDuration             time.Duration
+	agentInterval                          time.Duration
+	statusEntriesMaxAge                    *time.Duration
+	metricsEntriesMaxAge                   *time.Duration
+	sentryDSN                              string
+	sentryDebug                            bool
+	sentryEnvironment                      string
+	otelAgentSampler                       *SamplerConfig
+	otelRegistrySampler                    *SamplerConfig
+	otelExporterSentryEnabled              bool
+	otelExporterOtlpEnabled                bool
+	enableQueryLogging                     bool
+	agentDockerConfig                      []byte
+	frontendSentryDSN                      *string
+	frontendSentryTraceSampleRate          *float64
+	frontendPosthogToken                   *string
+	frontendPosthogAPIHost                 *string
+	frontendPosthogUIHost                  *string
+	userEmailVerificationRequired          bool
+	serverShutdownDelayDuration            *time.Duration
+	registration                           RegistrationMode
+	registryEnabled                        bool
+	registryS3Config                       S3Config
+	registryScratchDir                     *string
+	artifactTagsDefaultLimitPerOrg         int
+	registryUpstreamSyncCron               *string
+	registryUpstreamSyncTimeout            time.Duration
+	cleanupDeploymentRevisionStatusCron    *string
+	cleanupDeploymentRevisionStatusTimeout time.Duration
+	cleanupDeploymentTargetMetricsCron     *string
+	cleanupDeploymentTargetMetricsTimeout  time.Duration
+	cleanupOIDCStateCron                   *string
+	cleanupOIDCStateCronTimeout            time.Duration
+	cleanupArtifactBlobCron                *string
+	cleanupArtifactBlobTimeout             time.Duration
+	cleanupArtifactBlobMinAge              time.Duration
+	cleanupOrganizationCron                *string
+	cleanupOrganizationTimeout             time.Duration
+	cleanupOrganizationMinAge              time.Duration
+	deploymentStatusNotificationCron       *string
+	deploymentStatusNotificationTimeout    time.Duration
+	notificationEmailHourlyQuota           int
+	oidcGithubEnabled                      bool
+	oidcGithubClientID                     *string
+	oidcGithubClientSecret                 *string
+	oidcGoogleEnabled                      bool
+	oidcGoogleClientID                     *string
+	oidcGoogleClientSecret                 *string
+	oidcMicrosoftEnabled                   bool
+	oidcMicrosoftClientID                  *string
+	oidcMicrosoftClientSecret              *string
+	oidcMicrosoftTenantID                  *string
+	oidcGenericEnabled                     bool
+	oidcGenericClientID                    *string
+	oidcGenericClientSecret                *string
+	oidcGenericIssuer                      *string
+	oidcGenericScopes                      *string
+	oidcGenericPKCEEnabled                 bool
+	wellKnownMicrosoftIdentityAssociation  []byte
+	stripeWebhookSecret                    *string
+	stripeWebhookVersionMismatchBehavior   StripeWebhookVersionMismatchBehaviorType
+	stripeAPIKey                           *string
+	licenseKeyPrivateKeyPEM                []byte
+	licenseKey                             string
+	metricsEnabled                         bool
+	metricsAddr                            string
+	metricsBearerToken                     *string
+	supportBundleLogTailLines              int
+	lokiURL                                string
+	lokiBearerToken                        *string
+	lokiBasicAuthUsername                  *string
+	lokiBasicAuthPassword                  *string
+	lokiRequestTimeout                     time.Duration
 )
 
 func Initialize() {
@@ -122,7 +122,6 @@ func Initialize() {
 	agentInterval = envutil.GetEnvParsedOrDefault("AGENT_INTERVAL", envparse.PositiveDuration, 5*time.Second)
 	statusEntriesMaxAge = envutil.GetEnvParsedOrNil("STATUS_ENTRIES_MAX_AGE", envparse.PositiveDuration)
 	metricsEntriesMaxAge = envutil.GetEnvParsedOrNil("METRICS_ENTRIES_MAX_AGE", envparse.PositiveDuration)
-	logRecordEntriesMaxCount = envutil.GetEnvParsedOrNil("LOG_RECORD_ENTRIES_MAX_COUNT", envparse.NonNegativeNumber)
 	enableQueryLogging = envutil.GetEnvParsedOrDefault("ENABLE_QUERY_LOGGING", strconv.ParseBool, false)
 	userEmailVerificationRequired = envutil.GetEnvParsedOrDefault(
 		"USER_EMAIL_VERIFICATION_REQUIRED", strconv.ParseBool, true,
@@ -214,12 +213,6 @@ func Initialize() {
 	cleanupDeploymentTargetMetricsCron = envutil.GetEnvOrNil("CLEANUP_DEPLOYMENT_TARGET_METRICS_CRON")
 	cleanupDeploymentTargetMetricsTimeout = envutil.GetEnvParsedOrDefault("CLEANUP_DEPLOYMENT_TARGET_METRICS_TIMEOUT",
 		envparse.PositiveDuration, 0)
-	cleanupDeploymentLogRecordCron = envutil.GetEnvOrNil("CLEANUP_DEPLOYMENT_LOG_RECORD_CRON")
-	cleanupDeploymentLogRecordTimeout = envutil.GetEnvParsedOrDefault("CLEANUP_DEPLOYMENT_LOG_RECORD_TIMEOUT",
-		envparse.PositiveDuration, 0)
-	cleanupDeploymentTargetLogRecordCron = envutil.GetEnvOrNil("CLEANUP_DEPLOYMENT_TARGET_LOG_RECORD_CRON")
-	cleanupDeploymentTargetLogRecordTimeout = envutil.GetEnvParsedOrDefault("CLEANUP_DEPLOYMENT_TARGET_LOG_RECORD_TIMEOUT",
-		envparse.PositiveDuration, 0)
 	cleanupOIDCStateCron = envutil.GetEnvOrNil("CLEANUP_OIDC_STATE_CRON")
 	cleanupOIDCStateCronTimeout = envutil.GetEnvParsedOrDefault("CLEANUP_OIDC_STATE_CRON_TIMEOUT",
 		envparse.PositiveDuration, 0)
@@ -285,6 +278,12 @@ func Initialize() {
 	supportBundleLogTailLines = envutil.GetEnvParsedOrDefault(
 		"SUPPORT_BUNDLE_LOG_TAIL_LINES", envparse.PositiveNumber, 1000,
 	)
+
+	lokiURL = envutil.RequireEnv("LOKI_URL")
+	lokiBearerToken = envutil.GetEnvOrNil("LOKI_BEARER_TOKEN")
+	lokiBasicAuthUsername = envutil.GetEnvOrNil("LOKI_BASIC_AUTH_USERNAME")
+	lokiBasicAuthPassword = envutil.GetEnvOrNil("LOKI_BASIC_AUTH_PASSWORD")
+	lokiRequestTimeout = envutil.GetEnvParsedOrDefault("LOKI_REQUEST_TIMEOUT", envparse.PositiveDuration, 5*time.Minute)
 }
 
 func DatabaseUrl() string {
@@ -362,10 +361,6 @@ func StatusEntriesMaxAge() *time.Duration {
 
 func MetricsEntriesMaxAge() *time.Duration {
 	return metricsEntriesMaxAge
-}
-
-func LogRecordEntriesMaxCount() *int {
-	return logRecordEntriesMaxCount
 }
 
 func AgentDockerConfig() []byte {
@@ -458,22 +453,6 @@ func CleanupDeploymentTargetMetricsCron() *string {
 
 func CleanupDeploymentTargetMetricsTimeout() time.Duration {
 	return cleanupDeploymentTargetMetricsTimeout
-}
-
-func CleanupDeploymentLogRecordCron() *string {
-	return cleanupDeploymentLogRecordCron
-}
-
-func CleanupDeploymentLogRecordTimeout() time.Duration {
-	return cleanupDeploymentLogRecordTimeout
-}
-
-func CleanupDeploymentTargetLogRecordCron() *string {
-	return cleanupDeploymentTargetLogRecordCron
-}
-
-func CleanupDeploymentTargetLogRecordTimeout() time.Duration {
-	return cleanupDeploymentTargetLogRecordTimeout
 }
 
 func DeploymentStatusNotificationCron() *string {
@@ -624,4 +603,26 @@ func MetricsBearerToken() *string {
 // collected by the support bundle collect script.
 func SupportBundleLogTailLines() int {
 	return supportBundleLogTailLines
+}
+
+// LokiURL is the base URL of the Loki instance storing deployment and deployment
+// target log records, e.g. "http://loki:3100".
+func LokiURL() string {
+	return lokiURL
+}
+
+func LokiBearerToken() *string {
+	return lokiBearerToken
+}
+
+func LokiBasicAuthUsername() *string {
+	return lokiBasicAuthUsername
+}
+
+func LokiBasicAuthPassword() *string {
+	return lokiBasicAuthPassword
+}
+
+func LokiRequestTimeout() time.Duration {
+	return lokiRequestTimeout
 }

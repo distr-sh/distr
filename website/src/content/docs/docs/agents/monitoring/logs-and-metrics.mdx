@@ -60,6 +60,13 @@ Once open, use the breadcrumb dropdowns to switch between deployment targets and
 
 The log viewer auto-refreshes every 10 seconds. Use the **From** and **To** fields to view a specific time window, or the **Filter** field to search with plain text or a regular expression. You can pin any log entry by clicking the thumbtack icon on hover. The row stays sticky while you scroll, making it easy to compare entries.
 
+<Aside type="note" title="Log availability">
+  Log retention is time-based: the log viewer and log export can access logs
+  from the last **7 days**. In self-hosted installations, logs are stored in
+  Grafana Loki with a default retention period of 30 days, which can be
+  adjusted in the Loki configuration.
+</Aside>
+
 ### Agent Logs
 
 Agent logs show the raw output from the Distr agent process itself: connection events, deployment reconciliation cycles, errors, and status reports. These logs belong to the deployment target, not to any individual deployment, and are always available without any setup.
@@ -91,6 +98,8 @@ The view dropdown separates container resources into **active** and **archived**
 
 - **Active**: The resource has produced logs in one of the five most recent deployment revisions.
 - **Archived**: The resource only has logs from older revisions, typically because a container was renamed or removed during an update.
+
+Only resources with logs in the last 7 days are shown; resources whose logs are all older than that disappear from the dropdown entirely.
 
 Click **Show archived** at the bottom of the dropdown to reveal archived resources.
 

@@ -14,18 +14,39 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/handlerutil"
+	"github.com/distr-sh/distr/internal/logstore"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"go.uber.org/zap"
 )
+
+const latestRevisionsForActiveResources = 5
 
 func getDeploymentLogsResourcesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		deployment := internalctx.GetDeployment(ctx)
-		if active, archived, err := db.GetDeploymentLogRecordResources(ctx, deployment.ID); err != nil {
+		authInfo := auth.Authentication.Require(ctx)
+		org := authInfo.CurrentOrg()
+
+		revisionIDs, err := db.GetLatestDeploymentRevisionIDs(ctx, deployment.ID, latestRevisionsForActiveResources)
+		if err != nil {
+			internalctx.GetLogger(ctx).Error("failed to get deployment revisions", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		logStore := internalctx.GetLogStore(ctx)
+		active, archived, err := logStore.GetDeploymentLogRecordResources(ctx, org.ID, logstore.DeploymentLogResourcesQuery{
+			DeploymentID:      deployment.ID,
+			LatestRevisionIDs: revisionIDs,
+			Start:             time.Now().Add(-subscription.GetLogQueryWindow(org.SubscriptionType)),
+		})
+		if err != nil {
 			internalctx.GetLogger(ctx).Error("failed to get log records", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -54,8 +75,6 @@ func exportDeploymentLogsHandler() http.HandlerFunc {
 
 		filename := fmt.Sprintf("%s_%s.log", time.Now().Format("2006-01-02"), strings.Join(resources, "_"))
 
-		SetFileDownloadHeaders(w, filename)
-
 		var secrets []types.SecretWithUpdatedBy
 		if dt, err := db.GetDeploymentTargetForDeploymentID(ctx, deployment.ID); err != nil {
 			internalctx.GetLogger(ctx).Error("failed to get deployment target", zap.Error(err))
@@ -71,21 +90,41 @@ func exportDeploymentLogsHandler() http.HandlerFunc {
 
 		replacer := secretReplacer(secrets)
 
-		err := db.GetDeploymentLogRecordsForExport(
-			ctx, deployment.ID, resources, limit,
-			func(record types.DeploymentLogRecord) error {
-				_, err := fmt.Fprintf(w, "[%s] [%s] %s\n",
-					record.Timestamp.Format(time.RFC3339),
-					record.Severity,
-					replacer.Replace(record.Body))
-				return err
-			},
-		)
-		if err != nil {
-			log.Error("failed to export log records", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			// Note: If headers were already sent, we can't send error response
-			return
+		logStore := internalctx.GetLogStore(ctx)
+		records := logStore.QueryDeploymentLogRecords(ctx, org.ID, logstore.DeploymentLogQuery{
+			DeploymentID: deployment.ID,
+			Resources:    resources,
+			Start:        time.Now().Add(-subscription.GetLogQueryWindow(org.SubscriptionType)),
+			Limit:        limit,
+			Direction:    types.OrderDirectionDesc,
+		})
+		// The download headers are only set right before the first write, so an error
+		// response can still be sent as long as nothing has been written yet.
+		written := false
+		for record, err := range records {
+			if err != nil {
+				log.Error("failed to export log records", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				if !written {
+					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				}
+				return
+			}
+			if !written {
+				SetFileDownloadHeaders(w, filename)
+				written = true
+			}
+			_, err := fmt.Fprintf(w, "[%s] [%s] %s\n",
+				record.Timestamp.Format(time.RFC3339),
+				record.Severity,
+				replacer.Replace(record.Body))
+			if err != nil {
+				log.Error("failed to write log records to response writer", zap.Error(err))
+				return
+			}
+		}
+		if !written {
+			SetFileDownloadHeaders(w, filename)
 		}
 	}
 }
@@ -125,6 +164,20 @@ func getDeploymentLogsHandler() http.HandlerFunc {
 		}
 		order := types.OrderDirection(r.FormValue("order"))
 
+		authInfo := auth.Authentication.Require(ctx)
+		org := authInfo.CurrentOrg()
+		// The effective direction must be resolved from the client-supplied "after"
+		// before it is defaulted to the query window start below.
+		direction := types.EffectiveOrderDirection(order, !after.IsZero())
+		after, err = resolveLogQueryStart(org.SubscriptionType, after)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if before.IsZero() {
+			before = time.Now()
+		}
+
 		var secrets []types.SecretWithUpdatedBy
 		if dt, err := db.GetDeploymentTargetForDeploymentID(ctx, deployment.ID); err != nil {
 			internalctx.GetLogger(ctx).Error("failed to get deployment target", zap.Error(err))
@@ -138,9 +191,16 @@ func getDeploymentLogsHandler() http.HandlerFunc {
 			return
 		}
 
-		if records, err := db.GetDeploymentLogRecords(
-			ctx, deployment.ID, resources, limit, before, after, filter, order,
-		); err != nil {
+		logStore := internalctx.GetLogStore(ctx)
+		if records, err := util.SeqCollect(logStore.QueryDeploymentLogRecords(ctx, org.ID, logstore.DeploymentLogQuery{
+			DeploymentID: deployment.ID,
+			Resources:    resources,
+			Start:        after,
+			End:          before,
+			Filter:       filter,
+			Limit:        limit,
+			Direction:    direction,
+		})); err != nil {
 			if errors.Is(err, apierrors.ErrBadRequest) {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
