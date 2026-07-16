@@ -246,7 +246,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   ],
                 },
                 {
-                  label: 'Zarf',
+                  label: 'Air-Gapped Packaging',
                   items: [
                     {
                       label: 'Air-Gapped Deployments with Zarf',
