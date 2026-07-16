@@ -24,6 +24,16 @@ services:
       retries: 6
       start_period: 30s
 
+  # The hub runs as a nonroot user (UID 65532), but a freshly created named volume
+  # is owned by root, so this one-shot service fixes ownership of the scratch volume
+  # before the hub starts.
+  scratch-init:
+    image: 'busybox:1.38.0'
+    command: ['chown', '65532:65532', '/scratch']
+    volumes:
+      - 'scratch:/scratch'
+    logging: *default-logging
+
   hub:
     image: ghcr.io/distr-sh/distr-ce:2.26.0 # x-release-please-version
     depends_on:
@@ -32,11 +42,17 @@ services:
       # Remove when using an external S3 provider
       storage:
         condition: service_healthy
+      scratch-init:
+        condition: service_completed_successfully
     env_file:
       - .env
     ports:
       - '8080:8080'
       - '8585:8585'
+    # The scratch volume backs REGISTRY_SCRATCH_DIR, where the OCI registry buffers
+    # request bodies to temp files instead of holding them in memory.
+    volumes:
+      - 'scratch:/scratch'
     restart: always
     logging: *default-logging
 
@@ -64,3 +80,4 @@ services:
 volumes:
   postgres:
   rustfs:
+  scratch:
