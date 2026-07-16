@@ -1,5 +1,346 @@
 ---
+type Cell = '✓' | '—' | string;
 
+type Row = {
+  label: string;
+  community: Cell;
+  pro: Cell;
+  business: Cell;
+  enterprise: Cell;
+  indent?: boolean;
+};
+
+type Section = {
+  title: string;
+  rows: Row[];
+};
+
+const sections: Section[] = [
+  {
+    title: 'Limits',
+    rows: [
+      {
+        label: 'Self-Hosting or Cloud',
+        community: 'Self-Hosting',
+        pro: '✓',
+        business: '✓',
+        enterprise: '✓',
+      },
+      {
+        label: 'Max Customers',
+        community: 'Unlimited',
+        pro: '100',
+        business: 'Unlimited',
+        enterprise: 'Unlimited',
+      },
+      {
+        label: 'Max Deployments per Customer',
+        community: '1',
+        pro: '3',
+        business: '3',
+        enterprise: 'Unlimited',
+      },
+      {
+        label: 'Max Users per Customer',
+        community: '1',
+        pro: '10',
+        business: '25',
+        enterprise: 'Unlimited',
+      },
+      {
+        label: 'Registry storage',
+        community: 'Self-hosted',
+        pro: 'Up to 1 TB',
+        business: 'Up to 5 TB',
+        enterprise: 'Custom',
+      },
+    ],
+  },
+  {
+    title: 'Licensing & Deployment',
+    rows: [
+      {
+        label: 'Deployment Agents (Docker / K8s)',
+        community: '✓',
+        pro: '✓',
+        business: '✓',
+        enterprise: '✓',
+      },
+      {
+        label: 'Air-gapped Deployments (Zarf)',
+        community: '✓',
+        pro: '✓',
+        business: '✓',
+        enterprise: '✓',
+      },
+      {
+        label: 'Deployment History & Rollbacks',
+        community: '✓',
+        pro: '✓',
+        business: '✓',
+        enterprise: '✓',
+      },
+      {
+        label: 'GitHub Release Automation',
+        community: '✓',
+        pro: '✓',
+        business: '✓',
+        enterprise: '✓',
+      },
+      {
+        label: 'Pre/Post Install Scripts',
+        community: '✓',
+        pro: '✓',
+        business: '✓',
+        enterprise: '✓',
+      },
+      {
+        label: 'Customer Portal',
+        community: '✓',
+        pro: '✓',
+        business: '✓',
+        enterprise: '✓',
+      },
+      {
+        label: 'License Management',
+        community: '—',
+        pro: '✓',
+        business: '✓',
+        enterprise: '✓',
+      },
+      {
+        label: 'Application & Artifact Entitlements',
+        community: '—',
+        pro: '✓',
+        business: '✓',
+        enterprise: '✓',
+        indent: true,
+      },
+      {
+        label: 'License Keys (signed JWT tokens)',
+        community: '—',
+        pro: '✓',
+        business: '✓',
+        enterprise: '✓',
+        indent: true,
+      },
+      {
+        label: 'License Templates',
+        community: '—',
+        pro: '—',
+        business: '✓',
+        enterprise: '✓',
+      },
+      {
+        label: 'Reseller / Partner Organizations',
+        community: '—',
+        pro: '—',
+        business: '✓',
+        enterprise: '✓',
+      },
+      {
+        label: 'Customer Billing',
+        community: '—',
+        pro: '—',
+        business: '—',
+        enterprise: '✓',
+      },
+    ],
+  },
+  {
+    title: 'Security & Governance',
+    rows: [
+      {
+        label: 'Login with Google, GitHub & Microsoft',
+        community: '✓',
+        pro: '✓',
+        business: '✓',
+        enterprise: '✓',
+      },
+      {
+        label: 'Enterprise SSO: Bring-your-own OIDC (vendors & customers)',
+        community: '—',
+        pro: '—',
+        business: '✓',
+        enterprise: '✓',
+      },
+      {
+        label: 'SAML SSO',
+        community: '—',
+        pro: '—',
+        business: '—',
+        enterprise: '✓',
+      },
+      {
+        label: 'Role-based Access Controls',
+        community: '—',
+        pro: '✓',
+        business: '✓',
+        enterprise: '✓',
+      },
+      {
+        label: 'Custom Roles',
+        community: '—',
+        pro: '—',
+        business: '—',
+        enterprise: '✓',
+      },
+    ],
+  },
+  {
+    title: 'Observability',
+    rows: [
+      {
+        label: 'Live Container Metrics',
+        community: '✓',
+        pro: '✓',
+        business: '✓',
+        enterprise: '✓',
+      },
+      {
+        label: 'Deployment Status Metrics',
+        community: '✓',
+        pro: '✓',
+        business: '✓',
+        enterprise: '✓',
+      },
+      {
+        label: 'Log Retention',
+        community: 'Self-managed',
+        pro: '7 days',
+        business: '30 days',
+        enterprise: 'Custom',
+      },
+      {
+        label: 'Alerts',
+        community: '—',
+        pro: '✓',
+        business: '✓',
+        enterprise: '✓',
+      },
+      {
+        label: 'Support Bundles (Remote Troubleshooting)',
+        community: '—',
+        pro: '✓',
+        business: '✓',
+        enterprise: '✓',
+      },
+    ],
+  },
+  {
+    title: 'White Label',
+    rows: [
+      {
+        label: 'Custom Branding for your Customer Portal',
+        community: '—',
+        pro: '✓',
+        business: '✓',
+        enterprise: '✓',
+      },
+      {
+        label: 'Custom Domains (Full White Label)',
+        community: '—',
+        pro: '—',
+        business: '✓',
+        enterprise: '✓',
+      },
+      {
+        label: 'White-label Emails (Custom Sender Domain)',
+        community: '—',
+        pro: '—',
+        business: '✓',
+        enterprise: '✓',
+      },
+    ],
+  },
+  {
+    title: 'Support / Operations',
+    rows: [
+      {
+        label: 'Support Type',
+        community: 'Community (GitHub)',
+        pro: 'Email + Slack',
+        business: 'Priority Email + Slack',
+        enterprise: 'Email + Slack + Phone',
+      },
+      {
+        label: 'Onboarding Support',
+        community: '—',
+        pro: 'Free Onboarding Call',
+        business: 'White Glove Onboarding',
+        enterprise: 'White Glove Onboarding',
+      },
+      {
+        label: 'Dedicated Support Engineer',
+        community: '—',
+        pro: '—',
+        business: '—',
+        enterprise: '✓',
+      },
+      {
+        label: 'SLA',
+        community: '—',
+        pro: '—',
+        business: '—',
+        enterprise: '✓',
+      },
+      {
+        label: 'Custom Contracts & Procurement Support',
+        community: '—',
+        pro: '—',
+        business: '—',
+        enterprise: '✓',
+      },
+      {
+        label: 'Dedicated Infrastructure',
+        community: '—',
+        pro: '—',
+        business: '—',
+        enterprise: '✓',
+      },
+      {
+        label: 'Workflows / Automation',
+        community: '—',
+        pro: '—',
+        business: '—',
+        enterprise: '✓',
+      },
+      {
+        label: 'Documentation Pages & Wiki',
+        community: '—',
+        pro: '—',
+        business: '—',
+        enterprise: '✓',
+      },
+      {
+        label: 'Ticket System',
+        community: '—',
+        pro: '—',
+        business: '—',
+        enterprise: '✓',
+      },
+      {
+        label: 'Public Registry',
+        community: '—',
+        pro: '—',
+        business: '—',
+        enterprise: '✓',
+      },
+      {
+        label: 'CVE Scanning',
+        community: '—',
+        pro: '—',
+        business: '—',
+        enterprise: '✓',
+      },
+    ],
+  },
+];
+
+const cellClass = (value: Cell) =>
+  `p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800${
+    value === '✓' ? ' text-green-600 font-bold text-lg' : ''
+  }`;
 ---
 
 <section class="py-8 md:py-16">
@@ -7,735 +348,84 @@
     <div class="mt-16 mx-auto">
       <h2 class="text-center mb-8 text-3xl font-bold">Compare Features</h2>
       <div
-        class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl shadow-md">
+        class="overflow-x-auto lg:overflow-visible bg-white dark:bg-gray-900 rounded-xl shadow-md">
         <table class="w-full border-collapse table-fixed">
           <colgroup>
-            <col style="width: 25%;" />
-            <col style="width: 25%;" />
-            <col style="width: 25%;" />
-            <col style="width: 25%;" />
+            <col style="width: 24%;" />
+            <col style="width: 19%;" />
+            <col style="width: 19%;" />
+            <col style="width: 19%;" />
+            <col style="width: 19%;" />
           </colgroup>
           <thead>
             <tr>
               <th
-                class="bg-white dark:bg-gray-900 font-semibold text-center p-5 border-b border-gray-200 dark:border-gray-700 text-base">
+                class="plan-header rounded-tl-xl bg-white dark:bg-gray-900 font-semibold text-center p-5 border-b border-gray-200 dark:border-gray-700 text-base">
               </th>
               <th
-                class="bg-white dark:bg-gray-900 font-semibold text-center p-5 border-b border-gray-200 dark:border-gray-700 text-base relative">
-                Starter
+                class="plan-header bg-white dark:bg-gray-900 font-semibold text-center p-5 border-b border-gray-200 dark:border-gray-700 text-base">
+                Open Source
+                <br />
+                (Community)
                 <div
                   class="absolute bottom-0 left-[15%] right-[15%] h-[3px] rounded-full bg-gray-500">
                 </div>
               </th>
               <th
-                class="bg-white dark:bg-gray-900 font-semibold text-center p-5 border-b border-gray-200 dark:border-gray-700 text-base relative">
+                class="plan-header bg-white dark:bg-gray-900 font-semibold text-center p-5 border-b border-gray-200 dark:border-gray-700 text-base">
                 Pro
                 <div
-                  class="absolute bottom-0 left-[15%] right-[15%] h-[3px] rounded-full bg-[#0ea5e9]">
+                  class="absolute bottom-0 left-[15%] right-[15%] h-[3px] rounded-full bg-[#10b981]">
                 </div>
               </th>
               <th
-                class="bg-white dark:bg-gray-900 font-semibold text-center p-5 border-b border-gray-200 dark:border-gray-700 text-base relative">
+                class="plan-header bg-white dark:bg-gray-900 font-semibold text-center p-5 border-b border-gray-200 dark:border-gray-700 text-base">
+                Business
+                <div
+                  class="absolute bottom-0 left-[15%] right-[15%] h-[3px] rounded-full bg-accent-600">
+                </div>
+              </th>
+              <th
+                class="plan-header rounded-tr-xl bg-white dark:bg-gray-900 font-semibold text-center p-5 border-b border-gray-200 dark:border-gray-700 text-base">
                 Enterprise
                 <div
-                  class="absolute bottom-0 left-[15%] right-[15%] h-[3px] rounded-full bg-[#10b981]">
+                  class="absolute bottom-0 left-[15%] right-[15%] h-[3px] rounded-full bg-[#8b5cf6]">
                 </div>
               </th>
             </tr>
           </thead>
           <tbody>
-            <tr
-              class="bg-gray-100 dark:bg-gray-950 border-t-2 border-b-2 border-gray-300 dark:border-gray-700">
-              <td
-                colspan="4"
-                class="font-bold text-left p-4 text-gray-900 dark:text-gray-200 uppercase tracking-wider text-sm">
-                Limits
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Max Customers
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                3
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                100
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                Unlimited
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Max Deployments per Customer
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                1
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                3
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                Unlimited
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Max Users per Customer
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                1
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                10
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                Unlimited
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Registry storage
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                Up to 100 GB
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                Up to 1 TB
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                Unlimited
-              </td>
-            </tr>
-
-            <tr
-              class="bg-gray-100 dark:bg-gray-950 border-t-2 border-b-2 border-gray-300 dark:border-gray-700">
-              <td
-                colspan="4"
-                class="font-bold text-left p-4 text-gray-900 dark:text-gray-200 uppercase tracking-wider text-sm">
-                LICENSING & DEPLOYMENT
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Deployment Agents (Docker / K8s)
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                GitHub Release Automation
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Pre/Post Install Scripts
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Customer Portal with installation instructions
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                License Management
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800 pl-7 text-gray-500 dark:text-gray-400">
-                Application &amp; Artifact Entitlements
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800 pl-7 text-gray-500 dark:text-gray-400">
-                License Keys (signed JWT tokens)
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Deployment Alerts
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                License SDK
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Dynamic License Management
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Customer Billing
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Reseller / Partner Organizations
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-
-            <tr
-              class="bg-gray-100 dark:bg-gray-950 border-t-2 border-b-2 border-gray-300 dark:border-gray-700">
-              <td
-                colspan="4"
-                class="font-bold text-left p-4 text-gray-900 dark:text-gray-200 uppercase tracking-wider text-sm">
-                SECURITY & GOVERNANCE
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Single Sign-On (SSO)
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Role-based Access Controls
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Custom Roles
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-
-            <tr
-              class="bg-gray-100 dark:bg-gray-950 border-t-2 border-b-2 border-gray-300 dark:border-gray-700">
-              <td
-                colspan="4"
-                class="font-bold text-left p-4 text-gray-900 dark:text-gray-200 uppercase tracking-wider text-sm">
-                Observability
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Live Container Metrics
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Deployment Status Metrics
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Container Logs
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                100 rows
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                10.000 rows
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                Unlimited
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Alerts
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Prometheus Integration
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-
-            <tr
-              class="bg-gray-100 dark:bg-gray-950 border-t-2 border-b-2 border-gray-300 dark:border-gray-700">
-              <td
-                colspan="4"
-                class="font-bold text-left p-4 text-gray-900 dark:text-gray-200 uppercase tracking-wider text-sm">
-                SUPPORT / OPERATIONS
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Support Type
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                Email
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                Email + Slack
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                Email + Slack + Phone
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Onboarding Support
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                Free Onboarding Call
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                White Glove Onboarding
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                White Glove Onboarding
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Dedicated Support Engineer
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                SLA
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Self-Hosting or Cloud
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Dedicated Infrastructure
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                White Label
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Workflows / Automation
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Documentation Pages & Wiki
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Ticket System
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800">
-                Public Registry
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-100 dark:border-gray-800 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-3.5 text-left font-medium text-sm border-b border-gray-200 dark:border-gray-700">
-                CVE Scanning
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-200 dark:border-gray-700">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-200 dark:border-gray-700">
-                —
-              </td>
-              <td
-                class="p-3.5 text-center align-middle text-sm border-b border-gray-200 dark:border-gray-700 text-green-600 font-bold text-lg">
-                ✓
-              </td>
-            </tr>
+            {
+              sections.map(section => (
+                <>
+                  <tr class="section-row bg-gray-100 dark:bg-gray-950 border-t-2 border-b-2 border-gray-300 dark:border-gray-700">
+                    <td
+                      colspan="5"
+                      class="font-bold text-left p-4 text-gray-900 dark:text-gray-200 uppercase tracking-wider text-sm">
+                      {section.title}
+                    </td>
+                  </tr>
+                  {section.rows.map(row => (
+                    <tr>
+                      <td
+                        class={`p-3.5 text-left font-medium text-sm border-b border-gray-100 dark:border-gray-800${
+                          row.indent
+                            ? ' pl-7 text-gray-500 dark:text-gray-400'
+                            : ''
+                        }`}>
+                        {row.label}
+                      </td>
+                      <td class={cellClass(row.community)}>{row.community}</td>
+                      <td class={cellClass(row.pro)}>{row.pro}</td>
+                      <td class={cellClass(row.business)}>{row.business}</td>
+                      <td class={cellClass(row.enterprise)}>
+                        {row.enterprise}
+                      </td>
+                    </tr>
+                  ))}
+                </>
+              ))
+            }
           </tbody>
         </table>
       </div>
@@ -744,6 +434,22 @@
 </section>
 
 <style>
+  /* Starlight styles content tables as display:block with overflow:auto,
+     which would trap the sticky header inside the table. Horizontal
+     scrolling on small screens is handled by the wrapper div instead. */
+  table {
+    display: table;
+    overflow: visible;
+  }
+
+  /* Keep the plan names visible while scrolling through the table.
+     Offset by the site nav height so the row sticks below the fixed header. */
+  th.plan-header {
+    position: sticky;
+    top: var(--sl-nav-height, 0px);
+    z-index: 2;
+  }
+
   /* Mobile responsive adjustments */
   @media (max-width: 768px) {
     th:first-child,
@@ -755,25 +461,26 @@
       box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
     }
 
-    :global(.dark) th:first-child,
-    :global(.dark) td:first-child {
+    :global([data-theme='dark']) th:first-child,
+    :global([data-theme='dark']) td:first-child {
       background-color: rgb(17, 24, 39);
+      color: white;
     }
 
-    tr:where(.bg-gray-100) td:first-child {
-      background-color: rgb(243, 244, 246) !important;
+    tr.section-row td:first-child {
+      background-color: rgb(243, 244, 246);
     }
 
-    :global(.dark) tr:where(.bg-gray-950) td:first-child {
-      background-color: rgb(3, 7, 18) !important;
+    :global([data-theme='dark']) tr.section-row td:first-child {
+      background-color: rgb(3, 7, 18);
     }
   }
 
-  tr:not(:where(.bg-gray-100, .bg-gray-950)):hover {
+  tr:not(.section-row):hover {
     background-color: rgba(0, 0, 0, 0.01);
   }
 
-  :global(.dark) tr:not(:where(.bg-gray-100, .bg-gray-950)):hover {
+  :global([data-theme='dark']) tr:not(.section-row):hover {
     background-color: rgba(255, 255, 255, 0.03);
   }
 </style>

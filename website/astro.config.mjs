@@ -246,6 +246,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   ],
                 },
                 {
+                  label: 'Air-Gapped Packaging',
+                  items: [
+                    {
+                      label: 'Air-Gapped Deployments with Zarf',
+                      link: '/docs/integrations/zarf/',
+                    },
+                  ],
+                },
+                {
                   label: 'API & SDK',
                   items: [
                     {label: 'Distr API', link: '/docs/integrations/api/'},
