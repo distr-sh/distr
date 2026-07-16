@@ -158,7 +158,7 @@ const sections: Section[] = [
         enterprise: '✓',
       },
       {
-        label: 'Enterprise SSO — Bring-your-own OIDC (vendors & customers)',
+        label: 'Enterprise SSO: Bring-your-own OIDC (vendors & customers)',
         community: '—',
         pro: '—',
         business: '✓',
@@ -348,7 +348,7 @@ const cellClass = (value: Cell) =>
     <div class="mt-16 mx-auto">
       <h2 class="text-center mb-8 text-3xl font-bold">Compare Features</h2>
       <div
-        class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl shadow-md">
+        class="overflow-x-auto lg:overflow-visible bg-white dark:bg-gray-900 rounded-xl shadow-md">
         <table class="w-full border-collapse table-fixed">
           <colgroup>
             <col style="width: 24%;" />
@@ -360,10 +360,10 @@ const cellClass = (value: Cell) =>
           <thead>
             <tr>
               <th
-                class="bg-white dark:bg-gray-900 font-semibold text-center p-5 border-b border-gray-200 dark:border-gray-700 text-base">
+                class="plan-header rounded-tl-xl bg-white dark:bg-gray-900 font-semibold text-center p-5 border-b border-gray-200 dark:border-gray-700 text-base">
               </th>
               <th
-                class="bg-white dark:bg-gray-900 font-semibold text-center p-5 border-b border-gray-200 dark:border-gray-700 text-base relative">
+                class="plan-header bg-white dark:bg-gray-900 font-semibold text-center p-5 border-b border-gray-200 dark:border-gray-700 text-base">
                 Open Source
                 <br />
                 (Community)
@@ -372,24 +372,24 @@ const cellClass = (value: Cell) =>
                 </div>
               </th>
               <th
-                class="bg-white dark:bg-gray-900 font-semibold text-center p-5 border-b border-gray-200 dark:border-gray-700 text-base relative">
+                class="plan-header bg-white dark:bg-gray-900 font-semibold text-center p-5 border-b border-gray-200 dark:border-gray-700 text-base">
                 Pro
                 <div
-                  class="absolute bottom-0 left-[15%] right-[15%] h-[3px] rounded-full bg-[#0ea5e9]">
+                  class="absolute bottom-0 left-[15%] right-[15%] h-[3px] rounded-full bg-[#10b981]">
                 </div>
               </th>
               <th
-                class="bg-white dark:bg-gray-900 font-semibold text-center p-5 border-b border-gray-200 dark:border-gray-700 text-base relative">
+                class="plan-header bg-white dark:bg-gray-900 font-semibold text-center p-5 border-b border-gray-200 dark:border-gray-700 text-base">
                 Business
                 <div
-                  class="absolute bottom-0 left-[15%] right-[15%] h-[3px] rounded-full bg-[#8b5cf6]">
+                  class="absolute bottom-0 left-[15%] right-[15%] h-[3px] rounded-full bg-accent-600">
                 </div>
               </th>
               <th
-                class="bg-white dark:bg-gray-900 font-semibold text-center p-5 border-b border-gray-200 dark:border-gray-700 text-base relative">
+                class="plan-header rounded-tr-xl bg-white dark:bg-gray-900 font-semibold text-center p-5 border-b border-gray-200 dark:border-gray-700 text-base">
                 Enterprise
                 <div
-                  class="absolute bottom-0 left-[15%] right-[15%] h-[3px] rounded-full bg-[#10b981]">
+                  class="absolute bottom-0 left-[15%] right-[15%] h-[3px] rounded-full bg-[#8b5cf6]">
                 </div>
               </th>
             </tr>
@@ -398,10 +398,10 @@ const cellClass = (value: Cell) =>
             {
               sections.map(section => (
                 <>
-                  <tr class="section-row bg-gray-100 border-t-2 border-b-2 border-gray-300 dark:border-gray-700">
+                  <tr class="section-row bg-gray-100 dark:bg-gray-950 border-t-2 border-b-2 border-gray-300 dark:border-gray-700">
                     <td
                       colspan="5"
-                      class="font-bold text-left p-4 text-gray-900 uppercase tracking-wider text-sm">
+                      class="font-bold text-left p-4 text-gray-900 dark:text-gray-200 uppercase tracking-wider text-sm">
                       {section.title}
                     </td>
                   </tr>
@@ -434,11 +434,20 @@ const cellClass = (value: Cell) =>
 </section>
 
 <style>
-  /* Section header rows: solid backgrounds so the sticky first column works */
-  :global([data-theme='dark']) tr.section-row,
-  :global([data-theme='dark']) tr.section-row td {
-    background-color: rgb(31, 41, 55);
-    color: white;
+  /* Starlight styles content tables as display:block with overflow:auto,
+     which would trap the sticky header inside the table. Horizontal
+     scrolling on small screens is handled by the wrapper div instead. */
+  table {
+    display: table;
+    overflow: visible;
+  }
+
+  /* Keep the plan names visible while scrolling through the table.
+     Offset by the site nav height so the row sticks below the fixed header. */
+  th.plan-header {
+    position: sticky;
+    top: var(--sl-nav-height, 0px);
+    z-index: 2;
   }
 
   /* Mobile responsive adjustments */
@@ -463,7 +472,7 @@ const cellClass = (value: Cell) =>
     }
 
     :global([data-theme='dark']) tr.section-row td:first-child {
-      background-color: rgb(31, 41, 55);
+      background-color: rgb(3, 7, 18);
     }
   }
 

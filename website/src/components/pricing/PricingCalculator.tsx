@@ -228,8 +228,8 @@ export default function PricingCalculator() {
             <div class="w-full min-h-[4rem] flex flex-col justify-start mb-5">
               <h3 class="mb-1 text-lg leading-tight">Customers</h3>
               <p class="mb-0 text-sm text-gray-600 dark:text-gray-400 leading-snug">
-                Select how many customer organizations you have &ndash; each can
-                have unlimited users
+                Select how many customer organizations you have. Each can have
+                unlimited users
               </p>
             </div>
             <div class="flex items-center justify-start gap-3 w-full">
@@ -392,7 +392,7 @@ export default function PricingCalculator() {
               Everything to distribute and operate customer installs
             </h4>
             <p class="text-sm leading-relaxed mt-2 mb-0 px-6 text-gray-700 dark:text-gray-300">
-              Ship through Docker, Helm/Kubernetes, or your artifact registry —
+              Ship through Docker, Helm/Kubernetes, or your artifact registry,
               with licensing, alerting, and access control built in.
             </p>
             <ul class="list-none px-6 pt-5 mt-0 mb-0">
@@ -435,13 +435,13 @@ export default function PricingCalculator() {
 
           {/* Business Plan */}
           <div
-            class={`mt-10 flex flex-col lg:grid lg:grid-rows-subgrid lg:row-span-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg border-2 border-accent-600 relative transition-all ${
+            class={`mt-5 flex flex-col lg:grid lg:grid-rows-subgrid lg:row-span-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg border-2 border-accent-600 relative transition-all ${
               shouldBlurBusiness ? 'opacity-50 blur-sm pointer-events-none' : ''
             }`}>
-            <div class="absolute top-0 left-0 right-0 bg-accent-600 text-white py-1.5 text-base font-medium z-10 shadow-md text-center w-full rounded-t-md">
+            <div class="absolute top-0 left-0 right-0 bg-accent-600 text-white pt-1.5 pb-3.5 text-base font-medium shadow-md text-center w-full rounded-t-md">
               Most popular
             </div>
-            <div class="flex justify-start items-center flex-col px-6 pt-12 pb-6 text-center">
+            <div class="relative mt-9 rounded-t-lg bg-white dark:bg-gray-900 flex justify-start items-center flex-col px-6 pt-3 pb-6 text-center">
               <h3 class="text-xl font-semibold">Business</h3>
               <p class="mb-0 mt-1 text-sm invisible">starting at</p>
               <div class="text-4xl font-bold my-2">
@@ -492,8 +492,8 @@ export default function PricingCalculator() {
               For vendors distributing at scale
             </h4>
             <p class="text-sm leading-relaxed mt-2 mb-0 px-6 text-gray-700 dark:text-gray-300">
-              Run your entire distribution operation on Distr — partners,
-              license templates, and a fully white-labeled experience.
+              Run your entire distribution operation on Distr: partners, license
+              templates, and a fully white-labeled experience.
             </p>
             <ul class="list-none px-6 pt-5 mt-0 mb-0">
               <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
@@ -571,9 +571,8 @@ export default function PricingCalculator() {
               Built for regulated and high-security environments
             </h4>
             <p class="text-sm leading-relaxed mt-2 mb-0 px-6 text-gray-700 dark:text-gray-300">
-              For security-first vendors serving regulated industries. Dedicated
-              infrastructure, custom contracts, SLAs, and dedicated support
-              included.
+              Serve security-first customers with dedicated infrastructure,
+              custom contracts, SLAs, and a dedicated support engineer.
             </p>
             <ul class="list-none px-6 pt-5 mt-0 mb-0">
               <li class="pl-6 relative mb-3 before:content-['✓'] before:absolute before:left-0 before:text-green-600">
