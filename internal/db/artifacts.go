@@ -39,8 +39,68 @@ const (
 			FILTER (WHERE avpl.customer_organization_id IS NOT NULL), ARRAY[]::UUID[])
 			AS downloaded_by_customer_organizations `
 
+	// artifactInferredTypesOutExpr aggregates the distinct manifest types of all tagged
+	// versions of an artifact (excluding signatures). It mirrors the inference logic of
+	// GetVersionsForArtifact so the artifact list can show type indicators without
+	// loading all version manifests.
+	artifactInferredTypesOutExpr = `
+		(
+			SELECT array_agg(DISTINCT inferred_type ORDER BY inferred_type)
+			FROM (
+				SELECT CASE
+					WHEN EXISTS (
+						SELECT 1
+						FROM ArtifactVersionPart avpx
+						JOIN ArtifactVersion avx1 ON avx1.manifest_blob_digest = avpx.artifact_blob_digest
+						WHERE avpx.artifact_version_id = avx.id
+						AND convert_from(avx1.manifest_data, 'UTF8')::jsonb->>'artifactType'
+							= 'application/vnd.dev.sigstore.bundle.v0.3+json'
+					) THEN 'signature'
+					WHEN avx.manifest_content_type LIKE 'application/vnd.docker%' THEN 'container-image'
+					WHEN convert_from(avx.manifest_data, 'UTF8')::jsonb #>> '{config,mediaType}'
+						LIKE 'application/vnd.zarf.config%' THEN 'zarf-package'
+					WHEN convert_from(avx.manifest_data, 'UTF8')::jsonb #>> '{config,mediaType}'
+						LIKE 'application/vnd.cncf.helm%' THEN 'helm-chart'
+					WHEN EXISTS (
+						SELECT 1
+						FROM jsonb_array_elements(
+							coalesce(convert_from(avx.manifest_data, 'UTF8')::jsonb->'layers', '[]'::jsonb)) layer
+						WHERE layer->>'mediaType' LIKE 'application/vnd.cncf.helm%'
+					) THEN 'helm-chart'
+					WHEN convert_from(avx.manifest_data, 'UTF8')::jsonb #>> '{config,mediaType}'
+						IN ('application/vnd.oci.image.config.v1+json',
+							'application/vnd.docker.container.image.v1+json') THEN 'container-image'
+					WHEN EXISTS (
+						-- multi-arch artifacts are tagged as an OCI index, so the type has to be
+						-- inferred from the config media types of the child manifests
+						SELECT 1
+						FROM ArtifactVersionPart avpx
+						JOIN ArtifactVersion avx1 ON avx1.manifest_blob_digest = avpx.artifact_blob_digest
+						WHERE avpx.artifact_version_id = avx.id
+						AND convert_from(avx1.manifest_data, 'UTF8')::jsonb #>> '{config,mediaType}'
+							LIKE 'application/vnd.zarf.config%'
+					) THEN 'zarf-package'
+					WHEN EXISTS (
+						SELECT 1
+						FROM ArtifactVersionPart avpx
+						JOIN ArtifactVersion avx1 ON avx1.manifest_blob_digest = avpx.artifact_blob_digest
+						WHERE avpx.artifact_version_id = avx.id
+						AND convert_from(avx1.manifest_data, 'UTF8')::jsonb #>> '{config,mediaType}'
+							IN ('application/vnd.oci.image.config.v1+json',
+								'application/vnd.docker.container.image.v1+json')
+					) THEN 'container-image'
+					ELSE 'generic'
+				END AS inferred_type
+				FROM ArtifactVersion avx
+				WHERE avx.artifact_id = a.id
+				AND avx.name NOT LIKE '%:%'
+			) inferred
+			WHERE inferred_type <> 'signature'
+		) AS inferred_types `
+
 	artifactWithDownloadsOutputExpr = artifactOutputExpr +
 		", o.slug AS organization_slug," +
+		artifactInferredTypesOutExpr + "," +
 		artifactDownloadsOutExpr
 
 	artifactVersionOutputExpr = `
@@ -202,6 +262,19 @@ func GetArtifactByName(ctx context.Context, orgSlug, name string) (*types.Artifa
 	}
 }
 
+// isZarfConfigMediaType reports whether the given OCI config media type
+// identifies a Zarf package (https://zarf.dev).
+func isZarfConfigMediaType(mediaType string) bool {
+	return strings.HasPrefix(mediaType, "application/vnd.zarf.config")
+}
+
+// isImageConfigMediaType reports whether the given OCI config media type
+// identifies a runnable container image.
+func isImageConfigMediaType(mediaType string) bool {
+	return mediaType == "application/vnd.oci.image.config.v1+json" ||
+		mediaType == "application/vnd.docker.container.image.v1+json"
+}
+
 func GetVersionsForArtifact(ctx context.Context, artifactID uuid.UUID, customerOrgID *uuid.UUID) (
 	[]types.TaggedArtifactVersion,
 	error,
@@ -252,7 +325,22 @@ func GetVersionsForArtifact(ctx context.Context, artifactID uuid.UUID, customerO
 							JOIN ArtifactVersion av1 ON av1.manifest_blob_digest = avp.artifact_blob_digest
 						WHERE avp.artifact_version_id = av.id
 					)
-				) AS referrer_artifact_types
+				) AS referrer_artifact_types,
+				(
+					-- config media types of child manifests, used to infer the type of
+					-- multi-arch artifacts (e.g. Zarf packages) whose tagged manifest is an OCI index
+					SELECT array_agg(config_media_type)
+					FROM (
+						SELECT DISTINCT
+							array_to_json(array[jsonb_path_query(
+								convert_from(av1.manifest_data ,'UTF8')::jsonb,
+								'$.config.mediaType'
+							)])->>0 config_media_type
+						FROM ArtifactVersionPart avp
+							JOIN ArtifactVersion av1 ON av1.manifest_blob_digest = avp.artifact_blob_digest
+						WHERE avp.artifact_version_id = av.id
+					)
+				) AS part_config_media_types
 			FROM ArtifactVersion av
 			LEFT JOIN LATERAL (
 				WITH RECURSIVE aggregate AS (
@@ -346,17 +434,29 @@ func GetVersionsForArtifact(ctx context.Context, artifactID uuid.UUID, customerO
 				version.InferredType = types.ManifestTypeSignature
 			} else if strings.HasPrefix(version.ManifestContentType, "application/vnd.docker") {
 				version.InferredType = types.ManifestTypeContainerImage
-			} else if !manifest.MIMETypeIsMultiImage(version.ManifestContentType) && len(version.ManifestData) > 0 {
+			} else if manifest.MIMETypeIsMultiImage(version.ManifestContentType) {
+				// Multi-arch artifacts are tagged as an OCI index, so the type has to be
+				// inferred from the config media types of the child manifests.
+				if slices.ContainsFunc(version.PartConfigMediaTypes, isZarfConfigMediaType) {
+					version.InferredType = types.ManifestTypeZarf
+				} else if slices.ContainsFunc(version.PartConfigMediaTypes, isImageConfigMediaType) {
+					version.InferredType = types.ManifestTypeContainerImage
+				}
+			} else if len(version.ManifestData) > 0 {
 				parsedManifest, err := manifest.FromBlob(version.ManifestData, version.ManifestContentType)
 				if err != nil {
 					return nil, err
 				}
 
-				if strings.HasPrefix(parsedManifest.ConfigInfo().MediaType, "application/vnd.cncf.helm") ||
+				if isZarfConfigMediaType(parsedManifest.ConfigInfo().MediaType) {
+					version.InferredType = types.ManifestTypeZarf
+				} else if strings.HasPrefix(parsedManifest.ConfigInfo().MediaType, "application/vnd.cncf.helm") ||
 					slices.ContainsFunc(parsedManifest.LayerInfos(), func(layer manifest.LayerInfo) bool {
 						return strings.HasPrefix(layer.MediaType, "application/vnd.cncf.helm")
 					}) {
 					version.InferredType = types.ManifestTypeHelmChart
+				} else if isImageConfigMediaType(parsedManifest.ConfigInfo().MediaType) {
+					version.InferredType = types.ManifestTypeContainerImage
 				}
 			}
 			versions[i] = version

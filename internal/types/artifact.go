@@ -13,6 +13,7 @@ const (
 	ManifestTypeContainerImage ManifestType = "container-image"
 	ManifestTypeHelmChart      ManifestType = "helm-chart"
 	ManifestTypeSignature      ManifestType = "signature"
+	ManifestTypeZarf           ManifestType = "zarf-package"
 )
 
 type UpstreamAuthType string
@@ -63,6 +64,7 @@ type TaggedArtifactVersion struct {
 	DownloadMetrics
 
 	ReferrerArtifactTypes []string     `db:"referrer_artifact_types" json:"-"`
+	PartConfigMediaTypes  []string     `db:"part_config_media_types" json:"-"`
 	InferredType          ManifestType `db:"-" json:"inferredType"`
 }
 
@@ -70,6 +72,9 @@ type ArtifactWithDownloads struct {
 	Artifact
 	OrganizationSlug string `db:"organization_slug" json:"-"`
 	DownloadMetrics
+	// InferredTypes contains the distinct manifest types of all tagged versions
+	// of this artifact (excluding signatures).
+	InferredTypes []ManifestType `db:"inferred_types" json:"inferredTypes,omitempty"`
 }
 
 type ArtifactWithTaggedVersion struct {
