@@ -40,9 +40,7 @@ const (
 	// through larger limits in chunks of this size.
 	defaultMaxEntriesPerQuery = 5000
 
-	// defaultRequestTimeout must accommodate slow queries over large time ranges (e.g.
-	// log exports over the full query window against cold storage).
-	defaultRequestTimeout = 5 * time.Minute
+	defaultRequestTimeout = 30 * time.Second
 )
 
 type LokiConfig struct {
@@ -53,7 +51,7 @@ type LokiConfig struct {
 	// BasicAuthUsername and BasicAuthPassword enable basic authentication when both are non-nil.
 	BasicAuthUsername *string
 	BasicAuthPassword *string
-	// RequestTimeout is the timeout for a single Loki HTTP request. Defaults to 5m.
+	// RequestTimeout is the timeout for a single Loki HTTP request. Defaults to 30s.
 	RequestTimeout time.Duration
 }
 

@@ -108,7 +108,7 @@ the Loki configuration (`limits_config.retention_period`).
 | `LOKI_BEARER_TOKEN`        | no       | —       | Bearer token for authenticating against Loki.                                                     |
 | `LOKI_BASIC_AUTH_USERNAME` | no       | —       | Username for basic authentication against Loki. Ignored when `LOKI_BEARER_TOKEN` is set.          |
 | `LOKI_BASIC_AUTH_PASSWORD` | no       | —       | Password for basic authentication against Loki. Only used when `LOKI_BASIC_AUTH_USERNAME` is set. |
-| `LOKI_REQUEST_TIMEOUT`     | no       | `5m`    | Timeout for a single Loki HTTP request.                                                           |
+| `LOKI_REQUEST_TIMEOUT`     | no       | `30s`   | Timeout for a single Loki HTTP request.                                                           |
 
 ## Scheduled Jobs & Retention
 

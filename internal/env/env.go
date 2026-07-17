@@ -283,7 +283,7 @@ func Initialize() {
 	lokiBearerToken = envutil.GetEnvOrNil("LOKI_BEARER_TOKEN")
 	lokiBasicAuthUsername = envutil.GetEnvOrNil("LOKI_BASIC_AUTH_USERNAME")
 	lokiBasicAuthPassword = envutil.GetEnvOrNil("LOKI_BASIC_AUTH_PASSWORD")
-	lokiRequestTimeout = envutil.GetEnvParsedOrDefault("LOKI_REQUEST_TIMEOUT", envparse.PositiveDuration, 5*time.Minute)
+	lokiRequestTimeout = envutil.GetEnvParsedOrDefault("LOKI_REQUEST_TIMEOUT", envparse.PositiveDuration, 30*time.Second)
 }
 
 func DatabaseUrl() string {

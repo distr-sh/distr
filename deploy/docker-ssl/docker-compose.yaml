@@ -150,9 +150,11 @@ configs:
 
       server:
         http_listen_port: 3100
-        # Long-range queries (e.g. log exports) can exceed the 30s defaults.
-        http_server_read_timeout: 10m
-        http_server_write_timeout: 10m
+        # A single query result page (max_entries_limit_per_query entries) can exceed
+        # the 4 MB gRPC default, which makes the internal querier->frontend handoff
+        # fail and the query hang until it times out.
+        grpc_server_max_recv_msg_size: 67108864
+        grpc_server_max_send_msg_size: 67108864
 
       common:
         path_prefix: /loki
@@ -190,8 +192,6 @@ configs:
         increment_duplicate_timestamp: true
         allow_structured_metadata: true
         max_global_streams_per_user: 25000
-        # Queries over the full 7d window on cold storage can exceed the 1m default.
-        query_timeout: 5m
 
 networks:
   # Public-facing network shared by caddy and the hub only.
