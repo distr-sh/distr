@@ -11,6 +11,7 @@ import (
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
+	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 )
@@ -179,9 +180,9 @@ func sortRecords[T any](records []T, timestamp func(T) int64, direction types.Or
 	})
 }
 
-func truncate[T any](records []T, limit int) []T {
-	if limit > 0 && len(records) > limit {
-		return records[:limit]
+func truncate[T any](records []T, queryLimit limit.Limit) []T {
+	if !queryLimit.IsUnlimited() && int64(len(records)) > queryLimit.Value() {
+		return records[:queryLimit.Value()]
 	}
 	return records
 }

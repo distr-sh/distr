@@ -15,6 +15,7 @@ import (
 
 	"github.com/distr-sh/distr/api"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
@@ -426,6 +427,33 @@ func TestQueryDeploymentLogRecordsLimit(t *testing.T) {
 	}
 	g.Expect(bodies).To(Equal([]string{
 		"line-9", "line-8", "line-7", "line-6", "line-5", "line-4", "line-3",
+	}))
+}
+
+func TestQueryDeploymentLogRecordsUnlimited(t *testing.T) {
+	g := NewWithT(t)
+	// Reads with a zero End query up to time.Now(), so the entries must lie in the past.
+	base := time.Now().UTC().Add(-time.Hour).Truncate(time.Second)
+	entries := pagingTestEntries(base)
+
+	store := newTestStore(t, queryRangeHandler(t, entries))
+	store.maxEntriesPerQuery = 3
+
+	var bodies []string
+	seq := store.QueryDeploymentLogRecords(testContext(t), testOrgID, DeploymentLogQuery{
+		DeploymentID: testDeploymentID,
+		Resources:    []string{"resource-a", "resource-b"},
+		Start:        base,
+		Limit:        limit.Unlimited,
+		Direction:    types.OrderDirectionDesc,
+	})
+	for record, err := range seq {
+		g.Expect(err).NotTo(HaveOccurred())
+		bodies = append(bodies, record.Body)
+	}
+	// An unlimited read must page through the whole window and return everything.
+	g.Expect(bodies).To(Equal([]string{
+		"a-7", "b-6", "a-5", "b-4", "a-3", "a-2", "b-2", "a-1", "a-0", "b-0",
 	}))
 }
 

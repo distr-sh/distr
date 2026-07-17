@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/api"
+	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 )
@@ -32,7 +33,9 @@ type DeploymentLogQuery struct {
 	End          time.Time
 	// Filter is an optional RE2 body filter, already validated by the handler.
 	Filter string
-	Limit  int
+	// Limit is the maximum number of records to return. limit.Unlimited returns all
+	// matching records in the time range.
+	Limit limit.Limit
 	// Direction is the effective order direction, resolved by the handler from the
 	// client-supplied "after" parameter (before any window defaulting is applied).
 	Direction types.OrderDirection
@@ -55,7 +58,9 @@ type DeploymentTargetLogQuery struct {
 	End                time.Time
 	// Filter is an optional RE2 body filter, already validated by the handler.
 	Filter string
-	Limit  int
+	// Limit is the maximum number of records to return. limit.Unlimited returns all
+	// matching records in the time range.
+	Limit limit.Limit
 	// Direction is the effective order direction, resolved by the handler from the
 	// client-supplied "after" parameter (before any window defaulting is applied).
 	Direction types.OrderDirection

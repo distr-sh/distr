@@ -19,6 +19,7 @@ import (
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -193,22 +194,22 @@ func (s *lokiStore) GetDeploymentLogRecordResources(
 	return active, archived, nil
 }
 
-// querySeq lazily pages through query_range responses until limit entries have been
-// produced or the window is exhausted. Loki caps a single response at
-// max_entries_limit_per_query, so after each page the range bound on the read side
-// advances to the last returned entry's timestamp: the end bound moves backwards for
-// descending reads, the start bound forwards for ascending reads. Entries at that
-// boundary timestamp that were already emitted are re-fetched and skipped by
-// fingerprint. This is necessary because entries in different streams can share the
-// exact same nanosecond (increment_duplicate_timestamp only de-duplicates within a
-// stream).
+// querySeq lazily pages through query_range responses until queryLimit entries have
+// been produced (or the window is exhausted; an unlimited queryLimit always reads until
+// exhaustion). Loki caps a single response at max_entries_limit_per_query, so after
+// each page the range bound on the read side advances to the last returned entry's
+// timestamp: the end bound moves backwards for descending reads, the start bound
+// forwards for ascending reads. Entries at that boundary timestamp that were already
+// emitted are re-fetched and skipped by fingerprint. This is necessary because entries
+// in different streams can share the exact same nanosecond
+// (increment_duplicate_timestamp only de-duplicates within a stream).
 func querySeq[T any](
 	s *lokiStore,
 	ctx context.Context,
 	orgID uuid.UUID,
 	logql string,
 	start, end time.Time,
-	limit int,
+	queryLimit limit.Limit,
 	direction types.OrderDirection,
 	mapEntry func(lokiEntry) (T, error),
 ) iter.Seq2[T, error] {
@@ -222,16 +223,22 @@ func querySeq[T any](
 
 		logger := internalctx.GetLogger(ctx)
 		emittedAtBoundary := map[string]struct{}{}
-		remaining := limit
+		unlimited := queryLimit.IsUnlimited()
+		remaining := int(queryLimit.Value())
+		produced := 0
 		page := 0
-		for remaining > 0 {
+		for unlimited || remaining > 0 {
 			page++
 			logger.Debug("logstore query page",
-				zap.Int("page", page), zap.Int("remaining", remaining),
+				zap.Int("page", page), zap.Int("remaining", remaining), zap.Bool("unlimited", unlimited),
 				zap.Time("start", start), zap.Time("end", end))
-			// Entries at the boundary timestamp that were already emitted are re-fetched
-			// and skipped, so they must not count against the remaining budget.
-			pageLimit := min(remaining+len(emittedAtBoundary), s.maxEntriesPerQuery)
+			pageLimit := s.maxEntriesPerQuery
+			if !unlimited {
+				// Entries at the boundary timestamp that were already emitted are
+				// re-fetched and skipped, so they must not count against the remaining
+				// budget.
+				pageLimit = min(remaining+len(emittedAtBoundary), s.maxEntriesPerQuery)
+			}
 			entries, err := s.queryRange(ctx, orgID, logql, start, end, pageLimit, direction)
 			if err != nil {
 				yield(zero, err)
@@ -255,15 +262,18 @@ func querySeq[T any](
 				}
 
 				emitted++
-				remaining--
-				if remaining == 0 {
-					return
+				produced++
+				if !unlimited {
+					remaining--
+					if remaining == 0 {
+						return
+					}
 				}
 			}
 
 			if emitted == 0 || len(entries) < pageLimit {
 				logger.Debug("logstore query exhausted",
-					zap.Int("pages", page), zap.Int("produced", limit-remaining))
+					zap.Int("pages", page), zap.Int("produced", produced))
 				return
 			}
 

@@ -13,9 +13,9 @@ import (
 func TestResolveLogQueryStart(t *testing.T) {
 	t.Run("zero after defaults to the window start", func(t *testing.T) {
 		g := NewWithT(t)
-		before := time.Now().Add(-subscription.LogQueryWindowDefault)
+		before := time.Now().Add(-subscription.LogQueryWindowCommunity)
 		resolved, err := resolveLogQueryStart(types.SubscriptionTypeCommunity, time.Time{})
-		after := time.Now().Add(-subscription.LogQueryWindowDefault)
+		after := time.Now().Add(-subscription.LogQueryWindowCommunity)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resolved).To(And(
 			BeTemporally(">=", before),
@@ -33,8 +33,16 @@ func TestResolveLogQueryStart(t *testing.T) {
 
 	t.Run("after older than the window is rejected", func(t *testing.T) {
 		g := NewWithT(t)
-		requested := time.Now().Add(-subscription.LogQueryWindowDefault - time.Minute)
+		requested := time.Now().Add(-subscription.LogQueryWindowCommunity - time.Minute)
 		_, err := resolveLogQueryStart(types.SubscriptionTypeCommunity, requested)
 		g.Expect(err).To(MatchError(apierrors.ErrBadRequest))
+	})
+
+	t.Run("pro subscriptions get the larger default window", func(t *testing.T) {
+		g := NewWithT(t)
+		requested := time.Now().Add(-subscription.LogQueryWindowCommunity - time.Minute)
+		resolved, err := resolveLogQueryStart(types.SubscriptionTypePro, requested)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(resolved).To(Equal(requested))
 	})
 }

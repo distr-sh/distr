@@ -12,6 +12,7 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/handlerutil"
+	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/logstore"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/subscription"
@@ -26,9 +27,9 @@ func getDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 		ctx := r.Context()
 		deploymentTarget := internalctx.GetDeploymentTarget(ctx)
 
-		limit, err := QueryParam(r, "limit", strconv.Atoi, Max(100))
+		limitParam, err := QueryParam(r, "limit", strconv.Atoi, Min(1), Max(100))
 		if errors.Is(err, ErrParamNotDefined) {
-			limit = 25
+			limitParam = 25
 		} else if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -73,7 +74,7 @@ func getDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 				Start:              after,
 				End:                before,
 				Filter:             filter,
-				Limit:              limit,
+				Limit:              limit.Limit(limitParam),
 				Direction:          direction,
 			}))
 		if err != nil {
@@ -98,15 +99,15 @@ func exportDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 		deploymentTarget := internalctx.GetDeploymentTarget(ctx)
 		authInfo := auth.Authentication.Require(ctx)
 		org := authInfo.CurrentOrg()
-		limit := int(subscription.GetLogExportRowsLimit(org.SubscriptionType))
 
 		filename := fmt.Sprintf("%s_agent.log", time.Now().Format("2006-01-02"))
 
 		logStore := logstore.FromContext(ctx)
+		// Exports are bounded by the log query window only, not by a row limit.
 		records := logStore.QueryDeploymentTargetLogRecords(ctx, org.ID, logstore.DeploymentTargetLogQuery{
 			DeploymentTargetID: deploymentTarget.ID,
 			Start:              time.Now().Add(-subscription.GetLogQueryWindow(org.SubscriptionType)),
-			Limit:              limit,
+			Limit:              limit.Unlimited,
 			Direction:          types.OrderDirectionDesc,
 		})
 

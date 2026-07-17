@@ -14,6 +14,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/handlerutil"
+	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/logstore"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/subscription"
@@ -71,7 +72,6 @@ func exportDeploymentLogsHandler() http.HandlerFunc {
 
 		authInfo := auth.Authentication.Require(ctx)
 		org := authInfo.CurrentOrg()
-		limit := int(subscription.GetLogExportRowsLimit(org.SubscriptionType))
 
 		filename := fmt.Sprintf("%s_%s.log", time.Now().Format("2006-01-02"), strings.Join(resources, "_"))
 
@@ -91,11 +91,12 @@ func exportDeploymentLogsHandler() http.HandlerFunc {
 		replacer := secretReplacer(secrets)
 
 		logStore := logstore.FromContext(ctx)
+		// Exports are bounded by the log query window only, not by a row limit.
 		records := logStore.QueryDeploymentLogRecords(ctx, org.ID, logstore.DeploymentLogQuery{
 			DeploymentID: deployment.ID,
 			Resources:    resources,
 			Start:        time.Now().Add(-subscription.GetLogQueryWindow(org.SubscriptionType)),
-			Limit:        limit,
+			Limit:        limit.Unlimited,
 			Direction:    types.OrderDirectionDesc,
 		})
 		// The download headers are only set right before the first write, so an error
@@ -138,9 +139,9 @@ func getDeploymentLogsHandler() http.HandlerFunc {
 			http.Error(w, "query parameter resource is required", http.StatusBadRequest)
 			return
 		}
-		limit, err := QueryParam(r, "limit", strconv.Atoi, Max(100))
+		limitParam, err := QueryParam(r, "limit", strconv.Atoi, Min(1), Max(100))
 		if errors.Is(err, ErrParamNotDefined) {
-			limit = 25
+			limitParam = 25
 		} else if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -198,7 +199,7 @@ func getDeploymentLogsHandler() http.HandlerFunc {
 			Start:        after,
 			End:          before,
 			Filter:       filter,
-			Limit:        limit,
+			Limit:        limit.Limit(limitParam),
 			Direction:    direction,
 		})); err != nil {
 			if errors.Is(err, apierrors.ErrBadRequest) {
