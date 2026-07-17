@@ -102,13 +102,13 @@ All shipped deployment methods (Docker Compose and the Helm chart) include a pre
 Loki instance with a time-based retention of 30 days. Log retention is managed entirely by
 the Loki configuration (`limits_config.retention_period`).
 
-| Variable                   | Required | Default | Description                                                                                        |
-| -------------------------- | -------- | ------- | --------------------------------------------------------------------------------------------------- |
-| `LOKI_URL`                 | yes      | —       | Base URL of the Loki instance, e.g. `http://loki:3100`.                                              |
-| `LOKI_BEARER_TOKEN`        | no       | —       | Bearer token for authenticating against Loki.                                                        |
-| `LOKI_BASIC_AUTH_USERNAME` | no       | —       | Username for basic authentication against Loki. Ignored when `LOKI_BEARER_TOKEN` is set.             |
-| `LOKI_BASIC_AUTH_PASSWORD` | no       | —       | Password for basic authentication against Loki. Only used when `LOKI_BASIC_AUTH_USERNAME` is set.    |
-| `LOKI_REQUEST_TIMEOUT`     | no       | `5m`    | Timeout for a single Loki HTTP request.                                                              |
+| Variable                   | Required | Default | Description                                                                                       |
+| -------------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------- |
+| `LOKI_URL`                 | yes      | —       | Base URL of the Loki instance, e.g. `http://loki:3100`.                                           |
+| `LOKI_BEARER_TOKEN`        | no       | —       | Bearer token for authenticating against Loki.                                                     |
+| `LOKI_BASIC_AUTH_USERNAME` | no       | —       | Username for basic authentication against Loki. Ignored when `LOKI_BEARER_TOKEN` is set.          |
+| `LOKI_BASIC_AUTH_PASSWORD` | no       | —       | Password for basic authentication against Loki. Only used when `LOKI_BASIC_AUTH_USERNAME` is set. |
+| `LOKI_REQUEST_TIMEOUT`     | no       | `5m`    | Timeout for a single Loki HTTP request.                                                           |
 
 ## Scheduled Jobs & Retention
 
@@ -116,24 +116,24 @@ These control the built-in job scheduler and retention limits.
 See [Maintenance Jobs](/docs/self-hosting/maintenance/) for details and Kubernetes CronJob alternatives.
 If a `*_CRON` variable is unset, the corresponding job is not scheduled. A `*_TIMEOUT` of `0` means no timeout.
 
-| Variable                                       | Required | Default | Description                                                                 |
-| ---------------------------------------------- | -------- | ------- | --------------------------------------------------------------------------- |
-| `STATUS_ENTRIES_MAX_AGE`                       | no       | —       | Max age of deployment revision status entries before cleanup removes them.  |
-| `METRICS_ENTRIES_MAX_AGE`                      | no       | —       | Max age of deployment target metrics entries before cleanup removes them.   |
-| `CLEANUP_DEPLOYMENT_REVISION_STATUS_CRON`      | no       | —       | Cron schedule for pruning deployment revision status entries.               |
-| `CLEANUP_DEPLOYMENT_REVISION_STATUS_TIMEOUT`   | no       | `0`     | Timeout for the revision status cleanup run.                                |
-| `CLEANUP_DEPLOYMENT_TARGET_METRICS_CRON`       | no       | —       | Cron schedule for pruning deployment target metrics.                        |
-| `CLEANUP_DEPLOYMENT_TARGET_METRICS_TIMEOUT`    | no       | `0`     | Timeout for the metrics cleanup run.                                        |
-| `CLEANUP_OIDC_STATE_CRON`                      | no       | —       | Cron schedule for pruning expired OIDC state entries.                       |
-| `CLEANUP_OIDC_STATE_CRON_TIMEOUT`              | no       | `0`     | Timeout for the OIDC state cleanup run.                                     |
-| `CLEANUP_ARTIFACT_BLOB_CRON`                   | no       | —       | Cron schedule for pruning unreferenced registry blobs from S3.              |
-| `CLEANUP_ARTIFACT_BLOB_TIMEOUT`                | no       | `0`     | Timeout for the artifact blob cleanup run.                                  |
-| `CLEANUP_ARTIFACT_BLOB_MIN_AGE`                | no       | `24h`   | Minimum age of an unreferenced blob before it is eligible for deletion.     |
-| `CLEANUP_ORGANIZATION_CRON`                    | no       | —       | Cron schedule for permanently deleting soft-deleted organizations.          |
-| `CLEANUP_ORGANIZATION_TIMEOUT`                 | no       | `0`     | Timeout for the organization cleanup run.                                   |
-| `CLEANUP_ORGANIZATION_MIN_AGE`                 | no       | `720h`  | Retention period before a soft-deleted organization is permanently deleted. |
-| `DEPLOYMENT_STATUS_NOTIFICATION_CRON`          | no       | —       | Cron schedule for sending deployment status notification emails.            |
-| `DEPLOYMENT_STATUS_NOTIFICATION_TIMEOUT`       | no       | `0`     | Timeout for the deployment status notification run.                         |
+| Variable                                     | Required | Default | Description                                                                 |
+| -------------------------------------------- | -------- | ------- | --------------------------------------------------------------------------- |
+| `STATUS_ENTRIES_MAX_AGE`                     | no       | —       | Max age of deployment revision status entries before cleanup removes them.  |
+| `METRICS_ENTRIES_MAX_AGE`                    | no       | —       | Max age of deployment target metrics entries before cleanup removes them.   |
+| `CLEANUP_DEPLOYMENT_REVISION_STATUS_CRON`    | no       | —       | Cron schedule for pruning deployment revision status entries.               |
+| `CLEANUP_DEPLOYMENT_REVISION_STATUS_TIMEOUT` | no       | `0`     | Timeout for the revision status cleanup run.                                |
+| `CLEANUP_DEPLOYMENT_TARGET_METRICS_CRON`     | no       | —       | Cron schedule for pruning deployment target metrics.                        |
+| `CLEANUP_DEPLOYMENT_TARGET_METRICS_TIMEOUT`  | no       | `0`     | Timeout for the metrics cleanup run.                                        |
+| `CLEANUP_OIDC_STATE_CRON`                    | no       | —       | Cron schedule for pruning expired OIDC state entries.                       |
+| `CLEANUP_OIDC_STATE_CRON_TIMEOUT`            | no       | `0`     | Timeout for the OIDC state cleanup run.                                     |
+| `CLEANUP_ARTIFACT_BLOB_CRON`                 | no       | —       | Cron schedule for pruning unreferenced registry blobs from S3.              |
+| `CLEANUP_ARTIFACT_BLOB_TIMEOUT`              | no       | `0`     | Timeout for the artifact blob cleanup run.                                  |
+| `CLEANUP_ARTIFACT_BLOB_MIN_AGE`              | no       | `24h`   | Minimum age of an unreferenced blob before it is eligible for deletion.     |
+| `CLEANUP_ORGANIZATION_CRON`                  | no       | —       | Cron schedule for permanently deleting soft-deleted organizations.          |
+| `CLEANUP_ORGANIZATION_TIMEOUT`               | no       | `0`     | Timeout for the organization cleanup run.                                   |
+| `CLEANUP_ORGANIZATION_MIN_AGE`               | no       | `720h`  | Retention period before a soft-deleted organization is permanently deleted. |
+| `DEPLOYMENT_STATUS_NOTIFICATION_CRON`        | no       | —       | Cron schedule for sending deployment status notification emails.            |
+| `DEPLOYMENT_STATUS_NOTIFICATION_TIMEOUT`     | no       | `0`     | Timeout for the deployment status notification run.                         |
 
 ## OIDC Authentication
 
