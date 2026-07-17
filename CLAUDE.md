@@ -137,6 +137,7 @@ Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Pret
 - HTTP handlers receive dependencies via closure (database pool, logger, etc.)
 - Error handling uses `internal/apierrors` for API errors with proper status codes
 - Use `internal/context` helpers to retrieve logger, database, user from context
+- Do not add new context accessors to `internal/context`. Following idiomatic Go, they belong in the package that defines the stored type (e.g. `logstore.NewContext`/`logstore.FromContext`), which also avoids import cycles
 - Use structured logging with zap: `logger.Info("message", zap.String("key", value))`
 - Send exceptions to sentry with: `sentry.GetHubFromContext(ctx).CaptureException(err)`
 - When performing data transformations between DTOs and domain models, use `mapping.List(...)` inside the `internal/mapping` package

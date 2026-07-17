@@ -40,7 +40,7 @@ func getDeploymentLogsResourcesHandler() http.HandlerFunc {
 			return
 		}
 
-		logStore := internalctx.GetLogStore(ctx)
+		logStore := logstore.FromContext(ctx)
 		active, archived, err := logStore.GetDeploymentLogRecordResources(ctx, org.ID, logstore.DeploymentLogResourcesQuery{
 			DeploymentID:      deployment.ID,
 			LatestRevisionIDs: revisionIDs,
@@ -90,7 +90,7 @@ func exportDeploymentLogsHandler() http.HandlerFunc {
 
 		replacer := secretReplacer(secrets)
 
-		logStore := internalctx.GetLogStore(ctx)
+		logStore := logstore.FromContext(ctx)
 		records := logStore.QueryDeploymentLogRecords(ctx, org.ID, logstore.DeploymentLogQuery{
 			DeploymentID: deployment.ID,
 			Resources:    resources,
@@ -191,7 +191,7 @@ func getDeploymentLogsHandler() http.HandlerFunc {
 			return
 		}
 
-		logStore := internalctx.GetLogStore(ctx)
+		logStore := logstore.FromContext(ctx)
 		if records, err := util.SeqCollect(logStore.QueryDeploymentLogRecords(ctx, org.ID, logstore.DeploymentLogQuery{
 			DeploymentID: deployment.ID,
 			Resources:    resources,

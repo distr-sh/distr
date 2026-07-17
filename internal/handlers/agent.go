@@ -23,6 +23,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/deploymentvalues"
 	"github.com/distr-sh/distr/internal/env"
+	"github.com/distr-sh/distr/internal/logstore"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/notification"
@@ -336,7 +337,7 @@ func agentPutDeploymentLogsHandler() http.HandlerFunc {
 			return
 		}
 
-		logStore := internalctx.GetLogStore(ctx)
+		logStore := logstore.FromContext(ctx)
 		if err := logStore.SaveDeploymentLogRecords(ctx, auth.CurrentOrgID(), records); errors.Is(
 			err, apierrors.ErrBadRequest) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -372,7 +373,7 @@ func agentPutDeploymentTargetLogsHandler() http.HandlerFunc {
 			return
 		}
 
-		logStore := internalctx.GetLogStore(ctx)
+		logStore := logstore.FromContext(ctx)
 		if err := logStore.SaveDeploymentTargetLogRecords(
 			ctx, deploymentTarget.OrganizationID, deploymentTarget.ID, records,
 		); err != nil {

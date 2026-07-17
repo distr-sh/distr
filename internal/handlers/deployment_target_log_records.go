@@ -66,7 +66,7 @@ func getDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 			before = time.Now()
 		}
 
-		logStore := internalctx.GetLogStore(ctx)
+		logStore := logstore.FromContext(ctx)
 		records, err := util.SeqCollect(logStore.QueryDeploymentTargetLogRecords(ctx, org.ID,
 			logstore.DeploymentTargetLogQuery{
 				DeploymentTargetID: deploymentTarget.ID,
@@ -102,7 +102,7 @@ func exportDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 
 		filename := fmt.Sprintf("%s_agent.log", time.Now().Format("2006-01-02"))
 
-		logStore := internalctx.GetLogStore(ctx)
+		logStore := logstore.FromContext(ctx)
 		records := logStore.QueryDeploymentTargetLogRecords(ctx, org.ID, logstore.DeploymentTargetLogQuery{
 			DeploymentTargetID: deploymentTarget.ID,
 			Start:              time.Now().Add(-subscription.GetLogQueryWindow(org.SubscriptionType)),

@@ -2,6 +2,7 @@ package logstore
 
 import (
 	"cmp"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -13,10 +14,12 @@ import (
 	"time"
 
 	"github.com/distr-sh/distr/api"
+	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 	. "github.com/onsi/gomega"
+	"go.uber.org/zap/zaptest"
 )
 
 var (
@@ -25,6 +28,12 @@ var (
 	testRevisionID         = uuid.MustParse("addb2eac-c1e5-4580-a36e-42c011327dd5")
 	testDeploymentTargetID = uuid.MustParse("bd3ff37e-9dc2-4de6-9668-3f0e4c112233")
 )
+
+// testContext carries a logger because the Loki store retrieves it from the context for
+// debug logging.
+func testContext(t *testing.T) context.Context {
+	return internalctx.WithLogger(t.Context(), zaptest.NewLogger(t))
+}
 
 func newTestStore(t *testing.T, handler http.Handler) *lokiStore {
 	t.Helper()
@@ -55,7 +64,7 @@ func TestSaveDeploymentLogRecords(t *testing.T) {
 	}))
 
 	timestamp := time.Date(2026, 7, 16, 10, 0, 0, 0, time.UTC)
-	err := store.SaveDeploymentLogRecords(t.Context(), testOrgID, []api.DeploymentLogRecord{
+	err := store.SaveDeploymentLogRecords(testContext(t), testOrgID, []api.DeploymentLogRecord{
 		{
 			DeploymentID:         testDeploymentID,
 			DeploymentRevisionID: testRevisionID,
@@ -109,7 +118,7 @@ func TestSaveDeploymentLogRecordsBadRequest(t *testing.T) {
 	store := newTestStore(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "entry too far behind", http.StatusBadRequest)
 	}))
-	err := store.SaveDeploymentLogRecords(t.Context(), testOrgID, []api.DeploymentLogRecord{{Body: "x"}})
+	err := store.SaveDeploymentLogRecords(testContext(t), testOrgID, []api.DeploymentLogRecord{{Body: "x"}})
 	g.Expect(err).To(MatchError(ContainSubstring("bad request")))
 	g.Expect(err).To(MatchError(ContainSubstring("entry too far behind")))
 }
@@ -201,13 +210,14 @@ func TestQueryDeploymentTargetLogRecords(t *testing.T) {
 	}
 	store := newTestStore(t, queryRangeHandler(t, entries))
 
-	records, err := util.SeqCollect(store.QueryDeploymentTargetLogRecords(t.Context(), testOrgID, DeploymentTargetLogQuery{
-		DeploymentTargetID: testDeploymentTargetID,
-		Start:              base,
-		End:                base.Add(2 * time.Second),
-		Limit:              10,
-		Direction:          types.OrderDirectionDesc,
-	}))
+	records, err := util.SeqCollect(store.QueryDeploymentTargetLogRecords(
+		testContext(t), testOrgID, DeploymentTargetLogQuery{
+			DeploymentTargetID: testDeploymentTargetID,
+			Start:              base,
+			End:                base.Add(2 * time.Second),
+			Limit:              10,
+			Direction:          types.OrderDirectionDesc,
+		}))
 	g.Expect(err).NotTo(HaveOccurred())
 
 	// Streams (split by severity) must be merged and globally sorted newest first,
@@ -231,13 +241,14 @@ func TestQueryDeploymentTargetLogRecordsAscending(t *testing.T) {
 	}
 	store := newTestStore(t, queryRangeHandler(t, entries))
 
-	records, err := util.SeqCollect(store.QueryDeploymentTargetLogRecords(t.Context(), testOrgID, DeploymentTargetLogQuery{
-		DeploymentTargetID: testDeploymentTargetID,
-		Start:              base,
-		End:                base.Add(time.Minute),
-		Limit:              10,
-		Direction:          types.OrderDirectionAsc,
-	}))
+	records, err := util.SeqCollect(store.QueryDeploymentTargetLogRecords(
+		testContext(t), testOrgID, DeploymentTargetLogQuery{
+			DeploymentTargetID: testDeploymentTargetID,
+			Start:              base,
+			End:                base.Add(time.Minute),
+			Limit:              10,
+			Direction:          types.OrderDirectionAsc,
+		}))
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(records).To(HaveLen(2))
 	g.Expect(records[0].Body).To(Equal("first"))
@@ -253,7 +264,7 @@ func TestQueryDeploymentLogRecordsSelector(t *testing.T) {
 		_, _ = fmt.Fprint(w, `{"status":"success","data":{"resultType":"streams","result":[]}}`)
 	}))
 
-	_, err := util.SeqCollect(store.QueryDeploymentLogRecords(t.Context(), testOrgID, DeploymentLogQuery{
+	_, err := util.SeqCollect(store.QueryDeploymentLogRecords(testContext(t), testOrgID, DeploymentLogQuery{
 		DeploymentID: testDeploymentID,
 		Resources:    []string{"resource-a", "resource+b"},
 		Start:        time.Now().Add(-time.Hour),
@@ -313,7 +324,7 @@ func TestQueryDeploymentLogRecordsPaging(t *testing.T) {
 	store.maxEntriesPerQuery = 3
 
 	var bodies []string
-	seq := store.QueryDeploymentLogRecords(t.Context(), testOrgID, DeploymentLogQuery{
+	seq := store.QueryDeploymentLogRecords(testContext(t), testOrgID, DeploymentLogQuery{
 		DeploymentID: testDeploymentID,
 		Resources:    []string{"resource-a", "resource-b"},
 		Start:        base,
@@ -354,7 +365,7 @@ func TestQueryDeploymentLogRecordsPagingAscending(t *testing.T) {
 	store.maxEntriesPerQuery = 3
 
 	var bodies []string
-	seq := store.QueryDeploymentLogRecords(t.Context(), testOrgID, DeploymentLogQuery{
+	seq := store.QueryDeploymentLogRecords(testContext(t), testOrgID, DeploymentLogQuery{
 		DeploymentID: testDeploymentID,
 		Resources:    []string{"resource-a", "resource-b"},
 		Start:        base,
@@ -402,7 +413,7 @@ func TestQueryDeploymentLogRecordsLimit(t *testing.T) {
 	store.maxEntriesPerQuery = 4
 
 	var bodies []string
-	seq := store.QueryDeploymentLogRecords(t.Context(), testOrgID, DeploymentLogQuery{
+	seq := store.QueryDeploymentLogRecords(testContext(t), testOrgID, DeploymentLogQuery{
 		DeploymentID: testDeploymentID,
 		Resources:    []string{"resource-a"},
 		Start:        base,
@@ -440,7 +451,7 @@ func TestGetDeploymentLogRecordResources(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(map[string]any{"status": "success", "data": data})
 	}))
 
-	active, archived, err := store.GetDeploymentLogRecordResources(t.Context(), testOrgID, DeploymentLogResourcesQuery{
+	active, archived, err := store.GetDeploymentLogRecordResources(testContext(t), testOrgID, DeploymentLogResourcesQuery{
 		DeploymentID:      testDeploymentID,
 		LatestRevisionIDs: []uuid.UUID{testRevisionID},
 		Start:             time.Now().Add(-time.Hour),

@@ -51,7 +51,7 @@ func ContextInjectorMiddleware(
 			ctx = internalctx.WithPrometheusCollector(ctx, prometheusCollector)
 			ctx = internalctx.WithOIDCer(ctx, oidcer)
 			if logStore != nil {
-				ctx = internalctx.WithLogStore(ctx, logStore)
+				ctx = logstore.NewContext(ctx, logStore)
 			}
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})

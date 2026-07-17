@@ -18,8 +18,10 @@ import (
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
+	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 const (
@@ -220,9 +222,15 @@ func querySeq[T any](
 			end = time.Now()
 		}
 
+		logger := internalctx.GetLogger(ctx)
 		emittedAtBoundary := map[string]struct{}{}
 		remaining := limit
+		page := 0
 		for remaining > 0 {
+			page++
+			logger.Debug("logstore query page",
+				zap.Int("page", page), zap.Int("remaining", remaining),
+				zap.Time("start", start), zap.Time("end", end))
 			// Entries at the boundary timestamp that were already emitted are re-fetched
 			// and skipped, so they must not count against the remaining budget.
 			pageLimit := min(remaining+len(emittedAtBoundary), s.maxEntriesPerQuery)
@@ -256,6 +264,8 @@ func querySeq[T any](
 			}
 
 			if emitted == 0 || len(entries) < pageLimit {
+				logger.Debug("logstore query exhausted",
+					zap.Int("pages", page), zap.Int("produced", limit-remaining))
 				return
 			}
 
@@ -394,6 +404,13 @@ func (s *lokiStore) queryRange(
 		"direction": []string{lokiDirection},
 	}
 
+	logger := internalctx.GetLogger(ctx)
+	logger.Debug("loki query_range request",
+		zap.String("query", logql),
+		zap.Time("start", start), zap.Time("end", end),
+		zap.Int("limit", limit), zap.String("direction", lokiDirection))
+	began := time.Now()
+
 	req, err := s.newRequest(ctx, orgID, http.MethodGet, "/loki/api/v1/query_range", params)
 	if err != nil {
 		return nil, err
@@ -454,6 +471,9 @@ func (s *lokiStore) queryRange(
 	if len(entries) > limit {
 		entries = entries[:limit]
 	}
+
+	logger.Debug("loki query_range response",
+		zap.Int("entries", len(entries)), zap.Duration("duration", time.Since(began)))
 
 	return entries, nil
 }
