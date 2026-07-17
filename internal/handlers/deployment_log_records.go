@@ -26,6 +26,14 @@ import (
 
 const latestRevisionsForActiveResources = 5
 
+// exportTruncationNotice is appended to a log export when streaming fails midway: the
+// response status has already been sent at that point, so the client would otherwise
+// receive a silently truncated file.
+const exportTruncationNotice = `
+##################################################
+export possibly truncated due to an internal error
+`
+
 func getDeploymentLogsResourcesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -108,6 +116,8 @@ func exportDeploymentLogsHandler() http.HandlerFunc {
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 				if !written {
 					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				} else {
+					_, _ = w.Write([]byte(exportTruncationNotice))
 				}
 				return
 			}

@@ -120,6 +120,8 @@ func exportDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 				if !written {
 					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				} else {
+					_, _ = w.Write([]byte(exportTruncationNotice))
 				}
 				return
 			}
