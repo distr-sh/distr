@@ -31,14 +31,14 @@ The following table lists the average CPU and memory per component. These values
 | Distr                   | 100m         | 128 MB      |
 | PostgreSQL (database)   | 250m         | 512 MB      |
 | RustFS (object storage) | 100m         | 256 MB      |
-| Loki (log storage)      | 100m         | 256 MB      |
+| Loki (log storage)      | 100m         | 512 MB      |
 | Caddy (reverse proxy)   | 50m          | 64 MB       |
-| **Total**               | **~0.6 CPU** | **~1.2 GB** |
+| **Total**               | **~0.6 CPU** | **~1.5 GB** |
 
 &nbsp;
 
 :::note
-The average values are per-component footprints for Distr itself and do not include the operating system, Docker, or other system services. The workloads will also burst beyond these values on certain operations.
+The average values are per-component footprints for Distr itself and do not include the operating system, Docker, or other system services. The workloads will also burst beyond these values on certain operations — Loki in particular consumes significantly more CPU and memory while serving log queries and exports over large time ranges.
 
 We therefore recommend provisioning a VM with a **minimum of 2 CPUs and 4 GB RAM**.
 :::

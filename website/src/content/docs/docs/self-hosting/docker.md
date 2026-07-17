@@ -7,7 +7,7 @@ sidebar:
 ---
 
 The easiest way to get started hosting your own Distr Hub instance is with Docker Compose.
-For this, you need a working installation of Docker, as well as the Docker Compose plugin **version 5.3.0 or later** (the log storage setup uses `pre_start` lifecycle hooks introduced in Compose v5.3.0, see below for an alternative if you cannot upgrade yet).
+For this, you need a working installation of Docker, as well as the Docker Compose plugin, **ideally version 5.3.0 or later** (see below for details and workarounds).
 
 First, download and unpack the Distr Docker Compose deployment manifest from the latest release:
 

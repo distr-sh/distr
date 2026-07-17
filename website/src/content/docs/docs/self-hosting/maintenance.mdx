@@ -157,9 +157,6 @@ time-based, managed entirely by the Loki configuration (the shipped default is 3
 (`CLEANUP_DEPLOYMENT_LOG_RECORD_*`, `CLEANUP_DEPLOYMENT_TARGET_LOG_RECORD_*`), and
 `LOG_RECORD_ENTRIES_MAX_COUNT` have been removed.
 
-Existing log records stored in PostgreSQL are **not** migrated: they are deleted when
-upgrading to v3.0.0.
-
 ### Deployment Target Status (removed in v2.20.0)
 
 Prior to v2.20.0, Distr tracked a separate `DeploymentTargetStatus` per deployment target.
