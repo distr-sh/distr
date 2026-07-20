@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.26.1](https://github.com/distr-sh/distr/compare/2.26.0...2.26.1) (2026-07-20)
+
+
+### Bug Fixes
+
+* **deploy/chart:** add CronJob serviceAccount, more options for configuration ([#2866](https://github.com/distr-sh/distr/issues/2866)) ([961417c](https://github.com/distr-sh/distr/commit/961417c5b3a7d5bf52fd474004ebb03591a9f7a6))
+
 ## [2.26.0](https://github.com/distr-sh/distr/compare/2.25.2...2.26.0) (2026-07-15)
 
 
