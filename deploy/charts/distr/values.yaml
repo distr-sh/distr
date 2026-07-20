@@ -60,7 +60,7 @@ hub:
     - name: REGISTRY_S3_REGION
       value: local
     - name: REGISTRY_S3_ENDPOINT
-      value: http://distr-registry-rustfs-svc:9000
+      value: http://distr-rustfs-svc:9000
     - name: REGISTRY_S3_ACCESS_KEY_ID
       value: distr
     - name: REGISTRY_S3_SECRET_ACCESS_KEY
@@ -337,7 +337,7 @@ rustfs:
   # When disabled, provide external object storage for the registry and for Loki
   # (see loki.loki.storage.s3), otherwise those components cannot persist data.
   enabled: false
-  fullnameOverride: distr-registry-rustfs
+  fullnameOverride: distr-rustfs
   secret:
     rustfs:
       # These are the source-of-truth object storage credentials. If you change them you
@@ -393,7 +393,7 @@ loki:
         ruler: loki
         admin: loki
       s3:
-        endpoint: http://distr-registry-rustfs-svc:9000
+        endpoint: http://distr-rustfs-svc:9000
         region: local
         # Must match rustfs.secret.rustfs and the create-loki-bucket init container below.
         accessKeyId: distr
@@ -436,7 +436,7 @@ loki:
           - name: RCLONE_CONFIG_STORAGE_PROVIDER
             value: Other
           - name: RCLONE_CONFIG_STORAGE_ENDPOINT
-            value: http://distr-registry-rustfs-svc:9000
+            value: http://distr-rustfs-svc:9000
           # Must match rustfs.secret.rustfs and loki.loki.storage.s3 above.
           - name: RCLONE_CONFIG_STORAGE_ACCESS_KEY_ID
             value: distr
