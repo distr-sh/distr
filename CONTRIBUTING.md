@@ -44,14 +44,15 @@ Add the `STRIPE_WEBHOOK_SECRET` and `STRIPE_API_KEY` variables to your `.env.dev
 
 In your sandbox account, you need at least some of the price resources with the following lookup keys:
 
-- `distr_starter_customer_monthly`
-- `distr_starter_customer_yearly`
-- `distr_starter_user_monthly`
-- `distr_starter_user_yearly`
 - `distr_pro_customer_monthly`
 - `distr_pro_customer_yearly`
 - `distr_pro_user_monthly`
 - `distr_pro_user_yearly`
+- `distr_business_customer_monthly`
+- `distr_business_customer_yearly`
+- `distr_business_user_monthly`
+- `distr_business_user_yearly`
+
 
 ## Backporting bugfixes
 
