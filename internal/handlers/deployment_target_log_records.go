@@ -66,6 +66,13 @@ func getDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 		if before.IsZero() {
 			before = time.Now()
 		}
+		// A "before" cursor older than the resolved window start yields an empty range
+		// (start > end). This happens for pagination past the window boundary, so respond
+		// with no rows instead of forwarding an invalid range to the log store.
+		if before.Before(after) {
+			RespondJSON(w, mapping.List(nil, mapping.DeploymentTargetLogRecordToAPI))
+			return
+		}
 
 		logStore := logstore.FromContext(ctx)
 		records, err := util.SeqCollect(logStore.QueryDeploymentTargetLogRecords(ctx, org.ID,
