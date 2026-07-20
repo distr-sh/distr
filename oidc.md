@@ -7,9 +7,9 @@ This is a living document (v1, draft). Each issue gets a short summary and a det
 ## Current state (codebase)
 
 - OIDC is **instance-scoped only**: providers (Google, GitHub, Microsoft, Generic) are configured via environment variables in `internal/env/env.go` and initialized once at startup in `internal/oidc/oidc.go` (`NewOIDCer`).
-- Login flow: `internal/handlers/auth_oidc.go` — state + PKCE verifier stored in DB (`oidc_states` table), user matched **by email only**, auto-signup creates a new org.
-- Frontend: `oidc-buttons.component.ts` renders provider buttons based on build config; login/register pages.
-- Custom domains exist only as operator-managed columns: `organization_branding.app_domain` / `registry_domain`, resolved by `internal/customdomains` — no self-service, no automated TLS (existing setups use manually managed Route53 NS zones).
+- Login flow: `internal/handlers/auth_oidc.go` — state + PKCE verifier stored in DB (`oidc_states` table), user matched **by email only**, auto-signup creates a new org. Note: `verifyOIDCState` rejects states older than **60 seconds** (measured from before the redirect to the IdP).
+- Frontend: `oidc-buttons.component.ts` renders provider buttons based on the runtime endpoint `GET /api/v1/auth/login/config` (`authLoginConfigHandler` — env-based, host-independent); login/register pages.
+- Custom domains exist only as operator-managed columns: `organization_branding.app_domain` / `registry_domain` — no self-service, no automated TLS (existing setups use manually managed Route53 NS zones). `internal/customdomains` resolves org → effective domain; the only host → org resolution is `db.GetOrganizationBrandingByAppDomain`, used by `internal/handlers/portal.go`. The registry resolves organizations from the repository **path** (`internal/registry/name`: `<org>/<artifact>`), not from the Host header — `registry_domain` is a pure DNS alias, only used when rendering agent manifests.
 - Plans exist as `types.SubscriptionType` (community, starter, pro, enterprise, trial) with Stripe billing (`FeatureVendorBilling`), and org feature flags (`types.Feature`, `org.HasFeature(...)`, `ProFeatures`) are granted based on the subscription.
 - A **jetski/HyprMCP reference for the custom domain implementation is included as an appendix at the end of this document** (Caddy ingress + on-demand TLS + ask endpoint), together with the Distr-side design (`CustomDomain` data model, catch-all ingress, open decisions).
 
@@ -21,6 +21,7 @@ graph TD
     DEV592["DEV-592 Vendor custom domains"] --> DEV593["DEV-593 Customer custom domains"]
     DEV592 --> DEV596["DEV-596 Vendor-scoped OIDC"]
     DEV592 --> DEV594["DEV-594 Route53 NS → CNAME migration"]
+    DEV283 --> DEV595
     DEV595["DEV-595 Custom email providers"] --> DEV594
     DEV593 --> DEV597["DEV-597 Customer-scoped OIDC"]
     DEV596 --> DEV644["DEV-644 Hide instance OIDC on custom domains"]
@@ -56,12 +57,13 @@ Before shipping any of the enterprise features below, introduce the **business p
 **PR 1 — business plan + feature mapping**
 
 - Add `SubscriptionTypeBusiness` to `types.SubscriptionType`; define per-plan feature sets (extend the `ProFeatures` model to a `FeaturesForSubscriptionType(...)` mapping) including the new features from this project: `custom_domains`, `custom_email_provider`, `org_oidc`.
+- Generalize the currently binary pro-gating — all of these hardcode the current tiers or the flat `ProFeatures` list (today just `licensing`): `SubscriptionType.IsPro()`, `NonProSubscriptionTypes`, `billing.GetSubscriptionType` (Stripe product → type mapping), the Stripe webhook (`webhook_stripe.go` adds/removes `ProFeatures`), and `subscription.ReconcileEditionFeatures`.
 - Stripe product/price wiring for the business plan; make sure webhook-driven subscription updates set the correct features.
 - Website/pricing docs already describe the business tier (`fe363550`), keep product + docs consistent.
 
 **PR 2 — DEV-283: plan switching UI**
 
-- Subscription page: allow switching between plans (up/downgrade) via Stripe (checkout or subscription update + proration), not just the billing portal.
+- Much of the machinery exists: `CreateSubscriptionHandler` already runs a Stripe checkout for a chosen `SubscriptionType`, and `UpdateSubscriptionHandler` (`internal/handlers/billing_subscription.go`) already updates a running subscription — but only its **quantities**. Plan switching is therefore: extend `billing.UpdateSubscription` and the handler with a subscription-type change (price swap + proration), plus the subscription-page UI for it.
 - Handle downgrade consequences: features revoked → what happens to configured custom domains / OIDC configs / email providers (grace period vs. immediate disable; recommend: keep config stored, mark disabled).
 - Related: DEV-270 (cancelled-subscription banner) shares UI surface.
 
@@ -83,7 +85,8 @@ Today OIDC users are matched by email only. If a user changes their email at the
 **PR 1 — DB schema + identity linking on login**
 
 - New table `user_account_oidc_identities` (`user_account_id`, `provider`, `issuer`, `subject`, unique on `(issuer, subject)`, timestamps). A separate table (instead of columns on `user_accounts`) supports multiple linked providers per user and later per-org providers.
-- Extend `internal/oidc` extractors to return `issuer` + `subject` (and email) instead of just email. GitHub (plain OAuth2, no id_token) uses the numeric user ID as subject with a synthetic issuer.
+- Storage level (**decided**): the identity lives on the **user account**, not on the `Organization_UserAccount` membership row. Rationale: `(issuer, subject)` identifies the person at the IdP independent of org membership; user accounts are global and belong to many orgs; instance providers (Google/GitHub/Microsoft) have no org context at all; and storing per membership would duplicate the same identity N times and make the email-change handling below update N rows. Org-scoped providers (DEV-596/597) later add an optional `organization_id` (or config-id) column on the identity row — that gives clean unlink-on-org-leave / delete-on-config-removal semantics without moving storage to the membership row. Which org an org-IdP login lands in is determined by resolving the OIDC config from the Host, not by the identity row.
+- Extend `internal/oidc` extractors to return `issuer` + `subject` (and email) instead of just email. GitHub (plain OAuth2, no id_token) uses the numeric user ID as subject with a synthetic issuer — requires an additional `GET https://api.github.com/user` call; the current extractor only calls `/user/emails`. While in there: `GetEmailForCode` builds the oauth2 config twice (minor cleanup).
 - Callback handler lookup order:
   1. Find identity by `(issuer, subject)` → log that user in (even if email changed).
   2. Fallback: find user by email (current behavior) → create the identity record (backfill-on-login).
@@ -114,7 +117,9 @@ Follows the "recommended shape" in appendix §5: a dedicated `CustomDomain` tabl
 
 **PR 1 — data model + self-service API + validation (appendix §5.3–§5.5)**
 
-- New `CustomDomain` table (schema in appendix §5.3); migrate the existing `organization_branding.app_domain` / `registry_domain` values into it (as unscoped org-wide domains, normalizing the scheme-prefixed `app_domain` values to bare lowercase hostnames) and drop the columns; `customdomains.AppDomainOrDefault` / `RegistryDomainOrDefault` resolve via the new table.
+- New `CustomDomain` table (schema in appendix §5.3); migrate the existing `organization_branding.app_domain` / `registry_domain` values into it (as unscoped org-wide domains, normalizing the scheme-prefixed `app_domain` values to bare lowercase hostnames, **flagged as `legacy = TRUE`** — DEV-644 keeps instance login methods available on exactly these domains) and drop the columns; `customdomains.AppDomainOrDefault` / `RegistryDomainOrDefault` resolve via the new table.
+  - Refactor ripple: these helpers are currently pure functions of `*types.OrganizationBranding` with ~10 call sites (mail templates, agent manifest/connect, support bundles, user handlers) — resolving via `CustomDomain` makes them context/DB-backed, or callers must receive a pre-resolved domain set loaded alongside branding.
+  - Extra motivation for `UNIQUE (domain)`: `app_domain` has no unique constraint today, and `GetOrganizationBrandingByAppDomain` uses `CollectExactlyOneRow` — two orgs with the same domain break portal resolution at runtime.
 - Org-admin CRUD for app + registry domains: RFC-1123 hostname validation, global uniqueness via the `UNIQUE (domain)` constraint, rejection of platform-owned domains (`*.distr.sh`).
 - Gated on the business plan feature from Stage 0 (`custom_domains`).
 - Optional CNAME pre-verification (resolve domain → expected target) for better UX; the `ask` gate keeps it safe either way.
@@ -122,14 +127,15 @@ Follows the "recommended shape" in appendix §5: a dedicated `CustomDomain` tabl
 **PR 2 — Caddy on-demand TLS `ask` endpoint (appendix §3.3/§5.4, security-critical)**
 
 - Internal-only `GET .../ask?domain=...` endpoint returning 200 iff the domain exists in `CustomDomain`; single indexed db lookup (runs during TLS handshakes).
-- Served cluster-internally (separate listener/port like jetski's `:8085`), never internet-exposed.
+- **A real separate HTTP server**, not a route on the main server: a fourth server next to `server` (`:8080`), `artifactsServer` (`:8585`) and `metricsServer` in `cmd/hub/cmd/serve.go` / `internal/svc`, with its own chi router and port (e.g. `INTERNAL_SERVER_ADDR`, default `:8085`). It is **only started when the custom domain feature is configured** (i.e. the `CUSTOM_DOMAIN_*_CNAME_TARGET` env vars from PR 3 are set) and is intended to never be exposed outside the cluster.
+- Helm chart (documented in appendix §6, ships with PR 3): a dedicated Service with a clear internal name — `distr-internal-caddy-ask` — targeting only this port, separate from the public `distr` Service, so it can't accidentally be picked up by an Ingress for the public Service.
 
 **PR 3 — infrastructure (caddy-ingress) + CNAME targets (appendix §5.1/§5.2)**
 
-- `caddyserver/ingress` helm chart with `onDemandTLS: true` + `onDemandAsk` → the ask endpoint; static catch-all Ingress to the Hub (both already available as disabled-by-default dependencies of the Distr Helm chart, see appendix §6).
+- `caddyserver/ingress` helm chart with `onDemandTLS: true` + `onDemandAsk` → the ask endpoint; static catch-all Ingress to the Hub. The chart dependencies are **not applied yet** — this PR adds them to the Distr Helm chart as disabled-by-default dependencies (exact chart changes prepared in appendix §6), plus the `distr-internal-caddy-ask` Service for the ask listener (PR 2).
 - Two stable CNAME targets pointing at the Caddy LB, e.g. `custom-app.distr.sh` / `custom-registry.distr.sh` (region encoding to be decided, appendix §6); env vars `CUSTOM_DOMAIN_APP_CNAME_TARGET` / `CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET` (+ configuration.mdx), feature off when unset.
-- Resolve the app-vs-registry backend split (two Caddy installations vs. Hub-side host dispatch, appendix §5.2).
-- E2E validation with a staging domain.
+- Resolve the app-vs-registry backend split — recommended: **one Caddy installation with path-based routing** (registry traffic is always under the spec-mandated `/v2/` prefix, everything else is app traffic), see appendix §5.2. Verified against the code: the registry server 404s every non-`/v2` path (`internal/registry/registry.go`), and registry **login** also happens under the prefix — `docker login` has no dedicated login URL, it retries the spec-mandated version check `GET /v2/` with credentials after the `401` challenge, and Distr challenges with `Basic realm="Distr"` (`internal/auth/authentication.go`), not with a Docker token-auth `Bearer realm` that would point to a token endpoint outside `/v2/`. Nothing on the app side claims `/v2` (API is under `/api/v1`).
+- E2E validation with a staging domain — explicitly including the caddy ingress controller's prefix-path handling on host-less rules (`/v2` → 8585, `/` → 8080), the one part of the path-routing option that can't be verified from the repo.
 
 **PR 4 — frontend (appendix §5.6)**
 
@@ -138,7 +144,7 @@ Follows the "recommended shape" in appendix §5: a dedicated `CustomDomain` tabl
 ### Open questions
 
 - See the appendix §6 for the full list of open decisions (metacontroller vs. catch-all, region-encoded CNAME targets, shared-domain semantics).
-- Does the Hub host-context middleware (needed by DEV-596) land here or in DEV-596 PR 1? (Registry already resolves orgs by host; the app side needs an equivalent.)
+- Does the Hub host-context middleware (needed by DEV-596) land here or in DEV-596 PR 1? Note: the registry does **not** resolve orgs by host — it resolves them from the repository path prefix (`internal/registry/name`), so the middleware is new for both app and registry. Upside: the registry needs no per-host org dispatch at all; a custom registry domain works as a pure DNS alias.
 
 ---
 
@@ -146,21 +152,21 @@ Follows the "recommended shape" in appendix §5: a dedicated `CustomDomain` tabl
 
 ### Summary
 
-After moving off AWS certificates/NS records, Distr can no longer send email from customers' custom domains via our SES account. Let organizations configure their own email provider. **Scope decision: exactly one configuration per (vendor) organization** — no per-customer/per-partner configs; customer- and partner-related mails (invites, portal notifications) are sent via the owning vendor's provider. Providers for v1 are what [go-mailx/mailx](https://github.com/go-mailx/mailx) already supports and Distr already uses instance-wide: **SMTP** and **AWS SES with access key / secret key**. Resend/Brevo may come later as new mailx adapters.
+For **new custom domain configurations** (DEV-592 self-service), no AWS certificates or Route53 NS records are created anymore — so Distr cannot send email from those domains via our SES account (no domain verification/DKIM in our SES). Let organizations configure their own email provider instead. The **currently existing custom mail configurations** (SES sending for domains verified through the legacy NS zone setups) **stay supported for now**; they are only decommissioned via DEV-594 and the follow-up tickets. **Scope decision: exactly one configuration per (vendor) organization** — no per-customer/per-partner configs; customer- and partner-related mails (invites, portal notifications) are sent via the owning vendor's provider. Providers for v1 are what [go-mailx/mailx](https://github.com/go-mailx/mailx) already supports and Distr already uses instance-wide: **SMTP** and **AWS SES with access key / secret key**. Resend/Brevo may come later as new mailx adapters.
 
 ### Current state (code)
 
 - One global `*mailx.Mailer` is created at startup in `internal/svc/mailer.go` from `MAILER_TYPE` (`smtp` | `ses` | unset → noop): `smtp.New(smtp.Config{Host, Port, Username, Password, ImplicitTLS, TLSPolicy})` or `ses.NewFromContext(ctx)` (ambient AWS credentials). It is injected into the request context (`internalctx.WithMailer` / `GetMailer`) and used by all senders in `internal/mailsending/`.
 - A per-org **from address** override already exists: `organization_branding.email_from_address`, resolved via `customdomains.EmailFromAddressParsedOrDefault` and the `authOrgOverrideFromAddress` hook in the mailer's `FromAddressSrc` chain. DEV-595 only adds per-org **transport**; the from address stays on branding.
 - `mailx-ses` also exposes `ses.New(aws.Config)`, so per-org static credentials are straightforward: build an `aws.Config` with `credentials.NewStaticCredentialsProvider(accessKeyID, secretAccessKey, "")` and the configured region.
-- There is **no secrets-at-rest encryption today** (the existing `Secret` table for deployment secrets stores plaintext values; only JWT signing uses a key from env), so provider credentials need a new encryption helper.
+- There is **no secrets-at-rest encryption today** (the existing `Secret` table for deployment secrets stores plaintext values; only JWT signing uses a key from env). Provider credentials are stored the same way for now — introducing encryption at rest for all secret storage is a follow-up ticket.
 - Notification sends go through `sendNotificationWithQuota` (`internal/mailsending/mail_quota.go`), an hourly per-address quota protecting our SES reputation.
 
 ### Detailed plan
 
-**PR 1 — data model + secrets encryption**
+**PR 1 — data model**
 
-- New encryption helper (e.g. `internal/crypto`): AES-256-GCM with a key from a new env var `SECRETS_ENCRYPTION_KEY` (base64, 32 bytes; required once any org email config exists). Update `website/src/content/docs/docs/self-hosting/configuration.mdx`.
+- **No encryption at rest for v1** (decided): credentials are stored as plaintext columns, consistent with the existing `Secret` table. Secrets are still never serialized to JSON / returned by the API. Encryption at rest (for this table, the `Secret` table, and the DEV-596/597 client secrets together) is a follow-up ticket — see "Follow-up tickets".
 - New table, one row per org (`UNIQUE (organization_id)` — deliberately *not* the `CustomDomain` owner/scope pattern, per the scope decision):
 
 ```sql
@@ -176,16 +182,16 @@ CREATE TABLE OrganizationEmailConfiguration (
   smtp_host TEXT,
   smtp_port INT,
   smtp_username TEXT,
-  smtp_password_encrypted BYTEA,
+  smtp_password TEXT,
   smtp_implicit_tls BOOLEAN,
   -- ses (static credentials)
   ses_region TEXT,
   ses_access_key_id TEXT,
-  ses_secret_access_key_encrypted BYTEA,
+  ses_secret_access_key TEXT,
   CONSTRAINT OrganizationEmailConfiguration_provider_fields CHECK (
     (provider = 'smtp' AND smtp_host IS NOT NULL AND smtp_port IS NOT NULL)
     OR (provider = 'ses' AND ses_region IS NOT NULL AND ses_access_key_id IS NOT NULL
-        AND ses_secret_access_key_encrypted IS NOT NULL)
+        AND ses_secret_access_key IS NOT NULL)
   )
 );
 ```
@@ -197,7 +203,7 @@ CREATE TABLE OrganizationEmailConfiguration (
 - New resolver (in `internal/svc` or a small `internal/mailer` package): `MailerForOrganization(ctx, orgID) *mailx.Mailer` — returns a mailer built from the org's enabled config, else the instance default from context. Adapter construction is cheap (SMTP dials per send; SES client is a struct), so build per call; add a small cache keyed on `(organization_id, updated_at)` only if profiling says so.
 - Change `internal/mailsending/*` senders to resolve the mailer via the organization they already receive/resolve (e.g. `SendUserInviteMail` already gets `types.OrganizationWithBranding`; notification senders resolve the org from the deployment target). Customer/partner flows use the **vendor org's** config by definition of the scope decision.
 - **No silent fallback**: if an org config is enabled but sending fails, the send fails (logged + Sentry) rather than falling back to instance SES — falling back would send from a domain our SES isn't authorized for (SPF/DKIM/DMARC failures) and mask misconfiguration. The instance default is only used when no org config is enabled.
-- Exempt sends through a customer-provided transport from `sendNotificationWithQuota` (the quota protects *our* provider reputation; their provider is their responsibility) — keep the quota for the instance mailer path.
+- **Keep `sendNotificationWithQuota` for all transports, including customer-provided ones** (decided): the hourly per-recipient-address quota does not only protect our SES reputation — it also protects recipients (and the customer's provider reputation) from Distr-side notification storms (flapping deployments, notification loops), which are our bug regardless of whose transport delivers them. The quota is claimed in the DB before the transport is chosen, so this costs nothing. If an org needs more throughput, add a per-org quota override (follow-up) instead of bypassing the guard.
 
 **PR 3 — admin API + test send**
 
@@ -206,7 +212,8 @@ CREATE TABLE OrganizationEmailConfiguration (
   - `PUT /api/v1/settings/email-configuration` — create/update; omitted secret fields keep the stored value,
   - `DELETE /api/v1/settings/email-configuration`,
   - `POST /api/v1/settings/email-configuration/test` — send a test mail to the current user via the submitted (or stored) config and report the provider error verbatim.
-- Feature gating: `custom_email_provider` feature (Stage 0 plan gating), consistent with DEV-592.
+- Config validation (**decided**): the **test send is the only validation** — no provider-side checks like SES `GetIdentityVerificationAttributes` for the from-address domain. Keeps v1 provider-agnostic and simple; a failed test send with the verbatim provider error tells the admin what to fix.
+- Feature gating (**decided**): available on the **business plan only** (`custom_email_provider` feature from Stage 0), consistent with DEV-592.
 
 **PR 4 — frontend + docs**
 
@@ -216,10 +223,8 @@ CREATE TABLE OrganizationEmailConfiguration (
 
 ### Open questions
 
-- Should the existing plaintext `Secret` table also move to the new `SECRETS_ENCRYPTION_KEY` encryption (separate follow-up), or stay as-is?
 - SES: static keys only for v1, or also assume-role (external ID) for enterprise setups?
 - Should disabling/downgrading the feature (Stage 0 downgrade policy) hard-delete the config or keep it stored but disabled (recommended: keep, disabled)?
-- Do we validate the from-address domain against the provider (e.g. SES `GetIdentityVerificationAttributes`) or leave it to the test-send?
 
 ---
 
@@ -227,42 +232,46 @@ CREATE TABLE OrganizationEmailConfiguration (
 
 ### Summary
 
-An organization admin configures their own (generic) OIDC provider, tied to the custom domain they configured in DEV-592. Users visiting the vendor's domain log in via the vendor's IdP.
+An organization admin configures **one or more** (generic) OIDC providers, tied to the custom domain they configured in DEV-592. Users visiting the vendor's domain log in via one of the vendor's IdPs; a user can be linked to multiple of them (the DEV-641 identity table already supports several identities per account).
 
 ### Detailed plan
 
 **PR 1 — data model + dynamic provider registry**
 
-- New table `organization_oidc_configurations` (`organization_id`, `issuer`, `client_id`, encrypted `client_secret`, `scopes`, `pkce_enabled`, `sp_initiated`, `enabled`, timestamps). Start with exactly one generic provider per org.
-- `sp_initiated` marks the config as **service-provider initiated**: visitors of the org's custom domain are automatically redirected to the IdP instead of seeing the login form (see PR 2).
+- New table `organization_oidc_configurations` (`organization_id`, `name` (display label shown on the login button), `issuer`, `client_id`, `client_secret` (plaintext for now — never serialized to JSON; encryption at rest is a follow-up ticket), `scopes`, `pkce_enabled`, `sp_initiated`, `create_unknown_users BOOLEAN NOT NULL DEFAULT FALSE` (auto-provisioning toggle, see PR 2), `default_user_role` (`read_only` | `read_write` | `admin`, default `read_write` — role for auto-provisioned users), `enabled`, timestamps). **Multiple configs per org** are supported from the start: `UNIQUE (organization_id, name)`, and each config has its own stable id used in the auth routes and identity records.
+- `sp_initiated` marks a config as **service-provider initiated**: visitors of the org's custom domain are automatically redirected to that IdP instead of seeing the login form (see PR 2). **At most one config per org may be `sp_initiated`** — enforce with a partial unique index (`ON (organization_id) WHERE sp_initiated`).
 - Refactor `internal/oidc.OIDCer` from a fixed startup map to a resolver that can lazily initialize + cache per-org providers (discovery document fetch, verifier). Instance-scoped env providers remain the default set.
-- Extend `oidc_states` with the org/provider context so the callback knows which config to use (state is already server-side, so add columns rather than encoding in the URL).
+- Reuse the existing `oidc_states` mechanism (**decided**): it already provides server-side state + PKCE verifier storage and a cleanup cron (`CLEANUP_OIDC_STATE_CRON`) — extend it with the org/OIDC-config context so the callback knows which config to use (add columns rather than encoding in the URL), and raise the 60-second TTL (PR 2). No parallel state store for org providers.
 
 **PR 2 — login flow on custom domains**
 
-- `/api/v1/auth/oidc/{provider}` and callback resolve the org from the Host (host-context middleware, see DEV-592 open questions) and use the org's OIDC config; callback URL is on the vendor's domain.
-- Per-host provider discovery via the existing **`GET /api/v1/portal`** endpoint (`internal/handlers/portal.go`, already resolves the org branding by CNAME/Host): extend `api.PortalResponse` with the OIDC providers available on this host, including the `sp_initiated` flag — replacing pure build-config for the login/register pages.
-- **SP-initiated auto-redirect**: when the portal response marks the org's OIDC config as `sp_initiated`, the frontend immediately redirects unauthenticated visitors to `/api/v1/auth/oidc/{provider}` instead of rendering the login form. Escape hatch: a query param (e.g. `/login?manual=1`, also used after `oidc-failed` redirects) shows the regular login form to avoid redirect loops and admin lockout.
+- Auth initiation + callback resolve the org from the Host (host-context middleware, see DEV-592 open questions) and use the requested org OIDC config; since an org can have several configs, the org routes address them by config id (`/api/v1/auth/oidc/custom/{id}` + callback), while `/api/v1/auth/oidc/{provider}` stays for the instance providers. Callback URL is on the vendor's domain.
+- Per-host provider discovery via the existing **`GET /api/v1/portal`** endpoint (`internal/handlers/portal.go`, already resolves the org branding by CNAME/Host): extend `api.PortalResponse` with the **list** of OIDC providers available on this host (config id, display name, `sp_initiated` flag). Note: the login/register pages currently consume the host-independent **`GET /api/v1/auth/login/config`** — see the open question below about consolidating it into the portal request.
+- **Login UI**: the login page renders one button per provider from the portal list (display name from the config) — but **only when no provider is marked `sp_initiated`**; if one is, the auto-redirect below kicks in and the list is not shown (except via the `?manual=1` escape hatch, which reveals the full form including the provider list).
+- Raise the OIDC state TTL: `verifyOIDCState` rejects states older than 60 seconds, measured from before the redirect to the IdP — enterprise IdPs with MFA or first-time consent easily exceed that, and with SP-initiated auto-redirect a failure bounces back to the login page. Increase to e.g. 10 minutes in this stage (arguably even in DEV-641).
+- **SP-initiated auto-redirect**: when the portal response contains a provider marked `sp_initiated` (at most one, see PR 1), the frontend immediately redirects unauthenticated visitors to that provider's auth route instead of rendering the login form. Escape hatch: a query param (e.g. `/login?manual=1`, also used after `oidc-failed` redirects) shows the regular login form — including the provider list — to avoid redirect loops and admin lockout.
 - Mind caching: the portal response is cached per Host (`Vary: Host`, `max-age=60`) — OIDC config changes may take up to the cache TTL to apply.
-- Signup/first-login semantics (**decided**): a user signing in via a vendor-scoped IdP lands **in that vendor's org** (not a fresh personal org), with default role `read_write` (the regular user role). Invited users keep their invited role.
+- Signup/first-login semantics (**decided**): a user signing in via a vendor-scoped IdP lands **in that vendor's org** (not a fresh personal org). **Auto-provisioning of unknown users is a per-config setting** (`create_unknown_users`): when disabled, unknown users get a clear error page ("no account for this organization — contact your admin"); when enabled, the user is created with the config's `default_user_role`. Invited users keep their invited role.
+- **Billing on auto-provisioning**: when `create_unknown_users` is enabled and a new user would exceed the org's billable user seats (`SubscriptionUserAccountQty`, checked via `subscription.IsBillableUserAccountLimitReached`), the login flow **automatically increases the subscription's user quantity** (Stripe subscription update, `billing.UpdateSubscription`) instead of failing the login — an IdP-managed org must not lock out employees over a seat count. The UI warns about this when enabling the checkbox (PR 4).
 - **Org switching is disabled** for sessions established via an org-scoped OIDC provider: the login token is scoped to that org, the org switcher is hidden, and the switch endpoint rejects such tokens. (The user's identity/authorization only exists in the context of that org's IdP.)
 
 **PR 3 — role / privilege mapping (foundation)**
 
 - Add an optional role-mapping config to `organization_oidc_configurations`: a claim name (e.g. `groups` or `roles`) plus mapping rules claim-value → Distr role (`read_only` | `read_write` | `admin`), evaluated on every login (so demotions at the IdP take effect).
-- Default when no mapping configured: `read_write` on first login, role never touched afterwards.
+- Default when no mapping configured: the config's `default_user_role` on first login, role never touched afterwards.
 - Designed so DEV-720 (full IdP group sync) can build on it later.
 
 **PR 4 — admin API + frontend**
 
-- Org-admin CRUD endpoints for the OIDC config (+ "test connection" doing discovery).
-- Org settings page "SSO / OIDC": form with issuer, client ID/secret, scopes, PKCE toggle, SP-initiated toggle (with a warning about the auto-redirect behavior), role-mapping rules; shows the exact callback URL to register at the IdP.
+- Org-admin CRUD endpoints for the OIDC configs (list + create/update/delete per config id, + "test connection" doing discovery).
+- Org settings page "SSO / OIDC": list of configured providers with add/edit; per-config form with display name, issuer, client ID/secret, scopes, PKCE toggle, SP-initiated toggle (with a warning about the auto-redirect behavior and the one-per-org constraint), **"create unknown users" checkbox with a prominent warning** that every unknown user signing in via this IdP is created automatically **and the billed user seats are increased automatically** when the current quantity is exhausted, a **default role** select for auto-provisioned users, and role-mapping rules; shows the exact per-config callback URL to register at the IdP.
 - Docs page for vendors.
 
 ### Open questions
 
+- **Consolidate `GET /api/v1/auth/login/config` into the portal request**: instead of two endpoints answering "what can I do on this host" (host-independent login config + host-aware portal), fold the login config fields (`registrationEnabled`, instance OIDC provider flags) into `api.PortalResponse` and retire `/auth/login/config`. Mind the cache implications (the portal response is public and cached per Host) and the frontend boot order (login page currently fetches both).
+- **Redirect logins to the org's custom domain?** When an organization has a custom domain configured and one of its users tries to log in on the default host (app.distr.sh), should they be redirected to the custom domain (where the org's OIDC/SP-initiated flow lives)? Open points: the org is only known *after* the user is identified (email entry), so the redirect can happen at the earliest after an email-domain/user lookup; `?manual=1` should presumably bypass this too — otherwise a custom domain that was revoked or broken **on the DNS level** (CNAME removed, cert no longer issuable) would lock the org's users out entirely, with no working login page left; and it must not become an email-enumeration oracle (the redirect reveals that an account exists).
 - Vendor OIDC config as the **default** for all customer/partner organizations on the vendor's shared custom domain, inherited automatically by newly created customer/partner orgs; customer-scoped configs (DEV-597) override it on dedicated customer domains (see the appendix, "Shared custom domains" decision). Precedence + opt-out rules to be settled.
-- Should auto-provisioning of unknown users be opt-in per org, or always on when org OIDC is enabled?
 - Only "generic" per-org OIDC at first, or also branded Google/Microsoft per org?
 - Role mapping: is claim-value → role sufficient for v1, or do we need expression-based rules?
 - Should vendor-scoped OIDC also work on app.distr.sh (e.g. via email-domain discovery), or strictly custom-domain-only? (DEV-644 suggests strictly domain-scoped.)
@@ -291,6 +300,7 @@ A vendor admin configures a custom domain for each of their customers, e.g. vend
 
 - Do wildcard setups (`*.distribution.vendor.com`) need first-class support, or is per-customer explicit CNAME enough for v1?
 - What exactly is scoped by a customer domain besides login/OIDC (branding, registry too?)?
+- **Do customers get custom registry domains at all, or only custom portal URLs?** Registry access for customers works through the vendor's (custom or default) registry domain either way — org resolution is path-based, and the portal/login experience is the thing a customer-facing domain is actually for. Supporting per-customer registry domains would mean per-customer `domain_type = 'registry'` rows, per-customer CNAME instructions for a second record, and more `ask`-endpoint surface, for unclear benefit. Leaning: customer domains are **app/portal only** for v1; `CustomDomain` scoping (`customer_organization_id` + `domain_type`) already permits adding registry rows later without a schema change.
 
 ---
 
@@ -337,13 +347,13 @@ A **customer admin** sets up OIDC for their own organization, on their customer-
 
 - Allow `organization_oidc_configurations` for customer organizations; resolve config via the customer domain in the login flow.
 - Permissions: customer admins manage their own config; decide whether vendor admins may manage it on the customer's behalf.
-- Auto-provisioned users land in the customer org with default role `read_write`; the DEV-596 role/privilege mapping applies unchanged.
+- Auto-provisioned users (only when the config's `create_unknown_users` is enabled) land in the customer org with the config's `default_user_role` — concretely: an `Organization_UserAccount` row on the **vendor** org with `customer_organization_id` set (the membership/constraint model from migrations 52/104); the DEV-596 role/privilege mapping and the automatic seat-quantity increase apply unchanged.
 - Org switching is disabled for these sessions too (same org-scoped token mechanism as DEV-596 PR 2).
 - SP-initiated auto-redirect works the same on customer domains: the `/api/v1/portal` response for the customer's CNAME carries the customer org's OIDC config.
 
 **PR 2 — frontend + docs**
 
-- Customer-side settings page (customer portal) for OIDC config, same form/component as DEV-596 PR 3, reused.
+- Customer-side settings page (customer portal) for OIDC configs, same list + form components as DEV-596 PR 4, reused.
 - Vendor-side visibility (read-only status of customer SSO?) — to be decided.
 - Docs for customer admins.
 
@@ -360,22 +370,25 @@ A **customer admin** sets up OIDC for their own organization, on their customer-
 
 On custom domains, only the domain-scoped (vendor/customer) OIDC providers should be offered — not the instance-scoped Google/GitHub/Microsoft/Generic ones. **Breaking change**: users who currently sign in via instance OIDC on a custom domain could be locked out, so it needs advance communication.
 
+**Scoping decision**: instance login methods are available **only** on the default hostname (`env.Host()`) **and** on the hostnames that were configured in the organization settings before this project (the legacy `organization_branding.app_domain` values migrated into `CustomDomain` by DEV-592 PR 1). All domains created through the new self-service flow are strictly domain-scoped from day one. Removing the legacy exception is a follow-up ticket (see "Follow-up tickets").
+
 ### Detailed plan
 
-**PR 1 — behavior switch (possibly behind a transition flag)**
+**PR 1 — behavior switch**
 
-- The per-host provider listing endpoint (DEV-596 PR 2) returns only org-scoped providers for custom domains; instance providers only on the default host.
-- Backend enforcement as well: reject instance-provider auth initiation on custom domains (not just hidden in UI).
+- DEV-592 PR 1 marks the migrated `organization_branding` rows in `CustomDomain` (e.g. a `legacy BOOLEAN NOT NULL DEFAULT FALSE` column, set only by the migration).
+- The per-host provider listing (DEV-596 PR 2) returns instance providers only on the default host and on `legacy` domains; all other custom domains get only their org-scoped providers.
+- Backend enforcement as well: reject instance-provider auth initiation on non-legacy custom domains (not just hidden in UI).
 
-**Pre-rollout tasks (before the PR is enabled)**
+**Pre-rollout tasks (before the legacy exception is removed, follow-up ticket)**
 
-- Identify affected users (instance-OIDC logins with Host ≠ default from logs/metrics — add measurement early, ideally in DEV-596).
+- Identify affected users (instance-OIDC logins with Host ≠ default from logs/metrics — add measurement early, ideally in DEV-596). Caveat: `getRedirectURL` already derives the callback from the request Host, so an instance-OIDC login *initiated* on a custom domain sends a `redirect_uri` on that domain — normally not registered at Google/GitHub/Microsoft, so it already fails at the IdP. Measure auth **initiations** per Host, not successful logins; the affected population may already be near zero.
 - Notify affected vendors: set up org-scoped OIDC or ensure users have passwords/use the default domain.
-- Grace period with a warning banner on custom-domain logins using instance OIDC.
+- Grace period with a warning banner on legacy-domain logins using instance OIDC.
 
 ### Open questions
 
-- Do we need a per-org opt-out/grace flag, or is a global cutoff date with comms enough?
+- Timeline for dropping the `legacy` exception (global cutoff date with comms vs. per-org sign-off).
 
 ---
 
@@ -390,11 +403,27 @@ Request for mapping IdP groups to Distr users/roles. Currently not possible — 
 ## Cross-cutting notes
 
 - **Feature gating** (decided): plan-based via Stage 0 — the business plan (and above) grants the new `Feature` flags (`custom_domains`, `custom_email_provider`, `org_oidc`); DEV-283 plan switching is the prerequisite deliverable.
-- **Secret storage**: OIDC client secrets (DEV-596/597) and SMTP credentials (DEV-595) both need encryption at rest — pick one mechanism, build it in the first PR that needs it.
-- **Host-context middleware** is the shared backbone for DEV-593, DEV-596, DEV-597 and DEV-644 — the registry already resolves orgs by host, the app side needs an equivalent; decide whether it lands in DEV-592 or DEV-596 (open question in Stage 2).
+- **Secret storage** (decided): OIDC client secrets (DEV-596/597) and SMTP/SES credentials (DEV-595) are stored as plaintext for v1, consistent with the existing `Secret` table — never serialized to JSON or returned by the API. Encryption at rest for all of them together is a follow-up ticket.
+- **Host-context middleware** is the shared backbone for DEV-593, DEV-596, DEV-597 and DEV-644 — it is new for both app and registry (the registry resolves orgs from the repository path, not the Host header); decide whether it lands in DEV-592 or DEV-596 (open question in Stage 2).
 - **Org-scoped sessions**: logins via org-scoped OIDC providers produce org-scoped tokens without org switching (DEV-596 PR 2); the same mechanism serves customer-scoped OIDC (DEV-597).
-- **Role/privilege mapping**: introduced in DEV-596 PR 3 (claim → role rules, default `read_write`), reused by DEV-597, and the foundation for DEV-720 if it gets picked up.
+- **Role/privilege mapping**: introduced in DEV-596 PR 3 (claim → role rules, fallback to the config's `default_user_role`), reused by DEV-597, and the foundation for DEV-720 if it gets picked up.
 - **Docs**: every stage updates `website/src/content/docs/` (self-hosting configuration reference for new env vars, plus product docs for the new org settings).
+
+---
+
+## Follow-up tickets (create in Linear, not part of the stages above)
+
+Cleanup and nice-to-have work that intentionally stays out of the delivery stages:
+
+1. **Remove the `legacy` custom-domain exception** (after DEV-644 + comms/grace period): instance login methods stop working on the migrated legacy domains too; drop the `CustomDomain.legacy` flag/rows semantics.
+2. **Decommission Route53 + ALB legacy setup** (after the DEV-594 migration deadline): delete the Route53 NS zones, remove the migrated/expired domains from the ALB ingress list, revoke the associated ACM certificates.
+3. **Remove SES entries for customer domains** (after DEV-595 adoption): delete the customer-domain identities (domain verification, DKIM records) from our SES account; customer-domain email then only works via their own provider.
+4. **Introduce secrets-at-rest encryption** for all secret storage in one go: the existing `Secret` table, the DEV-595 email provider credentials, and the DEV-596/597 OIDC client secrets (all plaintext for now). Sketch: `internal/crypto` helper, AES-256-GCM, key from a new `SECRETS_ENCRYPTION_KEY` env var (base64, 32 bytes), ciphertexts prefixed with a key-ID/version byte so the key can become a keyring (rotation) without another migration; update `configuration.mdx`.
+5. **Admin UI to view/unlink connected OIDC identities** (DEV-641 open question).
+6. **Notify users (old + new address) on IdP-driven email change** (DEV-641 open question).
+7. **Additional mail providers (Resend/Brevo)** as new mailx adapters (DEV-595 summary).
+8. **Per-org notification quota override** for organizations with their own email provider that need more than the instance-wide `NOTIFICATION_EMAIL_HOURLY_QUOTA` (DEV-595 PR 2 keeps the quota for all transports).
+9. **DEV-720 IdP group mapping** — only if the customer returns; builds on the DEV-641 identity table + DEV-596 role mapping.
 
 ---
 
@@ -1066,7 +1095,7 @@ func RegistryDomainOrDefault(b *types.OrganizationBranding) string {
 }
 ```
 
-- The Hub already serves both app and registry traffic for any Host header from a single deployment (registry routing already resolves orgs by host for custom registry domains), so **no per-org child deployments are needed** — the biggest chunk of jetski's machinery (CRD, metacontroller, sync webhook generating Deployments) is unnecessary for Distr.
+- The Hub already serves both app and registry traffic for any Host header from a single deployment (registry org resolution is **path-based** — `<org>/<artifact>` — so custom registry domains work as pure DNS aliases), so **no per-org child deployments are needed** — the biggest chunk of jetski's machinery (CRD, metacontroller, sync webhook generating Deployments) is unnecessary for Distr.
 
 ### 5. Mapping onto DEV-592 — recommended shape for Distr
 
@@ -1087,9 +1116,10 @@ The jetski pattern reduces to this for Distr:
    - *DNS*: the Caddy LB has its own address, and only the CNAME targets (`custom-app.distr.sh`, `custom-registry.distr.sh`) and thus the vendors' custom domains resolve to it. Internal workload domains keep pointing at the other LB, so their traffic never reaches the catch-all in the first place.
    - Someone pointing an unregistered domain at the Caddy LB gets nothing: the `ask` endpoint rejects cert issuance (TLS handshake fails), and plain-HTTP requests hit the Hub which doesn't resolve the unknown Host (404).
 
-   **Caveat — app vs. registry need different backends:** Distr serves the app on `:8080` and the registry on a separate server on `:8585` (`cmd/hub/cmd/serve.go`), and a single host-less catch-all can only point to one backend port. Two clean solutions, both compatible with the two-CNAME-target model:
-   - *Two Caddy installations* (two ingress classes, e.g. `caddy-app` and `caddy-registry`, two LoadBalancers): `custom-app.distr.sh` CNAMEs to the app LB whose catch-all targets port 8080, `custom-registry.distr.sh` to the registry LB whose catch-all targets port 8585. Bonus hardening: each installation's `onDemandAsk` URL can carry the type (`/ask?type=app`), so an app domain can't get a certificate on the registry LB and vice versa.
-   - *One Caddy + Hub-side dispatch*: a single catch-all to port 8080, and the Hub routes requests whose Host is a registry domain (`CustomDomain.domain_type = 'registry'`) to the registry handler internally. Fewer moving parts in the cluster, but requires Hub changes and makes the registry share the app server's port/timeouts.
+   **Caveat — app vs. registry need different backends:** Distr serves the app on `:8080` and the registry on a separate server on `:8585` (`cmd/hub/cmd/serve.go`), and a single host-less catch-all rule can only point to one backend port. Options, in order of preference:
+   - *One Caddy installation with path-based routing* (**recommended**): the OCI distribution API mandates that all registry traffic lives under the `/v2/` path prefix (Distr's registry handler even 404s everything else, `internal/registry/registry.go`), so a single catch-all Ingress can carry two host-less rules — `/v2` → port 8585, `/` → port 8080. One LoadBalancer, one ingress class, one `ask` endpoint; both CNAME targets point at the same LB (they can even stay two distinct DNS names for future flexibility). No second installation needed. Only limitation: a domain of type `registry` also "answers" app paths and vice versa — acceptable, since the Hub resolves unknown Hosts to 404/default branding anyway; if desired, the host-context middleware can reject mismatched `domain_type` requests.
+   - *Two Caddy installations* (two ingress classes, e.g. `caddy-app` and `caddy-registry`, two LoadBalancers): `custom-app.distr.sh` CNAMEs to the app LB whose catch-all targets port 8080, `custom-registry.distr.sh` to the registry LB whose catch-all targets port 8585. Only needed if the app/registry LBs must be separated on the network level (independent scaling/timeouts/IP allowlists), since path-based routing already solves the port split. Bonus hardening: each installation's `onDemandAsk` URL can carry the type (`/ask?type=app`), so an app domain can't get a certificate on the registry LB and vice versa. (Requires a second aliased `caddy-ingress-controller` dependency in the Helm chart, see §6.)
+   - *One Caddy + Hub-side dispatch*: a single catch-all to port 8080, and the Hub routes requests whose Host is a registry domain (`CustomDomain.domain_type = 'registry'`) to the registry handler internally. Superseded by the path-based option, which achieves the same with zero Hub changes.
 
    - Alternative, closer to jetski: have the Hub create/update one Ingress per custom domain via a k8s client when the domain is saved (host rule picks the correct backend port, solving the app/registry split naturally). This gives per-domain routing objects and observability, at the cost of giving the Hub k8s API access. For a first iteration the static catch-all is simpler and sufficient.
 
@@ -1114,6 +1144,9 @@ CREATE TABLE CustomDomain (
   -- and partners.
   customer_organization_id UUID REFERENCES CustomerOrganization (id) ON DELETE CASCADE,
   partner_organization_id UUID REFERENCES PartnerOrganization (id) ON DELETE CASCADE,
+  -- TRUE only for rows migrated from organization_branding: instance login methods stay
+  -- available on these domains (DEV-644 scoping decision) until the follow-up cleanup ticket
+  legacy BOOLEAN NOT NULL DEFAULT FALSE,
   CONSTRAINT CustomDomain_at_most_one_scope
     CHECK (num_nonnulls(customer_organization_id, partner_organization_id) <= 1),
   -- a domain may exist only once, globally
@@ -1189,12 +1222,54 @@ Options, simplest first:
 
 **Assessment: metacontroller is overkill if the Ingress is the only child.** Its value (child lifecycle orchestration, GC across multiple resource types, decoupling the reconcile loop from the Hub) doesn't pay off for one resource type; option 1 needs no reconciliation at all and option 2 covers the per-domain-object requirement with far less machinery. Metacontroller only becomes attractive again if we later need per-org/per-domain workloads (dedicated proxies, isolated registries) like HyprMCP had.
 
-**Status: to be discussed.** To keep both paths open, the Distr Helm chart now bundles both as optional, disabled-by-default dependencies (`deploy/charts/distr/Chart.yaml`):
+**Status: to be discussed.** To keep both paths open, the Distr Helm chart should bundle both as optional, disabled-by-default dependencies. These chart changes are **not applied yet** — they ship with DEV-592 PR 3 (followed by `helm dependency update` to regenerate `Chart.lock` and helm-docs for the README):
 
-- `metacontroller` (alias for `metacontroller-helm`, `oci://ghcr.io/metacontroller`, `4.16.x`) — enable with `metacontroller.enabled=true`
-- `caddy-ingress-controller` (`https://caddyserver.github.io/ingress`, `1.3.x`) — enable with `caddy-ingress-controller.enabled=true`; values pre-wire `ingressController.config.onDemandTLS=true` and document the `onDemandAsk` endpoint pointing at the Distr Hub
+`deploy/charts/distr/Chart.yaml`:
 
-The Caddy ingress is required for the feature in any of the three options; metacontroller only for option 3.
+```yaml
+dependencies:
+  # ... existing postgresql + rustfs ...
+  - name: metacontroller-helm
+    alias: metacontroller
+    repository: oci://ghcr.io/metacontroller
+    version: 4.16.x
+    condition: metacontroller.enabled
+  - name: caddy-ingress-controller
+    repository: https://caddyserver.github.io/ingress
+    version: 1.3.x
+    condition: caddy-ingress-controller.enabled
+```
+
+`deploy/charts/distr/values.yaml`:
+
+```yaml
+# Metacontroller (https://metacontroller.github.io/metacontroller/) is only needed if Distr
+# should reconcile per-organization custom domain Ingresses via a CRD (see automated custom
+# domain configuration). Disabled by default.
+metacontroller:
+  enabled: false
+
+# Caddy ingress controller (https://github.com/caddyserver/ingress) with on-demand TLS for
+# automated custom domain configuration (vendors bring their own domain via CNAME record).
+# Disabled by default.
+caddy-ingress-controller:
+  enabled: false
+  ingressController:
+    config:
+      # E-mail address used for the ACME account.
+      email: ''
+      # On-demand TLS issues certificates during the first TLS handshake for unknown domains.
+      onDemandTLS: true
+      # The "ask" endpoint that authorizes certificate issuance for a domain.
+      # Must point at the Distr Hub's cluster-internal ask listener (DEV-592 PR 2), which
+      # returns 200 only for registered custom domains. Never expose this listener publicly.
+      # onDemandAsk: http://distr-internal-caddy-ask:8085/internal/webhook/tls/ask
+```
+
+Notes:
+
+- An earlier draft pointed `onDemandAsk` at the public main server port (`http://distr:8080/...`) — that contradicts the internal-only requirement from PR 2. The ask endpoint lives on its **own HTTP server** (DEV-592 PR 2) that is only started when the custom domain feature is configured, and the chart adds a **dedicated `distr-internal-caddy-ask` Service** exposing only that port — separate from the public `distr` Service so no Ingress for the public Service can ever route to it.
+- The Caddy ingress is required for the feature in any of the three options; metacontroller only for option 3. The *two Caddy installations* variant from §5.2 would need a second aliased `caddy-ingress-controller` dependency.
 
 #### Shared custom domains for multiple customers/partners + OIDC config as the default for new orgs
 
