@@ -21,7 +21,7 @@ You can find them in the reference [values.yaml](https://artifacthub.io/packages
 ## Log processing (Loki)
 
 The chart includes a bundled [Grafana Loki](https://grafana.com/oss/loki/) instance (enabled by default) that stores deployment and deployment target logs with a 30-day retention.
-By default it persists its data in the in-cluster RustFS object storage, so the quick start above works out of the box.
+Loki is preconfigured to persist its data in the in-cluster RustFS object storage, so enabling RustFS (as the quick start above does with `--set rustfs.enabled=true`) makes it work out of the box.
 
 If you use an external S3-compatible object storage instead of the bundled RustFS, point `loki.loki.storage.s3` (and the bucket-provisioning init container under `loki.singleBinary.initContainers`) at it.
 To use an externally managed Loki instance, set `loki.enabled=false` and configure `LOKI_URL` (and optionally `LOKI_BEARER_TOKEN` or `LOKI_BASIC_AUTH_*`) in `hub.env`.
