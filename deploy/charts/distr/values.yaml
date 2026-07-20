@@ -395,6 +395,10 @@ loki:
       # Accept backfilled logs up to the retention period so an agent that was
       # offline can still push its backlog.
       reject_old_samples_max_age: 720h
+      # Raised moderately from Loki's 4/6 MB defaults to give an organization with
+      # several chatty agents more headroom before pushes are throttled.
+      ingestion_rate_mb: 16
+      ingestion_burst_size_mb: 32
   singleBinary:
     replicas: 1
     persistence:
