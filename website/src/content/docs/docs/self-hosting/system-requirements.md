@@ -19,7 +19,7 @@ CPU values on this page use the Kubernetes notation of CPU millicores (`m`), whe
 To run the all-in-one [Docker Compose](/docs/self-hosting/docker/) setup you need:
 
 - **Docker Engine** ≥ v29
-- **Docker Compose** ≥ v5.3 (the `docker compose` plugin; the log storage setup uses `pre_start` lifecycle hooks introduced in v5.3.0)
+- **Docker Compose** ≥ v5.3 (the `docker compose` plugin; the log processing setup uses `pre_start` lifecycle hooks introduced in v5.3.0)
 - **curl** (to download the deployment manifest)
 
 ## Average resource consumption
@@ -47,7 +47,7 @@ We therefore recommend provisioning a VM with a **minimum of 2 CPUs and 4 GB RAM
 
 Distr itself does not require any persistent volumes. All state is stored in the PostgreSQL database, the S3-compatible object storage (registry blobs and log chunks), and the environment configuration.
 
-## Log storage (Loki)
+## Log processing (Loki)
 
 Deployment and deployment target logs are processed and stored via [Grafana Loki](https://grafana.com/oss/loki/), which is included in all shipped deployment methods (Docker Compose and Helm) in monolithic (single-binary) mode.
 Loki persists log chunks and its index in the same S3-compatible object storage as the registry, using a dedicated `loki` bucket, and only needs a small local volume for its write-ahead log and caches.

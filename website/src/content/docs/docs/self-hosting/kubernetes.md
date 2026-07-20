@@ -18,7 +18,7 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 For a quick testing setup, you don't have to modify the values. However, if you intend to use distr in production, please revisit all available configuration values and adapt them accordingly.
 You can find them in the reference [values.yaml](https://artifacthub.io/packages/helm/distr/distr?modal=values) file.
 
-## Log storage (Loki)
+## Log processing (Loki)
 
 The chart includes a bundled [Grafana Loki](https://grafana.com/oss/loki/) instance (enabled by default) that stores deployment and deployment target logs with a 30-day retention.
 By default it persists its data in the in-cluster RustFS object storage, so the quick start above works out of the box.

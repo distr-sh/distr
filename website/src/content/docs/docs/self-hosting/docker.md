@@ -28,7 +28,7 @@ docker compose up -d
 
 ## Older Docker Compose versions
 
-The shipped `docker-compose.yaml` provisions the object storage bucket for the Loki log storage with a `pre_start` lifecycle hook on the `loki` service, which requires Docker Compose ≥ 5.3.0.
+The shipped `docker-compose.yaml` provisions the object storage bucket for the Loki log processing backend with a `pre_start` lifecycle hook on the `loki` service, which requires Docker Compose ≥ 5.3.0.
 If you cannot upgrade Docker Compose yet, replace the `pre_start` hook with a one-shot service and let the `loki` service depend on its successful completion:
 
 ```yaml
