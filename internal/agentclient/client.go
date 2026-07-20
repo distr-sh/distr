@@ -54,9 +54,11 @@ func (c *Client) Resource(ctx context.Context) (*api.AgentResource, error) {
 		req.Header.Set("Content-Type", "application/json")
 		if resp, err := c.doAuthenticated(ctx, req, true); err != nil {
 			return nil, err
-		} else if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-			return nil, err
 		} else {
+			defer drainAndClose(resp)
+			if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+				return nil, err
+			}
 			return &result, nil
 		}
 	}
@@ -67,10 +69,9 @@ func (c *Client) Manifest(ctx context.Context) ([]byte, error) {
 		return nil, err
 	} else if resp, err := c.doAuthenticated(ctx, req, true); err != nil {
 		return nil, err
-	} else if data, err := io.ReadAll(resp.Body); err != nil {
-		return nil, err
 	} else {
-		return data, nil
+		defer drainAndClose(resp)
+		return io.ReadAll(resp.Body)
 	}
 }
 
@@ -96,9 +97,10 @@ func (c *Client) Status(
 		return err
 	} else {
 		req.Header.Set("Content-Type", "application/json")
-		if _, err := c.doAuthenticated(ctx, req, true); err != nil {
+		if resp, err := c.doAuthenticated(ctx, req, true); err != nil {
 			return err
 		} else {
+			drainAndClose(resp)
 			return nil
 		}
 	}
@@ -112,7 +114,7 @@ func (c *Client) ExportDeploymentLogs(ctx context.Context, records []api.Deploym
 		return err
 	} else {
 		req.Header.Set("Content-Type", "application/json")
-		if _, err := c.doAuthenticated(ctx, req, true); err != nil {
+		if resp, err := c.doAuthenticated(ctx, req, true); err != nil {
 			if statusErr, ok := errors.AsType[*httpstatus.StatusError](err); ok &&
 				statusErr.StatusCode == http.StatusBadRequest {
 				// The server rejected the batch as invalid; surface it as a permanent
@@ -120,6 +122,8 @@ func (c *Client) ExportDeploymentLogs(ctx context.Context, records []api.Deploym
 				return fmt.Errorf("%w: %w", deploymentlogs.ErrRecordsRejected, err)
 			}
 			return err
+		} else {
+			drainAndClose(resp)
 		}
 		return nil
 	}
@@ -133,7 +137,7 @@ func (c *Client) ExportDeploymentTargetLogs(records ...api.DeploymentTargetLogRe
 		return err
 	} else {
 		req.Header.Set("Content-Type", "application/json")
-		if _, err := c.doAuthenticated(context.TODO(), req, false); err != nil {
+		if resp, err := c.doAuthenticated(context.TODO(), req, false); err != nil {
 			if statusErr, ok := errors.AsType[*httpstatus.StatusError](err); ok &&
 				statusErr.StatusCode == http.StatusBadRequest {
 				// The server rejected the batch as invalid; surface it as a permanent
@@ -141,6 +145,8 @@ func (c *Client) ExportDeploymentTargetLogs(records ...api.DeploymentTargetLogRe
 				return fmt.Errorf("%w: %w", deploymenttargetlogs.ErrRecordsRejected, err)
 			}
 			return err
+		} else {
+			drainAndClose(resp)
 		}
 		return nil
 	}
@@ -155,6 +161,7 @@ func (c *Client) Login(ctx context.Context) error {
 	if resp, err := c.do(req); err != nil {
 		return err
 	} else {
+		defer drainAndClose(resp)
 		var loginResponse api.AuthLoginResponse
 		if err := json.NewDecoder(resp.Body).Decode(&loginResponse); err != nil {
 			return err
@@ -219,9 +226,10 @@ func (c *Client) ReportMetrics(ctx context.Context, metrics api.AgentDeploymentT
 		return err
 	} else {
 		req.Header.Set("Content-Type", "application/json")
-		if _, err := c.doAuthenticated(ctx, req, true); err != nil {
+		if resp, err := c.doAuthenticated(ctx, req, true); err != nil {
 			return err
 		} else {
+			drainAndClose(resp)
 			return nil
 		}
 	}
@@ -260,6 +268,16 @@ func (c *Client) doAuthenticatedNoRetry(
 func (c *Client) do(r *http.Request) (*http.Response, error) {
 	r.Header.Set("User-Agent", fmt.Sprintf("%v/%v", useragent.DistrAgentUserAgent, buildconfig.Version()))
 	return httpstatus.CheckStatus(c.httpClient.Do(r))
+}
+
+// drainAndClose consumes any remaining response body and closes it so the underlying
+// connection can be reused for keep-alive and no file descriptors are leaked.
+func drainAndClose(resp *http.Response) {
+	if resp == nil || resp.Body == nil {
+		return
+	}
+	_, _ = io.Copy(io.Discard, resp.Body)
+	_ = resp.Body.Close()
 }
 
 func (c *Client) ReloadFromEnv() (changed bool, err error) {

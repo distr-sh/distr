@@ -33,6 +33,9 @@ func CheckStatus(r *http.Response, err error) (*http.Response, error) {
 	if err != nil || StatusOK(r) {
 		return r, err
 	}
+	// The response is only used to build the error, so drain and close the body here to
+	// avoid leaking the connection/file descriptor since callers discard r on error.
+	defer func() { _ = r.Body.Close() }()
 	statusErr := &StatusError{StatusCode: r.StatusCode, Status: r.Status}
 	if body, err := io.ReadAll(r.Body); err == nil {
 		statusErr.Body = strings.TrimSpace(string(body))
