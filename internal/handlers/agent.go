@@ -23,6 +23,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/deploymentvalues"
 	"github.com/distr-sh/distr/internal/env"
+	"github.com/distr-sh/distr/internal/logstore"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/notification"
@@ -336,9 +337,16 @@ func agentPutDeploymentLogsHandler() http.HandlerFunc {
 			return
 		}
 
-		if err := db.SaveDeploymentLogRecords(ctx, records); errors.Is(err, apierrors.ErrBadRequest) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		} else if err != nil {
+		logStore := logstore.FromContext(ctx)
+		if err := logStore.SaveDeploymentLogRecords(ctx, auth.CurrentOrgID(), records); err != nil {
+			if errors.Is(err, apierrors.ErrBadRequest) {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			if errors.Is(err, logstore.ErrRateLimitExceeded) {
+				http.Error(w, err.Error(), http.StatusTooManyRequests)
+				return
+			}
 			log.Error("error saving deployment log records", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -370,9 +378,16 @@ func agentPutDeploymentTargetLogsHandler() http.HandlerFunc {
 			return
 		}
 
-		if err := db.SaveDeploymentTargetLogRecords(ctx, deploymentTarget.ID, records); err != nil {
+		logStore := logstore.FromContext(ctx)
+		if err := logStore.SaveDeploymentTargetLogRecords(
+			ctx, deploymentTarget.OrganizationID, deploymentTarget.ID, records,
+		); err != nil {
 			if errors.Is(err, apierrors.ErrBadRequest) {
 				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			if errors.Is(err, logstore.ErrRateLimitExceeded) {
+				http.Error(w, err.Error(), http.StatusTooManyRequests)
 				return
 			}
 

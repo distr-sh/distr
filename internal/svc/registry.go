@@ -14,6 +14,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/jobs"
+	"github.com/distr-sh/distr/internal/logstore"
 	"github.com/distr-sh/distr/internal/migrations"
 	"github.com/distr-sh/distr/internal/oidc"
 	distrprometheus "github.com/distr-sh/distr/internal/prometheus"
@@ -42,6 +43,7 @@ type Registry struct {
 	promRegistry      *prometheus.Registry
 	promCollector     *distrprometheus.DistrCollector
 	s3Client          *s3.Client
+	logStore          logstore.LogStore
 }
 
 func New(ctx context.Context, options ...RegistryOption) (*Registry, error) {
@@ -103,6 +105,18 @@ func newRegistry(ctx context.Context, reg *Registry) (*Registry, error) {
 
 	if env.RegistryEnabled() {
 		reg.s3Client = newS3Client(ctx)
+	}
+
+	if logStore, err := logstore.NewLokiStore(logstore.LokiConfig{
+		URL:               env.LokiURL(),
+		BearerToken:       env.LokiBearerToken(),
+		BasicAuthUsername: env.LokiBasicAuthUsername(),
+		BasicAuthPassword: env.LokiBasicAuthPassword(),
+		RequestTimeout:    env.LokiRequestTimeout(),
+	}); err != nil {
+		return nil, err
+	} else {
+		reg.logStore = logStore
 	}
 
 	if scheduler, err := reg.createJobsScheduler(); err != nil {
@@ -169,7 +183,12 @@ func (r *Registry) GetRouter() http.Handler {
 		r.GetTracers(),
 		r.GetOIDCer(),
 		r.GetPrometheusCollector(),
+		r.GetLogStore(),
 	)
+}
+
+func (r *Registry) GetLogStore() logstore.LogStore {
+	return r.logStore
 }
 
 func (r *Registry) GetArtifactsRouter() http.Handler {

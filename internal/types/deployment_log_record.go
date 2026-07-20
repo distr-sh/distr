@@ -1,18 +1,9 @@
 package types
 
-import (
-	"time"
-
-	"github.com/google/uuid"
-)
-
-type DeploymentLogRecord struct {
-	ID                   uuid.UUID `db:"id"`
-	CreatedAt            time.Time `db:"created_at"`
-	DeploymentID         uuid.UUID `db:"deployment_id"`
-	DeploymentRevisionID uuid.UUID `db:"deployment_revision_id"`
-	Resource             string    `db:"resource"`
-	Timestamp            time.Time `db:"timestamp"`
-	Severity             string    `db:"severity"`
-	Body                 string    `db:"body"`
-}
+// DeploymentLogRecord was removed: deployment log records are now stored in and served from the
+// log store (Loki) instead of the DeploymentLogRecord Postgres table. The backing table is kept
+// around temporarily so we can revert to the previous version if needed and provide manual exports
+// for customers on request.
+//
+// TODO: Drop the DeploymentLogRecord table once we are confident we no longer need to revert or
+// export the historical records.
