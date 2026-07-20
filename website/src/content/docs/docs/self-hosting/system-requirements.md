@@ -49,7 +49,7 @@ Distr itself does not require any persistent volumes. All state is stored in the
 
 ## Log storage (Loki)
 
-Deployment and deployment target logs are stored in [Grafana Loki](https://grafana.com/oss/loki/), which is included in all shipped deployment methods (Docker Compose and Helm) in monolithic (single-binary) mode.
+Deployment and deployment target logs are processed and stored via [Grafana Loki](https://grafana.com/oss/loki/), which is included in all shipped deployment methods (Docker Compose and Helm) in monolithic (single-binary) mode.
 Loki persists log chunks and its index in the same S3-compatible object storage as the registry, using a dedicated `loki` bucket, and only needs a small local volume for its write-ahead log and caches.
 The shipped configuration retains logs for 30 days.
 
