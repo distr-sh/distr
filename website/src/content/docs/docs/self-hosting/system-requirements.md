@@ -31,7 +31,7 @@ The following table lists the average CPU and memory per component. These values
 | Distr                   | 100m         | 128 MB      |
 | PostgreSQL (database)   | 250m         | 512 MB      |
 | RustFS (object storage) | 100m         | 256 MB      |
-| Loki (log processing)      | 100m         | 512 MB      |
+| Loki (log processing)   | 100m         | 512 MB      |
 | Caddy (reverse proxy)   | 50m          | 64 MB       |
 | **Total**               | **~0.6 CPU** | **~1.5 GB** |
 
