@@ -169,7 +169,11 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | loki.loki.compactor.retention_enabled                 | bool   | `true`                                           |             |
 | loki.loki.limits_config.allow_structured_metadata     | bool   | `true`                                           |             |
 | loki.loki.limits_config.increment_duplicate_timestamp | bool   | `true`                                           |             |
+| loki.loki.limits_config.ingestion_burst_size_mb       | int    | `32`                                             |             |
+| loki.loki.limits_config.ingestion_rate_mb             | int    | `16`                                             |             |
 | loki.loki.limits_config.max_global_streams_per_user   | int    | `25000`                                          |             |
+| loki.loki.limits_config.max_line_size_truncate        | bool   | `true`                                           |             |
+| loki.loki.limits_config.reject_old_samples_max_age    | string | `"720h"`                                         |             |
 | loki.loki.limits_config.retention_period              | string | `"720h"`                                         |             |
 | loki.loki.schemaConfig.configs[0].from                | string | `"2024-01-01"`                                   |             |
 | loki.loki.schemaConfig.configs[0].index.period        | string | `"24h"`                                          |             |
