@@ -14,7 +14,7 @@
 
 <!-- x-release-please-start-version -->
 
-![Version: 2.26.0](https://img.shields.io/badge/Version-2.26.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.26.0](https://img.shields.io/badge/AppVersion-2.26.0-informational?style=flat-square)
+![Version: 3.0.0-rc.1](https://img.shields.io/badge/Version-2.26.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.26.0](https://img.shields.io/badge/AppVersion-2.26.0-informational?style=flat-square)
 
 <!-- x-release-please-end -->
 
@@ -35,7 +35,7 @@ To install Distr in Kubernetes, simply run:
 
 ```shell
 helm upgrade --install --wait --namespace distr --create-namespace \
-  distr oci://ghcr.io/distr-sh/charts/distr --version 2.26.0 \
+  distr oci://ghcr.io/distr-sh/charts/distr --version 3.0.0-rc.1 \
   --set postgresql.enabled=true --set rustfs.enabled=true
 ```
 
