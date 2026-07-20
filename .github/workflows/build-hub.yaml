@@ -199,6 +199,7 @@ jobs:
           DATABASE_URL: postgres://placeholder
           JWT_SECRET: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
           DISTR_HOST: http://placeholder
+          LOKI_URL: http://placeholder
 
       - name: Start Hub and verify migrations and docs
         shell: bash
@@ -211,6 +212,7 @@ jobs:
           DATABASE_URL: postgres://test-user:test-password@localhost:5432/distr
           JWT_SECRET: H4V7z6mEpe8/k5H/KyogT/iATJhNpEIUMd5cHF6mqF8=
           DISTR_HOST: http://localhost:8080
+          LOKI_URL: http://localhost:3100
           USER_EMAIL_VERIFICATION_REQUIRED: 'false'
           LICENSE_KEY: ${{ matrix.edition.name == 'enterprise' && (startsWith(github.ref, 'refs/tags/') && secrets.LICENSE_KEY || steps.ephemeral-license.outputs.license-key) || '' }}
 
@@ -224,6 +226,7 @@ jobs:
           DATABASE_URL: postgres://test-user:test-password@localhost:5432/distr
           JWT_SECRET: H4V7z6mEpe8/k5H/KyogT/iATJhNpEIUMd5cHF6mqF8=
           DISTR_HOST: http://localhost:8080
+          LOKI_URL: http://localhost:3100
           USER_EMAIL_VERIFICATION_REQUIRED: 'false'
           LICENSE_KEY: ${{ matrix.edition.name == 'enterprise' && (startsWith(github.ref, 'refs/tags/') && secrets.LICENSE_KEY || steps.ephemeral-license.outputs.license-key) || '' }}
 

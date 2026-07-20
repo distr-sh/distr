@@ -19,32 +19,39 @@ CPU values on this page use the Kubernetes notation of CPU millicores (`m`), whe
 To run the all-in-one [Docker Compose](/docs/self-hosting/docker/) setup you need:
 
 - **Docker Engine** ≥ v29
-- **Docker Compose** ≥ v5 (the `docker compose` plugin)
+- **Docker Compose** ≥ v5.3 (the `docker compose` plugin; the log processing setup uses `pre_start` lifecycle hooks introduced in v5.3.0)
 - **curl** (to download the deployment manifest)
 
 ## Average resource consumption
 
 The following table lists the average CPU and memory per component. These values match the footprint of our staging environments and are a good starting point for a small self-hosted instance. Scale them up based on your request volume and artifact sizes.
 
-| Component               | CPU          | RAM       |
-| ----------------------- | ------------ | --------- |
-| Distr                   | 100m         | 128 MB    |
-| PostgreSQL (database)   | 250m         | 512 MB    |
-| RustFS (object storage) | 100m         | 256 MB    |
-| Caddy (reverse proxy)   | 50m          | 64 MB     |
-| **Total**               | **~0.5 CPU** | **~1 GB** |
+| Component               | CPU          | RAM         |
+| ----------------------- | ------------ | ----------- |
+| Distr                   | 100m         | 128 MB      |
+| PostgreSQL (database)   | 250m         | 512 MB      |
+| RustFS (object storage) | 100m         | 256 MB      |
+| Loki (log processing)   | 100m         | 512 MB      |
+| Caddy (reverse proxy)   | 50m          | 64 MB       |
+| **Total**               | **~0.6 CPU** | **~1.5 GB** |
 
 &nbsp;
 
 :::note
-The average values are per-component footprints for Distr itself and do not include the operating system, Docker, or other system services. The workloads will also burst beyond these values on certain operations.
+The average values are per-component footprints for Distr itself and do not include the operating system, Docker, or other system services. The workloads will also burst beyond these values on certain operations — Loki in particular consumes significantly more CPU and memory while serving log queries and exports over large time ranges.
 
 We therefore recommend provisioning a VM with a **minimum of 2 CPUs and 4 GB RAM**.
 :::
 
 ## Persistence
 
-Distr itself does not require any persistent volumes. All state is stored in the PostgreSQL database and the environment configuration.
+Distr itself does not require any persistent volumes. All state is stored in the PostgreSQL database, the S3-compatible object storage (registry blobs and log chunks), and the environment configuration.
+
+## Log processing (Loki)
+
+Deployment and deployment target logs are processed and stored via [Grafana Loki](https://grafana.com/oss/loki/), which is included in all shipped deployment methods (Docker Compose and Helm) in monolithic (single-binary) mode.
+Loki persists log chunks and its index in the same S3-compatible object storage as the registry, using a dedicated `loki` bucket, and only needs a small local volume for its write-ahead log and caches.
+The shipped configuration retains logs for 30 days.
 
 ## Registry
 

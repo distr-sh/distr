@@ -1,3 +1,11 @@
+// Package context provides accessors for request-scoped values.
+//
+// Do not add new context functions here. Following idiomatic Go, context accessors for
+// a type should live in the package that defines the type (see e.g. logstore.NewContext
+// and logstore.FromContext), which also avoids import cycles between this package and
+// the value's package.
+//
+// TODO: Move the existing accessors into the packages that define their types.
 package context
 
 import (
