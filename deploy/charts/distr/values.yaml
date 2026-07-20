@@ -321,6 +321,9 @@ rustfs:
   fullnameOverride: distr-registry-rustfs
   secret:
     rustfs:
+      # These are the source-of-truth object storage credentials. If you change them you
+      # must keep loki.loki.storage.s3 and the loki create-loki-bucket init container
+      # (loki.singleBinary.initContainers) in sync, otherwise Loki cannot access its bucket.
       access_key: 'distr'
       secret_key: 'distr123' # please change this
   mode:
@@ -373,8 +376,9 @@ loki:
       s3:
         endpoint: http://distr-registry-rustfs-svc:9000
         region: local
+        # Must match rustfs.secret.rustfs and the create-loki-bucket init container below.
         accessKeyId: distr
-        secretAccessKey: distr123 # please change this (must match rustfs.secret.rustfs)
+        secretAccessKey: distr123 # please change this
         s3ForcePathStyle: true
     compactor:
       retention_enabled: true
@@ -414,6 +418,7 @@ loki:
             value: Other
           - name: RCLONE_CONFIG_STORAGE_ENDPOINT
             value: http://distr-registry-rustfs-svc:9000
+          # Must match rustfs.secret.rustfs and loki.loki.storage.s3 above.
           - name: RCLONE_CONFIG_STORAGE_ACCESS_KEY_ID
             value: distr
           - name: RCLONE_CONFIG_STORAGE_SECRET_ACCESS_KEY
