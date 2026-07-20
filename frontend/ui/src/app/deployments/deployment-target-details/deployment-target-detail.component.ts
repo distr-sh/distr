@@ -10,7 +10,7 @@ import {
   viewChild,
 } from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
-import {FormBuilder, ReactiveFormsModule} from '@angular/forms';
+import {AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
@@ -23,10 +23,12 @@ import {
   faPlay,
   faServer,
 } from '@fortawesome/free-solid-svg-icons';
+import dayjs from 'dayjs';
 import {combineLatest, debounceTime, map, of, switchMap} from 'rxjs';
 import {dateTimeLocalToISO, isoToDateTimeLocal} from '../../../util/dates';
 import {DeploymentLogsService} from '../../services/deployment-logs.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
+import {OrganizationService} from '../../services/organization.service';
 import {OrderDirection} from '../../types/timeseries-options';
 import {DeploymentAppNameComponent} from '../deployment-target-card/deployment-app-name.component';
 import {DeploymentLogsTableComponent} from './deployment-logs-table.component';
@@ -55,6 +57,7 @@ export class DeploymentTargetDetailComponent {
   private readonly router = inject(Router);
   private readonly deploymentTargetsService = inject(DeploymentTargetsService);
   private readonly deploymentLogsService = inject(DeploymentLogsService);
+  private readonly organizationService = inject(OrganizationService);
   private readonly fb = inject(FormBuilder).nonNullable;
 
   protected readonly faServer = faServer;
@@ -101,6 +104,38 @@ export class DeploymentTargetDetailComponent {
 
   protected readonly live = computed(() => !this.after() && !this.before());
 
+  private readonly organization = toSignal(this.organizationService.get());
+  // The log query window is subscription-bound and enforced server-side. Constrain the
+  // date pickers to [now - window, now] so users cannot select an out-of-window range
+  // that the backend would reject.
+  protected readonly logRangeMin = computed(() => {
+    const windowSeconds = this.organization()?.subscriptionLimits.logQueryWindowSeconds;
+    return windowSeconds ? dayjs().subtract(windowSeconds, 'second').format('YYYY-MM-DDTHH:mm') : '';
+  });
+  protected readonly logRangeMax = computed(() => dayjs().format('YYYY-MM-DDTHH:mm'));
+
+  // The [min]/[max] picker attributes only guide the native widget; they do not stop a
+  // typed, pasted or bookmarked out-of-window value. This validator makes the same
+  // constraint authoritative in the reactive form so the request is never sent.
+  private readonly logRangeValidator = (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value as string;
+    if (!value) {
+      return null;
+    }
+    const date = dayjs(value);
+    if (!date.isValid()) {
+      return null;
+    }
+    if (date.isAfter(dayjs())) {
+      return {afterNow: true};
+    }
+    const windowSeconds = this.organization()?.subscriptionLimits.logQueryWindowSeconds;
+    if (windowSeconds && date.isBefore(dayjs().subtract(windowSeconds, 'second'))) {
+      return {beforeWindow: true};
+    }
+    return null;
+  };
+
   private readonly deploymentTargets$ = this.deploymentTargetsService.list();
   protected readonly deploymentTargets = toSignal(this.deploymentTargets$, {initialValue: []});
   protected readonly selectedDeploymentTarget = toSignal(
@@ -144,7 +179,11 @@ export class DeploymentTargetDetailComponent {
     return visible.some((r) => selected.includes(r)) && !this.allVisibleResourcesSelected();
   });
 
-  protected readonly form = this.fb.group({from: '', to: '', filter: ''});
+  protected readonly form = this.fb.group({
+    from: ['', this.logRangeValidator],
+    to: ['', this.logRangeValidator],
+    filter: '',
+  });
 
   private readonly deploymentTargetLogsTable = viewChild(DeploymentTargetLogsTableComponent);
   private readonly deploymentStatusTable = viewChild(DeploymentStatusTableComponent);
@@ -152,6 +191,14 @@ export class DeploymentTargetDetailComponent {
 
   constructor() {
     effect(() => localStorage.setItem(ORDER_DIRECTION_KEY, this.orderDirection()));
+
+    // The window validator depends on the organization, which loads asynchronously and
+    // is not reactive inside Angular validators, so re-validate once it is available.
+    effect(() => {
+      this.organization();
+      this.form.controls.from.updateValueAndValidity({emitEvent: false});
+      this.form.controls.to.updateValueAndValidity({emitEvent: false});
+    });
 
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       this.form.patchValue(
@@ -165,6 +212,9 @@ export class DeploymentTargetDetailComponent {
     });
 
     this.form.valueChanges.pipe(takeUntilDestroyed(), debounceTime(300)).subscribe((values) => {
+      if (this.form.controls.from.invalid || this.form.controls.to.invalid) {
+        return;
+      }
       this.router.navigate([], {
         relativeTo: this.route,
         queryParams: {
