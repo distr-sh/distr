@@ -3,7 +3,8 @@
     ".": {
       "include-v-in-tag": false,
       "release-type": "go",
-      "prerelease": false,
+      "prerelease": true,
+      "versioning": "prerelease",
       "draft": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": false,
