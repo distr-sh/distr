@@ -219,7 +219,9 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | nodeSelector                                          | object | `{}`                                             |             |
 | podAnnotations                                        | object | `{}`                                             |             |
 | podLabels                                             | object | `{}`                                             |             |
-| podSecurityContext                                    | object | `{}`                                             |             |
+| podSecurityContext.fsGroup                            | int    | `65532`                                          |             |
+| podSecurityContext.runAsNonRoot                       | bool   | `true`                                           |             |
+| podSecurityContext.runAsUser                          | int    | `65532`                                          |             |
 | postgresql.architecture                               | string | `"standalone"`                                   |             |
 | postgresql.auth.database                              | string | `"distr"`                                        |             |
 | postgresql.auth.existingSecret                        | string | `""`                                             |             |
@@ -253,6 +255,12 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | serviceAccount.automount                              | bool   | `true`                                           |             |
 | serviceAccount.create                                 | bool   | `true`                                           |             |
 | serviceAccount.name                                   | string | `""`                                             |             |
+| startupProbe.failureThreshold                         | int    | `30`                                             |             |
+| startupProbe.httpGet.path                             | string | `"/"`                                            |             |
+| startupProbe.httpGet.port                             | string | `"http"`                                         |             |
+| startupProbe.periodSeconds                            | int    | `10`                                             |             |
+| strategy                                              | object | `{}`                                             |             |
+| terminationGracePeriodSeconds                         | int    | `60`                                             |             |
 | tolerations                                           | list   | `[]`                                             |             |
 | volumeMounts                                          | list   | `[]`                                             |             |
 | volumes                                               | list   | `[]`                                             |             |
