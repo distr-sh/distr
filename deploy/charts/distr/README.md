@@ -14,7 +14,7 @@
 
 <!-- x-release-please-start-version -->
 
-![Version: 2.26.0](https://img.shields.io/badge/Version-2.25.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.25.0](https://img.shields.io/badge/AppVersion-2.25.0-informational?style=flat-square)
+![Version: 2.26.0](https://img.shields.io/badge/Version-2.26.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.26.0](https://img.shields.io/badge/AppVersion-2.26.0-informational?style=flat-square)
 
 <!-- x-release-please-end -->
 
@@ -172,7 +172,9 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | nodeSelector                               | object | `{}`                                             |             |
 | podAnnotations                             | object | `{}`                                             |             |
 | podLabels                                  | object | `{}`                                             |             |
-| podSecurityContext                         | object | `{}`                                             |             |
+| podSecurityContext.fsGroup                 | int    | `65532`                                          |             |
+| podSecurityContext.runAsNonRoot            | bool   | `true`                                           |             |
+| podSecurityContext.runAsUser               | int    | `65532`                                          |             |
 | postgresql.architecture                    | string | `"standalone"`                                   |             |
 | postgresql.auth.database                   | string | `"distr"`                                        |             |
 | postgresql.auth.existingSecret             | string | `""`                                             |             |
@@ -206,6 +208,12 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | serviceAccount.automount                   | bool   | `true`                                           |             |
 | serviceAccount.create                      | bool   | `true`                                           |             |
 | serviceAccount.name                        | string | `""`                                             |             |
+| startupProbe.failureThreshold              | int    | `30`                                             |             |
+| startupProbe.httpGet.path                  | string | `"/"`                                            |             |
+| startupProbe.httpGet.port                  | string | `"http"`                                         |             |
+| startupProbe.periodSeconds                 | int    | `10`                                             |             |
+| strategy                                   | object | `{}`                                             |             |
+| terminationGracePeriodSeconds              | int    | `60`                                             |             |
 | tolerations                                | list   | `[]`                                             |             |
 | volumeMounts                               | list   | `[]`                                             |             |
 | volumes                                    | list   | `[]`                                             |             |
