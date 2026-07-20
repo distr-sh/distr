@@ -52,6 +52,20 @@ type pushRequest struct {
 	} `json:"streams"`
 }
 
+func TestNewLokiStoreValidatesURL(t *testing.T) {
+	g := NewWithT(t)
+
+	for _, url := range []string{"", "not a url", "loki:3100", "//loki:3100"} {
+		_, err := NewLokiStore(LokiConfig{URL: url})
+		g.Expect(err).To(MatchError(ContainSubstring("invalid loki URL")), "expected error for URL %q", url)
+	}
+
+	for _, url := range []string{"http://loki:3100", "https://loki.example.com"} {
+		_, err := NewLokiStore(LokiConfig{URL: url})
+		g.Expect(err).NotTo(HaveOccurred(), "expected no error for URL %q", url)
+	}
+}
+
 func TestSaveDeploymentLogRecords(t *testing.T) {
 	g := NewWithT(t)
 

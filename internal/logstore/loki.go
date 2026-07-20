@@ -71,8 +71,12 @@ type lokiStore struct {
 // NewLokiStore creates the Loki-backed LogStore. The organization ID passed to each
 // method is sent as the Loki tenant (X-Scope-OrgID header).
 func NewLokiStore(config LokiConfig) (LogStore, error) {
-	if _, err := url.Parse(config.URL); err != nil {
+	if u, err := url.Parse(config.URL); err != nil {
 		return nil, fmt.Errorf("invalid loki URL: %w", err)
+	} else if u.Scheme != "http" && u.Scheme != "https" {
+		return nil, fmt.Errorf("invalid loki URL %q: scheme must be http or https", config.URL)
+	} else if u.Host == "" {
+		return nil, fmt.Errorf("invalid loki URL %q: missing host", config.URL)
 	}
 
 	timeout := config.RequestTimeout
