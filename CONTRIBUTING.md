@@ -53,7 +53,6 @@ In your sandbox account, you need at least some of the price resources with the 
 - `distr_business_user_monthly`
 - `distr_business_user_yearly`
 
-
 ## Backporting bugfixes
 
 If the `main` branch already contains changes that would warrant a major or minor version bump but there is need to create a patch release only,
