@@ -1,5 +1,46 @@
 # Changelog
 
+## [3.0.0-rc.1](https://github.com/distr-sh/distr/compare/2.26.0...3.0.0-rc.1) (2026-07-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* **backend:** change log storage backend to loki ([#2847](https://github.com/distr-sh/distr/issues/2847))
+
+### Features
+
+* **backend:** change log storage backend to loki ([#2847](https://github.com/distr-sh/distr/issues/2847)) ([6d7da43](https://github.com/distr-sh/distr/commit/6d7da433ff72e6cd4e30dd6cbd4261d6c3468a2c))
+
+
+### Bug Fixes
+
+* **deploy/chart:** add CronJob serviceAccount, more options for configuration ([#2866](https://github.com/distr-sh/distr/issues/2866)) ([4971ca7](https://github.com/distr-sh/distr/commit/4971ca7d32daaa1ee005b612de0ddabb16f65373))
+* **deps:** update module github.com/getsentry/sentry-go/otel/otlp to v0.48.0 ([#2841](https://github.com/distr-sh/distr/issues/2841)) ([a3ab89d](https://github.com/distr-sh/distr/commit/a3ab89dd3afad0d443e4bb6418d05b3444b2848e))
+
+
+### Other
+
+* **deps:** update angular monorepo to v22.0.7 ([#2848](https://github.com/distr-sh/distr/issues/2848)) ([36a0699](https://github.com/distr-sh/distr/commit/36a0699166275ccb2fb16f5933a82bd43ec06e5d))
+* **deps:** update angular-cli monorepo to v22.0.7 ([#2849](https://github.com/distr-sh/distr/issues/2849)) ([f8cbcc9](https://github.com/distr-sh/distr/commit/f8cbcc95df498ee5ee478e7bdfea256f7705de2b))
+* **deps:** update dependency @angular/cdk to v22.0.5 ([#2850](https://github.com/distr-sh/distr/issues/2850)) ([a0eb2bf](https://github.com/distr-sh/distr/commit/a0eb2bf023baf5d0effd1bf8207ed4facee960d5))
+* **deps:** update dependency astrojs-service-worker to v2.0.2 ([#2843](https://github.com/distr-sh/distr/issues/2843)) ([f1195fb](https://github.com/distr-sh/distr/commit/f1195fbe21fbf0a8e3c6c90a295f32bedaa2f884))
+* **deps:** update dependency autoprefixer to v10.5.3 ([#2842](https://github.com/distr-sh/distr/issues/2842)) ([12aa2a1](https://github.com/distr-sh/distr/commit/12aa2a1b22da3af7d61104db75a1ff273bf0982d))
+* **deps:** update dependency autoprefixer to v10.5.4 ([#2851](https://github.com/distr-sh/distr/issues/2851)) ([ef80b84](https://github.com/distr-sh/distr/commit/ef80b84ae20b5ac905d81388dafe2c7447cd0c4f))
+* **deps:** update docker docker tag to v29.6.2 ([#2857](https://github.com/distr-sh/distr/issues/2857)) ([8426585](https://github.com/distr-sh/distr/commit/84265852345c93e4bc10613f300938ce970a6a50))
+* **deps:** update font awesome to v7.3.1 ([#2853](https://github.com/distr-sh/distr/issues/2853)) ([30ca07b](https://github.com/distr-sh/distr/commit/30ca07b398046bda1dfbd4d66ea11890a8d77c52))
+* **deps:** update jdx/mise-action action to v4.2.1 ([#2855](https://github.com/distr-sh/distr/issues/2855)) ([aed4897](https://github.com/distr-sh/distr/commit/aed48977e98407687dd8c6ac5c5909cd3758f2c7))
+* **deps:** update pnpm to v11.15.0 ([#2856](https://github.com/distr-sh/distr/issues/2856)) ([b346f33](https://github.com/distr-sh/distr/commit/b346f330e73e497e04044f42e5b306f426339d98))
+* **deps:** update tailwindcss monorepo to v4.3.3 ([#2858](https://github.com/distr-sh/distr/issues/2858)) ([307d1d6](https://github.com/distr-sh/distr/commit/307d1d620799ed3cbc518f1cf668b0216cf462a9))
+* release 3.0.0-rc.1 ([15e7882](https://github.com/distr-sh/distr/commit/15e78825bce3372e1c159f5d8e5cf4fce3f63102))
+
+
+### Docs
+
+* **website:** add zarf integration guide ([#2838](https://github.com/distr-sh/distr/issues/2838)) ([e9acaad](https://github.com/distr-sh/distr/commit/e9acaad1962eb8e1ac4069fd09da0a48da9e2153))
+* **website:** fix monospace font ([#2844](https://github.com/distr-sh/distr/issues/2844)) ([65bc87e](https://github.com/distr-sh/distr/commit/65bc87e7187a6a18ff15b23843189a92f5e5c372))
+* **website:** replace starter plan with new business tier ([#2833](https://github.com/distr-sh/distr/issues/2833)) ([fe36355](https://github.com/distr-sh/distr/commit/fe363550f12fffd9a8e4bb0d8af750d25fe26c4b))
+* **website:** update homepage video to new Distr overview ([#2854](https://github.com/distr-sh/distr/issues/2854)) ([cfae4bc](https://github.com/distr-sh/distr/commit/cfae4bcebd6d787e58cb9f4cb0738556ddc57af8))
+
 ## [2.26.0](https://github.com/distr-sh/distr/compare/2.25.2...2.26.0) (2026-07-15)
 
 
