@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -111,8 +112,16 @@ func (c *Client) ExportDeploymentLogs(ctx context.Context, records []api.Deploym
 		return err
 	} else {
 		req.Header.Set("Content-Type", "application/json")
-		_, err := c.doAuthenticated(ctx, req, true)
-		return err
+		if _, err := c.doAuthenticated(ctx, req, true); err != nil {
+			if statusErr, ok := errors.AsType[*httpstatus.StatusError](err); ok &&
+				statusErr.StatusCode == http.StatusBadRequest {
+				// The server rejected the batch as invalid; surface it as a permanent
+				// rejection so the collector drops it instead of retrying forever.
+				return fmt.Errorf("%w: %w", deploymentlogs.ErrRecordsRejected, err)
+			}
+			return err
+		}
+		return nil
 	}
 }
 
@@ -124,8 +133,16 @@ func (c *Client) ExportDeploymentTargetLogs(records ...api.DeploymentTargetLogRe
 		return err
 	} else {
 		req.Header.Set("Content-Type", "application/json")
-		_, err := c.doAuthenticated(context.TODO(), req, false)
-		return err
+		if _, err := c.doAuthenticated(context.TODO(), req, false); err != nil {
+			if statusErr, ok := errors.AsType[*httpstatus.StatusError](err); ok &&
+				statusErr.StatusCode == http.StatusBadRequest {
+				// The server rejected the batch as invalid; surface it as a permanent
+				// rejection so the collector drops it instead of retrying forever.
+				return fmt.Errorf("%w: %w", deploymenttargetlogs.ErrRecordsRejected, err)
+			}
+			return err
+		}
+		return nil
 	}
 }
 

@@ -131,6 +131,14 @@ func (bc *BufferedCollector) syncNoLock() error {
 	}
 	if len(bc.buf) > 0 {
 		if err := bc.Delegate.ExportDeploymentTargetLogs(bc.buf...); err != nil {
+			if errors.Is(err, ErrRecordsRejected) {
+				// The server permanently rejected these records. Drop them so newer logs
+				// keep flowing; retrying would fail forever and wedge the buffer.
+				// We cannot use the zap logger here (this collector is a zap sink).
+				fmt.Fprintf(os.Stderr, "%v dropping log records rejected by the server: %v\n", time.Now(), err)
+				bc.resetBuffer()
+				return nil
+			}
 			return err
 		}
 		bc.resetBuffer()
