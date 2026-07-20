@@ -315,6 +315,8 @@ postgresql:
     tag: 17.6.0
 
 rustfs:
+  # When disabled, provide external object storage for the registry and for Loki
+  # (see loki.loki.storage.s3), otherwise those components cannot persist data.
   enabled: false
   fullnameOverride: distr-registry-rustfs
   secret:
@@ -358,6 +360,10 @@ loki:
           index:
             prefix: index_
             period: 24h
+    # Loki is enabled by default but rustfs.enabled is false by default, so the s3
+    # settings below point at the in-cluster RustFS endpoint without it being deployed.
+    # To persist logs you must either set rustfs.enabled=true or update these s3 settings
+    # (and the create-loki-bucket initContainer below) to point at external object storage.
     storage:
       type: s3
       bucketNames:
