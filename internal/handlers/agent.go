@@ -338,10 +338,15 @@ func agentPutDeploymentLogsHandler() http.HandlerFunc {
 		}
 
 		logStore := logstore.FromContext(ctx)
-		if err := logStore.SaveDeploymentLogRecords(ctx, auth.CurrentOrgID(), records); errors.Is(
-			err, apierrors.ErrBadRequest) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		} else if err != nil {
+		if err := logStore.SaveDeploymentLogRecords(ctx, auth.CurrentOrgID(), records); err != nil {
+			if errors.Is(err, apierrors.ErrBadRequest) {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			if errors.Is(err, logstore.ErrRateLimitExceeded) {
+				http.Error(w, err.Error(), http.StatusTooManyRequests)
+				return
+			}
 			log.Error("error saving deployment log records", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -379,6 +384,10 @@ func agentPutDeploymentTargetLogsHandler() http.HandlerFunc {
 		); err != nil {
 			if errors.Is(err, apierrors.ErrBadRequest) {
 				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			if errors.Is(err, logstore.ErrRateLimitExceeded) {
+				http.Error(w, err.Error(), http.StatusTooManyRequests)
 				return
 			}
 
