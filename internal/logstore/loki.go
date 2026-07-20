@@ -3,6 +3,7 @@ package logstore
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -235,7 +236,7 @@ func querySeq[T any](
 		}
 
 		logger := internalctx.GetLogger(ctx)
-		emittedAtBoundary := map[string]struct{}{}
+		emittedAtBoundary := map[[sha256.Size]byte]struct{}{}
 		unlimited := queryLimit.IsUnlimited()
 		remaining := int(queryLimit.Value())
 		produced := 0
@@ -412,8 +413,13 @@ type lokiEntry struct {
 	line      string
 }
 
-func (e lokiEntry) fingerprint() string {
-	return streamKey(e.labels) + strconv.FormatInt(e.timestamp.UnixNano(), 10) + "\x00" + e.line
+// fingerprint returns a fixed-size hash identifying the entry. It is only used to
+// de-duplicate entries re-fetched at a paging boundary, where a whole page can be
+// retained at once, so hashing bounds the memory instead of keeping the full lines.
+func (e lokiEntry) fingerprint() [sha256.Size]byte {
+	return sha256.Sum256(
+		[]byte(streamKey(e.labels) + strconv.FormatInt(e.timestamp.UnixNano(), 10) + "\x00" + e.line),
+	)
 }
 
 // queryRange runs a query_range request. Start and End are inclusive; Loki's exclusive
