@@ -114,6 +114,42 @@ func TestSaveDeploymentLogRecords(t *testing.T) {
 	g.Expect(first[2]).To(Equal(map[string]any{"severity": "info"}))
 }
 
+func TestSaveDeploymentLogRecordsClampsAndTruncates(t *testing.T) {
+	g := NewWithT(t)
+
+	var captured pushRequest
+	store := newTestStore(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		g.Expect(json.NewDecoder(r.Body).Decode(&captured)).To(Succeed())
+		w.WriteHeader(http.StatusNoContent)
+	}))
+
+	future := time.Now().Add(time.Hour)
+	oversized := strings.Repeat("x", maxLogLineBytes+100)
+	err := store.SaveDeploymentLogRecords(testContext(t), testOrgID, []api.DeploymentLogRecord{
+		{
+			DeploymentID:         testDeploymentID,
+			DeploymentRevisionID: testRevisionID,
+			Resource:             "resource-a",
+			Timestamp:            future,
+			Severity:             "info",
+			Body:                 oversized,
+		},
+	})
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(captured.Streams).To(HaveLen(1))
+	values := captured.Streams[0].Values
+	g.Expect(values).To(HaveLen(1))
+
+	// The future timestamp must be clamped to at most "now".
+	pushedNanos, parseErr := strconv.ParseInt(values[0][0].(string), 10, 64)
+	g.Expect(parseErr).NotTo(HaveOccurred())
+	g.Expect(pushedNanos).To(BeNumerically("<", future.UnixNano()))
+	g.Expect(pushedNanos).To(BeNumerically("<=", time.Now().UnixNano()))
+
+	// The oversized line must be truncated to maxLogLineBytes.
+	g.Expect(values[0][1].(string)).To(HaveLen(maxLogLineBytes))
+}
+
 func TestSaveDeploymentLogRecordsBadRequest(t *testing.T) {
 	g := NewWithT(t)
 	store := newTestStore(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

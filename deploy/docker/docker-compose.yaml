@@ -140,6 +140,11 @@ configs:
         increment_duplicate_timestamp: true
         allow_structured_metadata: true
         max_global_streams_per_user: 25000
+        # Truncate oversized log lines instead of rejecting the whole push.
+        max_line_size_truncate: true
+        # Accept backfilled logs up to the retention period so an agent that was
+        # offline can still push its backlog.
+        reject_old_samples_max_age: 720h
 
 volumes:
   postgres:

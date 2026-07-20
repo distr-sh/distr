@@ -42,6 +42,11 @@ const (
 	defaultMaxEntriesPerQuery = 5000
 
 	defaultRequestTimeout = 30 * time.Second
+
+	// maxLogLineBytes matches Loki's default limits_config.max_line_size. Lines are
+	// truncated to this size at the ingestion boundary so an oversized line cannot
+	// cause Loki to reject the whole push, independent of the target Loki's config.
+	maxLogLineBytes = 256 * 1024
 )
 
 type LokiConfig struct {
@@ -92,6 +97,7 @@ func (s *lokiStore) SaveDeploymentLogRecords(
 		return nil
 	}
 
+	now := time.Now()
 	streams := map[string]*lokiStream{}
 	for _, record := range records {
 		labels := map[string]string{
@@ -100,7 +106,8 @@ func (s *lokiStore) SaveDeploymentLogRecords(
 			labelDeploymentRevisionID: record.DeploymentRevisionID.String(),
 			labelResource:             record.Resource,
 		}
-		appendToStream(streams, labels, record.Timestamp, record.Body, record.Severity)
+		appendToStream(streams, labels, clampFutureTimestamp(record.Timestamp, now),
+			truncateLogLine(record.Body), record.Severity)
 	}
 
 	return s.push(ctx, orgID, streams)
@@ -116,6 +123,7 @@ func (s *lokiStore) SaveDeploymentTargetLogRecords(
 		return nil
 	}
 
+	now := time.Now()
 	streams := map[string]*lokiStream{}
 	labels := map[string]string{
 		labelKind:               kindDeploymentTarget,
@@ -123,7 +131,8 @@ func (s *lokiStore) SaveDeploymentTargetLogRecords(
 	}
 
 	for _, record := range records {
-		appendToStream(streams, labels, record.Timestamp, record.Body, record.Severity)
+		appendToStream(streams, labels, clampFutureTimestamp(record.Timestamp, now),
+			truncateLogLine(record.Body), record.Severity)
 	}
 
 	return s.push(ctx, orgID, streams)
@@ -300,6 +309,24 @@ func querySeq[T any](
 type lokiStream struct {
 	Stream map[string]string `json:"stream"`
 	Values [][]any           `json:"values"`
+}
+
+// clampFutureTimestamp caps timestamps that are ahead of now, e.g. from clock-skewed
+// customer hosts, so Loki does not reject the push via creation_grace_period.
+func clampFutureTimestamp(timestamp, now time.Time) time.Time {
+	if timestamp.After(now) {
+		return now
+	}
+	return timestamp
+}
+
+// truncateLogLine caps a log line to maxLogLineBytes so a single oversized line cannot
+// cause Loki to reject the whole push on instances without max_line_size_truncate.
+func truncateLogLine(body string) string {
+	if len(body) > maxLogLineBytes {
+		return body[:maxLogLineBytes]
+	}
+	return body
 }
 
 func appendToStream(

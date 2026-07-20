@@ -109,6 +109,11 @@ configs:
         increment_duplicate_timestamp: true
         allow_structured_metadata: true
         max_global_streams_per_user: 25000
+        # Truncate oversized log lines instead of rejecting the whole push.
+        max_line_size_truncate: true
+        # Accept backfilled logs up to the retention period so an agent that was
+        # offline can still push its backlog.
+        reject_old_samples_max_age: 720h
         # Raised from the 4/6 MB defaults so the log generator dev tool
         # (cmd/hub/generate/logs) can bulk-ingest without excessive throttling.
         ingestion_rate_mb: 64
