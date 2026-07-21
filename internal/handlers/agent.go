@@ -326,15 +326,20 @@ func agentPutDeploymentLogsHandler() http.HandlerFunc {
 
 		records = sanitizeLogRecords(records)
 
-		if err := db.ValidateDeploymentLogRecords(ctx, auth.CurrentDeploymentTargetID(), records); err != nil {
-			if errors.Is(err, apierrors.ErrNotFound) {
-				http.Error(w, fmt.Sprintf("bad request: %v", err), http.StatusBadRequest)
-			} else {
-				log.Error("error saving deployment log records", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			}
+		// Drop records referencing unknown deployment/revision tuples instead of rejecting the
+		// whole batch: the agent buffers records for many deployments together, so a single
+		// stale reference must not discard the other deployments' valid logs.
+		if valid, err := db.FilterValidDeploymentLogRecords(ctx, auth.CurrentDeploymentTargetID(), records); err != nil {
+			log.Error("error saving deployment log records", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
+		} else {
+			if len(valid) < len(records) {
+				log.Warn("dropping deployment log records referencing unknown deployment revisions",
+					zap.Int("dropped", len(records)-len(valid)), zap.Int("total", len(records)))
+			}
+			records = valid
 		}
 
 		logStore := logstore.FromContext(ctx)
