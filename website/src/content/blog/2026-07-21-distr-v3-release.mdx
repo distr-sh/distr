@@ -55,7 +55,7 @@ All Pro users now get 7 days of log retention, and the [Business plan](/pricing/
 
 Partner organizations are now supported on the Business plan. A partner is a reseller that onboards, supports, and manages its own Distr customers, while still receiving applications, release notes, and other resources from the vendor.
 
-## Custom OIDC Provider for vendors and customers
+## Custom OIDC Providers for Vendors and Customers
 
 Until now, OIDC in Distr was configured once per instance. With v3, both vendor and customer organizations can bring their own OIDC providers, tied to their custom domains: users visiting your domain log in through your IdP, and customers can connect their own IdP for their portal as well.
 
@@ -80,7 +80,7 @@ Both shipped deployment methods include a preconfigured Loki with 30-day retenti
   nothing more than an additional bucket in your object storage.
 </Aside>
 
-If you run your own Loki it is recommended to configure Loki with authentication and retention settings of minimum 7 days.
+If you run your own Loki, we recommend configuring it with authentication and a retention setting of at least 7 days.
 The `CLEANUP_DEPLOYMENT_LOG_RECORD_*`, `CLEANUP_DEPLOYMENT_TARGET_LOG_RECORD_*`, and `LOG_RECORD_ENTRIES_MAX_COUNT` environment variables have been removed. If you configured the `DeploymentLogRecord` and `DeploymentTargetLogRecord` cleanup cron jobs (e.g. as custom entries in the Helm chart's `cronJobs` list), remove them, as the `cleanup` command no longer knows these targets. The full list of new environment variables is in the [configuration reference](/docs/self-hosting/configuration/).
 
 One thing to be aware of: log records collected before the upgrade are not migrated to Loki. The log viewer starts fresh with logs collected after the upgrade, and the gap closes within days. The old records remain in your PostgreSQL database, as the log tables will only be dropped in v3.1, so a rollback to v2 is possible without losing any log history.
