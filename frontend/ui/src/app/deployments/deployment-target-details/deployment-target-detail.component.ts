@@ -127,7 +127,12 @@ export class DeploymentTargetDetailComponent {
     if (date.isAfter(this.now())) {
       return {afterNow: true};
     }
-    const windowSeconds = this.organization()?.subscriptionLimits.logQueryWindowSeconds;
+    const org = this.organization();
+    if (!org) {
+      // Org still loading: block sync/query until the window is known (no user-facing message).
+      return {windowPending: true};
+    }
+    const windowSeconds = org.subscriptionLimits.logQueryWindowSeconds;
     if (windowSeconds && date.isBefore(this.now().subtract(windowSeconds, 'second'))) {
       return {beforeWindow: true};
     }
