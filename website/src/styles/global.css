@@ -117,6 +117,48 @@
     color: var(--color-gray-100);
   }
 
+  /* Blog / guide tables — match pricing dark surfaces (explicit colors;
+     Starlight gray tokens and prose-invert wash out in dark mode) */
+  .prose table {
+    background-color: #ffffff;
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  .prose th {
+    background-color: #f3f4f6; /* gray-100 */
+    font-weight: 600;
+    text-align: left;
+  }
+
+  .prose th,
+  .prose td {
+    border: 1px solid #e5e7eb; /* gray-200 */
+    padding: 0.625rem 0.875rem;
+    vertical-align: top;
+  }
+
+  .prose tbody tr:nth-child(even) {
+    background-color: #f9fafb; /* gray-50 */
+  }
+
+  :root[data-theme='dark'] .prose table {
+    background-color: #111827; /* gray-900 */
+  }
+
+  :root[data-theme='dark'] .prose th {
+    background-color: #030712; /* gray-950 */
+  }
+
+  :root[data-theme='dark'] .prose th,
+  :root[data-theme='dark'] .prose td {
+    border-color: #374151; /* gray-700 */
+  }
+
+  :root[data-theme='dark'] .prose tbody tr:nth-child(even) {
+    background-color: #1f2937; /* gray-800 */
+  }
+
   /* Architecture diagram styling */
   .architecture-diagram {
     width: 100%;

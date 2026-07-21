@@ -295,6 +295,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             '/pricing/',
             '/blog/**',
             '/glossary/**',
+            '/cyber-resilience-act{,/**}',
             '/get-started/',
             '/onboarding/',
             'mailto:**',

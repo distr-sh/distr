@@ -1,0 +1,35 @@
+---
+interface Props {
+  title: string;
+  body: string;
+}
+
+const {title, body} = Astro.props;
+---
+
+<aside class="my-10 not-prose">
+  <div
+    class="max-w-2xl mx-auto bg-gradient-to-br from-accent-400 to-accent-600 dark:from-accent-600 dark:to-accent-950 rounded-xl p-6 md:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.15)] text-center"
+    style="color: white;">
+    <h2
+      class="text-xl md:text-2xl font-bold mb-4"
+      style="color: white;">
+      {title}
+    </h2>
+    <p
+      class="text-sm md:text-base opacity-90 leading-relaxed max-w-xl mx-auto mb-8"
+      style="color: white;">
+      {body}
+    </p>
+    <div class="flex justify-center">
+      <a
+        href="https://cal.glasskube.com/team/gk/demo"
+        class="inline-flex items-center justify-center w-full sm:w-auto px-6 py-3 text-base font-medium rounded-lg transition-colors bg-white hover:bg-gray-100 border-2 border-white shadow-sm"
+        style="color: #005580;"
+        target="_blank"
+        rel="noopener noreferrer">
+        Book Demo
+      </a>
+    </div>
+  </div>
+</aside>

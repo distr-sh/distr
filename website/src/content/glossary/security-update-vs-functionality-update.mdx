@@ -1,0 +1,38 @@
+---
+title: "Security Update vs Functionality Update: The CRA Distinction"
+slug: security-update-vs-functionality-update
+description: "Why the Cyber Resilience Act requires security updates to be delivered separately from feature updates, and what that means for release engineering."
+term: "Security update"
+alternateNames:
+  - "Security patch"
+  - "Functionality update"
+shortDefinition: "Under the Cyber Resilience Act, a security update addresses vulnerabilities and must be delivered separately from functionality updates where technically feasible (Annex I, Part II, point 2), so customers can take the patch without being forced onto new features."
+lastUpdated: 2026-07-21
+faq:
+  - question: "Does the CRA require free security updates?"
+    answer: "Yes. Security updates must be disseminated without delay and, unless agreed otherwise with a business user for a tailor-made product, free of charge, accompanied by advisory messages (Annex I, Part II, point 8)."
+  - question: "How long must security updates stay available?"
+    answer: "Each security update issued during the support period must remain available for at least 10 years after it was issued, or for the remainder of the support period, whichever is longer (Article 13(9))."
+---
+
+Under the Cyber Resilience Act, a security update is an update that addresses
+vulnerabilities, and manufacturers must deliver it separately from
+functionality updates where technically feasible (Annex I, Part II, point 2).
+The distinction matters because it protects the user's choice: a customer
+running a supported version must be able to apply a security patch without
+being forced to adopt new features, behavior changes, or a major version
+upgrade at the same time. In practice this means maintaining patch releases for
+supported version lines rather than shipping fixes only in the newest feature
+release.
+
+The CRA adds further conditions on the security side: security updates
+must be disseminated without delay and, unless agreed otherwise with a business
+user for a tailor-made product, free of charge, accompanied by advisory
+messages with the relevant information for users (Annex I, Part II, point 8),
+and each security update issued during the support period must remain available
+for at least 10 years (Article 13(9)). Functionality updates carry no such
+obligations.
+
+How this works operationally for self-hosted and air-gapped customers is
+covered in our guide on
+[delivering security updates under the CRA](/cyber-resilience-act/security-updates-air-gapped/).
