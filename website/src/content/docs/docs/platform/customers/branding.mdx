@@ -20,6 +20,12 @@ The Branding page of the Vendor Portal allows you to apply your own branding to 
 
 A well-configured Customer Portal should provide all the information your end users need to install, operate, and troubleshoot your software independently.
 
+<Aside type="note">
+  Custom branding for your Customer Portal is available on the Pro plan and
+  above. Custom domains for a fully white-labeled experience require the
+  Business plan. See the [pricing page](/pricing/) for a detailed comparison.
+</Aside>
+
 To get started, go to the Branding tab in the sidebar of the Vendor Portal.
 At the top of the page, live previews show what the navigation bar will look like for your own team in the Vendor Portal and for your customers in the Customer Portal.
 
@@ -35,10 +41,16 @@ These settings configure what your customers see when they log in to their porta
 
 - **Customer Portal Override**: Replaces the "Customer Portal" text next to the logo in the customer navigation bar.
 - **Welcome Page**: Markdown content shown to your customers on the home page of their portal. Recommended content:
-  - Release notes for the current version
-  - Installation, connection and upgrade instructions
+  - Installation and setup instructions
+  - Connection and upgrade instructions
   - Troubleshooting tips
-  - Links to relevant documentation
+  - Support contact details
+
+<Aside type="tip">
+  Release notes are best attached directly to the corresponding [application
+  version](/docs/agents/application/) as additional resources, so customers
+  always see the notes for the version they are running.
+</Aside>
 
 After saving, the [Customer Portal](/docs/platform/customer-portal/) is rebranded for your end users:
 
@@ -55,6 +67,8 @@ These settings replace Distr's branding across the application for users and cus
 - **Portal Title**: Shown as the browser tab title. If not set, the default Distr title is used.
 - **Portal Logo**: Shown in the navigation bar for users and customers of your organization, and on the login page of your custom domain. SVG, PNG, JPG or GIF with a recommended height of 64px. If not set, the Distr logo is shown.
 - **Fav-icon**: Shown in the browser tab. SVG, PNG, GIF or ICO with a recommended size of 64px x 64px (square). If not set, the Distr favicon is shown.
+
+None of these settings require a custom domain: they apply to all logged-in users and customers of your organization on app.distr.sh as well. With a [custom domain](#custom-domains), they additionally apply to unauthenticated pages such as the login page.
 
 <ThemedImage
   lightSrc={brandingWhiteLabelLight}
