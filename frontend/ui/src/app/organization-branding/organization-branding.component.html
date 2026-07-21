@@ -160,11 +160,9 @@
             </div>
           </div>
           <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-            Shown in the navigation bar for users and customers of your organization
-            @if (appDomain()) {
-              , and on the login page of your custom domain
-            }
-            . SVG, PNG, JPG or GIF (recommended height 64px). If not set, the Distr logo will be shown.
+            Shown in the navigation bar for users and customers of your organization{{
+              appDomain() ? ', and on the login page of your custom domain' : ''
+            }}. SVG, PNG, JPG or GIF (recommended height 64px). If not set, the Distr logo will be shown.
           </p>
         </div>
 
