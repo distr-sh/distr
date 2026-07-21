@@ -21,7 +21,6 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/v3/jwt"
-	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -243,12 +242,7 @@ func (c *Client) doAuthenticated(ctx context.Context, r *http.Request, loggingEn
 			c.logger.Warn("got 401 response, try to regenerate token")
 		}
 		c.ClearToken()
-		resp, err1 := c.doAuthenticatedNoRetry(ctx, r, loggingEnabled)
-		if err1 != nil {
-			return resp, multierr.Append(err, err1)
-		} else {
-			return resp, nil
-		}
+		return c.doAuthenticatedNoRetry(ctx, r, loggingEnabled)
 	}
 }
 
