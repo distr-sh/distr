@@ -313,7 +313,9 @@
         </form>
       </div>
 
-      @if (deploymentId(); as deploymentId) {
+      @if (rangeBlocked()) {
+        <p class="text-sm text-gray-500 dark:text-gray-400">Adjust the date range to view logs.</p>
+      } @else if (deploymentId(); as deploymentId) {
         @if (selectedResources().length > 0) {
           <app-deployment-logs-table
             [deploymentId]="deploymentId"

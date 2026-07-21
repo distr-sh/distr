@@ -100,6 +100,10 @@ export class DeploymentTargetDetailComponent {
   protected readonly filter = toSignal(this.filter$);
 
   protected readonly live = computed(() => !this.after() && !this.before());
+  // A present-but-invalid range must block the tables instead of falling back to live tailing.
+  protected readonly rangeBlocked = computed(
+    () => this.windowErrors(this.fromParam()) !== null || this.windowErrors(this.toParam()) !== null
+  );
 
   private readonly organization = toSignal(this.organizationService.get());
   // Ticks every minute so time-based bounds/validation don't freeze in long sessions.
