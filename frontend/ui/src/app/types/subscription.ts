@@ -7,6 +7,7 @@ export interface SubscriptionLimits {
   maxCustomerOrganizations: number;
   maxUsersPerCustomerOrganization: number;
   maxDeploymentsPerCustomerOrganization: number;
+  logQueryWindowSeconds: number;
 }
 
 export interface SubscriptionInfo {

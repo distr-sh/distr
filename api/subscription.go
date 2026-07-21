@@ -15,6 +15,9 @@ type SubscriptionLimits struct {
 	MaxCustomerOrganizations        int64 `json:"maxCustomerOrganizations"`
 	MaxUsersPerCustomerOrganization int64 `json:"maxUsersPerCustomerOrganization"`
 	MaxDeploymentsPerCustomerOrg    int64 `json:"maxDeploymentsPerCustomerOrganization"`
+	// LogQueryWindowSeconds is how far back (in seconds) log read queries may reach.
+	// The frontend uses it to constrain the log viewer's date pickers.
+	LogQueryWindowSeconds int64 `json:"logQueryWindowSeconds"`
 }
 
 type SubscriptionInfo struct {
