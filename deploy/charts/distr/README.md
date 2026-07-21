@@ -127,7 +127,7 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | hub.env[5].name                                       | string | `"REGISTRY_S3_REGION"`                           |             |
 | hub.env[5].value                                      | string | `"local"`                                        |             |
 | hub.env[6].name                                       | string | `"REGISTRY_S3_ENDPOINT"`                         |             |
-| hub.env[6].value                                      | string | `"http://distr-registry-rustfs-svc:9000"`        |             |
+| hub.env[6].value                                      | string | `"http://distr-rustfs-svc:9000"`                 |             |
 | hub.env[7].name                                       | string | `"REGISTRY_S3_ACCESS_KEY_ID"`                    |             |
 | hub.env[7].value                                      | string | `"distr"`                                        |             |
 | hub.env[8].name                                       | string | `"REGISTRY_S3_SECRET_ACCESS_KEY"`                |             |
@@ -187,7 +187,7 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | loki.loki.storage.bucketNames.chunks                  | string | `"loki"`                                         |             |
 | loki.loki.storage.bucketNames.ruler                   | string | `"loki"`                                         |             |
 | loki.loki.storage.s3.accessKeyId                      | string | `"distr"`                                        |             |
-| loki.loki.storage.s3.endpoint                         | string | `"http://distr-registry-rustfs-svc:9000"`        |             |
+| loki.loki.storage.s3.endpoint                         | string | `"http://distr-rustfs-svc:9000"`                 |             |
 | loki.loki.storage.s3.region                           | string | `"local"`                                        |             |
 | loki.loki.storage.s3.s3ForcePathStyle                 | bool   | `true`                                           |             |
 | loki.loki.storage.s3.secretAccessKey                  | string | `"distr123"`                                     |             |
@@ -204,7 +204,7 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | loki.singleBinary.initContainers[0].env[1].name       | string | `"RCLONE_CONFIG_STORAGE_PROVIDER"`               |             |
 | loki.singleBinary.initContainers[0].env[1].value      | string | `"Other"`                                        |             |
 | loki.singleBinary.initContainers[0].env[2].name       | string | `"RCLONE_CONFIG_STORAGE_ENDPOINT"`               |             |
-| loki.singleBinary.initContainers[0].env[2].value      | string | `"http://distr-registry-rustfs-svc:9000"`        |             |
+| loki.singleBinary.initContainers[0].env[2].value      | string | `"http://distr-rustfs-svc:9000"`                 |             |
 | loki.singleBinary.initContainers[0].env[3].name       | string | `"RCLONE_CONFIG_STORAGE_ACCESS_KEY_ID"`          |             |
 | loki.singleBinary.initContainers[0].env[3].value      | string | `"distr"`                                        |             |
 | loki.singleBinary.initContainers[0].env[4].name       | string | `"RCLONE_CONFIG_STORAGE_SECRET_ACCESS_KEY"`      |             |
@@ -236,7 +236,7 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | replicaCount                                          | int    | `2`                                              |             |
 | resources                                             | object | `{}`                                             |             |
 | rustfs.enabled                                        | bool   | `false`                                          |             |
-| rustfs.fullnameOverride                               | string | `"distr-registry-rustfs"`                        |             |
+| rustfs.fullnameOverride                               | string | `"distr-rustfs"`                                 |             |
 | rustfs.ingress.enabled                                | bool   | `false`                                          |             |
 | rustfs.mode.distributed.enabled                       | bool   | `false`                                          |             |
 | rustfs.mode.standalone.enabled                        | bool   | `true`                                           |             |
