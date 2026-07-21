@@ -21,3 +21,4 @@ spec:
       name: metrics
   selector:
     {{- include "distr.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: hub

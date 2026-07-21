@@ -6,6 +6,7 @@ metadata:
   name: {{ include "distr.fullname" $ }}-{{ $job.name }}
   labels:
     {{- include "distr.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $job.name }}
     {{- with $job.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -16,6 +17,7 @@ spec:
     metadata:
       labels:
         {{- include "distr.labels" $ | nindent 8 }}
+        app.kubernetes.io/component: {{ $job.name }}
         {{- with $job.labels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -24,6 +26,7 @@ spec:
         metadata:
           labels:
             {{- include "distr.labels" $ | nindent 12 }}
+            app.kubernetes.io/component: {{ $job.name }}
             {{- with $job.labels }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
