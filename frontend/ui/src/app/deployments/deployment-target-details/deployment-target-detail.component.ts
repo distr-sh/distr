@@ -91,40 +91,32 @@ export class DeploymentTargetDetailComponent {
   protected readonly deploymentId = toSignal(this.deploymentId$);
   private readonly selectedResources$ = this.route.queryParamMap.pipe(map((p) => p.getAll('resource')));
   protected readonly selectedResources = toSignal(this.selectedResources$, {initialValue: [] as string[]});
-  private readonly after$ = this.route.queryParamMap.pipe(
-    map((p) => (p.has('from') ? new Date(p.get('from')!) : undefined))
-  );
-  protected readonly after = toSignal(this.after$);
-  private readonly before$ = this.route.queryParamMap.pipe(
-    map((p) => (p.has('to') ? new Date(p.get('to')!) : undefined))
-  );
-  protected readonly before = toSignal(this.before$);
+  private readonly fromParam = toSignal(this.route.queryParamMap.pipe(map((p) => p.get('from') ?? undefined)));
+  private readonly toParam = toSignal(this.route.queryParamMap.pipe(map((p) => p.get('to') ?? undefined)));
+  // Gate table inputs with the same window check so stale/bookmarked URLs never query out-of-window.
+  protected readonly after = computed(() => this.validRangeDate(this.fromParam()));
+  protected readonly before = computed(() => this.validRangeDate(this.toParam()));
   private readonly filter$ = this.route.queryParamMap.pipe(map((p) => p.get('filter') || undefined));
   protected readonly filter = toSignal(this.filter$);
 
   protected readonly live = computed(() => !this.after() && !this.before());
 
   private readonly organization = toSignal(this.organizationService.get());
-  // Ticks every minute so the picker bounds track wall-clock time in long-running sessions
-  // instead of freezing at their initial value.
+  // Ticks every minute so time-based bounds/validation don't freeze in long sessions.
   private readonly now = toSignal(
     timer(0, 60_000).pipe(map(() => dayjs())),
     {initialValue: dayjs()}
   );
-  // The log query window is subscription-bound and enforced server-side. Constrain the
-  // date pickers to [now - window, now] so users cannot select an out-of-window range
-  // that the backend would reject.
+  // Constrain the pickers to [now - window, now]; the window is enforced server-side.
   protected readonly logRangeMin = computed(() => {
     const windowSeconds = this.organization()?.subscriptionLimits.logQueryWindowSeconds;
     return windowSeconds ? this.now().subtract(windowSeconds, 'second').format('YYYY-MM-DDTHH:mm') : '';
   });
   protected readonly logRangeMax = computed(() => this.now().format('YYYY-MM-DDTHH:mm'));
 
-  // The [min]/[max] picker attributes only guide the native widget; they do not stop a
-  // typed, pasted or bookmarked out-of-window value. This validator makes the same
-  // constraint authoritative in the reactive form so the request is never sent.
-  private readonly logRangeValidator = (control: AbstractControl): ValidationErrors | null => {
-    const value = control.value as string;
+  // Authoritative window check (the [min]/[max] attributes only guide the widget), shared by
+  // the form validator and the table inputs.
+  private readonly windowErrors = (value: string | undefined): ValidationErrors | null => {
     if (!value) {
       return null;
     }
@@ -132,15 +124,25 @@ export class DeploymentTargetDetailComponent {
     if (!date.isValid()) {
       return null;
     }
-    if (date.isAfter(dayjs())) {
+    if (date.isAfter(this.now())) {
       return {afterNow: true};
     }
     const windowSeconds = this.organization()?.subscriptionLimits.logQueryWindowSeconds;
-    if (windowSeconds && date.isBefore(dayjs().subtract(windowSeconds, 'second'))) {
+    if (windowSeconds && date.isBefore(this.now().subtract(windowSeconds, 'second'))) {
       return {beforeWindow: true};
     }
     return null;
   };
+
+  private readonly logRangeValidator = (control: AbstractControl): ValidationErrors | null =>
+    this.windowErrors(control.value as string);
+
+  private validRangeDate(value: string | undefined): Date | undefined {
+    if (!value || !dayjs(value).isValid() || this.windowErrors(value)) {
+      return undefined;
+    }
+    return new Date(value);
+  }
 
   private readonly deploymentTargets$ = this.deploymentTargetsService.list();
   protected readonly deploymentTargets = toSignal(this.deploymentTargets$, {initialValue: []});
@@ -198,10 +200,10 @@ export class DeploymentTargetDetailComponent {
   constructor() {
     effect(() => localStorage.setItem(ORDER_DIRECTION_KEY, this.orderDirection()));
 
-    // The window validator depends on the organization, which loads asynchronously and
-    // is not reactive inside Angular validators, so re-validate once it is available.
+    // Validators can't read signals reactively, so re-validate when org or time changes.
     effect(() => {
       this.organization();
+      this.now();
       this.form.controls.from.updateValueAndValidity({emitEvent: false});
       this.form.controls.to.updateValueAndValidity({emitEvent: false});
     });
@@ -219,8 +221,7 @@ export class DeploymentTargetDetailComponent {
 
     this.form.valueChanges.pipe(takeUntilDestroyed(), debounceTime(300)).subscribe((values) => {
       const queryParams: Params = {filter: values.filter || null};
-      // Only propagate a date when it is valid so an invalid from/to does not block the
-      // filter (or the other, valid date) from updating and diverging from the shown logs.
+      // Only propagate valid dates so an invalid one doesn't block filter/other-date updates.
       if (this.form.controls.from.valid) {
         queryParams.from = dateTimeLocalToISO(values.from);
       }
