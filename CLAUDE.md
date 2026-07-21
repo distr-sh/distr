@@ -126,17 +126,6 @@ mise run format:frontend     # Frontend only
 
 Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Prettier with config in `.prettierrc.mjs`.
 
-### Website (`website/`)
-
-Before opening or updating a website PR, always run from `website/`:
-
-```bash
-pnpm format
-pnpm build
-```
-
-CI runs `pnpm lint` (Prettier check) and will fail if formatting was skipped.
-
 ## Code Patterns and Conventions
 
 ### Go Code
