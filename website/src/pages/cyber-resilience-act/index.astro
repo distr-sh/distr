@@ -34,7 +34,8 @@ const milestones = [
     label: 'Reporting obligations start',
     detail:
       'Actively exploited vulnerabilities: 24h early warning to your CSIRT and ENISA. Applies to products already on the market.',
-    action: 'Have the reporting runbook and per-customer version tracking ready.',
+    action:
+      'Have the reporting runbook and per-customer version tracking ready.',
     state: 'next',
   },
   {
@@ -153,9 +154,9 @@ const head: StarlightPageProps['frontmatter']['head'] = [
       </h1>
       <p
         class="text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto mb-8">
-        If your customers run your software themselves, the Cyber Resilience
-        Act applies to you. Practical guides on scope, deadlines, secure
-        update distribution, and what to do first. No legalese, sources cited.
+        If your customers run your software themselves, the Cyber Resilience Act
+        applies to you. Practical guides on scope, deadlines, secure update
+        distribution, and what to do first. No legalese, sources cited.
       </p>
       {
         daysToReporting > 0 && (

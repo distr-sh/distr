@@ -7,25 +7,25 @@ lastUpdated: 2026-07-21
 order: 5
 teaser: 'Dependencies, exploitation signals, customer versions, and your CVD inbox: the four things to watch before the 24-hour clock starts.'
 faq:
-  - question: "When exactly does the 24-hour clock start?"
+  - question: 'When exactly does the 24-hour clock start?'
     answer: "When you become aware that a vulnerability in your product is being actively exploited. Not when the CVE is published, not when a patch exists. Awareness of a severe incident affecting the product's security starts the same cascade."
-  - question: "Do the reporting deadlines apply to products we shipped years ago?"
-    answer: "Yes. The Article 14 obligations apply from September 11, 2026 and cover products placed on the market before the full CRA obligations start in December 2027."
-  - question: "Do we have to report every CVE found in a dependency?"
-    answer: "No. Article 14 covers actively exploited vulnerabilities in your product and severe incidents. Ordinary dependency CVEs fall under the Annex I Part II handling duties: remediate without delay and ship the fix as a security update. If you find the vulnerability in an integrated component, report it upstream under Article 13(6)."
-  - question: "Do we have to publish details of fixed vulnerabilities?"
-    answer: "Yes, once the security update is available, including a description of the vulnerability and information for users. You can delay publication in justified cases until users have had a reasonable chance to patch."
-  - question: "Is a scan at each release enough?"
-    answer: "No. The support period runs at least five years and vulnerabilities are discovered against your old releases throughout it. Continuous rescanning of every supported release is the baseline."
-  - question: "What happens if we miss a deadline?"
-    answer: "Breaches of the essential requirements carry fines up to EUR 15 million or 2.5% of worldwide turnover. Nobody expects perfection in the first year, but \"we had no process\" is the worst possible position."
+  - question: 'Do the reporting deadlines apply to products we shipped years ago?'
+    answer: 'Yes. The Article 14 obligations apply from September 11, 2026 and cover products placed on the market before the full CRA obligations start in December 2027.'
+  - question: 'Do we have to report every CVE found in a dependency?'
+    answer: 'No. Article 14 covers actively exploited vulnerabilities in your product and severe incidents. Ordinary dependency CVEs fall under the Annex I Part II handling duties: remediate without delay and ship the fix as a security update. If you find the vulnerability in an integrated component, report it upstream under Article 13(6).'
+  - question: 'Do we have to publish details of fixed vulnerabilities?'
+    answer: 'Yes, once the security update is available, including a description of the vulnerability and information for users. You can delay publication in justified cases until users have had a reasonable chance to patch.'
+  - question: 'Is a scan at each release enough?'
+    answer: 'No. The support period runs at least five years and vulnerabilities are discovered against your old releases throughout it. Continuous rescanning of every supported release is the baseline.'
+  - question: 'What happens if we miss a deadline?'
+    answer: 'Breaches of the essential requirements carry fines up to EUR 15 million or 2.5% of worldwide turnover. Nobody expects perfection in the first year, but "we had no process" is the worst possible position.'
 ---
 
 import CraCta from '~/components/cta/CraCta.astro';
 
-*Last verified: July 2026. Based on Regulation (EU) 2024/2847. The Article 14
+_Last verified: July 2026. Based on Regulation (EU) 2024/2847. The Article 14
 reporting obligations apply from September 11, 2026, including for products
-placed on the market before December 2027.*
+placed on the market before December 2027._
 
 Every CRA summary tells you to "monitor vulnerabilities." Almost none of them
 say what that means on a Tuesday. Annex I Part II makes vulnerability handling
@@ -145,12 +145,12 @@ ten minutes.
 
 ## The monitoring table
 
-| What to monitor | Why | Example tooling |
-|---|---|---|
-| Your dependencies, continuously, across all supported releases | New CVEs hit old releases; remediation "without delay" (Annex I Part II) | osv-scanner, Trivy, Grype against stored SBOMs in CI or nightly jobs |
-| Exploitation signals | The 24h clock starts at awareness of active exploitation (Article 14) | CISA KEV, EUVD, NVD, OSV.dev, GitHub advisories, upstream PSIRT feeds |
-| Deployed versions per customer | Final report, user notification, and targeted advisories need to know who is affected | Registry pull logs, deployment agents, license or telemetry data where it exists |
-| Your CVD intake | Researcher reports trigger the same duties; a CVD policy and contact address are mandatory | security.txt, a monitored security@ mailbox, a disclosure platform if volume justifies it |
+| What to monitor                                                | Why                                                                                        | Example tooling                                                                           |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| Your dependencies, continuously, across all supported releases | New CVEs hit old releases; remediation "without delay" (Annex I Part II)                   | osv-scanner, Trivy, Grype against stored SBOMs in CI or nightly jobs                      |
+| Exploitation signals                                           | The 24h clock starts at awareness of active exploitation (Article 14)                      | CISA KEV, EUVD, NVD, OSV.dev, GitHub advisories, upstream PSIRT feeds                     |
+| Deployed versions per customer                                 | Final report, user notification, and targeted advisories need to know who is affected      | Registry pull logs, deployment agents, license or telemetry data where it exists          |
+| Your CVD intake                                                | Researcher reports trigger the same duties; a CVD policy and contact address are mandatory | security.txt, a monitored security@ mailbox, a disclosure platform if volume justifies it |
 
 An honest note on all of this: most of it is process, not tooling. The
 scanners are free and take an afternoon to wire up. What passes or fails an

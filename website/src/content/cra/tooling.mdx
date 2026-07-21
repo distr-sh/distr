@@ -7,23 +7,23 @@ lastUpdated: 2026-07-21
 order: 6
 teaser: 'No single tool makes you CRA-compliant. Here is the whole stack, layer by layer, including the one almost everyone forgets.'
 faq:
-  - question: "Is there one tool that makes us CRA compliant?"
-    answer: "No. The obligations span engineering, security operations, distribution, and documentation. Expect a stack of mostly open-source tools plus written process, not a single purchase."
-  - question: "Are Vanta or Drata enough for the CRA?"
-    answer: "They are generic compliance platforms built around frameworks like SOC 2. They can hold evidence and policies, but they are not CRA-specific: no Single Reporting Platform integration, no Article 14 clock, nothing about update distribution. Useful as a filing cabinet, not as coverage."
-  - question: "Do we need VEX documents?"
-    answer: "Not on day one. VEX becomes valuable when customers scan the SBOMs you ship and ask about every finding. A CSAF or OpenVEX statement saying \"not affected, and here is why\" answers hundreds of tickets at once."
-  - question: "Is open-source tooling acceptable for compliance evidence?"
-    answer: "Yes. The CRA prescribes outcomes, not vendors. A Syft SBOM, Grype scan history, cosign signatures, and registry pull logs are exactly the kind of material the Annex VII technical file describes. What matters is that the process around them is documented and actually followed."
-  - question: "What does non-compliance cost?"
+  - question: 'Is there one tool that makes us CRA compliant?'
+    answer: 'No. The obligations span engineering, security operations, distribution, and documentation. Expect a stack of mostly open-source tools plus written process, not a single purchase.'
+  - question: 'Are Vanta or Drata enough for the CRA?'
+    answer: 'They are generic compliance platforms built around frameworks like SOC 2. They can hold evidence and policies, but they are not CRA-specific: no Single Reporting Platform integration, no Article 14 clock, nothing about update distribution. Useful as a filing cabinet, not as coverage.'
+  - question: 'Do we need VEX documents?'
+    answer: 'Not on day one. VEX becomes valuable when customers scan the SBOMs you ship and ask about every finding. A CSAF or OpenVEX statement saying "not affected, and here is why" answers hundreds of tickets at once.'
+  - question: 'Is open-source tooling acceptable for compliance evidence?'
+    answer: 'Yes. The CRA prescribes outcomes, not vendors. A Syft SBOM, Grype scan history, cosign signatures, and registry pull logs are exactly the kind of material the Annex VII technical file describes. What matters is that the process around them is documented and actually followed.'
+  - question: 'What does non-compliance cost?'
     answer: "Breaches of the essential requirements carry fines up to EUR 15 million or 2.5% of worldwide turnover, whichever is higher. The more likely near-term cost is failing a customer's security review because you cannot show how patches reach their environment."
 ---
 
 import CraCta from '~/components/cta/CraCta.astro';
 
-*Last verified: July 2026. Based on Regulation (EU) 2024/2847. Tool
+_Last verified: July 2026. Based on Regulation (EU) 2024/2847. Tool
 capabilities change fast; treat the vendor names as examples, not
-endorsements.*
+endorsements._
 
 There is no single CRA compliance tool. Anyone claiming otherwise is selling.
 The regulation spans secure development, SBOMs, continuous vulnerability
@@ -77,17 +77,17 @@ and it is the least served layer in the market.
 
 ## The map
 
-| Layer | What the CRA asks for | Tools and standards | Honest caveat |
-|---|---|---|---|
-| SBOM generation | Machine-readable SBOM, at least top-level dependencies (Annex I Part II (1)) | Syft, Trivy, cdxgen | Generating one is trivial. Generating a correct one per release, for every supported release, and keeping them is the actual work. |
-| SBOM management and continuous monitoring | Components identified and documented for the whole support period | Dependency-Track, Interlynk, and a growing field of commercial platforms | The value is rescanning old SBOMs when new CVEs land. A folder of JSON files does not do that. |
-| Vulnerability scanning | Remediate without delay; regular testing and review (Annex I Part II (2)-(3)) | Grype, Trivy, osv-scanner, Snyk | A scanner finds problems. It does not triage them, patch them, or meet the 24h clock. Scanners without a process fail Article 14. |
-| VEX | Users informed of vulnerabilities; fixed vulnerabilities disclosed once the update is available | OpenVEX, CSAF | Only worth it once customers scan your SBOMs and drown you in "are you affected by X" tickets. Then it pays for itself. |
-| Signing and provenance | Secure distribution mechanism; integrity of updates (Annex I Part II (7)) | Sigstore/cosign, in-toto, SLSA, TUF | Signing is cheap now. Key management and documenting the verification path in your Annex VII file are the parts people skip. |
-| CVD intake | CVD policy and a contact address for reporting (Annex I Part II (5)-(6)) | security.txt, HackerOne, a plain monitored mailbox | A mailbox someone actually reads beats a bounty platform nobody triages. Start with security.txt and an SLA. |
-| Reporting and GRC | Article 14 reports via the Single Reporting Platform; evidence for the technical file | CRA-specific platforms (CRA Evidence, Kunnus); generic GRC (Vanta, Drata) | Generic GRC platforms were built for SOC 2 and ISO 27001. They are not CRA-specific and will not draft your 24-hour early warning. Templates and a rehearsed process might. |
-| Secure update delivery | Distribute updates securely, disseminate without delay, free, with advisories (Annex I Part II (7)-(8)) | Package repos and private OCI registries; TUF as a framework; Mender for embedded devices; Distr (open-source, registry + agents + customer portal for self-hosted software distribution) | The most overlooked layer, see below. |
-| Evidence and audit trails | Annex VII technical documentation must describe the vulnerability handling process including the secure update distribution solution | Registry pull logs, agent-reported deployment state, ticket history, signed release records | Nobody sells "evidence" as a product. It falls out of the layers above if they log, and does not exist if they don't. |
+| Layer                                     | What the CRA asks for                                                                                                                | Tools and standards                                                                                                                                                                       | Honest caveat                                                                                                                                                               |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SBOM generation                           | Machine-readable SBOM, at least top-level dependencies (Annex I Part II (1))                                                         | Syft, Trivy, cdxgen                                                                                                                                                                       | Generating one is trivial. Generating a correct one per release, for every supported release, and keeping them is the actual work.                                          |
+| SBOM management and continuous monitoring | Components identified and documented for the whole support period                                                                    | Dependency-Track, Interlynk, and a growing field of commercial platforms                                                                                                                  | The value is rescanning old SBOMs when new CVEs land. A folder of JSON files does not do that.                                                                              |
+| Vulnerability scanning                    | Remediate without delay; regular testing and review (Annex I Part II (2)-(3))                                                        | Grype, Trivy, osv-scanner, Snyk                                                                                                                                                           | A scanner finds problems. It does not triage them, patch them, or meet the 24h clock. Scanners without a process fail Article 14.                                           |
+| VEX                                       | Users informed of vulnerabilities; fixed vulnerabilities disclosed once the update is available                                      | OpenVEX, CSAF                                                                                                                                                                             | Only worth it once customers scan your SBOMs and drown you in "are you affected by X" tickets. Then it pays for itself.                                                     |
+| Signing and provenance                    | Secure distribution mechanism; integrity of updates (Annex I Part II (7))                                                            | Sigstore/cosign, in-toto, SLSA, TUF                                                                                                                                                       | Signing is cheap now. Key management and documenting the verification path in your Annex VII file are the parts people skip.                                                |
+| CVD intake                                | CVD policy and a contact address for reporting (Annex I Part II (5)-(6))                                                             | security.txt, HackerOne, a plain monitored mailbox                                                                                                                                        | A mailbox someone actually reads beats a bounty platform nobody triages. Start with security.txt and an SLA.                                                                |
+| Reporting and GRC                         | Article 14 reports via the Single Reporting Platform; evidence for the technical file                                                | CRA-specific platforms (CRA Evidence, Kunnus); generic GRC (Vanta, Drata)                                                                                                                 | Generic GRC platforms were built for SOC 2 and ISO 27001. They are not CRA-specific and will not draft your 24-hour early warning. Templates and a rehearsed process might. |
+| Secure update delivery                    | Distribute updates securely, disseminate without delay, free, with advisories (Annex I Part II (7)-(8))                              | Package repos and private OCI registries; TUF as a framework; Mender for embedded devices; Distr (open-source, registry + agents + customer portal for self-hosted software distribution) | The most overlooked layer, see below.                                                                                                                                       |
+| Evidence and audit trails                 | Annex VII technical documentation must describe the vulnerability handling process including the secure update distribution solution | Registry pull logs, agent-reported deployment state, ticket history, signed release records                                                                                               | Nobody sells "evidence" as a product. It falls out of the layers above if they log, and does not exist if they don't.                                                       |
 
 ## The layer everyone skips
 
