@@ -122,7 +122,7 @@ export class DeploymentTargetDetailComponent {
     }
     const date = dayjs(value);
     if (!date.isValid()) {
-      return null;
+      return {invalidDate: true};
     }
     if (date.isAfter(this.now())) {
       return {afterNow: true};
@@ -143,7 +143,7 @@ export class DeploymentTargetDetailComponent {
     this.windowErrors(control.value as string);
 
   private validRangeDate(value: string | undefined): Date | undefined {
-    if (!value || !dayjs(value).isValid() || this.windowErrors(value)) {
+    if (!value || this.windowErrors(value)) {
       return undefined;
     }
     return new Date(value);

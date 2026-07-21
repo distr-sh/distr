@@ -235,7 +235,9 @@
               [min]="logRangeMin()"
               [max]="logRangeMax()"
               class="bg-gray-50 border leading-none border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
-            @if (form.controls.from.hasError('beforeWindow')) {
+            @if (form.controls.from.hasError('invalidDate')) {
+              <p class="mt-1 text-xs text-red-600 dark:text-red-500">Invalid date</p>
+            } @else if (form.controls.from.hasError('beforeWindow')) {
               <p class="mt-1 text-xs text-red-600 dark:text-red-500">Outside the available log window</p>
             } @else if (form.controls.from.hasError('afterNow')) {
               <p class="mt-1 text-xs text-red-600 dark:text-red-500">Cannot be in the future</p>
@@ -251,7 +253,9 @@
               [min]="logRangeMin()"
               [max]="logRangeMax()"
               class="bg-gray-50 border leading-none border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
-            @if (form.controls.to.hasError('beforeWindow')) {
+            @if (form.controls.to.hasError('invalidDate')) {
+              <p class="mt-1 text-xs text-red-600 dark:text-red-500">Invalid date</p>
+            } @else if (form.controls.to.hasError('beforeWindow')) {
               <p class="mt-1 text-xs text-red-600 dark:text-red-500">Outside the available log window</p>
             } @else if (form.controls.to.hasError('afterNow')) {
               <p class="mt-1 text-xs text-red-600 dark:text-red-500">Cannot be in the future</p>
