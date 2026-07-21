@@ -9,6 +9,13 @@ global:
 # This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
 replicaCount: 2
 
+# This sets the deployment strategy more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+strategy: {}
+  # type: RollingUpdate
+  # rollingUpdate:
+  #   maxSurge: 25%
+  #   maxUnavailable: 25%
+
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 image:
   repository: ghcr.io/distr-sh/distr-ce
@@ -53,7 +60,7 @@ hub:
     - name: REGISTRY_S3_REGION
       value: local
     - name: REGISTRY_S3_ENDPOINT
-      value: http://distr-registry-rustfs-svc:9000
+      value: http://distr-rustfs-svc:9000
     - name: REGISTRY_S3_ACCESS_KEY_ID
       value: distr
     - name: REGISTRY_S3_SECRET_ACCESS_KEY
@@ -179,8 +186,10 @@ podAnnotations: {}
 # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
 podLabels: {}
 
-podSecurityContext: {}
-  # fsGroup: 2000
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  fsGroup: 65532
 
 securityContext: {}
   # capabilities:
@@ -236,7 +245,14 @@ resources: {}
   #   cpu: 100m
   #   memory: 256Mi
 
-# This is to set up the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+# This is to set up the liveness, readiness and startup probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+# The startup probe allows up to 5 minutes (failureThreshold * periodSeconds = 30 * 10s) for the hub to become ready before liveness/readiness probes take over.
+startupProbe:
+  httpGet:
+    path: /
+    port: http
+  periodSeconds: 10
+  failureThreshold: 30
 livenessProbe:
   httpGet:
     path: /
@@ -245,6 +261,9 @@ readinessProbe:
   httpGet:
     path: /
     port: http
+
+# This is the duration in seconds the pod needs to terminate gracefully after receiving a shutdown signal.
+terminationGracePeriodSeconds: 60
 
 # This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
 autoscaling:
@@ -318,7 +337,7 @@ rustfs:
   # When disabled, provide external object storage for the registry and for Loki
   # (see loki.loki.storage.s3), otherwise those components cannot persist data.
   enabled: false
-  fullnameOverride: distr-registry-rustfs
+  fullnameOverride: distr-rustfs
   secret:
     rustfs:
       # These are the source-of-truth object storage credentials. If you change them you
@@ -374,7 +393,7 @@ loki:
         ruler: loki
         admin: loki
       s3:
-        endpoint: http://distr-registry-rustfs-svc:9000
+        endpoint: http://distr-rustfs-svc:9000
         region: local
         # Must match rustfs.secret.rustfs and the create-loki-bucket init container below.
         accessKeyId: distr
@@ -417,7 +436,7 @@ loki:
           - name: RCLONE_CONFIG_STORAGE_PROVIDER
             value: Other
           - name: RCLONE_CONFIG_STORAGE_ENDPOINT
-            value: http://distr-registry-rustfs-svc:9000
+            value: http://distr-rustfs-svc:9000
           # Must match rustfs.secret.rustfs and loki.loki.storage.s3 above.
           - name: RCLONE_CONFIG_STORAGE_ACCESS_KEY_ID
             value: distr

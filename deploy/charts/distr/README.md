@@ -14,7 +14,7 @@
 
 <!-- x-release-please-start-version -->
 
-![Version: 2.26.0](https://img.shields.io/badge/Version-2.26.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.26.0](https://img.shields.io/badge/AppVersion-2.26.0-informational?style=flat-square)
+![Version: 3.0.0](https://img.shields.io/badge/Version-2.26.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.26.0](https://img.shields.io/badge/AppVersion-2.26.0-informational?style=flat-square)
 
 <!-- x-release-please-end -->
 
@@ -35,7 +35,7 @@ To install Distr in Kubernetes, simply run:
 
 ```shell
 helm upgrade --install --wait --namespace distr --create-namespace \
-  distr oci://ghcr.io/distr-sh/charts/distr --version 2.26.0 \
+  distr oci://ghcr.io/distr-sh/charts/distr --version 3.0.0 \
   --set postgresql.enabled=true --set rustfs.enabled=true
 ```
 
@@ -127,7 +127,7 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | hub.env[5].name                                       | string | `"REGISTRY_S3_REGION"`                           |             |
 | hub.env[5].value                                      | string | `"local"`                                        |             |
 | hub.env[6].name                                       | string | `"REGISTRY_S3_ENDPOINT"`                         |             |
-| hub.env[6].value                                      | string | `"http://distr-registry-rustfs-svc:9000"`        |             |
+| hub.env[6].value                                      | string | `"http://distr-rustfs-svc:9000"`                 |             |
 | hub.env[7].name                                       | string | `"REGISTRY_S3_ACCESS_KEY_ID"`                    |             |
 | hub.env[7].value                                      | string | `"distr"`                                        |             |
 | hub.env[8].name                                       | string | `"REGISTRY_S3_SECRET_ACCESS_KEY"`                |             |
@@ -187,7 +187,7 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | loki.loki.storage.bucketNames.chunks                  | string | `"loki"`                                         |             |
 | loki.loki.storage.bucketNames.ruler                   | string | `"loki"`                                         |             |
 | loki.loki.storage.s3.accessKeyId                      | string | `"distr"`                                        |             |
-| loki.loki.storage.s3.endpoint                         | string | `"http://distr-registry-rustfs-svc:9000"`        |             |
+| loki.loki.storage.s3.endpoint                         | string | `"http://distr-rustfs-svc:9000"`                 |             |
 | loki.loki.storage.s3.region                           | string | `"local"`                                        |             |
 | loki.loki.storage.s3.s3ForcePathStyle                 | bool   | `true`                                           |             |
 | loki.loki.storage.s3.secretAccessKey                  | string | `"distr123"`                                     |             |
@@ -204,7 +204,7 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | loki.singleBinary.initContainers[0].env[1].name       | string | `"RCLONE_CONFIG_STORAGE_PROVIDER"`               |             |
 | loki.singleBinary.initContainers[0].env[1].value      | string | `"Other"`                                        |             |
 | loki.singleBinary.initContainers[0].env[2].name       | string | `"RCLONE_CONFIG_STORAGE_ENDPOINT"`               |             |
-| loki.singleBinary.initContainers[0].env[2].value      | string | `"http://distr-registry-rustfs-svc:9000"`        |             |
+| loki.singleBinary.initContainers[0].env[2].value      | string | `"http://distr-rustfs-svc:9000"`                 |             |
 | loki.singleBinary.initContainers[0].env[3].name       | string | `"RCLONE_CONFIG_STORAGE_ACCESS_KEY_ID"`          |             |
 | loki.singleBinary.initContainers[0].env[3].value      | string | `"distr"`                                        |             |
 | loki.singleBinary.initContainers[0].env[4].name       | string | `"RCLONE_CONFIG_STORAGE_SECRET_ACCESS_KEY"`      |             |
@@ -219,7 +219,9 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | nodeSelector                                          | object | `{}`                                             |             |
 | podAnnotations                                        | object | `{}`                                             |             |
 | podLabels                                             | object | `{}`                                             |             |
-| podSecurityContext                                    | object | `{}`                                             |             |
+| podSecurityContext.fsGroup                            | int    | `65532`                                          |             |
+| podSecurityContext.runAsNonRoot                       | bool   | `true`                                           |             |
+| podSecurityContext.runAsUser                          | int    | `65532`                                          |             |
 | postgresql.architecture                               | string | `"standalone"`                                   |             |
 | postgresql.auth.database                              | string | `"distr"`                                        |             |
 | postgresql.auth.existingSecret                        | string | `""`                                             |             |
@@ -234,7 +236,7 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | replicaCount                                          | int    | `2`                                              |             |
 | resources                                             | object | `{}`                                             |             |
 | rustfs.enabled                                        | bool   | `false`                                          |             |
-| rustfs.fullnameOverride                               | string | `"distr-registry-rustfs"`                        |             |
+| rustfs.fullnameOverride                               | string | `"distr-rustfs"`                                 |             |
 | rustfs.ingress.enabled                                | bool   | `false`                                          |             |
 | rustfs.mode.distributed.enabled                       | bool   | `false`                                          |             |
 | rustfs.mode.standalone.enabled                        | bool   | `true`                                           |             |
@@ -253,6 +255,12 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | serviceAccount.automount                              | bool   | `true`                                           |             |
 | serviceAccount.create                                 | bool   | `true`                                           |             |
 | serviceAccount.name                                   | string | `""`                                             |             |
+| startupProbe.failureThreshold                         | int    | `30`                                             |             |
+| startupProbe.httpGet.path                             | string | `"/"`                                            |             |
+| startupProbe.httpGet.port                             | string | `"http"`                                         |             |
+| startupProbe.periodSeconds                            | int    | `10`                                             |             |
+| strategy                                              | object | `{}`                                             |             |
+| terminationGracePeriodSeconds                         | int    | `60`                                             |             |
 | tolerations                                           | list   | `[]`                                             |             |
 | volumeMounts                                          | list   | `[]`                                             |             |
 | volumes                                               | list   | `[]`                                             |             |
