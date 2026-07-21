@@ -242,6 +242,16 @@ func (c *Client) doAuthenticated(ctx context.Context, r *http.Request, loggingEn
 			c.logger.Warn("got 401 response, try to regenerate token")
 		}
 		c.ClearToken()
+		// The first attempt consumed the request body, so rewind it before retrying;
+		// otherwise the retry would send an empty payload. http.NewRequest populates
+		// GetBody for the in-memory bodies (bytes.Buffer) that all callers use.
+		if r.GetBody != nil {
+			if body, err := r.GetBody(); err != nil {
+				return nil, fmt.Errorf("cannot rewind request body for retry: %w", err)
+			} else {
+				r.Body = body
+			}
+		}
 		return c.doAuthenticatedNoRetry(ctx, r, loggingEnabled)
 	}
 }
