@@ -225,10 +225,10 @@ export class DeploymentTargetDetailComponent {
       const queryParams: Params = {filter: values.filter || null};
       // Only propagate valid dates so an invalid one doesn't block filter/other-date updates.
       if (this.form.controls.from.valid) {
-        queryParams.from = dateTimeLocalToISO(values.from);
+        queryParams['from'] = dateTimeLocalToISO(values.from);
       }
       if (this.form.controls.to.valid) {
-        queryParams.to = dateTimeLocalToISO(values.to);
+        queryParams['to'] = dateTimeLocalToISO(values.to);
       }
       this.router.navigate([], {
         relativeTo: this.route,
