@@ -330,7 +330,7 @@ func agentPutDeploymentLogsHandler() http.HandlerFunc {
 		// whole batch: the agent buffers records for many deployments together, so a single
 		// stale reference must not discard the other deployments' valid logs.
 		if valid, err := db.FilterValidDeploymentLogRecords(ctx, auth.CurrentDeploymentTargetID(), records); err != nil {
-			log.Error("error saving deployment log records", zap.Error(err))
+			log.Error("error filtering valid deployment log records", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
