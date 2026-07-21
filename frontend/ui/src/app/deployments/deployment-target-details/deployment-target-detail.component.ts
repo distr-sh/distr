@@ -103,10 +103,7 @@ export class DeploymentTargetDetailComponent {
 
   private readonly organization = toSignal(this.organizationService.get());
   // Ticks every minute so time-based bounds/validation don't freeze in long sessions.
-  private readonly now = toSignal(
-    timer(0, 60_000).pipe(map(() => dayjs())),
-    {initialValue: dayjs()}
-  );
+  private readonly now = toSignal(timer(0, 60_000).pipe(map(() => dayjs())), {initialValue: dayjs()});
   // Constrain the pickers to [now - window, now]; the window is enforced server-side.
   protected readonly logRangeMin = computed(() => {
     const windowSeconds = this.organization()?.subscriptionLimits.logQueryWindowSeconds;
