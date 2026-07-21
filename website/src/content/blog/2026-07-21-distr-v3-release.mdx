@@ -1,0 +1,94 @@
+---
+title: 'Introducing Distr v3'
+description: 'Distr v3 replaces the log storage backend with Grafana Loki for longer log retention, and adds partner organizations and custom OIDC providers for vendors and customers.'
+publishDate: 2026-07-21
+lastUpdated: 2026-07-21
+slug: 'distr-v3-release'
+authors:
+  - name: 'Philip Miglinci'
+    role: 'Co-Founder'
+    image: '/src/assets/blog/authors/pmig.jpg'
+    linkedIn: https://www.linkedin.com/in/pmigat/
+    gitHub: https://github.com/pmig
+image: '/src/assets/blog/2026-07-21-distr-v3-release/thumb.webp'
+tags:
+  - Releases
+---
+
+import {Aside} from '@astrojs/starlight/components';
+
+Distr 3.0 is out. The headline change is a new log storage backend that increases log retention, and the release also brings partner organizations and custom OIDC providers for vendors and customers.
+
+We also just passed 1,200 stars on [GitHub](https://github.com/distr-sh/distr). Thank you to everyone who has starred, filed issues, and contributed. If Distr helps you ship software to your customers, a star helps us reach more vendors.
+
+If you use the hosted Distr Hub, there is nothing you need to do; your log viewer already runs on the new backend. If you self-host, this major release changes your deployment setup, so read the upgrade notes below.
+
+## Using Loki as Logging Backend
+
+When we [shipped container log collection](/blog/distr-logs-metrics/) initially, log records went into [PostgreSQL](https://www.postgresql.org/) next to everything else, and retention was count-based: cleanup jobs kept the newest 10,000 entries per deployment resource and dropped the rest.
+
+We needed to fine-tune the cleanup job multiple times over the past weeks as some of our customers streamed thousands of log records every minute, which led to constant log record churn, and PostgreSQL needed to constantly either store or delete logs. Also, some of our customers didn't even have a couple of days of logs available, which made debugging past issues particularly challenging.
+
+As a lot of our self-hosted and open-source community users also value our simple architecture with only PostgreSQL and an object storage as services with a persistence requirement, we were hesitant to introduce another database to store time series data (like [InfluxDB](https://www.influxdata.com/)) or even [Elasticsearch](https://www.elastic.co/elasticsearch) for full-text search.
+
+We have already been using [Grafana Loki](https://grafana.com/oss/loki/) internally for years, and after a short PoC we decided to use it as the logging backend for Distr instead of further tuning PostgreSQL (e.g. with [BRIN indexes](https://www.postgresql.org/docs/current/brin.html)).
+
+Loki was a great fit, as it requires no persistent volume of its own and only uses an object storage as the backend (it even creates different paths for tenants, so each tenant's logs are stored in a separate path). For smaller self-hosted deployments, it is a single container running the Go application in monolithic mode, and for our hosted version we are running Loki in the distributed mode, being able to scale to hundreds of GBs of log ingestion per day.
+
+### CPU and memory usage after the rollout
+
+We rolled the change out to the hosted Distr Hub first. Here is what our infrastructure looked like on deployment day, with the rollout happening at around 12:45:
+
+| Memory usage                                                                                                                               | CPU usage                                                                                                                            |
+| ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| ![Memory usage of the hosted Distr Hub before and after the Loki rollout](../../assets/blog/2026-07-21-distr-v3-release/memory-usage.webp) | ![CPU usage of the hosted Distr Hub before and after the Loki rollout](../../assets/blog/2026-07-21-distr-v3-release/cpu-usage.webp) |
+
+Memory went up a bit, as the Loki ingesters, queriers, and distributors now run alongside the Hub and buffer recent log chunks in memory before flushing them to object storage. That is a fixed, predictable cost we gladly pay.
+
+CPU usage dropped noticeably. Before v3, cleanup jobs rotated thousands of log records in PostgreSQL every 10 minutes to enforce the count-based retention, and those constant delete cycles caused the tall CPU spikes on the left of the chart. With Loki, expired chunks simply age out of object storage, so the spikes are gone and PostgreSQL spends its cycles on actual application queries.
+
+### Log retention
+
+All Pro users now get 7 days of log retention, and the [Business plan](/pricing/) extends this to 30 days.
+
+## Partner Organizations
+
+Partner organizations are now supported on the Business plan. A partner is a reseller that onboards, supports, and manages its own Distr customers, while still receiving applications, release notes, and other resources from the vendor.
+
+## Custom OIDC Provider for vendors and customers
+
+Until now, OIDC in Distr was configured once per instance. With v3, both vendor and customer organizations can bring their own OIDC providers, tied to their custom domains: users visiting your domain log in through your IdP, and customers can connect their own IdP for their portal as well.
+
+An organization can configure multiple providers, each shown as its own login button, or mark one as SP-initiated so visitors go straight to the IdP without seeing a login form. You can choose to auto-provision unknown users with a default role, and Distr links accounts by the IdP-provided identity rather than by email, so an email change at your IdP no longer creates a duplicate account. Custom OIDC providers are available on the Business plan and ship together with improved self-service custom domain configuration.
+
+## Upgrading to Distr v3
+
+This is a breaking change for self-hosted installations: Distr now requires a Loki instance and will not start without `LOKI_URL` set.
+
+Both shipped deployment methods include a preconfigured Loki with 30-day retention, so for most setups the upgrade just means picking up the new manifests:
+
+- The **Docker Compose** distribution adds a `loki` service backed by the bundled object storage. Note that provisioning its bucket uses a `pre_start` lifecycle hook, which requires Docker Compose 5.3.0 or newer. The [Docker self-hosting docs](/docs/self-hosting/docker/) show a workaround for older versions.
+- The **Helm chart** bundles a Loki instance (enabled by default) that persists to the configured object storage. Details are in the [Kubernetes self-hosting docs](/docs/self-hosting/kubernetes/). For the upgrade itself, we recommend a two-step rollout: first deploy the v3 chart with the Distr image tag pinned to your current v2 Hub version, so Loki gets deployed and becomes ready, then remove the pin to upgrade the Hub to v3. Otherwise the new Hub can start before its Loki dependency exists. We used the same procedure for our own hosted infrastructure.
+
+&nbsp;
+
+<Aside type="tip">
+  For production installations we still recommend bringing your own external
+  PostgreSQL database and S3-compatible object storage instead of the PostgreSQL
+  and RustFS instances bundled with the Helm chart. For Loki, however, we
+  recommend the bundled instance: it is preconfigured for Distr and requires
+  nothing more than an additional bucket in your object storage.
+</Aside>
+
+If you run your own Loki it is recommended to configure Loki with authentication and retention settings of minimum 7 days.
+The `CLEANUP_DEPLOYMENT_LOG_RECORD_*`, `CLEANUP_DEPLOYMENT_TARGET_LOG_RECORD_*`, and `LOG_RECORD_ENTRIES_MAX_COUNT` environment variables have been removed. If you configured the `DeploymentLogRecord` and `DeploymentTargetLogRecord` cleanup cron jobs (e.g. as custom entries in the Helm chart's `cronJobs` list), remove them, as the `cleanup` command no longer knows these targets. The full list of new environment variables is in the [configuration reference](/docs/self-hosting/configuration/).
+
+One thing to be aware of: log records collected before the upgrade are not migrated to Loki. The log viewer starts fresh with logs collected after the upgrade, and the gap closes within days. The old records remain in your PostgreSQL database, as the log tables will only be dropped in v3.1, so a rollback to v2 is possible without losing any log history.
+
+## Join the Conversation
+
+We'd love to hear your thoughts on this release, especially if you self-host and hit anything unexpected during the upgrade.
+
+- [Join the discussion](https://github.com/distr-sh/distr/discussions)
+- [Book a demo call](https://cal.glasskube.com/team/gk/demo?duration=30)
+- [Star us on GitHub](https://github.com/distr-sh/distr)
