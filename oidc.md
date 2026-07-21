@@ -11,7 +11,7 @@ This is a living document (v1, draft). Each issue gets a short summary and a det
 - Frontend: `oidc-buttons.component.ts` renders provider buttons based on the runtime endpoint `GET /api/v1/auth/login/config` (`authLoginConfigHandler` — env-based, host-independent); login/register pages.
 - Custom domains exist only as operator-managed columns: `OrganizationBranding.app_domain` / `registry_domain` — no self-service, no automated TLS (existing setups use manually managed Route53 NS zones). `internal/customdomains` resolves org → effective domain; the only host → org resolution is `db.GetOrganizationBrandingByAppDomain`, used by `internal/handlers/portal.go`. The registry resolves organizations from the repository **path** (`internal/registry/name`: `<org>/<artifact>`), not from the Host header — `registry_domain` is a pure DNS alias, only used when rendering agent manifests.
 - Plans exist as `types.SubscriptionType` (community, starter, pro, enterprise, trial) with Stripe billing (`FeatureVendorBilling`), and org feature flags (`types.Feature`, `org.HasFeature(...)`, `ProFeatures`) are granted based on the subscription.
-- A **jetski/HyprMCP reference for the custom domain implementation is included as an appendix at the end of this document** (Caddy ingress + on-demand TLS + ask endpoint), together with the Distr-side design (`CustomDomain` data model, catch-all ingress, open decisions).
+- A **jetski/HyprMCP reference for the custom domain implementation is included as an appendix at the end of this document** (Caddy + on-demand TLS + ask endpoint), together with the Distr-side design (`CustomDomain` data model, static Caddyfile routing, open decisions).
 
 ## Dependency graph
 
@@ -26,7 +26,7 @@ graph TD
     DEV593 --> DEV597["DEV-597 Customer-scoped OIDC"]
     DEV596 --> DEV644["DEV-644 Hide instance OIDC on custom domains"]
     DEV641["DEV-641 IdP-provided UID"]
-    DEV720["DEV-720 IdP group mapping (snoozed)"]
+    DEV720["DEV-720 IdP group mapping (backlog)"]
 ```
 
 ## Proposed order of work
@@ -42,7 +42,7 @@ graph TD
 | 6     | DEV-594 | Migrate Route53 NS zones to CNAME setup         | Customer self-service migration; needs DEV-592 + DEV-595.           |
 | 7     | DEV-597 | Customer-scoped OIDC configuration              | Needs DEV-593; reuses DEV-596 machinery.                            |
 | 8     | DEV-644 | Hide instance-scoped OIDC on custom domains     | Breaking change; do last, after comms to affected users.            |
-| —     | DEV-720 | User group mapping from IdP                     | Snoozed; only if the customer comes back. Not planned.              |
+| —     | DEV-720 | User group mapping from IdP                     | In backlog. Not planned.                                            |
 
 ---
 
@@ -109,11 +109,11 @@ Today OIDC users are matched by email only. If a user changes their email at the
 
 ### Summary
 
-Vendor organizations should self-service a custom domain for the platform UI/API and the registry (two different CNAME targets, served via caddy-ingress rather than the AWS ALB). The full jetski/HyprMCP reference implementation and its mapping onto Distr are documented in the **appendix** at the end of this document — this stage tracks the Distr-side deliverables.
+Vendor organizations should self-service a custom domain for the platform UI/API, and optionally a separate one for the registry (served via a dedicated plain Caddy deployment rather than the AWS ALB). Because Caddy routes `/v2/*` to the registry backend on every custom domain, **a single app domain already serves both — the registry domain is optional**. The full jetski/HyprMCP reference implementation and its mapping onto Distr are documented in the **appendix** at the end of this document — this stage tracks the Distr-side deliverables.
 
 ### Detailed plan
 
-Follows the "recommended shape" in appendix §5: a dedicated `CustomDomain` table (owned by the vendor org, optional customer/partner scoping, globally unique domains — appendix §5.3), one Caddy ingress with on-demand TLS + `ask` endpoint, static catch-all ingress routing (no CRD/metacontroller machinery from jetski; see the appendix open questions for the metacontroller discussion).
+Follows the "recommended shape" in appendix §5: a dedicated `CustomDomain` table (owned by the vendor org, optional customer/partner scoping, globally unique domains — appendix §5.3), one **plain Caddy deployment** (no ingress controller) with on-demand TLS + `ask` endpoint and a static Caddyfile for routing (no Ingress resources, no CRD/metacontroller machinery from jetski; see the appendix open questions).
 
 **PR 1 — data model + self-service API + validation (appendix §5.3–§5.5)**
 
@@ -121,6 +121,7 @@ Follows the "recommended shape" in appendix §5: a dedicated `CustomDomain` tabl
   - Refactor ripple: these helpers are currently pure functions of `*types.OrganizationBranding` with ~10 call sites (mail templates, agent manifest/connect, support bundles, user handlers) — resolving via `CustomDomain` makes them context/DB-backed, or callers must receive a pre-resolved domain set loaded alongside branding.
   - Extra motivation for `UNIQUE (domain)`: `app_domain` has no unique constraint today, and `GetOrganizationBrandingByAppDomain` uses `CollectExactlyOneRow` — two orgs with the same domain break portal resolution at runtime.
 - Org-admin CRUD for app + registry domains: RFC-1123 hostname validation, global uniqueness via the `UNIQUE (domain)` constraint, rejection of platform-owned domains (`*.distr.sh`).
+- The registry domain is **optional**: the `/v2/*` path routing (PR 3) means every custom app domain already serves registry traffic, so `RegistryDomainOrDefault` resolves dedicated registry domain → custom app domain → instance default. A dedicated registry domain is only for vendors who want a separate hostname.
 - Gated on the business plan feature from Stage 0 (`custom_domains`).
 - Optional CNAME pre-verification (resolve domain → expected target) for better UX; the `ask` gate keeps it safe either way.
 
@@ -130,20 +131,20 @@ Follows the "recommended shape" in appendix §5: a dedicated `CustomDomain` tabl
 - **A real separate HTTP server**, not a route on the main server: a fourth server next to `server` (`:8080`), `artifactsServer` (`:8585`) and `metricsServer` in `cmd/hub/cmd/serve.go` / `internal/svc`, with its own chi router and port (e.g. `INTERNAL_SERVER_ADDR`, default `:8085`). It is **only started when the custom domain feature is configured** (i.e. the `CUSTOM_DOMAIN_*_CNAME_TARGET` env vars from PR 3 are set) and is intended to never be exposed outside the cluster.
 - Helm chart (documented in appendix §6, ships with PR 3): a dedicated Service with a clear internal name — `distr-internal-caddy-ask` — targeting only this port, separate from the public `distr` Service, so it can't accidentally be picked up by an Ingress for the public Service.
 
-**PR 3 — infrastructure (caddy-ingress) + CNAME targets (appendix §5.1/§5.2)**
+**PR 3 — infrastructure (plain Caddy) + CNAME targets (appendix §5.1/§5.2)**
 
-- `caddyserver/ingress` helm chart with `onDemandTLS: true` + `onDemandAsk` → the ask endpoint; static catch-all Ingress to the Hub. The chart dependencies are **not applied yet** — this PR adds them to the Distr Helm chart as disabled-by-default dependencies (exact chart changes prepared in appendix §6), plus the `distr-internal-caddy-ask` Service for the ask listener (PR 2).
-- Two stable CNAME targets pointing at the Caddy LB, e.g. `custom-app.distr.sh` / `custom-registry.distr.sh` (region encoding to be decided, appendix §6); env vars `CUSTOM_DOMAIN_APP_CNAME_TARGET` / `CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET` (+ configuration.mdx), feature off when unset.
+- **No ingress controller** — a plain Caddy deployment shipped by the Distr Helm chart itself (disabled by default): Deployment (official `caddy` image), ConfigMap with a static Caddyfile (`on_demand_tls` + `ask` → the internal ask endpoint, catch-all `https://` site with path routing to the Hub Services), and a Service of type `LoadBalancer` with **configurable annotations** — the chart stays generic, and for our deployment we set the AWS annotations that provision a Network Load Balancer. Exact chart changes prepared in appendix §6; this PR also adds the `distr-internal-caddy-ask` Service for the ask listener (PR 2).
+- Two stable CNAME targets pointing at the Caddy LB, e.g. `custom-app.distr.sh` / `custom-registry.distr.sh` (region encoding to be decided, appendix §6); env vars `CUSTOM_DOMAIN_APP_CNAME_TARGET` / `CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET` (+ configuration.mdx), feature off when unset. Both targets point at the same LB — the registry target only matters for vendors who configure a dedicated (optional) registry domain.
 - Resolve the app-vs-registry backend split — recommended: **one Caddy installation with path-based routing** (registry traffic is always under the spec-mandated `/v2/` prefix, everything else is app traffic), see appendix §5.2. Verified against the code: the registry server 404s every non-`/v2` path (`internal/registry/registry.go`), and registry **login** also happens under the prefix — `docker login` has no dedicated login URL, it retries the spec-mandated version check `GET /v2/` with credentials after the `401` challenge, and Distr challenges with `Basic realm="Distr"` (`internal/auth/authentication.go`), not with a Docker token-auth `Bearer realm` that would point to a token endpoint outside `/v2/`. Nothing on the app side claims `/v2` (API is under `/api/v1`).
-- E2E validation with a staging domain — explicitly including the caddy ingress controller's prefix-path handling on host-less rules (`/v2` → 8585, `/` → 8080), the one part of the path-routing option that can't be verified from the repo.
+- E2E validation with a staging domain — explicitly including the Caddyfile path routing (`/v2/*` → registry Service `:8585`, everything else → app Service `:8080`), on-demand TLS issuance through the `ask` endpoint, and the NLB annotations on the Caddy Service.
 
 **PR 4 — frontend (appendix §5.6)**
 
-- Org settings section "Custom domains" with app + registry domain fields, live validation, and explicit CNAME record instructions per field (targets from the env endpoint); verification status if PR 1 includes pre-verification.
+- Org settings section "Custom domains" with an app domain field and an **optional** registry domain field (with a hint that the app domain already serves the registry under `/v2/`), live validation, and explicit CNAME record instructions per field (targets from the env endpoint); verification status if PR 1 includes pre-verification.
 
 ### Open questions
 
-- See the appendix §6 for the full list of open decisions (metacontroller vs. catch-all, region-encoded CNAME targets, shared-domain semantics).
+- See the appendix §6 for the full list of open decisions (region-encoded CNAME targets, shared-domain semantics; the ingress-controller/metacontroller question is settled: plain Caddy, no controller).
 - Does the Hub host-context middleware (needed by DEV-596) land here or in DEV-596 PR 1? Note: the registry does **not** resolve orgs by host — it resolves them from the repository path prefix (`internal/registry/name`), so the middleware is new for both app and registry. Upside: the registry needs no per-host org dispatch at all; a custom registry domain works as a pure DNS alias.
 
 ---
@@ -252,8 +253,8 @@ An organization admin configures **one or more** (generic) OIDC providers, tied 
 - **SP-initiated auto-redirect**: when the portal response contains a provider marked `sp_initiated` (at most one, see PR 1), the frontend immediately redirects unauthenticated visitors to that provider's auth route instead of rendering the login form. Escape hatch: a query param (e.g. `/login?manual=1`, also used after `oidc-failed` redirects) shows the regular login form — including the provider list — to avoid redirect loops and admin lockout.
 - Mind caching: the portal response is cached per Host (`Vary: Host`, `max-age=60`) — OIDC config changes may take up to the cache TTL to apply.
 - Signup/first-login semantics (**decided**): a user signing in via a vendor-scoped IdP lands **in that vendor's org** (not a fresh personal org). **Auto-provisioning of unknown users is a per-config setting** (`create_unknown_users`): when disabled, unknown users get a clear error page ("no account for this organization — contact your admin"); when enabled, the user is created with the config's `default_user_role`. Invited users keep their invited role.
-- **Billing on auto-provisioning**: when `create_unknown_users` is enabled and a new user would exceed the org's billable user seats (`SubscriptionUserAccountQty`, checked via `subscription.IsBillableUserAccountLimitReached`), the login flow **automatically increases the subscription's user quantity** (Stripe subscription update, `billing.UpdateSubscription`) instead of failing the login — an IdP-managed org must not lock out employees over a seat count. The UI warns about this when enabling the checkbox (PR 4).
-- **Org switching is disabled** for sessions established via an org-scoped OIDC provider: the login token is scoped to that org, the org switcher is hidden, and the switch endpoint rejects such tokens. (The user's identity/authorization only exists in the context of that org's IdP.)
+- **Billing on auto-provisioning** (**decided**): when `create_unknown_users` is enabled and a new user would exceed the org's billable user seats (`SubscriptionUserAccountQty`, checked via `subscription.IsBillableUserAccountLimitReached`), the login **fails with a clear error page** ("user limit exceeded — please contact your administrator") — the subscription's user quantity is **never increased automatically**. The org admin raises the seat count in the billing settings, after which the user can simply retry the login. Deliberate trade-off: billing changes stay explicit, at the cost that new employees in an IdP-managed org are blocked until an admin acts.
+- **Org switching and org creation are disabled** for sessions established via an org-scoped OIDC provider: the login token is scoped to that org, the org switcher and the "create organization" action are hidden, and both the switch endpoint and the org-creation endpoint reject such tokens. (The user's identity/authorization only exists in the context of that org's IdP.)
 
 **PR 3 — role / privilege mapping (foundation)**
 
@@ -264,13 +265,13 @@ An organization admin configures **one or more** (generic) OIDC providers, tied 
 **PR 4 — admin API + frontend**
 
 - Org-admin CRUD endpoints for the OIDC configs (list + create/update/delete per config id, + "test connection" doing discovery).
-- Org settings page "SSO / OIDC": list of configured providers with add/edit; per-config form with display name, issuer, client ID/secret, scopes, PKCE toggle, SP-initiated toggle (with a warning about the auto-redirect behavior and the one-per-org constraint), **"create unknown users" checkbox with a prominent warning** that every unknown user signing in via this IdP is created automatically **and the billed user seats are increased automatically** when the current quantity is exhausted, a **default role** select for auto-provisioned users, and role-mapping rules; shows the exact per-config callback URL to register at the IdP.
+- Org settings page "SSO / OIDC": list of configured providers with add/edit; per-config form with display name, issuer, client ID/secret, scopes, PKCE toggle, SP-initiated toggle (with a warning about the auto-redirect behavior and the one-per-org constraint), **"create unknown users" checkbox with a prominent warning** that every unknown user signing in via this IdP is created automatically **up to the org's billed user seats — beyond that, logins fail with a "please contact your administrator" error** (seats are never increased automatically), a **default role** select for auto-provisioned users, and role-mapping rules; shows the exact per-config callback URL to register at the IdP.
 - Docs page for vendors.
 
 ### Open questions
 
 - **Consolidate `GET /api/v1/auth/login/config` into the portal request**: instead of two endpoints answering "what can I do on this host" (host-independent login config + host-aware portal), fold the login config fields (`registrationEnabled`, instance OIDC provider flags) into `api.PortalResponse` and retire `/auth/login/config`. Mind the cache implications (the portal response is public and cached per Host) and the frontend boot order (login page currently fetches both).
-- **Redirect logins to the org's custom domain?** When an organization has a custom domain configured and one of its users tries to log in on the default host (app.distr.sh), should they be redirected to the custom domain (where the org's OIDC/SP-initiated flow lives)? Open points: the org is only known _after_ the user is identified (email entry), so the redirect can happen at the earliest after an email-domain/user lookup; `?manual=1` should presumably bypass this too — otherwise a custom domain that was revoked or broken **on the DNS level** (CNAME removed, cert no longer issuable) would lock the org's users out entirely, with no working login page left; and it must not become an email-enumeration oracle (the redirect reveals that an account exists).
+- **Redirect logins to the org's custom domain? Decided: no.** When an organization has a custom domain configured and one of its users tries to log in on the default host (app.distr.sh), they are **not** redirected to the custom domain — each host only offers the login methods available on that host. Rationale: the org is only known _after_ the user is identified (email entry), an automatic redirect could lock users out entirely if the custom domain breaks on the DNS level (CNAME removed, cert no longer issuable), and it would act as an email-enumeration oracle (the redirect reveals that an account exists). Vendors should communicate their custom domain as the login URL themselves.
 - Vendor OIDC config as the **default** for all customer/partner organizations on the vendor's shared custom domain, inherited automatically by newly created customer/partner orgs; customer-scoped configs (DEV-597) override it on dedicated customer domains (see the appendix, "Shared custom domains" decision). Precedence + opt-out rules to be settled.
 - Only "generic" per-org OIDC at first, or also branded Google/Microsoft per org?
 - Role mapping: is claim-value → role sufficient for v1, or do we need expression-based rules?
@@ -300,7 +301,7 @@ A vendor admin configures a custom domain for each of their customers, e.g. vend
 
 - Do wildcard setups (`*.distribution.vendor.com`) need first-class support, or is per-customer explicit CNAME enough for v1?
 - What exactly is scoped by a customer domain besides login/OIDC (branding, registry too?)?
-- **Do customers get custom registry domains at all, or only custom portal URLs?** Registry access for customers works through the vendor's (custom or default) registry domain either way — org resolution is path-based, and the portal/login experience is the thing a customer-facing domain is actually for. Supporting per-customer registry domains would mean per-customer `domain_type = 'registry'` rows, per-customer CNAME instructions for a second record, and more `ask`-endpoint surface, for unclear benefit. Leaning: customer domains are **app/portal only** for v1; `CustomDomain` scoping (`customer_organization_id` + `domain_type`) already permits adding registry rows later without a schema change.
+- **Do customers get custom registry domains at all, or only custom portal URLs?** Registry access for customers works through the vendor's (custom or default) registry domain either way — org resolution is path-based, and the portal/login experience is the thing a customer-facing domain is actually for. And since even for vendors the registry domain is optional (any custom domain serves `/v2/` traffic, Stage 2), a per-customer app/portal domain already covers registry access too. Supporting dedicated per-customer registry domains would mean per-customer `domain_type = 'registry'` rows, per-customer CNAME instructions for a second record, and more `ask`-endpoint surface, for unclear benefit. Leaning: customer domains are **app/portal only** for v1; `CustomDomain` scoping (`customer_organization_id` + `domain_type`) already permits adding registry rows later without a schema change.
 
 ---
 
@@ -347,8 +348,8 @@ A **customer admin** sets up OIDC for their own organization, on their customer-
 
 - Allow `OrganizationOIDCConfiguration` for customer organizations; resolve config via the customer domain in the login flow.
 - Permissions: customer admins manage their own config; decide whether vendor admins may manage it on the customer's behalf.
-- Auto-provisioned users (only when the config's `create_unknown_users` is enabled) land in the customer org with the config's `default_user_role` — concretely: an `Organization_UserAccount` row on the **vendor** org with `customer_organization_id` set (the membership/constraint model from migrations 52/104); the DEV-596 role/privilege mapping and the automatic seat-quantity increase apply unchanged.
-- Org switching is disabled for these sessions too (same org-scoped token mechanism as DEV-596 PR 2).
+- Auto-provisioned users (only when the config's `create_unknown_users` is enabled) land in the customer org with the config's `default_user_role` — concretely: an `Organization_UserAccount` row on the **vendor** org with `customer_organization_id` set (the membership/constraint model from migrations 52/104); the DEV-596 role/privilege mapping and the seat-limit behavior (login fails with "please contact your administrator" when the billed user seats are exhausted; no automatic increase) apply unchanged.
+- Org switching and org creation are disabled for these sessions too (same org-scoped token mechanism as DEV-596 PR 2).
 - SP-initiated auto-redirect works the same on customer domains: the `/api/v1/portal` response for the customer's CNAME carries the customer org's OIDC config.
 
 **PR 2 — frontend + docs**
@@ -392,11 +393,11 @@ On custom domains, only the domain-scoped (vendor/customer) OIDC providers shoul
 
 ---
 
-## DEV-720: User group mapping from IdP side (snoozed)
+## DEV-720: User group mapping from IdP side (backlog)
 
 ### Summary
 
-Request for mapping IdP groups to Distr users/roles. Currently not possible — users must be imported/synced via automation. Snoozed in triage; would be scoped and estimated as a custom feature only if the customer returns. No plan yet, but the DEV-641 identity table and DEV-596 per-org OIDC config are the natural foundation (group claims → role mapping rules per org).
+Mapping IdP groups to Distr users/roles. Currently not possible — users must be imported/synced via automation. In the backlog, not scheduled. No plan yet, but the DEV-641 identity table and DEV-596 per-org OIDC config are the natural foundation (group claims → role mapping rules per org).
 
 ---
 
@@ -405,7 +406,7 @@ Request for mapping IdP groups to Distr users/roles. Currently not possible — 
 - **Feature gating** (decided): plan-based via Stage 0 — the business plan (and above) grants the new `Feature` flags (`custom_domains`, `custom_email_provider`, `org_oidc`); DEV-283 plan switching is the prerequisite deliverable.
 - **Secret storage** (decided): OIDC client secrets (DEV-596/597) and SMTP/SES credentials (DEV-595) are stored as plaintext for v1, consistent with the existing `Secret` table — never serialized to JSON or returned by the API. Encryption at rest for all of them together is a follow-up ticket.
 - **Host-context middleware** is the shared backbone for DEV-593, DEV-596, DEV-597 and DEV-644 — it is new for both app and registry (the registry resolves orgs from the repository path, not the Host header); decide whether it lands in DEV-592 or DEV-596 (open question in Stage 2).
-- **Org-scoped sessions**: logins via org-scoped OIDC providers produce org-scoped tokens without org switching (DEV-596 PR 2); the same mechanism serves customer-scoped OIDC (DEV-597).
+- **Org-scoped sessions**: logins via org-scoped OIDC providers produce org-scoped tokens without org switching or org creation (DEV-596 PR 2); the same mechanism serves customer-scoped OIDC (DEV-597).
 - **Role/privilege mapping**: introduced in DEV-596 PR 3 (claim → role rules, fallback to the config's `default_user_role`), reused by DEV-597, and the foundation for DEV-720 if it gets picked up.
 - **Docs**: every stage updates `website/src/content/docs/` (self-hosting configuration reference for new env vars, plus product docs for the new org settings).
 
@@ -423,7 +424,7 @@ Cleanup and nice-to-have work that intentionally stays out of the delivery stage
 6. **Notify users (old + new address) on IdP-driven email change** (DEV-641 open question).
 7. **Additional mail providers (Resend/Brevo)** as new mailx adapters (DEV-595 summary).
 8. **Per-org notification quota override** for organizations with their own email provider that need more than the instance-wide `NOTIFICATION_EMAIL_HOURLY_QUOTA` (DEV-595 PR 2 keeps the quota for all transports).
-9. **DEV-720 IdP group mapping** — only if the customer returns; builds on the DEV-641 identity table + DEV-596 role mapping.
+9. **DEV-720 IdP group mapping** — in backlog; builds on the DEV-641 identity table + DEV-596 role mapping.
 
 ---
 
@@ -1101,27 +1102,23 @@ func RegistryDomainOrDefault(b *types.OrganizationBranding) string {
 
 The jetski pattern reduces to this for Distr:
 
-1. **Two CNAME targets, one Caddy ingress deployment.**
-   Deploy the `caddyserver/ingress` helm chart with `onDemandTLS: true` and `onDemandAsk` pointing at a new internal Distr Hub endpoint. Create two stable DNS names pointing at the Caddy LoadBalancer, e.g.:
+1. **Two CNAME targets, one plain Caddy deployment.**
+   No ingress controller: deploy a plain Caddy (official image) via the Distr Helm chart with a static Caddyfile — `on_demand_tls` with `ask` pointing at the internal Distr Hub endpoint, and a catch-all `https://` site proxying to the Hub Services. Its Service is of type `LoadBalancer` with **configurable annotations**, so the chart stays generic and our deployment sets the AWS annotations that provision a Network Load Balancer. Create two stable DNS names pointing at that LoadBalancer, e.g.:
    - `custom-app.distr.sh` → Caddy LB (CNAME target for vendor app domains)
    - `custom-registry.distr.sh` → Caddy LB (CNAME target for vendor registry domains)
 
    `app.distr.sh` and `registry.distr.sh` remain on the existing AWS LoadBalancer, untouched.
 
-2. **Static catch-all Ingresses instead of per-org Ingresses.**
-   Because the Hub answers any Host, we don't need metacontroller or a CRD at all. Host-less (catch-all) Ingress rules with `ingressClassName: caddy` route everything arriving at the Caddy LoadBalancer to the Hub. On-demand TLS handles certificates per SNI, so no per-domain Ingress objects are required. (This is the documented caddy ingress pattern: an ingress rule _without_ a host + `onDemandTLS` + `onDemandAsk`.)
+2. **Static Caddyfile instead of an ingress controller and per-org Ingresses.**
+   Because the Hub answers any Host, we don't need metacontroller, a CRD, or even Ingress resources at all. The Caddyfile is fully static: a catch-all `https://` site serves every SNI, on-demand TLS issues certificates per domain, and authorization happens in the `ask` endpoint. Adding/removing a custom domain never touches the Kubernetes API — it is purely a DB change picked up by `/ask` and the Hub's host-based org resolution.
 
-   **Is a catch-all safe in a cluster that also runs internal workloads? Yes**, because isolation happens on two independent layers:
-   - _Ingress class_: the catch-all Ingress carries `ingressClassName: caddy`, so only the Caddy controller acts on it. Internal workloads keep their existing ingress class (ALB/nginx/…) and their Ingresses are invisible to Caddy — the catch-all cannot "swallow" their routes because each controller only serves traffic arriving at **its own** LoadBalancer. Just never mark the caddy IngressClass as the cluster default (`ingressclass.kubernetes.io/is-default-class`), otherwise class-less internal Ingresses would land on Caddy.
-   - _DNS_: the Caddy LB has its own address, and only the CNAME targets (`custom-app.distr.sh`, `custom-registry.distr.sh`) and thus the vendors' custom domains resolve to it. Internal workload domains keep pointing at the other LB, so their traffic never reaches the catch-all in the first place.
-   - Someone pointing an unregistered domain at the Caddy LB gets nothing: the `ask` endpoint rejects cert issuance (TLS handshake fails), and plain-HTTP requests hit the Hub which doesn't resolve the unknown Host (404).
+   **Is a catch-all safe in a cluster that also runs internal workloads? Yes**: Caddy doesn't watch cluster Ingresses (it isn't a controller), so there is no interaction with other workloads' routing at all. Isolation is purely DNS-level — the Caddy LB has its own address, and only the CNAME targets (`custom-app.distr.sh`, `custom-registry.distr.sh`) and thus the vendors' custom domains resolve to it. Someone pointing an unregistered domain at the Caddy LB gets nothing: the `ask` endpoint rejects cert issuance (TLS handshake fails), and plain-HTTP requests hit the Hub which doesn't resolve the unknown Host (404).
 
-   **Caveat — app vs. registry need different backends:** Distr serves the app on `:8080` and the registry on a separate server on `:8585` (`cmd/hub/cmd/serve.go`), and a single host-less catch-all rule can only point to one backend port. Options, in order of preference:
-   - _One Caddy installation with path-based routing_ (**recommended**): the OCI distribution API mandates that all registry traffic lives under the `/v2/` path prefix (Distr's registry handler even 404s everything else, `internal/registry/registry.go`), so a single catch-all Ingress can carry two host-less rules — `/v2` → port 8585, `/` → port 8080. One LoadBalancer, one ingress class, one `ask` endpoint; both CNAME targets point at the same LB (they can even stay two distinct DNS names for future flexibility). No second installation needed. Only limitation: a domain of type `registry` also "answers" app paths and vice versa — acceptable, since the Hub resolves unknown Hosts to 404/default branding anyway; if desired, the host-context middleware can reject mismatched `domain_type` requests.
-   - _Two Caddy installations_ (two ingress classes, e.g. `caddy-app` and `caddy-registry`, two LoadBalancers): `custom-app.distr.sh` CNAMEs to the app LB whose catch-all targets port 8080, `custom-registry.distr.sh` to the registry LB whose catch-all targets port 8585. Only needed if the app/registry LBs must be separated on the network level (independent scaling/timeouts/IP allowlists), since path-based routing already solves the port split. Bonus hardening: each installation's `onDemandAsk` URL can carry the type (`/ask?type=app`), so an app domain can't get a certificate on the registry LB and vice versa. (Requires a second aliased `caddy-ingress-controller` dependency in the Helm chart, see §6.)
-   - _One Caddy + Hub-side dispatch_: a single catch-all to port 8080, and the Hub routes requests whose Host is a registry domain (`CustomDomain.domain_type = 'registry'`) to the registry handler internally. Superseded by the path-based option, which achieves the same with zero Hub changes.
-
-   - Alternative, closer to jetski: have the Hub create/update one Ingress per custom domain via a k8s client when the domain is saved (host rule picks the correct backend port, solving the app/registry split naturally). This gives per-domain routing objects and observability, at the cost of giving the Hub k8s API access. For a first iteration the static catch-all is simpler and sufficient.
+   **Caveat — app vs. registry need different backends:** Distr serves the app on `:8080` and the registry on a separate server on `:8585` (`cmd/hub/cmd/serve.go`). Options, in order of preference:
+   - _One Caddy with path-based routing_ (**recommended**): the OCI distribution API mandates that all registry traffic lives under the `/v2/` path prefix (Distr's registry handler even 404s everything else, `internal/registry/registry.go`), so the Caddyfile simply contains two handlers — `handle /v2/*` → registry Service `:8585`, `handle` → app Service `:8080`. One LoadBalancer, one `ask` endpoint; both CNAME targets point at the same LB (they can even stay two distinct DNS names for future flexibility). Side effect turned feature: every custom domain "answers" both app and registry paths — which is exactly why **a dedicated registry domain is optional**: a vendor's app domain already serves `docker login <app-domain>` and all `/v2/` traffic. Consequently the host-context middleware must **not** reject requests based on `domain_type`.
+   - _Two Caddy deployments_ (two LoadBalancers): `custom-app.distr.sh` CNAMEs to the app LB whose Caddyfile targets port 8080, `custom-registry.distr.sh` to the registry LB whose Caddyfile targets port 8585. Only needed if the app/registry LBs must be separated on the network level (independent scaling/timeouts/IP allowlists), since path-based routing already solves the port split. Bonus hardening: each deployment's `ask` URL can carry the type (`/ask?type=app`), so an app domain can't get a certificate on the registry LB and vice versa. (In the chart: a second values block / deployment, see §6.)
+   - _One Caddy + Hub-side dispatch_: everything to port 8080, and the Hub routes requests whose Host is a registry domain (`CustomDomain.domain_type = 'registry'`) to the registry handler internally. Superseded by the path-based option, which achieves the same with zero Hub changes.
+   - The jetski-style alternative — per-domain routing objects reconciled into an ingress controller — is dropped along with the controller itself: with a static Caddyfile there are no per-domain resources to manage.
 
 3. **Data model: a dedicated `CustomDomain` table, always owned by the vendor organization.**
    Custom domains must be usable not only by (vendor) organizations, but also by **customer organizations** and **partner organizations**. Crucially, a single custom domain can serve _multiple_ customers/partners of a vendor at once: a user account joins a vendor organization exactly once, and that membership carries the optional `customer_organization_id` / `partner_organization_id` (see `types.UserAccountWithUserRole`) — an email can't be a customer and vendor user of the same org at the same time, so login on a shared domain is always unambiguous. Per-customer/per-partner domains are therefore an _optional narrowing_ (branding, customer-scoped OIDC per DEV-597), not a requirement for login.
@@ -1134,7 +1131,8 @@ CREATE TABLE CustomDomain (
   created_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
   -- bare lowercase hostname, no scheme
   domain TEXT NOT NULL,
-  -- which endpoint this domain fronts: 'app' or 'registry'
+  -- which endpoint this domain primarily fronts: 'app' or 'registry'. Registry rows are
+  -- optional — an app domain serves registry traffic too (/v2/ path routing, §5.2)
   domain_type TEXT NOT NULL CHECK (domain_type IN ('app', 'registry')),
   -- the vendor organization always owns and administers the domain
   organization_id UUID NOT NULL REFERENCES Organization (id) ON DELETE CASCADE,
@@ -1169,6 +1167,7 @@ Notes:
 - The `UNIQUE (domain)` constraint (backed by an index) is what the TLS `ask` lookup runs against, and it structurally prevents the double-configuration problem jetski never enforced.
 - Host-based resolution: a request's Host header resolves to exactly one row → vendor org context, plus optionally a customer/partner org context for branding and scoped OIDC. On a shared (unscoped) domain, the customer/partner context is only known after the user is identified (email/IdP callback) — which is fine because the membership model makes that unambiguous.
 - The existing `OrganizationBranding.app_domain` / `registry_domain` columns should be migrated into this table (as unscoped org-wide domains) and then dropped; `customdomains.AppDomainOrDefault` / `RegistryDomainOrDefault` switch to resolving via `CustomDomain`.
+- Registry rows are optional: since every custom domain serves `/v2/` registry traffic (§5.2), `RegistryDomainOrDefault` resolves dedicated registry domain → custom app domain → instance default. A `domain_type = 'registry'` row only exists when a vendor wants a separate registry hostname.
 - Concurrent inserts of the same domain fail cleanly on the unique constraint → map to `apierrors.ErrAlreadyExists`.
 
 4. **The `ask` endpoint (new, internal).**
@@ -1190,7 +1189,7 @@ Input normalization: store and query bare lowercase hostnames (note `app_domain`
    - optionally a CNAME verification step before enabling (resolve the domain and check it CNAMEs to the correct target) — jetski skipped this; the `ask` gate makes it safe but pre-validation gives better UX.
 
 6. **Frontend.**
-   Settings sections with two fields each (app domain, registry domain) — in org settings for the vendor, and in the customer/partner organization detail views for their domains — with live validation and the CNAME instructions per field, following the jetski component:
+   Settings sections with an app domain field and an optional registry domain field (hinting that the app domain already serves the registry under `/v2/`) — in org settings for the vendor, and in the customer/partner organization detail views for their domains — with live validation and the CNAME instructions per field, following the jetski component:
    - "Create a CNAME record: `app.customer.com` → `custom-app.distr.sh`"
    - "Create a CNAME record: `registry.customer.com` → `custom-registry.distr.sh`"
      The CNAME target hostnames should come from env (e.g. `CUSTOM_DOMAIN_APP_CNAME_TARGET`, `CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET`) and be exposed via the frontend env endpoint (`internal/handlers/internal.go` pattern), with the whole feature gated on these being set.
@@ -1199,7 +1198,7 @@ Input normalization: store and query bare lowercase hostnames (note `app_domain`
    - `CUSTOM_DOMAIN_APP_CNAME_TARGET`
    - `CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET`
 
-8. **What we deliberately do NOT need from jetski:** the `MCPGateway` CRD, controller-gen/applyconfiguration code, metacontroller, the `/sync` webhook, per-org Deployments/Services/ConfigMaps — all of that existed because HyprMCP ran one gateway pod per org. Distr's Hub is already multi-tenant per request.
+8. **What we deliberately do NOT need from jetski:** the `MCPGateway` CRD, controller-gen/applyconfiguration code, metacontroller, the `/sync` webhook, per-org Deployments/Services/ConfigMaps, and even the caddy ingress controller with its Ingress resources — all of that existed because HyprMCP ran one gateway pod per org and routed to it via Ingress objects. Distr's Hub is already multi-tenant per request, so a plain Caddy with a static Caddyfile is enough.
 
 #### Security checklist carried over from jetski
 
@@ -1211,66 +1210,65 @@ Input normalization: store and query bare lowercase hostnames (note `app_domain`
 
 ### 6. Open questions / decisions to discuss
 
-#### Should we use metacontroller if the only thing we reconcile is the Ingress?
+#### Do we need an ingress controller / metacontroller at all?
 
-jetski used metacontroller because it had to reconcile four child resource types per organization (ConfigMap, Deployment, Service, Ingress) with rollout coordination between them. For Distr, the Hub already serves every org, so the only per-domain Kubernetes resource that could need reconciliation is an **Ingress** — and with Caddy on-demand TLS possibly not even that (a host-less catch-all Ingress routes everything, certificates are issued per SNI, and authorization happens in the `ask` endpoint).
+**Decision: no.** jetski used metacontroller because it had to reconcile four child resource types per organization (ConfigMap, Deployment, Service, Ingress) with rollout coordination between them, and the caddy ingress controller because those per-org Ingresses were the routing mechanism. For Distr, the Hub already serves every org on any Host, and the routing is fully static (catch-all + `/v2` path split, §5.2) — so there are **no per-domain Kubernetes resources to reconcile at all**. A **plain Caddy deployment with a static Caddyfile** replaces the whole ingress-controller setup: no `caddy-ingress-controller` chart dependency, no Ingress resources, no IngressClass, no metacontroller, no CRD, no k8s RBAC for the Hub. Metacontroller would only become interesting again if we ever need per-org/per-domain workloads (dedicated proxies, isolated registries) like HyprMCP had.
 
-Options, simplest first:
-
-1. **No reconciliation at all (static catch-all Ingress).** Host-less Ingress rules with `ingressClassName: caddy`, shipped with the Helm chart. Custom domains never touch the Kubernetes API; adding/removing a domain is purely a DB change picked up by `/ask` and by the Hub's host-based org resolution. No CRD, no controller, no k8s RBAC for the Hub. Safe next to internal workloads in the same cluster (ingress class + DNS isolation, see section 5 item 2), but the app/registry backend split needs either two Caddy installations or Hub-side host dispatch. Downside: no per-domain object to inspect (`kubectl get ingress` won't show vendor domains), and per-domain routing tweaks are impossible.
-2. **Hub applies one Ingress per domain via server-side apply.** Like jetski's applier but writing the Ingress directly instead of a CRD. Needs a k8s client + RBAC in the Hub and cleanup logic on domain change/removal (label-based garbage collection), but no metacontroller. Drift is only corrected when settings are saved again.
-3. **Metacontroller + CRD (full jetski pattern).** Declarative desired state, drift repair through periodic resync, and automatic garbage collection of children — but we would run an extra cluster-wide controller deployment and maintain a CRD, applyconfiguration codegen, and a sync webhook just to manage a single Ingress per domain.
-
-**Assessment: metacontroller is overkill if the Ingress is the only child.** Its value (child lifecycle orchestration, GC across multiple resource types, decoupling the reconcile loop from the Hub) doesn't pay off for one resource type; option 1 needs no reconciliation at all and option 2 covers the per-domain-object requirement with far less machinery. Metacontroller only becomes attractive again if we later need per-org/per-domain workloads (dedicated proxies, isolated registries) like HyprMCP had.
-
-**Status: to be discussed.** To keep both paths open, the Distr Helm chart should bundle both as optional, disabled-by-default dependencies. These chart changes are **not applied yet** — they ship with DEV-592 PR 3 (followed by `helm dependency update` to regenerate `Chart.lock` and helm-docs for the README):
-
-`deploy/charts/distr/Chart.yaml`:
-
-```yaml
-dependencies:
-  # ... existing postgresql + rustfs ...
-  - name: metacontroller-helm
-    alias: metacontroller
-    repository: oci://ghcr.io/metacontroller
-    version: 4.16.x
-    condition: metacontroller.enabled
-  - name: caddy-ingress-controller
-    repository: https://caddyserver.github.io/ingress
-    version: 1.3.x
-    condition: caddy-ingress-controller.enabled
-```
+The chart ships its own generic Caddy templates instead (Deployment + Caddyfile ConfigMap + LoadBalancer Service). These chart changes are **not applied yet** — they ship with DEV-592 PR 3 (no new `Chart.yaml` dependencies needed):
 
 `deploy/charts/distr/values.yaml`:
 
 ```yaml
-# Metacontroller (https://metacontroller.github.io/metacontroller/) is only needed if Distr
-# should reconcile per-organization custom domain Ingresses via a CRD (see automated custom
-# domain configuration). Disabled by default.
-metacontroller:
+# Plain Caddy for automated custom domain configuration (vendors bring their own
+# domain via CNAME record): on-demand TLS with the Distr Hub as "ask" authorizer,
+# static path routing to the app and registry Services. Disabled by default.
+caddy:
   enabled: false
+  replicaCount: 2
+  image:
+    repository: caddy
+    tag: ''
+  # E-mail address used for the ACME account.
+  acmeEmail: ''
+  service:
+    type: LoadBalancer
+    # The chart stays generic: set cloud-specific annotations here.
+    # For our AWS deployment these provision a Network Load Balancer, e.g.:
+    #   service.beta.kubernetes.io/aws-load-balancer-type: external
+    #   service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    #   service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    annotations: {}
+```
 
-# Caddy ingress controller (https://github.com/caddyserver/ingress) with on-demand TLS for
-# automated custom domain configuration (vendors bring their own domain via CNAME record).
-# Disabled by default.
-caddy-ingress-controller:
-  enabled: false
-  ingressController:
-    config:
-      # E-mail address used for the ACME account.
-      email: ''
-      # On-demand TLS issues certificates during the first TLS handshake for unknown domains.
-      onDemandTLS: true
-      # The "ask" endpoint that authorizes certificate issuance for a domain.
-      # Must point at the Distr Hub's cluster-internal ask listener (DEV-592 PR 2), which
-      # returns 200 only for registered custom domains. Never expose this listener publicly.
-      # onDemandAsk: http://distr-internal-caddy-ask:8085/internal/webhook/tls/ask
+Caddyfile (ConfigMap template, static):
+
+```
+{
+  email {$ACME_EMAIL}
+  on_demand_tls {
+    # Authorizes certificate issuance per domain; returns 200 only for registered
+    # custom domains. Cluster-internal listener, never exposed publicly (DEV-592 PR 2).
+    ask http://distr-internal-caddy-ask:8085/internal/webhook/tls/ask
+  }
+}
+
+https:// {
+  tls {
+    on_demand
+  }
+  handle /v2/* {
+    reverse_proxy distr:8585
+  }
+  handle {
+    reverse_proxy distr:8080
+  }
+}
 ```
 
 Notes:
 
-- An earlier draft pointed `onDemandAsk` at the public main server port (`http://distr:8080/...`) — that contradicts the internal-only requirement from PR 2. The ask endpoint lives on its **own HTTP server** (DEV-592 PR 2) that is only started when the custom domain feature is configured, and the chart adds a **dedicated `distr-internal-caddy-ask` Service** exposing only that port — separate from the public `distr` Service so no Ingress for the public Service can ever route to it.
-- The Caddy ingress is required for the feature in any of the three options; metacontroller only for option 3. The _two Caddy installations_ variant from §5.2 would need a second aliased `caddy-ingress-controller` dependency.
+- An earlier draft pointed the `ask` URL at the public main server port (`http://distr:8080/...`) — that contradicts the internal-only requirement from PR 2. The ask endpoint lives on its **own HTTP server** (DEV-592 PR 2) that is only started when the custom domain feature is configured, and the chart adds a **dedicated `distr-internal-caddy-ask` Service** exposing only that port — separate from the public `distr` Service.
+- The _two Caddy deployments_ variant from §5.2 would be a second values block/deployment in the chart (each with its own Caddyfile and LB), not a chart dependency.
 
 #### Shared custom domains for multiple customers/partners + OIDC config as the default for new orgs
 
