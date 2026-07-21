@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors} from '@angular/forms';
-import {ActivatedRoute, Router, RouterLink} from '@angular/router';
+import {ActivatedRoute, Params, Router, RouterLink} from '@angular/router';
 import {DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
@@ -212,16 +212,18 @@ export class DeploymentTargetDetailComponent {
     });
 
     this.form.valueChanges.pipe(takeUntilDestroyed(), debounceTime(300)).subscribe((values) => {
-      if (this.form.controls.from.invalid || this.form.controls.to.invalid) {
-        return;
+      const queryParams: Params = {filter: values.filter || null};
+      // Only propagate a date when it is valid so an invalid from/to does not block the
+      // filter (or the other, valid date) from updating and diverging from the shown logs.
+      if (this.form.controls.from.valid) {
+        queryParams.from = dateTimeLocalToISO(values.from);
+      }
+      if (this.form.controls.to.valid) {
+        queryParams.to = dateTimeLocalToISO(values.to);
       }
       this.router.navigate([], {
         relativeTo: this.route,
-        queryParams: {
-          from: dateTimeLocalToISO(values.from),
-          to: dateTimeLocalToISO(values.to),
-          filter: values.filter || null,
-        },
+        queryParams,
         queryParamsHandling: 'merge',
       });
     });
