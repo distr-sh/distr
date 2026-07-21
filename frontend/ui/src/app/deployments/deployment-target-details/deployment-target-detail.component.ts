@@ -24,7 +24,7 @@ import {
   faServer,
 } from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import {combineLatest, debounceTime, map, of, switchMap} from 'rxjs';
+import {combineLatest, debounceTime, map, of, switchMap, timer} from 'rxjs';
 import {dateTimeLocalToISO, isoToDateTimeLocal} from '../../../util/dates';
 import {DeploymentLogsService} from '../../services/deployment-logs.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
@@ -105,14 +105,20 @@ export class DeploymentTargetDetailComponent {
   protected readonly live = computed(() => !this.after() && !this.before());
 
   private readonly organization = toSignal(this.organizationService.get());
+  // Ticks every minute so the picker bounds track wall-clock time in long-running sessions
+  // instead of freezing at their initial value.
+  private readonly now = toSignal(
+    timer(0, 60_000).pipe(map(() => dayjs())),
+    {initialValue: dayjs()}
+  );
   // The log query window is subscription-bound and enforced server-side. Constrain the
   // date pickers to [now - window, now] so users cannot select an out-of-window range
   // that the backend would reject.
   protected readonly logRangeMin = computed(() => {
     const windowSeconds = this.organization()?.subscriptionLimits.logQueryWindowSeconds;
-    return windowSeconds ? dayjs().subtract(windowSeconds, 'second').format('YYYY-MM-DDTHH:mm') : '';
+    return windowSeconds ? this.now().subtract(windowSeconds, 'second').format('YYYY-MM-DDTHH:mm') : '';
   });
-  protected readonly logRangeMax = computed(() => dayjs().format('YYYY-MM-DDTHH:mm'));
+  protected readonly logRangeMax = computed(() => this.now().format('YYYY-MM-DDTHH:mm'));
 
   // The [min]/[max] picker attributes only guide the native widget; they do not stop a
   // typed, pasted or bookmarked out-of-window value. This validator makes the same
