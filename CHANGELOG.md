@@ -1,5 +1,59 @@
 # Changelog
 
+## [3.0.0](https://github.com/distr-sh/distr/compare/2.26.0...3.0.0) (2026-07-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deploy/helm:** remove registry association from rustfs ([#2874](https://github.com/distr-sh/distr/issues/2874))
+* **backend:** change log storage backend to loki ([#2847](https://github.com/distr-sh/distr/issues/2847))
+
+### Features
+
+* **backend:** change log storage backend to loki ([#2847](https://github.com/distr-sh/distr/issues/2847)) ([8232a2e](https://github.com/distr-sh/distr/commit/8232a2e59d2ef493eed91775300c9ae8a9241ea4))
+
+
+### Bug Fixes
+
+* **deploy/chart:** add component label to workloads and service selector ([#2880](https://github.com/distr-sh/distr/issues/2880)) ([6fb13ae](https://github.com/distr-sh/distr/commit/6fb13ae233895d88662e542176b5cdbecf1123dd))
+* **deploy/chart:** add CronJob serviceAccount, more options for configuration ([#2866](https://github.com/distr-sh/distr/issues/2866)) ([f4e8481](https://github.com/distr-sh/distr/commit/f4e848177dd18f51351512aee124889f18ea1562))
+* **deps:** update module github.com/aws/aws-sdk-go-v2/service/s3 to v1.105.2 ([#2860](https://github.com/distr-sh/distr/issues/2860)) ([c6aada7](https://github.com/distr-sh/distr/commit/c6aada711e13ed8ab7bf5a396518cb23b4225d0d))
+* **deps:** update module github.com/aws/smithy-go to v1.27.4 ([#2861](https://github.com/distr-sh/distr/issues/2861)) ([8413cd8](https://github.com/distr-sh/distr/commit/8413cd8e058de977907a31734023ed4935f96d3c))
+* **deps:** update module github.com/docker/cli to v29.6.2+incompatible ([#2864](https://github.com/distr-sh/distr/issues/2864)) ([9cfad21](https://github.com/distr-sh/distr/commit/9cfad21aaa2f5f319cc35d70c8cd0dfcb1611440))
+* **deps:** update module github.com/getsentry/sentry-go/otel/otlp to v0.48.0 ([#2841](https://github.com/distr-sh/distr/issues/2841)) ([a3ab89d](https://github.com/distr-sh/distr/commit/a3ab89dd3afad0d443e4bb6418d05b3444b2848e))
+* **deps:** update module github.com/stripe/stripe-go/v86 to v86.1.1 ([#2865](https://github.com/distr-sh/distr/issues/2865)) ([64d2864](https://github.com/distr-sh/distr/commit/64d2864644e70384773f4c2f496d6a5f91d671e3))
+* **deps:** update website dependencies ([#2868](https://github.com/distr-sh/distr/issues/2868)) ([1af73dc](https://github.com/distr-sh/distr/commit/1af73dca3d38462013e1f9de6a3bab4de3b52e86))
+
+
+### Other
+
+* add limiting log viewer date selector to allowed window ([#2859](https://github.com/distr-sh/distr/issues/2859)) ([5aec5a5](https://github.com/distr-sh/distr/commit/5aec5a5c8cfe1abae1c4d1bbcd85752d22b71c9d))
+* **deploy/helm:** pin helm dependencies to bugfix versions ([#2877](https://github.com/distr-sh/distr/issues/2877)) ([b19f63f](https://github.com/distr-sh/distr/commit/b19f63f602f7552299ebc030db7c81cf83300870))
+* **deploy/helm:** remove registry association from rustfs ([#2874](https://github.com/distr-sh/distr/issues/2874)) ([f6f80af](https://github.com/distr-sh/distr/commit/f6f80af35d998d260f2f8eccc8ae0f5896e3f3a3))
+* **deps:** update actions/setup-go action to v7 ([#2872](https://github.com/distr-sh/distr/issues/2872)) ([3ac618d](https://github.com/distr-sh/distr/commit/3ac618d1152ad7656f95eab12490548036dea55b))
+* **deps:** update angular monorepo to v22.0.7 ([#2848](https://github.com/distr-sh/distr/issues/2848)) ([36a0699](https://github.com/distr-sh/distr/commit/36a0699166275ccb2fb16f5933a82bd43ec06e5d))
+* **deps:** update angular-cli monorepo to v22.0.7 ([#2849](https://github.com/distr-sh/distr/issues/2849)) ([f8cbcc9](https://github.com/distr-sh/distr/commit/f8cbcc95df498ee5ee478e7bdfea256f7705de2b))
+* **deps:** update axllent/mailpit docker tag to v1.30.5 ([#2878](https://github.com/distr-sh/distr/issues/2878)) ([16072c9](https://github.com/distr-sh/distr/commit/16072c9b03cf09d56c3685c90568fec8c0d885fa))
+* **deps:** update dependency @angular/cdk to v22.0.5 ([#2850](https://github.com/distr-sh/distr/issues/2850)) ([a0eb2bf](https://github.com/distr-sh/distr/commit/a0eb2bf023baf5d0effd1bf8207ed4facee960d5))
+* **deps:** update dependency astrojs-service-worker to v2.0.2 ([#2843](https://github.com/distr-sh/distr/issues/2843)) ([f1195fb](https://github.com/distr-sh/distr/commit/f1195fbe21fbf0a8e3c6c90a295f32bedaa2f884))
+* **deps:** update dependency autoprefixer to v10.5.3 ([#2842](https://github.com/distr-sh/distr/issues/2842)) ([12aa2a1](https://github.com/distr-sh/distr/commit/12aa2a1b22da3af7d61104db75a1ff273bf0982d))
+* **deps:** update dependency autoprefixer to v10.5.4 ([#2851](https://github.com/distr-sh/distr/issues/2851)) ([ef80b84](https://github.com/distr-sh/distr/commit/ef80b84ae20b5ac905d81388dafe2c7447cd0c4f))
+* **deps:** update docker docker tag to v29.6.2 ([#2857](https://github.com/distr-sh/distr/issues/2857)) ([8426585](https://github.com/distr-sh/distr/commit/84265852345c93e4bc10613f300938ce970a6a50))
+* **deps:** update font awesome to v7.3.1 ([#2853](https://github.com/distr-sh/distr/issues/2853)) ([30ca07b](https://github.com/distr-sh/distr/commit/30ca07b398046bda1dfbd4d66ea11890a8d77c52))
+* **deps:** update gcr.io/distroless/static-debian12:nonroot docker digest to f5b485e ([#2876](https://github.com/distr-sh/distr/issues/2876)) ([0dc1cf1](https://github.com/distr-sh/distr/commit/0dc1cf132747428e893923f1cfce1e15e7f1c5f1))
+* **deps:** update jdx/mise-action action to v4.2.1 ([#2855](https://github.com/distr-sh/distr/issues/2855)) ([aed4897](https://github.com/distr-sh/distr/commit/aed48977e98407687dd8c6ac5c5909cd3758f2c7))
+* **deps:** update pnpm to v11.15.0 ([#2856](https://github.com/distr-sh/distr/issues/2856)) ([b346f33](https://github.com/distr-sh/distr/commit/b346f330e73e497e04044f42e5b306f426339d98))
+* **deps:** update pnpm to v11.15.1 ([#2879](https://github.com/distr-sh/distr/issues/2879)) ([a18103b](https://github.com/distr-sh/distr/commit/a18103bb33532820c0bbda81d015b9478d06fe0b))
+* **deps:** update tailwindcss monorepo to v4.3.3 ([#2858](https://github.com/distr-sh/distr/issues/2858)) ([307d1d6](https://github.com/distr-sh/distr/commit/307d1d620799ed3cbc518f1cf668b0216cf462a9))
+
+
+### Docs
+
+* **website:** add zarf integration guide ([#2838](https://github.com/distr-sh/distr/issues/2838)) ([e9acaad](https://github.com/distr-sh/distr/commit/e9acaad1962eb8e1ac4069fd09da0a48da9e2153))
+* **website:** fix monospace font ([#2844](https://github.com/distr-sh/distr/issues/2844)) ([65bc87e](https://github.com/distr-sh/distr/commit/65bc87e7187a6a18ff15b23843189a92f5e5c372))
+* **website:** replace starter plan with new business tier ([#2833](https://github.com/distr-sh/distr/issues/2833)) ([fe36355](https://github.com/distr-sh/distr/commit/fe363550f12fffd9a8e4bb0d8af750d25fe26c4b))
+* **website:** update homepage video to new Distr overview ([#2854](https://github.com/distr-sh/distr/issues/2854)) ([cfae4bc](https://github.com/distr-sh/distr/commit/cfae4bcebd6d787e58cb9f4cb0738556ddc57af8))
+
 ## [2.26.0](https://github.com/distr-sh/distr/compare/2.25.2...2.26.0) (2026-07-15)
 
 
