@@ -123,6 +123,6 @@ func GetSubscriptionLimits(st types.SubscriptionType) api.SubscriptionLimits {
 		MaxCustomerOrganizations:        GetCustomersPerOrganizationLimit(st).Value(),
 		MaxUsersPerCustomerOrganization: GetUsersPerCustomerOrganizationLimit(st).Value(),
 		MaxDeploymentsPerCustomerOrg:    GetDeploymentTargetsPerCustomerOrganizationLimit(st).Value(),
-		LogQueryWindowSeconds:           int64(GetLogQueryWindow(st).Seconds()),
+		LogQueryWindowSeconds:           int64(GetLogQueryWindow(st) / time.Second),
 	}
 }
