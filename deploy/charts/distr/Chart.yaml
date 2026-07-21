@@ -19,13 +19,13 @@ appVersion: 2.26.0
 dependencies:
   - name: postgresql
     repository: oci://registry-1.docker.io/bitnamicharts
-    version: 18.x.x
+    version: 18.8.0
     condition: postgresql.enabled
   - name: rustfs
     repository: https://charts.rustfs.com
-    version: 0.8.x
+    version: 0.10.0
     condition: rustfs.enabled
   - name: loki
     repository: oci://ghcr.io/grafana-community/helm-charts
-    version: 18.x.x
+    version: 18.5.1
     condition: loki.enabled
