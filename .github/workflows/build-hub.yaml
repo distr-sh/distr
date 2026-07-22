@@ -25,7 +25,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: hack/validate-migrations.sh
 
   lint-and-test-go:
@@ -34,9 +34,9 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup Go
-        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: 'go.mod'
           check-latest: true
@@ -55,7 +55,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install pnpm
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
       - name: Setup node.js
@@ -107,10 +107,10 @@ jobs:
               registry.distr.sh/enterprise/distr-ee
     steps:
       - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Go
-        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: 'go.mod'
           check-latest: true
@@ -199,6 +199,7 @@ jobs:
           DATABASE_URL: postgres://placeholder
           JWT_SECRET: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
           DISTR_HOST: http://placeholder
+          LOKI_URL: http://placeholder
 
       - name: Start Hub and verify migrations and docs
         shell: bash
@@ -211,6 +212,7 @@ jobs:
           DATABASE_URL: postgres://test-user:test-password@localhost:5432/distr
           JWT_SECRET: H4V7z6mEpe8/k5H/KyogT/iATJhNpEIUMd5cHF6mqF8=
           DISTR_HOST: http://localhost:8080
+          LOKI_URL: http://localhost:3100
           USER_EMAIL_VERIFICATION_REQUIRED: 'false'
           LICENSE_KEY: ${{ matrix.edition.name == 'enterprise' && (startsWith(github.ref, 'refs/tags/') && secrets.LICENSE_KEY || steps.ephemeral-license.outputs.license-key) || '' }}
 
@@ -224,6 +226,7 @@ jobs:
           DATABASE_URL: postgres://test-user:test-password@localhost:5432/distr
           JWT_SECRET: H4V7z6mEpe8/k5H/KyogT/iATJhNpEIUMd5cHF6mqF8=
           DISTR_HOST: http://localhost:8080
+          LOKI_URL: http://localhost:3100
           USER_EMAIL_VERIFICATION_REQUIRED: 'false'
           LICENSE_KEY: ${{ matrix.edition.name == 'enterprise' && (startsWith(github.ref, 'refs/tags/') && secrets.LICENSE_KEY || steps.ephemeral-license.outputs.license-key) || '' }}
 
@@ -326,7 +329,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Download Docker image artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1

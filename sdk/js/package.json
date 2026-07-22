@@ -1,11 +1,11 @@
 {
   "name": "@distr-sh/distr-sdk",
-  "version": "2.26.0",
+  "version": "3.0.0",
   "type": "module",
   "license": "Apache-2.0",
   "description": "Distr SDK",
   "homepage": "https://distr.sh",
-  "packageManager": "pnpm@11.13.0",
+  "packageManager": "pnpm@11.15.1",
   "engines": {
     "node": "26.x"
   },

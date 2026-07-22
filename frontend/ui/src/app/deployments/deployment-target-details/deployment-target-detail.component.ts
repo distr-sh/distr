@@ -10,8 +10,8 @@ import {
   viewChild,
 } from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
-import {FormBuilder, ReactiveFormsModule} from '@angular/forms';
-import {ActivatedRoute, Router, RouterLink} from '@angular/router';
+import {AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors} from '@angular/forms';
+import {ActivatedRoute, Params, Router, RouterLink} from '@angular/router';
 import {DeploymentWithLatestRevision} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
@@ -23,10 +23,12 @@ import {
   faPlay,
   faServer,
 } from '@fortawesome/free-solid-svg-icons';
-import {combineLatest, debounceTime, map, of, switchMap} from 'rxjs';
+import dayjs from 'dayjs';
+import {combineLatest, debounceTime, map, of, switchMap, timer} from 'rxjs';
 import {dateTimeLocalToISO, isoToDateTimeLocal} from '../../../util/dates';
 import {DeploymentLogsService} from '../../services/deployment-logs.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
+import {OrganizationService} from '../../services/organization.service';
 import {OrderDirection} from '../../types/timeseries-options';
 import {DeploymentAppNameComponent} from '../deployment-target-card/deployment-app-name.component';
 import {DeploymentLogsTableComponent} from './deployment-logs-table.component';
@@ -55,6 +57,7 @@ export class DeploymentTargetDetailComponent {
   private readonly router = inject(Router);
   private readonly deploymentTargetsService = inject(DeploymentTargetsService);
   private readonly deploymentLogsService = inject(DeploymentLogsService);
+  private readonly organizationService = inject(OrganizationService);
   private readonly fb = inject(FormBuilder).nonNullable;
 
   protected readonly faServer = faServer;
@@ -88,18 +91,64 @@ export class DeploymentTargetDetailComponent {
   protected readonly deploymentId = toSignal(this.deploymentId$);
   private readonly selectedResources$ = this.route.queryParamMap.pipe(map((p) => p.getAll('resource')));
   protected readonly selectedResources = toSignal(this.selectedResources$, {initialValue: [] as string[]});
-  private readonly after$ = this.route.queryParamMap.pipe(
-    map((p) => (p.has('from') ? new Date(p.get('from')!) : undefined))
-  );
-  protected readonly after = toSignal(this.after$);
-  private readonly before$ = this.route.queryParamMap.pipe(
-    map((p) => (p.has('to') ? new Date(p.get('to')!) : undefined))
-  );
-  protected readonly before = toSignal(this.before$);
+  private readonly fromParam = toSignal(this.route.queryParamMap.pipe(map((p) => p.get('from') ?? undefined)));
+  private readonly toParam = toSignal(this.route.queryParamMap.pipe(map((p) => p.get('to') ?? undefined)));
+  // Gate table inputs with the same window check so stale/bookmarked URLs never query out-of-window.
+  protected readonly after = computed(() => this.validRangeDate(this.fromParam()));
+  protected readonly before = computed(() => this.validRangeDate(this.toParam()));
   private readonly filter$ = this.route.queryParamMap.pipe(map((p) => p.get('filter') || undefined));
   protected readonly filter = toSignal(this.filter$);
 
   protected readonly live = computed(() => !this.after() && !this.before());
+  // A present-but-invalid range must block the tables instead of falling back to live tailing.
+  protected readonly rangeBlocked = computed(
+    () => this.windowErrors(this.fromParam()) !== null || this.windowErrors(this.toParam()) !== null
+  );
+
+  private readonly organization = toSignal(this.organizationService.get());
+  // Ticks every minute so time-based bounds/validation don't freeze in long sessions.
+  private readonly now = toSignal(timer(0, 60_000).pipe(map(() => dayjs())), {initialValue: dayjs()});
+  // Constrain the pickers to [now - window, now]; the window is enforced server-side.
+  protected readonly logRangeMin = computed(() => {
+    const windowSeconds = this.organization()?.subscriptionLimits.logQueryWindowSeconds;
+    return windowSeconds ? this.now().subtract(windowSeconds, 'second').format('YYYY-MM-DDTHH:mm') : '';
+  });
+  protected readonly logRangeMax = computed(() => this.now().format('YYYY-MM-DDTHH:mm'));
+
+  // Authoritative window check (the [min]/[max] attributes only guide the widget), shared by
+  // the form validator and the table inputs.
+  private readonly windowErrors = (value: string | undefined): ValidationErrors | null => {
+    if (!value) {
+      return null;
+    }
+    const date = dayjs(value);
+    if (!date.isValid()) {
+      return {invalidDate: true};
+    }
+    if (date.isAfter(this.now())) {
+      return {afterNow: true};
+    }
+    const org = this.organization();
+    if (!org) {
+      // Org still loading: block sync/query until the window is known (no user-facing message).
+      return {windowPending: true};
+    }
+    const windowSeconds = org.subscriptionLimits.logQueryWindowSeconds;
+    if (windowSeconds && date.isBefore(this.now().subtract(windowSeconds, 'second'))) {
+      return {beforeWindow: true};
+    }
+    return null;
+  };
+
+  private readonly logRangeValidator = (control: AbstractControl): ValidationErrors | null =>
+    this.windowErrors(control.value as string);
+
+  private validRangeDate(value: string | undefined): Date | undefined {
+    if (!value || this.windowErrors(value)) {
+      return undefined;
+    }
+    return new Date(value);
+  }
 
   private readonly deploymentTargets$ = this.deploymentTargetsService.list();
   protected readonly deploymentTargets = toSignal(this.deploymentTargets$, {initialValue: []});
@@ -144,7 +193,11 @@ export class DeploymentTargetDetailComponent {
     return visible.some((r) => selected.includes(r)) && !this.allVisibleResourcesSelected();
   });
 
-  protected readonly form = this.fb.group({from: '', to: '', filter: ''});
+  protected readonly form = this.fb.group({
+    from: ['', this.logRangeValidator],
+    to: ['', this.logRangeValidator],
+    filter: '',
+  });
 
   private readonly deploymentTargetLogsTable = viewChild(DeploymentTargetLogsTableComponent);
   private readonly deploymentStatusTable = viewChild(DeploymentStatusTableComponent);
@@ -152,6 +205,14 @@ export class DeploymentTargetDetailComponent {
 
   constructor() {
     effect(() => localStorage.setItem(ORDER_DIRECTION_KEY, this.orderDirection()));
+
+    // Validators can't read signals reactively, so re-validate when org or time changes.
+    effect(() => {
+      this.organization();
+      this.now();
+      this.form.controls.from.updateValueAndValidity({emitEvent: false});
+      this.form.controls.to.updateValueAndValidity({emitEvent: false});
+    });
 
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       this.form.patchValue(
@@ -165,13 +226,17 @@ export class DeploymentTargetDetailComponent {
     });
 
     this.form.valueChanges.pipe(takeUntilDestroyed(), debounceTime(300)).subscribe((values) => {
+      const queryParams: Params = {filter: values.filter || null};
+      // Only propagate valid dates so an invalid one doesn't block filter/other-date updates.
+      if (this.form.controls.from.valid) {
+        queryParams['from'] = dateTimeLocalToISO(values.from);
+      }
+      if (this.form.controls.to.valid) {
+        queryParams['to'] = dateTimeLocalToISO(values.to);
+      }
       this.router.navigate([], {
         relativeTo: this.route,
-        queryParams: {
-          from: dateTimeLocalToISO(values.from),
-          to: dateTimeLocalToISO(values.to),
-          filter: values.filter || null,
-        },
+        queryParams,
         queryParamsHandling: 'merge',
       });
     });

@@ -1,16 +1,9 @@
 package types
 
-import (
-	"time"
-
-	"github.com/google/uuid"
-)
-
-type DeploymentTargetLogRecord struct {
-	ID                 uuid.UUID `db:"id"`
-	CreatedAt          time.Time `db:"created_at"`
-	DeploymentTargetID uuid.UUID `db:"deployment_target_id"`
-	Timestamp          time.Time `db:"timestamp"`
-	Severity           string    `db:"severity"`
-	Body               string    `db:"body"`
-}
+// DeploymentTargetLogRecord was removed: deployment target log records are now stored in and served
+// from the log store (Loki) instead of the DeploymentTargetLogRecord Postgres table. The backing
+// table is kept around temporarily so we can revert to the previous version if needed and provide
+// manual exports for customers on request.
+//
+// TODO: Drop the DeploymentTargetLogRecord table once we are confident we no longer need to revert
+// or export the historical records.

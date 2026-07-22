@@ -22,13 +22,11 @@ import (
 )
 
 const (
-	deploymentTargetMetrics   = "DeploymentTargetMetrics"
-	deploymentRevisionStatus  = "DeploymentRevisionStatus"
-	deploymentLogRecord       = "DeploymentLogRecord"
-	deploymentTargetLogRecord = "DeploymentTargetLogRecord"
-	oidcState                 = "OIDCState"
-	artifactBlob              = "ArtifactBlob"
-	organization              = "Organization"
+	deploymentTargetMetrics  = "DeploymentTargetMetrics"
+	deploymentRevisionStatus = "DeploymentRevisionStatus"
+	oidcState                = "OIDCState"
+	artifactBlob             = "ArtifactBlob"
+	organization             = "Organization"
 )
 
 type CleanupOptions struct {
@@ -41,11 +39,9 @@ func NewCleanupCommand() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "cleanup <type> [type...]",
 		Long: fmt.Sprintf(
-			"type must be one of: %v, %v, %v, %v, %v, %v, %v",
+			"type must be one of: %v, %v, %v, %v, %v",
 			deploymentRevisionStatus,
 			deploymentTargetMetrics,
-			deploymentLogRecord,
-			deploymentTargetLogRecord,
 			oidcState,
 			artifactBlob,
 			organization,
@@ -55,8 +51,6 @@ func NewCleanupCommand() *cobra.Command {
 		ValidArgs: []cobra.Completion{
 			deploymentRevisionStatus,
 			deploymentTargetMetrics,
-			deploymentLogRecord,
-			deploymentTargetLogRecord,
 			oidcState,
 			artifactBlob,
 			organization,
@@ -85,10 +79,6 @@ func resolveCleanupFunc(cleanupType string, registry *svc.Registry) (func(contex
 		return cleanup.RunDeploymentRevisionStatusCleanup, nil
 	case deploymentTargetMetrics:
 		return cleanup.RunDeploymentTargetMetricsCleanup, nil
-	case deploymentLogRecord:
-		return cleanup.RunDeploymentLogRecordCleanup, nil
-	case deploymentTargetLogRecord:
-		return cleanup.RunDeploymentTargetLogRecordCleanup, nil
 	case oidcState:
 		return cleanup.RunOIDCStateCleanup, nil
 	case artifactBlob:

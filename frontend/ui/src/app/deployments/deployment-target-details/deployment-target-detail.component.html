@@ -223,7 +223,7 @@
           </ol>
         </nav>
 
-        <form [formGroup]="form" class="flex flex-wrap items-center gap-4 pb-4">
+        <form [formGroup]="form" class="flex flex-wrap items-start gap-4 pb-4">
           <div>
             <label for="range-start" class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400"
               >From</label
@@ -232,7 +232,16 @@
               type="datetime-local"
               id="range-start"
               formControlName="from"
+              [min]="logRangeMin()"
+              [max]="logRangeMax()"
               class="bg-gray-50 border leading-none border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+            @if (form.controls.from.hasError('invalidDate')) {
+              <p class="mt-1 text-xs text-red-600 dark:text-red-500">Invalid date</p>
+            } @else if (form.controls.from.hasError('beforeWindow')) {
+              <p class="mt-1 text-xs text-red-600 dark:text-red-500">Outside the available log window</p>
+            } @else if (form.controls.from.hasError('afterNow')) {
+              <p class="mt-1 text-xs text-red-600 dark:text-red-500">Cannot be in the future</p>
+            }
           </div>
 
           <div>
@@ -241,7 +250,16 @@
               type="datetime-local"
               id="range-end"
               formControlName="to"
+              [min]="logRangeMin()"
+              [max]="logRangeMax()"
               class="bg-gray-50 border leading-none border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+            @if (form.controls.to.hasError('invalidDate')) {
+              <p class="mt-1 text-xs text-red-600 dark:text-red-500">Invalid date</p>
+            } @else if (form.controls.to.hasError('beforeWindow')) {
+              <p class="mt-1 text-xs text-red-600 dark:text-red-500">Outside the available log window</p>
+            } @else if (form.controls.to.hasError('afterNow')) {
+              <p class="mt-1 text-xs text-red-600 dark:text-red-500">Cannot be in the future</p>
+            }
           </div>
 
           <div>
@@ -295,7 +313,9 @@
         </form>
       </div>
 
-      @if (deploymentId(); as deploymentId) {
+      @if (rangeBlocked()) {
+        <p class="text-sm text-gray-500 dark:text-gray-400">Adjust the date range to view logs.</p>
+      } @else if (deploymentId(); as deploymentId) {
         @if (selectedResources().length > 0) {
           <app-deployment-logs-table
             [deploymentId]="deploymentId"

@@ -25,13 +25,15 @@ services:
       start_period: 30s
 
   hub:
-    image: ghcr.io/distr-sh/distr-ce:2.26.0 # x-release-please-version
+    image: ghcr.io/distr-sh/distr-ce:3.0.0 # x-release-please-version
     depends_on:
       postgres:
         condition: service_healthy
       # Remove when using an external S3 provider
       storage:
         condition: service_healthy
+      loki:
+        condition: service_started
     env_file:
       - .env
     ports:
@@ -61,6 +63,94 @@ services:
       retries: 3
       start_period: 40s
 
+  # Loki stores deployment and deployment target log records (30 days retention).
+  # It runs in monolithic (single-binary) mode and persists chunks + TSDB index in the
+  # "loki" bucket of the storage (rustfs) service. The bucket is created by a pre_start
+  # init container, which requires Docker Compose >= 5.3.0. If you cannot upgrade yet,
+  # see https://distr.sh/docs/self-hosting/docker/ for a one-shot service alternative.
+  loki:
+    image: 'grafana/loki:3.7.3'
+    command: ['-config.file=/etc/loki/distr-config.yaml']
+    configs:
+      - source: loki-config
+        target: /etc/loki/distr-config.yaml
+    volumes:
+      - 'loki:/loki'
+    depends_on:
+      storage:
+        condition: service_healthy
+    pre_start:
+      - image: 'rclone/rclone:1.74.4'
+        environment:
+          RCLONE_CONFIG_STORAGE_TYPE: s3
+          RCLONE_CONFIG_STORAGE_PROVIDER: Other
+          RCLONE_CONFIG_STORAGE_ENDPOINT: 'http://storage:9000'
+          RCLONE_CONFIG_STORAGE_ACCESS_KEY_ID: '${REGISTRY_S3_ACCESS_KEY_ID}'
+          RCLONE_CONFIG_STORAGE_SECRET_ACCESS_KEY: '${REGISTRY_S3_SECRET_ACCESS_KEY}'
+        command: ['mkdir', 'storage:loki']
+    restart: always
+    logging: *default-logging
+
+configs:
+  loki-config:
+    content: |
+      auth_enabled: true
+
+      server:
+        http_listen_port: 3100
+        # A single query result page (max_entries_limit_per_query entries) can exceed
+        # the 4 MB gRPC default, which makes the internal querier->frontend handoff
+        # fail and the query hang until it times out.
+        grpc_server_max_recv_msg_size: 67108864
+        grpc_server_max_send_msg_size: 67108864
+
+      common:
+        path_prefix: /loki
+        replication_factor: 1
+        ring:
+          kvstore:
+            store: inmemory
+
+      schema_config:
+        configs:
+          - from: "2024-01-01"
+            store: tsdb
+            object_store: s3
+            schema: v13
+            index:
+              prefix: index_
+              period: 24h
+
+      storage_config:
+        aws:
+          endpoint: http://storage:9000
+          region: local
+          access_key_id: ${REGISTRY_S3_ACCESS_KEY_ID}
+          secret_access_key: ${REGISTRY_S3_SECRET_ACCESS_KEY}
+          bucketnames: loki
+          s3forcepathstyle: true
+
+      compactor:
+        retention_enabled: true
+        delete_request_store: s3
+        working_directory: /loki/compactor
+
+      limits_config:
+        retention_period: 720h
+        increment_duplicate_timestamp: true
+        allow_structured_metadata: true
+        max_global_streams_per_user: 25000
+        # Truncate oversized log lines instead of rejecting the whole push.
+        max_line_size_truncate: true
+        # Accept backfilled logs up to the retention period so an agent that was
+        # offline can still push its backlog.
+        reject_old_samples_max_age: 720h
+        # Raised moderately from Loki's 4/6 MB defaults to give an organization with
+        # several chatty agents more headroom before pushes are throttled.
+        ingestion_rate_mb: 16
+        ingestion_burst_size_mb: 32
+
 volumes:
   postgres:
   rustfs:
+  loki:

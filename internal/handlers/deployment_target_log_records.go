@@ -11,11 +11,13 @@ import (
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
-	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/handlerutil"
+	"github.com/distr-sh/distr/internal/limit"
+	"github.com/distr-sh/distr/internal/logstore"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"go.uber.org/zap"
 )
@@ -25,9 +27,9 @@ func getDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 		ctx := r.Context()
 		deploymentTarget := internalctx.GetDeploymentTarget(ctx)
 
-		limit, err := QueryParam(r, "limit", strconv.Atoi, Max(100))
+		limitParam, err := QueryParam(r, "limit", strconv.Atoi, Min(1), Max(100))
 		if errors.Is(err, ErrParamNotDefined) {
-			limit = 25
+			limitParam = 25
 		} else if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -51,7 +53,37 @@ func getDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 		}
 		order := types.OrderDirection(r.FormValue("order"))
 
-		records, err := db.GetDeploymentTargetLogRecords(ctx, deploymentTarget.ID, limit, before, after, filter, order)
+		authInfo := auth.Authentication.Require(ctx)
+		org := authInfo.CurrentOrg()
+		// The effective direction must be resolved from the client-supplied "after"
+		// before it is defaulted to the query window start below.
+		direction := types.EffectiveOrderDirection(order, !after.IsZero())
+		after, err = resolveLogQueryStart(org.SubscriptionType, after)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if before.IsZero() {
+			before = time.Now()
+		}
+		// A "before" cursor older than the resolved window start yields an empty range
+		// (start > end). This happens for pagination past the window boundary, so respond
+		// with no rows instead of forwarding an invalid range to the log store.
+		if before.Before(after) {
+			RespondJSON(w, mapping.List(nil, mapping.DeploymentTargetLogRecordToAPI))
+			return
+		}
+
+		logStore := logstore.FromContext(ctx)
+		records, err := util.SeqCollect(logStore.QueryDeploymentTargetLogRecords(ctx, org.ID,
+			logstore.DeploymentTargetLogQuery{
+				DeploymentTargetID: deploymentTarget.ID,
+				Start:              after,
+				End:                before,
+				Filter:             filter,
+				Limit:              limit.Limit(limitParam),
+				Direction:          direction,
+			}))
 		if err != nil {
 			if errors.Is(err, apierrors.ErrBadRequest) {
 				http.Error(w, err.Error(), http.StatusBadRequest)
@@ -74,26 +106,35 @@ func exportDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 		deploymentTarget := internalctx.GetDeploymentTarget(ctx)
 		authInfo := auth.Authentication.Require(ctx)
 		org := authInfo.CurrentOrg()
-		limit := int(subscription.GetLogExportRowsLimit(org.SubscriptionType))
 
 		filename := fmt.Sprintf("%s_agent.log", time.Now().Format("2006-01-02"))
 
-		SetFileDownloadHeaders(w, filename)
+		logStore := logstore.FromContext(ctx)
+		// Exports are bounded by the log query window only, not by a row limit.
+		records := logStore.QueryDeploymentTargetLogRecords(ctx, org.ID, logstore.DeploymentTargetLogQuery{
+			DeploymentTargetID: deploymentTarget.ID,
+			Start:              time.Now().Add(-subscription.GetLogQueryWindow(org.SubscriptionType)),
+			Limit:              limit.Unlimited,
+			Direction:          types.OrderDirectionDesc,
+		})
 
-		records, err := db.GetDeploymentTargetLogRecordsSeq(ctx, deploymentTarget.ID, limit)
-		if err != nil {
-			log.Error("failed to export deployment target log records", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
+		// The download headers are only set right before the first write, so an error
+		// response can still be sent as long as nothing has been written yet.
+		written := false
 		for record, err := range records {
 			if err != nil {
 				log.Error("failed to export deployment target log records", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				if !written {
+					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				} else {
+					_, _ = w.Write([]byte(exportTruncationNotice))
+				}
 				return
+			}
+			if !written {
+				SetFileDownloadHeaders(w, filename)
+				written = true
 			}
 			_, err := fmt.Fprintf(w, "%s\t%s\t%s\n",
 				record.Timestamp.Format(time.RFC3339), record.Severity, strings.TrimSpace(record.Body))
@@ -101,6 +142,9 @@ func exportDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 				log.Error("failed to write deployment target log records to response writer", zap.Error(err))
 				return
 			}
+		}
+		if !written {
+			SetFileDownloadHeaders(w, filename)
 		}
 	}
 }
