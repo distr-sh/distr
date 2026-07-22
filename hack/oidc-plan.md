@@ -425,6 +425,7 @@ Cleanup and nice-to-have work that intentionally stays out of the delivery stage
 7. **Additional mail providers (Resend/Brevo)** as new mailx adapters (DEV-595 summary).
 8. **Per-org notification quota override** for organizations with their own email provider that need more than the instance-wide `NOTIFICATION_EMAIL_HOURLY_QUOTA` (DEV-595 PR 2 keeps the quota for all transports).
 9. **DEV-720 IdP group mapping** — in backlog; builds on the DEV-641 identity table + DEV-596 role mapping.
+10. **Remove this plan document** (`hack/oidc-plan.md`) from the repository once all stages have shipped and the remaining follow-ups are tracked in Linear.
 
 ---
 
