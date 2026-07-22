@@ -86,17 +86,17 @@ func TestRenderPayload(t *testing.T) {
 	t.Run("hasItem and itemQuantity can be combined in one template", func(t *testing.T) {
 		g := NewWithT(t)
 		sub := subscriptionWithItems(
-			subscriptionItem("pro-monthly", 1),
+			subscriptionItem("business-monthly", 1),
 			subscriptionItem("seats-monthly", 3),
 		)
 		result, err := RenderPayload(
 			tmpl(
-				`{"plan": "{{ if hasItem "pro-monthly" }}pro{{ else }}starter{{ end }}", `+
+				`{"plan": "{{ if hasItem "business-monthly" }}business{{ else }}pro{{ end }}", `+
 					`"seats": {{ itemQuantity "seats-monthly" }}}`,
 			),
 			sub,
 		)
 		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(string(result)).To(MatchJSON(`{"plan": "pro", "seats": 3}`))
+		g.Expect(string(result)).To(MatchJSON(`{"plan": "business", "seats": 3}`))
 	})
 }

@@ -15,7 +15,6 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
-	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
@@ -172,11 +171,10 @@ func handleStripeSubscription(ctx context.Context, sub stripe.Subscription) erro
 			org.SubscriptionPeriod = subscriptionPeriod
 		}
 
-		if org.SubscriptionType == types.SubscriptionTypeStarter {
-			org.RemoveFeatures(types.ProFeatures...)
-		} else {
-			org.AddFeatures(types.ProFeatures...)
-		}
+		// Reconcile plan-managed features: revoke everything plan-managed first, then
+		// grant the current plan's set. Manually managed features are left untouched.
+		org.RemoveFeatures(types.PlanManagedFeatures...)
+		org.AddFeatures(types.FeaturesForSubscriptionType(org.SubscriptionType)...)
 
 		log.Info("updated organization subscription",
 			zap.Stringer("organizationId", org.ID),
@@ -185,16 +183,6 @@ func handleStripeSubscription(ctx context.Context, sub stripe.Subscription) erro
 			zap.Int64("userAccountQty", org.SubscriptionUserAccountQty.Value()),
 			zap.Int64("customerOrganizationQty", org.SubscriptionCustomerOrganizationQty.Value()))
 
-		if err := db.UpdateOrganization(ctx, org); err != nil {
-			return err
-		}
-
-		if org.SubscriptionType == types.SubscriptionTypeStarter {
-			if err := subscription.ReconcileStarterFeaturesForOrganizationID(ctx, orgID); err != nil {
-				return err
-			}
-		}
-
-		return nil
+		return db.UpdateOrganization(ctx, org)
 	})
 }

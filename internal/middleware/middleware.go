@@ -160,6 +160,7 @@ func RequireAnySubscriptionType(types ...types.SubscriptionType) func(http.Handl
 
 var ProFeature = RequireAnySubscriptionType(
 	types.SubscriptionTypePro,
+	types.SubscriptionTypeBusiness,
 	types.SubscriptionTypeTrial,
 	types.SubscriptionTypeEnterprise,
 )

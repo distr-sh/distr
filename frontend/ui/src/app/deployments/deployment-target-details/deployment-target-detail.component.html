@@ -311,6 +311,24 @@
             </button>
           </div>
         </form>
+
+        @if (showBusinessLogBanner()) {
+          <div
+            class="mb-4 px-3 py-2 text-xs rounded-lg border border-primary-200 bg-primary-50 text-primary-800 dark:border-primary-800 dark:bg-gray-800 dark:text-primary-300 flex items-center justify-between gap-2">
+            <span>
+              Instantly unlock your last 30 days of logs with the
+              <a routerLink="/subscription" class="font-semibold underline">Distr Business plan</a>.
+            </span>
+            <button
+              type="button"
+              title="Dismiss"
+              (click)="dismissBusinessLogBanner()"
+              class="shrink-0 p-1 leading-none rounded-lg hover:bg-primary-100 dark:hover:bg-gray-700">
+              <fa-icon [icon]="faXmark" />
+              <span class="sr-only">Dismiss</span>
+            </button>
+          </div>
+        }
       </div>
 
       @if (rangeBlocked()) {

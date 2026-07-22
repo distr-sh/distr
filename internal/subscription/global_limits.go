@@ -12,27 +12,27 @@ import (
 
 const (
 	MaxCustomersPerOrganizationCommunity             = limit.Unlimited
-	MaxCustomersPerOrganizationStarter   limit.Limit = 3
 	MaxCustomersPerOrganizationPro       limit.Limit = 100
+	MaxCustomersPerOrganizationBusiness              = limit.Unlimited
 	MaxCustomersPerOrganizationTrial                 = limit.Unlimited
 
 	MaxUsersPerCustomerOrganizationCommunity limit.Limit = 1
-	MaxUsersPerCustomerOrganizationStarter   limit.Limit = 1
 	MaxUsersPerCustomerOrganizationPro       limit.Limit = 10
+	MaxUsersPerCustomerOrganizationBusiness  limit.Limit = 25
 	MaxUsersPerCustomerOrganizationTrial     limit.Limit = limit.Unlimited
 
 	MaxDeploymentTargetsPerCustomerOrganizationCommunity limit.Limit = 1
-	MaxDeploymentTargetsPerCustomerOrganizationStarter   limit.Limit = 1
 	MaxDeploymentTargetsPerCustomerOrganizationPro       limit.Limit = 8
+	MaxDeploymentTargetsPerCustomerOrganizationBusiness  limit.Limit = 8
 	MaxDeploymentTargetsPerCustomerOrganizationTrial                 = limit.Unlimited
 
 	MaxLogExportRowsCommunity limit.Limit = 100
-	MaxLogExportRowsStarter   limit.Limit = 100
 	MaxLogExportRowsPro       limit.Limit = 10_000
+	MaxLogExportRowsBusiness  limit.Limit = 10_000
 	MaxLogExportRowsTrial     limit.Limit = 10_000
 
 	LogQueryWindowCommunity = 24 * time.Hour
-	LogQueryWindowStarter   = 24 * time.Hour
+	LogQueryWindowBusiness  = 30 * 24 * time.Hour
 	LogQueryWindowDefault   = 7 * 24 * time.Hour
 )
 
@@ -42,10 +42,10 @@ func GetCustomersPerOrganizationLimit(st types.SubscriptionType) limit.Limit {
 		return MaxCustomersPerOrganizationCommunity
 	case types.SubscriptionTypeTrial:
 		return MaxCustomersPerOrganizationTrial
-	case types.SubscriptionTypeStarter:
-		return MaxCustomersPerOrganizationStarter
 	case types.SubscriptionTypePro:
 		return MaxCustomersPerOrganizationPro
+	case types.SubscriptionTypeBusiness:
+		return MaxCustomersPerOrganizationBusiness
 	case types.SubscriptionTypeEnterprise:
 		return license.GetLicenseData().MaxCustomersPerOrganization
 	default:
@@ -59,10 +59,10 @@ func GetUsersPerCustomerOrganizationLimit(st types.SubscriptionType) limit.Limit
 		return MaxUsersPerCustomerOrganizationCommunity
 	case types.SubscriptionTypeTrial:
 		return MaxUsersPerCustomerOrganizationTrial
-	case types.SubscriptionTypeStarter:
-		return MaxUsersPerCustomerOrganizationStarter
 	case types.SubscriptionTypePro:
 		return MaxUsersPerCustomerOrganizationPro
+	case types.SubscriptionTypeBusiness:
+		return MaxUsersPerCustomerOrganizationBusiness
 	case types.SubscriptionTypeEnterprise:
 		return license.GetLicenseData().MaxUsersPerCustomerOrganization
 	default:
@@ -76,10 +76,10 @@ func GetDeploymentTargetsPerCustomerOrganizationLimit(st types.SubscriptionType)
 		return MaxDeploymentTargetsPerCustomerOrganizationCommunity
 	case types.SubscriptionTypeTrial:
 		return MaxDeploymentTargetsPerCustomerOrganizationTrial
-	case types.SubscriptionTypeStarter:
-		return MaxDeploymentTargetsPerCustomerOrganizationStarter
 	case types.SubscriptionTypePro:
 		return MaxDeploymentTargetsPerCustomerOrganizationPro
+	case types.SubscriptionTypeBusiness:
+		return MaxDeploymentTargetsPerCustomerOrganizationBusiness
 	case types.SubscriptionTypeEnterprise:
 		return license.GetLicenseData().MaxDeploymentTargetsPerCustomerOrganization
 	default:
@@ -93,10 +93,10 @@ func GetLogExportRowsLimit(st types.SubscriptionType) limit.Limit {
 		return MaxLogExportRowsCommunity
 	case types.SubscriptionTypeTrial:
 		return MaxLogExportRowsTrial
-	case types.SubscriptionTypeStarter:
-		return MaxLogExportRowsStarter
 	case types.SubscriptionTypePro:
 		return MaxLogExportRowsPro
+	case types.SubscriptionTypeBusiness:
+		return MaxLogExportRowsBusiness
 	case types.SubscriptionTypeEnterprise:
 		return license.GetLicenseData().MaxLogExportRows
 	default:
@@ -104,15 +104,14 @@ func GetLogExportRowsLimit(st types.SubscriptionType) limit.Limit {
 	}
 }
 
-// GetLogQueryWindow returns how far back log read queries may reach. A planned
-// "business" subscription type will extend it up to the full Loki retention period
-// (30 days).
+// GetLogQueryWindow returns how far back log read queries may reach.
+// The business subscription type extends it up to the full Loki retention period (30 days).
 func GetLogQueryWindow(st types.SubscriptionType) time.Duration {
 	switch st {
 	case types.SubscriptionTypeCommunity:
 		return LogQueryWindowCommunity
-	case types.SubscriptionTypeStarter:
-		return LogQueryWindowStarter
+	case types.SubscriptionTypeBusiness:
+		return LogQueryWindowBusiness
 	default:
 		return LogQueryWindowDefault
 	}

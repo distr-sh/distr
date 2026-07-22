@@ -99,8 +99,8 @@ export class SideBarComponent {
   protected readonly isAllTutorialsStarted =
     this.auth.isVendor() && this.auth.hasAnyRole('admin')
       ? toSignal(
-          toObservable(this.organizationService.hasNoSubscription).pipe(
-            switchMap((hasNoSub) => (hasNoSub ? this.tutorialsService.allStarted$ : of(true)))
+          toObservable(this.organizationService.hasSubscription).pipe(
+            switchMap((hasSub) => (hasSub ? of(true) : this.tutorialsService.allStarted$))
           ),
           {initialValue: true}
         )
@@ -114,7 +114,7 @@ export class SideBarComponent {
   public readonly isSubscriptionBannerVisible = input<boolean>();
   public readonly isSidebarVisible = input<boolean>();
 
-  protected readonly hasNoSubscription = this.organizationService.hasNoSubscription;
+  protected readonly hasSubscription = this.organizationService.hasSubscription;
 
   protected readonly customerOrgFeatures = toSignal(
     this.contextService.getCustomerOrganization().pipe(

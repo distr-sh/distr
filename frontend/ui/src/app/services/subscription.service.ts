@@ -1,7 +1,7 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {firstValueFrom, Observable} from 'rxjs';
-import {CheckoutRequest, SubscriptionInfo} from '../types/subscription';
+import {CheckoutRequest, SubscriptionInfo, UpdateSubscriptionRequest} from '../types/subscription';
 
 @Injectable({
   providedIn: 'root',
@@ -25,11 +25,8 @@ export class SubscriptionService {
     window.location.href = response.url;
   }
 
-  async updateSubscription(request: {
-    subscriptionUserAccountQuantity: number;
-    subscriptionCustomerOrganizationQuantity: number;
-  }): Promise<SubscriptionInfo> {
-    // Update subscription quantities
+  async updateSubscription(request: UpdateSubscriptionRequest): Promise<SubscriptionInfo> {
+    // Update subscription quantities and optionally switch the plan
     const response = await firstValueFrom(
       this.httpClient.put<SubscriptionInfo>(`${this.baseUrl}/subscription`, request)
     );

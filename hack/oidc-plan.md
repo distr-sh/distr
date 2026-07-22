@@ -10,7 +10,7 @@ This is a living document (v1, draft). Each issue gets a short summary and a det
 - Login flow: `internal/handlers/auth_oidc.go` — state + PKCE verifier stored in DB (`OIDCState` table), user matched **by email only**, auto-signup creates a new org. Note: `verifyOIDCState` rejects states older than **60 seconds** (measured from before the redirect to the IdP).
 - Frontend: `oidc-buttons.component.ts` renders provider buttons based on the runtime endpoint `GET /api/v1/auth/login/config` (`authLoginConfigHandler` — env-based, host-independent); login/register pages.
 - Custom domains exist only as operator-managed columns: `OrganizationBranding.app_domain` / `registry_domain` — no self-service, no automated TLS (existing setups use manually managed Route53 NS zones). `internal/customdomains` resolves org → effective domain; the only host → org resolution is `db.GetOrganizationBrandingByAppDomain`, used by `internal/handlers/portal.go`. The registry resolves organizations from the repository **path** (`internal/registry/name`: `<org>/<artifact>`), not from the Host header — `registry_domain` is a pure DNS alias, only used when rendering agent manifests.
-- Plans exist as `types.SubscriptionType` (community, starter, pro, enterprise, trial) with Stripe billing (`FeatureVendorBilling`), and org feature flags (`types.Feature`, `org.HasFeature(...)`, `ProFeatures`) are granted based on the subscription.
+- Plans exist as `types.SubscriptionType` (community, pro, business, enterprise, trial — the starter plan was removed with the business plan introduction) with Stripe billing (`FeatureVendorBilling`), and org feature flags (`types.Feature`, `org.HasFeature(...)`) are granted based on the subscription via `types.FeaturesForSubscriptionType(...)` / `types.PlanManagedFeatures`.
 - A **jetski/HyprMCP reference for the custom domain implementation is included as an appendix at the end of this document** (Caddy + on-demand TLS + ask endpoint), together with the Distr-side design (`CustomDomain` data model, static Caddyfile routing, open decisions).
 
 ## Dependency graph
@@ -48,29 +48,35 @@ graph TD
 
 ## Stage 0 — Business plan gating + DEV-283: Switch subscription type on subscription page
 
+> **Status: implemented** (business plan introduction + starter removal + pro → business upgrade). What shipped and the decisions taken are recorded below; remaining follow-ups are listed at the end of this section.
+
 ### Summary
 
 Before shipping any of the enterprise features below, introduce the **business plan** as a first-class `SubscriptionType` with its own feature set, and let org admins switch their subscription type on the subscription page (DEV-283). All later stages then gate on "plan grants feature" instead of ad-hoc flags per org.
 
-### Detailed plan
+### Implemented
 
-**PR 1 — business plan + feature mapping**
+**Business plan + feature mapping (with starter plan removal)**
 
-- Add `SubscriptionTypeBusiness` to `types.SubscriptionType`; define per-plan feature sets (extend the `ProFeatures` model to a `FeaturesForSubscriptionType(...)` mapping) including the new features from this project: `custom_domains`, `custom_email_provider`, `org_oidc`.
-- Generalize the currently binary pro-gating — all of these hardcode the current tiers or the flat `ProFeatures` list (today just `licensing`): `SubscriptionType.IsPro()`, `NonProSubscriptionTypes`, `billing.GetSubscriptionType` (Stripe product → type mapping), the Stripe webhook (`webhook_stripe.go` adds/removes `ProFeatures`), and `subscription.ReconcileEditionFeatures`.
-- Stripe product/price wiring for the business plan; make sure webhook-driven subscription updates set the correct features.
-- Website/pricing docs already describe the business tier (`fe363550`), keep product + docs consistent.
+- `SubscriptionTypeBusiness` added to `types.SubscriptionType`; `SubscriptionTypeStarter` **removed** entirely. Migration `113_business_subscription_type` converts existing `starter` orgs to `pro` and recreates the enum as `('community', 'pro', 'business', 'enterprise', 'trial')`. **Pre-deploy check**: there must be no active Starter Stripe subscriptions — the starter price lookup keys were removed, so a webhook for such a subscription would fail with "no subscription type found".
+- Per-plan feature sets: `types.FeaturesForSubscriptionType(st)` (community → none; trial/pro/enterprise → `licensing`; business → `licensing`, `partner_management`) plus `types.PlanManagedFeatures` (the features that subscription reconciliation may touch — manually granted flags like `vendor_billing` are never modified). The Stripe webhook and `UpdateSubscriptionHandler` both reconcile features via this mapping. The new features from this project (`custom_domains`, `custom_email_provider`, `org_oidc`) are added to the business set by the respective later stages.
+- Gating generalized: `SubscriptionType.IsPro()` includes business; `NonProSubscriptionTypes` is now just `[community]`; `middleware.ProFeature` includes business; `ReconcileStarterFeaturesForOrganizationID` was deleted.
+- Limits (`internal/subscription/global_limits.go`): business = unlimited customers, 25 users/customer, 8 deployments/customer, 10,000 log export rows, **30-day log query window** (Loki retention).
+- Stripe wiring: lookup keys `distr_business_customer_monthly|yearly`, `distr_business_user_monthly|yearly` in `internal/billing/price.go` (**ops task**: create the corresponding Stripe products/prices — monthly $39 user / $159 customer; yearly $384 user / $1,536 customer). All shared key slices (`CustomerPriceKeys`, `UserPriceKeys`, `MonthlyPriceKeys`, `YearlyPriceKeys`) include the business keys, so quantity/period parsing works for business-keys-only subscriptions (covered by unit tests in `internal/billing/subscription_test.go`).
 
-**PR 2 — DEV-283: plan switching UI**
+**DEV-283: plan switching (pro → business upgrade)**
 
-- Much of the machinery exists: `CreateSubscriptionHandler` already runs a Stripe checkout for a chosen `SubscriptionType`, and `UpdateSubscriptionHandler` (`internal/handlers/billing_subscription.go`) already updates a running subscription — but only its **quantities**. Plan switching is therefore: extend `billing.UpdateSubscription` and the handler with a subscription-type change (price swap + proration), plus the subscription-page UI for it.
-- Handle downgrade consequences: features revoked → what happens to configured custom domains / OIDC configs / email providers (grace period vs. immediate disable; recommend: keep config stored, mark disabled).
+- `billing.UpdateSubscription` accepts an optional target `SubscriptionType`: it removes the current price items and adds the target plan's prices (same billing period, quantities from the request) in a single `subscription.Update` call; Stripe applies its default proration.
+- `UpdateSubscriptionHandler` (`PUT /api/v1/billing/subscription`, request struct `api.UpdateSubscriptionRequest`) accepts an optional `subscriptionType`; **only the pro → business upgrade is allowed** — downgrades keep going through support. Quantities are validated against the target plan. The handler only updates the quantities eagerly; the subscription type and plan-managed features are **applied exclusively by the `customer.subscription.updated` webhook**, which derives the type from the subscription items (all items must belong to a single plan).
+- Subscription page UI: trial orgs see a Business card next to the Pro card (checkout); orgs with an active pro subscription see an "Upgrade to Business" section with feature list, estimated cost, and a confirmation modal. After confirming a plan switch the frontend redirects to `/subscription/callback?pendingPlan=business`, which shows a "processing" state and reloads every 5 s until the webhook has flipped the org's subscription type.
+- Additional UI: the deployment log viewer shows vendor admins on pro/trial a banner "Instantly unlock your last 30 days of logs with the Distr Business plan" linking to the subscription page.
+- New organizations still start on `trial` (the Pro Unlimited Trial) — unchanged.
+
+### Remaining follow-ups
+
+- Downgrade support (business → pro) including consequences for then-unavailable features (custom domains / OIDC configs / email providers once they exist; recommend: keep config stored, mark disabled).
 - Related: DEV-270 (cancelled-subscription banner) shares UI surface.
-
-### Open questions
-
-- Exact feature matrix per plan (which of custom domains / org OIDC / email providers are business vs. enterprise)?
-- Downgrade policy for already-configured enterprise features.
+- License Templates are still gated by the manually granted `vendor_billing` feature (which also covers enterprise-only Customer Billing); splitting out a plan-managed `license_templates` feature for business is open.
 
 ---
 

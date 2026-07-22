@@ -24,18 +24,14 @@ export class OrganizationService {
     this.contextService.getOrganization()
   ).pipe(shareReplay(1));
 
-  public readonly hasNoSubscription = toSignal(
+  public readonly hasSubscription = toSignal(
     this.organization$.pipe(
       map(
         (org) =>
-          !(
-            org.subscriptionType === 'starter' ||
-            org.subscriptionType === 'pro' ||
-            org.subscriptionType === 'enterprise'
-          )
+          org.subscriptionType === 'pro' || org.subscriptionType === 'business' || org.subscriptionType === 'enterprise'
       )
     ),
-    {initialValue: false}
+    {initialValue: true}
   );
 
   public readonly isSubscriptionExpired = toSignal(this.organization$.pipe(map(isSubscriptionExpired)), {

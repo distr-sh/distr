@@ -14,7 +14,12 @@
   @if (pendingUpdate(); as subscriptionUpdate) {
     <div class="p-4 md:p-5 space-y-4">
       <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
-        You are about to update your subscription quantities:
+        @if (subscriptionUpdate.subscriptionType; as subscriptionType) {
+          You are about to upgrade your subscription to the
+          <span class="font-semibold capitalize">{{ subscriptionType }}</span> plan:
+        } @else {
+          You are about to update your subscription quantities:
+        }
       </p>
       <div class="space-y-2 pb-4 border-b border-dashed border-gray-300 dark:border-gray-600">
         <div class="flex justify-between text-sm">

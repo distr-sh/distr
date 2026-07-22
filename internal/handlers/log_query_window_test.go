@@ -45,4 +45,16 @@ func TestResolveLogQueryStart(t *testing.T) {
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resolved).To(Equal(requested))
 	})
+
+	t.Run("business subscriptions get the 30-day window", func(t *testing.T) {
+		g := NewWithT(t)
+		requested := time.Now().Add(-subscription.LogQueryWindowDefault - time.Minute)
+		resolved, err := resolveLogQueryStart(types.SubscriptionTypeBusiness, requested)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(resolved).To(Equal(requested))
+
+		tooOld := time.Now().Add(-subscription.LogQueryWindowBusiness - time.Minute)
+		_, err = resolveLogQueryStart(types.SubscriptionTypeBusiness, tooOld)
+		g.Expect(err).To(MatchError(apierrors.ErrBadRequest))
+	})
 }
