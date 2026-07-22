@@ -12,9 +12,10 @@ self.addEventListener('activate', event => {
     (async () => {
       const cacheKeys = await caches.keys();
       await Promise.all(cacheKeys.map(key => caches.delete(key)));
+      await self.clients.claim();
+      const windowClients = await self.clients.matchAll({type: 'window', includeUncontrolled: true});
       await self.registration.unregister();
-      const clients = await self.clients.matchAll({type: 'window'});
-      clients.forEach(client => client.navigate(client.url));
+      await Promise.all(windowClients.map(client => client.navigate(client.url)));
     })(),
   );
 });
