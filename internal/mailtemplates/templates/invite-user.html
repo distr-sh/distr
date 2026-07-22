@@ -13,7 +13,8 @@
 
         <p>
           {{ if .InvitingUser.Name }}{{ .InvitingUser.Name }}{{ else }}{{ .InvitingUser.Email }}{{ end }} invited you to
-          the <strong>{{ .TargetOrgName }}</strong> organization on <a href="{{ .Host }}/">{{ .Host }}</a>.
+          the <strong>{{ .TargetOrgName }}</strong> organization on
+          <a href="{{ if .InviteURL }}{{ .InviteURL | UnsafeURL }}{{ else }}{{ .Host }}/{{ end }}">{{ .Host }}</a>.
         </p>
 
         {{ if .InviteURL }}
