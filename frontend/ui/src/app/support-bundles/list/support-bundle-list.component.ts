@@ -124,6 +124,9 @@ export class SupportBundleListComponent {
 
   protected async downloadResources(bundle: SupportBundle, event: Event): Promise<void> {
     event.stopPropagation();
+    if (this.downloadingBundleId() !== null) {
+      return;
+    }
     this.downloadingBundleId.set(bundle.id);
     try {
       const blob = await firstValueFrom(this.svc.downloadResources(bundle.id));
@@ -134,7 +137,9 @@ export class SupportBundleListComponent {
         this.toast.error(msg);
       }
     } finally {
-      this.downloadingBundleId.set(null);
+      if (this.downloadingBundleId() === bundle.id) {
+        this.downloadingBundleId.set(null);
+      }
     }
   }
 

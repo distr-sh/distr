@@ -110,7 +110,7 @@
                         <button
                           type="button"
                           (click)="downloadResources(bundle, $event)"
-                          [disabled]="downloadingBundleId() === bundle.id"
+                          [disabled]="downloadingBundleId() !== null"
                           title="Download resources"
                           class="py-1.5 px-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg dark:text-gray-300 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700">
                           <fa-icon [icon]="faDownload" />

@@ -148,6 +148,9 @@ export class SupportBundleSettingsComponent {
   private importModalRef?: DialogRef;
 
   protected openImportModal(templateRef: TemplateRef<unknown>) {
+    if (this.envVarsArray.dirty) {
+      return;
+    }
     this.importText.reset();
     this.importModalRef = this.overlay.showModal(templateRef);
   }
@@ -179,6 +182,9 @@ export class SupportBundleSettingsComponent {
       added++;
     }
     this.closeImportModal();
+    if (added > 0) {
+      this.envVarsArray.markAsDirty();
+    }
     if (added > 0 && (await this.persistConfiguration())) {
       this.toast.success(`Imported and saved ${added} variable${added > 1 ? 's' : ''}`);
     }

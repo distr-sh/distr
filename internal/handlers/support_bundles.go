@@ -349,15 +349,29 @@ func downloadSupportBundleResourcesHandler() http.HandlerFunc {
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 
 		zipWriter := zip.NewWriter(w)
-		usedNames := make(map[string]int)
+		defer func() {
+			if err := zipWriter.Close(); err != nil {
+				log.Warn("failed to finalize zip archive", zap.Error(err))
+			}
+		}()
+
+		usedNames := make(map[string]struct{})
 		for _, resource := range resources {
 			name := strings.NewReplacer("/", "-", "\\", "-").Replace(resource.Name)
-			usedNames[name]++
-			if count := usedNames[name]; count > 1 {
-				name = fmt.Sprintf("%s-%d", name, count)
+			name = strings.TrimSpace(name)
+			if name == "" {
+				name = resource.ID.String()
 			}
+			entryName := name + ".txt"
+			for count := 2; ; count++ {
+				if _, exists := usedNames[entryName]; !exists {
+					break
+				}
+				entryName = fmt.Sprintf("%s-%d.txt", name, count)
+			}
+			usedNames[entryName] = struct{}{}
 			entry, err := zipWriter.CreateHeader(&zip.FileHeader{
-				Name:     name + ".txt",
+				Name:     entryName,
 				Method:   zip.Deflate,
 				Modified: resource.CreatedAt,
 			})
@@ -369,9 +383,6 @@ func downloadSupportBundleResourcesHandler() http.HandlerFunc {
 				log.Warn("failed to write zip entry", zap.Error(err))
 				return
 			}
-		}
-		if err := zipWriter.Close(); err != nil {
-			log.Warn("failed to finalize zip archive", zap.Error(err))
 		}
 	}
 }
