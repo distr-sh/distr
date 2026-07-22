@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"archive/zip"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -344,47 +346,73 @@ func downloadSupportBundleResourcesHandler() http.HandlerFunc {
 			return
 		}
 
+		var buffer bytes.Buffer
+		if err := writeSupportBundleZip(&buffer, resources); err != nil {
+			log.Error("failed to build zip archive", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		filename := supportBundleZipFileName(bundle)
 		w.Header().Set("Content-Type", "application/zip")
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
-
-		zipWriter := zip.NewWriter(w)
-		defer func() {
-			if err := zipWriter.Close(); err != nil {
-				log.Warn("failed to finalize zip archive", zap.Error(err))
-			}
-		}()
-
-		usedNames := make(map[string]struct{})
-		for _, resource := range resources {
-			name := strings.NewReplacer("/", "-", "\\", "-").Replace(resource.Name)
-			name = strings.TrimSpace(name)
-			if name == "" {
-				name = resource.ID.String()
-			}
-			entryName := name + ".txt"
-			for count := 2; ; count++ {
-				if _, exists := usedNames[entryName]; !exists {
-					break
-				}
-				entryName = fmt.Sprintf("%s-%d.txt", name, count)
-			}
-			usedNames[entryName] = struct{}{}
-			entry, err := zipWriter.CreateHeader(&zip.FileHeader{
-				Name:     entryName,
-				Method:   zip.Deflate,
-				Modified: resource.CreatedAt,
-			})
-			if err != nil {
-				log.Warn("failed to create zip entry", zap.Error(err))
-				return
-			}
-			if _, err := entry.Write([]byte(resource.Content)); err != nil {
-				log.Warn("failed to write zip entry", zap.Error(err))
-				return
-			}
+		if _, err := w.Write(buffer.Bytes()); err != nil {
+			log.Warn("failed to write zip archive", zap.Error(err))
 		}
 	}
+}
+
+func writeSupportBundleZip(w io.Writer, resources []types.SupportBundleResource) (err error) {
+	zipWriter := zip.NewWriter(w)
+	defer func() {
+		if closeErr := zipWriter.Close(); err == nil {
+			err = closeErr
+		}
+	}()
+
+	usedNames := make(map[string]struct{})
+	for _, resource := range resources {
+		name := supportBundleZipEntryName(resource.Name, resource.ID.String())
+		entryName := name + ".txt"
+		for count := 2; ; count++ {
+			if _, exists := usedNames[entryName]; !exists {
+				break
+			}
+			entryName = fmt.Sprintf("%s-%d.txt", name, count)
+		}
+		usedNames[entryName] = struct{}{}
+		entry, err := zipWriter.CreateHeader(&zip.FileHeader{
+			Name:     entryName,
+			Method:   zip.Deflate,
+			Modified: resource.CreatedAt,
+		})
+		if err != nil {
+			return err
+		}
+		if _, err := entry.Write([]byte(resource.Content)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func supportBundleZipEntryName(name, fallback string) string {
+	var b strings.Builder
+	for _, r := range name {
+		if b.Len() >= 128 {
+			break
+		}
+		if r == '/' || r == '\\' {
+			r = '-'
+		}
+		b.WriteRune(r)
+	}
+	name = strings.TrimSpace(b.String())
+	if name == "" {
+		return fallback
+	}
+	return name
 }
 
 func supportBundleZipFileName(bundle *types.SupportBundleWithDetails) string {

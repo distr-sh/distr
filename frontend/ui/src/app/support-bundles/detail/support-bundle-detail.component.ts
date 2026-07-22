@@ -121,7 +121,7 @@ export class SupportBundleDetailComponent {
 
   protected async downloadResources(): Promise<void> {
     const bundle = this.bundle();
-    if (!bundle) {
+    if (!bundle || this.downloading()) {
       return;
     }
     this.downloading.set(true);
