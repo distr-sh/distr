@@ -2,65 +2,80 @@ package db
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/distr-sh/distr/api"
-	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
-// ValidateDeploymentLogRecords checks that every (deployment, revision) tuple referenced
-// by the given records exists and belongs to the given deployment target. Log records
-// themselves are stored in the log store (Loki), so this is the only remaining Postgres
-// consistency check for pushed deployment log records.
-func ValidateDeploymentLogRecords(
+type deploymentRevisionTuple struct{ deploymentID, revisionID uuid.UUID }
+
+// FilterValidDeploymentLogRecords returns the subset of records whose (deployment, revision)
+// tuple exists and belongs to the given deployment target. Records referencing unknown tuples
+// are dropped instead of failing the whole batch, so valid records from other deployments in
+// the same batch are still persisted. Log records themselves are stored in the log store (Loki),
+// so this is the only remaining Postgres consistency check for pushed deployment log records.
+func FilterValidDeploymentLogRecords(
 	ctx context.Context,
 	deploymentTargetID uuid.UUID,
 	records []api.DeploymentLogRecord,
-) error {
+) ([]api.DeploymentLogRecord, error) {
 	if len(records) == 0 {
-		return nil
+		return records, nil
 	}
 
 	db := internalctx.GetDb(ctx)
 
-	tuples := map[struct{ deploymentID, revisionID uuid.UUID }]struct{}{}
+	tuples := map[deploymentRevisionTuple]struct{}{}
 	for _, record := range records {
-		tuples[struct{ deploymentID, revisionID uuid.UUID }{
-			deploymentID: record.DeploymentID,
-			revisionID:   record.DeploymentRevisionID,
-		}] = struct{}{}
+		tuples[deploymentRevisionTuple{record.DeploymentID, record.DeploymentRevisionID}] = struct{}{}
 	}
 
+	deploymentIDs := make([]uuid.UUID, 0, len(tuples))
+	revisionIDs := make([]uuid.UUID, 0, len(tuples))
 	for tuple := range tuples {
-		rows, err := db.Query(
-			ctx,
-			`SELECT 1
-			FROM Deployment d
-			JOIN DeploymentRevision dr ON d.id = dr.deployment_id
-			WHERE d.deployment_target_id = @deploymentTargetId
-				AND d.id = @deploymentId
-				AND dr.id = @deploymentRevisionId`,
-			pgx.NamedArgs{
-				"deploymentTargetId":   deploymentTargetID,
-				"deploymentId":         tuple.deploymentID,
-				"deploymentRevisionId": tuple.revisionID,
-			},
-		)
-		if err != nil {
-			return fmt.Errorf("could not query DeploymentTarget: %w", err)
-		}
-		if _, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[int64]); err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				return fmt.Errorf("%w: deployment %s and revision %s does not exist in deployment target %s",
-					apierrors.ErrNotFound, tuple.deploymentID, tuple.revisionID, deploymentTargetID)
-			}
-			return fmt.Errorf("could not collect DeploymentTarget: %w", err)
+		deploymentIDs = append(deploymentIDs, tuple.deploymentID)
+		revisionIDs = append(revisionIDs, tuple.revisionID)
+	}
+
+	rows, err := db.Query(
+		ctx,
+		`SELECT d.id, dr.id
+		FROM Deployment d
+		JOIN DeploymentRevision dr ON d.id = dr.deployment_id
+		WHERE d.deployment_target_id = @deploymentTargetId
+			AND (d.id, dr.id) IN (SELECT * FROM unnest(@deploymentIds::uuid[], @revisionIds::uuid[]))`,
+		pgx.NamedArgs{
+			"deploymentTargetId": deploymentTargetID,
+			"deploymentIds":      deploymentIDs,
+			"revisionIds":        revisionIDs,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query deployment revisions: %w", err)
+	}
+	validTuples, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (deploymentRevisionTuple, error) {
+		var tuple deploymentRevisionTuple
+		err := row.Scan(&tuple.deploymentID, &tuple.revisionID)
+		return tuple, err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("could not collect deployment revisions: %w", err)
+	}
+
+	valid := make(map[deploymentRevisionTuple]struct{}, len(validTuples))
+	for _, tuple := range validTuples {
+		valid[tuple] = struct{}{}
+	}
+
+	filtered := make([]api.DeploymentLogRecord, 0, len(records))
+	for _, record := range records {
+		if _, ok := valid[deploymentRevisionTuple{record.DeploymentID, record.DeploymentRevisionID}]; ok {
+			filtered = append(filtered, record)
 		}
 	}
 
-	return nil
+	return filtered, nil
 }

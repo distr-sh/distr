@@ -2,6 +2,7 @@ package deploymentlogs
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"slices"
@@ -72,12 +73,19 @@ func (c *collector) flushNoLock(ctx context.Context) error {
 
 	t := time.Now()
 	if err := c.exporter.ExportDeploymentLogs(ctx, c.logRecords); err != nil {
+		if errors.Is(err, ErrRecordsRejected) {
+			// The server permanently rejected these records. Drop them so collection can
+			// proceed and the watermark advances; retrying would fail forever and block
+			// all newer logs for the deployment.
+			log.Warn("dropping log records rejected by the server", zap.Error(err))
+			c.logRecords = make([]api.DeploymentLogRecord, 0, c.flushLimit)
+			return nil
+		}
 		return fmt.Errorf("export log records: %w", err)
-	} else {
-		log.Debug("flushed log records", zap.Duration("duration", time.Since(t)))
-		c.logRecords = make([]api.DeploymentLogRecord, 0, c.flushLimit)
 	}
 
+	log.Debug("flushed log records", zap.Duration("duration", time.Since(t)))
+	c.logRecords = make([]api.DeploymentLogRecord, 0, c.flushLimit)
 	return nil
 }
 
