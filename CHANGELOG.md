@@ -1,5 +1,25 @@
 # Changelog
 
+## [3.0.1](https://github.com/distr-sh/distr/compare/3.0.0...3.0.1) (2026-07-22)
+
+
+### Bug Fixes
+
+* **agent:** add dropping rejected log records ([#2862](https://github.com/distr-sh/distr/issues/2862)) ([4be32b2](https://github.com/distr-sh/distr/commit/4be32b237d7f5298a8e858fd2d4f35eda4afa7b7))
+
+
+### Other
+
+* **deps:** update actions/checkout action to v7.0.1 ([#2885](https://github.com/distr-sh/distr/issues/2885)) ([bcd2c04](https://github.com/distr-sh/distr/commit/bcd2c04ffdc0952c51f6a01e1fb98c4973ed5017))
+
+
+### Docs
+
+* add new business tier stripe price keys ([#2873](https://github.com/distr-sh/distr/issues/2873)) ([3a17fa8](https://github.com/distr-sh/distr/commit/3a17fa82c90d83a702c7a0ecff7b5ba8407a2259))
+* oidc configuration per org plan ([#2870](https://github.com/distr-sh/distr/issues/2870)) ([4f705c6](https://github.com/distr-sh/distr/commit/4f705c6a576a26c7d1a63874881f1245b2d0efed))
+* **website:** Distr v3 release blog post ([#2884](https://github.com/distr-sh/distr/issues/2884)) ([e091590](https://github.com/distr-sh/distr/commit/e091590743c2783303d64ce6aa93e80a5e542255))
+* **website:** migrate from website service worker to astro prefetch ([#2893](https://github.com/distr-sh/distr/issues/2893)) ([f03dd3d](https://github.com/distr-sh/distr/commit/f03dd3d6fcd32bfe3e17fa71d2915df1c7203cf7))
+
 ## [3.0.0](https://github.com/distr-sh/distr/compare/2.26.0...3.0.0) (2026-07-21)
 
 
