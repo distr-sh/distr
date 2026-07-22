@@ -45,6 +45,26 @@ jobs:
           update-deployments: true
 ```
 
+### Attaching Additional Resources
+
+The action can attach [additional resources](/docs/agents/application/#additional-resources) (markdown documents such as release notes or upgrade instructions) to the created version via the `resources` input.
+It takes a JSON array where each resource has a `name` and either inline `content` or a `path` to a file on the runner.
+With `visibleToCustomers` (defaults to `true`) you control whether a resource is shown to your customers.
+
+```yaml
+- uses: distr-sh/distr-create-version-action@v1
+  with:
+    api-token: ${{ secrets.DISTR_API_TOKEN }}
+    application-id: ${{ vars.DISTR_APPLICATION_ID }}
+    version-name: ${{ github.ref_name }}
+    compose-file: ${{ github.workspace }}/docker-compose.yaml
+    resources: |
+      [
+        { "name": "Release Notes", "path": "./docs/release-notes.md" },
+        { "name": "Internal Notes", "content": "For support staff only.", "visibleToCustomers": false }
+      ]
+```
+
 ### Complete Setup Guide
 
 For a step-by-step guide covering:

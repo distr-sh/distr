@@ -10,41 +10,79 @@ sidebar:
 import ThemedImage from '~/components/util/ThemedImage.astro';
 import brandingConfigLight from '~/assets/docs/platform/customers/branding/branding-config-light.png';
 import brandingConfigDark from '~/assets/docs/platform/customers/branding/branding-config-dark.png';
-import customerPortalLight from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-no-num-light.png';
-import customerPortalDark from '~/assets/docs/platform/customer-portal/customer-view/customer-portal-no-num-dark.png';
+import brandingWhiteLabelLight from '~/assets/docs/platform/customers/branding/branding-white-label-light.png';
+import brandingWhiteLabelDark from '~/assets/docs/platform/customers/branding/branding-white-label-dark.png';
+import brandedCustomerPortalLight from '~/assets/docs/platform/customers/branding/branded-customer-portal-light.png';
+import brandedCustomerPortalDark from '~/assets/docs/platform/customers/branding/branded-customer-portal-dark.png';
 import {Aside} from '@astrojs/starlight/components';
 
-The white-labeling section of the Vendor Portal allows you to apply your own branding to the UI that customers use to deploy and manage your software.
+The Branding page of the Vendor Portal allows you to apply your own branding to the UI that customers use to deploy and manage your software.
 
 A well-configured Customer Portal should provide all the information your end users need to install, operate, and troubleshoot your software independently.
 
-## How to White-label Distr
+<Aside type="note">
+  Custom branding for your Customer Portal is available on the Pro plan and
+  above. Custom domains for a fully white-labeled experience require the
+  Business plan. See the [pricing page](/pricing/) for a detailed comparison.
+</Aside>
 
-1. In the Vendor Portal, go to the Branding tab in the sidebar.
-2. Fill in your company's branding details:
-   - Recommended Content for the Customer Portal Dashboard:
-     - Release notes for the current version
-     - Installation, connection and upgrade instructions
-     - Troubleshooting tips
-     - Links to relevant documentation
-3. Review and save your changes.
-
-Branding configuration view:
+To get started, go to the Branding tab in the sidebar of the Vendor Portal.
+At the top of the page, live previews show what the navigation bar will look like for your own team in the Vendor Portal and for your customers in the Customer Portal.
 
 <ThemedImage
   lightSrc={brandingConfigLight}
   darkSrc={brandingConfigDark}
-  alt="Kubernetes Agent interface"
+  alt="Branding configuration page in the Vendor Portal"
 />
+
+## Customer Portal
+
+These settings configure what your customers see when they log in to their portal:
+
+- **Customer Portal Override**: Replaces the "Customer Portal" text next to the logo in the customer navigation bar.
+- **Welcome Page**: Markdown content shown to your customers on the home page of their portal. Recommended content:
+  - Installation and setup instructions
+  - Connection and upgrade instructions
+  - Troubleshooting tips
+  - Support contact details
+
+<Aside type="tip">
+  Release notes are best attached directly to the corresponding application
+  version as [additional
+  resources](/docs/agents/application/#additional-resources), so customers
+  always see the notes for the version they are running.
+</Aside>
 
 After saving, the [Customer Portal](/docs/platform/customer-portal/) is rebranded for your end users:
 
 <ThemedImage
-  lightSrc={customerPortalLight}
-  darkSrc={customerPortalDark}
-  alt="Deployments interface"
+  lightSrc={brandedCustomerPortalLight}
+  darkSrc={brandedCustomerPortalDark}
+  alt="White-labeled Customer Portal"
 />
 
+## White-label
+
+These settings replace Distr's branding across the application for users and customers of your organization:
+
+- **Portal Title**: Shown as the browser tab title. If not set, the default Distr title is used.
+- **Portal Logo**: Shown in the navigation bar for users and customers of your organization, and on the login page of your custom domain. SVG, PNG, JPG or GIF with a recommended height of 64px. If not set, the Distr logo is shown.
+- **Fav-icon**: Shown in the browser tab. SVG, PNG, GIF or ICO with a recommended size of 64px x 64px (square). If not set, the Distr favicon is shown.
+
+None of these settings require a custom domain: they apply to all logged-in users and customers of your organization on app.distr.sh as well. With a [custom domain](#custom-domains), they additionally apply to unauthenticated pages such as the login page.
+
+<ThemedImage
+  lightSrc={brandingWhiteLabelLight}
+  darkSrc={brandingWhiteLabelDark}
+  alt="White-label section of the Branding page"
+/>
+
+## Custom Domains
+
+For a fully white-labeled experience, Distr supports custom domains for the Customer Portal, the artifact registry, and the sender address of transactional e-mails.
+Once configured, they are displayed at the bottom of the Branding page, and all Distr-specific branding is removed when your portal is accessed via your custom domain.
+
 <Aside type="note">
-  Custom DNS is also supported. Contact us a support@distr.sh for setup.
+  Custom domains are configured by Distr support. Contact us at support@distr.sh
+  for setup.
 </Aside>
