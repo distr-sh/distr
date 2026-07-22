@@ -27,7 +27,7 @@ We also just passed 1,200 stars on [GitHub](https://github.com/distr-sh/distr). 
 
 If you use Distr, there is nothing you need to do; your log viewer already runs on the new backend. If you self-host, this major release changes your deployment setup, so read the upgrade notes below.
 
-## Using Loki as Logging Backend
+## Using Loki as the Logging Backend
 
 When we [shipped container log collection](/blog/distr-logs-metrics/) initially, log records went into [PostgreSQL](https://www.postgresql.org/) next to everything else, and retention was count-based: cleanup jobs kept the newest 10,000 entries per deployment resource and dropped the rest.
 
@@ -37,11 +37,11 @@ As a lot of our self-hosted and open-source community users also value our simpl
 
 We have already been using [Grafana Loki](https://grafana.com/oss/loki/) internally for years, and after a short PoC we decided to use it as the logging backend for Distr instead of further tuning PostgreSQL (e.g. with [BRIN indexes](https://www.postgresql.org/docs/current/brin.html), [table partitioning](https://www.postgresql.org/docs/current/ddl-partitioning.html), or a PostgreSQL extension like [TimescaleDB](https://github.com/timescale/timescaledb)).
 
-Loki was a great fit, as it requires no persistent volume of its own and only uses an object storage as the backend (it even creates different paths for tenants, so each tenant's logs are stored in a separate path). For smaller self-hosted deployments, it is a single container running the Go application in monolithic mode, while we are running Loki in the distributed mode, being able to scale to hundreds of GBs of log ingestion per day.
+Loki was a great fit, as it requires no persistent volume of its own and only uses an object storage as the backend (it even creates different paths for tenants, so each tenant's logs are stored in a separate path). For smaller self-hosted deployments, it is a single container running the Go application in monolithic mode, while we run Loki in distributed mode, which scales to hundreds of GBs of log ingestion per day.
 
 ### CPU and memory usage after the rollout
 
-We rolled the change out to our own infrastructure first. Here is what it looked like on deployment day, with the rollout happening at around 12:45:
+We rolled the change out to our own infrastructure first. Here is what it looked like on deployment day; the rollout happened at around 12:45:
 
 | Memory usage                                                                                                                | CPU usage                                                                                                             |
 | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
@@ -114,7 +114,7 @@ One thing to be aware of: log records collected before the upgrade are not migra
 
 ## Join the Conversation
 
-The whole Distr team wants to say thank you, and we hope Distr 3 helps you even better with your self-hosted deployments.
+The whole Distr team wants to say thank you, and we hope Distr 3 helps you manage your self-hosted deployments even better.
 
 We'd love to hear your thoughts on this release, especially if you self-host and hit anything unexpected during the upgrade.
 
