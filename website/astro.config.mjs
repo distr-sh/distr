@@ -7,7 +7,6 @@ import starlight from '@astrojs/starlight';
 import tailwindcss from '@tailwindcss/vite';
 import icon from 'astro-icon';
 import {defineConfig, fontProviders} from 'astro/config';
-import serviceWorker from 'astrojs-service-worker';
 import rehypeExternalLinks from 'rehype-external-links';
 import rehypeMermaid from 'rehype-mermaid';
 import starlightLinksValidator from 'starlight-links-validator';
@@ -16,6 +15,9 @@ import starlightSidebarTopics from 'starlight-sidebar-topics';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://distr.sh',
+  prefetch: {
+    prefetchAll: true,
+  },
   fonts: [
     {
       name: 'Inter',
@@ -51,7 +53,6 @@ export default defineConfig({
         return !excludedSlugs.some(slug => slug === pathname);
       },
     }),
-    serviceWorker(),
     starlight({
       title: 'Distr',
       customCss: ['./src/styles/global.css'],
