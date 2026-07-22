@@ -7,6 +7,7 @@ import TestimonialsSection from '~/components/home/TestimonialsSection.astro';
 import FAQ from '~/components/common/FAQ.astro';
 import type {CraGuideConfig} from '~/content.config';
 import type {StarlightPageProps} from '@astrojs/starlight/components/StarlightPage.astro';
+import '~/styles/cra.css';
 
 export async function getStaticPaths() {
   const guides = await getCollection('cra');
@@ -20,6 +21,15 @@ const {guide} = Astro.props;
 const {Content} = await render(guide);
 const {title, description, slug, publishDate, lastUpdated, faq} =
   guide.data as CraGuideConfig;
+
+// Previous and next guide, based on the hub order.
+const allGuides = (await getCollection('cra')).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+const guideIndex = allGuides.findIndex(g => g.data.slug === slug);
+const previousGuide = guideIndex > 0 ? allGuides[guideIndex - 1] : undefined;
+const nextGuide =
+  guideIndex < allGuides.length - 1 ? allGuides[guideIndex + 1] : undefined;
 
 const faqRendered =
   faq?.map(({question, answer}) => ({
@@ -90,94 +100,6 @@ const formatDate = (date: Date) =>
   }).format(new Date(date));
 ---
 
-<style>
-  .guide-content :global(h2) {
-    font-size: 1.5rem;
-    line-height: 2rem;
-    font-weight: 700;
-    letter-spacing: -0.025em;
-    margin-top: 3rem;
-    margin-bottom: 1rem;
-  }
-  .guide-content :global(h3) {
-    font-size: 1.25rem;
-    line-height: 1.75rem;
-    font-weight: 700;
-    letter-spacing: -0.025em;
-    margin-top: 2rem;
-    margin-bottom: 0.75rem;
-  }
-  .guide-content :global(p) {
-    line-height: 1.75;
-  }
-  .guide-content :global(a:not([class])) {
-    color: var(--sl-color-text-accent);
-    text-decoration: none;
-  }
-  .guide-content :global(a:not([class]):hover) {
-    text-decoration: underline;
-  }
-  .guide-content :global(table) {
-    margin-top: 2rem;
-    margin-bottom: 2rem;
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9375rem;
-    background-color: #ffffff;
-  }
-  .guide-content :global(th) {
-    background-color: #f3f4f6;
-    font-weight: 600;
-    text-align: left;
-  }
-  .guide-content :global(th),
-  .guide-content :global(td) {
-    border: 1px solid #e5e7eb;
-    padding: 0.625rem 0.875rem;
-    vertical-align: top;
-  }
-  .guide-content :global(tbody tr:nth-child(even)) {
-    background-color: #f9fafb;
-  }
-  /* Match pricing table dark surfaces — Starlight gray tokens wash out */
-  :root[data-theme='dark'] .guide-content :global(table) {
-    background-color: #111827; /* gray-900 */
-  }
-  :root[data-theme='dark'] .guide-content :global(th) {
-    background-color: #030712; /* gray-950 */
-  }
-  :root[data-theme='dark'] .guide-content :global(th),
-  :root[data-theme='dark'] .guide-content :global(td) {
-    border-color: #374151; /* gray-700 */
-  }
-  :root[data-theme='dark'] .guide-content :global(tbody tr:nth-child(even)) {
-    background-color: #1f2937; /* gray-800 */
-  }
-  /* Mermaid diagrams render with light node fills, so give them a light
-     card in both modes instead of floating white boxes on dark background */
-  .guide-content :global(svg) {
-    max-width: 100%;
-    height: auto;
-    margin: 2rem auto;
-    display: block;
-    background: #ffffff;
-    border: 1px solid var(--sl-color-gray-5, #e5e7eb);
-    border-radius: 0.5rem;
-    padding: 1.25rem;
-    box-sizing: border-box;
-  }
-  /* rehype-mermaid measures text with different font metrics than the
-     browser renders, which clips node labels. Letting the foreignObject
-     overflow and tightening the label line-height fixes the clipping. */
-  .guide-content :global(svg foreignObject) {
-    overflow: visible;
-  }
-  .guide-content :global(svg .nodeLabel),
-  .guide-content :global(svg .edgeLabel) {
-    line-height: 1.15;
-  }
-</style>
-
 <Layout title={title} description={description} head={head}>
   <section class="py-8 sm:py-12 mx-auto">
     <article class="max-w-3xl mx-auto px-6 sm:px-8">
@@ -239,10 +161,10 @@ const formatDate = (date: Date) =>
         </div>
       </header>
 
-      <!-- Article content: sl-markdown-content applies Starlight's typography
-           (headings, tables, lists), which is loaded globally and consistent
-           with the docs. The site does not ship the Tailwind typography
-           plugin, so prose-* classes have no effect here. -->
+      <!-- Article content: this page uses Starlight's sl-markdown-content
+           typography (headings, tables, lists), which is loaded globally and
+           consistent with the docs, instead of the Tailwind prose-* classes
+           used elsewhere on the site. -->
       <div class="sl-markdown-content guide-content">
         <Content />
       </div>
@@ -268,7 +190,49 @@ const formatDate = (date: Date) =>
       </footer>
     </article>
   </section>
-  {faqRendered.length > 0 && <FAQ faqs={faqRendered} />}
+
+  {/* Previous / next guide */}
+  <section class="py-8">
+    <div class="max-w-3xl mx-auto px-6 sm:px-8">
+      <div class="grid gap-4 sm:grid-cols-2">
+        {
+          previousGuide ? (
+            <a
+              href={`/cyber-resilience-act/${previousGuide.data.slug}/`}
+              class="group block p-5 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 transition-all duration-200 hover:shadow-lg no-underline">
+              <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Previous
+              </span>
+              <span class="mt-1 block font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                {previousGuide.data.title}
+              </span>
+            </a>
+          ) : (
+            <div />
+          )
+        }
+        {
+          nextGuide && (
+            <a
+              href={`/cyber-resilience-act/${nextGuide.data.slug}/`}
+              class="group block p-5 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 transition-all duration-200 hover:shadow-lg no-underline sm:text-right sm:col-start-2">
+              <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Next
+              </span>
+              <span class="mt-1 block font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                {nextGuide.data.title}
+              </span>
+            </a>
+          )
+        }
+      </div>
+    </div>
+  </section>
+  {
+    faqRendered.length > 0 && (
+      <FAQ faqs={faqRendered} bgClass="bg-gray-50 dark:bg-gray-800" />
+    )
+  }
   <SignUpCta bgClass="bg-[var(--sl-color-bg)]" />
   <TestimonialsSection />
 </Layout>

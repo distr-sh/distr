@@ -1,10 +1,12 @@
 ---
 import {getCollection} from 'astro:content';
+import {marked} from 'marked';
 import Layout from '~/layouts/StarlightLayout.astro';
 import SignUpCta from '~/components/cta/standalone/SignUpCta.astro';
 import TestimonialsSection from '~/components/home/TestimonialsSection.astro';
 import FAQ from '~/components/common/FAQ.astro';
 import type {StarlightPageProps} from '@astrojs/starlight/components/StarlightPage.astro';
+import '~/styles/cra.css';
 
 const guides = (await getCollection('cra')).sort(
   (a, b) => a.data.order - b.data.order,
@@ -14,39 +16,59 @@ const title = 'Cyber Resilience Act Compliance for Software Vendors';
 const description =
   'Everything software vendors with self-hosted, on-prem, and air-gapped customers need to know about the EU Cyber Resilience Act: who is affected, deadlines, secure update distribution, and step-by-step compliance guidance.';
 
-const milestones = [
+const now = new Date();
+
+const milestoneData = [
   {
-    date: 'Dec 10, 2024',
+    date: new Date('2024-12-10T00:00:00Z'),
+    dateLabel: 'Dec 10, 2024',
     label: 'CRA enters into force',
     detail: 'Regulation (EU) 2024/2847 becomes law.',
     action: 'Start your scope memo and classify your products.',
-    state: 'past',
   },
   {
-    date: 'Jun 11, 2026',
+    date: new Date('2026-06-11T00:00:00Z'),
+    dateLabel: 'Jun 11, 2026',
     label: 'Assessment bodies ready',
     detail: 'Conformity assessment body provisions apply.',
     action: 'Plan third-party assessments for Class I and II products.',
-    state: 'past',
   },
   {
-    date: 'Sep 11, 2026',
+    date: new Date('2026-09-11T00:00:00Z'),
+    dateLabel: 'Sep 11, 2026',
     label: 'Reporting obligations start',
     detail:
       'Actively exploited vulnerabilities: 24h early warning to your CSIRT and ENISA. Applies to products already on the market.',
     action:
       'Have the reporting runbook and per-customer version tracking ready.',
-    state: 'next',
   },
   {
-    date: 'Dec 11, 2027',
+    date: new Date('2027-12-11T00:00:00Z'),
+    dateLabel: 'Dec 11, 2027',
     label: 'Full compliance required',
     detail:
       'Essential requirements, SBOM, technical documentation, conformity assessment, and CE marking.',
     action: 'Complete the technical file and secure update distribution.',
-    state: 'future',
   },
 ];
+
+// Derive each milestone's state from the build date instead of hardcoding it,
+// so the markers stay consistent with the "you are here" progress bar.
+const firstUpcoming = milestoneData.findIndex(m => m.date > now);
+const milestones = milestoneData.map((m, i) => ({
+  ...m,
+  state:
+    firstUpcoming === -1 || i < firstUpcoming
+      ? 'past'
+      : i === firstUpcoming
+        ? 'next'
+        : 'future',
+}));
+
+const euCraUrl =
+  'https://digital-strategy.ec.europa.eu/en/policies/cyber-resilience-act';
+const craLegalTextUrl =
+  'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32024R2847';
 
 const faqs = [
   {
@@ -71,7 +93,29 @@ const faqs = [
   },
 ];
 
-const now = new Date();
+// Short definitions of the CRA terms from the glossary, appended to the FAQ.
+const craGlossarySlugs = [
+  'cyber-resilience-act',
+  'product-with-digital-elements',
+  'remote-data-processing-solution',
+  'open-source-software-steward',
+  'cra-support-period',
+  'security-update-vs-functionality-update',
+  'coordinated-vulnerability-disclosure',
+];
+const glossaryEntries = await getCollection('glossary');
+const glossaryFaqs = craGlossarySlugs.flatMap(slug => {
+  const entry = glossaryEntries.find(e => e.data.slug === slug);
+  if (!entry?.data.term || !entry.data.shortDefinition) return [];
+  return [
+    {
+      question: `What does "${entry.data.term}" mean?`,
+      answer: `${marked.parseInline(entry.data.shortDefinition)} <a href="/glossary/${slug}/">Read the full glossary entry</a>.`,
+    },
+  ];
+});
+const allFaqs = [...faqs, ...glossaryFaqs];
+
 const reportingDeadline = new Date('2026-09-11T00:00:00Z');
 const daysToReporting = Math.max(
   0,
@@ -81,20 +125,15 @@ const daysToReporting = Math.max(
 // "You are here" position on the timeline: milestones sit at the centers of a
 // 4-column grid (12.5%, 37.5%, 62.5%, 87.5%). Interpolate today's position
 // between the surrounding milestone dates.
-const milestoneDates = [
-  new Date('2024-12-10'),
-  new Date('2026-06-11'),
-  new Date('2026-09-11'),
-  new Date('2027-12-11'),
-];
 const centers = [12.5, 37.5, 62.5, 87.5];
 let progressPct = centers[0];
-for (let i = 0; i < milestoneDates.length - 1; i++) {
-  if (now >= milestoneDates[i]) {
-    const span = milestoneDates[i + 1].getTime() - milestoneDates[i].getTime();
+for (let i = 0; i < milestoneData.length - 1; i++) {
+  if (now >= milestoneData[i].date) {
+    const span =
+      milestoneData[i + 1].date.getTime() - milestoneData[i].date.getTime();
     const frac = Math.min(
       1,
-      (now.getTime() - milestoneDates[i].getTime()) / span,
+      (now.getTime() - milestoneData[i].date.getTime()) / span,
     );
     progressPct = centers[i] + frac * (centers[i + 1] - centers[i]);
   }
@@ -105,19 +144,6 @@ const canonicalUrl = new URL('/cyber-resilience-act/', Astro.site).toString();
 const ldJson = (obj: unknown) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
 const head: StarlightPageProps['frontmatter']['head'] = [
-  {
-    tag: 'script',
-    attrs: {type: 'application/ld+json'},
-    content: ldJson({
-      '@context': 'https://schema.org',
-      '@type': 'FAQPage',
-      mainEntity: faqs.map(({question, answer}) => ({
-        '@type': 'Question',
-        name: question,
-        acceptedAnswer: {'@type': 'Answer', text: answer},
-      })),
-    }),
-  },
   {
     tag: 'script',
     attrs: {type: 'application/ld+json'},
@@ -156,7 +182,8 @@ const head: StarlightPageProps['frontmatter']['head'] = [
         class="text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto mb-8">
         If your customers run your software themselves, the Cyber Resilience Act
         applies to you. Practical guides on scope, deadlines, secure update
-        distribution, and what to do first. No legalese, sources cited.
+        distribution, and what to do first, written without legalese and with
+        the sources cited.
       </p>
       {
         daysToReporting > 0 && (
@@ -169,6 +196,62 @@ const head: StarlightPageProps['frontmatter']['head'] = [
           </p>
         )
       }
+    </div>
+  </div>
+
+  {/* What is the CRA */}
+  <div class="py-12 sm:py-16">
+    <div class="mx-auto max-w-3xl px-6 sm:px-8 lg:px-10">
+      <h2
+        class="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
+        What is the Cyber Resilience Act?
+      </h2>
+      <div
+        class="text-gray-600 dark:text-gray-400 leading-relaxed space-y-4 text-base sm:text-lg">
+        <p>
+          The Cyber Resilience Act is <a
+            href={craLegalTextUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-blue-600 dark:text-blue-400 hover:underline"
+            >Regulation (EU) 2024/2847</a
+          >, which sets mandatory cybersecurity requirements for products with
+          digital elements placed on the EU market. It entered into force on
+          December 10, 2024 and applies in three stages: provisions on
+          conformity assessment bodies apply since June 11, 2026, reporting
+          obligations for actively exploited vulnerabilities start on September
+          11, 2026, and the full set of requirements, including CE marking,
+          technical documentation, SBOM, and conformity assessment, applies from
+          December 11, 2027.
+        </p>
+        <p>
+          The regulation covers both hardware and software and applies
+          regardless of where the manufacturer is established; what matters is
+          whether the product is placed on the EU market. Manufacturers must
+          build products securely, handle vulnerabilities throughout a defined
+          support period, distribute security updates through a secure
+          mechanism, and report actively exploited vulnerabilities to their
+          CSIRT and ENISA. Non-compliance with the essential requirements can be
+          fined with up to EUR 15 million or 2.5% of worldwide annual turnover,
+          whichever is higher.
+        </p>
+        <p class="text-sm">
+          See also the{' '}
+          <a
+            href="/glossary/cyber-resilience-act/"
+            class="text-blue-600 dark:text-blue-400 hover:underline"
+            >Cyber Resilience Act glossary entry</a
+          >{' '}
+          and the{' '}
+          <a
+            href={euCraUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-blue-600 dark:text-blue-400 hover:underline"
+            >official European Commission page on the Cyber Resilience Act</a
+          >.
+        </p>
+      </div>
     </div>
   </div>
 
@@ -251,7 +334,7 @@ const head: StarlightPageProps['frontmatter']['head'] = [
                         ? 'bg-blue-600 text-white dark:bg-blue-500'
                         : 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-gray-300',
                     ]}>
-                    {m.date}
+                    {m.dateLabel}
                   </span>
                   <h3 class="text-base font-bold text-gray-900 dark:text-white mb-1">
                     {m.label}
@@ -273,14 +356,13 @@ const head: StarlightPageProps['frontmatter']['head'] = [
   </div>
 
   {/* Guides */}
-  <div class="bg-gray-50 dark:bg-slate-900 py-12 sm:py-16">
+  <div
+    class="bg-gradient-to-br from-accent-400 to-accent-600 dark:from-accent-600 dark:to-accent-950 py-12 sm:py-16">
     <div class="mx-auto max-w-5xl px-6 sm:px-8 lg:px-10">
-      <h2
-        class="text-2xl font-bold text-gray-900 dark:text-white mb-2 text-center">
-        The guides
+      <h2 class="text-2xl font-bold text-white mb-2 text-center">
+        Cyber Resilience Act Content Hub
       </h2>
-      <p
-        class="text-gray-600 dark:text-gray-400 text-center mb-10 max-w-2xl mx-auto">
+      <p class="text-white opacity-90 text-center mb-10 max-w-2xl mx-auto">
         Written for vendors, checked against the regulation text, and kept
         current as the Commission guidance evolves.
       </p>
@@ -289,13 +371,11 @@ const head: StarlightPageProps['frontmatter']['head'] = [
           guides.map(g => (
             <a
               href={`/cyber-resilience-act/${g.data.slug}/`}
-              class="group block p-6 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 transition-all duration-200 hover:shadow-lg no-underline">
-              <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              class="block p-6 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 hover:border-white/40 transition-colors no-underline text-white">
+              <h3 class="text-xl font-semibold text-white mb-2">
                 {g.data.title}
               </h3>
-              <p class="text-gray-600 dark:text-gray-400 text-sm">
-                {g.data.teaser}
-              </p>
+              <p class="text-sm text-white opacity-90">{g.data.teaser}</p>
             </a>
           ))
         }
@@ -303,7 +383,7 @@ const head: StarlightPageProps['frontmatter']['head'] = [
     </div>
   </div>
 
-  <FAQ faqs={faqs} />
+  <FAQ faqs={allFaqs} bgClass="bg-gray-50 dark:bg-gray-800" />
   <SignUpCta bgClass="bg-[var(--sl-color-bg)]" />
   <TestimonialsSection />
 </Layout>

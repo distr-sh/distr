@@ -41,6 +41,10 @@ const faqRendered =
 
 const ldJson = (obj: unknown) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
+// shortDefinition may contain markdown links; JSON-LD wants plain text.
+const stripMarkdownLinks = (text: string) =>
+  text.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1');
+
 if (term) {
   head.push({
     tag: 'script',
@@ -58,7 +62,7 @@ if (term) {
         '@type': 'DefinedTerm',
         name: term,
         ...(alternateNames?.length ? {alternateName: alternateNames} : {}),
-        description: shortDefinition ?? description,
+        description: stripMarkdownLinks(shortDefinition ?? description),
         url: canonicalUrl,
         inDefinedTermSet: {
           '@type': 'DefinedTermSet',

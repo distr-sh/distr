@@ -16,7 +16,7 @@ faq:
   - question: 'We ship an SDK, not an application. Still in scope?'
     answer: 'Yes. Standalone software including SDKs and libraries supplied commercially counts as a product with digital elements.'
   - question: 'When do we actually have to be compliant?'
-    answer: 'Article 14 reporting obligations start September 11, 2026, and they apply to products already on the market. Full requirements including CE marking apply from December 11, 2027. Products placed on the market before that date need full compliance only after a substantial modification. The [full timeline and duty list](/cyber-resilience-act/guide/) is in our pillar post.'
+    answer: '[Article 14](https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#art_14) reporting obligations start September 11, 2026, and they apply to products already on the market. Full requirements including CE marking apply from December 11, 2027. Products placed on the market before that date need full compliance only after a substantial modification. The [full timeline and duty list](/cyber-resilience-act/introduction/) is in our pillar post.'
 ---
 
 import CraCta from '~/components/cta/CraCta.astro';
@@ -52,7 +52,7 @@ flowchart TD
 
 <CraCta
   title="In scope means you still owe updates to every customer"
-  body="A self-hosted edition, an on-prem agent, or an installer customers run themselves usually puts you on the CRA side of the line — and you need to know who’s on which version when a patch ships."
+  body="A self-hosted edition, an on-prem agent, or an installer customers run themselves usually puts you on the CRA side of the line, and you need to know who's on which version when a patch ships."
 />
 
 Two clarifications on the branches people get wrong.
@@ -69,7 +69,8 @@ That guidance is a draft and can change. Details in our post on
 
 **Pure SaaS is out, but "pure" is doing real work in that sentence.** The
 moment you ship anything for the customer to run, that thing is a product.
-And the exception cuts the other way too: Article 3(1)-(2) pulls a hosted
+And the exception cuts the other way too: [Article 3(1)-(2)][art-3] pulls a
+hosted
 service into scope as a "remote data processing solution" when a shipped
 product needs it to perform a function. An agent that is useless without
 your cloud backend drags the relevant backend functionality in with it.
@@ -92,25 +93,29 @@ Being in scope is question one. Question two is the classification, because it
 decides your conformity assessment route.
 
 The default category covers most business software and self-assesses under
-Module A. No notified body, no certification, just a technical file that holds
-up.
+Module A, without a notified body or certification, as long as the technical
+file holds up.
 
-"Important" products in Annex III Class I include identity and access
+"Important" products in [Annex III][anx-III] Class I include identity and
+access
 management systems, privileged access management, password managers, browsers,
 anti-malware, VPNs, network management systems, SIEM, boot managers, PKI
 software, operating systems, and routers. Class I products can self-assess
 only if they fully apply harmonised standards, common specifications, or an EU
-cybersecurity certification scheme at assurance level "substantial" (Article
-32(2)). The harmonised standards are still being finalized, so until they
+cybersecurity certification scheme at assurance level "substantial"
+([Article 32(2)][art-32-2]). The harmonised standards are still being
+finalized, so until they
 land, Class I practically means involving a notified body.
 
 Class II covers hypervisors, container runtimes, firewalls, intrusion
 detection and prevention systems, and tamper-resistant microprocessors.
-Third-party assessment, no self-assessment option. Critical products in Annex
-IV, such as hardware security modules and smart meter gateways, may face
+Third-party assessment, no self-assessment option. Critical products in
+[Annex IV][anx-IV], such as hardware security modules and smart meter
+gateways, may face
 mandatory EU certification.
 
-Read Annex III against what your product does, not what your marketing calls
+Read [Annex III][anx-III] against what your product does, not what your
+marketing calls
 it. A "developer platform" that manages credentials and access is an identity
 product for classification purposes.
 
@@ -138,6 +143,11 @@ available in the course of a commercial activity and is on the market. Labels
 do not move the line.
 
 <CraCta
-  title="See who’s affected, notify, document delivery"
+  title="See who's affected, notify, document delivery"
   body="Distr shows which customers run which version, helps you reach them when an update is available, and keeps pull and delivery records so you can prove the fix reached them."
 />
+
+[art-3]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#art_3
+[art-32-2]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#032.002
+[anx-III]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#anx_III
+[anx-IV]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#anx_IV

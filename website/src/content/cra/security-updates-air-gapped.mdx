@@ -8,15 +8,15 @@ order: 4
 teaser: "The hardest CRA duty for vendors with self-hosted customers: getting patches into environments you don't control, and proving it."
 faq:
   - question: 'Does the CRA require automatic updates for B2B software?'
-    answer: 'No. Automatic security updates with opt-out are the default expectation for consumer products. Recital 56 recognizes that professional and industrial environments manage updates through their own change processes. You must still distribute updates securely and notify users.'
+    answer: 'No. Automatic security updates with opt-out are the default expectation for consumer products. [Recital 56](https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#rct_56) recognizes that professional and industrial environments manage updates through their own change processes. You must still distribute updates securely and notify users.'
   - question: 'Are air-gapped customers exempt?'
     answer: 'No. The support period and update obligations apply regardless of connectivity. The mechanism can be offline (signed bundles, physical transfer), but it has to exist and be documented.'
   - question: 'Do we have to keep old patches available?'
-    answer: 'Yes. Article 13(9): each security update issued during the support period stays available for at least 10 years or the remainder of the support period, whichever is longer.'
+    answer: 'Yes. [Article 13(9)](https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#013.009): each security update issued during the support period stays available for at least 10 years or the remainder of the support period, whichever is longer.'
   - question: 'Is emailing customers a zip file compliant?'
-    answer: 'Email is neither authenticated nor integrity-protected, and gives you no delivery evidence. With signed artifacts and a documented verification step you might defend it; as a mechanism it fails the spirit of Annex I Part II (7) and will not survive a serious security review by your own customers.'
+    answer: 'Email is neither authenticated nor integrity-protected, and gives you no delivery evidence. With signed artifacts and a documented verification step you might defend it; as a mechanism it fails the spirit of [Annex I Part II (7)](https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#anx_I) and will not survive a serious security review by your own customers.'
   - question: 'What goes in the technical documentation?'
-    answer: 'Annex VII requires a description of the technical solutions chosen for the secure distribution of updates: your channel, your signing scheme, your verification steps, your advisory process, and your air-gap path if you have one.'
+    answer: '[Annex VII](https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#anx_VII) requires a description of the technical solutions chosen for the secure distribution of updates: your channel, your signing scheme, your verification steps, your advisory process, and your air-gap path if you have one.'
 ---
 
 import CraCta from '~/components/cta/CraCta.astro';
@@ -26,7 +26,8 @@ Commission's March 2026 draft guidance. The draft guidance can still change._
 
 The Cyber Resilience Act has a requirement that gets almost no attention next to
 SBOMs and CE marking, and it happens to be the hardest one for vendors with
-self-hosted customers. Annex I, Part II, point (7) requires manufacturers to
+self-hosted customers. [Annex I, Part II, point (7)][anx-I] requires
+manufacturers to
 "provide for mechanisms to securely distribute updates for products with digital
 elements to ensure that vulnerabilities are fixed or mitigated in a timely manner
 and, where applicable for security updates, in an automatic manner." Point (8)
@@ -37,7 +38,8 @@ agreed otherwise with a business user for a tailor-made product, free of charge,
 If all your customers run your SaaS, this is a deploy pipeline. If your customers
 run your software themselves, behind their firewalls, sometimes with no internet
 access at all, this is a distribution problem. And you have to describe your
-solution in writing: Annex VII requires the technical documentation to include
+solution in writing: [Annex VII][anx-VII] requires the technical documentation
+to include
 "a description of the technical solutions chosen for the secure distribution of
 updates."
 
@@ -45,22 +47,23 @@ updates."
 
 Four obligations shape the update pipeline for a self-hosted product:
 
-| Obligation                                     | Where               | What it means in practice                                                                                      |
-| ---------------------------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Secure distribution mechanism                  | Annex I Part II (7) | An authenticated, integrity-protected way for every customer to get updates                                    |
-| Dissemination without delay, with advisories   | Annex I Part II (8) | You notify customers when a security update exists and tell them what to do                                    |
-| Security updates separate from feature updates | Annex I Part II (2) | Customers can take the patch without taking the new features, where technically feasible                       |
-| Updates stay available for 10 years            | Article 13(9)       | Every security update remains downloadable for 10 years or the rest of the support period, whichever is longer |
+| Obligation                                     | Where                        | What it means in practice                                                                                      |
+| ---------------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Secure distribution mechanism                  | [Annex I Part II (7)][anx-I] | An authenticated, integrity-protected way for every customer to get updates                                    |
+| Dissemination without delay, with advisories   | [Annex I Part II (8)][anx-I] | You notify customers when a security update exists and tell them what to do                                    |
+| Security updates separate from feature updates | [Annex I Part II (2)][anx-I] | Customers can take the patch without taking the new features, where technically feasible                       |
+| Updates stay available for 10 years            | [Article 13(9)][art-13-9]    | Every security update remains downloadable for 10 years or the rest of the support period, whichever is longer |
 
 Just as important is what the CRA does not require. It does not mandate that your
 product phones home. It does not require automatic updates for B2B software:
-the automatic-update default in Annex I Part I is aimed at consumer products, and
-Recital 56 explicitly carves out products intended for professional ICT and
+the automatic-update default in [Annex I Part I][anx-I] is aimed at consumer
+products, and
+[Recital 56][rct-56] explicitly carves out products intended for professional ICT and
 industrial environments, where operators control change windows. And it does not
 prescribe a technical architecture. A signed tarball on an authenticated download
 portal can be compliant. The bar is that the mechanism is secure, documented, and
 actually reaches every customer during the support period of at least five years
-(Article 13(8)).
+([Article 13(8)][art-13-8]).
 
 That last part is where air-gapped customers come in. "Our updater needs internet
 access" is not an answer the CRA accepts, because the obligation is yours, not
@@ -68,7 +71,7 @@ your customer's.
 
 <CraCta
   title="Know which air-gapped customer still needs the patch"
-  body="Offline bundles only work as a CRA channel if you also know who last took which release across the gap — so you can see who’s still exposed when a security update ships."
+  body="Offline bundles only work as a CRA channel if you also know who last took which release across the gap, so you can see who's still exposed when a security update ships."
 />
 
 ## The patch flow, end to end
@@ -100,10 +103,11 @@ Customers with outbound internet access are the easy case. The workable pattern:
   "latest.zip" links fail the secure-distribution test and give you no idea who
   received what.
 - **Sign your artifacts and publish the verification path.** Cosign signatures on
-  container images, GPG on packages, or a TUF-style metadata layer. Annex VII
+  container images, GPG on packages, or a TUF-style metadata layer.
+  [Annex VII][anx-VII]
   makes you describe this anyway; it is easier to describe something real.
 - **Tag security releases as security releases.** The separation requirement in
-  Annex I Part II (2) means a customer on 2.3 should be able to get 2.3.1 with
+  [Annex I Part II (2)][anx-I] means a customer on 2.3 should be able to get 2.3.1 with
   the fix without being forced onto 3.0. Practically, that means maintaining
   patch branches for supported versions, which is why the support-period decision
   (5 years minimum) belongs in engineering planning, not just legal review.
@@ -112,7 +116,7 @@ Customers with outbound internet access are the easy case. The workable pattern:
   customer's change window, and reports the deployed version back closes the
   loop that a registry alone leaves open: you know not just who downloaded the
   patch but who is running it. For B2B this stays customer-controlled, which is
-  exactly what Recital 56 expects for professional environments.
+  exactly what [Recital 56][rct-56] expects for professional environments.
 - **Keep pull records.** When a market surveillance authority, or more likely a
   NIS2-regulated customer's auditor, asks whether the patch reached your
   customers, "here is the download log per customer, per version, with
@@ -121,7 +125,7 @@ Customers with outbound internet access are the easy case. The workable pattern:
 
 ## The advisory message: the duty everyone forgets
 
-Annex I Part II (8) does not just say ship the patch. It says security updates
+[Annex I Part II (8)][anx-I] does not just say ship the patch. It says security updates
 come "accompanied by advisory messages providing users with the relevant
 information, including on potential action to be taken." That is a notification
 duty, and it needs to work for every customer, not just the ones who read your
@@ -140,8 +144,8 @@ changelog. A pattern that satisfies it without heroics:
    both ask for it.
 4. **Precision about versions.** "Please update to the latest version" is not
    an advisory. "CVE-X affects 2.1.0 through 2.3.4, fixed in 2.3.5 and 3.1.2"
-   lets an operator act in minutes and is the wording Annex I Part II (4)
-   expects for public disclosure anyway.
+   lets an operator act in minutes and is the wording
+   [Annex I Part II (4)][anx-I] expects for public disclosure anyway.
 
 ## Pattern 2: air-gapped customers
 
@@ -157,7 +161,8 @@ obligations don't. The pattern that holds up:
    alone detects corruption, not tampering.
 3. **Document the transfer workflow** the customer uses: approved media,
    scanning on both sides, an internal registry or mirror inside the gap that
-   their deployments pull from. You don't control this part, but your Annex VII
+   their deployments pull from. You don't control this part, but your
+   [Annex VII][anx-VII]
    documentation should describe the handoff point and the verification steps.
 4. **Deliver the advisory out of band.** The air-gapped system won't tell its
    operators a patch exists. Your advisory email, customer portal notice, or
@@ -165,7 +170,7 @@ obligations don't. The pattern that holds up:
    precisely enough that an operator can check theirs.
 5. **Record what you made available and when.** Inside the gap you cannot prove
    installation. You can prove availability, notification, and handover. Under
-   Annex I Part II your duty is to distribute and disseminate; if a business
+   [Annex I Part II][anx-I] your duty is to distribute and disseminate; if a business
    customer contractually controls installation windows, document that split of
    responsibility and you have done your part.
 
@@ -174,8 +179,8 @@ obligations don't. The pattern that holds up:
 The reporting obligations that start on September 11, 2026 put a clock on all
 of this. An actively exploited vulnerability means an early warning to your CSIRT
 and ENISA within 24 hours, a fuller notification within 72, and a final report 14
-days after the patch is available (Article 14). Somewhere in that window, someone
-will ask which customers are affected.
+days after the patch is available ([Article 14][art-14]). Somewhere in that
+window, someone will ask which customers are affected.
 
 For SaaS that's a database query. For a self-hosted product it depends entirely
 on whether your distribution setup tracks versions per customer: what each
@@ -206,5 +211,12 @@ the mechanism either way.
 
 <CraCta
   title="Notify, ship the bundle, document the download"
-  body="Distr helps you reach customers when a new update is available, ship signed offline bundles through a private registry with per-customer access, and record who downloaded which version — delivery evidence for connected and air-gapped fleets."
+  body="Distr helps you reach customers when a new update is available, ship signed offline bundles through a private registry with per-customer access, and record who downloaded which version: delivery evidence for connected and air-gapped fleets."
 />
+
+[rct-56]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#rct_56
+[art-13-8]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#013.008
+[art-13-9]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#013.009
+[art-14]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#art_14
+[anx-I]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#anx_I
+[anx-VII]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#anx_VII

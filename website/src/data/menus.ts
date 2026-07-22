@@ -88,4 +88,11 @@ export const resourcesMenu: MenuItem[] = [
     value: 'file-text',
     href: '/white-paper/building-blocks/',
   },
+  {
+    title: 'Cyber Resilience Act',
+    description:
+      'CRA compliance guides for software vendors with self-hosted customers',
+    value: 'shield-check',
+    href: '/cyber-resilience-act/',
+  },
 ];

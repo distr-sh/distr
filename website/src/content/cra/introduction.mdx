@@ -1,7 +1,7 @@
 ---
 title: 'The Cyber Resilience Act for Software Vendors Who Ship Self-Hosted Software'
 description: 'Who the EU Cyber Resilience Act applies to, the 2026 and 2027 deadlines, what manufacturers must do, and the order to do it in. Written for B2B software vendors with self-hosted, on-prem, and air-gapped customers.'
-slug: guide
+slug: introduction
 publishDate: 2026-07-21
 lastUpdated: 2026-07-21
 order: 1
@@ -10,11 +10,11 @@ faq:
   - question: 'We are a US company with EU customers. Does the CRA apply to us?'
     answer: 'Yes. The trigger is placing a product on the EU market, not where the manufacturer sits. If EU customers buy and run your software, you are covered.'
   - question: 'Our product has been on the market for years. Are we grandfathered?'
-    answer: 'Partially. Products placed on the market before December 11, 2027 need full compliance only after a substantial modification. Article 14 reporting applies to them regardless, starting September 11, 2026.'
+    answer: 'Partially. Products placed on the market before December 11, 2027 need full compliance only after a substantial modification. [Article 14](https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#art_14) reporting applies to them regardless, starting September 11, 2026.'
   - question: 'Does our SaaS product fall under the CRA?'
     answer: 'Software offered purely as a service does not. Other EU rules like NIS2 or DORA may cover the service, depending on your sector and size. But the self-hosted edition, the on-prem agent, or the desktop client you ship are products in scope. And a cloud service your shipped product needs to function can be pulled in as a remote data processing solution.'
   - question: 'We ship AI models to customers. Does the CRA cover them?'
-    answer: "Yes. The CRA has no AI exemption: software with embedded models, and models you ship as part of a commercial product (an on-prem LLM deployment, for example), are components of a product with digital elements. They belong in the SBOM and fall under the same vulnerability handling and update duties as the rest of your stack. There is also an upside: under Article 12, a product classified as a high-risk AI system under the AI Act is deemed to meet that regulation's Article 15 cybersecurity requirements if it fulfills the CRA's essential requirements, so the work counts twice."
+    answer: "Yes. The CRA has no AI exemption: software with embedded models, and models you ship as part of a commercial product (an on-prem LLM deployment, for example), are components of a product with digital elements. They belong in the SBOM and fall under the same vulnerability handling and update duties as the rest of your stack. There is also an upside: under [Article 12](https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#art_12), a product classified as a high-risk AI system under the AI Act is deemed to meet that regulation's Article 15 cybersecurity requirements if it fulfills the CRA's essential requirements, so the work counts twice."
   - question: 'Who actually checks compliance?'
     answer: 'Market surveillance authorities in each member state. Default-category products self-assess, so there is no gatekeeper before you ship. The check comes afterwards, triggered by incidents, complaints, or audits, which is why the technical file has to hold up on its own.'
   - question: 'Is a support period of 5 years really mandatory?'
@@ -56,8 +56,8 @@ Who is out:
   apply to the service instead, but neither does so automatically. There is
   one catch: a "remote data processing solution" that a product needs to
   perform one of its functions is pulled into scope with the product
-  (Article 3(1)-(2)). A cloud backend that your shipped agent cannot work
-  without is that case.
+  ([Article 3(1)-(2)][art-3]). A cloud backend that your shipped agent cannot
+  work without is that case.
 - **Internal software.** Anything you build and run for yourself and never
   supply to others is not placed on the market. Bespoke software supplied
   commercially to a customer is in scope, though.
@@ -75,17 +75,17 @@ If you are unsure which side of the line you are on, work through our
 with a self-hosted offering, the answer is simply yes.
 
 <CraCta
-  title="Know who’s still on the vulnerable version"
-  body="When the Article 14 clock starts, you need to know which customers run which version — so you can see who’s affected before you file the early warning."
+  title="Know who's still on the vulnerable version"
+  body="When the Article 14 clock starts, you need to know which customers run which version, so you can see who's affected before you file the early warning."
 />
 
 ## The three deadlines
 
-| Date               | What starts                                                                                                                                                                                      |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| June 11, 2026      | Provisions on conformity assessment bodies apply (already in effect)                                                                                                                             |
-| September 11, 2026 | Article 14 reporting: 24-hour early warning to your CSIRT and ENISA for actively exploited vulnerabilities, fuller notification within 72 hours, final report 14 days after a patch is available |
-| December 11, 2027  | Full application: essential requirements, technical documentation, conformity assessment, CE marking                                                                                             |
+| Date               | What starts                                                                                                                                                                                                |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| June 11, 2026      | Provisions on conformity assessment bodies apply (already in effect)                                                                                                                                       |
+| September 11, 2026 | [Article 14][art-14] reporting: 24-hour early warning to your CSIRT and ENISA for actively exploited vulnerabilities, fuller notification within 72 hours, final report 14 days after a patch is available |
+| December 11, 2027  | Full application: essential requirements, technical documentation, conformity assessment, CE marking                                                                                                       |
 
 One transitional rule matters a lot for existing products. Products placed on
 the market before December 11, 2027 only need full compliance after a
@@ -107,40 +107,41 @@ the market and what you owe for as long as you support it.
 
 ### Before market
 
-| Duty                                                                                | Where               |
-| ----------------------------------------------------------------------------------- | ------------------- |
-| Cybersecurity risk assessment, documented and kept current                          | Article 13          |
-| Secure-by-design essential requirements                                             | Annex I Part I      |
-| No known exploitable vulnerabilities at release                                     | Annex I Part I      |
-| Machine-readable SBOM covering at least top-level dependencies                      | Annex I Part II (1) |
-| Conformity assessment appropriate to the product class                              | Articles 27, 32     |
-| Technical documentation, including a description of your secure update distribution | Annex VII           |
-| EU declaration of conformity and CE marking                                         | Articles 28, 30     |
+| Duty                                                                                | Where                               |
+| ----------------------------------------------------------------------------------- | ----------------------------------- |
+| Cybersecurity risk assessment, documented and kept current                          | [Article 13][art-13]                |
+| Secure-by-design essential requirements                                             | [Annex I Part I][anx-I]             |
+| No known exploitable vulnerabilities at release                                     | [Annex I Part I][anx-I]             |
+| Machine-readable SBOM covering at least top-level dependencies                      | [Annex I Part II (1)][anx-I]        |
+| Conformity assessment appropriate to the product class                              | Articles [27][art-27], [32][art-32] |
+| Technical documentation, including a description of your secure update distribution | [Annex VII][anx-VII]                |
+| EU declaration of conformity and CE marking                                         | Articles [28][art-28], [30][art-30] |
 
 The conformity route depends on classification. The default category, which
 covers most business software, self-assesses under Module A. "Important"
-products in Annex III Class I (identity and access management, password
+products in [Annex III][anx-III] Class I (identity and access management, password
 managers, VPNs, network management systems, SIEM, operating systems, and
 similar) can self-assess only if they fully apply harmonised standards, common
 specifications, or an EU cybersecurity certification scheme at assurance level
-"substantial" (Article 32(2)); the harmonised standards are still being
-finalized, so in practice a notified body often gets involved. Class II
+"substantial" ([Article 32(2)][art-32-2]); the harmonised standards are still
+being finalized, so in practice a notified body often gets involved. Class II
 (hypervisors, container runtimes, firewalls, intrusion detection and
 prevention systems) requires third-party assessment. Critical products in
-Annex IV, such as smart meter gateways, smartcards and secure elements, and
-hardware devices with security boxes, may face mandatory EU certification.
+[Annex IV][anx-IV], such as smart meter gateways, smartcards and secure
+elements, and hardware devices with security boxes, may face mandatory EU
+certification.
 
 ### Ongoing, for the whole support period
 
-| Duty                                                                                                                                                        | Where                         |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| Vulnerability handling, including a coordinated vulnerability disclosure policy and a contact address                                                       | Annex I Part II (4), (5), (6) |
-| Remediate vulnerabilities without delay; ship security updates separately from feature updates where technically feasible                                   | Annex I Part II (2)           |
-| Secure mechanism to distribute updates                                                                                                                      | Annex I Part II (7)           |
-| Disseminate security updates without delay, free of charge (unless agreed otherwise with a business user for a tailor-made product), with advisory messages | Annex I Part II (8)           |
-| Support period of at least 5 years                                                                                                                          | Article 13(8)                 |
-| Keep each security update available for at least 10 years                                                                                                   | Article 13(9)                 |
-| Report actively exploited vulnerabilities and severe incidents                                                                                              | Article 14                    |
+| Duty                                                                                                                                                        | Where                                  |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| Vulnerability handling, including a coordinated vulnerability disclosure policy and a contact address                                                       | [Annex I Part II (4), (5), (6)][anx-I] |
+| Remediate vulnerabilities without delay; ship security updates separately from feature updates where technically feasible                                   | [Annex I Part II (2)][anx-I]           |
+| Secure mechanism to distribute updates                                                                                                                      | [Annex I Part II (7)][anx-I]           |
+| Disseminate security updates without delay, free of charge (unless agreed otherwise with a business user for a tailor-made product), with advisory messages | [Annex I Part II (8)][anx-I]           |
+| Support period of at least 5 years                                                                                                                          | [Article 13(8)][art-13-8]              |
+| Keep each security update available for at least 10 years                                                                                                   | [Article 13(9)][art-13-9]              |
+| Report actively exploited vulnerabilities and severe incidents                                                                                              | [Article 14][art-14]                   |
 
 For a SaaS company the ongoing list is mostly a deploy pipeline. For a vendor
 with self-hosted customers it is a distribution problem, and for customers
@@ -156,8 +157,8 @@ without internet access it is a hard one. We cover that in detail in
 2. **Classify each product.** Default, Class I, Class II, or critical.
    This decides whether you can self-assess and therefore how much lead time
    you need. Most B2B software lands in the default category, but check
-   Annex III honestly: "network management" and "identity management" catch
-   more products than vendors expect.
+   [Annex III][anx-III] honestly: "network management" and "identity
+   management" catch more products than vendors expect.
 3. **Stand up the SBOM and the CVD policy.** The SBOM must be machine-readable
    and generated per release, not once. The CVD policy needs a published
    contact and an internal process behind it. Both are prerequisites for
@@ -171,9 +172,9 @@ without internet access it is a hard one. We cover that in detail in
    under 24 hours, including who is on call and how you identify affected
    customers.
 6. **Assemble the technical file and CE marking before December 11, 2027.**
-   Annex VII documentation, the declaration of conformity, and the marking
-   itself. If steps 1 through 5 are done, this step is mostly writing down
-   what already exists.
+   [Annex VII][anx-VII] documentation, the declaration of conformity, and the
+   marking itself. If steps 1 through 5 are done, this step is mostly writing
+   down what already exists.
 
 ## Penalties
 
@@ -188,5 +189,20 @@ market is not.
 
 <CraCta
   title="Notify, then prove the patch landed"
-  body="Distr helps you reach customers when a security update is available, and records who pulled or applied it — so update distribution and delivery evidence aren’t a spreadsheet exercise."
+  body="Distr helps you reach customers when a security update is available, and records who pulled or applied it, so update distribution and delivery evidence aren't a spreadsheet exercise."
 />
+
+[art-3]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#art_3
+[art-13]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#art_13
+[art-13-8]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#013.008
+[art-13-9]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#013.009
+[art-14]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#art_14
+[art-27]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#art_27
+[art-28]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#art_28
+[art-30]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#art_30
+[art-32]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#art_32
+[art-32-2]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#032.002
+[anx-I]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#anx_I
+[anx-III]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#anx_III
+[anx-IV]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#anx_IV
+[anx-VII]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#anx_VII
