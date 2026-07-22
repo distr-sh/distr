@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"archive/zip"
 	"context"
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/api"
@@ -60,6 +62,11 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 				With(option.Description("Get support bundle detail")).
 				With(option.Request(BundleIDRequest{})).
 				With(option.Response(http.StatusOK, api.SupportBundleDetail{}))
+
+			r.Get("/download", downloadSupportBundleResourcesHandler()).
+				With(option.Description("Download all support bundle resources as a zip archive")).
+				With(option.Request(BundleIDRequest{})).
+				With(option.Response(http.StatusOK, nil, option.ContentType("application/zip")))
 
 			r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 				Patch("/status", updateSupportBundleStatusHandler()).
@@ -317,6 +324,82 @@ func getSupportBundleDetailHandler() http.HandlerFunc {
 		}
 		RespondJSON(w, detail)
 	}
+}
+
+func downloadSupportBundleResourcesHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		bundle := requireSupportBundle(w, r)
+		if bundle == nil {
+			return
+		}
+
+		ctx := r.Context()
+		log := internalctx.GetLogger(ctx)
+
+		resources, err := db.GetSupportBundleResources(ctx, bundle.ID)
+		if err != nil {
+			log.Error("failed to get support bundle resources", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		filename := supportBundleZipFileName(bundle)
+		w.Header().Set("Content-Type", "application/zip")
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+
+		zipWriter := zip.NewWriter(w)
+		usedNames := make(map[string]int)
+		for _, resource := range resources {
+			name := strings.NewReplacer("/", "-", "\\", "-").Replace(resource.Name)
+			usedNames[name]++
+			if count := usedNames[name]; count > 1 {
+				name = fmt.Sprintf("%s-%d", name, count)
+			}
+			entry, err := zipWriter.CreateHeader(&zip.FileHeader{
+				Name:     name + ".txt",
+				Method:   zip.Deflate,
+				Modified: resource.CreatedAt,
+			})
+			if err != nil {
+				log.Warn("failed to create zip entry", zap.Error(err))
+				return
+			}
+			if _, err := entry.Write([]byte(resource.Content)); err != nil {
+				log.Warn("failed to write zip entry", zap.Error(err))
+				return
+			}
+		}
+		if err := zipWriter.Close(); err != nil {
+			log.Warn("failed to finalize zip archive", zap.Error(err))
+		}
+	}
+}
+
+func supportBundleZipFileName(bundle *types.SupportBundleWithDetails) string {
+	parts := []string{"distr-support-bundle"}
+	if customer := zipFileNamePart(bundle.CustomerOrganizationName); customer != "" {
+		parts = append(parts, customer)
+	}
+	if title := zipFileNamePart(bundle.Title); title != "" {
+		parts = append(parts, title)
+	}
+	parts = append(parts, bundle.ID.String()[:8])
+	return strings.Join(parts, "-") + ".zip"
+}
+
+// zipFileNamePart reduces a string to lowercase letters only, capped at 16 characters.
+func zipFileNamePart(s string) string {
+	var b strings.Builder
+	for _, r := range strings.ToLower(s) {
+		if r >= 'a' && r <= 'z' {
+			b.WriteRune(r)
+			if b.Len() >= 16 {
+				break
+			}
+		}
+	}
+	return b.String()
 }
 
 func updateSupportBundleStatusHandler() http.HandlerFunc {

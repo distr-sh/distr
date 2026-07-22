@@ -14,6 +14,25 @@ import {
 
 const baseUrl = '/api/v1/support-bundles';
 
+export function supportBundleZipFileName(bundle: SupportBundle): string {
+  const part = (s: string) =>
+    s
+      .toLowerCase()
+      .replaceAll(/[^a-z]/g, '')
+      .substring(0, 16);
+  const parts = ['distr-support-bundle'];
+  const customer = part(bundle.customerOrganizationName || '');
+  if (customer) {
+    parts.push(customer);
+  }
+  const title = part(bundle.title || '');
+  if (title) {
+    parts.push(title);
+  }
+  parts.push(bundle.id.substring(0, 8));
+  return parts.join('-') + '.zip';
+}
+
 @Injectable({providedIn: 'root'})
 export class SupportBundlesService {
   private readonly httpClient = inject(HttpClient);
@@ -32,6 +51,10 @@ export class SupportBundlesService {
 
   public get(id: string) {
     return this.httpClient.get<SupportBundleDetail>(`${baseUrl}/${id}`);
+  }
+
+  public downloadResources(id: string) {
+    return this.httpClient.get(`${baseUrl}/${id}/download`, {responseType: 'blob'});
   }
 
   public create(request: CreateSupportBundleRequest) {

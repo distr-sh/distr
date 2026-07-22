@@ -76,6 +76,9 @@
                   <th scope="col" class="p-4">Resources</th>
                   <th scope="col" class="p-4">Comments</th>
                   <th scope="col" class="p-4">Last Updated At</th>
+                  <th scope="col" class="p-4">
+                    <span class="sr-only">Actions</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -101,6 +104,19 @@
                     <td class="px-4 py-3">{{ bundle.commentCount }}</td>
                     <td class="px-4 py-3">
                       {{ bundle.lastCommentAt ? (bundle.lastCommentAt | date: 'medium') : '-' }}
+                    </td>
+                    <td class="px-4 py-3 text-right">
+                      @if (bundle.resourceCount > 0) {
+                        <button
+                          type="button"
+                          (click)="downloadResources(bundle, $event)"
+                          [disabled]="downloadingBundleId() === bundle.id"
+                          title="Download resources"
+                          class="py-1.5 px-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg dark:text-gray-300 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700">
+                          <fa-icon [icon]="faDownload" />
+                          <span class="sr-only">Download resources</span>
+                        </button>
+                      }
                     </td>
                   </tr>
                 }
