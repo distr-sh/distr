@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.0.2](https://github.com/distr-sh/distr/compare/3.0.1...3.0.2) (2026-07-23)
+
+
+### Other
+
+* introduce business subscription ([#2900](https://github.com/distr-sh/distr/issues/2900)) ([17d671f](https://github.com/distr-sh/distr/commit/17d671ffe5af266dfc20e6a996dd1722be90fa1f))
+* support bundle resources download ([#2897](https://github.com/distr-sh/distr/issues/2897)) ([5fb69cb](https://github.com/distr-sh/distr/commit/5fb69cb1177e9f53b9d06400333b750d5f6fd6e0))
+
+
+### Docs
+
+* **website:** update branding docs after branding page restructuring ([#2888](https://github.com/distr-sh/distr/issues/2888)) ([0c275a5](https://github.com/distr-sh/distr/commit/0c275a55c0aa0c7cabb98f85d91b690adfa05fa7))
+* **website:** use self-hosted instead of self-managed ([6bb11f7](https://github.com/distr-sh/distr/commit/6bb11f774733eebc221b704671d428db2c38a277))
+
 ## [3.0.1](https://github.com/distr-sh/distr/compare/3.0.0...3.0.1) (2026-07-22)
 
 
