@@ -1,6 +1,6 @@
 ---
 import {Icon} from '@astrojs/starlight/components';
-import distr from '~/assets/distr-brand.svg';
+import distr from '~/assets/distr.svg';
 import {Image} from 'astro:assets';
 
 const currentYear = new Date().getFullYear();
@@ -13,8 +13,11 @@ const currentYear = new Date().getFullYear();
     <div class="grid grid-cols-2 gap-8 lg:grid-cols-7">
       {/* Logo and description */}
       <div class="col-span-2 lg:col-span-2">
-        <div class="flex flex-col items-start mb-4">
-          <Image src={distr} alt="Distr Logo" class="w-48 mb-2" />
+        <div class="flex items-center gap-3 mb-4">
+          <Image src={distr} alt="Distr Logo" class="h-10 w-10" />
+          <span class="text-2xl font-semibold text-gray-900 dark:text-white">
+            Distr
+          </span>
         </div>
         <p
           class="text-sm text-gray-500 dark:text-gray-400 max-w-xs leading-relaxed">
