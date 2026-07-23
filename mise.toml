@@ -116,10 +116,13 @@ sources = [
   "deploy/charts/distr/values.yaml",
   "deploy/charts/distr/README.md.gotmpl",
 ]
-outputs = ["README.md"]
+outputs = ["deploy/charts/distr/README.md"]
 
 [tasks.format]
-run = { tasks = ["format:go", "format:frontend", "format:helm-docs"] }
+run = [
+  { tasks = ["format:go", "format:frontend"] },
+  { task = "format:helm-docs" },
+]
 
 [tasks."run:hub:serve"]
 run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/hub/ serve'
