@@ -1,19 +1,19 @@
 ---
 title: 'BYOC (Bring Your Own Cloud): Complete Guide'
 slug: byoc-definition
-description: 'Complete guide to BYOC (Bring Your Own Cloud): what it means, how it works, BYOC vs SaaS vs self-managed, architecture, benefits, challenges, and when to use BYOC for software distribution and data services.'
+description: 'Complete guide to BYOC (Bring Your Own Cloud): what it means, how it works, BYOC vs SaaS vs self-hosted, architecture, benefits, challenges, and when to use BYOC for software distribution and data services.'
 term: BYOC
 alternateNames:
   - Bring Your Own Cloud
 shortDefinition: "BYOC (Bring Your Own Cloud) is a deployment model where software vendors provision and manage their applications inside a customer's own cloud infrastructure instead of in the vendor's cloud environment. Customer data and workloads run in the customer's own AWS, Azure, or Google Cloud account, while the vendor handles operational tasks like updates, monitoring, and maintenance remotely."
-lastUpdated: 2026-04-17
+lastUpdated: 2026-07-23
 faq:
   - question: What is the difference between BYOC and private cloud?
     answer: 'BYOC runs vendor-managed software inside your public cloud account (AWS, Azure, GCP). Private cloud refers to cloud infrastructure dedicated to a single organization. BYOC can use private cloud infrastructure, but it typically uses public cloud providers with isolated customer accounts.'
   - question: Is BYOC more expensive than SaaS?
     answer: 'Usually, yes. Vendors charge premium prices for BYOC because it requires more complex infrastructure, dedicated per-customer deployments, and additional operational overhead compared to SaaS. BYOC can become cost-effective for organizations with large existing cloud commitments.'
   - question: Can I use BYOC with on-premises infrastructure?
-    answer: 'Traditional BYOC targets public cloud. Similar models exist for [on-premises](/glossary/on-premises-definition/) deployments and are often called "customer data center" or "[self-managed](/glossary/self-managed-software/)" offerings. Some vendors support hybrid models that bridge cloud and on-premises.'
+    answer: 'Traditional BYOC targets public cloud. Similar models exist for [on-premises](/glossary/on-premises-definition/) deployments and are often called "customer data center" or "[self-hosted](/glossary/self-hosted-software/)" offerings. Some vendors support hybrid models that bridge cloud and on-premises.'
   - question: Who is responsible for security in BYOC?
     answer: 'Responsibility is shared. Vendors secure the application layer (software vulnerabilities, updates, access controls). Customers secure the infrastructure layer (network policies, IAM, cloud resources, data encryption). Clear responsibility matrices are essential.'
   - question: How long does BYOC deployment take?
@@ -21,7 +21,7 @@ faq:
   - question: Can I migrate from BYOC to SaaS or vice versa?
     answer: 'Yes, with planning. BYOC to SaaS means data migration into vendor infrastructure. SaaS to BYOC means setting up customer infrastructure and transferring data. Vendors that offer both paths typically provide migration support.'
   - question: Does BYOC work with air-gapped environments?
-    answer: 'Standard BYOC needs internet connectivity for vendor control plane access. [Air-gapped](/glossary/air-gapped-meaning/) deployments need [self-managed](/glossary/self-managed-software/) or specialized deployment models with offline update mechanisms and local support tooling.'
+    answer: 'Standard BYOC needs internet connectivity for vendor control plane access. [Air-gapped](/glossary/air-gapped-meaning/) deployments need [self-hosted](/glossary/self-hosted-software/) or specialized deployment models with offline update mechanisms and local support tooling.'
   - question: How does BYOC handle software updates?
     answer: 'Vendors manage updates through the control plane, usually with automated updates gated by customer approval workflows. Update strategies vary: vendor-scheduled maintenance windows, customer-controlled timing, or prioritized security patches.'
   - question: What cloud providers support BYOC?
@@ -35,14 +35,14 @@ import TestimonialCTA from '~/components/cta/TestimonialCTA.astro';
 :::note
 BYOC (Bring Your Own Cloud) is a deployment model where software vendors provision and manage their applications inside a customer's own cloud infrastructure instead of in the vendor's cloud environment. Customer data and workloads run in the customer's own AWS, Azure, or Google Cloud account, while the vendor handles operational tasks like updates, monitoring, and maintenance remotely.
 
-BYOC sits between fully-managed [SaaS](/glossary/saas-definition/) (where everything runs in the vendor's infrastructure) and [self-managed deployments](/glossary/self-managed-software/) (where customers install and operate the software themselves). Customers keep control of cloud infrastructure, data location, and security policies. Vendors absorb the complexity of managing the software.
+BYOC sits between fully-managed [SaaS](/glossary/saas-definition/) (where everything runs in the vendor's infrastructure) and [self-hosted deployments](/glossary/self-hosted-software/) (where customers install and operate the software themselves). Customers keep control of cloud infrastructure, data location, and security policies. Vendors absorb the complexity of managing the software.
 :::
 
 ## What Does BYOC Stand For?
 
 BYOC stands for "Bring Your Own Cloud". It describes the practice of running vendor-managed software inside a customer's own cloud account. The name lines up with the actual flow: customers "bring" their existing cloud infrastructure (AWS, Azure, GCP) and the vendor deploys software into that environment.
 
-The model caught on as organizations wanted more control over their data and infrastructure while still getting the operational benefits of managed services. BYOC is the answer for teams that don't want to give up full control (SaaS), but also don't want to take on the full operational burden ([self-managed](/glossary/self-managed-software/)).
+The model caught on as organizations wanted more control over their data and infrastructure while still getting the operational benefits of managed services. BYOC is the answer for teams that don't want to hand everything over to a vendor, as with SaaS, but also don't want to take on the full operational burden of a [self-hosted](/glossary/self-hosted-software/) deployment.
 
 ## How BYOC Works
 
@@ -75,9 +75,9 @@ The control plane connects to the data plane through secure channels, usually vi
 
 That architecture keeps customer data inside the customer's environment while letting the vendor manage the software remotely. Vendors can deploy updates, monitor system health, and troubleshoot without direct access to customer data.
 
-## BYOC vs SaaS vs Self-Managed
+## BYOC vs SaaS vs Self-Hosted
 
-BYOC, SaaS, and self-managed are the three main deployment models, and picking the right one matters. For a detailed comparison, see our guide on [choosing between self-managed, cloud (SaaS), and BYOC deployment models](/blog/self-managed-vs-cloud-vs-byoc/).
+BYOC, SaaS, and self-hosted are the three main deployment models, and picking the right one matters. For a detailed comparison, see our guide on [choosing between self-hosted, SaaS, and BYOC deployment models](/blog/self-hosted-vs-saas-vs-byoc/).
 
 **[SaaS (Software as a Service)](/glossary/saas-definition/):**
 
@@ -97,7 +97,7 @@ BYOC, SaaS, and self-managed are the three main deployment models, and picking t
 - Cost varies: customer pays cloud provider directly plus vendor management fee
 - Best fit for organizations that need data sovereignty with managed operations
 
-**[Self-Managed](/glossary/self-managed-software/):**
+**[Self-Hosted](/glossary/self-hosted-software/):**
 
 - Software runs in customer infrastructure (cloud or [on-premises](/glossary/on-premises-definition/))
 - Customer manages everything: installation, configuration, updates, monitoring
@@ -108,7 +108,7 @@ BYOC, SaaS, and self-managed are the three main deployment models, and picking t
 
 **Key tradeoffs:**
 
-| Aspect                 | SaaS      | BYOC           | Self-Managed   |
+| Aspect                 | SaaS      | BYOC           | Self-Hosted    |
 | ---------------------- | --------- | -------------- | -------------- |
 | Operational Burden     | Vendor    | Shared         | Customer       |
 | Data Control           | Low       | High           | Complete       |
@@ -177,7 +177,7 @@ Software vendors that implement BYOC distribution usually need to build:
 2. **Deployment automation.** Infrastructure-as-code templates (Terraform, CloudFormation) for consistent provisioning.
 3. **Update system.** Automated update distribution with customer approval workflows and rollback.
 4. **Health monitoring.** Remote telemetry that respects customer privacy and security.
-5. **[License management](/glossary/software-license-management/).** Entitlement checks that run in the customer environment and report back to the vendor control plane.
+5. **[License management](/glossary/software-license-management/).** [Entitlement](/glossary/software-entitlement/) checks that run in the customer environment and report back to the vendor control plane.
 6. **Support tools.** Diagnostics that work within customer security boundaries.
 
 **BYOC and software distribution platforms:**

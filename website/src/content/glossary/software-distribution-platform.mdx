@@ -1,12 +1,12 @@
 ---
 title: 'Software Distribution Platform: Complete Guide (2026)'
 slug: software-distribution-platform
-description: 'Complete guide to software distribution platforms: what they are, vendor-to-customer vs IT admin tools, key features, distribution methods for on-premises, air-gapped, BYOC, and self-managed customer deployments.'
+description: 'Complete guide to software distribution platforms: what they are, vendor-to-customer vs IT admin tools, key features, distribution methods for on-premises, air-gapped, BYOC, and self-hosted customer deployments.'
 term: Software Distribution Platform
 alternateNames:
   - Software Distribution
 shortDefinition: 'A software distribution platform is the system software vendors use to get their applications into customer environments. It sits on dedicated infrastructure built to distribute software into customer-controlled environments: on-premises data centers, customer cloud accounts (BYOC), air-gapped networks, edge locations, and hybrid setups.'
-lastUpdated: 2026-04-17
+lastUpdated: 2026-07-23
 faq:
   - question: What is a software distribution platform?
     answer: "It's the system software vendors use to distribute, deploy, and manage applications in customer-controlled environments (on-premises, BYOC, air-gapped, edge)."
@@ -65,7 +65,7 @@ These platforms help software vendors and [ISVs](/glossary/isv-meaning/) distrib
 - Managing licensing and entitlements per customer
 - Distributing updates to customers
 - Providing self-service portals for customers
-- Supporting [self-managed](/glossary/self-managed-software/) and BYOC deployment models
+- Supporting [self-hosted](/glossary/self-hosted-software/) and BYOC deployment models
 
 **Primary users**: software vendors, SaaS companies offering self-hosted options, [ISVs](/glossary/isv-meaning/).
 
@@ -77,7 +77,7 @@ This article is about vendor-to-customer software distribution platforms. Those 
 
 **Software distribution** is the process of moving software applications from software vendors to their customers. In the vendor-to-customer case, that covers:
 
-- **Packaging.** Bundling application code, dependencies, configuration, and metadata into distributable artifacts ([container images](/glossary/oci-container-artifact-registry/), Helm charts, binaries).
+- **Packaging.** Bundling application code, dependencies, configuration, and metadata into distributable artifacts ([container images](/glossary/oci-container-artifact-registry/), [Helm charts](/glossary/helm-chart/), binaries).
 - **Delivery.** Moving artifacts from vendor infrastructure into customer environments.
 - **Deployment.** Installing and configuring software once it lands in customer infrastructure.
 - **Licensing.** Controlling which customers get which software versions and features.
@@ -88,7 +88,7 @@ Traditional software distribution meant physical media or a download page. Moder
 
 ## Why Software Vendors Need Distribution Platforms
 
-Pressure on vendors keeps mounting to support deployment flexibility. SaaS still dominates, but a significant share of enterprise customers want alternatives.
+Pressure on vendors keeps mounting to support deployment flexibility. [SaaS](/glossary/saas-definition/) still dominates, but a significant share of enterprise customers want alternatives.
 
 ### Customer requirements driving distribution complexity
 
@@ -96,7 +96,7 @@ Pressure on vendors keeps mounting to support deployment flexibility. SaaS still
 
 **Security and air-gap requirements.** Military, intelligence, critical infrastructure, and high-security organizations run [air-gapped networks](/glossary/air-gapped-meaning/) with no internet connectivity. They need a completely offline distribution path.
 
-**Cost optimization.** Large enterprises want to run vendor software in their own cloud accounts (AWS, Azure, GCP) to consolidate billing, use committed spend, and squeeze down total cost. That's the BYOC (Bring Your Own Cloud) model.
+**Cost optimization.** Large enterprises want to run vendor software in their own cloud accounts (AWS, Azure, GCP) to consolidate billing, use committed spend, and squeeze down total cost. That's the [BYOC (Bring Your Own Cloud)](/glossary/byoc-definition/) model.
 
 **Performance and latency.** Global operations and edge computing need software deployed close to users or devices, not funneled through a centralized SaaS region.
 
@@ -138,7 +138,7 @@ Enterprise customers expect professional self-service:
 
 ### License management and entitlements
 
-Commercial terms have to be enforceable across distributed installations:
+Commercial terms have to be enforceable across distributed installations through [license management](/glossary/software-license-management/) and [entitlements](/glossary/software-entitlement/):
 
 - Grant specific customers access to specific software versions
 - Control feature access based on subscription tier
@@ -155,7 +155,7 @@ Software distribution platforms accept that customers run everything, everywhere
 - **[On-premises](/glossary/on-premises-definition/)** data centers
 - **[Air-gapped](/glossary/air-gapped-meaning/)** networks with offline distribution
 - **Edge locations** and distributed infrastructure
-- **Kubernetes clusters** running Helm or operator-based deployments
+- **[Kubernetes](/glossary/kubernetes/) clusters** running Helm or operator-based deployments
 - **VM-based** environments with traditional installation
 
 ### Automated update distribution
@@ -222,12 +222,12 @@ Marketplace platforms (AppDirect, CloudBlue) focus on reseller ecosystems, billi
 
 ### For software vendors
 
-- **Faster time to market.** Pre-built distribution infrastructure accelerates the launch of self-managed offerings. Vendors avoid building custom deployment tooling.
+- **Faster time to market.** Pre-built distribution infrastructure accelerates the launch of self-hosted offerings. Vendors avoid building custom deployment tooling.
 - **Reduced operational burden.** Platforms automate update distribution, license management, and customer provisioning, which cuts manual work and human error.
 - **Better customer visibility.** Telemetry and monitoring show how customers use the software, which versions are deployed, and where issues emerge.
 - **Improved support efficiency.** Diagnostic tools and remote troubleshooting reduce time-to-resolution.
 - **Competitive advantage.** A professional distribution experience differentiates vendors in enterprise sales cycles. Customers prefer vendors offering deployment flexibility.
-- **Revenue expansion.** Supporting self-managed models opens market segments that can't or won't use SaaS.
+- **Revenue expansion.** Supporting self-hosted models opens market segments that can't or won't use SaaS.
 
 ### For customers
 
@@ -239,7 +239,7 @@ Marketplace platforms (AppDirect, CloudBlue) focus on reseller ecosystems, billi
 
 ## Distribute Software to Customer Environments with Distr
 
-Distr is an open-source software distribution platform built specifically for software vendors distributing applications to [self-managed](/glossary/self-managed-software/), BYOC, [on-premises](/glossary/on-premises-definition/), [air-gapped](/glossary/air-gapped-meaning/), and edge customer environments.
+Distr is an open-source software distribution platform built specifically for software vendors distributing applications to [self-hosted](/glossary/self-hosted-software/), BYOC, [on-premises](/glossary/on-premises-definition/), [air-gapped](/glossary/air-gapped-meaning/), and edge customer environments.
 
 **Key capabilities:**
 

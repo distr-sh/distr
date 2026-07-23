@@ -1,8 +1,8 @@
 ---
 title: 'Container Registry Comparison 2026: 12 Options Ranked'
-description: '12 container registries compared: Docker Hub, ECR, GCR, ACR, Harbor, JFrog, GitHub, GitLab + 4 more. Pricing, self-hosting, open source, and scale.'
+description: '12 container registries compared: Docker Hub, ECR, Google AR, ACR, Harbor, JFrog, GitHub, GitLab + 4 more. Pricing, self-hosting, open source, and scale.'
 publishDate: 2025-04-07
-lastUpdated: 2026-05-26
+lastUpdated: 2026-07-23
 slug: 'container-image-registry-comparison'
 authors:
   - name: 'Jake Page'
@@ -85,7 +85,7 @@ The trade-off is usually fewer knobs: limited UI, simpler access control, fewer 
 
 ![ACR](../../assets/blog/2025-04-07-registry-comparison/acr.png)
 
-[Azure Container Registry (ACR)](https://azure.microsoft.com/en-us/products/container-registry) lets users store artifacts in a default global namespace or organize them in more detail using the supported repository structure. Microsoft's scale brings some compelling extras: global image replication, and built-in automation for building and patching images. Vulnerability scanning is there too, reportedly through an Aqua Security integration, though most of the documentation on that lives in [Aqua's docs](https://www.aquasec.com/blog/image-vulnerability-scanning-in-azure-container-registry/) rather than Microsoft's.
+[Azure Container Registry (ACR)](https://azure.microsoft.com/en-us/products/container-registry) lets users store artifacts in a default global namespace or organize them in more detail using the supported repository structure. Microsoft's scale shows in extras like global image replication and built-in automation for building and patching images. Vulnerability scanning is there too, reportedly through an Aqua Security integration, though most of the documentation on that lives in [Aqua's docs](https://www.aquasec.com/blog/image-vulnerability-scanning-in-azure-container-registry/) rather than Microsoft's.
 
 **Key features:**
 
@@ -108,7 +108,7 @@ The trade-off is usually fewer knobs: limited UI, simpler access control, fewer 
 - Built-in lifecycle policy management
 - Powerful (though sometimes complicated) access control via AWS IAM
 
-### Google Artifacts Registry (GCR)
+### Google Artifact Registry
 
 ![gcr](../../assets/blog/2025-04-07-registry-comparison/gcr.png)
 
@@ -126,7 +126,7 @@ The trade-off is usually fewer knobs: limited UI, simpler access control, fewer 
 
 ![Oracle Container registry](../../assets/blog/2025-04-07-registry-comparison/ocr.png)
 
-[Oracle Container Registry](https://docs.oracle.com/en-us/iaas/Content/Registry/Concepts/registryoverview.html) is a managed service for storing and sharing container images with support for public and private repositories. It integrates with Oracle Cloud IAM for access control, supports multi-architecture images, and provides high availability through replication. It works well inside Oracle Cloud workflows, pairing with tools like Kubernetes Engine and Visual Builder Studio.
+[Oracle Container Registry](https://docs.oracle.com/en-us/iaas/Content/Registry/Concepts/registryoverview.html) is a managed service for storing and sharing container images with support for public and private repositories. It integrates with Oracle Cloud IAM for access control, supports multi-architecture images, and provides high availability through replication. It pairs with Oracle Cloud tools like Kubernetes Engine and Visual Builder Studio.
 
 **Key features:**
 
@@ -163,9 +163,9 @@ Artifactory layers in enterprise features: OCI v1.1 compliance, a proprietary qu
 
 ![gitlab](../../assets/blog/2025-04-07-registry-comparison/gitlab-cr.png)
 
-[GitLab Container Registry](https://docs.gitlab.com/user/packages/container_registry/) is part of the GitLab suite and fits neatly into GitLab CI/CD. It's still progressing toward full OCI compliance, making it a sensible pick for teams already deep in the GitLab ecosystem. Webhook integrations allow for more automation-heavy workflows.
+[GitLab Container Registry](https://docs.gitlab.com/user/packages/container_registry/) is part of the GitLab suite and fits neatly into GitLab CI/CD. Full OCI compliance is still in progress, but for teams already deep in the GitLab ecosystem it's a sensible pick anyway. Webhooks support automation-heavy workflows.
 
-Key features:
+**Key features:**
 
 - Can be self-hosted
 - Tight integration with GitLab CI/CD for build, test, and deployment
@@ -192,7 +192,7 @@ Key features:
 
 ![Mirantis](../../assets/blog/2025-04-07-registry-comparison/mirantis.png)
 
-[Mirantis Secure Registry (MSR)](https://www.mirantis.com/software/mirantis-secure-registry/) is an enterprise-grade private container registry aimed at hardening the software supply chain. Unlike public registries, MSR offers a secured environment for storing, sharing, and managing container images, with controls designed to ensure only approved and trusted images land in development and production.
+[Mirantis Secure Registry (MSR)](https://www.mirantis.com/software/mirantis-secure-registry/) is a commercial private container registry focused on supply chain security. Its controls exist to make sure only approved and trusted images land in development and production.
 
 **Key features:**
 
@@ -204,19 +204,19 @@ Key features:
 - High availability configurations
 - Exportable health metrics
 
-> Recent announcement: Mirantis moved the open-source core of MSR to CNCF Harbor. Rather than continuing to develop its own registry independently, Mirantis now builds MSR on top of Harbor.
+> In late 2024, Mirantis moved the open-source core of MSR to CNCF Harbor. Rather than continuing to develop its own registry independently, Mirantis now builds MSR on top of Harbor.
 
 ### Harbor
 
-[Harbor](https://goharbor.io/) is a robust open-source container registry. Administrators can organize repositories into projects (either public or private), with access controlled through RBAC.
+[Harbor](https://goharbor.io/) is an open-source container registry, originally created at VMware and a graduated [CNCF](https://www.cncf.io/projects/harbor/) project since 2020. Administrators can organize repositories into projects (either public or private), with access controlled through RBAC.
 
-Harbor supports full OCI v2.0 compliance and goes beyond basic container management to include vulnerability scanning, image replication, and automatic SBOM generation on push. The feature depth and security tooling make it a popular pick in enterprise environments.
+Harbor implements the full OCI v1.1 specification and goes beyond basic container management to include vulnerability scanning, image replication, and automatic SBOM generation on push. The feature depth and security tooling make it a popular pick in enterprise environments.
 
 ![harbor](../../assets/blog/2025-04-07-registry-comparison/harbor-cr.png)
 
 **Key features:**
 
-- Full OCI v2.0 compliance
+- Full OCI v1.1 compliance
 - Extensive artifact support: CNABs, OPA bundles, and user-defined OCI artifacts like ML models
 - Enterprise security: vulnerability scanning, image replication, advanced access control
 - Supply chain security: auto-generated SBOMs on push
@@ -291,36 +291,36 @@ For teams that already publish images or Helm charts to internal registries like
 
 - Vendor and customer portals
 - OCI-formatted and OCI-compliant artifact support (Helm, Docker, etc.)
-- Built specifically for commercial self-managed deployment options for software and AI companies
+- Built specifically for commercial self-hosted deployment options for software and AI companies
 - Pull-through cache for serving artifacts from multiple upstream registries through one customer-facing endpoint
 - Advanced features: artifact tag restrictions, usage tracking, and granular access controls
-- Available as a managed service (SaaS) via [Get Started](/get-started/), or [self-managed](/docs/self-hosting/)
+- Available as a managed service (SaaS) via [Get Started](/get-started/), or [self-hosted](/docs/self-hosting/)
 - Open source and free to use
 
 **Who it's for:**
 
-Independent Software Vendors (ISVs), B2B platforms, and enterprise software teams that distribute commercial software into customer environments, especially air-gapped, self-managed, or regulated deployments.
+Independent Software Vendors (ISVs), B2B platforms, and enterprise software teams that distribute commercial software into customer environments, especially air-gapped, self-hosted, or regulated deployments.
 
 ## Comparison Table
 
-| **Registry**          | **Managed service** | **Can be self-managed** | **Great support for external users** |
-| --------------------- | ------------------- | ----------------------- | ------------------------------------ |
-| **Gitea**             | ❌️                  | ✅️                      | ❌️                                   |
-| **Harbor**            | ❌️                  | ✅️                      | ❌️                                   |
-| **Docker Hub**        | ✅️                  | ❌️                      | ❌️                                   |
-| **GitLab CR**         | ✅️                  | ✅️                      | ❌️                                   |
-| **GitHub CR**         | ✅️                  | ❌️                      | ❌️                                   |
-| **JFrog Artifactory** | ❌️                  | ✅️                      | ✅️                                   |
-| **Azure CR**          | ✅️                  | ❌️                      | ❌️                                   |
-| **AWS ECR**           | ✅️                  | ❌️                      | ❌️                                   |
-| **Google CR**         | ✅️                  | ❌️                      | ❌️                                   |
-| **Oracle CR**         | ✅️                  | ❌️                      | ❌️                                   |
-| **Cloudsmith**        | ✅️                  | ❌️                      | ❌️                                   |
-| **Distr**             | ✅️                  | ✅️                      | ✅️                                   |
+| **Registry**          | **Managed service** | **Can be self-hosted** | **Great support for external users** |
+| --------------------- | ------------------- | ---------------------- | ------------------------------------ |
+| **Gitea**             | ❌️                  | ✅️                     | ❌️                                   |
+| **Harbor**            | ❌️                  | ✅️                     | ❌️                                   |
+| **Docker Hub**        | ✅️                  | ❌️                     | ❌️                                   |
+| **GitLab CR**         | ✅️                  | ✅️                     | ❌️                                   |
+| **GitHub CR**         | ✅️                  | ❌️                     | ❌️                                   |
+| **JFrog Artifactory** | ❌️                  | ✅️                     | ✅️                                   |
+| **Azure CR**          | ✅️                  | ❌️                     | ❌️                                   |
+| **AWS ECR**           | ✅️                  | ❌️                     | ❌️                                   |
+| **Google AR**         | ✅️                  | ❌️                     | ❌️                                   |
+| **Oracle CR**         | ✅️                  | ❌️                     | ❌️                                   |
+| **Cloudsmith**        | ✅️                  | ❌️                     | ❌️                                   |
+| **Distr**             | ✅️                  | ✅️                     | ✅️                                   |
 
 ## Which container registry fits your needs best?
 
 - **Enterprises using artifacts internally.** **JFrog Artifactory** or **Harbor** for large organizations running complex internal workflows. Both offer robust access controls, multi-format support, and policy enforcement at scale.
-- **SaaS vendors hosted on a single cloud with no self-managed need.** If your infrastructure sits inside one specific cloud, use that provider's container registry.
-- **Non-commercial open source projects.** **GitHub Container Registry** and **Docker Hub** for distributing public artifacts to a wide audience with minimal setup. Straightforward to adopt, compatible with standard tooling, widely known.
-- **Commercial open source and SaaS vendors that want to offer self-managed deployment options.** **[Distr](/)** is built for software vendors distributing artifacts into external customer environments, including regulated, self-managed, and air-gapped deployments. Granular access controls, usage tracking, and flexible deployment models that internal or public registries don't provide.
+- **SaaS vendors hosted on a single cloud with no self-hosted need.** If your infrastructure sits inside one specific cloud, use that provider's container registry.
+- **Non-commercial open source projects.** **GitHub Container Registry** and **Docker Hub** for distributing public artifacts to a wide audience with minimal setup. Both are straightforward to adopt and work with standard tooling.
+- **Commercial open source and SaaS vendors that want to offer self-hosted deployment options.** **[Distr](/)** is built for software vendors distributing artifacts into external customer environments, including regulated, self-hosted, and air-gapped deployments. Granular access controls, usage tracking, and flexible deployment models that internal or public registries don't provide.

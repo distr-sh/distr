@@ -1,0 +1,63 @@
+---
+title: Self-Hosted Software
+slug: self-hosted-software
+description: 'Understanding the self-hosted (self-managed) software deployment model, and how vendors support self-hosted customers with a distribution platform'
+term: Self-Hosted Software
+alternateNames:
+  - Self-Hosted
+  - Self-Managed Software
+  - Self-Managed
+shortDefinition: 'Self-hosted software (also called self-managed software) is software that organizations run and operate on infrastructure they control, either on-premises or in their own cloud accounts, instead of using a vendor-hosted SaaS edition. The customer handles setup, updates, scaling, and ongoing maintenance.'
+lastUpdated: 2026-07-23
+faq:
+  - question: What does self-hosted mean?
+    answer: 'Self-hosted means an organization runs software on infrastructure it controls (its own servers or its own cloud accounts) instead of using the vendor-hosted SaaS edition. The organization is responsible for installation, updates, backups, and maintenance.'
+  - question: Is self-hosted the same as self-managed?
+    answer: 'Yes, in practice. "Self-hosted" is more common in open source and developer communities, while many enterprise vendors label their non-SaaS edition "self-managed" (GitLab Self-Managed, for example). Both mean the customer runs and operates the software.'
+  - question: What is the difference between self-hosted and on-premises?
+    answer: '"On-premises" emphasizes the location (the customer''s infrastructure, traditionally their own data center). "Self-hosted" emphasizes the operation (the customer runs the software), regardless of whether that happens on physical servers or in the customer''s own cloud account. In most conversations they are used interchangeably.'
+  - question: What is the difference between self-hosted and SaaS?
+    answer: 'With SaaS, the vendor hosts and operates the software in its own infrastructure and customers access it over the internet. With self-hosted software, the customer downloads, installs, and operates the software in its own environment and keeps full control over data and configuration.'
+  - question: Why do organizations choose self-hosted software?
+    answer: 'Data sovereignty and compliance requirements, security policies (including air-gapped networks), deep customization and integration needs, and sometimes cost control. Regulated industries like finance, government, and healthcare are typical adopters.'
+  - question: How do software vendors support self-hosted customers?
+    answer: 'With a software distribution platform (such as Distr) that provides a registry for versioned artifacts, deployment agents for installs and updates, offline-capable license enforcement, health monitoring, and a customer self-service portal.'
+---
+
+## What is Self-Hosted Software?
+
+### Self-Hosted Software Definition
+
+:::note
+Self-hosted (also called self-managed) deployment is a model where organizations are responsible for fully hosting, operating, and maintaining software within their own infrastructure, either [on-premises](/glossary/on-premises-definition/) or in a private or public cloud environment. This approach gives customers complete control over their environment, including data security, compliance, and access management, which matters most in highly regulated industries. Unlike [SaaS](/glossary/saas-definition/) or [BYOC](/glossary/byoc-definition/), self-hosted solutions require organizations to handle software setup, updates, scaling, and ongoing maintenance themselves.
+:::
+
+### How Does Self-Hosted Software Work?
+
+In a self-hosted deployment, customers typically purchase a [license](/glossary/software-license-management/), then download and install the software onto their own servers or cloud environment. They handle all infrastructure-related tasks, including server setup, storage allocation, network configuration, and security. The organization's IT or DevOps team applies updates and patches, monitors system health, manages backups, and troubleshoots issues. This deployment model demands more technical expertise and generally carries higher ongoing IT costs, but it offers strong customization and control.
+
+### Why Choose Self-Hosted Software?
+
+Self-hosted deployment is often chosen by organizations that require complete control over their environment, particularly in industries with stringent data sovereignty, security, and compliance requirements, such as finance, government, and healthcare. This model is also preferred by companies with unique operational needs or specialized infrastructure requirements, as it allows for full customization and integration with existing systems.
+
+While it involves a larger internal resource commitment, self-hosted deployment is ideal for businesses and government agencies with the expertise and resources to manage their own infrastructure and for those needing a high degree of autonomy and data control. This model prioritizes control and flexibility at the expense of convenience and ease of scaling.
+
+For a detailed comparison of the three deployment models, see our guide on [choosing between self-hosted, SaaS, and BYOC](/blog/self-hosted-vs-saas-vs-byoc/).
+
+## Self-Hosted vs Self-Managed
+
+The two terms are pretty similar and, in most conversations, interchangeable: both mean the customer runs the software on infrastructure they control, and the vendor provides it. Which one you encounter mostly depends on who is talking. "Self-hosted" is the term used in open source and developer communities (think of the self-hosting movement around tools like Nextcloud or Home Assistant), while commercial vendors tend to brand their non-SaaS edition "self-managed": GitLab Self-Managed is the best-known example.
+
+Where people do draw a distinction, it's usually this: "self-hosted" emphasizes where the software runs (on the customer's infrastructure), while "self-managed" emphasizes who operates it (the customer's team handles updates, backups, and maintenance). In practice the two go together, since whoever hosts the software almost always ends up managing it too. Unless a vendor explicitly defines the terms differently in its offering, you can treat them as the same deployment model.
+
+## How Vendors Support Self-Hosted Software with a Distribution Platform
+
+Offering a self-hosted edition doesn't mean handing customers a tarball and wishing them luck. The vendors that succeed with self-hosted treat it as a product surface of its own, and a [software distribution platform](/glossary/software-distribution-platform/) like [Distr](/docs/) provides the infrastructure for that:
+
+- **Artifact distribution.** A vendor-controlled [container registry](/glossary/oci-container-artifact-registry/) serves Docker images, [Helm charts](/glossary/helm-chart/), and other artifacts, with per-customer access controls so each customer only sees the versions they are entitled to.
+- **Guided installation and updates.** Optional deployment agents (Docker Compose and Helm) install the software in the customer's environment and roll out updates when the customer approves them, which reduces version fragmentation.
+- **Offline license enforcement.** Signed [license keys](/glossary/software-license-management/) and [entitlements](/glossary/software-entitlement/) work without a connection back to the vendor, so seat limits, feature gates, and expiry hold up even in [air-gapped](/glossary/air-gapped-meaning/) environments.
+- **Health monitoring and diagnostics.** With customer consent, agents report deployment status, metrics, and logs, so support teams can troubleshoot without direct access to the customer's infrastructure.
+- **Customer self-service portal.** Customers download releases, generate registry credentials, and manage their deployments through a white-labeled portal instead of email threads with support.
+
+The result: vendors can offer a self-hosted edition with an operational profile close to SaaS, while customers keep the control that made them choose self-hosted in the first place.

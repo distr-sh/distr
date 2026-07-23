@@ -2,6 +2,7 @@
 title: Kubernetes
 slug: kubernetes
 description: 'Understanding the Kubernetes platform, its architecture, and its role in modern application deployment'
+lastUpdated: 2026-07-23
 ---
 
 ## What is Kubernetes? Definition and explanation
@@ -12,17 +13,17 @@ description: 'Understanding the Kubernetes platform, its architecture, and its r
 [Kubernetes](https://kubernetes.io/) is an open-source container orchestration platform that automates the deployment, scaling, and management of containerized applications. It helps ensure that applications run reliably across different environments, providing self-healing, load balancing, and rolling updates.
 :::
 
-[Kubernetes](https://kubernetes.io/), commonly known as "K8s," was created by engineers at Google and draws heavily from Google's internal system called Borg, which managed applications on a massive scale. While Borg was built for Google's internal use, Kubernetes was designed as an open-source solution to manage containerized applications across diverse environments, whether on-premises, in the cloud, or in hybrid setups.
+[Kubernetes](https://kubernetes.io/), commonly known as "K8s," was created by engineers at Google and draws heavily from Google's internal system called Borg, which managed applications on a massive scale. While Borg was built for Google's internal use, Kubernetes was designed as an open-source solution to manage containerized applications across diverse environments, whether [on-premises](/glossary/on-premises-definition/), in the cloud, or in hybrid setups.
 
 Kubernetes was the first project to graduate from the Cloud Native Computing Foundation ([CNCF](https://www.cncf.io/)). Many other CNCF projects build on Kubernetes to add capabilities in areas like monitoring, security, and service mesh, which is why it sits at the center of the cloud-native ecosystem.
 
-As Google engineer [Kelsey Hightower](https://x.com/kelseyhightower/status/935252923721793536?lang=en) puts it, "Kubernetes is a platform for creating platforms." It does more than run containers: it gives you a foundation to build more complex, tailored platforms on top of.
+As [Kelsey Hightower](https://x.com/kelseyhightower/status/935252923721793536?lang=en) famously put it, "Kubernetes is a platform for creating platforms." It does more than run containers: it gives you a foundation to build more complex, tailored platforms on top of.
 
-At its core, Kubernetes is built around a set of basic objects, such as Pods, Services, and Deployments, designed to manage applications. Beyond this, it introduces the concept of Custom Resource Definitions ([CRDs](https://kubernetes.io/docs/core-concepts/extend-kubernetes/api-extension/custom-resources/)), which allow developers to extend the platform to meet their unique needs. This flexibility lets teams adapt Kubernetes to many use cases and build custom workflows and operations.
+At its core, Kubernetes is built around a set of basic objects, such as Pods, Services, and Deployments, designed to manage applications. Beyond this, it introduces the concept of Custom Resource Definitions ([CRDs](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)), which allow developers to extend the platform to meet their unique needs. This flexibility lets teams adapt Kubernetes to many use cases and build custom workflows and operations.
 
 ## Kubernetes architecture
 
-Structurally, Kubernetes follows a master-worker architecture, where the control plane manages the cluster, and nodes (workers) run the applications. The control plane handles scheduling, state management, and communication, ensuring that desired states for applications are met.
+Structurally, a Kubernetes cluster consists of a control plane that manages the cluster and worker nodes that run the applications. The control plane handles scheduling, state management, and communication, continuously reconciling the actual state of the cluster with the desired state.
 
 ![kubernetes-cluster-architecture](../../assets/glossary/kubernetes-cluster-architecture.png)
 
@@ -85,10 +86,12 @@ Below is a non-exhaustive list of key Kubernetes objects:
 
 ### How `kubectl` is applied to Kubernetes administration:
 
-- **Deploy and Manage Applications**: `kubectl` allows users to create, update, and delete resources like Pods, Deployments, and Services. There are multiple ways to deploy applications to Kubernetes, including using Package Managers such as Helm.
+- **Deploy and Manage Applications**: `kubectl` allows users to create, update, and delete resources like Pods, Deployments, and Services. There are multiple ways to deploy applications to Kubernetes, including package managers such as [Helm](/glossary/helm-chart/).
 - **Monitor Cluster Resources**: Administrators can check the status of the cluster and its components by using commands like `kubectl get` or `kubectl describe`.
-- **Modify Configurations**: `kubectl` provides ways to interact with ConfigMaps, Secrets, and other configuration resources to manage environment variables and sensitive data. Configuration management in Kubernetes can be complex, additional tools like Kustomize exist to simplify and enhance this process.
+- **Modify Configurations**: `kubectl` provides ways to interact with ConfigMaps, Secrets, and other configuration resources to manage environment variables and sensitive data. Configuration management in Kubernetes can be complex, so additional tools like [Kustomize](https://kustomize.io/) exist to simplify it.
 - **Scale Applications**: With commands like `kubectl scale`, users can increase or decrease the number of instances for a deployment to handle changes in traffic or resource needs.
 - **Troubleshoot Issues**: Commands such as `kubectl logs` and `kubectl exec` help in diagnosing problems with running applications by inspecting logs or interacting with containers directly.
 
 Kubernetes also has a large open-source community and extensive [documentation](https://kubernetes.io/docs/home/). Thousands of developers contribute to it, and its wide adoption has produced a broad set of tools, services, and established practices. That ecosystem is a big part of why it has become a common default for deploying and managing modern applications.
+
+For software vendors deciding whether to ship their product for Kubernetes or Docker Compose environments, see our [Docker Compose vs Kubernetes decision guide](/blog/docker-compose-vs-kubernetes/).

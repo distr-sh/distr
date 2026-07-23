@@ -9,7 +9,7 @@ export const PricingFAQs: PricingFAQ[] = [
     id: 'what-is-distr',
     question: 'What is Distr?',
     answer:
-      'Distr is an Open Source software distribution platform that provides a ready-to-use setup with prebuilt components to help software and AI companies distribute applications to customers in complex, self-managed environments.',
+      'Distr is an Open Source software distribution platform that provides a ready-to-use setup with prebuilt components to help software and AI companies distribute applications to customers in complex, self-hosted environments.',
   },
   {
     id: 'plan-choice',

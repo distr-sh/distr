@@ -2,7 +2,7 @@
 title: 'Load Balancing and Routing in Docker Swarm'
 description: 'Learn how to set up load balancing, reverse proxying, and SSL termination in Docker Swarm. Covers two approaches: built-in routing mesh and Traefik with automatic HTTPS, plus monitoring with Prometheus and Grafana.'
 publishDate: 2026-02-17
-lastUpdated: 2026-02-17
+lastUpdated: 2026-07-23
 slug: 'docker-swarm-load-balancing-routing'
 authors:
   - name: 'Philip Miglinci'
@@ -27,7 +27,7 @@ import approach2Arch from '~/assets/blog/2026-02-13-docker-swarm-load-balancing-
 import approach1Compose from './2026-02-13-docker-swarm-load-balancing-routing/approach-1/docker-compose.yaml?raw';
 import approach2Compose from './2026-02-13-docker-swarm-load-balancing-routing/approach-2/docker-compose.yaml?raw';
 
-I am Philip, an engineer working at Distr, which helps software and AI companies distribute their applications to self-managed environments.
+I am Philip, an engineer working at Distr, which helps software and AI companies distribute their applications to self-hosted environments.
 Our Open Source Software Distribution platform is available on GitHub ([`github.com/distr-sh/distr`](https://github.com/distr-sh/distr)) and supports orchestrating Docker Swarm clusters alongside Docker Compose deployments.
 
 [Docker Swarm](https://docs.docker.com/engine/swarm/) comes with a built-in load balancer, but production workloads quickly outgrow it.
@@ -292,7 +292,7 @@ However, it was designed for single-host Docker setups and has [significant limi
 ## Deploying with Distr
 
 If you're distributing Docker Swarm-based applications to customer environments, managing stack files, secrets, and updates across multiple deployment targets can become complex.
-[Distr](https://distr.sh) can orchestrate Docker Swarm clusters alongside Docker Compose deployments, handling the distribution of stack files to self-managed customer environments.
+[Distr](https://distr.sh) can orchestrate Docker Swarm clusters alongside Docker Compose deployments, handling the distribution of stack files to self-hosted customer environments.
 This means your customers get a consistent deployment experience regardless of whether they're running a single-node setup or a multi-node Swarm cluster.
 
 ## Conclusion

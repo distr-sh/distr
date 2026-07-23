@@ -381,5 +381,12 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
     // Legacy blog redirects (content superseded by /compare/ pages)
     '/blog/distr-vs-replicated/': '/compare/replicated/',
+
+    // Renamed blog posts
+    '/blog/self-managed-vs-cloud-vs-byoc/':
+      '/blog/self-hosted-vs-saas-vs-byoc/',
+
+    // Glossary redirects
+    '/glossary/self-managed-software/': '/glossary/self-hosted-software/',
   },
 });

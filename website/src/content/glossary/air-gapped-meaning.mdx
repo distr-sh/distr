@@ -8,7 +8,7 @@ alternateNames:
   - Air Gapped
   - Airgapped
 shortDefinition: 'Air-gapped describes a computer system, network, or device that is physically or logically isolated from unsecured networks, including the internet and any untrusted local networks. The isolation prevents unauthorized remote access, data exfiltration, and most forms of cyberattack.'
-lastUpdated: 2026-04-17
+lastUpdated: 2026-07-23
 faq:
   - question: What does air-gapped mean?
     answer: 'Air-gapped means a computer, network, or device is completely isolated from unsecured networks, including the internet. That isolation prevents unauthorized remote access and protects against most cyberattacks.'
@@ -57,7 +57,7 @@ Air-gapping is one of the strongest security measures available in cybersecurity
 
 ## Why Air-Gapped Security Matters
 
-Organizations rarely choose air-gapped deployment on a whim. It gets implemented because regulatory, security, or operational requirements demand the highest level of protection. According to [security research](https://www.micromindercs.com/blog/air-gap-security), air-gapped systems protect 87% of nuclear facilities worldwide and critical infrastructure worth over $3.2 trillion globally.
+Organizations rarely choose air-gapped deployment on a whim. It gets implemented because regulatory, security, or operational requirements demand the highest level of protection.
 
 Common drivers for air-gapped deployment:
 
@@ -69,7 +69,7 @@ Common drivers for air-gapped deployment:
 - **Intellectual property**: pharmaceutical research, aerospace engineering, proprietary technology
 - **Ransomware protection**: air-gapped backups stay untouched during a ransomware attack
 
-The average cost of a data breach reached $4.45 million in 2024, which continues to push air-gapped security up the priority list despite its operational overhead.
+The global average cost of a data breach was $4.44 million in 2025, with the US average at a record $10.22 million, according to [IBM's Cost of a Data Breach Report](https://www.ibm.com/reports/data-breach). Numbers like these keep air-gapped security on the priority list despite its operational overhead.
 
 ---
 
@@ -148,7 +148,7 @@ Air-gapped systems run on a straightforward principle: what isn't connected can'
 - **Dedicated sanitized media**: USB drives used exclusively for air-gap transfers
 - **Media scanning stations**: isolated systems checking files before production transfer
 - **Write-once media**: CD-R discs that prevent malware persistence
-- **Cryptographic signing**: validating file integrity during transfer ([99.3% tampering detection rate](https://www.micromindercs.com/blog/air-gap-security))
+- **Cryptographic signing**: validating file integrity during transfer so tampered files are detected before they reach production
 - **Manual review processes**: human security analysis of data entering air-gapped networks
 
 ### Network isolation
@@ -171,11 +171,11 @@ Air-gapped systems run on a straightforward principle: what isn't connected can'
 
 ## Air-Gapped Network Attack Vectors
 
-Extreme isolation doesn't make air-gapped systems impenetrable. Sophisticated attackers have demonstrated otherwise. Security researchers have documented more than 17 advanced persistent threats (APTs) specifically designed to breach air-gapped networks.
+Extreme isolation doesn't make air-gapped systems impenetrable. Sophisticated attackers have demonstrated otherwise. [ESET researchers have documented 17 malicious frameworks](https://www.welivesecurity.com/2021/12/01/jumping-air-gap-15-years-nation-state-effort/) built by nation-state actors specifically to breach air-gapped networks.
 
 ### Notable air gap breaches
 
-**Stuxnet (2010)** was the most famous air gap attack. It targeted Iran's nuclear enrichment facilities through infected USB drives, exploited multiple zero-day vulnerabilities, and demonstrated that nation-state actors can breach even the most secure air-gapped systems.
+**[Stuxnet](https://en.wikipedia.org/wiki/Stuxnet) (2010)** was the most famous air gap attack. It targeted Iran's nuclear enrichment facilities through infected USB drives, exploited multiple zero-day vulnerabilities, and demonstrated that nation-state actors can breach even the most secure air-gapped systems.
 
 **Agent.BTZ (2008)** infected U.S. military networks through compromised USB drives, leading to the creation of U.S. Cyber Command.
 
@@ -321,9 +321,9 @@ Traditional software distribution assumes internet connectivity. Air-gapped envi
 
 **Dependency management.** Every dependency (base images, libraries, certificates) has to be bundled into the offline package.
 
-**Security patches.** Critical CVE fixes require emergency offline distribution.
+**Security patches.** Critical [CVE](/glossary/cve-common-vulnerabilities-and-exposures/) fixes require emergency offline distribution.
 
-**License validation.** License keys have to work offline, without phoning home.
+**License validation.** [License keys](/glossary/software-license-management/) have to work offline, without phoning home.
 
 **Telemetry gap.** No usage data, crash reports, or performance metrics unless the customer explicitly shares them.
 
@@ -369,7 +369,7 @@ Air-gapping isn't just for intelligence agencies. Plenty of industries rely on i
 
 **Critical infrastructure** (NIST guidelines):
 
-- Nuclear power plant control systems (441 reactors globally)
+- Nuclear power plant control systems
 - Power grid SCADA systems
 - Water treatment facilities
 - Oil and gas production control
@@ -494,6 +494,6 @@ Supporting air-gapped customers shouldn't mean rebuilding your distribution infr
 Distr makes this manageable whether you have one air-gapped customer or hundreds of isolated deployments across government, healthcare, and critical infrastructure.
 
 **Related topics:**
-[On-Premises Deployment](/glossary/on-premises-definition/) | [Self-Managed Software](/glossary/self-managed-software/) | [ISV Software Distribution](/glossary/isv-meaning/)
+[On-Premises Deployment](/glossary/on-premises-definition/) | [Self-Hosted Software](/glossary/self-hosted-software/) | [ISV Software Distribution](/glossary/isv-meaning/) | [Software Distribution Platform](/glossary/software-distribution-platform/) | [Container Registry](/glossary/oci-container-artifact-registry/)
 
 ---
