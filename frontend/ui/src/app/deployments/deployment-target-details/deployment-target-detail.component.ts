@@ -22,10 +22,12 @@ import {
   faFilterCircleXmark,
   faPlay,
   faServer,
+  faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {combineLatest, debounceTime, map, of, switchMap, timer} from 'rxjs';
 import {dateTimeLocalToISO, isoToDateTimeLocal} from '../../../util/dates';
+import {AuthService} from '../../services/auth.service';
 import {DeploymentLogsService} from '../../services/deployment-logs.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
 import {OrganizationService} from '../../services/organization.service';
@@ -36,6 +38,7 @@ import {DeploymentStatusTableComponent} from './deployment-status-table.componen
 import {DeploymentTargetLogsTableComponent} from './deployment-target-logs-table.component';
 
 const ORDER_DIRECTION_KEY = 'logViewer.orderDirection';
+const BUSINESS_LOG_BANNER_DISMISSED_KEY = 'logViewer.businessLogBannerDismissed';
 
 @Component({
   selector: 'app-deployment-target-detail',
@@ -58,6 +61,7 @@ export class DeploymentTargetDetailComponent {
   private readonly deploymentTargetsService = inject(DeploymentTargetsService);
   private readonly deploymentLogsService = inject(DeploymentLogsService);
   private readonly organizationService = inject(OrganizationService);
+  private readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder).nonNullable;
 
   protected readonly faServer = faServer;
@@ -67,6 +71,7 @@ export class DeploymentTargetDetailComponent {
   protected readonly faPlay = faPlay;
   protected readonly faArrowDownWideShort = faArrowDownWideShort;
   protected readonly faArrowUpShortWide = faArrowUpShortWide;
+  protected readonly faXmark = faXmark;
   protected readonly orderDirection = signal<OrderDirection>(
     (localStorage.getItem(ORDER_DIRECTION_KEY) as OrderDirection) || 'DESC'
   );
@@ -108,12 +113,34 @@ export class DeploymentTargetDetailComponent {
   private readonly organization = toSignal(this.organizationService.get());
   // Ticks every minute so time-based bounds/validation don't freeze in long sessions.
   private readonly now = toSignal(timer(0, 60_000).pipe(map(() => dayjs())), {initialValue: dayjs()});
-  // Constrain the pickers to [now - window, now]; the window is enforced server-side.
+  // Constrain the pickers to [start of the first day inside the window, now]; the range
+  // always begins at 00:00 local time so users can select whole days. The backend allows
+  // an extra day on top of the exact window to cover any timezone's midnight.
   protected readonly logRangeMin = computed(() => {
     const windowSeconds = this.organization()?.subscriptionLimits.logQueryWindowSeconds;
-    return windowSeconds ? this.now().subtract(windowSeconds, 'second').format('YYYY-MM-DDTHH:mm') : '';
+    return windowSeconds ? this.now().subtract(windowSeconds, 'second').startOf('day').format('YYYY-MM-DDTHH:mm') : '';
   });
   protected readonly logRangeMax = computed(() => this.now().format('YYYY-MM-DDTHH:mm'));
+
+  private readonly businessLogBannerDismissed = signal(
+    sessionStorage.getItem(BUSINESS_LOG_BANNER_DISMISSED_KEY) === 'true'
+  );
+
+  // Business plan upsell for vendor admins on plans with a shorter log window
+  protected readonly showBusinessLogBanner = computed(() => {
+    const subscriptionType = this.organization()?.subscriptionType;
+    return (
+      !this.businessLogBannerDismissed() &&
+      this.auth.hasAnyRole('admin') &&
+      this.auth.isVendor() &&
+      (subscriptionType === 'pro' || subscriptionType === 'trial')
+    );
+  });
+
+  protected dismissBusinessLogBanner(): void {
+    sessionStorage.setItem(BUSINESS_LOG_BANNER_DISMISSED_KEY, 'true');
+    this.businessLogBannerDismissed.set(true);
+  }
 
   // Authoritative window check (the [min]/[max] attributes only guide the widget), shared by
   // the form validator and the table inputs.
@@ -134,7 +161,7 @@ export class DeploymentTargetDetailComponent {
       return {windowPending: true};
     }
     const windowSeconds = org.subscriptionLimits.logQueryWindowSeconds;
-    if (windowSeconds && date.isBefore(this.now().subtract(windowSeconds, 'second'))) {
+    if (windowSeconds && date.isBefore(this.now().subtract(windowSeconds, 'second').startOf('day'))) {
       return {beforeWindow: true};
     }
     return null;

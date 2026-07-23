@@ -1,5 +1,5 @@
 export const UNLIMITED_QTY = -1;
-export type SubscriptionType = 'community' | 'starter' | 'pro' | 'enterprise' | 'trial';
+export type SubscriptionType = 'community' | 'pro' | 'business' | 'enterprise' | 'trial';
 
 export type SubscriptionPeriod = 'monthly' | 'yearly';
 
@@ -30,6 +30,13 @@ export interface SubscriptionInfo {
 export interface CheckoutRequest {
   subscriptionType: SubscriptionType;
   subscriptionPeriod: SubscriptionPeriod;
+  subscriptionUserAccountQuantity: number;
+  subscriptionCustomerOrganizationQuantity: number;
+}
+
+export interface UpdateSubscriptionRequest {
+  // Optionally switches the subscription to a different plan (currently only pro → business)
+  subscriptionType?: SubscriptionType;
   subscriptionUserAccountQuantity: number;
   subscriptionCustomerOrganizationQuantity: number;
 }

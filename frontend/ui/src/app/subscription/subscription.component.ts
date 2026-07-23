@@ -4,17 +4,16 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  DestroyRef,
   inject,
   OnInit,
   signal,
   TemplateRef,
   viewChild,
 } from '@angular/core';
-import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {NonNullableFormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCheck, faCreditCard, faShoppingCart, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faCheck, faCreditCard, faShoppingCart} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
 import {WEBSITE_URL} from '../../constants';
 import {getFormDisplayedError} from '../../util/errors';
@@ -46,17 +45,39 @@ export class SubscriptionComponent implements OnInit {
   protected readonly faCheck = faCheck;
   protected readonly faCreditCard = faCreditCard;
   protected readonly faShoppingCart = faShoppingCart;
-  protected readonly faXmark = faXmark;
 
   protected readonly unlimited = UNLIMITED_QTY;
   protected readonly websiteUrl = WEBSITE_URL;
+
+  // Feature lists mirroring the pricing cards on https://distr.sh/pricing/
+  protected readonly proPlanFeatures = [
+    'Docker + Kubernetes deployment agents',
+    'Customer Portal with installation instructions',
+    'RBAC + Login with Google, GitHub & Microsoft',
+    'License Management',
+    'Deployment Alerts',
+    '1TB container registry with FGAC',
+    'Custom Branding for your Customer Portal',
+    '7-day log retention',
+    'Free Onboarding Call + Private Slack',
+  ];
+  protected readonly businessPlanFeatures = [
+    'Everything in Pro',
+    'Reseller / Partner Organizations',
+    'License Templates',
+    'Custom Domains (Full White Label)',
+    'Enterprise SSO (bring-your-own OIDC)',
+    '5TB container registry with FGAC',
+    '30-day log retention',
+    'Priority support',
+    'White Glove Onboarding',
+  ];
 
   protected readonly auth = inject(AuthService);
   private readonly subscriptionService = inject(SubscriptionService);
   private readonly toast = inject(ToastService);
   private readonly overlay = inject(OverlayService);
   private readonly fb = inject(NonNullableFormBuilder);
-  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly isSubscriptionExpired = inject(OrganizationService).isSubscriptionExpired;
   protected readonly isPartnerManagementEnabled = inject(FeatureFlagService).isPartnerManagementEnabled;
@@ -110,14 +131,6 @@ export class SubscriptionComponent implements OnInit {
             ? info.subscriptionCustomerOrganizationQuantity
             : info.currentCustomerOrganizationCount,
       });
-
-      // Subscribe to subscription type changes to prevent invalid starter selection
-      this.form.controls.subscriptionType.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
-        if (value === 'starter' && !this.canSelectStarterPlan()) {
-          this.form.controls.subscriptionType.setValue('pro', {emitEvent: false});
-          this.toast.error('Starter plan not available. Current usage exceeds starter limits.');
-        }
-      });
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {
@@ -148,12 +161,12 @@ export class SubscriptionComponent implements OnInit {
     let userPrice = 0;
     let customerPrice = 0;
 
-    if (subscriptionType === 'starter') {
-      userPrice = subscriptionPeriod === 'monthly' ? 19 : 192;
-      customerPrice = subscriptionPeriod === 'monthly' ? 29 : 288;
-    } else if (subscriptionType === 'pro') {
+    if (subscriptionType === 'pro') {
       userPrice = subscriptionPeriod === 'monthly' ? 29 : 288;
       customerPrice = subscriptionPeriod === 'monthly' ? 69 : 672;
+    } else if (subscriptionType === 'business') {
+      userPrice = subscriptionPeriod === 'monthly' ? 39 : 384;
+      customerPrice = subscriptionPeriod === 'monthly' ? 159 : 1536;
     }
     return userPrice * userQty + customerPrice * customerQty;
   }
@@ -299,33 +312,16 @@ export class SubscriptionComponent implements OnInit {
     return this.getPlanLimit(info.subscriptionType, metric);
   }
 
-  canSelectStarterPlan(): boolean {
-    const info = this.subscriptionInfo();
-    if (!info) {
-      return true;
-    }
-
-    // Check if current usage exceeds starter plan limits
-    return (
-      info.currentCustomerOrganizationCount <= info.limits.starter.maxCustomerOrganizations &&
-      info.currentMaxUsersPerCustomer <= info.limits.starter.maxUsersPerCustomerOrganization &&
-      info.currentMaxDeploymentTargetsPerCustomer <= info.limits.starter.maxDeploymentsPerCustomerOrganization &&
-      !info.hasApplicationEntitlements &&
-      !info.hasArtifactEntitlements &&
-      !info.hasNonAdminRoles
-    );
-  }
-
   getPlanDisplayName(subscriptionType: SubscriptionType): string {
     switch (subscriptionType) {
       case 'community':
         return 'Distr Community Edition';
       case 'trial':
         return 'Distr Pro Unlimited Trial';
-      case 'starter':
-        return 'Distr Starter';
       case 'pro':
         return 'Distr Pro';
+      case 'business':
+        return 'Distr Business';
       case 'enterprise':
         return 'Distr Enterprise';
       default:
@@ -340,7 +336,43 @@ export class SubscriptionComponent implements OnInit {
 
   hasActiveSubscription(): boolean {
     const info = this.subscriptionInfo();
-    return info?.subscriptionType === 'starter' || info?.subscriptionType === 'pro';
+    return info?.subscriptionType === 'pro' || info?.subscriptionType === 'business';
+  }
+
+  canUpgradeToBusiness(): boolean {
+    return this.subscriptionInfo()?.subscriptionType === 'pro';
+  }
+
+  async upgradeToBusiness() {
+    this.form.markAllAsTouched();
+    if (this.form.valid) {
+      const info = this.subscriptionInfo();
+      if (!info) {
+        return;
+      }
+
+      const values = this.form.getRawValue();
+      this.pendingUpdate.set({
+        subscriptionType: 'business',
+        userAccountQuantity: values.userAccountQuantity,
+        customerOrganizationQuantity: values.customerOrganizationQuantity,
+        oldPrice: this.calculatePriceFor(info),
+        newPrice: this.calculatePrice(
+          'business',
+          info.subscriptionPeriod,
+          values.userAccountQuantity,
+          values.customerOrganizationQuantity
+        ),
+        subscriptionPeriod: info.subscriptionPeriod,
+      });
+
+      this.hideModal();
+      this.modal = this.overlay.showModal(this.updateModal(), {
+        hasBackdrop: true,
+        backdropStyleOnly: true,
+        positionStrategy: new GlobalPositionStrategy().centerHorizontally().centerVertically(),
+      });
+    }
   }
 
   async manageSubscription() {

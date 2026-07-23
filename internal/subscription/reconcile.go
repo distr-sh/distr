@@ -9,7 +9,6 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/license"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -22,30 +21,6 @@ func ensureProFeatures(ctx context.Context) error {
 	}
 	log.Info("ensured pro features for organizations", zap.Int64("updated_count", updated))
 	return nil
-}
-
-func ReconcileStarterFeaturesForOrganizationID(ctx context.Context, orgID uuid.UUID) error {
-	log := internalctx.GetLogger(ctx)
-	log.Info("reconciling starter features for organization", zap.String("organization_id", orgID.String()))
-	return db.RunTx(ctx, func(ctx context.Context) error {
-		if err := db.UpdateAllUserAccountOrganizationAssignmentsWithOrganizationID(
-			ctx,
-			orgID,
-			types.UserRoleAdmin,
-		); err != nil {
-			return err
-		} else if err := db.UpdateDeploymentUnsetEntitlementIDWithOrganizationID(ctx, orgID); err != nil {
-			return err
-		} else if _, err := db.DeleteApplicationEntitlementsWithOrganizationID(ctx, orgID); err != nil {
-			return err
-		} else if _, err := db.DeleteArtifactEntitlementsWithOrganizationID(ctx, orgID); err != nil {
-			return err
-		} else if _, err := db.DeleteAlertConfigurationsWithOrganizationID(ctx, orgID); err != nil {
-			return err
-		} else {
-			return nil
-		}
-	})
 }
 
 func ReconcileEditionFeatures(ctx context.Context) error {

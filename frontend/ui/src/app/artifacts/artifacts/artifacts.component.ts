@@ -102,7 +102,7 @@ export class ArtifactsComponent {
   ]).pipe(map(([env, registryDomain]) => registryDomain ?? env.registryHost));
 
   protected readonly auth = inject(AuthService);
-  protected readonly hasNoSubscription = this.organizationService.hasNoSubscription;
+  protected readonly hasSubscription = this.organizationService.hasSubscription;
 
   constructor() {
     this.createForm.controls.upstreamAuthType.valueChanges

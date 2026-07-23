@@ -49,7 +49,7 @@ export class BillingComponent {
   });
 
   protected readonly payloadTemplatePlaceholder = `{
-  "plan": "{{ if hasItem "pro" }}pro{{ else }}starter{{ end }}",
+  "plan": "{{ if hasItem "business" }}business{{ else }}pro{{ end }}",
   "seats": {{ itemQuantity "seats" }}
 }`;
 

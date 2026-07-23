@@ -15,14 +15,15 @@ import (
 // before applying this default, otherwise requests without an explicit "after" would
 // flip from newest-first to oldest-first.
 func resolveLogQueryStart(subscriptionType types.SubscriptionType, after time.Time) (time.Time, error) {
-	window := subscription.GetLogQueryWindow(subscriptionType)
-	windowStart := time.Now().Add(-window)
+	windowStart := subscription.GetLogQueryWindowStart(subscriptionType)
 	if after.IsZero() {
 		return windowStart, nil
 	}
-	if after.Before(windowStart) {
+	// Explicit values get the timezone slack so any timezone's 00:00 of the
+	// first day inside the window is accepted.
+	if after.Before(windowStart.Add(-subscription.LogQueryWindowTimezoneSlack)) {
 		return time.Time{}, apierrors.NewBadRequest(
-			fmt.Sprintf("after must not be older than %v", window),
+			fmt.Sprintf("after must not be older than %v", subscription.GetLogQueryWindow(subscriptionType)),
 		)
 	}
 	return after, nil
