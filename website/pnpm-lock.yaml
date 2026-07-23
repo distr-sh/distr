@@ -13,7 +13,7 @@ importers:
         version: 7.2.1(supports-color@10.2.2)
       '@astrojs/mdx':
         specifier: 7.0.3
-        version: 7.0.3(@astrojs/markdown-satteri@0.3.2)(astro@7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)
+        version: 7.0.3(@astrojs/markdown-satteri@0.3.4)(astro@7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)
       '@astrojs/preact':
         specifier: 6.0.1
         version: 6.0.1(@babel/core@7.29.7(supports-color@10.2.2))(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(preact@10.29.7)(rollup@2.80.0)(supports-color@10.2.2)(terser@5.49.0)(yaml@2.9.0)
@@ -21,11 +21,11 @@ importers:
         specifier: 3.7.3
         version: 3.7.3
       '@astrojs/starlight':
-        specifier: 0.41.3
-        version: 0.41.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(astro@7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)(typescript@6.0.3)
+        specifier: 0.41.4
+        version: 0.41.4(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(astro@7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)(typescript@6.0.3)
       '@astrojs/starlight-tailwind':
         specifier: 5.0.0
-        version: 5.0.0(@astrojs/starlight@0.41.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(astro@7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)(typescript@6.0.3))(tailwindcss@4.3.3)
+        version: 5.0.0(@astrojs/starlight@0.41.4(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(astro@7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)(typescript@6.0.3))(tailwindcss@4.3.3)
       '@iconify-json/lucide':
         specifier: ^1.2.105
         version: 1.2.118
@@ -33,8 +33,8 @@ importers:
         specifier: ^4.2.4
         version: 4.3.3(vite@8.0.16(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(yaml@2.9.0))
       astro:
-        specifier: 7.1.1
-        version: 7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0)
+        specifier: 7.1.3
+        version: 7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0)
       astro-icon:
         specifier: ^1.1.5
         version: 1.1.5(supports-color@10.2.2)
@@ -49,7 +49,7 @@ importers:
         version: 2.33.0
       marked:
         specifier: ^18.0.2
-        version: 18.0.6
+        version: 18.0.7
       mermaid:
         specifier: ^11.15.0
         version: 11.16.0
@@ -73,29 +73,29 @@ importers:
         version: 0.35.3(@types/node@25.6.0)
       starlight-links-validator:
         specifier: ^0.25.0
-        version: 0.25.2(@astrojs/starlight@0.41.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(astro@7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)(typescript@6.0.3))(astro@7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)
+        version: 0.25.2(@astrojs/starlight@0.41.4(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(astro@7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)(typescript@6.0.3))(astro@7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)
       starlight-sidebar-topics:
         specifier: ^0.8.0
-        version: 0.8.0(@astrojs/starlight@0.41.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(astro@7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)(typescript@6.0.3))
+        version: 0.8.0(@astrojs/starlight@0.41.4(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(astro@7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)(typescript@6.0.3))
       tailwindcss:
         specifier: ^4.2.4
         version: 4.3.3
     devDependencies:
       '@astrojs/check':
         specifier: ^0.9.9
-        version: 0.9.9(prettier-plugin-astro@0.14.1)(prettier@3.9.5)(typescript@6.0.3)
+        version: 0.9.9(prettier-plugin-astro@0.14.1)(prettier@3.9.6)(typescript@6.0.3)
       baseline-browser-mapping:
         specifier: ^2.10.24
-        version: 2.10.43
+        version: 2.11.1
       prettier:
         specifier: ^3.8.3
-        version: 3.9.5
+        version: 3.9.6
       prettier-plugin-astro:
         specifier: ^0.14.1
         version: 0.14.1
       prettier-plugin-organize-imports:
         specifier: ^4.3.0
-        version: 4.3.0(prettier@3.9.5)(typescript@6.0.3)
+        version: 4.3.0(prettier@3.9.6)(typescript@6.0.3)
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -182,9 +182,6 @@ packages:
   '@astrojs/compiler@2.13.1':
     resolution: {integrity: sha512-f3FN83d2G/v32ipNClRKgYv30onQlMZX1vCeZMjPsMMPl1mDpmbl0+N5BYo4S/ofzqJyS5hvwacEo0CCVDn/Qg==}
 
-  '@astrojs/internal-helpers@0.10.0':
-    resolution: {integrity: sha512-Ry2R3VPeIN4uPCSA4xQc+e+vsJXkalKpEbDc07hV+a/o5Bs2N/s/uDcPJH/05L19DKh9tAy7e6JM3YZ6Cxfezw==}
-
   '@astrojs/internal-helpers@0.10.1':
     resolution: {integrity: sha512-5phcroT/vmOOrYuuAxtkbPixy5hePtlz9i8K4OeDv3dNK6/UQRuXPOSRTxIOBbUY5Sonw2UaxjbuVc43Mcir6Q==}
 
@@ -202,9 +199,6 @@ packages:
 
   '@astrojs/markdown-remark@7.2.1':
     resolution: {integrity: sha512-jPVNIqTvk+yKviikszv/Y1U4jGUSKpp/Nw48QZV4qjWgp70j4Lkq3lhSDRbWwCfgKvEyO9GHuVbV1dM2WYXy1w==}
-
-  '@astrojs/markdown-satteri@0.3.2':
-    resolution: {integrity: sha512-feXuUPy41gVfeM7EHT1ciUim8ozGr+YHXab9uUBc1Hk8y60DQosO8ldL+AoPXnCAoGj1OChwHfvXmmJ6XVnY9A==}
 
   '@astrojs/markdown-satteri@0.3.3':
     resolution: {integrity: sha512-Lje33Ittd8UQGgbIIWQvhPkj5X5c4b1sZnZWX3JQV/AWpfbuQGxVi2ONt6+ScydcwfR4egilslEWyczMclrJ1g==}
@@ -241,8 +235,8 @@ packages:
       '@astrojs/starlight': '>=0.38.0'
       tailwindcss: ^4.0.0
 
-  '@astrojs/starlight@0.41.3':
-    resolution: {integrity: sha512-8xsG6UpK581TJmtOc7/pnxHKEbP16rV06VLWaVa7FOyE/VEwnaHOsLtL+miifCEfuiuv0Wn+j8u3JSluRQesMQ==}
+  '@astrojs/starlight@0.41.4':
+    resolution: {integrity: sha512-cRCKZhM2BKYViCakBiN68aVwPn5qj/XtMMq//G54xOWdXXcvic1gMMEI+veNlIKOqqC4QmIjcjk4jiFtlZ3mMg==}
     peerDependencies:
       '@astrojs/markdown-remark': ^7.2.0
       astro: ^7.0.2
@@ -1469,8 +1463,8 @@ packages:
   astro-icon@1.1.5:
     resolution: {integrity: sha512-CJYS5nWOw9jz4RpGWmzNQY7D0y2ZZacH7atL2K9DeJXJVaz7/5WrxeyIxO8KASk1jCM96Q4LjRx/F3R+InjJrw==}
 
-  astro@7.1.1:
-    resolution: {integrity: sha512-yfKhuvbz+DORHihJRL1DHcxyLcX9uTrxvz2nCSTzHH54k2DdACBfuOu2OAAAhdUC9xlu2IRXAiagqcPL3DftCg==}
+  astro@7.1.3:
+    resolution: {integrity: sha512-4dhPyAAXthf3xLEYnG8SeL7yr/nTPPABfY7e9YF0yuO+vK9Xp+8Q5j4xzsmL3GueukQv4oNwGNTBepLOiDGeJA==}
     engines: {node: '>=22.12.0', npm: '>=9.6.5', pnpm: '>=7.1.0'}
     hasBin: true
     peerDependencies:
@@ -1493,6 +1487,11 @@ packages:
 
   baseline-browser-mapping@2.10.43:
     resolution: {integrity: sha512-AjYpR78kDWAY3Efj+cDTFH9t9SCoL7OoTp1BOb0mQV7S+6CiLwnWM3FyxhJtdPufDFKzmCSFoUncKjWgJEZTCQ==}
+    engines: {node: '>=6.0.0'}
+    hasBin: true
+
+  baseline-browser-mapping@2.11.1:
+    resolution: {integrity: sha512-HYXq73DDpCtNzOmrFsm9eSwCvWCql0RzqjpDzXN9EadiLJ4DNat0nsZ/Bzmy+Ud12mb4/zKDY0cQ805ZzN+i0A==}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
@@ -1609,9 +1608,9 @@ packages:
   cookie-es@1.2.3:
     resolution: {integrity: sha512-lXVyvUvrNXblMqzIRrxHb57UUVmqsSWlxqt3XIjCkUP0wDAf6uicO6KMbEgYrMNtEvWgWHwe42CKxPu9MYAnWw==}
 
-  cookie@1.1.1:
-    resolution: {integrity: sha512-ei8Aos7ja0weRpFzJnEA9UHJ/7XQmqglbRwnf2ATjcB9Wq874VKH9kfjjirM6UhU2/E5fFYadylyhFldcqSidQ==}
-    engines: {node: '>=18'}
+  cookie@2.0.1:
+    resolution: {integrity: sha512-yuToqVvRrj6pfDXREyQAAv8SkAEk/8GS3jQRTiUMm66TVtBYmqQeoEjL2Lmq8Rpo6271vH76InTChTitEAm65w==}
+    engines: {node: '>=22'}
 
   cose-base@1.0.3:
     resolution: {integrity: sha512-s9whTXInMSgAp/NVXVNuVxVKzGH2qck3aQlVHxDCdAEPgtMKwc4Wq6/QKhgdEdgbLSi9rBTAcPoRa6JpiG4ksg==}
@@ -2388,8 +2387,8 @@ packages:
     engines: {node: '>= 20'}
     hasBin: true
 
-  marked@18.0.6:
-    resolution: {integrity: sha512-MrV5puXBfuiy6wl6DLaq3BtIJQAJToAd5zt/ZKhRfGRAuFPALE7/4Y7jnxRQoEgK/pBgurGqLyAuRgZ2xOjr6w==}
+  marked@18.0.7:
+    resolution: {integrity: sha512-iDVQ5ldaiKXn6b2JroX5kgRfmwgqolW7NpaEzTl1k/2Zh1njIEN9yniyLV/mOvWwtsE8OGgkjsCYvijuPk1dtA==}
     engines: {node: '>= 20'}
     hasBin: true
 
@@ -2605,8 +2604,8 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
-  neotraverse@0.6.18:
-    resolution: {integrity: sha512-Z4SmBUweYa09+o6pG+eASabEpP6QkQ70yHj351pQoEXIs8uHbaU2DWVmzBANKgflPa47A50PtB2+NgRpQvr7vA==}
+  neotraverse@1.0.1:
+    resolution: {integrity: sha512-WmmLty1YWwJl9yZi77v2dVIV6X2kuYV8YYBI/G3LWGKdGHmHUvL1z7FW0iDvEvGAwNEoc5x1tOOOyDnf5jJw/w==}
     engines: {node: '>= 10'}
 
   nlcst-to-string@4.0.0:
@@ -2780,8 +2779,8 @@ packages:
       vue-tsc:
         optional: true
 
-  prettier@3.9.5:
-    resolution: {integrity: sha512-/FVl766LpUfB5vXgCYOYa0MeV/441Ia99AeICQIQFTY/Nw0roZwULcXpku5i1/m5kt/baz+s4Zogspd839HSMg==}
+  prettier@3.9.6:
+    resolution: {integrity: sha512-OpN0zzVdiaiAhxpuuj5efpIS4sY9j7bY6uR5mnj5yPzGkdkjNKSJeUThPb60Jw29QuAZgA4o+/iB49kFiaBX6g==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -3524,9 +3523,9 @@ snapshots:
 
   '@antfu/utils@8.1.1': {}
 
-  '@astrojs/check@0.9.9(prettier-plugin-astro@0.14.1)(prettier@3.9.5)(typescript@6.0.3)':
+  '@astrojs/check@0.9.9(prettier-plugin-astro@0.14.1)(prettier@3.9.6)(typescript@6.0.3)':
     dependencies:
-      '@astrojs/language-server': 2.16.10(prettier-plugin-astro@0.14.1)(prettier@3.9.5)(typescript@6.0.3)
+      '@astrojs/language-server': 2.16.10(prettier-plugin-astro@0.14.1)(prettier@3.9.6)(typescript@6.0.3)
       chokidar: 4.0.3
       kleur: 4.1.5
       typescript: 6.0.3
@@ -3591,17 +3590,6 @@ snapshots:
 
   '@astrojs/compiler@2.13.1': {}
 
-  '@astrojs/internal-helpers@0.10.0':
-    dependencies:
-      '@types/hast': 3.0.4
-      '@types/mdast': 4.0.4
-      js-yaml: 4.1.1
-      picomatch: 4.0.5
-      retext-smartypants: 6.2.0
-      shiki: 4.0.2
-      smol-toml: 1.6.1
-      unified: 11.0.5
-
   '@astrojs/internal-helpers@0.10.1':
     dependencies:
       '@types/hast': 3.0.4
@@ -3613,7 +3601,7 @@ snapshots:
       smol-toml: 1.6.1
       unified: 11.0.5
 
-  '@astrojs/language-server@2.16.10(prettier-plugin-astro@0.14.1)(prettier@3.9.5)(typescript@6.0.3)':
+  '@astrojs/language-server@2.16.10(prettier-plugin-astro@0.14.1)(prettier@3.9.6)(typescript@6.0.3)':
     dependencies:
       '@astrojs/compiler': 2.13.1
       '@astrojs/yaml2ts': 0.2.4
@@ -3627,14 +3615,14 @@ snapshots:
       volar-service-css: 0.0.70(@volar/language-service@2.4.28)
       volar-service-emmet: 0.0.70(@volar/language-service@2.4.28)
       volar-service-html: 0.0.70(@volar/language-service@2.4.28)
-      volar-service-prettier: 0.0.70(@volar/language-service@2.4.28)(prettier@3.9.5)
+      volar-service-prettier: 0.0.70(@volar/language-service@2.4.28)(prettier@3.9.6)
       volar-service-typescript: 0.0.70(@volar/language-service@2.4.28)
       volar-service-typescript-twoslash-queries: 0.0.70(@volar/language-service@2.4.28)
       volar-service-yaml: 0.0.70(@volar/language-service@2.4.28)
       vscode-html-languageservice: 5.6.2
       vscode-uri: 3.1.0
     optionalDependencies:
-      prettier: 3.9.5
+      prettier: 3.9.6
       prettier-plugin-astro: 0.14.1
     transitivePeerDependencies:
       - typescript
@@ -3661,13 +3649,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@astrojs/markdown-satteri@0.3.2':
-    dependencies:
-      '@astrojs/internal-helpers': 0.10.0
-      '@astrojs/prism': 4.0.2
-      github-slugger: 2.0.0
-      satteri: 0.9.3
-
   '@astrojs/markdown-satteri@0.3.3':
     dependencies:
       '@astrojs/internal-helpers': 0.10.1
@@ -3683,13 +3664,13 @@ snapshots:
       hast-util-from-html: 2.0.3
       satteri: 0.9.4
 
-  '@astrojs/mdx@7.0.3(@astrojs/markdown-satteri@0.3.2)(astro@7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)':
+  '@astrojs/mdx@7.0.3(@astrojs/markdown-satteri@0.3.4)(astro@7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)':
     dependencies:
       '@astrojs/internal-helpers': 0.10.1
       '@astrojs/markdown-remark': 7.2.1(supports-color@10.2.2)
       '@mdx-js/mdx': 3.1.1(supports-color@10.2.2)
       acorn: 8.17.0
-      astro: 7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0)
+      astro: 7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0)
       es-module-lexer: 2.1.0
       estree-util-visit: 2.0.0
       hast-util-to-html: 9.0.5
@@ -3701,7 +3682,7 @@ snapshots:
       unist-util-visit: 5.1.0
       vfile: 6.0.3
     optionalDependencies:
-      '@astrojs/markdown-satteri': 0.3.2
+      '@astrojs/markdown-satteri': 0.3.4
     transitivePeerDependencies:
       - supports-color
 
@@ -3741,22 +3722,22 @@ snapshots:
       stream-replace-string: 2.0.0
       zod: 4.4.1
 
-  '@astrojs/starlight-tailwind@5.0.0(@astrojs/starlight@0.41.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(astro@7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)(typescript@6.0.3))(tailwindcss@4.3.3)':
+  '@astrojs/starlight-tailwind@5.0.0(@astrojs/starlight@0.41.4(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(astro@7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)(typescript@6.0.3))(tailwindcss@4.3.3)':
     dependencies:
-      '@astrojs/starlight': 0.41.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(astro@7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)(typescript@6.0.3)
+      '@astrojs/starlight': 0.41.4(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(astro@7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)(typescript@6.0.3)
       tailwindcss: 4.3.3
 
-  '@astrojs/starlight@0.41.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(astro@7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)(typescript@6.0.3)':
+  '@astrojs/starlight@0.41.4(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(astro@7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)(typescript@6.0.3)':
     dependencies:
-      '@astrojs/markdown-satteri': 0.3.2
-      '@astrojs/mdx': 7.0.3(@astrojs/markdown-satteri@0.3.2)(astro@7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)
+      '@astrojs/markdown-satteri': 0.3.4
+      '@astrojs/mdx': 7.0.3(@astrojs/markdown-satteri@0.3.4)(astro@7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)
       '@astrojs/sitemap': 3.7.3
       '@pagefind/default-ui': 1.5.2
       '@types/hast': 3.0.4
       '@types/js-yaml': 4.0.9
       '@types/mdast': 4.0.4
-      astro: 7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0)
-      astro-expressive-code: 0.44.0(astro@7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))
+      astro: 7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0)
+      astro-expressive-code: 0.44.0(astro@7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))
       bcp-47: 2.1.0
       hast-util-from-html: 2.0.3
       hast-util-select: 6.0.4
@@ -3773,7 +3754,7 @@ snapshots:
       rehype: 13.0.2
       rehype-format: 5.0.1
       remark-directive: 4.0.0(supports-color@10.2.2)
-      satteri: 0.9.3
+      satteri: 0.9.4
       ultrahtml: 1.6.0
       unified: 11.0.5
       unist-util-visit: 5.1.0
@@ -4966,9 +4947,9 @@ snapshots:
 
   astring@1.9.0: {}
 
-  astro-expressive-code@0.44.0(astro@7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0)):
+  astro-expressive-code@0.44.0(astro@7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0)):
     dependencies:
-      astro: 7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0)
+      astro: 7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0)
       rehype-expressive-code: 0.44.0
       url-extras: 0.1.0
 
@@ -4980,7 +4961,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  astro@7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0):
+  astro@7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0):
     dependencies:
       '@astrojs/compiler-rs': 0.3.1(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)
       '@astrojs/internal-helpers': 0.10.1
@@ -4996,7 +4977,7 @@ snapshots:
       ci-info: 4.4.0
       clsx: 2.1.1
       common-ancestor-path: 2.0.0
-      cookie: 1.1.1
+      cookie: 2.0.1
       devalue: 5.8.1
       diff: 8.0.4
       dset: 3.1.4
@@ -5013,7 +4994,7 @@ snapshots:
       magic-string: 0.30.21
       magicast: 0.5.2
       mrmime: 2.0.1
-      neotraverse: 0.6.18
+      neotraverse: 1.0.1
       obug: 2.1.1
       p-limit: 7.3.0
       p-queue: 9.2.0
@@ -5082,6 +5063,8 @@ snapshots:
   bail@2.0.2: {}
 
   baseline-browser-mapping@2.10.43: {}
+
+  baseline-browser-mapping@2.11.1: {}
 
   bcp-47-match@2.0.3: {}
 
@@ -5190,7 +5173,7 @@ snapshots:
 
   cookie-es@1.2.3: {}
 
-  cookie@1.1.1: {}
+  cookie@2.0.1: {}
 
   cose-base@1.0.3:
     dependencies:
@@ -6078,7 +6061,7 @@ snapshots:
 
   marked@16.4.2: {}
 
-  marked@18.0.6: {}
+  marked@18.0.7: {}
 
   mdast-util-definitions@6.0.0:
     dependencies:
@@ -6598,7 +6581,7 @@ snapshots:
 
   nanoid@3.3.15: {}
 
-  neotraverse@0.6.18: {}
+  neotraverse@1.0.1: {}
 
   nlcst-to-string@4.0.0:
     dependencies:
@@ -6775,15 +6758,15 @@ snapshots:
   prettier-plugin-astro@0.14.1:
     dependencies:
       '@astrojs/compiler': 2.13.1
-      prettier: 3.9.5
+      prettier: 3.9.6
       sass-formatter: 0.7.9
 
-  prettier-plugin-organize-imports@4.3.0(prettier@3.9.5)(typescript@6.0.3):
+  prettier-plugin-organize-imports@4.3.0(prettier@3.9.6)(typescript@6.0.3):
     dependencies:
-      prettier: 3.9.5
+      prettier: 3.9.6
       typescript: 6.0.3
 
-  prettier@3.9.5: {}
+  prettier@3.9.6: {}
 
   prismjs@1.30.0: {}
 
@@ -7195,12 +7178,12 @@ snapshots:
 
   stack-trace@1.0.0-pre2: {}
 
-  starlight-links-validator@0.25.2(@astrojs/starlight@0.41.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(astro@7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)(typescript@6.0.3))(astro@7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2):
+  starlight-links-validator@0.25.2(@astrojs/starlight@0.41.4(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(astro@7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)(typescript@6.0.3))(astro@7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2):
     dependencies:
       '@astrojs/markdown-satteri': 0.3.3
-      '@astrojs/starlight': 0.41.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(astro@7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)(typescript@6.0.3)
+      '@astrojs/starlight': 0.41.4(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(astro@7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)(typescript@6.0.3)
       '@types/picomatch': 4.0.3
-      astro: 7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0)
+      astro: 7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0)
       github-slugger: 2.0.0
       hast-util-from-html: 2.0.3
       is-absolute-url: 5.0.0
@@ -7214,9 +7197,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  starlight-sidebar-topics@0.8.0(@astrojs/starlight@0.41.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(astro@7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)(typescript@6.0.3)):
+  starlight-sidebar-topics@0.8.0(@astrojs/starlight@0.41.4(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(astro@7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)(typescript@6.0.3)):
     dependencies:
-      '@astrojs/starlight': 0.41.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(astro@7.1.1(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)(typescript@6.0.3)
+      '@astrojs/starlight': 0.41.4(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(astro@7.1.3(@astrojs/markdown-remark@7.2.1(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.2)(@types/node@26.1.1)(jiti@2.7.0)(rollup@2.80.0)(terser@5.49.0)(yaml@2.9.0))(supports-color@10.2.2)(typescript@6.0.3)
       picomatch: 4.0.4
 
   stream-replace-string@2.0.0: {}
@@ -7519,12 +7502,12 @@ snapshots:
     optionalDependencies:
       '@volar/language-service': 2.4.28
 
-  volar-service-prettier@0.0.70(@volar/language-service@2.4.28)(prettier@3.9.5):
+  volar-service-prettier@0.0.70(@volar/language-service@2.4.28)(prettier@3.9.6):
     dependencies:
       vscode-uri: 3.1.0
     optionalDependencies:
       '@volar/language-service': 2.4.28
-      prettier: 3.9.5
+      prettier: 3.9.6
 
   volar-service-typescript-twoslash-queries@0.0.70(@volar/language-service@2.4.28):
     dependencies:
@@ -7629,7 +7612,7 @@ snapshots:
       '@vscode/l10n': 0.0.18
       ajv: 8.20.0
       ajv-draft-04: 1.0.0(ajv@8.20.0)
-      prettier: 3.9.5
+      prettier: 3.9.6
       request-light: 0.5.8
       vscode-json-languageservice: 4.1.8
       vscode-languageserver: 9.0.1
