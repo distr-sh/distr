@@ -118,9 +118,7 @@ export class DeploymentTargetDetailComponent {
   // an extra day on top of the exact window to cover any timezone's midnight.
   protected readonly logRangeMin = computed(() => {
     const windowSeconds = this.organization()?.subscriptionLimits.logQueryWindowSeconds;
-    return windowSeconds
-      ? this.now().subtract(windowSeconds, 'second').startOf('day').format('YYYY-MM-DDTHH:mm')
-      : '';
+    return windowSeconds ? this.now().subtract(windowSeconds, 'second').startOf('day').format('YYYY-MM-DDTHH:mm') : '';
   });
   protected readonly logRangeMax = computed(() => this.now().format('YYYY-MM-DDTHH:mm'));
 
