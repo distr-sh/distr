@@ -24,6 +24,27 @@
   line-height: 1.75;
 }
 
+/* Reset guide-content styles for .not-prose descendants (e.g. CTAs) */
+.guide-content .not-prose h2 {
+  margin: 0;
+  font-size: inherit;
+  line-height: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+}
+
+.guide-content .not-prose h3 {
+  margin: 0;
+  font-size: inherit;
+  line-height: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+}
+
+.guide-content .not-prose p {
+  line-height: inherit;
+}
+
 .guide-content a:not([class]) {
   color: var(--sl-color-text-accent);
   text-decoration: none;
