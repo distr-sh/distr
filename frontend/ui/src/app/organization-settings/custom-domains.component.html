@@ -1,0 +1,113 @@
+@if (visible()) {
+  <div class="space-y-4 mt-8">
+    <h2 class="text-xl font-bold dark:text-white">Custom Domains</h2>
+    <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+      Serve Distr under your own domain. After adding a domain, create the shown CNAME record at your DNS provider
+      &mdash; the TLS certificate is issued automatically on the first request.
+    </p>
+
+    <div>
+      <label for="appDomain" class="distr-label mb-2">App domain</label>
+      @if (appDomain(); as domain) {
+        <div class="flex items-center gap-2">
+          <code class="px-2 py-1.5 rounded-sm bg-gray-100 dark:bg-gray-600 text-sm font-mono dark:text-white">
+            {{ domain.domain }}
+          </code>
+          <button
+            type="button"
+            (click)="remove(domain)"
+            aria-label="Remove app domain"
+            class="text-red-600 dark:text-red-500 hover:text-red-800 dark:hover:text-red-400">
+            <fa-icon [icon]="faTrash" />
+          </button>
+        </div>
+        <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+          Create a CNAME record: <code class="font-mono">{{ domain.domain }}</code> &rarr;
+          <code class="font-mono">{{ appCnameTarget() }}</code>
+        </p>
+      } @else {
+        <form [formGroup]="appDomainForm" (ngSubmit)="add('app')" class="flex items-start gap-2">
+          <div class="flex-grow">
+            <input
+              formControlName="domain"
+              autotrim
+              type="text"
+              name="appDomain"
+              id="appDomain"
+              class="distr-input"
+              placeholder="app.your-company.com" />
+            @if (appDomainForm.controls.domain.invalid && appDomainForm.controls.domain.touched) {
+              <p class="mt-1 text-sm text-red-600 dark:text-red-500">
+                Must be a valid hostname without scheme, e.g. app.your-company.com
+              </p>
+            }
+          </div>
+          <button
+            type="submit"
+            class="text-white inline-flex items-center justify-center distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
+            <fa-icon [icon]="faPlus" class="h-4 w-4 mr-2 -ml-0.5" />
+            Add
+          </button>
+        </form>
+        <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+          The domain for the Distr web UI and API. It also serves the artifact registry under the
+          <code class="font-mono">/v2/</code> path. You will have to create a CNAME record pointing to
+          <code class="font-mono">{{ appCnameTarget() }}</code
+          >.
+        </p>
+      }
+    </div>
+
+    <div>
+      <label for="registryDomain" class="distr-label mb-2">Registry domain (optional)</label>
+      @if (registryDomain(); as domain) {
+        <div class="flex items-center gap-2">
+          <code class="px-2 py-1.5 rounded-sm bg-gray-100 dark:bg-gray-600 text-sm font-mono dark:text-white">
+            {{ domain.domain }}
+          </code>
+          <button
+            type="button"
+            (click)="remove(domain)"
+            aria-label="Remove registry domain"
+            class="text-red-600 dark:text-red-500 hover:text-red-800 dark:hover:text-red-400">
+            <fa-icon [icon]="faTrash" />
+          </button>
+        </div>
+        <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+          Create a CNAME record: <code class="font-mono">{{ domain.domain }}</code> &rarr;
+          <code class="font-mono">{{ registryCnameTarget() }}</code>
+        </p>
+      } @else {
+        <form [formGroup]="registryDomainForm" (ngSubmit)="add('registry')" class="flex items-start gap-2">
+          <div class="flex-grow">
+            <input
+              formControlName="domain"
+              autotrim
+              type="text"
+              name="registryDomain"
+              id="registryDomain"
+              class="distr-input"
+              placeholder="registry.your-company.com" />
+            @if (registryDomainForm.controls.domain.invalid && registryDomainForm.controls.domain.touched) {
+              <p class="mt-1 text-sm text-red-600 dark:text-red-500">
+                Must be a valid hostname without scheme, e.g. registry.your-company.com
+              </p>
+            }
+          </div>
+          <button
+            type="submit"
+            class="text-white inline-flex items-center justify-center distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
+            <fa-icon [icon]="faPlus" class="h-4 w-4 mr-2 -ml-0.5" />
+            Add
+          </button>
+        </form>
+        <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+          Only needed if you want a separate hostname for the artifact registry &mdash; your app domain already serves
+          registry traffic. You will have to create a CNAME record pointing to
+          <code class="font-mono">{{ registryCnameTarget() }}</code
+          >.
+        </p>
+      }
+    </div>
+  </div>
+}

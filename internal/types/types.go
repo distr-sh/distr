@@ -124,6 +124,7 @@ const (
 	FeatureVendorBilling          Feature = "vendor_billing"
 	FeatureDeploymentLogsAfter    Feature = "deployment_logs_after"
 	FeaturePartnerManagement      Feature = "partner_management"
+	FeatureCustomDomains          Feature = "custom_domains"
 )
 
 // ProFeatures is the set of features granted to organizations with a paid (pro) subscription.
@@ -142,7 +143,7 @@ func FeaturesForSubscriptionType(st SubscriptionType) []Feature {
 	case SubscriptionTypeTrial, SubscriptionTypePro, SubscriptionTypeEnterprise:
 		return []Feature{FeatureLicensing}
 	case SubscriptionTypeBusiness:
-		return []Feature{FeatureLicensing, FeaturePartnerManagement}
+		return []Feature{FeatureLicensing, FeaturePartnerManagement, FeatureCustomDomains}
 	default:
 		return []Feature{}
 	}

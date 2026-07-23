@@ -16,21 +16,25 @@ func InternalRouter(r chi.Router) {
 func getFrontendEnvironmentHandler() http.HandlerFunc {
 	// precompute the json response
 	frontendEnvJSON := util.Require(json.Marshal(struct {
-		SentryDSN             *string  `json:"sentryDsn,omitempty"`
-		SentryEnvironment     string   `json:"sentryEnvironment,omitzero"`
-		SentryTraceSampleRate *float64 `json:"sentryTraceSampleRate,omitempty"`
-		PosthogToken          *string  `json:"posthogToken,omitempty"`
-		PosthogAPIHost        *string  `json:"posthogApiHost,omitempty"`
-		PosthogUIHost         *string  `json:"posthogUiHost,omitempty"`
-		RegistryHost          string   `json:"registryHost"`
+		SentryDSN                       *string  `json:"sentryDsn,omitempty"`
+		SentryEnvironment               string   `json:"sentryEnvironment,omitzero"`
+		SentryTraceSampleRate           *float64 `json:"sentryTraceSampleRate,omitempty"`
+		PosthogToken                    *string  `json:"posthogToken,omitempty"`
+		PosthogAPIHost                  *string  `json:"posthogApiHost,omitempty"`
+		PosthogUIHost                   *string  `json:"posthogUiHost,omitempty"`
+		RegistryHost                    string   `json:"registryHost"`
+		CustomDomainAppCNAMETarget      *string  `json:"customDomainAppCnameTarget,omitempty"`
+		CustomDomainRegistryCNAMETarget *string  `json:"customDomainRegistryCnameTarget,omitempty"`
 	}{
-		SentryDSN:             env.FrontendSentryDSN(),
-		SentryEnvironment:     env.SentryEnvironment(),
-		SentryTraceSampleRate: env.FrontendSentryTraceSampleRate(),
-		PosthogToken:          env.FrontendPosthogToken(),
-		PosthogAPIHost:        env.FrontendPosthogAPIHost(),
-		PosthogUIHost:         env.FrontendPosthogUIHost(),
-		RegistryHost:          env.RegistryHost(),
+		SentryDSN:                       env.FrontendSentryDSN(),
+		SentryEnvironment:               env.SentryEnvironment(),
+		SentryTraceSampleRate:           env.FrontendSentryTraceSampleRate(),
+		PosthogToken:                    env.FrontendPosthogToken(),
+		PosthogAPIHost:                  env.FrontendPosthogAPIHost(),
+		PosthogUIHost:                   env.FrontendPosthogUIHost(),
+		RegistryHost:                    env.RegistryHost(),
+		CustomDomainAppCNAMETarget:      env.CustomDomainAppCNAMETarget(),
+		CustomDomainRegistryCNAMETarget: env.CustomDomainRegistryCNAMETarget(),
 	}))
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

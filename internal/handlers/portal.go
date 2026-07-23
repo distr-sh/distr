@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net"
 	"net/http"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mapping"
+	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
@@ -31,7 +33,7 @@ func getPortalHandler(w http.ResponseWriter, r *http.Request) {
 	host := normalizeHost(r.Host)
 
 	var response *api.PortalResponse
-	if branding, err := db.GetOrganizationBrandingByAppDomain(ctx, host); err != nil {
+	if branding, err := resolvePortalBranding(ctx, host); err != nil {
 		// Portal branding is best-effort: log the error but still respond with the defaults so the app boots.
 		internalctx.GetLogger(ctx).Warn("failed to resolve portal branding", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -49,6 +51,18 @@ func getPortalHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		w.WriteHeader(http.StatusNoContent)
 	}
+}
+
+// resolvePortalBranding resolves the branding of the organization the host belongs to: self-service
+// CustomDomain first, with a fallback to the legacy OrganizationBranding.app_domain column (kept until
+// the branding domain migration follow-up ticket). It returns nil when no organization matches the host.
+func resolvePortalBranding(ctx context.Context, host string) (*types.OrganizationBranding, error) {
+	if branding, err := db.GetOrganizationBrandingByCustomDomain(ctx, host); err != nil {
+		return nil, err
+	} else if branding != nil {
+		return branding, nil
+	}
+	return db.GetOrganizationBrandingByAppDomain(ctx, host)
 }
 
 // normalizeHost lower-cases the host and strips a port so it can be matched against a normalized app_domain.

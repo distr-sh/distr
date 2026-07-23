@@ -281,7 +281,7 @@ func createAccessForDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 	}
 
 	org := auth.CurrentOrgWithBranding()
-	connectUrl, err := agentconnect.BuildConnectURL(deploymentTarget.ID, *org, targetSecret)
+	connectUrl, err := agentconnect.BuildConnectURL(ctx, deploymentTarget.ID, *org, targetSecret)
 	if err != nil {
 		log.Error("could not create connecturl", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -290,6 +290,7 @@ func createAccessForDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 	}
 
 	connectCommand, err := agentconnect.GenerateConnectCommand(
+		ctx,
 		deploymentTarget.DeploymentTarget,
 		*org,
 		targetSecret,

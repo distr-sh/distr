@@ -89,6 +89,18 @@ See [Registry Configuration](/docs/registry/configuration/) for a feature overvi
 | `REGISTRY_UPSTREAM_SYNC_CRON`              | no                  | —       | Cron schedule for syncing tags from upstream registries (pull-through cache).      |
 | `REGISTRY_UPSTREAM_SYNC_TIMEOUT`           | no                  | `10m`   | Timeout for a single upstream sync run.                                            |
 
+## Custom Domains
+
+Custom domain self-service lets vendor organizations serve Distr under their own domains.
+It requires an edge proxy with on-demand TLS (e.g. Caddy, included in the Helm chart) in front of the Hub.
+The feature is only offered in the UI when `CUSTOM_DOMAIN_APP_CNAME_TARGET` is set.
+
+| Variable                              | Required | Default | Description                                                                                                             |
+| ------------------------------------- | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `CUSTOM_DOMAIN_APP_CNAME_TARGET`      | no       | —       | Hostname customers point their app domain CNAME records at (e.g. `cname.distr.sh`). Enables custom domain self-service. |
+| `CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET` | no       | —       | Hostname customers point their registry domain CNAME records at. Falls back to the app CNAME target if unset.           |
+| `INTERNAL_SERVER_ADDR`                | no       | `:8085` | Listen address of the internal server exposing the Caddy on-demand TLS ask endpoint. Never expose it outside the cluster. |
+
 ## Support Bundles
 
 | Variable                        | Required | Default | Description                                                                                   |

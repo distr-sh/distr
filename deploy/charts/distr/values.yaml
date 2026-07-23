@@ -164,6 +164,15 @@ hub:
     #   value: '...'
     # - name: METRICS_BEARER_TOKEN
     #   value: '...'
+    # Self-service custom domains (requires caddy.enabled below). The CNAME targets are
+    # the DNS names (pointing at the Caddy LoadBalancer) that vendors CNAME their custom
+    # domains to. The feature (and the internal caddy-ask server) is off when unset.
+    # - name: CUSTOM_DOMAIN_APP_CNAME_TARGET
+    #   value: 'custom-app.distr.local'
+    # - name: CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET
+    #   value: 'custom-registry.distr.local'
+    # - name: INTERNAL_SERVER_ADDR
+    #   value: ':8085'
   envFrom: []
   # The OCI registry can buffer request bodies to temporary files instead of holding
   # them in memory. When enabled, this provisions a generic ephemeral volume (a per-pod
@@ -317,6 +326,40 @@ cronJobs:
     labels:
       distr.sh/job: registry-upstream-sync
     args: [maintenance, sync-artifacts-upstream, --timeout, 10m]
+
+# Plain Caddy deployment for automated custom domain configuration: vendors bring their
+# own domain via a CNAME record pointing at this Caddy's LoadBalancer. Caddy issues
+# certificates on demand (on the first TLS handshake), authorized per domain by the hub's
+# internal caddy-ask endpoint, and routes /v2/* to the registry and everything else to the
+# app. Requires the CUSTOM_DOMAIN_APP_CNAME_TARGET (and optionally
+# CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET) variables in hub.env to be set. Disabled by default.
+caddy:
+  enabled: false
+  # With more than one replica (and with disabled persistence) every pod issues and stores
+  # its own certificates, which increases ACME issuance volume. Enable persistence or keep
+  # a single replica unless you know what you are doing.
+  replicaCount: 1
+  image:
+    repository: caddy
+    tag: '2'
+    pullPolicy: IfNotPresent
+  # E-mail address used for the ACME account.
+  acmeEmail: ''
+  # Persist issued certificates (/data) across pod restarts. Uses an emptyDir when
+  # disabled, meaning all certificates are re-issued after a pod restart.
+  persistence:
+    enabled: false
+    size: 1Gi
+    storageClassName: ''
+  service:
+    type: LoadBalancer
+    # The chart stays generic: set cloud-specific annotations here.
+    # For an AWS deployment these provision a Network Load Balancer, e.g.:
+    #   service.beta.kubernetes.io/aws-load-balancer-type: external
+    #   service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    #   service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    annotations: {}
+  resources: {}
 
 postgresql:
   enabled: false

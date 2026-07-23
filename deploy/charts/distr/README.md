@@ -14,7 +14,7 @@
 
 <!-- x-release-please-start-version -->
 
-![Version: 3.0.1](https://img.shields.io/badge/Version-2.26.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.26.0](https://img.shields.io/badge/AppVersion-2.26.0-informational?style=flat-square)
+![Version: 3.0.1](https://img.shields.io/badge/Version-3.0.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 3.0.1](https://img.shields.io/badge/AppVersion-3.0.1-informational?style=flat-square)
 
 <!-- x-release-please-end -->
 
@@ -45,9 +45,9 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 
 | Repository                                  | Name       | Version |
 | ------------------------------------------- | ---------- | ------- |
-| https://charts.rustfs.com                   | rustfs     | 0.8.x   |
-| oci://ghcr.io/grafana-community/helm-charts | loki       | 18.x.x  |
-| oci://registry-1.docker.io/bitnamicharts    | postgresql | 18.x.x  |
+| https://charts.rustfs.com                   | rustfs     | 0.10.0  |
+| oci://ghcr.io/grafana-community/helm-charts | loki       | 18.5.1  |
+| oci://registry-1.docker.io/bitnamicharts    | postgresql | 18.8.0  |
 
 ## Values
 
@@ -58,6 +58,18 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | autoscaling.maxReplicas                               | int    | `10`                                             |             |
 | autoscaling.minReplicas                               | int    | `2`                                              |             |
 | autoscaling.targetCPUUtilizationPercentage            | int    | `100`                                            |             |
+| caddy.acmeEmail                                       | string | `""`                                             |             |
+| caddy.enabled                                         | bool   | `false`                                          |             |
+| caddy.image.pullPolicy                                | string | `"IfNotPresent"`                                 |             |
+| caddy.image.repository                                | string | `"caddy"`                                        |             |
+| caddy.image.tag                                       | string | `"2"`                                            |             |
+| caddy.persistence.enabled                             | bool   | `false`                                          |             |
+| caddy.persistence.size                                | string | `"1Gi"`                                          |             |
+| caddy.persistence.storageClassName                    | string | `""`                                             |             |
+| caddy.replicaCount                                    | int    | `1`                                              |             |
+| caddy.resources                                       | object | `{}`                                             |             |
+| caddy.service.annotations                             | object | `{}`                                             |             |
+| caddy.service.type                                    | string | `"LoadBalancer"`                                 |             |
 | cronJobs[0].args[0]                                   | string | `"cleanup"`                                      |             |
 | cronJobs[0].args[1]                                   | string | `"DeploymentRevisionStatus"`                     |             |
 | cronJobs[0].args[2]                                   | string | `"--timeout"`                                    |             |

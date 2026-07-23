@@ -84,7 +84,7 @@ func InviteUser(
 			"Organization":  organization,
 			"InvitingUser":  invitingUser,
 			"TargetOrgName": targetOrgName,
-			"Host":          customdomains.AppDomainOrDefault(organization.Branding),
+			"Host":          customdomains.AppDomainOrDefault(ctx, organization.ID, organization.Branding),
 			"InviteURL":     inviteURL,
 			"LogoDataUrl":   BrandingLogoDataURL(ctx, organization.Branding),
 		}
@@ -106,7 +106,7 @@ func VerifyEmail(
 		"UserAccount":  userAccount,
 		"Organization": org,
 		"Signature":    signature,
-		"Host":         customdomains.AppDomainOrDefault(org.Branding),
+		"Host":         customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding),
 		"Token":        token,
 		"LogoDataUrl":  BrandingLogoDataURL(ctx, org.Branding),
 	}
@@ -121,7 +121,7 @@ func PasswordReset(
 	host := env.Host()
 	var branding *types.OrganizationBranding
 	if organization != nil {
-		host = customdomains.AppDomainOrDefault(organization.Branding)
+		host = customdomains.AppDomainOrDefault(ctx, organization.ID, organization.Branding)
 		branding = organization.Branding
 	}
 	return templates.Lookup("password-reset.html"), map[string]any{
@@ -142,7 +142,7 @@ func UpdateEmail(
 	return templates.Lookup("update-email.html"), map[string]any{
 		"UserAccount":  userAccount,
 		"Organization": org,
-		"Host":         customdomains.AppDomainOrDefault(org.Branding),
+		"Host":         customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding),
 		"Token":        token,
 		"LogoDataUrl":  BrandingLogoDataURL(ctx, org.Branding),
 	}

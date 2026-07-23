@@ -99,6 +99,9 @@ var (
 	lokiBasicAuthUsername                  *string
 	lokiBasicAuthPassword                  *string
 	lokiRequestTimeout                     time.Duration
+	customDomainAppCNAMETarget             *string
+	customDomainRegistryCNAMETarget        *string
+	internalServerAddr                     string
 )
 
 func Initialize() {
@@ -284,6 +287,10 @@ func Initialize() {
 	lokiBasicAuthUsername = envutil.GetEnvOrNil("LOKI_BASIC_AUTH_USERNAME")
 	lokiBasicAuthPassword = envutil.GetEnvOrNil("LOKI_BASIC_AUTH_PASSWORD")
 	lokiRequestTimeout = envutil.GetEnvParsedOrDefault("LOKI_REQUEST_TIMEOUT", envparse.PositiveDuration, 30*time.Second)
+
+	customDomainAppCNAMETarget = envutil.GetEnvOrNil("CUSTOM_DOMAIN_APP_CNAME_TARGET")
+	customDomainRegistryCNAMETarget = envutil.GetEnvOrNil("CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET")
+	internalServerAddr = envutil.GetEnvOrDefault("INTERNAL_SERVER_ADDR", ":8085", envutil.GetEnvOpts{})
 }
 
 func DatabaseUrl() string {
@@ -625,4 +632,28 @@ func LokiBasicAuthPassword() *string {
 
 func LokiRequestTimeout() time.Duration {
 	return lokiRequestTimeout
+}
+
+// CustomDomainAppCNAMETarget is the DNS name (pointing at the Caddy LoadBalancer) that
+// vendors CNAME their custom app domains to, e.g. "custom-app.distr.sh".
+func CustomDomainAppCNAMETarget() *string {
+	return customDomainAppCNAMETarget
+}
+
+// CustomDomainRegistryCNAMETarget is the DNS name that vendors CNAME their (optional)
+// dedicated custom registry domains to, e.g. "custom-registry.distr.sh".
+func CustomDomainRegistryCNAMETarget() *string {
+	return customDomainRegistryCNAMETarget
+}
+
+// CustomDomainsConfigured reports whether the self-service custom domain feature is
+// configured on this instance. The internal caddy-ask server is only started when it is.
+func CustomDomainsConfigured() bool {
+	return customDomainAppCNAMETarget != nil
+}
+
+// InternalServerAddr is the listen address of the internal HTTP server serving the
+// Caddy on-demand TLS ask endpoint. It must never be exposed outside the cluster.
+func InternalServerAddr() string {
+	return internalServerAddr
 }

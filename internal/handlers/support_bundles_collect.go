@@ -69,7 +69,7 @@ func getCollectScriptHandler() http.HandlerFunc {
 			return
 		}
 
-		baseURL := customdomains.AppDomainOrDefault(org.Branding)
+		baseURL := customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding)
 
 		envVars, err := db.GetSupportBundleConfigurationEnvVars(ctx, bundle.OrganizationID)
 		if err != nil {

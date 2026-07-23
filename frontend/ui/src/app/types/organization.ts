@@ -8,7 +8,8 @@ export type Feature =
   | 'artifact_version_mutable'
   | 'vendor_billing'
   | 'deployment_logs_after'
-  | 'partner_management';
+  | 'partner_management'
+  | 'custom_domains';
 
 export interface SubscriptionLimits {
   maxCustomerOrganizations: number;

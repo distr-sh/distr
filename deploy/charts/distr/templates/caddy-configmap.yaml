@@ -1,0 +1,36 @@
+{{- if .Values.caddy.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "distr.fullname" . }}-caddy
+  labels:
+    {{- include "distr.labels" . | nindent 4 }}
+    app.kubernetes.io/component: caddy
+data:
+  Caddyfile: |
+    {
+      {{- with .Values.caddy.acmeEmail }}
+      email {{ . }}
+      {{- end }}
+      on_demand_tls {
+        # Authorizes certificate issuance per domain; the hub returns 200 only for
+        # registered custom domains. Served by the cluster-internal ask Service,
+        # never exposed publicly.
+        ask http://{{ include "distr.fullname" . }}-internal-caddy-ask:8085/internal/webhook/tls/ask
+      }
+    }
+
+    https:// {
+      tls {
+        on_demand
+      }
+      # The OCI distribution API mandates the /v2/ path prefix for all registry
+      # traffic, so a single custom domain serves both the app and the registry.
+      handle /v2/* {
+        reverse_proxy {{ include "distr.fullname" . }}:{{ .Values.service.artifactsPort }}
+      }
+      handle {
+        reverse_proxy {{ include "distr.fullname" . }}:{{ .Values.service.port }}
+      }
+    }
+{{- end }}

@@ -64,6 +64,11 @@ spec:
             - name: metrics
               containerPort: {{ .Values.service.metricsPort }}
               protocol: TCP
+            {{- if .Values.caddy.enabled }}
+            - name: internal
+              containerPort: 8085
+              protocol: TCP
+            {{- end }}
           {{- with .Values.startupProbe }}
           startupProbe:
             {{- toYaml . | nindent 12 }}

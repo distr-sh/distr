@@ -242,6 +242,20 @@ func (r *Registry) GetMetricsServer() server.Server {
 	}
 }
 
+// GetInternalServer returns the internal HTTP server serving the Caddy on-demand TLS ask
+// endpoint. It is a Noop unless the custom domain feature is configured, and must never be
+// exposed outside the cluster.
+func (r *Registry) GetInternalServer() server.Server {
+	if env.CustomDomainsConfigured() {
+		return server.NewServer(
+			routing.InternalCaddyAskRouter(r.logger.With(zap.String("server", "internal")), r.GetDbPool()),
+			r.logger.With(zap.String("server", "internal")),
+		)
+	} else {
+		return server.NewNoop()
+	}
+}
+
 func (r *Registry) GetPrometheusCollector() *distrprometheus.DistrCollector {
 	return r.promCollector
 }

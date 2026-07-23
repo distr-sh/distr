@@ -132,7 +132,7 @@ func preConnectHandler() http.HandlerFunc {
 		}
 
 		secret := r.URL.Query().Get("targetSecret")
-		script, err := agentconnect.GenerateConnectScript(deploymentTarget.ID, *org, secret)
+		script, err := agentconnect.GenerateConnectScript(ctx, deploymentTarget.ID, *org, secret)
 		if err != nil {
 			log.Error("could not generate connect script", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)

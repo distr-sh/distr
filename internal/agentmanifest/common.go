@@ -24,7 +24,7 @@ func Get(
 ) (io.Reader, error) {
 	if tmpl, err := getTemplate(deploymentTarget); err != nil {
 		return nil, err
-	} else if data, err := getTemplateData(deploymentTarget, org, secret); err != nil {
+	} else if data, err := getTemplateData(ctx, deploymentTarget, org, secret); err != nil {
 		return nil, err
 	} else {
 		var buf bytes.Buffer
@@ -33,6 +33,7 @@ func Get(
 }
 
 func getTemplateData(
+	ctx context.Context,
 	deploymentTarget types.DeploymentTargetFull,
 	org types.OrganizationWithBranding,
 	secret *string,
@@ -47,7 +48,7 @@ func getTemplateData(
 		agentLogsEndpoint string
 	)
 
-	if u, err := url.Parse(customdomains.AppDomainOrDefault(org.Branding)); err != nil {
+	if u, err := url.Parse(customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding)); err != nil {
 		return nil, err
 	} else {
 		u = u.JoinPath("api/v1/agent")
@@ -70,7 +71,7 @@ func getTemplateData(
 		"manifestEndpoint":  manifestEndpoint,
 		"metricsEndpoint":   metricsEndpoint,
 		"registryEnabled":   env.RegistryEnabled(),
-		"registryHost":      customdomains.RegistryDomainOrDefault(org.Branding),
+		"registryHost":      customdomains.RegistryDomainOrDefault(ctx, org.ID, org.Branding),
 		"registryPlainHttp": buildconfig.IsDevelopment(),
 		"resourcesEndpoint": resourcesEndpoint,
 		"statusEndpoint":    statusEndpoint,

@@ -176,6 +176,8 @@ func ApiRouter(
 					r.Route("/billing", handlers.BillingRouter)
 					r.Route("/context", handlers.ContextRouter)
 					r.Route("/customer-organizations", handlers.CustomerOrganizationsRouter)
+					r.With(middleware.CustomDomainsFeatureMiddleware).
+						Route("/custom-domains", handlers.CustomDomainsRouter)
 					r.With(middleware.PartnerManagementFeatureMiddleware).
 						Route("/partner-organizations", handlers.PartnerOrganizationsRouter)
 					r.With(middleware.UseReadonlyDB).Route("/dashboard", handlers.DashboardRouter)
@@ -226,6 +228,21 @@ func ApiRouter(
 func InternalRouter() http.Handler {
 	router := chi.NewRouter()
 	router.Route("/", handlers.InternalRouter)
+	return router
+}
+
+// InternalCaddyAskRouter serves the Caddy on-demand TLS ask endpoint on the internal HTTP
+// server (see env.InternalServerAddr()), which must never be exposed outside the cluster.
+func InternalCaddyAskRouter(logger *zap.Logger, db *pgxpool.Pool) http.Handler {
+	router := chi.NewRouter()
+	router.Use(
+		chimiddleware.Recoverer,
+		chimiddleware.RequestID,
+		middleware.Sentry,
+		middleware.LoggerCtxMiddleware(logger),
+		middleware.ContextInjectorMiddleware(db, nil, nil, nil, nil, nil),
+	)
+	router.Get("/internal/webhook/tls/ask", handlers.TLSAskHandler())
 	return router
 }
 
