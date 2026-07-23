@@ -10,9 +10,8 @@
       <main>
         {{ template "fragments/greeting.html" . }}
         <p>
-          Welcome to {{ .Signature }}! Please
-          <a href="{{ .Host }}/verify?jwt={{ .Token | QueryEscape }}">click this link</a> to verify that this is your
-          email address.
+          Welcome to {{ .Signature }}! Please verify that this is your email address at
+          <a href="{{ .Host }}/verify?jwt={{ .Token | QueryEscape }}">{{ .Host }}</a>.
         </p>
 
         <p>Alternatively, you can copy and paste the following URL into your browser:</p>
