@@ -18,7 +18,7 @@ func TLSAskHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		domain := r.FormValue("domain")
+		domain := normalizeHost(r.FormValue("domain"))
 		if domain == "" {
 			http.Error(w, "parameter domain is required", http.StatusBadRequest)
 			return

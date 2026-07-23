@@ -74,6 +74,24 @@ func createCustomDomainHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// The legacy OrganizationBranding.app_domain / registry_domain columns are not migrated into
+	// CustomDomain during coexistence, but portal and TLS resolution now prefer CustomDomain. Reject
+	// registering a domain that already belongs to another org's legacy branding to prevent takeover;
+	// same-org (self-)migration is still allowed.
+	if orgIDs, err := db.GetOrganizationIDsByLegacyBrandingDomain(ctx, request.Domain); err != nil {
+		log.Error("failed to check legacy branding domains", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	} else {
+		for _, orgID := range orgIDs {
+			if orgID != *auth.CurrentOrgID() {
+				http.Error(w, "this domain is already in use", http.StatusConflict)
+				return
+			}
+		}
+	}
+
 	customDomain := types.CustomDomain{
 		Domain:         request.Domain,
 		Type:           request.DomainType,

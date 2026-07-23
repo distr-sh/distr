@@ -65,11 +65,12 @@ func resolvePortalBranding(ctx context.Context, host string) (*types.Organizatio
 	return db.GetOrganizationBrandingByAppDomain(ctx, host)
 }
 
-// normalizeHost lower-cases the host and strips a port so it can be matched against a normalized app_domain.
+// normalizeHost lower-cases the host and strips surrounding whitespace, a port and a trailing dot
+// so it can be matched against a normalized custom domain / app_domain.
 func normalizeHost(host string) string {
-	host = strings.ToLower(host)
+	host = strings.ToLower(strings.TrimSpace(host))
 	if h, _, err := net.SplitHostPort(host); err == nil {
 		host = h
 	}
-	return host
+	return strings.TrimSuffix(host, ".")
 }

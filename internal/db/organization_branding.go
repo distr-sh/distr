@@ -79,6 +79,27 @@ func UpsertOrganizationBranding(ctx context.Context, b *types.OrganizationBrandi
 	}
 }
 
+// GetOrganizationIDsByLegacyBrandingDomain returns the IDs of all organizations whose legacy
+// OrganizationBranding.app_domain or registry_domain equals the given normalized host. It is used
+// to reject registering a self-service CustomDomain that would take over an existing legacy branding
+// domain owned by another organization (the legacy columns are not migrated during coexistence).
+func GetOrganizationIDsByLegacyBrandingDomain(ctx context.Context, host string) ([]uuid.UUID, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT organization_id FROM OrganizationBranding
+			WHERE app_domain = @host OR registry_domain = @host`,
+		pgx.NamedArgs{"host": host},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query organization branding by legacy domain: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID])
+	if err != nil {
+		return nil, fmt.Errorf("could not collect organization branding by legacy domain: %w", err)
+	}
+	return result, nil
+}
+
 // GetOrganizationBrandingByAppDomain resolves the branding for the organization whose branding app_domain matches
 // the given host. Both the stored app_domain and the given host must be normalized (lower-case, without scheme or
 // port). It returns nil when no organization matches the host.

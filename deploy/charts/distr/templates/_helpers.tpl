@@ -59,6 +59,30 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
+Caddy selector labels
+
+Caddy pods must carry an app.kubernetes.io/name distinct from the hub's, so they are not
+matched by the hub Deployment's selector (which is only distr.selectorLabels and is immutable
+on upgrade). Otherwise the hub ReplicaSet would adopt and churn the Caddy pods.
+*/}}
+{{- define "distr.caddy.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "distr.name" . }}-caddy
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{/*
+Caddy common labels
+*/}}
+{{- define "distr.caddy.labels" -}}
+helm.sh/chart: {{ include "distr.chart" . }}
+{{ include "distr.caddy.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
+
+{{/*
 Create the name of the service account to use
 */}}
 {{- define "distr.serviceAccountName" -}}

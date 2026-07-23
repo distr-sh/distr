@@ -4,7 +4,7 @@ kind: ConfigMap
 metadata:
   name: {{ include "distr.fullname" . }}-caddy
   labels:
-    {{- include "distr.labels" . | nindent 4 }}
+    {{- include "distr.caddy.labels" . | nindent 4 }}
     app.kubernetes.io/component: caddy
 data:
   Caddyfile: |

@@ -4,20 +4,20 @@ kind: Deployment
 metadata:
   name: {{ include "distr.fullname" . }}-caddy
   labels:
-    {{- include "distr.labels" . | nindent 4 }}
+    {{- include "distr.caddy.labels" . | nindent 4 }}
     app.kubernetes.io/component: caddy
 spec:
   replicas: {{ .Values.caddy.replicaCount }}
   selector:
     matchLabels:
-      {{- include "distr.selectorLabels" . | nindent 6 }}
+      {{- include "distr.caddy.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: caddy
   template:
     metadata:
       annotations:
         checksum/caddyfile: {{ include (print $.Template.BasePath "/caddy-configmap.yaml") . | sha256sum }}
       labels:
-        {{- include "distr.labels" . | nindent 8 }}
+        {{- include "distr.caddy.labels" . | nindent 8 }}
         app.kubernetes.io/component: caddy
     spec:
       containers:
@@ -69,7 +69,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{ include "distr.fullname" . }}-caddy-data
   labels:
-    {{- include "distr.labels" . | nindent 4 }}
+    {{- include "distr.caddy.labels" . | nindent 4 }}
     app.kubernetes.io/component: caddy
 spec:
   accessModes:
