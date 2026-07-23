@@ -113,7 +113,7 @@ func exportDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 		// Exports are bounded by the log query window only, not by a row limit.
 		records := logStore.QueryDeploymentTargetLogRecords(ctx, org.ID, logstore.DeploymentTargetLogQuery{
 			DeploymentTargetID: deploymentTarget.ID,
-			Start:              time.Now().Add(-subscription.GetLogQueryWindow(org.SubscriptionType)),
+			Start:              subscription.GetLogQueryWindowStart(org.SubscriptionType),
 			Limit:              limit.Unlimited,
 			Direction:          types.OrderDirectionDesc,
 		})

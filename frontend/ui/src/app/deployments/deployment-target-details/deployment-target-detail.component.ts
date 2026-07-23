@@ -113,10 +113,14 @@ export class DeploymentTargetDetailComponent {
   private readonly organization = toSignal(this.organizationService.get());
   // Ticks every minute so time-based bounds/validation don't freeze in long sessions.
   private readonly now = toSignal(timer(0, 60_000).pipe(map(() => dayjs())), {initialValue: dayjs()});
-  // Constrain the pickers to [now - window, now]; the window is enforced server-side.
+  // Constrain the pickers to [start of the first day inside the window, now]; the range
+  // always begins at 00:00 local time so users can select whole days. The backend allows
+  // an extra day on top of the exact window to cover any timezone's midnight.
   protected readonly logRangeMin = computed(() => {
     const windowSeconds = this.organization()?.subscriptionLimits.logQueryWindowSeconds;
-    return windowSeconds ? this.now().subtract(windowSeconds, 'second').format('YYYY-MM-DDTHH:mm') : '';
+    return windowSeconds
+      ? this.now().subtract(windowSeconds, 'second').startOf('day').format('YYYY-MM-DDTHH:mm')
+      : '';
   });
   protected readonly logRangeMax = computed(() => this.now().format('YYYY-MM-DDTHH:mm'));
 
@@ -159,7 +163,7 @@ export class DeploymentTargetDetailComponent {
       return {windowPending: true};
     }
     const windowSeconds = org.subscriptionLimits.logQueryWindowSeconds;
-    if (windowSeconds && date.isBefore(this.now().subtract(windowSeconds, 'second'))) {
+    if (windowSeconds && date.isBefore(this.now().subtract(windowSeconds, 'second').startOf('day'))) {
       return {beforeWindow: true};
     }
     return null;

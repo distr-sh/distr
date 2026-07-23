@@ -131,15 +131,10 @@ var ProFeatures = []Feature{
 	FeatureLicensing,
 }
 
-// PlanManagedFeatures is the set of features that are granted and revoked automatically
-// based on the subscription type. Features not in this list (e.g. vendor_billing) are
-// managed manually and must never be touched by subscription reconciliation.
-var PlanManagedFeatures = []Feature{
-	FeatureLicensing,
-	FeaturePartnerManagement,
-}
-
-// FeaturesForSubscriptionType returns the plan-managed features granted by a subscription type.
+// FeaturesForSubscriptionType returns the features granted by a subscription type.
+// Subscription reconciliation only ever adds these features, it never removes any:
+// manually granted features (e.g. vendor_billing) must survive plan changes, and
+// community organizations are stripped of features by ReconcileEditionFeatures instead.
 func FeaturesForSubscriptionType(st SubscriptionType) []Feature {
 	switch st {
 	case SubscriptionTypeCommunity:

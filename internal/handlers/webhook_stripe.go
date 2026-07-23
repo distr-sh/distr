@@ -171,9 +171,9 @@ func handleStripeSubscription(ctx context.Context, sub stripe.Subscription) erro
 			org.SubscriptionPeriod = subscriptionPeriod
 		}
 
-		// Reconcile plan-managed features: revoke everything plan-managed first, then
-		// grant the current plan's set. Manually managed features are left untouched.
-		org.RemoveFeatures(types.PlanManagedFeatures...)
+		// Grant the features of the (possibly new) plan. Features are intentionally never
+		// revoked here: only the community edition strips features (ReconcileEditionFeatures),
+		// and manually granted features (e.g. vendor_billing) must survive plan changes.
 		org.AddFeatures(types.FeaturesForSubscriptionType(org.SubscriptionType)...)
 
 		log.Info("updated organization subscription",

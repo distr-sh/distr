@@ -117,6 +117,19 @@ func GetLogQueryWindow(st types.SubscriptionType) time.Duration {
 	}
 }
 
+// LogQueryWindowTimezoneSlack is the extra period accepted for explicitly requested
+// log query start timestamps, on top of the exact subscription window. The frontend
+// limits the range picker to 00:00 local time of the first day inside the window,
+// whose UTC instant is unknown to the server but always within 24 hours before the
+// exact window boundary. It must not be applied to default (unset) query starts.
+const LogQueryWindowTimezoneSlack = 24 * time.Hour
+
+// GetLogQueryWindowStart returns the default start for log read queries,
+// i.e. the start of the exact subscription window.
+func GetLogQueryWindowStart(st types.SubscriptionType) time.Time {
+	return time.Now().Add(-GetLogQueryWindow(st))
+}
+
 func GetSubscriptionLimits(st types.SubscriptionType) api.SubscriptionLimits {
 	return api.SubscriptionLimits{
 		MaxCustomerOrganizations:        GetCustomersPerOrganizationLimit(st).Value(),

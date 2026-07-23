@@ -125,7 +125,7 @@
                     <p class="text-sm text-gray-600 dark:text-gray-400">
                       Prorated adjustments will be reflected on your next invoice (<a
                         [href]="
-                          websiteUrl + '/docs/product/subscription-management/#quantity-updates-during-billing-cycle'
+                          websiteUrl + '/docs/subscription-management/#pro-rata-adjustment'
                         "
                         class="underline"
                         target="_blank"
@@ -196,8 +196,13 @@
                         <ul class="space-y-1 text-sm text-gray-600 dark:text-gray-400 mb-4">
                           <li>
                             <fa-icon [icon]="faCheck" class="text-green-500" />
-                            Unlimited customers and up to
-                            {{ getPlanLimit('business', 'usersPerCustomer') }} users per customer
+                            Up to {{ getPlanLimit('business', 'customerOrganizations') }} customers (up from
+                            {{ getPlanLimit('pro', 'customerOrganizations') }})
+                          </li>
+                          <li>
+                            <fa-icon [icon]="faCheck" class="text-green-500" />
+                            {{ getPlanLimit('business', 'usersPerCustomer') }} users per customer (up from
+                            {{ getPlanLimit('pro', 'usersPerCustomer') }})
                           </li>
                           @for (feature of businessPlanFeatures; track feature) {
                             <li>

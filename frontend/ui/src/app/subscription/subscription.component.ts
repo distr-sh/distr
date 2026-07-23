@@ -49,13 +49,17 @@ export class SubscriptionComponent implements OnInit {
   protected readonly unlimited = UNLIMITED_QTY;
   protected readonly websiteUrl = WEBSITE_URL;
 
-  // Feature lists from the pricing table (https://distr.sh/pricing/)
+  // Feature lists mirroring the pricing cards on https://distr.sh/pricing/
   protected readonly proPlanFeatures = [
-    'License management for applications and artifacts',
-    'Role based access control (RBAC)',
-    'Deployment status notifications',
-    'Single-Sign-On (SSO)',
+    'Docker + Kubernetes deployment agents',
+    'Customer Portal with installation instructions',
+    'RBAC + Login with Google, GitHub & Microsoft',
+    'License Management',
+    'Deployment Alerts',
+    '1TB container registry with FGAC',
+    'Custom Branding for your Customer Portal',
     '7-day log retention',
+    'Free Onboarding Call + Private Slack',
   ];
   protected readonly businessPlanFeatures = [
     'Everything in Pro',
@@ -63,8 +67,10 @@ export class SubscriptionComponent implements OnInit {
     'License Templates',
     'Custom Domains (Full White Label)',
     'Enterprise SSO (bring-your-own OIDC)',
+    '5TB container registry with FGAC',
     '30-day log retention',
     'Priority support',
+    'White Glove Onboarding',
   ];
 
   protected readonly auth = inject(AuthService);
