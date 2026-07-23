@@ -83,9 +83,19 @@
 
       <!-- Resources card -->
       <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden mb-6 p-6">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Resources ({{ bundle.resources.length }})
-        </h2>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Resources ({{ bundle.resources.length }})</h2>
+          @if (bundle.resources.length > 0) {
+            <button
+              type="button"
+              (click)="downloadResources()"
+              [disabled]="downloading()"
+              class="inline-flex items-center py-1.5 px-3 text-xs font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg dark:text-gray-300 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700">
+              <fa-icon [icon]="faDownload" class="mr-2" />
+              Download
+            </button>
+          }
+        </div>
         @if (bundle.resources.length === 0) {
           <p class="text-sm text-gray-500 dark:text-gray-400">No resources collected yet.</p>
         } @else {
