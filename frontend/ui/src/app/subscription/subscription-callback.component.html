@@ -12,14 +12,14 @@
           </h1>
 
           <p class="text-gray-600 dark:text-gray-400 mb-6">
-            @if (isTrial()) {
-              Your successful payment is being processed. Please note that this may take a few moments.
-            } @else {
+            @if (isProcessing() === false) {
               Your subscription has been successfully updated.
+            } @else {
+              Your subscription update is being processed. Please note that this may take a few moments.
             }
           </p>
 
-          @if (!isTrial()) {
+          @if (isProcessing() === false) {
             <div class="space-y-3">
               <a
                 routerLink="/subscription"

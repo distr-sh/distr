@@ -15,7 +15,6 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
-	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
@@ -172,11 +171,10 @@ func handleStripeSubscription(ctx context.Context, sub stripe.Subscription) erro
 			org.SubscriptionPeriod = subscriptionPeriod
 		}
 
-		if org.SubscriptionType == types.SubscriptionTypeStarter {
-			org.RemoveFeatures(types.ProFeatures...)
-		} else {
-			org.AddFeatures(types.ProFeatures...)
-		}
+		// Grant the features of the (possibly new) plan. Features are intentionally never
+		// revoked here: only the community edition strips features (ReconcileEditionFeatures),
+		// and manually granted features (e.g. vendor_billing) must survive plan changes.
+		org.AddFeatures(types.FeaturesForSubscriptionType(org.SubscriptionType)...)
 
 		log.Info("updated organization subscription",
 			zap.Stringer("organizationId", org.ID),
@@ -185,16 +183,6 @@ func handleStripeSubscription(ctx context.Context, sub stripe.Subscription) erro
 			zap.Int64("userAccountQty", org.SubscriptionUserAccountQty.Value()),
 			zap.Int64("customerOrganizationQty", org.SubscriptionCustomerOrganizationQty.Value()))
 
-		if err := db.UpdateOrganization(ctx, org); err != nil {
-			return err
-		}
-
-		if org.SubscriptionType == types.SubscriptionTypeStarter {
-			if err := subscription.ReconcileStarterFeaturesForOrganizationID(ctx, orgID); err != nil {
-				return err
-			}
-		}
-
-		return nil
+		return db.UpdateOrganization(ctx, org)
 	})
 }

@@ -105,7 +105,11 @@ configs:
         working_directory: /loki/compactor
 
       limits_config:
-        retention_period: 720h
+        # 30 days (business log query window) plus the 24h timezone slack and 1h margin.
+        retention_period: 745h
+        # Business queries may span the full window incl. the timezone slack, which
+        # exceeds Loki's default max_query_length of 30d1h.
+        max_query_length: 745h
         increment_duplicate_timestamp: true
         allow_structured_metadata: true
         max_global_streams_per_user: 25000
@@ -113,7 +117,7 @@ configs:
         max_line_size_truncate: true
         # Accept backfilled logs up to the retention period so an agent that was
         # offline can still push its backlog.
-        reject_old_samples_max_age: 720h
+        reject_old_samples_max_age: 745h
         # Raised from the 4/6 MB defaults so the log generator dev tool
         # (cmd/hub/generate/logs) can bulk-ingest without excessive throttling.
         ingestion_rate_mb: 64

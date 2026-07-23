@@ -53,7 +53,7 @@ func getDeploymentLogsResourcesHandler() http.HandlerFunc {
 		active, archived, err := logStore.GetDeploymentLogRecordResources(ctx, org.ID, logstore.DeploymentLogResourcesQuery{
 			DeploymentID:      deployment.ID,
 			LatestRevisionIDs: revisionIDs,
-			Start:             time.Now().Add(-subscription.GetLogQueryWindow(org.SubscriptionType)),
+			Start:             subscription.GetLogQueryWindowStart(org.SubscriptionType),
 		})
 		if err != nil {
 			internalctx.GetLogger(ctx).Error("failed to get log records", zap.Error(err))
@@ -103,7 +103,7 @@ func exportDeploymentLogsHandler() http.HandlerFunc {
 		records := logStore.QueryDeploymentLogRecords(ctx, org.ID, logstore.DeploymentLogQuery{
 			DeploymentID: deployment.ID,
 			Resources:    resources,
-			Start:        time.Now().Add(-subscription.GetLogQueryWindow(org.SubscriptionType)),
+			Start:        subscription.GetLogQueryWindowStart(org.SubscriptionType),
 			Limit:        limit.Unlimited,
 			Direction:    types.OrderDirectionDesc,
 		})

@@ -79,8 +79,8 @@ func newestExistingTimestamp(
 	logStore logstore.LogStore,
 	orgID, deploymentID uuid.UUID,
 ) (time.Time, bool) {
-	// 30 days matches the shipped retention_period and stays within Loki's
-	// max_query_length limit (default 30d1h).
+	// 30 days stays within the shipped retention_period (745h) and Loki's
+	// max_query_length limit.
 	records := util.Require(util.SeqCollect(logStore.QueryDeploymentLogRecords(ctx, orgID, logstore.DeploymentLogQuery{
 		DeploymentID: deploymentID,
 		Start:        time.Now().UTC().Add(-30 * 24 * time.Hour),

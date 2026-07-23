@@ -30,9 +30,9 @@ export class FeatureFlagService {
     .pipe(map((org) => org.features.includes('partner_management')));
   public readonly isPartnerManagementEnabled = toSignal(this.isPartnerManagementEnabled$, {initialValue: false});
 
-  public readonly isNotificationsEnabled$ = this.requireSubscriptionType('trial', 'pro', 'enterprise');
+  public readonly isNotificationsEnabled$ = this.requireSubscriptionType('trial', 'pro', 'business', 'enterprise');
 
-  public readonly isSupportBundlesEnabled$ = this.requireSubscriptionType('trial', 'pro', 'enterprise');
+  public readonly isSupportBundlesEnabled$ = this.requireSubscriptionType('trial', 'pro', 'business', 'enterprise');
 
   private requireSubscriptionType(...type: SubscriptionType[]) {
     return this.organizationService.get().pipe(map((org) => type.includes(org.subscriptionType)));

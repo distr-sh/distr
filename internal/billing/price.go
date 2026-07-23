@@ -10,34 +10,28 @@ import (
 )
 
 const (
-	PriceKeyStarterCustomerMonthly = "distr_starter_customer_monthly"
-	PriceKeyStarterCustomerYearly  = "distr_starter_customer_yearly"
-	PriceKeyStarterUserMonthly     = "distr_starter_user_monthly"
-	PriceKeyStarterUserYearly      = "distr_starter_user_yearly"
-	PriceKeyProCustomerMonthly     = "distr_pro_customer_monthly"
-	PriceKeyProCustomerYearly      = "distr_pro_customer_yearly"
-	PriceKeyProUserMonthly         = "distr_pro_user_monthly"
-	PriceKeyProUserYearly          = "distr_pro_user_yearly"
+	PriceKeyProCustomerMonthly      = "distr_pro_customer_monthly"
+	PriceKeyProCustomerYearly       = "distr_pro_customer_yearly"
+	PriceKeyProUserMonthly          = "distr_pro_user_monthly"
+	PriceKeyProUserYearly           = "distr_pro_user_yearly"
+	PriceKeyBusinessCustomerMonthly = "distr_business_customer_monthly"
+	PriceKeyBusinessCustomerYearly  = "distr_business_customer_yearly"
+	PriceKeyBusinessUserMonthly     = "distr_business_user_monthly"
+	PriceKeyBusinessUserYearly      = "distr_business_user_yearly"
 )
 
 var (
 	CustomerPriceKeys = []string{
-		PriceKeyStarterCustomerMonthly,
-		PriceKeyStarterCustomerYearly,
 		PriceKeyProCustomerMonthly,
 		PriceKeyProCustomerYearly,
+		PriceKeyBusinessCustomerMonthly,
+		PriceKeyBusinessCustomerYearly,
 	}
 	UserPriceKeys = []string{
-		PriceKeyStarterUserMonthly,
-		PriceKeyStarterUserYearly,
 		PriceKeyProUserMonthly,
 		PriceKeyProUserYearly,
-	}
-	StarterPriceKeys = []string{
-		PriceKeyStarterCustomerMonthly,
-		PriceKeyStarterCustomerYearly,
-		PriceKeyStarterUserMonthly,
-		PriceKeyStarterUserYearly,
+		PriceKeyBusinessUserMonthly,
+		PriceKeyBusinessUserYearly,
 	}
 	ProPriceKeys = []string{
 		PriceKeyProCustomerMonthly,
@@ -45,17 +39,23 @@ var (
 		PriceKeyProUserMonthly,
 		PriceKeyProUserYearly,
 	}
+	BusinessPriceKeys = []string{
+		PriceKeyBusinessCustomerMonthly,
+		PriceKeyBusinessCustomerYearly,
+		PriceKeyBusinessUserMonthly,
+		PriceKeyBusinessUserYearly,
+	}
 	MonthlyPriceKeys = []string{
-		PriceKeyStarterCustomerMonthly,
-		PriceKeyStarterUserMonthly,
 		PriceKeyProCustomerMonthly,
 		PriceKeyProUserMonthly,
+		PriceKeyBusinessCustomerMonthly,
+		PriceKeyBusinessUserMonthly,
 	}
 	YearlyPriceKeys = []string{
-		PriceKeyStarterCustomerYearly,
-		PriceKeyStarterUserYearly,
 		PriceKeyProCustomerYearly,
 		PriceKeyProUserYearly,
+		PriceKeyBusinessCustomerYearly,
+		PriceKeyBusinessUserYearly,
 	}
 )
 
@@ -73,17 +73,6 @@ func GetStripePrices(
 	var userPriceLookupKey string
 
 	switch subscriptionType {
-	case types.SubscriptionTypeStarter:
-		switch subscriptionPeriod {
-		case types.SubscriptionPeriodMonthly:
-			customerPriceLookupKey = PriceKeyStarterCustomerMonthly
-			userPriceLookupKey = PriceKeyStarterUserMonthly
-		case types.SubscriptionPeriodYearly:
-			customerPriceLookupKey = PriceKeyStarterCustomerYearly
-			userPriceLookupKey = PriceKeyStarterUserYearly
-		default:
-			return nil, fmt.Errorf("invalid subscription period: %v", subscriptionPeriod)
-		}
 	case types.SubscriptionTypePro:
 		switch subscriptionPeriod {
 		case types.SubscriptionPeriodMonthly:
@@ -92,6 +81,17 @@ func GetStripePrices(
 		case types.SubscriptionPeriodYearly:
 			customerPriceLookupKey = PriceKeyProCustomerYearly
 			userPriceLookupKey = PriceKeyProUserYearly
+		default:
+			return nil, fmt.Errorf("invalid subscription period: %v", subscriptionPeriod)
+		}
+	case types.SubscriptionTypeBusiness:
+		switch subscriptionPeriod {
+		case types.SubscriptionPeriodMonthly:
+			customerPriceLookupKey = PriceKeyBusinessCustomerMonthly
+			userPriceLookupKey = PriceKeyBusinessUserMonthly
+		case types.SubscriptionPeriodYearly:
+			customerPriceLookupKey = PriceKeyBusinessCustomerYearly
+			userPriceLookupKey = PriceKeyBusinessUserYearly
 		default:
 			return nil, fmt.Errorf("invalid subscription period: %v", subscriptionPeriod)
 		}

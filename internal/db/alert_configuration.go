@@ -404,18 +404,3 @@ func DeleteAlertConfiguration(
 
 	return nil
 }
-
-func DeleteAlertConfigurationsWithOrganizationID(ctx context.Context, organizationID uuid.UUID) (int64, error) {
-	db := internalctx.GetDb(ctx)
-
-	cmd, err := db.Exec(
-		ctx,
-		`DELETE FROM AlertConfiguration WHERE organization_id = @organizationID`,
-		pgx.NamedArgs{"organizationID": organizationID},
-	)
-	if err != nil {
-		return 0, fmt.Errorf("failed to delete AlertConfiguration: %w", err)
-	}
-
-	return cmd.RowsAffected(), nil
-}

@@ -124,9 +124,7 @@
                     <h2 class="text-xl font-bold dark:text-white">Change Subscription Quantities</h2>
                     <p class="text-sm text-gray-600 dark:text-gray-400">
                       Prorated adjustments will be reflected on your next invoice (<a
-                        [href]="
-                          websiteUrl + '/docs/product/subscription-management/#quantity-updates-during-billing-cycle'
-                        "
+                        [href]="websiteUrl + '/docs/subscription-management/#pro-rata-adjustment'"
                         class="underline"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -183,128 +181,63 @@
                       </button>
                     </div>
                   </div>
+
+                  @if (canUpgradeToBusiness()) {
+                    <!-- Upgrade to Business -->
+                    <div class="space-y-4">
+                      <h2 class="text-xl font-bold dark:text-white">Upgrade to Business</h2>
+                      <div
+                        class="p-6 bg-linear-to-r from-primary-50 to-blue-50 dark:from-gray-700 dark:to-gray-800 rounded-lg">
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                          The Distr Business plan is built for vendors distributing at scale:
+                        </p>
+                        <ul class="space-y-1 text-sm text-gray-600 dark:text-gray-400 mb-4">
+                          <li>
+                            <fa-icon [icon]="faCheck" class="text-green-500" />
+                            Up to {{ getPlanLimit('business', 'customerOrganizations') }} customers (up from
+                            {{ getPlanLimit('pro', 'customerOrganizations') }})
+                          </li>
+                          <li>
+                            <fa-icon [icon]="faCheck" class="text-green-500" />
+                            {{ getPlanLimit('business', 'usersPerCustomer') }} users per customer (up from
+                            {{ getPlanLimit('pro', 'usersPerCustomer') }})
+                          </li>
+                          @for (feature of businessPlanFeatures; track feature) {
+                            <li>
+                              <fa-icon [icon]="faCheck" class="text-green-500" />
+                              {{ feature }}
+                            </li>
+                          }
+                        </ul>
+                        <div class="flex justify-between items-center">
+                          <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Estimated Cost</p>
+                            <p class="text-3xl font-bold text-gray-900 dark:text-white">
+                              {{
+                                getPreviewPriceFor('business', subscriptionInfoData.subscriptionPeriod)
+                                  | currency: 'USD'
+                              }}
+                              <span class="text-lg font-normal text-gray-600 dark:text-gray-400">
+                                / {{ subscriptionInfoData.subscriptionPeriod === 'monthly' ? 'month' : 'year' }}
+                              </span>
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            (click)="upgradeToBusiness()"
+                            [disabled]="form.invalid"
+                            class="text-white inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-6 py-3 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60 disabled:cursor-not-allowed">
+                            <fa-icon [icon]="faShoppingCart" size="lg" class="h-4 w-4 mr-2" />
+                            Upgrade to Business
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  }
                 } @else if (isTrialSubscription()) {
                   <div class="space-y-4">
                     <h2 class="text-xl font-bold dark:text-white">Choose Your Plan</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <!-- Starter Plan -->
-                      <label
-                        [class.ring-2]="form.value.subscriptionType === 'starter'"
-                        [class.ring-primary-600]="form.value.subscriptionType === 'starter'"
-                        [class.opacity-50]="!canSelectStarterPlan()"
-                        [class.cursor-not-allowed]="!canSelectStarterPlan()"
-                        [class.cursor-pointer]="canSelectStarterPlan()"
-                        [class.hover:border-primary-300]="canSelectStarterPlan()"
-                        class="flex flex-col p-4 border-2 border-gray-200 rounded-lg dark:border-gray-700 dark:hover:border-primary-700">
-                        <input
-                          type="radio"
-                          formControlName="subscriptionType"
-                          value="starter"
-                          [disabled]="!canSelectStarterPlan()"
-                          class="sr-only" />
-                        <div class="flex justify-between items-start mb-2">
-                          <h3 class="text-lg font-bold text-gray-900 dark:text-white">Starter</h3>
-                          @if (!canSelectStarterPlan()) {
-                            <span class="text-sm text-red-600 dark:text-red-400">Limits Exceeded</span>
-                          }
-                        </div>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                          Perfect for initial market validation
-                        </p>
-                        <ul class="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                          <li
-                            [class.text-red-600]="
-                              subscriptionInfoData.currentCustomerOrganizationCount >
-                              subscriptionInfoData.limits.starter.maxCustomerOrganizations
-                            "
-                            [class.dark:text-red-300]="
-                              subscriptionInfoData.currentCustomerOrganizationCount >
-                              subscriptionInfoData.limits.starter.maxCustomerOrganizations
-                            ">
-                            <fa-icon [icon]="faCheck" />
-                            {{ getPlanLimits('starter').customers }}
-                            <span class="text-xs">
-                              (current: {{ subscriptionInfoData.currentCustomerOrganizationCount }})
-                            </span>
-                          </li>
-                          <li
-                            [class.text-red-600]="
-                              subscriptionInfoData.currentMaxUsersPerCustomer >
-                              subscriptionInfoData.limits.starter.maxUsersPerCustomerOrganization
-                            "
-                            [class.dark:text-red-300]="
-                              subscriptionInfoData.currentMaxUsersPerCustomer >
-                              subscriptionInfoData.limits.starter.maxUsersPerCustomerOrganization
-                            ">
-                            <fa-icon [icon]="faCheck" />
-                            {{ getPlanLimits('starter').users }}
-                            <span class="text-xs">
-                              (current max: {{ subscriptionInfoData.currentMaxUsersPerCustomer }})
-                            </span>
-                          </li>
-                          <li
-                            [class.text-red-600]="
-                              subscriptionInfoData.currentMaxDeploymentTargetsPerCustomer >
-                              subscriptionInfoData.limits.starter.maxDeploymentsPerCustomerOrganization
-                            "
-                            [class.dark:text-red-300]="
-                              subscriptionInfoData.currentMaxDeploymentTargetsPerCustomer >
-                              subscriptionInfoData.limits.starter.maxDeploymentsPerCustomerOrganization
-                            ">
-                            <fa-icon [icon]="faCheck" />
-                            {{ getPlanLimits('starter').deployments }}
-                            <span class="text-xs">
-                              (current max: {{ subscriptionInfoData.currentMaxDeploymentTargetsPerCustomer }})
-                            </span>
-                          </li>
-                          <li
-                            [class.text-red-600]="
-                              subscriptionInfoData.hasApplicationEntitlements ||
-                              subscriptionInfoData.hasArtifactEntitlements
-                            "
-                            [class.dark:text-red-300]="
-                              subscriptionInfoData.hasApplicationEntitlements ||
-                              subscriptionInfoData.hasArtifactEntitlements
-                            ">
-                            <fa-icon [icon]="faXmark" />
-                            License Management
-                            <span class="text-xs">
-                              (Pro feature)
-                              @if (
-                                subscriptionInfoData.hasApplicationEntitlements ||
-                                subscriptionInfoData.hasArtifactEntitlements
-                              ) {
-                                <span class="font-semibold">- in use</span>
-                              }
-                            </span>
-                          </li>
-                          <li
-                            [class.text-red-600]="subscriptionInfoData.hasNonAdminRoles"
-                            [class.dark:text-red-300]="subscriptionInfoData.hasNonAdminRoles">
-                            <fa-icon [icon]="faXmark" />
-                            Role based access control (RBAC)
-                            <span class="text-xs">
-                              (Pro feature)
-                              @if (subscriptionInfoData.hasNonAdminRoles) {
-                                <span class="font-semibold">- in use</span>
-                              }
-                            </span>
-                          </li>
-                          <li
-                            [class.text-red-600]="subscriptionInfoData.hasAlertConfigurations"
-                            [class.dark:text-red-300]="subscriptionInfoData.hasAlertConfigurations">
-                            <fa-icon [icon]="faXmark" />
-                            Deployment status notifications
-                            <span class="text-xs">
-                              (Pro feature)
-                              @if (subscriptionInfoData.hasAlertConfigurations) {
-                                <span class="font-semibold">- in use</span>
-                              }
-                            </span>
-                          </li>
-                        </ul>
-                      </label>
-
                       <!-- Pro Plan -->
                       <label
                         [class.ring-2]="form.value.subscriptionType === 'pro'"
@@ -313,7 +246,6 @@
                         <input type="radio" formControlName="subscriptionType" value="pro" class="sr-only" />
                         <div class="flex justify-between items-start mb-2">
                           <h3 class="text-lg font-bold text-gray-900 dark:text-white">Pro</h3>
-                          <span class="text-sm text-gray-500 dark:text-gray-400">Most Popular</span>
                         </div>
                         <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Production rollouts with governance</p>
                         <ul class="space-y-1 text-sm text-gray-600 dark:text-gray-400">
@@ -338,22 +270,54 @@
                               >(current max: {{ subscriptionInfoData.currentMaxDeploymentTargetsPerCustomer }})</span
                             >
                           </li>
+                          @for (feature of proPlanFeatures; track feature) {
+                            <li>
+                              <fa-icon [icon]="faCheck" class="text-green-500" />
+                              {{ feature }}
+                            </li>
+                          }
+                        </ul>
+                      </label>
+
+                      <!-- Business Plan -->
+                      <label
+                        [class.ring-2]="form.value.subscriptionType === 'business'"
+                        [class.ring-primary-600]="form.value.subscriptionType === 'business'"
+                        class="flex flex-col p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-primary-300 dark:border-gray-700 dark:hover:border-primary-700">
+                        <input type="radio" formControlName="subscriptionType" value="business" class="sr-only" />
+                        <div class="flex justify-between items-start mb-2">
+                          <h3 class="text-lg font-bold text-gray-900 dark:text-white">Business</h3>
+                          <span class="text-sm text-gray-500 dark:text-gray-400">Most Popular</span>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">For vendors distributing at scale</p>
+                        <ul class="space-y-1 text-sm text-gray-600 dark:text-gray-400">
                           <li>
                             <fa-icon [icon]="faCheck" class="text-green-500" />
-                            License management for applications and artifacts
+                            {{ getPlanLimits('business').customers }}
+                            <span class="text-xs"
+                              >(current: {{ subscriptionInfoData.currentCustomerOrganizationCount }})</span
+                            >
                           </li>
                           <li>
                             <fa-icon [icon]="faCheck" class="text-green-500" />
-                            Role based access control (RBAC)
+                            {{ getPlanLimits('business').users }}
+                            <span class="text-xs"
+                              >(current max: {{ subscriptionInfoData.currentMaxUsersPerCustomer }})</span
+                            >
                           </li>
                           <li>
                             <fa-icon [icon]="faCheck" class="text-green-500" />
-                            Deployment status notifications
+                            {{ getPlanLimits('business').deployments }}
+                            <span class="text-xs"
+                              >(current max: {{ subscriptionInfoData.currentMaxDeploymentTargetsPerCustomer }})</span
+                            >
                           </li>
-                          <li>
-                            <fa-icon [icon]="faCheck" class="text-green-500" />
-                            Single-Sign-On (SSO)
-                          </li>
+                          @for (feature of businessPlanFeatures; track feature) {
+                            <li>
+                              <fa-icon [icon]="faCheck" class="text-green-500" />
+                              {{ feature }}
+                            </li>
+                          }
                         </ul>
                       </label>
                     </div>

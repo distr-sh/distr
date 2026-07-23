@@ -11,6 +11,21 @@ type CheckoutResponse struct {
 	URL       string `json:"url"`
 }
 
+type CreateSubscriptionRequest struct {
+	SubscriptionType        types.SubscriptionType   `json:"subscriptionType"`
+	SubscriptionPeriod      types.SubscriptionPeriod `json:"subscriptionPeriod"`
+	CustomerOrganizationQty int64                    `json:"subscriptionCustomerOrganizationQuantity"`
+	UserAccountQty          int64                    `json:"subscriptionUserAccountQuantity"`
+}
+
+type UpdateSubscriptionRequest struct {
+	// SubscriptionType optionally switches the subscription to a different plan.
+	// Currently only the pro → business upgrade is supported.
+	SubscriptionType        *types.SubscriptionType `json:"subscriptionType,omitempty"`
+	CustomerOrganizationQty int64                   `json:"subscriptionCustomerOrganizationQuantity"`
+	UserAccountQty          int64                   `json:"subscriptionUserAccountQuantity"`
+}
+
 type SubscriptionLimits struct {
 	MaxCustomerOrganizations        int64 `json:"maxCustomerOrganizations"`
 	MaxUsersPerCustomerOrganization int64 `json:"maxUsersPerCustomerOrganization"`

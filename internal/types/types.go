@@ -87,27 +87,29 @@ func EffectiveOrderDirection(order OrderDirection, hasAfter bool) OrderDirection
 type SubscriptionType string
 
 func (st SubscriptionType) IsPro() bool {
-	return st == SubscriptionTypeTrial || st == SubscriptionTypePro || st == SubscriptionTypeEnterprise
+	return st == SubscriptionTypeTrial ||
+		st == SubscriptionTypePro ||
+		st == SubscriptionTypeBusiness ||
+		st == SubscriptionTypeEnterprise
 }
 
 const (
 	SubscriptionTypeCommunity  SubscriptionType = "community"
-	SubscriptionTypeStarter    SubscriptionType = "starter"
 	SubscriptionTypePro        SubscriptionType = "pro"
+	SubscriptionTypeBusiness   SubscriptionType = "business"
 	SubscriptionTypeEnterprise SubscriptionType = "enterprise"
 	SubscriptionTypeTrial      SubscriptionType = "trial"
 )
 
 var NonProSubscriptionTypes = []SubscriptionType{
 	SubscriptionTypeCommunity,
-	SubscriptionTypeStarter,
 }
 
 func AllSubscriptionTypes() []SubscriptionType {
 	return []SubscriptionType{
 		SubscriptionTypeCommunity,
-		SubscriptionTypeStarter,
 		SubscriptionTypePro,
+		SubscriptionTypeBusiness,
 		SubscriptionTypeEnterprise,
 		SubscriptionTypeTrial,
 	}
@@ -127,6 +129,23 @@ const (
 // ProFeatures is the set of features granted to organizations with a paid (pro) subscription.
 var ProFeatures = []Feature{
 	FeatureLicensing,
+}
+
+// FeaturesForSubscriptionType returns the features granted by a subscription type.
+// Subscription reconciliation only ever adds these features, it never removes any:
+// manually granted features (e.g. vendor_billing) must survive plan changes, and
+// community organizations are stripped of features by ReconcileEditionFeatures instead.
+func FeaturesForSubscriptionType(st SubscriptionType) []Feature {
+	switch st {
+	case SubscriptionTypeCommunity:
+		return []Feature{}
+	case SubscriptionTypeTrial, SubscriptionTypePro, SubscriptionTypeEnterprise:
+		return []Feature{FeatureLicensing}
+	case SubscriptionTypeBusiness:
+		return []Feature{FeatureLicensing, FeaturePartnerManagement}
+	default:
+		return []Feature{}
+	}
 }
 
 type DeploymentStatusType string
