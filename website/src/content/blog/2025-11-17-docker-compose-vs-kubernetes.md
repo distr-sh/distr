@@ -2,7 +2,7 @@
 title: 'Docker Compose vs Kubernetes: A Practical Decision Guide for Software Distribution'
 description: A practical guide to choosing between Docker Compose and Kubernetes for software distribution.
 publishDate: 2025-11-17
-lastUpdated: 2026-04-17
+lastUpdated: 2026-07-23
 slug: 'docker-compose-vs-kubernetes'
 authors:
   - name: 'Louis Weston'
@@ -15,7 +15,7 @@ tags:
   - Docker Compose
   - Kubernetes
   - Software Distribution
-  - Self-Managed
+  - Self-Hosted
 ---
 
 # Docker Compose vs Kubernetes: A Practical Decision Guide for Software Distribution

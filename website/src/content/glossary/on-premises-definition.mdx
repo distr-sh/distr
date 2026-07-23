@@ -7,7 +7,7 @@ alternateNames:
   - On-Prem
   - On-Premise
 shortDefinition: 'On-premises (or on-prem) describes software and IT infrastructure that organizations run inside environments they control. The organization owns the hardware, runs the software, sets the security policy, and owns the data.'
-lastUpdated: 2026-04-17
+lastUpdated: 2026-07-23
 faq:
   - question: What does on-premise deployment mean?
     answer: "It means software runs on infrastructure controlled by the customer. That can be physical data centers or their own cloud accounts. The customer manages infrastructure, security, and maintenance instead of relying on the vendor's SaaS platform."
@@ -26,14 +26,14 @@ faq:
   - question: What is the difference between on-premises and self-hosted?
     answer: 'Often synonymous. "On-premises" emphasizes the location (the customer''s infrastructure). "Self-hosted" emphasizes the operation (the customer manages everything). Both stand in contrast to SaaS, where the vendor operates the software.'
   - question: How do software vendors distribute on-premises software?
-    answer: 'Through software distribution platforms (Distr, for example) that distribute containers, automate artifact distribution, track versions across customer installations, enforce licenses, and optionally collect telemetry. This is what lets vendors support both SaaS and [self-managed deployment](/glossary/self-managed-software/) efficiently.'
+    answer: 'Through software distribution platforms (Distr, for example) that distribute containers, automate artifact distribution, track versions across customer installations, enforce licenses, and optionally collect telemetry. This is what lets vendors support both SaaS and [self-hosted deployment](/glossary/self-hosted-software/) efficiently.'
 ---
 
 ## What does on-premises mean?
 
 **On-premises** (often shortened to **on-prem**) describes software and IT infrastructure that organizations run inside environments they control. The organization owns the hardware, runs the software, sets the security policy, and owns the data. The vendor does not.
 
-On-premises today covers two setups. The traditional case is physical servers and infrastructure inside the organization's own data centers or facilities. The modern case is self-managed infrastructure inside the organization's own cloud accounts: AWS VPCs, Azure subscriptions, GCP projects. Either way, the distinguishing factor is control. On-premises means the customer controls the deployment environment. SaaS means the vendor does.
+On-premises today covers two setups. The traditional case is physical servers and infrastructure inside the organization's own data centers or facilities. The modern case is self-hosted infrastructure inside the organization's own cloud accounts: AWS VPCs, Azure subscriptions, GCP projects. Either way, the distinguishing factor is control. On-premises means the customer controls the deployment environment. [SaaS](/glossary/saas-definition/) means the vendor does.
 
 ---
 
@@ -51,13 +51,13 @@ In formal writing, stick with "on-premises". In practice, engineers, buyers, and
 
 For software vendors, supporting on-prem deployment creates specific requirements around:
 
-- Distribution, via container registries, download portals, or artifact repositories
-- Installation, via Docker Compose files, Helm charts, installers, or Kubernetes operators
+- Distribution, via [container registries](/glossary/oci-container-artifact-registry/), download portals, or artifact repositories
+- Installation, via Docker Compose files, [Helm charts](/glossary/helm-chart/), installers, or [Kubernetes](/glossary/kubernetes/) operators
 - Updates across thousands of independent customer environments
-- Licensing that works offline
+- [Licensing](/glossary/software-license-management/) that works offline
 - Support and remote diagnostics without direct environment access
 
-Modern software distribution platforms like Distr exist to manage these complexities so vendors can offer on-prem without doubling engineering costs.
+Modern [software distribution platforms](/glossary/software-distribution-platform/) like Distr exist to manage these complexities so vendors can offer on-prem without doubling engineering costs.
 
 ---
 
@@ -76,7 +76,7 @@ Understanding the distinction is essential for both vendors and customers pickin
 | **Customization**            | Deep customization and integration possible       | Limited to platform capabilities              |
 | **Security**                 | Customer implements policies                      | Vendor handles security (with certifications) |
 | **Compliance**               | Easier for industry-specific regulations          | Depends on vendor compliance certifications   |
-| **Scalability**              | More Manual, often requires planning and hardware | Automatic, on-demand resources                |
+| **Scalability**              | More manual, often requires planning and hardware | Automatic, on-demand resources                |
 | **Maintenance**              | Customer IT / Platform team responsibility        | Vendor handles all maintenance                |
 | **Vendor Access**            | No access without explicit customer permission    | Vendor has backend infrastructure access      |
 
@@ -91,7 +91,7 @@ On-premises software spans every category of enterprise application.
 ### Enterprise business applications
 
 - **ERP systems**: SAP on-prem, Oracle E-Business Suite, Microsoft Dynamics GP
-- **CRM platforms**: Salesforce Shield, Microsoft Dynamics 365 on-premises
+- **CRM platforms**: Microsoft Dynamics 365 on-premises, SugarCRM (Sugar Enterprise)
 - **Databases**: Oracle Database, Microsoft SQL Server, self-hosted PostgreSQL, MongoDB Enterprise
 - **Collaboration**: Microsoft Exchange Server, SharePoint Server (pre-Office 365 versions)
 
@@ -102,10 +102,20 @@ On-premises software spans every category of enterprise application.
 - **CI/CD tools**: GitLab self-managed, Jenkins, JFrog Artifactory, Harbor registries
 - **Security tools**: Palo Alto Prisma Cloud (on-prem mode), CrowdStrike Falcon sensors
 
+### Open-source self-hosted applications
+
+Many widely used open-source products are built to run on customer infrastructure, often alongside a hosted SaaS edition:
+
+- **Business software (ERP/CRM)**: Odoo (Community and Enterprise editions run on-premises)
+- **DevOps platforms**: GitLab Self-Managed
+- **Web analytics**: Matomo On-Premise, the self-hosted alternative to Google Analytics
+- **Team messaging**: Mattermost, the self-hosted alternative to Slack
+- **Software distribution**: Distr, the open-source distribution platform vendors run [self-hosted](/docs/self-hosting/) to ship software to their own on-prem customers
+
 ### AI and machine learning infrastructure
 
 - **Model serving**: TensorFlow Serving, NVIDIA Triton Inference Server, vLLM
-- **Vector databases**: Pinecone self-hosted, Weaviate, Milvus
+- **Vector databases**: Weaviate, Milvus, Qdrant
 - **LLM deployments**: Ollama, Hugging Face models in customer Kubernetes, private OpenAI-compatible APIs
 
 ### Industry-specific systems
@@ -133,7 +143,7 @@ Customers write their own security policies, run penetration tests without askin
 
 ### Air-gapped and restricted networks
 
-Government agencies, defense contractors, financial institutions, and critical-infrastructure operators often run air-gapped networks with limited or no internet connectivity. SaaS cannot reach those environments at all.
+Government agencies, defense contractors, financial institutions, and critical-infrastructure operators often run [air-gapped networks](/glossary/air-gapped-meaning/) with limited or no internet connectivity. SaaS cannot reach those environments at all.
 
 ### Performance and latency
 
@@ -184,13 +194,13 @@ The rise of Kubernetes and containerization turned on-premises from legacy infra
 
 ### Kubernetes as a universal deployment target
 
-Kubernetes gives you consistent deployment across customer data centers, AWS VPCs, Azure private clusters, or Google GKE. Vendors package applications as Helm charts and deploy anywhere Kubernetes runs. The underlying infrastructure becomes an abstraction layer.
+[Kubernetes](/glossary/kubernetes/) gives you consistent deployment across customer data centers, AWS VPCs, Azure private clusters, or Google GKE. Vendors package applications as Helm charts and deploy anywhere Kubernetes runs. The underlying infrastructure becomes an abstraction layer.
 
-### Self-managed cloud, the new on-premises
+### Self-hosted cloud, the new on-premises
 
-Many "on-premises" deployments today run in customer-managed AWS, Azure, or GCP accounts rather than physical data centers. From the vendor's perspective, it's operationally identical to traditional on-prem: the customer controls the infrastructure, the vendor provides the software.
+Many "on-premises" deployments today run in customer-managed AWS, Azure, or GCP accounts rather than physical data centers. From the vendor's perspective, it's operationally identical to traditional on-prem: the customer controls the infrastructure, the vendor provides the software. This is [self-hosted software](/glossary/self-hosted-software/) in cloud infrastructure.
 
-This model is sometimes called BYOC (Bring Your Own Cloud), a hybrid of SaaS convenience and on-prem control.
+A related model is [BYOC (Bring Your Own Cloud)](/glossary/byoc-definition/), where the vendor manages the software inside the customer's cloud account, a hybrid of SaaS convenience and on-prem control.
 
 ### The software distribution platform approach
 
@@ -216,4 +226,4 @@ Distr is a modern software distribution platform built for vendors serving on-pr
 - **Customer portal**: white-labeled self-service portal for downloads, deployments, and documentation
 - **Telemetry and support**: collect metrics and logs (with customer permission) for troubleshooting
 
-Scale from your first self-managed customer to thousands without scaling engineering overhead in lockstep.
+Scale from your first self-hosted customer to thousands without scaling engineering overhead in lockstep.

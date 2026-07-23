@@ -2,7 +2,7 @@
 title: 'How to Protect Your Source Code and IP in Docker and Kubernetes Deployments'
 description: 'Shipping software on-prem means your customers have access to your container images. Here is what they can actually see, what they cannot, and the practical steps to protect your source code, model weights, and intellectual property.'
 publishDate: 2026-04-09
-lastUpdated: 2026-04-09
+lastUpdated: 2026-07-23
 slug: 'protect-source-code-docker-container'
 authors:
   - name: 'Louis Weston'
@@ -13,7 +13,7 @@ authors:
 image: src/assets/blog/2026-04-09-protect-source-code-docker/thumb.png
 tags:
   - Security
-  - Self-Managed
+  - Self-Hosted
   - Docker
   - Kubernetes
 ---
@@ -50,7 +50,7 @@ There are some differences in the details, though:
 
 **Kubernetes deployments often ship more artifacts.** If you distribute a custom operator, you are shipping an additional binary containing business logic. Init containers may contain migration scripts or seed data. ConfigMaps and Helm hooks can include SQL migrations or setup scripts. Each of these is an additional surface for IP exposure that Docker Compose deployments typically do not have.
 
-**Kubernetes has more security primitives, but none of them protect your IP from the customer.** Yes, Kubernetes Secrets can be encrypted at rest in etcd (though this needs explicit configuration; by default they are just base64-encoded). RBAC can restrict who reads what. Pod Security Standards can lock down containers. But your on-prem customer is the cluster admin. They have root. These controls protect the cluster from unauthorized users, not from the person who owns the infrastructure. In [self-managed](/glossary/self-managed-software/) deployments, the customer is always that person.
+**Kubernetes has more security primitives, but none of them protect your IP from the customer.** Yes, Kubernetes Secrets can be encrypted at rest in etcd (though this needs explicit configuration; by default they are just base64-encoded). RBAC can restrict who reads what. Pod Security Standards can lock down containers. But your on-prem customer is the cluster admin. They have root. These controls protect the cluster from unauthorized users, not from the person who owns the infrastructure. In [self-hosted](/glossary/self-hosted-software/) deployments, the customer is always that person.
 
 **One area where Kubernetes pulls ahead: Confidential Containers.** The CNCF Confidential Containers (CoCo) project integrates Kata Containers with hardware TEEs (Intel TDX, AMD SEV-SNP). This runs pods inside encrypted VMs where even the node operator cannot inspect memory or filesystem contents. Docker has no equivalent. CoCo is still maturing and requires specific hardware, but it is the only container-native technology that genuinely protects runtime IP from the customer. More on this below.
 
@@ -204,4 +204,4 @@ For most B2B vendors shipping to enterprise customers, compiled binaries, minima
 
 On the customer side, our deployment agents handle installation with a single command. You get visibility into which version each customer is running, deployment logs, and health status from your vendor portal. Need to rotate images, push an update, or revoke access? One place.
 
-If you are shipping software to [self-managed](/glossary/self-managed-software/) customers and do not want to build the distribution plumbing yourself, [try Distr free for 30 days](https://distr.sh/onboarding/).
+If you are shipping software to [self-hosted](/glossary/self-hosted-software/) customers and do not want to build the distribution plumbing yourself, [try Distr free for 30 days](https://distr.sh/onboarding/).

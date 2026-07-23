@@ -2,7 +2,7 @@
 title: 'Mounting Configuration Files in Docker Compose'
 description: 'A practical guide to shipping configuration files like postgresql.conf inside a Docker Compose deployment. Covers bind mounts, custom images, the Compose configs top-level keyword with inline content, and Compose secrets for sensitive values.'
 publishDate: 2026-04-15
-lastUpdated: 2026-04-15
+lastUpdated: 2026-07-23
 slug: 'docker-compose-mount-config-files'
 authors:
   - name: 'Philip Miglinci'
@@ -24,7 +24,7 @@ import TestimonialCTA from '~/components/cta/TestimonialCTA.astro';
 import postgresConfigsCompose from './2026-04-15-docker-compose-postgres-config-file/docker-compose.yaml?raw';
 import postgresBindMountCompose from './2026-04-15-docker-compose-postgres-config-file/docker-compose-bind-mount.yaml?raw';
 
-I am Philip, an engineer working at Distr, which helps software and AI companies distribute their applications to self-managed environments.
+I am Philip, an engineer working at Distr, which helps software and AI companies distribute their applications to self-hosted environments.
 Our Open Source Software Distribution platform is available on GitHub ([`github.com/distr-sh/distr`](https://github.com/distr-sh/distr)) and orchestrates both Docker Compose and Kubernetes deployments.
 
 [Docker Compose](https://docs.docker.com/compose/) is one of the most common ways to ship a multi-container application to a customer environment, alongside Kubernetes. Most services it runs accept runtime tuning through environment variables, but a surprising number of well-known images, including PostgreSQL, Nginx, Dex, Redis, Traefik, and HAProxy, expect a real configuration file inside the container and not a flat list of `KEY=value` pairs.

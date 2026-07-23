@@ -7,7 +7,7 @@ alternateNames:
   - ISV
   - ISVs
 shortDefinition: 'An Independent Software Vendor (ISV) is a company that develops, markets, and sells software products that operate independently of any specific hardware manufacturer, operating system, or cloud platform provider.'
-lastUpdated: 2026-04-17
+lastUpdated: 2026-07-23
 faq:
   - question: What does ISV stand for?
     answer: 'ISV stands for Independent Software Vendor, a company that develops and sells software independently of hardware manufacturers and platform providers.'
@@ -25,7 +25,7 @@ faq:
     answer: 'OEMs build hardware and bundle software with it. ISVs build software that runs independently of any specific hardware.'
   - question: How do ISVs distribute software to customer environments?
     answer: 'Cloud marketplaces, direct downloads, container registries, and software distribution platforms like Distr.'
-  - question: What challenges do ISVs face with self-managed deployments?
+  - question: What challenges do ISVs face with self-hosted deployments?
     answer: 'Limited visibility into customer environments, complex update management, version fragmentation, licensing control, and support without direct access.'
   - question: What is an AWS ISV?
     answer: 'Typically refers to ISVs participating in the AWS ISV Accelerate Program, which offers co-selling support, technical resources, and marketplace benefits to ISVs building on AWS.'
@@ -72,7 +72,7 @@ Most ISVs provide technical support, customer success programs, training, and pr
 
 ### Software distribution and deployment
 
-ISVs have to distribute their software to customers across a growing range of deployment environments: public cloud marketplaces, [self-managed](/glossary/self-managed-software/) infrastructure, [on-premises](/glossary/on-premises-definition/) data centers, and [air-gapped](/glossary/air-gapped-meaning/) environments. Distribution has become one of the harder problems as customers demand more flexibility.
+ISVs have to distribute their software to customers across a growing range of deployment environments: public cloud marketplaces, [self-hosted](/glossary/self-hosted-software/) infrastructure, [on-premises](/glossary/on-premises-definition/) data centers, and [air-gapped](/glossary/air-gapped-meaning/) environments. Distribution has become one of the harder problems as customers demand more flexibility.
 
 ### Compliance and security
 
@@ -101,7 +101,7 @@ Vertical ISVs specialize in industry-specific solutions:
 - **Toast**, restaurant point-of-sale and management
 - **Veeva**, life sciences CRM and content management
 - **Procore**, construction project management
-- **FinancialForce**, professional services automation
+- **Certinia** (formerly FinancialForce), professional services automation
 
 ### Developer tools ISVs
 
@@ -122,7 +122,7 @@ New ISV categories keep appearing in fast-moving technology sectors:
 
 ## ISV vs SaaS: Understanding the Difference
 
-ISVs and SaaS get mixed up constantly, so worth separating.
+ISVs and SaaS get mixed up constantly, so the two are worth separating.
 
 ISV describes a type of company (one that creates and sells software). SaaS describes a software distribution model (cloud-based, subscription-based).
 
@@ -217,7 +217,7 @@ Modern ISVs have to support several deployment models simultaneously:
 
 #### VPC and BYOC deployments
 
-Customers want to run ISV software in their own AWS, Azure, or Google Cloud accounts (BYOC, Bring Your Own Cloud) so they can control data residency, security policies, and cost.
+Customers want to run ISV software in their own AWS, Azure, or Google Cloud accounts ([BYOC, Bring Your Own Cloud](/glossary/byoc-definition/)) so they can control data residency, security policies, and cost.
 
 #### On-premises installations
 
@@ -269,12 +269,12 @@ Enterprise customers expect self-service portals, health dashboards, and managem
 
 ### How software distribution platforms help ISVs
 
-Platforms like **Distr** specialize in these distribution problems, providing:
+[Software distribution platforms](/glossary/software-distribution-platform/) like **Distr** specialize in these distribution problems, providing:
 
 - **Unified distribution pipeline.** A single workflow covering public cloud, private cloud, on-premises, and air-gapped environments.
 - **Customer portal infrastructure.** White-labeled management consoles where end customers install, configure, monitor, and update ISV software inside their own infrastructure.
 - **Automated update distribution.** Reliable update propagation to all customer installations, with configurable rollout strategies.
-- **License management system.** Entitlement controls, seat management, feature flagging, and subscription-tier enforcement.
+- **[License management](/glossary/software-license-management/) system.** [Entitlement](/glossary/software-entitlement/) controls, seat management, feature flagging, and subscription-tier enforcement.
 - **Health monitoring and telemetry.** Metrics, logs, and diagnostics from distributed installations so visibility doesn't disappear once software leaves the vendor.
 - **Container and Kubernetes-native.** Support for modern containerized applications and orchestration platforms.
 - **Air-gap support.** Offline distribution methods for disconnected environments.
@@ -293,7 +293,7 @@ A few technology shifts are actively reshaping how ISVs build, distribute, and o
 Modern ISVs build container-native applications:
 
 - **Portability.** Containers run consistently across any infrastructure.
-- **Scalability.** Kubernetes orchestrates containers for auto-scaling and high availability.
+- **Scalability.** [Kubernetes](/glossary/kubernetes/) orchestrates containers for auto-scaling and high availability.
 - **Efficiency.** Containers use fewer resources than virtual machines.
 - **DevOps alignment.** Containers integrate cleanly with CI/CD pipelines.
 
@@ -312,7 +312,7 @@ ISVs that lock customers to a single cloud platform tend to lose deals to more f
 
 ## Distribute Your ISV Software with Distr
 
-Distr is a software distribution platform built for ISVs that need to deploy software into customer-controlled environments, including [self-managed](/glossary/self-managed-software/) cloud, [on-premises](/glossary/on-premises-definition/) data centers, BYOC architectures, and [air-gapped](/glossary/air-gapped-meaning/) networks.
+Distr is a software distribution platform built for ISVs that need to deploy software into customer-controlled environments, including [self-hosted](/glossary/self-hosted-software/) cloud, [on-premises](/glossary/on-premises-definition/) data centers, BYOC architectures, and [air-gapped](/glossary/air-gapped-meaning/) networks.
 
 With Distr, ISVs can:
 

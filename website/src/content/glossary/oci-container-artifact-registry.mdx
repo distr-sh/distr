@@ -8,7 +8,7 @@ alternateNames:
   - OCI Registry
   - Artifact Registry
 shortDefinition: 'A container registry is the service that stores, manages, and distributes container images and OCI-compliant artifacts. It is the hub software teams use to publish container images out of CI/CD, distribute software to customers, and pull applications onto deployment targets.'
-lastUpdated: 2026-04-17
+lastUpdated: 2026-07-23
 faq:
   - question: What is the difference between a container registry and a Docker registry?
     answer: 'A Docker registry is a specific type of container registry built for Docker images. "Container registry" is the broader term, which also covers OCI-compliant registries that may store Helm charts, Terraform modules, and other artifacts alongside container images.'
@@ -31,16 +31,14 @@ faq:
   - question: How do I choose between cloud-hosted and self-hosted registries?
     answer: 'Cloud-hosted registries (AWS ECR, Azure ACR, Distr) have minimal operational overhead, automatic updates, and pay-per-use pricing. Self-hosted registries (Harbor, Distribution) give you full control, work in [air-gapped](/glossary/air-gapped-meaning/) environments, and avoid cloud egress fees, at the cost of operational management.'
   - question: What is the best registry for software vendors distributing to customers?
-    answer: 'Software vendors distributing commercial applications to external customers should use purpose-built registries like [Distr](/docs/registry/), which provide customer-specific access controls, usage analytics, license management, and support for self-managed and [air-gapped](/glossary/air-gapped-meaning/) customer deployments.'
+    answer: 'Software vendors distributing commercial applications to external customers should use purpose-built registries like [Distr](/docs/registry/), which provide customer-specific access controls, usage analytics, license management, and support for self-hosted and [air-gapped](/glossary/air-gapped-meaning/) customer deployments.'
 ---
 
 import TestimonialCTA from '~/components/cta/TestimonialCTA.astro';
 
-# Container Registry & Docker Registry: Complete Guide for Software Distribution
-
 ## What is a Container Registry?
 
-A **container registry** is the service that stores, manages, and distributes container images and OCI-compliant artifacts. It's the hub software teams use to publish container images out of CI/CD, distribute software to customers, and pull applications onto deployment targets, whether those targets are Kubernetes clusters, [on-premises](/glossary/on-premises-definition/) data centers, or [air-gapped](/glossary/air-gapped-meaning/) environments.
+A **container registry** is the service that stores, manages, and distributes container images and OCI-compliant artifacts. It's the hub software teams use to publish container images out of CI/CD, distribute software to customers, and pull applications onto deployment targets, whether those targets are [Kubernetes](/glossary/kubernetes/) clusters, [on-premises](/glossary/on-premises-definition/) data centers, or [air-gapped](/glossary/air-gapped-meaning/) environments.
 
 Registries are more than file storage. They add capabilities specific to containerized software: version control through tags, layer deduplication, authentication and access controls, vulnerability scanning, and APIs for programmatic push and pull. Registries plug directly into Docker and Kubernetes, which is why they've become foundational to modern cloud-native workflows.
 
@@ -136,7 +134,7 @@ Use cases:
 Limitations:
 
 - No privacy controls (your images are visible to anyone)
-- Rate limiting on anonymous pulls (Docker Hub caps anonymous at 100 pulls per 6 hours)
+- Rate limiting on anonymous pulls (since April 2025, Docker Hub caps unauthenticated users at [10 pulls per hour per IPv4 address](https://docs.docker.com/docker-hub/usage/); free authenticated accounts get 100 per hour)
 - Limited access control and auditing
 - Not a fit for proprietary software or sensitive code
 
@@ -155,7 +153,7 @@ Use cases:
 - Internal application development and deployment
 - Commercial software distribution to customers
 - Regulated industries requiring data control (healthcare, finance, government)
-- Software vendors distributing to [self-managed](/glossary/self-managed-software/) or [on-premises](/glossary/on-premises-definition/) customer environments
+- Software vendors distributing to [self-hosted](/glossary/self-hosted-software/) or [on-premises](/glossary/on-premises-definition/) customer environments
 - [Air-gapped](/glossary/air-gapped-meaning/) deployments with no internet connectivity
 
 Security features:
@@ -217,7 +215,7 @@ For more on vulnerability scanning, see our [vulnerability scanning glossary](/g
 
 ### Image signing and verification
 
-**Image signing** uses cryptographic signatures to prove an image's authenticity and detect tampering. Tools like Docker Content Trust, Notary, and Sigstore Cosign handle signing and verification.
+**Image signing** uses cryptographic signatures to prove an image's authenticity and detect tampering. Tools like Docker Content Trust, Notary, and [Sigstore Cosign](https://www.sigstore.dev/) handle signing and verification.
 
 The flow:
 
@@ -294,7 +292,7 @@ Container registries are commonly used for internal development workflows, but a
 
 **4. Air-gapped and disconnected environments.** Many enterprise customers run [air-gapped networks](/glossary/air-gapped-meaning/) with no internet connectivity (military, government, critical infrastructure). Standard registries assume internet access, which makes distribution to these environments its own engineering problem.
 
-**5. Self-managed and on-premises deployments.** Customers keep demanding [self-managed software](/glossary/self-managed-software/) running in their own infrastructure ([BYOC, Bring Your Own Cloud](/glossary/byoc-definition/), [on-premises](/glossary/on-premises-definition/), private clouds). Vendors need registry solutions that actually support that.
+**5. Self-hosted and on-premises deployments.** Customers keep demanding [self-hosted software](/glossary/self-hosted-software/) running in their own infrastructure ([BYOC, Bring Your Own Cloud](/glossary/byoc-definition/), [on-premises](/glossary/on-premises-definition/), private clouds). Vendors need registry solutions that actually support that.
 
 **6. Customer portal experience.** External customers expect self-service portals where they can view available images, generate access credentials, and manage deployments. Raw API access doesn't cut it.
 
@@ -468,7 +466,7 @@ Optimize image size:
 - Use multi-stage builds to exclude build tools from the final image
 - Remove unnecessary files before creating image layers
 
-Leverage layer caching:
+Make the most of layer caching:
 
 - Order Dockerfile instructions from least frequently changed to most frequently changed
 - Put dependency installation before application code
@@ -480,7 +478,7 @@ Leverage layer caching:
 
 Modern registries increasingly support **OCI artifacts** beyond container images. An **artifact registry** stores any OCI-compliant artifact type:
 
-**Helm charts**, Kubernetes application packages:
+**[Helm charts](/glossary/helm-chart/)**, Kubernetes application packages:
 
 ```shell
 helm push my-chart.tgz oci://registry.example.com/helm-charts
@@ -504,7 +502,7 @@ oras push registry.example.com/models/bert-base:v1.0 model.pkl:application/vnd.m
 oras push registry.example.com/wasm/serverless-fn:v1.0 function.wasm:application/vnd.wasm.content.layer.v1+wasm
 ```
 
-**Software Bill of Materials (SBOM)**, security metadata about software components:
+**[Software Bill of Materials (SBOM)](/glossary/sbom-software-bill-of-materials/)**, security metadata about software components:
 
 ```shell
 # SBOM attached to container image
@@ -539,6 +537,8 @@ Restart Docker daemon:
 ```shell
 sudo systemctl restart docker
 ```
+
+Beyond caching public images, vendors can also use a pull-through cache to give customers access to private images without exposing the upstream registry. See our guide on [pull-through caches for software distribution](/blog/container-registry-pull-through-cache/) and the [Distr pull-through cache docs](/docs/registry/pull-through-cache/).
 
 <TestimonialCTA name="weave" />
 
