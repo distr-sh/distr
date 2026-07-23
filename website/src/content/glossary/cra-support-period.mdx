@@ -1,0 +1,37 @@
+---
+title: 'Support Period (CRA): The 5-Year Floor Explained'
+slug: cra-support-period
+description: 'The Cyber Resilience Act support period: the minimum 5 years of vulnerability handling, the 10-year update availability rule, and the engineering consequences.'
+term: 'Support period'
+alternateNames:
+  - 'CRA support period'
+shortDefinition: 'The support period under the Cyber Resilience Act is the time during which a manufacturer must handle vulnerabilities in a product, at least 5 years under [Article 13(8)](https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#013.008) unless the product is expected to be in use for a shorter time.'
+lastUpdated: 2026-07-21
+faq:
+  - question: 'Is a 5-year support period mandatory under the CRA?'
+    answer: 'Yes, as a floor. [Article 13(8)](https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#013.008) requires at least 5 years, unless the product is expected to be in use for less time. Products expected to be used longer need correspondingly longer support periods.'
+  - question: 'What is the 10-year rule in the CRA?'
+    answer: 'Under [Article 13(9)](https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#013.009), each security update issued during the support period must remain available for at least 10 years after issuance, or for the remainder of the support period, whichever is longer.'
+---
+
+The support period under the Cyber Resilience Act is the time during which a
+manufacturer must handle vulnerabilities in a product with digital elements,
+and it must be at least 5 years under [Article 13(8)][art-13-8], unless the product is
+expected to be in use for a shorter time. During this period the manufacturer
+must identify, document, and remediate vulnerabilities without delay and
+provide security updates through a secure distribution mechanism.
+
+The support period is a product-level decision with engineering consequences:
+every version line a customer can legitimately run within that window needs a
+path to receive security fixes. A related but distinct obligation is update
+availability: under [Article 13(9)][art-13-9], each security update issued during the
+support period must remain available for at least 10 years after it was issued,
+or for the remainder of the support period, whichever is longer. The support
+period must also be stated transparently so users know how long they can expect
+security support.
+
+See the full duty list in
+[the CRA guide for software vendors](/cyber-resilience-act/introduction/).
+
+[art-13-8]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#013.008
+[art-13-9]: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#013.009
