@@ -108,8 +108,18 @@ run = 'golangci-lint run --fix'
 [tasks."format:frontend"]
 run = 'pnpm format'
 
+[tasks."format:helm-docs"]
+run = ['helm-docs', 'pnpm exec prettier --write README.md']
+dir = "deploy/charts/distr"
+sources = [
+  "deploy/charts/distr/Chart.yaml",
+  "deploy/charts/distr/values.yaml",
+  "deploy/charts/distr/README.md.gotmpl",
+]
+outputs = ["README.md"]
+
 [tasks.format]
-run = { tasks = ["format:go", "format:frontend"] }
+run = { tasks = ["format:go", "format:frontend", "format:helm-docs"] }
 
 [tasks."run:hub:serve"]
 run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/hub/ serve'
