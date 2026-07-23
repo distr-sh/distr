@@ -122,6 +122,7 @@
                   </div>
                   <p class="flex items-center gap-1 text-sm text-gray-500 truncate dark:text-gray-400 mt-1">
                     <app-uuid [uuid]="artifact.id" [small]="true" />
+                    <app-artifact-type-badges [types]="artifact.inferredTypes" />
                     @if (auth.isVendor() && artifact.upstreamUrl) {
                       <span
                         class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-blue-900 dark:text-blue-300">

@@ -30,7 +30,11 @@ import {OrganizationBrandingService} from '../../services/organization-branding.
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
-import {ArtifactsDownloadCountComponent, ArtifactsDownloadedByComponent} from '../components';
+import {
+  ArtifactsDownloadCountComponent,
+  ArtifactsDownloadedByComponent,
+  ArtifactTypeBadgesComponent,
+} from '../components';
 
 @Component({
   selector: 'app-artifacts',
@@ -42,6 +46,7 @@ import {ArtifactsDownloadCountComponent, ArtifactsDownloadedByComponent} from '.
     RouterLink,
     ArtifactsDownloadCountComponent,
     ArtifactsDownloadedByComponent,
+    ArtifactTypeBadgesComponent,
     AutotrimDirective,
     RequireVendorDirective,
     RequireCustomerDirective,
