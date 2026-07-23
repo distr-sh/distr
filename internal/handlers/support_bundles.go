@@ -1,10 +1,14 @@
 package handlers
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/api"
@@ -60,6 +64,11 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 				With(option.Description("Get support bundle detail")).
 				With(option.Request(BundleIDRequest{})).
 				With(option.Response(http.StatusOK, api.SupportBundleDetail{}))
+
+			r.Get("/download", downloadSupportBundleResourcesHandler()).
+				With(option.Description("Download all support bundle resources as a zip archive")).
+				With(option.Request(BundleIDRequest{})).
+				With(option.Response(http.StatusOK, nil, option.ContentType("application/zip")))
 
 			r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 				Patch("/status", updateSupportBundleStatusHandler()).
@@ -317,6 +326,119 @@ func getSupportBundleDetailHandler() http.HandlerFunc {
 		}
 		RespondJSON(w, detail)
 	}
+}
+
+func downloadSupportBundleResourcesHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		bundle := requireSupportBundle(w, r)
+		if bundle == nil {
+			return
+		}
+
+		ctx := r.Context()
+		log := internalctx.GetLogger(ctx)
+
+		resources, err := db.GetSupportBundleResources(ctx, bundle.ID)
+		if err != nil {
+			log.Error("failed to get support bundle resources", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var buffer bytes.Buffer
+		if err := writeSupportBundleZip(&buffer, resources); err != nil {
+			log.Error("failed to build zip archive", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		filename := supportBundleZipFileName(bundle)
+		w.Header().Set("Content-Type", "application/zip")
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+		if _, err := w.Write(buffer.Bytes()); err != nil {
+			log.Warn("failed to write zip archive", zap.Error(err))
+		}
+	}
+}
+
+func writeSupportBundleZip(w io.Writer, resources []types.SupportBundleResource) (err error) {
+	zipWriter := zip.NewWriter(w)
+	defer func() {
+		if closeErr := zipWriter.Close(); err == nil {
+			err = closeErr
+		}
+	}()
+
+	usedNames := make(map[string]struct{})
+	for _, resource := range resources {
+		name := supportBundleZipEntryName(resource.Name, resource.ID.String())
+		entryName := name + ".txt"
+		for count := 2; ; count++ {
+			if _, exists := usedNames[entryName]; !exists {
+				break
+			}
+			entryName = fmt.Sprintf("%s-%d.txt", name, count)
+		}
+		usedNames[entryName] = struct{}{}
+		entry, err := zipWriter.CreateHeader(&zip.FileHeader{
+			Name:     entryName,
+			Method:   zip.Deflate,
+			Modified: resource.CreatedAt,
+		})
+		if err != nil {
+			return err
+		}
+		if _, err := entry.Write([]byte(resource.Content)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func supportBundleZipEntryName(name, fallback string) string {
+	var b strings.Builder
+	for _, r := range name {
+		if b.Len() >= 128 {
+			break
+		}
+		if r == '/' || r == '\\' {
+			r = '-'
+		}
+		b.WriteRune(r)
+	}
+	name = strings.TrimSpace(b.String())
+	if name == "" {
+		return fallback
+	}
+	return name
+}
+
+func supportBundleZipFileName(bundle *types.SupportBundleWithDetails) string {
+	parts := []string{"distr-support-bundle"}
+	if customer := zipFileNamePart(bundle.CustomerOrganizationName); customer != "" {
+		parts = append(parts, customer)
+	}
+	if title := zipFileNamePart(bundle.Title); title != "" {
+		parts = append(parts, title)
+	}
+	parts = append(parts, bundle.ID.String()[:8])
+	return strings.Join(parts, "-") + ".zip"
+}
+
+// zipFileNamePart reduces a string to lowercase letters only, capped at 16 characters.
+func zipFileNamePart(s string) string {
+	var b strings.Builder
+	for _, r := range strings.ToLower(s) {
+		if r >= 'a' && r <= 'z' {
+			b.WriteRune(r)
+			if b.Len() >= 16 {
+				break
+			}
+		}
+	}
+	return b.String()
 }
 
 func updateSupportBundleStatusHandler() http.HandlerFunc {

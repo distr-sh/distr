@@ -4,8 +4,9 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faGear, faMagnifyingGlass, faPlus, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faDownload, faGear, faMagnifyingGlass, faPlus, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, map, of, startWith, Subject, switchMap, take} from 'rxjs';
+import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
 import {never} from '../../../util/exhaust';
 import {filteredByFormControl} from '../../../util/filter';
@@ -13,7 +14,7 @@ import {ClipComponent} from '../../components/clip.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AuthService} from '../../services/auth.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
-import {SupportBundlesService} from '../../services/support-bundles.service';
+import {SupportBundlesService, supportBundleZipFileName} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
 import {SupportBundle, SupportBundleStatus} from '../../types/support-bundle';
 
@@ -29,6 +30,7 @@ export class SupportBundleListComponent {
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
 
+  protected readonly faDownload = faDownload;
   protected readonly faGear = faGear;
   protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faPlus = faPlus;
@@ -115,6 +117,29 @@ export class SupportBundleListComponent {
       }
     } finally {
       this.createFormLoading = false;
+    }
+  }
+
+  protected readonly downloadingBundleId = signal<string | null>(null);
+
+  protected async downloadResources(bundle: SupportBundle, event: Event): Promise<void> {
+    event.stopPropagation();
+    if (this.downloadingBundleId() !== null) {
+      return;
+    }
+    this.downloadingBundleId.set(bundle.id);
+    try {
+      const blob = await firstValueFrom(this.svc.downloadResources(bundle.id));
+      downloadBlob(blob, supportBundleZipFileName(bundle));
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    } finally {
+      if (this.downloadingBundleId() === bundle.id) {
+        this.downloadingBundleId.set(null);
+      }
     }
   }
 

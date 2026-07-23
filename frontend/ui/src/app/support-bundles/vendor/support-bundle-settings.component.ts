@@ -117,6 +117,12 @@ export class SupportBundleSettingsComponent {
   }
 
   protected async save() {
+    if (await this.persistConfiguration()) {
+      this.toast.success('Support bundle configuration saved');
+    }
+  }
+
+  private async persistConfiguration(): Promise<boolean> {
     this.saving.set(true);
     const envVars: SupportBundleConfigurationEnvVar[] = this.envVarsArray.controls.map((group) => ({
       name: group.controls.name.value.trim(),
@@ -126,12 +132,13 @@ export class SupportBundleSettingsComponent {
     try {
       await firstValueFrom(this.svc.updateConfiguration({envVars}));
       this.envVarsArray.markAsPristine();
-      this.toast.success('Support bundle configuration saved');
+      return true;
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {
         this.toast.error(msg);
       }
+      return false;
     } finally {
       this.saving.set(false);
     }
@@ -141,6 +148,9 @@ export class SupportBundleSettingsComponent {
   private importModalRef?: DialogRef;
 
   protected openImportModal(templateRef: TemplateRef<unknown>) {
+    if (this.envVarsArray.dirty) {
+      return;
+    }
     this.importText.reset();
     this.importModalRef = this.overlay.showModal(templateRef);
   }
@@ -150,7 +160,7 @@ export class SupportBundleSettingsComponent {
     this.importModalRef = undefined;
   }
 
-  protected importEnvVars() {
+  protected async importEnvVars() {
     const existingNames = new Set(this.envVarsArray.controls.map((g) => g.controls.name.value.trim().toUpperCase()));
     const lines = this.importText.value.split('\n');
     let added = 0;
@@ -171,9 +181,12 @@ export class SupportBundleSettingsComponent {
       this.addEnvVar({name, redacted: false});
       added++;
     }
-    if (added > 0) {
-      this.toast.success(`Imported ${added} variable${added > 1 ? 's' : ''}`);
-    }
     this.closeImportModal();
+    if (added > 0) {
+      this.envVarsArray.markAsDirty();
+    }
+    if (added > 0 && (await this.persistConfiguration())) {
+      this.toast.success(`Imported and saved ${added} variable${added > 1 ? 's' : ''}`);
+    }
   }
 }
