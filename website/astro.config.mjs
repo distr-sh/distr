@@ -296,6 +296,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             '/pricing/',
             '/blog/**',
             '/glossary/**',
+            '/cyber-resilience-act{,/**}',
             '/get-started/',
             '/onboarding/',
             'mailto:**',
@@ -381,6 +382,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
     // Legacy blog redirects (content superseded by /compare/ pages)
     '/blog/distr-vs-replicated/': '/compare/replicated/',
+
+    // CRA hub: early slug renamed guide → introduction
+    '/cyber-resilience-act/guide/': '/cyber-resilience-act/introduction/',
 
     // Renamed blog posts
     '/blog/self-managed-vs-cloud-vs-byoc/':

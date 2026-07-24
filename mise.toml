@@ -105,8 +105,18 @@ run = { tasks = ["test:go", "test:frontend"] }
 [tasks."format:go"]
 run = 'golangci-lint run --fix'
 
+[tasks."build:helm-docs"]
+run = 'helm-docs --chart-search-root deploy/charts'
+sources = [
+  "deploy/charts/distr/Chart.yaml",
+  "deploy/charts/distr/values.yaml",
+  "deploy/charts/distr/README.md.gotmpl",
+]
+outputs = ["deploy/charts/distr/README.md"]
+
 [tasks."format:frontend"]
 run = 'pnpm format'
+depends = ["build:helm-docs"]
 
 [tasks.format]
 run = { tasks = ["format:go", "format:frontend"] }

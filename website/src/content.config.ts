@@ -45,6 +45,26 @@ export const GlossaryEntryConfigSchema = z.object({
     .optional(),
 });
 
+export const CraGuideConfigSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  slug: z.string(),
+  publishDate: z.coerce.date(),
+  lastUpdated: z.coerce.date(),
+  // Order on the /cyber-resilience-act hub page
+  order: z.number(),
+  // Short teaser for the hub card
+  teaser: z.string(),
+  faq: z
+    .array(
+      z.object({
+        question: z.string(),
+        answer: z.string(),
+      }),
+    )
+    .optional(),
+});
+
 export const CustomerConfigSchema = ({image}: SchemaContext) =>
   z.object({
     company: z.string(),
@@ -92,8 +112,13 @@ export const collections = {
     loader: glob({pattern: '**/*.{md,mdx}', base: 'src/content/customers'}),
     schema: CustomerConfigSchema,
   }),
+  cra: defineCollection({
+    loader: glob({pattern: '**/*.{md,mdx}', base: 'src/content/cra'}),
+    schema: CraGuideConfigSchema,
+  }),
 };
 
 export type BlogPostConfig = z.output<ReturnType<typeof BlogPostConfigSchema>>;
+export type CraGuideConfig = z.output<typeof CraGuideConfigSchema>;
 export type GlossaryEntryConfig = z.output<typeof GlossaryEntryConfigSchema>;
 export type CustomerConfig = z.output<ReturnType<typeof CustomerConfigSchema>>;
