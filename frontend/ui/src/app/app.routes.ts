@@ -51,7 +51,7 @@ const jwtAuthGuard: CanActivateFn = (_: ActivatedRouteSnapshot, state: RouterSta
   const router = inject(Router);
   const claims = auth.getClaims();
   if (claims) {
-    if (claims.password_reset) {
+    if (claims.scope === 'password_reset') {
       if (state.url === '/reset') {
         return true;
       } else {
