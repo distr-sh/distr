@@ -70,7 +70,7 @@ services:
       start_period: 30s
 
   hub:
-    image: ghcr.io/distr-sh/distr-ce:3.0.2 # x-release-please-version
+    image: ghcr.io/distr-sh/distr-ce:3.0.3 # x-release-please-version
     depends_on:
       postgres:
         condition: service_healthy
