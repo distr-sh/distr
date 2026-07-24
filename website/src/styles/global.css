@@ -55,7 +55,7 @@
   }
 
   /* Show the header logo slightly larger than the Starlight default
-     (nav height minus 2 * nav padding, i.e. 2rem) and closer to the title */
+     (nav height minus 2 * nav padding) and closer to the title */
   .site-title {
     gap: 0.5rem;
   }
