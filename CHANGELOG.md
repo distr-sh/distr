@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.0.3](https://github.com/distr-sh/distr/compare/3.0.2...3.0.3) (2026-07-24)
+
+
+### Bug Fixes
+
+* password reset links sometimes displayed as expired ([#2906](https://github.com/distr-sh/distr/issues/2906)) ([192cc69](https://github.com/distr-sh/distr/commit/192cc697b5e02d488deb12518c8ee5539f5b39ab))
+
+
+### Docs
+
+* **website:** Cyber Resilience Act content hub ([#2886](https://github.com/distr-sh/distr/issues/2886)) ([d4bae85](https://github.com/distr-sh/distr/commit/d4bae855c08275d6ec7ab84b203b6870272b33b0))
+
 ## [3.0.2](https://github.com/distr-sh/distr/compare/3.0.1...3.0.2) (2026-07-23)
 
 
