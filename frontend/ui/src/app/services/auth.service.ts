@@ -12,11 +12,13 @@ const authBaseUrl = '/api/v1/auth';
 
 export interface JWTClaims {
   sub: string;
-  org: string;
+  // Special tokens (password reset, invite, verification) are not scoped to an organization.
+  org?: string;
   c_org?: string;
   p_org?: string;
   email: string;
-  password_reset: boolean;
+  // Purpose a special token was minted for; absent on regular login tokens.
+  scope?: 'password_reset' | 'invite';
   email_verified: boolean;
   name: string;
   exp: string;

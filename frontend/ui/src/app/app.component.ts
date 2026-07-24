@@ -39,7 +39,9 @@ export class AppComponent implements OnInit {
         const email = jwtClaims.email;
         Sentry.setUser({email});
         posthog.setPersonProperties({email});
-        posthog.group('organization', jwtClaims.org);
+        if (jwtClaims.org) {
+          posthog.group('organization', jwtClaims.org);
+        }
       }
       posthog.capture('$pageview');
     });
