@@ -12,14 +12,14 @@ import (
 	"go.uber.org/zap"
 )
 
-func ensureProFeatures(ctx context.Context) error {
+func ensureEnterpriseFeatures(ctx context.Context) error {
 	log := internalctx.GetLogger(ctx)
-	log.Info("ensuring pro features for all organizations")
-	updated, err := db.EnsureOrganizationFeatures(ctx, types.ProFeatures)
+	log.Info("ensuring enterprise features for all organizations")
+	updated, err := db.EnsureOrganizationFeatures(ctx, types.FeaturesForSubscriptionType(types.SubscriptionTypeEnterprise))
 	if err != nil {
 		return err
 	}
-	log.Info("ensured pro features for organizations", zap.Int64("updated_count", updated))
+	log.Info("ensured enterprise features for organizations", zap.Int64("updated_count", updated))
 	return nil
 }
 
@@ -82,7 +82,7 @@ func ReconcileEditionFeatures(ctx context.Context) error {
 				return err
 			}
 
-			if err := ensureProFeatures(ctx); err != nil {
+			if err := ensureEnterpriseFeatures(ctx); err != nil {
 				return err
 			}
 

@@ -140,9 +140,9 @@ func FeaturesForSubscriptionType(st SubscriptionType) []Feature {
 	switch st {
 	case SubscriptionTypeCommunity:
 		return []Feature{}
-	case SubscriptionTypeTrial, SubscriptionTypePro, SubscriptionTypeEnterprise:
+	case SubscriptionTypeTrial, SubscriptionTypePro:
 		return []Feature{FeatureLicensing}
-	case SubscriptionTypeBusiness:
+	case SubscriptionTypeBusiness, SubscriptionTypeEnterprise:
 		return []Feature{FeatureLicensing, FeaturePartnerManagement, FeatureVulnerabilities}
 	default:
 		return []Feature{}

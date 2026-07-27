@@ -63,7 +63,7 @@ func CreateOrganization(ctx context.Context, org *types.Organization) error {
 		// When limits are enforced on startup, all organizations are set to the enterprise
 		// subscription type, so new organizations must reflect the same subscription.
 		org.SubscriptionType = types.SubscriptionTypeEnterprise
-		org.Features = slices.Clone(types.ProFeatures)
+		org.Features = types.FeaturesForSubscriptionType(types.SubscriptionTypeEnterprise)
 		org.SubscriptionPeriod = licenseData.Period
 		org.SubscriptionEndsAt = licenseData.ExpirationDate
 		org.SubscriptionCustomerOrganizationQty = licenseData.MaxCustomersPerOrganization
