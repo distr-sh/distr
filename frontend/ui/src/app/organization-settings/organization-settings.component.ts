@@ -37,6 +37,7 @@ export class OrganizationSettingsComponent implements OnInit {
   protected readonly auth = inject(AuthService);
 
   private readonly preflightConfirmTemplate = viewChild.required<TemplateRef<unknown>>('preflightConfirmTemplate');
+  private readonly customDomains = viewChild.required(CustomDomainsComponent);
 
   private organization?: Organization;
 
@@ -116,6 +117,7 @@ export class OrganizationSettingsComponent implements OnInit {
           })
         );
         this.toast.success('Settings saved successfully');
+        await this.customDomains().save();
       } catch (e) {
         const msg = getFormDisplayedError(e);
         if (msg) {

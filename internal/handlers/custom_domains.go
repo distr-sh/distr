@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"net"
 	"net/http"
@@ -29,10 +30,10 @@ func CustomDomainsRouter(r chiopenapi.Router) {
 		With(option.Description("List all custom domains of the current organization")).
 		With(option.Response(http.StatusOK, []types.CustomDomain{}))
 	r.With(middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
-		r.Post("/", createCustomDomainHandler).
-			With(option.Description("Register a new custom domain for the current organization")).
-			With(option.Request(api.CreateCustomDomainRequest{})).
-			With(option.Response(http.StatusOK, types.CustomDomain{}))
+		r.Post("/", createCustomDomainsHandler).
+			With(option.Description("Register new custom domains for the current organization")).
+			With(option.Request(api.CreateCustomDomainsRequest{})).
+			With(option.Response(http.StatusOK, []types.CustomDomain{}))
 		r.Delete("/{customDomainId}", deleteCustomDomainHandler).
 			With(option.Description("Delete a custom domain")).
 			With(option.Request(struct {
@@ -55,12 +56,12 @@ func getCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
 	RespondJSON(w, customDomains)
 }
 
-func createCustomDomainHandler(w http.ResponseWriter, r *http.Request) {
+func createCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 
-	request, err := JsonBody[api.CreateCustomDomainRequest](w, r)
+	request, err := JsonBody[api.CreateCustomDomainsRequest](w, r)
 	if err != nil {
 		return
 	}
@@ -69,24 +70,37 @@ func createCustomDomainHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if isPlatformOwnedDomain(request.Domain) {
-		http.Error(w, "this domain is owned by the platform and can not be registered", http.StatusBadRequest)
-		return
+
+	customDomains := make([]types.CustomDomain, len(request.Domains))
+	for i, domain := range request.Domains {
+		if isPlatformOwnedDomain(domain.Domain) {
+			http.Error(w, "this domain is owned by the platform and can not be registered", http.StatusBadRequest)
+			return
+		}
+		if conflict, err := legacyDomainOwnedByOtherOrg(ctx, domain.Domain, *auth.CurrentOrgID()); err != nil {
+			log.Error("failed to check legacy branding domains", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		} else if conflict {
+			http.Error(w, "this domain is already in use", http.StatusConflict)
+			return
+		}
+		customDomains[i] = types.CustomDomain{
+			Domain:         domain.Domain,
+			Type:           domain.DomainType,
+			OrganizationID: *auth.CurrentOrgID(),
+		}
 	}
 
-	customDomain := types.CustomDomain{
-		Domain:         request.Domain,
-		Type:           request.DomainType,
-		OrganizationID: *auth.CurrentOrgID(),
-	}
-	if err := db.CreateCustomDomain(ctx, &customDomain); errors.Is(err, apierrors.ErrConflict) {
+	if created, err := db.CreateCustomDomains(ctx, customDomains); errors.Is(err, apierrors.ErrConflict) {
 		http.Error(w, "this domain is already in use", http.StatusConflict)
 	} else if err != nil {
-		log.Error("failed to create custom domain", zap.Error(err))
+		log.Error("failed to create custom domains", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
-		RespondJSON(w, customDomain)
+		RespondJSON(w, created)
 	}
 }
 
@@ -110,6 +124,39 @@ func deleteCustomDomainHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		w.WriteHeader(http.StatusNoContent)
 	}
+}
+
+// legacyDomainOwnedByOtherOrg reports whether the given normalized domain is already configured as a
+// legacy OrganizationBranding.app_domain / registry_domain of a different organization. Custom domains
+// take precedence over the legacy columns during host resolution (portal branding, TLS ask), so
+// registering such a domain would let one organization take over another's existing domain. The owning
+// organization registering its own legacy domain is fine (self-service migration). Legacy values may
+// contain a scheme and/or port, so they are normalized before comparison.
+func legacyDomainOwnedByOtherOrg(ctx context.Context, domain string, orgID uuid.UUID) (bool, error) {
+	legacyDomains, err := db.GetOrganizationLegacyBrandingDomains(ctx)
+	if err != nil {
+		return false, err
+	}
+	for _, legacy := range legacyDomains {
+		if legacy.OrganizationID == orgID {
+			continue
+		}
+		for _, legacyDomain := range []*string{legacy.AppDomain, legacy.RegistryDomain} {
+			if legacyDomain != nil && normalizeLegacyDomain(*legacyDomain) == domain {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
+// normalizeLegacyDomain normalizes a legacy branding domain value to a bare lowercase hostname
+// (no scheme, port, trailing slash or trailing dot) so it can be compared against a normalized
+// self-service custom domain.
+func normalizeLegacyDomain(domain string) string {
+	domain = strings.ToLower(strings.TrimSpace(domain))
+	domain = strings.TrimSuffix(domain, "/")
+	return strings.TrimSuffix(hostnameOf(domain), ".")
 }
 
 // isPlatformOwnedDomain reports whether the given normalized domain is owned by the platform

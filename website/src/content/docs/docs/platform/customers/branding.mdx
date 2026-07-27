@@ -79,10 +79,28 @@ None of these settings require a custom domain: they apply to all logged-in user
 
 ## Custom Domains
 
-For a fully white-labeled experience, Distr supports custom domains for the Customer Portal, the artifact registry, and the sender address of transactional e-mails.
-Once configured, they are displayed at the bottom of the Branding page, and all Distr-specific branding is removed when your portal is accessed via your custom domain.
+For a fully white-labeled experience, Distr supports custom domains for the Customer Portal and the artifact registry.
+When your portal is accessed via your custom domain, all Distr-specific branding is removed and your white-label settings also apply to unauthenticated pages such as the login page.
+
+Organization admins can set up custom domains self-service under **Settings → Organization → Custom Domains**:
+
+1. **App domain** (e.g. `app.your-company.com`): Serves the web UI and API, including the Customer Portal. It also serves the artifact registry under the `/v2/` path, so a single domain is usually all you need.
+2. **Registry domain** (optional, e.g. `registry.your-company.com`): Only needed if you want a separate hostname for the artifact registry.
+
+Enter the domain as a bare hostname (no `https://`) and add it.
+Then create the CNAME record shown below the domain at your DNS provider, pointing your domain at the displayed target.
+The TLS certificate is issued automatically on the first request once the DNS record has propagated — no certificate upload or renewal handling required.
 
 <Aside type="note">
-  Custom domains are configured by Distr support. Contact us at support@distr.sh
-  for setup.
+  Custom domains are available on the Business plan. Each domain can only be
+  registered by one organization. Removing a domain makes it stop working
+  immediately and its TLS certificate is no longer renewed.
 </Aside>
+
+<Aside type="tip">
+  A custom sender address for transactional e-mails is currently still
+  configured by Distr support. Contact us at support@distr.sh for setup.
+</Aside>
+
+On self-hosted instances, the Custom Domains section only appears when the instance is configured for custom domain self-service.
+See the [configuration reference](/docs/self-hosting/configuration/#custom-domains) for the required setup.

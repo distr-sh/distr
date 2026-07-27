@@ -1,8 +1,8 @@
-import {ChangeDetectionStrategy, Component, computed, inject} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {ChangeDetectionStrategy, Component, computed, effect, inject} from '@angular/core';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faPlus, faTrash} from '@fortawesome/free-solid-svg-icons';
+import {faTrash} from '@fortawesome/free-solid-svg-icons';
 import {BehaviorSubject, combineLatest, firstValueFrom, of, switchMap} from 'rxjs';
 import {fromPromise} from 'rxjs/internal/observable/innerFrom';
 import {getRemoteEnvironment} from '../../env/remote';
@@ -24,9 +24,10 @@ const hostnamePattern = /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9]([a-z0-
   templateUrl: './custom-domains.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FaIconComponent, ReactiveFormsModule, AutotrimDirective],
+  // The host must not occupy a slot in the parent grid when the section is hidden.
+  host: {class: 'contents'},
 })
 export class CustomDomainsComponent {
-  protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;
 
   private readonly customDomainsService = inject(CustomDomainsService);
@@ -60,26 +61,60 @@ export class CustomDomainsComponent {
   protected readonly appDomain = computed(() => this.domains().find((d) => d.domainType === 'app'));
   protected readonly registryDomain = computed(() => this.domains().find((d) => d.domainType === 'registry'));
 
-  protected readonly appDomainForm = this.fb.group({
-    domain: this.fb.control('', [Validators.required, Validators.pattern(hostnamePattern)]),
+  // Not marked required: the inputs are saved together with the organization settings form,
+  // so empty domain inputs simply mean "nothing to save" and must not block that save.
+  protected readonly form = this.fb.group({
+    appDomain: this.fb.control('', [Validators.pattern(hostnamePattern)]),
+    registryDomainEnabled: this.fb.control(false),
+    registryDomain: this.fb.control({value: '', disabled: true}, [Validators.pattern(hostnamePattern)]),
   });
-  protected readonly registryDomainForm = this.fb.group({
-    domain: this.fb.control('', [Validators.required, Validators.pattern(hostnamePattern)]),
+  protected readonly registryDomainEnabled = toSignal(this.form.controls.registryDomainEnabled.valueChanges, {
+    initialValue: false,
   });
 
-  protected async add(domainType: CustomDomainType) {
-    const form = domainType === 'app' ? this.appDomainForm : this.registryDomainForm;
-    form.markAllAsTouched();
-    if (form.invalid) {
+  constructor() {
+    // Disabled controls are excluded from validation, so only the visible inputs block saving.
+    this.form.controls.registryDomainEnabled.valueChanges.pipe(takeUntilDestroyed()).subscribe((enabled) => {
+      if (enabled) {
+        this.form.controls.registryDomain.enable();
+      } else {
+        this.form.controls.registryDomain.disable();
+      }
+    });
+    effect(() => {
+      if (this.appDomain()) {
+        this.form.controls.appDomain.disable();
+      } else {
+        this.form.controls.appDomain.enable();
+      }
+    });
+  }
+
+  // Called by the organization settings save button; a no-op when no domains were entered.
+  public async save() {
+    const requests: {domain: string; domainType: CustomDomainType}[] = [];
+    if (!this.appDomain() && this.form.controls.appDomain.enabled && this.form.controls.appDomain.value) {
+      requests.push({domain: this.form.controls.appDomain.value.toLowerCase(), domainType: 'app'});
+    }
+    if (
+      !this.registryDomain() &&
+      this.form.controls.registryDomain.enabled &&
+      this.form.controls.registryDomain.value
+    ) {
+      requests.push({domain: this.form.controls.registryDomain.value.toLowerCase(), domainType: 'registry'});
+    }
+    if (requests.length === 0) {
+      return;
+    }
+    this.form.markAllAsTouched();
+    if (this.form.invalid) {
       return;
     }
     try {
-      await firstValueFrom(
-        this.customDomainsService.create({domain: form.controls.domain.value.toLowerCase(), domainType})
-      );
-      form.reset();
+      await firstValueFrom(this.customDomainsService.create(requests));
+      this.form.reset();
       this.refresh$.next();
-      this.toast.success('Custom domain added. Remember to create the CNAME record at your DNS provider.');
+      this.toast.success('Custom domains saved. Remember to create the CNAME records at your DNS provider.');
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {

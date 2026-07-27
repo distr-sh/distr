@@ -10,7 +10,6 @@ import (
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
@@ -64,7 +63,6 @@ func orgWideCustomDomains(ctx context.Context, orgID uuid.UUID) []types.CustomDo
 	domains, err := db.GetOrgWideCustomDomains(ctx, orgID)
 	if err != nil {
 		internalctx.GetLogger(ctx).Warn("failed to resolve custom domains", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
 		return nil
 	}
 	return domains

@@ -15,8 +15,8 @@ export class CustomDomainsService {
     return this.httpClient.get<CustomDomain[]>(baseUrl);
   }
 
-  public create(request: CreateCustomDomainRequest): Observable<CustomDomain> {
-    return this.httpClient.post<CustomDomain>(baseUrl, request);
+  public create(requests: CreateCustomDomainRequest[]): Observable<CustomDomain[]> {
+    return this.httpClient.post<CustomDomain[]>(baseUrl, {domains: requests});
   }
 
   public delete(id: string): Observable<void> {

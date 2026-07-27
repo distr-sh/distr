@@ -19,29 +19,38 @@ const customDomainOutputExpr = `
 	d.customer_organization_id, d.partner_organization_id
 `
 
-func CreateCustomDomain(ctx context.Context, customDomain *types.CustomDomain) error {
+// CreateCustomDomains inserts all given custom domains with a single statement, so either all
+// of them are created or none (e.g. on a unique constraint violation, mapped to ErrConflict).
+func CreateCustomDomains(ctx context.Context, customDomains []types.CustomDomain) ([]types.CustomDomain, error) {
 	db := internalctx.GetDb(ctx)
+	domains := make([]string, len(customDomains))
+	domainTypes := make([]string, len(customDomains))
+	organizationIDs := make([]uuid.UUID, len(customDomains))
+	for i, customDomain := range customDomains {
+		domains[i] = customDomain.Domain
+		domainTypes[i] = string(customDomain.Type)
+		organizationIDs[i] = customDomain.OrganizationID
+	}
 	rows, err := db.Query(ctx,
 		`INSERT INTO CustomDomain AS d (domain, domain_type, organization_id)
-		VALUES (@domain, @domainType, @organizationId)
+		SELECT * FROM unnest(@domains::TEXT[], @domainTypes::TEXT[], @organizationIds::UUID[])
 		RETURNING`+customDomainOutputExpr,
 		pgx.NamedArgs{
-			"domain":         customDomain.Domain,
-			"domainType":     customDomain.Type,
-			"organizationId": customDomain.OrganizationID,
+			"domains":         domains,
+			"domainTypes":     domainTypes,
+			"organizationIds": organizationIDs,
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("could not insert CustomDomain: %w", err)
+		return nil, fmt.Errorf("could not insert CustomDomains: %w", err)
 	}
-	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.CustomDomain])
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.CustomDomain])
 	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation {
-		return fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+		return nil, fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
 	} else if err != nil {
-		return fmt.Errorf("could not collect CustomDomain: %w", err)
+		return nil, fmt.Errorf("could not collect CustomDomains: %w", err)
 	}
-	*customDomain = result
-	return nil
+	return result, nil
 }
 
 func GetCustomDomains(ctx context.Context, organizationID uuid.UUID) ([]types.CustomDomain, error) {

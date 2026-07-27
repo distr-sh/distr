@@ -27,3 +27,25 @@ func (r *CreateCustomDomainRequest) Validate() error {
 	}
 	return validation.ValidateHostname(r.Domain)
 }
+
+type CreateCustomDomainsRequest struct {
+	Domains []CreateCustomDomainRequest `json:"domains"`
+}
+
+func (r *CreateCustomDomainsRequest) Normalize() {
+	for i := range r.Domains {
+		r.Domains[i].Normalize()
+	}
+}
+
+func (r *CreateCustomDomainsRequest) Validate() error {
+	if len(r.Domains) == 0 {
+		return validation.NewValidationFailedError("at least one domain is required")
+	}
+	for _, domain := range r.Domains {
+		if err := domain.Validate(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
