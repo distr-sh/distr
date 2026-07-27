@@ -1354,6 +1354,28 @@ func GetPullThroughBlobSize(ctx context.Context, orgSlug, artifactName, blobDige
 	return size, nil
 }
 
+// GetRegistryStorageUsage returns the total size of all artifact blobs of the given organization.
+// Blobs are deduplicated by digest so that layers shared between artifact versions are counted once.
+func GetRegistryStorageUsage(ctx context.Context, orgID uuid.UUID) (int64, error) {
+	db := internalctx.GetDb(ctx)
+	var size int64
+	err := db.QueryRow(ctx, `
+		SELECT COALESCE(SUM(distinct_blobs.artifact_blob_size), 0)
+		FROM (
+			SELECT DISTINCT avp.artifact_blob_digest, avp.artifact_blob_size
+			FROM ArtifactVersionPart avp
+			JOIN ArtifactVersion av ON av.id = avp.artifact_version_id
+			JOIN Artifact a ON a.id = av.artifact_id
+			WHERE a.organization_id = @orgId
+		) AS distinct_blobs`,
+		pgx.NamedArgs{"orgId": orgID},
+	).Scan(&size)
+	if err != nil {
+		return 0, fmt.Errorf("could not query registry storage usage: %w", err)
+	}
+	return size, nil
+}
+
 func GetAllReferencedBlobDigests(ctx context.Context) ([]string, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx, `

@@ -7,6 +7,8 @@ export interface SubscriptionLimits {
   maxCustomerOrganizations: number;
   maxUsersPerCustomerOrganization: number;
   maxDeploymentsPerCustomerOrganization: number;
+  // Reported for display purposes only, this limit is not enforced.
+  maxRegistryStorageBytes: number;
   logQueryWindowSeconds: number;
 }
 
@@ -18,8 +20,7 @@ export interface SubscriptionInfo {
   subscriptionUserAccountQuantity: number;
   currentUserAccountCount: number;
   currentCustomerOrganizationCount: number;
-  currentMaxUsersPerCustomer: number;
-  currentMaxDeploymentTargetsPerCustomer: number;
+  currentRegistryStorageBytes: number;
   hasApplicationEntitlements: boolean;
   hasArtifactEntitlements: boolean;
   hasNonAdminRoles: boolean;

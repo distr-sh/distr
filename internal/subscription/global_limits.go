@@ -17,14 +17,21 @@ const (
 	MaxCustomersPerOrganizationTrial                 = limit.Unlimited
 
 	MaxUsersPerCustomerOrganizationCommunity limit.Limit = 1
-	MaxUsersPerCustomerOrganizationPro       limit.Limit = 10
-	MaxUsersPerCustomerOrganizationBusiness  limit.Limit = 25
-	MaxUsersPerCustomerOrganizationTrial     limit.Limit = limit.Unlimited
+	MaxUsersPerCustomerOrganizationPro                   = limit.Unlimited
+	MaxUsersPerCustomerOrganizationBusiness              = limit.Unlimited
+	MaxUsersPerCustomerOrganizationTrial                 = limit.Unlimited
 
 	MaxDeploymentTargetsPerCustomerOrganizationCommunity limit.Limit = 1
 	MaxDeploymentTargetsPerCustomerOrganizationPro       limit.Limit = 8
 	MaxDeploymentTargetsPerCustomerOrganizationBusiness  limit.Limit = 8
-	MaxDeploymentTargetsPerCustomerOrganizationTrial                 = limit.Unlimited
+	MaxDeploymentTargetsPerCustomerOrganizationTrial     limit.Limit = 8
+
+	// The registry storage limits are informational: they are reported to the frontend so the
+	// subscription page can show usage against the plan allowance, but they are not enforced.
+	MaxRegistryStorageBytesCommunity             = limit.Unlimited
+	MaxRegistryStorageBytesPro       limit.Limit = 1 << 40
+	MaxRegistryStorageBytesBusiness  limit.Limit = 5 << 40
+	MaxRegistryStorageBytesTrial                 = limit.Unlimited
 
 	MaxLogExportRowsCommunity limit.Limit = 100
 	MaxLogExportRowsPro       limit.Limit = 10_000
@@ -87,6 +94,23 @@ func GetDeploymentTargetsPerCustomerOrganizationLimit(st types.SubscriptionType)
 	}
 }
 
+func GetRegistryStorageLimit(st types.SubscriptionType) limit.Limit {
+	switch st {
+	case types.SubscriptionTypeCommunity:
+		return MaxRegistryStorageBytesCommunity
+	case types.SubscriptionTypeTrial:
+		return MaxRegistryStorageBytesTrial
+	case types.SubscriptionTypePro:
+		return MaxRegistryStorageBytesPro
+	case types.SubscriptionTypeBusiness:
+		return MaxRegistryStorageBytesBusiness
+	case types.SubscriptionTypeEnterprise:
+		return license.GetLicenseData().MaxRegistryStorageBytes
+	default:
+		panic(fmt.Sprintf("invalid subscription type: %v", st))
+	}
+}
+
 func GetLogExportRowsLimit(st types.SubscriptionType) limit.Limit {
 	switch st {
 	case types.SubscriptionTypeCommunity:
@@ -135,6 +159,7 @@ func GetSubscriptionLimits(st types.SubscriptionType) api.SubscriptionLimits {
 		MaxCustomerOrganizations:        GetCustomersPerOrganizationLimit(st).Value(),
 		MaxUsersPerCustomerOrganization: GetUsersPerCustomerOrganizationLimit(st).Value(),
 		MaxDeploymentsPerCustomerOrg:    GetDeploymentTargetsPerCustomerOrganizationLimit(st).Value(),
+		MaxRegistryStorageBytes:         GetRegistryStorageLimit(st).Value(),
 		LogQueryWindowSeconds:           int64(GetLogQueryWindow(st) / time.Second),
 	}
 }
