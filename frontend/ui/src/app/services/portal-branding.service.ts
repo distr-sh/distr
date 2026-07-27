@@ -75,8 +75,10 @@ export class PortalBrandingService {
     // Logo and custom-domain flag are always host-based, so resolve the host first regardless of auth state.
     return this.resolveHostBranding().pipe(
       switchMap((host) => {
-        // Once logged in, the organization's title and favicon fully replace the host's (never merged).
-        if (!this.auth.getClaims()) {
+        // Once logged in, the organization's title and favicon fully replace the host's (never merged). Note that
+        // holding a token is not enough: requesting this with the organization-less token of a password reset or
+        // invite link is answered with 401, which would log the user out in the middle of that flow.
+        if (!this.auth.isLoggedIn()) {
           return of(host);
         }
         return this.organizationBrandingService.get().pipe(

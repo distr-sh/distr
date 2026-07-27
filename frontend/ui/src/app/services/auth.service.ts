@@ -74,7 +74,7 @@ export class AuthService {
 
   public isVendor(): boolean {
     const claims = this.getClaims();
-    return claims?.c_org === undefined && claims?.p_org === undefined;
+    return claims?.org !== undefined && claims.c_org === undefined && claims.p_org === undefined;
   }
 
   public isCustomer(): boolean {
@@ -91,6 +91,15 @@ export class AuthService {
 
   public isSuperAdmin(): boolean {
     return this.getClaims()?.is_super_admin === true;
+  }
+
+  /**
+   * Whether the current credential is a regular session. Login tokens always carry an organization, whereas the
+   * special tokens of the password reset, invite and email verification flows do not. Those are not sessions and
+   * are rejected by every organization-scoped endpoint, so they must not be used to request one.
+   */
+  public isLoggedIn(): boolean {
+    return this.getClaims()?.org !== undefined;
   }
 
   public login(email: string, password: string, mfaCode?: string): Observable<{requiresMfa: boolean}> {
@@ -221,7 +230,7 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
         return next(req.clone({headers: req.headers.set('Authorization', `Bearer ${token}`)})).pipe(
           tap({
             error: (e) => {
-              if (e instanceof HttpErrorResponse && e.status == 401) {
+              if (e instanceof HttpErrorResponse && e.status == 401 && !isUnrelatedToActionFlow(auth, req)) {
                 auth.logout();
                 removeJwtQueryParamAndRefresh(claims?.email);
               }
@@ -240,6 +249,31 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 };
+
+// Pages on which the user is setting up their credentials with a special token instead of a session.
+export const actionFlowPaths = ['/reset', '/join', '/verify'];
+
+/** The page of the credential-setup flow the given organization-less token was minted for. */
+export function actionFlowPath(claims: JWTClaims): string {
+  switch (claims.scope) {
+    case 'password_reset':
+      return '/reset';
+    case 'invite':
+      return '/join';
+    default:
+      return '/verify';
+  }
+}
+
+/**
+ * Whether a rejected request should be ignored because it has nothing to do with the flow the user is in. The
+ * special tokens of these pages carry no organization and are only accepted by the endpoints of their own flow,
+ * so a 401 from anywhere else says nothing about the validity of the link the user followed and must not send
+ * them to the "link expired" page.
+ */
+function isUnrelatedToActionFlow(auth: AuthService, req: HttpRequest<unknown>): boolean {
+  return !auth.isLoggedIn() && !req.url.startsWith(authBaseUrl) && actionFlowPaths.includes(location.pathname);
+}
 
 function authenticatedRoute(req: HttpRequest<unknown>): boolean {
   if (req.url.startsWith('/ready') || req.url.startsWith('/api/public/')) {

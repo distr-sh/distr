@@ -14,7 +14,7 @@ import {LoginComponent} from './login/login.component';
 import {MaintenanceComponent} from './maintenance/maintenance.component';
 import {PasswordResetComponent} from './password-reset/password-reset.component';
 import {RegisterComponent} from './register/register.component';
-import {AuthService} from './services/auth.service';
+import {actionFlowPath, AuthService} from './services/auth.service';
 import {ToastService} from './services/toast.service';
 import {VerifyComponent} from './verify/verify.component';
 
@@ -50,27 +50,20 @@ const jwtAuthGuard: CanActivateFn = (_: ActivatedRouteSnapshot, state: RouterSta
   const auth = inject(AuthService);
   const router = inject(Router);
   const claims = auth.getClaims();
-  if (claims) {
-    if (claims.scope === 'password_reset') {
-      if (state.url === '/reset') {
-        return true;
-      } else {
-        return router.createUrlTree(['/reset']);
-      }
-    } else if (!claims.email_verified) {
-      // An invitee whose email is not yet verified (invite link shared manually instead of via email) still
-      // needs to reach the invite component to set their password before they can verify their email.
-      if (state.url === '/verify' || state.url.startsWith('/join')) {
-        return true;
-      } else {
-        return router.createUrlTree(['/verify']);
-      }
-    } else {
-      return true;
-    }
-  } else {
+  if (!claims) {
     return router.createUrlTree(['/login']);
   }
+  if (!auth.isLoggedIn()) {
+    // The token of a credential-setup flow is not a session: it carries no organization and is rejected by every
+    // organization-scoped endpoint. Confine it to the page of its own flow, so it can neither reach the app nor
+    // bounce between the redirects that decide where a session belongs.
+    const path = actionFlowPath(claims);
+    return state.url.startsWith(path) ? true : router.createUrlTree([path]);
+  }
+  if (!claims.email_verified) {
+    return state.url === '/verify' ? true : router.createUrlTree(['/verify']);
+  }
+  return true;
 };
 
 const inviteComponentGuard: CanActivateFn = async () => {
