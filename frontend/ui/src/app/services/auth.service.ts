@@ -251,7 +251,19 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
 };
 
 // Pages on which the user is setting up their credentials with a special token instead of a session.
-const actionFlowPaths = ['/reset', '/join', '/verify'];
+export const actionFlowPaths = ['/reset', '/join', '/verify'];
+
+/** The page of the credential-setup flow the given organization-less token was minted for. */
+export function actionFlowPath(claims: JWTClaims): string {
+  switch (claims.scope) {
+    case 'password_reset':
+      return '/reset';
+    case 'invite':
+      return '/join';
+    default:
+      return '/verify';
+  }
+}
 
 /**
  * Whether a rejected request should be ignored because it has nothing to do with the flow the user is in. The
