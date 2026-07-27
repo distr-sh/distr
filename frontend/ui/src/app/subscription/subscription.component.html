@@ -202,7 +202,7 @@
                         <ul class="space-y-1 text-sm text-gray-600 dark:text-gray-400 mb-4">
                           <li>
                             <fa-icon [icon]="faCheck" class="text-green-500" />
-                            Up to {{ getCustomerOrganizationsLimit('business') }} customers (up from
+                            {{ getPlanCustomerLimitDescription('business') }} (up from
                             {{ getCustomerOrganizationsLimit('pro') }})
                           </li>
                           @for (feature of businessPlanFeatures; track feature) {
