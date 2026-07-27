@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.0.4](https://github.com/distr-sh/distr/compare/3.0.3...3.0.4) (2026-07-27)
+
+
+### Bug Fixes
+
+* **frontend:** don't make a portal request for unauthenticated users ([#2908](https://github.com/distr-sh/distr/issues/2908)) ([c0106fa](https://github.com/distr-sh/distr/commit/c0106fa31e84bbc71441a3201a31ceab065bede7))
+
+
+### Other
+
+* swap Distr Logo with nicer kube ([#2905](https://github.com/distr-sh/distr/issues/2905)) ([18941d5](https://github.com/distr-sh/distr/commit/18941d56a1b222635f66265edfe89d593b935ea0))
+* verification email templates now always link to verify path ([#2896](https://github.com/distr-sh/distr/issues/2896)) ([0a1346b](https://github.com/distr-sh/distr/commit/0a1346b88ac0cbb7c2e00cffe65ab9d63ac02376))
+
 ## [3.0.3](https://github.com/distr-sh/distr/compare/3.0.2...3.0.3) (2026-07-24)
 
 
