@@ -9,3 +9,4 @@ export * from './organization-branding';
 export * from './partner-organization';
 export * from './support-bundle';
 export * from './user-account';
+export * from './vulnerability';

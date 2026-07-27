@@ -30,6 +30,11 @@ export class FeatureFlagService {
     .pipe(map((org) => org.features.includes('partner_management')));
   public readonly isPartnerManagementEnabled = toSignal(this.isPartnerManagementEnabled$, {initialValue: false});
 
+  public readonly isVulnerabilitiesEnabled$ = this.organizationService
+    .get()
+    .pipe(map((org) => org.features.includes('vulnerabilities')));
+  public readonly isVulnerabilitiesEnabled = toSignal(this.isVulnerabilitiesEnabled$, {initialValue: false});
+
   public readonly isNotificationsEnabled$ = this.requireSubscriptionType('trial', 'pro', 'business', 'enterprise');
 
   public readonly isSupportBundlesEnabled$ = this.requireSubscriptionType('trial', 'pro', 'business', 'enterprise');

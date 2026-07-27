@@ -40,6 +40,23 @@ const (
 	`
 )
 
+func HasAnyApplicationEntitlement(ctx context.Context, orgID uuid.UUID) (bool, error) {
+	db := internalctx.GetDb(ctx)
+	var hasEntitlements bool
+	err := db.QueryRow(ctx, `
+		SELECT EXISTS(
+			SELECT 1
+			FROM ApplicationEntitlement al
+			WHERE al.organization_id = @orgId
+		)`,
+		pgx.NamedArgs{"orgId": orgID},
+	).Scan(&hasEntitlements)
+	if err != nil {
+		return false, fmt.Errorf("could not check for entitlements: %w", err)
+	}
+	return hasEntitlements, nil
+}
+
 func CreateApplicationEntitlement(ctx context.Context, entitlement *types.ApplicationEntitlementBase) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(

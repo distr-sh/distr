@@ -23,6 +23,7 @@ import {
   faLifeRing,
   faLightbulb,
   faPalette,
+  faShieldHalved,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
 import {map, of, switchMap} from 'rxjs';
@@ -88,6 +89,7 @@ export class SideBarComponent {
   protected readonly faChevronDown = faChevronDown;
   protected readonly faAsterisk = faAsterisk;
   protected readonly faLifeRing = faLifeRing;
+  protected readonly faShieldHalved = faShieldHalved;
   protected readonly faHandHoldingDollar = faHandHoldingDollar;
   protected feedbackAlert = true;
   protected readonly agentsSubMenuOpen = signal(true);
@@ -108,6 +110,7 @@ export class SideBarComponent {
   protected readonly isLicensingFeatureEnabled = toSignal(this.featureFlags.isLicensingEnabled$);
   protected readonly isNotificationsFeatureEnabled = toSignal(this.featureFlags.isNotificationsEnabled$);
   protected readonly isSupportBundlesFeatureEnabled = toSignal(this.featureFlags.isSupportBundlesEnabled$);
+  protected readonly isVulnerabilitiesFeatureEnabled = this.featureFlags.isVulnerabilitiesEnabled;
   protected readonly isVendorBillingFeatureEnabled = this.featureFlags.isVendorBillingEnabled;
   protected readonly isPartnerManagementEnabled = this.featureFlags.isPartnerManagementEnabled;
 

@@ -46,6 +46,8 @@ import {TutorialsComponent} from './tutorials/tutorials.component';
 import {UsersTutorialComponent} from './tutorials/users/users-tutorial.component';
 import {isSubscriptionExpired} from './types/organization';
 import {UserSettingsComponent} from './user-settings/user-settings.component';
+import {VulnerabilityDetailComponent} from './vulnerabilities/vulnerability-detail.component';
+import {VulnerabilityListComponent} from './vulnerabilities/vulnerability-list.component';
 
 function requiredRoleGuard(...userRole: UserRole[]): CanActivateFn {
   return () => {
@@ -111,6 +113,13 @@ function partnerManagementEnabledGuard(): CanActivateFn {
   return async () => {
     const featureFlags = inject(FeatureFlagService);
     return await firstValueFrom(featureFlags.isPartnerManagementEnabled$);
+  };
+}
+
+function vulnerabilitiesEnabledGuard(): CanActivateFn {
+  return async () => {
+    const featureFlags = inject(FeatureFlagService);
+    return await firstValueFrom(featureFlags.isVulnerabilitiesEnabled$);
   };
 }
 
@@ -368,6 +377,36 @@ export const routes: Routes = [
           {
             path: ':supportBundleId',
             component: SupportBundleDetailComponent,
+          },
+        ],
+      },
+      {
+        path: 'vulnerabilities',
+        canActivate: [requireVendorOrPartner, vulnerabilitiesEnabledGuard()],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            component: VulnerabilityListComponent,
+          },
+          {
+            path: ':vulnerabilityId',
+            component: VulnerabilityDetailComponent,
+          },
+        ],
+      },
+      {
+        path: 'security',
+        canActivate: [requireCustomer, vulnerabilitiesEnabledGuard()],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            component: VulnerabilityListComponent,
+          },
+          {
+            path: ':vulnerabilityId',
+            component: VulnerabilityDetailComponent,
           },
         ],
       },
