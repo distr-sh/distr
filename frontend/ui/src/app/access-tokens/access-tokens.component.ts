@@ -8,6 +8,7 @@ import {faClipboard, faMagnifyingGlass, faPlus, faTrash, faXmark} from '@fortawe
 import dayjs from 'dayjs';
 import {firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
 import {isExpired, RelativeDatePipe} from '../../util/dates';
+import {getFormDisplayedError} from '../../util/errors';
 import {USER_ROLE_LABELS, UserRoleLabelPipe} from '../../util/user-role';
 import {CreatedAccessTokenComponent} from '../components/created-access-token.component';
 import {ExpiresAtPickerComponent} from '../components/expires-at-picker/expires-at-picker.component';
@@ -56,7 +57,10 @@ export class AccessTokensComponent {
   private readonly overlay = inject(OverlayService);
   protected drawer: DialogRef<void> | null = null;
 
-  protected readonly currentUserRole = computed<UserRole | undefined>(() => this.auth.getClaims()?.role);
+  protected readonly currentUserRole = computed<UserRole | undefined>(() =>
+    // Super admins are not organization members and may only create read-only tokens.
+    this.auth.isSuperAdmin() ? 'read_only' : this.auth.getClaims()?.role
+  );
   protected readonly inheritOptionLabel = computed(() => {
     const role = this.currentUserRole();
     return role ? `Inherit (${USER_ROLE_LABELS[role]})` : 'Inherit from my role';
@@ -104,6 +108,11 @@ export class AccessTokensComponent {
       this.toast.success('token created');
       this.hideDrawer();
       this.refresh$.next();
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
     } finally {
       this.editFormLoading = false;
     }

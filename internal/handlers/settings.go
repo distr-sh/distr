@@ -74,7 +74,9 @@ func SettingsRouter(r chiopenapi.Router) {
 			With(option.Description("List all access tokens")).
 			With(option.Response(http.StatusOK, []api.AccessToken{}))
 
-		r.With(middleware.BlockSuperAdmin).Post("/", createAccessTokenHandler()).
+		// Super admins are allowed to create personal access tokens, but those are
+		// always forced to read-only at creation (see createAccessTokenHandler).
+		r.Post("/", createAccessTokenHandler()).
 			With(option.Description("Create a new access token")).
 			With(option.Request(api.CreateAccessTokenRequest{})).
 			With(option.Response(http.StatusCreated, api.AccessTokenWithKey{}))
@@ -84,7 +86,7 @@ func SettingsRouter(r chiopenapi.Router) {
 				AccessTokenID uuid.UUID `path:"accessTokenId"`
 			}
 
-			r.With(middleware.BlockSuperAdmin).Delete("/", deleteAccessTokenHandler()).
+			r.Delete("/", deleteAccessTokenHandler()).
 				With(option.Description("Delete an access token")).
 				With(option.Request(AccessTokenIDRequest{}))
 		})

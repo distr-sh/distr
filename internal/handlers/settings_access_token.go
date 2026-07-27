@@ -41,7 +41,11 @@ func createAccessTokenHandler() http.HandlerFunc {
 			return
 		}
 
-		if request.UserRole != nil {
+		if auth.IsSuperAdmin() {
+			// Super admins are not organization members, so they may only ever
+			// create read-only tokens regardless of what was requested.
+			request.UserRole = new(types.UserRoleReadOnly)
+		} else if request.UserRole != nil {
 			callerRole := auth.CurrentUserRole()
 			if callerRole == nil || request.UserRole.GreaterThan(*callerRole) {
 				http.Error(w, "token role cannot exceed your own role", http.StatusBadRequest)

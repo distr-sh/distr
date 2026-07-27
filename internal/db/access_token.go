@@ -102,7 +102,7 @@ func GetAccessTokenByKeyUpdatingLastUsed(
 			)
 			SELECT %v FROM updated tok
 			INNER JOIN UserAccount u ON tok.user_account_id = u.id
-			INNER JOIN Organization_UserAccount oua
+			LEFT JOIN Organization_UserAccount oua
 				ON oua.user_account_id = tok.user_account_id AND oua.organization_id = tok.organization_id
 			`,
 			accessTokenWithUserAccountOutputExpr,
