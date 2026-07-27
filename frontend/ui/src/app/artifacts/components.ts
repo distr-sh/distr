@@ -4,9 +4,61 @@ import {toSignal} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faDownload, faEllipsis, faUserCircle} from '@fortawesome/free-solid-svg-icons';
 import {SecureImagePipe} from '../../util/secureImage';
-import {HasDownloads} from '../services/artifacts.service';
+import {ArtifactManifestType, HasDownloads} from '../services/artifacts.service';
 import {CustomerOrganizationsCache} from '../services/customer-organizations.service';
 import {UsersService} from '../services/users.service';
+
+@Component({
+  selector: 'app-artifact-type-badge',
+  template: `
+    @switch (type()) {
+      @case ('container-image') {
+        <span
+          class="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-md border bg-cyan-100 text-cyan-800 border-cyan-400 dark:bg-gray-700 dark:text-cyan-400">
+          Container image
+        </span>
+      }
+      @case ('helm-chart') {
+        <span
+          class="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-md border bg-indigo-100 text-indigo-800 border-indigo-400 dark:bg-gray-700 dark:text-indigo-400">
+          Helm chart
+        </span>
+      }
+      @case ('zarf-package') {
+        <span
+          class="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-md border bg-purple-100 text-purple-800 border-purple-400 dark:bg-gray-700 dark:text-purple-400">
+          Zarf package
+        </span>
+      }
+      @case ('generic') {
+        <span
+          class="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-md border bg-gray-100 text-gray-800 border-gray-400 dark:bg-gray-700 dark:text-gray-400">
+          Generic OCI artifact
+        </span>
+      }
+      <!-- signatures are companion artifacts and never shown as a badge -->
+    }
+  `,
+  changeDetection: ChangeDetectionStrategy.Eager,
+})
+export class ArtifactTypeBadgeComponent {
+  public readonly type = input.required<ArtifactManifestType>();
+}
+
+@Component({
+  selector: 'app-artifact-type-badges',
+  template: `
+    @for (type of types(); track type) {
+      <app-artifact-type-badge [type]="type" />
+    }
+  `,
+  changeDetection: ChangeDetectionStrategy.Eager,
+  host: {class: 'inline-flex flex-wrap items-center gap-1'},
+  imports: [ArtifactTypeBadgeComponent],
+})
+export class ArtifactTypeBadgesComponent {
+  public readonly types = input<ArtifactManifestType[] | undefined>([]);
+}
 
 @Component({
   selector: 'app-artifacts-download-count',

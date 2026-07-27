@@ -199,6 +199,8 @@ export class ArtifactVersionsComponent {
         return `helm install <release-name> oci://${url} --version ${version.tags[0].name}`;
       case 'container-image':
         return `docker pull ${url}:${version.tags[0].name}`;
+      case 'zarf-package':
+        return `zarf package deploy oci://${url}:${version.tags[0].name}`;
       default:
         return `oras pull ${url}:${version.tags[0].name}`;
     }

@@ -213,6 +213,22 @@
                         @if (version.size > 0) {
                           <li>{{ version.size | bytes }}</li>
                         }
+                        <li>
+                          @switch (version.inferredType) {
+                            @case ('container-image') {
+                              Container image
+                            }
+                            @case ('helm-chart') {
+                              Helm chart
+                            }
+                            @case ('zarf-package') {
+                              Zarf package
+                            }
+                            @case ('generic') {
+                              Generic OCI artifact
+                            }
+                          }
+                        </li>
                         @if (version.signatureVersion) {
                           <li>
                             <button

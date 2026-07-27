@@ -50,11 +50,14 @@ export interface ArtifactUpstreamAuth {
   password?: string;
 }
 
+export type ArtifactManifestType = 'generic' | 'container-image' | 'helm-chart' | 'signature' | 'zarf-package';
+
 export interface Artifact extends BaseArtifact, HasDownloads {
   upstreamUrl?: string;
   lastSyncedAt?: string;
   lastSyncError?: string;
   upstreamAuthType?: UpstreamAuthType;
+  inferredTypes?: ArtifactManifestType[];
 }
 
 export interface TaggedArtifactVersion extends HasDownloads {
@@ -67,7 +70,7 @@ export interface TaggedArtifactVersion extends HasDownloads {
   vulnerabilities: Vulnerability[];
   lastScannedAt?: string;
   imageUrl?: string;
-  inferredType: 'generic' | 'container-image' | 'helm-chart' | 'signature';
+  inferredType: ArtifactManifestType;
 }
 
 export interface ArtifactWithTags extends Artifact {
