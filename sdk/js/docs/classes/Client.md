@@ -28,7 +28,7 @@ The low-level Distr API client. Each method represents on API endpoint.
 
 ### createAccessForDeploymentTarget()
 
-> **createAccessForDeploymentTarget**(`deploymentTargetId`): `Promise`\<[`DeploymentTargetAccessResponse`](../interfaces/DeploymentTargetAccessResponse.md)>>\>
+> **createAccessForDeploymentTarget**(`deploymentTargetId`): `Promise`\<[`DeploymentTargetAccessResponse`](../interfaces/DeploymentTargetAccessResponse.md)\>
 
 #### Parameters
 
@@ -44,7 +44,7 @@ The low-level Distr API client. Each method represents on API endpoint.
 
 ### createApplication()
 
-> **createApplication**(`application`): `Promise`\<[`Application`](../interfaces/Application.md)>>\>
+> **createApplication**(`application`): `Promise`\<[`Application`](../interfaces/Application.md)\>
 
 #### Parameters
 
@@ -60,7 +60,7 @@ The low-level Distr API client. Each method represents on API endpoint.
 
 ### createApplicationVersion()
 
-> **createApplicationVersion**(`applicationId`, `version`, `files?`): `Promise`\<[`ApplicationVersion`](../interfaces/ApplicationVersion.md)>>\>
+> **createApplicationVersion**(`applicationId`, `version`, `files?`): `Promise`\<[`ApplicationVersion`](../interfaces/ApplicationVersion.md)\>
 
 #### Parameters
 
@@ -84,7 +84,7 @@ The low-level Distr API client. Each method represents on API endpoint.
 
 ### createDeploymentTarget()
 
-> **createDeploymentTarget**(`deploymentTarget`): `Promise`\<[`DeploymentTarget`](../interfaces/DeploymentTarget.md)>>\>
+> **createDeploymentTarget**(`deploymentTarget`): `Promise`\<[`DeploymentTarget`](../interfaces/DeploymentTarget.md)\>
 
 #### Parameters
 
@@ -100,7 +100,7 @@ The low-level Distr API client. Each method represents on API endpoint.
 
 ### createOrUpdateDeployment()
 
-> **createOrUpdateDeployment**(`deploymentRequest`): `Promise`\<[`DeploymentRequest`](../interfaces/DeploymentRequest.md)>>\>
+> **createOrUpdateDeployment**(`deploymentRequest`): `Promise`\<[`DeploymentRequest`](../interfaces/DeploymentRequest.md)\>
 
 #### Parameters
 
@@ -116,7 +116,7 @@ The low-level Distr API client. Each method represents on API endpoint.
 
 ### getApplication()
 
-> **getApplication**(`applicationId`): `Promise`\<[`Application`](../interfaces/Application.md)>>\>
+> **getApplication**(`applicationId`): `Promise`\<[`Application`](../interfaces/Application.md)\>
 
 #### Parameters
 
@@ -162,7 +162,7 @@ The low-level Distr API client. Each method represents on API endpoint.
 
 ### getDeploymentTarget()
 
-> **getDeploymentTarget**(`deploymentTargetId`): `Promise`\<[`DeploymentTarget`](../interfaces/DeploymentTarget.md)>>\>
+> **getDeploymentTarget**(`deploymentTargetId`): `Promise`\<[`DeploymentTarget`](../interfaces/DeploymentTarget.md)\>
 
 #### Parameters
 
@@ -188,7 +188,7 @@ The low-level Distr API client. Each method represents on API endpoint.
 
 ### updateApplication()
 
-> **updateApplication**(`application`): `Promise`\<[`Application`](../interfaces/Application.md)>>\>
+> **updateApplication**(`application`): `Promise`\<[`Application`](../interfaces/Application.md)\>
 
 #### Parameters
 
