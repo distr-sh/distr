@@ -42,7 +42,7 @@ Strategy for determining the latest version of an application (default: 'semver'
 
 ### createDeployment()
 
-> **createDeployment**(`params`): `Promise`\<[`CreateDeploymentResult`](../type-aliases/CreateDeploymentResult.md)>>>\>
+> **createDeployment**(`params`): `Promise`\<[`CreateDeploymentResult`](../type-aliases/CreateDeploymentResult.md)>>>>>\>
 
 Creates a new deployment target and deploys the given application version to it.
 
@@ -64,7 +64,7 @@ Creates a new deployment target and deploys the given application version to it.
 
 ### createDockerApplicationVersion()
 
-> **createDockerApplicationVersion**(`applicationId`, `name`, `data`): `Promise`\<[`ApplicationVersion`](../interfaces/ApplicationVersion.md)>>>\>
+> **createDockerApplicationVersion**(`applicationId`, `name`, `data`): `Promise`\<[`ApplicationVersion`](../interfaces/ApplicationVersion.md)>>>>>\>
 
 Creates a new application version for the given docker application using a Docker Compose file and an
 optional template file.
@@ -107,7 +107,7 @@ Name of the new version
 
 ### createKubernetesApplicationVersion()
 
-> **createKubernetesApplicationVersion**(`applicationId`, `versionName`, `data`): `Promise`\<[`ApplicationVersion`](../interfaces/ApplicationVersion.md)>>>\>
+> **createKubernetesApplicationVersion**(`applicationId`, `versionName`, `data`): `Promise`\<[`ApplicationVersion`](../interfaces/ApplicationVersion.md)>>>>>\>
 
 Creates a new application version for the given Kubernetes application using a Helm chart.
 
@@ -163,7 +163,7 @@ Creates a new application version for the given Kubernetes application using a H
 
 ### getLatestVersion()
 
-> **getLatestVersion**(`appId`): `Promise`\<[`ApplicationVersion`](../interfaces/ApplicationVersion.md) \| `undefined`>>>\>
+> **getLatestVersion**(`appId`): `Promise`\<[`ApplicationVersion`](../interfaces/ApplicationVersion.md) \| `undefined`>>>>>\>
 
 Returns the latest version of the given application according to the specified strategy.
 
@@ -204,7 +204,7 @@ all versions are considered. The versions are ordered ascending according to the
 
 ### isOutdated()
 
-> **isOutdated**(`deploymentTargetId`): `Promise`\<[`IsOutdatedResult`](../type-aliases/IsOutdatedResult.md)>>>\>
+> **isOutdated**(`deploymentTargetId`): `Promise`\<[`IsOutdatedResult`](../type-aliases/IsOutdatedResult.md)>>>>>\>
 
 Checks if the deployments on the given deployment target are outdated, i.e. if there is a newer version of the application available.
 Returns results for all deployments on the target. Each result contains versions that are newer than the currently deployed one, ordered ascending.
@@ -223,7 +223,7 @@ Returns results for all deployments on the target. Each result contains versions
 
 ### updateAllDeployments()
 
-> **updateAllDeployments**(`applicationId`, `applicationVersionId`, `reuseConfigFromCurrentRevision?`): `Promise`\<[`UpdateAllDeploymentsResult`](../type-aliases/UpdateAllDeploymentsResult.md)>>>\>
+> **updateAllDeployments**(`applicationId`, `applicationVersionId`, `reuseConfigFromCurrentRevision?`): `Promise`\<[`UpdateAllDeploymentsResult`](../type-aliases/UpdateAllDeploymentsResult.md)>>>>>\>
 
 Updates all deployment targets that have the specified application deployed to the specified version.
 Only updates deployments that are not already on the target version.
@@ -256,7 +256,7 @@ If true, the existing deployment configuration (values YAML, env file, helm opti
 
 ### updateDeployment()
 
-> **updateDeployment**(`params`): `Promise`\<`void`>>>\>
+> **updateDeployment**(`params`): `Promise`\<`void`>>>>>\>
 
 Updates the deployment of an existing deployment target to the specified application version.
 

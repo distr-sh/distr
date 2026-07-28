@@ -38,7 +38,7 @@
     "@codemirror/language": "^6.12.4",
     "@codemirror/state": "^6.7.1",
     "@codemirror/view": "^6.43.6",
-    "@distr-sh/distr-sdk": "file:sdk/js/src",
+    "@distr-sh/distr-sdk": "file:./sdk/js/src",
     "@fontsource/inter": "^5.3.0",
     "@fontsource/poppins": "^5.3.0",
     "@fortawesome/angular-fontawesome": "^5.1.0",
