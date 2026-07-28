@@ -2,9 +2,18 @@ import {
   Application,
   ApplicationVersion,
   ApplicationVersionResource,
+  CreateUpdateVulnerabilityRequest,
+  CreateVulnerabilityCommentRequest,
+  CreateVulnerabilityRequest,
   DeploymentRequest,
   DeploymentTarget,
   DeploymentTargetAccessResponse,
+  UpdateVulnerabilityStatusRequest,
+  Vulnerability,
+  VulnerabilityDetail,
+  VulnerabilityEvent,
+  VulnerabilityFilter,
+  VulnerabilityImpact,
 } from '../types';
 import {ConditionalPartial, defaultClientConfig} from './config';
 
@@ -108,6 +117,71 @@ export class Client {
     return this.post<DeploymentTargetAccessResponse>(`deployment-targets/${deploymentTargetId}/access-request`);
   }
 
+  public async getVulnerabilities(filter: VulnerabilityFilter = {}): Promise<Vulnerability[]> {
+    const params = new URLSearchParams();
+    for (const status of filter.status ?? []) {
+      params.append('status', status);
+    }
+    for (const severity of filter.severity ?? []) {
+      params.append('severity', severity);
+    }
+    for (const tag of filter.tag ?? []) {
+      params.append('tag', tag);
+    }
+    const query = params.size > 0 ? `?${params}` : '';
+    return this.get<Vulnerability[]>(`vulnerabilities${query}`);
+  }
+
+  public async getVulnerability(vulnerabilityId: string): Promise<VulnerabilityDetail> {
+    return this.get<VulnerabilityDetail>(`vulnerabilities/${vulnerabilityId}`);
+  }
+
+  public async getVulnerabilityTags(): Promise<string[]> {
+    return this.get<string[]>('vulnerabilities/tags');
+  }
+
+  public async getVulnerabilityImpact(vulnerabilityId: string): Promise<VulnerabilityImpact> {
+    return this.get<VulnerabilityImpact>(`vulnerabilities/${vulnerabilityId}/impact`);
+  }
+
+  public async createVulnerability(request: CreateVulnerabilityRequest): Promise<VulnerabilityDetail> {
+    return this.post<VulnerabilityDetail, CreateVulnerabilityRequest>('vulnerabilities', request);
+  }
+
+  public async updateVulnerability(
+    vulnerabilityId: string,
+    request: CreateUpdateVulnerabilityRequest
+  ): Promise<VulnerabilityDetail> {
+    return this.put<VulnerabilityDetail, CreateUpdateVulnerabilityRequest>(
+      `vulnerabilities/${vulnerabilityId}`,
+      request
+    );
+  }
+
+  public async updateVulnerabilityStatus(
+    vulnerabilityId: string,
+    request: UpdateVulnerabilityStatusRequest
+  ): Promise<VulnerabilityDetail> {
+    return this.patch<VulnerabilityDetail, UpdateVulnerabilityStatusRequest>(
+      `vulnerabilities/${vulnerabilityId}/status`,
+      request
+    );
+  }
+
+  public async deleteVulnerability(vulnerabilityId: string): Promise<void> {
+    await this.delete(`vulnerabilities/${vulnerabilityId}`);
+  }
+
+  public async createVulnerabilityComment(
+    vulnerabilityId: string,
+    request: CreateVulnerabilityCommentRequest
+  ): Promise<VulnerabilityEvent> {
+    return this.post<VulnerabilityEvent, CreateVulnerabilityCommentRequest>(
+      `vulnerabilities/${vulnerabilityId}/comments`,
+      request
+    );
+  }
+
   private async get<T>(path: string): Promise<T> {
     const response = await fetch(`${this.config.apiBase}${path}`, {
       method: 'GET',
@@ -119,22 +193,33 @@ export class Client {
     return await this.handleResponse<T>(response, 'GET', path);
   }
 
-  private async post<T>(path: string, body?: T): Promise<T> {
-    const response = await fetch(`${this.config.apiBase}${path}`, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        Authorization: `AccessToken ${this.config.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-    return await this.handleResponse<T>(response, 'POST', path);
+  /** TBody defaults to TResponse so that the many endpoints echoing back their input stay concise. */
+  private async post<TResponse, TBody = TResponse>(path: string, body?: TBody): Promise<TResponse> {
+    return this.send<TResponse, TBody>('POST', path, body);
   }
 
-  private async put<T>(path: string, body: T): Promise<T> {
+  private async put<TResponse, TBody = TResponse>(path: string, body: TBody): Promise<TResponse> {
+    return this.send<TResponse, TBody>('PUT', path, body);
+  }
+
+  private async patch<TResponse, TBody = TResponse>(path: string, body: TBody): Promise<TResponse> {
+    return this.send<TResponse, TBody>('PATCH', path, body);
+  }
+
+  private async delete(path: string): Promise<void> {
     const response = await fetch(`${this.config.apiBase}${path}`, {
-      method: 'PUT',
+      method: 'DELETE',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `AccessToken ${this.config.apiKey}`,
+      },
+    });
+    await this.handleResponse<void>(response, 'DELETE', path);
+  }
+
+  private async send<TResponse, TBody>(method: string, path: string, body?: TBody): Promise<TResponse> {
+    const response = await fetch(`${this.config.apiBase}${path}`, {
+      method,
       headers: {
         Accept: 'application/json',
         Authorization: `AccessToken ${this.config.apiKey}`,
@@ -142,7 +227,7 @@ export class Client {
       },
       body: JSON.stringify(body),
     });
-    return await this.handleResponse<T>(response, 'PUT', path);
+    return await this.handleResponse<TResponse>(response, method, path);
   }
 
   private async handleResponse<T>(response: Response, method: string, path: string) {

@@ -127,12 +127,9 @@ const (
 	FeatureVulnerabilities        Feature = "vulnerabilities"
 )
 
-// ProFeatures is the set of features granted to organizations with a paid (pro) subscription.
-var ProFeatures = []Feature{
-	FeatureLicensing,
-}
-
 // FeaturesForSubscriptionType returns the features granted by a subscription type.
+// Enterprise is a superset of Business, so any feature added to Business must also be
+// available to Enterprise.
 // Subscription reconciliation only ever adds these features, it never removes any:
 // manually granted features (e.g. vendor_billing) must survive plan changes, and
 // community organizations are stripped of features by ReconcileEditionFeatures instead.
@@ -140,9 +137,9 @@ func FeaturesForSubscriptionType(st SubscriptionType) []Feature {
 	switch st {
 	case SubscriptionTypeCommunity:
 		return []Feature{}
-	case SubscriptionTypeTrial, SubscriptionTypePro, SubscriptionTypeEnterprise:
+	case SubscriptionTypeTrial, SubscriptionTypePro:
 		return []Feature{FeatureLicensing}
-	case SubscriptionTypeBusiness:
+	case SubscriptionTypeBusiness, SubscriptionTypeEnterprise:
 		return []Feature{FeatureLicensing, FeaturePartnerManagement, FeatureVulnerabilities}
 	default:
 		return []Feature{}

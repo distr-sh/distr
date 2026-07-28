@@ -1,4 +1,4 @@
-CREATE TYPE vulnerability_status AS ENUM ('triage', 'draft', 'published', 'resolved');
+CREATE TYPE vulnerability_status AS ENUM ('triage', 'draft', 'published', 'resolved', 'canceled');
 
 CREATE TYPE vulnerability_severity AS ENUM ('none', 'low', 'medium', 'high', 'critical');
 
@@ -80,6 +80,8 @@ CREATE TABLE VulnerabilityEvent (
 CREATE INDEX idx_vulnerability_event_vulnerability_id
     ON VulnerabilityEvent (vulnerability_id, created_at);
 
--- Must be the last statement: a newly added enum value cannot be used in the
--- transaction that adds it, so the backfill lives in a separate migration.
+-- Must be the last statement: a newly added enum value cannot be used in the transaction
+-- that adds it. No organization is granted the feature here for the same reason; the
+-- Stripe webhook and the enterprise startup reconciliation both grant it from
+-- FeaturesForSubscriptionType.
 ALTER TYPE FEATURE ADD VALUE IF NOT EXISTS 'vulnerabilities';

@@ -40,6 +40,26 @@ Strategy for determining the latest version of an application (default: 'semver'
 
 ## Methods
 
+### commentOnVulnerability()
+
+> **commentOnVulnerability**(`vulnerabilityId`, `content`): `Promise`\<[`VulnerabilityEvent`](../interfaces/VulnerabilityEvent.md)\>
+
+#### Parameters
+
+##### vulnerabilityId
+
+`string`
+
+##### content
+
+`string`
+
+#### Returns
+
+`Promise`\<[`VulnerabilityEvent`](../interfaces/VulnerabilityEvent.md)\>
+
+---
+
 ### createDeployment()
 
 > **createDeployment**(`params`): `Promise`\<[`CreateDeploymentResult`](../type-aliases/CreateDeploymentResult.md)\>
@@ -161,6 +181,41 @@ Creates a new application version for the given Kubernetes application using a H
 
 ---
 
+### createVulnerability()
+
+> **createVulnerability**(`request`): `Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>
+
+Creates a vulnerability. Without an explicit status it starts in `triage`, the inbox for
+externally reported issues.
+
+#### Parameters
+
+##### request
+
+[`CreateVulnerabilityRequest`](../interfaces/CreateVulnerabilityRequest.md)
+
+#### Returns
+
+`Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>
+
+---
+
+### deleteVulnerability()
+
+> **deleteVulnerability**(`vulnerabilityId`): `Promise`\<`void`\>
+
+#### Parameters
+
+##### vulnerabilityId
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+---
+
 ### getLatestVersion()
 
 > **getLatestVersion**(`appId`): `Promise`\<[`ApplicationVersion`](../interfaces/ApplicationVersion.md) \| `undefined`\>
@@ -199,6 +254,59 @@ all versions are considered. The versions are ordered ascending according to the
 #### Returns
 
 `Promise`\<\{ `app`: [`Application`](../interfaces/Application.md); `newerVersions`: [`ApplicationVersion`](../interfaces/ApplicationVersion.md)[]; \}\>
+
+---
+
+### getVulnerabilities()
+
+> **getVulnerabilities**(`filter?`): `Promise`\<[`Vulnerability`](../interfaces/Vulnerability.md)[]\>
+
+Returns the vulnerabilities of the organization. Customers only ever receive published and
+resolved vulnerabilities affecting a version they are entitled to.
+
+#### Parameters
+
+##### filter?
+
+[`VulnerabilityFilter`](../interfaces/VulnerabilityFilter.md) = `{}`
+
+#### Returns
+
+`Promise`\<[`Vulnerability`](../interfaces/Vulnerability.md)[]\>
+
+---
+
+### getVulnerability()
+
+> **getVulnerability**(`vulnerabilityId`): `Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>
+
+#### Parameters
+
+##### vulnerabilityId
+
+`string`
+
+#### Returns
+
+`Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>
+
+---
+
+### getVulnerabilityImpact()
+
+> **getVulnerabilityImpact**(`vulnerabilityId`): `Promise`\<[`VulnerabilityImpact`](../interfaces/VulnerabilityImpact.md)\>
+
+Returns the customers who deployed or pulled an affected version. Not available to customers.
+
+#### Parameters
+
+##### vulnerabilityId
+
+`string`
+
+#### Returns
+
+`Promise`\<[`VulnerabilityImpact`](../interfaces/VulnerabilityImpact.md)\>
 
 ---
 
@@ -269,3 +377,46 @@ Updates the deployment of an existing deployment target to the specified applica
 #### Returns
 
 `Promise`\<`void`\>
+
+---
+
+### updateVulnerability()
+
+> **updateVulnerability**(`vulnerabilityId`, `request`): `Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>
+
+#### Parameters
+
+##### vulnerabilityId
+
+`string`
+
+##### request
+
+[`CreateUpdateVulnerabilityRequest`](../interfaces/CreateUpdateVulnerabilityRequest.md)
+
+#### Returns
+
+`Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>
+
+---
+
+### updateVulnerabilityStatus()
+
+> **updateVulnerabilityStatus**(`vulnerabilityId`, `status`): `Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>
+
+Moves a vulnerability to the given status. Only the transitions allowed by the workflow are
+accepted, and publishing makes the vulnerability visible to entitled customers.
+
+#### Parameters
+
+##### vulnerabilityId
+
+`string`
+
+##### status
+
+[`VulnerabilityStatus`](../type-aliases/VulnerabilityStatus.md)
+
+#### Returns
+
+`Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>

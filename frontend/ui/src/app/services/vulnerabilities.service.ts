@@ -3,6 +3,7 @@ import {inject, Injectable} from '@angular/core';
 import {
   CreateUpdateVulnerabilityRequest,
   CreateVulnerabilityCommentRequest,
+  CreateVulnerabilityRequest,
   UpdateVulnerabilityStatusRequest,
   Vulnerability,
   VulnerabilityDetail,
@@ -19,14 +20,14 @@ export class VulnerabilitiesService {
 
   public list(filter: VulnerabilityFilter = {}) {
     let params = new HttpParams();
-    if (filter.status) {
-      params = params.set('status', filter.status);
+    for (const status of filter.status ?? []) {
+      params = params.append('status', status);
     }
-    if (filter.severity) {
-      params = params.set('severity', filter.severity);
+    for (const severity of filter.severity ?? []) {
+      params = params.append('severity', severity);
     }
-    if (filter.tag) {
-      params = params.set('tag', filter.tag);
+    for (const tag of filter.tag ?? []) {
+      params = params.append('tag', tag);
     }
     return this.httpClient.get<Vulnerability[]>(baseUrl, {params});
   }
@@ -43,7 +44,7 @@ export class VulnerabilitiesService {
     return this.httpClient.get<VulnerabilityImpact>(`${baseUrl}/${id}/impact`);
   }
 
-  public create(request: CreateUpdateVulnerabilityRequest) {
+  public create(request: CreateVulnerabilityRequest) {
     return this.httpClient.post<VulnerabilityDetail>(baseUrl, request);
   }
 

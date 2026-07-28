@@ -78,6 +78,37 @@ func TestUserRoleRankPanicsOnUnknown(t *testing.T) {
 	g.Expect(func() { UserRole("").Rank() }).To(Panic())
 }
 
+func TestFeaturesForSubscriptionType(t *testing.T) {
+	g := NewWithT(t)
+
+	cases := []struct {
+		subscriptionType SubscriptionType
+		expected         []Feature
+	}{
+		{SubscriptionTypeCommunity, []Feature{}},
+		{SubscriptionTypeTrial, []Feature{FeatureLicensing}},
+		{SubscriptionTypePro, []Feature{FeatureLicensing}},
+		{
+			SubscriptionTypeBusiness,
+			[]Feature{FeatureLicensing, FeaturePartnerManagement, FeatureVulnerabilities},
+		},
+		{
+			SubscriptionTypeEnterprise,
+			[]Feature{FeatureLicensing, FeaturePartnerManagement, FeatureVulnerabilities},
+		},
+	}
+	for _, tc := range cases {
+		g.Expect(FeaturesForSubscriptionType(tc.subscriptionType)).
+			To(ConsistOf(tc.expected), "features for %q", tc.subscriptionType)
+	}
+}
+
+func TestEnterpriseIncludesAllBusinessFeatures(t *testing.T) {
+	g := NewWithT(t)
+	g.Expect(FeaturesForSubscriptionType(SubscriptionTypeEnterprise)).
+		To(ContainElements(FeaturesForSubscriptionType(SubscriptionTypeBusiness)))
+}
+
 func TestDeploymentTypeParsing(t *testing.T) {
 	g := NewWithT(t)
 

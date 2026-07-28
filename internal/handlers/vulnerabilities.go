@@ -27,15 +27,9 @@ func VulnerabilitiesRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Vulnerabilities"))
 
 	r.With(middleware.RequireOrgAndRole).Group(func(r chiopenapi.Router) {
-		type ListVulnerabilitiesRequest struct {
-			Status   string `query:"status"`
-			Severity string `query:"severity"`
-			Tag      string `query:"tag"`
-		}
-
 		r.Get("/", getVulnerabilitiesHandler()).
 			With(option.Description("List vulnerabilities")).
-			With(option.Request(ListVulnerabilitiesRequest{})).
+			With(option.Request(api.ListVulnerabilitiesRequest{})).
 			With(option.Response(http.StatusOK, []api.Vulnerability{}))
 
 		r.With(middleware.RequireVendorOrPartner).
@@ -46,23 +40,22 @@ func VulnerabilitiesRouter(r chiopenapi.Router) {
 		r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 			Post("/", createVulnerabilityHandler()).
 			With(option.Description("Create a new vulnerability")).
-			With(option.Request(api.CreateUpdateVulnerabilityRequest{})).
+			With(option.Request(api.CreateVulnerabilityRequest{})).
 			With(option.Response(http.StatusOK, api.VulnerabilityDetail{}))
 
 		r.Route("/{vulnerabilityId}", func(r chiopenapi.Router) {
-			type VulnerabilityIDRequest struct {
-				VulnerabilityID uuid.UUID `path:"vulnerabilityId"`
-			}
-
 			r.Get("/", getVulnerabilityDetailHandler()).
 				With(option.Description("Get vulnerability detail")).
-				With(option.Request(VulnerabilityIDRequest{})).
+				With(option.Request(api.VulnerabilityIDRequest{})).
 				With(option.Response(http.StatusOK, api.VulnerabilityDetail{}))
 
-			r.With(middleware.RequireVendorOrPartner, middleware.UseReadonlyDB).
+			// Deliberately not served from the read-only database: the detail view
+			// refetches impact right after a status or version change, and replica lag
+			// would show the state from before the edit.
+			r.With(middleware.RequireVendorOrPartner).
 				Get("/impact", getVulnerabilityImpactHandler()).
 				With(option.Description("Get the customers affected by this vulnerability")).
-				With(option.Request(VulnerabilityIDRequest{})).
+				With(option.Request(api.VulnerabilityIDRequest{})).
 				With(option.Response(http.StatusOK, api.VulnerabilityImpact{}))
 
 			r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
@@ -70,7 +63,7 @@ func VulnerabilitiesRouter(r chiopenapi.Router) {
 					r.Put("/", updateVulnerabilityHandler()).
 						With(option.Description("Update a vulnerability")).
 						With(option.Request(struct {
-							VulnerabilityIDRequest
+							api.VulnerabilityIDRequest
 							api.CreateUpdateVulnerabilityRequest
 						}{})).
 						With(option.Response(http.StatusOK, api.VulnerabilityDetail{}))
@@ -78,19 +71,20 @@ func VulnerabilitiesRouter(r chiopenapi.Router) {
 					r.Patch("/status", updateVulnerabilityStatusHandler()).
 						With(option.Description("Update the status of a vulnerability")).
 						With(option.Request(struct {
-							VulnerabilityIDRequest
+							api.VulnerabilityIDRequest
 							api.UpdateVulnerabilityStatusRequest
 						}{})).
 						With(option.Response(http.StatusOK, api.VulnerabilityDetail{}))
 
 					r.Delete("/", deleteVulnerabilityHandler()).
 						With(option.Description("Delete a vulnerability")).
-						With(option.Request(VulnerabilityIDRequest{}))
+						With(option.Request(api.VulnerabilityIDRequest{})).
+						With(option.Response(http.StatusNoContent, nil))
 
 					r.Post("/comments", createVulnerabilityCommentHandler()).
 						With(option.Description("Add a comment to the vulnerability timeline")).
 						With(option.Request(struct {
-							VulnerabilityIDRequest
+							api.VulnerabilityIDRequest
 							api.CreateVulnerabilityCommentRequest
 						}{})).
 						With(option.Response(http.StatusOK, api.VulnerabilityEvent{}))
@@ -105,25 +99,23 @@ func getVulnerabilitiesHandler() http.HandlerFunc {
 		log := internalctx.GetLogger(ctx)
 		a := auth.Authentication.Require(ctx)
 
-		filter := db.VulnerabilityFilter{CustomerOrgID: a.CurrentCustomerOrgID()}
-		if value := r.URL.Query().Get("status"); value != "" {
-			status, err := types.ParseVulnerabilityStatus(value)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-			filter.Status = &status
+		values := r.URL.Query()
+		query := api.ListVulnerabilitiesRequest{
+			Status:   values["status"],
+			Severity: values["severity"],
+			Tag:      values["tag"],
 		}
-		if value := r.URL.Query().Get("severity"); value != "" {
-			severity, err := types.ParseVulnerabilitySeverity(value)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-			filter.Severity = &severity
+		parsed, err := query.Parse()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
-		if value := r.URL.Query().Get("tag"); value != "" {
-			filter.Tag = &value
+
+		filter := db.VulnerabilityFilter{
+			CustomerOrgID: a.CurrentCustomerOrgID(),
+			Statuses:      parsed.Statuses,
+			Severities:    parsed.Severities,
+			Tags:          parsed.Tags,
 		}
 
 		vulnerabilities, err := db.GetVulnerabilities(ctx, *a.CurrentOrgID(), filter)
@@ -179,7 +171,7 @@ func createVulnerabilityHandler() http.HandlerFunc {
 		orgID := *a.CurrentOrgID()
 		userID := a.CurrentUserID()
 
-		request, err := JsonBody[api.CreateUpdateVulnerabilityRequest](w, r)
+		request, err := JsonBody[api.CreateVulnerabilityRequest](w, r)
 		if err != nil {
 			return
 		} else if err := request.Validate(); err != nil {
@@ -187,7 +179,7 @@ func createVulnerabilityHandler() http.HandlerFunc {
 			return
 		}
 
-		if !validateVulnerabilityVersionsInOrg(w, r, orgID, &request) {
+		if !validateVulnerabilityVersionsInOrg(w, r, orgID, &request.CreateUpdateVulnerabilityRequest) {
 			return
 		}
 
@@ -197,6 +189,7 @@ func createVulnerabilityHandler() http.HandlerFunc {
 			CreatedByUserAccountID: &userID,
 			Title:                  request.Title,
 			Description:            request.Description,
+			Status:                 request.Status,
 			Severity:               severity,
 			CveID:                  request.CveID,
 		}
@@ -205,7 +198,9 @@ func createVulnerabilityHandler() http.HandlerFunc {
 			if err := db.CreateVulnerability(ctx, &vulnerability); err != nil {
 				return err
 			}
-			if err := applyVulnerabilityAssociations(ctx, vulnerability.ID, request); err != nil {
+			if err := applyVulnerabilityAssociations(
+				ctx, vulnerability.ID, request.CreateUpdateVulnerabilityRequest,
+			); err != nil {
 				return err
 			}
 			return db.CreateVulnerabilityEvent(
@@ -247,10 +242,19 @@ func updateVulnerabilityHandler() http.HandlerFunc {
 			return
 		}
 
-		versionsChanged, ok := vulnerabilityVersionsChanged(w, r, existing.ID, request)
+		versionsBefore, ok := loadVulnerabilityVersionMarkings(w, r, existing.ID)
 		if !ok {
 			return
 		}
+
+		existingReferences, err := db.GetVulnerabilityReferences(ctx, existing.ID)
+		if err != nil {
+			log.Error("failed to get vulnerability references", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		referencesAdded, referencesRemoved := referenceChangeMessages(existingReferences, request.References)
 
 		severity, _ := types.ParseVulnerabilitySeverity(request.Severity)
 		vulnerability := types.Vulnerability{
@@ -263,6 +267,7 @@ func updateVulnerabilityHandler() http.HandlerFunc {
 		}
 
 		tagsMessage := tagsChangeMessage(existing.Tags, request.Tags)
+		detailsMessage := detailChangeMessage(existing.Vulnerability, request)
 
 		err = db.RunTxRR(ctx, func(ctx context.Context) error {
 			if err := db.UpdateVulnerability(ctx, &vulnerability); err != nil {
@@ -271,10 +276,14 @@ func updateVulnerabilityHandler() http.HandlerFunc {
 			if err := applyVulnerabilityAssociations(ctx, vulnerability.ID, request); err != nil {
 				return err
 			}
-			if err := db.CreateVulnerabilityEvent(
-				ctx, vulnerability.ID, &userID, types.VulnerabilityEventTypeEdited, nil,
-			); err != nil {
-				return err
+			// Only recorded when something actually changed, so that opening the form and
+			// saving it unchanged does not leave a trace that suggests otherwise.
+			if detailsMessage != nil {
+				if err := db.CreateVulnerabilityEvent(
+					ctx, vulnerability.ID, &userID, types.VulnerabilityEventTypeEdited, detailsMessage,
+				); err != nil {
+					return err
+				}
 			}
 			if tagsMessage != nil {
 				if err := db.CreateVulnerabilityEvent(
@@ -283,9 +292,29 @@ func updateVulnerabilityHandler() http.HandlerFunc {
 					return err
 				}
 			}
-			if versionsChanged {
+			if referencesAdded != nil {
 				if err := db.CreateVulnerabilityEvent(
-					ctx, vulnerability.ID, &userID, types.VulnerabilityEventTypeVersionsChanged, nil,
+					ctx, vulnerability.ID, &userID, types.VulnerabilityEventTypeReferenceAdded, referencesAdded,
+				); err != nil {
+					return err
+				}
+			}
+			if referencesRemoved != nil {
+				if err := db.CreateVulnerabilityEvent(
+					ctx, vulnerability.ID, &userID, types.VulnerabilityEventTypeReferenceRemoved, referencesRemoved,
+				); err != nil {
+					return err
+				}
+			}
+			// Read back rather than derived from the request, so that the names in the
+			// message come from the database instead of being looked up separately.
+			versionsAfter, err := vulnerabilityVersionMarkings(ctx, vulnerability.ID)
+			if err != nil {
+				return err
+			}
+			if versionsMessage := versionChangeMessage(versionsBefore, versionsAfter); versionsMessage != nil {
+				if err := db.CreateVulnerabilityEvent(
+					ctx, vulnerability.ID, &userID, types.VulnerabilityEventTypeVersionsChanged, versionsMessage,
 				); err != nil {
 					return err
 				}
@@ -321,14 +350,12 @@ func updateVulnerabilityStatusHandler() http.HandlerFunc {
 		request, err := JsonBody[api.UpdateVulnerabilityStatusRequest](w, r)
 		if err != nil {
 			return
-		}
-
-		status, err := types.ParseVulnerabilityStatus(request.Status)
-		if err != nil {
+		} else if err := request.Validate(); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
+		status := request.Status
 		if !existing.Status.CanTransitionTo(status) {
 			http.Error(w, fmt.Sprintf("cannot change status from %v to %v", existing.Status, status),
 				http.StatusBadRequest)
@@ -593,64 +620,185 @@ func validateVulnerabilityVersionsInOrg(
 	return true
 }
 
-func vulnerabilityVersionsChanged(
-	w http.ResponseWriter, r *http.Request, vulnerabilityID uuid.UUID, request api.CreateUpdateVulnerabilityRequest,
-) (bool, bool) {
-	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
+// versionMarking is an application or artifact version together with the relation it has to
+// the vulnerability, reduced to what a timeline message needs.
+type versionMarking struct {
+	id       uuid.UUID
+	label    string
+	relation types.VulnerabilityVersionRelation
+}
 
+// vulnerabilityVersionMarkings reads the currently marked application and artifact versions
+// as a single list.
+func vulnerabilityVersionMarkings(ctx context.Context, vulnerabilityID uuid.UUID) ([]versionMarking, error) {
 	applicationVersions, err := db.GetVulnerabilityApplicationVersions(ctx, vulnerabilityID)
 	if err != nil {
-		log.Error("failed to get vulnerability application versions", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return false, false
+		return nil, err
 	}
 	artifactVersions, err := db.GetVulnerabilityArtifactVersions(ctx, vulnerabilityID)
 	if err != nil {
-		log.Error("failed to get vulnerability artifact versions", zap.Error(err))
+		return nil, err
+	}
+
+	markings := make([]versionMarking, 0, len(applicationVersions)+len(artifactVersions))
+	for _, version := range applicationVersions {
+		markings = append(markings, versionMarking{
+			id:       version.ApplicationVersionID,
+			label:    version.ApplicationName + " " + version.ApplicationVersionName,
+			relation: version.Relation,
+		})
+	}
+	for _, version := range artifactVersions {
+		markings = append(markings, versionMarking{
+			id:       version.ArtifactVersionID,
+			label:    version.ArtifactName + " " + version.ArtifactVersionName,
+			relation: version.Relation,
+		})
+	}
+	return markings, nil
+}
+
+func loadVulnerabilityVersionMarkings(
+	w http.ResponseWriter, r *http.Request, vulnerabilityID uuid.UUID,
+) ([]versionMarking, bool) {
+	ctx := r.Context()
+	markings, err := vulnerabilityVersionMarkings(ctx, vulnerabilityID)
+	if err != nil {
+		internalctx.GetLogger(ctx).Error("failed to get vulnerability versions", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return false, false
+		return nil, false
 	}
-
-	var currentAffectedApps, currentFixedApps []uuid.UUID
-	for _, version := range applicationVersions {
-		if version.Relation == types.VulnerabilityVersionRelationAffected {
-			currentAffectedApps = append(currentAffectedApps, version.ApplicationVersionID)
-		} else {
-			currentFixedApps = append(currentFixedApps, version.ApplicationVersionID)
-		}
-	}
-	var currentAffectedArtifacts, currentFixedArtifacts []uuid.UUID
-	for _, version := range artifactVersions {
-		if version.Relation == types.VulnerabilityVersionRelationAffected {
-			currentAffectedArtifacts = append(currentAffectedArtifacts, version.ArtifactVersionID)
-		} else {
-			currentFixedArtifacts = append(currentFixedArtifacts, version.ArtifactVersionID)
-		}
-	}
-
-	changed := !sameIDs(currentAffectedApps, request.AffectedApplicationVersionIDs) ||
-		!sameIDs(currentFixedApps, request.FixedApplicationVersionIDs) ||
-		!sameIDs(currentAffectedArtifacts, request.AffectedArtifactVersionIDs) ||
-		!sameIDs(currentFixedArtifacts, request.FixedArtifactVersionIDs)
-	return changed, true
+	return markings, true
 }
 
-func sameIDs(a, b []uuid.UUID) bool {
-	if len(a) != len(b) {
-		return false
+// maxVersionChangeMessageParts bounds the timeline message: marking a hundred versions at
+// once must not write a message nobody can read.
+const maxVersionChangeMessageParts = 10
+
+// versionChangeMessage describes how the affected and fixed markings changed, or returns nil
+// when they are the same. Versions are matched by id, so one that switches between affected
+// and fixed reads as a change rather than as a removal plus an addition.
+func versionChangeMessage(before, after []versionMarking) *string {
+	beforeByID := make(map[uuid.UUID]versionMarking, len(before))
+	for _, marking := range before {
+		beforeByID[marking.id] = marking
 	}
-	sortedA := slices.Clone(a)
-	sortedB := slices.Clone(b)
-	slices.SortFunc(sortedA, func(x, y uuid.UUID) int { return strings.Compare(x.String(), y.String()) })
-	slices.SortFunc(sortedB, func(x, y uuid.UUID) int { return strings.Compare(x.String(), y.String()) })
-	return slices.Equal(sortedA, sortedB)
+	afterByID := make(map[uuid.UUID]versionMarking, len(after))
+	for _, marking := range after {
+		afterByID[marking.id] = marking
+	}
+
+	var parts []string
+	for _, marking := range after {
+		previous, existed := beforeByID[marking.id]
+		if !existed {
+			parts = append(parts, fmt.Sprintf("marked %v as %v", marking.label, marking.relation))
+		} else if previous.relation != marking.relation {
+			parts = append(parts, fmt.Sprintf(
+				"changed %v from %v to %v", marking.label, previous.relation, marking.relation))
+		}
+	}
+	for _, marking := range before {
+		if _, exists := afterByID[marking.id]; !exists {
+			parts = append(parts, fmt.Sprintf("unmarked %v", marking.label))
+		}
+	}
+
+	if len(parts) == 0 {
+		return nil
+	}
+	if len(parts) > maxVersionChangeMessageParts {
+		remaining := len(parts) - maxVersionChangeMessageParts
+		parts = append(parts[:maxVersionChangeMessageParts], fmt.Sprintf("and %v more", remaining))
+	}
+
+	message := strings.Join(parts, "; ")
+	return &message
 }
 
-// tagsChangeMessage describes a tag change for the timeline, or returns nil when the tag
-// set is unchanged.
+// detailChangeMessage describes which of the editable detail fields changed, or returns nil
+// when none did. The description is only reported as changed: a diff of free-form Markdown
+// does not belong in a one-line timeline entry.
+func detailChangeMessage(before types.Vulnerability, after api.CreateUpdateVulnerabilityRequest) *string {
+	var parts []string
+
+	if before.Title != after.Title {
+		parts = append(parts, fmt.Sprintf("changed the title from %q to %q", before.Title, after.Title))
+	}
+	if string(before.Severity) != after.Severity {
+		parts = append(parts, fmt.Sprintf("changed the severity from %v to %v", before.Severity, after.Severity))
+	}
+	if message := cveChangeMessage(before.CveID, after.CveID); message != "" {
+		parts = append(parts, message)
+	}
+	if before.Description != after.Description {
+		parts = append(parts, "updated the description")
+	}
+
+	if len(parts) == 0 {
+		return nil
+	}
+	message := strings.Join(parts, "; ")
+	return &message
+}
+
+func cveChangeMessage(before, after *string) string {
+	switch {
+	case before == nil && after == nil:
+		return ""
+	case before == nil:
+		return fmt.Sprintf("set the CVE ID to %v", *after)
+	case after == nil:
+		return fmt.Sprintf("removed the CVE ID %v", *before)
+	case *before != *after:
+		return fmt.Sprintf("changed the CVE ID from %v to %v", *before, *after)
+	default:
+		return ""
+	}
+}
+
+// referenceChangeMessages compares the reference list of an update request against the stored
+// one and returns the message for the reference_added and the reference_removed event, or nil
+// where no event should be recorded. References are identified by their URL, which is what
+// makes a reference the same reference to a reader.
+func referenceChangeMessages(
+	before []types.VulnerabilityReference, after []api.VulnerabilityReference,
+) (added, removed *string) {
+	beforeURLs := make([]string, len(before))
+	for i, reference := range before {
+		beforeURLs[i] = reference.URL
+	}
+	afterURLs := make([]string, len(after))
+	for i, reference := range after {
+		afterURLs[i] = reference.URL
+	}
+
+	var addedURLs, removedURLs []string
+	for _, url := range afterURLs {
+		if !slices.Contains(beforeURLs, url) {
+			addedURLs = append(addedURLs, url)
+		}
+	}
+	for _, url := range beforeURLs {
+		if !slices.Contains(afterURLs, url) {
+			removedURLs = append(removedURLs, url)
+		}
+	}
+
+	if len(addedURLs) > 0 {
+		message := "added " + strings.Join(addedURLs, ", ")
+		added = &message
+	}
+	if len(removedURLs) > 0 {
+		message := "removed " + strings.Join(removedURLs, ", ")
+		removed = &message
+	}
+	return added, removed
+}
+
+// tagsChangeMessage describes a tag change for the timeline, or returns nil when the tag set
+// is unchanged.
 func tagsChangeMessage(before, after []string) *string {
 	var added, removed []string
 	for _, tag := range after {

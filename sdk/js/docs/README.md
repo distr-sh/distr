@@ -26,6 +26,9 @@
 - [CreateUpdateCustomerOrganizationRequest](interfaces/CreateUpdateCustomerOrganizationRequest.md)
 - [CreateUpdatePartnerOrganizationRequest](interfaces/CreateUpdatePartnerOrganizationRequest.md)
 - [CreateUpdateSupportBundleConfigurationRequest](interfaces/CreateUpdateSupportBundleConfigurationRequest.md)
+- [CreateUpdateVulnerabilityRequest](interfaces/CreateUpdateVulnerabilityRequest.md)
+- [CreateVulnerabilityCommentRequest](interfaces/CreateVulnerabilityCommentRequest.md)
+- [CreateVulnerabilityRequest](interfaces/CreateVulnerabilityRequest.md)
 - [CustomerOrganization](interfaces/CustomerOrganization.md)
 - [CustomerOrganizationWithUsage](interfaces/CustomerOrganizationWithUsage.md)
 - [Deployment](interfaces/Deployment.md)
@@ -51,8 +54,19 @@
 - [SupportBundleResource](interfaces/SupportBundleResource.md)
 - [TokenResponse](interfaces/TokenResponse.md)
 - [UpdateSupportBundleStatusRequest](interfaces/UpdateSupportBundleStatusRequest.md)
+- [UpdateVulnerabilityStatusRequest](interfaces/UpdateVulnerabilityStatusRequest.md)
 - [UserAccount](interfaces/UserAccount.md)
 - [UserAccountWithRole](interfaces/UserAccountWithRole.md)
+- [Vulnerability](interfaces/Vulnerability.md)
+- [VulnerabilityApplicationVersion](interfaces/VulnerabilityApplicationVersion.md)
+- [VulnerabilityArtifactVersion](interfaces/VulnerabilityArtifactVersion.md)
+- [VulnerabilityDetail](interfaces/VulnerabilityDetail.md)
+- [VulnerabilityEvent](interfaces/VulnerabilityEvent.md)
+- [VulnerabilityFilter](interfaces/VulnerabilityFilter.md)
+- [VulnerabilityImpact](interfaces/VulnerabilityImpact.md)
+- [VulnerabilityImpactedDeployment](interfaces/VulnerabilityImpactedDeployment.md)
+- [VulnerabilityImpactedPull](interfaces/VulnerabilityImpactedPull.md)
+- [VulnerabilityReference](interfaces/VulnerabilityReference.md)
 
 ## Type Aliases
 
@@ -66,6 +80,7 @@
 - [DeploymentType](type-aliases/DeploymentType.md)
 - [DockerType](type-aliases/DockerType.md)
 - [HelmChartType](type-aliases/HelmChartType.md)
+- [InitialVulnerabilityStatus](type-aliases/InitialVulnerabilityStatus.md)
 - [IsOutdatedResult](type-aliases/IsOutdatedResult.md)
 - [IsOutdatedResultItem](type-aliases/IsOutdatedResultItem.md)
 - [LatestVersionStrategy](type-aliases/LatestVersionStrategy.md)
@@ -76,6 +91,11 @@
 - [UpdateAllDeploymentsUpdatedTarget](type-aliases/UpdateAllDeploymentsUpdatedTarget.md)
 - [UpdateDeploymentParams](type-aliases/UpdateDeploymentParams.md)
 - [UserRole](type-aliases/UserRole.md)
+- [VulnerabilityEventType](type-aliases/VulnerabilityEventType.md)
+- [VulnerabilityImpactState](type-aliases/VulnerabilityImpactState.md)
+- [VulnerabilitySeverity](type-aliases/VulnerabilitySeverity.md)
+- [VulnerabilityStatus](type-aliases/VulnerabilityStatus.md)
+- [VulnerabilityVersionRelation](type-aliases/VulnerabilityVersionRelation.md)
 
 ## Functions
 

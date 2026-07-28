@@ -3,12 +3,20 @@ import {
   Application,
   ApplicationVersion,
   ApplicationVersionResource,
+  CreateUpdateVulnerabilityRequest,
+  CreateVulnerabilityRequest,
   DeploymentRequest,
   DeploymentTarget,
   DeploymentTargetAccessResponse,
   DeploymentTargetScope,
   DeploymentType,
   HelmChartType,
+  Vulnerability,
+  VulnerabilityDetail,
+  VulnerabilityEvent,
+  VulnerabilityFilter,
+  VulnerabilityImpact,
+  VulnerabilityStatus,
 } from '../types';
 import {Client, ClientConfig} from './client';
 import {ConditionalPartial, defaultClientConfig} from './config';
@@ -413,5 +421,56 @@ export class DistrService {
         }
       });
     return {app, newerVersions};
+  }
+
+  /**
+   * Returns the vulnerabilities of the organization. Customers only ever receive published and
+   * resolved vulnerabilities affecting a version they are entitled to.
+   */
+  public async getVulnerabilities(filter: VulnerabilityFilter = {}): Promise<Vulnerability[]> {
+    return this.client.getVulnerabilities(filter);
+  }
+
+  public async getVulnerability(vulnerabilityId: string): Promise<VulnerabilityDetail> {
+    return this.client.getVulnerability(vulnerabilityId);
+  }
+
+  /** Returns the customers who deployed or pulled an affected version. Not available to customers. */
+  public async getVulnerabilityImpact(vulnerabilityId: string): Promise<VulnerabilityImpact> {
+    return this.client.getVulnerabilityImpact(vulnerabilityId);
+  }
+
+  /**
+   * Creates a vulnerability. Without an explicit status it starts in `triage`, the inbox for
+   * externally reported issues.
+   */
+  public async createVulnerability(request: CreateVulnerabilityRequest): Promise<VulnerabilityDetail> {
+    return this.client.createVulnerability(request);
+  }
+
+  public async updateVulnerability(
+    vulnerabilityId: string,
+    request: CreateUpdateVulnerabilityRequest
+  ): Promise<VulnerabilityDetail> {
+    return this.client.updateVulnerability(vulnerabilityId, request);
+  }
+
+  /**
+   * Moves a vulnerability to the given status. Only the transitions allowed by the workflow are
+   * accepted, and publishing makes the vulnerability visible to entitled customers.
+   */
+  public async updateVulnerabilityStatus(
+    vulnerabilityId: string,
+    status: VulnerabilityStatus
+  ): Promise<VulnerabilityDetail> {
+    return this.client.updateVulnerabilityStatus(vulnerabilityId, {status});
+  }
+
+  public async deleteVulnerability(vulnerabilityId: string): Promise<void> {
+    return this.client.deleteVulnerability(vulnerabilityId);
+  }
+
+  public async commentOnVulnerability(vulnerabilityId: string, content: string): Promise<VulnerabilityEvent> {
+    return this.client.createVulnerabilityComment(vulnerabilityId, {content});
   }
 }
