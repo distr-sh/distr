@@ -200,22 +200,6 @@ externally reported issues.
 
 ---
 
-### deleteVulnerability()
-
-> **deleteVulnerability**(`vulnerabilityId`): `Promise`\<`void`\>
-
-#### Parameters
-
-##### vulnerabilityId
-
-`string`
-
-#### Returns
-
-`Promise`\<`void`\>
-
----
-
 ### getLatestVersion()
 
 > **getLatestVersion**(`appId`): `Promise`\<[`ApplicationVersion`](../interfaces/ApplicationVersion.md) \| `undefined`\>

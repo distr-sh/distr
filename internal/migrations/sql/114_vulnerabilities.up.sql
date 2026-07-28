@@ -60,7 +60,7 @@ CREATE INDEX idx_vulnerability_application_version_application_version_id
 
 CREATE TABLE VulnerabilityArtifactVersion (
     vulnerability_id UUID NOT NULL REFERENCES Vulnerability (id) ON DELETE CASCADE,
-    artifact_version_id UUID NOT NULL REFERENCES ArtifactVersion (id) ON DELETE CASCADE,
+    artifact_version_id UUID NOT NULL REFERENCES ArtifactVersion (id) ON DELETE RESTRICT,
     relation vulnerability_version_relation NOT NULL,
     PRIMARY KEY (vulnerability_id, artifact_version_id)
 );

@@ -56,10 +56,6 @@ export class VulnerabilitiesService {
     return this.httpClient.patch<VulnerabilityDetail>(`${baseUrl}/${id}/status`, request);
   }
 
-  public delete(id: string) {
-    return this.httpClient.delete<void>(`${baseUrl}/${id}`);
-  }
-
   public createComment(id: string, request: CreateVulnerabilityCommentRequest) {
     return this.httpClient.post<VulnerabilityEvent>(`${baseUrl}/${id}/comments`, request);
   }

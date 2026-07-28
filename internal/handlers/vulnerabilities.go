@@ -76,11 +76,6 @@ func VulnerabilitiesRouter(r chiopenapi.Router) {
 						}{})).
 						With(option.Response(http.StatusOK, api.VulnerabilityDetail{}))
 
-					r.Delete("/", deleteVulnerabilityHandler()).
-						With(option.Description("Delete a vulnerability")).
-						With(option.Request(api.VulnerabilityIDRequest{})).
-						With(option.Response(http.StatusNoContent, nil))
-
 					r.Post("/comments", createVulnerabilityCommentHandler()).
 						With(option.Description("Add a comment to the vulnerability timeline")).
 						With(option.Request(struct {
@@ -386,29 +381,6 @@ func updateVulnerabilityStatusHandler() http.HandlerFunc {
 	}
 }
 
-func deleteVulnerabilityHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		vulnerability := requireVulnerability(w, r)
-		if vulnerability == nil {
-			return
-		}
-
-		ctx := r.Context()
-		log := internalctx.GetLogger(ctx)
-
-		err := db.DeleteVulnerability(ctx, vulnerability.ID, vulnerability.OrganizationID)
-		if errors.Is(err, apierrors.ErrNotFound) {
-			http.NotFound(w, r)
-		} else if err != nil {
-			log.Error("failed to delete vulnerability", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
-			w.WriteHeader(http.StatusNoContent)
-		}
-	}
-}
-
 func createVulnerabilityCommentHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vulnerability := requireVulnerability(w, r)
@@ -450,9 +422,10 @@ func getVulnerabilityImpactHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
+		a := auth.Authentication.Require(ctx)
 
 		deployments, err := db.GetVulnerabilityImpactedDeployments(
-			ctx, vulnerability.ID, vulnerability.OrganizationID)
+			ctx, vulnerability.ID, vulnerability.OrganizationID, a.CurrentPartnerOrgID())
 		if err != nil {
 			log.Error("failed to get vulnerability impacted deployments", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -460,7 +433,8 @@ func getVulnerabilityImpactHandler() http.HandlerFunc {
 			return
 		}
 
-		pulls, err := db.GetVulnerabilityImpactedPulls(ctx, vulnerability.ID, vulnerability.OrganizationID)
+		pulls, err := db.GetVulnerabilityImpactedPulls(
+			ctx, vulnerability.ID, vulnerability.OrganizationID, a.CurrentPartnerOrgID())
 		if err != nil {
 			log.Error("failed to get vulnerability impacted pulls", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)

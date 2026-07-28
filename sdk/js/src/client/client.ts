@@ -168,10 +168,6 @@ export class Client {
     );
   }
 
-  public async deleteVulnerability(vulnerabilityId: string): Promise<void> {
-    await this.delete(`vulnerabilities/${vulnerabilityId}`);
-  }
-
   public async createVulnerabilityComment(
     vulnerabilityId: string,
     request: CreateVulnerabilityCommentRequest
@@ -204,17 +200,6 @@ export class Client {
 
   private async patch<TResponse, TBody = TResponse>(path: string, body: TBody): Promise<TResponse> {
     return this.send<TResponse, TBody>('PATCH', path, body);
-  }
-
-  private async delete(path: string): Promise<void> {
-    const response = await fetch(`${this.config.apiBase}${path}`, {
-      method: 'DELETE',
-      headers: {
-        Accept: 'application/json',
-        Authorization: `AccessToken ${this.config.apiKey}`,
-      },
-    });
-    await this.handleResponse<void>(response, 'DELETE', path);
   }
 
   private async send<TResponse, TBody>(method: string, path: string, body?: TBody): Promise<TResponse> {

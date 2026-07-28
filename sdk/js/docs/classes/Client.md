@@ -150,22 +150,6 @@ The low-level Distr API client. Each method represents on API endpoint.
 
 ---
 
-### deleteVulnerability()
-
-> **deleteVulnerability**(`vulnerabilityId`): `Promise`\<`void`\>
-
-#### Parameters
-
-##### vulnerabilityId
-
-`string`
-
-#### Returns
-
-`Promise`\<`void`\>
-
----
-
 ### getApplication()
 
 > **getApplication**(`applicationId`): `Promise`\<[`Application`](../interfaces/Application.md)\>

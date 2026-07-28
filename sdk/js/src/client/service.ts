@@ -466,10 +466,6 @@ export class DistrService {
     return this.client.updateVulnerabilityStatus(vulnerabilityId, {status});
   }
 
-  public async deleteVulnerability(vulnerabilityId: string): Promise<void> {
-    return this.client.deleteVulnerability(vulnerabilityId);
-  }
-
   public async commentOnVulnerability(vulnerabilityId: string, content: string): Promise<VulnerabilityEvent> {
     return this.client.createVulnerabilityComment(vulnerabilityId, {content});
   }
