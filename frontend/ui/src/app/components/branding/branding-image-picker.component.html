@@ -1,0 +1,35 @@
+<label class="distr-label mb-1">{{ label() }}</label>
+<div class="inline-block relative">
+  @let baseClass = 'rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 object-contain';
+  @if (publicUrl()) {
+    <img [src]="publicImageUrl() ?? fallbackSrc()" [alt]="alt()" [class]="baseClass + ' ' + currentImageClass()" />
+  } @else if (imageId(); as id) {
+    <img
+      [src]="(id | secureImage | async) ?? fallbackSrc()"
+      [alt]="alt()"
+      [class]="baseClass + ' ' + currentImageClass()" />
+  } @else {
+    <img [src]="fallbackSrc()" [alt]="alt()" [class]="baseClass + ' ' + currentImageClass()" />
+  }
+  <div class="absolute -bottom-2 -right-0.5 space-x-1">
+    <button
+      type="button"
+      class="rounded-full size-6 text-sm text-gray-900 focus:outline-none bg-white border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+      (click)="edit()">
+      <span class="sr-only">Edit {{ label() }}</span>
+      <fa-icon [icon]="faPen" size="sm" />
+    </button>
+    @if (imageId()) {
+      <button
+        type="button"
+        class="rounded-full size-6 text-sm text-gray-900 focus:outline-none bg-white border border-gray-200 hover:bg-gray-100 hover:text-red-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+        (click)="remove()">
+        <span class="sr-only">Remove {{ label() }}</span>
+        <fa-icon [icon]="faTrashCan" size="sm" />
+      </button>
+    }
+  </div>
+</div>
+<p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+  <ng-content />
+</p>
