@@ -17,7 +17,6 @@ import {faCheck, faCreditCard, faShoppingCart} from '@fortawesome/free-solid-svg
 import {firstValueFrom} from 'rxjs';
 import {WEBSITE_URL} from '../../constants';
 import {getFormDisplayedError} from '../../util/errors';
-import {never} from '../../util/exhaust';
 import {BytesPipe} from '../../util/units';
 import {DeleteOrganizationComponent} from '../components/delete-organization/delete-organization.component';
 import {AuthService} from '../services/auth.service';
@@ -124,10 +123,6 @@ export class SubscriptionComponent implements OnInit {
     const bytes = this.currentPlanLimits()?.maxRegistryStorageBytes;
     return bytes === undefined || bytes === UNLIMITED_QTY ? undefined : bytes;
   });
-
-  protected readonly logRetentionDays = computed(() =>
-    Math.round((this.currentPlanLimits()?.logQueryWindowSeconds ?? 0) / (24 * 60 * 60))
-  );
 
   async ngOnInit() {
     try {
@@ -297,23 +292,6 @@ export class SubscriptionComponent implements OnInit {
       return '';
     }
     return this.getCustomerOrganizationsLimit(info.subscriptionType);
-  }
-
-  getPlanDisplayName(subscriptionType: SubscriptionType): string {
-    switch (subscriptionType) {
-      case 'community':
-        return 'Distr Community Edition';
-      case 'trial':
-        return 'Distr Pro Unlimited Trial';
-      case 'pro':
-        return 'Distr Pro';
-      case 'business':
-        return 'Distr Business';
-      case 'enterprise':
-        return 'Distr Enterprise';
-      default:
-        return never(subscriptionType);
-    }
   }
 
   isTrialSubscription(): boolean {

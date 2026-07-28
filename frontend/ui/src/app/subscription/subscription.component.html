@@ -19,7 +19,7 @@
               <!-- Current Usage -->
               <div class="space-y-4">
                 <h2 class="text-xl font-bold dark:text-white">Current Usage</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div
                     class="grid grid-rows-3 gap-0 py-2 px-4 border border-gray-200 dark:border-gray-700 rounded-lg text-center">
                     <p class="text-sm text-gray-600 dark:text-gray-400 self-center">Users</p>
@@ -43,12 +43,9 @@
                     <p class="text-xs text-gray-500 dark:text-gray-500 self-center">
                       @if (subscriptionInfoData.subscriptionCustomerOrganizationQuantity !== unlimited) {
                         of {{ subscriptionInfoData.subscriptionCustomerOrganizationQuantity }} Customers used
+                      } @else {
+                        invited customer organizations
                       }
-                      <br />
-                      <span class="text-xs text-gray-400">
-                        ({{ getPlanDisplayName(subscriptionInfoData.subscriptionType) }} max:
-                        {{ getCurrentCustomerOrganizationsLimit() }})
-                      </span>
                     </p>
                   </div>
                   <div
@@ -63,20 +60,6 @@
                       } @else {
                         artifacts stored
                       }
-                    </p>
-                  </div>
-                  <div
-                    class="grid grid-rows-3 gap-0 py-2 px-4 border border-gray-200 dark:border-gray-700 rounded-lg text-center">
-                    <p class="text-sm text-gray-600 dark:text-gray-400 self-center">Log Retention</p>
-                    <p class="text-3xl font-bold text-gray-900 dark:text-white self-center">
-                      {{ logRetentionDays() }}
-                    </p>
-                    <p class="text-xs text-gray-500 dark:text-gray-500 self-center">
-                      <ng-container [ngPlural]="logRetentionDays()">
-                        <ng-template ngPluralCase="=1">day</ng-template>
-                        <ng-template ngPluralCase="other">days</ng-template>
-                      </ng-container>
-                      of deployment logs
                     </p>
                   </div>
                 </div>
@@ -141,7 +124,7 @@
                     </p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label for="userAccountQuantity-update" class="distr-label mb-2"> Internal Users * </label>
+                        <label for="userAccountQuantity-update" class="distr-label mb-2"> Vendor Team Members * </label>
                         <input
                           formControlName="userAccountQuantity"
                           type="number"
@@ -152,7 +135,7 @@
                           [placeholder]="subscriptionInfoData.currentUserAccountCount.toString()"
                           required />
                         <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-                          Number of internal team members
+                          Number of vendor team members
                           @if (isPartnerManagementEnabled()) {
                             and partner users
                           }
@@ -321,7 +304,9 @@
                     <h2 class="text-xl font-bold dark:text-white">Subscription Quantities</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label for="userAccountQuantity-checkout" class="distr-label mb-2"> Internal Users * </label>
+                        <label for="userAccountQuantity-checkout" class="distr-label mb-2">
+                          Vendor Team Members *
+                        </label>
                         <input
                           formControlName="userAccountQuantity"
                           type="number"
@@ -332,7 +317,7 @@
                           placeholder="1"
                           required />
                         <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-                          Number of internal team members
+                          Number of vendor team members
                           @if (isPartnerManagementEnabled()) {
                             and partner users
                           }
