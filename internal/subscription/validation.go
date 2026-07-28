@@ -54,8 +54,6 @@ func IsDeploymentTargetLimitReached(
 ) (bool, error) {
 	if !org.HasActiveSubscription() {
 		return true, nil
-	} else if org.SubscriptionType == types.SubscriptionTypeTrial {
-		return false, nil
 	} else if count, err := db.CountDeploymentTargets(ctx, org.ID, customerOrgID); err != nil {
 		return true, fmt.Errorf("could not query DeploymentTarget: %w", err)
 	} else {

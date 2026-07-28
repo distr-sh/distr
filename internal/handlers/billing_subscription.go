@@ -359,20 +359,19 @@ func buildSubscriptionInfo(ctx context.Context, org *types.Organization) (*api.S
 	}
 
 	info := &api.SubscriptionInfo{
-		SubscriptionType:                       org.SubscriptionType,
-		SubscriptionEndsAt:                     org.SubscriptionEndsAt,
-		SubscriptionPeriod:                     org.SubscriptionPeriod,
-		SubscriptionCustomerOrganizationQty:    org.SubscriptionCustomerOrganizationQty.Value(),
-		SubscriptionUserAccountQty:             org.SubscriptionUserAccountQty.Value(),
-		CurrentUserAccountCount:                usage.userAccountCount,
-		CurrentCustomerOrganizationCount:       usage.customerOrganizationCount,
-		CurrentMaxUsersPerCustomer:             usage.maxUsersPerCustomer,
-		CurrentMaxDeploymentTargetsPerCustomer: usage.maxDeploymentTargetsPerCustomer,
-		HasApplicationEntitlements:             hasApplicationEntitlements,
-		HasArtifactEntitlements:                hasArtifactEntitlements,
-		HasNonAdminRoles:                       hasNonAdminRoles,
-		HasAlertConfigurations:                 hasAlertConfigurations,
-		Limits:                                 map[types.SubscriptionType]api.SubscriptionLimits{},
+		SubscriptionType:                    org.SubscriptionType,
+		SubscriptionEndsAt:                  org.SubscriptionEndsAt,
+		SubscriptionPeriod:                  org.SubscriptionPeriod,
+		SubscriptionCustomerOrganizationQty: org.SubscriptionCustomerOrganizationQty.Value(),
+		SubscriptionUserAccountQty:          org.SubscriptionUserAccountQty.Value(),
+		CurrentUserAccountCount:             usage.userAccountCount,
+		CurrentCustomerOrganizationCount:    usage.customerOrganizationCount,
+		CurrentRegistryStorageBytes:         usage.registryStorageBytes,
+		HasApplicationEntitlements:          hasApplicationEntitlements,
+		HasArtifactEntitlements:             hasArtifactEntitlements,
+		HasNonAdminRoles:                    hasNonAdminRoles,
+		HasAlertConfigurations:              hasAlertConfigurations,
+		Limits:                              map[types.SubscriptionType]api.SubscriptionLimits{},
 	}
 
 	for _, st := range types.AllSubscriptionTypes() {
@@ -390,6 +389,7 @@ type currentUsageCounts struct {
 	maxDeploymentTargetsPerCustomer int64
 	applicationEntitlementCount     int64
 	artifactEntitlementCount        int64
+	registryStorageBytes            int64
 }
 
 // getCurrentUsageCounts retrieves the current usage counts for the given organization
@@ -422,6 +422,11 @@ func getCurrentUsageCounts(ctx context.Context, orgID uuid.UUID) (*currentUsageC
 		return nil, fmt.Errorf("failed to count internal deployment targets: %w", err)
 	}
 
+	registryStorageBytes, err := db.GetRegistryStorageUsage(ctx, orgID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get registry storage usage: %w", err)
+	}
+
 	// Find the maximum user count and deployment target count across all customer organizations
 	var maxUsersPerCustomer int64
 	for _, customerOrg := range customerOrgs {
@@ -440,6 +445,7 @@ func getCurrentUsageCounts(ctx context.Context, orgID uuid.UUID) (*currentUsageC
 		maxDeploymentTargetsPerCustomer: maxDeploymentTargetsPerCustomer,
 		applicationEntitlementCount:     int64(len(appEntitlements)),
 		artifactEntitlementCount:        int64(len(artifactEntitlements)),
+		registryStorageBytes:            registryStorageBytes,
 	}, nil
 }
 
