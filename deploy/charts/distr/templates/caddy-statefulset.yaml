@@ -1,6 +1,10 @@
 {{- if .Values.caddy.enabled }}
+{{- /* A StatefulSet, because every replica keeps its own certificate storage: Caddy instances
+form a cluster only when they share storage, which would require a ReadWriteMany volume or a
+storage module compiled into a custom image. Independent per-replica storage is preferred here,
+at the cost of one ACME issuance per replica and domain. */}}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "distr.fullname" . }}-caddy
   labels:
@@ -8,6 +12,10 @@ metadata:
     app.kubernetes.io/component: caddy
 spec:
   replicas: {{ .Values.caddy.replicaCount }}
+  serviceName: {{ include "distr.fullname" . }}-caddy-headless
+  # Certificates are per-replica anyway, so there is no reason to start or update the pods
+  # one after another.
+  podManagementPolicy: Parallel
   selector:
     matchLabels:
       {{- include "distr.selectorLabels" . | nindent 6 }}
@@ -53,32 +61,21 @@ spec:
         - name: caddyfile
           configMap:
             name: {{ include "distr.fullname" . }}-caddy
-        - name: data
-          {{- if .Values.caddy.persistence.enabled }}
-          persistentVolumeClaim:
-            claimName: {{ include "distr.fullname" . }}-caddy-data
-          {{- else }}
-          emptyDir: {}
-          {{- end }}
         - name: config
           emptyDir: {}
-{{- if .Values.caddy.persistence.enabled }}
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ include "distr.fullname" . }}-caddy-data
-  labels:
-    {{- include "distr.labels" . | nindent 4 }}
-    app.kubernetes.io/component: caddy
-spec:
-  accessModes:
-    - ReadWriteOnce
-  {{- with .Values.caddy.persistence.storageClassName }}
-  storageClassName: {{ . | quote }}
-  {{- end }}
-  resources:
-    requests:
-      storage: {{ .Values.caddy.persistence.size | quote }}
-{{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          {{- include "distr.labels" . | nindent 10 }}
+          app.kubernetes.io/component: caddy
+      spec:
+        accessModes:
+          {{- toYaml .Values.caddy.persistence.accessModes | nindent 10 }}
+        {{- with .Values.caddy.persistence.storageClassName }}
+        storageClassName: {{ . | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.caddy.persistence.size | quote }}
 {{- end }}

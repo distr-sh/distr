@@ -30,7 +30,7 @@ func CustomDomainsRouter(r chiopenapi.Router) {
 		With(option.Description("List all custom domains of the current organization")).
 		With(option.Response(http.StatusOK, []types.CustomDomain{}))
 	r.With(middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
-		r.Post("/", createCustomDomainsHandler).
+		r.With(middleware.RequireCustomDomainsConfigured).Post("/", createCustomDomainsHandler).
 			With(option.Description("Register new custom domains for the current organization")).
 			With(option.Request(api.CreateCustomDomainsRequest{})).
 			With(option.Response(http.StatusOK, []types.CustomDomain{}))
@@ -74,7 +74,7 @@ func createCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
 	customDomains := make([]types.CustomDomain, len(request.Domains))
 	for i, domain := range request.Domains {
 		if isPlatformOwnedDomain(domain.Domain) {
-			http.Error(w, "this domain is owned by the platform and can not be registered", http.StatusBadRequest)
+			http.Error(w, "this domain is owned by the platform and cannot be registered", http.StatusBadRequest)
 			return
 		}
 		if conflict, err := legacyDomainOwnedByOtherOrg(ctx, domain.Domain, *auth.CurrentOrgID()); err != nil {

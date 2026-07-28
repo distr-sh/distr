@@ -79,8 +79,9 @@ export class OrganizationSettingsComponent implements OnInit {
   }
 
   async save() {
+    const customDomainsValid = this.customDomains().validate();
     this.form.markAllAsTouched();
-    if (this.form.valid) {
+    if (this.form.valid && customDomainsValid) {
       const wasPrePostScriptsEnabled = this.organization?.features?.includes('pre_post_scripts') ?? false;
       const isNowPrePostScriptsEnabled = this.form.value.prePostScriptsEnabled ?? false;
 
@@ -116,8 +117,8 @@ export class OrganizationSettingsComponent implements OnInit {
             prePostScriptsEnabled: this.form.value.prePostScriptsEnabled ?? false,
           })
         );
-        this.toast.success('Settings saved successfully');
         await this.customDomains().save();
+        this.toast.success('Settings saved successfully');
       } catch (e) {
         const msg = getFormDisplayedError(e);
         if (msg) {

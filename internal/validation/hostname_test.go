@@ -42,3 +42,17 @@ func TestValidateHostname(t *testing.T) {
 		g.Expect(validation.ValidateHostname(hostname)).To(HaveOccurred(), hostname)
 	}
 }
+
+func TestNormalizeHostname(t *testing.T) {
+	g := NewWithT(t)
+	for input, expected := range map[string]string{
+		"example.com":       "example.com",
+		"Example.COM":       "example.com",
+		"  example.com  ":   "example.com",
+		"example.com.":      "example.com",
+		"App.Example.Com. ": "app.example.com",
+	} {
+		g.Expect(validation.NormalizeHostname(input)).To(Equal(expected), input)
+		g.Expect(validation.ValidateHostname(validation.NormalizeHostname(input))).To(Succeed(), input)
+	}
+}

@@ -7,30 +7,47 @@ metadata:
     {{- include "distr.labels" . | nindent 4 }}
     app.kubernetes.io/component: caddy
 data:
+  # Indented with tabs because that is the format `caddy fmt` expects; anything else
+  # makes Caddy log a "input is not formatted" warning on every start.
   Caddyfile: |
     {
-      {{- with .Values.caddy.acmeEmail }}
-      email {{ . }}
-      {{- end }}
-      on_demand_tls {
-        # Authorizes certificate issuance per domain; the hub returns 200 only for
-        # registered custom domains. Served by the cluster-internal ask Service,
-        # never exposed publicly.
-        ask http://{{ include "distr.fullname" . }}-internal-caddy-ask:8085/internal/webhook/tls/ask
-      }
+    	{{- with .Values.caddy.acmeEmail }}
+    	email {{ . }}
+    	{{- end }}
+    	{{- with .Values.caddy.acmeCA }}
+    	acme_ca {{ . }}
+    	{{- end }}
+    	{{- with .Values.caddy.storage }}
+    	{{- . | trim | nindent 4 | replace "\n    " "\n    \t" }}
+    	{{- end }}
+    	on_demand_tls {
+    		# Authorizes certificate issuance per domain; the hub returns 200 only for
+    		# registered custom domains. Served by the cluster-internal ask Service,
+    		# never exposed publicly.
+    		ask http://{{ include "distr.fullname" . }}-internal-caddy-ask:{{ .Values.caddy.internalAskPort }}/internal/webhook/tls/ask
+    	}
+    }
+
+    # Custom domains are served over HTTPS only; ACME HTTP-01 challenges are still
+    # answered by Caddy itself before this site is consulted.
+    http:// {
+    	redir https://{host}{uri}
     }
 
     https:// {
-      tls {
-        on_demand
-      }
-      # The OCI distribution API mandates the /v2/ path prefix for all registry
-      # traffic, so a single custom domain serves both the app and the registry.
-      handle /v2/* {
-        reverse_proxy {{ include "distr.fullname" . }}:{{ .Values.service.artifactsPort }}
-      }
-      handle {
-        reverse_proxy {{ include "distr.fullname" . }}:{{ .Values.service.port }}
-      }
+    	tls {
+    		on_demand
+    		{{- if eq .Values.caddy.issuer "internal" }}
+    		issuer internal
+    		{{- end }}
+    	}
+    	# The OCI distribution API mandates the /v2/ path prefix for all registry
+    	# traffic, so a single custom domain serves both the app and the registry.
+    	handle /v2/* {
+    		reverse_proxy {{ include "distr.fullname" . }}:{{ .Values.service.artifactsPort }}
+    	}
+    	handle {
+    		reverse_proxy {{ include "distr.fullname" . }}:{{ .Values.service.port }}
+    	}
     }
 {{- end }}

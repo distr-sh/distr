@@ -5,6 +5,7 @@ import (
 
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
 	"go.uber.org/zap"
 )
@@ -18,7 +19,9 @@ func TLSAskHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		domain := r.FormValue("domain")
+		// Domains are stored normalized, and the SNI Caddy passes here may carry a different
+		// case or a trailing dot, so it must be normalized before the lookup.
+		domain := validation.NormalizeHostname(r.URL.Query().Get("domain"))
 		if domain == "" {
 			http.Error(w, "parameter domain is required", http.StatusBadRequest)
 			return

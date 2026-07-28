@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/validation"
@@ -16,7 +15,7 @@ type CreateCustomDomainRequest struct {
 // Normalize lower-cases the domain and strips surrounding whitespace and a trailing dot,
 // so it can be validated and stored as a bare hostname.
 func (r *CreateCustomDomainRequest) Normalize() {
-	r.Domain = strings.TrimSuffix(strings.ToLower(strings.TrimSpace(r.Domain)), ".")
+	r.Domain = validation.NormalizeHostname(r.Domain)
 }
 
 func (r *CreateCustomDomainRequest) Validate() error {

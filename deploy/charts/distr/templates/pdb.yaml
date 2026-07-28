@@ -1,0 +1,25 @@
+{{- if .Values.podDisruptionBudget.enabled }}
+{{- if and .Values.podDisruptionBudget.minAvailable .Values.podDisruptionBudget.maxUnavailable }}
+{{- fail "podDisruptionBudget: set either minAvailable or maxUnavailable, not both" }}
+{{- end }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "distr.fullname" . }}
+  labels:
+    {{- include "distr.labels" . | nindent 4 }}
+    app.kubernetes.io/component: hub
+spec:
+  {{- with .Values.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ . }}
+  {{- end }}
+  {{- with .Values.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ . }}
+  {{- end }}
+  {{- /* The component label is required here: without it the selector would also cover the
+  cronjob pods, whose evictions would then count against the hub's budget. */}}
+  selector:
+    matchLabels:
+      {{- include "distr.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: hub
+{{- end }}

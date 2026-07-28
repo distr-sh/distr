@@ -355,6 +355,19 @@ var (
 	CustomDomainsFeatureMiddleware        = FeatureFlagMiddleware(types.FeatureCustomDomains)
 )
 
+// RequireCustomDomainsConfigured rejects requests unless the instance itself is set up for custom
+// domain self-service. Without a CNAME target there is no proxy obtaining certificates for custom
+// domains, so a registered domain would never be served.
+func RequireCustomDomainsConfigured(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !env.CustomDomainsConfigured() {
+			http.Error(w, "custom domains are not configured on this instance", http.StatusForbidden)
+			return
+		}
+		handler.ServeHTTP(w, r)
+	})
+}
+
 func SetRequestPattern(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		next.ServeHTTP(w, r)

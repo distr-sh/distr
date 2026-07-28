@@ -3,21 +3,22 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faTrash} from '@fortawesome/free-solid-svg-icons';
-import {BehaviorSubject, combineLatest, firstValueFrom, of, switchMap} from 'rxjs';
-import {fromPromise} from 'rxjs/internal/observable/innerFrom';
+import {BehaviorSubject, combineLatest, firstValueFrom, from, of, switchMap} from 'rxjs';
 import {getRemoteEnvironment} from '../../env/remote';
 import {getFormDisplayedError} from '../../util/errors';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AuthService} from '../services/auth.service';
+import {ContextService} from '../services/context.service';
 import {CustomDomainsService} from '../services/custom-domains.service';
 import {FeatureFlagService} from '../services/feature-flag.service';
 import {OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
 import {CustomDomain, CustomDomainType} from '../types/custom-domain';
 
-// RFC-1123 hostname: dot-separated labels of lowercase alphanumerics and hyphens
-// (not at the start or end of a label), at least two labels.
-const hostnamePattern = /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/;
+// RFC-1123 hostname: dot-separated labels of alphanumerics and hyphens (not at the start or
+// end of a label), at least two labels. Case-insensitive because domains are entered as typed
+// and lower-cased on save.
+const hostnamePattern = /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i;
 
 @Component({
   selector: 'app-custom-domains',
@@ -35,9 +36,10 @@ export class CustomDomainsComponent {
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly overlay = inject(OverlayService);
+  private readonly contextService = inject(ContextService);
   private readonly fb = inject(FormBuilder).nonNullable;
 
-  private readonly remoteEnv = toSignal(fromPromise(getRemoteEnvironment()));
+  private readonly remoteEnv = toSignal(from(getRemoteEnvironment()));
   protected readonly appCnameTarget = computed(() => this.remoteEnv()?.customDomainAppCnameTarget);
   protected readonly registryCnameTarget = computed(
     () => this.remoteEnv()?.customDomainRegistryCnameTarget ?? this.appCnameTarget()
@@ -90,7 +92,15 @@ export class CustomDomainsComponent {
     });
   }
 
+  // Called by the organization settings save button before anything is saved, so invalid domain
+  // inputs block the save instead of being silently skipped.
+  public validate(): boolean {
+    this.form.markAllAsTouched();
+    return this.form.valid;
+  }
+
   // Called by the organization settings save button; a no-op when no domains were entered.
+  // Errors are propagated so the caller does not report a successful save.
   public async save() {
     const requests: {domain: string; domainType: CustomDomainType}[] = [];
     if (!this.appDomain() && this.form.controls.appDomain.enabled && this.form.controls.appDomain.value) {
@@ -106,21 +116,11 @@ export class CustomDomainsComponent {
     if (requests.length === 0) {
       return;
     }
-    this.form.markAllAsTouched();
-    if (this.form.invalid) {
-      return;
-    }
-    try {
-      await firstValueFrom(this.customDomainsService.create(requests));
-      this.form.reset();
-      this.refresh$.next();
-      this.toast.success('Custom domains saved. Remember to create the CNAME records at your DNS provider.');
-    } catch (e) {
-      const msg = getFormDisplayedError(e);
-      if (msg) {
-        this.toast.error(msg);
-      }
-    }
+    await firstValueFrom(this.customDomainsService.create(requests));
+    this.form.reset();
+    this.refresh$.next();
+    // The effective registry host of the organization may have changed with the new domain.
+    this.contextService.reload();
   }
 
   protected async remove(domain: CustomDomain) {
@@ -135,6 +135,7 @@ export class CustomDomainsComponent {
     try {
       await firstValueFrom(this.customDomainsService.delete(domain.id));
       this.refresh$.next();
+      this.contextService.reload();
       this.toast.success('Custom domain removed');
     } catch (e) {
       const msg = getFormDisplayedError(e);
