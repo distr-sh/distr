@@ -1,7 +1,7 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {OrganizationBranding} from '@distr-sh/distr-sdk';
-import {BehaviorSubject, catchError, map, Observable, of, tap} from 'rxjs';
+import {BehaviorSubject, Observable, of, tap} from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -30,12 +30,5 @@ export class OrganizationBrandingService {
     return this.httpClient
       .put<OrganizationBranding>(this.organizationBrandingUrl, organizationBranding)
       .pipe(tap((obj) => this.brandingSubject.next(obj)));
-  }
-
-  registryDomain(): Observable<string | undefined> {
-    return this.get().pipe(
-      map((branding) => branding.registryDomain),
-      catchError(() => of(undefined))
-    );
   }
 }

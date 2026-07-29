@@ -242,6 +242,21 @@ func (r *Registry) GetMetricsServer() server.Server {
 	}
 }
 
+// GetInternalServer returns the HTTP server for cluster-internal endpoints, which must never
+// be exposed outside the cluster. Not to be confused with routing.InternalRouter, which serves
+// the /internal routes of the main server. Its only route so far is the Caddy on-demand TLS ask
+// endpoint, so it is a Noop unless the custom domain feature is configured.
+func (r *Registry) GetInternalServer() server.Server {
+	if env.CustomDomainsConfigured() {
+		return server.NewServer(
+			routing.CaddyAskRouter(r.logger.With(zap.String("server", "internal")), r.GetDbPool()),
+			r.logger.With(zap.String("server", "internal")),
+		)
+	} else {
+		return server.NewNoop()
+	}
+}
+
 func (r *Registry) GetPrometheusCollector() *distrprometheus.DistrCollector {
 	return r.promCollector
 }

@@ -209,7 +209,7 @@ func createSupportBundleHandler() http.HandlerFunc {
 			return
 		}
 
-		baseURL := customdomains.AppDomainOrDefault(org.Branding)
+		baseURL := customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding)
 
 		expiresAt := time.Now().UTC().Add(24 * time.Hour)
 		bundle := types.SupportBundle{
@@ -317,7 +317,7 @@ func getSupportBundleDetailHandler() http.HandlerFunc {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			baseURL := customdomains.AppDomainOrDefault(org.Branding)
+			baseURL := customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding)
 			cmd := fmt.Sprintf(
 				"curl -fsSL '%s/api/v1/support-bundle-collect/%s/collect-script?bundleSecret=%s' | sh",
 				baseURL, bundle.ID.String(), bundle.BundleSecret,

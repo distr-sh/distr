@@ -1,14 +1,15 @@
 package handlers
 
 import (
-	"net"
+	"context"
 	"net/http"
-	"strings"
 
 	"github.com/distr-sh/distr/api"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mapping"
+	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
@@ -28,10 +29,10 @@ func PublicPortalRouter(r chiopenapi.Router) {
 func getPortalHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	host := normalizeHost(r.Host)
+	host := validation.NormalizeHostname(r.Host)
 
 	var response *api.PortalResponse
-	if branding, err := db.GetOrganizationBrandingByAppDomain(ctx, host); err != nil {
+	if branding, err := resolvePortalBranding(ctx, host); err != nil {
 		// Portal branding is best-effort: log the error but still respond with the defaults so the app boots.
 		internalctx.GetLogger(ctx).Warn("failed to resolve portal branding", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -51,11 +52,14 @@ func getPortalHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// normalizeHost lower-cases the host and strips a port so it can be matched against a normalized app_domain.
-func normalizeHost(host string) string {
-	host = strings.ToLower(host)
-	if h, _, err := net.SplitHostPort(host); err == nil {
-		host = h
+// resolvePortalBranding resolves the branding of the organization the host belongs to: self-service
+// CustomDomain first, with a fallback to the legacy OrganizationBranding.app_domain column (kept until
+// the branding domain migration follow-up ticket). It returns nil when no organization matches the host.
+func resolvePortalBranding(ctx context.Context, host string) (*types.OrganizationBranding, error) {
+	if branding, err := db.GetOrganizationBrandingByCustomDomain(ctx, host); err != nil {
+		return nil, err
+	} else if branding != nil {
+		return branding, nil
 	}
-	return host
+	return db.GetOrganizationBrandingByAppDomain(ctx, host)
 }

@@ -80,6 +80,7 @@ func runServe(ctx context.Context, opts ServeOptions) {
 	server := registry.GetServer()
 	artifactsServer := registry.GetArtifactsServer()
 	metricsServer := registry.GetMetricsServer()
+	internalServer := registry.GetInternalServer()
 
 	sigCtx, _ := signal.NotifyContext(ctx, syscall.SIGTERM, syscall.SIGINT)
 	context.AfterFunc(sigCtx, func() {
@@ -87,14 +88,17 @@ func runServe(ctx context.Context, opts ServeOptions) {
 		server.Shutdown(ctx)
 		artifactsServer.Shutdown(ctx)
 		metricsServer.Shutdown(ctx)
+		internalServer.Shutdown(ctx)
 		cancel()
 	})
 
 	go func() { util.Must(server.Start(":8080")) }()
 	go func() { util.Must(artifactsServer.Start(":8585")) }()
 	go func() { util.Must(metricsServer.Start(env.MetricsAddr())) }()
+	go func() { util.Must(internalServer.Start(env.InternalServerAddr())) }()
 	registry.GetJobsScheduler().Start()
 	server.WaitForShutdown()
 	artifactsServer.WaitForShutdown()
 	metricsServer.WaitForShutdown()
+	internalServer.WaitForShutdown()
 }

@@ -4,45 +4,56 @@
 
 global:
   security:
+    # -- Allow the legacy Bitnami images the bundled PostgreSQL subchart is pinned to.
     allowInsecureImages: true
 
-# This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+# -- Number of hub [replicas](https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/).
+# Ignored when `autoscaling.enabled` is true.
 replicaCount: 2
 
-# This sets the deployment strategy more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+# -- [Deployment strategy](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy)
+# of the hub. Empty means the Kubernetes default.
 strategy: {}
   # type: RollingUpdate
   # rollingUpdate:
   #   maxSurge: 25%
   #   maxUnavailable: 25%
 
-# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 image:
+  # -- Hub [image](https://kubernetes.io/docs/concepts/containers/images/) repository. The community
+  # edition is the default; the enterprise edition is `ghcr.io/distr-sh/distr`.
   repository: ghcr.io/distr-sh/distr-ce
-  # This sets the pull policy for images.
+  # -- Hub image pull policy.
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
+  # -- Hub image tag.
+  # @default -- the chart appVersion
   tag: ''
 
-# This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+# -- [Secrets for pulling the images](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)
+# from a private repository.
 imagePullSecrets: []
-# This is to override the chart name.
+# -- Overrides the chart name used in resource names and labels.
 nameOverride: ''
+# -- Overrides the full name prefix of all resources created by this chart.
 fullnameOverride: ''
 
-# This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
 serviceAccount:
-  # Specifies whether a service account should be created
+  # -- Create a [service account](https://kubernetes.io/docs/concepts/security/service-accounts/)
+  # for the hub.
   create: true
-  # Automatically mount a ServiceAccount's API credentials?
+  # -- Automatically mount the service account's API credentials into the hub pods.
   automount: true
-  # Annotations to add to the service account
+  # -- Annotations to add to the service account.
   annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
+  # -- Name of the service account to use. Generated from the fullname template when empty and
+  # `serviceAccount.create` is true.
   name: ''
 
 hub:
+  # -- Environment of the hub container. This is where Distr itself is configured; see the
+  # [configuration reference](https://distr.sh/docs/self-hosting/configuration/) for every
+  # supported variable, and the commented-out entries in this file for the common ones.
+  # @default -- see the values file
   env:
     - name: DISTR_HOST
       value: http://distr.local
@@ -164,33 +175,41 @@ hub:
     #   value: '...'
     # - name: METRICS_BEARER_TOKEN
     #   value: '...'
+    # Self-service custom domains are configured in the "caddy" section below, which also
+    # sets CUSTOM_DOMAIN_APP_CNAME_TARGET, CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET and
+    # INTERNAL_SERVER_ADDR for the hub.
+  # -- Sources to populate the hub environment from, e.g. a ConfigMap or Secret reference.
   envFrom: []
-  # The OCI registry can buffer request bodies to temporary files instead of holding
-  # them in memory. When enabled, this provisions a generic ephemeral volume (a per-pod
-  # PVC that is created and deleted together with the pod) and points REGISTRY_SCRATCH_DIR
-  # at its mount path. Requires Kubernetes >= 1.23.
   scratch:
+    # -- Let the OCI registry buffer request bodies in temporary files instead of holding them in
+    # memory. This provisions a generic ephemeral volume (a per-pod PVC created and deleted together
+    # with the pod) and points REGISTRY_SCRATCH_DIR at its mount path. Requires Kubernetes >= 1.23.
     enabled: false
+    # -- Mount path of the scratch volume, passed to the hub as REGISTRY_SCRATCH_DIR.
     mountPath: /scratch
-    # Size requested for the ephemeral volume.
+    # -- Size requested for the ephemeral scratch volume.
     size: 10Gi
-    # StorageClass for the ephemeral volume. An empty string uses the cluster default.
+    # -- Storage class of the scratch volume. Empty means the cluster default.
     storageClassName: ''
+    # -- Access modes of the scratch volume. It is mounted by exactly one pod, so ReadWriteOnce is
+    # sufficient.
     accessModes:
       - ReadWriteOnce
 
-# This is for setting Kubernetes Annotations to a Pod.
-# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+# -- [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)
+# to add to the hub pods.
 podAnnotations: {}
-# This is for setting Kubernetes Labels to a Pod.
-# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+# -- [Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) to add to
+# the hub pods.
 podLabels: {}
 
+# -- Pod-level security context of the hub pods. The hub image runs as UID/GID 65532.
 podSecurityContext:
   runAsNonRoot: true
   runAsUser: 65532
   fsGroup: 65532
 
+# -- Container-level security context of the hub container.
 securityContext: {}
   # capabilities:
   #   drop:
@@ -199,22 +218,30 @@ securityContext: {}
   # runAsNonRoot: true
   # runAsUser: 1000
 
-# This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
 service:
-  # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+  # -- [Type](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types)
+  # of the hub Service.
   type: ClusterIP
-  # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
+  # -- Port of the app and API server.
   port: 8080
+  # -- Port of the OCI registry server.
   artifactsPort: 8585
+  # -- Port of the Prometheus metrics server.
   metricsPort: 3000
 
-# This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
 ingress:
+  # -- Create an [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) for the
+  # hub Service.
   enabled: false
+  # -- Ingress class name, e.g. `nginx`.
   className: ''
+  # -- Annotations of the Ingress.
   annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
+  # -- Hosts served by the Ingress. The app and the registry are served on separate hosts, routed to
+  # the `http` and `artifacts` ports of the hub Service.
+  # @default -- see the values file
   hosts:
     - host: distr.local
       paths:
@@ -228,16 +255,16 @@ ingress:
           pathType: ImplementationSpecific
           port:
             name: artifacts
+  # -- TLS configuration of the Ingress.
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:
   #      - chart-example.local
 
+# -- Resource requests and limits of the hub container. Left empty deliberately so the chart also
+# runs on clusters with few resources, such as Minikube. Uncomment and adjust the lines below to
+# specify resources.
 resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
   # limits:
   #   cpu: 1000m
   #   memory: 2Gi
@@ -245,53 +272,80 @@ resources: {}
   #   cpu: 100m
   #   memory: 256Mi
 
-# This is to set up the liveness, readiness and startup probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
-# The startup probe allows up to 5 minutes (failureThreshold * periodSeconds = 30 * 10s) for the hub to become ready before liveness/readiness probes take over.
+# -- [Startup probe](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
+# of the hub container. It allows up to 5 minutes (failureThreshold * periodSeconds) for the hub to
+# come up before the liveness and readiness probes take over.
 startupProbe:
   httpGet:
     path: /
     port: http
   periodSeconds: 10
   failureThreshold: 30
+# -- Liveness probe of the hub container.
 livenessProbe:
   httpGet:
     path: /
     port: http
+# -- Readiness probe of the hub container.
 readinessProbe:
   httpGet:
     path: /
     port: http
 
-# This is the duration in seconds the pod needs to terminate gracefully after receiving a shutdown signal.
+# -- Seconds the hub pod is given to terminate gracefully after receiving a shutdown signal.
 terminationGracePeriodSeconds: 60
 
-# This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
 autoscaling:
+  # -- Create a [HorizontalPodAutoscaler](https://kubernetes.io/docs/concepts/workloads/autoscaling/)
+  # for the hub, which takes precedence over `replicaCount`.
   enabled: false
+  # -- Lower bound of the autoscaler.
   minReplicas: 2
+  # -- Upper bound of the autoscaler.
   maxReplicas: 10
+  # -- Target average CPU utilization the autoscaler scales for.
   targetCPUUtilizationPercentage: 100
   # targetMemoryUtilizationPercentage: 80
 
-# Additional volumes on the output Deployment definition.
+podDisruptionBudget:
+  # -- Keep voluntary disruptions (node drains, cluster upgrades) from taking down all hub replicas
+  # at once. Only the hub pods are covered; the cronjob pods run to completion and are not part of
+  # the budget.
+  enabled: true
+  # -- Hub replicas that may be unavailable during a voluntary disruption. Mutually exclusive with
+  # `minAvailable`, which is why this one is set by default: a minAvailable budget would block node
+  # drains indefinitely when replicaCount is 1.
+  maxUnavailable: 1
+  # -- Hub replicas that must stay available during a voluntary disruption. Mutually exclusive with
+  # `maxUnavailable`.
+  minAvailable: ''
+
+# -- Additional volumes of the hub pods.
 volumes: []
 # - name: foo
 #   secret:
 #     secretName: mysecret
 #     optional: false
 
-# Additional volumeMounts on the output Deployment definition.
+# -- Additional volume mounts of the hub container.
 volumeMounts: []
 # - name: foo
 #   mountPath: "/etc/foo"
 #   readOnly: true
 
+# -- Node selector of the hub pods.
 nodeSelector: {}
 
+# -- Tolerations of the hub pods.
 tolerations: []
 
+# -- Affinity of the hub pods.
 affinity: {}
 
+# -- Maintenance CronJobs run against the database, each executing the hub image with `args`. Removing
+# an entry disables that job; the commented-out `organization-cleanup` job deletes organizations that
+# have been marked for deletion.
+# @default -- see the values file
 cronJobs:
   - name: deployment-revision-status-cleanup
     labels:
@@ -318,45 +372,156 @@ cronJobs:
       distr.sh/job: registry-upstream-sync
     args: [maintenance, sync-artifacts-upstream, --timeout, 10m]
 
+# Plain Caddy deployment for automated custom domain configuration: vendors bring their
+# own domain via a CNAME record pointing at this Caddy's LoadBalancer. Caddy issues
+# certificates on demand (on the first TLS handshake), authorized per domain by the hub's
+# internal caddy-ask endpoint, and routes /v2/* to the registry and everything else to the
+# app. Disabled by default.
+caddy:
+  # -- Deploy the Caddy reverse proxy that terminates TLS for customer-configured custom domains.
+  enabled: false
+  # -- The DNS name customers point their app domain CNAME records at. It must resolve to the
+  # LoadBalancer of this Caddy. Required when caddy.enabled is true, and passed to the hub as
+  # CUSTOM_DOMAIN_APP_CNAME_TARGET, which is what enables custom domain self-service.
+  appCnameTarget: ''
+  # -- The DNS name customers point their (optional) dedicated registry domain CNAME records at,
+  # passed to the hub as CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET. Usually the same LoadBalancer.
+  # Falls back to appCnameTarget when unset.
+  registryCnameTarget: ''
+  # -- Number of Caddy replicas. Anything above 1 requires certificate storage that all replicas
+  # share, either a `ReadWriteMany` volume (see `caddy.persistence.accessModes`) or a `caddy.storage`
+  # module: Caddy instances coordinate certificate issuance and solve each other's ACME challenges
+  # only when they use the same storage, and the load balancer routes a challenge to an arbitrary
+  # replica. The chart refuses to render otherwise.
+  replicaCount: 1
+  image:
+    # -- Caddy image repository. Only change this for a custom build, e.g. one that includes a
+    # storage module for `caddy.storage`.
+    repository: caddy
+    # -- Caddy image tag.
+    tag: 2.11.4-alpine
+    # -- Caddy image pull policy.
+    pullPolicy: IfNotPresent
+  # -- E-mail address used for the ACME account.
+  acmeEmail: ''
+  # -- ACME directory URL. Leave empty for Caddy's defaults (Let's Encrypt / ZeroSSL). Point it at
+  # `https://acme-staging-v02.api.letsencrypt.org/directory` while testing a new setup.
+  acmeCA: ''
+  # -- Certificate issuer for custom domains: `acme` (public certificates) or `internal` (Caddy's
+  # own CA, for local testing or environments with a private trust store).
+  issuer: acme
+  # -- Advanced: a Caddyfile global `storage` directive, as an alternative to the volume for
+  # clusters without a `ReadWriteMany` storage class. Requires a Caddy image built with the
+  # corresponding storage module, because Caddy has no runtime plugins. Set
+  # `caddy.persistence.enabled` to false when the module keeps the certificates.
+  storage: ''
+  # storage: |
+  #   storage redis {
+  #     host distr-redis-master
+  #   }
+  podDisruptionBudget:
+    # -- Keep voluntary disruptions (node drains, cluster upgrades) from taking down all replicas at
+    # once, which would make every custom domain unreachable.
+    enabled: true
+    # -- Replicas that may be unavailable during a voluntary disruption. Mutually exclusive with
+    # `minAvailable`, which is why this one is set by default: a minAvailable budget would block node
+    # drains indefinitely when replicaCount is 1.
+    maxUnavailable: 1
+    # -- Replicas that must stay available during a voluntary disruption. Mutually exclusive with
+    # `maxUnavailable`.
+    minAvailable: ''
+  persistence:
+    # -- Keep the certificates on a volume. It is kept when the release is uninstalled, so that a
+    # reinstall does not reissue a certificate for every custom domain. Disable this only when
+    # `caddy.storage` stores the certificates elsewhere.
+    enabled: true
+    # -- Use an existing PersistentVolumeClaim instead of the one created by the chart, for example
+    # a preprovisioned NFS or EFS claim.
+    existingClaim: ''
+    # -- Size of the certificate storage volume.
+    size: 1Gi
+    # -- Storage class of the certificate storage volume. Empty means the cluster default.
+    storageClassName: ''
+    # -- Access modes of the certificate storage volume. All replicas mount the same volume, so
+    # `caddy.replicaCount` above 1 needs ReadWriteMany and a storage class that provides it.
+    accessModes:
+      - ReadWriteOnce
+  service:
+    # -- Type of the public Caddy Service. It must be reachable under the CNAME targets above.
+    type: LoadBalancer
+    # -- Annotations of the public Caddy Service. The chart stays generic: set cloud-specific
+    # annotations here. The commented-out ones provision an AWS Network Load Balancer.
+    annotations: {}
+      # service.beta.kubernetes.io/aws-load-balancer-type: external
+      # service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+      # service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+  # -- Port Caddy reaches the hub's on-demand TLS ask endpoint on. It is passed to the hub as
+  # INTERNAL_SERVER_ADDR, the address of its internal server, and must never be exposed publicly.
+  askServerPort: 8085
+  # -- Resource requests and limits of the Caddy container.
+  resources: {}
+
 postgresql:
+  # -- Deploy the bundled PostgreSQL subchart. When disabled, configure `externalDatabase` instead.
   enabled: false
   auth:
+    # -- Database user created by the bundled PostgreSQL.
     username: distr
+    # -- Password of that user. Generated randomly when empty, which breaks on upgrades, so set it
+    # or use `postgresql.auth.existingSecret`.
     password: ''
+    # -- Database created by the bundled PostgreSQL.
     database: distr
+    # -- Existing secret holding the database password, instead of `postgresql.auth.password`.
     existingSecret: ''
+  # -- PostgreSQL architecture, `standalone` or `replication`.
   architecture: standalone
   service:
     ports:
+      # -- Port the bundled PostgreSQL listens on.
       postgresql: 5432
   image:
+    # -- PostgreSQL image repository.
     repository: bitnamilegacy/postgresql
+    # -- PostgreSQL image tag.
     tag: 17.6.0
 
 rustfs:
-  # When disabled, provide external object storage for the registry and for Loki
-  # (see loki.loki.storage.s3), otherwise those components cannot persist data.
+  # -- Deploy the bundled RustFS object storage, used by the OCI registry and by Loki. When disabled,
+  # provide external object storage for both (see `loki.loki.storage.s3`), otherwise they cannot
+  # persist data.
   enabled: false
+  # -- Name of the RustFS resources. The default is referenced by the registry and Loki endpoints.
   fullnameOverride: distr-rustfs
   secret:
     rustfs:
-      # These are the source-of-truth object storage credentials. If you change them you
-      # must keep loki.loki.storage.s3 and the loki create-loki-bucket init container
-      # (loki.singleBinary.initContainers) in sync, otherwise Loki cannot access its bucket.
+      # -- Object storage access key. This is the source of truth: changing it requires keeping
+      # `loki.loki.storage.s3` and the create-loki-bucket init container in sync, otherwise Loki
+      # cannot access its bucket.
       access_key: 'distr'
-      secret_key: 'distr123' # please change this
+      # -- Object storage secret key. Change this for any real deployment, and keep it in sync as
+      # described above.
+      secret_key: 'distr123'
   mode:
     standalone:
+      # -- Run RustFS as a single instance.
       enabled: true
       strategy:
+        # -- Deployment strategy of the standalone instance. Recreate, because the data volume is
+        # ReadWriteOnce.
         type: Recreate
     distributed:
+      # -- Run RustFS as a distributed cluster instead.
       enabled: false
   storageclass:
+    # -- Storage class of the RustFS volumes. Empty means the cluster default.
     name: ''
+    # -- Size of the RustFS data volume.
     dataStorageSize: 20Gi
+    # -- Size of the RustFS log volume.
     logStorageSize: 10Gi
   ingress:
+    # -- Expose RustFS through an Ingress. Not needed by Distr, which reaches it in-cluster.
     enabled: false
 
 # Loki stores deployment and deployment target log records (default retention: 30 days).
@@ -366,9 +531,17 @@ rustfs:
 # Set loki.enabled to false to use an externally managed Loki instance instead and point
 # LOKI_URL (and the optional LOKI_* auth variables) in hub.env at it.
 loki:
+  # -- Deploy the bundled Loki subchart. When disabled, point `LOKI_URL` in `hub.env` at an
+  # externally managed Loki instance.
   enabled: true
+  # -- Name of the Loki resources. The default is referenced by `LOKI_URL` in `hub.env`.
   fullnameOverride: distr-loki
+  # -- Loki deployment mode. Monolithic is sufficient for the log volume Distr produces.
   deploymentMode: Monolithic
+  # -- Loki's own configuration: object storage, schema, retention (`limits_config.retention_period`,
+  # 30 days by default) and ingestion limits. See the values file for the individual settings and why
+  # they deviate from Loki's defaults.
+  # @default -- see the values file
   loki:
     auth_enabled: true
     commonConfig:
@@ -422,6 +595,10 @@ loki:
       # several chatty agents more headroom before pushes are throttled.
       ingestion_rate_mb: 16
       ingestion_burst_size_mb: 32
+  # -- Loki's monolithic instance: replica count, volume size and the init container that provisions
+  # the `loki` bucket in the object storage. Keep its credentials in sync with
+  # `rustfs.secret.rustfs` when you change them.
+  # @default -- see the values file
   singleBinary:
     replicas: 1
     persistence:
@@ -443,25 +620,37 @@ loki:
           - name: RCLONE_CONFIG_STORAGE_SECRET_ACCESS_KEY
             value: distr123
   gateway:
+    # -- Deploy Loki's nginx gateway. Not needed: the hub talks to Loki directly.
     enabled: false
   lokiCanary:
+    # -- Deploy the Loki canary, which continuously probes log delivery.
     enabled: false
   test:
+    # -- Deploy the Loki chart's test resources.
     enabled: false
   chunksCache:
+    # -- Deploy the memcached chunks cache.
     enabled: false
   resultsCache:
+    # -- Deploy the memcached query results cache.
     enabled: false
   memcached:
+    # -- Deploy the shared memcached instance of the Loki chart.
     enabled: false
   backend:
+    # -- Backend replicas of Loki's scalable mode, unused in monolithic mode.
     replicas: 0
   read:
+    # -- Read replicas of Loki's scalable mode, unused in monolithic mode.
     replicas: 0
   write:
+    # -- Write replicas of Loki's scalable mode, unused in monolithic mode.
     replicas: 0
 
 externalDatabase:
+  # -- Connection URI of an external PostgreSQL, used when `postgresql.enabled` is false.
   uri: ''
+  # -- Existing secret holding the connection URI, instead of `externalDatabase.uri`.
   existingSecret: ''
+  # -- Key of the connection URI inside `externalDatabase.existingSecret`.
   existingSecretUriKey: 'uri'

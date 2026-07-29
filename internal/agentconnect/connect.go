@@ -1,6 +1,7 @@
 package agentconnect
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"strings"
@@ -11,12 +12,13 @@ import (
 )
 
 func buildURL(
+	ctx context.Context,
 	targetID uuid.UUID,
 	org types.OrganizationWithBranding,
 	targetSecret string,
 	preConnect bool,
 ) (string, error) {
-	u, err := url.Parse(customdomains.AppDomainOrDefault(org.Branding))
+	u, err := url.Parse(customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding))
 	if err != nil {
 		return "", err
 	}
@@ -33,20 +35,31 @@ func buildURL(
 	return u.String(), nil
 }
 
-func BuildConnectURL(targetID uuid.UUID, org types.OrganizationWithBranding, targetSecret string) (string, error) {
-	return buildURL(targetID, org, targetSecret, false)
-}
-
-func BuildPreConnectURL(targetID uuid.UUID, org types.OrganizationWithBranding, targetSecret string) (string, error) {
-	return buildURL(targetID, org, targetSecret, true)
-}
-
-func GenerateConnectScript(
+func BuildConnectURL(
+	ctx context.Context,
 	targetID uuid.UUID,
 	org types.OrganizationWithBranding,
 	targetSecret string,
 ) (string, error) {
-	connectURL, err := BuildConnectURL(targetID, org, targetSecret)
+	return buildURL(ctx, targetID, org, targetSecret, false)
+}
+
+func BuildPreConnectURL(
+	ctx context.Context,
+	targetID uuid.UUID,
+	org types.OrganizationWithBranding,
+	targetSecret string,
+) (string, error) {
+	return buildURL(ctx, targetID, org, targetSecret, true)
+}
+
+func GenerateConnectScript(
+	ctx context.Context,
+	targetID uuid.UUID,
+	org types.OrganizationWithBranding,
+	targetSecret string,
+) (string, error) {
+	connectURL, err := BuildConnectURL(ctx, targetID, org, targetSecret)
 	if err != nil {
 		return "", fmt.Errorf("failed to build connect URL: %w", err)
 	}
@@ -89,19 +102,20 @@ func generateKubernetesConnectCommand(namespace string, connectURL string) strin
 }
 
 func GenerateConnectCommand(
+	ctx context.Context,
 	deploymentTarget types.DeploymentTarget,
 	org types.OrganizationWithBranding,
 	targetSecret string,
 ) (string, error) {
 	if deploymentTarget.Type == types.DeploymentTypeDocker && org.HasFeature(types.FeaturePrePostScripts) {
-		preConnectURL, err := BuildPreConnectURL(deploymentTarget.ID, org, targetSecret)
+		preConnectURL, err := BuildPreConnectURL(ctx, deploymentTarget.ID, org, targetSecret)
 		if err != nil {
 			return "", fmt.Errorf("failed to build pre-connect URL: %w", err)
 		}
 		return generateScriptCommand(preConnectURL, org.ConnectScriptIsSudo), nil
 	}
 
-	connectURL, err := BuildConnectURL(deploymentTarget.ID, org, targetSecret)
+	connectURL, err := BuildConnectURL(ctx, deploymentTarget.ID, org, targetSecret)
 	if err != nil {
 		return "", fmt.Errorf("failed to build connect URL: %w", err)
 	}
