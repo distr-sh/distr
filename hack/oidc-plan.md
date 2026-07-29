@@ -89,6 +89,8 @@ Before shipping any of the enterprise features below, introduce the **business p
 
 > **Status: implemented and e2e-validated.** All four PR scopes below landed in a single change: `CustomDomain` table (migration 114) + CRUD API + validation, the internal caddy-ask server (`INTERNAL_SERVER_ADDR`), the Helm chart Caddy deployment with `distr-internal-caddy-ask` Service, and the org settings "Custom Domains" UI with CNAME instructions. Legacy `OrganizationBranding` domain columns remain supported as fallback (migration is the follow-up ticket 0). CNAME pre-verification and the host-context middleware were not included.
 >
+> **The table is vendor-org scoped only**: the `customer_organization_id` / `partner_organization_id` columns of the appendix §5.3 shape were left out, since nothing sets or reads them yet. DEV-593 adds them (plus the API surface) in its own migration, which also replaces the `UNIQUE (organization_id, domain_type)` constraint with the partial unique indexes per scope.
+>
 > **Caddy runs as a Deployment with a single replica** and one PVC for `/data` (retained via `helm.sh/resource-policy: keep`). A per-replica-storage StatefulSet was tried first but is not viable: Caddy instances only share certificates and solve each other's ACME challenges when they use the same storage, and the LoadBalancer routes the CA's validation request to an arbitrary replica. `caddy.replicaCount` above 1 therefore requires either a `ReadWriteMany` claim or a `caddy.storage` module with a matching custom image, and the chart fails to render without one.
 >
 > **E2E validated on minikube** (values in `hack/minikube-custom-domains-values.yaml`, Caddy's internal CA as issuer): feature gating (403 without `custom_domains`), platform-domain/hostname/duplicate rejection (400/409), domain normalization on create and on `ask`, `ask` returning 200/404/400 and being absent from the public app and registry servers, on-demand TLS issuance for a registered domain, TLS handshake failure for an unregistered one, `/v2/` routed to the registry (`Basic realm="Distr"`) and everything else to the app, HTTP→HTTPS redirect, portal branding resolved by custom domain (204 on the default host), `registryHost` falling back app domain → instance default after deleting the registry domain, the certificate store surviving a pod restart, and Caddyfile changes rolling the pods via the checksum annotation.
@@ -291,7 +293,7 @@ A vendor admin configures a custom domain for each of their customers, e.g. vend
 
 **PR 1 — data model + API**
 
-- The `CustomDomain` table already supports scoping a domain to a **customer organization** managed by the vendor (`customer_organization_id`, appendix §5.3) — wire up the API surface for it.
+- Extend the `CustomDomain` table with the scope columns of appendix §5.3 (`customer_organization_id`, `partner_organization_id`, the mutual-exclusion check, and per-scope partial unique indexes replacing the vendor-only `UNIQUE (organization_id, domain_type)`), so a domain can be dedicated to a **customer organization** managed by the vendor — and wire up the API surface for it.
 - Vendor-admin endpoints to create/verify/remove customer domains, reusing the DEV-592 verification machinery.
 - Host-resolution middleware maps customer domains to the customer org context (login page branding, scoping).
 
