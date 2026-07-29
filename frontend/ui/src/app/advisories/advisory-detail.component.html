@@ -1,0 +1,259 @@
+<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
+  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
+    <a
+      [routerLink]="backRoute"
+      class="inline-flex items-center text-sm text-gray-600 hover:text-primary-700 dark:text-gray-400 dark:hover:text-white mb-4">
+      <fa-icon [icon]="faArrowLeft" class="me-2" />
+      Back to advisories
+    </a>
+
+    @if (advisory(); as advisory) {
+      <div class="bg-white dark:bg-gray-800 shadow-md sm:rounded-lg p-4 md:p-6 mb-4">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ advisory.title }}</h1>
+            <div class="flex flex-wrap items-center gap-2 mt-3">
+              <span class="distr-badge capitalize" [ngClass]="severityBadgeClass(advisory.severity)">
+                {{ advisory.severity }}
+              </span>
+              @if (!auth.isCustomer()) {
+                <span class="distr-badge capitalize" [ngClass]="statusBadgeClass(advisory.status)">
+                  {{ advisory.status }}
+                </span>
+              }
+              @if (advisory.cveId) {
+                <span class="font-mono text-xs text-gray-600 dark:text-gray-300">{{ advisory.cveId }}</span>
+              }
+              @for (tag of advisory.tags; track tag) {
+                <span class="distr-badge bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200">
+                  {{ tag }}
+                </span>
+              }
+            </div>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-3">
+              Created {{ advisory.createdAt | date: 'medium' }}
+              @if (advisory.createdByUserName) {
+                by {{ advisory.createdByUserName }}
+              }
+              @if (advisory.publishedAt) {
+                &middot; Published {{ advisory.publishedAt | date: 'medium' }}
+              }
+              @if (advisory.resolvedAt) {
+                &middot; Resolved {{ advisory.resolvedAt | date: 'medium' }}
+              }
+            </p>
+          </div>
+
+          @if (canEdit) {
+            <div class="flex flex-wrap items-center justify-end gap-2 shrink-0">
+              @for (status of nextStatuses(); track status) {
+                <button
+                  type="button"
+                  (click)="changeStatus(status)"
+                  [disabled]="updatingStatus()"
+                  class="py-2 px-4 text-sm font-medium distr-btn-secondary disabled:opacity-60 disabled:cursor-not-allowed">
+                  {{ statusActionLabel(status) }}
+                </button>
+              }
+              <button
+                type="button"
+                (click)="openEditDialog(editAdvisoryDialog)"
+                class="py-2 px-4 text-sm font-medium distr-btn-secondary">
+                <fa-icon [icon]="faPen" class="me-2" />
+                Edit
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-2 space-y-4">
+          <div class="bg-white dark:bg-gray-800 shadow-md sm:rounded-lg p-4 md:p-6">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Description</h2>
+            @if (advisory.description) {
+              <div class="markdown text-gray-900 dark:text-white" [innerMarkdown]="advisory.description"></div>
+            } @else {
+              <p class="text-sm text-gray-500 dark:text-gray-400">No description provided.</p>
+            }
+          </div>
+
+          @if (canSeeImpact) {
+            <div class="bg-white dark:bg-gray-800 shadow-md sm:rounded-lg p-4 md:p-6">
+              <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">Affected Customers</h2>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                Deployments that run, or previously ran, an affected application version, and registry pulls of an
+                affected artifact version.
+              </p>
+
+              @if (impactResult(); as impact) {
+                @if (impact.deployments.length > 0) {
+                  <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Deployments</h3>
+                  <div class="overflow-x-auto mb-6">
+                    <table class="distr-table">
+                      <thead class="distr-table-head">
+                        <tr>
+                          <th scope="col" class="p-3">Customer</th>
+                          <th scope="col" class="p-3">Deployment Target</th>
+                          <th scope="col" class="p-3">Application</th>
+                          <th scope="col" class="p-3">State</th>
+                          <th scope="col" class="p-3">Affected Version</th>
+                          <th scope="col" class="p-3">Current Version</th>
+                          <th scope="col" class="p-3">Last Ran Affected</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (deployment of impact.deployments; track deployment.deploymentId) {
+                          <tr class="border-t border-gray-200 dark:border-gray-600">
+                            <td class="px-3 py-2">{{ deployment.customerOrganizationName || 'Internal' }}</td>
+                            <td class="px-3 py-2">{{ deployment.deploymentTargetName }}</td>
+                            <td class="px-3 py-2">{{ deployment.applicationName }}</td>
+                            <td class="px-3 py-2">
+                              <span class="distr-badge" [ngClass]="impactStateBadgeClass(deployment.state)">
+                                {{ impactStateLabel(deployment.state) }}
+                              </span>
+                            </td>
+                            <td class="px-3 py-2">{{ deployment.applicationVersionName }}</td>
+                            <td class="px-3 py-2">{{ deployment.currentApplicationVersionName }}</td>
+                            <td class="px-3 py-2">{{ deployment.lastDeployedAt | date: 'medium' }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+
+                @if (impact.pulls.length > 0) {
+                  <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Artifact Downloads</h3>
+                  <div class="overflow-x-auto">
+                    <table class="distr-table">
+                      <thead class="distr-table-head">
+                        <tr>
+                          <th scope="col" class="p-3">Customer</th>
+                          <th scope="col" class="p-3">Artifact</th>
+                          <th scope="col" class="p-3">Version</th>
+                          <th scope="col" class="p-3">Pulls</th>
+                          <th scope="col" class="p-3">Last Pulled At</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (
+                          pull of impact.pulls;
+                          track pull.artifactVersionId + (pull.customerOrganizationId ?? '')
+                        ) {
+                          <tr class="border-t border-gray-200 dark:border-gray-600">
+                            <td class="px-3 py-2">{{ pull.customerOrganizationName || 'Internal' }}</td>
+                            <td class="px-3 py-2">{{ pull.artifactName }}</td>
+                            <td class="px-3 py-2 font-mono text-xs">{{ pull.artifactVersionName }}</td>
+                            <td class="px-3 py-2">{{ pull.pullCount }}</td>
+                            <td class="px-3 py-2">{{ pull.lastPulledAt | date: 'medium' }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+
+                @if (impact.deployments.length === 0 && impact.pulls.length === 0) {
+                  <p class="text-sm text-gray-500 dark:text-gray-400">
+                    No customer has deployed or downloaded an affected version.
+                  </p>
+                }
+              } @else if (impactFailed()) {
+                <p class="text-sm text-red-600 dark:text-red-400">
+                  The impact analysis could not be loaded. Please try again.
+                </p>
+              } @else {
+                <p class="text-sm text-gray-500 dark:text-gray-400">Loading impact analysis...</p>
+              }
+            </div>
+          }
+
+          @if (!auth.isCustomer()) {
+            <app-activity-timeline
+              [entries]="timelineEntries()"
+              emptyText="No activity yet."
+              placeholder="Add a note to the timeline"
+              [canComment]="canEdit"
+              [submitting]="submittingComment()"
+              (commentSubmitted)="submitComment($event)" />
+          }
+        </div>
+
+        <div class="space-y-4">
+          <div class="bg-white dark:bg-gray-800 shadow-md sm:rounded-lg p-4 md:p-6">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Versions</h2>
+
+            <h3 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Affected</h3>
+            @if (affectedApplicationVersions().length > 0 || affectedArtifactVersions().length > 0) {
+              <ul class="text-sm text-gray-900 dark:text-white space-y-1 mb-4">
+                @for (version of affectedApplicationVersions(); track version.applicationVersionId) {
+                  <li>{{ version.applicationName }} {{ version.applicationVersionName }}</li>
+                }
+                @for (version of affectedArtifactVersions(); track version.artifactVersionId) {
+                  <li>
+                    {{ version.artifactName }} <span class="font-mono text-xs">{{ version.artifactVersionName }}</span>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">No affected versions recorded.</p>
+            }
+
+            <h3 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Fixed In</h3>
+            @if (fixedApplicationVersions().length > 0 || fixedArtifactVersions().length > 0) {
+              <ul class="text-sm text-gray-900 dark:text-white space-y-1">
+                @for (version of fixedApplicationVersions(); track version.applicationVersionId) {
+                  <li>{{ version.applicationName }} {{ version.applicationVersionName }}</li>
+                }
+                @for (version of fixedArtifactVersions(); track version.artifactVersionId) {
+                  <li>
+                    {{ version.artifactName }} <span class="font-mono text-xs">{{ version.artifactVersionName }}</span>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="text-sm text-gray-500 dark:text-gray-400">No fix released yet.</p>
+            }
+          </div>
+
+          <div class="bg-white dark:bg-gray-800 shadow-md sm:rounded-lg p-4 md:p-6">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">References</h2>
+            @if (advisory.references.length > 0) {
+              <ul class="space-y-2">
+                @for (reference of advisory.references; track reference.url) {
+                  <li>
+                    <a
+                      [href]="reference.url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="inline-flex items-center gap-1 text-sm text-primary-600 hover:underline dark:text-primary-500 break-all">
+                      {{ reference.label || reference.url }}
+                      <fa-icon [icon]="faUpRightFromSquare" class="text-xs" />
+                    </a>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="text-sm text-gray-500 dark:text-gray-400">No references linked.</p>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</section>
+
+<ng-template #editAdvisoryDialog>
+  @if (editDialogOpen()) {
+    @if (advisory(); as current) {
+      <app-advisory-form
+        [advisory]="current"
+        [draft]="editDraft()"
+        (draftChanged)="editDraft.set($event)"
+        (dismissed)="closeEditDialog()"
+        (cancelled)="cancelEditDialog()"
+        (saved)="onSaved($event)" />
+    }
+  }
+</ng-template>

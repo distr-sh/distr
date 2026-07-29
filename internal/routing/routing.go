@@ -197,7 +197,7 @@ func ApiRouter(
 					r.Route("/licenses", handlers.LicensesRouter)
 					r.Route("/user-accounts", handlers.UserAccountsRouter)
 					r.With(middleware.VulnerabilitiesFeatureMiddleware).
-						Route("/vulnerabilities", handlers.VulnerabilitiesRouter)
+						Route("/advisories", handlers.AdvisoriesRouter)
 				})
 			})
 

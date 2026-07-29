@@ -40,13 +40,13 @@ Strategy for determining the latest version of an application (default: 'semver'
 
 ## Methods
 
-### commentOnVulnerability()
+### commentOnAdvisory()
 
-> **commentOnVulnerability**(`vulnerabilityId`, `content`): `Promise`\<[`VulnerabilityEvent`](../interfaces/VulnerabilityEvent.md)\>
+> **commentOnAdvisory**(`advisoryId`, `content`): `Promise`\<[`AdvisoryEvent`](../interfaces/AdvisoryEvent.md)\>
 
 #### Parameters
 
-##### vulnerabilityId
+##### advisoryId
 
 `string`
 
@@ -56,7 +56,26 @@ Strategy for determining the latest version of an application (default: 'semver'
 
 #### Returns
 
-`Promise`\<[`VulnerabilityEvent`](../interfaces/VulnerabilityEvent.md)\>
+`Promise`\<[`AdvisoryEvent`](../interfaces/AdvisoryEvent.md)\>
+
+---
+
+### createAdvisory()
+
+> **createAdvisory**(`request`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+Creates an advisory. Without an explicit status it starts in `triage`, the inbox for
+externally reported issues.
+
+#### Parameters
+
+##### request
+
+[`CreateAdvisoryRequest`](../interfaces/CreateAdvisoryRequest.md)
+
+#### Returns
+
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
 
 ---
 
@@ -181,22 +200,56 @@ Creates a new application version for the given Kubernetes application using a H
 
 ---
 
-### createVulnerability()
+### getAdvisories()
 
-> **createVulnerability**(`request`): `Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>
+> **getAdvisories**(`filter?`): `Promise`\<[`Advisory`](../interfaces/Advisory.md)[]\>
 
-Creates a vulnerability. Without an explicit status it starts in `triage`, the inbox for
-externally reported issues.
+Returns the advisories of the organization. Customers only ever receive published and
+resolved advisories affecting a version they are entitled to.
 
 #### Parameters
 
-##### request
+##### filter?
 
-[`CreateVulnerabilityRequest`](../interfaces/CreateVulnerabilityRequest.md)
+[`AdvisoryFilter`](../interfaces/AdvisoryFilter.md) = `{}`
 
 #### Returns
 
-`Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>
+`Promise`\<[`Advisory`](../interfaces/Advisory.md)[]\>
+
+---
+
+### getAdvisory()
+
+> **getAdvisory**(`advisoryId`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+#### Returns
+
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+---
+
+### getAdvisoryImpact()
+
+> **getAdvisoryImpact**(`advisoryId`): `Promise`\<[`AdvisoryImpact`](../interfaces/AdvisoryImpact.md)\>
+
+Returns the customers who deployed or pulled an affected version. Not available to customers.
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+#### Returns
+
+`Promise`\<[`AdvisoryImpact`](../interfaces/AdvisoryImpact.md)\>
 
 ---
 
@@ -241,59 +294,6 @@ all versions are considered. The versions are ordered ascending according to the
 
 ---
 
-### getVulnerabilities()
-
-> **getVulnerabilities**(`filter?`): `Promise`\<[`Vulnerability`](../interfaces/Vulnerability.md)[]\>
-
-Returns the vulnerabilities of the organization. Customers only ever receive published and
-resolved vulnerabilities affecting a version they are entitled to.
-
-#### Parameters
-
-##### filter?
-
-[`VulnerabilityFilter`](../interfaces/VulnerabilityFilter.md) = `{}`
-
-#### Returns
-
-`Promise`\<[`Vulnerability`](../interfaces/Vulnerability.md)[]\>
-
----
-
-### getVulnerability()
-
-> **getVulnerability**(`vulnerabilityId`): `Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>
-
-#### Parameters
-
-##### vulnerabilityId
-
-`string`
-
-#### Returns
-
-`Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>
-
----
-
-### getVulnerabilityImpact()
-
-> **getVulnerabilityImpact**(`vulnerabilityId`): `Promise`\<[`VulnerabilityImpact`](../interfaces/VulnerabilityImpact.md)\>
-
-Returns the customers who deployed or pulled an affected version. Not available to customers.
-
-#### Parameters
-
-##### vulnerabilityId
-
-`string`
-
-#### Returns
-
-`Promise`\<[`VulnerabilityImpact`](../interfaces/VulnerabilityImpact.md)\>
-
----
-
 ### isOutdated()
 
 > **isOutdated**(`deploymentTargetId`): `Promise`\<[`IsOutdatedResult`](../type-aliases/IsOutdatedResult.md)\>
@@ -310,6 +310,49 @@ Returns results for all deployments on the target. Each result contains versions
 #### Returns
 
 `Promise`\<[`IsOutdatedResult`](../type-aliases/IsOutdatedResult.md)\>
+
+---
+
+### updateAdvisory()
+
+> **updateAdvisory**(`advisoryId`, `request`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+##### request
+
+[`CreateUpdateAdvisoryRequest`](../interfaces/CreateUpdateAdvisoryRequest.md)
+
+#### Returns
+
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+---
+
+### updateAdvisoryStatus()
+
+> **updateAdvisoryStatus**(`advisoryId`, `status`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+Moves an advisory to the given status. Only the transitions allowed by the workflow are
+accepted, and publishing makes the advisory visible to entitled customers.
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+##### status
+
+[`AdvisoryStatus`](../type-aliases/AdvisoryStatus.md)
+
+#### Returns
+
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
 
 ---
 
@@ -361,46 +404,3 @@ Updates the deployment of an existing deployment target to the specified applica
 #### Returns
 
 `Promise`\<`void`\>
-
----
-
-### updateVulnerability()
-
-> **updateVulnerability**(`vulnerabilityId`, `request`): `Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>
-
-#### Parameters
-
-##### vulnerabilityId
-
-`string`
-
-##### request
-
-[`CreateUpdateVulnerabilityRequest`](../interfaces/CreateUpdateVulnerabilityRequest.md)
-
-#### Returns
-
-`Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>
-
----
-
-### updateVulnerabilityStatus()
-
-> **updateVulnerabilityStatus**(`vulnerabilityId`, `status`): `Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>
-
-Moves a vulnerability to the given status. Only the transitions allowed by the workflow are
-accepted, and publishing makes the vulnerability visible to entitled customers.
-
-#### Parameters
-
-##### vulnerabilityId
-
-`string`
-
-##### status
-
-[`VulnerabilityStatus`](../type-aliases/VulnerabilityStatus.md)
-
-#### Returns
-
-`Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>

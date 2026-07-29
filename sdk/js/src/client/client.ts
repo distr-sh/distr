@@ -1,19 +1,19 @@
 import {
+  Advisory,
+  AdvisoryDetail,
+  AdvisoryEvent,
+  AdvisoryFilter,
+  AdvisoryImpact,
   Application,
   ApplicationVersion,
   ApplicationVersionResource,
-  CreateUpdateVulnerabilityRequest,
-  CreateVulnerabilityCommentRequest,
-  CreateVulnerabilityRequest,
+  CreateAdvisoryCommentRequest,
+  CreateAdvisoryRequest,
+  CreateUpdateAdvisoryRequest,
   DeploymentRequest,
   DeploymentTarget,
   DeploymentTargetAccessResponse,
-  UpdateVulnerabilityStatusRequest,
-  Vulnerability,
-  VulnerabilityDetail,
-  VulnerabilityEvent,
-  VulnerabilityFilter,
-  VulnerabilityImpact,
+  UpdateAdvisoryStatusRequest,
 } from '../types';
 import {ConditionalPartial, defaultClientConfig} from './config';
 
@@ -117,7 +117,7 @@ export class Client {
     return this.post<DeploymentTargetAccessResponse>(`deployment-targets/${deploymentTargetId}/access-request`);
   }
 
-  public async getVulnerabilities(filter: VulnerabilityFilter = {}): Promise<Vulnerability[]> {
+  public async getAdvisories(filter: AdvisoryFilter = {}): Promise<Advisory[]> {
     const params = new URLSearchParams();
     for (const status of filter.status ?? []) {
       params.append('status', status);
@@ -129,53 +129,38 @@ export class Client {
       params.append('tag', tag);
     }
     const query = params.size > 0 ? `?${params}` : '';
-    return this.get<Vulnerability[]>(`vulnerabilities${query}`);
+    return this.get<Advisory[]>(`advisories${query}`);
   }
 
-  public async getVulnerability(vulnerabilityId: string): Promise<VulnerabilityDetail> {
-    return this.get<VulnerabilityDetail>(`vulnerabilities/${vulnerabilityId}`);
+  public async getAdvisory(advisoryId: string): Promise<AdvisoryDetail> {
+    return this.get<AdvisoryDetail>(`advisories/${advisoryId}`);
   }
 
-  public async getVulnerabilityTags(): Promise<string[]> {
-    return this.get<string[]>('vulnerabilities/tags');
+  public async getAdvisoryTags(): Promise<string[]> {
+    return this.get<string[]>('advisories/tags');
   }
 
-  public async getVulnerabilityImpact(vulnerabilityId: string): Promise<VulnerabilityImpact> {
-    return this.get<VulnerabilityImpact>(`vulnerabilities/${vulnerabilityId}/impact`);
+  public async getAdvisoryImpact(advisoryId: string): Promise<AdvisoryImpact> {
+    return this.get<AdvisoryImpact>(`advisories/${advisoryId}/impact`);
   }
 
-  public async createVulnerability(request: CreateVulnerabilityRequest): Promise<VulnerabilityDetail> {
-    return this.post<VulnerabilityDetail, CreateVulnerabilityRequest>('vulnerabilities', request);
+  public async createAdvisory(request: CreateAdvisoryRequest): Promise<AdvisoryDetail> {
+    return this.post<AdvisoryDetail, CreateAdvisoryRequest>('advisories', request);
   }
 
-  public async updateVulnerability(
-    vulnerabilityId: string,
-    request: CreateUpdateVulnerabilityRequest
-  ): Promise<VulnerabilityDetail> {
-    return this.put<VulnerabilityDetail, CreateUpdateVulnerabilityRequest>(
-      `vulnerabilities/${vulnerabilityId}`,
-      request
-    );
+  public async updateAdvisory(advisoryId: string, request: CreateUpdateAdvisoryRequest): Promise<AdvisoryDetail> {
+    return this.put<AdvisoryDetail, CreateUpdateAdvisoryRequest>(`advisories/${advisoryId}`, request);
   }
 
-  public async updateVulnerabilityStatus(
-    vulnerabilityId: string,
-    request: UpdateVulnerabilityStatusRequest
-  ): Promise<VulnerabilityDetail> {
-    return this.patch<VulnerabilityDetail, UpdateVulnerabilityStatusRequest>(
-      `vulnerabilities/${vulnerabilityId}/status`,
-      request
-    );
+  public async updateAdvisoryStatus(advisoryId: string, request: UpdateAdvisoryStatusRequest): Promise<AdvisoryDetail> {
+    return this.patch<AdvisoryDetail, UpdateAdvisoryStatusRequest>(`advisories/${advisoryId}/status`, request);
   }
 
-  public async createVulnerabilityComment(
-    vulnerabilityId: string,
-    request: CreateVulnerabilityCommentRequest
-  ): Promise<VulnerabilityEvent> {
-    return this.post<VulnerabilityEvent, CreateVulnerabilityCommentRequest>(
-      `vulnerabilities/${vulnerabilityId}/comments`,
-      request
-    );
+  public async createAdvisoryComment(
+    advisoryId: string,
+    request: CreateAdvisoryCommentRequest
+  ): Promise<AdvisoryEvent> {
+    return this.post<AdvisoryEvent, CreateAdvisoryCommentRequest>(`advisories/${advisoryId}/comments`, request);
   }
 
   private async get<T>(path: string): Promise<T> {

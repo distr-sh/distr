@@ -1,0 +1,158 @@
+// Package advisory holds the business rules for security advisories that are independent
+// of storage, most importantly the predicate deciding which advisories a customer
+// organization may see.
+package advisory
+
+import (
+	"time"
+
+	"github.com/distr-sh/distr/internal/types"
+	"github.com/google/uuid"
+)
+
+// VersionRef identifies a single application or artifact version affected by a
+// advisory, together with the application or artifact it belongs to.
+//
+// For artifacts the caller is expected to expand each affected version into every version
+// that resolves to the same content, so that an entitlement pinning a different tag or a
+// different manifest of the same multi-arch index still matches.
+type VersionRef struct {
+	VersionID uuid.UUID
+	ParentID  uuid.UUID
+}
+
+// EntitlementRef is a customer's entitlement to an application or artifact.
+// An empty VersionIDs covers every version of the parent, matching the behaviour of
+// ApplicationEntitlement rows without ApplicationEntitlement_ApplicationVersion children and
+// of ArtifactEntitlement_Artifact rows with a NULL artifact_version_id.
+// A nil ExpiresAt never expires.
+type EntitlementRef struct {
+	ParentID   uuid.UUID
+	VersionIDs []uuid.UUID
+	ExpiresAt  *time.Time
+}
+
+func (e EntitlementRef) coversVersion(ref VersionRef, now time.Time) bool {
+	if e.ParentID != ref.ParentID {
+		return false
+	}
+	if e.ExpiresAt != nil && !e.ExpiresAt.After(now) {
+		return false
+	}
+	if len(e.VersionIDs) == 0 {
+		return true
+	}
+	for _, versionID := range e.VersionIDs {
+		if versionID == ref.VersionID {
+			return true
+		}
+	}
+	return false
+}
+
+// CustomerView is everything about a single customer organization that the visibility rule
+// depends on.
+//
+// The two OrgHas* flags describe the vendor organization as a whole and drive the fallback
+// for vendors who do not use the licensing feature. They are deliberately tracked per
+// entitlement kind: a vendor may gate artifacts but not applications, and in that case the
+// application side must still fall back to "visible to everyone" while the artifact side
+// stays gated.
+type CustomerView struct {
+	OrgHasApplicationEntitlements bool
+	OrgHasArtifactEntitlements    bool
+	ApplicationEntitlements       []EntitlementRef
+	ArtifactEntitlements          []EntitlementRef
+	// DeployedApplicationVersionIDs are the application versions the customer has deployed at
+	// any point, including ones they have since upgraded away from.
+	DeployedApplicationVersionIDs []uuid.UUID
+}
+
+func (v CustomerView) hasDeployedAny(affected []VersionRef) bool {
+	for _, ref := range affected {
+		for _, versionID := range v.DeployedApplicationVersionIDs {
+			if versionID == ref.VersionID {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// IsVisibleToCustomer reports whether a customer organization may see an advisory.
+//
+// The rule is:
+//
+//   - Only published and resolved advisories are ever customer visible.
+//   - An advisory without an affected version is not customer visible. A vendor must
+//     explicitly identify what is affected before publishing can disclose the advisory.
+//   - It is visible when the customer has deployed at least one affected application version.
+//     Deployments do not require an entitlement, so this is the only signal that keeps the
+//     customer's view in sync with the vendor's deployment-based impact report. Artifacts need
+//     no equivalent, because a gated artifact cannot be pulled without an entitlement anyway.
+//   - Otherwise it is visible when the customer is entitled to at least one affected version.
+//     Only affected versions grant visibility; versions recorded as fixed do not.
+//   - Per entitlement kind, a vendor who has configured no entitlements of that kind at all
+//     exposes every affected version of that kind to every customer. This mirrors
+//     CheckEntitlementForArtifact so that vendors who do not use licensing still reach their
+//     customers, and it is scoped per kind so that using one kind does not silently expose
+//     the other.
+//
+// Callers must pass only affected versions, already scoped to the vendor organization.
+func IsVisibleToCustomer(
+	status types.AdvisoryStatus,
+	affectedApplicationVersions []VersionRef,
+	affectedArtifactVersions []VersionRef,
+	view CustomerView,
+	now time.Time,
+) bool {
+	if !status.IsCustomerVisible() {
+		return false
+	}
+
+	if len(affectedApplicationVersions) == 0 && len(affectedArtifactVersions) == 0 {
+		return false
+	}
+
+	if view.hasDeployedAny(affectedApplicationVersions) {
+		return true
+	}
+
+	if isEntitledToAny(
+		affectedApplicationVersions,
+		view.ApplicationEntitlements,
+		view.OrgHasApplicationEntitlements,
+		now,
+	) {
+		return true
+	}
+
+	return isEntitledToAny(
+		affectedArtifactVersions,
+		view.ArtifactEntitlements,
+		view.OrgHasArtifactEntitlements,
+		now,
+	)
+}
+
+func isEntitledToAny(
+	affected []VersionRef,
+	entitlements []EntitlementRef,
+	orgHasEntitlements bool,
+	now time.Time,
+) bool {
+	if len(affected) == 0 {
+		return false
+	}
+	if !orgHasEntitlements {
+		return true
+	}
+	for _, ref := range affected {
+		for _, entitlement := range entitlements {
+			if entitlement.coversVersion(ref, now) {
+				return true
+			}
+		}
+	}
+	return false
+}

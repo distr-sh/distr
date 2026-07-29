@@ -57,7 +57,7 @@ When working with the SDK:
 - **Log storage**: Deployment and deployment target log records are stored in Grafana Loki (not PostgreSQL), accessed through the `internal/logstore` package (`LogStore` interface, Loki implementation, in-memory fake for tests). The log record types (`logstore.DeploymentLogRecord`, `logstore.DeploymentTargetLogRecord`) live in this package, not in `internal/types`, since they are not database entities. The org ID is passed explicitly to every store method and maps to the Loki tenant (`X-Scope-OrgID`). Log retention is time-based and managed by the Loki config (shipped default: 30 days); read queries are limited to a subscription-dependent query window (`subscription.GetLogQueryWindow`: 24 hours for Community/Starter, 7 days otherwise)
 - **Migrations**: SQL migrations in `internal/migrations/sql/` managed by golang-migrate
 - **Database queries**: All database interactions are in `internal/db/` with transaction support
-- **Vulnerability management**: Gated by the org-level `vulnerabilities` feature (Business plan), with no per-customer toggle. Customer visibility is derived, not configured: a customer sees a vulnerability only when it is `published` or `resolved` and they hold an unexpired entitlement to an affected version (`db.customerVisibilityExpr`). Both applications and artifacts keep the usual "everything is visible if the vendor configured no entitlements of that kind at all" fallback, so vendors who do not use the licensing feature still reach their customers. An `ApplicationEntitlement` with no explicit version rows covers every version of its application. The event timeline is vendor-internal and must never be serialized for customer users
+- **Security advisories**: The entity is called `Advisory` everywhere (model, table, API path `/advisories`, frontend route `/advisories`), and the UI label is "Security Advisory". The feature gate keeps the wider category name: the org-level feature is `vulnerabilities` / `types.FeatureVulnerabilities` ("Vulnerability Management", Business plan), because a vulnerability scan log will be added to the same category later. Do not rename the feature to match the entity. There is no per-customer toggle. Customer visibility is derived, not configured, by the pure predicate in `internal/advisory` (`advisory.IsVisibleToCustomer`, fed by the loaders in `internal/db/advisory_visibility.go`) rather than in SQL: a customer sees an advisory only when it is `published` or `resolved`, it has at least one affected version, and they either deployed an affected application version or hold an unexpired entitlement to one. Both applications and artifacts keep the usual "everything is visible if the vendor configured no entitlements of that kind at all" fallback, so vendors who do not use the licensing feature still reach their customers. An `ApplicationEntitlement` with no explicit version rows covers every version of its application. The event timeline is vendor-internal and must never be serialized for customer users. Partners may read advisories but see impact tables scoped to their own customers
 
 Key internal packages:
 
@@ -70,6 +70,7 @@ Key internal packages:
 - `internal/middleware/`: HTTP middleware (logging, auth, Sentry, etc.)
 - `internal/svc/`: Business logic services
 - `internal/mapping/`: Mapping logic for data transformations between DTOs and domain models
+- `internal/advisory/`: Storage-independent security advisory rules, most importantly the customer visibility predicate
 - `api/`: All request structs used by HTTP handlers should be in the api package and not in the handler package
 
 ### Frontend Architecture (Angular)
@@ -99,7 +100,7 @@ The database schema is managed through SQL migrations in `internal/migrations/sq
 - `applications`: Artifact collections
 - `licensekey`: License keys that vendors can generate for its customers
 - `application_entitlements` & `artifact_entitlements`: Access entitlements for applications and artifacts
-- `vulnerability`: Security advisories a vendor tracks and discloses, with link tables for tags, references, affected/fixed versions, and an append-only event timeline
+- `advisory`: Security advisories a vendor tracks and discloses, with link tables for tags, references, affected/fixed versions, and an append-only event timeline
 
 This database stores timestamps as `TIMESTAMP` (without time zone), not `TIMESTAMPTZ`.
 

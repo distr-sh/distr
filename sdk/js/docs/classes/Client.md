@@ -42,6 +42,42 @@ The low-level Distr API client. Each method represents on API endpoint.
 
 ---
 
+### createAdvisory()
+
+> **createAdvisory**(`request`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+#### Parameters
+
+##### request
+
+[`CreateAdvisoryRequest`](../interfaces/CreateAdvisoryRequest.md)
+
+#### Returns
+
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+---
+
+### createAdvisoryComment()
+
+> **createAdvisoryComment**(`advisoryId`, `request`): `Promise`\<[`AdvisoryEvent`](../interfaces/AdvisoryEvent.md)\>
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+##### request
+
+[`CreateAdvisoryCommentRequest`](../interfaces/CreateAdvisoryCommentRequest.md)
+
+#### Returns
+
+`Promise`\<[`AdvisoryEvent`](../interfaces/AdvisoryEvent.md)\>
+
+---
+
 ### createApplication()
 
 > **createApplication**(`application`): `Promise`\<[`Application`](../interfaces/Application.md)\>
@@ -114,39 +150,61 @@ The low-level Distr API client. Each method represents on API endpoint.
 
 ---
 
-### createVulnerability()
+### getAdvisories()
 
-> **createVulnerability**(`request`): `Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>
+> **getAdvisories**(`filter?`): `Promise`\<[`Advisory`](../interfaces/Advisory.md)[]\>
 
 #### Parameters
 
-##### request
+##### filter?
 
-[`CreateVulnerabilityRequest`](../interfaces/CreateVulnerabilityRequest.md)
+[`AdvisoryFilter`](../interfaces/AdvisoryFilter.md) = `{}`
 
 #### Returns
 
-`Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>
+`Promise`\<[`Advisory`](../interfaces/Advisory.md)[]\>
 
 ---
 
-### createVulnerabilityComment()
+### getAdvisory()
 
-> **createVulnerabilityComment**(`vulnerabilityId`, `request`): `Promise`\<[`VulnerabilityEvent`](../interfaces/VulnerabilityEvent.md)\>
+> **getAdvisory**(`advisoryId`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
 
 #### Parameters
 
-##### vulnerabilityId
+##### advisoryId
 
 `string`
 
-##### request
+#### Returns
 
-[`CreateVulnerabilityCommentRequest`](../interfaces/CreateVulnerabilityCommentRequest.md)
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+---
+
+### getAdvisoryImpact()
+
+> **getAdvisoryImpact**(`advisoryId`): `Promise`\<[`AdvisoryImpact`](../interfaces/AdvisoryImpact.md)\>
+
+#### Parameters
+
+##### advisoryId
+
+`string`
 
 #### Returns
 
-`Promise`\<[`VulnerabilityEvent`](../interfaces/VulnerabilityEvent.md)\>
+`Promise`\<[`AdvisoryImpact`](../interfaces/AdvisoryImpact.md)\>
+
+---
+
+### getAdvisoryTags()
+
+> **getAdvisoryTags**(): `Promise`\<`string`[]\>
+
+#### Returns
+
+`Promise`\<`string`[]\>
 
 ---
 
@@ -222,61 +280,43 @@ The low-level Distr API client. Each method represents on API endpoint.
 
 ---
 
-### getVulnerabilities()
+### updateAdvisory()
 
-> **getVulnerabilities**(`filter?`): `Promise`\<[`Vulnerability`](../interfaces/Vulnerability.md)[]\>
-
-#### Parameters
-
-##### filter?
-
-[`VulnerabilityFilter`](../interfaces/VulnerabilityFilter.md) = `{}`
-
-#### Returns
-
-`Promise`\<[`Vulnerability`](../interfaces/Vulnerability.md)[]\>
-
----
-
-### getVulnerability()
-
-> **getVulnerability**(`vulnerabilityId`): `Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>
+> **updateAdvisory**(`advisoryId`, `request`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
 
 #### Parameters
 
-##### vulnerabilityId
+##### advisoryId
 
 `string`
 
+##### request
+
+[`CreateUpdateAdvisoryRequest`](../interfaces/CreateUpdateAdvisoryRequest.md)
+
 #### Returns
 
-`Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
 
 ---
 
-### getVulnerabilityImpact()
+### updateAdvisoryStatus()
 
-> **getVulnerabilityImpact**(`vulnerabilityId`): `Promise`\<[`VulnerabilityImpact`](../interfaces/VulnerabilityImpact.md)\>
+> **updateAdvisoryStatus**(`advisoryId`, `request`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
 
 #### Parameters
 
-##### vulnerabilityId
+##### advisoryId
 
 `string`
 
-#### Returns
+##### request
 
-`Promise`\<[`VulnerabilityImpact`](../interfaces/VulnerabilityImpact.md)\>
-
----
-
-### getVulnerabilityTags()
-
-> **getVulnerabilityTags**(): `Promise`\<`string`[]\>
+[`UpdateAdvisoryStatusRequest`](../interfaces/UpdateAdvisoryStatusRequest.md)
 
 #### Returns
 
-`Promise`\<`string`[]\>
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
 
 ---
 
@@ -293,43 +333,3 @@ The low-level Distr API client. Each method represents on API endpoint.
 #### Returns
 
 `Promise`\<[`Application`](../interfaces/Application.md)\>
-
----
-
-### updateVulnerability()
-
-> **updateVulnerability**(`vulnerabilityId`, `request`): `Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>
-
-#### Parameters
-
-##### vulnerabilityId
-
-`string`
-
-##### request
-
-[`CreateUpdateVulnerabilityRequest`](../interfaces/CreateUpdateVulnerabilityRequest.md)
-
-#### Returns
-
-`Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>
-
----
-
-### updateVulnerabilityStatus()
-
-> **updateVulnerabilityStatus**(`vulnerabilityId`, `request`): `Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>
-
-#### Parameters
-
-##### vulnerabilityId
-
-`string`
-
-##### request
-
-[`UpdateVulnerabilityStatusRequest`](../interfaces/UpdateVulnerabilityStatusRequest.md)
-
-#### Returns
-
-`Promise`\<[`VulnerabilityDetail`](../interfaces/VulnerabilityDetail.md)\>

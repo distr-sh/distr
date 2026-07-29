@@ -1259,33 +1259,6 @@ func IsLastTagOfArtifact(ctx context.Context, artifactID uuid.UUID, tagName stri
 func DeleteArtifactVersion(ctx context.Context, artifactID uuid.UUID, tagName string) error {
 	db := internalctx.GetDb(ctx)
 
-	var referencedByVulnerability bool
-	err := db.QueryRow(ctx, `
-		SELECT EXISTS (
-			SELECT 1
-			FROM ArtifactVersion selected
-				JOIN ArtifactVersion associated
-					ON associated.artifact_id = selected.artifact_id
-					AND associated.manifest_blob_digest = selected.manifest_blob_digest
-				JOIN VulnerabilityArtifactVersion vav
-					ON vav.artifact_version_id = associated.id
-			WHERE selected.artifact_id = @artifactId
-				AND selected.name = @tagName
-		)`,
-		pgx.NamedArgs{
-			"artifactId": artifactID,
-			"tagName":    tagName,
-		},
-	).Scan(&referencedByVulnerability)
-	if err != nil {
-		return fmt.Errorf("could not check vulnerability references: %w", err)
-	}
-	if referencedByVulnerability {
-		return apierrors.NewBadRequest(
-			"cannot delete tag: its artifact version is referenced by a vulnerability",
-		)
-	}
-
 	// Delete only the tag, not the version SHA
 	// Tags are ArtifactVersion records where name does NOT contain a colon
 	cmd, err := db.Exec(ctx, `

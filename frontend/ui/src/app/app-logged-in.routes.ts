@@ -4,6 +4,8 @@ import {UserRole} from '@distr-sh/distr-sdk';
 import {firstValueFrom, map} from 'rxjs';
 import {getRemoteEnvironment} from '../env/remote';
 import {AccessTokensComponent} from './access-tokens/access-tokens.component';
+import {AdvisoryDetailComponent} from './advisories/advisory-detail.component';
+import {AdvisoryListComponent} from './advisories/advisory-list.component';
 import {AlertConfigurationsComponent} from './alert-configurations/alert-configurations.component';
 import {ApplicationDetailComponent} from './applications/application-detail.component';
 import {ApplicationsPageComponent} from './applications/applications-page.component';
@@ -46,8 +48,6 @@ import {TutorialsComponent} from './tutorials/tutorials.component';
 import {UsersTutorialComponent} from './tutorials/users/users-tutorial.component';
 import {isSubscriptionExpired} from './types/organization';
 import {UserSettingsComponent} from './user-settings/user-settings.component';
-import {VulnerabilityDetailComponent} from './vulnerabilities/vulnerability-detail.component';
-import {VulnerabilityListComponent} from './vulnerabilities/vulnerability-list.component';
 
 function requiredRoleGuard(...userRole: UserRole[]): CanActivateFn {
   return () => {
@@ -381,17 +381,17 @@ export const routes: Routes = [
         ],
       },
       {
-        path: 'vulnerabilities',
+        path: 'advisories',
         canActivate: [requireVendorOrPartner, vulnerabilitiesEnabledGuard()],
         children: [
           {
             path: '',
             pathMatch: 'full',
-            component: VulnerabilityListComponent,
+            component: AdvisoryListComponent,
           },
           {
-            path: ':vulnerabilityId',
-            component: VulnerabilityDetailComponent,
+            path: ':advisoryId',
+            component: AdvisoryDetailComponent,
           },
         ],
       },
@@ -402,11 +402,11 @@ export const routes: Routes = [
           {
             path: '',
             pathMatch: 'full',
-            component: VulnerabilityListComponent,
+            component: AdvisoryListComponent,
           },
           {
-            path: ':vulnerabilityId',
-            component: VulnerabilityDetailComponent,
+            path: ':advisoryId',
+            component: AdvisoryDetailComponent,
           },
         ],
       },

@@ -124,7 +124,10 @@ const (
 	FeatureVendorBilling          Feature = "vendor_billing"
 	FeatureDeploymentLogsAfter    Feature = "deployment_logs_after"
 	FeaturePartnerManagement      Feature = "partner_management"
-	FeatureVulnerabilities        Feature = "vulnerabilities"
+	// FeatureVulnerabilities gates the "Vulnerability Management" category. It is deliberately
+	// not named after the Advisory entity: the category covers security advisories today and
+	// will cover vulnerability scan logs as well.
+	FeatureVulnerabilities Feature = "vulnerabilities"
 )
 
 // FeaturesForSubscriptionType returns the features granted by a subscription type.

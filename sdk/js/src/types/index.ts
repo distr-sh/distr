@@ -1,4 +1,5 @@
 export * from './access-token';
+export * from './advisory';
 export * from './agent-version';
 export * from './application';
 export * from './base';
@@ -9,4 +10,3 @@ export * from './organization-branding';
 export * from './partner-organization';
 export * from './support-bundle';
 export * from './user-account';
-export * from './vulnerability';

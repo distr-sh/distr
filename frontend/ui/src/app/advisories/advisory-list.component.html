@@ -1,0 +1,170 @@
+<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
+  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
+    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+      <div
+        class="flex flex-col md:flex-row items-stretch md:items-center md:space-x-3 space-y-3 md:space-y-0 justify-between m-4 dark:border-gray-700">
+        <div class="w-full md:w-2/3">
+          <form class="flex flex-col md:flex-row items-stretch md:items-center gap-2" [formGroup]="filterForm">
+            <label for="simple-search" class="sr-only">Search</label>
+            <div class="relative w-full">
+              <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <fa-icon [icon]="faMagnifyingGlass" class="text-gray-500 dark:text-gray-400" />
+              </div>
+              <input
+                [formControl]="filterForm.controls.search"
+                autotrim
+                type="text"
+                id="simple-search"
+                placeholder="Filter advisories"
+                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+            </div>
+
+            <app-multi-select
+              class="md:w-40 shrink-0"
+              idPrefix="severity-filter"
+              placeholder="All severities"
+              itemLabel="severities"
+              [options]="severityOptions"
+              [(selected)]="selectedSeverities" />
+
+            @if (canFilterByStatus) {
+              <app-multi-select
+                class="md:w-40 shrink-0"
+                idPrefix="status-filter"
+                placeholder="All statuses"
+                itemLabel="statuses"
+                [options]="statusOptions"
+                [(selected)]="selectedStatuses" />
+            }
+
+            @if (tagOptions().length > 0) {
+              <app-multi-select
+                class="md:w-40 shrink-0"
+                idPrefix="tag-filter"
+                placeholder="All tags"
+                itemLabel="tags"
+                [options]="tagOptions()"
+                [(selected)]="selectedTags" />
+            }
+          </form>
+        </div>
+        @if (canEdit) {
+          <div class="w-full md:w-auto flex justify-end flex-shrink-0">
+            <button
+              (click)="openCreateDialog(createAdvisoryDialog)"
+              type="button"
+              class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+              <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
+              New Security Advisory
+            </button>
+          </div>
+        }
+      </div>
+
+      @if (!loading()) {
+        @if (filteredAdvisories().length > 0) {
+          <div class="overflow-x-auto">
+            <table class="distr-table">
+              <thead class="distr-table-head">
+                <tr>
+                  <th scope="col" class="p-4">Title</th>
+                  <th scope="col" class="p-4">Severity</th>
+                  @if (!auth.isCustomer()) {
+                    <th scope="col" class="p-4">Status</th>
+                  }
+                  <th scope="col" class="p-4">CVE</th>
+                  <th scope="col" class="p-4">Tags</th>
+                  <th scope="col" class="p-4">Affected Versions</th>
+                  <th scope="col" class="p-4">Last Updated At</th>
+                  @if (canEdit) {
+                    <th scope="col" class="p-4">
+                      <span class="sr-only">Actions</span>
+                    </th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (advisory of filteredAdvisories(); track advisory.id) {
+                  <tr
+                    [routerLink]="routePrefix + '/' + advisory.id"
+                    class="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                    <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                      {{ advisory.title }}
+                    </td>
+                    <td class="px-4 py-3">
+                      <span class="distr-badge capitalize" [ngClass]="severityBadgeClass(advisory.severity)">
+                        {{ advisory.severity }}
+                      </span>
+                    </td>
+                    @if (!auth.isCustomer()) {
+                      <td class="px-4 py-3">
+                        <span class="distr-badge capitalize" [ngClass]="statusBadgeClass(advisory.status)">
+                          {{ advisory.status }}
+                        </span>
+                      </td>
+                    }
+                    <td class="px-4 py-3 font-mono text-xs">{{ advisory.cveId || '-' }}</td>
+                    <td class="px-4 py-3">
+                      <div class="flex flex-wrap gap-1">
+                        @for (tag of advisory.tags; track tag) {
+                          <span class="distr-badge bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200">
+                            {{ tag }}
+                          </span>
+                        } @empty {
+                          -
+                        }
+                      </div>
+                    </td>
+                    <td class="px-4 py-3">{{ advisory.affectedVersionCount }}</td>
+                    <td class="px-4 py-3">{{ advisory.updatedAt | date: 'medium' }}</td>
+                    @if (canEdit) {
+                      <td class="px-4 py-3">
+                        <div class="flex items-center justify-end gap-2">
+                          @for (target of quickStatusTransitionsFor(advisory.status); track target) {
+                            <button
+                              type="button"
+                              (click)="$event.stopPropagation(); changeStatus(advisory, target)"
+                              [disabled]="isChangingStatus(advisory.id)"
+                              class="whitespace-nowrap px-3 py-1.5 text-xs font-medium distr-btn-secondary disabled:opacity-60 disabled:cursor-not-allowed">
+                              {{ statusActionShortLabel(advisory.status, target) }}
+                            </button>
+                          }
+                        </div>
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else if (advisories().length > 0 || filtersActive()) {
+          <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+            <p>No matching advisories.</p>
+          </div>
+        } @else if (auth.isCustomer()) {
+          <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+            <p>No advisories have been published for your products.</p>
+          </div>
+        } @else {
+          <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+            <p>No advisories yet.</p>
+            <p class="text-sm mt-1">
+              Track a security issue from triage through disclosure and see which customers are affected.
+            </p>
+          </div>
+        }
+      }
+    </div>
+  </div>
+</section>
+
+<ng-template #createAdvisoryDialog>
+  @if (dialogOpen()) {
+    <app-advisory-form
+      [draft]="createDraft()"
+      (draftChanged)="createDraft.set($event)"
+      (dismissed)="closeDialog()"
+      (cancelled)="cancelCreateDialog()"
+      (saved)="onCreated()" />
+  }
+</ng-template>

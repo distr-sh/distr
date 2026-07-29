@@ -1,22 +1,22 @@
 import semver from 'semver/preload';
 import {
+  Advisory,
+  AdvisoryDetail,
+  AdvisoryEvent,
+  AdvisoryFilter,
+  AdvisoryImpact,
+  AdvisoryStatus,
   Application,
   ApplicationVersion,
   ApplicationVersionResource,
-  CreateUpdateVulnerabilityRequest,
-  CreateVulnerabilityRequest,
+  CreateAdvisoryRequest,
+  CreateUpdateAdvisoryRequest,
   DeploymentRequest,
   DeploymentTarget,
   DeploymentTargetAccessResponse,
   DeploymentTargetScope,
   DeploymentType,
   HelmChartType,
-  Vulnerability,
-  VulnerabilityDetail,
-  VulnerabilityEvent,
-  VulnerabilityFilter,
-  VulnerabilityImpact,
-  VulnerabilityStatus,
 } from '../types';
 import {Client, ClientConfig} from './client';
 import {ConditionalPartial, defaultClientConfig} from './config';
@@ -424,49 +424,43 @@ export class DistrService {
   }
 
   /**
-   * Returns the vulnerabilities of the organization. Customers only ever receive published and
-   * resolved vulnerabilities affecting a version they are entitled to.
+   * Returns the advisories of the organization. Customers only ever receive published and
+   * resolved advisories affecting a version they are entitled to.
    */
-  public async getVulnerabilities(filter: VulnerabilityFilter = {}): Promise<Vulnerability[]> {
-    return this.client.getVulnerabilities(filter);
+  public async getAdvisories(filter: AdvisoryFilter = {}): Promise<Advisory[]> {
+    return this.client.getAdvisories(filter);
   }
 
-  public async getVulnerability(vulnerabilityId: string): Promise<VulnerabilityDetail> {
-    return this.client.getVulnerability(vulnerabilityId);
+  public async getAdvisory(advisoryId: string): Promise<AdvisoryDetail> {
+    return this.client.getAdvisory(advisoryId);
   }
 
   /** Returns the customers who deployed or pulled an affected version. Not available to customers. */
-  public async getVulnerabilityImpact(vulnerabilityId: string): Promise<VulnerabilityImpact> {
-    return this.client.getVulnerabilityImpact(vulnerabilityId);
+  public async getAdvisoryImpact(advisoryId: string): Promise<AdvisoryImpact> {
+    return this.client.getAdvisoryImpact(advisoryId);
   }
 
   /**
-   * Creates a vulnerability. Without an explicit status it starts in `triage`, the inbox for
+   * Creates an advisory. Without an explicit status it starts in `triage`, the inbox for
    * externally reported issues.
    */
-  public async createVulnerability(request: CreateVulnerabilityRequest): Promise<VulnerabilityDetail> {
-    return this.client.createVulnerability(request);
+  public async createAdvisory(request: CreateAdvisoryRequest): Promise<AdvisoryDetail> {
+    return this.client.createAdvisory(request);
   }
 
-  public async updateVulnerability(
-    vulnerabilityId: string,
-    request: CreateUpdateVulnerabilityRequest
-  ): Promise<VulnerabilityDetail> {
-    return this.client.updateVulnerability(vulnerabilityId, request);
+  public async updateAdvisory(advisoryId: string, request: CreateUpdateAdvisoryRequest): Promise<AdvisoryDetail> {
+    return this.client.updateAdvisory(advisoryId, request);
   }
 
   /**
-   * Moves a vulnerability to the given status. Only the transitions allowed by the workflow are
-   * accepted, and publishing makes the vulnerability visible to entitled customers.
+   * Moves an advisory to the given status. Only the transitions allowed by the workflow are
+   * accepted, and publishing makes the advisory visible to entitled customers.
    */
-  public async updateVulnerabilityStatus(
-    vulnerabilityId: string,
-    status: VulnerabilityStatus
-  ): Promise<VulnerabilityDetail> {
-    return this.client.updateVulnerabilityStatus(vulnerabilityId, {status});
+  public async updateAdvisoryStatus(advisoryId: string, status: AdvisoryStatus): Promise<AdvisoryDetail> {
+    return this.client.updateAdvisoryStatus(advisoryId, {status});
   }
 
-  public async commentOnVulnerability(vulnerabilityId: string, content: string): Promise<VulnerabilityEvent> {
-    return this.client.createVulnerabilityComment(vulnerabilityId, {content});
+  public async commentOnAdvisory(advisoryId: string, content: string): Promise<AdvisoryEvent> {
+    return this.client.createAdvisoryComment(advisoryId, {content});
   }
 }
