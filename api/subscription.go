@@ -30,25 +30,27 @@ type SubscriptionLimits struct {
 	MaxCustomerOrganizations        int64 `json:"maxCustomerOrganizations"`
 	MaxUsersPerCustomerOrganization int64 `json:"maxUsersPerCustomerOrganization"`
 	MaxDeploymentsPerCustomerOrg    int64 `json:"maxDeploymentsPerCustomerOrganization"`
+	// MaxRegistryStorageBytes is the registry storage included in the plan. It is reported for
+	// display purposes only and is not enforced.
+	MaxRegistryStorageBytes int64 `json:"maxRegistryStorageBytes"`
 	// LogQueryWindowSeconds is how far back (in seconds) log read queries may reach.
 	// The frontend uses it to constrain the log viewer's date pickers.
 	LogQueryWindowSeconds int64 `json:"logQueryWindowSeconds"`
 }
 
 type SubscriptionInfo struct {
-	SubscriptionType                       types.SubscriptionType   `json:"subscriptionType"`
-	SubscriptionPeriod                     types.SubscriptionPeriod `json:"subscriptionPeriod"`
-	SubscriptionEndsAt                     time.Time                `json:"subscriptionEndsAt"`
-	SubscriptionCustomerOrganizationQty    int64                    `json:"subscriptionCustomerOrganizationQuantity"`
-	SubscriptionUserAccountQty             int64                    `json:"subscriptionUserAccountQuantity"`
-	CurrentUserAccountCount                int64                    `json:"currentUserAccountCount"`
-	CurrentCustomerOrganizationCount       int64                    `json:"currentCustomerOrganizationCount"`
-	CurrentMaxUsersPerCustomer             int64                    `json:"currentMaxUsersPerCustomer"`
-	CurrentMaxDeploymentTargetsPerCustomer int64                    `json:"currentMaxDeploymentTargetsPerCustomer"`
-	HasApplicationEntitlements             bool                     `json:"hasApplicationEntitlements"`
-	HasArtifactEntitlements                bool                     `json:"hasArtifactEntitlements"`
-	HasNonAdminRoles                       bool                     `json:"hasNonAdminRoles"`
-	HasAlertConfigurations                 bool                     `json:"hasAlertConfigurations"`
+	SubscriptionType                    types.SubscriptionType   `json:"subscriptionType"`
+	SubscriptionPeriod                  types.SubscriptionPeriod `json:"subscriptionPeriod"`
+	SubscriptionEndsAt                  time.Time                `json:"subscriptionEndsAt"`
+	SubscriptionCustomerOrganizationQty int64                    `json:"subscriptionCustomerOrganizationQuantity"`
+	SubscriptionUserAccountQty          int64                    `json:"subscriptionUserAccountQuantity"`
+	CurrentUserAccountCount             int64                    `json:"currentUserAccountCount"`
+	CurrentCustomerOrganizationCount    int64                    `json:"currentCustomerOrganizationCount"`
+	CurrentRegistryStorageBytes         int64                    `json:"currentRegistryStorageBytes"`
+	HasApplicationEntitlements          bool                     `json:"hasApplicationEntitlements"`
+	HasArtifactEntitlements             bool                     `json:"hasArtifactEntitlements"`
+	HasNonAdminRoles                    bool                     `json:"hasNonAdminRoles"`
+	HasAlertConfigurations              bool                     `json:"hasAlertConfigurations"`
 
 	Limits map[types.SubscriptionType]SubscriptionLimits `json:"limits"`
 }

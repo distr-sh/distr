@@ -24,9 +24,10 @@ import {
   faLightbulb,
   faPalette,
   faUsers,
+  faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import {map, of, switchMap} from 'rxjs';
-import {GITHUB_URL} from '../../../constants';
+import {GITHUB_URL, WEBSITE_URL} from '../../../constants';
 import {buildConfig} from '../../../data';
 import {environment} from '../../../env/env';
 import {
@@ -70,6 +71,7 @@ export class SideBarComponent {
   protected readonly buildConfig = buildConfig;
   protected readonly edition = environment.edition;
   protected readonly githubUrl = GITHUB_URL;
+  protected readonly websiteUrl = WEBSITE_URL;
 
   protected readonly faDashboard = faDashboard;
   protected readonly faBoxesStacked = faBoxesStacked;
@@ -89,6 +91,7 @@ export class SideBarComponent {
   protected readonly faAsterisk = faAsterisk;
   protected readonly faLifeRing = faLifeRing;
   protected readonly faHandHoldingDollar = faHandHoldingDollar;
+  protected readonly faXmark = faXmark;
   protected feedbackAlert = true;
   protected readonly agentsSubMenuOpen = signal(true);
   protected readonly registrySubMenuOpen = signal(true);

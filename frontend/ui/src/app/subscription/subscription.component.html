@@ -19,7 +19,7 @@
               <!-- Current Usage -->
               <div class="space-y-4">
                 <h2 class="text-xl font-bold dark:text-white">Current Usage</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div
                     class="grid grid-rows-3 gap-0 py-2 px-4 border border-gray-200 dark:border-gray-700 rounded-lg text-center">
                     <p class="text-sm text-gray-600 dark:text-gray-400 self-center">Users</p>
@@ -43,32 +43,23 @@
                     <p class="text-xs text-gray-500 dark:text-gray-500 self-center">
                       @if (subscriptionInfoData.subscriptionCustomerOrganizationQuantity !== unlimited) {
                         of {{ subscriptionInfoData.subscriptionCustomerOrganizationQuantity }} Customers used
+                      } @else {
+                        invited customer organizations
                       }
-                      <br />
-                      <span class="text-xs text-gray-400">
-                        ({{ getPlanDisplayName(subscriptionInfoData.subscriptionType) }} max:
-                        {{ getCurrentPlanLimit('customerOrganizations') }})
-                      </span>
                     </p>
                   </div>
                   <div
                     class="grid grid-rows-3 gap-0 py-2 px-4 border border-gray-200 dark:border-gray-700 rounded-lg text-center">
-                    <p class="text-sm text-gray-600 dark:text-gray-400 self-center">Most Users per Customer</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 self-center">Registry Storage</p>
                     <p class="text-3xl font-bold text-gray-900 dark:text-white self-center">
-                      {{ subscriptionInfoData.currentMaxUsersPerCustomer }}
+                      {{ subscriptionInfoData.currentRegistryStorageBytes | bytes: '1.0-1' }}
                     </p>
                     <p class="text-xs text-gray-500 dark:text-gray-500 self-center">
-                      of {{ getCurrentPlanLimit('usersPerCustomer') }} allowed
-                    </p>
-                  </div>
-                  <div
-                    class="grid grid-rows-3 gap-0 py-2 px-4 border border-gray-200 dark:border-gray-700 rounded-lg text-center">
-                    <p class="text-sm text-gray-600 dark:text-gray-400 self-center">Most Deployments per Customer</p>
-                    <p class="text-3xl font-bold text-gray-900 dark:text-white self-center">
-                      {{ subscriptionInfoData.currentMaxDeploymentTargetsPerCustomer }}
-                    </p>
-                    <p class="text-xs text-gray-500 dark:text-gray-500 self-center">
-                      of {{ getCurrentPlanLimit('deploymentsPerCustomer') }} allowed
+                      @if (registryStorageLimit(); as storageLimit) {
+                        of {{ storageLimit | bytes: '1.0-0' }} used
+                      } @else {
+                        artifacts stored
+                      }
                     </p>
                   </div>
                 </div>
@@ -133,7 +124,7 @@
                     </p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label for="userAccountQuantity-update" class="distr-label mb-2"> Internal Users * </label>
+                        <label for="userAccountQuantity-update" class="distr-label mb-2"> Vendor Team Members * </label>
                         <input
                           formControlName="userAccountQuantity"
                           type="number"
@@ -144,7 +135,7 @@
                           [placeholder]="subscriptionInfoData.currentUserAccountCount.toString()"
                           required />
                         <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-                          Number of internal team members
+                          Number of vendor team members
                           @if (isPartnerManagementEnabled()) {
                             and partner users
                           }
@@ -159,14 +150,14 @@
                           name="customerOrganizationQuantity"
                           id="customerOrganizationQuantity-update"
                           [min]="subscriptionInfoData.currentCustomerOrganizationCount"
-                          [max]="getCurrentPlanLimit('customerOrganizations')"
+                          [max]="getCurrentCustomerOrganizationsLimit()"
                           class="distr-input"
                           [placeholder]="subscriptionInfoData.currentCustomerOrganizationCount.toString()"
                           required />
                         <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
                           Number of external customers (min:
                           {{ subscriptionInfoData.currentCustomerOrganizationCount }}, max:
-                          {{ getCurrentPlanLimit('customerOrganizations') }})
+                          {{ getCurrentCustomerOrganizationsLimit() }})
                         </p>
                       </div>
                     </div>
@@ -194,13 +185,8 @@
                         <ul class="space-y-1 text-sm text-gray-600 dark:text-gray-400 mb-4">
                           <li>
                             <fa-icon [icon]="faCheck" class="text-green-500" />
-                            Up to {{ getPlanLimit('business', 'customerOrganizations') }} customers (up from
-                            {{ getPlanLimit('pro', 'customerOrganizations') }})
-                          </li>
-                          <li>
-                            <fa-icon [icon]="faCheck" class="text-green-500" />
-                            {{ getPlanLimit('business', 'usersPerCustomer') }} users per customer (up from
-                            {{ getPlanLimit('pro', 'usersPerCustomer') }})
+                            {{ getPlanCustomerLimitDescription('business') }} (up from
+                            {{ getCustomerOrganizationsLimit('pro') }})
                           </li>
                           @for (feature of businessPlanFeatures; track feature) {
                             <li>
@@ -251,23 +237,9 @@
                         <ul class="space-y-1 text-sm text-gray-600 dark:text-gray-400">
                           <li>
                             <fa-icon [icon]="faCheck" class="text-green-500" />
-                            {{ getPlanLimits('pro').customers }} customers
+                            {{ getPlanCustomerLimitDescription('pro') }}
                             <span class="text-xs"
                               >(current: {{ subscriptionInfoData.currentCustomerOrganizationCount }})</span
-                            >
-                          </li>
-                          <li>
-                            <fa-icon [icon]="faCheck" class="text-green-500" />
-                            {{ getPlanLimits('pro').users }}
-                            <span class="text-xs"
-                              >(current max: {{ subscriptionInfoData.currentMaxUsersPerCustomer }})</span
-                            >
-                          </li>
-                          <li>
-                            <fa-icon [icon]="faCheck" class="text-green-500" />
-                            {{ getPlanLimits('pro').deployments }}
-                            <span class="text-xs"
-                              >(current max: {{ subscriptionInfoData.currentMaxDeploymentTargetsPerCustomer }})</span
                             >
                           </li>
                           @for (feature of proPlanFeatures; track feature) {
@@ -293,23 +265,9 @@
                         <ul class="space-y-1 text-sm text-gray-600 dark:text-gray-400">
                           <li>
                             <fa-icon [icon]="faCheck" class="text-green-500" />
-                            {{ getPlanLimits('business').customers }}
+                            {{ getPlanCustomerLimitDescription('business') }}
                             <span class="text-xs"
                               >(current: {{ subscriptionInfoData.currentCustomerOrganizationCount }})</span
-                            >
-                          </li>
-                          <li>
-                            <fa-icon [icon]="faCheck" class="text-green-500" />
-                            {{ getPlanLimits('business').users }}
-                            <span class="text-xs"
-                              >(current max: {{ subscriptionInfoData.currentMaxUsersPerCustomer }})</span
-                            >
-                          </li>
-                          <li>
-                            <fa-icon [icon]="faCheck" class="text-green-500" />
-                            {{ getPlanLimits('business').deployments }}
-                            <span class="text-xs"
-                              >(current max: {{ subscriptionInfoData.currentMaxDeploymentTargetsPerCustomer }})</span
                             >
                           </li>
                           @for (feature of businessPlanFeatures; track feature) {
@@ -346,7 +304,9 @@
                     <h2 class="text-xl font-bold dark:text-white">Subscription Quantities</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label for="userAccountQuantity-checkout" class="distr-label mb-2"> Internal Users * </label>
+                        <label for="userAccountQuantity-checkout" class="distr-label mb-2">
+                          Vendor Team Members *
+                        </label>
                         <input
                           formControlName="userAccountQuantity"
                           type="number"
@@ -357,7 +317,7 @@
                           placeholder="1"
                           required />
                         <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-                          Number of internal team members
+                          Number of vendor team members
                           @if (isPartnerManagementEnabled()) {
                             and partner users
                           }
