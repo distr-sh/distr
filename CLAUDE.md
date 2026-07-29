@@ -185,6 +185,12 @@ err := db.BeginFunc(ctx, func(tx pgx.Tx) error {
 })
 ```
 
+#### Enum Types
+
+Model a closed set of values as a Postgres enum type, not as a `TEXT` column with a `CHECK (col IN (...))` constraint. `CHECK` constraints are for cross-column invariants (e.g. `(type = 'docker') = (scope IS NULL)`).
+
+When you add a Postgres enum type, register it (and its array type, prefixed with `_`) in the `AfterConnect` type list in `internal/svc/db_pool.go`, e.g. `CUSTOM_DOMAIN_TYPE` and `_CUSTOM_DOMAIN_TYPE`. Without it pgx cannot encode Go values into the enum's OID. Cast query parameters to the enum type, never to `TEXT`: `unnest(@domainTypes::CUSTOM_DOMAIN_TYPE[])`, since Postgres does not implicitly coerce `text` to an enum. Pass the Go string type itself (`[]types.DomainType`), not `[]string`.
+
 #### Read-only Database
 
 An optional read-only database (e.g. a replica) can be configured via `DATABASE_READONLY_URL` (and `DATABASE_READONLY_MAX_CONNS`). When unset, no read-only pool is created and everything uses the primary. When set, it is injected into the request context by `ContextInjectorMiddleware` via `WithReadonlyDB` (the primary is always injected via `WithDb`).
