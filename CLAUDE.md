@@ -158,13 +158,15 @@ Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Pret
 - Use reactive forms for all form handling
 - Use as little `undefined` types as possible, always use the actual type
 - Don't use any svg path icons, always look for a matching icon in the icon library used. These icons should always be the same in the import, the component and template e.g. `faServer` and not `serverIcon`.
+  This applies to CSS too: never hand-write an inline SVG or an `url("data:image/svg+xml,...")` background, not even to restyle a browser or Flowbite default.
+- Before inventing a new pattern for a shared control, look at how the same control is already used elsewhere and reuse that. The indeterminate "select all" checkbox, for example, needs nothing beyond `distr-checkbox`; the sizing and centering of the dash is already handled there.
 - Use [Angular Signals](https://angular.dev/guide/signals) for inputs, child views and everywhere where the current Angular version supports signals.
   If you find usages of non signal usages for inputs, child views etc. change them to signals in the files you would edit anyway.
 - Don't use any responsive design classes in modals. They should always be optimized for the none mobile use case.
 - Use Angular's `takeUntilDestroyed` instead of a manual `destroyed$` subject.
 - Use [Angular Signal Based Animations](https://angular.dev/guide/animations) instead of legacy animations defined in the component.
 - Use Tailwind CSS utility classes for text transformations (e.g. `capitalize`, `uppercase`, `lowercase`) instead of TypeScript string manipulation when possible.
-- Reuse the shared global `distr-*` component classes defined in `frontend/ui/src/styles/theme.scss` (e.g. `distr-checkbox`, `distr-radio`, `distr-label`) instead of repeating their Tailwind utility chains inline, and add a new one there when an element's styling is repeated across the app. Append only element-specific extra utilities when needed (e.g. `class="distr-checkbox indeterminate:bg-[length:65%_65%]"`).
+- Reuse the shared global `distr-*` component classes defined in `frontend/ui/src/styles/theme.scss` (e.g. `distr-checkbox`, `distr-radio`, `distr-label`) instead of repeating their Tailwind utility chains inline, and add a new one there when an element's styling is repeated across the app. Append only element-specific extra utilities when needed (e.g. `class="distr-input font-mono"`). Keep in mind that Tailwind scans this file too, so any class name written here is emitted into the stylesheet: prefer describing a class to pasting a full `class="..."` attribute.
 
 ### Database Access
 

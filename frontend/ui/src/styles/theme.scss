@@ -42,6 +42,15 @@
 @layer components {
   .distr-checkbox {
     @apply size-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600;
+
+    // Flowbite draws the indeterminate dash oversized, and its SVG sits slightly left of
+    // centre, so it is scaled down and nudged back to line up with the check mark. The
+    // attribute selector is only there to outweigh Flowbite's own
+    // [type=checkbox]:indeterminate rule, which has equal specificity but comes later.
+    &[type='checkbox']:indeterminate {
+      background-size: 65% 65%;
+      background-position: calc(50% + 0.5px) center;
+    }
   }
 
   .distr-radio {
