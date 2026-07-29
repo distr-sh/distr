@@ -287,7 +287,7 @@ func UpdateAdvisory(ctx context.Context, advisory *types.Advisory) error {
 // resolved_at timestamps. published_at is only set the first time an advisory is
 // published so that unpublishing and republishing keeps the original disclosure date.
 func UpdateAdvisoryStatus(
-	ctx context.Context, id, orgID uuid.UUID, status types.AdvisoryStatus,
+	ctx context.Context, id, orgID uuid.UUID, from, status types.AdvisoryStatus,
 ) error {
 	db := internalctx.GetDb(ctx)
 	result, err := db.Exec(
@@ -295,6 +295,10 @@ func UpdateAdvisoryStatus(
 		// Every occurrence of the status parameter carries the same explicit cast. NamedArgs
 		// collapses them into one placeholder, and without the cast Postgres deduces the enum
 		// from the assignment but text from the IN list and rejects the statement (42P08).
+		//
+		// The WHERE clause pins the update to the status the caller validated the transition
+		// against. If a concurrent request already moved the advisory to a different status,
+		// this update matches no rows so the stale transition cannot be applied.
 		`UPDATE Advisory
 		SET status = @status::advisory_status,
 			published_at = CASE
@@ -307,14 +311,14 @@ func UpdateAdvisoryStatus(
 				ELSE NULL
 			END,
 			updated_at = now()
-		WHERE id = @id AND organization_id = @orgId`,
-		pgx.NamedArgs{"id": id, "orgId": orgID, "status": status},
+		WHERE id = @id AND organization_id = @orgId AND status = @from::advisory_status`,
+		pgx.NamedArgs{"id": id, "orgId": orgID, "from": from, "status": status},
 	)
 	if err != nil {
 		return fmt.Errorf("could not update advisory status: %w", err)
 	}
 	if result.RowsAffected() == 0 {
-		return apierrors.ErrNotFound
+		return apierrors.ErrConflict
 	}
 	return nil
 }

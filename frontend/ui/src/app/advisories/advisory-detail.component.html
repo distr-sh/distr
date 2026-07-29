@@ -251,7 +251,7 @@
         [advisory]="current"
         [draft]="editDraft()"
         (draftChanged)="editDraft.set($event)"
-        (dismissed)="closeEditDialog()"
+        (dismissed)="cancelEditDialog()"
         (cancelled)="cancelEditDialog()"
         (saved)="onSaved($event)" />
     }

@@ -368,7 +368,7 @@ func updateAdvisoryStatusHandler() http.HandlerFunc {
 		message := fmt.Sprintf("changed status from %v to %v", existing.Status, status)
 		err = db.RunTxRR(ctx, func(ctx context.Context) error {
 			if err := db.UpdateAdvisoryStatus(
-				ctx, existing.ID, existing.OrganizationID, status,
+				ctx, existing.ID, existing.OrganizationID, existing.Status, status,
 			); err != nil {
 				return err
 			}
@@ -377,6 +377,9 @@ func updateAdvisoryStatusHandler() http.HandlerFunc {
 		})
 		if errors.Is(err, apierrors.ErrNotFound) {
 			http.NotFound(w, r)
+			return
+		} else if errors.Is(err, apierrors.ErrConflict) {
+			http.Error(w, "advisory status changed concurrently, please retry", http.StatusConflict)
 			return
 		} else if err != nil {
 			log.Error("failed to update advisory status", zap.Error(err))
