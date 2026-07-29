@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.1.0-rc.1](https://github.com/distr-sh/distr/compare/3.0.4...3.1.0-rc.1) (2026-07-29)
+
+
+### Other
+
+* add registry storage to subscription cards ([#2909](https://github.com/distr-sh/distr/issues/2909)) ([5f21baa](https://github.com/distr-sh/distr/commit/5f21baa44edc6f1b002b9798064a4f5b4530537d))
+* configure pre release ([4df7432](https://github.com/distr-sh/distr/commit/4df7432812ed3779ee9a62c850ca9adafafcbd61))
+* **deps:** update angular ([#2912](https://github.com/distr-sh/distr/issues/2912)) ([2dce26d](https://github.com/distr-sh/distr/commit/2dce26df05344e0228ff76966087e560c29be41f))
+* **deps:** update aws-actions/configure-aws-credentials action to v6.2.3 ([#2914](https://github.com/distr-sh/distr/issues/2914)) ([bed339b](https://github.com/distr-sh/distr/commit/bed339b2ed914e950aa73ca0117003a70dbea138))
+* **deps:** update axllent/mailpit docker tag to v1.30.6 ([#2919](https://github.com/distr-sh/distr/issues/2919)) ([abfad76](https://github.com/distr-sh/distr/commit/abfad76a6c28a885442168ec16f96045a81fc2eb))
+* **deps:** update grafana/loki docker tag to v3.7.4 ([#2915](https://github.com/distr-sh/distr/issues/2915)) ([d1fb660](https://github.com/distr-sh/distr/commit/d1fb6603ef63d2eda35fc35646bff59c790423e0))
+* **deps:** update jdx/mise-action action to v4.2.3 ([#2916](https://github.com/distr-sh/distr/issues/2916)) ([7351e98](https://github.com/distr-sh/distr/commit/7351e9831ebc7acaba5d59fca30287b9ce196840))
+* only setup vendor releated custom domain cols for now ([9993b5c](https://github.com/distr-sh/distr/commit/9993b5cdc56421fe00a3ed847ef618b4edf688da))
+
 ## [3.0.4](https://github.com/distr-sh/distr/compare/3.0.3...3.0.4) (2026-07-27)
 
 
