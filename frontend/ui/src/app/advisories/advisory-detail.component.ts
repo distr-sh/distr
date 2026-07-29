@@ -146,22 +146,27 @@ export class AdvisoryDetailComponent {
       .pipe(
         switchMap((params) => {
           const id = params.get('advisoryId')!;
+          // Drop the previously loaded advisory so it can never be shown under the new URL,
+          // neither while the new request is in flight nor when it fails.
+          this.advisory.set(undefined);
           return this.refresh$.pipe(
             startWith(0),
-            switchMap(() => this.advisoriesService.get(id))
+            switchMap(() =>
+              this.advisoriesService.get(id).pipe(
+                catchError((e) => {
+                  const message = getFormDisplayedError(e);
+                  if (message) {
+                    this.toast.error(message);
+                  }
+                  return of(undefined);
+                })
+              )
+            )
           );
         }),
         takeUntilDestroyed()
       )
-      .subscribe({
-        next: (detail) => this.advisory.set(detail),
-        error: (e) => {
-          const message = getFormDisplayedError(e);
-          if (message) {
-            this.toast.error(message);
-          }
-        },
-      });
+      .subscribe((detail) => this.advisory.set(detail));
   }
 
   protected openEditDialog(templateRef: TemplateRef<unknown>): void {

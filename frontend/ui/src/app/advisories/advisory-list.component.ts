@@ -115,11 +115,17 @@ export class AdvisoryListComponent {
 
   // Recomputes only when a selection actually changes, so the list is not refetched on every
   // unrelated signal write.
-  private readonly serverFilter = computed(() => ({
-    status: this.selectedStatuses(),
-    severity: this.selectedSeverities(),
-    tag: this.selectedTags(),
-  }));
+  private readonly serverFilter = computed(() => {
+    const status = this.selectedStatuses();
+    return {
+      // The multi-select treats an empty selection as "no filter", but the list deliberately
+      // hides canceled advisories, so fall back to the default statuses instead of letting the
+      // API return everything (including canceled).
+      status: status.length > 0 ? status : this.defaultStatuses,
+      severity: this.selectedSeverities(),
+      tag: this.selectedTags(),
+    };
+  });
 
   // shareReplay keeps the two subscribers below from each issuing their own request.
   private readonly advisories$ = combineLatest([
