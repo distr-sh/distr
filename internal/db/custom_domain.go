@@ -15,8 +15,7 @@ import (
 )
 
 const customDomainOutputExpr = `
-	d.id, d.created_at, d.domain, d.domain_type, d.organization_id,
-	d.customer_organization_id, d.partner_organization_id
+	d.id, d.created_at, d.domain, d.domain_type, d.organization_id
 `
 
 // CreateCustomDomains inserts all given custom domains with a single statement, so either all
@@ -53,34 +52,13 @@ func CreateCustomDomains(ctx context.Context, customDomains []types.CustomDomain
 	return result, nil
 }
 
+// GetCustomDomains returns the organization's custom domains. There is at most one per domain
+// type, enforced by a unique constraint.
 func GetCustomDomains(ctx context.Context, organizationID uuid.UUID) ([]types.CustomDomain, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		"SELECT"+customDomainOutputExpr+
 			"FROM CustomDomain d WHERE d.organization_id = @organizationId ORDER BY d.created_at, d.domain",
-		pgx.NamedArgs{"organizationId": organizationID},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("could not query CustomDomains: %w", err)
-	}
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.CustomDomain])
-	if err != nil {
-		return nil, fmt.Errorf("could not collect CustomDomains: %w", err)
-	}
-	return result, nil
-}
-
-// GetOrgWideCustomDomains returns the organization's unscoped (org-wide) custom domains,
-// i.e. those not dedicated to a customer or partner organization. At most one row per
-// domain type exists (enforced by a partial unique index).
-func GetOrgWideCustomDomains(ctx context.Context, organizationID uuid.UUID) ([]types.CustomDomain, error) {
-	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(ctx,
-		"SELECT"+customDomainOutputExpr+
-			`FROM CustomDomain d
-			WHERE d.organization_id = @organizationId
-				AND d.customer_organization_id IS NULL
-				AND d.partner_organization_id IS NULL`,
 		pgx.NamedArgs{"organizationId": organizationID},
 	)
 	if err != nil {

@@ -20,7 +20,7 @@ var urlSchemeRegex = regexp.MustCompile("^https?://")
 // self-service CustomDomain first, then the legacy OrganizationBranding.app_domain
 // (kept until the branding domain migration follow-up ticket), then env.Host().
 func AppDomainOrDefault(ctx context.Context, orgID uuid.UUID, b *types.OrganizationBranding) string {
-	domains := orgWideCustomDomains(ctx, orgID)
+	domains := customDomains(ctx, orgID)
 	if d := domainOfType(domains, types.DomainTypeApp); d != nil {
 		return withScheme(*d)
 	}
@@ -35,7 +35,7 @@ func AppDomainOrDefault(ctx context.Context, orgID uuid.UUID, b *types.Organizat
 // custom domain serves registry traffic under /v2/ via the Caddy path routing), then
 // the legacy OrganizationBranding.registry_domain, then env.RegistryHost().
 func RegistryDomainOrDefault(ctx context.Context, orgID uuid.UUID, b *types.OrganizationBranding) string {
-	domains := orgWideCustomDomains(ctx, orgID)
+	domains := customDomains(ctx, orgID)
 	if d := domainOfType(domains, types.DomainTypeRegistry); d != nil {
 		return *d
 	}
@@ -56,11 +56,11 @@ func EmailFromAddressParsedOrDefault(b *types.OrganizationBranding) (*mail.Addre
 	}
 }
 
-// orgWideCustomDomains loads the organization's unscoped custom domains best-effort:
-// on error the caller falls back to the legacy branding columns / instance defaults,
-// which keep working for every organization.
-func orgWideCustomDomains(ctx context.Context, orgID uuid.UUID) []types.CustomDomain {
-	domains, err := db.GetOrgWideCustomDomains(ctx, orgID)
+// customDomains loads the organization's custom domains best-effort: on error the caller
+// falls back to the legacy branding columns / instance defaults, which keep working for
+// every organization.
+func customDomains(ctx context.Context, orgID uuid.UUID) []types.CustomDomain {
+	domains, err := db.GetCustomDomains(ctx, orgID)
 	if err != nil {
 		internalctx.GetLogger(ctx).Warn("failed to resolve custom domains", zap.Error(err))
 		return nil

@@ -20,9 +20,4 @@ type CustomDomain struct {
 	Type      DomainType `db:"domain_type" json:"domainType"`
 	// OrganizationID references the vendor organization that owns the domain.
 	OrganizationID uuid.UUID `db:"organization_id" json:"organizationId"`
-	// CustomerOrganizationID and PartnerOrganizationID optionally narrow the domain
-	// to a single customer or partner organization. Both unset means the domain is
-	// the org-wide domain. No API surface for them yet (DEV-593).
-	CustomerOrganizationID *uuid.UUID `db:"customer_organization_id" json:"customerOrganizationId,omitempty"`
-	PartnerOrganizationID  *uuid.UUID `db:"partner_organization_id"  json:"partnerOrganizationId,omitempty"`
 }
