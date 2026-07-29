@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.0-rc.2](https://github.com/distr-sh/distr/compare/3.1.0-rc.1...3.1.0-rc.2) (2026-07-29)
+
+
+### Bug Fixes
+
+* enum mapping ([f5c359a](https://github.com/distr-sh/distr/commit/f5c359a62ef6f3bfdfbf1523a4d397e8cf018694))
+
 ## [3.1.0-rc.1](https://github.com/distr-sh/distr/compare/3.0.4...3.1.0-rc.1) (2026-07-29)
 
 
