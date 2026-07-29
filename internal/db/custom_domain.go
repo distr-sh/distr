@@ -23,16 +23,16 @@ const customDomainOutputExpr = `
 func CreateCustomDomains(ctx context.Context, customDomains []types.CustomDomain) ([]types.CustomDomain, error) {
 	db := internalctx.GetDb(ctx)
 	domains := make([]string, len(customDomains))
-	domainTypes := make([]string, len(customDomains))
+	domainTypes := make([]types.DomainType, len(customDomains))
 	organizationIDs := make([]uuid.UUID, len(customDomains))
 	for i, customDomain := range customDomains {
 		domains[i] = customDomain.Domain
-		domainTypes[i] = string(customDomain.Type)
+		domainTypes[i] = customDomain.Type
 		organizationIDs[i] = customDomain.OrganizationID
 	}
 	rows, err := db.Query(ctx,
 		`INSERT INTO CustomDomain AS d (domain, domain_type, organization_id)
-		SELECT * FROM unnest(@domains::TEXT[], @domainTypes::TEXT[], @organizationIds::UUID[])
+		SELECT * FROM unnest(@domains::TEXT[], @domainTypes::CUSTOM_DOMAIN_TYPE[], @organizationIds::UUID[])
 		RETURNING`+customDomainOutputExpr,
 		pgx.NamedArgs{
 			"domains":         domains,

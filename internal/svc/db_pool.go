@@ -72,6 +72,8 @@ func (reg *Registry) createDBPoolFor(ctx context.Context, url string, maxConns *
 			"CUSTOMER_ORGANIZATION_FEATURE",
 			"_CUSTOMER_ORGANIZATION_FEATURE",
 			"UPSTREAM_AUTH_TYPE",
+			"CUSTOM_DOMAIN_TYPE",
+			"_CUSTOM_DOMAIN_TYPE",
 		}
 		for _, typeName := range typeNames {
 			if pgType, err := conn.LoadType(ctx, typeName); err != nil {
