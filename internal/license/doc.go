@@ -16,7 +16,7 @@ A compatible Distr license key can be generated using the following JSON as a te
 			"moc": 123,
 			"mcu": 123,
 			"mcd": 123,
-			"mlr": 123
+			"mrs": 123
 		}
 	}
 

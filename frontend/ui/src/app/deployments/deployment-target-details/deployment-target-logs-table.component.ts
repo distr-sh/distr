@@ -85,7 +85,12 @@ export class DeploymentTargetLogsTableComponent {
   );
 
   protected readonly exporter: TimeseriesExporter = {
-    export: () => this.svc.export(this.deploymentTargetId()),
+    export: () =>
+      this.svc.export(this.deploymentTargetId(), {
+        after: this.after(),
+        before: this.before(),
+        filter: this.filter(),
+      }),
     getFileName: () => 'agent.log',
   };
 

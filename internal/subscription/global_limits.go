@@ -33,10 +33,14 @@ const (
 	MaxRegistryStorageBytesBusiness  limit.Limit = 5 << 40
 	MaxRegistryStorageBytesTrial                 = limit.Unlimited
 
-	MaxLogExportRowsCommunity limit.Limit = 100
-	MaxLogExportRowsPro       limit.Limit = 10_000
-	MaxLogExportRowsBusiness  limit.Limit = 10_000
-	MaxLogExportRowsTrial     limit.Limit = 10_000
+	// MaxLogExportRows is a hard cap on the number of lines a single log export may
+	// produce, so very large exports cannot exhaust hub or client resources. It applies
+	// to all subscription types.
+	MaxLogExportRows limit.Limit = 1_000_000
+
+	// MaxArtifactPullExportRows caps the artifact pull CSV export. Unlike log exports, the
+	// rows are collected in memory before writing, so the cap is much lower.
+	MaxArtifactPullExportRows limit.Limit = 10_000
 
 	LogQueryWindowCommunity = 24 * time.Hour
 	LogQueryWindowBusiness  = 30 * 24 * time.Hour
@@ -106,23 +110,6 @@ func GetRegistryStorageLimit(st types.SubscriptionType) limit.Limit {
 		return MaxRegistryStorageBytesBusiness
 	case types.SubscriptionTypeEnterprise:
 		return license.GetLicenseData().MaxRegistryStorageBytes
-	default:
-		panic(fmt.Sprintf("invalid subscription type: %v", st))
-	}
-}
-
-func GetLogExportRowsLimit(st types.SubscriptionType) limit.Limit {
-	switch st {
-	case types.SubscriptionTypeCommunity:
-		return MaxLogExportRowsCommunity
-	case types.SubscriptionTypeTrial:
-		return MaxLogExportRowsTrial
-	case types.SubscriptionTypePro:
-		return MaxLogExportRowsPro
-	case types.SubscriptionTypeBusiness:
-		return MaxLogExportRowsBusiness
-	case types.SubscriptionTypeEnterprise:
-		return license.GetLicenseData().MaxLogExportRows
 	default:
 		panic(fmt.Sprintf("invalid subscription type: %v", st))
 	}

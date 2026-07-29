@@ -11,7 +11,6 @@ import (
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
-	"github.com/distr-sh/distr/internal/handlerutil"
 	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/logstore"
 	"github.com/distr-sh/distr/internal/mapping"
@@ -34,42 +33,17 @@ func getDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		before, err := QueryParam(r, "before", ParseTimeFunc(time.RFC3339Nano))
-		if err != nil && !errors.Is(err, ErrParamNotDefined) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		after, err := QueryParam(r, "after", ParseTimeFunc(time.RFC3339Nano))
-		if err != nil && !errors.Is(err, ErrParamNotDefined) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		filter := r.FormValue("filter")
-		if filter != "" {
-			if err := handlerutil.ValidateFilterRegex(filter); err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-		}
 		order := types.OrderDirection(r.FormValue("order"))
 
 		authInfo := auth.Authentication.Require(ctx)
 		org := authInfo.CurrentOrg()
-		// The effective direction must be resolved from the client-supplied "after"
-		// before it is defaulted to the query window start below.
-		direction := types.EffectiveOrderDirection(order, !after.IsZero())
-		after, err = resolveLogQueryStart(org.SubscriptionType, after)
+		queryRange, err := parseLogQueryRange(r, org.SubscriptionType)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		if before.IsZero() {
-			before = time.Now()
-		}
-		// A "before" cursor older than the resolved window start yields an empty range
-		// (start > end). This happens for pagination past the window boundary, so respond
-		// with no rows instead of forwarding an invalid range to the log store.
-		if before.Before(after) {
+		direction := types.EffectiveOrderDirection(order, queryRange.StartExplicit)
+		if queryRange.IsEmpty() {
 			RespondJSON(w, mapping.List(nil, mapping.DeploymentTargetLogRecordToAPI))
 			return
 		}
@@ -78,9 +52,9 @@ func getDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 		records, err := util.SeqCollect(logStore.QueryDeploymentTargetLogRecords(ctx, org.ID,
 			logstore.DeploymentTargetLogQuery{
 				DeploymentTargetID: deploymentTarget.ID,
-				Start:              after,
-				End:                before,
-				Filter:             filter,
+				Start:              queryRange.Start,
+				End:                queryRange.End,
+				Filter:             queryRange.Filter,
 				Limit:              limit.Limit(limitParam),
 				Direction:          direction,
 			}))
@@ -107,20 +81,33 @@ func exportDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 		authInfo := auth.Authentication.Require(ctx)
 		org := authInfo.CurrentOrg()
 
+		queryRange, err := parseLogQueryRange(r, org.SubscriptionType)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
 		filename := fmt.Sprintf("%s_agent.log", time.Now().Format("2006-01-02"))
 
+		if queryRange.IsEmpty() {
+			SetFileDownloadHeaders(w, filename)
+			return
+		}
+
 		logStore := logstore.FromContext(ctx)
-		// Exports are bounded by the log query window only, not by a row limit.
 		records := logStore.QueryDeploymentTargetLogRecords(ctx, org.ID, logstore.DeploymentTargetLogQuery{
 			DeploymentTargetID: deploymentTarget.ID,
-			Start:              subscription.GetLogQueryWindowStart(org.SubscriptionType),
-			Limit:              limit.Unlimited,
+			Start:              queryRange.Start,
+			End:                queryRange.End,
+			Filter:             queryRange.Filter,
+			Limit:              subscription.MaxLogExportRows,
 			Direction:          types.OrderDirectionDesc,
 		})
 
 		// The download headers are only set right before the first write, so an error
 		// response can still be sent as long as nothing has been written yet.
 		written := false
+		count := int64(0)
 		for record, err := range records {
 			if err != nil {
 				log.Error("failed to export deployment target log records", zap.Error(err))
@@ -142,9 +129,12 @@ func exportDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 				log.Error("failed to write deployment target log records to response writer", zap.Error(err))
 				return
 			}
+			count++
 		}
 		if !written {
 			SetFileDownloadHeaders(w, filename)
+		} else if subscription.MaxLogExportRows.IsReached(count) {
+			_, _ = w.Write([]byte(exportLimitNotice))
 		}
 	}
 }

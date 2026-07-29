@@ -119,7 +119,12 @@ export class DeploymentLogsTableComponent {
   );
 
   protected readonly exporter: TimeseriesExporter = {
-    export: () => this.svc.export(this.deploymentId(), this.resources()),
+    export: () =>
+      this.svc.export(this.deploymentId(), this.resources(), {
+        after: this.after(),
+        before: this.before(),
+        filter: this.filter(),
+      }),
     getFileName: () => `${this.resources().join('_')}.log`,
   };
 
