@@ -166,6 +166,15 @@ Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Pret
 - Use Angular's `takeUntilDestroyed` instead of a manual `destroyed$` subject.
 - Use [Angular Signal Based Animations](https://angular.dev/guide/animations) instead of legacy animations defined in the component.
 - Use Tailwind CSS utility classes for text transformations (e.g. `capitalize`, `uppercase`, `lowercase`) instead of TypeScript string manipulation when possible.
+- Use [NgPlural](https://angular.dev/api/common/NgPlural) with `ngPluralCase` for pluralized text in templates instead of ternaries like `count === 1 ? 'day' : 'days'`:
+
+  ```html
+  <ng-container [ngPlural]="count()">
+    <ng-template ngPluralCase="=1">day</ng-template>
+    <ng-template ngPluralCase="other">days</ng-template>
+  </ng-container>
+  ```
+
 - Reuse the shared global `distr-*` component classes defined in `frontend/ui/src/styles/theme.scss` (e.g. `distr-checkbox`, `distr-radio`, `distr-label`) instead of repeating their Tailwind utility chains inline, and add a new one there when an element's styling is repeated across the app. Append only element-specific extra utilities when needed (e.g. `class="distr-input font-mono"`). Keep in mind that Tailwind scans this file too, so any class name written here is emitted into the stylesheet: prefer describing a class to pasting a full `class="..."` attribute.
 
 ### Database Access
@@ -222,6 +231,7 @@ When adding new routes, ensure the OpenAPI spec remains valid. The `chiopenapi` 
 ## General rules
 
 - Always ensure this file is up-to-date.
+- Always build, test, lint and format through mise tasks (`mise run build:hub:community`, `mise run test:go`, `mise run test:frontend`, `mise run lint`, `mise run format`). Never invoke `go build`, `go test`, `golangci-lint` or `pnpm` directly.
 - When you add, remove, or change an environment variable in `internal/env/env.go` (name, default, required/optional status, or accepted values), update the configuration reference page at `website/src/content/docs/docs/self-hosting/configuration.mdx` in the same change so it stays complete and accurate.
 - Don't write any unnecessary comments that just explain the functionality below, if there is nothing special about it.
 - If a user requests you to do something differently, add the difference to a new rule / convention in this file

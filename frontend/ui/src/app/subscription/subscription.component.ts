@@ -17,7 +17,7 @@ import {faCheck, faCreditCard, faShoppingCart} from '@fortawesome/free-solid-svg
 import {firstValueFrom} from 'rxjs';
 import {WEBSITE_URL} from '../../constants';
 import {getFormDisplayedError} from '../../util/errors';
-import {never} from '../../util/exhaust';
+import {BytesPipe} from '../../util/units';
 import {DeleteOrganizationComponent} from '../components/delete-organization/delete-organization.component';
 import {AuthService} from '../services/auth.service';
 import {FeatureFlagService} from '../services/feature-flag.service';
@@ -39,6 +39,7 @@ import {PendingSubscriptionUpdate, SubscriptionUpdateModalComponent} from './sub
     OverlayModule,
     SubscriptionUpdateModalComponent,
     DeleteOrganizationComponent,
+    BytesPipe,
   ],
 })
 export class SubscriptionComponent implements OnInit {
@@ -110,6 +111,17 @@ export class SubscriptionComponent implements OnInit {
       values.userAccountQuantity !== info.subscriptionUserAccountQuantity ||
       values.customerOrganizationQuantity !== info.subscriptionCustomerOrganizationQuantity
     );
+  });
+
+  private readonly currentPlanLimits = computed(() => {
+    const info = this.subscriptionInfo();
+    return info ? info.limits[info.subscriptionType] : undefined;
+  });
+
+  /** The registry storage included in the current plan, or `undefined` if it is unlimited. */
+  protected readonly registryStorageLimit = computed(() => {
+    const bytes = this.currentPlanLimits()?.maxRegistryStorageBytes;
+    return bytes === undefined || bytes === UNLIMITED_QTY ? undefined : bytes;
   });
 
   async ngOnInit() {
@@ -247,26 +259,15 @@ export class SubscriptionComponent implements OnInit {
     );
   }
 
-  getPlanLimits(plan: SubscriptionType): {customers: string; users: string; deployments: string} {
+  getPlanCustomerLimitDescription(plan: SubscriptionType): string {
     const limits = this.getPlanLimitsObject(plan);
     if (!limits) {
-      return {customers: '', users: '', deployments: ''};
+      return '';
     }
 
-    return {
-      customers:
-        limits.maxCustomerOrganizations === UNLIMITED_QTY
-          ? 'Unlimited customers'
-          : `Up to ${limits.maxCustomerOrganizations} customer${limits.maxCustomerOrganizations > 1 ? 's' : ''}`,
-      users:
-        limits.maxUsersPerCustomerOrganization === UNLIMITED_QTY
-          ? 'Unlimited users per customer'
-          : `Up to ${limits.maxUsersPerCustomerOrganization} user account${limits.maxUsersPerCustomerOrganization > 1 ? 's' : ''} per customer`,
-      deployments:
-        limits.maxDeploymentsPerCustomerOrganization === UNLIMITED_QTY
-          ? 'Unlimited deployments per customer'
-          : `${limits.maxDeploymentsPerCustomerOrganization} active deployment${limits.maxDeploymentsPerCustomerOrganization > 1 ? 's' : ''} per customer`,
-    };
+    return limits.maxCustomerOrganizations === UNLIMITED_QTY
+      ? 'Unlimited customers'
+      : `Up to ${limits.maxCustomerOrganizations} customer${limits.maxCustomerOrganizations > 1 ? 's' : ''}`;
   }
 
   private getPlanLimitsObject(subscriptionType: SubscriptionType) {
@@ -277,56 +278,20 @@ export class SubscriptionComponent implements OnInit {
     return info.limits[subscriptionType];
   }
 
-  getPlanLimit(
-    subscriptionType: SubscriptionType,
-    metric: 'customerOrganizations' | 'usersPerCustomer' | 'deploymentsPerCustomer'
-  ): string | number {
+  getCustomerOrganizationsLimit(subscriptionType: SubscriptionType): string | number {
     const limits = this.getPlanLimitsObject(subscriptionType);
     if (!limits) {
       return '';
     }
-
-    switch (metric) {
-      case 'customerOrganizations':
-        return limits.maxCustomerOrganizations === UNLIMITED_QTY ? 'unlimited' : limits.maxCustomerOrganizations;
-      case 'usersPerCustomer':
-        return limits.maxUsersPerCustomerOrganization === UNLIMITED_QTY
-          ? 'unlimited'
-          : limits.maxUsersPerCustomerOrganization;
-      case 'deploymentsPerCustomer':
-        return limits.maxDeploymentsPerCustomerOrganization === UNLIMITED_QTY
-          ? 'unlimited'
-          : limits.maxDeploymentsPerCustomerOrganization;
-      default:
-        return never(metric);
-    }
+    return limits.maxCustomerOrganizations === UNLIMITED_QTY ? 'unlimited' : limits.maxCustomerOrganizations;
   }
 
-  getCurrentPlanLimit(
-    metric: 'customerOrganizations' | 'usersPerCustomer' | 'deploymentsPerCustomer'
-  ): string | number {
+  getCurrentCustomerOrganizationsLimit(): string | number {
     const info = this.subscriptionInfo();
     if (!info) {
       return '';
     }
-    return this.getPlanLimit(info.subscriptionType, metric);
-  }
-
-  getPlanDisplayName(subscriptionType: SubscriptionType): string {
-    switch (subscriptionType) {
-      case 'community':
-        return 'Distr Community Edition';
-      case 'trial':
-        return 'Distr Pro Unlimited Trial';
-      case 'pro':
-        return 'Distr Pro';
-      case 'business':
-        return 'Distr Business';
-      case 'enterprise':
-        return 'Distr Enterprise';
-      default:
-        return never(subscriptionType);
-    }
+    return this.getCustomerOrganizationsLimit(info.subscriptionType);
   }
 
   isTrialSubscription(): boolean {

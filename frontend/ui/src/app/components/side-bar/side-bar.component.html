@@ -671,33 +671,33 @@
             >
             <button
               type="button"
-              class="inline-flex p-1 w-6 h-6 text-gray-500 bg-gray-50 rounded-lg focus:ring-2 focus:ring-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+              class="inline-flex items-center justify-center p-1 w-6 h-6 text-gray-500 bg-gray-50 rounded-lg focus:ring-2 focus:ring-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
               aria-label="Close"
               (click)="feedbackAlert = false">
-              <span class="sr-only">Feedback</span>
-              <svg
-                aria-hidden="true"
-                class="w-4 h-4"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-                xmlns="http://www.w3.org/2000/svg">
-                <path
-                  fill-rule="evenodd"
-                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                  clip-rule="evenodd"></path>
-              </svg>
+              <fa-icon [icon]="faXmark" class="w-4 h-4" />
             </button>
           </div>
           <div class="mb-3 text-sm text-gray-700 dark:text-gray-300">
-            We just launched Distr v2, any feedback helps us building a better product.
+            We just released Distr v3, any feedback helps us building a better product.
           </div>
-          <a
-            href="https://cal.glasskube.com/team/founder/30min"
-            target="_blank"
-            class="inline-flex items-center text-sm font-medium text-gray-600 dark:text-gray-500 hover:underline">
-            Contact us
-            <fa-icon [icon]="faArrowRightLong" class="ml-2" />
-          </a>
+          <div class="flex flex-col gap-2">
+            <a
+              [href]="websiteUrl + '/blog/distr-v3-release/'"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center text-sm font-medium text-gray-600 dark:text-gray-500 hover:underline">
+              Read the announcement
+              <fa-icon [icon]="faArrowRightLong" class="ml-2" />
+            </a>
+            <a
+              href="https://cal.glasskube.com/team/founder/30min"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center text-sm font-medium text-gray-600 dark:text-gray-500 hover:underline">
+              Book a call
+              <fa-icon [icon]="faArrowRightLong" class="ml-2" />
+            </a>
+          </div>
         </div>
       }
 

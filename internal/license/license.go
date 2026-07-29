@@ -84,6 +84,7 @@ type LicenseData struct {
 	MaxUsersPerCustomerOrganization             limit.Limit `mapstructure:"mcu"`
 	MaxDeploymentTargetsPerCustomerOrganization limit.Limit `mapstructure:"mcd"`
 	MaxLogExportRows                            limit.Limit `mapstructure:"mlr"`
+	MaxRegistryStorageBytes                     limit.Limit `mapstructure:"mrs"`
 
 	ExpirationDate time.Time
 }
@@ -99,6 +100,7 @@ var (
 		MaxUsersPerCustomerOrganization:             limit.Unlimited,
 		MaxDeploymentTargetsPerCustomerOrganization: limit.Unlimited,
 		MaxLogExportRows:                            1_000_000,
+		MaxRegistryStorageBytes:                     limit.Unlimited,
 	}
 )
 
