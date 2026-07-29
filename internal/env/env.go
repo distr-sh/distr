@@ -652,8 +652,9 @@ func CustomDomainsConfigured() bool {
 	return customDomainAppCNAMETarget != nil
 }
 
-// InternalServerAddr is the listen address of the internal HTTP server serving the
-// Caddy on-demand TLS ask endpoint. It must never be exposed outside the cluster.
+// InternalServerAddr is the listen address of the internal HTTP server, which currently
+// serves only the Caddy on-demand TLS ask endpoint. It must never be exposed outside the
+// cluster.
 func InternalServerAddr() string {
 	return internalServerAddr
 }

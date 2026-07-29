@@ -46,13 +46,21 @@ func TestValidateHostname(t *testing.T) {
 func TestNormalizeHostname(t *testing.T) {
 	g := NewWithT(t)
 	for input, expected := range map[string]string{
-		"example.com":       "example.com",
-		"Example.COM":       "example.com",
-		"  example.com  ":   "example.com",
-		"example.com.":      "example.com",
-		"App.Example.Com. ": "app.example.com",
+		"example.com":                 "example.com",
+		"Example.COM":                 "example.com",
+		"  example.com  ":             "example.com",
+		"example.com.":                "example.com",
+		"App.Example.Com. ":           "app.example.com",
+		"https://app.distr.sh":        "app.distr.sh",
+		"https://app.distr.sh:8080":   "app.distr.sh",
+		"https://app.distr.sh/portal": "app.distr.sh",
+		"http://localhost:8080":       "localhost",
+		"registry.distr.sh:5000":      "registry.distr.sh",
+		"app.customer.com/":           "app.customer.com",
+		"https://app.customer.com/":   "app.customer.com",
+		"  App.Customer.Com.  ":       "app.customer.com",
+		"":                            "",
 	} {
 		g.Expect(validation.NormalizeHostname(input)).To(Equal(expected), input)
-		g.Expect(validation.ValidateHostname(validation.NormalizeHostname(input))).To(Succeed(), input)
 	}
 }

@@ -1,5 +1,7 @@
 ALTER TYPE FEATURE ADD VALUE IF NOT EXISTS 'custom_domains';
 
+CREATE TYPE CUSTOM_DOMAIN_TYPE AS ENUM ('app', 'registry');
+
 -- Self-service custom domains served via the Caddy deployment (on-demand TLS).
 -- The legacy OrganizationBranding.app_domain / registry_domain columns stay untouched
 -- for now and keep working as a fallback; migrating their values into this table is
@@ -11,7 +13,7 @@ CREATE TABLE CustomDomain (
   domain TEXT NOT NULL,
   -- which endpoint this domain primarily fronts. Registry rows are optional:
   -- an app domain serves registry traffic too (/v2/ path routing in Caddy).
-  domain_type TEXT NOT NULL CHECK (domain_type IN ('app', 'registry')),
+  domain_type CUSTOM_DOMAIN_TYPE NOT NULL,
   -- the vendor organization always owns and administers the domain
   organization_id UUID NOT NULL REFERENCES Organization (id) ON DELETE CASCADE,
   -- optional narrower scope: when set, the domain is dedicated to one customer or

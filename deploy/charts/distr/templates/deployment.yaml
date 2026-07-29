@@ -65,8 +65,8 @@ spec:
               containerPort: {{ .Values.service.metricsPort }}
               protocol: TCP
             {{- if .Values.caddy.enabled }}
-            - name: internal
-              containerPort: {{ .Values.caddy.internalAskPort }}
+            - name: caddy-ask
+              containerPort: {{ .Values.caddy.askServerPort }}
               protocol: TCP
             {{- end }}
           {{- with .Values.startupProbe }}
@@ -106,8 +106,8 @@ spec:
               value: {{ .Values.hub.scratch.mountPath | quote }}
             {{- end }}
             {{- if .Values.caddy.enabled }}
-            {{- /* Derived from the caddy values so the hub, the Caddyfile and the internal
-                   ask Service can not drift apart. */}}
+            {{- /* Derived from the caddy values so the hub, the Caddyfile and the caddy-ask
+                   Service cannot drift apart. */}}
             - name: CUSTOM_DOMAIN_APP_CNAME_TARGET
               value: {{ required "caddy.appCnameTarget is required when caddy.enabled is true" .Values.caddy.appCnameTarget | quote }}
             {{- with .Values.caddy.registryCnameTarget }}
@@ -115,7 +115,7 @@ spec:
               value: {{ . | quote }}
             {{- end }}
             - name: INTERNAL_SERVER_ADDR
-              value: ":{{ .Values.caddy.internalAskPort }}"
+              value: ":{{ .Values.caddy.askServerPort }}"
             {{- end }}
       {{- if or .Values.volumes .Values.hub.scratch.enabled }}
       volumes:

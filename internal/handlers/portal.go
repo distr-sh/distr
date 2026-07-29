@@ -2,15 +2,14 @@ package handlers
 
 import (
 	"context"
-	"net"
 	"net/http"
-	"strings"
 
 	"github.com/distr-sh/distr/api"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
@@ -30,7 +29,7 @@ func PublicPortalRouter(r chiopenapi.Router) {
 func getPortalHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	host := normalizeHost(r.Host)
+	host := validation.NormalizeHostname(r.Host)
 
 	var response *api.PortalResponse
 	if branding, err := resolvePortalBranding(ctx, host); err != nil {
@@ -63,13 +62,4 @@ func resolvePortalBranding(ctx context.Context, host string) (*types.Organizatio
 		return branding, nil
 	}
 	return db.GetOrganizationBrandingByAppDomain(ctx, host)
-}
-
-// normalizeHost lower-cases the host and strips a port so it can be matched against a normalized app_domain.
-func normalizeHost(host string) string {
-	host = strings.ToLower(host)
-	if h, _, err := net.SplitHostPort(host); err == nil {
-		host = h
-	}
-	return host
 }

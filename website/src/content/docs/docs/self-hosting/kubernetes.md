@@ -41,12 +41,24 @@ domain is registered, using an internal Service that must never be exposed publi
 CNAME targets is what enables the feature in the UI, so both values are required when
 `caddy.enabled` is `true`.
 
-Caddy runs as a StatefulSet with two replicas by default, each with its own volume for certificate
-storage. Replicas therefore do not share certificates and each one issues its own for a given
-domain, which keeps the deployment free of a `ReadWriteMany` volume or a custom Caddy image with a
-clustered storage module. Take this into account when raising `caddy.replicaCount`, since every
-replica counts against the ACME provider's rate limits. To share storage instead, set
-`caddy.storage` to a Caddyfile storage block and use an image that contains the matching module.
+Caddy stores the certificates it obtains on a persistent volume, which the chart keeps when the
+release is uninstalled so that a reinstall does not have to reissue a certificate for every custom
+domain.
+
+The default is a single replica, because Caddy instances form a cluster only when they use the same
+storage. Sharing storage is what lets them coordinate issuance, share certificates and solve each
+other's ACME challenges — and the last part is not optional behind a load balancer, which routes the
+certificate authority's validation request to an arbitrary replica. To run more than one replica,
+give all of them the same storage in one of two ways:
+
+- Set `caddy.persistence.accessModes` to `[ReadWriteMany]` with a storage class that supports it
+  (EFS, Filestore, Azure Files, CephFS, …), or point `caddy.persistence.existingClaim` at such a
+  claim.
+- Set `caddy.storage` to a Caddyfile storage block for a distributed backend (Redis, Consul, …) and
+  `caddy.image.repository` to an image built with that storage module, since Caddy has no runtime
+  plugins.
+
+The chart refuses to render a `caddy.replicaCount` above 1 without either of them.
 
 ## Log processing (Loki)
 

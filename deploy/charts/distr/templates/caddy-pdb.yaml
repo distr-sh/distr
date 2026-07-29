@@ -3,8 +3,7 @@
 {{- fail "caddy.podDisruptionBudget: set either minAvailable or maxUnavailable, not both" }}
 {{- end }}
 {{- /* Caddy terminates TLS for every custom domain, so a node drain must not take down all
-replicas at once: they are interchangeable, but each one holds its own certificate storage
-and a domain is unreachable while no replica is left to serve it. */}}
+replicas at once: every custom domain is unreachable while no replica is left to serve it. */}}
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:

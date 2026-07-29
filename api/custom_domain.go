@@ -12,8 +12,8 @@ type CreateCustomDomainRequest struct {
 	DomainType types.DomainType `json:"domainType"`
 }
 
-// Normalize lower-cases the domain and strips surrounding whitespace and a trailing dot,
-// so it can be validated and stored as a bare hostname.
+// Normalize reduces the domain to the bare hostname it is validated and stored as, so that a
+// value pasted as a URL is accepted as well.
 func (r *CreateCustomDomainRequest) Normalize() {
 	r.Domain = validation.NormalizeHostname(r.Domain)
 }

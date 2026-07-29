@@ -1,10 +1,21 @@
 {{- if .Values.caddy.enabled }}
-{{- /* A StatefulSet, because every replica keeps its own certificate storage: Caddy instances
-form a cluster only when they share storage, which would require a ReadWriteMany volume or a
-storage module compiled into a custom image. Independent per-replica storage is preferred here,
-at the cost of one ACME issuance per replica and domain. */}}
+{{- $sharedVolume := and .Values.caddy.persistence.enabled (has "ReadWriteMany" .Values.caddy.persistence.accessModes) }}
+{{- if gt (int .Values.caddy.replicaCount) 1 }}
+{{- if .Values.caddy.persistence.enabled }}
+{{- if not $sharedVolume }}
+{{- fail "caddy.replicaCount > 1 requires certificate storage that all replicas share: add ReadWriteMany to caddy.persistence.accessModes and use a storage class that supports it, or configure caddy.storage" }}
+{{- end }}
+{{- else if not .Values.caddy.storage }}
+{{- fail "caddy.replicaCount > 1 without persistence requires caddy.storage to point at a storage module shared by all replicas" }}
+{{- end }}
+{{- end }}
+{{- /* Caddy instances act as a cluster - coordinating ACME issuance, sharing certificates and
+solving each other's challenges - only when they use the same storage. A challenge is validated
+through the LoadBalancer, which hands it to an arbitrary replica, so replicas with separate
+storage would fail to obtain certificates. All replicas therefore mount the same volume, and the
+checks above reject configurations in which they cannot. */}}
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: {{ include "distr.fullname" . }}-caddy
   labels:
@@ -12,10 +23,13 @@ metadata:
     app.kubernetes.io/component: caddy
 spec:
   replicas: {{ .Values.caddy.replicaCount }}
-  serviceName: {{ include "distr.fullname" . }}-caddy-headless
-  # Certificates are per-replica anyway, so there is no reason to start or update the pods
-  # one after another.
-  podManagementPolicy: Parallel
+  strategy:
+    {{- if and .Values.caddy.persistence.enabled (not $sharedVolume) }}
+    # A ReadWriteOnce volume cannot be mounted by the outgoing and the incoming pod at the same time.
+    type: Recreate
+    {{- else }}
+    type: RollingUpdate
+    {{- end }}
   selector:
     matchLabels:
       {{- include "distr.selectorLabels" . | nindent 6 }}
@@ -61,21 +75,13 @@ spec:
         - name: caddyfile
           configMap:
             name: {{ include "distr.fullname" . }}-caddy
+        - name: data
+          {{- if .Values.caddy.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.caddy.persistence.existingClaim | default (printf "%s-caddy" (include "distr.fullname" .)) }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
         - name: config
           emptyDir: {}
-  volumeClaimTemplates:
-    - metadata:
-        name: data
-        labels:
-          {{- include "distr.labels" . | nindent 10 }}
-          app.kubernetes.io/component: caddy
-      spec:
-        accessModes:
-          {{- toYaml .Values.caddy.persistence.accessModes | nindent 10 }}
-        {{- with .Values.caddy.persistence.storageClassName }}
-        storageClassName: {{ . | quote }}
-        {{- end }}
-        resources:
-          requests:
-            storage: {{ .Values.caddy.persistence.size | quote }}
 {{- end }}

@@ -372,7 +372,7 @@ cronJobs:
       distr.sh/job: registry-upstream-sync
     args: [maintenance, sync-artifacts-upstream, --timeout, 10m]
 
-# Plain Caddy StatefulSet for automated custom domain configuration: vendors bring their
+# Plain Caddy deployment for automated custom domain configuration: vendors bring their
 # own domain via a CNAME record pointing at this Caddy's LoadBalancer. Caddy issues
 # certificates on demand (on the first TLS handshake), authorized per domain by the hub's
 # internal caddy-ask endpoint, and routes /v2/* to the registry and everything else to the
@@ -388,10 +388,12 @@ caddy:
   # passed to the hub as CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET. Usually the same LoadBalancer.
   # Falls back to appCnameTarget when unset.
   registryCnameTarget: ''
-  # -- Number of Caddy replicas. Every replica keeps its own certificate storage, so every replica
-  # issues and renews its own certificate per custom domain. That is intentional (no shared storage
-  # required), but it means the ACME issuance volume scales with the replica count.
-  replicaCount: 2
+  # -- Number of Caddy replicas. Anything above 1 requires certificate storage that all replicas
+  # share, either a `ReadWriteMany` volume (see `caddy.persistence.accessModes`) or a `caddy.storage`
+  # module: Caddy instances coordinate certificate issuance and solve each other's ACME challenges
+  # only when they use the same storage, and the load balancer routes a challenge to an arbitrary
+  # replica. The chart refuses to render otherwise.
+  replicaCount: 1
   image:
     # -- Caddy image repository. Only change this for a custom build, e.g. one that includes a
     # storage module for `caddy.storage`.
@@ -408,10 +410,10 @@ caddy:
   # -- Certificate issuer for custom domains: `acme` (public certificates) or `internal` (Caddy's
   # own CA, for local testing or environments with a private trust store).
   issuer: acme
-  # -- Advanced: a Caddyfile global `storage` directive to share certificate storage between replicas,
-  # so they issue certificates only once, as a cluster. Requires a Caddy image built with the
-  # corresponding storage module, because Caddy has no runtime plugins. The per-replica volumes are
-  # then unused.
+  # -- Advanced: a Caddyfile global `storage` directive, as an alternative to the volume for
+  # clusters without a `ReadWriteMany` storage class. Requires a Caddy image built with the
+  # corresponding storage module, because Caddy has no runtime plugins. Set
+  # `caddy.persistence.enabled` to false when the module keeps the certificates.
   storage: ''
   # storage: |
   #   storage redis {
@@ -429,12 +431,19 @@ caddy:
     # `maxUnavailable`.
     minAvailable: ''
   persistence:
-    # -- Size of the certificate storage volume provisioned for each replica.
+    # -- Keep the certificates on a volume. It is kept when the release is uninstalled, so that a
+    # reinstall does not reissue a certificate for every custom domain. Disable this only when
+    # `caddy.storage` stores the certificates elsewhere.
+    enabled: true
+    # -- Use an existing PersistentVolumeClaim instead of the one created by the chart, for example
+    # a preprovisioned NFS or EFS claim.
+    existingClaim: ''
+    # -- Size of the certificate storage volume.
     size: 1Gi
-    # -- Storage class of the certificate storage volumes. Empty means the cluster default.
+    # -- Storage class of the certificate storage volume. Empty means the cluster default.
     storageClassName: ''
-    # -- Access modes of the certificate storage volumes. Each volume is mounted by exactly one
-    # replica, so ReadWriteOnce is sufficient.
+    # -- Access modes of the certificate storage volume. All replicas mount the same volume, so
+    # `caddy.replicaCount` above 1 needs ReadWriteMany and a storage class that provides it.
     accessModes:
       - ReadWriteOnce
   service:
@@ -446,9 +455,9 @@ caddy:
       # service.beta.kubernetes.io/aws-load-balancer-type: external
       # service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
       # service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
-  # -- Port of the hub's internal server exposed to Caddy for the on-demand TLS ask endpoint. It is
-  # passed to the hub as INTERNAL_SERVER_ADDR and must never be exposed publicly.
-  internalAskPort: 8085
+  # -- Port Caddy reaches the hub's on-demand TLS ask endpoint on. It is passed to the hub as
+  # INTERNAL_SERVER_ADDR, the address of its internal server, and must never be exposed publicly.
+  askServerPort: 8085
   # -- Resource requests and limits of the Caddy container.
   resources: {}
 

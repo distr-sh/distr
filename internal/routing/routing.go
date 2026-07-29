@@ -231,9 +231,9 @@ func InternalRouter() http.Handler {
 	return router
 }
 
-// InternalCaddyAskRouter serves the Caddy on-demand TLS ask endpoint on the internal HTTP
-// server (see env.InternalServerAddr()), which must never be exposed outside the cluster.
-func InternalCaddyAskRouter(logger *zap.Logger, db *pgxpool.Pool) http.Handler {
+// CaddyAskRouter serves the Caddy on-demand TLS ask endpoint on the internal HTTP server
+// (see env.InternalServerAddr()), which must never be exposed outside the cluster.
+func CaddyAskRouter(logger *zap.Logger, db *pgxpool.Pool) http.Handler {
 	router := chi.NewRouter()
 	router.Use(
 		chimiddleware.Recoverer,

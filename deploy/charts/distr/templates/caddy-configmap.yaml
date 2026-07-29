@@ -24,7 +24,7 @@ data:
     		# Authorizes certificate issuance per domain; the hub returns 200 only for
     		# registered custom domains. Served by the cluster-internal ask Service,
     		# never exposed publicly.
-    		ask http://{{ include "distr.fullname" . }}-internal-caddy-ask:{{ .Values.caddy.internalAskPort }}/internal/webhook/tls/ask
+    		ask http://{{ include "distr.fullname" . }}-internal-caddy-ask:{{ .Values.caddy.askServerPort }}/internal/webhook/tls/ask
     	}
     }
 

@@ -3,9 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
-	"net"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/distr-sh/distr/api"
@@ -16,6 +14,7 @@ import (
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -142,7 +141,7 @@ func legacyDomainOwnedByOtherOrg(ctx context.Context, domain string, orgID uuid.
 			continue
 		}
 		for _, legacyDomain := range []*string{legacy.AppDomain, legacy.RegistryDomain} {
-			if legacyDomain != nil && normalizeLegacyDomain(*legacyDomain) == domain {
+			if legacyDomain != nil && validation.NormalizeHostname(*legacyDomain) == domain {
 				return true, nil
 			}
 		}
@@ -150,46 +149,25 @@ func legacyDomainOwnedByOtherOrg(ctx context.Context, domain string, orgID uuid.
 	return false, nil
 }
 
-// normalizeLegacyDomain normalizes a legacy branding domain value to a bare lowercase hostname
-// (no scheme, port, trailing slash or trailing dot) so it can be compared against a normalized
-// self-service custom domain.
-func normalizeLegacyDomain(domain string) string {
-	domain = strings.ToLower(strings.TrimSpace(domain))
-	domain = strings.TrimSuffix(domain, "/")
-	return strings.TrimSuffix(hostnameOf(domain), ".")
-}
-
 // isPlatformOwnedDomain reports whether the given normalized domain is owned by the platform
 // and must therefore not be registrable as a custom domain: distr.sh (and subdomains), the
 // instance's own app and registry hosts, and the CNAME target hosts.
 func isPlatformOwnedDomain(domain string) bool {
-	platformHosts := []string{"distr.sh", hostnameOf(env.Host()), hostnameOf(env.RegistryHost())}
+	platformHosts := []string{
+		"distr.sh",
+		validation.NormalizeHostname(env.Host()),
+		validation.NormalizeHostname(env.RegistryHost()),
+	}
 	if target := env.CustomDomainAppCNAMETarget(); target != nil {
-		platformHosts = append(platformHosts, *target)
+		platformHosts = append(platformHosts, validation.NormalizeHostname(*target))
 	}
 	if target := env.CustomDomainRegistryCNAMETarget(); target != nil {
-		platformHosts = append(platformHosts, *target)
+		platformHosts = append(platformHosts, validation.NormalizeHostname(*target))
 	}
 	for _, host := range platformHosts {
-		host = strings.ToLower(host)
 		if host != "" && (domain == host || strings.HasSuffix(domain, "."+host)) {
 			return true
 		}
 	}
 	return false
-}
-
-// hostnameOf extracts the bare hostname from a host value that may contain a scheme and/or
-// port (env.Host() is a base URL like "https://app.distr.sh", env.RegistryHost() may carry
-// a port in development setups).
-func hostnameOf(host string) string {
-	if strings.Contains(host, "://") {
-		if u, err := url.Parse(host); err == nil && u.Host != "" {
-			return u.Hostname()
-		}
-	}
-	if h, _, err := net.SplitHostPort(host); err == nil {
-		return h
-	}
-	return host
 }

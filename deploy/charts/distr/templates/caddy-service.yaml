@@ -24,25 +24,4 @@ spec:
   selector:
     {{- include "distr.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: caddy
----
-{{- /* Governing Service of the Caddy StatefulSet. It only provides stable pod DNS names and is
-never used to reach Caddy: public traffic goes through the LoadBalancer Service above. */}}
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ include "distr.fullname" . }}-caddy-headless
-  labels:
-    {{- include "distr.labels" . | nindent 4 }}
-    app.kubernetes.io/component: caddy
-spec:
-  type: ClusterIP
-  clusterIP: None
-  ports:
-    - port: 443
-      targetPort: https
-      protocol: TCP
-      name: https
-  selector:
-    {{- include "distr.selectorLabels" . | nindent 4 }}
-    app.kubernetes.io/component: caddy
 {{- end }}
