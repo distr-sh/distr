@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -26,10 +25,8 @@ func getDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 		ctx := r.Context()
 		deploymentTarget := internalctx.GetDeploymentTarget(ctx)
 
-		limitParam, err := QueryParam(r, "limit", strconv.Atoi, Min(1), Max(100))
-		if errors.Is(err, ErrParamNotDefined) {
-			limitParam = 25
-		} else if err != nil {
+		limitParam, err := parseTimeseriesLimit(r)
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -88,9 +85,10 @@ func exportDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 		}
 
 		filename := fmt.Sprintf("%s_agent.log", time.Now().Format("2006-01-02"))
+		export := newExportWriter(w, log, filename)
 
 		if queryRange.IsEmpty() {
-			SetFileDownloadHeaders(w, filename)
+			export.finish()
 			return
 		}
 
@@ -103,38 +101,18 @@ func exportDeploymentTargetLogRecordsHandler() http.HandlerFunc {
 			Limit:              subscription.MaxLogExportRows,
 			Direction:          types.OrderDirectionDesc,
 		})
-
-		// The download headers are only set right before the first write, so an error
-		// response can still be sent as long as nothing has been written yet.
-		written := false
-		count := int64(0)
 		for record, err := range records {
 			if err != nil {
-				log.Error("failed to export deployment target log records", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				if !written {
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				} else {
-					_, _ = w.Write([]byte(exportTruncationNotice))
-				}
+				export.fail(ctx, "failed to export deployment target log records", err)
 				return
 			}
-			if !written {
-				SetFileDownloadHeaders(w, filename)
-				written = true
-			}
-			_, err := fmt.Fprintf(w, "%s\t%s\t%s\n",
-				record.Timestamp.Format(time.RFC3339), record.Severity, strings.TrimSpace(record.Body))
-			if err != nil {
-				log.Error("failed to write deployment target log records to response writer", zap.Error(err))
+			if err := export.writeLine("%s\t%s\t%s\n",
+				record.Timestamp.Format(time.RFC3339),
+				record.Severity,
+				strings.TrimSpace(record.Body)); err != nil {
 				return
 			}
-			count++
 		}
-		if !written {
-			SetFileDownloadHeaders(w, filename)
-		} else if subscription.MaxLogExportRows.IsReached(count) {
-			_, _ = w.Write([]byte(exportLimitNotice))
-		}
+		export.finish()
 	}
 }

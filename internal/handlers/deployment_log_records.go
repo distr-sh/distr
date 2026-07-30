@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -24,21 +23,6 @@ import (
 )
 
 const latestRevisionsForActiveResources = 5
-
-// exportTruncationNotice is appended to a log export when streaming fails midway: the
-// response status has already been sent at that point, so the client would otherwise
-// receive a silently truncated file.
-const exportTruncationNotice = `
-##################################################
-export possibly truncated due to an internal error
-`
-
-// exportLimitNotice is appended to a log export that hit [subscription.MaxLogExportRows],
-// so the truncation is visible in the downloaded file.
-var exportLimitNotice = fmt.Sprintf(`
-##################################################
-export truncated at the limit of %d lines, select a smaller time range to export all lines
-`, subscription.MaxLogExportRows)
 
 func getDeploymentLogsResourcesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -97,21 +81,22 @@ func exportDeploymentLogsHandler() http.HandlerFunc {
 
 		var secrets []types.SecretWithUpdatedBy
 		if dt, err := db.GetDeploymentTargetForDeploymentID(ctx, deployment.ID); err != nil {
-			internalctx.GetLogger(ctx).Error("failed to get deployment target", zap.Error(err))
+			log.Error("failed to get deployment target", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		} else if secrets, err = db.GetSecretsForDeploymentTarget(ctx, dt.DeploymentTarget); err != nil {
-			internalctx.GetLogger(ctx).Error("failed to get secrets", zap.Error(err))
+			log.Error("failed to get secrets", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 
 		replacer := secretReplacer(secrets)
+		export := newExportWriter(w, log, filename)
 
 		if queryRange.IsEmpty() {
-			SetFileDownloadHeaders(w, filename)
+			export.finish()
 			return
 		}
 
@@ -125,40 +110,19 @@ func exportDeploymentLogsHandler() http.HandlerFunc {
 			Limit:        subscription.MaxLogExportRows,
 			Direction:    types.OrderDirectionDesc,
 		})
-		// The download headers are only set right before the first write, so an error
-		// response can still be sent as long as nothing has been written yet.
-		written := false
-		count := int64(0)
 		for record, err := range records {
 			if err != nil {
-				log.Error("failed to export log records", zap.Error(err))
-				sentry.GetHubFromContext(ctx).CaptureException(err)
-				if !written {
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				} else {
-					_, _ = w.Write([]byte(exportTruncationNotice))
-				}
+				export.fail(ctx, "failed to export log records", err)
 				return
 			}
-			if !written {
-				SetFileDownloadHeaders(w, filename)
-				written = true
-			}
-			_, err := fmt.Fprintf(w, "[%s] [%s] %s\n",
+			if err := export.writeLine("[%s] [%s] %s\n",
 				record.Timestamp.Format(time.RFC3339),
 				record.Severity,
-				replacer.Replace(record.Body))
-			if err != nil {
-				log.Error("failed to write log records to response writer", zap.Error(err))
+				replacer.Replace(record.Body)); err != nil {
 				return
 			}
-			count++
 		}
-		if !written {
-			SetFileDownloadHeaders(w, filename)
-		} else if subscription.MaxLogExportRows.IsReached(count) {
-			_, _ = w.Write([]byte(exportLimitNotice))
-		}
+		export.finish()
 	}
 }
 
@@ -171,10 +135,8 @@ func getDeploymentLogsHandler() http.HandlerFunc {
 			http.Error(w, "query parameter resource is required", http.StatusBadRequest)
 			return
 		}
-		limitParam, err := QueryParam(r, "limit", strconv.Atoi, Min(1), Max(100))
-		if errors.Is(err, ErrParamNotDefined) {
-			limitParam = 25
-		} else if err != nil {
+		limitParam, err := parseTimeseriesLimit(r)
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}

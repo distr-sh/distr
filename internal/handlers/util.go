@@ -7,6 +7,7 @@ import (
 	"html"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/distr-sh/distr/internal/contenttype"
@@ -38,6 +39,21 @@ type timeseriesRange struct {
 	After time.Time
 	// Filter is an optional RE2 filter on the record body, already validated.
 	Filter string
+}
+
+// defaultTimeseriesLimit is the page size used when a timeseries read does not request one.
+const defaultTimeseriesLimit = 25
+
+// parseTimeseriesLimit parses the limit query parameter of a timeseries read. All returned
+// errors are caused by invalid client input and should be answered with status 400.
+func parseTimeseriesLimit(r *http.Request) (int, error) {
+	limit, err := QueryParam(r, "limit", strconv.Atoi, Min(1), Max(100))
+	if errors.Is(err, ErrParamNotDefined) {
+		return defaultTimeseriesLimit, nil
+	} else if err != nil {
+		return 0, err
+	}
+	return limit, nil
 }
 
 // parseTimeseriesRange parses and validates the before, after and filter query parameters.
