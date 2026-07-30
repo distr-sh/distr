@@ -206,7 +206,7 @@
             }
           </div>
 
-          @if (!auth.isCustomer()) {
+          @if (auth.isVendor()) {
             <app-activity-timeline
               [entries]="timelineEntries()"
               emptyText="No activity yet."

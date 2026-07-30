@@ -185,15 +185,21 @@ export class AdvisoryFormComponent {
   protected async toggleArtifact(artifactId: string): Promise<void> {
     const next = this.expandedArtifactId() === artifactId ? null : artifactId;
     this.expandedArtifactId.set(next);
+    if (next !== null) {
+      await this.loadArtifactVersions(next);
+    }
+  }
+
+  private async loadArtifactVersions(artifactId: string): Promise<void> {
     // A present key means "loaded", which is what distinguishes an artifact without any
     // versions from one whose versions are still on their way.
-    if (next === null || this.artifactVersions()[next] || this.isLoadingArtifactVersions(next)) {
+    if (this.artifactVersions()[artifactId] || this.isLoadingArtifactVersions(artifactId)) {
       return;
     }
-    this.loadingArtifactIds.update((ids) => new Set(ids).add(next));
+    this.loadingArtifactIds.update((ids) => new Set(ids).add(artifactId));
     try {
-      const artifact = await firstValueFrom(this.artifactsService.getByIdAndCache(next));
-      this.artifactVersions.update((versions) => ({...versions, [next]: artifact?.versions ?? []}));
+      const artifact = await firstValueFrom(this.artifactsService.getByIdAndCache(artifactId));
+      this.artifactVersions.update((versions) => ({...versions, [artifactId]: artifact?.versions ?? []}));
     } catch (e) {
       // Leave the key absent so that reopening the accordion retries.
       const message = getFormDisplayedError(e);
@@ -203,7 +209,7 @@ export class AdvisoryFormComponent {
     } finally {
       this.loadingArtifactIds.update((ids) => {
         const remaining = new Set(ids);
-        remaining.delete(next);
+        remaining.delete(artifactId);
         return remaining;
       });
     }
@@ -302,6 +308,11 @@ export class AdvisoryFormComponent {
     this.expandedApplicationId.set(draft.expandedApplicationId);
     this.expandedArtifactId.set(draft.expandedArtifactId);
     this.versionsTab.set(draft.versionsTab);
+    // Expansion state alone does not trigger the lazy version load that toggleArtifact does,
+    // so a restored draft with an expanded artifact must fetch its versions explicitly.
+    if (draft.expandedArtifactId !== null) {
+      void this.loadArtifactVersions(draft.expandedArtifactId);
+    }
   }
 
   private emitDraft(): void {

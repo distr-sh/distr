@@ -143,6 +143,7 @@ export class AdvisoryListComponent {
         advisory.title.toLowerCase().includes(query) ||
         (advisory.cveId ?? '').toLowerCase().includes(query) ||
         advisory.status.includes(query) ||
+        this.statusDisplayLabel(advisory.status).toLowerCase().includes(query) ||
         advisory.severity.includes(query) ||
         advisory.tags.some((tag) => tag.toLowerCase().includes(query))
       );
@@ -163,6 +164,15 @@ export class AdvisoryListComponent {
 
   protected async changeStatus(advisory: Advisory, status: AdvisoryStatus): Promise<void> {
     if (this.changingStatusFor()) {
+      return;
+    }
+
+    // Publishing without an affected version leaves the advisory invisible to customers, so
+    // block it here to match the disclosure rule enforced by advisory.IsVisibleToCustomer.
+    if (status === 'published' && advisory.affectedVersionCount === 0) {
+      this.toast.error(
+        'Add at least one affected version before publishing, otherwise customers cannot see this advisory.'
+      );
       return;
     }
 

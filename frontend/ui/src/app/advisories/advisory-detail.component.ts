@@ -217,6 +217,14 @@ export class AdvisoryDetailComponent {
     if (!advisory) {
       return;
     }
+    // Publishing without an affected version leaves the advisory invisible to customers, so
+    // block it here to match the disclosure rule enforced by advisory.IsVisibleToCustomer.
+    if (status === 'published' && advisory.affectedVersionCount === 0) {
+      this.toast.error(
+        'Add at least one affected version before publishing, otherwise customers cannot see this advisory.'
+      );
+      return;
+    }
     let comment: string | undefined;
     if (status === 'resolved') {
       const result = await firstValueFrom(
