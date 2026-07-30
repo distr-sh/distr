@@ -365,6 +365,15 @@ func updateAdvisoryStatusHandler() http.HandlerFunc {
 			return
 		}
 
+		// Canceling means the advisory was never disclosed. Once published_at is set the
+		// advisory has been visible to customers at some point (even after unpublishing back to
+		// draft), so it can only be unpublished or resolved, never canceled.
+		if status == types.AdvisoryStatusCanceled && existing.PublishedAt != nil {
+			http.Error(w, "cannot cancel an advisory that has already been published",
+				http.StatusBadRequest)
+			return
+		}
+
 		message := fmt.Sprintf("changed status from %v to %v", existing.Status, status)
 		err = db.RunTxRR(ctx, func(ctx context.Context) error {
 			if err := db.UpdateAdvisoryStatus(
