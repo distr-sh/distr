@@ -69,9 +69,7 @@
                 <tr>
                   <th scope="col" class="p-4">Title</th>
                   <th scope="col" class="p-4">Severity</th>
-                  @if (!auth.isCustomer()) {
-                    <th scope="col" class="p-4">Status</th>
-                  }
+                  <th scope="col" class="p-4">Status</th>
                   <th scope="col" class="p-4">CVE</th>
                   <th scope="col" class="p-4">Tags</th>
                   <th scope="col" class="p-4">Affected Versions</th>
@@ -96,13 +94,11 @@
                         {{ advisory.severity }}
                       </span>
                     </td>
-                    @if (!auth.isCustomer()) {
-                      <td class="px-4 py-3">
-                        <span class="distr-badge capitalize" [ngClass]="statusBadgeClass(advisory.status)">
-                          {{ advisory.status }}
-                        </span>
-                      </td>
-                    }
+                    <td class="px-4 py-3">
+                      <span class="distr-badge" [ngClass]="statusBadgeClass(advisory.status)">
+                        {{ statusDisplayLabel(advisory.status) }}
+                      </span>
+                    </td>
                     <td class="px-4 py-3 font-mono text-xs">{{ advisory.cveId || '-' }}</td>
                     <td class="px-4 py-3">
                       <div class="flex flex-wrap gap-1">

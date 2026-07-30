@@ -2,6 +2,13 @@ import {AsyncPipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, input} from '@angular/core';
 import {SecureImagePipe} from '../../util/secureImage';
 
+/**
+ * A user's profile image, falling back to their initials.
+ *
+ * Both renderings fill the host, so the caller must give it a size (`class="size-8"`).
+ * Without one the host collapses onto its content: an uploaded image renders at its
+ * natural resolution, and the initials lose their circle.
+ */
 @Component({
   selector: 'app-user-avatar',
   changeDetection: ChangeDetectionStrategy.Eager,

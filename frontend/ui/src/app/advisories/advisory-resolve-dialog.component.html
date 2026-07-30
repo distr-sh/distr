@@ -1,0 +1,56 @@
+@if (!isClosing()) {
+  <div
+    class="relative p-4 w-full max-w-2xl max-h-full lg:mt-32"
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top"
+    (animationend)="animationComplete()">
+    <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
+      <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Resolve Advisory</h3>
+        <button
+          type="button"
+          class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+          (click)="dialogRef.dismiss()">
+          <fa-icon [icon]="faXmark" />
+          <span class="sr-only">Close modal</span>
+        </button>
+      </div>
+
+      <div class="p-4 md:p-5 space-y-4">
+        <p class="text-base leading-relaxed text-gray-500 dark:text-gray-200">
+          Resolving records that a fix has shipped. The advisory stays visible to customers so they can confirm they are
+          covered.
+        </p>
+        <div>
+          <label for="resolveComment" class="distr-label mb-2">Note (optional)</label>
+          <textarea
+            id="resolveComment"
+            rows="4"
+            [formControl]="comment"
+            class="distr-input"
+            placeholder="What was fixed, and in which release?"></textarea>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Added to the timeline, which is only visible to your team.
+          </p>
+        </div>
+      </div>
+
+      <div
+        class="flex items-center justify-end p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600 gap-2">
+        <button type="button" (click)="dialogRef.dismiss()" class="py-2.5 px-5 text-sm font-medium distr-btn-secondary">
+          Cancel
+        </button>
+        <button type="button" (click)="resolve()" class="py-2.5 px-5 text-sm font-medium distr-btn-secondary">
+          Resolve
+        </button>
+        <button
+          type="button"
+          (click)="resolveWithComment()"
+          [disabled]="!hasComment()"
+          class="text-white distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
+          Resolve with comment
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -54,9 +54,8 @@ func AdvisoriesRouter(r chiopenapi.Router) {
 			// Deliberately not served from the read-only database: the detail view
 			// refetches impact right after a status or version change, and replica lag
 			// would show the state from before the edit.
-			r.With(middleware.RequireVendorOrPartner).
-				Get("/impact", getAdvisoryImpactHandler()).
-				With(option.Description("Get the customers affected by this advisory")).
+			r.Get("/impact", getAdvisoryImpactHandler()).
+				With(option.Description("Get the deployments and downloads affected by this advisory")).
 				With(option.Request(api.AdvisoryIDRequest{})).
 				With(option.Response(http.StatusOK, api.AdvisoryImpact{}))
 
@@ -432,8 +431,14 @@ func getAdvisoryImpactHandler() http.HandlerFunc {
 		log := internalctx.GetLogger(ctx)
 		a := auth.Authentication.Require(ctx)
 
-		deployments, err := db.GetAdvisoryImpactedDeployments(
-			ctx, advisory.ID, advisory.OrganizationID, a.CurrentPartnerOrgID())
+		// Customers reach this endpoint too, to see whether their own deployments still run an
+		// affected version. The scope keeps every other customer's rows out of the response.
+		scope := db.AdvisoryImpactScope{
+			PartnerOrgID:  a.CurrentPartnerOrgID(),
+			CustomerOrgID: a.CurrentCustomerOrgID(),
+		}
+
+		deployments, err := db.GetAdvisoryImpactedDeployments(ctx, advisory.ID, advisory.OrganizationID, scope)
 		if err != nil {
 			log.Error("failed to get advisory impacted deployments", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -441,8 +446,7 @@ func getAdvisoryImpactHandler() http.HandlerFunc {
 			return
 		}
 
-		pulls, err := db.GetAdvisoryImpactedPulls(
-			ctx, advisory.ID, advisory.OrganizationID, a.CurrentPartnerOrgID())
+		pulls, err := db.GetAdvisoryImpactedPulls(ctx, advisory.ID, advisory.OrganizationID, scope)
 		if err != nil {
 			log.Error("failed to get advisory impacted pulls", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)

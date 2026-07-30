@@ -674,17 +674,24 @@ func CreateAdvisoryCommentEvent(
 
 // Impact
 
+// AdvisoryImpactScope narrows an impact query to the rows its caller may see. A vendor
+// leaves both fields nil and sees the whole organization, a partner sees the customers
+// assigned to it, and a customer sees only its own rows.
+type AdvisoryImpactScope struct {
+	PartnerOrgID  *uuid.UUID
+	CustomerOrgID *uuid.UUID
+}
+
 // GetAdvisoryImpactedDeployments returns one row per deployment that has ever run an
 // application version this advisory affects, classified by the version its current
-// revision runs: still affected, patched, or moved onto a version marked neither.
+// revision runs: still affected, fixed, or moved onto a version marked neither.
 //
 // Each row also carries the most recent affected version the deployment ran and when, so
 // that the exposure window stays visible for deployments that have since moved on.
 func GetAdvisoryImpactedDeployments(
-	ctx context.Context, advisoryID, orgID uuid.UUID, partnerOrgID *uuid.UUID,
+	ctx context.Context, advisoryID, orgID uuid.UUID, scope AdvisoryImpactScope,
 ) ([]types.AdvisoryImpactedDeployment, error) {
 	db := internalctx.GetDb(ctx)
-	isVendor := partnerOrgID == nil
 	rows, err := db.Query(
 		ctx,
 		// marked holds both relations, because the state of a deployment depends on whether the
@@ -728,7 +735,7 @@ func GetAdvisoryImpactedDeployments(
 						THEN 'affected'
 					WHEN cr.application_version_id IN (
 						SELECT application_version_id FROM marked WHERE relation = 'fixed')
-						THEN 'patched'
+						THEN 'fixed'
 					ELSE 'not_affected'
 				END AS state,
 				i.last_deployed_at
@@ -741,7 +748,8 @@ func GetAdvisoryImpactedDeployments(
 				JOIN ApplicationVersion current_av ON current_av.id = cr.application_version_id
 				LEFT JOIN CustomerOrganization co ON co.id = dt.customer_organization_id
 			WHERE dt.organization_id = @orgId
-				AND (@isVendor OR co.partner_organization_id = @partnerOrgId)
+				AND (@partnerOrgId::uuid IS NULL OR co.partner_organization_id = @partnerOrgId)
+				AND (@customerOrgId::uuid IS NULL OR dt.customer_organization_id = @customerOrgId)
 		)
 		SELECT * FROM classified
 		ORDER BY
@@ -749,10 +757,10 @@ func GetAdvisoryImpactedDeployments(
 			customer_organization_name NULLS LAST,
 			deployment_target_name`,
 		pgx.NamedArgs{
-			"id":           advisoryID,
-			"orgId":        orgID,
-			"isVendor":     isVendor,
-			"partnerOrgId": partnerOrgID,
+			"id":            advisoryID,
+			"orgId":         orgID,
+			"partnerOrgId":  scope.PartnerOrgID,
+			"customerOrgId": scope.CustomerOrgID,
 		},
 	)
 	if err != nil {
@@ -775,10 +783,9 @@ func GetAdvisoryImpactedDeployments(
 // never backfilled, so older pulls are attributed through the pulling user's customer
 // organization membership instead.
 func GetAdvisoryImpactedPulls(
-	ctx context.Context, advisoryID, orgID uuid.UUID, partnerOrgID *uuid.UUID,
+	ctx context.Context, advisoryID, orgID uuid.UUID, scope AdvisoryImpactScope,
 ) ([]types.AdvisoryImpactedPull, error) {
 	db := internalctx.GetDb(ctx)
-	isVendor := partnerOrgID == nil
 	rows, err := db.Query(
 		ctx,
 		`WITH affected AS (
@@ -813,15 +820,17 @@ func GetAdvisoryImpactedPulls(
 			LEFT JOIN CustomerOrganization co
 				ON co.id = coalesce(avpl.customer_organization_id, oua.customer_organization_id)
 		WHERE a.organization_id = @orgId
-			AND (@isVendor OR co.partner_organization_id = @partnerOrgId)
+			AND (@partnerOrgId::uuid IS NULL OR co.partner_organization_id = @partnerOrgId)
+			AND (@customerOrgId::uuid IS NULL
+				OR coalesce(avpl.customer_organization_id, oua.customer_organization_id) = @customerOrgId)
 		GROUP BY coalesce(avpl.customer_organization_id, oua.customer_organization_id),
 			co.name, a.id, a.name, av.id, av.name
 		ORDER BY co.name NULLS LAST, a.name, av.name`,
 		pgx.NamedArgs{
-			"id":           advisoryID,
-			"orgId":        orgID,
-			"isVendor":     isVendor,
-			"partnerOrgId": partnerOrgID,
+			"id":            advisoryID,
+			"orgId":         orgID,
+			"partnerOrgId":  scope.PartnerOrgID,
+			"customerOrgId": scope.CustomerOrgID,
 		},
 	)
 	if err != nil {

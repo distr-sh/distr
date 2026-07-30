@@ -18,6 +18,7 @@ import {Advisory, AdvisorySeverity, AdvisoryStatus} from '../types/advisory';
 import {
   advisorySeverities,
   advisoryStatuses,
+  customerStatusLabel,
   defaultAdvisoryStatusFilter,
   quickStatusTransitionsFor,
   severityBadgeClass,
@@ -28,6 +29,7 @@ import {
   statusLabel,
 } from './advisory-display';
 import {AdvisoryFormComponent, AdvisoryFormDraft} from './advisory-form.component';
+import {AdvisoryResolveDialogComponent, AdvisoryResolveResult} from './advisory-resolve-dialog.component';
 
 @Component({
   selector: 'app-advisory-list',
@@ -56,6 +58,7 @@ export class AdvisoryListComponent {
   protected readonly statusBadgeClass = statusBadgeClass;
   protected readonly statusActionShortLabel = statusActionShortLabel;
   protected readonly quickStatusTransitionsFor = quickStatusTransitionsFor;
+  protected readonly statusDisplayLabel = this.auth.isCustomer() ? customerStatusLabel : statusLabel;
 
   protected readonly routePrefix = this.auth.isCustomer() ? '/security' : '/advisories';
   protected readonly canEdit = this.auth.isVendor() && this.auth.hasAnyRole('read_write', 'admin');
@@ -163,14 +166,30 @@ export class AdvisoryListComponent {
       return;
     }
 
-    const confirmation = statusChangeConfirmation(status);
-    if (confirmation && !(await firstValueFrom(this.overlay.confirm(confirmation)))) {
-      return;
+    let comment: string | undefined;
+    if (status === 'resolved') {
+      const result = await firstValueFrom(
+        this.overlay.showModal<AdvisoryResolveResult>(AdvisoryResolveDialogComponent).result()
+      );
+      if (!result) {
+        return;
+      }
+      comment = result.comment;
+    } else {
+      const confirmation = statusChangeConfirmation(status);
+      if (confirmation && !(await firstValueFrom(this.overlay.confirm(confirmation)))) {
+        return;
+      }
     }
 
     this.changingStatusFor.set(advisory.id);
     try {
       await firstValueFrom(this.advisoriesService.updateStatus(advisory.id, {status}));
+      // Posted after the status change so that a failing comment cannot leave the advisory
+      // unresolved; the timeline then reads as the transition followed by its explanation.
+      if (comment) {
+        await firstValueFrom(this.advisoriesService.createComment(advisory.id, {content: comment}));
+      }
       this.toast.success('Status updated');
       this.refresh$.next();
     } catch (e) {

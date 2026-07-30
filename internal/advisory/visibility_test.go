@@ -257,7 +257,7 @@ func TestIsVisibleToCustomerDeployments(t *testing.T) {
 			visible:     true,
 		},
 		{
-			// The customer already upgraded, which is the "patched" row of the vendor's
+			// The customer already upgraded, which is the "fixed" row of the vendor's
 			// impact report. They still need to read the advisory.
 			name:        "deployed an affected version they have since upgraded away from",
 			appAffected: []advisory.VersionRef{appVersion(versionOneID)},

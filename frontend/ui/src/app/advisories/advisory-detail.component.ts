@@ -18,6 +18,9 @@ import {ToastService} from '../services/toast.service';
 import {AdvisoryDetail, AdvisoryImpact, AdvisoryStatus} from '../types/advisory';
 import {
   allowedStatusTransitions,
+  applicationVersionLabel,
+  artifactVersionLabel,
+  customerStatusLabel,
   eventLabel,
   impactStateBadgeClass,
   impactStateLabel,
@@ -25,8 +28,10 @@ import {
   statusActionLabel,
   statusBadgeClass,
   statusChangeConfirmation,
+  statusLabel,
 } from './advisory-display';
 import {AdvisoryFormComponent, AdvisoryFormDraft} from './advisory-form.component';
+import {AdvisoryResolveDialogComponent, AdvisoryResolveResult} from './advisory-resolve-dialog.component';
 
 /**
  * Impact is loaded separately from the advisory itself, so a failed query must stay
@@ -64,10 +69,12 @@ export class AdvisoryDetailComponent {
   protected readonly statusActionLabel = statusActionLabel;
   protected readonly impactStateBadgeClass = impactStateBadgeClass;
   protected readonly impactStateLabel = impactStateLabel;
+  protected readonly applicationVersionLabel = applicationVersionLabel;
+  protected readonly artifactVersionLabel = artifactVersionLabel;
+  protected readonly statusDisplayLabel = this.auth.isCustomer() ? customerStatusLabel : statusLabel;
 
   protected readonly backRoute = this.auth.isCustomer() ? '/security' : '/advisories';
   protected readonly canEdit = this.auth.isVendor() && this.auth.hasAnyRole('read_write', 'admin');
-  protected readonly canSeeImpact = !this.auth.isCustomer();
 
   private readonly timeline = viewChild(ActivityTimelineComponent);
 
@@ -115,9 +122,6 @@ export class AdvisoryDetailComponent {
     this.route.paramMap.pipe(
       switchMap((params) => {
         const id = params.get('advisoryId')!;
-        if (!this.canSeeImpact) {
-          return of<ImpactState>({state: 'failed'});
-        }
         // switchMap discards an in-flight request when a newer one starts, so a slow
         // response for a previous advisory can never overwrite the current one.
         return this.refreshImpact$.pipe(
@@ -141,6 +145,11 @@ export class AdvisoryDetailComponent {
   });
   protected readonly impactFailed = computed(() => this.impact().state === 'failed');
 
+  /** Drives the customer-facing verdict: whether anything of theirs still runs an affected version. */
+  protected readonly stillAffectedCount = computed(
+    () => this.impactResult()?.deployments.filter((deployment) => deployment.state === 'affected').length ?? 0
+  );
+
   constructor() {
     this.route.paramMap
       .pipe(
@@ -148,20 +157,27 @@ export class AdvisoryDetailComponent {
           const id = params.get('advisoryId')!;
           return this.refresh$.pipe(
             startWith(0),
-            switchMap(() => this.advisoriesService.get(id))
+            switchMap(() =>
+              this.advisoriesService.get(id).pipe(
+                // Handled here rather than in the subscriber so that one failed load does not
+                // tear down the subscription and leave the page unable to reload.
+                catchError((e) => {
+                  const message = getFormDisplayedError(e);
+                  if (message) {
+                    this.toast.error(message);
+                  }
+                  return of(undefined);
+                })
+              )
+            ),
+            // Drops the previously shown advisory as soon as the route id changes, so a slow
+            // or failing load can never leave the wrong record under the new URL.
+            startWith(undefined)
           );
         }),
         takeUntilDestroyed()
       )
-      .subscribe({
-        next: (detail) => this.advisory.set(detail),
-        error: (e) => {
-          const message = getFormDisplayedError(e);
-          if (message) {
-            this.toast.error(message);
-          }
-        },
-      });
+      .subscribe((detail) => this.advisory.set(detail));
   }
 
   protected openEditDialog(templateRef: TemplateRef<unknown>): void {
@@ -201,15 +217,31 @@ export class AdvisoryDetailComponent {
     if (!advisory) {
       return;
     }
-    const confirmation = statusChangeConfirmation(status);
-    if (confirmation && !(await firstValueFrom(this.overlay.confirm(confirmation)))) {
-      return;
+    let comment: string | undefined;
+    if (status === 'resolved') {
+      const result = await firstValueFrom(
+        this.overlay.showModal<AdvisoryResolveResult>(AdvisoryResolveDialogComponent).result()
+      );
+      if (!result) {
+        return;
+      }
+      comment = result.comment;
+    } else {
+      const confirmation = statusChangeConfirmation(status);
+      if (confirmation && !(await firstValueFrom(this.overlay.confirm(confirmation)))) {
+        return;
+      }
     }
 
     this.updatingStatus.set(true);
     try {
       const updated = await firstValueFrom(this.advisoriesService.updateStatus(advisory.id, {status}));
       this.advisory.set(updated);
+      // Posted after the status change so that a failing comment cannot leave the advisory
+      // unresolved; the timeline then reads as the transition followed by its explanation.
+      if (comment) {
+        await firstValueFrom(this.advisoriesService.createComment(advisory.id, {content: comment}));
+      }
       this.toast.success('Status updated');
       this.refresh$.next();
     } catch (e) {

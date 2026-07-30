@@ -1,5 +1,24 @@
 import {never} from '../../util/exhaust';
-import {AdvisoryEventType, AdvisoryImpactState, AdvisorySeverity, AdvisoryStatus} from '../types/advisory';
+import {
+  AdvisoryApplicationVersion,
+  AdvisoryArtifactVersion,
+  AdvisoryEventType,
+  AdvisoryImpactState,
+  AdvisorySeverity,
+  AdvisoryStatus,
+} from '../types/advisory';
+
+/**
+ * The full name of a marked version. The version panel truncates these to keep the sidebar
+ * width stable, so the same string is also what goes into the title attribute.
+ */
+export function applicationVersionLabel(version: AdvisoryApplicationVersion): string {
+  return `${version.applicationName} ${version.applicationVersionName}`;
+}
+
+export function artifactVersionLabel(version: AdvisoryArtifactVersion): string {
+  return `${version.artifactName} ${version.artifactVersionName}`;
+}
 
 export const advisorySeverities: AdvisorySeverity[] = ['none', 'low', 'medium', 'high', 'critical'];
 
@@ -27,6 +46,15 @@ export function statusLabel(status: AdvisoryStatus): string {
     default:
       return never(status);
   }
+}
+
+/**
+ * How a status reads in the customer portal. Customers only ever see published and resolved
+ * advisories, and "published" describes our editorial workflow rather than the thing they
+ * need to know, which is whether the advisory still needs their attention.
+ */
+export function customerStatusLabel(status: AdvisoryStatus): string {
+  return status === 'published' ? 'Active' : statusLabel(status);
 }
 
 export function severityLabel(severity: AdvisorySeverity): string {
@@ -84,8 +112,8 @@ export function impactStateLabel(state: AdvisoryImpactState): string {
   switch (state) {
     case 'affected':
       return 'Affected';
-    case 'patched':
-      return 'Patched';
+    case 'fixed':
+      return 'Fixed';
     case 'not_affected':
       return 'Not affected';
     default:
@@ -97,7 +125,7 @@ export function impactStateBadgeClass(state: AdvisoryImpactState): string {
   switch (state) {
     case 'affected':
       return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-    case 'patched':
+    case 'fixed':
       return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
     case 'not_affected':
       return 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200';

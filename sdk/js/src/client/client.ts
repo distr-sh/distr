@@ -128,8 +128,8 @@ export class Client {
     for (const tag of filter.tag ?? []) {
       params.append('tag', tag);
     }
-    const query = params.size > 0 ? `?${params}` : '';
-    return this.get<Advisory[]>(`advisories${query}`);
+    const query = params.toString();
+    return this.get<Advisory[]>(`advisories${query ? `?${query}` : ''}`);
   }
 
   public async getAdvisory(advisoryId: string): Promise<AdvisoryDetail> {

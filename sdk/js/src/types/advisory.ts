@@ -75,7 +75,7 @@ export interface AdvisoryDetail extends Advisory {
  * revision runs: still on an affected version, on a version marked as containing the fix, or
  * on a version marked as neither.
  */
-export type AdvisoryImpactState = 'affected' | 'patched' | 'not_affected';
+export type AdvisoryImpactState = 'affected' | 'fixed' | 'not_affected';
 
 /**
  * One deployment that has run an affected application version at some point. `applicationVersion*`

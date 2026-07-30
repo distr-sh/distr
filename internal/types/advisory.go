@@ -203,8 +203,8 @@ type AdvisoryImpactState string
 const (
 	// AdvisoryImpactStateAffected means the current revision runs a version marked affected.
 	AdvisoryImpactStateAffected AdvisoryImpactState = "affected"
-	// AdvisoryImpactStatePatched means the current revision runs a version marked fixed.
-	AdvisoryImpactStatePatched AdvisoryImpactState = "patched"
+	// AdvisoryImpactStateFixed means the current revision runs a version marked fixed.
+	AdvisoryImpactStateFixed AdvisoryImpactState = "fixed"
 	// AdvisoryImpactStateNotAffected means the deployment ran an affected version at some
 	// point but has since moved to a version marked neither affected nor fixed.
 	AdvisoryImpactStateNotAffected AdvisoryImpactState = "not_affected"
