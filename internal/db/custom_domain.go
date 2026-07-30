@@ -106,26 +106,23 @@ func ExistsCustomDomain(ctx context.Context, domain string) (bool, error) {
 	return exists, nil
 }
 
-// GetOrganizationBrandingByCustomDomain resolves the branding of the organization owning the
-// given (normalized) custom domain. It returns nil when the domain is not registered, and also
-// when the owning organization has no branding row yet.
-func GetOrganizationBrandingByCustomDomain(ctx context.Context, host string) (*types.OrganizationBranding, error) {
+// GetOrganizationIDByCustomDomain returns the organization owning the given (normalized) custom
+// domain, or nil when the domain is not registered. Callers must not assume that the organization
+// has a branding row: a domain can be registered before any branding is saved.
+func GetOrganizationIDByCustomDomain(ctx context.Context, domain string) (*uuid.UUID, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		"SELECT "+organizationBrandingOutputExpr+
-			` FROM CustomDomain d
-			JOIN OrganizationBranding b ON b.organization_id = d.organization_id
-			WHERE d.domain = @host`,
-		pgx.NamedArgs{"host": host},
+		"SELECT d.organization_id FROM CustomDomain d WHERE d.domain = @domain",
+		pgx.NamedArgs{"domain": domain},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("could not query organization branding by custom domain: %w", err)
+		return nil, fmt.Errorf("could not query CustomDomain: %w", err)
 	}
-	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.OrganizationBranding])
+	organizationID, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[uuid.UUID])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
-		return nil, fmt.Errorf("could not get organization branding by custom domain: %w", err)
+		return nil, fmt.Errorf("could not get organization by custom domain: %w", err)
 	}
-	return &result, nil
+	return &organizationID, nil
 }
