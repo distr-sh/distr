@@ -1,6 +1,14 @@
 import {BlockScrollStrategy, GlobalPositionStrategy, Overlay, OverlayConfig, ViewportRuler} from '@angular/cdk/overlay';
 import {ComponentPortal, ComponentType, TemplatePortal} from '@angular/cdk/portal';
-import {inject, Injectable, InjectionToken, Injector, TemplateRef, ViewContainerRef} from '@angular/core';
+import {
+  inject,
+  Injectable,
+  InjectionToken,
+  Injector,
+  StaticProvider,
+  TemplateRef,
+  ViewContainerRef,
+} from '@angular/core';
 import {filter, fromEvent, map, merge, Observable, Subject, take, takeUntil} from 'rxjs';
 import {ConfirmConfig, ConfirmDialogComponent} from '../components/confirm-dialog/confirm-dialog.component';
 
@@ -90,20 +98,17 @@ export class OverlayService {
       ...config,
     });
     const dialogRef = new DialogRef<T>();
-    const injector =
-      config.data !== null && config.data !== undefined
-        ? Injector.create({
-            parent: this.viewContainerRef.injector,
-            providers: [
-              {provide: DialogRef, useValue: dialogRef},
-              {provide: OverlayData, useValue: config.data},
-            ],
-          })
-        : null;
+    // DialogRef is always available, so that a dialog can close itself whether or not it was
+    // handed any data. OverlayData is only provided when there is something to inject.
+    const providers: StaticProvider[] = [{provide: DialogRef, useValue: dialogRef}];
+    if (config.data !== null && config.data !== undefined) {
+      providers.push({provide: OverlayData, useValue: config.data});
+    }
+    const injector = Injector.create({parent: this.viewContainerRef.injector, providers});
 
     if (templateRefOrComponentType instanceof TemplateRef) {
       const embeddedViewRef = overlayRef.attach(
-        new TemplatePortal(templateRefOrComponentType, this.viewContainerRef, injector)
+        new TemplatePortal(templateRefOrComponentType, this.viewContainerRef, undefined, injector)
       );
       dialogRef.closed().subscribe(() => embeddedViewRef.destroy());
     } else if (!templateRefOrComponentType) {
