@@ -69,12 +69,87 @@ type CustomerView struct {
 }
 
 func (v CustomerView) hasDeployedAny(affected []VersionRef) bool {
-	for _, ref := range affected {
-		for _, versionID := range v.DeployedApplicationVersionIDs {
+	return containsAnyVersion(affected, v.DeployedApplicationVersionIDs)
+}
+
+func containsAnyVersion(refs []VersionRef, versionIDs []uuid.UUID) bool {
+	for _, ref := range refs {
+		for _, versionID := range versionIDs {
 			if versionID == ref.VersionID {
 				return true
 			}
 		}
+	}
+	return false
+}
+
+// MarkedVersions are the versions an advisory marks, already expanded to every version that
+// resolves to the same content.
+//
+// There are no fixed application versions because the application side is decided by what a
+// deployment runs right now, which needs no notion of a fix: a deployment that has moved off
+// every affected version is no longer exposed, whether or not the version it moved to is one
+// the vendor marked.
+type MarkedVersions struct {
+	AffectedApplicationVersions []VersionRef
+	AffectedArtifactVersions    []VersionRef
+	FixedArtifactVersions       []VersionRef
+}
+
+// Exposure is what a customer or partner has actually done with the vendor's software.
+type Exposure struct {
+	// CurrentApplicationVersionIDs are the versions their deployments run right now, one per
+	// deployment. Not every version they ever ran: that distinction is the whole point, since
+	// visibility deliberately keeps the advisory in front of customers who have already
+	// upgraded, and this is what then tells them they are in the clear.
+	CurrentApplicationVersionIDs []uuid.UUID
+	// PulledArtifactVersionIDs are every artifact version they have pulled from the registry.
+	PulledArtifactVersionIDs []uuid.UUID
+}
+
+// IsStillAffected reports whether an advisory is a live problem for whoever is asking, which
+// is what customers and partners are shown in place of the editorial status.
+//
+// A deployment counts while it still runs an affected version, which mirrors
+// AdvisoryImpactStateAffected in GetAdvisoryImpactedDeployments so that the badge and the
+// impact table cannot disagree.
+//
+// A pull cannot be observed the same way, because Distr sees that an artifact was downloaded
+// but never what became of it. Pulling a version carrying the fix is the closest thing to
+// evidence that the fix was taken, so it is what clears the artifact.
+func IsStillAffected(marked MarkedVersions, exposure Exposure) bool {
+	if containsAnyVersion(marked.AffectedApplicationVersions, exposure.CurrentApplicationVersionIDs) {
+		return true
+	}
+	return hasUnfixedPull(marked, exposure.PulledArtifactVersionIDs)
+}
+
+// hasUnfixedPull reports whether an affected version of some artifact was pulled without a
+// version of that same artifact carrying the fix also being pulled.
+//
+// The check is per artifact rather than across the advisory as a whole: an advisory covering
+// two artifacts is not settled by upgrading one of them.
+func hasUnfixedPull(marked MarkedVersions, pulledIDs []uuid.UUID) bool {
+	pulled := make(map[uuid.UUID]struct{}, len(pulledIDs))
+	for _, id := range pulledIDs {
+		pulled[id] = struct{}{}
+	}
+
+	fixTaken := make(map[uuid.UUID]struct{})
+	for _, ref := range marked.FixedArtifactVersions {
+		if _, ok := pulled[ref.VersionID]; ok {
+			fixTaken[ref.ParentID] = struct{}{}
+		}
+	}
+
+	for _, ref := range marked.AffectedArtifactVersions {
+		if _, ok := pulled[ref.VersionID]; !ok {
+			continue
+		}
+		if _, ok := fixTaken[ref.ParentID]; ok {
+			continue
+		}
+		return true
 	}
 	return false
 }

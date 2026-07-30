@@ -22,6 +22,7 @@ func AdvisoryToAPI(advisory types.AdvisoryWithDetails) api.Advisory {
 		ReferenceCount:       advisory.ReferenceCount,
 		PublishedAt:          advisory.PublishedAt,
 		ResolvedAt:           advisory.ResolvedAt,
+		Affected:             advisory.CallerAffected,
 	}
 }
 

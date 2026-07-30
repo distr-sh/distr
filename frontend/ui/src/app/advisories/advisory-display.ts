@@ -38,7 +38,7 @@ export function statusLabel(status: AdvisoryStatus): string {
     case 'draft':
       return 'Draft';
     case 'published':
-      return 'Published';
+      return 'Active';
     case 'resolved':
       return 'Resolved';
     case 'canceled':
@@ -49,12 +49,20 @@ export function statusLabel(status: AdvisoryStatus): string {
 }
 
 /**
- * How a status reads in the customer portal. Customers only ever see published and resolved
- * advisories, and "published" describes our editorial workflow rather than the thing they
- * need to know, which is whether the advisory still needs their attention.
+ * What customers and partners see in place of the status. The editorial workflow is the
+ * vendor's business; the only thing that matters on the other side is whether a deployment
+ * still runs an affected version, which is what the `affected` flag reports.
+ *
+ * A missing flag means the caller is a vendor, who never reaches this.
  */
-export function customerStatusLabel(status: AdvisoryStatus): string {
-  return status === 'published' ? 'Active' : statusLabel(status);
+export function affectedLabel(affected: boolean | undefined): string {
+  return affected ? 'Affected' : 'Not affected';
+}
+
+export function affectedBadgeClass(affected: boolean | undefined): string {
+  return affected
+    ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+    : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
 }
 
 export function severityLabel(severity: AdvisorySeverity): string {

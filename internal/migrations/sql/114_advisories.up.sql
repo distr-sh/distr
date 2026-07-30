@@ -32,6 +32,10 @@ CREATE TABLE Advisory (
 
 CREATE INDEX idx_advisory_organization_id ON Advisory (organization_id);
 
+-- Deleting a user account nulls the column, which without an index scans the whole table.
+CREATE INDEX idx_advisory_created_by_user_account_id
+    ON Advisory (created_by_user_account_id);
+
 -- One CVE is one issue, so an organization discloses it in exactly one advisory. Matching is
 -- case-insensitive, otherwise "cve-2026-1234" would slip past as a second advisory for the
 -- same CVE. Advisories without a CVE ID are unconstrained; there can be any number of them.
@@ -90,6 +94,9 @@ CREATE TABLE AdvisoryEvent (
 
 CREATE INDEX idx_advisory_event_advisory_id
     ON AdvisoryEvent (advisory_id, created_at);
+
+CREATE INDEX idx_advisory_event_user_account_id
+    ON AdvisoryEvent (user_account_id);
 
 -- The feature gate stays named after the "Vulnerability Management" category, which covers
 -- security advisories today and will cover vulnerability scan logs later.

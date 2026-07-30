@@ -17,10 +17,11 @@ import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
 import {AdvisoryDetail, AdvisoryImpact, AdvisoryStatus} from '../types/advisory';
 import {
+  affectedBadgeClass,
+  affectedLabel,
   allowedStatusTransitions,
   applicationVersionLabel,
   artifactVersionLabel,
-  customerStatusLabel,
   eventLabel,
   impactStateBadgeClass,
   impactStateLabel,
@@ -71,7 +72,12 @@ export class AdvisoryDetailComponent {
   protected readonly impactStateLabel = impactStateLabel;
   protected readonly applicationVersionLabel = applicationVersionLabel;
   protected readonly artifactVersionLabel = artifactVersionLabel;
-  protected readonly statusDisplayLabel = this.auth.isCustomer() ? customerStatusLabel : statusLabel;
+  protected readonly statusLabel = statusLabel;
+  protected readonly affectedLabel = affectedLabel;
+  protected readonly affectedBadgeClass = affectedBadgeClass;
+
+  /** Everyone outside the vendor organization is shown their own exposure, not the status. */
+  protected readonly showsAffectedState = this.auth.isCustomer() || this.auth.isPartner();
 
   protected readonly backRoute = this.auth.isCustomer() ? '/security' : '/advisories';
   protected readonly canEdit = this.auth.isVendor() && this.auth.hasAnyRole('read_write', 'admin');

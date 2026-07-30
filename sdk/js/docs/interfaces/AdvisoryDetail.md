@@ -12,6 +12,19 @@
 
 ## Properties
 
+### affected?
+
+> `optional` **affected?**: `boolean`
+
+Whether the requesting customer or partner still has a deployment running an affected
+version. Absent for vendors, who see the status instead.
+
+#### Inherited from
+
+[`Advisory`](Advisory.md).[`affected`](Advisory.md#affected)
+
+---
+
 ### affectedVersionCount
 
 > **affectedVersionCount**: `number`

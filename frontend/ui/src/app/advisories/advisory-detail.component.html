@@ -16,9 +16,15 @@
               <span class="distr-badge capitalize" [ngClass]="severityBadgeClass(advisory.severity)">
                 {{ advisory.severity }}
               </span>
-              <span class="distr-badge" [ngClass]="statusBadgeClass(advisory.status)">
-                {{ statusDisplayLabel(advisory.status) }}
-              </span>
+              @if (showsAffectedState) {
+                <span class="distr-badge" [ngClass]="affectedBadgeClass(advisory.affected)">
+                  {{ affectedLabel(advisory.affected) }}
+                </span>
+              } @else {
+                <span class="distr-badge" [ngClass]="statusBadgeClass(advisory.status)">
+                  {{ statusLabel(advisory.status) }}
+                </span>
+              }
               @if (advisory.cveId) {
                 <span class="font-mono text-xs text-gray-600 dark:text-gray-300">{{ advisory.cveId }}</span>
               }
@@ -92,22 +98,26 @@
             }
 
             @if (impactResult(); as impact) {
-              @if (auth.isCustomer() && impact.deployments.length > 0) {
-                @if (stillAffectedCount() > 0) {
+              @if (auth.isCustomer() && (impact.deployments.length > 0 || impact.pulls.length > 0)) {
+                @if (advisory.affected) {
                   <div
                     class="mb-4 p-4 text-sm rounded-lg bg-red-50 text-red-800 dark:bg-gray-700 dark:text-red-400"
                     role="alert">
                     <span class="font-semibold">Action required.</span>
-                    {{ stillAffectedCount() }} of your deployments still
-                    {{ stillAffectedCount() === 1 ? 'runs' : 'run' }} an affected version. Upgrade to a version listed
-                    under Fixed In.
+                    @if (stillAffectedCount() > 0) {
+                      {{ stillAffectedCount() }} of your deployments still
+                      {{ stillAffectedCount() === 1 ? 'runs' : 'run' }} an affected version.
+                    } @else {
+                      You downloaded an affected artifact version and have not downloaded one containing the fix.
+                    }
+                    Move to a version listed under Fixed In.
                   </div>
                 } @else {
                   <div
                     class="mb-4 p-4 text-sm rounded-lg bg-green-50 text-green-800 dark:bg-gray-700 dark:text-green-400"
                     role="alert">
                     <span class="font-semibold">You are no longer affected.</span>
-                    None of your deployments run an affected version any more.
+                    Nothing you currently run or have downloaded is still exposed to this advisory.
                   </div>
                 }
               }

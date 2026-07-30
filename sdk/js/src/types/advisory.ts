@@ -30,6 +30,11 @@ export interface Advisory {
   referenceCount: number;
   publishedAt?: string;
   resolvedAt?: string;
+  /**
+   * Whether the requesting customer or partner still has a deployment running an affected
+   * version. Absent for vendors, who see the status instead.
+   */
+  affected?: boolean;
 }
 
 export interface AdvisoryReference {

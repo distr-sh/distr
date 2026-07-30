@@ -11,6 +11,7 @@ import (
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
+	"github.com/distr-sh/distr/internal/authn/authinfo"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mapping"
@@ -24,6 +25,15 @@ import (
 )
 
 const duplicateCveIDMessage = "another advisory in this organization already covers this CVE ID"
+
+// advisoryScope narrows queries to what the caller may see. A vendor gets an empty scope and
+// sees the whole organization.
+func advisoryScope(a authinfo.AuthInfoWithUserAndOrganization) db.AdvisoryScope {
+	return db.AdvisoryScope{
+		PartnerOrgID:  a.CurrentPartnerOrgID(),
+		CustomerOrgID: a.CurrentCustomerOrgID(),
+	}
+}
 
 func AdvisoriesRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Advisories"))
@@ -108,10 +118,10 @@ func getAdvisoriesHandler() http.HandlerFunc {
 		}
 
 		filter := db.AdvisoryFilter{
-			CustomerOrgID: a.CurrentCustomerOrgID(),
-			Statuses:      parsed.Statuses,
-			Severities:    parsed.Severities,
-			Tags:          parsed.Tags,
+			Scope:      advisoryScope(a),
+			Statuses:   parsed.Statuses,
+			Severities: parsed.Severities,
+			Tags:       parsed.Tags,
 		}
 
 		advisories, err := db.GetAdvisories(ctx, *a.CurrentOrgID(), filter)
@@ -433,10 +443,7 @@ func getAdvisoryImpactHandler() http.HandlerFunc {
 
 		// Customers reach this endpoint too, to see whether their own deployments still run an
 		// affected version. The scope keeps every other customer's rows out of the response.
-		scope := db.AdvisoryImpactScope{
-			PartnerOrgID:  a.CurrentPartnerOrgID(),
-			CustomerOrgID: a.CurrentCustomerOrgID(),
-		}
+		scope := advisoryScope(a)
 
 		deployments, err := db.GetAdvisoryImpactedDeployments(ctx, advisory.ID, advisory.OrganizationID, scope)
 		if err != nil {
@@ -475,7 +482,7 @@ func requireAdvisory(w http.ResponseWriter, r *http.Request) *types.AdvisoryWith
 	log := internalctx.GetLogger(ctx)
 	a := auth.Authentication.Require(ctx)
 
-	advisory, err := db.GetAdvisoryByID(ctx, id, *a.CurrentOrgID(), a.CurrentCustomerOrgID())
+	advisory, err := db.GetAdvisoryByID(ctx, id, *a.CurrentOrgID(), advisoryScope(a))
 	if errors.Is(err, apierrors.ErrNotFound) {
 		http.NotFound(w, r)
 		return nil
@@ -494,7 +501,7 @@ func respondAdvisoryDetail(w http.ResponseWriter, r *http.Request, id uuid.UUID)
 	log := internalctx.GetLogger(ctx)
 	a := auth.Authentication.Require(ctx)
 
-	advisory, err := db.GetAdvisoryByID(ctx, id, *a.CurrentOrgID(), a.CurrentCustomerOrgID())
+	advisory, err := db.GetAdvisoryByID(ctx, id, *a.CurrentOrgID(), advisoryScope(a))
 	if err != nil {
 		log.Error("failed to get advisory", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)

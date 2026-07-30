@@ -18,7 +18,8 @@ import {Advisory, AdvisorySeverity, AdvisoryStatus} from '../types/advisory';
 import {
   advisorySeverities,
   advisoryStatuses,
-  customerStatusLabel,
+  affectedBadgeClass,
+  affectedLabel,
   defaultAdvisoryStatusFilter,
   quickStatusTransitionsFor,
   severityBadgeClass,
@@ -58,20 +59,27 @@ export class AdvisoryListComponent {
   protected readonly statusBadgeClass = statusBadgeClass;
   protected readonly statusActionShortLabel = statusActionShortLabel;
   protected readonly quickStatusTransitionsFor = quickStatusTransitionsFor;
-  protected readonly statusDisplayLabel = this.auth.isCustomer() ? customerStatusLabel : statusLabel;
+  protected readonly statusLabel = statusLabel;
+  protected readonly affectedLabel = affectedLabel;
+  protected readonly affectedBadgeClass = affectedBadgeClass;
+
+  /** Everyone outside the vendor organization is shown their own exposure, not the status. */
+  protected readonly showsAffectedState = this.auth.isCustomer() || this.auth.isPartner();
 
   protected readonly routePrefix = this.auth.isCustomer() ? '/security' : '/advisories';
   protected readonly canEdit = this.auth.isVendor() && this.auth.hasAnyRole('read_write', 'admin');
-  // Customers only ever see published and resolved items, so a status filter adds nothing.
-  protected readonly canFilterByStatus = !this.auth.isCustomer();
+  // Filtering by a status that the column does not show would be a dropdown of terms the
+  // reader never sees anywhere else.
+  protected readonly canFilterByStatus = !this.showsAffectedState;
 
   protected readonly filterForm = new FormGroup({
     search: new FormControl(''),
   });
 
-  // Customers have no status dropdown, so sending them a status filter would be noise; the
-  // backend already limits them to published and resolved.
-  private readonly defaultStatuses: AdvisoryStatus[] = this.canFilterByStatus ? defaultAdvisoryStatusFilter : [];
+  // Sending customers a status filter would be noise, since the backend already limits them to
+  // published and resolved. Partners keep the default even though their dropdown is hidden, so
+  // that advisories nobody has disclosed stay out of their list too.
+  private readonly defaultStatuses: AdvisoryStatus[] = this.auth.isCustomer() ? [] : defaultAdvisoryStatusFilter;
 
   protected readonly selectedStatuses = signal<AdvisoryStatus[]>([...this.defaultStatuses]);
   protected readonly selectedSeverities = signal<AdvisorySeverity[]>([]);

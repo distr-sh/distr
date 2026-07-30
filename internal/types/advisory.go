@@ -149,6 +149,10 @@ type AdvisoryWithDetails struct {
 	AffectedVersionCount int64      `db:"affected_version_count"`
 	FixedVersionCount    int64      `db:"fixed_version_count"`
 	ReferenceCount       int64      `db:"reference_count"`
+	// CallerAffected reports whether the requesting customer or partner is still exposed,
+	// either through a deployment or an unfixed pull. Nil for vendors, who see the status
+	// instead. Stamped by applyScope rather than selected, hence not a column.
+	CallerAffected *bool `db:"-"`
 }
 
 type AdvisoryReference struct {

@@ -421,3 +421,139 @@ func TestIsVisibleToCustomerEntitlementFallback(t *testing.T) {
 		})
 	}
 }
+
+func TestIsStillAffectedDeployments(t *testing.T) {
+	cases := []struct {
+		name        string
+		appAffected []advisory.VersionRef
+		current     []uuid.UUID
+		affected    bool
+	}{
+		{
+			name:        "runs an affected version",
+			appAffected: []advisory.VersionRef{appVersion(versionOneID)},
+			current:     []uuid.UUID{versionOneID},
+			affected:    true,
+		},
+		{
+			// The counterpart to TestIsVisibleToCustomerDeployments: having once run the
+			// affected version keeps the advisory visible, but no longer running it is what
+			// tells the customer they are in the clear.
+			name:        "has upgraded away from the affected version",
+			appAffected: []advisory.VersionRef{appVersion(versionOneID)},
+			current:     []uuid.UUID{versionTwoID},
+			affected:    false,
+		},
+		{
+			name:        "one of several deployments still runs an affected version",
+			appAffected: []advisory.VersionRef{appVersion(versionOneID)},
+			current:     []uuid.UUID{versionTwoID, versionOneID},
+			affected:    true,
+		},
+		{
+			name:        "runs one of several affected versions",
+			appAffected: []advisory.VersionRef{appVersion(versionOneID), appVersion(versionTwoID)},
+			current:     []uuid.UUID{versionTwoID},
+			affected:    true,
+		},
+		{
+			name:        "deploys nothing at all",
+			appAffected: []advisory.VersionRef{appVersion(versionOneID)},
+			current:     nil,
+			affected:    false,
+		},
+		{
+			// An entitled customer who never deployed still sees the advisory, and must be
+			// told they are not affected rather than left guessing.
+			name:        "advisory affects no application version",
+			appAffected: nil,
+			current:     []uuid.UUID{versionOneID},
+			affected:    false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			g := NewWithT(t)
+			marked := advisory.MarkedVersions{AffectedApplicationVersions: tc.appAffected}
+			exposure := advisory.Exposure{CurrentApplicationVersionIDs: tc.current}
+			g.Expect(advisory.IsStillAffected(marked, exposure)).To(Equal(tc.affected))
+		})
+	}
+}
+
+func otherArtifactVersion(versionID uuid.UUID) advisory.VersionRef {
+	return advisory.VersionRef{VersionID: versionID, ParentID: otherArtifactID}
+}
+
+func TestIsStillAffectedPulls(t *testing.T) {
+	otherAffectedID := uuid.New()
+	otherFixedID := uuid.New()
+
+	cases := []struct {
+		name        string
+		artAffected []advisory.VersionRef
+		artFixed    []advisory.VersionRef
+		pulled      []uuid.UUID
+		affected    bool
+	}{
+		{
+			name:        "pulled an affected version and no fix exists yet",
+			artAffected: []advisory.VersionRef{artifactVersion(amd64VersionID)},
+			pulled:      []uuid.UUID{amd64VersionID},
+			affected:    true,
+		},
+		{
+			name:        "pulled an affected version and has not pulled the fix",
+			artAffected: []advisory.VersionRef{artifactVersion(amd64VersionID)},
+			artFixed:    []advisory.VersionRef{artifactVersion(arm64VersionID)},
+			pulled:      []uuid.UUID{amd64VersionID},
+			affected:    true,
+		},
+		{
+			name:        "pulled the fix as well",
+			artAffected: []advisory.VersionRef{artifactVersion(amd64VersionID)},
+			artFixed:    []advisory.VersionRef{artifactVersion(arm64VersionID)},
+			pulled:      []uuid.UUID{amd64VersionID, arm64VersionID},
+			affected:    false,
+		},
+		{
+			// Pulling the fix by a sibling tag counts, which is why GetMarkedVersions expands
+			// the fixed side the same way it expands the affected side.
+			name:        "pulled the fix under a different tag of the same digest",
+			artAffected: []advisory.VersionRef{artifactVersion(amd64VersionID)},
+			artFixed:    []advisory.VersionRef{artifactVersion(arm64VersionID), artifactVersion(indexVersionID)},
+			pulled:      []uuid.UUID{amd64VersionID, indexVersionID},
+			affected:    false,
+		},
+		{
+			name:        "never pulled anything affected",
+			artAffected: []advisory.VersionRef{artifactVersion(amd64VersionID)},
+			pulled:      []uuid.UUID{arm64VersionID},
+			affected:    false,
+		},
+		{
+			// The fix is tracked per artifact: taking it for one does not settle the other.
+			name: "pulled the fix for one artifact but not the other",
+			artAffected: []advisory.VersionRef{
+				artifactVersion(amd64VersionID),
+				otherArtifactVersion(otherAffectedID),
+			},
+			artFixed: []advisory.VersionRef{artifactVersion(arm64VersionID), otherArtifactVersion(otherFixedID)},
+			pulled:   []uuid.UUID{amd64VersionID, arm64VersionID, otherAffectedID},
+			affected: true,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			g := NewWithT(t)
+			marked := advisory.MarkedVersions{
+				AffectedArtifactVersions: tc.artAffected,
+				FixedArtifactVersions:    tc.artFixed,
+			}
+			exposure := advisory.Exposure{PulledArtifactVersionIDs: tc.pulled}
+			g.Expect(advisory.IsStillAffected(marked, exposure)).To(Equal(tc.affected))
+		})
+	}
+}

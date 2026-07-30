@@ -18,6 +18,22 @@ import (
 
 // Advisories
 
+// AdvisoryScope narrows a query to the rows its caller may see. A vendor leaves both fields
+// nil and sees the whole organization, a partner sees the customers assigned to it, and a
+// customer sees only itself.
+type AdvisoryScope struct {
+	PartnerOrgID  *uuid.UUID
+	CustomerOrgID *uuid.UUID
+}
+
+// bind adds the two parameters that every scoped query reads. They are always bound, because
+// the queries reference them whether or not the caller is scoped.
+func (s AdvisoryScope) bind(args pgx.NamedArgs) pgx.NamedArgs {
+	args["partnerOrgId"] = s.PartnerOrgID
+	args["customerOrgId"] = s.CustomerOrgID
+	return args
+}
+
 const advisoryWithDetailsOutputExpr = `
 	v.id,
 	v.created_at,
@@ -53,50 +69,116 @@ const advisoryWithDetailsOutputExpr = `
 	(SELECT count(*) FROM AdvisoryReference vr WHERE vr.advisory_id = v.id) AS reference_count
 `
 
-// filterCustomerVisible keeps only the advisories a customer organization may see.
-// The rule itself lives in advisory.IsVisibleToCustomer; this only loads the data it
-// needs. Filtering happens in Go rather than SQL because the rule is security critical and
-// needs to be unit testable, which is affordable here because the result set is a bounded
-// per-organization list with no pagination.
-func filterCustomerVisible(
+// applyScope applies everything about a result set that depends on who is asking: it drops the
+// advisories a customer may not see, and stamps CallerAffected for the callers who are shown
+// their own exposure instead of the editorial status. Both need the advisories' affected
+// versions, so those are loaded once and shared.
+//
+// The rules themselves live in the advisory package; this only loads what they need. They run
+// in Go rather than SQL because they are security critical and need to be unit testable, which
+// is affordable here because the result set is a bounded per-organization list with no
+// pagination.
+func applyScope(
 	ctx context.Context,
 	advisories []types.AdvisoryWithDetails,
-	orgID, customerOrgID uuid.UUID,
+	orgID uuid.UUID,
+	scope AdvisoryScope,
 ) ([]types.AdvisoryWithDetails, error) {
-	if len(advisories) == 0 {
+	if len(advisories) == 0 || (scope.CustomerOrgID == nil && scope.PartnerOrgID == nil) {
 		return advisories, nil
-	}
-
-	view, err := GetCustomerView(ctx, orgID, customerOrgID)
-	if err != nil {
-		return nil, err
 	}
 
 	ids := make([]uuid.UUID, len(advisories))
 	for i, v := range advisories {
 		ids[i] = v.ID
 	}
-	affected, err := GetAffectedVersions(ctx, ids)
+	marked, err := GetMarkedVersions(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
 
-	now := time.Now()
-	visible := make([]types.AdvisoryWithDetails, 0, len(advisories))
-	for _, v := range advisories {
-		versions := affected[v.ID]
-		if advisory.IsVisibleToCustomer(
-			v.Status, versions.ApplicationVersions, versions.ArtifactVersions, view, now,
-		) {
-			visible = append(visible, v)
+	if scope.CustomerOrgID != nil {
+		view, err := GetCustomerView(ctx, orgID, *scope.CustomerOrgID)
+		if err != nil {
+			return nil, err
+		}
+		now := time.Now()
+		visible := make([]types.AdvisoryWithDetails, 0, len(advisories))
+		for _, v := range advisories {
+			versions := marked[v.ID]
+			if advisory.IsVisibleToCustomer(
+				v.Status,
+				versions.AffectedApplicationVersions,
+				versions.AffectedArtifactVersions,
+				view,
+				now,
+			) {
+				visible = append(visible, v)
+			}
+		}
+		advisories = visible
+	}
+
+	exposure, err := getExposure(ctx, orgID, scope, marked)
+	if err != nil {
+		return nil, err
+	}
+	for i := range advisories {
+		stillAffected := advisory.IsStillAffected(marked[advisories[i].ID], exposure)
+		advisories[i].CallerAffected = &stillAffected
+	}
+	return advisories, nil
+}
+
+// getExposure loads what the caller runs and has downloaded, which is the same for every
+// advisory in the result and is therefore loaded once.
+func getExposure(
+	ctx context.Context,
+	orgID uuid.UUID,
+	scope AdvisoryScope,
+	marked map[uuid.UUID]advisory.MarkedVersions,
+) (advisory.Exposure, error) {
+	var exposure advisory.Exposure
+
+	current, err := getCurrentApplicationVersionIDs(ctx, orgID, scope)
+	if err != nil {
+		return exposure, err
+	}
+	pulled, err := getPulledArtifactVersionIDs(ctx, orgID, scope, markedArtifactVersionIDs(marked))
+	if err != nil {
+		return exposure, err
+	}
+
+	exposure.CurrentApplicationVersionIDs = current
+	exposure.PulledArtifactVersionIDs = pulled
+	return exposure, nil
+}
+
+// markedArtifactVersionIDs collects every artifact version the advisories mark, on either
+// side of the relation, so that the pull lookup can be narrowed to them.
+func markedArtifactVersionIDs(marked map[uuid.UUID]advisory.MarkedVersions) []uuid.UUID {
+	seen := make(map[uuid.UUID]struct{})
+	ids := make([]uuid.UUID, 0, len(marked))
+	collect := func(refs []advisory.VersionRef) {
+		for _, ref := range refs {
+			if _, ok := seen[ref.VersionID]; ok {
+				continue
+			}
+			seen[ref.VersionID] = struct{}{}
+			ids = append(ids, ref.VersionID)
 		}
 	}
-	return visible, nil
+	for _, m := range marked {
+		collect(m.AffectedArtifactVersions)
+		collect(m.FixedArtifactVersions)
+	}
+	return ids
 }
 
 type AdvisoryFilter struct {
-	// CustomerOrgID scopes the result to what a customer may see. Nil for vendor users.
-	CustomerOrgID *uuid.UUID
+	// Scope restricts both which advisories are returned and whose exposure decides the
+	// CallerAffected flag.
+	Scope AdvisoryScope
 	// Each of the following matches an advisory that has any of the given values.
 	// An empty slice means the filter is not applied at all.
 	Statuses   []types.AdvisoryStatus
@@ -157,14 +239,11 @@ func GetAdvisories(
 		return nil, fmt.Errorf("could not get advisories: %w", err)
 	}
 
-	if filter.CustomerOrgID != nil {
-		return filterCustomerVisible(ctx, result, orgID, *filter.CustomerOrgID)
-	}
-	return result, nil
+	return applyScope(ctx, result, orgID, filter.Scope)
 }
 
 func GetAdvisoryByID(
-	ctx context.Context, id, orgID uuid.UUID, customerOrgID *uuid.UUID,
+	ctx context.Context, id, orgID uuid.UUID, scope AdvisoryScope,
 ) (*types.AdvisoryWithDetails, error) {
 	db := internalctx.GetDb(ctx)
 
@@ -188,20 +267,16 @@ func GetAdvisoryByID(
 		return nil, fmt.Errorf("could not get advisory: %w", err)
 	}
 
-	if customerOrgID != nil {
-		// An advisory the customer may not see must be indistinguishable from one that
-		// does not exist, so this reports ErrNotFound rather than a permission error.
-		visible, err := filterCustomerVisible(
-			ctx, []types.AdvisoryWithDetails{result}, orgID, *customerOrgID,
-		)
-		if err != nil {
-			return nil, err
-		}
-		if len(visible) == 0 {
-			return nil, apierrors.ErrNotFound
-		}
+	// An advisory the customer may not see must be indistinguishable from one that does not
+	// exist, so this reports ErrNotFound rather than a permission error.
+	scoped, err := applyScope(ctx, []types.AdvisoryWithDetails{result}, orgID, scope)
+	if err != nil {
+		return nil, err
 	}
-	return &result, nil
+	if len(scoped) == 0 {
+		return nil, apierrors.ErrNotFound
+	}
+	return &scoped[0], nil
 }
 
 // CreateAdvisory inserts the advisory. Status must be set by the caller; the column
@@ -674,14 +749,6 @@ func CreateAdvisoryCommentEvent(
 
 // Impact
 
-// AdvisoryImpactScope narrows an impact query to the rows its caller may see. A vendor
-// leaves both fields nil and sees the whole organization, a partner sees the customers
-// assigned to it, and a customer sees only its own rows.
-type AdvisoryImpactScope struct {
-	PartnerOrgID  *uuid.UUID
-	CustomerOrgID *uuid.UUID
-}
-
 // GetAdvisoryImpactedDeployments returns one row per deployment that has ever run an
 // application version this advisory affects, classified by the version its current
 // revision runs: still affected, fixed, or moved onto a version marked neither.
@@ -689,7 +756,7 @@ type AdvisoryImpactScope struct {
 // Each row also carries the most recent affected version the deployment ran and when, so
 // that the exposure window stays visible for deployments that have since moved on.
 func GetAdvisoryImpactedDeployments(
-	ctx context.Context, advisoryID, orgID uuid.UUID, scope AdvisoryImpactScope,
+	ctx context.Context, advisoryID, orgID uuid.UUID, scope AdvisoryScope,
 ) ([]types.AdvisoryImpactedDeployment, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
@@ -756,12 +823,7 @@ func GetAdvisoryImpactedDeployments(
 			CASE state WHEN 'affected' THEN 0 WHEN 'not_affected' THEN 1 ELSE 2 END,
 			customer_organization_name NULLS LAST,
 			deployment_target_name`,
-		pgx.NamedArgs{
-			"id":            advisoryID,
-			"orgId":         orgID,
-			"partnerOrgId":  scope.PartnerOrgID,
-			"customerOrgId": scope.CustomerOrgID,
-		},
+		scope.bind(pgx.NamedArgs{"id": advisoryID, "orgId": orgID}),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not query advisory impacted deployments: %w", err)
@@ -783,7 +845,7 @@ func GetAdvisoryImpactedDeployments(
 // never backfilled, so older pulls are attributed through the pulling user's customer
 // organization membership instead.
 func GetAdvisoryImpactedPulls(
-	ctx context.Context, advisoryID, orgID uuid.UUID, scope AdvisoryImpactScope,
+	ctx context.Context, advisoryID, orgID uuid.UUID, scope AdvisoryScope,
 ) ([]types.AdvisoryImpactedPull, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
@@ -826,12 +888,7 @@ func GetAdvisoryImpactedPulls(
 		GROUP BY coalesce(avpl.customer_organization_id, oua.customer_organization_id),
 			co.name, a.id, a.name, av.id, av.name
 		ORDER BY co.name NULLS LAST, a.name, av.name`,
-		pgx.NamedArgs{
-			"id":            advisoryID,
-			"orgId":         orgID,
-			"partnerOrgId":  scope.PartnerOrgID,
-			"customerOrgId": scope.CustomerOrgID,
-		},
+		scope.bind(pgx.NamedArgs{"id": advisoryID, "orgId": orgID}),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not query advisory impacted pulls: %w", err)

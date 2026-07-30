@@ -34,6 +34,9 @@ type Advisory struct {
 	ReferenceCount       int64                  `json:"referenceCount"`
 	PublishedAt          *time.Time             `json:"publishedAt,omitempty"`
 	ResolvedAt           *time.Time             `json:"resolvedAt,omitempty"`
+	// Affected reports whether the requesting customer or partner still has a deployment
+	// running an affected version. Omitted for vendors, who see the status instead.
+	Affected *bool `json:"affected,omitempty"`
 }
 
 type AdvisoryDetail struct {

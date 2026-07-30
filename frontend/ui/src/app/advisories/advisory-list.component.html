@@ -95,9 +95,15 @@
                       </span>
                     </td>
                     <td class="px-4 py-3">
-                      <span class="distr-badge" [ngClass]="statusBadgeClass(advisory.status)">
-                        {{ statusDisplayLabel(advisory.status) }}
-                      </span>
+                      @if (showsAffectedState) {
+                        <span class="distr-badge" [ngClass]="affectedBadgeClass(advisory.affected)">
+                          {{ affectedLabel(advisory.affected) }}
+                        </span>
+                      } @else {
+                        <span class="distr-badge" [ngClass]="statusBadgeClass(advisory.status)">
+                          {{ statusLabel(advisory.status) }}
+                        </span>
+                      }
                     </td>
                     <td class="px-4 py-3 font-mono text-xs">{{ advisory.cveId || '-' }}</td>
                     <td class="px-4 py-3">

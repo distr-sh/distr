@@ -7,6 +7,7 @@ import (
 
 	"github.com/distr-sh/distr/internal/advisory"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
@@ -39,6 +40,44 @@ func GetCustomerView(
 		return view, err
 	}
 	return view, nil
+}
+
+// getCurrentApplicationVersionIDs returns the application versions the deployments in scope
+// run right now, one per deployment. This is the counterpart to
+// getDeployedApplicationVersionIDs: that one answers "were they ever exposed", which decides
+// visibility, and this one answers "are they still exposed", which decides what
+// advisory.IsStillAffected reports.
+//
+// Vendors are not scoped and never ask for this, so an unscoped call returns nothing rather
+// than every deployment in the organization.
+func getCurrentApplicationVersionIDs(
+	ctx context.Context, orgID uuid.UUID, scope AdvisoryScope,
+) ([]uuid.UUID, error) {
+	if scope.CustomerOrgID == nil && scope.PartnerOrgID == nil {
+		return nil, nil
+	}
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`SELECT DISTINCT ON (d.id) dr.application_version_id
+		FROM DeploymentRevision dr
+			JOIN Deployment d ON d.id = dr.deployment_id
+			JOIN DeploymentTarget dt ON dt.id = d.deployment_target_id
+			LEFT JOIN CustomerOrganization co ON co.id = dt.customer_organization_id
+		WHERE dt.organization_id = @orgId
+			AND (@partnerOrgId::uuid IS NULL OR co.partner_organization_id = @partnerOrgId)
+			AND (@customerOrgId::uuid IS NULL OR dt.customer_organization_id = @customerOrgId)
+		ORDER BY d.id, dr.created_at DESC`,
+		scope.bind(pgx.NamedArgs{"orgId": orgID}),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query current application versions: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID])
+	if err != nil {
+		return nil, fmt.Errorf("could not get current application versions: %w", err)
+	}
+	return result, nil
 }
 
 // getDeployedApplicationVersionIDs returns every application version the customer has ever
@@ -152,30 +191,29 @@ func getArtifactEntitlementRefs(
 	return refs, nil
 }
 
-// AffectedVersions are the application and artifact versions an advisory affects.
-// Only versions with relation 'affected' are included, since fixed versions never grant
-// customers visibility.
-type AffectedVersions struct {
-	ApplicationVersions []advisory.VersionRef
-	ArtifactVersions    []advisory.VersionRef
-}
-
 type affectedVersionRow struct {
 	AdvisoryID uuid.UUID `db:"advisory_id"`
 	VersionID  uuid.UUID `db:"version_id"`
 	ParentID   uuid.UUID `db:"parent_id"`
 }
 
-// GetAffectedVersions loads the affected versions of several advisories at once.
+type markedVersionRow struct {
+	affectedVersionRow
+	Relation types.AdvisoryVersionRelation `db:"relation"`
+}
+
+// GetMarkedVersions loads the versions several advisories mark, all at once.
 //
 // Artifact versions are expanded to every version resolving to the same content: first the
 // sibling tags sharing a manifest digest, then recursively the indexes that contain the
-// affected manifest as a part. This mirrors CheckEntitlementForArtifact so that visibility
-// and the actual pull entitlement agree for multi-arch images.
-func GetAffectedVersions(
+// marked manifest as a part. This mirrors CheckEntitlementForArtifact so that visibility
+// and the actual pull entitlement agree for multi-arch images. It matters just as much for
+// the fixed side, where a customer who pulled the fix by tag must be recognised as having
+// taken it.
+func GetMarkedVersions(
 	ctx context.Context, advisoryIDs []uuid.UUID,
-) (map[uuid.UUID]AffectedVersions, error) {
-	result := make(map[uuid.UUID]AffectedVersions, len(advisoryIDs))
+) (map[uuid.UUID]advisory.MarkedVersions, error) {
+	result := make(map[uuid.UUID]advisory.MarkedVersions, len(advisoryIDs))
 	if len(advisoryIDs) == 0 {
 		return result, nil
 	}
@@ -200,51 +238,104 @@ func GetAffectedVersions(
 	}
 
 	// UNION rather than UNION ALL: it deduplicates against all rows produced so far, which
-	// terminates the recursion even if artifact parts ever form a cycle.
+	// terminates the recursion even if artifact parts ever form a cycle. The relation travels
+	// with each row so that both sides come back from one traversal.
 	artifactRows, err := db.Query(
 		ctx,
-		`WITH RECURSIVE Affected (advisory_id, id, artifact_id, manifest_blob_digest) AS (
-			SELECT vrv.advisory_id, sibling.id, sibling.artifact_id, sibling.manifest_blob_digest
+		`WITH RECURSIVE Marked (advisory_id, relation, id, artifact_id, manifest_blob_digest) AS (
+			SELECT vrv.advisory_id, vrv.relation, sibling.id, sibling.artifact_id,
+					sibling.manifest_blob_digest
 				FROM AdvisoryArtifactVersion vrv
 				JOIN ArtifactVersion av ON av.id = vrv.artifact_version_id
 				JOIN ArtifactVersion sibling
 					ON sibling.artifact_id = av.artifact_id
 					AND sibling.manifest_blob_digest = av.manifest_blob_digest
 				WHERE vrv.advisory_id = any(@advisoryIds)
-					AND vrv.relation = 'affected'
 			UNION
-			SELECT agg.advisory_id, av.id, av.artifact_id, av.manifest_blob_digest
+			SELECT agg.advisory_id, agg.relation, av.id, av.artifact_id, av.manifest_blob_digest
 				FROM ArtifactVersion av
 				JOIN ArtifactVersionPart avp ON av.id = avp.artifact_version_id
-				JOIN Affected agg ON avp.artifact_blob_digest = agg.manifest_blob_digest
+				JOIN Marked agg ON avp.artifact_blob_digest = agg.manifest_blob_digest
 		)
-		SELECT DISTINCT advisory_id, id AS version_id, artifact_id AS parent_id
-		FROM Affected`,
+		SELECT DISTINCT advisory_id, relation, id AS version_id, artifact_id AS parent_id
+		FROM Marked`,
 		pgx.NamedArgs{"advisoryIds": advisoryIDs},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("could not query affected artifact versions: %w", err)
+		return nil, fmt.Errorf("could not query marked artifact versions: %w", err)
 	}
-	artifactVersions, err := pgx.CollectRows(artifactRows, pgx.RowToStructByName[affectedVersionRow])
+	artifactVersions, err := pgx.CollectRows(artifactRows, pgx.RowToStructByName[markedVersionRow])
 	if err != nil {
-		return nil, fmt.Errorf("could not get affected artifact versions: %w", err)
+		return nil, fmt.Errorf("could not get marked artifact versions: %w", err)
 	}
 
 	for _, row := range applicationVersions {
-		affected := result[row.AdvisoryID]
-		affected.ApplicationVersions = append(
-			affected.ApplicationVersions,
+		marked := result[row.AdvisoryID]
+		marked.AffectedApplicationVersions = append(
+			marked.AffectedApplicationVersions,
 			advisory.VersionRef{VersionID: row.VersionID, ParentID: row.ParentID},
 		)
-		result[row.AdvisoryID] = affected
+		result[row.AdvisoryID] = marked
 	}
 	for _, row := range artifactVersions {
-		affected := result[row.AdvisoryID]
-		affected.ArtifactVersions = append(
-			affected.ArtifactVersions,
-			advisory.VersionRef{VersionID: row.VersionID, ParentID: row.ParentID},
-		)
-		result[row.AdvisoryID] = affected
+		marked := result[row.AdvisoryID]
+		ref := advisory.VersionRef{VersionID: row.VersionID, ParentID: row.ParentID}
+		if row.Relation == types.AdvisoryVersionRelationFixed {
+			marked.FixedArtifactVersions = append(marked.FixedArtifactVersions, ref)
+		} else {
+			marked.AffectedArtifactVersions = append(marked.AffectedArtifactVersions, ref)
+		}
+		result[row.AdvisoryID] = marked
+	}
+	return result, nil
+}
+
+// getPulledArtifactVersionIDs returns which of the given artifact versions the callers in
+// scope have pulled from the registry.
+//
+// It takes the versions to look for rather than returning everything pulled, because
+// ArtifactVersionPull is an append-only audit log that grows with every registry pull and is
+// by far the largest table involved here. Narrowing to the versions the advisories actually
+// mark drives the query off fk_ArtifactVersionPull_artifact_version_id and keeps it
+// proportional to the advisories on screen instead of the organization's pull history. It
+// costs nothing in accuracy: a pull of an unmarked version can never change the answer.
+//
+// The customer predicate cannot drive the query on its own, because coalescing the column
+// with the membership fallback makes it unindexable.
+//
+// Attribution matches GetAdvisoryImpactedPulls, including that fallback through the pulling
+// user's customer organization for pulls recorded before migration 71 added the column.
+func getPulledArtifactVersionIDs(
+	ctx context.Context, orgID uuid.UUID, scope AdvisoryScope, versionIDs []uuid.UUID,
+) ([]uuid.UUID, error) {
+	if len(versionIDs) == 0 || (scope.CustomerOrgID == nil && scope.PartnerOrgID == nil) {
+		return nil, nil
+	}
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`SELECT DISTINCT avpl.artifact_version_id
+		FROM ArtifactVersionPull avpl
+			JOIN ArtifactVersion av ON av.id = avpl.artifact_version_id
+			JOIN Artifact a ON a.id = av.artifact_id
+			LEFT JOIN Organization_UserAccount oua
+				ON oua.user_account_id = avpl.useraccount_id
+					AND oua.organization_id = a.organization_id
+			LEFT JOIN CustomerOrganization co
+				ON co.id = coalesce(avpl.customer_organization_id, oua.customer_organization_id)
+		WHERE avpl.artifact_version_id = any(@versionIds)
+			AND a.organization_id = @orgId
+			AND (@partnerOrgId::uuid IS NULL OR co.partner_organization_id = @partnerOrgId)
+			AND (@customerOrgId::uuid IS NULL
+				OR coalesce(avpl.customer_organization_id, oua.customer_organization_id) = @customerOrgId)`,
+		scope.bind(pgx.NamedArgs{"orgId": orgID, "versionIds": versionIDs}),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query pulled artifact versions: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID])
+	if err != nil {
+		return nil, fmt.Errorf("could not get pulled artifact versions: %w", err)
 	}
 	return result, nil
 }
