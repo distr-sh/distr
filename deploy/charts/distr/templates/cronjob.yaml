@@ -58,5 +58,9 @@ spec:
               {{- end }}
               env:
                 {{- include "distr.hubEnv" $ | nindent 16 }}
+              {{- with $job.resources | default $.Values.cronJobResources }}
+              resources:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
           restartPolicy: {{ $job.restartPolicy | default "OnFailure" }}
 {{- end }}

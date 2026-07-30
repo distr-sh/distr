@@ -292,6 +292,14 @@ tolerations: []
 
 affinity: {}
 
+# -- Default resources for all cron job containers. Individual jobs can override this with `cronJobs[].resources`.
+cronJobResources: {}
+  # limits:
+  #   memory: 512Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 64Mi
+
 cronJobs:
   - name: deployment-revision-status-cleanup
     labels:
