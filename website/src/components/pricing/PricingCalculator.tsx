@@ -340,7 +340,7 @@ export default function PricingCalculator() {
             <div class="flex justify-start items-center flex-col px-6 pt-12 pb-6 text-center">
               <h3 class="text-xl font-semibold">Pro</h3>
               <p class="mb-0 mt-1 text-sm text-gray-600 dark:text-gray-400">
-                SaaS or Self-Hosted
+                Distr Cloud or Self-Hosted
               </p>
               <div class="text-4xl font-bold my-2">
                 {currency}
@@ -446,7 +446,7 @@ export default function PricingCalculator() {
             <div class="relative mt-9 rounded-t-lg bg-white dark:bg-gray-900 flex justify-start items-center flex-col px-6 pt-12 pb-6 text-center">
               <h3 class="text-xl font-semibold">Business</h3>
               <p class="mb-0 mt-1 text-sm text-gray-600 dark:text-gray-400">
-                SaaS or Self-Hosted
+                Distr Cloud or Self-Hosted
               </p>
               <div class="text-4xl font-bold my-2">
                 {currency}
@@ -549,7 +549,7 @@ export default function PricingCalculator() {
               {currency === '$' ? (
                 <>
                   <p class="mb-0 mt-1 text-sm text-gray-600 dark:text-gray-400">
-                    SaaS or Self-Hosted • starting at
+                    Distr Cloud or Self-Hosted • starting at
                   </p>
                   <div class="text-4xl font-bold my-2">
                     $59,000
