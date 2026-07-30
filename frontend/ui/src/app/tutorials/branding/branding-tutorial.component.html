@@ -16,25 +16,22 @@
                 </p>
                 <p class="mt-8">
                   You can find additional resources on this topic in our
-                  <a
-                    [href]="websiteUrl + '/docs/product/customer-portal/'"
-                    class="text-primary-600 underline"
-                    target="_blank"
-                    >docs</a
-                  >.
+                  <a [href]="customerPortalDocsUrl" class="text-primary-600 underline" target="_blank">docs</a>.
                 </p>
               </div>
 
               <div class="gap-4 sm:flex sm:items-center sm:justify-between">
                 <button
                   (click)="navigateToOverviewPage()"
-                  class="flex-1 sm:flex-none items-center justify-center w-full rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 sm:w-auto">
+                  type="button"
+                  class="distr-btn-secondary flex-1 sm:flex-none inline-flex items-center justify-center w-full sm:w-auto px-5 py-2.5 text-sm font-medium">
                   Exit Tutorial
                 </button>
                 <button
                   (click)="continueFromWelcome()"
-                  type="submit"
-                  class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
+                  [disabled]="loading()"
+                  type="button"
+                  class="distr-btn-primary text-white flex w-full sm:w-auto items-center justify-center">
                   Let's Go
                   <fa-icon class="ml-2" [icon]="faArrowRight" />
                 </button>
@@ -42,11 +39,11 @@
             </div>
           </cdk-step>
           <cdk-step label="Branding Options" [stepControl]="brandingFormGroup">
-            <div class="p-8 w-full">
+            <div class="px-8 py-10 w-full">
               <form [formGroup]="brandingFormGroup" (ngSubmit)="continueFromBranding()">
                 <ol
                   class="ml-4 relative text-gray-900 dark:text-white mb-12 border-s border-gray-200 dark:border-gray-700">
-                  <li class="mb-10 ms-8">
+                  <li class="ms-8">
                     <span
                       class="absolute flex items-center justify-center size-8 bg-gray-100 dark:bg-gray-700 rounded-full -start-4 ring-4 ring-white dark:ring-gray-800">
                       <fa-icon [icon]="faLightbulb" />
@@ -56,77 +53,32 @@
                       Imagine you are one of your customers, getting started with self hosting your application: What
                       would you like to see in your Customer Portal?
                     </p>
-                  </li>
-                  <li class="mb-10 ms-8">
-                    <span class="absolute flex items-center justify-center -start-2 mt-0.75">
-                      <input
-                        id="titleDone"
-                        type="checkbox"
-                        [formControl]="brandingFormGroup.controls.titleDone"
-                        class="distr-checkbox" />
-                    </span>
-                    <label for="titleDone" class="text-lg font-medium leading-tight">Set Customer Portal Title</label>
-                    <p class="mt-1 text-sm">The title will be shown in the header next to the logo.</p>
-                    <div class="mt-2">
-                      <input
-                        [formControl]="brandingFormGroup.controls.title"
-                        autotrim
-                        type="text"
-                        name="title"
-                        id="title"
-                        class="distr-input" />
-                      @if (brandingFormGroup.controls.title.touched && brandingFormGroup.controls.title.errors) {
-                        <div class="mt-2 text-sm text-red-500">Please enter this field.</div>
-                      }
-                    </div>
-                  </li>
-                  <li class="mb-10 ms-8">
-                    <span class="absolute flex items-center justify-center -start-2 mt-0.75">
-                      <input
-                        id="descriptionDone"
-                        type="checkbox"
-                        [formControl]="brandingFormGroup.controls.descriptionDone"
-                        class="distr-checkbox" />
-                    </span>
-                    <label for="descriptionDone" class="text-lg font-medium leading-tight"
-                      >Write a short Welcome Page</label
-                    >
-                    <p class="mt-1 text-sm">
-                      This will be shown as the home page for your customers. Markdown is supported.
+                    <p class="text-sm mt-2">
+                      Upload your logo and favicon, choose how the portal is named, write a short welcome page and set
+                      the browser tab title. All of this is optional and can be changed later on the
+                      <a [href]="brandingDocsUrl" class="text-primary-600 underline" target="_blank">Branding page</a>,
+                      which also shows your custom domains.
                     </p>
-                    <div class="mt-2">
-                      <textarea
-                        [formControl]="brandingFormGroup.controls.description"
-                        type="text"
-                        rows="8"
-                        name="description"
-                        id="description"
-                        class="distr-input">
-                      </textarea>
-                      @if (
-                        brandingFormGroup.controls.description.touched && brandingFormGroup.controls.description.errors
-                      ) {
-                        <div class="mt-2 text-sm text-red-500">Please enter this field.</div>
-                      }
-                    </div>
+
+                    <app-branding-form
+                      class="block mt-8"
+                      [showCustomDomains]="false"
+                      [defaultDescription]="defaultBrandingDescription" />
                   </li>
                 </ol>
 
                 <div class="gap-4 sm:flex sm:items-center sm:justify-between">
                   <button
                     cdkStepperPrevious
-                    class="flex-1 sm:flex-none items-center justify-center w-full rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 sm:w-auto">
+                    type="button"
+                    class="distr-btn-secondary flex-1 sm:flex-none inline-flex items-center justify-center w-full sm:w-auto px-5 py-2.5 text-sm font-medium">
                     Back
                   </button>
                   <button
                     type="submit"
                     [disabled]="loading()"
-                    class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
-                    @if (brandingFormGroup.dirty) {
-                      Update Branding and Continue
-                    } @else {
-                      Continue
-                    }
+                    class="distr-btn-primary text-white flex w-full sm:w-auto items-center justify-center">
+                    Save and Continue
                     <fa-icon class="ml-2" [icon]="faArrowRight" />
                   </button>
                 </div>
@@ -166,16 +118,16 @@
                       <input
                         [formControl]="inviteFormGroup.controls.customerName"
                         autotrim
-                        type="email"
+                        type="text"
                         name="customerName"
                         id="customerName"
-                        class="md:w-108 bg-gray-50 border border-gray-300 text-sm text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                        class="distr-input min-w-0 md:w-108" />
                       @if (inviteFormGroup.controls.customerName.dirty) {
                         <button
                           type="button"
                           [disabled]="loading()"
                           (click)="createCustomerOrganization()"
-                          class="ml-4 flex items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
+                          class="distr-btn-primary text-white ml-4 flex items-center justify-center sm:w-auto">
                           Create
                         </button>
                       }
@@ -213,13 +165,13 @@
                         type="email"
                         name="customerEmail"
                         id="customerEmail"
-                        class="md:w-108 bg-gray-50 border border-gray-300 text-sm text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+                        class="distr-input min-w-0 md:w-108" />
                       @if (inviteFormGroup.controls.customerEmail.dirty) {
                         <button
                           type="button"
                           [disabled]="loading()"
                           (click)="sendInviteMail()"
-                          class="ml-4 flex items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
+                          class="distr-btn-primary text-white ml-4 flex items-center justify-center sm:w-auto">
                           Send Invite Mail
                         </button>
                       }
@@ -248,7 +200,7 @@
                     </p>
                     <p class="mt-1 text-sm">Please note: You are now mimicking to be a customer.</p>
                     <p class="mt-1 text-sm">
-                      In the customer portal, you should see the previously chosen title and welcome page.
+                      In the customer portal, you should see the logo, portal name and welcome page you just configured.
                     </p>
                     <p class="mt-1 text-sm">When done, mark this checkbox and complete the tutorial.</p>
                     @if (
@@ -267,13 +219,14 @@
                 <div class="gap-4 sm:flex sm:items-center sm:justify-between">
                   <button
                     cdkStepperPrevious
-                    class="flex-1 sm:flex-none items-center justify-center w-full rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 sm:w-auto">
+                    type="button"
+                    class="distr-btn-secondary flex-1 sm:flex-none inline-flex items-center justify-center w-full sm:w-auto px-5 py-2.5 text-sm font-medium">
                     Back
                   </button>
                   <button
                     [disabled]="loading()"
                     type="submit"
-                    class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
+                    class="distr-btn-primary text-white flex w-full sm:w-auto items-center justify-center">
                     <fa-icon class="mr-2" [icon]="faCheck" />
                     @if (progress?.completedAt) {
                       Done

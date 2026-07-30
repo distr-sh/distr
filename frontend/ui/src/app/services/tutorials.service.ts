@@ -47,10 +47,10 @@ export class TutorialsService {
       completedRoute: '/deployments',
     },
     {
-      name: 'Invite your first customer',
+      name: 'Customer Portal and Onboarding',
       id: 'branding',
       icon: this.faPalette,
-      description: 'Create and customize your Customer Portal.',
+      description: 'Customize your Customer Portal, then invite a customer.',
       completedRoute: '/customers',
     },
   ];

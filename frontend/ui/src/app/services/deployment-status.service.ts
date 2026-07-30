@@ -16,7 +16,8 @@ export class DeploymentStatusService {
     return this.httpClient.get<DeploymentRevisionStatus[]>(`${this.baseUrl}/${deploymentId}/status`, {params});
   }
 
-  export(deploymentId: string): Observable<Blob> {
-    return this.httpClient.get(`${this.baseUrl}/${deploymentId}/status/export`, {responseType: 'blob'});
+  export(deploymentId: string, options?: TimeseriesOptions): Observable<Blob> {
+    const params = timeseriesOptionsAsParams(options);
+    return this.httpClient.get(`${this.baseUrl}/${deploymentId}/status/export`, {params, responseType: 'blob'});
   }
 }
