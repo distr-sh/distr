@@ -1,4 +1,5 @@
 import {OverlayModule} from '@angular/cdk/overlay';
+import {DecimalPipe} from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -25,12 +26,15 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import {combineLatest, debounceTime, map, of, switchMap, timer} from 'rxjs';
+import {combineLatest, debounceTime, firstValueFrom, map, of, switchMap, timer} from 'rxjs';
+import {MAX_LOG_EXPORT_LINES} from '../../../constants';
 import {dateTimeLocalToISO, isoToDateTimeLocal} from '../../../util/dates';
+import {ConfirmConfig} from '../../components/confirm-dialog/confirm-dialog.component';
 import {AuthService} from '../../services/auth.service';
 import {DeploymentLogsService} from '../../services/deployment-logs.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
 import {OrganizationService} from '../../services/organization.service';
+import {OverlayService} from '../../services/overlay.service';
 import {OrderDirection} from '../../types/timeseries-options';
 import {DeploymentAppNameComponent} from '../deployment-target-card/deployment-app-name.component';
 import {DeploymentLogsTableComponent} from './deployment-logs-table.component';
@@ -54,13 +58,16 @@ const BUSINESS_LOG_BANNER_DISMISSED_KEY = 'logViewer.businessLogBannerDismissed'
     ReactiveFormsModule,
     RouterLink,
   ],
+  providers: [DecimalPipe],
 })
 export class DeploymentTargetDetailComponent {
+  private readonly decimalPipe = inject(DecimalPipe);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly deploymentTargetsService = inject(DeploymentTargetsService);
   private readonly deploymentLogsService = inject(DeploymentLogsService);
   private readonly organizationService = inject(OrganizationService);
+  private readonly overlay = inject(OverlayService);
   private readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder).nonNullable;
 
@@ -334,7 +341,23 @@ export class DeploymentTargetDetailComponent {
     this.form.patchValue({from: '', to: ''});
   }
 
-  protected export() {
+  private readonly exportWithoutRangeConfirm: ConfirmConfig = {
+    message: {
+      message: 'Without a time range, the export covers the whole available log window.',
+      alert: {
+        type: 'warning',
+        message:
+          'We recommend setting From and To before exporting, and a Filter to narrow the export down further. ' +
+          `An export contains at most ${this.decimalPipe.transform(MAX_LOG_EXPORT_LINES)} lines and is truncated beyond that.`,
+      },
+    },
+    confirmLabel: 'Export anyway',
+  };
+
+  protected async export() {
+    if (this.live() && !(await firstValueFrom(this.overlay.confirm(this.exportWithoutRangeConfirm)))) {
+      return;
+    }
     // Only one of the tables is shown at any given time, so it's fine to call export on all of them
     this.deploymentTargetLogsTable()?.export();
     this.deploymentStatusTable()?.export();

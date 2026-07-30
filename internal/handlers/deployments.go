@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/distr-sh/distr/api"
@@ -14,7 +13,6 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/deploymentvalues"
-	"github.com/distr-sh/distr/internal/handlerutil"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/subscription"
@@ -60,14 +58,16 @@ func DeploymentsRouter(r chiopenapi.Router) {
 				With(option.Response(http.StatusOK, []api.DeploymentRevisionStatus{}))
 			r.Get("/status/export", exportDeploymentStatusHandler()).
 				With(option.Description("Export deployment status")).
-				With(option.Request(DeploymentIDRequest{})).
+				With(option.Request(struct {
+					DeploymentIDRequest
+					TimeseriesRangeRequest
+				}{})).
 				With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
 			r.Get("/logs", getDeploymentLogsHandler()).
 				With(option.Description("Get deployment logs")).
 				With(option.Request(struct {
 					DeploymentTimeseriesRequest
 					ResourceRequest
-					Filter *string `query:"filter"`
 				}{})).
 				With(option.Response(http.StatusOK, []api.DeploymentLogRecord{}))
 			r.Get("/logs/resources", getDeploymentLogsResourcesHandler()).
@@ -79,6 +79,7 @@ func DeploymentsRouter(r chiopenapi.Router) {
 				With(option.Request(struct {
 					DeploymentIDRequest
 					ResourceRequest
+					TimeseriesRangeRequest
 				}{})).
 				With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
 		})
@@ -523,33 +524,19 @@ func getDeploymentRevisions(w http.ResponseWriter, r *http.Request) {
 func getDeploymentStatus(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	deployment := internalctx.GetDeployment(ctx)
-	limit, err := QueryParam(r, "limit", strconv.Atoi, Max(100))
-	if errors.Is(err, ErrParamNotDefined) {
-		limit = 25
-	} else if err != nil {
+	limit, err := parseTimeseriesLimit(r)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	before, err := QueryParam(r, "before", ParseTimeFunc(time.RFC3339Nano))
-	if err != nil && !errors.Is(err, ErrParamNotDefined) {
+	queryRange, err := parseTimeseriesRange(r)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
-	}
-	after, err := QueryParam(r, "after", ParseTimeFunc(time.RFC3339Nano))
-	if err != nil && !errors.Is(err, ErrParamNotDefined) {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	filter := r.FormValue("filter")
-	if filter != "" {
-		if err := handlerutil.ValidateFilterRegex(filter); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
 	}
 	order := types.OrderDirection(r.FormValue("order"))
 	if deploymentStatus, err := db.GetDeploymentRevisionStatus(
-		ctx, deployment.ID, limit, before, after, filter, order,
+		ctx, deployment.ID, limit, queryRange.Before, queryRange.After, queryRange.Filter, order,
 	); err != nil {
 		if errors.Is(err, apierrors.ErrBadRequest) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -569,30 +556,30 @@ func exportDeploymentStatusHandler() http.HandlerFunc {
 		log := internalctx.GetLogger(ctx)
 
 		deployment := internalctx.GetDeployment(ctx)
-		authInfo := auth.Authentication.Require(ctx)
-		org := authInfo.CurrentOrg()
-		limit := int(subscription.GetLogExportRowsLimit(org.SubscriptionType))
+
+		queryRange, err := parseTimeseriesRange(r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 
 		filename := fmt.Sprintf("%s_deployment_status.log", time.Now().Format("2006-01-02"))
+		export := newExportWriter(w, log, filename)
 
-		SetFileDownloadHeaders(w, filename)
-
-		err := db.GetDeploymentRevisionStatusForExport(
-			ctx, deployment.ID, limit,
+		if err := db.GetDeploymentRevisionStatusForExport(
+			ctx, deployment.ID, int(subscription.MaxLogExportRows),
+			queryRange.Before, queryRange.After, queryRange.Filter,
 			func(record types.DeploymentRevisionStatus) error {
-				_, err := fmt.Fprintf(w, "[%s] [%s] %s\n",
+				return export.writeLine("[%s] [%s] %s\n",
 					record.CreatedAt.Format(time.RFC3339),
 					record.Type,
 					record.Message)
-				return err
 			},
-		)
-		if err != nil {
-			log.Error("failed to export status records", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			// Note: If headers were already sent, we can't send error response
+		); err != nil {
+			export.fail(ctx, "failed to export status records", err)
 			return
 		}
+		export.finish()
 	}
 }
 

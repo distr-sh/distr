@@ -146,9 +146,21 @@ func GetDeploymentRevisionStatusForExport(
 	ctx context.Context,
 	deploymentID uuid.UUID,
 	limit int,
+	before time.Time,
+	after time.Time,
+	filter string,
 	callback func(types.DeploymentRevisionStatus) error,
 ) error {
+	if before.IsZero() {
+		before = time.Now()
+	}
+
 	db := internalctx.GetDb(ctx)
+
+	filterExpr := ""
+	if filter != "" {
+		filterExpr = "AND message ~ @filter"
+	}
 
 	rows, err := db.Query(
 		ctx,
@@ -158,6 +170,8 @@ func GetDeploymentRevisionStatusForExport(
 			SELECT id, created_at, deployment_revision_id, type, message
 			FROM DeploymentRevisionStatus
 			WHERE deployment_revision_id = dr.id
+				AND created_at BETWEEN @after AND @before
+				`+filterExpr+`
 			ORDER BY created_at DESC
 			LIMIT @limit
 		) drs
@@ -167,9 +181,15 @@ func GetDeploymentRevisionStatusForExport(
 		pgx.NamedArgs{
 			"deploymentId": deploymentID,
 			"limit":        limit,
+			"before":       before,
+			"after":        after,
+			"filter":       filter,
 		},
 	)
 	if err != nil {
+		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.InvalidRegularExpression {
+			return apierrors.NewBadRequest("invalid filter regex")
+		}
 		return fmt.Errorf("failed to query DeploymentRevisionStatus: %w", err)
 	}
 

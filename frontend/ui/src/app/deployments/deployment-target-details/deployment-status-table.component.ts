@@ -85,7 +85,12 @@ export class DeploymentStatusTableComponent {
   );
 
   protected readonly exporter: TimeseriesExporter = {
-    export: () => this.svc.export(this.deploymentId()),
+    export: () =>
+      this.svc.export(this.deploymentId(), {
+        after: this.after(),
+        before: this.before(),
+        filter: this.filter(),
+      }),
     getFileName: () => `deployment_status.log`,
   };
 
