@@ -125,7 +125,6 @@ func TestParseAndValidate_AllFields(t *testing.T) {
 			"moc": 30,
 			"mcu": 40,
 			"mcd": 50,
-			"mlr": 60,
 			"mrs": 70,
 		},
 	})
@@ -142,7 +141,6 @@ func TestParseAndValidate_AllFields(t *testing.T) {
 		MaxCustomersPerOrganization:                 limit.New(30),
 		MaxUsersPerCustomerOrganization:             limit.New(40),
 		MaxDeploymentTargetsPerCustomerOrganization: limit.New(50),
-		MaxLogExportRows:                            limit.New(60),
 		MaxRegistryStorageBytes:                     limit.New(70),
 	}))
 }
@@ -169,7 +167,6 @@ func TestParseAndValidate_PartialClaims_DefaultsForUnspecifiedFields(t *testing.
 		MaxCustomersPerOrganization:                 defaultLicenseData.MaxCustomersPerOrganization,
 		MaxUsersPerCustomerOrganization:             defaultLicenseData.MaxUsersPerCustomerOrganization,
 		MaxDeploymentTargetsPerCustomerOrganization: defaultLicenseData.MaxDeploymentTargetsPerCustomerOrganization,
-		MaxLogExportRows:                            defaultLicenseData.MaxLogExportRows,
 		MaxRegistryStorageBytes:                     defaultLicenseData.MaxRegistryStorageBytes,
 	}))
 }
@@ -185,7 +182,6 @@ func TestParseAndValidate_ZeroLimits(t *testing.T) {
 			"moc": 0,
 			"mcu": 0,
 			"mcd": 0,
-			"mlr": 0,
 			"mrs": 0,
 		},
 	})
@@ -201,7 +197,6 @@ func TestParseAndValidate_ZeroLimits(t *testing.T) {
 		MaxCustomersPerOrganization:                 limit.New(0),
 		MaxUsersPerCustomerOrganization:             limit.New(0),
 		MaxDeploymentTargetsPerCustomerOrganization: limit.New(0),
-		MaxLogExportRows:                            limit.New(0),
 		MaxRegistryStorageBytes:                     limit.New(0),
 	}))
 }

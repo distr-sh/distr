@@ -345,10 +345,18 @@ tolerations: []
 # -- Affinity of the hub pods.
 affinity: {}
 
+# @default -- see the values file
+# -- Default resources for all cron job containers. Individual jobs can override this with `cronJobs[].resources`.
+cronJobResources: {}
+  # limits:
+  #   memory: 512Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 64Mi
+
 # -- Maintenance CronJobs run against the database, each executing the hub image with `args`. Removing
 # an entry disables that job; the commented-out `organization-cleanup` job deletes organizations that
 # have been marked for deletion.
-# @default -- see the values file
 cronJobs:
   - name: deployment-revision-status-cleanup
     labels:

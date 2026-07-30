@@ -240,15 +240,13 @@ func exportArtifactPullsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := internalctx.GetLogger(ctx)
-		authInfo := auth.Authentication.Require(ctx)
-		org := authInfo.CurrentOrg()
 
 		filter, err := parseArtifactPullFilters(w, r)
 		if err != nil {
 			return
 		}
 
-		filter.Count = int(subscription.GetLogExportRowsLimit(org.SubscriptionType))
+		filter.Count = int(subscription.MaxArtifactPullExportRows)
 
 		pulls, err := db.GetArtifactVersionPulls(ctx, filter)
 		if err != nil {
