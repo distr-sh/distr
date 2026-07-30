@@ -129,7 +129,19 @@ export class AdvisoryListComponent {
     this.refresh$.pipe(startWith(0)),
     toObservable(this.serverFilter),
   ]).pipe(
-    switchMap(([, filter]) => this.advisoriesService.list(filter)),
+    switchMap(([, filter]) =>
+      // Handled here rather than in the subscriber so that a failed load recovers to an empty
+      // result instead of leaving the loading state stuck with no feedback.
+      this.advisoriesService.list(filter).pipe(
+        catchError((e) => {
+          const message = getFormDisplayedError(e);
+          if (message) {
+            this.toast.error(message);
+          }
+          return of<Advisory[]>([]);
+        })
+      )
+    ),
     shareReplay({bufferSize: 1, refCount: true}),
     takeUntilDestroyed()
   );
@@ -191,13 +203,15 @@ export class AdvisoryListComponent {
         await firstValueFrom(this.advisoriesService.createComment(advisory.id, {content: comment}));
       }
       this.toast.success('Status updated');
-      this.refresh$.next();
     } catch (e) {
       const message = getFormDisplayedError(e);
       if (message) {
         this.toast.error(message);
       }
     } finally {
+      // Refresh regardless of outcome so the list reflects the server state even when the
+      // status update succeeded but the follow-up comment failed.
+      this.refresh$.next();
       this.changingStatusFor.set(undefined);
     }
   }
