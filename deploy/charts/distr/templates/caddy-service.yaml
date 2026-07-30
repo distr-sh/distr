@@ -21,6 +21,12 @@ spec:
       targetPort: https
       protocol: TCP
       name: https
+    # HTTP/3. The load balancer has to serve TCP and UDP on the same port, which an AWS NLB does as a
+    # TCP_UDP listener; see the annotations in the values file.
+    - port: 443
+      targetPort: https-quic
+      protocol: UDP
+      name: https-quic
   selector:
     {{- include "distr.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: caddy

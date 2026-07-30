@@ -235,10 +235,13 @@ ingress:
   enabled: false
   # -- Ingress class name, e.g. `nginx`.
   className: ''
-  # -- Annotations of the Ingress.
+  # -- Annotations of the Ingress. Registry pushes have no size limit, so raise or disable the body
+  # size limit of your Ingress controller on the registry host: ingress-nginx, for example, rejects
+  # anything above 1 MB unless `nginx.ingress.kubernetes.io/proxy-body-size` says otherwise.
   annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
+    # nginx.ingress.kubernetes.io/proxy-body-size: "0"
   # -- Hosts served by the Ingress. The app and the registry are served on separate hosts, routed to
   # the `http` and `artifacts` ports of the hub Service.
   # @default -- see the values file
@@ -450,16 +453,29 @@ caddy:
     # -- Type of the public Caddy Service. It must be reachable under the CNAME targets above.
     type: LoadBalancer
     # -- Annotations of the public Caddy Service. The chart stays generic: set cloud-specific
-    # annotations here. The commented-out ones provision an AWS Network Load Balancer.
+    # annotations here. The commented-out ones provision an AWS Network Load Balancer. The Service
+    # serves HTTP/3 on UDP 443 next to TCP 443, which an AWS NLB only does as a `TCP_UDP` listener,
+    # enabled by the last annotation together with AWS Load Balancer Controller v2.13.0 or later and
+    # its `EnableTCPUDPListener` feature gate.
     annotations: {}
       # service.beta.kubernetes.io/aws-load-balancer-type: external
       # service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
       # service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+      # service.beta.kubernetes.io/aws-load-balancer-enable-tcp-udp-listener: 'true'
   # -- Port Caddy reaches the hub's on-demand TLS ask endpoint on. It is passed to the hub as
   # INTERNAL_SERVER_ADDR, the address of its internal server, and must never be exposed publicly.
   askServerPort: 8085
-  # -- Resource requests and limits of the Caddy container.
+  # -- Resource requests and limits of the Caddy container. Left empty deliberately so the chart also
+  # runs on clusters with few resources, such as Minikube. Uncomment and adjust the lines below to
+  # specify resources. Keep in mind that Caddy terminates TLS for all custom domain traffic,
+  # including registry pushes, which it streams to the hub without buffering or a size limit.
   resources: {}
+    # limits:
+    #   cpu: 1000m
+    #   memory: 256Mi
+    # requests:
+    #   cpu: 50m
+    #   memory: 64Mi
 
 postgresql:
   # -- Deploy the bundled PostgreSQL subchart. When disabled, configure `externalDatabase` instead.

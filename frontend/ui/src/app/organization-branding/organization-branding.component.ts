@@ -3,6 +3,7 @@ import {HttpErrorResponse} from '@angular/common/http';
 import {ChangeDetectionStrategy, Component, computed, inject, OnInit, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
+import {RouterLink} from '@angular/router';
 import {OrganizationBranding} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheck, faCircleXmark, faFloppyDisk, faPen, faTrashCan} from '@fortawesome/free-solid-svg-icons';
@@ -12,8 +13,10 @@ import {SecureImagePipe} from '../../util/secureImage';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
 import {AuthService} from '../services/auth.service';
+import {FeatureFlagService} from '../services/feature-flag.service';
 import {ImageUploadService} from '../services/image-upload.service';
 import {OrganizationBrandingService} from '../services/organization-branding.service';
+import {OrganizationService} from '../services/organization.service';
 import {PortalBrandingService} from '../services/portal-branding.service';
 import {ToastService} from '../services/toast.service';
 
@@ -24,6 +27,7 @@ import {ToastService} from '../services/toast.service';
   imports: [
     FaIconComponent,
     ReactiveFormsModule,
+    RouterLink,
     AsyncPipe,
     AutotrimDirective,
     InnerMarkdownDirective,
@@ -39,9 +43,20 @@ export class OrganizationBrandingComponent implements OnInit {
 
   protected readonly auth = inject(AuthService);
   private readonly organizationBrandingService = inject(OrganizationBrandingService);
+  private readonly organizationService = inject(OrganizationService);
+  private readonly featureFlags = inject(FeatureFlagService);
   private readonly imageUploadService = inject(ImageUploadService);
   private readonly portalBranding = inject(PortalBrandingService);
   private readonly toast = inject(ToastService);
+
+  private readonly organization = toSignal(this.organizationService.get());
+
+  protected readonly customDomainsSelfService = this.featureFlags.isCustomDomainsEnabled;
+  // Business plan upsell, shown only on the plans that can actually upgrade to it
+  protected readonly showCustomDomainsUpsell = computed(() => {
+    const subscriptionType = this.organization()?.subscriptionType;
+    return !this.customDomainsSelfService() && (subscriptionType === 'pro' || subscriptionType === 'trial');
+  });
 
   private organizationBranding?: OrganizationBranding;
 

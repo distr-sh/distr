@@ -6,8 +6,21 @@
       </h1>
       <p class="text-gray-500 dark:text-gray-400">
         Customize how Distr looks for your team and your customers. Upload a logo, set a customer portal name and a
-        welcome page. Custom domains are configured by Distr support.
+        welcome page.
       </p>
+
+      @if (customDomainsSelfService() || showCustomDomainsUpsell()) {
+        <div
+          class="mt-4 p-4 text-sm rounded-lg border border-primary-200 bg-primary-50 text-primary-800 dark:border-primary-800 dark:bg-gray-700 dark:text-primary-300">
+          @if (customDomainsSelfService()) {
+            Admins can configure custom domains for your app, registry and customer portal in the
+            <a routerLink="/settings/organization" class="font-semibold underline">organization settings</a>.
+          } @else {
+            Upgrade to the <a routerLink="/subscription" class="font-semibold underline">Distr Business plan</a> to
+            configure custom domains for your app, registry and customer portal.
+          }
+        </div>
+      }
 
       <div class="grid gap-4 mt-6 sm:grid-cols-2">
         <div>
@@ -203,9 +216,12 @@
         @if (hasCustomDomains()) {
           <div>
             <h3 class="text-lg font-bold dark:text-white">Custom Domains</h3>
-            <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-              Custom domains are configured by Distr support. Please contact us if you want to change these settings.
-            </p>
+            @if (!customDomainsSelfService()) {
+              <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+                These custom domains are configured by Distr support. Please contact us if you want to change these
+                settings.
+              </p>
+            }
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -227,11 +243,6 @@
                 </div>
               </div>
             }
-          </div>
-        } @else {
-          <div class="p-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400" role="alert">
-            Custom domains can be configured by Distr support. Please contact us if you are interested in setting up
-            custom domains.
           </div>
         }
 

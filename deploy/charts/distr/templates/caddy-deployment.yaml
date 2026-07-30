@@ -53,6 +53,9 @@ spec:
             - name: https
               containerPort: 443
               protocol: TCP
+            - name: https-quic
+              containerPort: 443
+              protocol: UDP
           readinessProbe:
             tcpSocket:
               port: https
