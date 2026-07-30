@@ -29,7 +29,6 @@ import {
   switchMap,
   tap,
 } from 'rxjs';
-import {getRemoteEnvironment} from '../../../env/remote';
 import {RelativeDatePipe} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
@@ -48,9 +47,9 @@ import {
   UpstreamAuthType,
 } from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
+import {ContextService} from '../../services/context.service';
 import {CustomerOrganizationsCache} from '../../services/customer-organizations.service';
 import {ImageUploadService} from '../../services/image-upload.service';
-import {OrganizationBrandingService} from '../../services/organization-branding.service';
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
@@ -85,7 +84,7 @@ export class ArtifactVersionsComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly organization = inject(OrganizationService);
-  private readonly organizationBranding = inject(OrganizationBrandingService);
+  private readonly contextService = inject(ContextService);
   private readonly overlay = inject(OverlayService);
   private readonly imageUploadService = inject(ImageUploadService);
   private readonly toast = inject(ToastService);
@@ -176,11 +175,8 @@ export class ArtifactVersionsComponent {
   protected readonly org = resource({
     loader: () => firstValueFrom(this.organization.get()),
   });
-  private readonly registryDomain = resource({
-    loader: () => firstValueFrom(this.organizationBranding.registryDomain()),
-  });
-  private readonly remoteEnv = resource({
-    loader: () => getRemoteEnvironment(),
+  private readonly registryHost = resource({
+    loader: () => firstValueFrom(this.contextService.getRegistryHost()),
   });
 
   public getArtifactUsage(artifact: ArtifactWithTags): string | undefined {
@@ -189,9 +185,8 @@ export class ArtifactVersionsComponent {
       return undefined;
     }
     const org = this.org.value();
-    const env = this.remoteEnv.value();
-    const registryDomain = this.registryDomain.value();
-    let url = `${registryDomain ?? env?.registryHost ?? 'REGISTRY_DOMAIN'}/${org?.slug ?? 'ORG_SLUG'}/${artifact.name}`;
+    const registryHost = this.registryHost.value();
+    let url = `${registryHost ?? 'REGISTRY_DOMAIN'}/${org?.slug ?? 'ORG_SLUG'}/${artifact.name}`;
     const version = artifact.versions.find((it) => it.inferredType !== 'signature' && it.tags && it.tags.length > 0);
     if (!version) return;
     switch (version.inferredType) {

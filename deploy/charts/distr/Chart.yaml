@@ -1,6 +1,6 @@
 apiVersion: v2
 name: distr
-description: The easiest way to distribute enterprise software
+description: Ship self-hosted software
 keywords:
   - distr
   - software distribution
@@ -8,8 +8,9 @@ keywords:
   - docker
   - kubernetes
 maintainers:
-  - name: Glasskube
-    url: https://github.com/glasskube
+  - name: Distr Team
+    email: support@distr.sh
+    url: https://distr.sh
 icon: >-
   https://github.com/distr-sh/distr/raw/refs/heads/main/frontend/ui/public/distr-logo.svg
 home: https://distr.sh/docs/
