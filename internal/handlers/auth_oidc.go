@@ -26,6 +26,7 @@ import (
 const (
 	redirectToLoginOIDCFailed               = "/login?reason=oidc-failed"
 	redirectToLoginOIDCRegistrationDisabled = "/login?reason=oidc-registration-disabled"
+	redirectToLoginOIDCUnavailable          = "/login?reason=oidc-unavailable"
 )
 
 func AuthOIDCRouter(r chiopenapi.Router) {
@@ -43,6 +44,22 @@ func authLoginOidcHandler(w http.ResponseWriter, r *http.Request) {
 	provider := oidc.Provider(r.PathValue("oidcProvider"))
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
+
+	// The instance-scoped providers belong to the platform, not to the organization owning the domain, so they are
+	// not offered on a self-service custom domain. Hiding the buttons is not enough, since the auth routes are
+	// reachable directly. Only the initiation is gated: the IdP binds the redirect_uri to the initiating host.
+	if customDomain, err := requestOnCustomDomain(ctx, r); err != nil {
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		log.Error("could not resolve custom domain for OIDC login", zap.Error(err))
+		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
+		return
+	} else if customDomain {
+		log.Info("rejecting instance OIDC login on custom domain",
+			zap.String("provider", string(provider)), zap.String("host", r.Host))
+		http.Redirect(w, r, redirectToLoginOIDCUnavailable, http.StatusFound)
+		return
+	}
+
 	if state, pkceVerifier, err := db.CreateOIDCState(ctx); err != nil {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		log.Error("OIDC state creation failed", zap.Error(err))

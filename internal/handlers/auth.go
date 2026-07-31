@@ -42,10 +42,8 @@ func AuthRouter(r chiopenapi.Router) {
 			return chimiddleware.GetClientIP(r.Context()), nil
 		}, httprate.KeyByEndpoint),
 	))
-	r.Route("/login", func(r chiopenapi.Router) {
-		r.Post("/", authLoginHandler)
-		r.Get("/config", authLoginConfigHandler())
-	})
+	// The login methods available on a host are part of the host-resolved GET /api/public/v1/portal response.
+	r.Post("/login", authLoginHandler)
 	r.Route("/oidc", AuthOIDCRouter)
 	r.Post("/register", authRegisterHandler)
 	r.Post("/reset", authResetPasswordHandler)
@@ -371,25 +369,6 @@ func authLoginHandler(w http.ResponseWriter, r *http.Request) {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		log.Warn("user login failed", zap.Error(err))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	}
-}
-
-func authLoginConfigHandler() http.HandlerFunc {
-	resp := struct {
-		RegistrationEnabled  bool `json:"registrationEnabled"`
-		OIDCGithubEnabled    bool `json:"oidcGithubEnabled"`
-		OIDCGoogleEnabled    bool `json:"oidcGoogleEnabled"`
-		OIDCMicrosoftEnabled bool `json:"oidcMicrosoftEnabled"`
-		OIDCGenericEnabled   bool `json:"oidcGenericEnabled"`
-	}{
-		RegistrationEnabled:  env.Registration() == env.RegistrationEnabled,
-		OIDCGithubEnabled:    env.OIDCGithubEnabled(),
-		OIDCGoogleEnabled:    env.OIDCGoogleEnabled(),
-		OIDCMicrosoftEnabled: env.OIDCMicrosoftEnabled(),
-		OIDCGenericEnabled:   env.OIDCGenericEnabled(),
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		RespondJSON(w, resp)
 	}
 }
 
