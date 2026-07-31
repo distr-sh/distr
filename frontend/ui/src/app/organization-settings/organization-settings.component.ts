@@ -13,12 +13,19 @@ import {OrganizationService} from '../services/organization.service';
 import {OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
 import {Organization} from '../types/organization';
+import {CustomDomainsComponent} from './custom-domains.component';
 
 @Component({
   selector: 'app-organization-settings',
   templateUrl: './organization-settings.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [FaIconComponent, ReactiveFormsModule, AutotrimDirective, DeleteOrganizationComponent],
+  imports: [
+    FaIconComponent,
+    ReactiveFormsModule,
+    AutotrimDirective,
+    DeleteOrganizationComponent,
+    CustomDomainsComponent,
+  ],
 })
 export class OrganizationSettingsComponent implements OnInit {
   protected readonly faFloppyDisk = faFloppyDisk;
@@ -30,6 +37,7 @@ export class OrganizationSettingsComponent implements OnInit {
   protected readonly auth = inject(AuthService);
 
   private readonly preflightConfirmTemplate = viewChild.required<TemplateRef<unknown>>('preflightConfirmTemplate');
+  private readonly customDomains = viewChild.required(CustomDomainsComponent);
 
   private organization?: Organization;
 
@@ -71,8 +79,9 @@ export class OrganizationSettingsComponent implements OnInit {
   }
 
   async save() {
+    const customDomainsValid = this.customDomains().validate();
     this.form.markAllAsTouched();
-    if (this.form.valid) {
+    if (this.form.valid && customDomainsValid) {
       const wasPrePostScriptsEnabled = this.organization?.features?.includes('pre_post_scripts') ?? false;
       const isNowPrePostScriptsEnabled = this.form.value.prePostScriptsEnabled ?? false;
 
@@ -108,6 +117,7 @@ export class OrganizationSettingsComponent implements OnInit {
             prePostScriptsEnabled: this.form.value.prePostScriptsEnabled ?? false,
           })
         );
+        await this.customDomains().save();
         this.toast.success('Settings saved successfully');
       } catch (e) {
         const msg = getFormDisplayedError(e);

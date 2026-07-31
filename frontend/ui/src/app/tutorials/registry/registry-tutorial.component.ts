@@ -28,16 +28,14 @@ import {
   faPalette,
   faRightToBracket,
 } from '@fortawesome/free-solid-svg-icons';
-import {combineLatest, firstValueFrom, lastValueFrom, map, Subject, switchMap, takeUntil, tap} from 'rxjs';
-import {fromPromise} from 'rxjs/internal/observable/innerFrom';
-import {getRemoteEnvironment} from '../../../env/remote';
+import {firstValueFrom, lastValueFrom, map, Subject, switchMap, takeUntil, tap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {slugMaxLength, slugPattern} from '../../../util/slug';
 import {ClipComponent} from '../../components/clip.component';
 import {CreatedAccessTokenComponent} from '../../components/created-access-token.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AccessTokensService} from '../../services/access-tokens.service';
-import {OrganizationBrandingService} from '../../services/organization-branding.service';
+import {ContextService} from '../../services/context.service';
 import {OrganizationService} from '../../services/organization.service';
 import {ToastService} from '../../services/toast.service';
 import {TutorialsService} from '../../services/tutorials.service';
@@ -95,7 +93,7 @@ export class RegistryTutorialComponent implements OnInit, AfterViewInit, OnDestr
   private readonly router = inject(Router);
   protected readonly toast = inject(ToastService);
   protected readonly organizationService = inject(OrganizationService);
-  protected readonly organizationBrandingService = inject(OrganizationBrandingService);
+  private readonly contextService = inject(ContextService);
   protected readonly tutorialsService = inject(TutorialsService);
   protected readonly tokenService = inject(AccessTokensService);
   protected createdToken?: AccessTokenWithKey;
@@ -121,11 +119,7 @@ export class RegistryTutorialComponent implements OnInit, AfterViewInit, OnDestr
   });
 
   private readonly slug = toSignal(this.organizationService.get().pipe(map((o) => o.slug)));
-  protected readonly host = toSignal(
-    combineLatest([fromPromise(getRemoteEnvironment()), this.organizationBrandingService.registryDomain()]).pipe(
-      map(([env, registryDomain]) => registryDomain ?? env.registryHost)
-    )
-  );
+  protected readonly host = toSignal(this.contextService.getRegistryHost());
   protected readonly proxyGhcrUrl = helloDistrProxyUrl('ghcr.io/distr-sh');
   protected readonly proxyDistrUrl = computed(() => helloDistrProxyUrl(this.host() + '/' + this.slug()));
 

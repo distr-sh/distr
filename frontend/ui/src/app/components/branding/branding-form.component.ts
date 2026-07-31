@@ -11,6 +11,7 @@ import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {InnerMarkdownDirective} from '../../directives/inner-markdown.directive';
+import {FeatureFlagService} from '../../services/feature-flag.service';
 import {OrganizationBrandingService} from '../../services/organization-branding.service';
 import {PortalBrandingService} from '../../services/portal-branding.service';
 import {ToastService} from '../../services/toast.service';
@@ -34,6 +35,9 @@ export class BrandingFormComponent implements OnInit {
   private readonly organizationBrandingService = inject(OrganizationBrandingService);
   private readonly portalBranding = inject(PortalBrandingService);
   private readonly toast = inject(ToastService);
+  private readonly featureFlags = inject(FeatureFlagService);
+
+  protected readonly customDomainsSelfService = this.featureFlags.isCustomDomainsEnabled;
 
   protected readonly faCheck = faCheck;
   protected readonly faCircleXmark = faCircleXmark;
