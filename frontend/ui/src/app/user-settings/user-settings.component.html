@@ -106,6 +106,45 @@
       </form>
 
       <div class="space-y-4">
+        <h2 class="text-xl font-bold dark:text-white">Connected Accounts</h2>
+
+        <div class="text-gray-500 text-sm">
+          These identity provider accounts can be used to sign in to Distr. An account is connected the first time you
+          sign in with it, and stays connected to your Distr account even if the e-mail address changes on either side.
+        </div>
+
+        @if (oidcIdentities().length === 0) {
+          <div class="text-sm dark:text-white">You have no connected accounts.</div>
+        } @else {
+          <ul class="space-y-2">
+            @for (identity of oidcIdentities(); track identity.id) {
+              <li
+                class="flex items-center gap-4 border border-gray-300 dark:border-gray-600 rounded-lg p-4 text-sm dark:text-white">
+                <fa-icon class="w-4 h-4 flex align-middle" [icon]="providerIcon(identity.provider)" />
+                <div class="grow">
+                  <div class="font-medium">{{ providerName(identity.provider) }}</div>
+                  <div class="text-gray-500">{{ identity.email ?? identity.issuer }}</div>
+                  <div class="text-gray-500">
+                    Connected {{ identity.createdAt | date: 'mediumDate' }}
+                    @if (identity.lastLoginAt; as lastLoginAt) {
+                      &middot; last used {{ lastLoginAt | date: 'medium' }}
+                    }
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  [disabled]="formLoading()"
+                  (click)="showDisconnectOidcIdentityDialog(identity)"
+                  class="text-gray-900 inline-flex items-center justify-center bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700 disabled:opacity-60 disabled:cursor-not-allowed">
+                  Disconnect
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      <div class="space-y-4">
         <h2 class="text-xl font-bold dark:text-white">Multi-Factor Authentication</h2>
 
         <div class="text-gray-500 text-sm">
@@ -305,6 +344,55 @@
           </form>
         </div>
       </section>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #disconnectOidcIdentityDialog>
+  <div
+    class="p-4 max-w-lg mt-12 max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-900"
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top">
+    <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Disconnect Account</h2>
+      <button
+        type="button"
+        (click)="disconnectOidcIdentityDialogRef?.dismiss()"
+        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+        <fa-icon [icon]="faXmark" />
+        <span class="sr-only">Close modal</span>
+      </button>
+    </div>
+
+    <div class="p-4 md:p-5 space-y-4">
+      @if (oidcIdentityToDisconnect(); as identity) {
+        <div
+          class="flex items-center p-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
+          role="alert">
+          <fa-icon [icon]="faCircleExclamation" />
+          <span class="sr-only">Warning</span>
+          <div class="ml-3 text-sm font-medium">
+            You will no longer be able to sign in with {{ providerName(identity.provider) }}. Signing in with it again
+            reconnects it to your account.
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2">
+          <button
+            type="button"
+            (click)="disconnectOidcIdentityDialogRef?.dismiss()"
+            class="text-gray-900 bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700">
+            Cancel
+          </button>
+          <button
+            type="button"
+            [disabled]="formLoading()"
+            (click)="disconnectOidcIdentity()"
+            class="text-white inline-flex items-center justify-center bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800 disabled:opacity-60 disabled:cursor-not-allowed">
+            Disconnect {{ providerName(identity.provider) }}
+          </button>
+        </div>
+      }
     </div>
   </div>
 </ng-template>

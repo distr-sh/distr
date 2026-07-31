@@ -36,6 +36,20 @@ func SettingsRouter(r chiopenapi.Router) {
 			With(option.Description("Update current user email address")).
 			With(option.Request(api.UpdateUserAccountEmailRequest{})).
 			With(option.Response(http.StatusAccepted, nil))
+
+		r.Route("/oidc-identities", func(r chiopenapi.Router) {
+			type OIDCIdentityIDRequest struct {
+				OIDCIdentityID uuid.UUID `path:"oidcIdentityId"`
+			}
+
+			r.Get("/", getOIDCIdentitiesHandler).
+				With(option.Description("List the identity provider accounts connected to the current user")).
+				With(option.Response(http.StatusOK, []api.UserAccountOIDCIdentity{}))
+
+			r.Delete("/{oidcIdentityId}", deleteOIDCIdentityHandler).
+				With(option.Description("Disconnect an identity provider account from the current user")).
+				With(option.Request(OIDCIdentityIDRequest{}))
+		})
 	})
 
 	r.Route("/mfa", func(r chiopenapi.Router) {
