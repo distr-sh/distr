@@ -11,10 +11,13 @@ import {Aside} from '@astrojs/starlight/components';
 
 Distr offers subscription plans for different stages of software distribution. This guide explains which plan fits your current needs.
 
+Every plan works on [Distr Cloud and self-hosted](#distr-cloud-or-self-hosted) in your own environment, so you can pick a plan first and decide where it runs later.
+
 <Aside type="tip">
-  All new organizations start with a **30-day Pro Trial**, giving you full
-  access to Pro features to evaluate Distr. Learn more in our [trial
-  guide](/docs/free-trial/).
+  You can try Distr for free in two ways: every new organization gets a 30-day
+  Pro Trial on Distr Cloud (see our [trial guide](/docs/free-trial/)), and the
+  free and open source Community Edition is the perfect option to try Distr
+  locally (see our [self-hosting guide](/docs/self-hosting/)).
 </Aside>
 
 ## Pro Plan
@@ -28,20 +31,18 @@ Pro covers everything you need to ship to self-managed customers: deployments th
 - Shipping your first customer installations and scaling from there
 - Teams that need license management and version control
 - Organizations requiring role-based access control
-- Teams that want login with Google, GitHub, or Microsoft
 - Teams that want a branded customer portal
 
 **Key characteristics:**
 
-- Up to 100 customer organizations
-- License management for version control
+- License management with application and artifact entitlements and signed license keys
 - Role-based access control (Admin, Default, Read-Only)
-- Login with Google, GitHub & Microsoft
 - Deployment alerts
 - Support bundles for remote troubleshooting
 - Deployment history and rollbacks
 - Custom branding for your Customer Portal
-- 7-day log retention
+- Up to 1 TB registry storage and 7-day log retention
+- Email and Slack support, including a free onboarding call
 
 <Aside type="note">
   For detailed feature comparisons and limits, visit our [pricing
@@ -64,12 +65,13 @@ Business adds the features you need to run your entire distribution operation on
 
 **Key characteristics:**
 
+- Everything in Pro
 - Reseller / partner organizations
 - License templates
-- Custom domains (full white label)
+- Custom domains (full white label) and white-label emails from your own sender domain
 - Enterprise SSO — bring-your-own OIDC (vendors and customers)
-- 5 TB registry storage and 30-day log retention
-- Priority support
+- Up to 5 TB registry storage and 30-day log retention
+- Priority email and Slack support with white glove onboarding
 
 ## Enterprise Plan
 
@@ -87,19 +89,28 @@ At this stage you distribute more than software. Documentation, support portals,
 
 **Key characteristics:**
 
-- Unlimited customer organizations, deployments, and users
-- Advanced features: customer billing, custom roles, SAML SSO, workflows
+- Everything in Business, plus unlimited usage at a flat yearly rate
+- Advanced features: customer billing, custom roles, SAML SSO, workflows and automation
 - Documentation pages, wiki, and ticket system
 - Public registry and CVE scanning
-- Custom log retention
+- Custom registry storage and log retention
 - Dedicated infrastructure
 - Custom contracts and procurement support
-- Dedicated support engineer and SLA
+- Dedicated support engineer, phone support, and SLA
 
 <Aside type="note">
   Enterprise plans include custom pricing based on your specific needs. [Contact
   us](/contact/) to discuss Enterprise options.
 </Aside>
+
+## Distr Cloud or Self-Hosted
+
+Every plan is available on Distr Cloud and self-hosted, with the same feature set either way. Where Distr runs is a separate decision from which plan you pick:
+
+- **Distr Cloud** - We operate the Hub, the registry, and log storage for you at [app.distr.sh](https://app.distr.sh), so there is nothing to install.
+- **Self-hosted** - You run the Hub in your own environment with Docker Compose or Kubernetes, and bring your own PostgreSQL database and S3-compatible object storage. A license key unlocks your plan, so [contact us](/contact/) to get one.
+
+For deployment methods, system requirements, and configuration options, see our [self-hosting guide](/docs/self-hosting/).
 
 ## Making Your Decision
 
@@ -125,18 +136,9 @@ At this stage you distribute more than software. Documentation, support portals,
 - ✅ You require dedicated infrastructure, SAML SSO, and custom roles
 - ✅ You need custom contracts, SLAs, and a dedicated support engineer
 
-## Self-Hosting Distr
-
-If you prefer to self-host Distr in your own environment, we offer two editions:
-
-- **Community Edition** - Free and open source, ideal for getting started
-- **Enterprise Edition** - Unlocks the features of our paid plans in your own environment
-
-For more information about self-hosting options, deployment methods, and how to get started, see our [self-hosting guide](/docs/self-hosting/).
-
 ## Next Steps
 
-1. **Start your trial** - All new organizations get a 30-day Pro Trial. [Create your account](https://signup.distr.sh) to begin.
+1. **Try Distr for free** - Start a 30-day Pro Trial on Distr Cloud by [creating your account](/onboarding/), or run the free Community Edition on your own machine.
 2. **Review pricing** - See current pricing and calculate costs on our [pricing page](/pricing/).
 3. **Learn about trials** - Understand how the 30-day trial works in our [trial guide](/docs/free-trial/).
 4. **Manage your subscription** - Once you've chosen a plan, learn how to manage it in our [subscription management guide](/docs/subscription-management/).
