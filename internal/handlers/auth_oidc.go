@@ -16,6 +16,7 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/userauth"
 	"github.com/distr-sh/distr/internal/util"
+	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -48,15 +49,18 @@ func authLoginOidcHandler(w http.ResponseWriter, r *http.Request) {
 	// The instance-scoped providers belong to the platform, not to the organization owning the domain, so they are
 	// not offered on a self-service custom domain. Hiding the buttons is not enough, since the auth routes are
 	// reachable directly. Only the initiation is gated: the IdP binds the redirect_uri to the initiating host.
-	if customDomain, err := requestOnCustomDomain(ctx, r); err != nil {
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("could not resolve custom domain for OIDC login", zap.Error(err))
-		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
-		return
-	} else if customDomain {
+	// The same resolution backs the portal response, so the buttons and this gate can never disagree.
+	host, err := resolvePortalHost(ctx, validation.NormalizeHostname(r.Host))
+	if !host.instanceLoginAllowed() {
 		log.Info("rejecting instance OIDC login on custom domain",
 			zap.String("provider", string(provider)), zap.String("host", r.Host))
 		http.Redirect(w, r, redirectToLoginOIDCUnavailable, http.StatusFound)
+		return
+	} else if err != nil {
+		// Fail closed: an unresolved host may well be a custom domain.
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		log.Error("could not resolve host for OIDC login", zap.Error(err))
+		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
 		return
 	}
 
