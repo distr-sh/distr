@@ -27,7 +27,7 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import {map, of, switchMap} from 'rxjs';
-import {GITHUB_URL, WEBSITE_URL} from '../../../constants';
+import {WEBSITE_URL} from '../../../constants';
 import {buildConfig} from '../../../data';
 import {environment} from '../../../env/env';
 import {
@@ -70,7 +70,6 @@ export class SideBarComponent {
 
   protected readonly buildConfig = buildConfig;
   protected readonly edition = environment.edition;
-  protected readonly githubUrl = GITHUB_URL;
   protected readonly websiteUrl = WEBSITE_URL;
 
   protected readonly faDashboard = faDashboard;

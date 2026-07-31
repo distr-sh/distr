@@ -217,6 +217,17 @@ _, err := db.CopyFrom(
 )
 ```
 
+### Subscription Gating
+
+Never gate a feature by listing the subscription types that are allowed to use it. Every such allowlist has to be touched again whenever a new plan is introduced, and the plan silently loses the feature if it is forgotten. Always express gating as a denylist of the lower plans instead, so a new plan gets access by default:
+
+- Go: use `types.NonProSubscriptionTypes` with `SubscriptionType.IsPro()`, `middleware.ForbidSubscriptionTypes(...)` or the ready-made `middleware.ProFeature`.
+- Frontend: use `isProSubscription()` / `isPayingSubscription()` from `app/types/subscription.ts`, or `NON_PRO_SUBSCRIPTION_TYPES` / `NON_PAYING_SUBSCRIPTION_TYPES` when a list is needed.
+
+The only exceptions are plan-specific billing UI (checkout, plan comparison) and upsell banners for one particular plan, which are inherently tied to concrete plans.
+
+Organization features (`types.Feature`) come from two sources and must not be mixed up. Plan-managed features are granted by `types.FeaturesForSubscriptionType` and collected in `types.PlanManagedFeatures`; they are the only ones that may be revoked when an organization loses its plan. Everything else is granted out of band — `vendor_billing` by staff, `pre_post_scripts` and `artifact_version_mutable` by an organization admin in the settings — and must survive plan changes and edition reconciliation. Never overwrite the whole `features` array to revoke a plan; remove `types.PlanManagedFeatures` from it.
+
 ### API Routes
 
 API routes are defined in `internal/routing/`. Routes are grouped by authentication requirements:

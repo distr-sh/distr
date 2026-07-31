@@ -191,12 +191,15 @@ func UpdateOrganizationSubscriptionType(ctx context.Context, subscriptionType ty
 		pgx.NamedArgs{"subscription_type": subscriptionType},
 	)
 	if err != nil {
-		return fmt.Errorf("could no update Organization: %w", err)
+		return fmt.Errorf("could not update Organization: %w", err)
 	}
 	return nil
 }
 
-func UpdateOrganizationFeaturesWithSubscriptionType(
+// RemoveOrganizationFeaturesWithSubscriptionType removes the given features from all
+// organizations with one of the given subscription types. Features that are not passed in are
+// left untouched, so features granted outside of a subscription plan survive.
+func RemoveOrganizationFeaturesWithSubscriptionType(
 	ctx context.Context,
 	subscriptionType []types.SubscriptionType,
 	features []types.Feature,
@@ -205,12 +208,17 @@ func UpdateOrganizationFeaturesWithSubscriptionType(
 	_, err := db.Exec(
 		ctx,
 		`UPDATE Organization
-		SET features = @features
-		WHERE subscription_type = ANY(@subscription_type)`,
+		SET features = array(
+			SELECT unnest(features)
+			EXCEPT
+			SELECT unnest(@features::feature[])
+		)
+		WHERE subscription_type = ANY(@subscription_type)
+			AND features && @features::feature[]`,
 		pgx.NamedArgs{"subscription_type": subscriptionType, "features": features},
 	)
 	if err != nil {
-		return fmt.Errorf("could no update Organization: %w", err)
+		return fmt.Errorf("could not update Organization: %w", err)
 	}
 	return nil
 }

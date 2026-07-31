@@ -133,7 +133,10 @@ var (
 	RequireAdmin            = RequireAnyUserRole(types.UserRoleAdmin)
 )
 
-func RequireAnySubscriptionType(types ...types.SubscriptionType) func(http.Handler) http.Handler {
+// ForbidSubscriptionTypes blocks the given subscription types. Gating is expressed as a
+// denylist of the lower plans instead of an allowlist of the higher ones, so a newly
+// introduced plan has access by default.
+func ForbidSubscriptionTypes(forbidden ...types.SubscriptionType) func(http.Handler) http.Handler {
 	return func(handler http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -141,13 +144,13 @@ func RequireAnySubscriptionType(types ...types.SubscriptionType) func(http.Handl
 				http.Error(w, err.Error(), http.StatusForbidden)
 			} else if auth.CurrentOrg() == nil {
 				http.Error(w, "inadequate access token", http.StatusForbidden)
-			} else if !slices.Contains(types, auth.CurrentOrg().SubscriptionType) {
-				typesStr := make([]string, 0, len(types))
-				for _, t := range types {
+			} else if slices.Contains(forbidden, auth.CurrentOrg().SubscriptionType) {
+				typesStr := make([]string, 0, len(forbidden))
+				for _, t := range forbidden {
 					typesStr = append(typesStr, string(t))
 				}
 				http.Error(w, fmt.Sprintf(
-					"this operation can only be performed on an organization with one of the following subscription types: %v",
+					"this operation can not be performed on an organization with one of the following subscription types: %v",
 					strings.Join(typesStr, ", "),
 				), http.StatusForbidden)
 			} else {
@@ -158,12 +161,7 @@ func RequireAnySubscriptionType(types ...types.SubscriptionType) func(http.Handl
 	}
 }
 
-var ProFeature = RequireAnySubscriptionType(
-	types.SubscriptionTypePro,
-	types.SubscriptionTypeBusiness,
-	types.SubscriptionTypeTrial,
-	types.SubscriptionTypeEnterprise,
-)
+var ProFeature = ForbidSubscriptionTypes(types.NonProSubscriptionTypes...)
 
 func RequireVendor(handler http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {

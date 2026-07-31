@@ -78,6 +78,25 @@ func TestUserRoleRankPanicsOnUnknown(t *testing.T) {
 	g.Expect(func() { UserRole("").Rank() }).To(Panic())
 }
 
+func TestPlanManagedFeatures(t *testing.T) {
+	g := NewWithT(t)
+
+	g.Expect(PlanManagedFeatures).To(ConsistOf(FeatureLicensing, FeaturePartnerManagement, FeatureCustomDomains))
+
+	for _, st := range AllSubscriptionTypes() {
+		g.Expect(PlanManagedFeatures).To(ContainElements(FeaturesForSubscriptionType(st)),
+			"features granted by %q must be revocable", st)
+	}
+
+	// Features granted outside of a plan must never be revoked by edition reconciliation.
+	g.Expect(PlanManagedFeatures).NotTo(ContainElements(
+		FeaturePrePostScripts,
+		FeatureArtifactVersionMutable,
+		FeatureVendorBilling,
+		FeatureDeploymentLogsAfter,
+	))
+}
+
 func TestDeploymentTypeParsing(t *testing.T) {
 	g := NewWithT(t)
 
