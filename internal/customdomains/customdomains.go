@@ -2,14 +2,12 @@ package customdomains
 
 import (
 	"context"
-	"net/mail"
 	"regexp"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
@@ -46,14 +44,6 @@ func RegistryDomainOrDefault(ctx context.Context, orgID uuid.UUID, b *types.Orga
 		return *b.RegistryDomain
 	}
 	return env.RegistryHost()
-}
-
-func EmailFromAddressParsedOrDefault(b *types.OrganizationBranding) (*mail.Address, error) {
-	if b != nil && b.EmailFromAddress != nil {
-		return mail.ParseAddress(*b.EmailFromAddress)
-	} else {
-		return util.PtrTo(env.GetMailerConfig().FromAddress), nil
-	}
 }
 
 // customDomains loads the organization's custom domains best-effort: on error the caller

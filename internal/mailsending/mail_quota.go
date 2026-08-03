@@ -6,20 +6,33 @@ import (
 	"fmt"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/custommail"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/go-mailx/mailx"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
 var ErrEmailQuotaExceeded = errors.New("email sending quota exceeded")
 
-// sendNotificationWithQuota sends a notification email to the given address, enforcing the
-// hourly per-address quota. If the quota is exhausted, the email is not sent and
-// ErrEmailQuotaExceeded is returned. If sending fails, the claimed quota slot is released
-// again so that failed sends do not consume quota.
-func sendNotificationWithQuota(ctx context.Context, email string, opts ...mailx.MailOpt) error {
-	mailer := internalctx.GetMailer(ctx)
+// sendNotificationWithQuota sends a notification email to the given address through the
+// organization's mailer, enforcing the hourly per-address quota. The quota applies to every
+// transport, including organization-provided ones: it protects recipients from notification
+// storms caused by Distr, which are our bug regardless of who delivers the mail.
+// If the quota is exhausted, the email is not sent and ErrEmailQuotaExceeded is returned. If
+// sending fails, the claimed quota slot is released again so that failed sends do not consume
+// quota.
+func sendNotificationWithQuota(
+	ctx context.Context,
+	orgID uuid.UUID,
+	email string,
+	opts ...mailx.MailOpt,
+) error {
+	mailer, err := custommail.MailerForOrganization(ctx, orgID)
+	if err != nil {
+		return err
+	}
 	quota := env.NotificationEmailHourlyQuota()
 	if quota <= 0 {
 		return mailer.Send(ctx, append(opts, mailx.To(email))...)

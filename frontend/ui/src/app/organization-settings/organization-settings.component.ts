@@ -14,6 +14,7 @@ import {OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
 import {Organization} from '../types/organization';
 import {CustomDomainsComponent} from './custom-domains.component';
+import {CustomEmailComponent} from './custom-email.component';
 
 @Component({
   selector: 'app-organization-settings',
@@ -25,6 +26,7 @@ import {CustomDomainsComponent} from './custom-domains.component';
     AutotrimDirective,
     DeleteOrganizationComponent,
     CustomDomainsComponent,
+    CustomEmailComponent,
   ],
 })
 export class OrganizationSettingsComponent implements OnInit {

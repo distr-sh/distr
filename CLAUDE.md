@@ -228,6 +228,12 @@ The only exceptions are plan-specific billing UI (checkout, plan comparison) and
 
 Organization features (`types.Feature`) come from two sources and must not be mixed up. Plan-managed features are granted by `types.FeaturesForSubscriptionType` and collected in `types.PlanManagedFeatures`; they are the only ones that may be revoked when an organization loses its plan. Everything else is granted out of band — `vendor_billing` by staff, `pre_post_scripts` and `artifact_version_mutable` by an organization admin in the settings — and must survive plan changes and edition reconciliation. Never overwrite the whole `features` array to revoke a plan; remove `types.PlanManagedFeatures` from it.
 
+### Sending Mail
+
+Never take the mailer straight from the context. An organization can configure its own SMTP server (`CustomEmailConfiguration`), which overrides the instance mailer built from the `MAILER_*` env vars, so every sender resolves its transport with `custommail.MailerForOrganization(ctx, orgID)` and its sender address with `custommail.FromAddressOrDefault(ctx, orgID, branding)`. Both fall back to the instance defaults when the organization has no enabled configuration, and neither falls back when sending through a configured server fails — the instance mailer would send from a domain that server's sender address does not belong to, which fails SPF/DKIM/DMARC and hides the misconfiguration.
+
+The organization must be passed explicitly rather than read from the authentication: background jobs have no authentication in their context (`internal/jobs/runner.go`), and notification mail is sent from exactly there.
+
 ### API Routes
 
 API routes are defined in `internal/routing/`. Routes are grouped by authentication requirements:

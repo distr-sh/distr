@@ -97,10 +97,27 @@ The TLS certificate is issued automatically on the first request once the DNS re
   immediately and its TLS certificate is no longer renewed.
 </Aside>
 
-<Aside type="tip">
-  A custom sender address for transactional e-mails is currently still
-  configured by Distr support. Contact us at support@distr.sh for setup.
-</Aside>
-
 On self-hosted instances, the Custom Domains section only appears when the instance is configured for custom domain self-service.
 See the [configuration reference](/docs/self-hosting/configuration/#custom-domains) for the required setup.
+
+## Custom Email
+
+By default, all transactional e-mails — invitations, e-mail verifications, password resets, license key updates and deployment notifications — are sent by Distr.
+To send them from your own domain instead, configure your SMTP server under **Settings → Organization → Custom Email**:
+
+1. **Sender address** (e.g. `notifications@your-company.com`): The address your users and customers see as the sender.
+2. **SMTP host and port**: Your mail provider's SMTP endpoint, e.g. `smtp.your-company.com` on port `587`.
+3. **Username and password**: Leave both empty to connect without authentication.
+4. **Use implicit TLS**: Enable it if your provider expects a TLS connection right away instead of an upgrade via STARTTLS, which is usually the case on port `465`.
+
+Use **Send test email** to send a test message to your own address before saving.
+A failed test reports the error from your SMTP server verbatim, so you can see exactly what to fix.
+
+Your SMTP server must be authorized to send for the domain of your sender address.
+Set up SPF, DKIM and DMARC records for that domain at your DNS provider as documented by your mail provider — otherwise recipients may reject your e-mails or classify them as spam.
+
+<Aside type="note">
+  Custom email is available on the Business plan. Unchecking "Send emails
+  through this SMTP server" keeps the configuration but makes Distr send the
+  e-mails again, which is useful while you are debugging a delivery problem.
+</Aside>

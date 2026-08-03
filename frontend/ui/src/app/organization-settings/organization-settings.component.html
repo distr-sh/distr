@@ -157,6 +157,10 @@
         </div>
       </form>
 
+      <!-- Outside the settings form: this section has its own save, test and remove actions,
+        and forms must not be nested. -->
+      <app-custom-email />
+
       @if (!auth.isSuperAdmin()) {
         <h2 class="text-xl font-bold dark:text-white mt-8 mb-2">Danger Zone</h2>
         <app-delete-organization />

@@ -8,6 +8,7 @@ import (
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/authjwt"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/custommail"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/types"
@@ -21,8 +22,12 @@ func SendUserVerificationMail(
 	org types.Organization,
 	greetWithOrgName bool,
 ) error {
-	mailer := internalctx.GetMailer(ctx)
 	log := internalctx.GetLogger(ctx)
+
+	mailer, err := custommail.MailerForOrganization(ctx, org.ID)
+	if err != nil {
+		return fmt.Errorf("failed to resolve mailer for verification mail: %w", err)
+	}
 
 	branding, err := db.GetOrganizationBranding(ctx, org.ID)
 	if err != nil && !errors.Is(err, apierrors.ErrNotFound) {
