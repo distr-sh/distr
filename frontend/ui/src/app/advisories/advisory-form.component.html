@@ -215,9 +215,16 @@
                 <button
                   type="button"
                   (click)="toggleApplication(application.id!)"
-                  class="w-full flex items-center justify-between p-3 text-left text-sm font-medium text-gray-900 dark:text-white">
-                  {{ application.name }}
-                  <span class="text-xs text-gray-500 dark:text-gray-400">
+                  class="w-full flex items-center justify-between gap-2 p-3 text-left text-sm font-medium text-gray-900 dark:text-white">
+                  <span class="flex items-center gap-2 min-w-0">
+                    <app-application-logo
+                      class="size-6 shrink-0"
+                      [imageUrl]="application.imageUrl"
+                      [type]="application.type" />
+                    <span class="truncate">{{ application.name }}</span>
+                    <span class="distr-deployment-type-badge capitalize">{{ application.type }}</span>
+                  </span>
+                  <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">
                     {{ application.versions?.length ?? 0 }} versions
                   </span>
                 </button>
@@ -260,11 +267,30 @@
                     } @else {
                       @for (version of artifactVersions()[artifact.id] ?? []; track version.id) {
                         <div class="flex items-center justify-between gap-4 p-3">
-                          <span class="text-sm text-gray-900 dark:text-white font-mono">
-                            {{ artifactVersionLabel(version) }}
-                          </span>
+                          <div class="flex-1 min-w-0">
+                            @if (version.tags.length > 0) {
+                              <div class="flex flex-row flex-wrap gap-1">
+                                @for (tag of version.tags; track tag.name) {
+                                  <span
+                                    [class]="
+                                      tag.name === 'latest' ? 'distr-artifact-tag-latest' : 'distr-artifact-tag'
+                                    ">
+                                    {{ tag.name }}
+                                  </span>
+                                }
+                              </div>
+                            } @else {
+                              <span class="text-xs text-gray-500 dark:text-gray-400 italic">Untagged</span>
+                            }
+                            <ul class="flex gap-3 mt-1 text-xs font-normal text-gray-500 truncate dark:text-gray-400">
+                              <li>{{ version.createdAt | relativeDate }}</li>
+                              <li>
+                                <app-artifacts-hash [hash]="version.digest" [expandable]="false" />
+                              </li>
+                            </ul>
+                          </div>
                           <select
-                            class="distr-input w-32 px-2 py-1 text-xs"
+                            class="distr-input w-32 shrink-0 px-2 py-1 text-xs"
                             [value]="relationOf(artifactVersionSelection(), version.id)"
                             (change)="setArtifactVersionRelation(version.id, $any($event.target).value)">
                             <option value="">Not affected</option>

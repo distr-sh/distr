@@ -1,3 +1,5 @@
+import {DeploymentType} from './deployment';
+
 export type AdvisoryStatus = 'triage' | 'draft' | 'published' | 'resolved' | 'canceled';
 
 export type AdvisorySeverity = 'none' | 'low' | 'medium' | 'high' | 'critical';
@@ -45,6 +47,9 @@ export interface AdvisoryReference {
 export interface AdvisoryApplicationVersion {
   applicationId: string;
   applicationName: string;
+  applicationType: DeploymentType;
+  /** Absent when the application has no uploaded logo and the icon of its type is used. */
+  applicationImageUrl?: string;
   applicationVersionId: string;
   applicationVersionName: string;
   relation: AdvisoryVersionRelation;
@@ -54,7 +59,11 @@ export interface AdvisoryArtifactVersion {
   artifactId: string;
   artifactName: string;
   artifactVersionId: string;
+  /** Name of the marked row, which is a digest when the version was marked by digest. */
   artifactVersionName: string;
+  artifactVersionDigest: string;
+  /** Tags pointing at the same content, so a version marked by digest is still recognisable. */
+  artifactVersionTags: string[];
   relation: AdvisoryVersionRelation;
 }
 

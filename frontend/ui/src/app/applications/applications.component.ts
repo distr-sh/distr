@@ -1,5 +1,5 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
-import {AsyncPipe, DatePipe, NgOptimizedImage} from '@angular/common';
+import {AsyncPipe, DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, inject, input, OnDestroy, TemplateRef} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
@@ -17,7 +17,6 @@ import {
 import {lastValueFrom, Observable, Subject, takeUntil} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {filteredByFormControl} from '../../util/filter';
-import {SecureImagePipe} from '../../util/secureImage';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {
   PermissionsDirective,
@@ -27,6 +26,7 @@ import {
 import {ApplicationsService} from '../services/applications.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
+import {ApplicationLogoComponent} from './components';
 
 @Component({
   selector: 'app-applications',
@@ -35,14 +35,13 @@ import {ToastService} from '../services/toast.service';
     DatePipe,
     ReactiveFormsModule,
     FaIconComponent,
-    NgOptimizedImage,
     OverlayModule,
     AutotrimDirective,
     RequireVendorDirective,
     RequireRoleDirective,
     PermissionsDirective,
     RouterLink,
-    SecureImagePipe,
+    ApplicationLogoComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './applications.component.html',

@@ -54,19 +54,29 @@ type AdvisoryReference struct {
 }
 
 type AdvisoryApplicationVersion struct {
-	ApplicationID          uuid.UUID                     `json:"applicationId"`
-	ApplicationName        string                        `json:"applicationName"`
+	ApplicationID   uuid.UUID            `json:"applicationId"`
+	ApplicationName string               `json:"applicationName"`
+	ApplicationType types.DeploymentType `json:"applicationType"`
+	// ApplicationImageURL is absent when the application has no uploaded logo and the generic
+	// icon of its deployment type is used instead.
+	ApplicationImageURL    *string                       `json:"applicationImageUrl,omitempty"`
 	ApplicationVersionID   uuid.UUID                     `json:"applicationVersionId"`
 	ApplicationVersionName string                        `json:"applicationVersionName"`
 	Relation               types.AdvisoryVersionRelation `json:"relation"`
 }
 
 type AdvisoryArtifactVersion struct {
-	ArtifactID          uuid.UUID                     `json:"artifactId"`
-	ArtifactName        string                        `json:"artifactName"`
-	ArtifactVersionID   uuid.UUID                     `json:"artifactVersionId"`
-	ArtifactVersionName string                        `json:"artifactVersionName"`
-	Relation            types.AdvisoryVersionRelation `json:"relation"`
+	ArtifactID   uuid.UUID `json:"artifactId"`
+	ArtifactName string    `json:"artifactName"`
+	// ArtifactVersionName is the name of the marked row, which is a digest when the version
+	// was marked by digest rather than by tag.
+	ArtifactVersionID   uuid.UUID `json:"artifactVersionId"`
+	ArtifactVersionName string    `json:"artifactVersionName"`
+	// ArtifactVersionDigest and ArtifactVersionTags describe the same content, so that a
+	// version marked by digest can still be shown by the tags pointing at it.
+	ArtifactVersionDigest string                        `json:"artifactVersionDigest"`
+	ArtifactVersionTags   []string                      `json:"artifactVersionTags"`
+	Relation              types.AdvisoryVersionRelation `json:"relation"`
 }
 
 type AdvisoryEvent struct {

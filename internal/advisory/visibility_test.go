@@ -422,6 +422,135 @@ func TestIsVisibleToCustomerEntitlementFallback(t *testing.T) {
 	}
 }
 
+func TestVersionVisibilityAllows(t *testing.T) {
+	expired := now.Add(-time.Hour)
+	valid := now.Add(time.Hour)
+
+	cases := []struct {
+		name       string
+		visibility advisory.VersionVisibility
+		ref        advisory.VersionRef
+		allowed    bool
+	}{
+		{
+			// The counterpart to the fallback in IsVisibleToCustomer: a vendor who does not
+			// gate this kind at all discloses every version of it.
+			name:       "vendor uses no entitlements of this kind",
+			visibility: advisory.VersionVisibility{},
+			ref:        appVersion(versionOneID),
+			allowed:    true,
+		},
+		{
+			name: "entitlement pins this version",
+			visibility: advisory.VersionVisibility{
+				OrgHasEntitlements: true,
+				Entitlements: []advisory.EntitlementRef{
+					{ParentID: applicationID, VersionIDs: []uuid.UUID{versionOneID}},
+				},
+			},
+			ref:     appVersion(versionOneID),
+			allowed: true,
+		},
+		{
+			// The case from the review: entitled to one version line, so the other one and
+			// its fix must not be disclosed.
+			name: "entitlement pins a different version of the same application",
+			visibility: advisory.VersionVisibility{
+				OrgHasEntitlements: true,
+				Entitlements: []advisory.EntitlementRef{
+					{ParentID: applicationID, VersionIDs: []uuid.UUID{versionOneID}},
+				},
+			},
+			ref:     appVersion(versionTwoID),
+			allowed: false,
+		},
+		{
+			name: "entitlement covers the whole application",
+			visibility: advisory.VersionVisibility{
+				OrgHasEntitlements: true,
+				Entitlements:       []advisory.EntitlementRef{{ParentID: applicationID}},
+			},
+			ref:     appVersion(versionTwoID),
+			allowed: true,
+		},
+		{
+			name: "entitlement is for another application entirely",
+			visibility: advisory.VersionVisibility{
+				OrgHasEntitlements: true,
+				Entitlements:       []advisory.EntitlementRef{{ParentID: otherApplicationID}},
+			},
+			ref:     appVersion(versionOneID),
+			allowed: false,
+		},
+		{
+			name: "entitlement has expired",
+			visibility: advisory.VersionVisibility{
+				OrgHasEntitlements: true,
+				Entitlements:       []advisory.EntitlementRef{{ParentID: applicationID, ExpiresAt: &expired}},
+			},
+			ref:     appVersion(versionOneID),
+			allowed: false,
+		},
+		{
+			name: "entitlement has not expired yet",
+			visibility: advisory.VersionVisibility{
+				OrgHasEntitlements: true,
+				Entitlements:       []advisory.EntitlementRef{{ParentID: applicationID, ExpiresAt: &valid}},
+			},
+			ref:     appVersion(versionOneID),
+			allowed: true,
+		},
+		{
+			// Deployment grants visibility without an entitlement, so the version that
+			// granted it has to be disclosed or the advisory would list nothing as affected.
+			name: "customer deployed it without holding an entitlement",
+			visibility: advisory.VersionVisibility{
+				OrgHasEntitlements: true,
+				KnownVersionIDs:    []uuid.UUID{versionOneID},
+			},
+			ref:     appVersion(versionOneID),
+			allowed: true,
+		},
+		{
+			name: "customer has neither an entitlement nor a deployment",
+			visibility: advisory.VersionVisibility{
+				OrgHasEntitlements: true,
+				KnownVersionIDs:    []uuid.UUID{versionOneID},
+			},
+			ref:     appVersion(versionTwoID),
+			allowed: false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			g := NewWithT(t)
+			g.Expect(tc.visibility.Allows(tc.ref, now)).To(Equal(tc.allowed))
+		})
+	}
+}
+
+func TestFilterVisibleVersions(t *testing.T) {
+	g := NewWithT(t)
+
+	rows := []advisory.VersionRef{
+		appVersion(versionOneID),
+		appVersion(versionTwoID),
+		{VersionID: amd64VersionID, ParentID: otherApplicationID},
+	}
+	visibility := advisory.VersionVisibility{
+		OrgHasEntitlements: true,
+		Entitlements: []advisory.EntitlementRef{
+			{ParentID: applicationID, VersionIDs: []uuid.UUID{versionOneID}},
+		},
+	}
+
+	visible := advisory.FilterVisibleVersions(
+		rows, func(ref advisory.VersionRef) advisory.VersionRef { return ref }, visibility, now)
+
+	g.Expect(visible).To(Equal([]advisory.VersionRef{appVersion(versionOneID)}))
+}
+
 func TestIsStillAffectedDeployments(t *testing.T) {
 	cases := []struct {
 		name        string

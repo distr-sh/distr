@@ -4,6 +4,7 @@
 package advisory
 
 import (
+	"slices"
 	"time"
 
 	"github.com/distr-sh/distr/internal/types"
@@ -42,12 +43,7 @@ func (e EntitlementRef) coversVersion(ref VersionRef, now time.Time) bool {
 	if len(e.VersionIDs) == 0 {
 		return true
 	}
-	for _, versionID := range e.VersionIDs {
-		if versionID == ref.VersionID {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(e.VersionIDs, ref.VersionID)
 }
 
 // CustomerView is everything about a single customer organization that the visibility rule
@@ -73,14 +69,9 @@ func (v CustomerView) hasDeployedAny(affected []VersionRef) bool {
 }
 
 func containsAnyVersion(refs []VersionRef, versionIDs []uuid.UUID) bool {
-	for _, ref := range refs {
-		for _, versionID := range versionIDs {
-			if versionID == ref.VersionID {
-				return true
-			}
-		}
-	}
-	return false
+	return slices.ContainsFunc(refs, func(ref VersionRef) bool {
+		return slices.Contains(versionIDs, ref.VersionID)
+	})
 }
 
 // MarkedVersions are the versions an advisory marks, already expanded to every version that
@@ -130,28 +121,58 @@ func IsStillAffected(marked MarkedVersions, exposure Exposure) bool {
 // The check is per artifact rather than across the advisory as a whole: an advisory covering
 // two artifacts is not settled by upgrading one of them.
 func hasUnfixedPull(marked MarkedVersions, pulledIDs []uuid.UUID) bool {
-	pulled := make(map[uuid.UUID]struct{}, len(pulledIDs))
-	for _, id := range pulledIDs {
-		pulled[id] = struct{}{}
+	wasPulled := func(ref VersionRef) bool {
+		return slices.Contains(pulledIDs, ref.VersionID)
 	}
-
-	fixTaken := make(map[uuid.UUID]struct{})
-	for _, ref := range marked.FixedArtifactVersions {
-		if _, ok := pulled[ref.VersionID]; ok {
-			fixTaken[ref.ParentID] = struct{}{}
-		}
+	fixTaken := func(artifactID uuid.UUID) bool {
+		return slices.ContainsFunc(marked.FixedArtifactVersions, func(ref VersionRef) bool {
+			return ref.ParentID == artifactID && wasPulled(ref)
+		})
 	}
+	return slices.ContainsFunc(marked.AffectedArtifactVersions, func(ref VersionRef) bool {
+		return wasPulled(ref) && !fixTaken(ref.ParentID)
+	})
+}
 
-	for _, ref := range marked.AffectedArtifactVersions {
-		if _, ok := pulled[ref.VersionID]; !ok {
-			continue
-		}
-		if _, ok := fixTaken[ref.ParentID]; ok {
-			continue
-		}
+// VersionVisibility decides which of an advisory's marked versions a customer may be shown,
+// for one kind of version: applications or artifacts.
+//
+// This is disclosure, not exposure. It never feeds IsStillAffected, because a customer running
+// an affected version they were never entitled to is affected all the same.
+type VersionVisibility struct {
+	// OrgHasEntitlements reports whether the vendor gates this kind of version at all. A
+	// vendor who does not discloses everything, mirroring IsVisibleToCustomer.
+	OrgHasEntitlements bool
+	Entitlements       []EntitlementRef
+	// KnownVersionIDs are versions the customer demonstrably already has, by having deployed
+	// or pulled them. They stay disclosed without an entitlement, because visibility itself is
+	// granted by deployment: filtering them away would leave such a customer looking at an
+	// advisory with nothing listed as affected.
+	KnownVersionIDs []uuid.UUID
+}
+
+// Allows reports whether the version behind ref may be disclosed.
+func (v VersionVisibility) Allows(ref VersionRef, now time.Time) bool {
+	if !v.OrgHasEntitlements {
 		return true
 	}
-	return false
+	if slices.Contains(v.KnownVersionIDs, ref.VersionID) {
+		return true
+	}
+	return slices.ContainsFunc(v.Entitlements, func(entitlement EntitlementRef) bool {
+		return entitlement.coversVersion(ref, now)
+	})
+}
+
+// FilterVisibleVersions keeps the rows whose version the customer may see, in order. The ref
+// function maps a row to the version it marks, so that the rule can be shared by the
+// application and artifact row types.
+func FilterVisibleVersions[T any](
+	rows []T, ref func(T) VersionRef, visibility VersionVisibility, now time.Time,
+) []T {
+	return slices.DeleteFunc(slices.Clone(rows), func(row T) bool {
+		return !visibility.Allows(ref(row), now)
+	})
 }
 
 // IsVisibleToCustomer reports whether a customer organization may see an advisory.
@@ -222,12 +243,9 @@ func isEntitledToAny(
 	if !orgHasEntitlements {
 		return true
 	}
-	for _, ref := range affected {
-		for _, entitlement := range entitlements {
-			if entitlement.coversVersion(ref, now) {
-				return true
-			}
-		}
-	}
-	return false
+	return slices.ContainsFunc(affected, func(ref VersionRef) bool {
+		return slices.ContainsFunc(entitlements, func(entitlement EntitlementRef) bool {
+			return entitlement.coversVersion(ref, now)
+		})
+	})
 }

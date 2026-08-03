@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/distr-sh/distr/internal/advisory"
@@ -106,6 +107,163 @@ func getDeployedApplicationVersionIDs(
 		return nil, fmt.Errorf("could not get deployed application versions: %w", err)
 	}
 	return result, nil
+}
+
+// getVersionVisibility loads what a customer may be told about the versions an advisory marks,
+// for applications and artifacts respectively.
+//
+// artifactVersionIDs are the artifact versions about to be filtered. They bound the pull
+// lookup, and they are the only ones whose digest siblings need resolving.
+func getVersionVisibility(
+	ctx context.Context, orgID, customerOrgID uuid.UUID, artifactVersionIDs []uuid.UUID,
+) (advisory.VersionVisibility, advisory.VersionVisibility, error) {
+	var application, artifact advisory.VersionVisibility
+	fail := func(err error) (advisory.VersionVisibility, advisory.VersionVisibility, error) {
+		return advisory.VersionVisibility{}, advisory.VersionVisibility{}, err
+	}
+
+	hasApplicationEntitlements, err := HasAnyApplicationEntitlement(ctx, orgID)
+	if err != nil {
+		return fail(err)
+	}
+	hasArtifactEntitlements, err := HasAnyArtifactEntitlement(ctx, orgID)
+	if err != nil {
+		return fail(err)
+	}
+	application.OrgHasEntitlements = hasApplicationEntitlements
+	artifact.OrgHasEntitlements = hasArtifactEntitlements
+
+	// A vendor who does not gate this kind discloses all of it, so nothing else needs loading.
+	if application.OrgHasEntitlements {
+		if application.Entitlements, err = getApplicationEntitlementRefs(ctx, orgID, customerOrgID); err != nil {
+			return fail(err)
+		}
+		if application.KnownVersionIDs, err = getDeployedApplicationVersionIDs(ctx, orgID, customerOrgID); err != nil {
+			return fail(err)
+		}
+	}
+
+	if artifact.OrgHasEntitlements {
+		if artifact, err = artifactVersionVisibility(
+			ctx, artifact, orgID, customerOrgID, artifactVersionIDs,
+		); err != nil {
+			return fail(err)
+		}
+	}
+
+	return application, artifact, nil
+}
+
+// artifactVersionVisibility fills in the artifact side, where an entitlement or a pull may
+// name a different tag of the same content than the advisory marks. Both are therefore
+// resolved through the versions sharing a manifest digest, the same equivalence
+// GetMarkedVersions and CheckEntitlementForArtifact use.
+func artifactVersionVisibility(
+	ctx context.Context,
+	artifact advisory.VersionVisibility,
+	orgID, customerOrgID uuid.UUID,
+	artifactVersionIDs []uuid.UUID,
+) (advisory.VersionVisibility, error) {
+	siblings, err := getArtifactVersionSiblings(ctx, artifactVersionIDs)
+	if err != nil {
+		return advisory.VersionVisibility{}, err
+	}
+
+	entitlements, err := getArtifactEntitlementRefs(ctx, orgID, customerOrgID)
+	if err != nil {
+		return advisory.VersionVisibility{}, err
+	}
+	// Expanding each entitlement separately rather than into one flat set keeps every expiry
+	// attached to the entitlement that carries it.
+	for i := range entitlements {
+		if pinned := entitlements[i].VersionIDs; len(pinned) > 0 {
+			entitlements[i].VersionIDs = union(pinned, markedEquivalentTo(siblings, pinned))
+		}
+	}
+	artifact.Entitlements = entitlements
+
+	// Ask about every version resolving to the same content as one the advisory marks, then
+	// translate the answer back to the marked versions themselves.
+	pulled, err := getPulledArtifactVersionIDs(
+		ctx, orgID, AdvisoryScope{CustomerOrgID: &customerOrgID}, siblingUnion(siblings))
+	if err != nil {
+		return advisory.VersionVisibility{}, err
+	}
+	artifact.KnownVersionIDs = markedEquivalentTo(siblings, pulled)
+
+	return artifact, nil
+}
+
+// getArtifactVersionSiblings maps each of the given artifact versions to every version
+// resolving to the same content, itself included. Versions with no row are absent.
+func getArtifactVersionSiblings(
+	ctx context.Context, versionIDs []uuid.UUID,
+) (map[uuid.UUID][]uuid.UUID, error) {
+	result := make(map[uuid.UUID][]uuid.UUID, len(versionIDs))
+	if len(versionIDs) == 0 {
+		return result, nil
+	}
+
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`SELECT sibling.id AS version_id, selected.id AS sibling_of
+		FROM ArtifactVersion selected
+			JOIN ArtifactVersion sibling
+				ON sibling.artifact_id = selected.artifact_id
+				AND sibling.manifest_blob_digest = selected.manifest_blob_digest
+		WHERE selected.id = any(@versionIds)`,
+		pgx.NamedArgs{"versionIds": versionIDs},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query artifact version siblings: %w", err)
+	}
+	type siblingRow struct {
+		VersionID uuid.UUID `db:"version_id"`
+		SiblingOf uuid.UUID `db:"sibling_of"`
+	}
+	collected, err := pgx.CollectRows(rows, pgx.RowToStructByName[siblingRow])
+	if err != nil {
+		return nil, fmt.Errorf("could not get artifact version siblings: %w", err)
+	}
+	for _, row := range collected {
+		result[row.SiblingOf] = append(result[row.SiblingOf], row.VersionID)
+	}
+	return result, nil
+}
+
+// markedEquivalentTo returns the marked versions that resolve to the same content as any of
+// the given versions. It is how an entitlement or a pull naming one tag of an image reaches
+// the tag the advisory happens to mark.
+func markedEquivalentTo(siblings map[uuid.UUID][]uuid.UUID, versionIDs []uuid.UUID) []uuid.UUID {
+	var result []uuid.UUID
+	for markedID, group := range siblings {
+		for _, sibling := range group {
+			if slices.Contains(versionIDs, sibling) {
+				result = append(result, markedID)
+				break
+			}
+		}
+	}
+	return result
+}
+
+func siblingUnion(siblings map[uuid.UUID][]uuid.UUID) []uuid.UUID {
+	var all []uuid.UUID
+	for _, group := range siblings {
+		all = union(all, group)
+	}
+	return all
+}
+
+func union(a, b []uuid.UUID) []uuid.UUID {
+	result := slices.Clone(a)
+	for _, id := range b {
+		if !slices.Contains(result, id) {
+			result = append(result, id)
+		}
+	}
+	return result
 }
 
 type entitlementRefRow struct {

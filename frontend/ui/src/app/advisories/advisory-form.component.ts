@@ -4,7 +4,10 @@ import {FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators} from
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
+import {RelativeDatePipe} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
+import {ApplicationLogoComponent} from '../applications/components';
+import {ArtifactsHashComponent} from '../artifacts/components';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
 import {AdvisoriesService} from '../services/advisories.service';
@@ -43,7 +46,15 @@ export interface AdvisoryFormDraft {
   selector: 'app-advisory-form',
   templateUrl: './advisory-form.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective, InnerMarkdownDirective],
+  imports: [
+    ReactiveFormsModule,
+    FaIconComponent,
+    AutotrimDirective,
+    InnerMarkdownDirective,
+    ArtifactsHashComponent,
+    ApplicationLogoComponent,
+    RelativeDatePipe,
+  ],
 })
 export class AdvisoryFormComponent {
   private readonly advisoriesService = inject(AdvisoriesService);
@@ -219,14 +230,6 @@ export class AdvisoryFormComponent {
 
   protected setArtifactVersionRelation(versionId: string, relation: string): void {
     this.artifactVersionSelection.update((selection) => updateSelection(selection, versionId, relation));
-  }
-
-  /** Artifact versions are identified by digest, but tags are what users recognize. */
-  protected artifactVersionLabel(version: TaggedArtifactVersion): string {
-    if (version.tags.length > 0) {
-      return version.tags.map((tag) => tag.name).join(', ');
-    }
-    return version.digest.substring(0, 19);
   }
 
   protected cancel(): void {

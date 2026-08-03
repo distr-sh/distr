@@ -163,21 +163,31 @@ type AdvisoryReference struct {
 }
 
 type AdvisoryApplicationVersion struct {
-	AdvisoryID             uuid.UUID               `db:"advisory_id"`
-	ApplicationID          uuid.UUID               `db:"application_id"`
-	ApplicationName        string                  `db:"application_name"`
+	AdvisoryID      uuid.UUID      `db:"advisory_id"`
+	ApplicationID   uuid.UUID      `db:"application_id"`
+	ApplicationName string         `db:"application_name"`
+	ApplicationType DeploymentType `db:"application_type"`
+	// ApplicationImageID is the uploaded logo, absent when the application falls back to the
+	// generic icon of its deployment type.
+	ApplicationImageID     *uuid.UUID              `db:"application_image_id"`
 	ApplicationVersionID   uuid.UUID               `db:"application_version_id"`
 	ApplicationVersionName string                  `db:"application_version_name"`
 	Relation               AdvisoryVersionRelation `db:"relation"`
 }
 
 type AdvisoryArtifactVersion struct {
-	AdvisoryID          uuid.UUID               `db:"advisory_id"`
-	ArtifactID          uuid.UUID               `db:"artifact_id"`
-	ArtifactName        string                  `db:"artifact_name"`
-	ArtifactVersionID   uuid.UUID               `db:"artifact_version_id"`
-	ArtifactVersionName string                  `db:"artifact_version_name"`
-	Relation            AdvisoryVersionRelation `db:"relation"`
+	AdvisoryID   uuid.UUID `db:"advisory_id"`
+	ArtifactID   uuid.UUID `db:"artifact_id"`
+	ArtifactName string    `db:"artifact_name"`
+	// ArtifactVersionID and ArtifactVersionName identify the row the vendor marked, whose name
+	// is a digest when they picked the version by digest rather than by tag.
+	ArtifactVersionID   uuid.UUID `db:"artifact_version_id"`
+	ArtifactVersionName string    `db:"artifact_version_name"`
+	// ArtifactVersionDigest and ArtifactVersionTags describe the same content the way the
+	// registry views show it, so that a version marked by digest is still recognisable.
+	ArtifactVersionDigest string                  `db:"artifact_version_digest"`
+	ArtifactVersionTags   []string                `db:"artifact_version_tags"`
+	Relation              AdvisoryVersionRelation `db:"relation"`
 }
 
 type AdvisoryEvent struct {

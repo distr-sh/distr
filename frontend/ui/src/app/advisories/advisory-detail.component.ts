@@ -1,4 +1,4 @@
-import {DatePipe, NgClass} from '@angular/common';
+import {DatePipe, NgClass, NgTemplateOutlet} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, RouterLink} from '@angular/router';
@@ -6,6 +6,8 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faArrowLeft, faPen, faUpRightFromSquare} from '@fortawesome/free-solid-svg-icons';
 import {catchError, firstValueFrom, map, of, startWith, Subject, switchMap, take} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
+import {ApplicationLogoComponent} from '../applications/components';
+import {ArtifactsHashComponent} from '../artifacts/components';
 import {
   ActivityTimelineComponent,
   ActivityTimelineEntry,
@@ -47,11 +49,14 @@ type ImpactState = {state: 'loading'} | {state: 'loaded'; impact: AdvisoryImpact
   imports: [
     DatePipe,
     NgClass,
+    NgTemplateOutlet,
     RouterLink,
     FaIconComponent,
     InnerMarkdownDirective,
     AdvisoryFormComponent,
     ActivityTimelineComponent,
+    ArtifactsHashComponent,
+    ApplicationLogoComponent,
   ],
 })
 export class AdvisoryDetailComponent {

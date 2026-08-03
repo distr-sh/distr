@@ -317,7 +317,7 @@ func updateAdvisoryHandler() http.HandlerFunc {
 			}
 			// Read back rather than derived from the request, so that the names in the
 			// message come from the database instead of being looked up separately.
-			versionsAfter, err := advisoryVersionMarkings(ctx, advisory.ID)
+			versionsAfter, err := advisoryVersionMarkings(ctx, advisory.ID, advisory.OrganizationID)
 			if err != nil {
 				return err
 			}
@@ -537,14 +537,9 @@ func buildAdvisoryDetail(
 		return fail("failed to get advisory references", err)
 	}
 
-	applicationVersions, err := db.GetAdvisoryApplicationVersions(ctx, advisory.ID)
+	versions, err := db.GetAdvisoryVersions(ctx, []uuid.UUID{advisory.ID}, *a.CurrentOrgID(), advisoryScope(a))
 	if err != nil {
-		return fail("failed to get advisory application versions", err)
-	}
-
-	artifactVersions, err := db.GetAdvisoryArtifactVersions(ctx, advisory.ID)
-	if err != nil {
-		return fail("failed to get advisory artifact versions", err)
+		return fail("failed to get advisory versions", err)
 	}
 
 	events := []types.AdvisoryEventWithUser{}
@@ -559,8 +554,8 @@ func buildAdvisoryDetail(
 		Advisory:            mapping.AdvisoryToAPI(advisory),
 		Description:         advisory.Description,
 		References:          mapping.List(references, mapping.AdvisoryReferenceToAPI),
-		ApplicationVersions: mapping.List(applicationVersions, mapping.AdvisoryApplicationVersionToAPI),
-		ArtifactVersions:    mapping.List(artifactVersions, mapping.AdvisoryArtifactVersionToAPI),
+		ApplicationVersions: mapping.List(versions.ApplicationVersions, mapping.AdvisoryApplicationVersionToAPI),
+		ArtifactVersions:    mapping.List(versions.ArtifactVersions, mapping.AdvisoryArtifactVersionToAPI),
 		Events:              mapping.List(events, mapping.AdvisoryEventToAPI),
 	}, true
 }
@@ -623,15 +618,18 @@ type versionMarking struct {
 
 // advisoryVersionMarkings reads the currently marked application and artifact versions
 // as a single list.
-func advisoryVersionMarkings(ctx context.Context, advisoryID uuid.UUID) ([]versionMarking, error) {
-	applicationVersions, err := db.GetAdvisoryApplicationVersions(ctx, advisoryID)
+//
+// The scope is deliberately empty: these feed the timeline messages describing an edit, which
+// only vendors make and only vendors read, so they must show every marking.
+func advisoryVersionMarkings(
+	ctx context.Context, advisoryID, orgID uuid.UUID,
+) ([]versionMarking, error) {
+	versions, err := db.GetAdvisoryVersions(ctx, []uuid.UUID{advisoryID}, orgID, db.AdvisoryScope{})
 	if err != nil {
 		return nil, err
 	}
-	artifactVersions, err := db.GetAdvisoryArtifactVersions(ctx, advisoryID)
-	if err != nil {
-		return nil, err
-	}
+	applicationVersions := versions.ApplicationVersions
+	artifactVersions := versions.ArtifactVersions
 
 	markings := make([]versionMarking, 0, len(applicationVersions)+len(artifactVersions))
 	for _, version := range applicationVersions {
@@ -655,7 +653,8 @@ func loadAdvisoryVersionMarkings(
 	w http.ResponseWriter, r *http.Request, advisoryID uuid.UUID,
 ) ([]versionMarking, bool) {
 	ctx := r.Context()
-	markings, err := advisoryVersionMarkings(ctx, advisoryID)
+	a := auth.Authentication.Require(ctx)
+	markings, err := advisoryVersionMarkings(ctx, advisoryID, *a.CurrentOrgID())
 	if err != nil {
 		internalctx.GetLogger(ctx).Error("failed to get advisory versions", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)

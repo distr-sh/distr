@@ -17,7 +17,8 @@ export function applicationVersionLabel(version: AdvisoryApplicationVersion): st
 }
 
 export function artifactVersionLabel(version: AdvisoryArtifactVersion): string {
-  return `${version.artifactName} ${version.artifactVersionName}`;
+  const tags = version.artifactVersionTags.join(', ');
+  return [version.artifactName, tags, version.artifactVersionDigest].filter((part) => part).join(' ');
 }
 
 export const advisorySeverities: AdvisorySeverity[] = ['none', 'low', 'medium', 'high', 'critical'];

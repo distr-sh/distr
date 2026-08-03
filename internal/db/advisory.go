@@ -127,6 +127,60 @@ func applyScope(
 		stillAffected := advisory.IsStillAffected(marked[advisories[i].ID], exposure)
 		advisories[i].CallerAffected = &stillAffected
 	}
+
+	return applyVersionCounts(ctx, advisories, orgID, scope)
+}
+
+// applyVersionCounts restates the version counts over what the caller may actually be told
+// about, so the number in the list and the rows on the detail page cannot disagree. Only
+// customers see a filtered detail page, so only their counts need restating.
+func applyVersionCounts(
+	ctx context.Context,
+	advisories []types.AdvisoryWithDetails,
+	orgID uuid.UUID,
+	scope AdvisoryScope,
+) ([]types.AdvisoryWithDetails, error) {
+	if len(advisories) == 0 || scope.CustomerOrgID == nil {
+		return advisories, nil
+	}
+
+	ids := make([]uuid.UUID, len(advisories))
+	for i, v := range advisories {
+		ids[i] = v.ID
+	}
+	versions, err := GetAdvisoryVersions(ctx, ids, orgID, scope)
+	if err != nil {
+		return nil, err
+	}
+
+	type counts struct{ affected, fixed int64 }
+	byAdvisory := make(map[uuid.UUID]*counts, len(advisories))
+	for i := range advisories {
+		byAdvisory[advisories[i].ID] = &counts{}
+	}
+	count := func(advisoryID uuid.UUID, relation types.AdvisoryVersionRelation) {
+		c, ok := byAdvisory[advisoryID]
+		if !ok {
+			return
+		}
+		if relation == types.AdvisoryVersionRelationFixed {
+			c.fixed++
+		} else {
+			c.affected++
+		}
+	}
+	for _, version := range versions.ApplicationVersions {
+		count(version.AdvisoryID, version.Relation)
+	}
+	for _, version := range versions.ArtifactVersions {
+		count(version.AdvisoryID, version.Relation)
+	}
+
+	for i := range advisories {
+		c := byAdvisory[advisories[i].ID]
+		advisories[i].AffectedVersionCount = c.affected
+		advisories[i].FixedVersionCount = c.fixed
+	}
 	return advisories, nil
 }
 
@@ -499,21 +553,58 @@ func SetAdvisoryReferences(
 
 // Versions
 
-func GetAdvisoryApplicationVersions(
-	ctx context.Context, advisoryID uuid.UUID,
+// AdvisoryVersions are the versions one or more advisories mark, in the shape the detail view
+// shows them: the rows the vendor actually selected, not expanded to their digest siblings.
+type AdvisoryVersions struct {
+	ApplicationVersions []types.AdvisoryApplicationVersion
+	ArtifactVersions    []types.AdvisoryArtifactVersion
+}
+
+// GetAdvisoryVersions loads the versions the given advisories mark, disclosing only what the
+// caller may be told about.
+//
+// Customers see the versions they are entitled to and the ones they already have; everything
+// else is withheld, so that an advisory cannot disclose a version line or an application they
+// have no access to. Vendors and partners see all of it. Taking the scope here rather than
+// filtering at the call sites means a new caller cannot forget to.
+func GetAdvisoryVersions(
+	ctx context.Context, advisoryIDs []uuid.UUID, orgID uuid.UUID, scope AdvisoryScope,
+) (AdvisoryVersions, error) {
+	var result AdvisoryVersions
+	if len(advisoryIDs) == 0 {
+		return result, nil
+	}
+
+	var err error
+	if result.ApplicationVersions, err = getAdvisoryApplicationVersions(ctx, advisoryIDs); err != nil {
+		return AdvisoryVersions{}, err
+	}
+	if result.ArtifactVersions, err = getAdvisoryArtifactVersions(ctx, advisoryIDs); err != nil {
+		return AdvisoryVersions{}, err
+	}
+
+	if scope.CustomerOrgID == nil {
+		return result, nil
+	}
+	return filterAdvisoryVersionsForCustomer(ctx, result, orgID, *scope.CustomerOrgID)
+}
+
+func getAdvisoryApplicationVersions(
+	ctx context.Context, advisoryIDs []uuid.UUID,
 ) ([]types.AdvisoryApplicationVersion, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
 		`SELECT vav.advisory_id, vav.relation,
 			a.id AS application_id, a.name AS application_name,
+			a.type AS application_type, a.image_id AS application_image_id,
 			av.id AS application_version_id, av.name AS application_version_name
 		FROM AdvisoryApplicationVersion vav
 			JOIN ApplicationVersion av ON av.id = vav.application_version_id
 			JOIN Application a ON a.id = av.application_id
-		WHERE vav.advisory_id = @id
+		WHERE vav.advisory_id = any(@advisoryIds)
 		ORDER BY a.name, av.created_at`,
-		pgx.NamedArgs{"id": advisoryID},
+		pgx.NamedArgs{"advisoryIds": advisoryIDs},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not query advisory application versions: %w", err)
@@ -525,21 +616,32 @@ func GetAdvisoryApplicationVersions(
 	return result, nil
 }
 
-func GetAdvisoryArtifactVersions(
-	ctx context.Context, advisoryID uuid.UUID,
+func getAdvisoryArtifactVersions(
+	ctx context.Context, advisoryIDs []uuid.UUID,
 ) ([]types.AdvisoryArtifactVersion, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
+		// A version marked by digest reads as a bare sha256 in the UI, so the tags pointing at
+		// the same content travel with it. The name convention is the registry's: a tag row
+		// has no colon in its name, a digest row does.
 		`SELECT vrv.advisory_id, vrv.relation,
 			a.id AS artifact_id, a.name AS artifact_name,
-			av.id AS artifact_version_id, av.name AS artifact_version_name
+			av.id AS artifact_version_id, av.name AS artifact_version_name,
+			av.manifest_blob_digest AS artifact_version_digest,
+			coalesce((
+				SELECT array_agg(avt.name ORDER BY avt.name)
+				FROM ArtifactVersion avt
+				WHERE avt.artifact_id = av.artifact_id
+					AND avt.manifest_blob_digest = av.manifest_blob_digest
+					AND avt.name NOT LIKE '%:%'
+			), ARRAY[]::TEXT[]) AS artifact_version_tags
 		FROM AdvisoryArtifactVersion vrv
 			JOIN ArtifactVersion av ON av.id = vrv.artifact_version_id
 			JOIN Artifact a ON a.id = av.artifact_id
-		WHERE vrv.advisory_id = @id
+		WHERE vrv.advisory_id = any(@advisoryIds)
 		ORDER BY a.name, av.created_at`,
-		pgx.NamedArgs{"id": advisoryID},
+		pgx.NamedArgs{"advisoryIds": advisoryIDs},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not query advisory artifact versions: %w", err)
@@ -549,6 +651,37 @@ func GetAdvisoryArtifactVersions(
 		return nil, fmt.Errorf("could not get advisory artifact versions: %w", err)
 	}
 	return result, nil
+}
+
+func filterAdvisoryVersionsForCustomer(
+	ctx context.Context, versions AdvisoryVersions, orgID, customerOrgID uuid.UUID,
+) (AdvisoryVersions, error) {
+	artifactVersionIDs := make([]uuid.UUID, len(versions.ArtifactVersions))
+	for i, version := range versions.ArtifactVersions {
+		artifactVersionIDs[i] = version.ArtifactVersionID
+	}
+
+	application, artifact, err := getVersionVisibility(ctx, orgID, customerOrgID, artifactVersionIDs)
+	if err != nil {
+		return AdvisoryVersions{}, err
+	}
+
+	now := time.Now()
+	versions.ApplicationVersions = advisory.FilterVisibleVersions(
+		versions.ApplicationVersions,
+		func(v types.AdvisoryApplicationVersion) advisory.VersionRef {
+			return advisory.VersionRef{VersionID: v.ApplicationVersionID, ParentID: v.ApplicationID}
+		},
+		application, now,
+	)
+	versions.ArtifactVersions = advisory.FilterVisibleVersions(
+		versions.ArtifactVersions,
+		func(v types.AdvisoryArtifactVersion) advisory.VersionRef {
+			return advisory.VersionRef{VersionID: v.ArtifactVersionID, ParentID: v.ArtifactID}
+		},
+		artifact, now,
+	)
+	return versions, nil
 }
 
 // AdvisoryVersionSelection is the set of versions an advisory applies to,

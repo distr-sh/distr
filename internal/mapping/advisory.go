@@ -39,6 +39,8 @@ func AdvisoryApplicationVersionToAPI(
 	return api.AdvisoryApplicationVersion{
 		ApplicationID:          version.ApplicationID,
 		ApplicationName:        version.ApplicationName,
+		ApplicationType:        version.ApplicationType,
+		ApplicationImageURL:    CreateImageURL(version.ApplicationImageID),
 		ApplicationVersionID:   version.ApplicationVersionID,
 		ApplicationVersionName: version.ApplicationVersionName,
 		Relation:               version.Relation,
@@ -49,11 +51,13 @@ func AdvisoryArtifactVersionToAPI(
 	version types.AdvisoryArtifactVersion,
 ) api.AdvisoryArtifactVersion {
 	return api.AdvisoryArtifactVersion{
-		ArtifactID:          version.ArtifactID,
-		ArtifactName:        version.ArtifactName,
-		ArtifactVersionID:   version.ArtifactVersionID,
-		ArtifactVersionName: version.ArtifactVersionName,
-		Relation:            version.Relation,
+		ArtifactID:            version.ArtifactID,
+		ArtifactName:          version.ArtifactName,
+		ArtifactVersionID:     version.ArtifactVersionID,
+		ArtifactVersionName:   version.ArtifactVersionName,
+		ArtifactVersionDigest: version.ArtifactVersionDigest,
+		ArtifactVersionTags:   version.ArtifactVersionTags,
+		Relation:              version.Relation,
 	}
 }
 

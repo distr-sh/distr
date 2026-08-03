@@ -233,16 +233,12 @@
 
             <h3 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Affected</h3>
             @if (affectedApplicationVersions().length > 0 || affectedArtifactVersions().length > 0) {
-              <ul class="text-sm text-gray-900 dark:text-white space-y-1 mb-4">
+              <ul class="text-sm text-gray-900 dark:text-white space-y-2 mb-4">
                 @for (version of affectedApplicationVersions(); track version.applicationVersionId) {
-                  <li class="truncate" [title]="applicationVersionLabel(version)">
-                    {{ version.applicationName }} {{ version.applicationVersionName }}
-                  </li>
+                  <ng-container *ngTemplateOutlet="applicationVersionItem; context: {$implicit: version}" />
                 }
                 @for (version of affectedArtifactVersions(); track version.artifactVersionId) {
-                  <li class="truncate" [title]="artifactVersionLabel(version)">
-                    {{ version.artifactName }} <span class="font-mono text-xs">{{ version.artifactVersionName }}</span>
-                  </li>
+                  <ng-container *ngTemplateOutlet="artifactVersionItem; context: {$implicit: version}" />
                 }
               </ul>
             } @else {
@@ -251,16 +247,12 @@
 
             <h3 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Fixed In</h3>
             @if (fixedApplicationVersions().length > 0 || fixedArtifactVersions().length > 0) {
-              <ul class="text-sm text-gray-900 dark:text-white space-y-1">
+              <ul class="text-sm text-gray-900 dark:text-white space-y-2">
                 @for (version of fixedApplicationVersions(); track version.applicationVersionId) {
-                  <li class="truncate" [title]="applicationVersionLabel(version)">
-                    {{ version.applicationName }} {{ version.applicationVersionName }}
-                  </li>
+                  <ng-container *ngTemplateOutlet="applicationVersionItem; context: {$implicit: version}" />
                 }
                 @for (version of fixedArtifactVersions(); track version.artifactVersionId) {
-                  <li class="truncate" [title]="artifactVersionLabel(version)">
-                    {{ version.artifactName }} <span class="font-mono text-xs">{{ version.artifactVersionName }}</span>
-                  </li>
+                  <ng-container *ngTemplateOutlet="artifactVersionItem; context: {$implicit: version}" />
                 }
               </ul>
             } @else {
@@ -294,6 +286,39 @@
     }
   </div>
 </section>
+
+<ng-template #applicationVersionItem let-version>
+  <li class="flex items-center gap-2">
+    <app-application-logo
+      class="size-8 shrink-0"
+      [imageUrl]="version.applicationImageUrl"
+      [type]="version.applicationType" />
+    <div class="min-w-0">
+      <div class="truncate" [title]="applicationVersionLabel(version)">
+        {{ version.applicationName }} {{ version.applicationVersionName }}
+      </div>
+      <span class="distr-deployment-type-badge capitalize">{{ version.applicationType }}</span>
+    </div>
+  </li>
+</ng-template>
+
+<!-- A version marked by digest has no readable name of its own, so it is shown by the tags
+     pointing at the same content, mirroring the artifact entitlement dropdown. -->
+<ng-template #artifactVersionItem let-version>
+  <li>
+    <div class="truncate" [title]="artifactVersionLabel(version)">{{ version.artifactName }}</div>
+    @if (version.artifactVersionTags.length > 0) {
+      <div class="flex flex-row flex-wrap gap-1 mt-1">
+        @for (tag of version.artifactVersionTags; track tag) {
+          <span [class]="tag === 'latest' ? 'distr-artifact-tag-latest' : 'distr-artifact-tag'">{{ tag }}</span>
+        }
+      </div>
+    }
+    <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+      <app-artifacts-hash [hash]="version.artifactVersionDigest" [expandable]="false" />
+    </div>
+  </li>
+</ng-template>
 
 <ng-template #editAdvisoryDialog>
   @if (editDialogOpen()) {
