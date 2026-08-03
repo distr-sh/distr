@@ -19,6 +19,8 @@
 
 {{ template "chart.description" . }}
 
+Distr gives your customers a SaaS-like path to install, update, and support software in their own cloud, VPC, or air-gapped environment, so your team can ship self-hosted offerings without operating overhead.
+
 {{ template "chart.homepageLine" . }}
 
 ## Prerequisites
@@ -33,7 +35,7 @@ To install Distr in Kubernetes, simply run:
 <!-- x-release-please-start-version -->
 ```shell
 helm upgrade --install --wait --namespace distr --create-namespace \
-  distr oci://ghcr.io/distr-sh/charts/distr --version 3.0.4 \
+  distr oci://ghcr.io/distr-sh/charts/distr --version 3.1.0 \
   --set postgresql.enabled=true --set rustfs.enabled=true
 ```
 <!-- x-release-please-end -->

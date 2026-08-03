@@ -133,7 +133,10 @@ var (
 	RequireAdmin            = RequireAnyUserRole(types.UserRoleAdmin)
 )
 
-func RequireAnySubscriptionType(types ...types.SubscriptionType) func(http.Handler) http.Handler {
+// ForbidSubscriptionTypes blocks the given subscription types. Gating is expressed as a
+// denylist of the lower plans instead of an allowlist of the higher ones, so a newly
+// introduced plan has access by default.
+func ForbidSubscriptionTypes(forbidden ...types.SubscriptionType) func(http.Handler) http.Handler {
 	return func(handler http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -141,13 +144,13 @@ func RequireAnySubscriptionType(types ...types.SubscriptionType) func(http.Handl
 				http.Error(w, err.Error(), http.StatusForbidden)
 			} else if auth.CurrentOrg() == nil {
 				http.Error(w, "inadequate access token", http.StatusForbidden)
-			} else if !slices.Contains(types, auth.CurrentOrg().SubscriptionType) {
-				typesStr := make([]string, 0, len(types))
-				for _, t := range types {
+			} else if slices.Contains(forbidden, auth.CurrentOrg().SubscriptionType) {
+				typesStr := make([]string, 0, len(forbidden))
+				for _, t := range forbidden {
 					typesStr = append(typesStr, string(t))
 				}
 				http.Error(w, fmt.Sprintf(
-					"this operation can only be performed on an organization with one of the following subscription types: %v",
+					"this operation can not be performed on an organization with one of the following subscription types: %v",
 					strings.Join(typesStr, ", "),
 				), http.StatusForbidden)
 			} else {
@@ -158,12 +161,7 @@ func RequireAnySubscriptionType(types ...types.SubscriptionType) func(http.Handl
 	}
 }
 
-var ProFeature = RequireAnySubscriptionType(
-	types.SubscriptionTypePro,
-	types.SubscriptionTypeBusiness,
-	types.SubscriptionTypeTrial,
-	types.SubscriptionTypeEnterprise,
-)
+var ProFeature = ForbidSubscriptionTypes(types.NonProSubscriptionTypes...)
 
 func RequireVendor(handler http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
@@ -352,8 +350,22 @@ var (
 	LicensingFeatureFlagEnabledMiddleware = FeatureFlagMiddleware(types.FeatureLicensing)
 	VendorBillingFeatureMiddleware        = FeatureFlagMiddleware(types.FeatureVendorBilling)
 	PartnerManagementFeatureMiddleware    = FeatureFlagMiddleware(types.FeaturePartnerManagement)
+	CustomDomainsFeatureMiddleware        = FeatureFlagMiddleware(types.FeatureCustomDomains)
 	VulnerabilitiesFeatureMiddleware      = FeatureFlagMiddleware(types.FeatureVulnerabilities)
 )
+
+// RequireCustomDomainsConfigured rejects requests unless the instance itself is set up for custom
+// domain self-service. Without a CNAME target there is no proxy obtaining certificates for custom
+// domains, so a registered domain would never be served.
+func RequireCustomDomainsConfigured(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !env.CustomDomainsConfigured() {
+			http.Error(w, "custom domains are not configured on this instance", http.StatusForbidden)
+			return
+		}
+		handler.ServeHTTP(w, r)
+	})
+}
 
 func SetRequestPattern(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

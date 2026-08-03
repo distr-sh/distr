@@ -141,8 +141,10 @@
             </div>
           }
 
+          <app-custom-domains />
+
           @if (!auth.isSuperAdmin()) {
-            <div class="flex justify-center w-full space-x-4 mt-8 sm:mt-0">
+            <div class="flex justify-center w-full space-x-4 mt-4">
               <button
                 type="submit"
                 [disabled]="formLoading() || form.invalid"

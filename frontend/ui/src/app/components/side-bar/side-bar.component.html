@@ -78,8 +78,8 @@
                   <span class="">Deployments</span>
                 </a>
               </li>
-              @if (isNotificationsFeatureEnabled()) {
-                <li>
+              <li>
+                @if (isNotificationsFeatureEnabled()) {
                   <a
                     (click)="sidebar.hide()"
                     routerLinkActive="bg-gray-100 dark:bg-gray-700"
@@ -87,8 +87,30 @@
                     class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                     <span class="">Alerts</span>
                   </a>
-                </li>
-              }
+                } @else {
+                  <a
+                    class="flex items-center p-2 pl-4 ml-7 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group cursor-pointer"
+                    title="Upgrade to Pro to enable alerts"
+                    (click)="toggle(notificationsOverlayOpen)"
+                    cdkOverlayOrigin
+                    #alertsTooltipTrigger="cdkOverlayOrigin">
+                    <span class="flex-1 text-left rtl:text-right whitespace-nowrap">Alerts</span>
+                    <span class="distr-plan-badge ml-2 me-2">Pro</span>
+                    <ng-template
+                      cdkConnectedOverlay
+                      [cdkConnectedOverlayHasBackdrop]="true"
+                      (backdropClick)="toggle(notificationsOverlayOpen)"
+                      [cdkConnectedOverlayOrigin]="alertsTooltipTrigger"
+                      [cdkConnectedOverlayBackdropClass]="'transparent'"
+                      [cdkConnectedOverlayPositions]="[
+                        {originX: 'end', overlayX: 'start', originY: 'center', overlayY: 'center'},
+                      ]"
+                      [cdkConnectedOverlayOpen]="notificationsOverlayOpen()">
+                      <ng-container *ngTemplateOutlet="proFeatureOverlayContent" />
+                    </ng-template>
+                  </a>
+                }
+              </li>
             </ul>
           }
         </li>
@@ -158,10 +180,7 @@
                 size="lg"
                 class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
               <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Licenses</span>
-              <span
-                class="ml-2 bg-gray-300 text-gray-900 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-gray-500 dark:text-gray-100"
-                >Pro</span
-              >
+              <span class="distr-plan-badge ml-2 me-2">Pro</span>
               <ng-template
                 cdkConnectedOverlay
                 [cdkConnectedOverlayHasBackdrop]="true"
@@ -250,11 +269,8 @@
                 [icon]="faLifeRing"
                 size="lg"
                 class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
-              <span class="ms-3">Support Bundles</span>
-              <span
-                class="ml-2 bg-gray-300 text-gray-900 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-gray-700 dark:text-gray-300"
-                >Pro</span
-              >
+              <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Support Bundles</span>
+              <span class="distr-plan-badge ml-2 me-2">Pro</span>
               <ng-template
                 cdkConnectedOverlay
                 [cdkConnectedOverlayHasBackdrop]="true"
@@ -721,21 +737,16 @@
     class="p-3 text-sm font-medium text-gray-900 bg-white border border-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-w-64">
     <div class="mb-1">
       This feature is available to organizations with a
-      <span
-        class="bg-gray-300 text-gray-900 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-gray-500 dark:text-gray-100">
-        Pro</span
-      >
+      <span class="distr-plan-badge">Pro</span>
       subscription.
     </div>
-    To request access,
+    Our Pro and Business plans are also available for self-hosted customers. See our
     <a
-      [href]="githubUrl + '/discussions'"
+      [href]="websiteUrl + '/pricing/'"
       target="_blank"
       rel="noopener noreferrer"
       class="text-gray-600 dark:text-gray-400 hover:underline"
-      >get help</a
-    >
-    in our community forum or email us at
-    <a href="mailto:support@distr.sh" class="text-gray-600 dark:text-gray-400 hover:underline">support&#64;distr.sh</a>.
+      >pricing page</a
+    >.
   </div>
 </ng-template>

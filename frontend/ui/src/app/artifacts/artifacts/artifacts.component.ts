@@ -15,8 +15,6 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, lastValueFrom, map, startWith} from 'rxjs';
-import {fromPromise} from 'rxjs/internal/observable/innerFrom';
-import {getRemoteEnvironment} from '../../../env/remote';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
@@ -25,8 +23,8 @@ import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {RequireCustomerDirective, RequireVendorDirective} from '../../directives/required-role.directive';
 import {ArtifactsService, ArtifactUpstreamAuth, UpstreamAuthType} from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
+import {ContextService} from '../../services/context.service';
 import {CustomerOrganizationsCache} from '../../services/customer-organizations.service';
-import {OrganizationBrandingService} from '../../services/organization-branding.service';
 import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
@@ -94,12 +92,9 @@ export class ArtifactsComponent {
   );
 
   private readonly organizationService = inject(OrganizationService);
-  private readonly organizationBrandingService = inject(OrganizationBrandingService);
+  private readonly contextService = inject(ContextService);
   protected readonly registrySlug$ = this.organizationService.get().pipe(map((org) => org.slug));
-  protected readonly registryHost$ = combineLatest([
-    fromPromise(getRemoteEnvironment()),
-    this.organizationBrandingService.registryDomain(),
-  ]).pipe(map(([env, registryDomain]) => registryDomain ?? env.registryHost));
+  protected readonly registryHost$ = this.contextService.getRegistryHost();
 
   protected readonly auth = inject(AuthService);
   protected readonly hasSubscription = this.organizationService.hasSubscription;

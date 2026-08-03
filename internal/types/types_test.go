@@ -81,6 +81,12 @@ func TestUserRoleRankPanicsOnUnknown(t *testing.T) {
 func TestFeaturesForSubscriptionType(t *testing.T) {
 	g := NewWithT(t)
 
+	businessFeatures := []Feature{
+		FeatureLicensing,
+		FeaturePartnerManagement,
+		FeatureCustomDomains,
+		FeatureVulnerabilities,
+	}
 	cases := []struct {
 		subscriptionType SubscriptionType
 		expected         []Feature
@@ -88,14 +94,8 @@ func TestFeaturesForSubscriptionType(t *testing.T) {
 		{SubscriptionTypeCommunity, []Feature{}},
 		{SubscriptionTypeTrial, []Feature{FeatureLicensing}},
 		{SubscriptionTypePro, []Feature{FeatureLicensing}},
-		{
-			SubscriptionTypeBusiness,
-			[]Feature{FeatureLicensing, FeaturePartnerManagement, FeatureVulnerabilities},
-		},
-		{
-			SubscriptionTypeEnterprise,
-			[]Feature{FeatureLicensing, FeaturePartnerManagement, FeatureVulnerabilities},
-		},
+		{SubscriptionTypeBusiness, businessFeatures},
+		{SubscriptionTypeEnterprise, businessFeatures},
 	}
 	for _, tc := range cases {
 		g.Expect(FeaturesForSubscriptionType(tc.subscriptionType)).
@@ -107,6 +107,30 @@ func TestEnterpriseIncludesAllBusinessFeatures(t *testing.T) {
 	g := NewWithT(t)
 	g.Expect(FeaturesForSubscriptionType(SubscriptionTypeEnterprise)).
 		To(ContainElements(FeaturesForSubscriptionType(SubscriptionTypeBusiness)))
+}
+
+func TestPlanManagedFeatures(t *testing.T) {
+	g := NewWithT(t)
+
+	g.Expect(PlanManagedFeatures).To(ConsistOf(
+		FeatureLicensing,
+		FeaturePartnerManagement,
+		FeatureCustomDomains,
+		FeatureVulnerabilities,
+	))
+
+	for _, st := range AllSubscriptionTypes() {
+		g.Expect(PlanManagedFeatures).To(ContainElements(FeaturesForSubscriptionType(st)),
+			"features granted by %q must be revocable", st)
+	}
+
+	// Features granted outside of a plan must never be revoked by edition reconciliation.
+	g.Expect(PlanManagedFeatures).NotTo(ContainElements(
+		FeaturePrePostScripts,
+		FeatureArtifactVersionMutable,
+		FeatureVendorBilling,
+		FeatureDeploymentLogsAfter,
+	))
 }
 
 func TestDeploymentTypeParsing(t *testing.T) {

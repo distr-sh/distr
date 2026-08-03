@@ -1,0 +1,25 @@
+{{- if and .Values.caddy.enabled .Values.caddy.podDisruptionBudget.enabled }}
+{{- if and .Values.caddy.podDisruptionBudget.minAvailable .Values.caddy.podDisruptionBudget.maxUnavailable }}
+{{- fail "caddy.podDisruptionBudget: set either minAvailable or maxUnavailable, not both" }}
+{{- end }}
+{{- /* Caddy terminates TLS for every custom domain, so a node drain must not take down all
+replicas at once: every custom domain is unreachable while no replica is left to serve it. */}}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "distr.fullname" . }}-caddy
+  labels:
+    {{- include "distr.labels" . | nindent 4 }}
+    app.kubernetes.io/component: caddy
+spec:
+  {{- with .Values.caddy.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ . }}
+  {{- end }}
+  {{- with .Values.caddy.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ . }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "distr.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: caddy
+{{- end }}

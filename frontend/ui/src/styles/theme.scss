@@ -81,6 +81,10 @@
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
 
+  .distr-plan-badge {
+    @apply bg-gray-200 text-gray-600 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-gray-500 dark:text-gray-100;
+  }
+
   .distr-table {
     @apply w-full text-sm text-left text-gray-500 dark:text-gray-400;
   }

@@ -61,10 +61,10 @@ func ReconcileEditionFeatures(ctx context.Context) error {
 			types.NonProSubscriptionTypes,
 		); err != nil {
 			return err
-		} else if err := db.UpdateOrganizationFeaturesWithSubscriptionType(
+		} else if err := db.RemoveOrganizationFeaturesWithSubscriptionType(
 			ctx,
 			types.NonProSubscriptionTypes,
-			[]types.Feature{},
+			types.PlanManagedFeatures,
 		); err != nil {
 			return err
 		}

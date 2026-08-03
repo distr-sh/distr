@@ -1,0 +1,90 @@
+{{- if .Values.caddy.enabled }}
+{{- $sharedVolume := and .Values.caddy.persistence.enabled (has "ReadWriteMany" .Values.caddy.persistence.accessModes) }}
+{{- if gt (int .Values.caddy.replicaCount) 1 }}
+{{- if .Values.caddy.persistence.enabled }}
+{{- if not $sharedVolume }}
+{{- fail "caddy.replicaCount > 1 requires certificate storage that all replicas share: add ReadWriteMany to caddy.persistence.accessModes and use a storage class that supports it, or configure caddy.storage" }}
+{{- end }}
+{{- else if not .Values.caddy.storage }}
+{{- fail "caddy.replicaCount > 1 without persistence requires caddy.storage to point at a storage module shared by all replicas" }}
+{{- end }}
+{{- end }}
+{{- /* Caddy instances act as a cluster - coordinating ACME issuance, sharing certificates and
+solving each other's challenges - only when they use the same storage. A challenge is validated
+through the LoadBalancer, which hands it to an arbitrary replica, so replicas with separate
+storage would fail to obtain certificates. All replicas therefore mount the same volume, and the
+checks above reject configurations in which they cannot. */}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "distr.fullname" . }}-caddy
+  labels:
+    {{- include "distr.labels" . | nindent 4 }}
+    app.kubernetes.io/component: caddy
+spec:
+  replicas: {{ .Values.caddy.replicaCount }}
+  strategy:
+    {{- if and .Values.caddy.persistence.enabled (not $sharedVolume) }}
+    # A ReadWriteOnce volume cannot be mounted by the outgoing and the incoming pod at the same time.
+    type: Recreate
+    {{- else }}
+    type: RollingUpdate
+    {{- end }}
+  selector:
+    matchLabels:
+      {{- include "distr.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: caddy
+  template:
+    metadata:
+      annotations:
+        checksum/caddyfile: {{ include (print $.Template.BasePath "/caddy-configmap.yaml") . | sha256sum }}
+      labels:
+        {{- include "distr.labels" . | nindent 8 }}
+        app.kubernetes.io/component: caddy
+    spec:
+      containers:
+        - name: caddy
+          image: "{{ .Values.caddy.image.repository }}:{{ .Values.caddy.image.tag }}"
+          imagePullPolicy: {{ .Values.caddy.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+            - name: https
+              containerPort: 443
+              protocol: TCP
+            - name: https-quic
+              containerPort: 443
+              protocol: UDP
+          readinessProbe:
+            tcpSocket:
+              port: https
+          livenessProbe:
+            tcpSocket:
+              port: https
+          {{- with .Values.caddy.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: caddyfile
+              mountPath: /etc/caddy
+              readOnly: true
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /config
+      volumes:
+        - name: caddyfile
+          configMap:
+            name: {{ include "distr.fullname" . }}-caddy
+        - name: data
+          {{- if .Values.caddy.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.caddy.persistence.existingClaim | default (printf "%s-caddy" (include "distr.fullname" .)) }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: config
+          emptyDir: {}
+{{- end }}

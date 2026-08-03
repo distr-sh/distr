@@ -1,5 +1,35 @@
 # Changelog
 
+## [3.1.0](https://github.com/distr-sh/distr/compare/3.0.4...3.1.0) (2026-07-31)
+
+
+### Features
+
+* custom domain configuration for vendors ([#2903](https://github.com/distr-sh/distr/issues/2903)) ([cf87921](https://github.com/distr-sh/distr/commit/cf87921e2a020f47c5176562a50af6120008f827))
+
+
+### Bug Fixes
+
+* business plans couldn't change user roles ([#2927](https://github.com/distr-sh/distr/issues/2927)) ([940cd76](https://github.com/distr-sh/distr/commit/940cd761dcf67119cd3bd73668eb410d8d19fd4b))
+* limit log export with query range and hard cap at 1000000 rows ([#2923](https://github.com/distr-sh/distr/issues/2923)) ([c555b2f](https://github.com/distr-sh/distr/commit/c555b2f01110b99f54c9cefa6264d0afb04edfc4))
+
+
+### Other
+
+* add registry storage to subscription cards ([#2909](https://github.com/distr-sh/distr/issues/2909)) ([5f21baa](https://github.com/distr-sh/distr/commit/5f21baa44edc6f1b002b9798064a4f5b4530537d))
+* **deploy/helm:** add cronJobResources ([#2926](https://github.com/distr-sh/distr/issues/2926)) ([a97928e](https://github.com/distr-sh/distr/commit/a97928e00c883b0df406de05c1c6a5c62849f1ae))
+* **deps:** update angular ([#2912](https://github.com/distr-sh/distr/issues/2912)) ([2dce26d](https://github.com/distr-sh/distr/commit/2dce26df05344e0228ff76966087e560c29be41f))
+* **deps:** update aws-actions/configure-aws-credentials action to v6.2.3 ([#2914](https://github.com/distr-sh/distr/issues/2914)) ([bed339b](https://github.com/distr-sh/distr/commit/bed339b2ed914e950aa73ca0117003a70dbea138))
+* **deps:** update axllent/mailpit docker tag to v1.30.6 ([#2919](https://github.com/distr-sh/distr/issues/2919)) ([abfad76](https://github.com/distr-sh/distr/commit/abfad76a6c28a885442168ec16f96045a81fc2eb))
+* **deps:** update grafana/loki docker tag to v3.7.4 ([#2915](https://github.com/distr-sh/distr/issues/2915)) ([d1fb660](https://github.com/distr-sh/distr/commit/d1fb6603ef63d2eda35fc35646bff59c790423e0))
+* **deps:** update jdx/mise-action action to v4.2.3 ([#2916](https://github.com/distr-sh/distr/issues/2916)) ([7351e98](https://github.com/distr-sh/distr/commit/7351e9831ebc7acaba5d59fca30287b9ce196840))
+* update branding tutorial with new branding component ([#2917](https://github.com/distr-sh/distr/issues/2917)) ([492cf2e](https://github.com/distr-sh/distr/commit/492cf2ea82ee71dc9d2e2c9408dd3c05731d0d8b))
+
+
+### Docs
+
+* **website:** update homepage video embed ([#2931](https://github.com/distr-sh/distr/issues/2931)) ([203889d](https://github.com/distr-sh/distr/commit/203889de73b512a52107caf8e86196e838e5e5d3))
+
 ## [3.0.4](https://github.com/distr-sh/distr/compare/3.0.3...3.0.4) (2026-07-27)
 
 

@@ -42,6 +42,7 @@ import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
+import {isProSubscription} from '../../types/subscription';
 import {InlineEditComponent} from '../inline-edit.component';
 import {QuotaLimitComponent} from '../quota-limit.component';
 import {UserRoleSelectComponent} from '../user-role-select.component';
@@ -135,10 +136,7 @@ export class UsersComponent {
     return org.currentBillableUserAccountCount;
   });
 
-  protected readonly isProSubscription = computed(() => {
-    const subscriptionType = this.organization()?.subscriptionType;
-    return subscriptionType && ['trial', 'pro', 'enterprise'].includes(subscriptionType);
-  });
+  protected readonly isProSubscription = computed(() => isProSubscription(this.organization()?.subscriptionType));
 
   protected readonly editRoleUserId = signal<string | null>(null);
   protected readonly editRoleFormLoading = signal(false);

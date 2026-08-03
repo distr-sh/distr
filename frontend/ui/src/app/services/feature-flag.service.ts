@@ -1,7 +1,7 @@
 import {inject, Injectable} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {map} from 'rxjs';
-import {SubscriptionType} from '../types/subscription';
+import {NON_PRO_SUBSCRIPTION_TYPES, SubscriptionType} from '../types/subscription';
 import {OrganizationService} from './organization.service';
 
 @Injectable({
@@ -30,16 +30,21 @@ export class FeatureFlagService {
     .pipe(map((org) => org.features.includes('partner_management')));
   public readonly isPartnerManagementEnabled = toSignal(this.isPartnerManagementEnabled$, {initialValue: false});
 
+  public readonly isCustomDomainsEnabled$ = this.organizationService
+    .get()
+    .pipe(map((org) => org.features.includes('custom_domains')));
+  public readonly isCustomDomainsEnabled = toSignal(this.isCustomDomainsEnabled$, {initialValue: false});
+
   public readonly isVulnerabilitiesEnabled$ = this.organizationService
     .get()
     .pipe(map((org) => org.features.includes('vulnerabilities')));
   public readonly isVulnerabilitiesEnabled = toSignal(this.isVulnerabilitiesEnabled$, {initialValue: false});
 
-  public readonly isNotificationsEnabled$ = this.requireSubscriptionType('trial', 'pro', 'business', 'enterprise');
+  public readonly isNotificationsEnabled$ = this.forbidSubscriptionType(...NON_PRO_SUBSCRIPTION_TYPES);
 
-  public readonly isSupportBundlesEnabled$ = this.requireSubscriptionType('trial', 'pro', 'business', 'enterprise');
+  public readonly isSupportBundlesEnabled$ = this.forbidSubscriptionType(...NON_PRO_SUBSCRIPTION_TYPES);
 
-  private requireSubscriptionType(...type: SubscriptionType[]) {
-    return this.organizationService.get().pipe(map((org) => type.includes(org.subscriptionType)));
+  private forbidSubscriptionType(...type: SubscriptionType[]) {
+    return this.organizationService.get().pipe(map((org) => !type.includes(org.subscriptionType)));
   }
 }
