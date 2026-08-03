@@ -31,6 +31,14 @@ export const advisoryStatuses: AdvisoryStatus[] = ['triage', 'draft', 'published
  */
 export const defaultAdvisoryStatusFilter: AdvisoryStatus[] = advisoryStatuses.filter((status) => status !== 'canceled');
 
+/**
+ * The statuses of an advisory that has actually been disclosed. Mirrors the customer
+ * visibility rule in internal/advisory/visibility.go. Partners, unlike customers, are not
+ * narrowed to these by the backend, so the list must request them explicitly to keep
+ * undisclosed advisories out of the partner view.
+ */
+export const disclosedAdvisoryStatuses: AdvisoryStatus[] = ['published', 'resolved'];
+
 export function statusLabel(status: AdvisoryStatus): string {
   switch (status) {
     case 'triage':

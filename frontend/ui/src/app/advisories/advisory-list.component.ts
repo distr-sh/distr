@@ -21,6 +21,7 @@ import {
   affectedBadgeClass,
   affectedLabel,
   defaultAdvisoryStatusFilter,
+  disclosedAdvisoryStatuses,
   quickStatusTransitionsFor,
   severityBadgeClass,
   severityLabel,
@@ -77,9 +78,13 @@ export class AdvisoryListComponent {
   });
 
   // Sending customers a status filter would be noise, since the backend already limits them to
-  // published and resolved. Partners keep the default even though their dropdown is hidden, so
-  // that advisories nobody has disclosed stay out of their list too.
-  private readonly defaultStatuses: AdvisoryStatus[] = this.auth.isCustomer() ? [] : defaultAdvisoryStatusFilter;
+  // published and resolved. Partners get no such backend narrowing, so the list must request the
+  // disclosed statuses explicitly to keep advisories nobody has disclosed out of their list too.
+  private readonly defaultStatuses: AdvisoryStatus[] = this.auth.isCustomer()
+    ? []
+    : this.auth.isPartner()
+      ? disclosedAdvisoryStatuses
+      : defaultAdvisoryStatusFilter;
 
   protected readonly selectedStatuses = signal<AdvisoryStatus[]>([...this.defaultStatuses]);
   protected readonly selectedSeverities = signal<AdvisorySeverity[]>([]);

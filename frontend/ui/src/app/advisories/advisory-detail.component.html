@@ -98,7 +98,9 @@
             }
 
             @if (impactResult(); as impact) {
-              @if (auth.isCustomer() && (impact.deployments.length > 0 || impact.pulls.length > 0)) {
+              @if (
+                auth.isCustomer() && (advisory.affected || impact.deployments.length > 0 || impact.pulls.length > 0)
+              ) {
                 @if (advisory.affected) {
                   <div
                     class="mb-4 p-4 text-sm rounded-lg bg-red-50 text-red-800 dark:bg-gray-700 dark:text-red-400"
@@ -107,8 +109,10 @@
                     @if (stillAffectedCount() > 0) {
                       {{ stillAffectedCount() }} of your deployments still
                       {{ stillAffectedCount() === 1 ? 'runs' : 'run' }} an affected version.
-                    } @else {
+                    } @else if (impact.pulls.length > 0) {
                       You downloaded an affected artifact version and have not downloaded one containing the fix.
+                    } @else {
+                      You are entitled to, or previously used, an affected version.
                     }
                     Move to a version listed under Fixed In.
                   </div>
@@ -199,13 +203,17 @@
               }
 
               @if (impact.deployments.length === 0 && impact.pulls.length === 0) {
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  @if (auth.isCustomer()) {
-                    Distr has no record of you deploying or downloading an affected version.
-                  } @else {
-                    No customer has deployed or downloaded an affected version.
+                @if (auth.isCustomer()) {
+                  @if (!advisory.affected) {
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                      Distr has no record of you deploying or downloading an affected version.
+                    </p>
                   }
-                </p>
+                } @else {
+                  <p class="text-sm text-gray-500 dark:text-gray-400">
+                    No customer has deployed or downloaded an affected version.
+                  </p>
+                }
               }
             } @else if (impactFailed()) {
               <p class="text-sm text-red-600 dark:text-red-400">
