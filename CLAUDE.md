@@ -105,24 +105,25 @@ This database stores timestamps as `TIMESTAMP` (without time zone), not `TIMESTA
 
 ### Building
 
-````bash
+```sh
 # Build hub (includes frontend build)
 mise run build:hub:community        # Community edition
 
 # Build agents
 mise run build:agent:docker
 mise run build:agent:kubernetes
+```
 
 Binaries are output to `dist/`.
 
 ### Linting and Formatting
 
-```bash
+```sh
 # Auto-fix linting issues
 mise run format              # All
 mise run format:go           # Go only
 mise run format:frontend     # Frontend only
-````
+```
 
 Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Prettier with config in `.prettierrc.mjs`.
 
@@ -246,12 +247,37 @@ When adding new routes, ensure the OpenAPI spec remains valid. The `chiopenapi` 
 
 `resolvePortalHost` distinguishes three host sources. Self-service `CustomDomain` rows and legacy `OrganizationBranding.app_domain` values are **not** interchangeable: both drop Distr's own branding, but the instance-scoped OIDC providers stay available on the legacy domains, since they predate self-service domains and their users would otherwise be locked out. The response is cached per Host (`Vary: Host`, `max-age=60`), so it must not carry anything user- or organization-specific.
 
+## Comments
+
+Write as few comments as possible. A comment has to earn its place by saying something the code cannot, and every comment that does not is noise that goes stale and has to be reviewed forever.
+
+Do not write a comment that:
+
+- Restates the code or the name below it, including doc comments on self-explanatory types, fields, functions and env getters. A getter named after the value it returns needs no comment saying that it returns that value.
+- Explains the change you are making, why it is correct, or what was there before. That belongs in the commit message or the pull request description, not in the code.
+- Narrates a step of an obvious sequence (`// send the request`, `// parse the response`).
+- Repeats what the documentation, a rule in this file, or a linked ticket already says.
+
+Do write a comment when it records something a reader cannot see:
+
+- A constraint imposed from outside the code, e.g. a requirement of a third-party API, a browser or protocol quirk, or a database limitation the code has to work around.
+- Why a non-obvious approach was chosen over the obvious one, when the obvious one is wrong or breaks something.
+- A deliberate invariant that a future change would silently break.
+
+## Tests
+
+Only write a test that could fail for a real reason. Every test is code that has to be maintained, and a test that restates the implementation costs maintenance without ever catching a bug.
+
+- Do not test guard clauses, getters, plain mappings, a single `if` branch, or that a value passed in comes back out.
+- Do not write a test whose assertion is trivially true because the dependency it needs is not configured in tests.
+- Do test behaviour that is hard to get right and expensive to get wrong: wire formats sent to third parties, fail-closed security behaviour, parsing, permission and subscription gating, and non-trivial query or business logic.
+- Prefer a few focused tests over an exhaustive matrix of near-duplicates.
+
 ## General rules
 
 - Always ensure this file is up-to-date.
 - Always build, test, lint and format through mise tasks (`mise run build:hub:community`, `mise run test:go`, `mise run test:frontend`, `mise run lint`, `mise run format`). Never invoke `go build`, `go test`, `golangci-lint` or `pnpm` directly.
 - When you add, remove, or change an environment variable in `internal/env/env.go` (name, default, required/optional status, or accepted values), update the configuration reference page at `website/src/content/docs/docs/self-hosting/configuration.mdx` in the same change so it stays complete and accurate.
-- Don't write any unnecessary comments that just explain the functionality below, if there is nothing special about it.
 - If a user requests you to do something differently, add the difference to a new rule / convention in this file
 - If you read code that doesn't follow these rules, please fix it.
 - If you see any typos, or spelling mistakes, please fix them.

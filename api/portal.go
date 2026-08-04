@@ -18,9 +18,10 @@ type PortalResponse struct {
 // are configured per instance via environment variables, but are only offered on the default host and on legacy
 // branding app domains -- never on a self-service custom domain, where only that organization's own providers apply.
 type PortalLoginConfig struct {
-	RegistrationEnabled  bool `json:"registrationEnabled"`
-	OIDCGithubEnabled    bool `json:"oidcGithubEnabled"`
-	OIDCGoogleEnabled    bool `json:"oidcGoogleEnabled"`
-	OIDCMicrosoftEnabled bool `json:"oidcMicrosoftEnabled"`
-	OIDCGenericEnabled   bool `json:"oidcGenericEnabled"`
+	RegistrationEnabled  bool    `json:"registrationEnabled"`
+	TurnstileSiteKey     *string `json:"turnstileSiteKey,omitempty"`
+	OIDCGithubEnabled    bool    `json:"oidcGithubEnabled"`
+	OIDCGoogleEnabled    bool    `json:"oidcGoogleEnabled"`
+	OIDCMicrosoftEnabled bool    `json:"oidcMicrosoftEnabled"`
+	OIDCGenericEnabled   bool    `json:"oidcGenericEnabled"`
 }

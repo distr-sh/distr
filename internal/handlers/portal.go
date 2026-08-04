@@ -53,6 +53,13 @@ func (h portalHost) instanceLoginAllowed() bool {
 	return h.source != portalHostCustomDomain
 }
 
+func (h portalHost) turnstileSiteKey() *string {
+	if h.customDomain() {
+		return nil
+	}
+	return env.TurnstileSiteKey()
+}
+
 func PublicPortalRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Portal"))
 	r.Get("/", getPortalHandler).
@@ -92,7 +99,10 @@ func getPortalHandler(w http.ResponseWriter, r *http.Request) {
 // portalLoginConfig lists the login methods offered on the given host. Instance-scoped OIDC providers are
 // suppressed on self-service custom domains, where only the organization's own providers apply.
 func portalLoginConfig(host portalHost) api.PortalLoginConfig {
-	config := api.PortalLoginConfig{RegistrationEnabled: env.Registration() == env.RegistrationEnabled}
+	config := api.PortalLoginConfig{
+		RegistrationEnabled: env.Registration() == env.RegistrationEnabled,
+		TurnstileSiteKey:    host.turnstileSiteKey(),
+	}
 	if !host.instanceLoginAllowed() {
 		return config
 	}

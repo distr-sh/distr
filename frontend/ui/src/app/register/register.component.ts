@@ -1,13 +1,15 @@
-import {ChangeDetectionStrategy, Component, inject, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject, OnInit, signal, viewChild} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {OidcButtonsComponent} from '../components/oidc-buttons.component';
 import {PortalLogoComponent} from '../components/portal-logo/portal-logo.component';
+import {TurnstileComponent} from '../components/turnstile.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {PlaceholderDirective} from '../directives/placeholder.directive';
 import {AuthService} from '../services/auth.service';
+import {PortalService} from '../services/portal.service';
 
 @Component({
   selector: 'app-register',
@@ -18,6 +20,7 @@ import {AuthService} from '../services/auth.service';
     PlaceholderDirective,
     OidcButtonsComponent,
     PortalLogoComponent,
+    TurnstileComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './register.component.html',
@@ -25,9 +28,15 @@ import {AuthService} from '../services/auth.service';
 export class RegisterComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly auth = inject(AuthService);
+  private readonly loginConfig = inject(PortalService).loginConfig;
 
-  errorMessage?: string;
-  loading = false;
+  protected readonly errorMessage = signal<string | undefined>(undefined);
+  protected readonly loading = signal(false);
+
+  protected readonly turnstileSiteKey = computed(() => this.loginConfig().turnstileSiteKey);
+  private readonly turnstile = viewChild(TurnstileComponent);
+  private readonly turnstileToken = signal<string | undefined>(undefined);
+
   public readonly form = new FormGroup(
     {
       email: new FormControl('', [Validators.required, Validators.email]),
@@ -46,19 +55,34 @@ export class RegisterComponent implements OnInit {
     }
   }
 
+  protected onTurnstileToken(token: string | undefined): void {
+    this.turnstileToken.set(token);
+  }
+
   public async submit(): Promise<void> {
     this.form.markAllAsTouched();
-    this.errorMessage = undefined;
-    if (this.form.valid) {
-      this.loading = true;
-      const value = this.form.value;
-      try {
-        await firstValueFrom(this.auth.register(value.email!, value.name, value.organizationName, value.password!));
-        location.assign('/');
-      } catch (e) {
-        this.errorMessage = getFormDisplayedError(e);
-        this.loading = false;
-      }
+    this.errorMessage.set(undefined);
+    if (!this.form.valid) {
+      return;
+    }
+    const turnstileToken = this.turnstileToken();
+    if (this.turnstileSiteKey() && !turnstileToken) {
+      this.errorMessage.set('Please complete the challenge to prove that you are human');
+      return;
+    }
+
+    this.loading.set(true);
+    const value = this.form.value;
+    try {
+      await firstValueFrom(
+        this.auth.register(value.email!, value.name, value.organizationName, value.password!, turnstileToken)
+      );
+      location.assign('/');
+    } catch (e) {
+      this.errorMessage.set(getFormDisplayedError(e));
+      this.loading.set(false);
+      // A token can only be redeemed once, so a retry needs a new challenge.
+      this.turnstile()?.reset();
     }
   }
 }

@@ -41,6 +41,24 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
 | `RESET_TOKEN_VALID_DURATION`     | no       | `1h`    | How long password reset links remain valid.                       |
 | `AGENT_TOKEN_MAX_VALID_DURATION` | no       | `24h`   | Maximum validity of an agent access token before it is refreshed. |
 
+## Bot Protection
+
+Registrations can optionally be protected with a [Cloudflare Turnstile](https://www.cloudflare.com/products/turnstile/)
+widget, which blocks automated sign-ups without asking users to solve a puzzle. It is disabled unless **both**
+variables below are set: the site key renders the widget in the browser and the secret verifies its token on the
+server, so a half-configured widget could only ever reject valid registrations. Distr logs a warning and stays
+unprotected when just one of them is present.
+
+Create a widget in the Cloudflare dashboard under **Turnstile**, add the hostname of your instance to it and copy
+both keys. Turnstile does not require your instance to be proxied through Cloudflare. Because a widget only accepts
+challenges from its configured hostnames, registrations made through an organization's custom app domain do not show
+the widget and are not verified; they remain subject to the rate limits of the authentication endpoints.
+
+| Variable             | Required                | Default | Description                                                                        |
+| -------------------- | ----------------------- | ------- | ---------------------------------------------------------------------------------- |
+| `TURNSTILE_SITE_KEY` | if `TURNSTILE_SECRET`   | —       | Public site key of the Turnstile widget, rendered on the registration form.        |
+| `TURNSTILE_SECRET`   | if `TURNSTILE_SITE_KEY` | —       | Secret key used to verify tokens with Cloudflare's siteverify API. Keep it secret. |
+
 ## Agents
 
 | Variable              | Required | Default | Description                                                                              |
