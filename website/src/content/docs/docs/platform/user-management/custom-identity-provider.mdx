@@ -14,8 +14,8 @@ Your organization can connect its own OpenID Connect identity provider, so your 
 <Aside type="note">
   A custom identity provider is available on the Business plan and requires a
   [custom app domain](/docs/platform/branding/#custom-domains), because your
-  provider is only offered on your own domain. See the [pricing
-  page](/pricing/) for a comparison.
+  provider is only offered on your own domain. See the [pricing page](/pricing/)
+  for a comparison.
 </Aside>
 
 ## Requirements
@@ -41,14 +41,14 @@ Issuer URLs for the most common providers:
 | ------------------ | -------------------------------------------------------- |
 | Microsoft Entra ID | `https://login.microsoftonline.com/<tenant-id>/v2.0`     |
 | Google             | `https://accounts.google.com`                            |
-| Okta               | `https://<your-org>.okta.com` (or `/oauth2/<server-id>`)  |
+| Okta               | `https://<your-org>.okta.com` (or `/oauth2/<server-id>`) |
 | Auth0              | `https://<your-tenant>.eu.auth0.com/`                    |
 | Keycloak           | `https://<your-host>/realms/<realm>`                     |
 
 <Aside type="caution" title="Microsoft Entra ID needs your tenant ID">
   The `common`, `organizations` and `consumers` endpoints cannot be used: their
-  OpenID configuration does not name a tenant, so the tokens they issue cannot be
-  verified against a single issuer. Use the single-tenant issuer with your
+  OpenID configuration does not name a tenant, so the tokens they issue cannot
+  be verified against a single issuer. Use the single-tenant issuer with your
   directory (tenant) ID.
 </Aside>
 
