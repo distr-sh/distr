@@ -28,7 +28,8 @@ import {PortalService} from '../services/portal.service';
 export class RegisterComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly auth = inject(AuthService);
-  private readonly loginConfig = inject(PortalService).loginConfig;
+  private readonly portal = inject(PortalService);
+  private readonly loginConfig = this.portal.loginConfig;
 
   protected readonly errorMessage = signal<string | undefined>(undefined);
   protected readonly loading = signal(false);
@@ -65,8 +66,12 @@ export class RegisterComponent implements OnInit {
     if (!this.form.valid) {
       return;
     }
+    // Wait for the portal config to settle: before it loads (and whenever its fetch fails) the site key is absent,
+    // which is indistinguishable from Turnstile being disabled, so a submit racing ahead of it would skip a challenge
+    // the backend still requires and fail with a captcha error that no widget can recover from.
+    const {turnstileSiteKey} = (await firstValueFrom(this.portal.portal$)).loginConfig;
     const turnstileToken = this.turnstileToken();
-    if (this.turnstileSiteKey() && !turnstileToken) {
+    if (turnstileSiteKey && !turnstileToken) {
       this.errorMessage.set('Please complete the challenge to prove that you are human');
       return;
     }

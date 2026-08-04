@@ -60,6 +60,11 @@ function loadTurnstile(): Promise<TurnstileApi> {
     });
     script.addEventListener('error', () => reject(new Error('failed to load the Turnstile script')));
     document.head.appendChild(script);
+  }).catch((e) => {
+    // Drop the cached rejection so a later attempt (e.g. after an ad blocker is disabled or a transient CDN
+    // failure clears) retries the load instead of reusing the failure for the rest of the session.
+    api = undefined;
+    throw e;
   });
   return api;
 }
