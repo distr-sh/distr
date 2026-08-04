@@ -23,6 +23,16 @@ Distr supports four OIDC providers out of the box: **Google**, **GitHub**, **Mic
 Each provider can be enabled independently through environment variables.
 When enabled, the corresponding sign-in button appears on both the login and sign-up pages.
 
+<Aside type="caution" title="Custom domains">
+  Providers configured this way belong to the instance, not to a single
+  organization, so they are only offered on the instance's own host. On a
+  [custom domain](/docs/platform/branding/#custom-domains) that an organization
+  set up itself, the sign-in buttons are hidden and the auth routes are rejected
+  — users sign in there with email and password. Domains configured for an
+  organization by an instance operator before self-service custom domains
+  existed are exempt and keep offering the instance providers.
+</Aside>
+
 ## Connected accounts
 
 The first time a user signs in with a provider, Distr stores the identity that the provider reports for them (the issuer and the `sub` claim, or the numeric user ID in the case of GitHub) and connects it to their user account. Every later sign-in is matched on that identity rather than on the email address, so the account stays the same when the email changes at the provider.

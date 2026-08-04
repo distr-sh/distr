@@ -1,17 +1,11 @@
 import {DOCUMENT} from '@angular/common';
-import {HttpBackend, HttpClient} from '@angular/common/http';
 import {inject, Injectable, signal} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {Title} from '@angular/platform-browser';
 import {catchError, map, Observable, of, Subject, switchMap} from 'rxjs';
 import {AuthService} from './auth.service';
 import {OrganizationBrandingService} from './organization-branding.service';
-
-interface PortalResponse {
-  pageTitle?: string;
-  faviconUrl?: string;
-  logoUrl?: string;
-}
+import {PortalService} from './portal.service';
 
 interface ResolvedBranding {
   pageTitle?: string;
@@ -31,9 +25,7 @@ interface ResolvedBranding {
  */
 @Injectable({providedIn: 'root'})
 export class PortalBrandingService {
-  // Bypass global interceptors (auth, error toasts, maintenance-mode probe) so this best-effort
-  // call stays silent and can never surface a toast or flip the app into maintenance mode.
-  private readonly httpClient = new HttpClient(inject(HttpBackend));
+  private readonly portal = inject(PortalService);
   private readonly title = inject(Title);
   private readonly document = inject(DOCUMENT);
   private readonly auth = inject(AuthService);
@@ -97,16 +89,8 @@ export class PortalBrandingService {
   }
 
   private resolveHostBranding(): Observable<ResolvedBranding> {
-    return this.httpClient.get<PortalResponse | null>('/api/public/v1/portal').pipe(
-      // A response is only returned for a custom app domain, so its presence indicates a custom domain.
-      map((portal) => ({
-        pageTitle: portal?.pageTitle,
-        faviconUrl: portal?.faviconUrl,
-        logoUrl: portal?.logoUrl,
-        customDomain: portal != null,
-      })),
-      // best-effort: keep the default title, favicon and logo
-      catchError(() => of<ResolvedBranding>({customDomain: false}))
+    return this.portal.portal$.pipe(
+      map(({pageTitle, faviconUrl, logoUrl, customDomain}) => ({pageTitle, faviconUrl, logoUrl, customDomain}))
     );
   }
 
