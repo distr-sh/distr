@@ -201,6 +201,10 @@
             <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
               {{ editing()?.clientSecretSet ? 'A secret is stored. Leave empty to keep it.' : 'No secret stored yet.' }}
             </p>
+          } @else if (form.controls.clientSecret.hasError('required') && form.controls.clientSecret.touched) {
+            <p class="text-xs font-normal text-red-600 dark:text-red-500">
+              Your provider issues this secret together with the client ID.
+            </p>
           }
         </div>
 

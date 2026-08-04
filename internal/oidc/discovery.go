@@ -113,6 +113,9 @@ func fetchCanonicalIssuer(ctx context.Context, issuerURL *url.URL) (string, erro
 		return "", fmt.Errorf("could not read %v: %w", discoveryURL, err)
 	}
 	defer resp.Body.Close()
+	if final := resp.Request.URL; !strings.EqualFold(final.Hostname(), issuerURL.Hostname()) {
+		return "", fmt.Errorf("%v redirects to the different host %v", discoveryURL, final.Hostname())
+	}
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("could not read %v: %v", discoveryURL, resp.Status)
 	}

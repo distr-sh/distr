@@ -88,6 +88,7 @@ export class CustomOidcComponent {
 
   protected showDialog(configuration?: CustomOidcConfiguration) {
     this.editing.set(configuration);
+    this.form.controls.clientSecret.setValidators(configuration ? [] : [Validators.required]);
     if (configuration) {
       this.form.setValue({
         name: configuration.name,
