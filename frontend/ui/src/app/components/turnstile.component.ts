@@ -106,6 +106,7 @@ export class TurnstileComponent {
   private turnstile?: TurnstileApi;
   private widgetId?: string;
   private renderedTheme?: TurnstileTheme;
+  private destroyed = false;
 
   constructor() {
     afterNextRender(() => this.render());
@@ -119,7 +120,10 @@ export class TurnstileComponent {
         void this.render();
       }
     });
-    inject(DestroyRef).onDestroy(() => this.remove());
+    inject(DestroyRef).onDestroy(() => {
+      this.destroyed = true;
+      this.remove();
+    });
   }
 
   /** Discards the current token and shows a fresh challenge. A token can only be redeemed once. */
@@ -137,6 +141,10 @@ export class TurnstileComponent {
     } catch (e) {
       console.error(e);
       this.loadFailed.set(true);
+      return;
+    }
+    // The load can outlive the component: if it was destroyed while awaiting, there is no view to render into.
+    if (this.destroyed) {
       return;
     }
     const theme = this.theme();
