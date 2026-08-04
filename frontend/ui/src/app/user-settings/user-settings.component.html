@@ -9,39 +9,42 @@
       <form [formGroup]="generalForm" (ngSubmit)="saveGeneral()">
         <div class="space-y-4">
           <h2 class="text-xl font-bold dark:text-white">General</h2>
-          <div class="space-y-2">
-            <label for="name" class="distr-label">Name</label>
-            <input
-              formControlName="name"
-              autotrim
-              type="text"
-              name="name"
-              id="name"
-              class="distr-input"
-              placeholder="Name" />
-            <div class="text-sm text-gray-500">
-              This name is used to address you in E-Mail communications and is shown to other users.
-            </div>
-          </div>
 
-          <div class="space-y-2">
-            <div class="block text-sm font-medium text-gray-900 dark:text-white">Profile Picture</div>
-            <div class="inline-block relative">
-              @if (generalForm.value.imageId) {
-                <img [src]="generalForm.value.imageId | secureImage | async" class="rounded-full size-32" />
-              } @else {
-                <div
-                  class="flex items-center justify-center text-gray-500 size-32 rounded-full border dark:border-gray-600">
-                  No picture
-                </div>
-              }
-              <button
-                type="button"
-                class="absolute bottom-1 right-1 rounded-full size-8 text-sm text-gray-900 focus:outline-none bg-white border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
-                (click)="showProfilePictureDialog()">
-                <span class="sr-only">Edit profile picture</span>
-                <fa-icon [icon]="faPen" />
-              </button>
+          <div class="flex flex-col md:flex-row gap-6 md:items-start">
+            <div class="md:w-1/4 shrink-0 space-y-2">
+              <div class="distr-label">Profile Picture</div>
+              <div class="inline-block relative">
+                @if (generalForm.value.imageId) {
+                  <img [src]="generalForm.value.imageId | secureImage | async" class="rounded-full size-32" />
+                } @else {
+                  <div
+                    class="flex items-center justify-center text-gray-500 size-32 rounded-full border dark:border-gray-600">
+                    No picture
+                  </div>
+                }
+                <button
+                  type="button"
+                  class="absolute bottom-1 right-1 rounded-full size-8 text-sm text-gray-900 focus:outline-none bg-white border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+                  (click)="showProfilePictureDialog()">
+                  <span class="sr-only">Edit profile picture</span>
+                  <fa-icon [icon]="faPen" />
+                </button>
+              </div>
+            </div>
+
+            <div class="grow space-y-2">
+              <label for="name" class="distr-label">Name</label>
+              <input
+                formControlName="name"
+                autotrim
+                type="text"
+                name="name"
+                id="name"
+                class="distr-input"
+                placeholder="Name" />
+              <div class="text-sm text-gray-500">
+                This name is used to address you in E-Mail communications and is shown to other users.
+              </div>
             </div>
           </div>
 
@@ -67,7 +70,7 @@
           </div>
 
           <div class="space-y-2">
-            <div class="block text-sm font-medium text-gray-900 dark:text-white">Current E-Mail address</div>
+            <div class="distr-label">Current E-Mail address</div>
 
             <div
               class="flex items-baseline gap-2 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white p-4 rounded-lg text-sm">
@@ -106,15 +109,34 @@
       </form>
 
       <div class="space-y-4">
-        <h2 class="text-xl font-bold dark:text-white">Connected Accounts</h2>
+        <h2 class="text-xl font-bold dark:text-white">Password Reset</h2>
 
         <div class="text-gray-500 text-sm">
-          These identity provider accounts can be used to sign in to Distr. An account is connected the first time you
-          sign in with it, and stays connected to your Distr account even if the e-mail address changes on either side.
+          Your password is changed through the password reset flow: we send a link to your e-mail address that lets you
+          set a new one. If you only sign in through an identity provider and have no password yet, this is also how you
+          set one.
+        </div>
+
+        <a
+          routerLink="/forgot"
+          [queryParams]="{email: user()?.email}"
+          class="distr-btn-secondary inline-flex items-center px-5 py-2.5 text-sm font-medium">
+          <fa-icon [icon]="faKey" class="mr-2" />
+          Request password reset
+        </a>
+      </div>
+
+      <div class="space-y-4">
+        <h2 class="text-xl font-bold dark:text-white">Connected Identity Providers</h2>
+
+        <div class="text-gray-500 text-sm">
+          These identity providers can be used to sign in to Distr. A provider is connected the first time you sign in
+          with it, matched to your Distr account by the e-mail address it reports. From then on it stays connected even
+          if the e-mail address changes on either side.
         </div>
 
         @if (oidcIdentities().length === 0) {
-          <div class="text-sm dark:text-white">You have no connected accounts.</div>
+          <div class="text-sm dark:text-white">You have no connected identity providers.</div>
         } @else {
           <ul class="space-y-2">
             @for (identity of oidcIdentities(); track identity.id) {

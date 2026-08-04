@@ -2,6 +2,7 @@ import {AsyncPipe, DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
+import {RouterLink} from '@angular/router';
 import {FaIconComponent, IconDefinition} from '@fortawesome/angular-fontawesome';
 import {faGithub, faGoogle, faMicrosoft} from '@fortawesome/free-brands-svg-icons';
 import {
@@ -10,6 +11,7 @@ import {
   faCircleExclamation,
   faExclamationTriangle,
   faFloppyDisk,
+  faKey,
   faPen,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
@@ -40,11 +42,12 @@ const oidcProviderIcons: Record<OIDCProvider, IconDefinition> = {
 @Component({
   templateUrl: './user-settings.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective, SecureImagePipe, AsyncPipe, DatePipe],
+  imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective, SecureImagePipe, AsyncPipe, DatePipe, RouterLink],
 })
 export class UserSettingsComponent {
   protected readonly faFloppyDisk = faFloppyDisk;
   protected readonly faPen = faPen;
+  protected readonly faKey = faKey;
   protected readonly faCheck = faCheck;
   protected readonly faXmark = faXmark;
   protected readonly faCircleExclamation = faCircleExclamation;
