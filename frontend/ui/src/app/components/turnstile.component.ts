@@ -9,6 +9,7 @@ import {
   inject,
   input,
   output,
+  signal,
   viewChild,
 } from '@angular/core';
 import {ColorSchemeService} from '../services/color-scheme.service';
@@ -45,23 +46,36 @@ const action = 'turnstile-spin-v2';
 let api: Promise<TurnstileApi> | undefined;
 
 function loadTurnstile(): Promise<TurnstileApi> {
-  api ??= new Promise<TurnstileApi>((resolve, reject) => {
+  // A failed load is not cached: a single page application session outlives it, and the next attempt gets a fresh
+  // script element instead of the rejection of the first one.
+  api ??= requestTurnstile().catch((e) => {
+    api = undefined;
+    throw e;
+  });
+  return api;
+}
+
+function requestTurnstile(): Promise<TurnstileApi> {
+  return new Promise<TurnstileApi>((resolve, reject) => {
     const script = document.createElement('script');
     script.src = scriptUrl;
     script.async = true;
     script.defer = true;
+    const fail = (message: string) => {
+      script.remove();
+      reject(new Error(message));
+    };
     script.addEventListener('load', () => {
       const loaded = (window as TurnstileWindow).turnstile;
       if (loaded) {
         resolve(loaded);
       } else {
-        reject(new Error('the Turnstile script did not install its API'));
+        fail('the Turnstile script did not install its API');
       }
     });
-    script.addEventListener('error', () => reject(new Error('failed to load the Turnstile script')));
+    script.addEventListener('error', () => fail('failed to load the Turnstile script'));
     document.head.appendChild(script);
   });
-  return api;
 }
 
 /**
@@ -79,6 +93,11 @@ export class TurnstileComponent {
 
   /** The token of a solved challenge, or undefined once it expired or the challenge failed. */
   public readonly token = output<string | undefined>();
+
+  private readonly loadFailed = signal(false);
+
+  /** Whether the challenge is unavailable, meaning no token can be obtained until the page is loaded again. */
+  public readonly unavailable = this.loadFailed.asReadonly();
 
   private readonly colorScheme = inject(ColorSchemeService).colorScheme;
   private readonly theme = computed<TurnstileTheme>(() => (this.colorScheme() === 'dark' ? 'dark' : 'light'));
@@ -114,8 +133,10 @@ export class TurnstileComponent {
   private async render(): Promise<void> {
     try {
       this.turnstile = await loadTurnstile();
+      this.loadFailed.set(false);
     } catch (e) {
       console.error(e);
+      this.loadFailed.set(true);
       return;
     }
     const theme = this.theme();
