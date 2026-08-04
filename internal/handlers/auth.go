@@ -456,7 +456,9 @@ func verifyRegistrationChallenge(w http.ResponseWriter, r *http.Request, token s
 
 	if err := turnstile.Verify(ctx, token, chimiddleware.GetClientIP(ctx)); err != nil {
 		log.Info("turnstile verification failed", zap.Error(err))
-		http.Error(w, "captcha verification failed", http.StatusForbidden)
+		// The frontend shows the message of a 4xx response as-is, so it has to be one a user can act on.
+		http.Error(w, "could not verify that you are human, please reload the page and try again",
+			http.StatusForbidden)
 		return false
 	}
 	return true

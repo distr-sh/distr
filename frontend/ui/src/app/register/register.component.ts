@@ -67,7 +67,12 @@ export class RegisterComponent implements OnInit {
     }
     const turnstileToken = this.turnstileToken();
     if (this.turnstileSiteKey() && !turnstileToken) {
-      this.errorMessage.set('Please complete the challenge to prove that you are human');
+      // With an unavailable challenge there is nothing on the page to complete, so say what actually went wrong.
+      this.errorMessage.set(
+        this.turnstile()?.unavailable()
+          ? 'The challenge that proves you are human could not be loaded. Please reload the page and make sure that challenges.cloudflare.com is not blocked.'
+          : 'Please complete the challenge that proves you are human, then try again'
+      );
       return;
     }
 

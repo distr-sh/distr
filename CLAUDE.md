@@ -144,6 +144,7 @@ Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Pret
 - When performing data transformations between DTOs and domain models, use `mapping.List(...)` inside the `internal/mapping` package
 - Always use [Gomega](https://onsi.github.io/gomega/) for test assertions in Go tests
 - Do not use `util.PtrTo`. Use `new(value)` to obtain a `*T` from a typed value (e.g. `new(types.UserRoleReadOnly)`).
+- The body of a 4xx response is displayed verbatim in the frontend forms (`getFormDisplayedError`), so write those messages for the end user and put anything only a developer can use into the log instead.
 
 ### Frontend Code
 
