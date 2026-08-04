@@ -7,9 +7,6 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 )
 
-// CustomOIDCConfigurationToDTO maps a configuration for the API. domain is the custom domain the
-// provider is offered on, which the callback URL is derived from: the identity provider has to
-// have exactly that URL registered as a redirect URI.
 func CustomOIDCConfigurationToDTO(
 	model types.CustomOIDCConfiguration,
 	domain string,

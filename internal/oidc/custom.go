@@ -13,9 +13,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// CustomProvider is a provider configured by an organization, ready to run one authorization step.
-// It is built per request rather than cached, so an edited configuration takes effect immediately;
-// the cost is one discovery request per login step, which is irrelevant at login frequency.
 type CustomProvider struct {
 	provider     *oidc.Provider
 	verifier     *oidc.IDTokenVerifier
@@ -23,9 +20,6 @@ type CustomProvider struct {
 	pkceEnabled  bool
 }
 
-// ProviderForConfiguration resolves the configuration's issuer and prepares the authorization
-// request. redirectURL must be the callback on the host the login was started from, because the
-// identity provider binds the authorization code to it.
 func ProviderForConfiguration(
 	ctx context.Context,
 	configuration types.CustomOIDCConfiguration,
@@ -53,8 +47,6 @@ func ProviderForConfiguration(
 	}, nil
 }
 
-// CustomRedirectURL is the callback of an organization configuration on the host of the given
-// request. The configuration is only offered on its own custom domain, so the host is stable.
 func CustomRedirectURL(r *http.Request, configurationID uuid.UUID) string {
 	return fmt.Sprintf("%v/api/v1/auth/oidc/custom/%v/callback",
 		handlerutil.GetRequestSchemeAndHost(r), configurationID)
@@ -68,9 +60,6 @@ func (p *CustomProvider) AuthCodeURL(state, nonce, pkceVerifier string) string {
 	return p.oauth2Config.AuthCodeURL(state, opts...)
 }
 
-// IdentityForCode exchanges the authorization code and returns the verified identity. The nonce is
-// the one that was sent with the authorization request: checking it ties the ID token to this
-// login attempt, so a token obtained elsewhere cannot be replayed here.
 func (p *CustomProvider) IdentityForCode(ctx context.Context, code, pkceVerifier, nonce string) (Identity, error) {
 	ctx = oidc.ClientContext(ctx, discoveryHTTPClient())
 
@@ -96,10 +85,8 @@ func (p *CustomProvider) IdentityForCode(ctx context.Context, code, pkceVerifier
 	}
 
 	var claims struct {
-		Email string `json:"email"`
-		// A missing email_verified claim means "unknown", not "unverified" — Entra ID usually
-		// omits it. It only ever decides whether the address counts as verified in Distr.
-		EmailVerified *bool `json:"email_verified"`
+		Email         string `json:"email"`
+		EmailVerified *bool  `json:"email_verified"`
 	}
 	if err := idToken.Claims(&claims); err != nil {
 		return Identity{}, fmt.Errorf("failed to parse id_token claims: %w", err)
@@ -113,9 +100,6 @@ func (p *CustomProvider) IdentityForCode(ctx context.Context, code, pkceVerifier
 		EmailVerified: claims.EmailVerified != nil && *claims.EmailVerified,
 	}
 	if identity.Email == "" {
-		// Okta can be configured to leave the email out of the ID token, and Entra ID omits it
-		// for accounts without a mail attribute. UserInfo goes through the provider, which
-		// cross-checks that the response belongs to the same subject.
 		userInfo, err := p.provider.UserInfo(ctx, oauth2.StaticTokenSource(token))
 		if err != nil {
 			return Identity{}, fmt.Errorf("id_token carries no email and userinfo failed: %w", err)

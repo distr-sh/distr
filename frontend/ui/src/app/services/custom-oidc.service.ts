@@ -31,7 +31,6 @@ export class CustomOidcService {
     return this.httpClient.delete<void>(`${baseUrl}/${id}`);
   }
 
-  /** Runs discovery against the stored issuer and reports the provider's own error verbatim. */
   public test(id: string): Observable<void> {
     return this.httpClient.post<void>(`${baseUrl}/${id}/test`, {});
   }

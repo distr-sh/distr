@@ -31,7 +31,6 @@ export class PortalService {
     // The endpoint answered custom domains with 204 before the login config moved into it, and its responses are
     // cached for a minute, so an empty body can still arrive from a cache while a new version rolls out.
     map((portal) => portal ?? defaultPortal),
-    // The provider list is omitted when empty, but consumers iterate over it unconditionally.
     map((portal) => ({
       ...portal,
       loginConfig: {...portal.loginConfig, oidcProviders: portal.loginConfig.oidcProviders ?? []},

@@ -194,9 +194,6 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 			userHasExisted = true
 			userAccount = *existingUA
 
-			// Adding an existing account is the one place where a second membership can appear, so
-			// this is where the account exclusivity that organization-scoped single sign-on relies
-			// on is kept intact.
 			if err := checkMembershipAllowed(ctx, userAccount.ID, organization.ID); errors.Is(
 				err, apierrors.ErrBadRequest) {
 				http.Error(w, err.Error(), http.StatusBadRequest)

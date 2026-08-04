@@ -18,30 +18,17 @@ import (
 const (
 	discoveryPath    = "/.well-known/openid-configuration"
 	discoveryTimeout = 10 * time.Second
-	// entraHost issues multi-tenant discovery documents whose issuer is the literal template
-	// "https://login.microsoftonline.com/{tenantid}/v2.0", which can never be verified.
-	entraHost = "login.microsoftonline.com"
+	entraHost        = "login.microsoftonline.com"
 )
 
-// entraMultiTenantPaths are the Entra ID endpoints that are not bound to a single tenant.
 var entraMultiTenantPaths = []string{"common", "organizations", "consumers"}
 
-// DiscoveryResult is the outcome of resolving an issuer URL to an identity provider.
 type DiscoveryResult struct {
-	// Issuer is the canonical issuer as stated by the discovery document. It may differ from the
-	// URL that was entered (Auth0 states a trailing slash, Entra ID a tenant GUID for a domain
-	// name), and it is what has to be stored and used for verification.
-	Issuer   string
-	Provider *oidc.Provider
-	// PKCESupported reports whether the provider announced S256 code challenges, so an
-	// administrator does not have to know.
+	Issuer        string
+	Provider      *oidc.Provider
 	PKCESupported bool
 }
 
-// Discover resolves an issuer URL entered by an organization administrator to its identity
-// provider. The URL is attacker-controlled input that this server fetches, so it is validated
-// before and after the request: only https, no query or fragment, no multi-tenant Entra endpoint,
-// and (unless CUSTOM_OIDC_ALLOW_PRIVATE_ISSUERS is set) no private network target.
 func Discover(ctx context.Context, issuerURL string) (*DiscoveryResult, error) {
 	parsed, err := ParseIssuerURL(issuerURL)
 	if err != nil {
@@ -56,8 +43,6 @@ func Discover(ctx context.Context, issuerURL string) (*DiscoveryResult, error) {
 		return nil, err
 	}
 
-	// go-oidc verifies that the document's issuer matches the one it was asked for, which is why
-	// the canonical value has to be passed here instead of the entered one.
 	provider, err := oidc.NewProvider(ctx, canonicalIssuer)
 	if err != nil {
 		return nil, fmt.Errorf("could not read the OpenID configuration of %v: %w", canonicalIssuer, err)
@@ -77,8 +62,6 @@ func Discover(ctx context.Context, issuerURL string) (*DiscoveryResult, error) {
 	}, nil
 }
 
-// ParseIssuerURL validates an issuer URL as entered by an administrator. It does not contact the
-// provider, so it can be used to reject input before any request is made.
 func ParseIssuerURL(issuerURL string) (*url.URL, error) {
 	parsed, err := url.Parse(strings.TrimSpace(issuerURL))
 	if err != nil {
@@ -94,8 +77,6 @@ func ParseIssuerURL(issuerURL string) (*url.URL, error) {
 	if parsed.User != nil {
 		return nil, fmt.Errorf("issuer must not contain credentials")
 	}
-	// Azure AD B2C identifies a user flow with a query parameter, which the discovery URL and the
-	// issuer comparison cannot carry. Such a tenant needs a user-flow-specific issuer instead.
 	if parsed.RawQuery != "" || parsed.Fragment != "" {
 		return nil, fmt.Errorf("issuer must not contain a query string or fragment")
 	}
@@ -121,9 +102,6 @@ func validateNotEntraMultiTenant(parsed *url.URL) error {
 	return nil
 }
 
-// fetchCanonicalIssuer reads the issuer the provider states for itself. The document has to be
-// served by the host that was entered: otherwise a provider could claim an issuer belonging to
-// somebody else, and identities of two organizations would collide on (issuer, subject).
 func fetchCanonicalIssuer(ctx context.Context, issuerURL *url.URL) (string, error) {
 	discoveryURL := strings.TrimSuffix(issuerURL.String(), "/") + discoveryPath
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, discoveryURL, nil)
@@ -159,9 +137,6 @@ func fetchCanonicalIssuer(ctx context.Context, issuerURL *url.URL) (string, erro
 	return document.Issuer, nil
 }
 
-// discoveryHTTPClient is the client used for every request to an organization-configured provider,
-// including the JWKS fetch during token verification. Its dialer rejects private network targets
-// after DNS resolution, which also covers redirects and DNS rebinding.
 func discoveryHTTPClient() *http.Client {
 	dialer := &net.Dialer{Control: rejectPrivateAddress}
 	return &http.Client{

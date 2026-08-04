@@ -106,9 +106,6 @@ func ExistsCustomDomain(ctx context.Context, domain string) (bool, error) {
 	return exists, nil
 }
 
-// GetCustomDomainByDomain returns the custom domain registered for the given (normalized) host, or
-// nil when the host is not registered. Callers must not assume that the owning organization has a
-// branding row: a domain can be registered before any branding is saved.
 func GetCustomDomainByDomain(ctx context.Context, domain string) (*types.CustomDomain, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,

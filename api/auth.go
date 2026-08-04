@@ -12,12 +12,8 @@ type AuthLoginRequest struct {
 }
 
 type AuthLoginResponse struct {
-	Token       string `json:"token,omitempty"`
-	RequiresMFA bool   `json:"requiresMfa"`
-	// RedirectURL is set when the login happened on the instance's default host while the user's
-	// primary organization has a custom app domain: the browser is expected to continue there, so
-	// the user ends up on the host that offers their organization's login methods and branding. The
-	// token is valid on either host, so an API client can ignore this.
+	Token       string  `json:"token,omitempty"`
+	RequiresMFA bool    `json:"requiresMfa"`
 	RedirectURL *string `json:"redirectUrl,omitempty"`
 }
 

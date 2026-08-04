@@ -76,7 +76,6 @@ export class LoginComponent implements OnInit {
       )
       .subscribe(() => this.toast.success('Account activated successfully. You can now log in!'));
 
-    // The login methods arrive with the portal response, so the automatic redirect has to wait for it.
     this.portalService.portal$
       .pipe(take(1), takeUntilDestroyed())
       .subscribe(({loginConfig}) => this.redirectToSingleSignOn(loginConfig));
@@ -126,12 +125,6 @@ export class LoginComponent implements OnInit {
     }
   }
 
-  /**
-   * Sends the browser straight to the organization's identity provider when it is configured to take over the login
-   * page. `?manual=1` skips it, which is how a user with a password reaches the form - and how an administrator gets
-   * back in when the provider itself is broken. A login that just failed carries a reason and is never redirected
-   * either, which would send the user back into the provider that refused them.
-   */
   private redirectToSingleSignOn(loginConfig: PortalLoginConfig): void {
     const params = this.route.snapshot.queryParamMap;
     if (this.isJWTLogin() || params.has('manual') || params.has('reason')) {
@@ -168,8 +161,6 @@ export class LoginComponent implements OnInit {
       if (response.requiresMfa) {
         this.mfaRequired.set(true);
       } else if (response.redirectUrl && !this.route.snapshot.queryParamMap.has('stay')) {
-        // The organization has its own app domain, so the session continues there. `?stay=1` keeps the user on this
-        // host, which is the way back in when that domain is broken.
         window.location.href = response.redirectUrl;
       } else {
         // Re-apply branding now that the user is authenticated, since this SPA navigation does not

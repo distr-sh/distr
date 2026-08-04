@@ -56,7 +56,6 @@ export class CustomOidcComponent {
   protected readonly configurations = computed(() => this.response().configurations);
   protected readonly membersWithOtherOrganizations = computed(() => this.response().membersWithOtherOrganizations);
 
-  // A provider is only offered on the organization's own app domain, so without one there is nothing to configure.
   private readonly domains = toSignal(
     combineLatest([this.featureFlags.isCustomOidcProvidersEnabled$, this.refresh$]).pipe(
       switchMap(([enabled]) => (enabled ? this.customDomainsService.list() : of([] as CustomDomain[])))
@@ -129,7 +128,6 @@ export class CustomOidcComponent {
       enabled: value.enabled,
       issuer: value.issuer,
       clientId: value.clientId,
-      // An omitted secret keeps the stored one, which is why the field is empty when editing.
       clientSecret: value.clientSecret || undefined,
       scopes: splitList(value.scopes),
       pkceEnabled: value.pkce === 'auto' ? undefined : value.pkce === 'on',
@@ -194,10 +192,6 @@ export class CustomOidcComponent {
   }
 }
 
-/**
- * An account created on first sign-in joins the vendor's own team, so which addresses may do that is a decision the
- * organization has to have made. The API and a table constraint refuse the combination as well.
- */
 function provisioningNeedsEmailDomains(group: AbstractControl): ValidationErrors | null {
   const value = group.value as {createUnknownUsers?: boolean; allowedEmailDomains?: string};
   return value.createUnknownUsers && splitList(value.allowedEmailDomains ?? '').length === 0

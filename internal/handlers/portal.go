@@ -38,9 +38,7 @@ const (
 type portalHost struct {
 	source portalHostSource
 	// branding is nil unless the host belongs to an organization that has branding configured.
-	branding *types.OrganizationBranding
-	// customDomainRow is set for portalHostCustomDomain and identifies which self-service domain was matched,
-	// which is what binds an organization's own OIDC providers to one host.
+	branding        *types.OrganizationBranding
 	customDomainRow *types.CustomDomain
 }
 
@@ -50,9 +48,6 @@ func (h portalHost) customDomain() bool {
 	return h.source != portalHostDefault
 }
 
-// instanceAuthAllowed reports whether the instance-scoped authentication functions - the platform's OIDC providers
-// and signing up for a new organization - are offered on this host. They belong to the platform rather than to an
-// organization, so a self-service custom domain only gets its organization's own.
 func (h portalHost) instanceAuthAllowed() bool {
 	return h.source != portalHostCustomDomain
 }
@@ -93,9 +88,6 @@ func getPortalHandler(w http.ResponseWriter, r *http.Request) {
 	RespondJSON(w, response)
 }
 
-// portalLoginConfig lists the login methods offered on the given host. A self-service custom domain gets the
-// providers configured by the organization that owns it, and neither the instance-scoped OIDC providers nor
-// self-registration: both create or use an account on the platform rather than in that organization.
 func portalLoginConfig(ctx context.Context, host portalHost) api.PortalLoginConfig {
 	if !host.instanceAuthAllowed() {
 		return api.PortalLoginConfig{OIDCProviders: portalOIDCProviders(ctx, host)}
@@ -109,9 +101,6 @@ func portalLoginConfig(ctx context.Context, host portalHost) api.PortalLoginConf
 	}
 }
 
-// portalOIDCProviders lists the organization's own providers offered on this host. They are bound to one domain, so
-// they are never offered on the default host or on a legacy branding domain. Resolution is best-effort: the login
-// page stays usable with password login when the lookup fails.
 func portalOIDCProviders(ctx context.Context, host portalHost) []api.PortalOIDCProvider {
 	if host.customDomainRow == nil {
 		return nil

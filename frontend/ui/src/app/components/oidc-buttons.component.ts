@@ -4,11 +4,6 @@ import {faGithub, faGoogle, faMicrosoft} from '@fortawesome/free-brands-svg-icon
 import {faArrowRightToBracket} from '@fortawesome/free-solid-svg-icons';
 import {PortalService} from '../services/portal.service';
 
-/**
- * Renders a button per OIDC provider offered on this host: the instance-scoped providers on the default host, and
- * the providers configured by an organization on its own custom app domain. The two sets never appear together,
- * because the list is host-resolved.
- */
 @Component({
   selector: 'app-oidc-buttons',
   imports: [FaIconComponent],

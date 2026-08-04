@@ -15,14 +15,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// OIDCStateMaxAge is how long an in-flight authorization request stays redeemable. It has to
-// cover a full interactive login at the identity provider, including a password prompt, a
-// multi-factor challenge and a consent screen.
 const OIDCStateMaxAge = 10 * time.Minute
 
-// OIDCState is an in-flight authorization request. It binds the callback to the flow that
-// started it: the PKCE verifier and the nonce are only known to this server, and the
-// configuration id prevents a code issued for one provider from being redeemed against another.
 type OIDCState struct {
 	ID                        uuid.UUID  `db:"id"`
 	CreatedAt                 time.Time  `db:"created_at"`
@@ -31,13 +25,10 @@ type OIDCState struct {
 	CustomOIDCConfigurationID *uuid.UUID `db:"custom_oidc_configuration_id"`
 }
 
-// Expired reports whether the state is too old to be redeemed.
 func (s OIDCState) Expired() bool {
 	return s.CreatedAt.Before(time.Now().UTC().Add(-OIDCStateMaxAge))
 }
 
-// CreateOIDCState creates the state for a new authorization request. customOIDCConfigurationID is
-// nil for the instance-scoped providers.
 func CreateOIDCState(ctx context.Context, customOIDCConfigurationID *uuid.UUID) (OIDCState, error) {
 	nonce, err := generateOIDCNonce()
 	if err != nil {
@@ -63,7 +54,6 @@ func CreateOIDCState(ctx context.Context, customOIDCConfigurationID *uuid.UUID) 
 	return state, nil
 }
 
-// DeleteOIDCState consumes the state, so an authorization code can only be redeemed once.
 func DeleteOIDCState(ctx context.Context, id uuid.UUID) (OIDCState, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,

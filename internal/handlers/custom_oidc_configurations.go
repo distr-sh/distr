@@ -148,15 +148,11 @@ func updateCustomOIDCConfigurationHandler(w http.ResponseWriter, r *http.Request
 
 	configuration := *existing
 	configuration.UpdatedByUserAccountID = new(auth.CurrentUserID())
-	// An omitted secret keeps the stored one, so the form can be saved without the secret ever
-	// having been sent to the browser.
 	if request.ClientSecret != nil {
 		configuration.ClientSecret = *request.ClientSecret
 	}
 	applyCustomOIDCConfigurationRequest(&configuration, request)
 
-	// Only re-run discovery when the issuer changed: an unrelated edit must not fail because the
-	// provider happens to be unreachable at that moment.
 	if configuration.Issuer != existing.Issuer {
 		issuer, ok := resolveCustomOIDCIssuer(w, r, configuration)
 		if !ok {
@@ -192,8 +188,6 @@ func deleteCustomOIDCConfigurationHandler(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// testCustomOIDCConfigurationHandler reports the discovery error verbatim: it is the provider's own
-// diagnosis of the configuration, and paraphrasing it would only make troubleshooting harder.
 func testCustomOIDCConfigurationHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	orgID := *auth.Authentication.Require(ctx).CurrentOrgID()
@@ -235,10 +229,6 @@ func applyCustomOIDCConfigurationRequest(
 	configuration.AllowedEmailDomains = request.AllowedEmailDomains
 }
 
-// validateCustomOIDCConfigurationRequest normalizes and validates the request and checks that the
-// referenced domain is an app domain of the caller's organization. A registry domain cannot serve
-// the login page, and a domain of another organization would offer the provider on a host its
-// users never visit.
 func validateCustomOIDCConfigurationRequest(
 	w http.ResponseWriter,
 	r *http.Request,
@@ -270,9 +260,6 @@ func validateCustomOIDCConfigurationRequest(
 	return true
 }
 
-// resolveCustomOIDCIssuer returns the canonical issuer as stated by the provider, so that a value
-// entered in a different but equivalent form (Auth0's trailing slash, an Entra ID domain name
-// instead of the tenant GUID) still matches the issuer of the ID tokens it will send.
 func resolveCustomOIDCIssuer(
 	w http.ResponseWriter,
 	r *http.Request,

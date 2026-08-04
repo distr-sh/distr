@@ -573,10 +573,6 @@ func OIDCGenericScopes() []string {
 	return scopes
 }
 
-// CustomOIDCAllowPrivateIssuers allows organization-configured OIDC issuers to resolve to
-// loopback, link-local and private network addresses. They are rejected by default, because the
-// issuer URL is attacker-controlled input that the server fetches (SSRF). Only enable it on a
-// self-hosted instance whose users run their identity provider inside the same network.
 func CustomOIDCAllowPrivateIssuers() bool {
 	return customOIDCAllowPrivateIssuers
 }

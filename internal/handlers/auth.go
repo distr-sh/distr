@@ -385,10 +385,6 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Signing up creates a new organization on the platform, which is not something a vendor's own
-	// domain offers: its users get an account by invitation or through its identity provider.
-	// Hiding the link is not enough, the endpoint is reachable directly. Resolution failures fail
-	// closed, because an unresolved host may well be a custom domain.
 	if host, err := resolvePortalHost(ctx, validation.NormalizeHostname(r.Host)); err != nil {
 		log.Error("could not resolve host for registration", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)

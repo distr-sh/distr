@@ -25,11 +25,6 @@ const userAccountOIDCIdentityOutputExpr = `
 	i.last_login_at,
 	i.custom_oidc_configuration_id`
 
-// GetUserAccountWithOIDCIdentity returns the user account linked to the given identity provider
-// identity, together with the identity itself. customOIDCConfigurationID selects the organization
-// configuration the identity belongs to and is nil for the instance-scoped providers: the same
-// (issuer, subject) may be known through an instance provider and through any number of
-// organization configurations, and those identities must never be confused for one another.
 func GetUserAccountWithOIDCIdentity(
 	ctx context.Context,
 	customOIDCConfigurationID *uuid.UUID,
@@ -69,9 +64,6 @@ func GetUserAccountWithOIDCIdentity(
 	return &res.User, &res.Identity, nil
 }
 
-// GetUserAccountOIDCIdentities returns the identities of the given account. Custom identities
-// carry the name of the configuration and of the organization controlling it, so that an
-// organization-scoped login is never presented as an instance-wide one.
 func GetUserAccountOIDCIdentities(ctx context.Context, userID uuid.UUID) (
 	[]types.UserAccountOIDCIdentityWithConfiguration,
 	error,
@@ -96,9 +88,6 @@ func GetUserAccountOIDCIdentities(ctx context.Context, userID uuid.UUID) (
 	return result, nil
 }
 
-// ExistsUserAccountCustomOIDCIdentity reports whether the account can sign in through an
-// organization's own identity provider. Such an account must be a member of that one organization
-// and of no other, so this gates every operation that would add a membership.
 func ExistsUserAccountCustomOIDCIdentity(ctx context.Context, userID uuid.UUID) (bool, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,

@@ -50,8 +50,6 @@ export class RegisterComponent implements OnInit {
       this.form.patchValue({email});
     }
 
-    // The login page only hides the sign-up link, so this page would otherwise render and submit a request that the
-    // server refuses - on an instance with registration disabled as much as on a vendor's custom domain.
     this.portalService.portal$.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe(({loginConfig}) => {
       if (!loginConfig.registrationEnabled) {
         this.router.navigate(['/login'], {replaceUrl: true});

@@ -71,10 +71,6 @@ export class ContextService {
     return this.cache.pipe(map((ctx) => ctx.registryHost));
   }
 
-  /**
-   * Whether the user may create another organization. It is false for a user who signs in through an organization's
-   * own identity provider: such an account has to stay a member of that one organization.
-   */
   public canCreateOrganization(): Observable<boolean> {
     return this.cache.pipe(map((ctx) => ctx.canCreateOrganization));
   }

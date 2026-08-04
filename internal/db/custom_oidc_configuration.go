@@ -135,8 +135,6 @@ func GetCustomOIDCConfigurations(
 	return result, nil
 }
 
-// GetCustomOIDCConfigurationsForDomain returns the enabled configurations offered on the given
-// custom domain. It backs the portal response and therefore never widens beyond one domain.
 func GetCustomOIDCConfigurationsForDomain(
 	ctx context.Context,
 	customDomainID uuid.UUID,
@@ -159,9 +157,6 @@ func GetCustomOIDCConfigurationsForDomain(
 	return result, nil
 }
 
-// GetCustomOIDCConfiguration returns a configuration by id. The organization is not part of the
-// lookup because the login flow has no authenticated organization yet; callers acting on behalf of
-// an organization must pass it via GetCustomOIDCConfigurationOfOrganization.
 func GetCustomOIDCConfiguration(ctx context.Context, id uuid.UUID) (*types.CustomOIDCConfiguration, error) {
 	return getCustomOIDCConfiguration(ctx, id, nil)
 }
@@ -211,9 +206,6 @@ func DeleteCustomOIDCConfiguration(ctx context.Context, id, organizationID uuid.
 	return nil
 }
 
-// ExistsCustomOIDCConfigurationForOrganization reports whether the organization has any OIDC
-// configuration at all, including a disabled one: a disabled configuration can be re-enabled at
-// any time, so it constrains organization membership just as much as an enabled one.
 func ExistsCustomOIDCConfigurationForOrganization(ctx context.Context, organizationID uuid.UUID) (bool, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,

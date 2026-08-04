@@ -260,7 +260,7 @@ A `CustomOIDCConfiguration` is an organization's own identity provider, hanging 
 - Always ensure this file is up-to-date.
 - Always build, test, lint and format through mise tasks (`mise run build:hub:community`, `mise run test:go`, `mise run test:frontend`, `mise run lint`, `mise run format`). Never invoke `go build`, `go test`, `golangci-lint` or `pnpm` directly.
 - When you add, remove, or change an environment variable in `internal/env/env.go` (name, default, required/optional status, or accepted values), update the configuration reference page at `website/src/content/docs/docs/self-hosting/configuration.mdx` in the same change so it stays complete and accurate.
-- Don't write any unnecessary comments that just explain the functionality below, if there is nothing special about it.
+- Don't write any unnecessary comments that just explain the functionality below, if there is nothing special about it. The default for new code is no comment at all: no doc comments on Go functions, types or struct fields that only restate their name, no JSDoc on Angular components and services, no comments in SQL migrations, and no explanations of the design rationale of a change (that belongs in the commit message or the PR description). Write a comment only for a constraint or trap that a reader cannot see in the code itself, and keep it to one or two lines. Design rationale that is worth keeping goes into this file or the docs under `website/`, not into the source.
 - If a user requests you to do something differently, add the difference to a new rule / convention in this file
 - If you read code that doesn't follow these rules, please fix it.
 - If you see any typos, or spelling mistakes, please fix them.

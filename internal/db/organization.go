@@ -349,11 +349,6 @@ func ExistsVendorOrganizationWithUserID(ctx context.Context, userID uuid.UUID) (
 	return
 }
 
-// CountUserAccountOrganizationsExcept counts the account's memberships outside the given
-// organization. A non-zero count means the account is not exclusive to that organization, and an
-// organization's own identity provider must not be able to authenticate it: a provider that could
-// would be a bridge into every other organization the account is a member of. Deleted
-// organizations are ignored, they cannot be reached any more.
 func CountUserAccountOrganizationsExcept(ctx context.Context, userID, orgID uuid.UUID) (int64, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
@@ -373,10 +368,6 @@ func CountUserAccountOrganizationsExcept(ctx context.Context, userID, orgID uuid
 	return count, nil
 }
 
-// CountOrganizationMembersWithOtherOrganizations counts the organization's members that are also
-// members of another organization, and therefore cannot use the organization's own identity
-// provider. Existing members are never removed for it, so this is reported on the configuration
-// form rather than enforced.
 func CountOrganizationMembersWithOtherOrganizations(ctx context.Context, orgID uuid.UUID) (int64, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,

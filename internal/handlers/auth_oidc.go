@@ -30,15 +30,9 @@ const (
 	redirectToLoginOIDCFailed               = "/login?reason=oidc-failed"
 	redirectToLoginOIDCRegistrationDisabled = "/login?reason=oidc-registration-disabled"
 	redirectToLoginOIDCUnavailable          = "/login?reason=oidc-unavailable"
-	// redirectToLoginOIDCNoAccount is used when the identity provider authenticated somebody who
-	// has no account in the organization and must not be provisioned one.
-	redirectToLoginOIDCNoAccount = "/login?reason=oidc-no-account"
-	// redirectToLoginOIDCUserLimit is used when provisioning would exceed the billed user seats,
-	// which are never raised automatically.
-	redirectToLoginOIDCUserLimit = "/login?reason=oidc-user-limit"
-	// redirectToLoginOIDCNotExclusive is used when the account is a member of another organization
-	// as well, which no organization's own identity provider may authenticate.
-	redirectToLoginOIDCNotExclusive = "/login?reason=oidc-account-not-exclusive"
+	redirectToLoginOIDCNoAccount            = "/login?reason=oidc-no-account"
+	redirectToLoginOIDCUserLimit            = "/login?reason=oidc-user-limit"
+	redirectToLoginOIDCNotExclusive         = "/login?reason=oidc-account-not-exclusive"
 )
 
 func AuthOIDCRouter(r chiopenapi.Router) {
@@ -145,8 +139,6 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		} else if err = db.UpdateUserAccountLastLoggedIn(ctx, user.ID); err != nil {
 			return err
 		} else {
-			// An organization with its own app domain is sent there, so its users end up on the
-			// host that offers their organization's login methods.
 			redirectLoginToAppDomain(w, r, *user, tokenString)
 			return nil
 		}
@@ -158,10 +150,6 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// authLoginCustomOidcHandler starts a login through a provider configured by an organization. The
-// provider is only reachable on the custom domain it is bound to: the request host decides which
-// configurations exist at all, so a provider cannot be used from the default host or from another
-// organization's domain.
 func authLoginCustomOidcHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
@@ -174,7 +162,6 @@ func authLoginCustomOidcHandler(w http.ResponseWriter, r *http.Request) {
 
 	provider, err := oidc.ProviderForConfiguration(ctx, *configuration, oidc.CustomRedirectURL(r, configuration.ID))
 	if err != nil {
-		// A broken configuration is the organization's to fix, so this is not reported to Sentry.
 		log.Warn("could not build custom OIDC provider", zap.Error(err))
 		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
 		return
@@ -240,8 +227,6 @@ func authLoginCustomOidcCallbackHandler(w http.ResponseWriter, r *http.Request) 
 				return err
 			}
 		}
-		// The token is pinned to the configuration's organization: the login says nothing about any
-		// other organization, and under the exclusivity rule there is no other one anyway.
 		tokenString, err := userauth.GenerateLoginTokenForOrganization(ctx, *user, configuration.OrganizationID)
 		if err != nil {
 			return fmt.Errorf("token creation failed: %w", err)
@@ -261,9 +246,6 @@ func authLoginCustomOidcCallbackHandler(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-// resolveCustomOIDCConfigurationForHost loads the configuration named in the path and verifies that
-// it is offered on the request host. Both the initiation and the callback go through this, so a
-// configuration is unusable outside its own domain even when its id is known.
 func resolveCustomOIDCConfigurationForHost(
 	w http.ResponseWriter,
 	r *http.Request,
@@ -311,8 +293,6 @@ func resolveCustomOIDCConfigurationForHost(
 		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
 		return nil, false
 	}
-	// The feature is checked on every login, not only when the configuration is saved, so a
-	// provider stops working when the organization loses the plan that granted it.
 	if !organization.HasFeature(types.FeatureCustomOidcProviders) {
 		log.Info("rejecting custom OIDC login without the feature",
 			zap.Any("organizationId", organization.ID))
@@ -322,10 +302,6 @@ func resolveCustomOIDCConfigurationForHost(
 	return configuration, true
 }
 
-// resolveCustomOIDCUser returns the account the identity belongs to, or the login page the refused
-// login is sent to. A configuration may only ever authenticate an account that belongs to its
-// organization and to no other one: an account with a membership elsewhere would turn the
-// organization's provider into a way into that other organization.
 func resolveCustomOIDCUser(
 	ctx context.Context,
 	log *zap.Logger,
@@ -340,8 +316,6 @@ func resolveCustomOIDCUser(
 		} else if !exclusive {
 			return nil, redirectToLoginOIDCNotExclusive, nil
 		}
-		// The user account email is authoritative and is never overwritten with the one from the
-		// identity provider, which is only kept on the identity for display.
 		return user, "", db.UpdateUserAccountOIDCIdentityOnLogin(ctx, existingIdentity.ID, new(identity.Email))
 	} else if !errors.Is(err, apierrors.ErrNotFound) {
 		return nil, "", err
@@ -360,9 +334,6 @@ func resolveCustomOIDCUser(
 		return nil, "", err
 	}
 
-	// Linking an existing account by email is the only merge that ever happens, and only for an
-	// account that is already a member of this organization and of no other: an invited user, or
-	// one who signed up before the provider was configured.
 	if exclusive, err := isExclusiveToOrganization(ctx, *user, configuration.OrganizationID); err != nil {
 		return nil, "", err
 	} else if !exclusive {
@@ -378,9 +349,6 @@ func resolveCustomOIDCUser(
 	return user, "", linkCustomOIDCIdentity(ctx, configuration, identity, *user)
 }
 
-// provisionCustomOIDCUser creates an account for an email address that has none yet. It returns
-// (nil, redirect, nil) when the configuration does not allow it, the email domain is not allowed, or
-// the organization has no seat left — seats are never raised automatically.
 func provisionCustomOIDCUser(
 	ctx context.Context,
 	log *zap.Logger,
@@ -439,9 +407,6 @@ func linkCustomOIDCIdentity(
 	return db.CreateUserAccountOIDCIdentity(ctx, &newIdentity)
 }
 
-// isExclusiveToOrganization reports whether the account may be authenticated by a provider of the
-// given organization: it must not be a member of any other organization, and it must not be a super
-// admin, whose account reaches every organization on the instance.
 func isExclusiveToOrganization(ctx context.Context, user types.UserAccount, orgID uuid.UUID) (bool, error) {
 	if user.IsSuperAdmin {
 		return false, nil
@@ -462,10 +427,6 @@ func isOrganizationMember(ctx context.Context, user types.UserAccount, orgID uui
 	return true, nil
 }
 
-// emailDomainAllowed reports whether an account may be provisioned for the given email address.
-// An empty allowlist allows nothing: a provisioned account joins the organization's own team, and
-// which addresses may do that is a decision the organization has to have made. The API and a table
-// constraint both refuse such a configuration, so this only ever guards a row that predates them.
 func emailDomainAllowed(configuration types.CustomOIDCConfiguration, email string) bool {
 	_, domain, found := strings.Cut(strings.ToLower(email), "@")
 	return found && slices.Contains(configuration.AllowedEmailDomains, domain)
@@ -536,8 +497,6 @@ func registerOIDCUser(ctx context.Context, email string) (*types.UserAccount, er
 	return &userAccount, nil
 }
 
-// oidcCallbackCode returns the authorization code from the callback, or redirects to the login page
-// when the provider reported an error instead.
 func oidcCallbackCode(w http.ResponseWriter, r *http.Request, log *zap.Logger) (string, bool) {
 	if oidcError := r.URL.Query().Get("error"); oidcError != "" {
 		log.Warn("OIDC provider returned error",
@@ -555,8 +514,6 @@ func oidcCallbackCode(w http.ResponseWriter, r *http.Request, log *zap.Logger) (
 	return code, true
 }
 
-// consumeOIDCState redeems the state of the callback exactly once and verifies that it was created
-// for the same provider the callback arrived at.
 func consumeOIDCState(
 	w http.ResponseWriter,
 	r *http.Request,
@@ -593,8 +550,6 @@ func verifyOIDCState(r *http.Request, customOIDCConfigurationID *uuid.UUID) (db.
 		return db.OIDCState{}, fmt.Errorf("%w: got an OIDC state that is too old: %v, created_at: %v, now: %v",
 			apierrors.ErrBadRequest, id, state.CreatedAt, time.Now().UTC())
 	}
-	// A code issued for one provider must not be redeemable at another one, which would let a
-	// provider assert an identity for a flow it was never part of.
 	if (state.CustomOIDCConfigurationID == nil) != (customOIDCConfigurationID == nil) ||
 		(state.CustomOIDCConfigurationID != nil && *state.CustomOIDCConfigurationID != *customOIDCConfigurationID) {
 		return db.OIDCState{}, fmt.Errorf("%w: OIDC state %v belongs to a different provider",

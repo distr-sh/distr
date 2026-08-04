@@ -30,7 +30,6 @@ func TestParseIssuerURL(t *testing.T) {
 		"https://user:secret@accounts.google.com",
 		"https://accounts.google.com?p=b2c_1_signin",
 		"https://accounts.google.com#fragment",
-		// The Entra ID endpoints without a tenant state a templated issuer that can never be verified.
 		"https://login.microsoftonline.com/common/v2.0",
 		"https://login.microsoftonline.com/organizations/v2.0",
 		"https://login.microsoftonline.com/consumers/v2.0",

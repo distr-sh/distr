@@ -30,7 +30,6 @@ const oidcProviderNames: Record<OIDCProvider, string> = {
   google: 'Google',
   microsoft: 'Microsoft',
   generic: 'OIDC Provider',
-  // Overridden by the configuration's display name, which the API reports for these identities.
   custom: 'Organization provider',
 };
 
@@ -297,10 +296,6 @@ export class UserSettingsComponent {
     }
   }
 
-  /**
-   * The name to show for an identity. A provider configured by an organization carries its own display name, which is
-   * the only thing the user recognizes it by.
-   */
   protected providerName(identity: OIDCIdentity): string {
     return identity.configurationName ?? oidcProviderNames[identity.provider] ?? identity.provider;
   }

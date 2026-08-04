@@ -14,12 +14,9 @@ import (
 
 const (
 	customOIDCConfigurationNameMaxLength = 100
-	// openIDScope is required for an OIDC flow, so it is added rather than demanded.
-	openIDScope = "openid"
+	openIDScope                          = "openid"
 )
 
-// CustomOIDCConfiguration is an organization's own OIDC provider. The client secret is never
-// returned; ClientSecretSet reports whether one is stored.
 type CustomOIDCConfiguration struct {
 	ID                  uuid.UUID      `json:"id"`
 	CreatedAt           time.Time      `json:"createdAt"`
@@ -36,27 +33,20 @@ type CustomOIDCConfiguration struct {
 	CreateUnknownUsers  bool           `json:"createUnknownUsers"`
 	DefaultUserRole     types.UserRole `json:"defaultUserRole"`
 	AllowedEmailDomains []string       `json:"allowedEmailDomains"`
-	// CallbackURL is the redirect URI that has to be registered with the identity provider.
-	CallbackURL string `json:"callbackUrl"`
+	CallbackURL         string         `json:"callbackUrl"`
 }
 
-// CustomOIDCConfigurationsResponse lists an organization's providers together with the number of
-// members that cannot use any of them, because they are also members of another organization.
 type CustomOIDCConfigurationsResponse struct {
-	Configurations []CustomOIDCConfiguration `json:"configurations"`
-	// MembersWithOtherOrganizations is reported rather than enforced: existing members keep their
-	// membership and their password login, they just cannot sign in through the provider.
-	MembersWithOtherOrganizations int64 `json:"membersWithOtherOrganizations"`
+	Configurations                []CustomOIDCConfiguration `json:"configurations"`
+	MembersWithOtherOrganizations int64                     `json:"membersWithOtherOrganizations"`
 }
 
 type CustomOIDCConfigurationRequest struct {
-	CustomDomainID uuid.UUID `json:"customDomainId"`
-	Name           string    `json:"name"`
-	Enabled        bool      `json:"enabled"`
-	Issuer         string    `json:"issuer"`
-	ClientID       string    `json:"clientId"`
-	// ClientSecret is write-only. An omitted value keeps the stored secret, which is how the form
-	// can be saved again without the secret ever being sent to the browser.
+	CustomDomainID      uuid.UUID      `json:"customDomainId"`
+	Name                string         `json:"name"`
+	Enabled             bool           `json:"enabled"`
+	Issuer              string         `json:"issuer"`
+	ClientID            string         `json:"clientId"`
 	ClientSecret        *string        `json:"clientSecret,omitempty"`
 	Scopes              []string       `json:"scopes"`
 	PKCEEnabled         *bool          `json:"pkceEnabled,omitempty"`
@@ -66,8 +56,6 @@ type CustomOIDCConfigurationRequest struct {
 	AllowedEmailDomains []string       `json:"allowedEmailDomains"`
 }
 
-// Normalize brings the request into the form it is stored in: a trimmed name and issuer, the
-// openid scope present exactly once, and email domains as bare lowercase hostnames.
 func (r *CustomOIDCConfigurationRequest) Normalize() {
 	r.Name = strings.TrimSpace(r.Name)
 	r.Issuer = strings.TrimSpace(r.Issuer)
@@ -121,9 +109,6 @@ func (r *CustomOIDCConfigurationRequest) Validate() error {
 				fmt.Sprintf("allowedEmailDomains contains the invalid domain %q", domain))
 		}
 	}
-	// An account created on first sign-in joins the organization's own team, so provisioning without
-	// a domain restriction would hand a membership to everybody the provider can authenticate —
-	// including the customer users who reach the same domain through the customer portal.
 	if r.CreateUnknownUsers && len(r.AllowedEmailDomains) == 0 {
 		return validation.NewValidationFailedError(
 			"allowedEmailDomains is required when accounts are created on first sign-in")

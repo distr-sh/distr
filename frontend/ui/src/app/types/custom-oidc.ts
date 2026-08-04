@@ -9,7 +9,6 @@ export interface CustomOidcConfiguration {
   enabled: boolean;
   issuer: string;
   clientId: string;
-  // Whether a client secret is stored. The secret itself is never returned.
   clientSecretSet: boolean;
   scopes: string[];
   pkceEnabled?: boolean;
@@ -17,13 +16,11 @@ export interface CustomOidcConfiguration {
   createUnknownUsers: boolean;
   defaultUserRole: UserRole;
   allowedEmailDomains: string[];
-  // The redirect URI that has to be registered with the identity provider.
   callbackUrl: string;
 }
 
 export interface CustomOidcConfigurationsResponse {
   configurations: CustomOidcConfiguration[];
-  // Members that are also members of another organization and therefore cannot use any provider.
   membersWithOtherOrganizations: number;
 }
 
@@ -33,7 +30,6 @@ export interface CustomOidcConfigurationRequest {
   enabled: boolean;
   issuer: string;
   clientId: string;
-  // Omitted keeps the stored secret.
   clientSecret?: string;
   scopes: string[];
   pkceEnabled?: boolean;
