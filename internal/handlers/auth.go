@@ -20,8 +20,10 @@ import (
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/security"
+	"github.com/distr-sh/distr/internal/turnstile"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/userauth"
+	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httprate"
@@ -386,6 +388,8 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	} else if err := request.Validate(); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
+	} else if !verifyRegistrationChallenge(w, r, request.TurnstileToken) {
+		return
 	} else {
 		userAccount := types.UserAccount{
 			Name:     request.Name,
@@ -433,6 +437,29 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 		RespondJSON(w, api.AuthLoginResponse{Token: token})
 	}
+}
+
+func verifyRegistrationChallenge(w http.ResponseWriter, r *http.Request, token string) bool {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+
+	// Resolution is best-effort in the same way as in the portal endpoint: a failed lookup leaves the default
+	// host, which is the one that requires a challenge.
+	host, err := resolvePortalHost(ctx, validation.NormalizeHostname(r.Host))
+	if err != nil {
+		log.Warn("failed to resolve host for challenge verification", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+	}
+	if host.turnstileSiteKey() == nil {
+		return true
+	}
+
+	if err := turnstile.Verify(ctx, token, chimiddleware.GetClientIP(ctx)); err != nil {
+		log.Info("turnstile verification failed", zap.Error(err))
+		http.Error(w, "captcha verification failed", http.StatusForbidden)
+		return false
+	}
+	return true
 }
 
 func authResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
