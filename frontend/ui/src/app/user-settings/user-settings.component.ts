@@ -30,6 +30,8 @@ const oidcProviderNames: Record<OIDCProvider, string> = {
   google: 'Google',
   microsoft: 'Microsoft',
   generic: 'OIDC Provider',
+  // Overridden by the configuration's display name, which the API reports for these identities.
+  custom: 'Organization provider',
 };
 
 const oidcProviderIcons: Record<OIDCProvider, IconDefinition> = {
@@ -37,6 +39,7 @@ const oidcProviderIcons: Record<OIDCProvider, IconDefinition> = {
   google: faGoogle,
   microsoft: faMicrosoft,
   generic: faArrowRightToBracket,
+  custom: faArrowRightToBracket,
 };
 
 @Component({
@@ -294,8 +297,12 @@ export class UserSettingsComponent {
     }
   }
 
-  protected providerName(provider: OIDCProvider): string {
-    return oidcProviderNames[provider] ?? provider;
+  /**
+   * The name to show for an identity. A provider configured by an organization carries its own display name, which is
+   * the only thing the user recognizes it by.
+   */
+  protected providerName(identity: OIDCIdentity): string {
+    return identity.configurationName ?? oidcProviderNames[identity.provider] ?? identity.provider;
   }
 
   protected providerIcon(provider: OIDCProvider): IconDefinition {
@@ -317,7 +324,7 @@ export class UserSettingsComponent {
     try {
       this.formLoading.set(true);
       await firstValueFrom(this.settingsService.deleteOIDCIdentity(identity.id));
-      this.toast.success(`${this.providerName(identity.provider)} disconnected successfully.`);
+      this.toast.success(`${this.providerName(identity)} disconnected successfully.`);
       this.disconnectOidcIdentityDialogRef?.close();
       this.oidcIdentityToDisconnect.set(undefined);
       await this.loadOidcIdentities();

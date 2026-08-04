@@ -35,6 +35,11 @@ export class FeatureFlagService {
     .pipe(map((org) => org.features.includes('custom_domains')));
   public readonly isCustomDomainsEnabled = toSignal(this.isCustomDomainsEnabled$, {initialValue: false});
 
+  public readonly isCustomOidcProvidersEnabled$ = this.organizationService
+    .get()
+    .pipe(map((org) => org.features.includes('custom_oidc_providers')));
+  public readonly isCustomOidcProvidersEnabled = toSignal(this.isCustomOidcProvidersEnabled$, {initialValue: false});
+
   public readonly isNotificationsEnabled$ = this.forbidSubscriptionType(...NON_PRO_SUBSCRIPTION_TYPES);
 
   public readonly isSupportBundlesEnabled$ = this.forbidSubscriptionType(...NON_PRO_SUBSCRIPTION_TYPES);

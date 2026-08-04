@@ -349,6 +349,58 @@ func ExistsVendorOrganizationWithUserID(ctx context.Context, userID uuid.UUID) (
 	return
 }
 
+// CountUserAccountOrganizationsExcept counts the account's memberships outside the given
+// organization. A non-zero count means the account is not exclusive to that organization, and an
+// organization's own identity provider must not be able to authenticate it: a provider that could
+// would be a bridge into every other organization the account is a member of. Deleted
+// organizations are ignored, they cannot be reached any more.
+func CountUserAccountOrganizationsExcept(ctx context.Context, userID, orgID uuid.UUID) (int64, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT count(*)
+		FROM Organization_UserAccount j
+		INNER JOIN Organization o ON o.id = j.organization_id
+		WHERE j.user_account_id = @userId AND j.organization_id != @orgId AND o.deleted_at IS NULL`,
+		pgx.NamedArgs{"userId": userID, "orgId": orgID},
+	)
+	if err != nil {
+		return 0, fmt.Errorf("could not count organizations of user account: %w", err)
+	}
+	count, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[int64])
+	if err != nil {
+		return 0, fmt.Errorf("could not count organizations of user account: %w", err)
+	}
+	return count, nil
+}
+
+// CountOrganizationMembersWithOtherOrganizations counts the organization's members that are also
+// members of another organization, and therefore cannot use the organization's own identity
+// provider. Existing members are never removed for it, so this is reported on the configuration
+// form rather than enforced.
+func CountOrganizationMembersWithOtherOrganizations(ctx context.Context, orgID uuid.UUID) (int64, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT count(*)
+		FROM Organization_UserAccount j
+		WHERE j.organization_id = @orgId AND EXISTS (
+			SELECT 1 FROM Organization_UserAccount other
+			INNER JOIN Organization o ON o.id = other.organization_id
+			WHERE other.user_account_id = j.user_account_id
+				AND other.organization_id != @orgId
+				AND o.deleted_at IS NULL
+		)`,
+		pgx.NamedArgs{"orgId": orgID},
+	)
+	if err != nil {
+		return 0, fmt.Errorf("could not count organization members with other organizations: %w", err)
+	}
+	count, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[int64])
+	if err != nil {
+		return 0, fmt.Errorf("could not count organization members with other organizations: %w", err)
+	}
+	return count, nil
+}
+
 func GetOrganizationByID(ctx context.Context, orgID uuid.UUID) (*types.Organization, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,

@@ -39,6 +39,9 @@ type portalHost struct {
 	source portalHostSource
 	// branding is nil unless the host belongs to an organization that has branding configured.
 	branding *types.OrganizationBranding
+	// customDomainRow is set for portalHostCustomDomain and identifies which self-service domain was matched,
+	// which is what binds an organization's own OIDC providers to one host.
+	customDomainRow *types.CustomDomain
 }
 
 // customDomain reports whether the host belongs to an organization through either of the two sources. This is not
@@ -47,9 +50,10 @@ func (h portalHost) customDomain() bool {
 	return h.source != portalHostDefault
 }
 
-// instanceLoginAllowed reports whether the instance-scoped login methods are offered on this host. They belong to
-// the platform rather than to an organization, so a self-service custom domain only gets its organization's own.
-func (h portalHost) instanceLoginAllowed() bool {
+// instanceAuthAllowed reports whether the instance-scoped authentication functions - the platform's OIDC providers
+// and signing up for a new organization - are offered on this host. They belong to the platform rather than to an
+// organization, so a self-service custom domain only gets its organization's own.
+func (h portalHost) instanceAuthAllowed() bool {
 	return h.source != portalHostCustomDomain
 }
 
@@ -80,7 +84,7 @@ func getPortalHandler(w http.ResponseWriter, r *http.Request) {
 	// Marking the host as a custom domain even without branding is what makes the client drop Distr's own
 	// branding when the organization has not configured any of its own.
 	response.CustomDomain = host.customDomain()
-	response.LoginConfig = portalLoginConfig(host)
+	response.LoginConfig = portalLoginConfig(ctx, host)
 
 	// Branding and login methods are resolved from the request Host, so shared caches/CDNs must key on it.
 	w.Header().Set("Vary", "Host")
@@ -89,18 +93,47 @@ func getPortalHandler(w http.ResponseWriter, r *http.Request) {
 	RespondJSON(w, response)
 }
 
-// portalLoginConfig lists the login methods offered on the given host. Instance-scoped OIDC providers are
-// suppressed on self-service custom domains, where only the organization's own providers apply.
-func portalLoginConfig(host portalHost) api.PortalLoginConfig {
-	config := api.PortalLoginConfig{RegistrationEnabled: env.Registration() == env.RegistrationEnabled}
-	if !host.instanceLoginAllowed() {
-		return config
+// portalLoginConfig lists the login methods offered on the given host. A self-service custom domain gets the
+// providers configured by the organization that owns it, and neither the instance-scoped OIDC providers nor
+// self-registration: both create or use an account on the platform rather than in that organization.
+func portalLoginConfig(ctx context.Context, host portalHost) api.PortalLoginConfig {
+	if !host.instanceAuthAllowed() {
+		return api.PortalLoginConfig{OIDCProviders: portalOIDCProviders(ctx, host)}
 	}
-	config.OIDCGithubEnabled = env.OIDCGithubEnabled()
-	config.OIDCGoogleEnabled = env.OIDCGoogleEnabled()
-	config.OIDCMicrosoftEnabled = env.OIDCMicrosoftEnabled()
-	config.OIDCGenericEnabled = env.OIDCGenericEnabled()
-	return config
+	return api.PortalLoginConfig{
+		RegistrationEnabled:  env.Registration() == env.RegistrationEnabled,
+		OIDCGithubEnabled:    env.OIDCGithubEnabled(),
+		OIDCGoogleEnabled:    env.OIDCGoogleEnabled(),
+		OIDCMicrosoftEnabled: env.OIDCMicrosoftEnabled(),
+		OIDCGenericEnabled:   env.OIDCGenericEnabled(),
+	}
+}
+
+// portalOIDCProviders lists the organization's own providers offered on this host. They are bound to one domain, so
+// they are never offered on the default host or on a legacy branding domain. Resolution is best-effort: the login
+// page stays usable with password login when the lookup fails.
+func portalOIDCProviders(ctx context.Context, host portalHost) []api.PortalOIDCProvider {
+	if host.customDomainRow == nil {
+		return nil
+	}
+	organization, err := db.GetOrganizationByID(ctx, host.customDomainRow.OrganizationID)
+	if err != nil {
+		internalctx.GetLogger(ctx).Warn("failed to resolve organization for portal OIDC providers", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		return nil
+	}
+	if !organization.HasFeature(types.FeatureCustomOidcProviders) {
+		return nil
+	}
+	configurations, err := db.GetCustomOIDCConfigurationsForDomain(ctx, host.customDomainRow.ID)
+	if err != nil {
+		internalctx.GetLogger(ctx).Warn("failed to resolve portal OIDC providers", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		return nil
+	}
+	return mapping.List(configurations, func(c types.CustomOIDCConfiguration) api.PortalOIDCProvider {
+		return api.PortalOIDCProvider{ID: c.ID, Name: c.Name, SPInitiated: c.SPInitiated}
+	})
 }
 
 // resolvePortalHost resolves the (normalized) host to the organization it belongs to: self-service CustomDomain
@@ -108,13 +141,13 @@ func portalLoginConfig(host portalHost) api.PortalLoginConfig {
 // migration follow-up ticket). On error it still returns everything that was resolved before the failure, so
 // callers that treat resolution as best-effort do not silently downgrade a custom domain to the default host.
 func resolvePortalHost(ctx context.Context, host string) (portalHost, error) {
-	organizationID, err := db.GetOrganizationIDByCustomDomain(ctx, host)
+	customDomain, err := db.GetCustomDomainByDomain(ctx, host)
 	if err != nil {
 		return portalHost{}, err
 	}
-	if organizationID != nil {
-		resolved := portalHost{source: portalHostCustomDomain}
-		branding, err := db.GetOrganizationBranding(ctx, *organizationID)
+	if customDomain != nil {
+		resolved := portalHost{source: portalHostCustomDomain, customDomainRow: customDomain}
+		branding, err := db.GetOrganizationBranding(ctx, customDomain.OrganizationID)
 		if errors.Is(err, apierrors.ErrNotFound) {
 			return resolved, nil
 		} else if err != nil {

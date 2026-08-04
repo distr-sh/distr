@@ -171,6 +171,13 @@ See [OIDC Authentication](/docs/self-hosting/oidc/) for setup instructions and c
 | `OIDC_GENERIC_SCOPES`                           | if generic enabled | —       | Comma- or space-separated scopes (e.g. `openid,email,profile`).                   |
 | `OIDC_GENERIC_PKCE_ENABLED`                     | no                 | `false` | Enables PKCE (`S256`) for the generic provider.                                   |
 | `WELLKNOWN_MICROSOFT_IDENTITY_ASSOCIATION_JSON` | no                 | —       | Base64-encoded JSON served at `/.well-known/microsoft-identity-association.json`. |
+| `CUSTOM_OIDC_ALLOW_PRIVATE_ISSUERS`             | no                 | `false` | Allows `http` and private network issuers for organization-configured providers.   |
+
+Vendor organizations on the Business plan can additionally configure their own providers in the UI, which requires no
+instance configuration. Those issuer URLs are entered by organization administrators and fetched by the Hub, so they
+must be `https` and must not resolve to a private network address. `CUSTOM_OIDC_ALLOW_PRIVATE_ISSUERS` lifts both
+restrictions and must only be set for local development or an instance whose identity providers run on an internal
+network.
 
 ## Observability
 

@@ -81,7 +81,8 @@ func TestUserRoleRankPanicsOnUnknown(t *testing.T) {
 func TestPlanManagedFeatures(t *testing.T) {
 	g := NewWithT(t)
 
-	g.Expect(PlanManagedFeatures).To(ConsistOf(FeatureLicensing, FeaturePartnerManagement, FeatureCustomDomains))
+	g.Expect(PlanManagedFeatures).To(ConsistOf(
+		FeatureLicensing, FeaturePartnerManagement, FeatureCustomDomains, FeatureCustomOidcProviders))
 
 	for _, st := range AllSubscriptionTypes() {
 		g.Expect(PlanManagedFeatures).To(ContainElements(FeaturesForSubscriptionType(st)),

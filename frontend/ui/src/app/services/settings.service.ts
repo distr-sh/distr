@@ -28,7 +28,7 @@ export interface MFARecoveryCodesStatus {
   remainingCodes: number;
 }
 
-export type OIDCProvider = 'github' | 'google' | 'microsoft' | 'generic';
+export type OIDCProvider = 'github' | 'google' | 'microsoft' | 'generic' | 'custom';
 
 export interface OIDCIdentity {
   id: string;
@@ -37,6 +37,9 @@ export interface OIDCIdentity {
   issuer: string;
   email?: string;
   lastLoginAt?: string;
+  // Set for provider 'custom': the provider's display name and the organization that controls it.
+  configurationName?: string;
+  organizationName?: string;
 }
 
 @Injectable({providedIn: 'root'})

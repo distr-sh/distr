@@ -13,6 +13,9 @@ const (
 	OIDCProviderGoogle    OIDCProvider = "google"
 	OIDCProviderMicrosoft OIDCProvider = "microsoft"
 	OIDCProviderGeneric   OIDCProvider = "generic"
+	// OIDCProviderCustom is an identity from a CustomOIDCConfiguration, i.e. from a provider
+	// configured by an organization rather than by the instance.
+	OIDCProviderCustom OIDCProvider = "custom"
 )
 
 // UserAccountOIDCIdentity is the identity of a user account at an identity provider.
@@ -29,4 +32,16 @@ type UserAccountOIDCIdentity struct {
 	// user account is never overwritten with it.
 	Email       *string    `db:"email"         json:"email,omitempty"`
 	LastLoginAt *time.Time `db:"last_login_at" json:"lastLoginAt,omitempty"`
+	// CustomOIDCConfigurationID is set exactly for Provider OIDCProviderCustom and names the
+	// organization configuration that governs this login.
+	CustomOIDCConfigurationID *uuid.UUID `db:"custom_oidc_configuration_id" json:"-"`
+}
+
+// UserAccountOIDCIdentityWithConfiguration adds the display name of the organization
+// configuration behind a custom identity and the name of the organization that controls it.
+// Both are nil for the instance-scoped providers.
+type UserAccountOIDCIdentityWithConfiguration struct {
+	UserAccountOIDCIdentity
+	ConfigurationName *string `db:"configuration_name"`
+	OrganizationName  *string `db:"organization_name"`
 }

@@ -84,6 +84,7 @@ var (
 	oidcGenericIssuer                      *string
 	oidcGenericScopes                      *string
 	oidcGenericPKCEEnabled                 bool
+	customOIDCAllowPrivateIssuers          bool
 	wellKnownMicrosoftIdentityAssociation  []byte
 	stripeWebhookSecret                    *string
 	stripeWebhookVersionMismatchBehavior   StripeWebhookVersionMismatchBehaviorType
@@ -259,6 +260,8 @@ func Initialize() {
 		oidcGenericScopes = util.PtrTo(envutil.RequireEnv("OIDC_GENERIC_SCOPES"))
 		oidcGenericPKCEEnabled = envutil.GetEnvParsedOrDefault("OIDC_GENERIC_PKCE_ENABLED", strconv.ParseBool, false)
 	}
+	customOIDCAllowPrivateIssuers = envutil.GetEnvParsedOrDefault(
+		"CUSTOM_OIDC_ALLOW_PRIVATE_ISSUERS", strconv.ParseBool, false)
 	wellKnownMicrosoftIdentityAssociation = envutil.GetEnvParsedOrDefault(
 		"WELLKNOWN_MICROSOFT_IDENTITY_ASSOCIATION_JSON", envparse.ByteSlice, nil)
 
@@ -568,6 +571,14 @@ func OIDCGenericScopes() []string {
 		}
 	}
 	return scopes
+}
+
+// CustomOIDCAllowPrivateIssuers allows organization-configured OIDC issuers to resolve to
+// loopback, link-local and private network addresses. They are rejected by default, because the
+// issuer URL is attacker-controlled input that the server fetches (SSRF). Only enable it on a
+// self-hosted instance whose users run their identity provider inside the same network.
+func CustomOIDCAllowPrivateIssuers() bool {
+	return customOIDCAllowPrivateIssuers
 }
 
 func WellKnownMicrosoftIdentityAssociation() []byte {

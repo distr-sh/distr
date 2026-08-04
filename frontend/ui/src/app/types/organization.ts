@@ -9,7 +9,8 @@ export type Feature =
   | 'vendor_billing'
   | 'deployment_logs_after'
   | 'partner_management'
-  | 'custom_domains';
+  | 'custom_domains'
+  | 'custom_oidc_providers';
 
 export interface SubscriptionLimits {
   maxCustomerOrganizations: number;

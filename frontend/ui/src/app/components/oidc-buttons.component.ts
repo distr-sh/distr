@@ -5,8 +5,9 @@ import {faArrowRightToBracket} from '@fortawesome/free-solid-svg-icons';
 import {PortalService} from '../services/portal.service';
 
 /**
- * Renders a button per instance-scoped OIDC provider offered on this host. The providers are configured per
- * instance, but are not offered on an organization's custom app domain, so the list is host-resolved.
+ * Renders a button per OIDC provider offered on this host: the instance-scoped providers on the default host, and
+ * the providers configured by an organization on its own custom app domain. The two sets never appear together,
+ * because the list is host-resolved.
  */
 @Component({
   selector: 'app-oidc-buttons',
@@ -21,6 +22,10 @@ export class OidcButtonsComponent {
 
   protected getLoginURL(provider: string): string {
     return `/api/v1/auth/oidc/${provider}`;
+  }
+
+  protected getCustomLoginURL(configurationId: string): string {
+    return `/api/v1/auth/oidc/custom/${configurationId}`;
   }
 
   protected readonly faGithub = faGithub;

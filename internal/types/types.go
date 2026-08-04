@@ -128,6 +128,7 @@ const (
 	FeatureDeploymentLogsAfter    Feature = "deployment_logs_after"
 	FeaturePartnerManagement      Feature = "partner_management"
 	FeatureCustomDomains          Feature = "custom_domains"
+	FeatureCustomOidcProviders    Feature = "custom_oidc_providers"
 )
 
 // ProFeatures is the set of features granted to organizations with a paid (pro) subscription.
@@ -146,7 +147,7 @@ func FeaturesForSubscriptionType(st SubscriptionType) []Feature {
 	}
 	features := slices.Clone(ProFeatures)
 	if st == SubscriptionTypeBusiness {
-		features = append(features, FeaturePartnerManagement, FeatureCustomDomains)
+		features = append(features, FeaturePartnerManagement, FeatureCustomDomains, FeatureCustomOidcProviders)
 	}
 	return features
 }

@@ -351,6 +351,7 @@ var (
 	VendorBillingFeatureMiddleware        = FeatureFlagMiddleware(types.FeatureVendorBilling)
 	PartnerManagementFeatureMiddleware    = FeatureFlagMiddleware(types.FeaturePartnerManagement)
 	CustomDomainsFeatureMiddleware        = FeatureFlagMiddleware(types.FeatureCustomDomains)
+	CustomOidcProvidersFeatureMiddleware  = FeatureFlagMiddleware(types.FeatureCustomOidcProviders)
 )
 
 // RequireCustomDomainsConfigured rejects requests unless the instance itself is set up for custom

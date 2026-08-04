@@ -157,6 +157,11 @@
         </div>
       </form>
 
+      <!-- Outside the settings form: this section has its own form in a modal, and forms must not be nested. -->
+      <div class="mt-8">
+        <app-custom-oidc />
+      </div>
+
       @if (!auth.isSuperAdmin()) {
         <h2 class="text-xl font-bold dark:text-white mt-8 mb-2">Danger Zone</h2>
         <app-delete-organization />

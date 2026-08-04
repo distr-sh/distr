@@ -30,6 +30,13 @@ func AppDomainOrDefault(ctx context.Context, orgID uuid.UUID, b *types.Organizat
 	return env.Host()
 }
 
+// AppDomain returns the organization's self-service app domain, or nil when it has none. Unlike
+// AppDomainOrDefault it falls back neither to the legacy branding column nor to the instance host,
+// because callers use it to decide whether an organization owns a domain of its own.
+func AppDomain(ctx context.Context, orgID uuid.UUID) *string {
+	return domainOfType(customDomains(ctx, orgID), types.DomainTypeApp)
+}
+
 // RegistryDomainOrDefault resolves the effective registry host for an organization:
 // dedicated CustomDomain registry row first, then the CustomDomain app row (every
 // custom domain serves registry traffic under /v2/ via the Caddy path routing), then

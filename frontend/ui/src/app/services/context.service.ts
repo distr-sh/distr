@@ -13,6 +13,7 @@ interface ContextResponse {
   sidebarLinks?: SidebarLink[];
   availableContexts?: OrganizationWithUserRole[];
   registryHost?: string;
+  canCreateOrganization: boolean;
 }
 
 /**
@@ -68,6 +69,14 @@ export class ContextService {
   /** The effective registry host of the organization, considering custom domains and legacy branding domains. */
   public getRegistryHost(): Observable<string | undefined> {
     return this.cache.pipe(map((ctx) => ctx.registryHost));
+  }
+
+  /**
+   * Whether the user may create another organization. It is false for a user who signs in through an organization's
+   * own identity provider: such an account has to stay a member of that one organization.
+   */
+  public canCreateOrganization(): Observable<boolean> {
+    return this.cache.pipe(map((ctx) => ctx.canCreateOrganization));
   }
 
   public reload() {

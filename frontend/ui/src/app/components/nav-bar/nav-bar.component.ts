@@ -101,6 +101,8 @@ export class NavBarComponent implements OnInit {
   protected readonly isVendorSomewhere = computed(() =>
     this.allOrgs().some((org) => organizationKind(org) === 'vendor')
   );
+  // Comes from the server rather than from a token claim, so it cannot assert a state that has changed since login.
+  protected readonly canCreateOrganization = toSignal(this.ctx.canCreateOrganization(), {initialValue: false});
   protected readonly isDifferentOrganizationKind = computed(
     () => this.allOrgs().reduce((kinds, org) => kinds.add(organizationKind(org)), new Set<string>()).size > 1
   );

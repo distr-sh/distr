@@ -9,6 +9,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/google/uuid"
 )
 
 // SetUserPassword hashes the given password, optionally updates the name (when name is non-nil and non-empty),
@@ -101,4 +102,26 @@ func GenerateLoginToken(ctx context.Context, user types.UserAccount) (string, er
 	}
 	_, token, err := authjwt.GenerateDefaultToken(user, org)
 	return token, err
+}
+
+// GenerateLoginTokenForOrganization generates a login token for one specific organization. Unlike GenerateLoginToken
+// it neither falls back to another organization nor creates a personal one, which is what a login through an
+// organization's own identity provider requires: that login may only ever result in a session in that organization.
+// It returns apierrors.ErrNotFound when the user is not a member of it.
+func GenerateLoginTokenForOrganization(
+	ctx context.Context,
+	user types.UserAccount,
+	organizationID uuid.UUID,
+) (string, error) {
+	orgs, err := db.GetOrganizationsForUser(ctx, user.ID)
+	if err != nil {
+		return "", err
+	}
+	for _, org := range orgs {
+		if org.ID == organizationID {
+			_, token, err := authjwt.GenerateDefaultToken(user, org)
+			return token, err
+		}
+	}
+	return "", apierrors.ErrNotFound
 }

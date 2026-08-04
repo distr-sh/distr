@@ -17,6 +17,7 @@ const portalResponse: Portal = {
     oidcGoogleEnabled: false,
     oidcMicrosoftEnabled: false,
     oidcGenericEnabled: false,
+    oidcProviders: [],
   },
 };
 

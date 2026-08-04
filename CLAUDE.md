@@ -246,6 +246,15 @@ When adding new routes, ensure the OpenAPI spec remains valid. The `chiopenapi` 
 
 `resolvePortalHost` distinguishes three host sources. Self-service `CustomDomain` rows and legacy `OrganizationBranding.app_domain` values are **not** interchangeable: both drop Distr's own branding, but the instance-scoped OIDC providers stay available on the legacy domains, since they predate self-service domains and their users would otherwise be locked out. The response is cached per Host (`Vary: Host`, `max-age=60`), so it must not carry anything user- or organization-specific.
 
+### Organization-configured OIDC Providers
+
+A `CustomOIDCConfiguration` is an organization's own identity provider, hanging off the `CustomDomain` it is offered on (`custom_domain_id`). The domain decides both where the provider is usable and who may configure it, which is what lets the same table serve a vendor's app domain today and a customer portal domain later without a schema change.
+
+- **Never cache providers.** `oidc.ProviderForConfiguration` builds one per request from the configuration row, so an edit takes effect immediately. Discovery and JWKS are cached by `go-oidc` within a flow, which is where caching belongs.
+- **Store the issuer the provider states for itself**, taken from its discovery document (`oidc.Discover`), never the string an administrator typed. Auth0 states a trailing slash and Entra ID a tenant GUID, and identities are keyed by `(configuration, issuer, subject)`.
+- Issuer URLs are administrator-controlled input that the Hub fetches, so anything that resolves one must go through `oidc.ParseIssuerURL` and the SSRF-guarded client in `internal/oidc/discovery.go`.
+- **Account exclusivity is a security invariant, not a convenience:** a custom provider may only authenticate an account whose memberships are exclusively in that provider's organization. Without it, an organization can point a provider at an account that also belongs to somebody else's organization and reach their data through a personal access token, which no session-scoping claim prevents. Identity resolution therefore only ever matches within the provider's organization, and `internal/handlers/account_exclusivity.go` guards organization creation and invites. Any new way to gain a membership or an organization has to call those guards.
+
 ## General rules
 
 - Always ensure this file is up-to-date.
