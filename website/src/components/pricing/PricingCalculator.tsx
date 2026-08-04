@@ -635,7 +635,7 @@ export default function PricingCalculator() {
               Community Edition
             </a>{' '}
             is the perfect option to try Distr locally and to ship your first
-            customer installs. Every plan can be self-hosted as well, with the
+            customer installs. Paid plans can be self-hosted as well, with the
             same feature set as on Distr Cloud, so please{' '}
             <a
               href="/contact/"

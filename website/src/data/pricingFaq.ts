@@ -54,7 +54,7 @@ export const PricingFAQs: PricingFAQ[] = [
     id: 'self-hosting',
     question: 'Can I self-host Distr?',
     answer:
-      'Yes, Distr is fully Open Source and you can self-host it. The free and open source Community Edition is the perfect option to try Distr locally. Every plan can be self-hosted as well, with the same feature set as on Distr Cloud, and a license key unlocks your plan in your own environment. For details on deployment methods and getting started, see our <a href="/docs/self-hosting/" class="text-[#00b5eb] hover:underline">self-hosting documentation</a>.',
+      'Yes, Distr is fully Open Source and you can self-host it. The free and open source Community Edition is the perfect option to try Distr locally. Paid plans can be self-hosted as well, with the same feature set as on Distr Cloud, and a license key unlocks your plan in your own environment. For details on deployment methods and getting started, see our <a href="/docs/self-hosting/" class="text-[#00b5eb] hover:underline">self-hosting documentation</a>.',
   },
   {
     id: 'support',
