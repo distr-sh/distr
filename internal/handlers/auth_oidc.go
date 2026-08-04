@@ -15,7 +15,6 @@ import (
 	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/userauth"
-	"github.com/distr-sh/distr/internal/util"
 	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
@@ -116,22 +115,17 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	oidcer := internalctx.GetOIDCer(ctx)
-	email, emailVerified, err := oidcer.GetEmailForCode(ctx, provider, code, pkceVerifier, r)
+	identity, err := oidcer.GetIdentityForCode(ctx, provider, code, pkceVerifier, r)
 	if err != nil {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
-		log.Error("OIDC email extraction failed", zap.Error(err))
+		log.Error("OIDC identity extraction failed", zap.Error(err))
 		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
 		return
 	}
 
 	err = db.RunTx(ctx, func(ctx context.Context) error {
-		user, err := db.GetUserAccountByEmail(ctx, email)
-		if errors.Is(err, apierrors.ErrNotFound) {
-			user, err = registerOIDCUser(ctx, email)
-			if err != nil {
-				return err
-			}
-		} else if err != nil {
+		user, err := resolveOIDCUser(ctx, log, identity)
+		if err != nil {
 			return err
 		}
 		if user == nil {
@@ -140,7 +134,7 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		log = log.With(zap.Any("userId", user.ID))
 
-		if user.EmailVerifiedAt == nil && emailVerified {
+		if user.EmailVerifiedAt == nil && identity.EmailVerified {
 			if err = db.UpdateUserAccountEmailVerified(ctx, user); err != nil {
 				return err
 			}
@@ -163,6 +157,53 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// resolveOIDCUser returns the user account the given identity provider identity belongs to.
+// The identity is looked up first, so a login keeps working when the email address changed
+// on either side. Accounts that predate the identity linking are matched by email and get
+// their identity created on the fly. Returns (nil, nil) if the user would have to be
+// registered but registration is administratively disabled.
+func resolveOIDCUser(
+	ctx context.Context,
+	log *zap.Logger,
+	identity oidc.Identity,
+) (*types.UserAccount, error) {
+	user, existingIdentity, err := db.GetUserAccountWithOIDCIdentity(ctx, identity.Issuer, identity.Subject)
+	if err == nil {
+		// The user account email is authoritative and is never overwritten with the one
+		// from the identity provider, which is only kept on the identity for display.
+		return user, db.UpdateUserAccountOIDCIdentityOnLogin(ctx, existingIdentity.ID, new(identity.Email))
+	} else if !errors.Is(err, apierrors.ErrNotFound) {
+		return nil, err
+	}
+
+	user, err = db.GetUserAccountByEmail(ctx, identity.Email)
+	if errors.Is(err, apierrors.ErrNotFound) {
+		if user, err = registerOIDCUser(ctx, identity.Email); err != nil {
+			return nil, err
+		} else if user == nil {
+			return nil, nil
+		}
+		log.Info("registered new user account for OIDC identity", zap.Any("userId", user.ID))
+	} else if err != nil {
+		return nil, err
+	} else {
+		log.Info("linking OIDC identity to existing user account matched by email",
+			zap.Any("userId", user.ID))
+	}
+
+	newIdentity := types.UserAccountOIDCIdentity{
+		UserAccountID: user.ID,
+		Provider:      identity.Provider,
+		Issuer:        identity.Issuer,
+		Subject:       identity.Subject,
+		Email:         new(identity.Email),
+	}
+	if err := db.CreateUserAccountOIDCIdentity(ctx, &newIdentity); err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
 // registerOIDCUser creates a new user account for an OIDC-authenticated user.
 // The account is created without a password; the user can set one later via the
 // password reset flow if they want to also sign in with email and password.
@@ -173,7 +214,7 @@ func registerOIDCUser(ctx context.Context, email string) (*types.UserAccount, er
 	}
 	userAccount := types.UserAccount{
 		Email:           email,
-		EmailVerifiedAt: util.PtrTo(time.Now()),
+		EmailVerifiedAt: new(time.Now()),
 	}
 	if err := db.CreateUserAccountWithOrganization(ctx, &userAccount, &types.Organization{}); err != nil {
 		return nil, fmt.Errorf("failed to create OIDC user: %w", err)

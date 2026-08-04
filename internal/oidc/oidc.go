@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/distr-sh/distr/internal/env"
+	"github.com/distr-sh/distr/internal/types"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
@@ -15,41 +17,61 @@ import (
 	"golang.org/x/oauth2/microsoft"
 )
 
-type Provider string
+type Provider = types.OIDCProvider
 
 const (
-	ProviderGithub    Provider = "github"
-	ProviderGoogle    Provider = "google"
-	ProviderMicrosoft Provider = "microsoft"
-	ProviderGeneric   Provider = "generic"
+	ProviderGithub    = types.OIDCProviderGithub
+	ProviderGoogle    = types.OIDCProviderGoogle
+	ProviderMicrosoft = types.OIDCProviderMicrosoft
+	ProviderGeneric   = types.OIDCProviderGeneric
 )
 
-type EmailExtractorFunc func(context.Context, *oauth2.Token) (string, bool, error)
+// githubIssuer is a synthetic issuer, because GitHub is plain OAuth2 and does not issue
+// an ID token that could provide one.
+const githubIssuer = "https://github.com"
 
-func verifiedIdTokenEmailExtractor(verifier *oidc.IDTokenVerifier) EmailExtractorFunc {
-	return func(ctx context.Context, token *oauth2.Token) (string, bool, error) {
+// Identity is the user identity as reported by an identity provider. Issuer and Subject
+// identify the user at the provider and remain stable when the email address changes.
+type Identity struct {
+	Provider      Provider
+	Issuer        string
+	Subject       string
+	Email         string
+	EmailVerified bool
+}
+
+type IdentityExtractorFunc func(context.Context, *oauth2.Token) (Identity, error)
+
+func verifiedIdTokenIdentityExtractor(provider Provider, verifier *oidc.IDTokenVerifier) IdentityExtractorFunc {
+	return func(ctx context.Context, token *oauth2.Token) (Identity, error) {
 		idTokenStr, ok := token.Extra("id_token").(string)
 		if !ok {
-			return "", false, fmt.Errorf("id_token not found in token response")
+			return Identity{}, fmt.Errorf("id_token not found in token response")
 		}
 		idToken, err := verifier.Verify(ctx, idTokenStr)
 		if err != nil {
-			return "", false, fmt.Errorf("failed to verify id_token: %w", err)
+			return Identity{}, fmt.Errorf("failed to verify id_token: %w", err)
 		}
 		var claims struct {
 			Email         string `json:"email"`
 			EmailVerified bool   `json:"email_verified"`
 		}
 		if err := idToken.Claims(&claims); err != nil {
-			return "", false, fmt.Errorf("failed to parse id_token claims: %w", err)
+			return Identity{}, fmt.Errorf("failed to parse id_token claims: %w", err)
 		}
-		return claims.Email, claims.EmailVerified, nil
+		return Identity{
+			Provider:      provider,
+			Issuer:        idToken.Issuer,
+			Subject:       idToken.Subject,
+			Email:         claims.Email,
+			EmailVerified: claims.EmailVerified,
+		}, nil
 	}
 }
 
 type providerContext struct {
-	oauth2Config   func(r *http.Request) *config
-	emailExtractor EmailExtractorFunc
+	oauth2Config      func(r *http.Request) *config
+	identityExtractor IdentityExtractorFunc
 }
 
 type OIDCer struct {
@@ -72,8 +94,8 @@ func NewOIDCer(ctx context.Context, log *zap.Logger) (*OIDCer, error) {
 		googleOidcConfig := &oidc.Config{ClientID: *env.OIDCGoogleClientID()}
 		googleVerifier := googleProvider.Verifier(googleOidcConfig)
 		p[ProviderGoogle] = &providerContext{
-			oauth2Config:   getGoogleOauth2Config,
-			emailExtractor: verifiedIdTokenEmailExtractor(googleVerifier),
+			oauth2Config:      getGoogleOauth2Config,
+			identityExtractor: verifiedIdTokenIdentityExtractor(ProviderGoogle, googleVerifier),
 		}
 	}
 	if env.OIDCMicrosoftEnabled() {
@@ -86,15 +108,15 @@ func NewOIDCer(ctx context.Context, log *zap.Logger) (*OIDCer, error) {
 		microsoftOidcConfig := &oidc.Config{ClientID: *env.OIDCMicrosoftClientID()}
 		microsoftVerifier := microsoftProvider.Verifier(microsoftOidcConfig)
 		p[ProviderMicrosoft] = &providerContext{
-			oauth2Config:   getMicrosoftOauth2Config,
-			emailExtractor: verifiedIdTokenEmailExtractor(microsoftVerifier),
+			oauth2Config:      getMicrosoftOauth2Config,
+			identityExtractor: verifiedIdTokenIdentityExtractor(ProviderMicrosoft, microsoftVerifier),
 		}
 	}
 	if env.OIDCGithubEnabled() {
 		log.Info("initializing github OIDC")
 		p[ProviderGithub] = &providerContext{
-			oauth2Config:   getGithubOauth2Config,
-			emailExtractor: getEmailFromGithubAccessToken,
+			oauth2Config:      getGithubOauth2Config,
+			identityExtractor: getIdentityFromGithubAccessToken,
 		}
 	}
 	if env.OIDCGenericEnabled() {
@@ -118,7 +140,7 @@ func NewOIDCer(ctx context.Context, log *zap.Logger) (*OIDCer, error) {
 					pkceEnabled: env.OIDCGenericPKCEEnabled(),
 				}
 			},
-			emailExtractor: verifiedIdTokenEmailExtractor(genericVerifier),
+			identityExtractor: verifiedIdTokenIdentityExtractor(ProviderGeneric, genericVerifier),
 		}
 	}
 	return &OIDCer{providers: p}, nil
@@ -163,51 +185,40 @@ func getGithubOauth2Config(r *http.Request) *config {
 	}
 }
 
-// GetEmailForCode exchanges the code for a token and extracts the user's email and verification status.
-func (o *OIDCer) GetEmailForCode(
+// GetIdentityForCode exchanges the code for a token and extracts the user's identity at the provider.
+func (o *OIDCer) GetIdentityForCode(
 	ctx context.Context, provider Provider, code, pkceVerifier string, r *http.Request,
-) (string, bool, error) {
+) (Identity, error) {
 	prov := o.providers[provider]
 	if prov == nil || prov.oauth2Config == nil {
-		return "", false, fmt.Errorf("OIDC provider not configured: %s", provider)
+		return Identity{}, fmt.Errorf("OIDC provider not configured: %s", provider)
 	}
 	c := prov.oauth2Config(r)
 	var opts []oauth2.AuthCodeOption
 	if c.pkceEnabled {
 		opts = append(opts, oauth2.VerifierOption(pkceVerifier))
 	}
-	token, err := prov.oauth2Config(r).Exchange(ctx, code, opts...)
+	token, err := c.Exchange(ctx, code, opts...)
 	if err != nil {
-		return "", false, fmt.Errorf("token exchange failed: %w", err)
+		return Identity{}, fmt.Errorf("token exchange failed: %w", err)
 	}
 
-	if email, verified, err := prov.emailExtractor(ctx, token); err != nil {
-		return "", false, err
-	} else {
-		return email, verified, nil
-	}
+	return prov.identityExtractor(ctx, token)
 }
 
-func getEmailFromGithubAccessToken(ctx context.Context, token *oauth2.Token) (string, bool, error) {
+func getIdentityFromGithubAccessToken(ctx context.Context, token *oauth2.Token) (Identity, error) {
 	accessToken, ok := token.Extra("access_token").(string)
 	if !ok {
-		return "", false, fmt.Errorf("access_token not found in token response")
+		return Identity{}, fmt.Errorf("access_token not found in token response")
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.github.com/user/emails", nil)
-	if err != nil {
-		return "", false, err
+	var user struct {
+		ID int64 `json:"id"`
 	}
-	req.Header.Set("Authorization", "Bearer "+accessToken)
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", false, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", false, fmt.Errorf("failed to fetch emails: %s", resp.Status)
+	if err := getGithubResource(ctx, accessToken, "https://api.github.com/user", &user); err != nil {
+		return Identity{}, err
+	} else if user.ID == 0 {
+		return Identity{}, fmt.Errorf("no user id returned by GitHub")
 	}
 
 	var emails []struct {
@@ -215,16 +226,43 @@ func getEmailFromGithubAccessToken(ctx context.Context, token *oauth2.Token) (st
 		Primary  bool   `json:"primary"`
 		Verified bool   `json:"verified"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&emails); err != nil {
-		return "", false, err
+	if err := getGithubResource(ctx, accessToken, "https://api.github.com/user/emails", &emails); err != nil {
+		return Identity{}, err
 	}
 
 	for _, email := range emails {
 		if email.Primary && email.Verified {
-			return email.Email, true, nil
+			return Identity{
+				Provider: ProviderGithub,
+				Issuer:   githubIssuer,
+				// the numeric user id is stable across username and email changes
+				Subject:       strconv.FormatInt(user.ID, 10),
+				Email:         email.Email,
+				EmailVerified: true,
+			}, nil
 		}
 	}
-	return "", false, fmt.Errorf("no primary verified email found")
+	return Identity{}, fmt.Errorf("no primary verified email found")
+}
+
+func getGithubResource(ctx context.Context, accessToken, url string, out any) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to fetch %v: %v", url, resp.Status)
+	}
+
+	return json.NewDecoder(resp.Body).Decode(out)
 }
 
 // GetAuthCodeURL returns the OIDC provider's AuthCodeURL for the given state and provider.

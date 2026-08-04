@@ -1,0 +1,3 @@
+DROP TABLE UserAccountOIDCIdentity;
+
+DROP TYPE OIDC_PROVIDER;

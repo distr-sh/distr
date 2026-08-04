@@ -28,6 +28,17 @@ export interface MFARecoveryCodesStatus {
   remainingCodes: number;
 }
 
+export type OIDCProvider = 'github' | 'google' | 'microsoft' | 'generic';
+
+export interface OIDCIdentity {
+  id: string;
+  createdAt: string;
+  provider: OIDCProvider;
+  issuer: string;
+  email?: string;
+  lastLoginAt?: string;
+}
+
 @Injectable({providedIn: 'root'})
 export class SettingsService {
   private readonly httpClient = inject(HttpClient);
@@ -64,5 +75,13 @@ export class SettingsService {
 
   public getMFARecoveryCodesStatus() {
     return this.httpClient.get<MFARecoveryCodesStatus>(`${this.baseUrl}/mfa/recovery-codes/status`);
+  }
+
+  public getOIDCIdentities() {
+    return this.httpClient.get<OIDCIdentity[]>(`${this.baseUrl}/user/oidc-identities`);
+  }
+
+  public deleteOIDCIdentity(id: string) {
+    return this.httpClient.delete<void>(`${this.baseUrl}/user/oidc-identities/${id}`);
   }
 }
