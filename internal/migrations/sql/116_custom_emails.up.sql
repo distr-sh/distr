@@ -1,8 +1,5 @@
 ALTER TYPE FEATURE ADD VALUE IF NOT EXISTS 'custom_emails';
 
--- Per-organization mail transport, overriding the instance mailer configured via the MAILER_* env
--- vars. Only SMTP is supported for now; adding another provider means adding a provider column,
--- making the smtp_* columns nullable and constraining them per provider.
 -- The legacy OrganizationBranding.email_from_address column stays untouched and keeps working as a
 -- fallback for the from address, just like the legacy branding domain columns do for CustomDomain.
 CREATE TABLE CustomEmailConfiguration (

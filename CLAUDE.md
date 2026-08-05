@@ -288,6 +288,7 @@ Only write a test that could fail for a real reason. Every test is code that has
 - If you read code that doesn't follow these rules, please fix it.
 - If you see any typos, or spelling mistakes, please fix them.
 - If you fetch data from GitHub always use the GitHub cli (`gh`) instead of the web interface.
+- Scripting language preference, for anything from a one-off command to a checked-in script: shell first (like `hack/validate-migrations.sh`), Node when a task outgrows shell (like `hack/agent-changelog.mjs`). Avoid Python, and never use Perl (e.g. `perl -pi -e`). Edit existing files directly instead of piping them through a stream editor.
 - When you resolve merge conflicts (whether during a merge or rebase), always ensure that the conflict resolutions are committed before continuing, or at least prompt the user to commit them, so that unrelated new changes are not unintentionally included in that commit.
 
 ## Code Review Instructions

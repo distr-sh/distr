@@ -1,5 +1,5 @@
 import {HttpErrorResponse} from '@angular/common/http';
-import {ChangeDetectionStrategy, Component, computed, inject, OnInit, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, OnInit, signal} from '@angular/core';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faFloppyDisk, faPaperPlane, faTrash} from '@fortawesome/free-solid-svg-icons';
@@ -7,9 +7,7 @@ import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {HOSTNAME_MAX_LENGTH, HOSTNAME_REGEX} from '../../util/validation';
 import {AutotrimDirective} from '../directives/autotrim.directive';
-import {AuthService} from '../services/auth.service';
 import {CustomEmailService} from '../services/custom-email.service';
-import {FeatureFlagService} from '../services/feature-flag.service';
 import {OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
 import {CustomEmailConfiguration, CustomEmailSettings} from '../types/custom-email';
@@ -26,15 +24,9 @@ export class CustomEmailComponent implements OnInit {
   protected readonly faTrash = faTrash;
 
   private readonly customEmailService = inject(CustomEmailService);
-  private readonly featureFlags = inject(FeatureFlagService);
-  private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly overlay = inject(OverlayService);
   private readonly fb = inject(FormBuilder).nonNullable;
-
-  protected readonly visible = computed(
-    () => this.featureFlags.isCustomEmailsEnabled() && this.auth.isVendor() && this.auth.hasRole('admin')
-  );
 
   protected readonly configuration = signal<CustomEmailConfiguration | undefined>(undefined);
   protected readonly saveLoading = signal(false);
@@ -55,9 +47,6 @@ export class CustomEmailComponent implements OnInit {
   });
 
   async ngOnInit() {
-    if (!this.visible()) {
-      return;
-    }
     try {
       this.applyConfiguration(await firstValueFrom(this.customEmailService.get()));
     } catch (e) {

@@ -1,145 +1,144 @@
-@if (visible()) {
-  <div class="space-y-4 mt-8">
-    <h2 class="text-xl font-bold dark:text-white">Custom Email</h2>
-    <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-      Send all transactional emails to your users and customers through your own SMTP server. Without a configuration,
-      emails are sent by Distr. Make sure your SMTP server is authorized to send for the sender address domain (SPF,
-      DKIM and DMARC), otherwise emails may be rejected or land in spam.
-    </p>
+<div class="space-y-4">
+  <h2 class="text-xl font-bold dark:text-white">Custom Email Sending Provider</h2>
+  <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+    Send all transactional emails to your users and customers through your own SMTP server. Without a configuration,
+    emails are sent by Distr. Make sure your SMTP server is authorized to send for the sender address domain (SPF, DKIM
+    and DMARC), otherwise emails may be rejected or land in spam.
+  </p>
 
-    <form [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
-      <div>
-        <label for="fromAddress" class="distr-label mb-2">Sender address *</label>
+  <form [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
+    <div>
+      <label for="fromAddress" class="distr-label mb-2">Sender address *</label>
+      <input
+        formControlName="fromAddress"
+        autotrim
+        type="email"
+        name="fromAddress"
+        id="fromAddress"
+        class="distr-input"
+        autocomplete="off"
+        placeholder="notifications@your-company.com" />
+      @if (form.controls.fromAddress.invalid && form.controls.fromAddress.touched) {
+        <p class="mt-1 text-sm text-red-600 dark:text-red-500">Must be a valid email address.</p>
+      }
+      <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+        The address your users and customers see as the sender.
+      </p>
+    </div>
+
+    <div class="flex gap-4">
+      <div class="grow">
+        <label for="smtpHost" class="distr-label mb-2">SMTP host *</label>
         <input
-          formControlName="fromAddress"
+          formControlName="smtpHost"
           autotrim
-          type="email"
-          name="fromAddress"
-          id="fromAddress"
+          type="text"
+          name="smtpHost"
+          id="smtpHost"
           class="distr-input"
-          placeholder="notifications@your-company.com" />
-        @if (form.controls.fromAddress.invalid && form.controls.fromAddress.touched) {
-          <p class="mt-1 text-sm text-red-600 dark:text-red-500">Must be a valid email address.</p>
+          placeholder="smtp.your-company.com" />
+        @if (form.controls.smtpHost.invalid && form.controls.smtpHost.touched) {
+          <p class="mt-1 text-sm text-red-600 dark:text-red-500">
+            Must be a valid hostname without scheme, e.g. smtp.your-company.com
+          </p>
         }
+      </div>
+      <div class="w-32">
+        <label for="smtpPort" class="distr-label mb-2">Port *</label>
+        <input
+          formControlName="smtpPort"
+          type="number"
+          name="smtpPort"
+          id="smtpPort"
+          class="distr-input"
+          placeholder="587" />
+        @if (form.controls.smtpPort.invalid && form.controls.smtpPort.touched) {
+          <p class="mt-1 text-sm text-red-600 dark:text-red-500">Must be between 1 and 65535.</p>
+        }
+      </div>
+    </div>
+
+    <div class="flex gap-4">
+      <div class="grow">
+        <label for="smtpUsername" class="distr-label mb-2">Username</label>
+        <input
+          formControlName="smtpUsername"
+          autotrim
+          type="text"
+          name="smtpUsername"
+          id="smtpUsername"
+          class="distr-input"
+          autocomplete="off" />
         <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-          The address your users and customers see as the sender.
+          Leave empty to connect without authentication.
         </p>
       </div>
-
-      <div class="flex gap-4">
-        <div class="grow">
-          <label for="smtpHost" class="distr-label mb-2">SMTP host *</label>
-          <input
-            formControlName="smtpHost"
-            autotrim
-            type="text"
-            name="smtpHost"
-            id="smtpHost"
-            class="distr-input"
-            placeholder="smtp.your-company.com" />
-          @if (form.controls.smtpHost.invalid && form.controls.smtpHost.touched) {
-            <p class="mt-1 text-sm text-red-600 dark:text-red-500">
-              Must be a valid hostname without scheme, e.g. smtp.your-company.com
-            </p>
+      <div class="grow">
+        <label for="smtpPassword" class="distr-label mb-2">Password</label>
+        <input
+          formControlName="smtpPassword"
+          type="text"
+          name="smtpPassword"
+          id="smtpPassword"
+          class="distr-input"
+          autocomplete="off"
+          [placeholder]="configuration()?.smtpPasswordSet ? '••••••••' : ''" />
+        <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+          @if (configuration()?.smtpPasswordSet) {
+            A password is stored. Leave empty to keep it.
+          } @else {
+            The password is not shown again after saving.
           }
-        </div>
-        <div class="w-32">
-          <label for="smtpPort" class="distr-label mb-2">Port *</label>
-          <input
-            formControlName="smtpPort"
-            type="number"
-            name="smtpPort"
-            id="smtpPort"
-            class="distr-input"
-            placeholder="587" />
-          @if (form.controls.smtpPort.invalid && form.controls.smtpPort.touched) {
-            <p class="mt-1 text-sm text-red-600 dark:text-red-500">Must be between 1 and 65535.</p>
-          }
-        </div>
-      </div>
-
-      <div class="flex gap-4">
-        <div class="grow">
-          <label for="smtpUsername" class="distr-label mb-2">Username</label>
-          <input
-            formControlName="smtpUsername"
-            autotrim
-            type="text"
-            name="smtpUsername"
-            id="smtpUsername"
-            class="distr-input"
-            autocomplete="off" />
-          <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-            Leave empty to connect without authentication.
-          </p>
-        </div>
-        <div class="grow">
-          <label for="smtpPassword" class="distr-label mb-2">Password</label>
-          <input
-            formControlName="smtpPassword"
-            type="password"
-            name="smtpPassword"
-            id="smtpPassword"
-            class="distr-input"
-            autocomplete="new-password"
-            [placeholder]="configuration()?.smtpPasswordSet ? '••••••••' : ''" />
-          <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-            @if (configuration()?.smtpPasswordSet) {
-              A password is stored. Leave empty to keep it.
-            } @else {
-              The password is stored securely and never shown again.
-            }
-          </p>
-        </div>
-      </div>
-
-      <div>
-        <input formControlName="smtpImplicitTls" id="smtpImplicitTls" type="checkbox" class="distr-checkbox" />
-        <label for="smtpImplicitTls" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-          Use implicit TLS
-        </label>
-        <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-          Connect with TLS right away instead of upgrading via STARTTLS. Usually required on port 465.
         </p>
       </div>
+    </div>
 
-      <div>
-        <input formControlName="enabled" id="enabled" type="checkbox" class="distr-checkbox" />
-        <label for="enabled" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-          Send emails through this SMTP server
-        </label>
-        <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-          When disabled, the configuration is kept but emails are sent by Distr again.
-        </p>
-      </div>
+    <div>
+      <input formControlName="smtpImplicitTls" id="smtpImplicitTls" type="checkbox" class="distr-checkbox" />
+      <label for="smtpImplicitTls" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+        Use implicit TLS
+      </label>
+      <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+        Connect with TLS right away instead of upgrading via STARTTLS. Usually required on port 465.
+      </p>
+    </div>
 
-      <div class="flex gap-4">
-        <button
-          type="submit"
-          [disabled]="saveLoading() || testLoading()"
-          class="text-white inline-flex items-center justify-center distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
-          <fa-icon [icon]="faFloppyDisk" size="lg" class="h-4 w-4 mr-2 -ml-0.5 mb-1" />
-          Save
-        </button>
+    <div>
+      <input formControlName="enabled" id="enabled" type="checkbox" class="distr-checkbox" />
+      <label for="enabled" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+        Send emails through this SMTP server
+      </label>
+      <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+        When disabled, the configuration is kept but emails are sent by Distr again.
+      </p>
+    </div>
+
+    <div class="flex gap-4">
+      <button
+        type="submit"
+        [disabled]="saveLoading() || testLoading()"
+        class="text-white inline-flex items-center justify-center distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
+        <fa-icon [icon]="faFloppyDisk" size="lg" class="h-4 w-4 mr-2 -ml-0.5 mb-1" />
+        Save
+      </button>
+      <button
+        type="button"
+        (click)="sendTest()"
+        [disabled]="saveLoading() || testLoading()"
+        class="inline-flex items-center justify-center distr-btn-secondary font-medium text-sm px-5 py-2.5 disabled:opacity-60 disabled:cursor-not-allowed">
+        <fa-icon [icon]="faPaperPlane" size="lg" class="h-4 w-4 mr-2 -ml-0.5 mb-1" />
+        Send test email
+      </button>
+      @if (configuration()) {
         <button
           type="button"
-          (click)="sendTest()"
+          (click)="remove()"
           [disabled]="saveLoading() || testLoading()"
-          class="inline-flex items-center justify-center distr-btn-secondary font-medium text-sm px-5 py-2.5 disabled:opacity-60 disabled:cursor-not-allowed">
-          <fa-icon [icon]="faPaperPlane" size="lg" class="h-4 w-4 mr-2 -ml-0.5 mb-1" />
-          Send test email
+          class="inline-flex items-center justify-center distr-btn-danger px-5 py-2.5 disabled:opacity-60 disabled:cursor-not-allowed">
+          <fa-icon [icon]="faTrash" size="lg" class="h-4 w-4 mr-2 -ml-0.5 mb-1" />
+          Remove
         </button>
-        @if (configuration()) {
-          <button
-            type="button"
-            (click)="remove()"
-            [disabled]="saveLoading() || testLoading()"
-            class="inline-flex items-center justify-center distr-btn-danger px-5 py-2.5 disabled:opacity-60 disabled:cursor-not-allowed">
-            <fa-icon [icon]="faTrash" size="lg" class="h-4 w-4 mr-2 -ml-0.5 mb-1" />
-            Remove
-          </button>
-        }
-      </div>
-    </form>
-  </div>
-}
+      }
+    </div>
+  </form>
+</div>

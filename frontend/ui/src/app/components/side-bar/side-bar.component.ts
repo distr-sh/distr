@@ -41,6 +41,8 @@ import {FeatureFlagService} from '../../services/feature-flag.service';
 import {OrganizationService} from '../../services/organization.service';
 import {SidebarService} from '../../services/sidebar.service';
 import {TutorialsService} from '../../services/tutorials.service';
+import {PlanBadgeComponent} from '../plan-badge.component';
+import {PlanFeatureHintComponent} from '../plan-feature-hint.component';
 
 @Component({
   selector: 'app-side-bar',
@@ -57,6 +59,8 @@ import {TutorialsService} from '../../services/tutorials.service';
     RequireVendorDirective,
     RequireCustomerDirective,
     RequirePartnerDirective,
+    PlanBadgeComponent,
+    PlanFeatureHintComponent,
   ],
 })
 export class SideBarComponent {

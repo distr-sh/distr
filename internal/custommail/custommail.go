@@ -19,13 +19,8 @@ import (
 	"github.com/google/uuid"
 )
 
-// MailerForOrganization returns the mailer to send mails on behalf of the given organization
-// with: the organization's own configuration if it has an enabled one, the instance mailer
-// otherwise.
-//
-// There is deliberately no fallback to the instance mailer when the organization's configuration
-// cannot be resolved or used: the instance mailer sends from a domain the organization's sender
-// address does not belong to, which fails SPF/DKIM/DMARC and hides the misconfiguration.
+// An error is never turned into a fallback to the instance mailer: that one sends from a domain
+// the organization's sender address does not belong to, which fails SPF/DKIM/DMARC.
 func MailerForOrganization(ctx context.Context, orgID uuid.UUID) (*mailx.Mailer, error) {
 	config, err := configuration(ctx, orgID)
 	if err != nil {
@@ -36,8 +31,8 @@ func MailerForOrganization(ctx context.Context, orgID uuid.UUID) (*mailx.Mailer,
 	return MailerForConfiguration(*config)
 }
 
-// MailerForConfiguration builds a mailer for the given configuration without consulting the
-// database, so that a configuration can be tested before it is stored.
+// MailerForConfiguration does not consult the database, so that a configuration can be tested
+// before it is stored.
 func MailerForConfiguration(config types.CustomEmailConfiguration) (*mailx.Mailer, error) {
 	adapter, err := smtp.New(smtp.Config{
 		Host:        config.SMTPHost,
@@ -58,9 +53,6 @@ func MailerForConfiguration(config types.CustomEmailConfiguration) (*mailx.Maile
 	}}, nil
 }
 
-// FromAddressOrDefault resolves the sender address for an organization: its custom email
-// configuration first, then the legacy OrganizationBranding.email_from_address, then the
-// instance default from MAILER_FROM_ADDRESS.
 func FromAddressOrDefault(
 	ctx context.Context,
 	orgID uuid.UUID,
@@ -78,8 +70,7 @@ func FromAddressOrDefault(
 	return new(env.GetMailerConfig().FromAddress), nil
 }
 
-// configuration returns the organization's email configuration if it has an enabled one, and nil
-// if it has none or a disabled one.
+// A disabled configuration is reported as none, so that callers fall back to the instance mailer.
 func configuration(ctx context.Context, orgID uuid.UUID) (*types.CustomEmailConfiguration, error) {
 	config, err := db.GetCustomEmailConfiguration(ctx, orgID)
 	if errors.Is(err, apierrors.ErrNotFound) {

@@ -16,13 +16,12 @@ import (
 
 var ErrEmailQuotaExceeded = errors.New("email sending quota exceeded")
 
-// sendNotificationWithQuota sends a notification email to the given address through the
-// organization's mailer, enforcing the hourly per-address quota. The quota applies to every
-// transport, including organization-provided ones: it protects recipients from notification
-// storms caused by Distr, which are our bug regardless of who delivers the mail.
-// If the quota is exhausted, the email is not sent and ErrEmailQuotaExceeded is returned. If
-// sending fails, the claimed quota slot is released again so that failed sends do not consume
-// quota.
+// sendNotificationWithQuota sends a notification email to the given address, enforcing the
+// hourly per-address quota. The quota also applies to organization-provided transports: it
+// protects recipients from notification storms caused by Distr, which are our bug regardless of
+// who delivers the mail. If the quota is exhausted, the email is not sent and
+// ErrEmailQuotaExceeded is returned. If sending fails, the claimed quota slot is released
+// again so that failed sends do not consume quota.
 func sendNotificationWithQuota(
 	ctx context.Context,
 	orgID uuid.UUID,

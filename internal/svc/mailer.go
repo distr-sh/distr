@@ -20,8 +20,7 @@ func (r *Registry) GetMailer() *mailx.Mailer {
 
 func createMailer(ctx context.Context) (*mailx.Mailer, error) {
 	config := env.GetMailerConfig()
-	// Fallback for senders that do not resolve the organization themselves. Note that background
-	// jobs have no authentication in their context, so those must use custommail directly.
+	// Fallback for senders that do not resolve the organization themselves.
 	authOrgOverrideFromAddress := func(ctx context.Context, mail mailx.Mail) string {
 		if auth, err := auth.Authentication.Get(ctx); err == nil {
 			if orgID := auth.CurrentOrgID(); orgID != nil {

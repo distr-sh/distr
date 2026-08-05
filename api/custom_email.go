@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// CustomEmailConfiguration is the API representation of an organization's email configuration.
 // The SMTP password is write-only and therefore only reported as being set or not.
 type CustomEmailConfiguration struct {
 	ID              uuid.UUID `json:"id"`
@@ -25,7 +24,6 @@ type CustomEmailConfiguration struct {
 	SMTPImplicitTLS bool      `json:"smtpImplicitTls"`
 }
 
-// CustomEmailSettings are the mail transport settings shared by the update and the test request.
 type CustomEmailSettings struct {
 	FromAddress  string `json:"fromAddress"`
 	SMTPHost     string `json:"smtpHost"`
@@ -60,8 +58,6 @@ func (r *CustomEmailSettings) Validate() error {
 
 type UpdateCustomEmailConfigurationRequest struct {
 	CustomEmailSettings
-	// Enabled reports whether mails should actually be sent through this configuration. A
-	// disabled configuration is kept but ignored, so the instance mailer is used instead.
 	Enabled bool `json:"enabled"`
 }
 

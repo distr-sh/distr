@@ -108,9 +108,8 @@ func deleteCustomEmailConfigurationHandler(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-// testCustomEmailConfigurationHandler sends a test mail to the current user with the submitted
-// configuration, without storing it. Sending is the only validation of a configuration, so the
-// provider error is reported verbatim to tell the admin what to fix.
+// Sending is the only real validation of a configuration, so the provider error is reported
+// verbatim to tell the admin what to fix.
 func testCustomEmailConfigurationHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
@@ -154,9 +153,8 @@ func testCustomEmailConfigurationHandler(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-// customEmailConfigurationFromRequest builds the configuration described by the request. An
-// omitted password keeps the stored one, so that the password never has to be sent to the client
-// and re-entered to change another setting.
+// An omitted password keeps the stored one, so that the password never has to be sent to the
+// client and re-entered to change another setting.
 func customEmailConfigurationFromRequest(
 	ctx context.Context,
 	settings api.CustomEmailSettings,

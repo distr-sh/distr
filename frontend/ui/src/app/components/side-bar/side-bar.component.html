@@ -95,7 +95,7 @@
                     cdkOverlayOrigin
                     #alertsTooltipTrigger="cdkOverlayOrigin">
                     <span class="flex-1 text-left rtl:text-right whitespace-nowrap">Alerts</span>
-                    <span class="distr-plan-badge ml-2 me-2">Pro</span>
+                    <app-plan-badge plan="pro" class="ml-2 me-2" />
                     <ng-template
                       cdkConnectedOverlay
                       [cdkConnectedOverlayHasBackdrop]="true"
@@ -180,7 +180,7 @@
                 size="lg"
                 class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
               <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Licenses</span>
-              <span class="distr-plan-badge ml-2 me-2">Pro</span>
+              <app-plan-badge plan="pro" class="ml-2 me-2" />
               <ng-template
                 cdkConnectedOverlay
                 [cdkConnectedOverlayHasBackdrop]="true"
@@ -270,7 +270,7 @@
                 size="lg"
                 class="pl-0.5 w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
               <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Support Bundles</span>
-              <span class="distr-plan-badge ml-2 me-2">Pro</span>
+              <app-plan-badge plan="pro" class="ml-2 me-2" />
               <ng-template
                 cdkConnectedOverlay
                 [cdkConnectedOverlayHasBackdrop]="true"
@@ -685,21 +685,5 @@
 }
 
 <ng-template #proFeatureOverlayContent>
-  <div
-    role="tooltip"
-    class="p-3 text-sm font-medium text-gray-900 bg-white border border-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-w-64">
-    <div class="mb-1">
-      This feature is available to organizations with a
-      <span class="distr-plan-badge">Pro</span>
-      subscription.
-    </div>
-    Our Pro and Business plans are also available for self-hosted customers. See our
-    <a
-      [href]="websiteUrl + '/pricing/'"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="text-gray-600 dark:text-gray-400 hover:underline"
-      >pricing page</a
-    >.
-  </div>
+  <app-plan-feature-hint plan="pro" />
 </ng-template>

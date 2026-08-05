@@ -17,9 +17,7 @@ const customEmailConfigurationOutputExpr = `
 	c.from_address, c.smtp_host, c.smtp_port, c.smtp_username, c.smtp_password, c.smtp_implicit_tls
 `
 
-// GetCustomEmailConfiguration returns the organization's email configuration, or ErrNotFound when
-// the organization has none. The result includes the SMTP password, which must never be returned
-// to a client.
+// The result includes the SMTP password, which must never be returned to a client.
 func GetCustomEmailConfiguration(
 	ctx context.Context,
 	organizationID uuid.UUID,
@@ -42,8 +40,7 @@ func GetCustomEmailConfiguration(
 	return &result, nil
 }
 
-// UpsertCustomEmailConfiguration creates or replaces the organization's email configuration and
-// writes the stored state back into the given struct.
+// The stored state is written back into the given struct.
 func UpsertCustomEmailConfiguration(ctx context.Context, config *types.CustomEmailConfiguration) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
