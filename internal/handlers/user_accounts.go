@@ -518,6 +518,9 @@ func deleteUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 			return err
 		} else if err := db.DeleteTutorialProgressesOfUserInOrg(ctx, userAccount.ID, *auth.CurrentOrgID()); err != nil {
 			return err
+		} else if err := db.DeleteCustomOIDCIdentitiesOfUserInOrg(
+			ctx, userAccount.ID, *auth.CurrentOrgID()); err != nil {
+			return err
 		} else {
 			w.WriteHeader(http.StatusNoContent)
 			return nil

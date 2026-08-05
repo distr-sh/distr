@@ -7,12 +7,14 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/distr-sh/distr/internal/env"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -23,10 +25,28 @@ const (
 
 var entraMultiTenantPaths = []string{"common", "organizations", "consumers"}
 
+// supportedSigningAlgorithms are the algorithms go-oidc can verify an ID token with. The list of the
+// discovery document is filtered by it, the same way go-oidc's own discovery does, so that an identity
+// provider cannot name an algorithm that ends up being passed to the JOSE library unchecked.
+var supportedSigningAlgorithms = []string{
+	oidc.RS256, oidc.RS384, oidc.RS512,
+	oidc.ES256, oidc.ES384, oidc.ES512,
+	oidc.PS256, oidc.PS384, oidc.PS512,
+	oidc.EdDSA,
+}
+
 type DiscoveryResult struct {
 	Issuer        string
 	Provider      *oidc.Provider
 	PKCESupported bool
+}
+
+// discoveryDocument is the part of the OpenID configuration we act on. It is parsed by us instead of
+// go-oidc's discovery, so that reading the issuer for the anti-collision checks and building the provider
+// need only one request to the identity provider.
+type discoveryDocument struct {
+	oidc.ProviderConfig
+	CodeChallengeMethodsSupported []string `json:"code_challenge_methods_supported"`
 }
 
 func Discover(ctx context.Context, issuerURL string) (*DiscoveryResult, error) {
@@ -35,30 +55,18 @@ func Discover(ctx context.Context, issuerURL string) (*DiscoveryResult, error) {
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(oidc.ClientContext(ctx, discoveryHTTPClient()), discoveryTimeout)
+	ctx, cancel := context.WithTimeout(RestrictedClientContext(ctx), discoveryTimeout)
 	defer cancel()
 
-	canonicalIssuer, err := fetchCanonicalIssuer(ctx, parsed)
+	document, err := fetchDiscoveryDocument(ctx, parsed)
 	if err != nil {
 		return nil, err
 	}
 
-	provider, err := oidc.NewProvider(ctx, canonicalIssuer)
-	if err != nil {
-		return nil, fmt.Errorf("could not read the OpenID configuration of %v: %w", canonicalIssuer, err)
-	}
-
-	var claims struct {
-		CodeChallengeMethodsSupported []string `json:"code_challenge_methods_supported"`
-	}
-	if err := provider.Claims(&claims); err != nil {
-		return nil, fmt.Errorf("could not read the OpenID configuration of %v: %w", canonicalIssuer, err)
-	}
-
 	return &DiscoveryResult{
-		Issuer:        canonicalIssuer,
-		Provider:      provider,
-		PKCESupported: containsFold(claims.CodeChallengeMethodsSupported, "S256"),
+		Issuer:        document.IssuerURL,
+		Provider:      document.NewProvider(ctx),
+		PKCESupported: containsFold(document.CodeChallengeMethodsSupported, "S256"),
 	}, nil
 }
 
@@ -102,45 +110,62 @@ func validateNotEntraMultiTenant(parsed *url.URL) error {
 	return nil
 }
 
-func fetchCanonicalIssuer(ctx context.Context, issuerURL *url.URL) (string, error) {
+func fetchDiscoveryDocument(ctx context.Context, issuerURL *url.URL) (*discoveryDocument, error) {
 	discoveryURL := strings.TrimSuffix(issuerURL.String(), "/") + discoveryPath
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, discoveryURL, nil)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	resp, err := discoveryHTTPClient().Do(req)
+	resp, err := restrictedHTTPClient().Do(req)
 	if err != nil {
-		return "", fmt.Errorf("could not read %v: %w", discoveryURL, err)
+		return nil, fmt.Errorf("could not read %v: %w", discoveryURL, err)
 	}
 	defer resp.Body.Close()
-	if final := resp.Request.URL; !strings.EqualFold(final.Hostname(), issuerURL.Hostname()) {
-		return "", fmt.Errorf("%v redirects to the different host %v", discoveryURL, final.Hostname())
+	final := resp.Request.URL
+	if !strings.EqualFold(final.Hostname(), issuerURL.Hostname()) {
+		return nil, fmt.Errorf("%v redirects to the different host %v", discoveryURL, final.Hostname())
+	}
+	if !strings.EqualFold(final.Scheme, issuerURL.Scheme) {
+		return nil, fmt.Errorf("%v redirects to %v, which is not the scheme of the issuer",
+			discoveryURL, final.Scheme)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("could not read %v: %v", discoveryURL, resp.Status)
+		return nil, fmt.Errorf("could not read %v: %v", discoveryURL, resp.Status)
 	}
 
-	var document struct {
-		Issuer string `json:"issuer"`
-	}
+	var document discoveryDocument
 	if err := json.NewDecoder(resp.Body).Decode(&document); err != nil {
-		return "", fmt.Errorf("could not parse %v: %w", discoveryURL, err)
+		return nil, fmt.Errorf("could not parse %v: %w", discoveryURL, err)
 	}
-	if document.Issuer == "" {
-		return "", fmt.Errorf("%v does not state an issuer", discoveryURL)
+	if document.IssuerURL == "" {
+		return nil, fmt.Errorf("%v does not state an issuer", discoveryURL)
+	}
+	if document.AuthURL == "" || document.TokenURL == "" || document.JWKSURL == "" {
+		return nil, fmt.Errorf("%v does not state an authorization, token and jwks endpoint", discoveryURL)
 	}
 
-	canonical, err := ParseIssuerURL(document.Issuer)
+	canonical, err := ParseIssuerURL(document.IssuerURL)
 	if err != nil {
-		return "", fmt.Errorf("%v states an unusable issuer %q: %w", discoveryURL, document.Issuer, err)
+		return nil, fmt.Errorf("%v states an unusable issuer %q: %w", discoveryURL, document.IssuerURL, err)
 	}
 	if !strings.EqualFold(canonical.Hostname(), issuerURL.Hostname()) {
-		return "", fmt.Errorf("%v states the issuer %q of a different host", discoveryURL, document.Issuer)
+		return nil, fmt.Errorf("%v states the issuer %q of a different host", discoveryURL, document.IssuerURL)
 	}
-	return document.Issuer, nil
+	document.Algorithms = slices.DeleteFunc(document.Algorithms, func(algorithm string) bool {
+		return !slices.Contains(supportedSigningAlgorithms, algorithm)
+	})
+	return &document, nil
 }
 
-func discoveryHTTPClient() *http.Client {
+// RestrictedClientContext returns a context whose OpenID Connect and OAuth2 requests all go through the
+// client that refuses non-public addresses, so that neither the endpoints of a discovery document nor a
+// redirect can be used to reach into the network the hub runs in.
+func RestrictedClientContext(ctx context.Context) context.Context {
+	client := restrictedHTTPClient()
+	return context.WithValue(oidc.ClientContext(ctx, client), oauth2.HTTPClient, client)
+}
+
+func restrictedHTTPClient() *http.Client {
 	dialer := &net.Dialer{Control: rejectPrivateAddress}
 	return &http.Client{
 		Timeout:   discoveryTimeout,

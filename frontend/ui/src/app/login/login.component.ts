@@ -127,7 +127,9 @@ export class LoginComponent implements OnInit {
 
   private redirectToSingleSignOn(loginConfig: PortalLoginConfig): void {
     const params = this.route.snapshot.queryParamMap;
-    if (this.isJWTLogin() || params.has('manual') || params.has('reason')) {
+    // Read from the query params rather than isJWTLogin, which ngOnInit may set only after the portal
+    // response arrived. Redirecting then would throw away a token handed over by the login forwarding.
+    if (params.has('jwt') || params.has('manual') || params.has('reason')) {
       return;
     }
     const spInitiated = loginConfig.oidcProviders.filter((provider) => provider.spInitiated);

@@ -59,10 +59,6 @@ func authLoginOidcHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 
-	// The instance-scoped providers belong to the platform, not to the organization owning the domain, so they are
-	// not offered on a self-service custom domain. Hiding the buttons is not enough, since the auth routes are
-	// reachable directly. Only the initiation is gated: the IdP binds the redirect_uri to the initiating host.
-	// The same resolution backs the portal response, so the buttons and this gate can never disagree.
 	host, err := resolvePortalHost(ctx, validation.NormalizeHostname(r.Host))
 	if !host.instanceAuthAllowed() {
 		log.Info("rejecting instance OIDC login on custom domain",
@@ -70,7 +66,6 @@ func authLoginOidcHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, redirectToLoginOIDCUnavailable, http.StatusFound)
 		return
 	} else if err != nil {
-		// Fail closed: an unresolved host may well be a custom domain.
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		log.Error("could not resolve host for OIDC login", zap.Error(err))
 		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
@@ -84,7 +79,7 @@ func authLoginOidcHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		oidcer := internalctx.GetOIDCer(ctx)
-		redirectURL, err := oidcer.GetAuthCodeURL(r, provider, state.ID.String(), state.PKCECodeVerifier)
+		redirectURL, err := oidcer.GetAuthCodeURL(r, provider, state.ID.String(), state.PKCECodeVerifier, state.Nonce)
 		if err != nil {
 			http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
 			return
@@ -111,7 +106,7 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	oidcer := internalctx.GetOIDCer(ctx)
-	identity, err := oidcer.GetIdentityForCode(ctx, provider, code, state.PKCECodeVerifier, r)
+	identity, err := oidcer.GetIdentityForCode(ctx, provider, code, state.PKCECodeVerifier, state.Nonce, r)
 	if err != nil {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		log.Error("OIDC identity extraction failed", zap.Error(err))
@@ -176,7 +171,7 @@ func authLoginCustomOidcHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
 		return
 	}
-	http.Redirect(w, r, provider.AuthCodeURL(state.ID.String(), state.Nonce, state.PKCECodeVerifier),
+	http.Redirect(w, r, provider.AuthCodeURL(state.ID.String(), state.PKCECodeVerifier, state.Nonce),
 		http.StatusFound)
 }
 
@@ -319,10 +314,10 @@ func resolveCustomOIDCUser(
 	user, existingIdentity, err := db.GetUserAccountWithOIDCIdentity(
 		ctx, &configuration.ID, identity.Issuer, identity.Subject)
 	if err == nil {
-		if exclusive, err := isExclusiveToOrganization(ctx, *user, configuration.OrganizationID); err != nil {
+		if failure, err := checkCustomOIDCLoginAllowed(ctx, *user, configuration.OrganizationID); err != nil {
 			return nil, "", err
-		} else if !exclusive {
-			return nil, redirectToLoginOIDCNotExclusive, nil
+		} else if failure != "" {
+			return nil, failure, nil
 		}
 		return user, "", db.UpdateUserAccountOIDCIdentityOnLogin(ctx, existingIdentity.ID, new(identity.Email))
 	} else if !errors.Is(err, apierrors.ErrNotFound) {
@@ -342,19 +337,35 @@ func resolveCustomOIDCUser(
 		return nil, "", err
 	}
 
-	if exclusive, err := isExclusiveToOrganization(ctx, *user, configuration.OrganizationID); err != nil {
+	if failure, err := checkCustomOIDCLoginAllowed(ctx, *user, configuration.OrganizationID); err != nil {
 		return nil, "", err
-	} else if !exclusive {
-		return nil, redirectToLoginOIDCNotExclusive, nil
-	}
-	if member, err := isOrganizationMember(ctx, *user, configuration.OrganizationID); err != nil {
-		return nil, "", err
-	} else if !member {
-		return nil, redirectToLoginOIDCNoAccount, nil
+	} else if failure != "" {
+		return nil, failure, nil
 	}
 	log.Info("linking custom OIDC identity to existing user account matched by email",
 		zap.Any("userId", user.ID))
 	return user, "", linkCustomOIDCIdentity(ctx, configuration, identity, *user)
+}
+
+// checkCustomOIDCLoginAllowed returns the login redirect to answer with when the user must not sign in
+// through the organization's identity provider, or an empty string when the login may proceed. Membership
+// is required for every login, so an identity that outlives the membership does not keep access alive.
+func checkCustomOIDCLoginAllowed(
+	ctx context.Context,
+	user types.UserAccount,
+	organizationID uuid.UUID,
+) (string, error) {
+	if exclusive, err := isExclusiveToOrganization(ctx, user, organizationID); err != nil {
+		return "", err
+	} else if !exclusive {
+		return redirectToLoginOIDCNotExclusive, nil
+	}
+	if member, err := isOrganizationMember(ctx, user, organizationID); err != nil {
+		return "", err
+	} else if !member {
+		return redirectToLoginOIDCNoAccount, nil
+	}
+	return "", nil
 }
 
 func provisionCustomOIDCUser(
@@ -440,11 +451,6 @@ func emailDomainAllowed(configuration types.CustomOIDCConfiguration, email strin
 	return found && slices.Contains(configuration.AllowedEmailDomains, domain)
 }
 
-// resolveOIDCUser returns the user account the given identity provider identity belongs to.
-// The identity is looked up first, so a login keeps working when the email address changed
-// on either side. Accounts that predate the identity linking are matched by email and get
-// their identity created on the fly. Returns (nil, nil) if the user would have to be
-// registered but registration is administratively disabled.
 func resolveOIDCUser(
 	ctx context.Context,
 	log *zap.Logger,
@@ -452,8 +458,6 @@ func resolveOIDCUser(
 ) (*types.UserAccount, error) {
 	user, existingIdentity, err := db.GetUserAccountWithOIDCIdentity(ctx, nil, identity.Issuer, identity.Subject)
 	if err == nil {
-		// The user account email is authoritative and is never overwritten with the one
-		// from the identity provider, which is only kept on the identity for display.
 		return user, db.UpdateUserAccountOIDCIdentityOnLogin(ctx, existingIdentity.ID, new(identity.Email))
 	} else if !errors.Is(err, apierrors.ErrNotFound) {
 		return nil, err
@@ -487,10 +491,6 @@ func resolveOIDCUser(
 	return user, nil
 }
 
-// registerOIDCUser creates a new user account for an OIDC-authenticated user.
-// The account is created without a password; the user can set one later via the
-// password reset flow if they want to also sign in with email and password.
-// Returns (nil, nil) if registration is administratively disabled.
 func registerOIDCUser(ctx context.Context, email string) (*types.UserAccount, error) {
 	if env.Registration() == env.RegistrationDisabled {
 		return nil, nil
