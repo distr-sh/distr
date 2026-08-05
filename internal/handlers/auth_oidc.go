@@ -40,12 +40,13 @@ func AuthOIDCRouter(r chiopenapi.Router) {
 		OIDCProvider string `path:"oidcProvider"`
 	}
 	type CustomOIDCRequest struct {
-		CustomOIDCConfigurationID uuid.UUID `path:"customOidcConfigurationId"`
+		OrganizationSlug string `path:"organizationSlug"`
+		ProviderSlug     string `path:"providerSlug"`
 	}
 
-	r.Get("/custom/{customOidcConfigurationId}", authLoginCustomOidcHandler).
+	r.Get("/custom/{organizationSlug}/{providerSlug}", authLoginCustomOidcHandler).
 		With(option.Request(CustomOIDCRequest{}))
-	r.Get("/custom/{customOidcConfigurationId}/callback", authLoginCustomOidcCallbackHandler).
+	r.Get("/custom/{organizationSlug}/{providerSlug}/callback", authLoginCustomOidcCallbackHandler).
 		With(option.Request(CustomOIDCRequest{}))
 	r.Get("/{oidcProvider}", authLoginOidcHandler).
 		With(option.Request(OIDCRequest{}))
@@ -154,13 +155,14 @@ func authLoginCustomOidcHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 
-	configuration, ok := resolveCustomOIDCConfigurationForHost(w, r)
+	login, ok := resolveCustomOIDCConfigurationForHost(w, r)
 	if !ok {
 		return
 	}
+	configuration := login.configuration
 	log = log.With(zap.Any("customOidcConfigurationId", configuration.ID))
 
-	provider, err := oidc.ProviderForConfiguration(ctx, *configuration, oidc.CustomRedirectURL(r, configuration.ID))
+	provider, err := oidc.ProviderForConfiguration(ctx, configuration, login.redirectURL)
 	if err != nil {
 		log.Warn("could not build custom OIDC provider", zap.Error(err))
 		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
@@ -182,10 +184,11 @@ func authLoginCustomOidcCallbackHandler(w http.ResponseWriter, r *http.Request) 
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 
-	configuration, ok := resolveCustomOIDCConfigurationForHost(w, r)
+	login, ok := resolveCustomOIDCConfigurationForHost(w, r)
 	if !ok {
 		return
 	}
+	configuration := login.configuration
 	log = log.With(zap.Any("customOidcConfigurationId", configuration.ID))
 
 	state, ok := consumeOIDCState(w, r, &configuration.ID)
@@ -197,7 +200,7 @@ func authLoginCustomOidcCallbackHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	provider, err := oidc.ProviderForConfiguration(ctx, *configuration, oidc.CustomRedirectURL(r, configuration.ID))
+	provider, err := oidc.ProviderForConfiguration(ctx, configuration, login.redirectURL)
 	if err != nil {
 		log.Warn("could not build custom OIDC provider", zap.Error(err))
 		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
@@ -211,7 +214,7 @@ func authLoginCustomOidcCallbackHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	err = db.RunTx(ctx, func(ctx context.Context) error {
-		user, failure, err := resolveCustomOIDCUser(ctx, log, *configuration, identity)
+		user, failure, err := resolveCustomOIDCUser(ctx, log, configuration, identity)
 		if err != nil {
 			return err
 		}
@@ -246,44 +249,46 @@ func authLoginCustomOidcCallbackHandler(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+type customOIDCLogin struct {
+	configuration types.CustomOIDCConfiguration
+	redirectURL   string
+}
+
 func resolveCustomOIDCConfigurationForHost(
 	w http.ResponseWriter,
 	r *http.Request,
-) (*types.CustomOIDCConfiguration, bool) {
+) (customOIDCLogin, bool) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 
-	id, err := uuid.Parse(r.PathValue("customOidcConfigurationId"))
-	if err != nil {
-		http.Redirect(w, r, redirectToLoginOIDCUnavailable, http.StatusFound)
-		return nil, false
-	}
+	organizationSlug := validation.NormalizeSlug(r.PathValue("organizationSlug"))
+	providerSlug := validation.NormalizeSlug(r.PathValue("providerSlug"))
 
 	host, err := resolvePortalHost(ctx, validation.NormalizeHostname(r.Host))
 	if err != nil {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		log.Error("could not resolve host for custom OIDC login", zap.Error(err))
 		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
-		return nil, false
+		return customOIDCLogin{}, false
 	}
 
-	configuration, err := db.GetCustomOIDCConfiguration(ctx, id)
+	configuration, err := db.GetCustomOIDCConfigurationBySlug(ctx, organizationSlug, providerSlug)
 	if errors.Is(err, apierrors.ErrNotFound) {
 		http.Redirect(w, r, redirectToLoginOIDCUnavailable, http.StatusFound)
-		return nil, false
+		return customOIDCLogin{}, false
 	} else if err != nil {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		log.Error("could not get custom OIDC configuration", zap.Error(err))
 		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
-		return nil, false
+		return customOIDCLogin{}, false
 	}
 
 	if !configuration.Enabled ||
 		host.customDomainRow == nil || host.customDomainRow.ID != configuration.CustomDomainID {
 		log.Info("rejecting custom OIDC login on foreign host",
-			zap.Any("customOidcConfigurationId", id), zap.String("host", r.Host))
+			zap.Any("customOidcConfigurationId", configuration.ID), zap.String("host", r.Host))
 		http.Redirect(w, r, redirectToLoginOIDCUnavailable, http.StatusFound)
-		return nil, false
+		return customOIDCLogin{}, false
 	}
 
 	organization, err := db.GetOrganizationByID(ctx, configuration.OrganizationID)
@@ -291,15 +296,18 @@ func resolveCustomOIDCConfigurationForHost(
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		log.Error("could not get organization of custom OIDC configuration", zap.Error(err))
 		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
-		return nil, false
+		return customOIDCLogin{}, false
 	}
 	if !organization.HasFeature(types.FeatureCustomOidcProviders) {
 		log.Info("rejecting custom OIDC login without the feature",
 			zap.Any("organizationId", organization.ID))
 		http.Redirect(w, r, redirectToLoginOIDCUnavailable, http.StatusFound)
-		return nil, false
+		return customOIDCLogin{}, false
 	}
-	return configuration, true
+	return customOIDCLogin{
+		configuration: *configuration,
+		redirectURL:   oidc.CustomRedirectURL(r, organizationSlug, configuration.Slug),
+	}, true
 }
 
 func resolveCustomOIDCUser(

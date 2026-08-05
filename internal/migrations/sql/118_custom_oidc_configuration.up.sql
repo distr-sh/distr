@@ -6,6 +6,7 @@ CREATE TABLE CustomOIDCConfiguration (
   organization_id            UUID      NOT NULL REFERENCES Organization (id) ON DELETE CASCADE,
   custom_domain_id           UUID      NOT NULL REFERENCES CustomDomain (id) ON DELETE RESTRICT,
   name                       TEXT      NOT NULL,
+  slug                       TEXT      NOT NULL,
   enabled                    BOOLEAN   NOT NULL DEFAULT TRUE,
   issuer                     TEXT      NOT NULL,
   client_id                  TEXT      NOT NULL,
@@ -17,6 +18,8 @@ CREATE TABLE CustomOIDCConfiguration (
   default_user_role          USER_ROLE NOT NULL DEFAULT 'read_write',
   allowed_email_domains      TEXT[]    NOT NULL DEFAULT '{}',
   CONSTRAINT CustomOIDCConfiguration_org_name_unique UNIQUE (organization_id, name),
+  -- the slug is the path segment identifying the provider in its login and callback URL
+  CONSTRAINT CustomOIDCConfiguration_org_slug_unique UNIQUE (organization_id, slug),
   CONSTRAINT CustomOIDCConfiguration_provisioning_domains_check
     CHECK (NOT create_unknown_users OR cardinality(allowed_email_domains) > 0)
 );

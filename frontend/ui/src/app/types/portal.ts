@@ -1,6 +1,6 @@
 export interface PortalOIDCProvider {
-  id: string;
   name: string;
+  loginPath: string;
   spInitiated: boolean;
 }
 

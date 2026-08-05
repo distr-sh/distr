@@ -6,6 +6,7 @@ export interface CustomOidcConfiguration {
   updatedAt: string;
   customDomainId: string;
   name: string;
+  slug: string;
   enabled: boolean;
   issuer: string;
   clientId: string;
@@ -19,14 +20,21 @@ export interface CustomOidcConfiguration {
   callbackUrl: string;
 }
 
+export interface OrganizationMember {
+  id: string;
+  email: string;
+  name?: string;
+}
+
 export interface CustomOidcConfigurationsResponse {
   configurations: CustomOidcConfiguration[];
-  membersWithOtherOrganizations: number;
+  membersWithOtherOrganizations: OrganizationMember[];
 }
 
 export interface CustomOidcConfigurationRequest {
   customDomainId: string;
   name: string;
+  slug: string;
   enabled: boolean;
   issuer: string;
   clientId: string;

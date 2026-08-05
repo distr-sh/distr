@@ -44,12 +44,12 @@ export class OrganizationSettingsComponent {
     if (this.vendorAdmin()) {
       // Without the feature the tab is shown as disabled rather than hidden, so that admins can
       // see that the feature exists and which plan it needs.
-      tabs.push({id: 'email', label: 'Custom Email Sending Provider', disabled: !this.customEmailVisible()});
       tabs.push({
         id: 'identity-provider',
-        label: 'Custom Identity Provider',
+        label: 'Identity Provider',
         disabled: !this.customOidcVisible(),
       });
+      tabs.push({id: 'email', label: 'Email Sending Provider', disabled: !this.customEmailVisible()});
     }
     return tabs;
   });

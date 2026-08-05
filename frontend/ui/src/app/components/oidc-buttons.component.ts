@@ -19,10 +19,6 @@ export class OidcButtonsComponent {
     return `/api/v1/auth/oidc/${provider}`;
   }
 
-  protected getCustomLoginURL(configurationId: string): string {
-    return `/api/v1/auth/oidc/custom/${configurationId}`;
-  }
-
   protected readonly faGithub = faGithub;
   protected readonly faGoogle = faGoogle;
   protected readonly faMicrosoft = faMicrosoft;

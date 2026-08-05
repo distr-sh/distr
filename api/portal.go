@@ -1,7 +1,5 @@
 package api
 
-import "github.com/google/uuid"
-
 // PortalResponse is the host-resolved bootstrap configuration for the unauthenticated pages: the portal branding
 // (browser tab title, favicon and logo) that applies to everyone visiting an organization's custom app domain, plus
 // the login methods available on this host. The branding fields are empty unless the host matches a custom app
@@ -29,7 +27,9 @@ type PortalLoginConfig struct {
 }
 
 type PortalOIDCProvider struct {
-	ID          uuid.UUID `json:"id"`
-	Name        string    `json:"name"`
-	SPInitiated bool      `json:"spInitiated"`
+	Name string `json:"name"`
+	// LoginPath is assembled by the backend, because the login URL of a custom provider is built from the
+	// organization slug and the provider slug.
+	LoginPath   string `json:"loginPath"`
+	SPInitiated bool   `json:"spInitiated"`
 }

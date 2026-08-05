@@ -1,16 +1,19 @@
+import {NgPlural, NgPluralCase} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleExclamation, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {BehaviorSubject, combineLatest, firstValueFrom, of, switchMap} from 'rxjs';
+import {BehaviorSubject, combineLatest, firstValueFrom, map, of, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
+import {slugMaxLength, slugPattern} from '../../util/slug';
 import {ClipComponent} from '../components/clip.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AuthService} from '../services/auth.service';
 import {CustomDomainsService} from '../services/custom-domains.service';
 import {CustomOidcService} from '../services/custom-oidc.service';
 import {FeatureFlagService} from '../services/feature-flag.service';
+import {OrganizationService} from '../services/organization.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
 import {CustomDomain} from '../types/custom-domain';
@@ -20,7 +23,7 @@ import {CustomOidcConfiguration, CustomOidcConfigurationsResponse} from '../type
   selector: 'app-custom-oidc',
   templateUrl: './custom-oidc.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FaIconComponent, ReactiveFormsModule, AutotrimDirective, ClipComponent],
+  imports: [FaIconComponent, ReactiveFormsModule, AutotrimDirective, ClipComponent, NgPlural, NgPluralCase],
 })
 export class CustomOidcComponent {
   protected readonly faPlus = faPlus;
@@ -31,6 +34,7 @@ export class CustomOidcComponent {
 
   private readonly customOidcService = inject(CustomOidcService);
   private readonly customDomainsService = inject(CustomDomainsService);
+  private readonly organizationService = inject(OrganizationService);
   private readonly featureFlags = inject(FeatureFlagService);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
@@ -48,10 +52,10 @@ export class CustomOidcComponent {
       switchMap(([enabled]) =>
         enabled
           ? this.customOidcService.list()
-          : of({configurations: [], membersWithOtherOrganizations: 0} as CustomOidcConfigurationsResponse)
+          : of({configurations: [], membersWithOtherOrganizations: []} as CustomOidcConfigurationsResponse)
       )
     ),
-    {initialValue: {configurations: [], membersWithOtherOrganizations: 0} as CustomOidcConfigurationsResponse}
+    {initialValue: {configurations: [], membersWithOtherOrganizations: []} as CustomOidcConfigurationsResponse}
   );
   protected readonly configurations = computed(() => this.response().configurations);
   protected readonly membersWithOtherOrganizations = computed(() => this.response().membersWithOtherOrganizations);
@@ -64,20 +68,32 @@ export class CustomOidcComponent {
   );
   protected readonly appDomain = computed(() => this.domains().find((domain) => domain.domainType === 'app'));
 
+  protected readonly organizationSlug = toSignal(
+    this.organizationService.get().pipe(map((organization) => organization.slug)),
+    {initialValue: undefined}
+  );
+
+  protected readonly configurable = computed(() => !!this.appDomain() && !!this.organizationSlug());
+
   protected readonly editing = signal<CustomOidcConfiguration | undefined>(undefined);
   protected readonly saving = signal(false);
+  protected readonly toggling = signal<string | undefined>(undefined);
   private readonly formDialog = viewChild.required<TemplateRef<unknown>>('formDialog');
   private dialogRef?: DialogRef;
 
   protected readonly form = this.fb.group(
     {
       name: this.fb.control('', [Validators.required, Validators.maxLength(100)]),
+      slug: this.fb.control('', [
+        Validators.required,
+        Validators.pattern(slugPattern),
+        Validators.maxLength(slugMaxLength),
+      ]),
       issuer: this.fb.control('', [Validators.required, Validators.pattern(/^https?:\/\/\S+$/)]),
       clientId: this.fb.control('', [Validators.required]),
       clientSecret: this.fb.control(''),
       scopes: this.fb.control('profile email'),
       pkce: this.fb.control<'auto' | 'on' | 'off'>('auto'),
-      enabled: this.fb.control(true),
       spInitiated: this.fb.control(false),
       createUnknownUsers: this.fb.control(false),
       defaultUserRole: this.fb.control<'read_only' | 'read_write' | 'admin'>('read_write'),
@@ -86,18 +102,29 @@ export class CustomOidcComponent {
     {validators: [provisioningNeedsEmailDomains]}
   );
 
+  private readonly slugValue = toSignal(this.form.controls.slug.valueChanges, {initialValue: ''});
+  protected readonly callbackUrl = computed(() => {
+    const domain = this.appDomain()?.domain;
+    const organizationSlug = this.organizationSlug();
+    const slug = this.slugValue();
+    if (!domain || !organizationSlug || !slug) {
+      return undefined;
+    }
+    return `https://${domain}/api/v1/auth/oidc/custom/${organizationSlug}/${slug}/callback`;
+  });
+
   protected showDialog(configuration?: CustomOidcConfiguration) {
     this.editing.set(configuration);
     this.form.controls.clientSecret.setValidators(configuration ? [] : [Validators.required]);
     if (configuration) {
       this.form.setValue({
         name: configuration.name,
+        slug: configuration.slug,
         issuer: configuration.issuer,
         clientId: configuration.clientId,
         clientSecret: '',
         scopes: configuration.scopes.filter((scope) => scope !== 'openid').join(' '),
         pkce: configuration.pkceEnabled === undefined ? 'auto' : configuration.pkceEnabled ? 'on' : 'off',
-        enabled: configuration.enabled,
         spInitiated: configuration.spInitiated,
         createUnknownUsers: configuration.createUnknownUsers,
         defaultUserRole: configuration.defaultUserRole,
@@ -126,7 +153,8 @@ export class CustomOidcComponent {
     const request = {
       customDomainId,
       name: value.name,
-      enabled: value.enabled,
+      slug: value.slug,
+      enabled: existing?.enabled ?? true,
       issuer: value.issuer,
       clientId: value.clientId,
       clientSecret: value.clientSecret || undefined,
@@ -155,6 +183,38 @@ export class CustomOidcComponent {
       }
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  protected async toggleEnabled(configuration: CustomOidcConfiguration, toggle: HTMLInputElement) {
+    this.toggling.set(configuration.id);
+    try {
+      await firstValueFrom(
+        this.customOidcService.update(configuration.id, {
+          customDomainId: configuration.customDomainId,
+          name: configuration.name,
+          slug: configuration.slug,
+          enabled: !configuration.enabled,
+          issuer: configuration.issuer,
+          clientId: configuration.clientId,
+          scopes: configuration.scopes,
+          pkceEnabled: configuration.pkceEnabled,
+          spInitiated: configuration.spInitiated,
+          createUnknownUsers: configuration.createUnknownUsers,
+          defaultUserRole: configuration.defaultUserRole,
+          allowedEmailDomains: configuration.allowedEmailDomains,
+        })
+      );
+      this.refresh$.next();
+    } catch (e) {
+      // the browser has already flipped the checkbox, and re-rendering the row does not undo that
+      toggle.checked = configuration.enabled;
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    } finally {
+      this.toggling.set(undefined);
     }
   }
 

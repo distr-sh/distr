@@ -33,10 +33,7 @@
           <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
         }
       </div>
-    </div>
 
-    <div class="space-y-4">
-      <h2 class="text-xl font-bold dark:text-white">Artifact registry</h2>
       <div>
         <label for="slug" class="distr-label mb-2">Slug</label>
         <input
@@ -48,15 +45,19 @@
           class="distr-input"
           placeholder="slug" />
         <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
-          The slug will used as part of the url for artifact registry. It must start with a lower case letter or digit
-          and consist only of lowercase letters, digits, as well as the following special characters: “.”, “_”, “__”,
-          “-”.
+          The slug is part of the URLs that belong to your organization: your artifact registry repositories and the
+          login and callback URL of every identity provider you configure. It must start with a lower case letter or
+          digit and consist only of lowercase letters, digits, as well as the following special characters: “.”, “_”,
+          “__”, “-”.
         </p>
         @if (form.controls.slug.invalid && form.controls.slug.touched) {
           <p class="mt-1 text-sm text-red-600 dark:text-red-500">Slug must be url safe.</p>
         }
       </div>
+    </div>
 
+    <div class="space-y-4">
+      <h2 class="text-xl font-bold dark:text-white">Artifact registry</h2>
       <div>
         <input
           formControlName="artifactVersionMutable"

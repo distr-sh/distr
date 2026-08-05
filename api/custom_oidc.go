@@ -20,6 +20,7 @@ type CustomOIDCConfiguration struct {
 	UpdatedAt           time.Time      `json:"updatedAt"`
 	CustomDomainID      uuid.UUID      `json:"customDomainId"`
 	Name                string         `json:"name"`
+	Slug                string         `json:"slug"`
 	Enabled             bool           `json:"enabled"`
 	Issuer              string         `json:"issuer"`
 	ClientID            string         `json:"clientId"`
@@ -34,13 +35,16 @@ type CustomOIDCConfiguration struct {
 }
 
 type CustomOIDCConfigurationsResponse struct {
-	Configurations                []CustomOIDCConfiguration `json:"configurations"`
-	MembersWithOtherOrganizations int64                     `json:"membersWithOtherOrganizations"`
+	Configurations []CustomOIDCConfiguration `json:"configurations"`
+	// MembersWithOtherOrganizations are the members that a custom provider cannot authenticate, because
+	// account exclusivity refuses an account that belongs to another organization as well.
+	MembersWithOtherOrganizations []types.OrganizationMember `json:"membersWithOtherOrganizations"`
 }
 
 type CustomOIDCConfigurationRequest struct {
 	CustomDomainID      uuid.UUID      `json:"customDomainId"`
 	Name                string         `json:"name"`
+	Slug                string         `json:"slug"`
 	Enabled             bool           `json:"enabled"`
 	Issuer              string         `json:"issuer"`
 	ClientID            string         `json:"clientId"`
@@ -55,6 +59,7 @@ type CustomOIDCConfigurationRequest struct {
 
 func (r *CustomOIDCConfigurationRequest) Normalize() {
 	r.Name = strings.TrimSpace(r.Name)
+	r.Slug = validation.NormalizeSlug(r.Slug)
 	r.Issuer = strings.TrimSpace(r.Issuer)
 	r.ClientID = strings.TrimSpace(r.ClientID)
 
@@ -80,6 +85,12 @@ func (r *CustomOIDCConfigurationRequest) Validate() error {
 	if len(r.Name) > customOIDCConfigurationNameMaxLength {
 		return validation.NewValidationFailedError(
 			fmt.Sprintf("name must be at most %v characters", customOIDCConfigurationNameMaxLength))
+	}
+	if r.Slug == "" {
+		return validation.NewValidationFailedError("slug is required")
+	}
+	if err := validation.ValidateSlug(r.Slug); err != nil {
+		return err
 	}
 	if _, err := oidc.ParseIssuerURL(r.Issuer); err != nil {
 		return validation.NewValidationFailedError(err.Error())

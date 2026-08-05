@@ -36,17 +36,6 @@
         <app-general-settings />
       </div>
 
-      @if (customEmailVisible()) {
-        <div
-          role="tabpanel"
-          id="tabpanel-email"
-          aria-labelledby="tab-email"
-          class="pt-6"
-          [hidden]="activeTab() !== 'email'">
-          <app-custom-email />
-        </div>
-      }
-
       @if (customOidcVisible()) {
         <div
           role="tabpanel"
@@ -55,6 +44,17 @@
           class="pt-6"
           [hidden]="activeTab() !== 'identity-provider'">
           <app-custom-oidc />
+        </div>
+      }
+
+      @if (customEmailVisible()) {
+        <div
+          role="tabpanel"
+          id="tabpanel-email"
+          aria-labelledby="tab-email"
+          class="pt-6"
+          [hidden]="activeTab() !== 'email'">
+          <app-custom-email />
         </div>
       }
     </div>

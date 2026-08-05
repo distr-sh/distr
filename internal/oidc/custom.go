@@ -4,12 +4,9 @@ import (
 	"context"
 	"crypto/subtle"
 	"fmt"
-	"net/http"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/distr-sh/distr/internal/handlerutil"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 )
 
@@ -45,11 +42,6 @@ func ProviderForConfiguration(
 		},
 		pkceEnabled: pkceEnabled,
 	}, nil
-}
-
-func CustomRedirectURL(r *http.Request, configurationID uuid.UUID) string {
-	return fmt.Sprintf("%v/api/v1/auth/oidc/custom/%v/callback",
-		handlerutil.GetRequestSchemeAndHost(r), configurationID)
 }
 
 func (p *CustomProvider) AuthCodeURL(state, nonce, pkceVerifier string) string {

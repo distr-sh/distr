@@ -16,7 +16,7 @@ import (
 
 const customOIDCConfigurationOutputExpr = `
 	c.id, c.created_at, c.updated_at, c.updated_by_user_account_id, c.organization_id, c.custom_domain_id,
-	c.name, c.enabled, c.issuer, c.client_id, c.client_secret, c.scopes, c.pkce_enabled, c.sp_initiated,
+	c.name, c.slug, c.enabled, c.issuer, c.client_id, c.client_secret, c.scopes, c.pkce_enabled, c.sp_initiated,
 	c.create_unknown_users, c.default_user_role, c.allowed_email_domains
 `
 
@@ -26,6 +26,7 @@ func customOIDCConfigurationArgs(c types.CustomOIDCConfiguration) pgx.NamedArgs 
 		"customDomainId":         c.CustomDomainID,
 		"updatedByUserAccountId": c.UpdatedByUserAccountID,
 		"name":                   c.Name,
+		"slug":                   c.Slug,
 		"enabled":                c.Enabled,
 		"issuer":                 c.Issuer,
 		"clientId":               c.ClientID,
@@ -43,11 +44,11 @@ func CreateCustomOIDCConfiguration(ctx context.Context, c *types.CustomOIDCConfi
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		`INSERT INTO CustomOIDCConfiguration AS c (
-			organization_id, custom_domain_id, updated_by_user_account_id, name, enabled, issuer, client_id,
+			organization_id, custom_domain_id, updated_by_user_account_id, name, slug, enabled, issuer, client_id,
 			client_secret, scopes, pkce_enabled, sp_initiated, create_unknown_users, default_user_role,
 			allowed_email_domains
 		) VALUES (
-			@organizationId, @customDomainId, @updatedByUserAccountId, @name, @enabled, @issuer, @clientId,
+			@organizationId, @customDomainId, @updatedByUserAccountId, @name, @slug, @enabled, @issuer, @clientId,
 			@clientSecret, @scopes, @pkceEnabled, @spInitiated, @createUnknownUsers, @defaultUserRole,
 			@allowedEmailDomains
 		) RETURNING`+customOIDCConfigurationOutputExpr,
@@ -74,6 +75,7 @@ func UpdateCustomOIDCConfiguration(ctx context.Context, c *types.CustomOIDCConfi
 			updated_by_user_account_id = @updatedByUserAccountId,
 			custom_domain_id = @customDomainId,
 			name = @name,
+			slug = @slug,
 			enabled = @enabled,
 			issuer = @issuer,
 			client_id = @clientId,
@@ -157,28 +159,40 @@ func GetCustomOIDCConfigurationsForDomain(
 	return result, nil
 }
 
-func GetCustomOIDCConfiguration(ctx context.Context, id uuid.UUID) (*types.CustomOIDCConfiguration, error) {
-	return getCustomOIDCConfiguration(ctx, id, nil)
-}
-
 func GetCustomOIDCConfigurationOfOrganization(
 	ctx context.Context,
 	id, organizationID uuid.UUID,
-) (*types.CustomOIDCConfiguration, error) {
-	return getCustomOIDCConfiguration(ctx, id, &organizationID)
-}
-
-func getCustomOIDCConfiguration(
-	ctx context.Context,
-	id uuid.UUID,
-	organizationID *uuid.UUID,
 ) (*types.CustomOIDCConfiguration, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		"SELECT"+customOIDCConfigurationOutputExpr+
 			`FROM CustomOIDCConfiguration c
-			WHERE c.id = @id AND (@organizationId::UUID IS NULL OR c.organization_id = @organizationId)`,
+			WHERE c.id = @id AND c.organization_id = @organizationId`,
 		pgx.NamedArgs{"id": id, "organizationId": organizationID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query CustomOIDCConfiguration: %w", err)
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.CustomOIDCConfiguration])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, apierrors.ErrNotFound
+	} else if err != nil {
+		return nil, fmt.Errorf("could not get CustomOIDCConfiguration: %w", err)
+	}
+	return &result, nil
+}
+
+func GetCustomOIDCConfigurationBySlug(
+	ctx context.Context,
+	organizationSlug, slug string,
+) (*types.CustomOIDCConfiguration, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		"SELECT"+customOIDCConfigurationOutputExpr+
+			`FROM CustomOIDCConfiguration c
+			JOIN Organization o ON o.id = c.organization_id
+			WHERE o.slug = @organizationSlug AND c.slug = @slug`,
+		pgx.NamedArgs{"organizationSlug": organizationSlug, "slug": slug},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not query CustomOIDCConfiguration: %w", err)

@@ -12,7 +12,7 @@ const portalResponse: Portal = {
     oidcGoogleEnabled: true,
     oidcMicrosoftEnabled: false,
     oidcGenericEnabled: false,
-    oidcProviders: [{id: '2c2e0f2a-2a17-4f2f-9a3a-2d2b3f0a1f11', name: 'Acme SSO', spInitiated: false}],
+    oidcProviders: [{name: 'Acme SSO', loginPath: '/api/v1/auth/oidc/custom/acme/acme-sso', spInitiated: false}],
   },
 };
 

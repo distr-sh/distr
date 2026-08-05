@@ -1,6 +1,6 @@
 @if (visible()) {
   <div class="space-y-4">
-    <h2 class="text-xl font-bold dark:text-white">Custom Identity Provider</h2>
+    <h2 class="text-xl font-bold dark:text-white">Identity Provider</h2>
     <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
       Let your team sign in with your own identity provider instead of a Distr password. A provider is offered on your
       custom app domain and nowhere else &mdash; which includes the Customer Portal served from that domain, so your
@@ -8,21 +8,47 @@
       only works for accounts that belong to no other Distr organization.
     </p>
 
-    @if (!appDomain()) {
+    @if (!configurable()) {
       <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-        Configure a custom app domain on the General tab first &mdash; your identity provider is offered on that domain
-        only.
+        @if (!appDomain()) {
+          Configure a custom app domain on the General tab first &mdash; your identity provider is offered on that
+          domain only.
+        } @else {
+          Set an organization slug on the General tab first &mdash; it is part of every provider's login and callback
+          URL.
+        }
       </p>
     } @else {
-      @if (membersWithOtherOrganizations() > 0) {
+      @if (membersWithOtherOrganizations().length > 0) {
         <div
           class="flex items-start p-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-600"
           role="alert">
           <fa-icon [icon]="faCircleExclamation" class="mt-0.5 shrink-0" />
-          <div class="ms-3 text-sm">
-            {{ membersWithOtherOrganizations() }} of your members are also members of another Distr organization. They
-            keep their password login, but they cannot sign in through your identity provider until they leave that
-            other organization.
+          <div class="ms-3 text-sm space-y-2">
+            <p>
+              <ng-container [ngPlural]="membersWithOtherOrganizations().length">
+                <ng-template ngPluralCase="=1">This member is</ng-template>
+                <ng-template ngPluralCase="other">These members are</ng-template>
+              </ng-container>
+              also
+              <ng-container [ngPlural]="membersWithOtherOrganizations().length">
+                <ng-template ngPluralCase="=1">a member</ng-template>
+                <ng-template ngPluralCase="other">members</ng-template>
+              </ng-container>
+              of another Distr organization. They keep their password login, but they cannot sign in through your
+              identity provider until they leave that other organization.
+            </p>
+            <ul class="list-disc list-inside">
+              @for (member of membersWithOtherOrganizations(); track member.id) {
+                <li>
+                  @if (member.name) {
+                    {{ member.name }} &lt;{{ member.email }}&gt;
+                  } @else {
+                    {{ member.email }}
+                  }
+                </li>
+              }
+            </ul>
           </div>
         </div>
       }
@@ -33,7 +59,7 @@
             <tr>
               <th scope="col" class="p-4">Name</th>
               <th scope="col" class="p-4">Issuer</th>
-              <th scope="col" class="p-4">Status</th>
+              <th scope="col" class="p-4">Enabled</th>
               <th scope="col" class="p-4">Callback URL</th>
               <th scope="col" class="p-4"></th>
             </tr>
@@ -48,9 +74,19 @@
                   <code class="font-mono text-sm">{{ configuration.issuer }}</code>
                 </td>
                 <td class="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">
-                  {{ configuration.enabled ? 'Enabled' : 'Disabled' }}
+                  <label class="inline-flex items-center cursor-pointer my-1">
+                    <input
+                      #enabledToggle
+                      type="checkbox"
+                      class="sr-only peer"
+                      aria-label="Enabled"
+                      [disabled]="toggling() === configuration.id"
+                      [checked]="configuration.enabled"
+                      (change)="toggleEnabled(configuration, enabledToggle)" />
+                    <div class="distr-toggle peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+                  </label>
                   @if (configuration.spInitiated) {
-                    <span class="text-gray-500 dark:text-gray-400">&middot; default</span>
+                    <span class="ms-2 text-gray-500 dark:text-gray-400">default</span>
                   }
                 </td>
                 <td class="px-4 py-3">
@@ -126,10 +162,39 @@
 
     <div class="p-4 md:p-5">
       <form [formGroup]="form" (ngSubmit)="save()" class="flex flex-col space-y-5">
-        <div class="space-y-2">
-          <label for="oidcName" class="distr-label">Display name <span class="text-red-500">*</span></label>
-          <input type="text" id="oidcName" formControlName="name" autotrim placeholder="Acme SSO" class="distr-input" />
-          <p class="text-xs font-normal text-gray-500 dark:text-gray-400">Shown on the login button.</p>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label for="oidcName" class="distr-label">Display name <span class="text-red-500">*</span></label>
+            <input
+              type="text"
+              id="oidcName"
+              formControlName="name"
+              autotrim
+              placeholder="Acme SSO"
+              class="distr-input" />
+            <p class="text-xs font-normal text-gray-500 dark:text-gray-400">Shown on the login button.</p>
+          </div>
+
+          <div class="space-y-2">
+            <label for="oidcSlug" class="distr-label">Slug <span class="text-red-500">*</span></label>
+            <input
+              type="text"
+              id="oidcSlug"
+              formControlName="slug"
+              autotrim
+              placeholder="acme-sso"
+              class="distr-input" />
+            @if (form.controls.slug.invalid && form.controls.slug.touched) {
+              <p class="text-xs font-normal text-red-600 dark:text-red-500">
+                Lowercase letters and digits, separated by <code class="font-mono">-</code>,
+                <code class="font-mono">_</code> or <code class="font-mono">.</code>, at most 64 characters.
+              </p>
+            } @else {
+              <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
+                Part of the login and callback URL, unique within your organization.
+              </p>
+            }
+          </div>
         </div>
 
         <div class="space-y-2">
@@ -149,102 +214,87 @@
 
         <div class="space-y-2">
           <span class="distr-label">Callback URL</span>
-          @if (editing(); as configuration) {
+          @if (callbackUrl(); as url) {
             <div class="flex items-center gap-2">
-              <code class="font-mono text-sm text-gray-900 dark:text-white">{{ configuration.callbackUrl }}</code>
-              <app-clip [clip]="configuration.callbackUrl" />
+              <code class="font-mono text-sm text-gray-900 dark:text-white">{{ url }}</code>
+              <app-clip [clip]="url" />
             </div>
             <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
               Register this as a redirect URI with your provider.
             </p>
           } @else {
             <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
-              The callback URL contains the provider's ID, so it is shown in the list once you have created it. Register
-              it as a redirect URI with your provider before anyone signs in.
+              Pick a slug to see the callback URL. Register it as a redirect URI with your provider before anyone signs
+              in.
             </p>
           }
         </div>
 
-        <div class="space-y-2">
-          <label for="oidc-application-id" class="distr-label">Client ID <span class="text-red-500">*</span></label>
-          <input
-            type="text"
-            id="oidc-application-id"
-            name="oidc-application-id"
-            formControlName="clientId"
-            autotrim
-            autocomplete="off"
-            data-1p-ignore
-            data-lpignore="true"
-            data-bwignore
-            class="distr-input" />
-        </div>
-
-        <div class="space-y-2">
-          <label for="oidc-application-key" class="distr-label">
-            Client secret
-            @if (!editing()) {
-              <span class="text-red-500">*</span>
-            }
-          </label>
-          <input
-            type="text"
-            id="oidc-application-key"
-            name="oidc-application-key"
-            formControlName="clientSecret"
-            autotrim
-            autocomplete="off"
-            data-1p-ignore
-            data-lpignore="true"
-            data-bwignore
-            class="distr-input" />
-          @if (editing()) {
-            <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
-              {{ editing()?.clientSecretSet ? 'A secret is stored. Leave empty to keep it.' : 'No secret stored yet.' }}
-            </p>
-          } @else if (form.controls.clientSecret.hasError('required') && form.controls.clientSecret.touched) {
-            <p class="text-xs font-normal text-red-600 dark:text-red-500">
-              Your provider issues this secret together with the client ID.
-            </p>
-          }
-        </div>
-
-        <div class="space-y-2">
-          <label for="oidcScopes" class="distr-label">Additional scopes</label>
-          <input type="text" id="oidcScopes" formControlName="scopes" autotrim class="distr-input" />
-          <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
-            Space separated. <code class="font-mono">openid</code> is always requested.
-          </p>
-        </div>
-
-        <div class="space-y-2">
-          <label for="oidcPkce" class="distr-label">PKCE</label>
-          <select id="oidcPkce" formControlName="pkce" class="distr-input">
-            <option value="auto">Automatic (from the OpenID configuration)</option>
-            <option value="on">Always</option>
-            <option value="off">Never</option>
-          </select>
-        </div>
-
-        <div class="space-y-2">
-          <div class="flex items-center">
-            <input type="checkbox" id="oidcEnabled" formControlName="enabled" class="distr-checkbox" />
-            <label for="oidcEnabled" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Enabled</label>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label for="oidc-application-id" class="distr-label">Client ID <span class="text-red-500">*</span></label>
+            <input
+              type="text"
+              id="oidc-application-id"
+              name="oidc-application-id"
+              formControlName="clientId"
+              autotrim
+              autocomplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-bwignore
+              class="distr-input" />
           </div>
-        </div>
 
-        <div class="space-y-2">
-          <div class="flex items-center">
-            <input type="checkbox" id="oidcSpInitiated" formControlName="spInitiated" class="distr-checkbox" />
-            <label for="oidcSpInitiated" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-              Sign in with this provider automatically
+          <div class="space-y-2">
+            <label for="oidc-application-key" class="distr-label">
+              Client secret
+              @if (!editing()) {
+                <span class="text-red-500">*</span>
+              }
             </label>
+            <input
+              type="text"
+              id="oidc-application-key"
+              name="oidc-application-key"
+              formControlName="clientSecret"
+              autotrim
+              autocomplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-bwignore
+              class="distr-input" />
+            @if (editing()) {
+              <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
+                {{
+                  editing()?.clientSecretSet ? 'A secret is stored. Leave empty to keep it.' : 'No secret stored yet.'
+                }}
+              </p>
+            } @else if (form.controls.clientSecret.hasError('required') && form.controls.clientSecret.touched) {
+              <p class="text-xs font-normal text-red-600 dark:text-red-500">
+                Your provider issues this secret together with the client ID.
+              </p>
+            }
           </div>
-          <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
-            The login page on your domain redirects here without asking. Only one provider per organization can do this.
-            <code class="font-mono">/login?manual=1</code> still shows the form, which is how anyone with a password
-            gets in when the provider is unavailable.
-          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label for="oidcScopes" class="distr-label">Additional scopes</label>
+            <input type="text" id="oidcScopes" formControlName="scopes" autotrim class="distr-input" />
+            <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
+              Space separated. <code class="font-mono">openid</code> is always requested.
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <label for="oidcPkce" class="distr-label">PKCE</label>
+            <select id="oidcPkce" formControlName="pkce" class="distr-input">
+              <option value="auto">Automatic (from the OpenID configuration)</option>
+              <option value="on">Always</option>
+              <option value="off">Never</option>
+            </select>
+          </div>
         </div>
 
         <div class="space-y-2">
@@ -261,43 +311,64 @@
           <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
             Everyone your provider authenticates joins your own team, never a customer organization, up to your billed
             user seats. Seats are never raised automatically: beyond them, sign-in fails until an administrator raises
-            them. Because a new member is a member of your team, this requires the email domains below.
+            them. Because a new member is a member of your team, this requires the allowed email domains below.
           </p>
         </div>
 
-        <div class="space-y-2">
-          <label for="oidcDefaultUserRole" class="distr-label">Role for new users</label>
-          <select id="oidcDefaultUserRole" formControlName="defaultUserRole" class="distr-input">
-            <option value="read_only">Read only</option>
-            <option value="read_write">Read &amp; write</option>
-            <option value="admin">Admin</option>
-          </select>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label for="oidcAllowedEmailDomains" class="distr-label">
+              Allowed email domains
+              @if (form.controls.createUnknownUsers.value) {
+                <span class="text-red-500">*</span>
+              }
+            </label>
+            <input
+              type="text"
+              id="oidcAllowedEmailDomains"
+              formControlName="allowedEmailDomains"
+              autotrim
+              placeholder="your-company.com"
+              class="distr-input" />
+            @if (form.hasError('emailDomainsRequired') && form.controls.allowedEmailDomains.touched) {
+              <p class="text-xs font-normal text-red-600 dark:text-red-500">
+                Name the domains you own before letting your provider create accounts.
+              </p>
+            } @else if (form.controls.createUnknownUsers.value) {
+              <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
+                Space separated, required while accounts are created on first sign-in. Accounts are only created for
+                addresses in these domains.
+              </p>
+            } @else {
+              <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
+                Space separated. Accounts are only created for addresses in these domains.
+              </p>
+            }
+          </div>
+
+          <div class="space-y-2">
+            <label for="oidcDefaultUserRole" class="distr-label">Role for new users</label>
+            <select id="oidcDefaultUserRole" formControlName="defaultUserRole" class="distr-input">
+              <option value="read_only">Read only</option>
+              <option value="read_write">Read &amp; write</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
         </div>
 
         <div class="space-y-2">
-          <label for="oidcAllowedEmailDomains" class="distr-label">
-            Allowed email domains
-            @if (form.controls.createUnknownUsers.value) {
-              <span class="text-red-500">*</span>
-            }
-          </label>
-          <input
-            type="text"
-            id="oidcAllowedEmailDomains"
-            formControlName="allowedEmailDomains"
-            autotrim
-            placeholder="your-company.com"
-            class="distr-input" />
-          @if (form.hasError('emailDomainsRequired') && form.controls.allowedEmailDomains.touched) {
-            <p class="text-xs font-normal text-red-600 dark:text-red-500">
-              Name the domains you own before letting your provider create accounts.
-            </p>
-          } @else {
-            <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
-              Space separated. Accounts are only created for addresses in these domains. Existing members sign in
-              regardless of their address.
-            </p>
-          }
+          <div class="flex items-center">
+            <input type="checkbox" id="oidcSpInitiated" formControlName="spInitiated" class="distr-checkbox" />
+            <label for="oidcSpInitiated" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+              Sign in with this provider automatically
+            </label>
+          </div>
+          <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
+            Usually not recommended: the login page on your domain redirects here without asking, so everyone reaching
+            it, including your customers' users, ends up at your provider instead of the login form. Only one provider
+            per organization can do this. <code class="font-mono">/login?manual=1</code> still shows the form, which is
+            how anyone with a password gets in when your provider is unavailable.
+          </p>
         </div>
 
         <button

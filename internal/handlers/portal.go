@@ -11,6 +11,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/mapping"
+	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
@@ -111,7 +112,7 @@ func portalOIDCProviders(ctx context.Context, host portalHost) []api.PortalOIDCP
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		return nil
 	}
-	if !organization.HasFeature(types.FeatureCustomOidcProviders) {
+	if !organization.HasFeature(types.FeatureCustomOidcProviders) || organization.Slug == nil {
 		return nil
 	}
 	configurations, err := db.GetCustomOIDCConfigurationsForDomain(ctx, host.customDomainRow.ID)
@@ -121,7 +122,11 @@ func portalOIDCProviders(ctx context.Context, host portalHost) []api.PortalOIDCP
 		return nil
 	}
 	return mapping.List(configurations, func(c types.CustomOIDCConfiguration) api.PortalOIDCProvider {
-		return api.PortalOIDCProvider{ID: c.ID, Name: c.Name, SPInitiated: c.SPInitiated}
+		return api.PortalOIDCProvider{
+			Name:        c.Name,
+			LoginPath:   oidc.CustomLoginPath(*organization.Slug, c.Slug),
+			SPInitiated: c.SPInitiated,
+		}
 	})
 }
 

@@ -56,7 +56,8 @@ func CustomOIDCConfigurationsRouter(r chiopenapi.Router) {
 
 func getCustomOIDCConfigurationsHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	orgID := *auth.Authentication.Require(ctx).CurrentOrgID()
+	auth := auth.Authentication.Require(ctx)
+	orgID := *auth.CurrentOrgID()
 
 	configurations, err := db.GetCustomOIDCConfigurations(ctx, orgID)
 	if err != nil {
@@ -68,7 +69,7 @@ func getCustomOIDCConfigurationsHandler(w http.ResponseWriter, r *http.Request) 
 		respondCustomOIDCConfigurationError(w, r, err)
 		return
 	}
-	memberCount, err := db.CountOrganizationMembersWithOtherOrganizations(ctx, orgID)
+	members, err := db.GetOrganizationMembersWithOtherOrganizations(ctx, orgID)
 	if err != nil {
 		respondCustomOIDCConfigurationError(w, r, err)
 		return
@@ -76,9 +77,9 @@ func getCustomOIDCConfigurationsHandler(w http.ResponseWriter, r *http.Request) 
 	RespondJSON(w, api.CustomOIDCConfigurationsResponse{
 		Configurations: mapping.List(configurations,
 			func(c types.CustomOIDCConfiguration) api.CustomOIDCConfiguration {
-				return mapping.CustomOIDCConfigurationToDTO(c, domains[c.CustomDomainID].Domain)
+				return mapping.CustomOIDCConfigurationToDTO(c, auth.CurrentOrg().Slug, domains[c.CustomDomainID].Domain)
 			}),
-		MembersWithOtherOrganizations: memberCount,
+		MembersWithOtherOrganizations: members,
 	})
 }
 
@@ -218,6 +219,7 @@ func applyCustomOIDCConfigurationRequest(
 ) {
 	configuration.CustomDomainID = request.CustomDomainID
 	configuration.Name = request.Name
+	configuration.Slug = request.Slug
 	configuration.Enabled = request.Enabled
 	configuration.Issuer = request.Issuer
 	configuration.ClientID = request.ClientID
@@ -235,11 +237,19 @@ func validateCustomOIDCConfigurationRequest(
 	request *api.CustomOIDCConfigurationRequest,
 ) bool {
 	ctx := r.Context()
-	orgID := *auth.Authentication.Require(ctx).CurrentOrgID()
+	auth := auth.Authentication.Require(ctx)
+	orgID := *auth.CurrentOrgID()
 
 	request.Normalize()
 	if err := request.Validate(); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return false
+	}
+
+	// The login and callback URL of every provider start with the organization slug.
+	if slug := auth.CurrentOrg().Slug; slug == nil || *slug == "" {
+		http.Error(w, "the organization needs a slug before an OIDC provider can be configured",
+			http.StatusBadRequest)
 		return false
 	}
 
@@ -278,13 +288,15 @@ func respondCustomOIDCConfiguration(
 	r *http.Request,
 	configuration types.CustomOIDCConfiguration,
 ) {
-	domains, err := customDomainsByID(r.Context(), configuration.OrganizationID)
+	ctx := r.Context()
+	domains, err := customDomainsByID(ctx, configuration.OrganizationID)
 	if err != nil {
 		respondCustomOIDCConfigurationError(w, r, err)
 		return
 	}
-	RespondJSON(w,
-		mapping.CustomOIDCConfigurationToDTO(configuration, domains[configuration.CustomDomainID].Domain))
+	organizationSlug := auth.Authentication.Require(ctx).CurrentOrg().Slug
+	RespondJSON(w, mapping.CustomOIDCConfigurationToDTO(
+		configuration, organizationSlug, domains[configuration.CustomDomainID].Domain))
 }
 
 func respondCustomOIDCConfigurationError(w http.ResponseWriter, r *http.Request, err error) {

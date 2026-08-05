@@ -1,6 +1,7 @@
 package api_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/distr-sh/distr/api"
@@ -13,7 +14,8 @@ func validCustomOIDCConfigurationRequest() api.CustomOIDCConfigurationRequest {
 	return api.CustomOIDCConfigurationRequest{
 		CustomDomainID:  uuid.New(),
 		Name:            "Acme SSO",
-		Issuer:          "https://acme.eu.auth0.com/",
+		Slug:            "acme-sso",
+		Issuer:          "https://dex.acme.com/dex",
 		ClientID:        "client-id",
 		ClientSecret:    new("secret"),
 		DefaultUserRole: types.UserRoleReadWrite,
@@ -25,7 +27,8 @@ func TestCustomOIDCConfigurationRequestNormalize(t *testing.T) {
 
 	request := api.CustomOIDCConfigurationRequest{
 		Name:                "  Acme SSO  ",
-		Issuer:              "  https://acme.eu.auth0.com/  ",
+		Slug:                "  Acme-SSO  ",
+		Issuer:              "  https://dex.acme.com/dex  ",
 		ClientID:            " client-id ",
 		Scopes:              []string{" profile ", "email,groups", "", "email", "openid"},
 		AllowedEmailDomains: []string{" @Acme.com ", "acme.com", "https://sub.acme.com/path", ""},
@@ -33,7 +36,8 @@ func TestCustomOIDCConfigurationRequestNormalize(t *testing.T) {
 	request.Normalize()
 
 	g.Expect(request.Name).To(Equal("Acme SSO"))
-	g.Expect(request.Issuer).To(Equal("https://acme.eu.auth0.com/"))
+	g.Expect(request.Slug).To(Equal("acme-sso"))
+	g.Expect(request.Issuer).To(Equal("https://dex.acme.com/dex"))
 	g.Expect(request.ClientID).To(Equal("client-id"))
 	g.Expect(request.Scopes).To(Equal([]string{"openid", "profile", "email", "groups"}))
 	g.Expect(request.AllowedEmailDomains).To(Equal([]string{"acme.com", "sub.acme.com"}))
@@ -57,6 +61,9 @@ func TestCustomOIDCConfigurationRequestValidate(t *testing.T) {
 		"missing custom domain": func(r *api.CustomOIDCConfigurationRequest) { r.CustomDomainID = uuid.Nil },
 		"missing name":          func(r *api.CustomOIDCConfigurationRequest) { r.Name = "" },
 		"long name":             func(r *api.CustomOIDCConfigurationRequest) { r.Name = string(make([]byte, 101)) },
+		"missing slug":          func(r *api.CustomOIDCConfigurationRequest) { r.Slug = "" },
+		"invalid slug":          func(r *api.CustomOIDCConfigurationRequest) { r.Slug = "Acme SSO" },
+		"long slug":             func(r *api.CustomOIDCConfigurationRequest) { r.Slug = strings.Repeat("a", 65) },
 		"missing issuer":        func(r *api.CustomOIDCConfigurationRequest) { r.Issuer = "" },
 		"insecure issuer":       func(r *api.CustomOIDCConfigurationRequest) { r.Issuer = "http://acme.example.com" },
 		"missing client id":     func(r *api.CustomOIDCConfigurationRequest) { r.ClientID = "" },

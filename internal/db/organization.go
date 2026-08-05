@@ -368,28 +368,33 @@ func CountUserAccountOrganizationsExcept(ctx context.Context, userID, orgID uuid
 	return count, nil
 }
 
-func CountOrganizationMembersWithOtherOrganizations(ctx context.Context, orgID uuid.UUID) (int64, error) {
+func GetOrganizationMembersWithOtherOrganizations(
+	ctx context.Context,
+	orgID uuid.UUID,
+) ([]types.OrganizationMember, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		`SELECT count(*)
+		`SELECT u.id, u.email, u.name
 		FROM Organization_UserAccount j
+		INNER JOIN UserAccount u ON u.id = j.user_account_id
 		WHERE j.organization_id = @orgId AND EXISTS (
 			SELECT 1 FROM Organization_UserAccount other
 			INNER JOIN Organization o ON o.id = other.organization_id
 			WHERE other.user_account_id = j.user_account_id
 				AND other.organization_id != @orgId
 				AND o.deleted_at IS NULL
-		)`,
+		)
+		ORDER BY u.email`,
 		pgx.NamedArgs{"orgId": orgID},
 	)
 	if err != nil {
-		return 0, fmt.Errorf("could not count organization members with other organizations: %w", err)
+		return nil, fmt.Errorf("could not query organization members with other organizations: %w", err)
 	}
-	count, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[int64])
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.OrganizationMember])
 	if err != nil {
-		return 0, fmt.Errorf("could not count organization members with other organizations: %w", err)
+		return nil, fmt.Errorf("could not map organization members with other organizations: %w", err)
 	}
-	return count, nil
+	return result, nil
 }
 
 func GetOrganizationByID(ctx context.Context, orgID uuid.UUID) (*types.Organization, error) {

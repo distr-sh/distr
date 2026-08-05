@@ -14,6 +14,7 @@ type CustomOIDCConfiguration struct {
 	OrganizationID         uuid.UUID  `db:"organization_id"            json:"-"`
 	CustomDomainID         uuid.UUID  `db:"custom_domain_id" json:"customDomainId"`
 	Name                   string     `db:"name"             json:"name"`
+	Slug                   string     `db:"slug"             json:"slug"`
 	Enabled                bool       `db:"enabled"          json:"enabled"`
 	Issuer                 string     `db:"issuer"    json:"issuer"`
 	ClientID               string     `db:"client_id" json:"clientId"`

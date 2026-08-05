@@ -132,7 +132,7 @@ export class LoginComponent implements OnInit {
     }
     const spInitiated = loginConfig.oidcProviders.filter((provider) => provider.spInitiated);
     if (spInitiated.length === 1) {
-      window.location.href = `/api/v1/auth/oidc/custom/${spInitiated[0].id}`;
+      window.location.href = spInitiated[0].loginPath;
     }
   }
 

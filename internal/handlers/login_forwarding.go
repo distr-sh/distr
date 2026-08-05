@@ -16,6 +16,11 @@ import (
 	"go.uber.org/zap"
 )
 
+// loginAppDomainRedirect forwards a login on the default host to the organization's app domain. The target is
+// resolved with customdomains.AppDomain and never with AppDomainOrDefault: only a self-service CustomDomain row
+// is a domain this instance serves itself (it is what Caddy's on-demand TLS asks for), whereas a legacy
+// OrganizationBranding.app_domain is a hostname an organization once configured for links and branding, hosted
+// in a way Distr knows nothing about. Sending a freshly issued token there could strand the user.
 func loginAppDomainRedirect(ctx context.Context, r *http.Request, user types.UserAccount, token string) *string {
 	log := internalctx.GetLogger(ctx)
 
