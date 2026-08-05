@@ -78,9 +78,9 @@ func DeleteCustomDomain(ctx context.Context, id, organizationID uuid.UUID) error
 		pgx.NamedArgs{"id": id, "organizationId": organizationID},
 	)
 	if err != nil {
-		// A domain an identity provider hangs off is deleted with ON DELETE RESTRICT, so that removing a
-		// domain cannot silently take everyone's sign-in with it.
-		if pgerr := (*pgconn.PgError)(nil); errors.As(err, &pgerr) && pgerr.Code == pgerrcode.ForeignKeyViolation {
+		// A domain an identity provider hangs off references it with ON DELETE RESTRICT, so that removing
+		// a domain cannot silently take everyone's sign-in with it.
+		if isStillReferencedError(err) {
 			return fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
 		}
 		return fmt.Errorf("could not delete CustomDomain: %w", err)
