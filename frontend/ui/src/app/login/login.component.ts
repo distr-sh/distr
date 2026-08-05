@@ -1,5 +1,5 @@
 import {ChangeDetectionStrategy, Component, inject, OnInit, signal} from '@angular/core';
-import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {distinctUntilChanged, filter, lastValueFrom, map, take} from 'rxjs';
@@ -10,6 +10,7 @@ import {AutotrimDirective} from '../directives/autotrim.directive';
 import {PlaceholderDirective} from '../directives/placeholder.directive';
 import {AuthService} from '../services/auth.service';
 import {PortalBrandingService} from '../services/portal-branding.service';
+import {PortalService} from '../services/portal.service';
 import {ToastService} from '../services/toast.service';
 
 @Component({
@@ -51,7 +52,7 @@ export class LoginComponent implements OnInit {
   protected readonly loading = signal(false);
   protected readonly errorMessage = signal<string | undefined>(undefined);
 
-  readonly loginConfig = toSignal(this.auth.loginConfig$);
+  readonly loginConfig = inject(PortalService).loginConfig;
   readonly isJWTLogin = signal(false);
 
   constructor() {
@@ -88,6 +89,9 @@ export class LoginComponent implements OnInit {
         break;
       case 'oidc-registration-disabled':
         this.toast.error('Sign-up is disabled on this instance. Please contact your administrator.');
+        break;
+      case 'oidc-unavailable':
+        this.toast.error('This login method is not available on this domain. Please contact your administrator.');
         break;
     }
 

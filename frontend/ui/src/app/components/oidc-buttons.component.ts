@@ -1,10 +1,13 @@
 import {ChangeDetectionStrategy, Component, inject, input} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faGithub, faGoogle, faMicrosoft} from '@fortawesome/free-brands-svg-icons';
 import {faArrowRightToBracket} from '@fortawesome/free-solid-svg-icons';
-import {AuthService} from '../services/auth.service';
+import {PortalService} from '../services/portal.service';
 
+/**
+ * Renders a button per instance-scoped OIDC provider offered on this host. The providers are configured per
+ * instance, but are not offered on an organization's custom app domain, so the list is host-resolved.
+ */
 @Component({
   selector: 'app-oidc-buttons',
   imports: [FaIconComponent],
@@ -12,8 +15,7 @@ import {AuthService} from '../services/auth.service';
   templateUrl: './oidc-buttons.component.html',
 })
 export class OidcButtonsComponent {
-  private readonly auth = inject(AuthService);
-  protected readonly loginConfig = toSignal(this.auth.loginConfig$);
+  protected readonly loginConfig = inject(PortalService).loginConfig;
 
   readonly label = input('Or use one of these to sign in:');
 

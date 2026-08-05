@@ -7,8 +7,8 @@ This is a living document (v1, draft). Each issue gets a short summary and a det
 ## Current state (codebase)
 
 - OIDC is **instance-scoped only**: providers (Google, GitHub, Microsoft, Generic) are configured via environment variables in `internal/env/env.go` and initialized once at startup in `internal/oidc/oidc.go` (`NewOIDCer`).
-- Login flow: `internal/handlers/auth_oidc.go` — state + PKCE verifier stored in DB (`OIDCState` table), user matched **by email only**, auto-signup creates a new org. Note: `verifyOIDCState` rejects states older than **60 seconds** (measured from before the redirect to the IdP).
-- Frontend: `oidc-buttons.component.ts` renders provider buttons based on the runtime endpoint `GET /api/v1/auth/login/config` (`authLoginConfigHandler` — env-based, host-independent); login/register pages.
+- Login flow: `internal/handlers/auth_oidc.go` — state + PKCE verifier stored in DB (`OIDCState` table), user matched **by IdP identity** (`UserAccountOIDCIdentity`, Stage 1) with an email fallback for accounts that predate the linking, auto-signup creates a new org. Note: `verifyOIDCState` rejects states older than **60 seconds** (measured from before the redirect to the IdP).
+- Frontend: `oidc-buttons.component.ts` renders provider buttons based on the host-resolved `GET /api/public/v1/portal` endpoint (`internal/handlers/portal.go`), which since DEV-644 also carries the login config (`PortalResponse.LoginConfig`) that used to live in the host-independent `GET /api/v1/auth/login/config`; login/register pages.
 - Custom domains exist only as operator-managed columns: `OrganizationBranding.app_domain` / `registry_domain` — no self-service, no automated TLS (existing setups use manually managed Route53 NS zones). `internal/customdomains` resolves org → effective domain; the only host → org resolution is `db.GetOrganizationBrandingByAppDomain`, used by `internal/handlers/portal.go`. The registry resolves organizations from the repository **path** (`internal/registry/name`: `<org>/<artifact>`), not from the Host header — `registry_domain` is a pure DNS alias, only used when rendering agent manifests.
 - Plans exist as `types.SubscriptionType` (community, pro, business, enterprise, trial — the starter plan was removed with the business plan introduction) with Stripe billing (`FeatureVendorBilling`), and org feature flags (`types.Feature`, `org.HasFeature(...)`) are granted based on the subscription via `types.FeaturesForSubscriptionType(...)` / `types.PlanManagedFeatures`.
 - A **jetski/HyprMCP reference for the custom domain implementation is included as an appendix at the end of this document** (Caddy + on-demand TLS + ask endpoint), together with the Distr-side design (`CustomDomain` data model, static Caddyfile routing, open decisions).
@@ -19,12 +19,12 @@ This is a living document (v1, draft). Each issue gets a short summary and a det
 graph TD
     DEV283["Stage 0: Business plan gating + DEV-283 plan switching"] --> DEV592
     DEV592["DEV-592 Vendor custom domains"] --> DEV593["DEV-593 Customer custom domains"]
-    DEV592 --> DEV596["DEV-596 Vendor-scoped OIDC + IdP identity handling (incl. DEV-641)"]
+    DEV592 --> DEV596["DEV-596 Vendor-scoped OIDC configuration"]
     DEV592 --> DEV594["DEV-594 Route53 NS → CNAME migration"]
     DEV283 --> DEV595
     DEV595["DEV-595 Custom email providers"] --> DEV594
     DEV593 --> DEV597["DEV-597 Customer-scoped OIDC"]
-    DEV596 --> DEV644["DEV-644 Hide instance OIDC on custom domains"]
+    DEV592 --> DEV644["DEV-644 Hide instance OIDC on custom domains"]
     DEV720["DEV-720 IdP group mapping (backlog)"]
 ```
 
@@ -33,14 +33,14 @@ graph TD
 | Stage | Issue   | Title                                           | Why now                                                                                  |
 | ----- | ------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | 0     | DEV-283 | Business plan gating + subscription switching   | Prerequisite: defines how all enterprise features below are gated.                       |
-| 1     | DEV-641 | Improve handling of IdP-provided UID            | **Merged into DEV-596 (Stage 4)** — no standalone stage.                                 |
+| 1     | DEV-641 | Improve handling of IdP-provided UID            | **Implemented** as a standalone stage. Foundation for DEV-596.                           |
 | 2     | DEV-592 | Automated custom domain configuration (vendors) | **Implemented** (PRs 1–4 in one change). Root of the dependency tree.                    |
 | 3     | DEV-595 | Custom email provider configurations            | **Implemented** (PRs 1–4 in one change, SMTP only). Needed before the Route53 migration. |
-| 4     | DEV-596 | Vendor-scoped OIDC config + IdP identity (641)  | First multi-tenant OIDC deliverable; needs DEV-592; absorbs DEV-641.                     |
+| 4     | DEV-596 | Vendor-scoped OIDC configuration                | First multi-tenant OIDC deliverable; needs DEV-592 and DEV-641.                          |
 | 5     | DEV-593 | Automated customer domain configuration         | Extends DEV-592 to customer orgs.                                                        |
 | 6     | DEV-594 | Migrate Route53 NS zones to CNAME setup         | Customer self-service migration; needs DEV-592 + DEV-595.                                |
 | 7     | DEV-597 | Customer-scoped OIDC configuration              | Needs DEV-593; reuses DEV-596 machinery.                                                 |
-| 8     | DEV-644 | Hide instance-scoped OIDC on custom domains     | Breaking change; do last, after comms to affected users.                                 |
+| 8     | DEV-644 | Hide instance-scoped OIDC on custom domains     | **Implemented**, pulled forward: needs only DEV-592, not DEV-596.                        |
 | —     | DEV-720 | User group mapping from IdP                     | In backlog. Not planned.                                                                 |
 
 ---
@@ -81,7 +81,38 @@ Before shipping any of the enterprise features below, introduce the **business p
 
 ## Stage 1 — DEV-641: Improve handling of IdP-provided UID
 
-> **Merged into Stage 4 (DEV-596)** — DEV-641 is not delivered as a standalone stage. Since org-scoped OIDC providers need the IdP identity table anyway (per-config identities, unlink semantics), the identity handling ships as the first PR of the combined "Vendor-scoped OIDC configuration + IdP identity handling" stage. See Stage 4 for the full plan (the detailed DEV-641 content moved there as PR 0).
+> **Status: implemented** as a standalone stage after all (it was planned as PR 0 of Stage 4 for a while). Org-scoped providers build on the schema it introduces; what remains for them is listed under Stage 4.
+
+### Summary
+
+OIDC logins used to be matched by email address only, which created a duplicate account whenever the address changed at the IdP, and re-created the old account when the user changed their address in Distr. Logins are now matched on the identity the IdP reports.
+
+### Implemented
+
+**Schema (migration `115_user_account_oidc_identity`)**
+
+- `OIDC_PROVIDER` enum (`github`, `google`, `microsoft`, `generic`) — the four env-configured instance providers, mapped 1:1 onto `oidc.Provider`, which is now a type alias of `types.OIDCProvider`.
+- `UserAccountOIDCIdentity` (`user_account_id` → `UserAccount` with `ON DELETE CASCADE`, `provider`, `issuer`, `subject`, nullable `email` and `last_login_at`). A separate table rather than columns on `UserAccount`, so a user can connect several providers.
+- Uniqueness is a **unique index** on `(issuer, subject)`, not a table constraint, so Stage 4 can swap it for a config-scoped one with plain index DDL.
+
+**Login flow (`internal/handlers/auth_oidc.go`, `resolveOIDCUser`)**
+
+1. Look up the identity by `(issuer, subject)` → log that user in and refresh `last_login_at` plus the IdP-reported email on the identity row.
+2. Otherwise match by email (accounts predating the linking, and invited users) → create the identity for that account.
+3. Otherwise auto-signup as before → create the identity.
+
+- Email-change behavior (**decided, reversing the earlier note**): the Distr account email is **never** overwritten with the one from the IdP. The IdP email is stored on the identity row for display only. Overwriting would silently revert a user's deliberate email change in Distr, which is one of the two bugs this stage fixes; identity matching alone already keeps the login working.
+- Email-based fallback matching deliberately keeps its previous semantics (no new `email_verified` requirement), so generic IdPs that omit the claim keep working. Documented as a known limitation in `website/.../self-hosting/oidc.mdx`.
+
+**Identity extraction (`internal/oidc`)**
+
+- `EmailExtractorFunc` → `IdentityExtractorFunc` returning an `oidc.Identity` (provider, issuer, subject, email, verified); `GetEmailForCode` → `GetIdentityForCode` (which also no longer builds the oauth2 config twice).
+- Google, Microsoft and generic take issuer and subject from the verified `id_token`. GitHub is plain OAuth2 with no id_token, so it uses an additional `GET https://api.github.com/user` call for the numeric user ID as subject (stable across username and email changes) with the synthetic issuer `https://github.com`.
+
+**Settings UI**
+
+- `GET` / `DELETE /api/v1/settings/user/oidc-identities` and a "Connected Accounts" section on the user settings page: one row per connected provider with the IdP email and connect date, plus a disconnect confirmation dialog. Disconnecting is rejected with `409` when it is the account's last login method (no password and no other identity).
+- Connecting a provider from the settings page is deliberately **not** supported — a provider is connected by signing in with it once. A settings-initiated link flow would need a user-scoped `OIDCState` plus conflict handling for identities already owned by another account.
 
 ---
 
@@ -93,7 +124,7 @@ Before shipping any of the enterprise features below, introduce the **business p
 >
 > **Caddy runs as a Deployment with a single replica** and one PVC for `/data` (retained via `helm.sh/resource-policy: keep`). A per-replica-storage StatefulSet was tried first but is not viable: Caddy instances only share certificates and solve each other's ACME challenges when they use the same storage, and the LoadBalancer routes the CA's validation request to an arbitrary replica. `caddy.replicaCount` above 1 therefore requires either a `ReadWriteMany` claim or a `caddy.storage` module with a matching custom image, and the chart fails to render without one.
 >
-> **E2E validated on minikube** (values in `hack/minikube-custom-domains-values.yaml`, Caddy's internal CA as issuer): feature gating (403 without `custom_domains`), platform-domain/hostname/duplicate rejection (400/409), domain normalization on create and on `ask`, `ask` returning 200/404/400 and being absent from the public app and registry servers, on-demand TLS issuance for a registered domain, TLS handshake failure for an unregistered one, `/v2/` routed to the registry (`Basic realm="Distr"`) and everything else to the app, HTTP→HTTPS redirect, portal branding resolved by custom domain (204 on the default host), `registryHost` falling back app domain → instance default after deleting the registry domain, the certificate store surviving a pod restart, and Caddyfile changes rolling the pods via the checksum annotation.
+> **E2E validated on minikube** (values in `hack/minikube-custom-domains-values.yaml`, Caddy's internal CA as issuer): feature gating (403 without `custom_domains`), platform-domain/hostname/duplicate rejection (400/409), domain normalization on create and on `ask`, `ask` returning 200/404/400 and being absent from the public app and registry servers, on-demand TLS issuance for a registered domain, TLS handshake failure for an unregistered one, `/v2/` routed to the registry (`Basic realm="Distr"`) and everything else to the app, HTTP→HTTPS redirect, portal branding resolved by custom domain (the default host answered 204 back then; DEV-644 replaced that with an explicit `customDomain` flag in a 200 response), `registryHost` falling back app domain → instance default after deleting the registry domain, the certificate store surviving a pod restart, and Caddyfile changes rolling the pods via the checksum annotation.
 
 ### Summary
 
@@ -105,7 +136,7 @@ Follows the "recommended shape" in appendix §5: a dedicated `CustomDomain` tabl
 
 **PR 1 — data model + self-service API + validation (appendix §5.3–§5.5)**
 
-- New `CustomDomain` table (schema in appendix §5.3). **Decided: this stage does _not_ migrate the existing `OrganizationBranding.app_domain` / `registry_domain` values and does _not_ drop those columns** — the legacy columns stay untouched and keep working; migrating their values into `CustomDomain` (normalized to bare lowercase hostnames, **flagged as `legacy = TRUE`** — DEV-644 keeps instance login methods available on exactly these domains) plus the column drop is a **follow-on ticket** (see "Follow-up tickets"). Until then both sources are supported in parallel: `customdomains.AppDomainOrDefault` / `RegistryDomainOrDefault` resolve `CustomDomain` first and fall back to the legacy branding columns, then to the instance defaults.
+- New `CustomDomain` table (schema in appendix §5.3). **Decided: this stage does _not_ migrate the existing `OrganizationBranding.app_domain` / `registry_domain` values and does _not_ drop those columns** — the legacy columns stay untouched and keep working; migrating their values into `CustomDomain` (normalized to bare lowercase hostnames, **flagged as `legacy = TRUE`** — DEV-644 keeps instance login methods available on exactly these domains, and until that migration runs it recognizes them via the branding column directly) plus the column drop is a **follow-on ticket** (see "Follow-up tickets"). Until then both sources are supported in parallel: `customdomains.AppDomainOrDefault` / `RegistryDomainOrDefault` resolve `CustomDomain` first and fall back to the legacy branding columns, then to the instance defaults.
   - Refactor ripple: these helpers are currently pure functions of `*types.OrganizationBranding` with ~10 call sites (mail templates, agent manifest/connect, support bundles, user handlers) — they additionally get the org's `CustomDomain` rows (context/DB-backed or pre-resolved alongside branding).
   - Extra motivation for `UNIQUE (domain)`: `app_domain` has no unique constraint today, and `GetOrganizationBrandingByAppDomain` uses `CollectExactlyOneRow` — two orgs with the same domain break portal resolution at runtime. The new table enforces uniqueness for self-service domains from day one.
 - Org-admin CRUD for app + registry domains: RFC-1123 hostname validation, global uniqueness via the `UNIQUE (domain)` constraint, rejection of platform-owned domains (`*.distr.sh`).
@@ -227,29 +258,39 @@ CREATE TABLE OrganizationEmailConfiguration (
 
 ---
 
-## Stage 4 — DEV-596: Vendor-scoped OIDC configuration + IdP identity handling (incl. DEV-641)
+## Stage 4 — DEV-596: Vendor-scoped OIDC configuration
 
 ### Summary
 
 An organization admin configures **one or more** (generic) OIDC providers, tied to the custom domain they configured in DEV-592. Users visiting the vendor's domain log in via one of the vendor's IdPs; a user can be linked to multiple of them.
 
-This stage **absorbs DEV-641** (IdP-provided UID): today OIDC users are matched by email only — if a user changes their email at the IdP, a duplicate account is created; if they change it in Distr, a login via the IdP re-creates the old account. Storing the IdP identity (issuer + `sub` claim) is foundational for org-scoped providers (per-config identities, unlink semantics), so it ships here as PR 0 instead of as a standalone stage.
+The IdP identity handling this builds on shipped with **Stage 1 (DEV-641)**: identities live on the user account in `UserAccountOIDCIdentity`, keyed by `(issuer, subject)`. Storage level (**decided there**): on the user account, not on the `Organization_UserAccount` membership row — `(issuer, subject)` identifies the person at the IdP independent of org membership, user accounts are global and belong to many orgs, instance providers have no org context at all, and storing per membership would duplicate the same identity N times. Which org an org-IdP login lands in is determined by resolving the OIDC config from the Host, not by the identity row.
 
 This stage also introduces the **`custom_authentication`** feature flag (business plan, added to `types.FeaturesForSubscriptionType` when this stage is developed — deliberately _not_ pre-created by Stage 2).
 
 ### Detailed plan
 
-**PR 0 (DEV-641) — IdP identity schema + identity linking on login**
+**PR 0 — extend the identity schema for org-scoped configs**
 
-- New table `UserAccountOIDCIdentity` (`user_account_id`, `provider`, `issuer`, `subject`, unique on `(issuer, subject)`, timestamps). A separate table (instead of columns on `UserAccount`) supports multiple linked providers per user and the per-org providers from this stage.
-- Storage level (**decided**): the identity lives on the **user account**, not on the `Organization_UserAccount` membership row. Rationale: `(issuer, subject)` identifies the person at the IdP independent of org membership; user accounts are global and belong to many orgs; instance providers (Google/GitHub/Microsoft) have no org context at all; and storing per membership would duplicate the same identity N times and make the email-change handling below update N rows. Org-scoped providers (this stage / DEV-597) add an optional `organization_id` (or config-id) column on the identity row — that gives clean unlink-on-org-leave / delete-on-config-removal semantics without moving storage to the membership row. Which org an org-IdP login lands in is determined by resolving the OIDC config from the Host, not by the identity row.
-- Extend `internal/oidc` extractors to return `issuer` + `subject` (and email) instead of just email. GitHub (plain OAuth2, no id_token) uses the numeric user ID as subject with a synthetic issuer — requires an additional `GET https://api.github.com/user` call; the current extractor only calls `/user/emails`. While in there: `GetEmailForCode` builds the oauth2 config twice (minor cleanup).
-- Callback handler lookup order:
-  1. Find identity by `(issuer, subject)` → log that user in (even if email changed).
-  2. Fallback: find user by email (current behavior) → create the identity record (backfill-on-login).
-  3. Otherwise: auto-signup (unchanged) + create identity record.
-- Email-change behavior (**decided**): when the identity matches by `(issuer, subject)` but the IdP reports a different email, **update the Distr account email** to the new one (the IdP is the source of truth for OIDC-managed accounts). Guard: only if the new email is verified by the IdP and not already taken by another account (in that conflict case, fail the login with a clear error instead of merging accounts). Log/audit every email change.
-- Observability (optional, small follow-up PR): metrics/log fields for "matched by identity" vs "matched by email" vs "signed up", plus email-change audit events; docs update in `website/.../self-hosting/oidc.mdx`.
+Stage 1 shaped the schema so this is additive:
+
+- `ALTER TYPE OIDC_PROVIDER ADD VALUE 'custom'` for identities that come from an `OrganizationOIDCConfiguration`, matching the `/api/v1/auth/oidc/custom/{id}` route of PR 2. `generic` stays reserved for the env-configured instance provider.
+- Nullable `organization_oidc_configuration_id UUID REFERENCES OrganizationOIDCConfiguration(id) ON DELETE CASCADE` on `UserAccountOIDCIdentity`, plus a check that the two agree, so `provider` remains a single-column discriminator and deleting a config unlinks its identities:
+
+```sql
+ALTER TABLE UserAccountOIDCIdentity ADD CONSTRAINT UserAccountOIDCIdentity_custom_config_check
+  CHECK ((provider = 'custom') = (organization_oidc_configuration_id IS NOT NULL));
+```
+
+- Scope the uniqueness by config, because an org config may point at an issuer that is also reachable via an instance provider (Google Workspace, say) and the second login must create a second identity instead of colliding. Postgres 18 means one index covers both cases:
+
+```sql
+DROP INDEX UserAccountOIDCIdentity_issuer_subject_uq;
+CREATE UNIQUE INDEX UserAccountOIDCIdentity_config_issuer_subject_uq
+  ON UserAccountOIDCIdentity (organization_oidc_configuration_id, issuer, subject) NULLS NOT DISTINCT;
+```
+
+- Observability (optional, small follow-up): metrics/log fields for "matched by identity" vs "matched by email" vs "signed up".
 
 **PR 1 — data model + dynamic provider registry**
 
@@ -261,9 +302,9 @@ This stage also introduces the **`custom_authentication`** feature flag (busines
 **PR 2 — login flow on custom domains**
 
 - Auth initiation + callback resolve the org from the Host (host-context middleware, see DEV-592 open questions) and use the requested org OIDC config; since an org can have several configs, the org routes address them by config id (`/api/v1/auth/oidc/custom/{id}` + callback), while `/api/v1/auth/oidc/{provider}` stays for the instance providers. Callback URL is on the vendor's domain.
-- Per-host provider discovery via the existing **`GET /api/v1/portal`** endpoint (`internal/handlers/portal.go`, already resolves the org branding by CNAME/Host): extend `api.PortalResponse` with the **list** of OIDC providers available on this host (config id, display name, `sp_initiated` flag). Note: the login/register pages currently consume the host-independent **`GET /api/v1/auth/login/config`** — see the open question below about consolidating it into the portal request.
+- Per-host provider discovery via the existing **`GET /api/public/v1/portal`** endpoint (`internal/handlers/portal.go`, already resolves the org branding by CNAME/Host): extend `api.PortalResponse.LoginConfig` with the **list** of OIDC providers available on this host (config id, display name, `sp_initiated` flag). The consolidation groundwork is done — DEV-644 already retired `/auth/login/config` and moved `registrationEnabled` plus the instance provider flags into `PortalResponse.LoginConfig`, so this stage only adds the per-org list next to them.
 - **Login UI**: the login page renders one button per provider from the portal list (display name from the config) — but **only when no provider is marked `sp_initiated`**; if one is, the auto-redirect below kicks in and the list is not shown (except via the `?manual=1` escape hatch, which reveals the full form including the provider list).
-- Raise the OIDC state TTL: `verifyOIDCState` rejects states older than 60 seconds, measured from before the redirect to the IdP — enterprise IdPs with MFA or first-time consent easily exceed that, and with SP-initiated auto-redirect a failure bounces back to the login page. Increase to e.g. 10 minutes in this stage (arguably even in DEV-641).
+- Raise the OIDC state TTL: `verifyOIDCState` rejects states older than 60 seconds, measured from before the redirect to the IdP — enterprise IdPs with MFA or first-time consent easily exceed that, and with SP-initiated auto-redirect a failure bounces back to the login page. Increase to e.g. 10 minutes in this stage.
 - **SP-initiated auto-redirect**: when the portal response contains a provider marked `sp_initiated` (at most one, see PR 1), the frontend immediately redirects unauthenticated visitors to that provider's auth route instead of rendering the login form. Escape hatch: a query param (e.g. `/login?manual=1`, also used after `oidc-failed` redirects) shows the regular login form — including the provider list — to avoid redirect loops and admin lockout.
 - Mind caching: the portal response is cached per Host (`Vary: Host`, `max-age=60`) — OIDC config changes may take up to the cache TTL to apply.
 - Signup/first-login semantics (**decided**): a user signing in via a vendor-scoped IdP lands **in that vendor's org** (not a fresh personal org). **Auto-provisioning of unknown users is a per-config setting** (`create_unknown_users`): when disabled, unknown users get a clear error page ("no account for this organization — contact your admin"); when enabled, the user is created with the config's `default_user_role`. Invited users keep their invited role.
@@ -284,7 +325,7 @@ This stage also introduces the **`custom_authentication`** feature flag (busines
 
 ### Open questions
 
-- **Consolidate `GET /api/v1/auth/login/config` into the portal request**: instead of two endpoints answering "what can I do on this host" (host-independent login config + host-aware portal), fold the login config fields (`registrationEnabled`, instance OIDC provider flags) into `api.PortalResponse` and retire `/auth/login/config`. Mind the cache implications (the portal response is public and cached per Host) and the frontend boot order (login page currently fetches both).
+- ~~**Consolidate `GET /api/v1/auth/login/config` into the portal request**~~ — **done, pulled forward into DEV-644** (Stage 8). The login config now lives in `api.PortalResponse.LoginConfig` and `/auth/login/config` is gone.
 - **Redirect logins to the org's custom domain? Decided: no.** When an organization has a custom domain configured and one of its users tries to log in on the default host (app.distr.sh), they are **not** redirected to the custom domain — each host only offers the login methods available on that host. Rationale: the org is only known _after_ the user is identified (email entry), an automatic redirect could lock users out entirely if the custom domain breaks on the DNS level (CNAME removed, cert no longer issuable), and it would act as an email-enumeration oracle (the redirect reveals that an account exists). Vendors should communicate their custom domain as the login URL themselves.
 - Vendor OIDC config as the **default** for all customer/partner organizations on the vendor's shared custom domain, inherited automatically by newly created customer/partner orgs; customer-scoped configs (DEV-597) override it on dedicated customer domains (see the appendix, "Shared custom domains" decision). Precedence + opt-out rules to be settled.
 - Only "generic" per-org OIDC at first, or also branded Google/Microsoft per org?
@@ -381,19 +422,29 @@ A **customer admin** sets up OIDC for their own organization, on their customer-
 
 ## Stage 8 — DEV-644: Hide instance-scoped OIDC config on custom domains
 
+> **Status: PR 1 implemented, pulled forward ahead of DEV-596.** It turned out not to depend on DEV-596 at all: the only thing DEV-644 needs is a host → "is this a self-service custom domain" decision, which `internal/handlers/portal.go` already made for branding. The org-scoped providers that DEV-596 will add simply slot into the same response. It also does not need the `legacy` column yet — see the scoping decision below.
+>
+> It is also far less breaking than assumed: `getRedirectURL` derives the callback from the request Host, so an instance-OIDC login initiated on a custom domain already sends a `redirect_uri` that is not registered at Google/GitHub/Microsoft and fails at the IdP. The buttons were effectively dead on custom domains before this change.
+
 ### Summary
 
 On custom domains, only the domain-scoped (vendor/customer) OIDC providers should be offered — not the instance-scoped Google/GitHub/Microsoft/Generic ones. **Breaking change**: users who currently sign in via instance OIDC on a custom domain could be locked out, so it needs advance communication.
 
-**Scoping decision**: instance login methods are available **only** on the default hostname (`env.Host()`) **and** on the hostnames that were configured in the organization settings before this project (the legacy `OrganizationBranding.app_domain` values, migrated into `CustomDomain` with `legacy = TRUE` by the branding-domain migration follow-up ticket — see "Follow-up tickets"). All domains created through the new self-service flow are strictly domain-scoped from day one. Removing the legacy exception is a further follow-up ticket.
+**Scoping decision**: instance login methods are available **only** on the default hostname (`env.Host()`) **and** on the hostnames that were configured in the organization settings before this project (the legacy `OrganizationBranding.app_domain` values). Since the branding-domain migration has not run yet, those values still live exclusively in `OrganizationBranding`, so the distinction is simply _which of the two host lookups matched_ — no `legacy` column is needed. When that migration folds the branding domains into `CustomDomain`, it must add the `legacy BOOLEAN NOT NULL DEFAULT FALSE` flag, and `portalHostLegacyBranding` becomes "matched a `CustomDomain` row with `legacy = TRUE`". All domains created through the new self-service flow are strictly domain-scoped from day one. Removing the legacy exception is a further follow-up ticket.
 
-### Detailed plan
+### Implemented (PR 1 — behavior switch)
 
-**PR 1 — behavior switch**
+**Consolidation into the portal request** (the DEV-596 open question, pulled forward because DEV-644 needs a host-resolved login config anyway):
 
-- The branding-domain migration follow-up ticket marks the migrated `OrganizationBranding` rows in `CustomDomain` (e.g. a `legacy BOOLEAN NOT NULL DEFAULT FALSE` column, set only by that migration) — a prerequisite for this stage.
-- The per-host provider listing (DEV-596 PR 2) returns instance providers only on the default host and on `legacy` domains; all other custom domains get only their org-scoped providers.
-- Backend enforcement as well: reject instance-provider auth initiation on non-legacy custom domains (not just hidden in UI).
+- `api.PortalResponse` gained an explicit `customDomain` flag and a nested `loginConfig` object (`api.PortalLoginConfig`: `registrationEnabled` plus the four instance provider flags). `GET /api/public/v1/portal` therefore **always answers 200** — the old `204` was what signalled "not a custom domain", which the new flag now does. `Vary: Host` and `Cache-Control: public, max-age=60` are unchanged; the login config is env-derived and host-independent apart from the suppression below, so it caches identically.
+- `authLoginConfigHandler` and `GET /api/v1/auth/login/config` are **deleted**. The route was under `option.GroupHidden(true)`, so it was never part of the published OpenAPI contract.
+- Frontend: a new `PortalService` owns the single `/api/public/v1/portal` request (`HttpBackend`, `shareReplay(1)`) and exposes the `loginConfig` signal; `PortalBrandingService` consumes it instead of doing its own HTTP; `OidcButtonsComponent` and `LoginComponent` read from it; `LoginConfig` / `loginConfig$` are gone from `AuthService`. The client maps an empty body to "no login methods", so a `204` still sitting in a browser cache from before the rollout degrades gracefully for at most the 60 s TTL.
+
+**The behavior switch itself:**
+
+- `resolvePortalHost` (was `resolvePortalBranding`) returns a `portalHost` carrying a `portalHostSource` — `portalHostDefault` / `portalHostCustomDomain` / `portalHostLegacyBranding` — instead of collapsing both custom domain kinds into one boolean. `customDomain()` (branding suppression) is true for both sources, `instanceLoginAllowed()` is false **only** for `portalHostCustomDomain`. On a partial failure the resolver returns the source it already established, so a failing branding lookup cannot downgrade a custom domain back to the default host and re-offer the instance providers.
+- Backend enforcement, not just hiding: `authLoginOidcHandler` calls the same `resolvePortalHost` and redirects to `/login?reason=oidc-unavailable` when `instanceLoginAllowed()` is false, failing closed on an unresolvable host. Sharing the resolver is deliberate — the buttons and the gate cannot disagree, and the legacy exception only has to be changed in one place during the branding-domain migration. Only the initiation is gated — the IdP binds the `redirect_uri` to the initiating host, so the callback cannot be reached from a different one.
+- Adding the DEV-596 org-scoped provider list is now purely additive: it goes next to the instance flags in `PortalResponse.LoginConfig`.
 
 **Pre-rollout tasks (before the legacy exception is removed, follow-up ticket)**
 
@@ -411,7 +462,7 @@ On custom domains, only the domain-scoped (vendor/customer) OIDC providers shoul
 
 ### Summary
 
-Mapping IdP groups to Distr users/roles. Currently not possible — users must be imported/synced via automation. In the backlog, not scheduled. No plan yet, but the identity table (DEV-596 PR 0, ex-DEV-641) and the DEV-596 per-org OIDC config are the natural foundation (group claims → role mapping rules per org).
+Mapping IdP groups to Distr users/roles. Currently not possible — users must be imported/synced via automation. In the backlog, not scheduled. No plan yet, but the identity table (DEV-641) and the DEV-596 per-org OIDC config are the natural foundation (group claims → role mapping rules per org).
 
 ---
 
@@ -430,16 +481,16 @@ Mapping IdP groups to Distr users/roles. Currently not possible — users must b
 
 Cleanup and nice-to-have work that intentionally stays out of the delivery stages:
 
-0. **Migrate legacy `OrganizationBranding` domains into `CustomDomain` + drop the columns** (after DEV-592, before DEV-644): copy the existing `app_domain` / `registry_domain` values into `CustomDomain` (normalized to bare lowercase hostnames, `legacy = TRUE`, duplicate domains keep the oldest row), drop the two branding columns, remove the legacy fallback from the `internal/customdomains` resolution and `GetOrganizationBrandingByAppDomain`, and remove the read-only domain rows from the branding settings page.
+0. **Migrate legacy `OrganizationBranding` domains into `CustomDomain` + drop the columns** (after DEV-592): copy the existing `app_domain` / `registry_domain` values into `CustomDomain` (normalized to bare lowercase hostnames, `legacy = TRUE`, duplicate domains keep the oldest row), drop the two branding columns, remove the legacy fallback from the `internal/customdomains` resolution and `GetOrganizationBrandingByAppDomain`, and remove the read-only domain rows from the branding settings page. **DEV-644 shipped before this**, so the migration must keep its legacy exception intact: `resolvePortalHost` currently derives `portalHostLegacyBranding` from `GetOrganizationBrandingByAppDomain` matching, and has to switch to the `legacy` flag in the same change — otherwise the migrated domains silently lose the instance login methods. It is the only place that makes this distinction, for both the portal response and the OIDC gate.
 1. **Remove the `legacy` custom-domain exception** (after DEV-644 + comms/grace period): instance login methods stop working on the migrated legacy domains too; drop the `CustomDomain.legacy` flag/rows semantics.
 2. **Decommission Route53 + ALB legacy setup** (after the DEV-594 migration deadline): delete the Route53 NS zones, remove the migrated/expired domains from the ALB ingress list, revoke the associated ACM certificates.
 3. **Remove SES entries for customer domains** (after DEV-595 adoption): delete the customer-domain identities (domain verification, DKIM records) from our SES account; customer-domain email then only works via their own provider.
 4. **Introduce secrets-at-rest encryption** for all secret storage in one go: the existing `Secret` table, the DEV-595 email provider credentials, and the DEV-596/597 OIDC client secrets (all plaintext for now). Sketch: `internal/crypto` helper, AES-256-GCM, key from a new `SECRETS_ENCRYPTION_KEY` env var (base64, 32 bytes), ciphertexts prefixed with a key-ID/version byte so the key can become a keyring (rotation) without another migration; update `configuration.mdx`.
-5. **Admin UI to view/unlink connected OIDC identities** (DEV-596 PR 0 / ex-DEV-641 open question).
-6. **Notify users (old + new address) on IdP-driven email change** (DEV-596 PR 0 / ex-DEV-641 open question).
+5. **Connect an OIDC provider from the user settings page** (DEV-641 left this out): the settings page lists and disconnects connected accounts, but connecting one requires signing in with it. A settings-initiated link flow needs a user-scoped `OIDCState` and conflict handling for identities already owned by another account. An org-admin view of the identities of other users is a separate question.
+6. **Require a provider-verified email for the email fallback match** (DEV-641 kept the previous semantics): the fallback that links an identity to an account found by email does not check `email_verified`, because generic IdPs may omit the claim. Tightening this would harden linking against IdPs that report unverified addresses.
 7. **Additional mail providers** for the custom email configuration: **SES with static credentials** (dropped from the DEV-595 v1 scope — needs a `provider` enum column, nullable `smtp_*` columns and a per-provider `CHECK`, plus `ses.New(aws.Config)` with `credentials.NewStaticCredentialsProvider`), and Resend/Brevo as new mailx adapters (DEV-595 summary).
 8. **Per-org notification quota override** for organizations with their own email provider that need more than the instance-wide `NOTIFICATION_EMAIL_HOURLY_QUOTA` (DEV-595 PR 2 keeps the quota for all transports).
-9. **DEV-720 IdP group mapping** — in backlog; builds on the DEV-596 identity table (PR 0, ex-DEV-641) + role mapping.
+9. **DEV-720 IdP group mapping** — in backlog; builds on the DEV-641 identity table + DEV-596 role mapping.
 10. **Remove this plan document** (`hack/oidc-plan.md`) from the repository once all stages have shipped and the remaining follow-ups are tracked in Linear.
 
 ---

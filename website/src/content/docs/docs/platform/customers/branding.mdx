@@ -97,6 +97,14 @@ The TLS certificate is issued automatically on the first request once the DNS re
   immediately and its TLS certificate is no longer renewed.
 </Aside>
 
+<Aside type="caution" title="Login methods on your custom domain">
+  OIDC sign-in buttons such as Google, GitHub and Microsoft are configured for
+  the Distr instance as a whole, not for a single organization, so they are not
+  offered on your domain — visitors there sign in with email and password. Make
+  sure your users have a password set before you point them at your custom
+  domain.
+</Aside>
+
 On self-hosted instances, the Custom Domains section only appears when the instance is configured for custom domain self-service.
 See the [configuration reference](/docs/self-hosting/configuration/#custom-domains) for the required setup.
 

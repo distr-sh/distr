@@ -3,7 +3,7 @@ import {inject, Injectable} from '@angular/core';
 import {LoginResponse, TokenResponse, UserRole} from '@distr-sh/distr-sdk';
 import dayjs from 'dayjs';
 import {jwtDecode} from 'jwt-decode';
-import {catchError, map, Observable, of, shareReplay, tap, throwError} from 'rxjs';
+import {map, Observable, of, tap, throwError} from 'rxjs';
 import {Organization} from '../types/organization';
 
 const tokenStorageKey = 'cloud_token';
@@ -26,14 +26,6 @@ export interface JWTClaims {
   image_url: string | undefined;
   is_super_admin?: boolean;
   [claim: string]: unknown;
-}
-
-export interface LoginConfig {
-  registrationEnabled?: boolean;
-  oidcGithubEnabled?: boolean;
-  oidcGoogleEnabled?: boolean;
-  oidcMicrosoftEnabled?: boolean;
-  oidcGenericEnabled?: boolean;
 }
 
 @Injectable({providedIn: 'root'})
@@ -136,11 +128,6 @@ export class AuthService {
       map(() => undefined)
     );
   }
-
-  public readonly loginConfig$ = this.httpClient.get<LoginConfig>(`${authBaseUrl}/login/config`).pipe(
-    catchError(() => of({} as LoginConfig)),
-    shareReplay(1)
-  );
 
   public register(
     email: string,
