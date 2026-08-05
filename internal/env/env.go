@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/distr-sh/distr/internal/envparse"
@@ -82,7 +83,6 @@ var (
 	oidcGenericIssuer                      *string
 	oidcGenericScopes                      *string
 	oidcGenericPKCEEnabled                 bool
-	customOIDCAllowPrivateIssuers          bool
 	wellKnownMicrosoftIdentityAssociation  []byte
 	stripeWebhookSecret                    *string
 	stripeWebhookVersionMismatchBehavior   StripeWebhookVersionMismatchBehaviorType
@@ -258,8 +258,6 @@ func Initialize() {
 		oidcGenericScopes = util.PtrTo(envutil.RequireEnv("OIDC_GENERIC_SCOPES"))
 		oidcGenericPKCEEnabled = envutil.GetEnvParsedOrDefault("OIDC_GENERIC_PKCE_ENABLED", strconv.ParseBool, false)
 	}
-	customOIDCAllowPrivateIssuers = envutil.GetEnvParsedOrDefault(
-		"CUSTOM_OIDC_ALLOW_PRIVATE_ISSUERS", strconv.ParseBool, false)
 	wellKnownMicrosoftIdentityAssociation = envutil.GetEnvParsedOrDefault(
 		"WELLKNOWN_MICROSOFT_IDENTITY_ASSOCIATION_JSON", envparse.ByteSlice, nil)
 
@@ -324,6 +322,16 @@ func JWTSecret() []byte {
 }
 
 func Host() string { return host }
+
+// HostScheme is the scheme this instance is reached with, taken from DISTR_HOST. It is https unless
+// DISTR_HOST explicitly says http, and is the scheme of every URL this instance builds for a host
+// other than the one of the current request, e.g. an organization's custom domain.
+func HostScheme() URLScheme {
+	if strings.HasPrefix(strings.ToLower(host), string(SchemeHTTP)+"://") {
+		return SchemeHTTP
+	}
+	return SchemeHTTPS
+}
 
 func RegistryHost() string { return registryHost }
 
@@ -555,10 +563,6 @@ func OIDCGenericClientSecret() *string { return oidcGenericClientSecret }
 func OIDCGenericIssuer() *string       { return oidcGenericIssuer }
 func OIDCGenericPKCEEnabled() bool     { return oidcGenericPKCEEnabled }
 func OIDCGenericScopes() *string       { return oidcGenericScopes }
-
-func CustomOIDCAllowPrivateIssuers() bool {
-	return customOIDCAllowPrivateIssuers
-}
 
 func WellKnownMicrosoftIdentityAssociation() []byte {
 	return wellKnownMicrosoftIdentityAssociation

@@ -110,7 +110,9 @@ export class CustomOidcComponent {
     if (!domain || !organizationSlug || !slug) {
       return undefined;
     }
-    return `https://${domain}/api/v1/auth/oidc/custom/${organizationSlug}/${slug}/callback`;
+    // The protocol of the current page, not a hard-wired https, so that the preview matches the callback URL the
+    // hub reports for a saved provider, which follows the scheme the instance is configured with.
+    return `${location.protocol}//${domain}/api/v1/auth/oidc/custom/${organizationSlug}/${slug}/callback`;
   });
 
   protected showDialog(configuration?: CustomOidcConfiguration) {

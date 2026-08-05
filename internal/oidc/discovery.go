@@ -75,8 +75,8 @@ func ParseIssuerURL(issuerURL string) (*url.URL, error) {
 	if err != nil {
 		return nil, fmt.Errorf("issuer is not a valid URL: %w", err)
 	}
-	scheme := strings.ToLower(parsed.Scheme)
-	if scheme != "https" && (scheme != "http" || !env.CustomOIDCAllowPrivateIssuers()) {
+	scheme := env.URLScheme(strings.ToLower(parsed.Scheme))
+	if scheme != env.SchemeHTTPS && (scheme != env.SchemeHTTP || !nonPublicIssuersAllowed()) {
 		return nil, fmt.Errorf("issuer must be an https URL")
 	}
 	if parsed.Host == "" {
@@ -173,8 +173,18 @@ func restrictedHTTPClient() *http.Client {
 	}
 }
 
+// nonPublicIssuersAllowed reports whether an issuer may be reached over http or at a non-public
+// address. That is the case exactly on an instance which is not served over https itself: it is a
+// local or internal installation, where the identity provider to develop or test against runs next
+// to the hub. On every other instance the issuer is administrator input this server fetches, so both
+// are refused - an operator with an identity provider inside their own network configures it as the
+// instance-wide generic provider instead.
+func nonPublicIssuersAllowed() bool {
+	return env.HostScheme() != env.SchemeHTTPS
+}
+
 func rejectPrivateAddress(_, address string, _ syscall.RawConn) error {
-	if env.CustomOIDCAllowPrivateIssuers() {
+	if nonPublicIssuersAllowed() {
 		return nil
 	}
 	host, _, err := net.SplitHostPort(address)

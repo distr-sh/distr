@@ -8,6 +8,7 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/handlerutil"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/validation"
@@ -47,7 +48,7 @@ func loginAppDomainRedirect(ctx context.Context, r *http.Request, user types.Use
 	if domain == nil {
 		return nil
 	}
-	return new(fmt.Sprintf("https://%v/login?jwt=%v", *domain, token))
+	return new(fmt.Sprintf("%v://%v/login?jwt=%v", env.HostScheme(), *domain, token))
 }
 
 func redirectLoginToAppDomain(w http.ResponseWriter, r *http.Request, user types.UserAccount, token string) {

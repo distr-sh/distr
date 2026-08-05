@@ -1,8 +1,6 @@
 package mapping
 
 import (
-	"fmt"
-
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/types"
@@ -30,13 +28,6 @@ func CustomOIDCConfigurationToDTO(
 		CreateUnknownUsers:  model.CreateUnknownUsers,
 		DefaultUserRole:     model.DefaultUserRole,
 		AllowedEmailDomains: model.AllowedEmailDomains,
-		CallbackURL:         CustomOIDCCallbackURL(domain, organizationSlug, model.Slug),
+		CallbackURL:         oidc.CustomCallbackURL(domain, organizationSlug, model.Slug),
 	}
-}
-
-func CustomOIDCCallbackURL(domain string, organizationSlug *string, slug string) string {
-	if domain == "" || organizationSlug == nil || *organizationSlug == "" {
-		return ""
-	}
-	return fmt.Sprintf("https://%v%v/callback", domain, oidc.CustomLoginPath(*organizationSlug, slug))
 }

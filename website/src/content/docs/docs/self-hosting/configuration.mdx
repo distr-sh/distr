@@ -26,7 +26,7 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
 | `DATABASE_URL`                     | yes      | —         | PostgreSQL connection string (e.g. `postgres://user:pass@host:5432/distr`).                     |
 | `DATABASE_MAX_CONNS`               | no       | —         | Overrides the maximum number of connections in the pgx pool.                                    |
 | `JWT_SECRET`                       | yes      | —         | Base64-encoded secret used to sign JWTs. Generate with `openssl rand -base64 32`.               |
-| `DISTR_HOST`                       | yes      | —         | Base URL of your Distr instance. Used for links, callbacks and email content.                   |
+| `DISTR_HOST`                       | yes      | —         | Base URL of your Distr instance. Its scheme is used for every link, callback URL and email.      |
 | `DISTR_ENV`                        | no       | —         | Path to a dotenv file to load on startup (a matching `.secret` file is also loaded if present). |
 | `REGISTRATION`                     | no       | `enabled` | Sign-up mode: `enabled`, `hidden` or `disabled`.                                                |
 | `USER_EMAIL_VERIFICATION_REQUIRED` | no       | `true`    | Whether new users must verify their email address before signing in.                            |
@@ -171,13 +171,13 @@ See [OIDC Authentication](/docs/self-hosting/oidc/) for setup instructions and c
 | `OIDC_GENERIC_SCOPES`                           | if generic enabled | —       | Comma- or space-separated scopes (e.g. `email,profile`); `openid` is always added. |
 | `OIDC_GENERIC_PKCE_ENABLED`                     | no                 | `false` | Enables PKCE (`S256`) for the generic provider.                                    |
 | `WELLKNOWN_MICROSOFT_IDENTITY_ASSOCIATION_JSON` | no                 | —       | Base64-encoded JSON served at `/.well-known/microsoft-identity-association.json`.  |
-| `CUSTOM_OIDC_ALLOW_PRIVATE_ISSUERS`             | no                 | `false` | Allows `http` and private network issuers for organization-configured providers.   |
 
 Vendor organizations on the Business plan can additionally configure their own providers in the UI, which requires no
 instance configuration. Those issuer URLs are entered by organization administrators and fetched by the Hub, so they
-must be `https` and must not resolve to a private network address. `CUSTOM_OIDC_ALLOW_PRIVATE_ISSUERS` lifts both
-restrictions and must only be set for local development or an instance whose identity providers run on an internal
-network.
+must be `https` and must not resolve to a private network address. Both restrictions are lifted when `DISTR_HOST` is an
+`http` URL, so that an instance running locally can be developed against an identity provider next to it. An operator
+whose identity provider only exists inside their own network configures it as the instance-wide generic provider above
+instead.
 
 ## Observability
 
