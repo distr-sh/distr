@@ -178,6 +178,8 @@ func ApiRouter(
 					r.Route("/customer-organizations", handlers.CustomerOrganizationsRouter)
 					r.With(middleware.CustomDomainsFeatureMiddleware).
 						Route("/custom-domains", handlers.CustomDomainsRouter)
+					r.With(middleware.CustomEmailsFeatureMiddleware).
+						Route("/custom-email", handlers.CustomEmailsRouter)
 					r.With(middleware.PartnerManagementFeatureMiddleware).
 						Route("/partner-organizations", handlers.PartnerOrganizationsRouter)
 					r.With(middleware.UseReadonlyDB).Route("/dashboard", handlers.DashboardRouter)

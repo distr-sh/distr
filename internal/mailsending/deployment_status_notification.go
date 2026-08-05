@@ -17,7 +17,7 @@ func DeploymentStatusNotificationError(
 	deployment types.DeploymentWithLatestRevision,
 	currentStatus types.DeploymentRevisionStatus,
 ) error {
-	return sendNotificationWithQuota(ctx, user.Email,
+	return sendNotificationWithQuota(ctx, organization.ID, user.Email,
 		mailx.Subject(getDeploymentStatusNotificationSubject(
 			"Error",
 			organization,
@@ -40,7 +40,7 @@ func DeploymentStatusNotificationStale(
 	deployment types.DeploymentWithLatestRevision,
 	previousStatus types.DeploymentRevisionStatus,
 ) error {
-	return sendNotificationWithQuota(ctx, user.Email,
+	return sendNotificationWithQuota(ctx, organization.ID, user.Email,
 		mailx.Subject(getDeploymentStatusNotificationSubject(
 			"Stale",
 			organization,
@@ -63,7 +63,7 @@ func DeploymentStatusNotificationRecovered(
 	deployment types.DeploymentWithLatestRevision,
 	currentStatus types.DeploymentRevisionStatus,
 ) error {
-	return sendNotificationWithQuota(ctx, user.Email,
+	return sendNotificationWithQuota(ctx, organization.ID, user.Email,
 		mailx.Subject(getDeploymentStatusNotificationSubject(
 			"Recovered",
 			organization,

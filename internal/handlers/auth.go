@@ -13,7 +13,7 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authjwt"
 	internalctx "github.com/distr-sh/distr/internal/context"
-	"github.com/distr-sh/distr/internal/customdomains"
+	"github.com/distr-sh/distr/internal/custommail"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/mailsending"
@@ -438,7 +438,6 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 func authResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
-	mailer := internalctx.GetMailer(ctx)
 	if request, err := JsonBody[api.AuthResetPasswordRequest](w, r); err != nil {
 		return
 	} else if err := request.Validate(); err != nil {
@@ -463,6 +462,7 @@ func authResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "something went wrong", http.StatusInternalServerError)
 	} else {
 		var organization *types.OrganizationWithBranding
+		mailer := internalctx.GetMailer(ctx)
 		mailOpts := []mailx.MailOpt{
 			mailx.To(user.Email),
 			mailx.Subject("Password reset"),
@@ -477,7 +477,18 @@ func authResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 				organization = result
 			}
 
-			if from, err := customdomains.EmailFromAddressParsedOrDefault(organization.Branding); err == nil {
+			// The mail is sent through the organization of the user's first membership: the reset
+			// request is unauthenticated, so there is no current organization to resolve.
+			if result, err := custommail.MailerForOrganization(ctx, organization.ID); err != nil {
+				log.Error("could not send reset mail", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				http.Error(w, "something went wrong", http.StatusInternalServerError)
+				return
+			} else {
+				mailer = result
+			}
+
+			if from, err := custommail.FromAddressOrDefault(ctx, organization.ID, organization.Branding); err == nil {
 				mailOpts = append(mailOpts, mailx.From(*from))
 			} else {
 				log.Warn("error parsing custom from address", zap.Error(err))

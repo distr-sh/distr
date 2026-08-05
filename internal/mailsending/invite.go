@@ -5,7 +5,7 @@ import (
 
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
-	"github.com/distr-sh/distr/internal/customdomains"
+	"github.com/distr-sh/distr/internal/custommail"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/types"
@@ -21,11 +21,15 @@ func SendUserInviteMail(
 	customerOrgID *uuid.UUID,
 	inviteURL string,
 ) error {
-	mailer := internalctx.GetMailer(ctx)
 	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 
-	from, err := customdomains.EmailFromAddressParsedOrDefault(organization.Branding)
+	mailer, err := custommail.MailerForOrganization(ctx, organization.ID)
+	if err != nil {
+		return err
+	}
+
+	from, err := custommail.FromAddressOrDefault(ctx, organization.ID, organization.Branding)
 	if err != nil {
 		return err
 	}

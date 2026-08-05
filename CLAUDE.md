@@ -229,6 +229,12 @@ The only exceptions are plan-specific billing UI (checkout, plan comparison) and
 
 Organization features (`types.Feature`) come from two sources and must not be mixed up. Plan-managed features are granted by `types.FeaturesForSubscriptionType` and collected in `types.PlanManagedFeatures`; they are the only ones that may be revoked when an organization loses its plan. Everything else is granted out of band — `vendor_billing` by staff, `pre_post_scripts` and `artifact_version_mutable` by an organization admin in the settings — and must survive plan changes and edition reconciliation. Never overwrite the whole `features` array to revoke a plan; remove `types.PlanManagedFeatures` from it.
 
+### Sending Mail
+
+Never take the mailer straight from the context. An organization can configure its own SMTP server (`CustomEmailConfiguration`), which overrides the instance mailer built from the `MAILER_*` env vars, so every sender resolves its transport with `custommail.MailerForOrganization(ctx, orgID)` and its sender address with `custommail.FromAddressOrDefault(ctx, orgID, branding)`. Both fall back to the instance defaults when the organization has no enabled configuration, and neither falls back when sending through a configured server fails — the instance mailer would send from a domain that server's sender address does not belong to, which fails SPF/DKIM/DMARC and hides the misconfiguration.
+
+The organization must be passed explicitly rather than read from the authentication: background jobs have no authentication in their context (`internal/jobs/runner.go`), and notification mail is sent from exactly there.
+
 ### API Routes
 
 API routes are defined in `internal/routing/`. Routes are grouped by authentication requirements:
@@ -282,6 +288,7 @@ Only write a test that could fail for a real reason. Every test is code that has
 - If you read code that doesn't follow these rules, please fix it.
 - If you see any typos, or spelling mistakes, please fix them.
 - If you fetch data from GitHub always use the GitHub cli (`gh`) instead of the web interface.
+- Scripting language preference, for anything from a one-off command to a checked-in script: shell first (like `hack/validate-migrations.sh`), Node when a task outgrows shell (like `hack/agent-changelog.mjs`). Avoid Python, and never use Perl (e.g. `perl -pi -e`). Edit existing files directly instead of piping them through a stream editor.
 - When you resolve merge conflicts (whether during a merge or rebase), always ensure that the conflict resolutions are committed before continuing, or at least prompt the user to commit them, so that unrelated new changes are not unintentionally included in that commit.
 
 ## Code Review Instructions

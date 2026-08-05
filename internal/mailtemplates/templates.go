@@ -148,6 +148,24 @@ func UpdateEmail(
 	}
 }
 
+func CustomEmailTest(
+	ctx context.Context,
+	userAccount types.UserAccount,
+	org types.OrganizationWithBranding,
+	config types.CustomEmailConfiguration,
+) (*template.Template, any) {
+	return templates.Lookup("custom-email-test.html"), map[string]any{
+		"UserAccount":   userAccount,
+		"Organization":  org,
+		"Configuration": config,
+		// Distr reports the result of the test to the admin, so the organization name must not be
+		// used as the signature here.
+		"Signature":   "Distr",
+		"Host":        customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding),
+		"LogoDataUrl": BrandingLogoDataURL(ctx, org.Branding),
+	}
+}
+
 func DeploymentTargetMetricsNotificationAlert(
 	deploymentTarget types.DeploymentTargetFull,
 	metricType string,
