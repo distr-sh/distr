@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
-	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/distr-sh/distr/internal/envparse"
 	"github.com/distr-sh/distr/internal/envutil"
 	"github.com/distr-sh/distr/internal/util"
@@ -556,22 +554,7 @@ func OIDCGenericClientID() *string     { return oidcGenericClientID }
 func OIDCGenericClientSecret() *string { return oidcGenericClientSecret }
 func OIDCGenericIssuer() *string       { return oidcGenericIssuer }
 func OIDCGenericPKCEEnabled() bool     { return oidcGenericPKCEEnabled }
-
-// OIDCGenericScopes returns scopes as a string array
-// expecting user input as "foo bar baz" or "foo,bar,baz"
-func OIDCGenericScopes() []string {
-	scopes := []string{
-		oidc.ScopeOpenID,
-	}
-	if oidcGenericScopes != nil {
-		if strings.Contains(*oidcGenericScopes, ",") {
-			scopes = append(scopes, strings.Split(*oidcGenericScopes, ",")...)
-		} else if strings.Contains(*oidcGenericScopes, " ") {
-			scopes = append(scopes, strings.Split(*oidcGenericScopes, " ")...)
-		}
-	}
-	return scopes
-}
+func OIDCGenericScopes() *string       { return oidcGenericScopes }
 
 func CustomOIDCAllowPrivateIssuers() bool {
 	return customOIDCAllowPrivateIssuers

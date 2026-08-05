@@ -33,19 +33,19 @@ graph TD
 
 ## Proposed order of work
 
-| Stage | Issue   | Title                                           | Why now                                                               |
-| ----- | ------- | ----------------------------------------------- | --------------------------------------------------------------------- |
-| 0     | DEV-283 | Business plan gating + subscription switching   | Prerequisite: defines how all enterprise features below are gated.    |
-| 1     | DEV-641 | Improve handling of IdP-provided UID            | **Implemented** as a standalone stage. Foundation for DEV-596.        |
-| 2     | DEV-592 | Automated custom domain configuration (vendors) | **Implemented** (PRs 1–4 in one change). Root of the dependency tree. |
-| 3     | DEV-595 | Custom email provider configurations            | Independent of OIDC; needed before the Route53 migration.             |
-| 4     | DEV-596 | Vendor-scoped OIDC configuration                | **Implemented** except role mapping; needed DEV-592 and DEV-641.      |
-| 5     | DEV-593 | Customer portal domain configuration            | Extends DEV-592 to the customer portal.                               |
-| 6     | DEV-594 | Migrate Route53 NS zones to CNAME setup         | Customer self-service migration; needs DEV-592 + DEV-595.             |
-| 7     | —       | Customer portal OIDC, vendor-configured         | Level 3 below; needs DEV-593 + DEV-596. No Linear issue yet.          |
-| 8     | DEV-597 | Customer-configured OIDC (customer feature)     | Level 4 below; needs DEV-593 + DEV-596.                               |
-| 9     | DEV-644 | Hide instance-scoped OIDC on custom domains     | **Implemented**, pulled forward: needs only DEV-592, not DEV-596.     |
-| —     | DEV-720 | User group mapping from IdP                     | In backlog. Not planned.                                              |
+| Stage | Issue   | Title                                           | Why now                                                                                  |
+| ----- | ------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| 0     | DEV-283 | Business plan gating + subscription switching   | Prerequisite: defines how all enterprise features below are gated.                       |
+| 1     | DEV-641 | Improve handling of IdP-provided UID            | **Implemented** as a standalone stage. Foundation for DEV-596.                           |
+| 2     | DEV-592 | Automated custom domain configuration (vendors) | **Implemented** (PRs 1–4 in one change). Root of the dependency tree.                    |
+| 3     | DEV-595 | Custom email provider configurations            | **Implemented** (PRs 1–4 in one change, SMTP only). Needed before the Route53 migration. |
+| 4     | DEV-596 | Vendor-scoped OIDC configuration                | **Implemented** except role mapping; needed DEV-592 and DEV-641.                         |
+| 5     | DEV-593 | Customer portal domain configuration            | Extends DEV-592 to the customer portal.                                                  |
+| 6     | DEV-594 | Migrate Route53 NS zones to CNAME setup         | Customer self-service migration; needs DEV-592 + DEV-595.                                |
+| 7     | —       | Customer portal OIDC, vendor-configured         | Level 3 below; needs DEV-593 + DEV-596. No Linear issue yet.                             |
+| 8     | DEV-597 | Customer-configured OIDC (customer feature)     | Level 4 below; needs DEV-593 + DEV-596.                                                  |
+| 9     | DEV-644 | Hide instance-scoped OIDC on custom domains     | **Implemented**, pulled forward: needs only DEV-592, not DEV-596.                        |
+| —     | DEV-720 | User group mapping from IdP                     | In backlog. Not planned.                                                                 |
 
 ---
 
@@ -62,7 +62,7 @@ Before shipping any of the enterprise features below, introduce the **business p
 **Business plan + feature mapping (with starter plan removal)**
 
 - `SubscriptionTypeBusiness` added to `types.SubscriptionType`; `SubscriptionTypeStarter` **removed** entirely. Migration `113_business_subscription_type` converts existing `starter` orgs to `pro` and recreates the enum as `('community', 'pro', 'business', 'enterprise', 'trial')`. **Pre-deploy check**: there must be no active Starter Stripe subscriptions — the starter price lookup keys were removed, so a webhook for such a subscription would fail with "no subscription type found".
-- Per-plan feature sets: `types.FeaturesForSubscriptionType(st)` (community → none; trial/pro/enterprise → `licensing`; business → `licensing`, `partner_management`). Subscription reconciliation (the Stripe webhook) is **additive only** — plan changes grant the new plan's features but never revoke any, so manually granted flags (e.g. `vendor_billing`) and previously granted plan features survive; only community organizations get their features stripped, by `ReconcileEditionFeatures` at startup. Trial → pro is a no-op feature-wise since the sets are identical. The new features from this project (`custom_domains`, `custom_email_provider`, `custom_oidc_providers`) are added to the business set by the respective later stages.
+- Per-plan feature sets: `types.FeaturesForSubscriptionType(st)` (community → none; trial/pro/enterprise → `licensing`; business → `licensing`, `partner_management`). Subscription reconciliation (the Stripe webhook) is **additive only** — plan changes grant the new plan's features but never revoke any, so manually granted flags (e.g. `vendor_billing`) and previously granted plan features survive; only community organizations get their features stripped, by `ReconcileEditionFeatures` at startup. Trial → pro is a no-op feature-wise since the sets are identical. The new features from this project (`custom_domains`, `custom_emails`, `custom_oidc_providers`) are added to the business set by the respective later stages.
 - Gating generalized: `SubscriptionType.IsPro()` includes business; `NonProSubscriptionTypes` is now just `[community]`; `middleware.ProFeature` includes business; `ReconcileStarterFeaturesForOrganizationID` was deleted.
 - Limits (`internal/subscription/global_limits.go`): business = unlimited customers, 25 users/customer, 8 deployments/customer, 10,000 log export rows, **30-day log query window** (Loki retention).
 - Stripe wiring: lookup keys `distr_business_customer_monthly|yearly`, `distr_business_user_monthly|yearly` in `internal/billing/price.go` (**ops task**: create the corresponding Stripe products/prices — monthly $39 user / $159 customer; yearly $384 user / $1,536 customer). All shared key slices (`CustomerPriceKeys`, `UserPriceKeys`, `MonthlyPriceKeys`, `YearlyPriceKeys`) include the business keys, so quantity/period parsing works for business-keys-only subscriptions (covered by unit tests in `internal/billing/subscription_test.go`).
@@ -174,6 +174,16 @@ Follows the "recommended shape" in appendix §5: a dedicated `CustomDomain` tabl
 
 ## Stage 3 — DEV-595: Custom email provider configurations
 
+> **Status: implemented**, with the scope reduced to SMTP. All four PR scopes below landed in a single change: the `CustomEmailConfiguration` table (migration 115), the `custom_emails` feature flag on the business plan, the CRUD + test-send API under `/api/v1/custom-email`, per-org mailer resolution in `internal/custommail`, and the org settings "Custom Email" section.
+>
+> **Deltas from the plan below**, all deliberate:
+>
+> - **SMTP only.** SES with static credentials was dropped from v1, so the table has **no `provider` column** — nothing would read it, the same reasoning that kept the customer/partner scope columns out of `CustomDomain` in Stage 2. Adding SES is an additive migration: a `provider` enum, nullable `smtp_*` columns and a per-provider `CHECK`.
+> - **The feature flag is `custom_emails`**, not `custom_email_provider`.
+> - **The from address moved onto the new table** (`from_address`, `NOT NULL`) instead of staying on branding. `OrganizationBranding.email_from_address` was never writable through the API, so it could only be set by support; it stays untouched as a **legacy fallback**, exactly like the legacy branding domain columns, and is not migrated. Resolution order is custom email configuration → branding column → `MAILER_FROM_ADDRESS`, implemented by `custommail.FromAddressOrDefault`, which replaced `customdomains.EmailFromAddressParsedOrDefault`.
+> - **The endpoints live under their own router** `/api/v1/custom-email` (`handlers.CustomEmailsRouter`, mounted behind `middleware.CustomEmailsFeatureMiddleware`) rather than under the settings router, mirroring `/api/v1/custom-domains`.
+> - **Resolution is threaded explicitly through every sender** (`custommail.MailerForOrganization(ctx, orgID)`): invites, verification, password reset, the e-mail change confirmation, license key revisions (org from `licenseKey.OrganizationID`) and both notification senders (`sendNotificationWithQuota` gained an `orgID` parameter). The `authOrgOverrideFromAddress` hook in `internal/svc/mailer.go` now also consults the new configuration, but only covers authenticated requests — background jobs have no authentication in their context, which is why the explicit threading is required.
+
 ### Summary
 
 For **new custom domain configurations** (DEV-592 self-service), no AWS certificates or Route53 NS records are created anymore — so Distr cannot send email from those domains via our SES account (no domain verification/DKIM in our SES). Let organizations configure their own email provider instead. The **currently existing custom mail configurations** (SES sending for domains verified through the legacy NS zone setups) **stay supported for now**; they are only decommissioned via DEV-594 and the follow-up tickets. **Scope decision: exactly one configuration per (vendor) organization** — no per-customer/per-partner configs; customer- and partner-related mails (invites, portal notifications) are sent via the owning vendor's provider. Providers for v1 are what [go-mailx/mailx](https://github.com/go-mailx/mailx) already supports and Distr already uses instance-wide: **SMTP** and **AWS SES with access key / secret key**. Resend/Brevo may come later as new mailx adapters.
@@ -237,7 +247,7 @@ CREATE TABLE OrganizationEmailConfiguration (
   - `DELETE /api/v1/settings/email-configuration`,
   - `POST /api/v1/settings/email-configuration/test` — send a test mail to the current user via the submitted (or stored) config and report the provider error verbatim.
 - Config validation (**decided**): the **test send is the only validation** — no provider-side checks like SES `GetIdentityVerificationAttributes` for the from-address domain. Keeps v1 provider-agnostic and simple; a failed test send with the verbatim provider error tells the admin what to fix.
-- Feature gating (**decided**): available on the **business plan only** (`custom_email_provider` feature from Stage 0), consistent with DEV-592.
+- Feature gating (**decided**): available on the **business plan only** (`custom_emails` feature), consistent with DEV-592.
 
 **PR 4 — frontend + docs**
 
@@ -266,7 +276,7 @@ The feature flag is **`custom_oidc_providers`** (business plan, in `types.Featur
 
 ### What shipped
 
-**Schema** (migrations `116_custom_oidc_enum` and `117_custom_oidc_configuration`)
+**Schema** (migrations `117_custom_oidc_enum` and `118_custom_oidc_configuration`)
 
 - `ALTER TYPE FEATURE ADD VALUE 'custom_oidc_providers'` and `ALTER TYPE OIDC_PROVIDER ADD VALUE 'custom'`, in their own migration because `ALTER TYPE ADD VALUE` may not be used in the same transaction as a statement that references the new value. `generic` stays reserved for the env-configured instance provider.
 - `CustomOIDCConfiguration` (`organization_id`, `custom_domain_id`, `name`, `enabled`, `issuer`, `client_id`, `client_secret`, `scopes`, `pkce_enabled` (nullable — null means "from the discovery document"), `sp_initiated`, `create_unknown_users`, `default_user_role`, `allowed_email_domains`, timestamps). Named `CustomOIDCConfiguration`, not `OrganizationOIDCConfiguration`, to match the `CustomDomain` and `CustomEmailConfiguration` it sits next to.
@@ -507,7 +517,7 @@ Mapping IdP groups to Distr users/roles. Currently not possible — users must b
 
 ## Cross-cutting notes
 
-- **Feature gating** (decided): plan-based via Stage 0 — the business plan (and above) grants the new `Feature` flags (`custom_domains`, `custom_email_provider`, `custom_oidc_providers`); DEV-283 plan switching is the prerequisite deliverable. Each flag is introduced by the stage that develops the feature (`custom_domains` by DEV-592, `custom_email_provider` by DEV-595, `custom_oidc_providers` by DEV-596) — flags are never pre-created.
+- **Feature gating** (decided): plan-based via Stage 0 — the business plan (and above) grants the new `Feature` flags (`custom_domains`, `custom_emails`, `custom_oidc_providers`); DEV-283 plan switching is the prerequisite deliverable. Each flag is introduced by the stage that develops the feature (`custom_domains` by DEV-592, `custom_emails` by DEV-595, `custom_oidc_providers` by DEV-596) — flags are never pre-created.
 - **Secret storage** (decided): OIDC client secrets (DEV-596/597) and SMTP/SES credentials (DEV-595) are stored as plaintext for v1, consistent with the existing `Secret` table — never serialized to JSON or returned by the API. Encryption at rest for all of them together is a follow-up ticket.
 - ~~**Host-context middleware** is the shared backbone for DEV-593, DEV-596, DEV-597 and DEV-644~~ — **no middleware was needed**. DEV-644 and DEV-596 both resolve the host in the handful of handlers that care (`resolvePortalHost` in `internal/handlers/portal.go`, reused by the auth and registration handlers), and the registry resolves organizations from the repository path rather than the Host header. A middleware would have put a database lookup on every request for the benefit of a few. Levels 3 and 4 should reuse `resolvePortalHost` rather than revive the idea.
 - **Ownership of an OIDC configuration follows the domain it hangs off**, never a customer relationship: the vendor owns what sits on its app and customer portal domains, a customer owns what sits on its own domain. See "The four levels of OIDC for a customer user" above; vendors never configure a provider for one specific customer.
@@ -528,7 +538,7 @@ Cleanup and nice-to-have work that intentionally stays out of the delivery stage
 4. **Introduce secrets-at-rest encryption** for all secret storage in one go: the existing `Secret` table, the DEV-595 email provider credentials, and the DEV-596/597 OIDC client secrets (all plaintext for now). Sketch: `internal/crypto` helper, AES-256-GCM, key from a new `SECRETS_ENCRYPTION_KEY` env var (base64, 32 bytes), ciphertexts prefixed with a key-ID/version byte so the key can become a keyring (rotation) without another migration; update `configuration.mdx`.
 5. **Connect an OIDC provider from the user settings page** (DEV-641 left this out): the settings page lists and disconnects connected accounts, but connecting one requires signing in with it. A settings-initiated link flow needs a user-scoped `OIDCState` and conflict handling for identities already owned by another account. An org-admin view of the identities of other users is a separate question.
 6. **Require a provider-verified email for the email fallback match** (DEV-641 kept the previous semantics): the fallback that links an identity to an account found by email does not check `email_verified`, because generic IdPs may omit the claim. Tightening this would harden linking against IdPs that report unverified addresses.
-7. **Additional mail providers (Resend/Brevo)** as new mailx adapters (DEV-595 summary).
+7. **Additional mail providers** for the custom email configuration: **SES with static credentials** (dropped from the DEV-595 v1 scope — needs a `provider` enum column, nullable `smtp_*` columns and a per-provider `CHECK`, plus `ses.New(aws.Config)` with `credentials.NewStaticCredentialsProvider`), and Resend/Brevo as new mailx adapters (DEV-595 summary).
 8. **Per-org notification quota override** for organizations with their own email provider that need more than the instance-wide `NOTIFICATION_EMAIL_HOURLY_QUOTA` (DEV-595 PR 2 keeps the quota for all transports).
 9. **DEV-720 IdP group mapping** — in backlog; builds on the DEV-641 identity table + DEV-596 role mapping.
 10. **Remove this plan document** (`hack/oidc-plan.md`) from the repository once all stages have shipped and the remaining follow-ups are tracked in Linear.

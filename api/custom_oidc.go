@@ -12,10 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const (
-	customOIDCConfigurationNameMaxLength = 100
-	openIDScope                          = "openid"
-)
+const customOIDCConfigurationNameMaxLength = 100
 
 type CustomOIDCConfiguration struct {
 	ID                  uuid.UUID      `json:"id"`
@@ -61,13 +58,7 @@ func (r *CustomOIDCConfigurationRequest) Normalize() {
 	r.Issuer = strings.TrimSpace(r.Issuer)
 	r.ClientID = strings.TrimSpace(r.ClientID)
 
-	scopes := []string{openIDScope}
-	for _, scope := range r.Scopes {
-		if scope = strings.TrimSpace(scope); scope != "" && !slices.Contains(scopes, scope) {
-			scopes = append(scopes, scope)
-		}
-	}
-	r.Scopes = scopes
+	r.Scopes = oidc.NormalizeScopes(r.Scopes)
 
 	domains := make([]string, 0, len(r.AllowedEmailDomains))
 	for _, domain := range r.AllowedEmailDomains {

@@ -20,7 +20,7 @@ func DeploymentTargetMetricsNotificationAlert(
 	threshold int,
 	usagePercent int64,
 ) error {
-	return sendNotificationWithQuota(ctx, user.Email,
+	return sendNotificationWithQuota(ctx, organization.ID, user.Email,
 		mailx.Subject(getDeploymentTargetMetricsNotificationSubject("Alert", metricType, organization, deploymentTarget)),
 		mailx.HtmlBodyTemplate(mailtemplates.DeploymentTargetMetricsNotificationAlert(
 			deploymentTarget, metricType, diskDevice, diskPath, threshold, usagePercent,
@@ -39,7 +39,7 @@ func DeploymentTargetMetricsNotificationResolved(
 	threshold int,
 	usagePercent int64,
 ) error {
-	return sendNotificationWithQuota(ctx, user.Email,
+	return sendNotificationWithQuota(ctx, organization.ID, user.Email,
 		mailx.Subject(getDeploymentTargetMetricsNotificationSubject("Resolved", metricType, organization, deploymentTarget)),
 		mailx.HtmlBodyTemplate(mailtemplates.DeploymentTargetMetricsNotificationResolved(
 			deploymentTarget, metricType, diskDevice, diskPath, threshold, usagePercent,

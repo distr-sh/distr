@@ -9,6 +9,7 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	"github.com/distr-sh/distr/internal/authjwt"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/custommail"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/middleware"
@@ -162,7 +163,6 @@ func userSettingsUpdateHandler(w http.ResponseWriter, r *http.Request) {
 func userSettingsUpdateEmailHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		mailer := internalctx.GetMailer(ctx)
 		log := internalctx.GetLogger(ctx)
 		auth := auth.Authentication.Require(ctx)
 		user := auth.CurrentUser()
@@ -202,6 +202,14 @@ func userSettingsUpdateEmailHandler() http.HandlerFunc {
 			return
 		}
 		user.Email = oldEmail
+
+		mailer, err := custommail.MailerForOrganization(ctx, *auth.CurrentOrgID())
+		if err != nil {
+			log.Error("failed to resolve mailer for email change", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		owb := *auth.CurrentOrgWithBranding()
 		if err := mailer.Send(ctx,

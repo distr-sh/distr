@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    {{ template "fragments/style.html" }}
+  </head>
+  <body>
+    <div class="message-container">
+      {{ template "fragments/header.html" . }}
+      <main>
+        {{ template "fragments/greeting.html" . }}
+
+
+        <p>
+          This is a test email from Distr, sent through the SMTP server configured for
+          {{ if .Organization.Name }}
+            {{ .Organization.Name }}
+          {{ else }}
+            your organization
+          {{ end }}.
+          Receiving it means that the configuration works.
+        </p>
+
+        <p>These are the settings it was sent with:</p>
+
+        <ul>
+          <li>
+            <strong>Sender address:</strong>
+            {{ .Configuration.FromAddress }}
+          </li>
+          <li>
+            <strong>SMTP server:</strong>
+            {{ .Configuration.SMTPHost }}:{{ .Configuration.SMTPPort }}
+          </li>
+          <li>
+            <strong>Authentication:</strong>
+            {{ if .Configuration.SMTPUsername }}
+              {{ .Configuration.SMTPUsername }}
+            {{ else }}
+              none
+            {{ end }}
+          </li>
+          <li>
+            <strong>Encryption:</strong>
+            {{ if .Configuration.SMTPImplicitTLS }}
+              implicit TLS
+            {{ else }}
+              STARTTLS
+            {{ end }}
+          </li>
+        </ul>
+
+        <p>
+          If this email ended up in your spam folder, your sender domain is most likely missing SPF, DKIM or DMARC
+          records authorizing this server to send for it.
+        </p>
+
+        <p>{{ template "fragments/signature.html" . }}</p>
+      </main>
+      {{ template "fragments/footer.html" . }}
+    </div>
+  </body>
+</html>

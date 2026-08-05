@@ -10,7 +10,8 @@
 
     @if (!appDomain()) {
       <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-        Configure a custom app domain above first &mdash; your identity provider is offered on that domain only.
+        Configure a custom app domain on the General tab first &mdash; your identity provider is offered on that domain
+        only.
       </p>
     } @else {
       @if (membersWithOtherOrganizations() > 0) {

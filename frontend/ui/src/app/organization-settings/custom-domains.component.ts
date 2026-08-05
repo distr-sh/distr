@@ -6,6 +6,7 @@ import {faTrash} from '@fortawesome/free-solid-svg-icons';
 import {BehaviorSubject, combineLatest, firstValueFrom, from, of, switchMap} from 'rxjs';
 import {getRemoteEnvironment} from '../../env/remote';
 import {getFormDisplayedError} from '../../util/errors';
+import {HOSTNAME_MAX_LENGTH, HOSTNAME_REGEX} from '../../util/validation';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AuthService} from '../services/auth.service';
 import {ContextService} from '../services/context.service';
@@ -14,11 +15,6 @@ import {FeatureFlagService} from '../services/feature-flag.service';
 import {OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
 import {CustomDomain, CustomDomainType} from '../types/custom-domain';
-
-// RFC-1123 hostname: dot-separated labels of alphanumerics and hyphens (not at the start or
-// end of a label), at least two labels. Case-insensitive because domains are entered as typed
-// and lower-cased on save.
-const hostnamePattern = /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i;
 
 @Component({
   selector: 'app-custom-domains',
@@ -66,9 +62,12 @@ export class CustomDomainsComponent {
   // Not marked required: the inputs are saved together with the organization settings form,
   // so empty domain inputs simply mean "nothing to save" and must not block that save.
   protected readonly form = this.fb.group({
-    appDomain: this.fb.control('', [Validators.pattern(hostnamePattern)]),
+    appDomain: this.fb.control('', [Validators.pattern(HOSTNAME_REGEX), Validators.maxLength(HOSTNAME_MAX_LENGTH)]),
     registryDomainEnabled: this.fb.control(false),
-    registryDomain: this.fb.control({value: '', disabled: true}, [Validators.pattern(hostnamePattern)]),
+    registryDomain: this.fb.control({value: '', disabled: true}, [
+      Validators.pattern(HOSTNAME_REGEX),
+      Validators.maxLength(HOSTNAME_MAX_LENGTH),
+    ]),
   });
   protected readonly registryDomainEnabled = toSignal(this.form.controls.registryDomainEnabled.valueChanges, {
     initialValue: false,

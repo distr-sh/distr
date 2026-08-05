@@ -133,7 +133,7 @@ Any OIDC-compliant identity provider can be configured with the generic options.
 | `OIDC_GENERIC_ISSUER`        | yes      | (none)  | Issuer URL, e.g. `https://auth.example.com/`.                                       |
 | `OIDC_GENERIC_CLIENT_ID`     | yes      | (none)  | Client ID issued by the provider.                                                   |
 | `OIDC_GENERIC_CLIENT_SECRET` | yes      | (none)  | Client secret issued by the provider.                                               |
-| `OIDC_GENERIC_SCOPES`        | yes      | (none)  | Comma-separated scopes to request. Typically `openid,email,profile`.                |
+| `OIDC_GENERIC_SCOPES`        | yes      | (none)  | Comma- or space-separated scopes to request, e.g. `email,profile`. `openid` is always requested. |
 | `OIDC_GENERIC_PKCE_ENABLED`  | no       | `false` | Enable PKCE (`S256`). Recommended for public clients and providers that support it. |
 
 Callback URL: `{DISTR_HOST}/api/v1/auth/oidc/generic/callback`

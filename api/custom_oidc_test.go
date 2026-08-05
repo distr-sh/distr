@@ -27,7 +27,7 @@ func TestCustomOIDCConfigurationRequestNormalize(t *testing.T) {
 		Name:                "  Acme SSO  ",
 		Issuer:              "  https://acme.eu.auth0.com/  ",
 		ClientID:            " client-id ",
-		Scopes:              []string{" profile ", "email", "", "email", "openid"},
+		Scopes:              []string{" profile ", "email,groups", "", "email", "openid"},
 		AllowedEmailDomains: []string{" @Acme.com ", "acme.com", "https://sub.acme.com/path", ""},
 	}
 	request.Normalize()
@@ -35,7 +35,7 @@ func TestCustomOIDCConfigurationRequestNormalize(t *testing.T) {
 	g.Expect(request.Name).To(Equal("Acme SSO"))
 	g.Expect(request.Issuer).To(Equal("https://acme.eu.auth0.com/"))
 	g.Expect(request.ClientID).To(Equal("client-id"))
-	g.Expect(request.Scopes).To(Equal([]string{"openid", "profile", "email"}))
+	g.Expect(request.Scopes).To(Equal([]string{"openid", "profile", "email", "groups"}))
 	g.Expect(request.AllowedEmailDomains).To(Equal([]string{"acme.com", "sub.acme.com"}))
 }
 

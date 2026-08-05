@@ -5,7 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
+	"strings"
+	"unicode"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/distr-sh/distr/internal/env"
@@ -41,6 +44,20 @@ type Identity struct {
 }
 
 type IdentityExtractorFunc func(context.Context, *oauth2.Token) (Identity, error)
+
+// NormalizeScopes accepts scopes as a list, or as comma or space separated values in any of its
+// entries, and always requests openid first, because without it a provider issues no ID token.
+func NormalizeScopes(values []string) []string {
+	scopes := []string{oidc.ScopeOpenID}
+	for _, value := range values {
+		for _, scope := range strings.FieldsFunc(value, func(r rune) bool { return r == ',' || unicode.IsSpace(r) }) {
+			if !slices.Contains(scopes, scope) {
+				scopes = append(scopes, scope)
+			}
+		}
+	}
+	return scopes
+}
 
 func verifiedIdTokenIdentityExtractor(provider Provider, verifier *oidc.IDTokenVerifier) IdentityExtractorFunc {
 	return func(ctx context.Context, token *oauth2.Token) (Identity, error) {
@@ -135,7 +152,7 @@ func NewOIDCer(ctx context.Context, log *zap.Logger) (*OIDCer, error) {
 						ClientSecret: *env.OIDCGenericClientSecret(),
 						RedirectURL:  getRedirectURL(r, ProviderGeneric),
 						Endpoint:     genericProvider.Endpoint(),
-						Scopes:       env.OIDCGenericScopes(),
+						Scopes:       NormalizeScopes([]string{*env.OIDCGenericScopes()}),
 					},
 					pkceEnabled: env.OIDCGenericPKCEEnabled(),
 				}
