@@ -270,7 +270,7 @@ Only write a test that could fail for a real reason. Every test is code that has
 
 - Do not test guard clauses, getters, plain mappings, a single `if` branch, or that a value passed in comes back out.
 - Do not write a test whose assertion is trivially true because the dependency it needs is not configured in tests.
-- Do test behaviour that is hard to get right and expensive to get wrong: wire formats sent to third parties, fail-closed security behaviour, parsing, permission and subscription gating, and non-trivial query or business logic.
+- Do test behavior that is hard to get right and expensive to get wrong: wire formats sent to third parties, fail-closed security behavior, parsing, permission and subscription gating, and non-trivial query or business logic.
 - Prefer a few focused tests over an exhaustive matrix of near-duplicates.
 
 ## General rules
