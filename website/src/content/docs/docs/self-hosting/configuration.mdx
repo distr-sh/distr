@@ -152,26 +152,26 @@ If a `*_CRON` variable is unset, the corresponding job is not scheduled. A `*_TI
 Each provider is enabled independently and its credentials are only required when it is enabled.
 See [OIDC Authentication](/docs/self-hosting/oidc/) for setup instructions and callback URLs.
 
-| Variable                                        | Required           | Default | Description                                                                       |
-| ----------------------------------------------- | ------------------ | ------- | --------------------------------------------------------------------------------- |
-| `OIDC_GITHUB_ENABLED`                           | no                 | `false` | Enables GitHub sign-in.                                                           |
-| `OIDC_GITHUB_CLIENT_ID`                         | if GitHub enabled  | —       | GitHub OAuth App client ID.                                                       |
-| `OIDC_GITHUB_CLIENT_SECRET`                     | if GitHub enabled  | —       | GitHub OAuth App client secret.                                                   |
-| `OIDC_GOOGLE_ENABLED`                           | no                 | `false` | Enables Google sign-in.                                                           |
-| `OIDC_GOOGLE_CLIENT_ID`                         | if Google enabled  | —       | Google OAuth 2.0 client ID.                                                       |
-| `OIDC_GOOGLE_CLIENT_SECRET`                     | if Google enabled  | —       | Google OAuth 2.0 client secret.                                                   |
-| `OIDC_MICROSOFT_ENABLED`                        | no                 | `false` | Enables Microsoft (Entra ID) sign-in.                                             |
-| `OIDC_MICROSOFT_CLIENT_ID`                      | if MS enabled      | —       | Entra ID application (client) ID.                                                 |
-| `OIDC_MICROSOFT_CLIENT_SECRET`                  | if MS enabled      | —       | Entra ID client secret.                                                           |
-| `OIDC_MICROSOFT_TENANT_ID`                      | if MS enabled      | —       | Directory (tenant) ID, or `common`/`organizations`/`consumers`.                   |
-| `OIDC_GENERIC_ENABLED`                          | no                 | `false` | Enables a generic OIDC provider.                                                  |
-| `OIDC_GENERIC_CLIENT_ID`                        | if generic enabled | —       | Client ID issued by the provider.                                                 |
-| `OIDC_GENERIC_CLIENT_SECRET`                    | if generic enabled | —       | Client secret issued by the provider.                                             |
-| `OIDC_GENERIC_ISSUER`                           | if generic enabled | —       | Issuer URL exposing `/.well-known/openid-configuration`.                          |
+| Variable                                        | Required           | Default | Description                                                                        |
+| ----------------------------------------------- | ------------------ | ------- | ---------------------------------------------------------------------------------- |
+| `OIDC_GITHUB_ENABLED`                           | no                 | `false` | Enables GitHub sign-in.                                                            |
+| `OIDC_GITHUB_CLIENT_ID`                         | if GitHub enabled  | —       | GitHub OAuth App client ID.                                                        |
+| `OIDC_GITHUB_CLIENT_SECRET`                     | if GitHub enabled  | —       | GitHub OAuth App client secret.                                                    |
+| `OIDC_GOOGLE_ENABLED`                           | no                 | `false` | Enables Google sign-in.                                                            |
+| `OIDC_GOOGLE_CLIENT_ID`                         | if Google enabled  | —       | Google OAuth 2.0 client ID.                                                        |
+| `OIDC_GOOGLE_CLIENT_SECRET`                     | if Google enabled  | —       | Google OAuth 2.0 client secret.                                                    |
+| `OIDC_MICROSOFT_ENABLED`                        | no                 | `false` | Enables Microsoft (Entra ID) sign-in.                                              |
+| `OIDC_MICROSOFT_CLIENT_ID`                      | if MS enabled      | —       | Entra ID application (client) ID.                                                  |
+| `OIDC_MICROSOFT_CLIENT_SECRET`                  | if MS enabled      | —       | Entra ID client secret.                                                            |
+| `OIDC_MICROSOFT_TENANT_ID`                      | if MS enabled      | —       | Directory (tenant) ID, or `common`/`organizations`/`consumers`.                    |
+| `OIDC_GENERIC_ENABLED`                          | no                 | `false` | Enables a generic OIDC provider.                                                   |
+| `OIDC_GENERIC_CLIENT_ID`                        | if generic enabled | —       | Client ID issued by the provider.                                                  |
+| `OIDC_GENERIC_CLIENT_SECRET`                    | if generic enabled | —       | Client secret issued by the provider.                                              |
+| `OIDC_GENERIC_ISSUER`                           | if generic enabled | —       | Issuer URL exposing `/.well-known/openid-configuration`.                           |
 | `OIDC_GENERIC_SCOPES`                           | if generic enabled | —       | Comma- or space-separated scopes (e.g. `email,profile`); `openid` is always added. |
-| `OIDC_GENERIC_PKCE_ENABLED`                     | no                 | `false` | Enables PKCE (`S256`) for the generic provider.                                   |
-| `WELLKNOWN_MICROSOFT_IDENTITY_ASSOCIATION_JSON` | no                 | —       | Base64-encoded JSON served at `/.well-known/microsoft-identity-association.json`. |
-| `CUSTOM_OIDC_ALLOW_PRIVATE_ISSUERS`             | no                 | `false` | Allows `http` and private network issuers for organization-configured providers.  |
+| `OIDC_GENERIC_PKCE_ENABLED`                     | no                 | `false` | Enables PKCE (`S256`) for the generic provider.                                    |
+| `WELLKNOWN_MICROSOFT_IDENTITY_ASSOCIATION_JSON` | no                 | —       | Base64-encoded JSON served at `/.well-known/microsoft-identity-association.json`.  |
+| `CUSTOM_OIDC_ALLOW_PRIVATE_ISSUERS`             | no                 | `false` | Allows `http` and private network issuers for organization-configured providers.   |
 
 Vendor organizations on the Business plan can additionally configure their own providers in the UI, which requires no
 instance configuration. Those issuer URLs are entered by organization administrators and fetched by the Hub, so they
