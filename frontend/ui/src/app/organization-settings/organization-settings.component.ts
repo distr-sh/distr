@@ -1,33 +1,30 @@
 import {CdkConnectedOverlay} from '@angular/cdk/overlay';
 import {ChangeDetectionStrategy, Component, computed, inject, signal} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {ActivatedRoute, NavigationEnd, Router, RouterOutlet} from '@angular/router';
+import {filter} from 'rxjs';
 import {PlanBadgeComponent} from '../components/plan-badge.component';
 import {PlanFeatureHintComponent} from '../components/plan-feature-hint.component';
 import {TabBarComponent, TabItem} from '../components/tab-bar.component';
 import {AuthService} from '../services/auth.service';
 import {FeatureFlagService} from '../services/feature-flag.service';
-import {CustomEmailComponent} from './custom-email.component';
-import {CustomOidcComponent} from './custom-oidc.component';
-import {GeneralSettingsComponent} from './general-settings.component';
 
-type OrganizationSettingsTab = 'general' | 'email' | 'identity-provider';
+const organizationSettingsTabs = ['general', 'identity-provider', 'email'] as const;
+const defaultTab: OrganizationSettingsTab = 'general';
+
+type OrganizationSettingsTab = (typeof organizationSettingsTabs)[number];
 
 @Component({
   selector: 'app-organization-settings',
   templateUrl: './organization-settings.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [
-    CdkConnectedOverlay,
-    TabBarComponent,
-    PlanBadgeComponent,
-    PlanFeatureHintComponent,
-    GeneralSettingsComponent,
-    CustomEmailComponent,
-    CustomOidcComponent,
-  ],
+  imports: [CdkConnectedOverlay, TabBarComponent, PlanBadgeComponent, PlanFeatureHintComponent, RouterOutlet],
 })
 export class OrganizationSettingsComponent {
   private readonly featureFlags = inject(FeatureFlagService);
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   private readonly vendorAdmin = computed(() => this.auth.isVendor() && this.auth.hasRole('admin'));
 
@@ -54,12 +51,28 @@ export class OrganizationSettingsComponent {
     return tabs;
   });
 
-  protected readonly activeTab = signal<OrganizationSettingsTab>('general');
-  protected readonly planHintOpen = signal(false);
+  protected readonly activeTab = signal(this.tabFromRoute());
+  protected readonly planHintTab = signal<OrganizationSettingsTab | null>(null);
+
+  constructor() {
+    this.router.events
+      .pipe(
+        filter((event) => event instanceof NavigationEnd),
+        takeUntilDestroyed()
+      )
+      .subscribe(() => this.activeTab.set(this.tabFromRoute()));
+  }
 
   protected onTabClick(tab: TabItem<OrganizationSettingsTab>) {
     if (tab.disabled) {
-      this.planHintOpen.update((open) => !open);
+      this.planHintTab.update((open) => (open === tab.id ? null : tab.id));
+    } else {
+      this.router.navigate([tab.id], {relativeTo: this.route});
     }
+  }
+
+  private tabFromRoute(): OrganizationSettingsTab {
+    const path = this.route.snapshot.firstChild?.routeConfig?.path;
+    return organizationSettingsTabs.find((tab) => tab === path) ?? defaultTab;
   }
 }

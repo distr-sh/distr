@@ -53,28 +53,21 @@
         </div>
       }
 
-      <div class="overflow-x-auto">
+      <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
         <table class="distr-table">
-          <thead class="distr-table-head">
+          <thead class="distr-table-head border-t-0">
             <tr>
-              <th scope="col" class="p-4">Name</th>
-              <th scope="col" class="p-4">Issuer</th>
-              <th scope="col" class="p-4">Enabled</th>
-              <th scope="col" class="p-4">Callback URL</th>
-              <th scope="col" class="p-4"></th>
+              <th scope="col" class="ps-4 py-3 w-px">Enabled</th>
+              <th scope="col" class="px-4 py-3">Provider</th>
+              <th scope="col" class="px-4 py-3">Callback URL</th>
+              <th scope="col" class="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody>
             @for (configuration of configurations(); track configuration.id) {
               <tr class="distr-table-row">
-                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
-                  {{ configuration.name }}
-                </td>
-                <td class="px-4 py-3 text-gray-900 dark:text-white">
-                  <code class="font-mono text-sm">{{ configuration.issuer }}</code>
-                </td>
-                <td class="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">
-                  <label class="inline-flex items-center cursor-pointer my-1">
+                <td class="ps-4 py-3">
+                  <label class="inline-flex items-center cursor-pointer align-middle">
                     <input
                       #enabledToggle
                       type="checkbox"
@@ -85,13 +78,32 @@
                       (change)="toggleEnabled(configuration, enabledToggle)" />
                     <div class="distr-toggle peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
                   </label>
-                  @if (configuration.spInitiated) {
-                    <span class="ms-2 text-gray-500 dark:text-gray-400">default</span>
-                  }
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex items-center gap-2">
-                    <code class="font-mono text-sm text-gray-900 dark:text-white">{{ configuration.callbackUrl }}</code>
+                    <span
+                      class="font-medium whitespace-nowrap"
+                      [class]="
+                        configuration.enabled ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'
+                      ">
+                      {{ configuration.name }}
+                    </span>
+                    @if (configuration.spInitiated) {
+                      <span
+                        class="text-xs font-medium px-2 py-0.5 rounded-sm bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300">
+                        Automatic
+                      </span>
+                    }
+                  </div>
+                  <code class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ configuration.slug }}</code>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <code
+                      class="font-mono text-xs text-gray-500 dark:text-gray-400 truncate max-w-64"
+                      [title]="configuration.callbackUrl">
+                      {{ configuration.callbackUrl }}
+                    </code>
                     <app-clip [clip]="configuration.callbackUrl" />
                   </div>
                 </td>
@@ -121,8 +133,8 @@
             } @empty {
               <tr class="border-t border-gray-200 dark:border-gray-600">
                 <td
-                  colspan="5"
-                  class="px-4 py-3 font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap text-center">
+                  colspan="4"
+                  class="px-4 py-6 font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap text-center">
                   No identity provider configured
                 </td>
               </tr>

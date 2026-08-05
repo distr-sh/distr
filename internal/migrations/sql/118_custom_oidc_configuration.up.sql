@@ -4,6 +4,8 @@ CREATE TABLE CustomOIDCConfiguration (
   updated_at                 TIMESTAMP NOT NULL DEFAULT current_timestamp,
   updated_by_user_account_id UUID      REFERENCES UserAccount (id) ON DELETE SET NULL,
   organization_id            UUID      NOT NULL REFERENCES Organization (id) ON DELETE CASCADE,
+  -- RESTRICT and not CASCADE: deleting a configuration deletes the identities linked to it, so a
+  -- cascade would let removing a domain silently take away the sign-in of everyone using it
   custom_domain_id           UUID      NOT NULL REFERENCES CustomDomain (id) ON DELETE RESTRICT,
   name                       TEXT      NOT NULL,
   slug                       TEXT      NOT NULL,

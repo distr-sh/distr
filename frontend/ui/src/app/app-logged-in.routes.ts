@@ -26,6 +26,9 @@ import {LicenseKeysComponent} from './licenses/license-keys/license-keys.compone
 import {LicensesOverviewComponent} from './licenses/licenses-overview.component';
 import {NotificationRecordsComponent} from './notification-records/notification-records.component';
 import {OrganizationBrandingComponent} from './organization-branding/organization-branding.component';
+import {CustomEmailComponent} from './organization-settings/custom-email.component';
+import {CustomOidcComponent} from './organization-settings/custom-oidc.component';
+import {GeneralSettingsComponent} from './organization-settings/general-settings.component';
 import {OrganizationSettingsComponent} from './organization-settings/organization-settings.component';
 import {CustomerSecretsPageComponent} from './secrets/customer-secrets-page.component';
 import {SecretsPage} from './secrets/secrets-page.component';
@@ -104,6 +107,28 @@ function vendorBillingEnabledGuard(): CanActivateFn {
   return async () => {
     const featureFlags = inject(FeatureFlagService);
     return await firstValueFrom(featureFlags.isVendorBillingEnabled$);
+  };
+}
+
+function customOidcProvidersEnabledGuard(): CanActivateFn {
+  return async () => {
+    const featureFlags = inject(FeatureFlagService);
+    const router = inject(Router);
+    return (
+      (await firstValueFrom(featureFlags.isCustomOidcProvidersEnabled$)) ||
+      router.createUrlTree(['/settings/organization/general'])
+    );
+  };
+}
+
+function customEmailsEnabledGuard(): CanActivateFn {
+  return async () => {
+    const featureFlags = inject(FeatureFlagService);
+    const router = inject(Router);
+    return (
+      (await firstValueFrom(featureFlags.isCustomEmailsEnabled$)) ||
+      router.createUrlTree(['/settings/organization/general'])
+    );
   };
 }
 
@@ -283,6 +308,27 @@ export const routes: Routes = [
             component: OrganizationSettingsComponent,
             data: {userRole: 'vendor'},
             canActivate: [requireVendor, requiredRoleGuard('admin')],
+            children: [
+              {
+                path: '',
+                pathMatch: 'full',
+                redirectTo: 'general',
+              },
+              {
+                path: 'general',
+                component: GeneralSettingsComponent,
+              },
+              {
+                path: 'identity-provider',
+                component: CustomOidcComponent,
+                canActivate: [customOidcProvidersEnabledGuard()],
+              },
+              {
+                path: 'email',
+                component: CustomEmailComponent,
+                canActivate: [customEmailsEnabledGuard()],
+              },
+            ],
           },
           {
             path: 'profile',
