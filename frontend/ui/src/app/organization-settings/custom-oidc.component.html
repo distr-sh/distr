@@ -94,7 +94,7 @@
             </app-domain-field>
           }
 
-          @if (appDomain(); as domain) {
+          @if (oidcProvidersEnabled() && appDomain(); as domain) {
             <h4 class="text-base font-semibold text-gray-900 dark:text-white mt-8">Identity Providers</h4>
             <ng-container [ngTemplateOutlet]="providerSection" [ngTemplateOutletContext]="{$implicit: domain}" />
           }
@@ -132,7 +132,7 @@
           </app-domain-field>
         }
 
-        @if (customerPortalDomain(); as domain) {
+        @if (oidcProvidersEnabled() && customerPortalDomain(); as domain) {
           <h4 class="text-base font-semibold text-gray-900 dark:text-white mt-8">Identity Providers</h4>
           <ng-container [ngTemplateOutlet]="providerSection" [ngTemplateOutletContext]="{$implicit: domain}" />
         }

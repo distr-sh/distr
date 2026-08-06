@@ -33,6 +33,9 @@ func AppDomain(ctx context.Context, orgID uuid.UUID) *string {
 	return domainOfType(customDomains(ctx, orgID, nil), types.DomainTypeApp)
 }
 
+// CustomerPortalDomainOrDefault resolves the link host for a member of this organization: customerOrgID
+// nil means a vendor team member, who never uses the shared customer portal (loginAppDomainRedirect
+// sends them to the app domain too) — only an actual customer user falls through to it.
 func CustomerPortalDomainOrDefault(
 	ctx context.Context,
 	orgID uuid.UUID,
@@ -40,22 +43,31 @@ func CustomerPortalDomainOrDefault(
 	b *types.OrganizationBranding,
 ) string {
 	return customerPortalDomainOrDefault(
-		customerDomains(ctx, orgID, customerOrgID), customDomains(ctx, orgID, nil), b)
+		customerDomains(ctx, orgID, customerOrgID), customerOrgID, customDomains(ctx, orgID, nil), b)
 }
 
 func customerPortalDomainOrDefault(
-	customerScopedDomains, vendorDomains []types.CustomDomain,
+	customerScopedDomains []types.CustomDomain,
+	customerOrgID *uuid.UUID,
+	vendorDomains []types.CustomDomain,
 	b *types.OrganizationBranding,
 ) string {
-	if d := portalDomain(customerScopedDomains, vendorDomains); d != nil {
-		return withScheme(*d)
+	if customerOrgID != nil {
+		if d := portalDomain(customerScopedDomains, vendorDomains); d != nil {
+			return withScheme(*d)
+		}
 	}
 	// Falls through to the vendor's app domain (including its legacy branding fallback) rather than
 	// straight to env.Host(), so a vendor without a portal domain still keeps its own hostname.
 	return appDomainOrDefault(vendorDomains, b)
 }
 
+// CustomerPortalDomain is nil for a vendor team member (customerOrgID nil): there is no "customer
+// portal" for them, only their app domain, resolved separately by AppDomain.
 func CustomerPortalDomain(ctx context.Context, orgID uuid.UUID, customerOrgID *uuid.UUID) *string {
+	if customerOrgID == nil {
+		return nil
+	}
 	return portalDomain(customerDomains(ctx, orgID, customerOrgID), customDomains(ctx, orgID, nil))
 }
 

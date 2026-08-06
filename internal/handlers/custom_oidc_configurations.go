@@ -14,6 +14,7 @@ import (
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/distr-sh/distr/internal/util"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -100,7 +101,7 @@ func createCustomOIDCConfigurationHandler(w http.ResponseWriter, r *http.Request
 	if !ok {
 		return
 	}
-	if !validateCustomOIDCConfigurationRequest(w, r, &request, customerOrgID, nil) {
+	if !validateCustomOIDCConfigurationRequest(w, r, &request, customerOrgID, nil, true) {
 		return
 	}
 	if request.ClientSecret == nil {
@@ -148,7 +149,7 @@ func updateCustomOIDCConfigurationHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		return
 	}
-	if !validateCustomOIDCConfigurationRequest(w, r, &request, customerOrgID, partnerOrgID) {
+	if !validateCustomOIDCConfigurationRequest(w, r, &request, customerOrgID, partnerOrgID, false) {
 		return
 	}
 
@@ -249,11 +250,19 @@ func applyCustomOIDCConfigurationRequest(
 	configuration.AllowedEmailDomains = request.AllowedEmailDomains
 }
 
+// enforceExactScope must be true on create: the domain lookup below runs through the caller's own
+// broad auth scope (a vendor sees every domain), so without this check a vendor could attach a
+// provider to a customer's domain by id alone, without naming that customer in the request and
+// therefore without resolveCustomerScopeForWrite ever checking that customer's oidc_providers feature.
+// It must be false on update, where customerOrgID/partnerOrgID are already the caller's own broad
+// scope by design (a vendor may retarget any of its domains) and the domain is already guaranteed to
+// be one the caller may reach, since it comes from the same scope that authorized the existing row.
 func validateCustomOIDCConfigurationRequest(
 	w http.ResponseWriter,
 	r *http.Request,
 	request *api.CustomOIDCConfigurationRequest,
 	customerOrgID, partnerOrgID *uuid.UUID,
+	enforceExactScope bool,
 ) bool {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
@@ -281,6 +290,10 @@ func validateCustomOIDCConfigurationRequest(
 	}
 	domain, ok := domains[request.CustomDomainID]
 	if !ok {
+		http.Error(w, "unknown custom domain", http.StatusBadRequest)
+		return false
+	}
+	if enforceExactScope && !util.PtrEq(domain.CustomerOrganizationID, customerOrgID) {
 		http.Error(w, "unknown custom domain", http.StatusBadRequest)
 		return false
 	}

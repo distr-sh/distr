@@ -31,11 +31,19 @@ func resolveCustomerScopeForWrite(w http.ResponseWriter, r *http.Request, reques
 		return customerOrgID, true
 	}
 
+	// A partner never owns vendor-scoped resources: unlike a vendor, "no target" cannot fall back to
+	// the caller's own organization, or a partner admin could create app/registry/portal domains and
+	// providers directly on the vendor org. Secrets and entitlements enforce the same rule.
+	partnerOrgID := a.CurrentPartnerOrgID()
 	if requested == nil {
+		if partnerOrgID != nil {
+			http.Error(w, "customer organization ID is required", http.StatusBadRequest)
+			return nil, false
+		}
 		return nil, true
 	}
 
-	if partnerOrgID := a.CurrentPartnerOrgID(); partnerOrgID != nil {
+	if partnerOrgID != nil {
 		if err := db.ValidateCustomerOrgBelongsToPartnerOrg(ctx, *requested, *partnerOrgID); err != nil {
 			http.Error(w, "invalid customer organization ID", http.StatusBadRequest)
 			return nil, false

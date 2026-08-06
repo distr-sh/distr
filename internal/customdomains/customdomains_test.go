@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/google/uuid"
 	. "github.com/onsi/gomega"
 )
 
@@ -12,10 +13,13 @@ func domain(domainType types.DomainType, name string) types.CustomDomain {
 }
 
 func TestCustomerPortalDomainOrDefault(t *testing.T) {
+	someCustomerOrgID := uuid.New()
+
 	t.Run("the customer's own portal domain wins over the vendor's", func(t *testing.T) {
 		g := NewWithT(t)
 		g.Expect(customerPortalDomainOrDefault(
 			[]types.CustomDomain{domain(types.DomainTypeCustomerPortal, "acme.customer.com")},
+			&someCustomerOrgID,
 			[]types.CustomDomain{
 				domain(types.DomainTypeApp, "app.vendor.com"),
 				domain(types.DomainTypeCustomerPortal, "portal.vendor.com"),
@@ -24,10 +28,11 @@ func TestCustomerPortalDomainOrDefault(t *testing.T) {
 		)).To(Equal("https://acme.customer.com"))
 	})
 
-	t.Run("falls back to the vendor's shared portal domain", func(t *testing.T) {
+	t.Run("a customer without its own domain falls back to the vendor's shared portal domain", func(t *testing.T) {
 		g := NewWithT(t)
 		g.Expect(customerPortalDomainOrDefault(
 			nil,
+			&someCustomerOrgID,
 			[]types.CustomDomain{
 				domain(types.DomainTypeApp, "app.vendor.com"),
 				domain(types.DomainTypeCustomerPortal, "portal.vendor.com"),
@@ -36,10 +41,27 @@ func TestCustomerPortalDomainOrDefault(t *testing.T) {
 		)).To(Equal("https://portal.vendor.com"))
 	})
 
+	// A vendor team member (nil customerOrgID) must never end up on the shared customer portal, or
+	// their invite/verify/password-reset/email-change links would disagree with where they are
+	// actually sent by loginAppDomainRedirect, which always sends them to the app domain.
+	t.Run("a vendor team member skips the shared portal domain entirely", func(t *testing.T) {
+		g := NewWithT(t)
+		g.Expect(customerPortalDomainOrDefault(
+			nil,
+			nil,
+			[]types.CustomDomain{
+				domain(types.DomainTypeApp, "app.vendor.com"),
+				domain(types.DomainTypeCustomerPortal, "portal.vendor.com"),
+			},
+			nil,
+		)).To(Equal("https://app.vendor.com"))
+	})
+
 	t.Run("falls back to the vendor's app domain", func(t *testing.T) {
 		g := NewWithT(t)
 		g.Expect(customerPortalDomainOrDefault(
 			nil,
+			&someCustomerOrgID,
 			[]types.CustomDomain{domain(types.DomainTypeApp, "app.vendor.com")},
 			nil,
 		)).To(Equal("https://app.vendor.com"))
@@ -51,7 +73,7 @@ func TestCustomerPortalDomainOrDefault(t *testing.T) {
 		g := NewWithT(t)
 		legacy := "legacy.vendor.com"
 		g.Expect(customerPortalDomainOrDefault(
-			nil, nil, &types.OrganizationBranding{AppDomain: &legacy},
+			nil, &someCustomerOrgID, nil, &types.OrganizationBranding{AppDomain: &legacy},
 		)).To(Equal("https://legacy.vendor.com"))
 	})
 }

@@ -14,7 +14,8 @@
   <div class="flex items-center gap-2">
     <input
       type="checkbox"
-      [(ngModel)]="enabled"
+      [ngModel]="enabled()"
+      (ngModelChange)="enabled.set($event)"
       name="registryDomainEnabled"
       id="registryDomainEnabled"
       class="distr-checkbox" />

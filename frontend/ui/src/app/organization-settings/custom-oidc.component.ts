@@ -85,16 +85,24 @@ export class CustomOidcComponent {
   // with, so the domain fields (not the identity providers of ones already configured) stay hidden.
   protected readonly customDomainsConfigured = computed(() => !!this.appCnameTarget());
 
+  // The tab and its route guard open on either feature (see organization-settings.component.ts /
+  // app-logged-in.routes.ts), so this must too, or an org with only custom_domains gets an enabled
+  // tab that stays blank. The identity-provider-specific parts of the page (the list of providers,
+  // the "add provider" action) stay gated on oidcProvidersEnabled separately.
+  protected readonly domainsEnabled = computed(() => this.featureFlags.isCustomDomainsEnabled());
+  protected readonly oidcProvidersEnabled = computed(() => this.featureFlags.isCustomOidcProvidersEnabled());
+
   protected readonly visible = computed(
     () =>
-      this.featureFlags.isCustomOidcProvidersEnabled() &&
+      (this.domainsEnabled() || this.oidcProvidersEnabled()) &&
       (this.customerScoped() || this.auth.isVendor()) &&
       this.auth.hasRole('admin')
   );
 
   // The server returns everything within the caller's scope (a vendor's own and every customer's
   // providers); configurationsFor narrows to the one domain being rendered, the same way scopedDomains
-  // below narrows the domain list.
+  // below narrows the domain list. Fetched only when the OIDC feature is on: the /custom-oidc route
+  // itself is gated on it, so fetching without it would just 403.
   private readonly response = toSignal(
     combineLatest([this.featureFlags.isCustomOidcProvidersEnabled$, this.refresh$]).pipe(
       switchMap(([enabled]) =>
@@ -109,8 +117,14 @@ export class CustomOidcComponent {
   protected readonly membersWithOtherOrganizations = computed(() => this.response().membersWithOtherOrganizations);
 
   private readonly domains = toSignal(
-    combineLatest([this.featureFlags.isCustomOidcProvidersEnabled$, this.refresh$]).pipe(
-      switchMap(([enabled]) => (enabled ? this.customDomainsService.list() : of([] as CustomDomain[])))
+    combineLatest([
+      this.featureFlags.isCustomDomainsEnabled$,
+      this.featureFlags.isCustomOidcProvidersEnabled$,
+      this.refresh$,
+    ]).pipe(
+      switchMap(([domainsEnabled, oidcEnabled]) =>
+        domainsEnabled || oidcEnabled ? this.customDomainsService.list() : of([] as CustomDomain[])
+      )
     ),
     {initialValue: [] as CustomDomain[]}
   );
