@@ -1,13 +1,15 @@
-import {ChangeDetectionStrategy, Component, inject, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {ActivatedRoute, RouterLink} from '@angular/router';
-import {firstValueFrom} from 'rxjs';
+import {ActivatedRoute, Router, RouterLink} from '@angular/router';
+import {firstValueFrom, take} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {OidcButtonsComponent} from '../components/oidc-buttons.component';
 import {PortalLogoComponent} from '../components/portal-logo/portal-logo.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {PlaceholderDirective} from '../directives/placeholder.directive';
 import {AuthService} from '../services/auth.service';
+import {PortalService} from '../services/portal.service';
 
 @Component({
   selector: 'app-register',
@@ -24,7 +26,10 @@ import {AuthService} from '../services/auth.service';
 })
 export class RegisterComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
+  private readonly portalService = inject(PortalService);
+  private readonly destroyRef = inject(DestroyRef);
 
   errorMessage?: string;
   loading = false;
@@ -44,6 +49,12 @@ export class RegisterComponent implements OnInit {
     if (email) {
       this.form.patchValue({email});
     }
+
+    this.portalService.portal$.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe(({loginConfig}) => {
+      if (!loginConfig.registrationEnabled) {
+        this.router.navigate(['/login'], {replaceUrl: true});
+      }
+    });
   }
 
   public async submit(): Promise<void> {

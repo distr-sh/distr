@@ -1,0 +1,93 @@
+---
+title: 'Custom Identity Provider'
+description: 'Let your team sign in to Distr with your own OpenID Connect identity provider (single sign-on) on your custom app domain, with optional automatic account provisioning.'
+slug: docs/platform/custom-identity-provider
+sidebar:
+  label: Custom Identity Provider
+  order: 2
+---
+
+import {Aside} from '@astrojs/starlight/components';
+
+Your organization can connect its own OpenID Connect identity provider, so your team signs in to Distr with the accounts they already have. Provisioning, password policies and multi-factor authentication then stay in your identity provider.
+
+<Aside type="note">
+  A custom identity provider is available on the Business plan and requires a
+  [custom app domain](/docs/platform/branding/#custom-domains), because your
+  provider is only offered on your own domain. See the [pricing page](/pricing/)
+  for a comparison.
+</Aside>
+
+## Requirements
+
+1. A custom app domain (e.g. `app.your-company.com`) set up under **Settings → Organization → Custom Domains**, and an organization slug, because both are part of every provider's URLs.
+2. An identity provider that serves an OpenID configuration under `<issuer>/.well-known/openid-configuration`. Microsoft Entra ID, Google Workspace, Okta, Auth0, Keycloak, JumpCloud, Authentik and any other OpenID Connect provider work with the same fields.
+3. An application (client) registered with that provider, using the authorization code flow.
+
+## Connecting your identity provider
+
+Go to **Settings → Organization → Identity Provider** and add a provider:
+
+1. **Display name**: Shown on the sign-in button, e.g. `Acme SSO`.
+2. **Slug**: Identifies the provider in its URLs, unique within your organization, e.g. `acme-sso`. Changing it later changes both URLs, so your provider needs the new redirect URI.
+3. **Issuer URL**: The provider's issuer. Distr fetches its OpenID configuration when you save, verifies that the document belongs to that host, and stores the issuer exactly as the provider states it. So a URL that is a little off is corrected rather than rejected.
+4. **Client ID** and **Client secret**: From the application you registered. The secret is never shown again; leave the field empty when editing to keep it.
+5. Copy the **Callback URL** and register it as a redirect URI with your provider.
+
+The URLs of a provider are built from your organization slug and the provider slug:
+
+```
+https://app.your-company.com/api/v1/auth/oidc/custom/<organization-slug>/<provider-slug>
+https://app.your-company.com/api/v1/auth/oidc/custom/<organization-slug>/<provider-slug>/callback
+```
+
+The additional scopes (`profile email` by default) and PKCE are prefilled sensibly: PKCE is used automatically when the provider announces support for it.
+
+Issuer URLs for the most common providers:
+
+| Provider           | Issuer                                                   |
+| ------------------ | -------------------------------------------------------- |
+| Microsoft Entra ID | `https://login.microsoftonline.com/<tenant-id>/v2.0`     |
+| Google             | `https://accounts.google.com`                            |
+| Okta               | `https://<your-org>.okta.com` (or `/oauth2/<server-id>`) |
+| Auth0              | `https://<your-tenant>.eu.auth0.com/`                    |
+| Keycloak           | `https://<your-host>/realms/<realm>`                     |
+
+<Aside type="caution" title="Microsoft Entra ID needs your tenant ID">
+  The `common`, `organizations` and `consumers` endpoints cannot be used: their
+  OpenID configuration does not name a tenant, so the tokens they issue cannot
+  be verified against a single issuer. Use the single-tenant issuer with your
+  directory (tenant) ID.
+</Aside>
+
+## Who can sign in
+
+Your provider is offered on your custom app domain and nowhere else. That domain also serves the [Customer Portal](/docs/platform/customer-portal/), so your customers' users see the sign-in button too, and they can use it for as long as your identity provider authenticates them. That is useful when your customers are part of your own directory, and it is worth knowing when they are not: the button is visible to them either way, and pressing it sends them to your provider, which then refuses them.
+
+Distr matches an account either by an identity it has connected before or by the email address your provider asserts. Two rules make sure your provider never reaches an account outside your organization:
+
+- An account that is also a member of another Distr organization cannot sign in through your provider. Such members keep their password login. The settings page reports how many of your members this affects, so you can see it before you switch anyone over.
+- An account that has signed in through your provider cannot create another organization or be invited into one, and it cannot be invited into your organization if it already belongs to another one.
+
+## Provisioning accounts automatically
+
+With **Create accounts on first sign-in**, everyone your provider authenticates gets an account with the role you select, so you do not have to invite your team member by member. Such an account joins your own team, never one of your customer organizations.
+
+- **Allowed email domains** are therefore required for this: an account that joins your team is not something to hand out to every address your identity provider can assert, and the customer users reaching the same domain are exactly who would receive one. Accounts are only created for addresses in the domains you name here; existing members sign in regardless of their address.
+- New accounts are created up to your billed user seats. Seats are never raised automatically: beyond them, sign-in fails until an administrator raises them.
+
+## Making your provider the default
+
+With **Sign in with this provider automatically**, the login page on your domain redirects to your provider without asking. Only one provider per organization can do this.
+
+This is usually not recommended: your domain also serves the Customer Portal, so your customers' users are sent to your provider as well and never see the login form, even though most of them have a password rather than an account in your directory.
+
+`https://app.your-company.com/login?manual=1` still shows the login form. That is how anyone with a password gets in while your provider is unavailable, so keep at least one administrator with a password and a working recovery method.
+
+## Signing in on app.distr.sh
+
+Your users can sign in on `app.distr.sh` with their password as before; they are then forwarded to your custom domain. Your own identity provider is only offered on your domain, because the login page of the shared host cannot know which organization a visitor belongs to before they identify themselves.
+
+## Removing a provider
+
+Deleting a provider removes the connected identities with it. Everyone who signed in through it loses that login, and users who never set a password have to reset it before they can sign in again.

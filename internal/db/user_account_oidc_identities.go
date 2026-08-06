@@ -22,11 +22,14 @@ const userAccountOIDCIdentityOutputExpr = `
 	i.issuer,
 	i.subject,
 	i.email,
-	i.last_login_at`
+	i.last_login_at,
+	i.custom_oidc_configuration_id`
 
-// GetUserAccountWithOIDCIdentity returns the user account linked to the given identity provider
-// identity, together with the identity itself.
-func GetUserAccountWithOIDCIdentity(ctx context.Context, issuer, subject string) (
+func GetUserAccountWithOIDCIdentity(
+	ctx context.Context,
+	customOIDCConfigurationID *uuid.UUID,
+	issuer, subject string,
+) (
 	*types.UserAccount,
 	*types.UserAccountOIDCIdentity,
 	error,
@@ -37,8 +40,13 @@ func GetUserAccountWithOIDCIdentity(ctx context.Context, issuer, subject string)
 			(`+userAccountOIDCIdentityOutputExpr+`)
 		FROM UserAccountOIDCIdentity i
 		INNER JOIN UserAccount u ON u.id = i.user_account_id
-		WHERE i.issuer = @issuer AND i.subject = @subject`,
-		pgx.NamedArgs{"issuer": issuer, "subject": subject},
+		WHERE i.issuer = @issuer AND i.subject = @subject
+			AND i.custom_oidc_configuration_id IS NOT DISTINCT FROM @customOidcConfigurationId`,
+		pgx.NamedArgs{
+			"issuer":                    issuer,
+			"subject":                   subject,
+			"customOidcConfigurationId": customOIDCConfigurationID,
+		},
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not query UserAccountOIDCIdentity: %w", err)
@@ -57,13 +65,15 @@ func GetUserAccountWithOIDCIdentity(ctx context.Context, issuer, subject string)
 }
 
 func GetUserAccountOIDCIdentities(ctx context.Context, userID uuid.UUID) (
-	[]types.UserAccountOIDCIdentity,
+	[]types.UserAccountOIDCIdentityWithConfiguration,
 	error,
 ) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		"SELECT "+userAccountOIDCIdentityOutputExpr+`
+		"SELECT "+userAccountOIDCIdentityOutputExpr+`, c.name, o.name
 		FROM UserAccountOIDCIdentity i
+		LEFT JOIN CustomOIDCConfiguration c ON c.id = i.custom_oidc_configuration_id
+		LEFT JOIN Organization o ON o.id = c.organization_id
 		WHERE i.user_account_id = @userId
 		ORDER BY i.created_at`,
 		pgx.NamedArgs{"userId": userID},
@@ -71,11 +81,50 @@ func GetUserAccountOIDCIdentities(ctx context.Context, userID uuid.UUID) (
 	if err != nil {
 		return nil, fmt.Errorf("could not query UserAccountOIDCIdentity: %w", err)
 	}
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.UserAccountOIDCIdentity])
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.UserAccountOIDCIdentityWithConfiguration])
 	if err != nil {
 		return nil, fmt.Errorf("could not map UserAccountOIDCIdentity: %w", err)
 	}
 	return result, nil
+}
+
+func ExistsUserAccountCustomOIDCIdentity(ctx context.Context, userID uuid.UUID) (bool, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT EXISTS (
+			SELECT 1 FROM UserAccountOIDCIdentity
+			WHERE user_account_id = @userId AND custom_oidc_configuration_id IS NOT NULL
+		)`,
+		pgx.NamedArgs{"userId": userID},
+	)
+	if err != nil {
+		return false, fmt.Errorf("could not query UserAccountOIDCIdentity: %w", err)
+	}
+	exists, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[bool])
+	if err != nil {
+		return false, fmt.Errorf("could not query UserAccountOIDCIdentity: %w", err)
+	}
+	return exists, nil
+}
+
+func ExistsUserAccountCustomOIDCIdentityExcept(ctx context.Context, userID, organizationID uuid.UUID) (bool, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`SELECT EXISTS (
+			SELECT 1 FROM UserAccountOIDCIdentity i
+			INNER JOIN CustomOIDCConfiguration c ON c.id = i.custom_oidc_configuration_id
+			WHERE i.user_account_id = @userId AND c.organization_id != @organizationId
+		)`,
+		pgx.NamedArgs{"userId": userID, "organizationId": organizationID},
+	)
+	if err != nil {
+		return false, fmt.Errorf("could not query UserAccountOIDCIdentity: %w", err)
+	}
+	exists, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[bool])
+	if err != nil {
+		return false, fmt.Errorf("could not query UserAccountOIDCIdentity: %w", err)
+	}
+	return exists, nil
 }
 
 func CountUserAccountOIDCIdentities(ctx context.Context, userID uuid.UUID) (int64, error) {
@@ -98,15 +147,16 @@ func CreateUserAccountOIDCIdentity(ctx context.Context, identity *types.UserAcco
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		`INSERT INTO UserAccountOIDCIdentity AS i
-			(user_account_id, provider, issuer, subject, email, last_login_at)
-		VALUES (@userId, @provider, @issuer, @subject, @email, current_timestamp)
+			(user_account_id, provider, issuer, subject, email, last_login_at, custom_oidc_configuration_id)
+		VALUES (@userId, @provider, @issuer, @subject, @email, current_timestamp, @customOidcConfigurationId)
 		RETURNING `+userAccountOIDCIdentityOutputExpr,
 		pgx.NamedArgs{
-			"userId":   identity.UserAccountID,
-			"provider": identity.Provider,
-			"issuer":   identity.Issuer,
-			"subject":  identity.Subject,
-			"email":    identity.Email,
+			"userId":                    identity.UserAccountID,
+			"provider":                  identity.Provider,
+			"issuer":                    identity.Issuer,
+			"subject":                   identity.Subject,
+			"email":                     identity.Email,
+			"customOidcConfigurationId": identity.CustomOIDCConfigurationID,
 		},
 	)
 	if err != nil {
@@ -139,6 +189,20 @@ func UpdateUserAccountOIDCIdentityOnLogin(ctx context.Context, id uuid.UUID, ema
 	}
 	if err != nil {
 		return fmt.Errorf("could not update UserAccountOIDCIdentity: %w", err)
+	}
+	return nil
+}
+
+func DeleteCustomOIDCIdentitiesOfUserInOrg(ctx context.Context, userID, orgID uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	if _, err := db.Exec(ctx,
+		`DELETE FROM UserAccountOIDCIdentity
+		WHERE user_account_id = @userId AND custom_oidc_configuration_id IN (
+			SELECT id FROM CustomOIDCConfiguration WHERE organization_id = @orgId
+		)`,
+		pgx.NamedArgs{"userId": userID, "orgId": orgID},
+	); err != nil {
+		return fmt.Errorf("could not delete UserAccountOIDCIdentity: %w", err)
 	}
 	return nil
 }

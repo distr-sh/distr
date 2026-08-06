@@ -2,10 +2,14 @@ package oidc
 
 import (
 	"context"
+	"crypto/subtle"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
+	"strings"
+	"unicode"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/distr-sh/distr/internal/env"
@@ -40,38 +44,99 @@ type Identity struct {
 	EmailVerified bool
 }
 
-type IdentityExtractorFunc func(context.Context, *oauth2.Token) (Identity, error)
+// IdentityExtractorFunc turns a token response into the identity of the user it was issued for. The nonce
+// is the one of the authorization request, and is empty for providers that issue no ID token to carry it.
+type IdentityExtractorFunc func(ctx context.Context, token *oauth2.Token, nonce string) (Identity, error)
 
-func verifiedIdTokenIdentityExtractor(provider Provider, verifier *oidc.IDTokenVerifier) IdentityExtractorFunc {
-	return func(ctx context.Context, token *oauth2.Token) (Identity, error) {
-		idTokenStr, ok := token.Extra("id_token").(string)
-		if !ok {
-			return Identity{}, fmt.Errorf("id_token not found in token response")
+// NormalizeScopes accepts scopes as a list, or as comma or space separated values in any of its
+// entries, and always requests openid first, because without it a provider issues no ID token.
+func NormalizeScopes(values []string) []string {
+	scopes := []string{oidc.ScopeOpenID}
+	for _, value := range values {
+		for _, scope := range strings.FieldsFunc(value, func(r rune) bool { return r == ',' || unicode.IsSpace(r) }) {
+			if !slices.Contains(scopes, scope) {
+				scopes = append(scopes, scope)
+			}
 		}
-		idToken, err := verifier.Verify(ctx, idTokenStr)
-		if err != nil {
-			return Identity{}, fmt.Errorf("failed to verify id_token: %w", err)
-		}
-		var claims struct {
-			Email         string `json:"email"`
-			EmailVerified bool   `json:"email_verified"`
-		}
-		if err := idToken.Claims(&claims); err != nil {
-			return Identity{}, fmt.Errorf("failed to parse id_token claims: %w", err)
-		}
-		return Identity{
-			Provider:      provider,
-			Issuer:        idToken.Issuer,
-			Subject:       idToken.Subject,
-			Email:         claims.Email,
-			EmailVerified: claims.EmailVerified,
-		}, nil
 	}
+	return scopes
+}
+
+func idTokenIdentityExtractor(
+	provider Provider,
+	oidcProvider *oidc.Provider,
+	verifier *oidc.IDTokenVerifier,
+) IdentityExtractorFunc {
+	return func(ctx context.Context, token *oauth2.Token, nonce string) (Identity, error) {
+		return identityFromIDToken(ctx, provider, oidcProvider, verifier, token, nonce)
+	}
+}
+
+// identityFromIDToken verifies the ID token of a token response and reads the identity from its claims.
+// The nonce is compared to the one of the authorization request, so an ID token cannot be replayed in
+// another login. Providers that only expose the email on their userinfo endpoint are asked for it there.
+func identityFromIDToken(
+	ctx context.Context,
+	provider Provider,
+	oidcProvider *oidc.Provider,
+	verifier *oidc.IDTokenVerifier,
+	token *oauth2.Token,
+	nonce string,
+) (Identity, error) {
+	idTokenStr, ok := token.Extra("id_token").(string)
+	if !ok {
+		return Identity{}, fmt.Errorf("id_token not found in token response")
+	}
+	idToken, err := verifier.Verify(ctx, idTokenStr)
+	if err != nil {
+		return Identity{}, fmt.Errorf("failed to verify id_token: %w", err)
+	}
+	if subtle.ConstantTimeCompare([]byte(idToken.Nonce), []byte(nonce)) != 1 {
+		return Identity{}, fmt.Errorf("id_token nonce does not match the authorization request")
+	}
+
+	var claims struct {
+		Email         string `json:"email"`
+		EmailVerified *bool  `json:"email_verified"`
+	}
+	if err := idToken.Claims(&claims); err != nil {
+		return Identity{}, fmt.Errorf("failed to parse id_token claims: %w", err)
+	}
+
+	identity := Identity{
+		Provider:      provider,
+		Issuer:        idToken.Issuer,
+		Subject:       idToken.Subject,
+		Email:         claims.Email,
+		EmailVerified: claims.EmailVerified != nil && *claims.EmailVerified,
+	}
+	if identity.Email != "" {
+		return identity, nil
+	}
+
+	userInfo, err := oidcProvider.UserInfo(ctx, oauth2.StaticTokenSource(token))
+	if err != nil {
+		return Identity{}, fmt.Errorf("id_token carries no email and userinfo failed: %w", err)
+	}
+	var userInfoClaims struct {
+		EmailVerified *bool `json:"email_verified"`
+	}
+	if err := userInfo.Claims(&userInfoClaims); err != nil {
+		return Identity{}, fmt.Errorf("failed to parse userinfo claims: %w", err)
+	}
+	if userInfo.Email == "" {
+		return Identity{}, fmt.Errorf("neither the id_token nor userinfo carries an email address")
+	}
+	identity.Email = userInfo.Email
+	identity.EmailVerified = userInfoClaims.EmailVerified != nil && *userInfoClaims.EmailVerified
+	return identity, nil
 }
 
 type providerContext struct {
 	oauth2Config      func(r *http.Request) *config
 	identityExtractor IdentityExtractorFunc
+	// nonceSupported is false for GitHub, which is plain OAuth2 and has no ID token to carry a nonce.
+	nonceSupported bool
 }
 
 type OIDCer struct {
@@ -95,7 +160,8 @@ func NewOIDCer(ctx context.Context, log *zap.Logger) (*OIDCer, error) {
 		googleVerifier := googleProvider.Verifier(googleOidcConfig)
 		p[ProviderGoogle] = &providerContext{
 			oauth2Config:      getGoogleOauth2Config,
-			identityExtractor: verifiedIdTokenIdentityExtractor(ProviderGoogle, googleVerifier),
+			identityExtractor: idTokenIdentityExtractor(ProviderGoogle, googleProvider, googleVerifier),
+			nonceSupported:    true,
 		}
 	}
 	if env.OIDCMicrosoftEnabled() {
@@ -108,8 +174,10 @@ func NewOIDCer(ctx context.Context, log *zap.Logger) (*OIDCer, error) {
 		microsoftOidcConfig := &oidc.Config{ClientID: *env.OIDCMicrosoftClientID()}
 		microsoftVerifier := microsoftProvider.Verifier(microsoftOidcConfig)
 		p[ProviderMicrosoft] = &providerContext{
-			oauth2Config:      getMicrosoftOauth2Config,
-			identityExtractor: verifiedIdTokenIdentityExtractor(ProviderMicrosoft, microsoftVerifier),
+			oauth2Config: getMicrosoftOauth2Config,
+			identityExtractor: idTokenIdentityExtractor(
+				ProviderMicrosoft, microsoftProvider, microsoftVerifier),
+			nonceSupported: true,
 		}
 	}
 	if env.OIDCGithubEnabled() {
@@ -135,12 +203,13 @@ func NewOIDCer(ctx context.Context, log *zap.Logger) (*OIDCer, error) {
 						ClientSecret: *env.OIDCGenericClientSecret(),
 						RedirectURL:  getRedirectURL(r, ProviderGeneric),
 						Endpoint:     genericProvider.Endpoint(),
-						Scopes:       env.OIDCGenericScopes(),
+						Scopes:       NormalizeScopes([]string{*env.OIDCGenericScopes()}),
 					},
 					pkceEnabled: env.OIDCGenericPKCEEnabled(),
 				}
 			},
-			identityExtractor: verifiedIdTokenIdentityExtractor(ProviderGeneric, genericVerifier),
+			identityExtractor: idTokenIdentityExtractor(ProviderGeneric, genericProvider, genericVerifier),
+			nonceSupported:    true,
 		}
 	}
 	return &OIDCer{providers: p}, nil
@@ -187,7 +256,7 @@ func getGithubOauth2Config(r *http.Request) *config {
 
 // GetIdentityForCode exchanges the code for a token and extracts the user's identity at the provider.
 func (o *OIDCer) GetIdentityForCode(
-	ctx context.Context, provider Provider, code, pkceVerifier string, r *http.Request,
+	ctx context.Context, provider Provider, code, pkceVerifier, nonce string, r *http.Request,
 ) (Identity, error) {
 	prov := o.providers[provider]
 	if prov == nil || prov.oauth2Config == nil {
@@ -203,10 +272,13 @@ func (o *OIDCer) GetIdentityForCode(
 		return Identity{}, fmt.Errorf("token exchange failed: %w", err)
 	}
 
-	return prov.identityExtractor(ctx, token)
+	if !prov.nonceSupported {
+		nonce = ""
+	}
+	return prov.identityExtractor(ctx, token, nonce)
 }
 
-func getIdentityFromGithubAccessToken(ctx context.Context, token *oauth2.Token) (Identity, error) {
+func getIdentityFromGithubAccessToken(ctx context.Context, token *oauth2.Token, _ string) (Identity, error) {
 	accessToken, ok := token.Extra("access_token").(string)
 	if !ok {
 		return Identity{}, fmt.Errorf("access_token not found in token response")
@@ -266,14 +338,20 @@ func getGithubResource(ctx context.Context, accessToken, url string, out any) er
 }
 
 // GetAuthCodeURL returns the OIDC provider's AuthCodeURL for the given state and provider.
-func (o *OIDCer) GetAuthCodeURL(r *http.Request, provider Provider, state, pkceVerifier string) (string, error) {
+func (o *OIDCer) GetAuthCodeURL(
+	r *http.Request, provider Provider, state, pkceVerifier, nonce string,
+) (string, error) {
 	prov := o.providers[provider]
 	if prov == nil || prov.oauth2Config == nil {
 		return "", fmt.Errorf("OIDC provider not configured: %s", provider)
 	}
 	c := prov.oauth2Config(r)
-	if c.pkceEnabled {
-		return c.AuthCodeURL(state, oauth2.S256ChallengeOption(pkceVerifier)), nil
+	var opts []oauth2.AuthCodeOption
+	if prov.nonceSupported {
+		opts = append(opts, oidc.Nonce(nonce))
 	}
-	return c.AuthCodeURL(state), nil
+	if c.pkceEnabled {
+		opts = append(opts, oauth2.S256ChallengeOption(pkceVerifier))
+	}
+	return c.AuthCodeURL(state, opts...), nil
 }

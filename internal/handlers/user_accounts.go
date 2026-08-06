@@ -193,6 +193,17 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			userHasExisted = true
 			userAccount = *existingUA
+
+			if err := checkMembershipAllowed(ctx, userAccount.ID, organization.ID); errors.Is(
+				err, apierrors.ErrBadRequest) {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return err
+			} else if err != nil {
+				err = fmt.Errorf("failed to check membership: %w", err)
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return err
+			}
 		}
 
 		if err := db.CreateUserAccountOrganizationAssignment(
@@ -506,6 +517,9 @@ func deleteUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 		} else if err := db.DeleteAccessTokensOfUserInOrg(ctx, userAccount.ID, *auth.CurrentOrgID()); err != nil {
 			return err
 		} else if err := db.DeleteTutorialProgressesOfUserInOrg(ctx, userAccount.ID, *auth.CurrentOrgID()); err != nil {
+			return err
+		} else if err := db.DeleteCustomOIDCIdentitiesOfUserInOrg(
+			ctx, userAccount.ID, *auth.CurrentOrgID()); err != nil {
 			return err
 		} else {
 			w.WriteHeader(http.StatusNoContent)

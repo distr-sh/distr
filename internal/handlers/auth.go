@@ -22,6 +22,7 @@ import (
 	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/userauth"
+	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httprate"
@@ -361,7 +362,10 @@ func authLoginHandler(w http.ResponseWriter, r *http.Request) {
 		} else if err = db.UpdateUserAccountLastLoggedIn(ctx, user.ID); err != nil {
 			return err
 		} else {
-			RespondJSON(w, api.AuthLoginResponse{Token: tokenString})
+			RespondJSON(w, api.AuthLoginResponse{
+				Token:       tokenString,
+				RedirectURL: loginAppDomainRedirect(ctx, r, *user, tokenString),
+			})
 			return nil
 		}
 	})
@@ -378,6 +382,16 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	if env.Registration() == env.RegistrationDisabled {
 		http.Error(w, "registration is disabled", http.StatusForbidden)
+		return
+	}
+
+	if host, err := resolvePortalHost(ctx, validation.NormalizeHostname(r.Host)); err != nil {
+		log.Error("could not resolve host for registration", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, "registration is not available on this domain", http.StatusForbidden)
+		return
+	} else if !host.instanceAuthAllowed() {
+		http.Error(w, "registration is not available on this domain", http.StatusForbidden)
 		return
 	}
 

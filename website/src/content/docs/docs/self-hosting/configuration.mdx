@@ -26,7 +26,7 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
 | `DATABASE_URL`                     | yes      | —         | PostgreSQL connection string (e.g. `postgres://user:pass@host:5432/distr`).                     |
 | `DATABASE_MAX_CONNS`               | no       | —         | Overrides the maximum number of connections in the pgx pool.                                    |
 | `JWT_SECRET`                       | yes      | —         | Base64-encoded secret used to sign JWTs. Generate with `openssl rand -base64 32`.               |
-| `DISTR_HOST`                       | yes      | —         | Base URL of your Distr instance. Used for links, callbacks and email content.                   |
+| `DISTR_HOST`                       | yes      | —         | Base URL of your Distr instance. Its scheme is used for every link, callback URL and email.     |
 | `DISTR_ENV`                        | no       | —         | Path to a dotenv file to load on startup (a matching `.secret` file is also loaded if present). |
 | `REGISTRATION`                     | no       | `enabled` | Sign-up mode: `enabled`, `hidden` or `disabled`.                                                |
 | `USER_EMAIL_VERIFICATION_REQUIRED` | no       | `true`    | Whether new users must verify their email address before signing in.                            |
@@ -152,25 +152,32 @@ If a `*_CRON` variable is unset, the corresponding job is not scheduled. A `*_TI
 Each provider is enabled independently and its credentials are only required when it is enabled.
 See [OIDC Authentication](/docs/self-hosting/oidc/) for setup instructions and callback URLs.
 
-| Variable                                        | Required           | Default | Description                                                                       |
-| ----------------------------------------------- | ------------------ | ------- | --------------------------------------------------------------------------------- |
-| `OIDC_GITHUB_ENABLED`                           | no                 | `false` | Enables GitHub sign-in.                                                           |
-| `OIDC_GITHUB_CLIENT_ID`                         | if GitHub enabled  | —       | GitHub OAuth App client ID.                                                       |
-| `OIDC_GITHUB_CLIENT_SECRET`                     | if GitHub enabled  | —       | GitHub OAuth App client secret.                                                   |
-| `OIDC_GOOGLE_ENABLED`                           | no                 | `false` | Enables Google sign-in.                                                           |
-| `OIDC_GOOGLE_CLIENT_ID`                         | if Google enabled  | —       | Google OAuth 2.0 client ID.                                                       |
-| `OIDC_GOOGLE_CLIENT_SECRET`                     | if Google enabled  | —       | Google OAuth 2.0 client secret.                                                   |
-| `OIDC_MICROSOFT_ENABLED`                        | no                 | `false` | Enables Microsoft (Entra ID) sign-in.                                             |
-| `OIDC_MICROSOFT_CLIENT_ID`                      | if MS enabled      | —       | Entra ID application (client) ID.                                                 |
-| `OIDC_MICROSOFT_CLIENT_SECRET`                  | if MS enabled      | —       | Entra ID client secret.                                                           |
-| `OIDC_MICROSOFT_TENANT_ID`                      | if MS enabled      | —       | Directory (tenant) ID, or `common`/`organizations`/`consumers`.                   |
-| `OIDC_GENERIC_ENABLED`                          | no                 | `false` | Enables a generic OIDC provider.                                                  |
-| `OIDC_GENERIC_CLIENT_ID`                        | if generic enabled | —       | Client ID issued by the provider.                                                 |
-| `OIDC_GENERIC_CLIENT_SECRET`                    | if generic enabled | —       | Client secret issued by the provider.                                             |
-| `OIDC_GENERIC_ISSUER`                           | if generic enabled | —       | Issuer URL exposing `/.well-known/openid-configuration`.                          |
-| `OIDC_GENERIC_SCOPES`                           | if generic enabled | —       | Comma- or space-separated scopes (e.g. `openid,email,profile`).                   |
-| `OIDC_GENERIC_PKCE_ENABLED`                     | no                 | `false` | Enables PKCE (`S256`) for the generic provider.                                   |
-| `WELLKNOWN_MICROSOFT_IDENTITY_ASSOCIATION_JSON` | no                 | —       | Base64-encoded JSON served at `/.well-known/microsoft-identity-association.json`. |
+| Variable                                        | Required           | Default | Description                                                                        |
+| ----------------------------------------------- | ------------------ | ------- | ---------------------------------------------------------------------------------- |
+| `OIDC_GITHUB_ENABLED`                           | no                 | `false` | Enables GitHub sign-in.                                                            |
+| `OIDC_GITHUB_CLIENT_ID`                         | if GitHub enabled  | —       | GitHub OAuth App client ID.                                                        |
+| `OIDC_GITHUB_CLIENT_SECRET`                     | if GitHub enabled  | —       | GitHub OAuth App client secret.                                                    |
+| `OIDC_GOOGLE_ENABLED`                           | no                 | `false` | Enables Google sign-in.                                                            |
+| `OIDC_GOOGLE_CLIENT_ID`                         | if Google enabled  | —       | Google OAuth 2.0 client ID.                                                        |
+| `OIDC_GOOGLE_CLIENT_SECRET`                     | if Google enabled  | —       | Google OAuth 2.0 client secret.                                                    |
+| `OIDC_MICROSOFT_ENABLED`                        | no                 | `false` | Enables Microsoft (Entra ID) sign-in.                                              |
+| `OIDC_MICROSOFT_CLIENT_ID`                      | if MS enabled      | —       | Entra ID application (client) ID.                                                  |
+| `OIDC_MICROSOFT_CLIENT_SECRET`                  | if MS enabled      | —       | Entra ID client secret.                                                            |
+| `OIDC_MICROSOFT_TENANT_ID`                      | if MS enabled      | —       | Directory (tenant) ID, or `common`/`organizations`/`consumers`.                    |
+| `OIDC_GENERIC_ENABLED`                          | no                 | `false` | Enables a generic OIDC provider.                                                   |
+| `OIDC_GENERIC_CLIENT_ID`                        | if generic enabled | —       | Client ID issued by the provider.                                                  |
+| `OIDC_GENERIC_CLIENT_SECRET`                    | if generic enabled | —       | Client secret issued by the provider.                                              |
+| `OIDC_GENERIC_ISSUER`                           | if generic enabled | —       | Issuer URL exposing `/.well-known/openid-configuration`.                           |
+| `OIDC_GENERIC_SCOPES`                           | if generic enabled | —       | Comma- or space-separated scopes (e.g. `email,profile`); `openid` is always added. |
+| `OIDC_GENERIC_PKCE_ENABLED`                     | no                 | `false` | Enables PKCE (`S256`) for the generic provider.                                    |
+| `WELLKNOWN_MICROSOFT_IDENTITY_ASSOCIATION_JSON` | no                 | —       | Base64-encoded JSON served at `/.well-known/microsoft-identity-association.json`.  |
+
+Vendor organizations on the Business plan can additionally configure their own providers in the UI, which requires no
+instance configuration. Those issuer URLs are entered by organization administrators and fetched by the Hub, so they
+must be `https` and must not resolve to a private network address. Both restrictions are lifted when `DISTR_HOST` is an
+`http` URL, so that an instance running locally can be developed against an identity provider next to it. An operator
+whose identity provider only exists inside their own network configures it as the instance-wide generic provider above
+instead.
 
 ## Observability
 

@@ -12,10 +12,10 @@
             <ng-template
               cdkConnectedOverlay
               [cdkConnectedOverlayOrigin]="origin"
-              [cdkConnectedOverlayOpen]="planHintOpen()"
+              [cdkConnectedOverlayOpen]="planHintTab() === tab.id"
               [cdkConnectedOverlayHasBackdrop]="true"
               [cdkConnectedOverlayBackdropClass]="'transparent'"
-              (backdropClick)="planHintOpen.set(false)"
+              (backdropClick)="planHintTab.set(null)"
               [cdkConnectedOverlayPositions]="[
                 {originX: 'center', overlayX: 'center', originY: 'bottom', overlayY: 'top'},
               ]">
@@ -25,27 +25,9 @@
         </ng-template>
       </app-tab-bar>
 
-      <!-- The panels stay mounted and are only hidden, so that switching tabs does not discard
-        what has been typed into the other tab's form. -->
-      <div
-        role="tabpanel"
-        id="tabpanel-general"
-        aria-labelledby="tab-general"
-        class="pt-6"
-        [hidden]="activeTab() !== 'general'">
-        <app-general-settings />
+      <div role="tabpanel" class="pt-6" [id]="'tabpanel-' + activeTab()" [attr.aria-labelledby]="'tab-' + activeTab()">
+        <router-outlet />
       </div>
-
-      @if (customEmailVisible()) {
-        <div
-          role="tabpanel"
-          id="tabpanel-email"
-          aria-labelledby="tab-email"
-          class="pt-6"
-          [hidden]="activeTab() !== 'email'">
-          <app-custom-email />
-        </div>
-      }
     </div>
   </div>
 </section>

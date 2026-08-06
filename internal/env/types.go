@@ -5,6 +5,14 @@ import (
 	"net/mail"
 )
 
+// URLScheme is the scheme of a URL this instance builds or fetches.
+type URLScheme string
+
+const (
+	SchemeHTTP  URLScheme = "http"
+	SchemeHTTPS URLScheme = "https"
+)
+
 type RegistrationMode string
 
 const (

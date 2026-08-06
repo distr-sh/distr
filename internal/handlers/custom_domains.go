@@ -116,6 +116,11 @@ func deleteCustomDomainHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := db.DeleteCustomDomain(ctx, id, *auth.CurrentOrgID()); errors.Is(err, apierrors.ErrNotFound) {
 		http.NotFound(w, r)
+	} else if errors.Is(err, apierrors.ErrConflict) {
+		http.Error(w,
+			"this domain still has an identity provider configured, please delete it on the "+
+				"Identity Provider tab first",
+			http.StatusConflict)
 	} else if err != nil {
 		log.Error("failed to delete custom domain", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)

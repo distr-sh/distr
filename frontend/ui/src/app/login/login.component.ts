@@ -12,6 +12,7 @@ import {AuthService} from '../services/auth.service';
 import {PortalBrandingService} from '../services/portal-branding.service';
 import {PortalService} from '../services/portal.service';
 import {ToastService} from '../services/toast.service';
+import {PortalLoginConfig} from '../types/portal';
 
 @Component({
   selector: 'app-login',
@@ -52,7 +53,8 @@ export class LoginComponent implements OnInit {
   protected readonly loading = signal(false);
   protected readonly errorMessage = signal<string | undefined>(undefined);
 
-  readonly loginConfig = inject(PortalService).loginConfig;
+  private readonly portalService = inject(PortalService);
+  readonly loginConfig = this.portalService.loginConfig;
   readonly isJWTLogin = signal(false);
 
   constructor() {
@@ -73,6 +75,10 @@ export class LoginComponent implements OnInit {
         take(1)
       )
       .subscribe(() => this.toast.success('Account activated successfully. You can now log in!'));
+
+    this.portalService.portal$
+      .pipe(take(1), takeUntilDestroyed())
+      .subscribe(({loginConfig}) => this.redirectToSingleSignOn(loginConfig));
   }
 
   public ngOnInit(): void {
@@ -93,6 +99,21 @@ export class LoginComponent implements OnInit {
       case 'oidc-unavailable':
         this.toast.error('This login method is not available on this domain. Please contact your administrator.');
         break;
+      case 'oidc-no-account':
+        this.toast.error('You do not have an account in this organization. Please contact your administrator.');
+        break;
+      case 'oidc-user-limit':
+        this.toast.error(
+          'This organization has no user seats left, so no account could be created. ' +
+            'Please contact your administrator.'
+        );
+        break;
+      case 'oidc-account-not-exclusive':
+        this.toast.error(
+          'Your account is a member of another Distr organization, so it cannot sign in through this ' +
+            'organization’s identity provider. Please contact your administrator.'
+        );
+        break;
     }
 
     const jwt = this.route.snapshot.queryParamMap.get('jwt');
@@ -100,6 +121,20 @@ export class LoginComponent implements OnInit {
       this.isJWTLogin.set(true);
       this.auth.loginWithToken(jwt);
       window.location.href = '/';
+      return;
+    }
+  }
+
+  private redirectToSingleSignOn(loginConfig: PortalLoginConfig): void {
+    const params = this.route.snapshot.queryParamMap;
+    // Read from the query params rather than isJWTLogin, which ngOnInit may set only after the portal
+    // response arrived. Redirecting then would throw away a token handed over by the login forwarding.
+    if (params.has('jwt') || params.has('manual') || params.has('reason')) {
+      return;
+    }
+    const spInitiated = loginConfig.oidcProviders.filter((provider) => provider.spInitiated);
+    if (spInitiated.length === 1) {
+      window.location.href = spInitiated[0].loginPath;
     }
   }
 
@@ -127,6 +162,8 @@ export class LoginComponent implements OnInit {
       const response = await lastValueFrom(this.auth.login(email, password, mfaCode));
       if (response.requiresMfa) {
         this.mfaRequired.set(true);
+      } else if (response.redirectUrl && !this.route.snapshot.queryParamMap.has('stay')) {
+        window.location.href = response.redirectUrl;
       } else {
         // Re-apply branding now that the user is authenticated, since this SPA navigation does not
         // reload the app and re-run the bootstrap initializer.

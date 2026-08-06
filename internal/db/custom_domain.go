@@ -78,6 +78,11 @@ func DeleteCustomDomain(ctx context.Context, id, organizationID uuid.UUID) error
 		pgx.NamedArgs{"id": id, "organizationId": organizationID},
 	)
 	if err != nil {
+		// A domain an identity provider hangs off references it with ON DELETE RESTRICT, so that removing
+		// a domain cannot silently take everyone's sign-in with it.
+		if isStillReferencedError(err) {
+			return fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+		}
 		return fmt.Errorf("could not delete CustomDomain: %w", err)
 	} else if cmd.RowsAffected() == 0 {
 		return apierrors.ErrNotFound
@@ -106,23 +111,20 @@ func ExistsCustomDomain(ctx context.Context, domain string) (bool, error) {
 	return exists, nil
 }
 
-// GetOrganizationIDByCustomDomain returns the organization owning the given (normalized) custom
-// domain, or nil when the domain is not registered. Callers must not assume that the organization
-// has a branding row: a domain can be registered before any branding is saved.
-func GetOrganizationIDByCustomDomain(ctx context.Context, domain string) (*uuid.UUID, error) {
+func GetCustomDomainByDomain(ctx context.Context, domain string) (*types.CustomDomain, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		"SELECT d.organization_id FROM CustomDomain d WHERE d.domain = @domain",
+		"SELECT"+customDomainOutputExpr+"FROM CustomDomain d WHERE d.domain = @domain",
 		pgx.NamedArgs{"domain": domain},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not query CustomDomain: %w", err)
 	}
-	organizationID, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[uuid.UUID])
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.CustomDomain])
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
-		return nil, fmt.Errorf("could not get organization by custom domain: %w", err)
+		return nil, fmt.Errorf("could not get CustomDomain by domain: %w", err)
 	}
-	return &organizationID, nil
+	return &result, nil
 }

@@ -2,6 +2,7 @@ package customdomains
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
@@ -26,6 +27,10 @@ func AppDomainOrDefault(ctx context.Context, orgID uuid.UUID, b *types.Organizat
 		return withScheme(*b.AppDomain)
 	}
 	return env.Host()
+}
+
+func AppDomain(ctx context.Context, orgID uuid.UUID) *string {
+	return domainOfType(customDomains(ctx, orgID), types.DomainTypeApp)
 }
 
 // RegistryDomainOrDefault resolves the effective registry host for an organization:
@@ -67,17 +72,12 @@ func domainOfType(domains []types.CustomDomain, domainType types.DomainType) *st
 	return nil
 }
 
-// withScheme prefixes the domain with the scheme of env.Host() (https:// if the
-// configured host has none) unless it already contains one. Self-service custom
-// domains are stored as bare hostnames; legacy branding app domains may contain
+// withScheme prefixes the domain with the scheme of this instance unless it already contains one.
+// Self-service custom domains are stored as bare hostnames; legacy branding app domains may contain
 // a scheme already.
 func withScheme(domain string) string {
 	if urlSchemeRegex.MatchString(domain) {
 		return domain
 	}
-	scheme := urlSchemeRegex.FindString(env.Host())
-	if scheme == "" {
-		scheme = "https://"
-	}
-	return scheme + domain
+	return fmt.Sprintf("%v://%v", env.HostScheme(), domain)
 }

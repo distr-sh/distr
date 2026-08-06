@@ -98,11 +98,12 @@ The TLS certificate is issued automatically on the first request once the DNS re
 </Aside>
 
 <Aside type="caution" title="Login methods on your custom domain">
-  OIDC sign-in buttons such as Google, GitHub and Microsoft are configured for
-  the Distr instance as a whole, not for a single organization, so they are not
-  offered on your domain — visitors there sign in with email and password. Make
-  sure your users have a password set before you point them at your custom
-  domain.
+  The Google, GitHub and Microsoft sign-in buttons are configured for the Distr
+  instance as a whole, not for a single organization, so they are not offered on
+  your domain. Visitors there sign in with email and password, or with a [custom
+  identity provider](/docs/platform/custom-identity-provider/) you configure
+  yourself. Self-registration is also disabled on your domain: new users are
+  invited or provisioned by your identity provider.
 </Aside>
 
 On self-hosted instances, the Custom Domains section only appears when the instance is configured for custom domain self-service.
@@ -111,7 +112,7 @@ See the [configuration reference](/docs/self-hosting/configuration/#custom-domai
 ## Custom Email
 
 By default, all transactional e-mails — invitations, e-mail verifications, password resets, license key updates and deployment notifications — are sent by Distr.
-To send them from your own domain instead, configure your SMTP server under **Settings → Organization → Custom Email**:
+To send them from your own domain instead, configure your SMTP server under **Settings → Organization → Email Sending Provider**:
 
 1. **Sender address** (e.g. `notifications@your-company.com`): The address your users and customers see as the sender.
 2. **SMTP host and port**: Your mail provider's SMTP endpoint, e.g. `smtp.your-company.com` on port `587`.
