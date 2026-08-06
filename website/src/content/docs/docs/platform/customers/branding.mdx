@@ -82,10 +82,11 @@ None of these settings require a custom domain: they apply to all logged-in user
 For a fully white-labeled experience, Distr supports custom domains for the Customer Portal and the artifact registry.
 When your portal is accessed via your custom domain, all Distr-specific branding is removed and your white-label settings also apply to unauthenticated pages such as the login page.
 
-Organization admins can set up custom domains self-service under **Settings → Organization → Custom Domains**:
+Organization admins can set up custom domains self-service under **Settings → Organization → Custom Domains & Identity Provider**, in the Vendor Portal, Customer Portal and Registry sections:
 
-1. **App domain** (e.g. `app.your-company.com`): Serves the web UI and API, including the Customer Portal. It also serves the artifact registry under the `/v2/` path, so a single domain is usually all you need.
-2. **Registry domain** (optional, e.g. `registry.your-company.com`): Only needed if you want a separate hostname for the artifact registry.
+1. **App domain** (e.g. `app.your-company.com`): Serves the web UI and API for your own team (and your partners, if partner management is enabled). It also serves the artifact registry under the `/v2/` path, so a single domain is usually all you need.
+2. **Customer portal domain** (optional, e.g. `portal.your-company.com`): Serves the Customer Portal for all of your customers. When it is set, invitation links, password resets and notification mails sent to customer users point at it instead of your app domain; without it, they use your app domain like everyone else.
+3. **Registry domain** (optional, e.g. `registry.your-company.com`): Only needed if you want a separate hostname for the artifact registry.
 
 Enter the domain as a bare hostname (no `https://`) and add it.
 Then create the CNAME record shown below the domain at your DNS provider, pointing your domain at the displayed target.
@@ -93,9 +94,11 @@ The TLS certificate is issued automatically on the first request once the DNS re
 
 <Aside type="note">
   Custom domains are available on the Business plan. Each domain can only be
-  registered by one organization. Removing a domain makes it stop working
+  registered once, instance-wide. Removing a domain makes it stop working
   immediately and its TLS certificate is no longer renewed.
 </Aside>
+
+A customer that needs its own hostname and its own identity provider, rather than sharing your customer portal domain, can get one: grant it the Custom Identity Provider feature in the customer list, described in [Custom Identity Provider](/docs/platform/custom-identity-provider/#letting-a-customer-bring-its-own-provider).
 
 <Aside type="caution" title="Login methods on your custom domain">
   The Google, GitHub and Microsoft sign-in buttons are configured for the Distr

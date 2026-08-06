@@ -1,29 +1,52 @@
-import {NgPlural, NgPluralCase} from '@angular/common';
-import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRef, viewChild} from '@angular/core';
+import {NgPlural, NgPluralCase, NgTemplateOutlet} from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  signal,
+  TemplateRef,
+  viewChild,
+} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleExclamation, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {BehaviorSubject, combineLatest, firstValueFrom, map, of, switchMap} from 'rxjs';
+import {BehaviorSubject, combineLatest, firstValueFrom, from, map, of, switchMap} from 'rxjs';
+import {getRemoteEnvironment} from '../../env/remote';
 import {getFormDisplayedError} from '../../util/errors';
 import {slugMaxLength, slugPattern} from '../../util/slug';
 import {ClipComponent} from '../components/clip.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AuthService} from '../services/auth.service';
+import {ContextService} from '../services/context.service';
 import {CustomDomainsService} from '../services/custom-domains.service';
 import {CustomOidcService} from '../services/custom-oidc.service';
 import {FeatureFlagService} from '../services/feature-flag.service';
 import {OrganizationService} from '../services/organization.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
-import {CustomDomain} from '../types/custom-domain';
+import {CustomDomain, CustomDomainType} from '../types/custom-domain';
 import {CustomOidcConfiguration, CustomOidcConfigurationsResponse} from '../types/custom-oidc';
+import {DomainFieldComponent} from './domain-field.component';
+import {RegistryDomainFieldComponent} from './registry-domain-field.component';
 
 @Component({
   selector: 'app-custom-oidc',
   templateUrl: './custom-oidc.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FaIconComponent, ReactiveFormsModule, AutotrimDirective, ClipComponent, NgPlural, NgPluralCase],
+  imports: [
+    FaIconComponent,
+    ReactiveFormsModule,
+    AutotrimDirective,
+    ClipComponent,
+    NgPlural,
+    NgPluralCase,
+    NgTemplateOutlet,
+    DomainFieldComponent,
+    RegistryDomainFieldComponent,
+  ],
 })
 export class CustomOidcComponent {
   protected readonly faPlus = faPlus;
@@ -39,14 +62,39 @@ export class CustomOidcComponent {
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly overlay = inject(OverlayService);
+  private readonly contextService = inject(ContextService);
   private readonly fb = inject(FormBuilder).nonNullable;
+
+  private readonly remoteEnv = toSignal(from(getRemoteEnvironment()));
+  protected readonly appCnameTarget = computed(() => this.remoteEnv()?.customDomainAppCnameTarget);
+  protected readonly registryCnameTarget = computed(
+    () => this.remoteEnv()?.customDomainRegistryCnameTarget ?? this.appCnameTarget()
+  );
 
   private readonly refresh$ = new BehaviorSubject<void>(undefined);
 
+  // Set on the customer-scoped page, where only the customer's own portal domain is managed.
+  public readonly customerOrganizationId = input<string>();
+
+  protected readonly customerScoped = computed(() => !!this.customerOrganizationId());
+  // A customer-scoped page is reached both by the customer's own admins and by a vendor managing that
+  // customer on their behalf; the copy addresses "your users" only for the former.
+  protected readonly viewerIsCustomer = computed(() => this.auth.isCustomer());
+  protected readonly partnerManagementEnabled = computed(() => this.featureFlags.isPartnerManagementEnabled());
+  // Self-hosted instances that never configured a CNAME target have nothing to serve a custom domain
+  // with, so the domain fields (not the identity providers of ones already configured) stay hidden.
+  protected readonly customDomainsConfigured = computed(() => !!this.appCnameTarget());
+
   protected readonly visible = computed(
-    () => this.featureFlags.isCustomOidcProvidersEnabled() && this.auth.isVendor() && this.auth.hasRole('admin')
+    () =>
+      this.featureFlags.isCustomOidcProvidersEnabled() &&
+      (this.customerScoped() || this.auth.isVendor()) &&
+      this.auth.hasRole('admin')
   );
 
+  // The server returns everything within the caller's scope (a vendor's own and every customer's
+  // providers); configurationsFor narrows to the one domain being rendered, the same way scopedDomains
+  // below narrows the domain list.
   private readonly response = toSignal(
     combineLatest([this.featureFlags.isCustomOidcProvidersEnabled$, this.refresh$]).pipe(
       switchMap(([enabled]) =>
@@ -66,15 +114,78 @@ export class CustomOidcComponent {
     ),
     {initialValue: [] as CustomDomain[]}
   );
-  protected readonly appDomain = computed(() => this.domains().find((domain) => domain.domainType === 'app'));
+  protected readonly scopedDomains = computed(() =>
+    this.domains().filter((d) => (d.customerOrganizationId ?? undefined) === this.customerOrganizationId())
+  );
+  protected readonly appDomain = computed(() => this.scopedDomains().find((domain) => domain.domainType === 'app'));
+  protected readonly registryDomain = computed(() =>
+    this.scopedDomains().find((domain) => domain.domainType === 'registry')
+  );
+  protected readonly customerPortalDomain = computed(() =>
+    this.scopedDomains().find((domain) => domain.domainType === 'customer_portal')
+  );
+
+  protected readonly savingDomain = signal(false);
+
+  protected async saveDomain(value: string, domainType: CustomDomainType) {
+    this.savingDomain.set(true);
+    try {
+      await firstValueFrom(
+        this.customDomainsService.create([{domain: value, domainType}], this.customerOrganizationId())
+      );
+      this.refresh$.next();
+      // The effective registry host of the organization may have changed with the new domain.
+      this.contextService.reload();
+      this.toast.success('Custom domain saved');
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    } finally {
+      this.savingDomain.set(false);
+    }
+  }
+
+  protected async removeDomain(domain: CustomDomain | undefined) {
+    if (!domain) {
+      return;
+    }
+    const confirmed = await firstValueFrom(
+      this.overlay.confirm(
+        `Really remove ${domain.domain}? The domain will stop working and its TLS certificate will no longer be renewed.`
+      )
+    );
+    if (!confirmed) {
+      return;
+    }
+    try {
+      await firstValueFrom(this.customDomainsService.delete(domain.id));
+      this.refresh$.next();
+      this.contextService.reload();
+      this.toast.success('Custom domain removed');
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    }
+  }
 
   protected readonly organizationSlug = toSignal(
     this.organizationService.get().pipe(map((organization) => organization.slug)),
     {initialValue: undefined}
   );
 
-  protected readonly configurable = computed(() => !!this.appDomain() && !!this.organizationSlug());
+  protected readonly configurable = computed(() => !!this.organizationSlug());
 
+  protected configurationsFor(domain: CustomDomain): CustomOidcConfiguration[] {
+    return this.configurations().filter((configuration) => configuration.customDomainId === domain.id);
+  }
+
+  // The domain the dialog is currently adding or editing a provider for. Each host carries its own
+  // provider set, so it is the domain and not the organization that a provider belongs to.
+  private readonly activeDomain = signal<CustomDomain | undefined>(undefined);
   protected readonly editing = signal<CustomOidcConfiguration | undefined>(undefined);
   protected readonly saving = signal(false);
   protected readonly toggling = signal<string | undefined>(undefined);
@@ -104,7 +215,7 @@ export class CustomOidcComponent {
 
   private readonly slugValue = toSignal(this.form.controls.slug.valueChanges, {initialValue: ''});
   protected readonly callbackUrl = computed(() => {
-    const domain = this.appDomain()?.domain;
+    const domain = this.activeDomain()?.domain;
     const organizationSlug = this.organizationSlug();
     const slug = this.slugValue();
     if (!domain || !organizationSlug || !slug) {
@@ -115,7 +226,8 @@ export class CustomOidcComponent {
     return `${location.protocol}//${domain}/api/v1/auth/oidc/custom/${organizationSlug}/${slug}/callback`;
   });
 
-  protected showDialog(configuration?: CustomOidcConfiguration) {
+  protected showDialog(domain: CustomDomain, configuration?: CustomOidcConfiguration) {
+    this.activeDomain.set(domain);
     this.editing.set(configuration);
     this.form.controls.clientSecret.setValidators(configuration ? [] : [Validators.required]);
     if (configuration) {
@@ -141,12 +253,19 @@ export class CustomOidcComponent {
   protected closeDialog() {
     this.form.reset();
     this.editing.set(undefined);
+    this.activeDomain.set(undefined);
     this.dialogRef?.close();
   }
 
+  // Automatic provisioning has no customer to provision into on the vendor's shared portal domain.
+  protected readonly provisioningAvailable = computed(() => {
+    const domain = this.activeDomain();
+    return !!domain && (domain.domainType !== 'customer_portal' || !!domain.customerOrganizationId);
+  });
+
   protected async save() {
     this.form.markAllAsTouched();
-    const customDomainId = this.appDomain()?.id;
+    const customDomainId = this.activeDomain()?.id;
     if (!this.form.valid || !customDomainId) {
       return;
     }
@@ -154,6 +273,9 @@ export class CustomOidcComponent {
     const existing = this.editing();
     const request = {
       customDomainId,
+      // Only meaningful on create; the server ignores it on update, since the existing row already
+      // pins the scope.
+      customerOrganizationId: this.customerOrganizationId(),
       name: value.name,
       slug: value.slug,
       enabled: existing?.enabled ?? true,

@@ -1,6 +1,6 @@
 ---
 title: 'Custom Identity Provider'
-description: 'Let your team sign in to Distr with your own OpenID Connect identity provider (single sign-on) on your custom app domain, with optional automatic account provisioning.'
+description: 'Let your team, your customer portal, or an individual customer sign in to Distr with your own OpenID Connect identity provider (single sign-on), with optional automatic account provisioning.'
 slug: docs/platform/custom-identity-provider
 sidebar:
   label: Custom Identity Provider
@@ -9,24 +9,35 @@ sidebar:
 
 import {Aside} from '@astrojs/starlight/components';
 
-Your organization can connect its own OpenID Connect identity provider, so your team signs in to Distr with the accounts they already have. Provisioning, password policies and multi-factor authentication then stay in your identity provider.
+Your organization can connect its own OpenID Connect identity provider, so your team, your customer portal, or an individual customer signs in to Distr with accounts they already have. Provisioning, password policies and multi-factor authentication then stay in that identity provider.
 
 <Aside type="note">
   A custom identity provider is available on the Business plan and requires a
-  [custom app domain](/docs/platform/branding/#custom-domains), because your
-  provider is only offered on your own domain. See the [pricing page](/pricing/)
-  for a comparison.
+  custom domain, because a provider is only offered on the domain it is
+  attached to. See the [pricing page](/pricing/) for a comparison.
 </Aside>
+
+## Where a provider applies
+
+Every domain carries its own set of providers. Nothing is inherited between them, so a user's sign-in options are decided entirely by the host they open:
+
+| Domain                                       | Providers configured by | Applies to                                          |
+| -------------------------------------------- | ----------------------- | --------------------------------------------------- |
+| Your app domain, e.g. `app.your-company.com` | you                     | your own team                                        |
+| Your customer portal domain                  | you                     | all of your customers, including ones created later |
+| A customer's own portal domain               | you or that customer    | that one customer                                    |
+
+All three are configured under **Settings → Organization → Custom Domains & Identity Provider**, which is also where the domains themselves are registered. A customer's own domain additionally needs the **Custom Identity Provider** feature, which you grant per customer in the customer list.
 
 ## Requirements
 
-1. A custom app domain (e.g. `app.your-company.com`) set up under **Settings → Organization → Custom Domains**, and an organization slug, because both are part of every provider's URLs.
+1. A custom app domain (e.g. `app.your-company.com`) set up under **Settings → Organization → Custom Domains & Identity Provider**, and an organization slug, because both are part of every provider's URLs.
 2. An identity provider that serves an OpenID configuration under `<issuer>/.well-known/openid-configuration`. Microsoft Entra ID, Google Workspace, Okta, Auth0, Keycloak, JumpCloud, Authentik and any other OpenID Connect provider work with the same fields.
 3. An application (client) registered with that provider, using the authorization code flow.
 
 ## Connecting your identity provider
 
-Go to **Settings → Organization → Identity Provider** and add a provider:
+Go to **Settings → Organization → Custom Domains & Identity Provider** and add a provider:
 
 1. **Display name**: Shown on the sign-in button, e.g. `Acme SSO`.
 2. **Slug**: Identifies the provider in its URLs, unique within your organization, e.g. `acme-sso`. Changing it later changes both URLs, so your provider needs the new redirect URI.
@@ -60,29 +71,66 @@ Issuer URLs for the most common providers:
   directory (tenant) ID.
 </Aside>
 
+## Customer portal domain
+
+A customer portal domain (e.g. `portal.your-company.com`) is the host all of your customers sign in on. Register it in the **Customer Portal** section of the Custom Domains & Identity Provider tab and create the shown CNAME record.
+
+Once it exists, it replaces your app domain in everything sent to a customer user: invitation links, password resets, email verification and notification mails. Your own team keeps the app domain, and agent manifests, connect commands and the artifact registry keep using it as well.
+
+Providers you attach to this domain apply to every customer at once. You cannot single out one customer here; a customer that needs its own provider gets its own domain instead.
+
+<Aside type="note" title="No automatic provisioning on the shared portal domain">
+  A provider on the shared customer portal domain cannot create accounts on
+  first sign-in. Nothing in an OpenID response says which of your customers a
+  new user belongs to, so there is no organization to create them in. Invite
+  them, or give that customer its own portal domain.
+</Aside>
+
+## Letting a customer bring its own provider
+
+Grant a customer the **Custom Identity Provider** feature in the customer list. Its administrators then get an **Identity Provider** page of their own, where they register their own portal domain and connect their own provider. You can reach the same page from the customer list and configure it on their behalf.
+
+A provider on a customer's own domain only ever authenticates users of that customer, and accounts created on first sign-in join that customer organization and count against its user limit rather than your billed seats.
+
+The feature can only be granted while your own plan includes custom identity providers.
+
 ## Who can sign in
 
-Your provider is offered on your custom app domain and nowhere else. That domain also serves the [Customer Portal](/docs/platform/customer-portal/), so your customers' users see the sign-in button too, and they can use it for as long as your identity provider authenticates them. That is useful when your customers are part of your own directory, and it is worth knowing when they are not: the button is visible to them either way, and pressing it sends them to your provider, which then refuses them.
+Distr matches an account either by an identity it has connected before or by the email address the provider asserts. Two rules make sure a provider never reaches an account outside the organization it belongs to:
 
-Distr matches an account either by an identity it has connected before or by the email address your provider asserts. Two rules make sure your provider never reaches an account outside your organization:
+- An account that is also a member of another Distr organization cannot sign in through a custom provider. Such members keep their password login. The settings page reports how many of your members this affects, so you can see it before you switch anyone over.
+- An account that has signed in through a custom provider cannot create another organization or be invited into one, and it cannot be invited into your organization if it already belongs to another one.
 
-- An account that is also a member of another Distr organization cannot sign in through your provider. Such members keep their password login. The settings page reports how many of your members this affects, so you can see it before you switch anyone over.
-- An account that has signed in through your provider cannot create another organization or be invited into one, and it cannot be invited into your organization if it already belongs to another one.
+<Aside type="caution" title="Two consequences worth planning for">
+  These rules are what stops a provider from reaching another organization's
+  data, so they apply to every custom provider, including a customer's own.
+  Two things follow that are easy to be surprised by:
+
+  - A person who is a customer user of two Distr vendors is a member of two
+    organizations and can therefore use single sign-on at neither of them. They
+    keep their password login at both.
+  - As soon as any provider is configured in your organization, including one
+    configured by a single customer, you can no longer invite anyone who is
+    already a member of another Distr organization. Removing that member from
+    the other organization, or deleting the provider, makes the invitation
+    possible again.
+</Aside>
 
 ## Provisioning accounts automatically
 
-With **Create accounts on first sign-in**, everyone your provider authenticates gets an account with the role you select, so you do not have to invite your team member by member. Such an account joins your own team, never one of your customer organizations.
+With **Create accounts on first sign-in**, everyone the provider authenticates gets an account with the role you select, so you do not have to invite people one by one. Where such an account lands depends on the domain the provider is attached to: your app domain creates a member of your own team, a customer's own portal domain a user of that customer.
 
-- **Allowed email domains** are therefore required for this: an account that joins your team is not something to hand out to every address your identity provider can assert, and the customer users reaching the same domain are exactly who would receive one. Accounts are only created for addresses in the domains you name here; existing members sign in regardless of their address.
-- New accounts are created up to your billed user seats. Seats are never raised automatically: beyond them, sign-in fails until an administrator raises them.
+- **Allowed email domains** are therefore required for this: an account created this way is not something to hand out to every address an identity provider can assert. Accounts are only created for addresses in the domains you name here; existing members sign in regardless of their address.
+- Accounts for your own team are created up to your billed user seats, accounts for a customer up to that customer's user limit. Limits are never raised automatically: beyond them, sign-in fails until an administrator raises them.
+- The shared customer portal domain cannot provision accounts at all, as described above.
 
-## Making your provider the default
+## Making a provider the default
 
-With **Sign in with this provider automatically**, the login page on your domain redirects to your provider without asking. Only one provider per organization can do this.
+With **Sign in with this provider automatically**, the login page on that domain redirects to the provider without asking. Only one provider per domain can do this.
 
-This is usually not recommended: your domain also serves the Customer Portal, so your customers' users are sent to your provider as well and never see the login form, even though most of them have a password rather than an account in your directory.
+This is usually not recommended: everyone reaching the domain is sent to the provider and never sees the login form, even though some of them have a password rather than an account in that directory.
 
-`https://app.your-company.com/login?manual=1` still shows the login form. That is how anyone with a password gets in while your provider is unavailable, so keep at least one administrator with a password and a working recovery method.
+`https://app.your-company.com/login?manual=1` still shows the login form. That is how anyone with a password gets in while the provider is unavailable, so keep at least one administrator with a password and a working recovery method.
 
 ## Signing in on app.distr.sh
 

@@ -62,7 +62,8 @@ func SendUserInviteMail(
 		mailx.ReplyTo(currentUser.Email),
 		mailx.Subject(subject),
 		mailx.HtmlBodyTemplate(
-			mailtemplates.InviteUser(ctx, userAccount, organization, *currentUser, targetOrgName, inviteURL),
+			mailtemplates.InviteUser(
+				ctx, userAccount, organization, customerOrgID, *currentUser, targetOrgName, inviteURL),
 		),
 	); err != nil {
 		log.Error(

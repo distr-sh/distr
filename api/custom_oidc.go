@@ -42,19 +42,22 @@ type CustomOIDCConfigurationsResponse struct {
 }
 
 type CustomOIDCConfigurationRequest struct {
-	CustomDomainID      uuid.UUID      `json:"customDomainId"`
-	Name                string         `json:"name"`
-	Slug                string         `json:"slug"`
-	Enabled             bool           `json:"enabled"`
-	Issuer              string         `json:"issuer"`
-	ClientID            string         `json:"clientId"`
-	ClientSecret        *string        `json:"clientSecret,omitempty"`
-	Scopes              []string       `json:"scopes"`
-	PKCEEnabled         *bool          `json:"pkceEnabled,omitempty"`
-	SPInitiated         bool           `json:"spInitiated"`
-	CreateUnknownUsers  bool           `json:"createUnknownUsers"`
-	DefaultUserRole     types.UserRole `json:"defaultUserRole"`
-	AllowedEmailDomains []string       `json:"allowedEmailDomains"`
+	CustomDomainID uuid.UUID `json:"customDomainId"`
+	// CustomerOrganizationID targets a customer's own provider instead of the caller's organization.
+	// Only a vendor or partner admin may set it; a customer caller may only ever target itself.
+	CustomerOrganizationID *uuid.UUID     `json:"customerOrganizationId,omitempty"`
+	Name                   string         `json:"name"`
+	Slug                   string         `json:"slug"`
+	Enabled                bool           `json:"enabled"`
+	Issuer                 string         `json:"issuer"`
+	ClientID               string         `json:"clientId"`
+	ClientSecret           *string        `json:"clientSecret,omitempty"`
+	Scopes                 []string       `json:"scopes"`
+	PKCEEnabled            *bool          `json:"pkceEnabled,omitempty"`
+	SPInitiated            bool           `json:"spInitiated"`
+	CreateUnknownUsers     bool           `json:"createUnknownUsers"`
+	DefaultUserRole        types.UserRole `json:"defaultUserRole"`
+	AllowedEmailDomains    []string       `json:"allowedEmailDomains"`
 }
 
 func (r *CustomOIDCConfigurationRequest) Normalize() {

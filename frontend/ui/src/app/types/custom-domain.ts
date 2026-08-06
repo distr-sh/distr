@@ -1,4 +1,4 @@
-export type CustomDomainType = 'app' | 'registry';
+export type CustomDomainType = 'app' | 'registry' | 'customer_portal';
 
 export interface CustomDomain {
   id: string;
@@ -6,6 +6,7 @@ export interface CustomDomain {
   domain: string;
   domainType: CustomDomainType;
   organizationId: string;
+  customerOrganizationId?: string;
 }
 
 export interface CreateCustomDomainRequest {

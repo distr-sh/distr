@@ -24,13 +24,15 @@ import (
 
 func CustomDomainsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Custom Domains"))
-	r.Use(middleware.RequireVendor, middleware.RequireOrgAndRole, middleware.RequireAdmin)
+	r.Use(middleware.RequireOrgAndRole, middleware.RequireAdmin)
 	r.Get("/", getCustomDomainsHandler).
-		With(option.Description("List all custom domains of the current organization")).
+		With(option.Description("List the custom domains within the caller's scope: every domain for a " +
+			"vendor, one customer's own for a customer, or the domains of the customers assigned to a partner")).
 		With(option.Response(http.StatusOK, []types.CustomDomain{}))
 	r.With(middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
 		r.With(middleware.RequireCustomDomainsConfigured).Post("/", createCustomDomainsHandler).
-			With(option.Description("Register new custom domains for the current organization")).
+			With(option.Description("Register new custom domains for the caller's organization, or for a " +
+				"customer named in the request")).
 			With(option.Request(api.CreateCustomDomainsRequest{})).
 			With(option.Response(http.StatusOK, []types.CustomDomain{}))
 		r.Delete("/{customDomainId}", deleteCustomDomainHandler).
@@ -45,7 +47,8 @@ func getCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
-	customDomains, err := db.GetCustomDomains(ctx, *auth.CurrentOrgID())
+	customDomains, err := db.GetCustomDomainsForScope(
+		ctx, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
 	if err != nil {
 		log.Error("failed to get custom domains", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -69,9 +72,17 @@ func createCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	customerOrgID, ok := resolveCustomerScopeForWrite(w, r, request.CustomerOrganizationID)
+	if !ok {
+		return
+	}
 
 	customDomains := make([]types.CustomDomain, len(request.Domains))
 	for i, domain := range request.Domains {
+		if customerOrgID != nil && domain.DomainType != types.DomainTypeCustomerPortal {
+			http.Error(w, "a customer can only register a customer portal domain", http.StatusBadRequest)
+			return
+		}
 		if isPlatformOwnedDomain(domain.Domain) {
 			http.Error(w, "this domain is owned by the platform and cannot be registered", http.StatusBadRequest)
 			return
@@ -86,9 +97,10 @@ func createCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		customDomains[i] = types.CustomDomain{
-			Domain:         domain.Domain,
-			Type:           domain.DomainType,
-			OrganizationID: *auth.CurrentOrgID(),
+			Domain:                 domain.Domain,
+			Type:                   domain.DomainType,
+			OrganizationID:         *auth.CurrentOrgID(),
+			CustomerOrganizationID: customerOrgID,
 		}
 	}
 
@@ -114,12 +126,13 @@ func deleteCustomDomainHandler(w http.ResponseWriter, r *http.Request) {
 	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 
-	if err := db.DeleteCustomDomain(ctx, id, *auth.CurrentOrgID()); errors.Is(err, apierrors.ErrNotFound) {
+	err = db.DeleteCustomDomain(ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
+	if errors.Is(err, apierrors.ErrNotFound) {
 		http.NotFound(w, r)
 	} else if errors.Is(err, apierrors.ErrConflict) {
 		http.Error(w,
 			"this domain still has an identity provider configured, please delete it on the "+
-				"Identity Provider tab first",
+				"Custom Domains & Identity Provider tab first",
 			http.StatusConflict)
 	} else if err != nil {
 		log.Error("failed to delete custom domain", zap.Error(err))

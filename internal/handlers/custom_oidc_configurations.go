@@ -32,9 +32,10 @@ type customOIDCConfigurationRequest struct {
 
 func CustomOIDCConfigurationsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Custom OIDC Providers"))
-	r.Use(middleware.RequireVendor, middleware.RequireOrgAndRole, middleware.RequireAdmin)
+	r.Use(middleware.RequireOrgAndRole, middleware.RequireAdmin)
 	r.Get("/", getCustomOIDCConfigurationsHandler).
-		With(option.Description("List the OIDC providers configured by the current organization")).
+		With(option.Description("List the OIDC providers within the caller's scope: every provider for " +
+			"a vendor, one customer's own for a customer, or the providers of the customers assigned to a partner")).
 		With(option.Response(http.StatusOK, api.CustomOIDCConfigurationsResponse{}))
 	r.With(middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
 		r.Post("/", createCustomOIDCConfigurationHandler).
@@ -58,18 +59,21 @@ func getCustomOIDCConfigurationsHandler(w http.ResponseWriter, r *http.Request) 
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 	orgID := *auth.CurrentOrgID()
+	customerOrgID, partnerOrgID := auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID()
 
-	configurations, err := db.GetCustomOIDCConfigurations(ctx, orgID)
+	configurations, err := db.GetCustomOIDCConfigurations(ctx, orgID, customerOrgID, partnerOrgID)
 	if err != nil {
 		respondCustomOIDCConfigurationError(w, r, err)
 		return
 	}
-	domains, err := customDomainsByID(ctx, orgID)
+	domains, err := customDomainsByID(ctx, orgID, customerOrgID, partnerOrgID)
 	if err != nil {
 		respondCustomOIDCConfigurationError(w, r, err)
 		return
 	}
-	members, err := db.GetOrganizationMembersWithOtherOrganizations(ctx, orgID)
+	// Only reflects the caller's own scope (the vendor's team, or one customer): once a vendor's list
+	// spans every customer, a single flat exclusion warning could no longer point at one clear owner.
+	members, err := db.GetOrganizationMembersWithOtherOrganizations(ctx, orgID, customerOrgID)
 	if err != nil {
 		respondCustomOIDCConfigurationError(w, r, err)
 		return
@@ -92,7 +96,11 @@ func createCustomOIDCConfigurationHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		return
 	}
-	if !validateCustomOIDCConfigurationRequest(w, r, &request) {
+	customerOrgID, ok := resolveCustomerScopeForWrite(w, r, request.CustomerOrganizationID)
+	if !ok {
+		return
+	}
+	if !validateCustomOIDCConfigurationRequest(w, r, &request, customerOrgID, nil) {
 		return
 	}
 	if request.ClientSecret == nil {
@@ -117,13 +125,19 @@ func createCustomOIDCConfigurationHandler(w http.ResponseWriter, r *http.Request
 		respondCustomOIDCConfigurationError(w, r, err)
 		return
 	}
-	respondCustomOIDCConfiguration(w, r, configuration)
+	respondCustomOIDCConfiguration(w, r, configuration, customerOrgID, nil)
 }
 
+// updateCustomOIDCConfigurationHandler, deleteCustomOIDCConfigurationHandler and
+// testCustomOIDCConfigurationHandler all operate on an existing configuration addressed by id, so the
+// caller's own auth scope is enough to authorize them: a vendor may reach any row, a partner any row of
+// an assigned customer, and a customer only its own. Unlike create, they take no explicit customer
+// target from the request.
 func updateCustomOIDCConfigurationHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
 	orgID := *auth.CurrentOrgID()
+	customerOrgID, partnerOrgID := auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID()
 
 	id, err := uuid.Parse(r.PathValue("customOidcConfigurationId"))
 	if err != nil {
@@ -134,11 +148,11 @@ func updateCustomOIDCConfigurationHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		return
 	}
-	if !validateCustomOIDCConfigurationRequest(w, r, &request) {
+	if !validateCustomOIDCConfigurationRequest(w, r, &request, customerOrgID, partnerOrgID) {
 		return
 	}
 
-	existing, err := db.GetCustomOIDCConfigurationOfOrganization(ctx, id, orgID)
+	existing, err := db.GetCustomOIDCConfigurationOfOrganization(ctx, id, orgID, customerOrgID, partnerOrgID)
 	if errors.Is(err, apierrors.ErrNotFound) {
 		http.NotFound(w, r)
 		return
@@ -167,20 +181,22 @@ func updateCustomOIDCConfigurationHandler(w http.ResponseWriter, r *http.Request
 	} else if err != nil {
 		respondCustomOIDCConfigurationError(w, r, err)
 	} else {
-		respondCustomOIDCConfiguration(w, r, configuration)
+		respondCustomOIDCConfiguration(w, r, configuration, customerOrgID, partnerOrgID)
 	}
 }
 
 func deleteCustomOIDCConfigurationHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	orgID := *auth.Authentication.Require(ctx).CurrentOrgID()
+	auth := auth.Authentication.Require(ctx)
+	orgID := *auth.CurrentOrgID()
 
 	id, err := uuid.Parse(r.PathValue("customOidcConfigurationId"))
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
-	if err := db.DeleteCustomOIDCConfiguration(ctx, id, orgID); errors.Is(err, apierrors.ErrNotFound) {
+	err = db.DeleteCustomOIDCConfiguration(ctx, id, orgID, auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
+	if errors.Is(err, apierrors.ErrNotFound) {
 		http.NotFound(w, r)
 	} else if err != nil {
 		respondCustomOIDCConfigurationError(w, r, err)
@@ -191,14 +207,16 @@ func deleteCustomOIDCConfigurationHandler(w http.ResponseWriter, r *http.Request
 
 func testCustomOIDCConfigurationHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	orgID := *auth.Authentication.Require(ctx).CurrentOrgID()
+	auth := auth.Authentication.Require(ctx)
+	orgID := *auth.CurrentOrgID()
 
 	id, err := uuid.Parse(r.PathValue("customOidcConfigurationId"))
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
-	configuration, err := db.GetCustomOIDCConfigurationOfOrganization(ctx, id, orgID)
+	configuration, err := db.GetCustomOIDCConfigurationOfOrganization(
+		ctx, id, orgID, auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
 	if errors.Is(err, apierrors.ErrNotFound) {
 		http.NotFound(w, r)
 		return
@@ -235,6 +253,7 @@ func validateCustomOIDCConfigurationRequest(
 	w http.ResponseWriter,
 	r *http.Request,
 	request *api.CustomOIDCConfigurationRequest,
+	customerOrgID, partnerOrgID *uuid.UUID,
 ) bool {
 	ctx := r.Context()
 	auth := auth.Authentication.Require(ctx)
@@ -253,7 +272,9 @@ func validateCustomOIDCConfigurationRequest(
 		return false
 	}
 
-	domains, err := customDomainsByID(ctx, orgID)
+	// Only the domains of this request's scope are candidates, so a customer cannot attach a provider
+	// to the vendor's app domain and the vendor cannot attach one to a customer's domain.
+	domains, err := customDomainsByID(ctx, orgID, customerOrgID, partnerOrgID)
 	if err != nil {
 		respondCustomOIDCConfigurationError(w, r, err)
 		return false
@@ -263,8 +284,17 @@ func validateCustomOIDCConfigurationRequest(
 		http.Error(w, "unknown custom domain", http.StatusBadRequest)
 		return false
 	}
-	if domain.Type != types.DomainTypeApp {
-		http.Error(w, "the OIDC provider must be bound to an app domain", http.StatusBadRequest)
+	if domain.Type == types.DomainTypeRegistry {
+		http.Error(w, "the OIDC provider must be bound to an app or customer portal domain",
+			http.StatusBadRequest)
+		return false
+	}
+	// The shared customer portal domain serves every customer of the vendor, and nothing in an OIDC
+	// response says which one a new user belongs to, so there is no organization to provision into.
+	if request.CreateUnknownUsers &&
+		domain.Type == types.DomainTypeCustomerPortal && domain.CustomerOrganizationID == nil {
+		http.Error(w, "users cannot be created automatically on the shared customer portal domain, "+
+			"because the provider does not say which customer they belong to", http.StatusBadRequest)
 		return false
 	}
 	return true
@@ -287,9 +317,10 @@ func respondCustomOIDCConfiguration(
 	w http.ResponseWriter,
 	r *http.Request,
 	configuration types.CustomOIDCConfiguration,
+	customerOrgID, partnerOrgID *uuid.UUID,
 ) {
 	ctx := r.Context()
-	domains, err := customDomainsByID(ctx, configuration.OrganizationID)
+	domains, err := customDomainsByID(ctx, configuration.OrganizationID, customerOrgID, partnerOrgID)
 	if err != nil {
 		respondCustomOIDCConfigurationError(w, r, err)
 		return
@@ -314,8 +345,12 @@ func respondCustomOIDCConfigurationError(w http.ResponseWriter, r *http.Request,
 	}
 }
 
-func customDomainsByID(ctx context.Context, orgID uuid.UUID) (map[uuid.UUID]types.CustomDomain, error) {
-	domains, err := db.GetCustomDomains(ctx, orgID)
+func customDomainsByID(
+	ctx context.Context,
+	orgID uuid.UUID,
+	customerOrgID, partnerOrgID *uuid.UUID,
+) (map[uuid.UUID]types.CustomDomain, error) {
+	domains, err := db.GetCustomDomainsForScope(ctx, orgID, customerOrgID, partnerOrgID)
 	if err != nil {
 		return nil, err
 	}

@@ -32,8 +32,12 @@ export class OrganizationSettingsComponent {
     () => this.vendorAdmin() && this.featureFlags.isCustomEmailsEnabled()
   );
 
+  // The tab now holds the custom domains as well, which are gated on their own feature. Both are
+  // granted by the same plan, so either one is enough to make the tab worth opening.
   protected readonly customOidcVisible = computed(
-    () => this.vendorAdmin() && this.featureFlags.isCustomOidcProvidersEnabled()
+    () =>
+      this.vendorAdmin() &&
+      (this.featureFlags.isCustomOidcProvidersEnabled() || this.featureFlags.isCustomDomainsEnabled())
   );
 
   protected readonly tabs = computed<TabItem<OrganizationSettingsTab>[]>(() => {
@@ -43,7 +47,7 @@ export class OrganizationSettingsComponent {
       // see that the feature exists and which plan it needs.
       tabs.push({
         id: 'identity-provider',
-        label: 'Identity Provider',
+        label: 'Custom Domains & Identity Provider',
         disabled: !this.customOidcVisible(),
       });
       tabs.push({id: 'email', label: 'Email Sending Provider', disabled: !this.customEmailVisible()});

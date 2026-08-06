@@ -1,0 +1,43 @@
+<div>
+  <label [for]="fieldId()" class="distr-label mb-2">{{ label() }}</label>
+  @if (domain(); as domain) {
+    <div class="flex items-center gap-2">
+      <code class="px-2 py-1.5 rounded-sm bg-gray-100 dark:bg-gray-600 text-sm font-mono dark:text-white">
+        {{ domain.domain }}
+      </code>
+      <button
+        type="button"
+        (click)="remove.emit()"
+        [attr.aria-label]="removeAriaLabel()"
+        class="text-red-600 dark:text-red-500 hover:text-red-800 dark:hover:text-red-400">
+        <fa-icon [icon]="faTrash" />
+      </button>
+    </div>
+    <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+      Create a CNAME record: <code class="font-mono">{{ domain.domain }}</code> &rarr;
+      <code class="font-mono">{{ cnameTarget() }}</code>
+    </p>
+  } @else {
+    <form (ngSubmit)="submit()">
+      <input
+        [formControl]="control"
+        autotrim
+        type="text"
+        [name]="fieldId()"
+        [id]="fieldId()"
+        class="distr-input"
+        [placeholder]="placeholder()" />
+      @if (control.invalid && control.touched) {
+        <p class="mt-1 text-sm text-red-600 dark:text-red-500">{{ invalidHint() }}</p>
+      }
+      <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+        <ng-content />
+        You will have to create a CNAME record pointing to <code class="font-mono">{{ cnameTarget() }}</code
+        >.
+      </p>
+      <button type="submit" [disabled]="saving()" class="distr-btn-primary mt-4 disabled:opacity-60">
+        Save domain
+      </button>
+    </form>
+  }
+</div>

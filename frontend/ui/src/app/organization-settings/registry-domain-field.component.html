@@ -1,0 +1,42 @@
+@if (domain()) {
+  <app-domain-field
+    fieldId="registryDomain"
+    label="Registry domain"
+    placeholder="registry.your-company.com"
+    invalidHint="Must be a valid hostname without scheme, e.g. registry.your-company.com"
+    removeAriaLabel="Remove registry domain"
+    [domain]="domain()"
+    [cnameTarget]="cnameTarget()"
+    [saving]="saving()"
+    (save)="save.emit($event)"
+    (remove)="remove.emit()" />
+} @else {
+  <div class="flex items-center gap-2">
+    <input
+      type="checkbox"
+      [(ngModel)]="enabled"
+      name="registryDomainEnabled"
+      id="registryDomainEnabled"
+      class="distr-checkbox" />
+    <label for="registryDomainEnabled" class="distr-label">Use a separate registry domain</label>
+  </div>
+  <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+    Only needed if you want a separate hostname for the artifact registry; your app domain already serves registry
+    traffic under <code class="font-mono">/v2/</code>.
+  </p>
+  @if (enabled()) {
+    <div class="mt-2">
+      <app-domain-field
+        fieldId="registryDomain"
+        label="Registry domain"
+        placeholder="registry.your-company.com"
+        invalidHint="Must be a valid hostname without scheme, e.g. registry.your-company.com"
+        removeAriaLabel="Remove registry domain"
+        [domain]="domain()"
+        [cnameTarget]="cnameTarget()"
+        [saving]="saving()"
+        (save)="save.emit($event)"
+        (remove)="remove.emit()" />
+    </div>
+  }
+}

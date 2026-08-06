@@ -114,7 +114,7 @@
                       class="origin-top w-full text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600">
                       <ul
                         class="w-full text-sm font-medium text-gray-900 bg-white border-gray-200 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                        @for (f of allCustomerFeatures; track f) {
+                        @for (f of allCustomerFeatures(); track f) {
                           <li class="w-full border-t border-gray-200 dark:border-gray-600">
                             <label class="flex items-center ps-3" [class.ms-4]="isFeatureIndent(f)">
                               <input
@@ -158,30 +158,25 @@
                   <a
                     [routerLink]="[customer.id, 'users']"
                     class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                    @if (auth.hasAnyRole('read_write', 'admin')) {
-                      Manage users
-                    } @else {
-                      Show users
-                    }
+                    Users
                   </a>
                   <a
                     [routerLink]="[customer.id, 'secrets']"
                     class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                    @if (auth.hasAnyRole('read_write', 'admin')) {
-                      Manage secrets
-                    } @else {
-                      Show secrets
-                    }
+                    Secrets
                   </a>
                   <a
                     [routerLink]="[customer.id, 'links']"
                     class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                    @if (auth.hasAnyRole('read_write', 'admin')) {
-                      Manage links
-                    } @else {
-                      Show links
-                    }
+                    Links
                   </a>
+                  @if (auth.hasAnyRole('admin') && customer.features.includes('oidc_providers')) {
+                    <a
+                      [routerLink]="[customer.id, 'settings']"
+                      class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                      Settings
+                    </a>
+                  }
                   @if (auth.hasAnyRole('admin') && (auth.isVendor() || auth.isPartner())) {
                     <button
                       type="button"

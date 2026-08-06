@@ -15,10 +15,12 @@ const baseUrl = '/api/v1/custom-oidc';
 export class CustomOidcService {
   private readonly httpClient = inject(HttpClient);
 
+  // See CustomDomainsService.list: returns everything within the caller's scope, filtered client-side.
   public list(): Observable<CustomOidcConfigurationsResponse> {
     return this.httpClient.get<CustomOidcConfigurationsResponse>(baseUrl);
   }
 
+  // request.customerOrganizationId targets a customer's own provider instead of the caller's own.
   public create(request: CustomOidcConfigurationRequest): Observable<CustomOidcConfiguration> {
     return this.httpClient.post<CustomOidcConfiguration>(baseUrl, request);
   }
