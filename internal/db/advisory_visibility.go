@@ -195,7 +195,9 @@ func artifactVersionVisibility(
 }
 
 // getArtifactVersionSiblings maps each of the given artifact versions to every version
-// resolving to the same content, itself included. Versions with no row are absent.
+// resolving to the same content, itself included: same-digest tag siblings and, recursively,
+// multi-arch indexes that contain the marked manifest as a part. Versions with no row are
+// absent. The expansion matches GetMarkedVersions and CheckEntitlementForArtifact.
 func getArtifactVersionSiblings(
 	ctx context.Context, versionIDs []uuid.UUID,
 ) (map[uuid.UUID][]uuid.UUID, error) {
@@ -207,12 +209,22 @@ func getArtifactVersionSiblings(
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		`SELECT sibling.id AS version_id, selected.id AS sibling_of
-		FROM ArtifactVersion selected
-			JOIN ArtifactVersion sibling
-				ON sibling.artifact_id = selected.artifact_id
-				AND sibling.manifest_blob_digest = selected.manifest_blob_digest
-		WHERE selected.id = any(@versionIds)`,
+		`WITH RECURSIVE Equivalents (sibling_of, id, artifact_id, manifest_blob_digest) AS (
+			SELECT selected.id AS sibling_of, sibling.id, sibling.artifact_id,
+					sibling.manifest_blob_digest
+				FROM ArtifactVersion selected
+				JOIN ArtifactVersion sibling
+					ON sibling.artifact_id = selected.artifact_id
+					AND sibling.manifest_blob_digest = selected.manifest_blob_digest
+				WHERE selected.id = any(@versionIds)
+			UNION
+			SELECT eq.sibling_of, av.id, av.artifact_id, av.manifest_blob_digest
+				FROM ArtifactVersion av
+				JOIN ArtifactVersionPart avp ON av.id = avp.artifact_version_id
+				JOIN Equivalents eq ON avp.artifact_blob_digest = eq.manifest_blob_digest
+		)
+		SELECT id AS version_id, sibling_of
+		FROM Equivalents`,
 		pgx.NamedArgs{"versionIds": versionIDs},
 	)
 	if err != nil {
