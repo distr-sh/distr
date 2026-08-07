@@ -388,12 +388,14 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if host, err := resolvePortalHost(ctx, validation.NormalizeHostname(r.Host)); err != nil {
+	host, err := resolvePortalHost(ctx, validation.NormalizeHostname(r.Host))
+	if err != nil {
 		log.Error("could not resolve host for registration", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, "registration is not available on this domain", http.StatusForbidden)
 		return
-	} else if !host.instanceAuthAllowed() {
+	}
+	if !host.instanceAuthAllowed() {
 		http.Error(w, "registration is not available on this domain", http.StatusForbidden)
 		return
 	}
@@ -403,7 +405,7 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	} else if err := request.Validate(); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
-	} else if !verifyRegistrationChallenge(w, r, request.TurnstileToken) {
+	} else if !verifyRegistrationChallenge(w, ctx, host, request.TurnstileToken) {
 		return
 	} else {
 		userAccount := types.UserAccount{
@@ -454,17 +456,9 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func verifyRegistrationChallenge(w http.ResponseWriter, r *http.Request, token string) bool {
-	ctx := r.Context()
+func verifyRegistrationChallenge(w http.ResponseWriter, ctx context.Context, host portalHost, token string) bool {
 	log := internalctx.GetLogger(ctx)
 
-	// Resolution is best-effort in the same way as in the portal endpoint: a failed lookup leaves the default
-	// host, which is the one that requires a challenge.
-	host, err := resolvePortalHost(ctx, validation.NormalizeHostname(r.Host))
-	if err != nil {
-		log.Warn("failed to resolve host for challenge verification", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-	}
 	if host.turnstileSiteKey() == nil {
 		return true
 	}

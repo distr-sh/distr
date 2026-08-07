@@ -106,6 +106,8 @@ export class TurnstileComponent {
   private turnstile?: TurnstileApi;
   private widgetId?: string;
   private renderedTheme?: TurnstileTheme;
+  private rendering = false;
+  private needsRerender = false;
 
   constructor() {
     afterNextRender(() => this.render());
@@ -113,11 +115,17 @@ export class TurnstileComponent {
     // discards the current token: challenges are solved per widget, and this is a new one.
     effect(() => {
       const theme = this.theme();
-      if (this.widgetId !== undefined && theme !== this.renderedTheme) {
+      if (theme === this.renderedTheme) {
+        return;
+      }
+      if (this.widgetId === undefined && !this.rendering) {
+        return;
+      }
+      if (this.widgetId !== undefined) {
         this.remove();
         this.token.emit(undefined);
-        void this.render();
       }
+      void this.render();
     });
     inject(DestroyRef).onDestroy(() => this.remove());
   }
@@ -131,26 +139,52 @@ export class TurnstileComponent {
   }
 
   private async render(): Promise<void> {
+    if (this.rendering) {
+      this.needsRerender = true;
+      return;
+    }
+    this.rendering = true;
+    this.needsRerender = false;
     try {
-      this.turnstile = await loadTurnstile();
-      this.loadFailed.set(false);
+      try {
+        this.turnstile = await loadTurnstile();
+        this.loadFailed.set(false);
+      } catch (e) {
+        console.error(e);
+        this.loadFailed.set(true);
+        return;
+      }
+      const theme = this.theme();
+      const widgetId = this.turnstile.render(this.widget().nativeElement, {
+        sitekey: this.siteKey(),
+        action,
+        theme,
+        // Only shows the widget when the challenge actually has to be solved by hand.
+        appearance: 'interaction-only',
+        callback: (token) => this.token.emit(token),
+        'error-callback': () => this.token.emit(undefined),
+        'expired-callback': () => this.token.emit(undefined),
+      });
+      if (!widgetId) {
+        throw new Error('Turnstile did not return a widget id');
+      }
+      this.widgetId = widgetId;
+      this.renderedTheme = theme;
     } catch (e) {
       console.error(e);
       this.loadFailed.set(true);
-      return;
+      this.widgetId = undefined;
+      this.renderedTheme = undefined;
+    } finally {
+      this.rendering = false;
+      if (this.needsRerender || this.theme() !== this.renderedTheme) {
+        if (this.widgetId !== undefined) {
+          this.remove();
+          this.token.emit(undefined);
+        }
+        void this.render();
+      }
     }
-    const theme = this.theme();
-    this.widgetId = this.turnstile.render(this.widget().nativeElement, {
-      sitekey: this.siteKey(),
-      action,
-      theme,
-      // Only shows the widget when the challenge actually has to be solved by hand.
-      appearance: 'interaction-only',
-      callback: (token) => this.token.emit(token),
-      'error-callback': () => this.token.emit(undefined),
-      'expired-callback': () => this.token.emit(undefined),
-    });
-    this.renderedTheme = theme;
   }
 
   private remove(): void {
