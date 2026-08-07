@@ -108,24 +108,25 @@ This database stores timestamps as `TIMESTAMP` (without time zone), not `TIMESTA
 
 ### Building
 
-````bash
+```sh
 # Build hub (includes frontend build)
 mise run build:hub:community        # Community edition
 
 # Build agents
 mise run build:agent:docker
 mise run build:agent:kubernetes
+```
 
 Binaries are output to `dist/`.
 
 ### Linting and Formatting
 
-```bash
+```sh
 # Auto-fix linting issues
 mise run format              # All
 mise run format:go           # Go only
 mise run format:frontend     # Frontend only
-````
+```
 
 Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Prettier with config in `.prettierrc.mjs`.
 
@@ -233,6 +234,12 @@ The only exceptions are plan-specific billing UI (checkout, plan comparison) and
 
 Organization features (`types.Feature`) come from two sources and must not be mixed up. Plan-managed features are granted by `types.FeaturesForSubscriptionType` and collected in `types.PlanManagedFeatures`; they are the only ones that may be revoked when an organization loses its plan. Everything else is granted out of band — `vendor_billing` by staff, `pre_post_scripts` and `artifact_version_mutable` by an organization admin in the settings — and must survive plan changes and edition reconciliation. Never overwrite the whole `features` array to revoke a plan; remove `types.PlanManagedFeatures` from it.
 
+### Sending Mail
+
+Never take the mailer straight from the context. An organization can configure its own SMTP server (`CustomEmailConfiguration`), which overrides the instance mailer built from the `MAILER_*` env vars, so every sender resolves its transport with `custommail.MailerForOrganization(ctx, orgID)` and its sender address with `custommail.FromAddressOrDefault(ctx, orgID, branding)`. Both fall back to the instance defaults when the organization has no enabled configuration, and neither falls back when sending through a configured server fails — the instance mailer would send from a domain that server's sender address does not belong to, which fails SPF/DKIM/DMARC and hides the misconfiguration.
+
+The organization must be passed explicitly rather than read from the authentication: background jobs have no authentication in their context (`internal/jobs/runner.go`), and notification mail is sent from exactly there.
+
 ### API Routes
 
 API routes are defined in `internal/routing/`. Routes are grouped by authentication requirements:
@@ -245,16 +252,57 @@ API routes are defined in `internal/routing/`. Routes are grouped by authenticat
 
 When adding new routes, ensure the OpenAPI spec remains valid. The `chiopenapi` router generates the spec from route definitions. Endpoints that have path parameters, query parameters, or a request body must declare them via `option.Request()` with a struct using the appropriate tags (`path:`, `query:`, `json:`). Endpoints without any parameters or body do not need `option.Request()`. Follow the existing pattern of composing path param structs with body request structs via embedding.
 
+### Generated URLs
+
+Never hard-wire `https://` into a URL that is built for this instance. The scheme is `env.HostScheme()`, taken from `DISTR_HOST` (https unless it explicitly says http). It returns the `env.URLScheme` enum (`env.SchemeHTTP` / `env.SchemeHTTPS`), which is also what a parsed URL's scheme is compared against, rather than a bare `"https"` string:
+
+- For a URL on the host of the current request use `handlerutil.GetRequestSchemeAndHost(r)`. It keeps the request's host, so a request on a custom domain stays on it, and takes the scheme from the configuration rather than the request, which arrives as plain http behind a TLS-terminating proxy.
+- For a URL on another host — an organization's custom domain in `customdomains.withScheme`, the login forwarding target, the OIDC callback URL an administrator has to register (`oidc.CustomCallbackURL`) — use `env.HostScheme()` directly.
+
+A hard-wired https breaks every locally running instance, and for the OIDC callback URL it produces a URL that disagrees with the `redirect_uri` the login actually sends. In the frontend, use the protocol of the current page for the same reason.
+
+### Host-resolved Bootstrap Configuration
+
+`GET /api/public/v1/portal` (`internal/handlers/portal.go`) is the single endpoint the unauthenticated pages boot from: it resolves the request Host to an organization and returns its portal branding plus the login methods available on that host. Anything the login/register pages need before a user exists belongs here, not in a new endpoint — on the frontend it is owned by `PortalService`, which requests it once and replays it.
+
+`resolvePortalHost` distinguishes three host sources. Self-service `CustomDomain` rows and legacy `OrganizationBranding.app_domain` values are **not** interchangeable: both drop Distr's own branding, but the instance-scoped OIDC providers stay available on the legacy domains, since they predate self-service domains and their users would otherwise be locked out. The response is cached per Host (`Vary: Host`, `max-age=60`), so it must not carry anything user- or organization-specific.
+
+## Comments
+
+Write as few comments as possible. A comment has to earn its place by saying something the code cannot, and every comment that does not is noise that goes stale and has to be reviewed forever.
+
+Do not write a comment that:
+
+- Restates the code or the name below it, including doc comments on self-explanatory types, fields, functions and env getters. A getter named after the value it returns needs no comment saying that it returns that value.
+- Explains the change you are making, why it is correct, or what was there before. That belongs in the commit message or the pull request description, not in the code.
+- Narrates a step of an obvious sequence (`// send the request`, `// parse the response`).
+- Repeats what the documentation, a rule in this file, or a linked ticket already says.
+
+Do write a comment when it records something a reader cannot see:
+
+- A constraint imposed from outside the code, e.g. a requirement of a third-party API, a browser or protocol quirk, or a database limitation the code has to work around.
+- Why a non-obvious approach was chosen over the obvious one, when the obvious one is wrong or breaks something.
+- A deliberate invariant that a future change would silently break.
+
+## Tests
+
+Only write a test that could fail for a real reason. Every test is code that has to be maintained, and a test that restates the implementation costs maintenance without ever catching a bug.
+
+- Do not test guard clauses, getters, plain mappings, a single `if` branch, or that a value passed in comes back out.
+- Do not write a test whose assertion is trivially true because the dependency it needs is not configured in tests.
+- Do test behavior that is hard to get right and expensive to get wrong: wire formats sent to third parties, fail-closed security behavior, parsing, permission and subscription gating, and non-trivial query or business logic.
+- Prefer a few focused tests over an exhaustive matrix of near-duplicates.
+
 ## General rules
 
 - Always ensure this file is up-to-date.
 - Always build, test, lint and format through mise tasks (`mise run build:hub:community`, `mise run test:go`, `mise run test:frontend`, `mise run lint`, `mise run format`). Never invoke `go build`, `go test`, `golangci-lint` or `pnpm` directly.
 - When you add, remove, or change an environment variable in `internal/env/env.go` (name, default, required/optional status, or accepted values), update the configuration reference page at `website/src/content/docs/docs/self-hosting/configuration.mdx` in the same change so it stays complete and accurate.
-- Don't write any unnecessary comments that just explain the functionality below, if there is nothing special about it.
 - If a user requests you to do something differently, add the difference to a new rule / convention in this file
 - If you read code that doesn't follow these rules, please fix it.
 - If you see any typos, or spelling mistakes, please fix them.
 - If you fetch data from GitHub always use the GitHub cli (`gh`) instead of the web interface.
+- Scripting language preference, for anything from a one-off command to a checked-in script: shell first (like `hack/validate-migrations.sh`), Node when a task outgrows shell (like `hack/agent-changelog.mjs`). Avoid Python, and never use Perl (e.g. `perl -pi -e`). Edit existing files directly instead of piping them through a stream editor.
 - When you resolve merge conflicts (whether during a merge or rebase), always ensure that the conflict resolutions are committed before continuing, or at least prompt the user to commit them, so that unrelated new changes are not unintentionally included in that commit.
 
 ## Code Review Instructions

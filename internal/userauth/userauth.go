@@ -9,6 +9,7 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/google/uuid"
 )
 
 // SetUserPassword hashes the given password, optionally updates the name (when name is non-nil and non-empty),
@@ -101,4 +102,22 @@ func GenerateLoginToken(ctx context.Context, user types.UserAccount) (string, er
 	}
 	_, token, err := authjwt.GenerateDefaultToken(user, org)
 	return token, err
+}
+
+func GenerateLoginTokenForOrganization(
+	ctx context.Context,
+	user types.UserAccount,
+	organizationID uuid.UUID,
+) (string, error) {
+	orgs, err := db.GetOrganizationsForUser(ctx, user.ID)
+	if err != nil {
+		return "", err
+	}
+	for _, org := range orgs {
+		if org.ID == organizationID {
+			_, token, err := authjwt.GenerateDefaultToken(user, org)
+			return token, err
+		}
+	}
+	return "", apierrors.ErrNotFound
 }

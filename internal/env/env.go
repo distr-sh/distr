@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/distr-sh/distr/internal/envparse"
 	"github.com/distr-sh/distr/internal/envutil"
 	"github.com/distr-sh/distr/internal/util"
@@ -324,6 +323,16 @@ func JWTSecret() []byte {
 
 func Host() string { return host }
 
+// HostScheme is the scheme this instance is reached with, taken from DISTR_HOST. It is https unless
+// DISTR_HOST explicitly says http, and is the scheme of every URL this instance builds for a host
+// other than the one of the current request, e.g. an organization's custom domain.
+func HostScheme() URLScheme {
+	if strings.HasPrefix(strings.ToLower(host), string(SchemeHTTP)+"://") {
+		return SchemeHTTP
+	}
+	return SchemeHTTPS
+}
+
 func RegistryHost() string { return registryHost }
 
 func GetMailerConfig() MailerConfig {
@@ -553,22 +562,7 @@ func OIDCGenericClientID() *string     { return oidcGenericClientID }
 func OIDCGenericClientSecret() *string { return oidcGenericClientSecret }
 func OIDCGenericIssuer() *string       { return oidcGenericIssuer }
 func OIDCGenericPKCEEnabled() bool     { return oidcGenericPKCEEnabled }
-
-// OIDCGenericScopes returns scopes as a string array
-// expecting user input as "foo bar baz" or "foo,bar,baz"
-func OIDCGenericScopes() []string {
-	scopes := []string{
-		oidc.ScopeOpenID,
-	}
-	if oidcGenericScopes != nil {
-		if strings.Contains(*oidcGenericScopes, ",") {
-			scopes = append(scopes, strings.Split(*oidcGenericScopes, ",")...)
-		} else if strings.Contains(*oidcGenericScopes, " ") {
-			scopes = append(scopes, strings.Split(*oidcGenericScopes, " ")...)
-		}
-	}
-	return scopes
-}
+func OIDCGenericScopes() *string       { return oidcGenericScopes }
 
 func WellKnownMicrosoftIdentityAssociation() []byte {
 	return wellKnownMicrosoftIdentityAssociation

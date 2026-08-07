@@ -1,13 +1,17 @@
-import {AsyncPipe} from '@angular/common';
+import {AsyncPipe, DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
-import {FaIconComponent} from '@fortawesome/angular-fontawesome';
+import {RouterLink} from '@angular/router';
+import {FaIconComponent, IconDefinition} from '@fortawesome/angular-fontawesome';
+import {faGithub, faGoogle, faMicrosoft} from '@fortawesome/free-brands-svg-icons';
 import {
+  faArrowRightToBracket,
   faCheck,
   faCircleExclamation,
   faExclamationTriangle,
   faFloppyDisk,
+  faKey,
   faPen,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
@@ -18,17 +22,34 @@ import {AutotrimDirective} from '../directives/autotrim.directive';
 import {ContextService} from '../services/context.service';
 import {ImageUploadService} from '../services/image-upload.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
-import {MFASetupData, SettingsService} from '../services/settings.service';
+import {MFASetupData, OIDCIdentity, OIDCProvider, SettingsService} from '../services/settings.service';
 import {ToastService} from '../services/toast.service';
+
+const oidcProviderNames: Record<OIDCProvider, string> = {
+  github: 'GitHub',
+  google: 'Google',
+  microsoft: 'Microsoft',
+  generic: 'OIDC Provider',
+  custom: 'Organization provider',
+};
+
+const oidcProviderIcons: Record<OIDCProvider, IconDefinition> = {
+  github: faGithub,
+  google: faGoogle,
+  microsoft: faMicrosoft,
+  generic: faArrowRightToBracket,
+  custom: faArrowRightToBracket,
+};
 
 @Component({
   templateUrl: './user-settings.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective, SecureImagePipe, AsyncPipe],
+  imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective, SecureImagePipe, AsyncPipe, DatePipe, RouterLink],
 })
 export class UserSettingsComponent {
   protected readonly faFloppyDisk = faFloppyDisk;
   protected readonly faPen = faPen;
+  protected readonly faKey = faKey;
   protected readonly faCheck = faCheck;
   protected readonly faXmark = faXmark;
   protected readonly faCircleExclamation = faCircleExclamation;
@@ -73,13 +94,18 @@ export class UserSettingsComponent {
   protected readonly mfaSetupData = signal<MFASetupData | undefined>(undefined);
   protected readonly recoveryCodes = signal<string[] | undefined>(undefined);
   protected readonly recoveryCodesCount = signal<number>(0);
+  protected readonly oidcIdentities = signal<OIDCIdentity[]>([]);
   protected disableMfaDialogRef?: DialogRef<void>;
   protected regenerateRecoveryCodesDialogRef?: DialogRef<void>;
+  protected disconnectOidcIdentityDialogRef?: DialogRef<void>;
+  protected readonly oidcIdentityToDisconnect = signal<OIDCIdentity | undefined>(undefined);
 
   private readonly disableMfaDialog = viewChild.required<TemplateRef<unknown>>('disableMfaDialog');
   private readonly regenerateRecoveryCodesDialog = viewChild.required<TemplateRef<unknown>>(
     'regenerateRecoveryCodesDialog'
   );
+  private readonly disconnectOidcIdentityDialog =
+    viewChild.required<TemplateRef<unknown>>('disconnectOidcIdentityDialog');
 
   constructor() {
     this.ctx
@@ -90,6 +116,7 @@ export class UserSettingsComponent {
         this.formLoading.set(false);
         this.loadRecoveryCodesStatus();
       });
+    this.loadOidcIdentities();
   }
 
   protected async showProfilePictureDialog() {
@@ -266,6 +293,54 @@ export class UserSettingsComponent {
       }
     } finally {
       this.formLoading.set(false);
+    }
+  }
+
+  protected providerName(identity: OIDCIdentity): string {
+    return identity.configurationName ?? oidcProviderNames[identity.provider] ?? identity.provider;
+  }
+
+  protected providerIcon(provider: OIDCProvider): IconDefinition {
+    return oidcProviderIcons[provider] ?? faArrowRightToBracket;
+  }
+
+  protected showDisconnectOidcIdentityDialog(identity: OIDCIdentity): void {
+    this.oidcIdentityToDisconnect.set(identity);
+    this.disconnectOidcIdentityDialogRef?.dismiss();
+    this.disconnectOidcIdentityDialogRef = this.overlay.showModal<void>(this.disconnectOidcIdentityDialog());
+  }
+
+  protected async disconnectOidcIdentity(): Promise<void> {
+    const identity = this.oidcIdentityToDisconnect();
+    if (!identity) {
+      return;
+    }
+
+    try {
+      this.formLoading.set(true);
+      await firstValueFrom(this.settingsService.deleteOIDCIdentity(identity.id));
+      this.toast.success(`${this.providerName(identity)} disconnected successfully.`);
+      this.disconnectOidcIdentityDialogRef?.close();
+      this.oidcIdentityToDisconnect.set(undefined);
+      await this.loadOidcIdentities();
+    } catch (e) {
+      const errorMessage = getFormDisplayedError(e);
+      if (errorMessage) {
+        this.toast.error(errorMessage);
+      }
+    } finally {
+      this.formLoading.set(false);
+    }
+  }
+
+  private async loadOidcIdentities(): Promise<void> {
+    try {
+      this.oidcIdentities.set(await firstValueFrom(this.settingsService.getOIDCIdentities()));
+    } catch (e) {
+      const errorMessage = getFormDisplayedError(e);
+      if (errorMessage) {
+        this.toast.error(errorMessage);
+      }
     }
   }
 

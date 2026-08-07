@@ -6,6 +6,14 @@ export const HELM_RELEASE_NAME_REGEX = /^[a-z0-9]([-a-z0-9]*)?[a-z0-9]$/;
 export const HELM_RELEASE_NAME_MAX_LENGTH = 53;
 
 /**
+ * RFC-1123 hostname: dot-separated labels of alphanumerics and hyphens (not at the start or end of
+ * a label), at least two labels. Case-insensitive because hostnames are entered as typed and
+ * lower-cased on save. Mirrors `internal/validation/hostname.go`.
+ */
+export const HOSTNAME_REGEX = /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i;
+export const HOSTNAME_MAX_LENGTH = 253;
+
+/**
  * Pattern for a valid time.Duration from the Golang standard library
  *
  * @see https://pkg.go.dev/time#ParseDuration

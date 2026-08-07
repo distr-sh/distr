@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"regexp"
 	"time"
 
 	"github.com/distr-sh/distr/api"
@@ -18,6 +17,7 @@ import (
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
+	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/oaswrap/spec/adapter/chiopenapi"
@@ -130,6 +130,16 @@ func createOrganization(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := checkOrganizationCreationAllowed(ctx, auth.CurrentUserID()); errors.Is(err, apierrors.ErrBadRequest) {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	} else if err != nil {
+		log.Error("failed to check organization creation", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
 	body, err := JsonBody[api.CreateUpdateOrganizationRequest](w, r)
 	if err != nil {
 		return
@@ -189,13 +199,8 @@ func validateOrganizationRequest(w http.ResponseWriter, organization api.CreateU
 		return false
 	}
 	if organization.Slug != nil {
-		slugPattern := "^[a-z0-9]+((\\.|_|__|-+)[a-z0-9]+)*$"
-		slugMaxLength := 64
-		if matched, _ := regexp.MatchString(slugPattern, *organization.Slug); !matched {
-			http.Error(w, "Slug is invalid", http.StatusBadRequest)
-			return false
-		} else if len(*organization.Slug) > slugMaxLength {
-			http.Error(w, "Slug too long (max 64 chars)", http.StatusBadRequest)
+		if err := validation.ValidateSlug(*organization.Slug); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return false
 		}
 	}

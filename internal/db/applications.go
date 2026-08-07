@@ -74,7 +74,7 @@ func DeleteApplicationWithID(ctx context.Context, id uuid.UUID) error {
 	db := internalctx.GetDb(ctx)
 	cmd, err := db.Exec(ctx, `DELETE FROM Application WHERE id = @id`, pgx.NamedArgs{"id": id})
 	if err != nil {
-		if pgerr := (*pgconn.PgError)(nil); errors.As(err, &pgerr) && pgerr.Code == pgerrcode.ForeignKeyViolation {
+		if isStillReferencedError(err) {
 			err = fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
 		}
 	} else if cmd.RowsAffected() == 0 {

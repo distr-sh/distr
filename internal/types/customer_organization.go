@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,6 +18,9 @@ const (
 	CustomerOrganizationFeatureArtifacts         CustomerOrganizationFeature = "artifacts"
 	CustomerOrganizationFeatureAlerts            CustomerOrganizationFeature = "alerts"
 	CustomerOrganizationFeatureSupportBundles    CustomerOrganizationFeature = "support_bundles"
+	// CustomerOrganizationFeatureOidcProviders lets admins of the customer organization
+	// configure their own portal domain and their own OIDC providers on it.
+	CustomerOrganizationFeatureOidcProviders CustomerOrganizationFeature = "oidc_providers"
 )
 
 func ParseCustomerOrganizationFeature(value string) (CustomerOrganizationFeature, error) {
@@ -29,6 +33,8 @@ func ParseCustomerOrganizationFeature(value string) (CustomerOrganizationFeature
 		return CustomerOrganizationFeatureAlerts, nil
 	case string(CustomerOrganizationFeatureSupportBundles):
 		return CustomerOrganizationFeatureSupportBundles, nil
+	case string(CustomerOrganizationFeatureOidcProviders):
+		return CustomerOrganizationFeatureOidcProviders, nil
 	default:
 		return "", fmt.Errorf("%w: %v", ErrInvalidCustomerOrganizationFeature, value)
 	}
@@ -54,6 +60,10 @@ type CustomerOrganization struct {
 	Name                  string                        `db:"name" json:"name"`
 	Features              []CustomerOrganizationFeature `db:"features" json:"features"`
 	PartnerOrganizationID *uuid.UUID                    `db:"partner_organization_id" json:"partnerOrganizationId,omitempty"` //nolint:lll
+}
+
+func (co *CustomerOrganization) HasFeature(feature CustomerOrganizationFeature) bool {
+	return slices.Contains(co.Features, feature)
 }
 
 type CustomerOrganizationWithUsage struct {

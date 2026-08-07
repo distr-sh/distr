@@ -629,7 +629,7 @@ export default function PricingCalculator() {
             Just getting started? Try our Community Edition
           </h3>
           <p class="text-base leading-relaxed text-gray-700 dark:text-gray-300 mb-0">
-            Distr is Open Source. Self-host our free{' '}
+            Distr is Open Source. Our free{' '}
             <a
               href="https://github.com/distr-sh/distr"
               target="_blank"
@@ -637,8 +637,9 @@ export default function PricingCalculator() {
               class="text-accent-600 hover:text-accent-900 dark:text-accent-600 dark:hover:text-accent-200 font-medium underline">
               Community Edition
             </a>{' '}
-            to run your first customer installs. For self-hosting a paid edition
-            with Pro or Business features, please{' '}
+            is the perfect option to try Distr locally and to ship your first
+            customer installs. Paid plans can be self-hosted as well, with the
+            same feature set as on Distr Cloud, so please{' '}
             <a
               href="/contact/"
               class="text-accent-600 hover:text-accent-900 dark:text-accent-600 dark:hover:text-accent-200 font-medium underline">

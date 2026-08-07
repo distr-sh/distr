@@ -131,7 +131,9 @@ const (
 	// FeatureVulnerabilities gates the "Vulnerability Management" category. It is deliberately
 	// not named after the Advisory entity: the category covers security advisories today and
 	// will cover vulnerability scan logs as well.
-	FeatureVulnerabilities Feature = "vulnerabilities"
+	FeatureVulnerabilities     Feature = "vulnerabilities"
+	FeatureCustomEmails        Feature = "custom_emails"
+	FeatureCustomOidcProviders Feature = "custom_oidc_providers"
 )
 
 // ProFeatures is the set of features granted to organizations with a paid (pro) subscription.
@@ -144,6 +146,8 @@ var BusinessFeatures = []Feature{
 	FeaturePartnerManagement,
 	FeatureCustomDomains,
 	FeatureVulnerabilities,
+	FeatureCustomEmails,
+	FeatureCustomOidcProviders,
 }
 
 // FeaturesForSubscriptionType returns the features granted by a subscription type.

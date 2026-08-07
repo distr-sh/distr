@@ -101,6 +101,7 @@ export class NavBarComponent implements OnInit {
   protected readonly isVendorSomewhere = computed(() =>
     this.allOrgs().some((org) => organizationKind(org) === 'vendor')
   );
+  protected readonly canCreateOrganization = toSignal(this.ctx.canCreateOrganization(), {initialValue: false});
   protected readonly isDifferentOrganizationKind = computed(
     () => this.allOrgs().reduce((kinds, org) => kinds.add(organizationKind(org)), new Set<string>()).size > 1
   );

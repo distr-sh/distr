@@ -12,8 +12,9 @@ type AuthLoginRequest struct {
 }
 
 type AuthLoginResponse struct {
-	Token       string `json:"token,omitempty"`
-	RequiresMFA bool   `json:"requiresMfa"`
+	Token       string  `json:"token,omitempty"`
+	RequiresMFA bool    `json:"requiresMfa"`
+	RedirectURL *string `json:"redirectUrl,omitempty"`
 }
 
 type AuthRegistrationRequest struct {

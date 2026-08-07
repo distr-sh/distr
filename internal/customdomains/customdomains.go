@@ -2,26 +2,25 @@ package customdomains
 
 import (
 	"context"
-	"net/mail"
+	"fmt"
 	"regexp"
 
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
 var urlSchemeRegex = regexp.MustCompile("^https?://")
 
-// AppDomainOrDefault resolves the effective app base URL for an organization:
-// self-service CustomDomain first, then the legacy OrganizationBranding.app_domain
-// (kept until the branding domain migration follow-up ticket), then env.Host().
 func AppDomainOrDefault(ctx context.Context, orgID uuid.UUID, b *types.OrganizationBranding) string {
-	domains := customDomains(ctx, orgID)
-	if d := domainOfType(domains, types.DomainTypeApp); d != nil {
+	return appDomainOrDefault(customDomains(ctx, orgID, nil), b)
+}
+
+func appDomainOrDefault(vendorDomains []types.CustomDomain, b *types.OrganizationBranding) string {
+	if d := domainOfType(vendorDomains, types.DomainTypeApp); d != nil {
 		return withScheme(*d)
 	}
 	if b != nil && b.AppDomain != nil {
@@ -30,16 +29,73 @@ func AppDomainOrDefault(ctx context.Context, orgID uuid.UUID, b *types.Organizat
 	return env.Host()
 }
 
-// RegistryDomainOrDefault resolves the effective registry host for an organization:
-// dedicated CustomDomain registry row first, then the CustomDomain app row (every
-// custom domain serves registry traffic under /v2/ via the Caddy path routing), then
-// the legacy OrganizationBranding.registry_domain, then env.RegistryHost().
+func AppDomain(ctx context.Context, orgID uuid.UUID) *string {
+	return domainOfType(customDomains(ctx, orgID, nil), types.DomainTypeApp)
+}
+
+// CustomerPortalDomainOrDefault resolves the link host for a member of this organization: customerOrgID
+// nil means a vendor team member, who never uses the shared customer portal (loginAppDomainRedirect
+// sends them to the app domain too) — only an actual customer user falls through to it.
+func CustomerPortalDomainOrDefault(
+	ctx context.Context,
+	orgID uuid.UUID,
+	customerOrgID *uuid.UUID,
+	b *types.OrganizationBranding,
+) string {
+	return customerPortalDomainOrDefault(
+		customerDomains(ctx, orgID, customerOrgID), customerOrgID, customDomains(ctx, orgID, nil), b)
+}
+
+func customerPortalDomainOrDefault(
+	customerScopedDomains []types.CustomDomain,
+	customerOrgID *uuid.UUID,
+	vendorDomains []types.CustomDomain,
+	b *types.OrganizationBranding,
+) string {
+	if customerOrgID != nil {
+		if d := portalDomain(customerScopedDomains, vendorDomains); d != nil {
+			return withScheme(*d)
+		}
+	}
+	// Falls through to the vendor's app domain (including its legacy branding fallback) rather than
+	// straight to env.Host(), so a vendor without a portal domain still keeps its own hostname.
+	return appDomainOrDefault(vendorDomains, b)
+}
+
+// CustomerPortalDomain is nil for a vendor team member (customerOrgID nil): there is no "customer
+// portal" for them, only their app domain, resolved separately by AppDomain.
+func CustomerPortalDomain(ctx context.Context, orgID uuid.UUID, customerOrgID *uuid.UUID) *string {
+	if customerOrgID == nil {
+		return nil
+	}
+	return portalDomain(customerDomains(ctx, orgID, customerOrgID), customDomains(ctx, orgID, nil))
+}
+
+func portalDomain(customerScopedDomains, vendorDomains []types.CustomDomain) *string {
+	if d := domainOfType(customerScopedDomains, types.DomainTypeCustomerPortal); d != nil {
+		return d
+	}
+	return domainOfType(vendorDomains, types.DomainTypeCustomerPortal)
+}
+
+func customerDomains(ctx context.Context, orgID uuid.UUID, customerOrgID *uuid.UUID) []types.CustomDomain {
+	if customerOrgID == nil {
+		return nil
+	}
+	return customDomains(ctx, orgID, customerOrgID)
+}
+
 func RegistryDomainOrDefault(ctx context.Context, orgID uuid.UUID, b *types.OrganizationBranding) string {
-	domains := customDomains(ctx, orgID)
-	if d := domainOfType(domains, types.DomainTypeRegistry); d != nil {
+	return registryDomainOrDefault(customDomains(ctx, orgID, nil), b)
+}
+
+func registryDomainOrDefault(vendorDomains []types.CustomDomain, b *types.OrganizationBranding) string {
+	if d := domainOfType(vendorDomains, types.DomainTypeRegistry); d != nil {
 		return *d
 	}
-	if d := domainOfType(domains, types.DomainTypeApp); d != nil {
+	// Every custom domain serves registry traffic under /v2/ via the Caddy path routing, so the
+	// app domain is a valid registry host too.
+	if d := domainOfType(vendorDomains, types.DomainTypeApp); d != nil {
 		return *d
 	}
 	if b != nil && b.RegistryDomain != nil {
@@ -48,19 +104,10 @@ func RegistryDomainOrDefault(ctx context.Context, orgID uuid.UUID, b *types.Orga
 	return env.RegistryHost()
 }
 
-func EmailFromAddressParsedOrDefault(b *types.OrganizationBranding) (*mail.Address, error) {
-	if b != nil && b.EmailFromAddress != nil {
-		return mail.ParseAddress(*b.EmailFromAddress)
-	} else {
-		return util.PtrTo(env.GetMailerConfig().FromAddress), nil
-	}
-}
-
-// customDomains loads the organization's custom domains best-effort: on error the caller
-// falls back to the legacy branding columns / instance defaults, which keep working for
-// every organization.
-func customDomains(ctx context.Context, orgID uuid.UUID) []types.CustomDomain {
-	domains, err := db.GetCustomDomains(ctx, orgID)
+// Errors are swallowed so callers fall back to the legacy branding columns / instance defaults
+// instead of failing outright.
+func customDomains(ctx context.Context, orgID uuid.UUID, customerOrgID *uuid.UUID) []types.CustomDomain {
+	domains, err := db.GetCustomDomains(ctx, orgID, customerOrgID)
 	if err != nil {
 		internalctx.GetLogger(ctx).Warn("failed to resolve custom domains", zap.Error(err))
 		return nil
@@ -77,17 +124,10 @@ func domainOfType(domains []types.CustomDomain, domainType types.DomainType) *st
 	return nil
 }
 
-// withScheme prefixes the domain with the scheme of env.Host() (https:// if the
-// configured host has none) unless it already contains one. Self-service custom
-// domains are stored as bare hostnames; legacy branding app domains may contain
-// a scheme already.
+// Legacy branding app domains may already contain a scheme; self-service ones never do.
 func withScheme(domain string) string {
 	if urlSchemeRegex.MatchString(domain) {
 		return domain
 	}
-	scheme := urlSchemeRegex.FindString(env.Host())
-	if scheme == "" {
-		scheme = "https://"
-	}
-	return scheme + domain
+	return fmt.Sprintf("%v://%v", env.HostScheme(), domain)
 }

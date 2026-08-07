@@ -40,6 +40,16 @@ export class FeatureFlagService {
     .pipe(map((org) => org.features.includes('vulnerabilities')));
   public readonly isVulnerabilitiesEnabled = toSignal(this.isVulnerabilitiesEnabled$, {initialValue: false});
 
+  public readonly isCustomEmailsEnabled$ = this.organizationService
+    .get()
+    .pipe(map((org) => org.features.includes('custom_emails')));
+  public readonly isCustomEmailsEnabled = toSignal(this.isCustomEmailsEnabled$, {initialValue: false});
+
+  public readonly isCustomOidcProvidersEnabled$ = this.organizationService
+    .get()
+    .pipe(map((org) => org.features.includes('custom_oidc_providers')));
+  public readonly isCustomOidcProvidersEnabled = toSignal(this.isCustomOidcProvidersEnabled$, {initialValue: false});
+
   public readonly isNotificationsEnabled$ = this.forbidSubscriptionType(...NON_PRO_SUBSCRIPTION_TYPES);
 
   public readonly isSupportBundlesEnabled$ = this.forbidSubscriptionType(...NON_PRO_SUBSCRIPTION_TYPES);

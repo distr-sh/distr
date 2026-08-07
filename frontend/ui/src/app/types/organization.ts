@@ -10,7 +10,9 @@ export type Feature =
   | 'deployment_logs_after'
   | 'partner_management'
   | 'custom_domains'
-  | 'vulnerabilities';
+  | 'vulnerabilities'
+  | 'custom_emails'
+  | 'custom_oidc_providers';
 
 export interface SubscriptionLimits {
   maxCustomerOrganizations: number;

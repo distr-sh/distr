@@ -21,6 +21,7 @@ import {PartnerOrganizationsComponent} from './components/partner-organizations/
 import {CustomerUsersComponent} from './components/users/customers/customer-users.component';
 import {PartnerUsersComponent} from './components/users/partners/partner-users.component';
 import {VendorUsersComponent} from './components/users/vendors/vendor-users.component';
+import {CustomerSettingsComponent} from './customer-settings/customer-settings.component';
 import {DeploymentTargetDetailComponent} from './deployments/deployment-target-details/deployment-target-detail.component';
 import {DeploymentTargetsComponent} from './deployments/deployment-targets.component';
 import {CustomerLicenseDetailComponent} from './licenses/customer-license-detail.component';
@@ -28,10 +29,14 @@ import {LicenseKeysComponent} from './licenses/license-keys/license-keys.compone
 import {LicensesOverviewComponent} from './licenses/licenses-overview.component';
 import {NotificationRecordsComponent} from './notification-records/notification-records.component';
 import {OrganizationBrandingComponent} from './organization-branding/organization-branding.component';
+import {CustomEmailComponent} from './organization-settings/custom-email.component';
+import {CustomOidcComponent} from './organization-settings/custom-oidc.component';
+import {GeneralSettingsComponent} from './organization-settings/general-settings.component';
 import {OrganizationSettingsComponent} from './organization-settings/organization-settings.component';
 import {CustomerSecretsPageComponent} from './secrets/customer-secrets-page.component';
 import {SecretsPage} from './secrets/secrets-page.component';
 import {AuthService} from './services/auth.service';
+import {ContextService} from './services/context.service';
 import {FeatureFlagService} from './services/feature-flag.service';
 import {OrganizationService} from './services/organization.service';
 import {ToastService} from './services/toast.service';
@@ -106,6 +111,39 @@ function vendorBillingEnabledGuard(): CanActivateFn {
   return async () => {
     const featureFlags = inject(FeatureFlagService);
     return await firstValueFrom(featureFlags.isVendorBillingEnabled$);
+  };
+}
+
+// The tab holds the custom domains as well, so either feature makes it reachable.
+function customOidcProvidersEnabledGuard(): CanActivateFn {
+  return async () => {
+    const featureFlags = inject(FeatureFlagService);
+    const router = inject(Router);
+    return (
+      (await firstValueFrom(featureFlags.isCustomOidcProvidersEnabled$)) ||
+      (await firstValueFrom(featureFlags.isCustomDomainsEnabled$)) ||
+      router.createUrlTree(['/settings/organization/general'])
+    );
+  };
+}
+
+function customerSettingsEnabledGuard(): CanActivateFn {
+  return async () => {
+    const contextService = inject(ContextService);
+    const router = inject(Router);
+    const customerOrganization = await firstValueFrom(contextService.getCustomerOrganization());
+    return customerOrganization?.features?.includes('oidc_providers') || router.createUrlTree(['/']);
+  };
+}
+
+function customEmailsEnabledGuard(): CanActivateFn {
+  return async () => {
+    const featureFlags = inject(FeatureFlagService);
+    const router = inject(Router);
+    return (
+      (await firstValueFrom(featureFlags.isCustomEmailsEnabled$)) ||
+      router.createUrlTree(['/settings/organization/general'])
+    );
   };
 }
 
@@ -211,6 +249,11 @@ export const routes: Routes = [
           {path: 'users', component: CustomerUsersComponent},
           {path: 'secrets', component: CustomerSecretsPageComponent},
           {path: 'links', component: SidebarLinksPageComponent},
+          {
+            path: 'settings',
+            component: CustomerSettingsComponent,
+            canActivate: [customOidcProvidersEnabledGuard()],
+          },
           {path: '', pathMatch: 'full', redirectTo: 'users'},
         ],
       },
@@ -288,10 +331,36 @@ export const routes: Routes = [
             redirectTo: 'organization',
           },
           {
+            path: 'customer',
+            component: CustomerSettingsComponent,
+            canActivate: [requireCustomer, requiredRoleGuard('admin'), customerSettingsEnabledGuard()],
+          },
+          {
             path: 'organization',
             component: OrganizationSettingsComponent,
             data: {userRole: 'vendor'},
             canActivate: [requireVendor, requiredRoleGuard('admin')],
+            children: [
+              {
+                path: '',
+                pathMatch: 'full',
+                redirectTo: 'general',
+              },
+              {
+                path: 'general',
+                component: GeneralSettingsComponent,
+              },
+              {
+                path: 'identity-provider',
+                component: CustomOidcComponent,
+                canActivate: [customOidcProvidersEnabledGuard()],
+              },
+              {
+                path: 'email',
+                component: CustomEmailComponent,
+                canActivate: [customEmailsEnabledGuard()],
+              },
+            ],
           },
           {
             path: 'profile',
