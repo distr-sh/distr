@@ -22,6 +22,7 @@ type AuthRegistrationRequest struct {
 	OrganizationName string `json:"organizationName"`
 	Email            string `json:"email"`
 	Password         string `json:"password"`
+	TurnstileToken   string `json:"turnstileToken"`
 }
 
 func (r *AuthRegistrationRequest) Validate() error {
