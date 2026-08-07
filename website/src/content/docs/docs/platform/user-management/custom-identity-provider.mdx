@@ -29,6 +29,8 @@ Every domain carries its own set of providers. Nothing is inherited between them
 
 All three are configured under **Settings → Organization → Custom Domains & Identity Provider**, which is also where the domains themselves are registered. A customer's own domain additionally needs the **Custom Identity Provider** feature, which you grant per customer in the customer list.
 
+Domains added anywhere show a status panel next to them — green once the CNAME resolves to the expected target, red with the reason otherwise — so you can tell without leaving the page whether a provider is actually reachable yet.
+
 ## Requirements
 
 1. A custom app domain (e.g. `app.your-company.com`) set up under **Settings → Organization → Custom Domains & Identity Provider**, and an organization slug, because both are part of every provider's URLs.
@@ -90,7 +92,7 @@ Providers you attach to this domain apply to every customer at once. You cannot 
 
 ## Letting a customer bring its own provider
 
-Grant a customer the **Custom Identity Provider** feature in the customer list. Its administrators then get an **Identity Provider** page of their own, where they register their own portal domain and connect their own provider. You can reach the same page from the customer list and configure it on their behalf.
+Grant a customer the **Custom Identity Provider** feature in the customer list. Its administrators then get a **Settings** page of their own, where they register their own portal domain and connect their own provider. You can reach the same page from the **Settings** button in the customer list and configure it on their behalf.
 
 A provider on a customer's own domain only ever authenticates users of that customer, and accounts created on first sign-in join that customer organization and count against its user limit rather than your billed seats.
 

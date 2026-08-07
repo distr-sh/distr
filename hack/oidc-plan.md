@@ -122,7 +122,7 @@ OIDC logins used to be matched by email address only, which created a duplicate 
 
 ## Stage 2 — DEV-592: Automated custom domain configuration for vendors
 
-> **Status: implemented and e2e-validated.** All four PR scopes below landed in a single change: `CustomDomain` table (migration 114) + CRUD API + validation, the internal caddy-ask server (`INTERNAL_SERVER_ADDR`), the Helm chart Caddy deployment with `distr-internal-caddy-ask` Service, and the org settings "Custom Domains" UI with CNAME instructions. Legacy `OrganizationBranding` domain columns remain supported as fallback (migration is the follow-up ticket 0). CNAME pre-verification and the host-context middleware were not included.
+> **Status: implemented and e2e-validated.** All four PR scopes below landed in a single change: `CustomDomain` table (migration 114) + CRUD API + validation, the internal caddy-ask server (`INTERNAL_SERVER_ADDR`), the Helm chart Caddy deployment with `distr-internal-caddy-ask` Service, and the org settings "Custom Domains" UI with CNAME instructions. Legacy `OrganizationBranding` domain columns remain supported as fallback (migration is the follow-up ticket 0). The host-context middleware was not included (see the cross-cutting note below — none was needed). **CNAME pre-verification landed later** (alongside DEV-593): `internal/dns.VerifyCNAME` resolves each domain's CNAME live (no persistence, 5s timeout) and the list/create/verify responses carry the result (`api.CustomDomainWithVerification`), fanned out concurrently via `errgroup` since a vendor's list can include every customer's portal domain; the settings UI shows a green/red panel per domain with the reason, a "Checked Xs/m/h ago" timestamp, and a manual recheck button.
 >
 > **The table is vendor-org scoped only**: the `customer_organization_id` / `partner_organization_id` columns of the appendix §5.3 shape were left out, since nothing sets or reads them yet. DEV-593 adds them (plus the API surface) in its own migration, which also replaces the `UNIQUE (organization_id, domain_type)` constraint with the partial unique indexes per scope.
 >
@@ -146,7 +146,7 @@ Follows the "recommended shape" in appendix §5: a dedicated `CustomDomain` tabl
 - Org-admin CRUD for app + registry domains: RFC-1123 hostname validation, global uniqueness via the `UNIQUE (domain)` constraint, rejection of platform-owned domains (`*.distr.sh`).
 - The registry domain is **optional**: the `/v2/*` path routing (PR 3) means every custom app domain already serves registry traffic, so `RegistryDomainOrDefault` resolves dedicated registry domain → custom app domain → instance default. A dedicated registry domain is only for vendors who want a separate hostname.
 - Gated on the new `custom_domains` feature flag (business plan), introduced by this stage (Stage 0 only prepared the gating mechanism, not the flag).
-- Optional CNAME pre-verification (resolve domain → expected target) for better UX; the `ask` gate keeps it safe either way.
+- CNAME pre-verification (resolve domain → expected target) for better UX; the `ask` gate keeps it safe either way. **Landed later** as `internal/dns.VerifyCNAME`, live and unpersisted rather than a cached/background-checked status.
 
 **PR 2 — Caddy on-demand TLS `ask` endpoint (appendix §3.3/§5.4, security-critical)**
 
@@ -163,7 +163,7 @@ Follows the "recommended shape" in appendix §5: a dedicated `CustomDomain` tabl
 
 **PR 4 — frontend (appendix §5.6)**
 
-- Org settings section "Custom domains" with an app domain field and an **optional** registry domain field (with a hint that the app domain already serves the registry under `/v2/`), live validation, and explicit CNAME record instructions per field (targets from the env endpoint); verification status if PR 1 includes pre-verification.
+- Org settings section "Custom domains" with an app domain field and an **optional** registry domain field (with a hint that the app domain already serves the registry under `/v2/`), live validation, and explicit CNAME record instructions per field (targets from the env endpoint); verification status if PR 1 includes pre-verification. **Landed later**: a green/red status pill per domain field with the check's detail message as a tooltip, a "Checked Xs/m/h ago" label, and a small reload icon next to the pill for a manual recheck.
 
 ### Open questions
 
@@ -506,9 +506,12 @@ A customer configures **its own** IdP for **its own** domain, unlocked by a per-
 - May vendors configure/override customer OIDC, or strictly customer-managed? **Decided: vendors may
   fully edit**, from the same page a customer admin sees, reached via a button in the customer list.
 - Does the customer portal currently have a settings area where this fits naturally? **Decided: a new
-  `settings/identity-provider` route**, sibling to `settings/profile`, gated on the `requireCustomer` guard
-  and the customer's `oidc_providers` feature; the customer sidebar gained an Identity Provider
-  entry next to Users.
+  `settings/customer` route** (component `CustomerSettingsComponent`, shared with the vendor-side view at
+  `customers/:customerOrganizationId/settings`), gated on the `requireCustomer` guard and the customer's
+  `oidc_providers` feature; the customer sidebar gained a **Settings** entry next to Users. It ended up
+  hosting domain management alongside the identity providers (DEV-593's own settings page merged into
+  this one rather than staying separate), so the route and nav label stayed generic instead of naming
+  OIDC specifically.
 
 ---
 
