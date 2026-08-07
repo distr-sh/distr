@@ -27,4 +27,8 @@ export class CustomDomainsService {
   public delete(id: string): Observable<void> {
     return this.httpClient.delete<void>(`${baseUrl}/${id}`);
   }
+
+  public verify(id: string): Observable<CustomDomain> {
+    return this.httpClient.post<CustomDomain>(`${baseUrl}/${id}/verify`, {});
+  }
 }

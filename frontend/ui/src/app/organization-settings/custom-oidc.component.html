@@ -1,7 +1,13 @@
 @if (visible()) {
   <div class="space-y-8">
     <div class="space-y-4">
-      <h2 class="text-xl font-bold dark:text-white">Custom Domains &amp; Identity Provider</h2>
+      <h2 class="text-xl font-bold dark:text-white">
+        @if (oidcProvidersEnabled()) {
+          Custom Domains &amp; Identity Provider
+        } @else {
+          Custom Domains
+        }
+      </h2>
       <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
         @if (customerScoped() && viewerIsCustomer()) {
           Let your users sign in with their own identity provider instead of a Distr password. A provider is offered on
@@ -25,6 +31,24 @@
         </p>
       }
     </div>
+
+    @if (showBusinessOidcBanner()) {
+      <div
+        class="px-3 py-2 text-xs rounded-lg border border-primary-200 bg-primary-50 text-primary-800 dark:border-primary-800 dark:bg-gray-800 dark:text-primary-300 flex items-center justify-between gap-2">
+        <span>
+          Unlock custom identity providers with the
+          <a routerLink="/subscription" class="font-semibold underline">Distr Business plan</a>.
+        </span>
+        <button
+          type="button"
+          title="Dismiss"
+          (click)="dismissBusinessOidcBanner()"
+          class="shrink-0 p-1 leading-none rounded-lg hover:bg-primary-100 dark:hover:bg-gray-700">
+          <fa-icon [icon]="faXmark" />
+          <span class="sr-only">Dismiss</span>
+        </button>
+      </div>
+    }
 
     @if (configurable()) {
       @if (membersWithOtherOrganizations().length > 0) {
@@ -81,15 +105,17 @@
           @if (customDomainsConfigured()) {
             <app-domain-field
               fieldId="appDomain"
-              label="App domain"
+              label="General Portal domain"
               placeholder="deploy.your-company.com"
               invalidHint="Must be a valid hostname without scheme, e.g. deploy.your-company.com"
               removeAriaLabel="Remove app domain"
               [domain]="appDomain()"
               [cnameTarget]="appCnameTarget()"
               [saving]="savingDomain()"
+              [verifying]="checkingDomainIds().has(appDomain()?.id ?? '')"
               (save)="saveDomain($event, 'app')"
-              (remove)="removeDomain(appDomain())">
+              (remove)="removeDomain(appDomain())"
+              (recheck)="recheckDomain(appDomain()!)">
               The domain for the Distr web UI and API.
             </app-domain-field>
           }
@@ -113,15 +139,17 @@
         @if (customDomainsConfigured()) {
           <app-domain-field
             fieldId="customerPortalDomain"
-            label="Portal domain"
+            label="Customer Portal domain"
             placeholder="<slug>-portal.yourcompany.com"
             invalidHint="Must be a valid hostname without scheme, e.g. <slug>-portal.yourcompany.com"
             removeAriaLabel="Remove portal domain"
             [domain]="customerPortalDomain()"
             [cnameTarget]="appCnameTarget()"
             [saving]="savingDomain()"
+            [verifying]="checkingDomainIds().has(customerPortalDomain()?.id ?? '')"
             (save)="saveDomain($event, 'customer_portal')"
-            (remove)="removeDomain(customerPortalDomain())">
+            (remove)="removeDomain(customerPortalDomain())"
+            (recheck)="recheckDomain(customerPortalDomain()!)">
             @if (customerScoped()) {
               The domain this customer's users sign in on. Links in invitations, password resets and notification mails
               use it.
@@ -145,8 +173,10 @@
             [domain]="registryDomain()"
             [cnameTarget]="registryCnameTarget()"
             [saving]="savingDomain()"
+            [verifying]="checkingDomainIds().has(registryDomain()?.id ?? '')"
             (save)="saveDomain($event, 'registry')"
-            (remove)="removeDomain(registryDomain())" />
+            (remove)="removeDomain(registryDomain())"
+            (recheck)="recheckDomain(registryDomain()!)" />
         </section>
       }
     }

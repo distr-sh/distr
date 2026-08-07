@@ -130,6 +130,44 @@ func GetCustomDomainsForScope(
 	return result, nil
 }
 
+// GetCustomDomainOfOrganization returns one domain within the caller's scope: any domain for a vendor,
+// its own domain for a customer, or a domain of an assigned customer for a partner.
+func GetCustomDomainOfOrganization(
+	ctx context.Context,
+	id, organizationID uuid.UUID,
+	customerOrgID, partnerOrgID *uuid.UUID,
+) (*types.CustomDomain, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		"SELECT"+customDomainOutputExpr+
+			`FROM CustomDomain d
+			WHERE d.id = @id AND d.organization_id = @organizationId
+				AND (@isVendor
+					OR d.customer_organization_id = @customerOrganizationId
+					OR EXISTS (
+						SELECT 1 FROM CustomerOrganization c
+						WHERE c.id = d.customer_organization_id AND c.partner_organization_id = @partnerOrganizationId
+					))`,
+		pgx.NamedArgs{
+			"id":                     id,
+			"organizationId":         organizationID,
+			"customerOrganizationId": customerOrgID,
+			"partnerOrganizationId":  partnerOrgID,
+			"isVendor":               customerOrgID == nil && partnerOrgID == nil,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query CustomDomain: %w", err)
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.CustomDomain])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, apierrors.ErrNotFound
+	} else if err != nil {
+		return nil, fmt.Errorf("could not get CustomDomain: %w", err)
+	}
+	return &result, nil
+}
+
 // DeleteCustomDomain removes a domain within the caller's scope: any domain for a vendor, own domain
 // for a customer, or a domain of an assigned customer for a partner.
 func DeleteCustomDomain(

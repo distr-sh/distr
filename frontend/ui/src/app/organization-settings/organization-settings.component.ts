@@ -40,6 +40,14 @@ export class OrganizationSettingsComponent {
       (this.featureFlags.isCustomOidcProvidersEnabled() || this.featureFlags.isCustomDomainsEnabled())
   );
 
+  // Drops the identity provider mention once domains are enabled without it, so the tab does not
+  // advertise a capability the organization does not have.
+  protected readonly identityProviderTabLabel = computed(() =>
+    this.featureFlags.isCustomDomainsEnabled() && !this.featureFlags.isCustomOidcProvidersEnabled()
+      ? 'Custom Domains'
+      : 'Custom Domains & Identity Provider'
+  );
+
   protected readonly tabs = computed<TabItem<OrganizationSettingsTab>[]>(() => {
     const tabs: TabItem<OrganizationSettingsTab>[] = [{id: 'general', label: 'General'}];
     if (this.vendorAdmin()) {
@@ -47,7 +55,7 @@ export class OrganizationSettingsComponent {
       // see that the feature exists and which plan it needs.
       tabs.push({
         id: 'identity-provider',
-        label: 'Custom Domains & Identity Provider',
+        label: this.identityProviderTabLabel(),
         disabled: !this.customOidcVisible(),
       });
       tabs.push({id: 'email', label: 'Email Sending Provider', disabled: !this.customEmailVisible()});

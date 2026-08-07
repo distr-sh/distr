@@ -8,8 +8,10 @@
     [domain]="domain()"
     [cnameTarget]="cnameTarget()"
     [saving]="saving()"
+    [verifying]="verifying()"
     (save)="save.emit($event)"
-    (remove)="remove.emit()" />
+    (remove)="remove.emit()"
+    (recheck)="recheck.emit()" />
 } @else {
   <div class="flex items-center gap-2">
     <input
@@ -36,8 +38,10 @@
         [domain]="domain()"
         [cnameTarget]="cnameTarget()"
         [saving]="saving()"
+        [verifying]="verifying()"
         (save)="save.emit($event)"
-        (remove)="remove.emit()" />
+        (remove)="remove.emit()"
+        (recheck)="recheck.emit()" />
     </div>
   }
 }

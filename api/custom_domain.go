@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"slices"
+	"time"
 
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/validation"
@@ -58,4 +59,14 @@ func (r *CreateCustomDomainsRequest) Validate() error {
 		}
 	}
 	return nil
+}
+
+// CustomDomainWithVerification adds the result of a live CNAME check to a CustomDomain. It is
+// computed fresh on every request and never persisted, so DNSCheckedAt is the time of this response,
+// not of some earlier check.
+type CustomDomainWithVerification struct {
+	types.CustomDomain
+	DNSVerified  bool      `json:"dnsVerified"`
+	DNSDetail    string    `json:"dnsDetail"`
+	DNSCheckedAt time.Time `json:"dnsCheckedAt"`
 }

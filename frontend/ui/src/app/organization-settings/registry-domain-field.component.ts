@@ -16,9 +16,11 @@ export class RegistryDomainFieldComponent {
   public readonly domain = input<CustomDomain>();
   public readonly cnameTarget = input<string>();
   public readonly saving = input(false);
+  public readonly verifying = input(false);
 
   public readonly save = output<string>();
   public readonly remove = output<void>();
+  public readonly recheck = output<void>();
 
   protected readonly enabled = signal(false);
 }

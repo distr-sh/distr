@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators} from '@angular/forms';
+import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleExclamation, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {BehaviorSubject, combineLatest, firstValueFrom, from, map, of, switchMap} from 'rxjs';
@@ -32,6 +33,8 @@ import {CustomOidcConfiguration, CustomOidcConfigurationsResponse} from '../type
 import {DomainFieldComponent} from './domain-field.component';
 import {RegistryDomainFieldComponent} from './registry-domain-field.component';
 
+const BUSINESS_OIDC_BANNER_DISMISSED_KEY = 'customOidc.businessOidcBannerDismissed';
+
 @Component({
   selector: 'app-custom-oidc',
   templateUrl: './custom-oidc.component.html',
@@ -46,6 +49,7 @@ import {RegistryDomainFieldComponent} from './registry-domain-field.component';
     NgTemplateOutlet,
     DomainFieldComponent,
     RegistryDomainFieldComponent,
+    RouterLink,
   ],
 })
 export class CustomOidcComponent {
@@ -92,6 +96,22 @@ export class CustomOidcComponent {
   protected readonly domainsEnabled = computed(() => this.featureFlags.isCustomDomainsEnabled());
   protected readonly oidcProvidersEnabled = computed(() => this.featureFlags.isCustomOidcProvidersEnabled());
 
+  private readonly businessOidcBannerDismissed = signal(
+    sessionStorage.getItem(BUSINESS_OIDC_BANNER_DISMISSED_KEY) === 'true'
+  );
+  protected readonly showBusinessOidcBanner = computed(
+    () =>
+      !this.customerScoped() &&
+      this.domainsEnabled() &&
+      !this.oidcProvidersEnabled() &&
+      !this.businessOidcBannerDismissed()
+  );
+
+  protected dismissBusinessOidcBanner(): void {
+    sessionStorage.setItem(BUSINESS_OIDC_BANNER_DISMISSED_KEY, 'true');
+    this.businessOidcBannerDismissed.set(true);
+  }
+
   protected readonly visible = computed(
     () =>
       (this.domainsEnabled() || this.oidcProvidersEnabled()) &&
@@ -116,7 +136,7 @@ export class CustomOidcComponent {
   protected readonly configurations = computed(() => this.response().configurations);
   protected readonly membersWithOtherOrganizations = computed(() => this.response().membersWithOtherOrganizations);
 
-  private readonly domains = toSignal(
+  private readonly fetchedDomains = toSignal(
     combineLatest([
       this.featureFlags.isCustomDomainsEnabled$,
       this.featureFlags.isCustomOidcProvidersEnabled$,
@@ -127,6 +147,12 @@ export class CustomOidcComponent {
       )
     ),
     {initialValue: [] as CustomDomain[]}
+  );
+  // Recheck results land here instead of triggering a full refetch, so clicking the reload icon on
+  // one domain updates only that domain's panel.
+  private readonly domainOverrides = signal<Record<string, CustomDomain>>({});
+  private readonly domains = computed(() =>
+    this.fetchedDomains().map((domain) => this.domainOverrides()[domain.id] ?? domain)
   );
   protected readonly scopedDomains = computed(() =>
     this.domains().filter((d) => (d.customerOrganizationId ?? undefined) === this.customerOrganizationId())
@@ -183,6 +209,27 @@ export class CustomOidcComponent {
       if (msg) {
         this.toast.error(msg);
       }
+    }
+  }
+
+  protected readonly checkingDomainIds = signal<ReadonlySet<string>>(new Set());
+
+  protected async recheckDomain(domain: CustomDomain) {
+    this.checkingDomainIds.update((ids) => new Set(ids).add(domain.id));
+    try {
+      const updated = await firstValueFrom(this.customDomainsService.verify(domain.id));
+      this.domainOverrides.update((overrides) => ({...overrides, [domain.id]: updated}));
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    } finally {
+      this.checkingDomainIds.update((ids) => {
+        const next = new Set(ids);
+        next.delete(domain.id);
+        return next;
+      });
     }
   }
 
