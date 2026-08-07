@@ -35,6 +35,11 @@ export class FeatureFlagService {
     .pipe(map((org) => org.features.includes('custom_domains')));
   public readonly isCustomDomainsEnabled = toSignal(this.isCustomDomainsEnabled$, {initialValue: false});
 
+  public readonly isVulnerabilitiesEnabled$ = this.organizationService
+    .get()
+    .pipe(map((org) => org.features.includes('vulnerabilities')));
+  public readonly isVulnerabilitiesEnabled = toSignal(this.isVulnerabilitiesEnabled$, {initialValue: false});
+
   public readonly isCustomEmailsEnabled$ = this.organizationService
     .get()
     .pipe(map((org) => org.features.includes('custom_emails')));

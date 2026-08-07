@@ -1,8 +1,16 @@
 import semver from 'semver/preload';
 import {
+  Advisory,
+  AdvisoryDetail,
+  AdvisoryEvent,
+  AdvisoryFilter,
+  AdvisoryImpact,
+  AdvisoryStatus,
   Application,
   ApplicationVersion,
   ApplicationVersionResource,
+  CreateAdvisoryRequest,
+  CreateUpdateAdvisoryRequest,
   DeploymentRequest,
   DeploymentTarget,
   DeploymentTargetAccessResponse,
@@ -413,5 +421,46 @@ export class DistrService {
         }
       });
     return {app, newerVersions};
+  }
+
+  /**
+   * Returns the advisories of the organization. Customers only ever receive published and
+   * resolved advisories affecting a version they are entitled to.
+   */
+  public async getAdvisories(filter: AdvisoryFilter = {}): Promise<Advisory[]> {
+    return this.client.getAdvisories(filter);
+  }
+
+  public async getAdvisory(advisoryId: string): Promise<AdvisoryDetail> {
+    return this.client.getAdvisory(advisoryId);
+  }
+
+  /** Returns the customers who deployed or pulled an affected version. Not available to customers. */
+  public async getAdvisoryImpact(advisoryId: string): Promise<AdvisoryImpact> {
+    return this.client.getAdvisoryImpact(advisoryId);
+  }
+
+  /**
+   * Creates an advisory. Without an explicit status it starts in `triage`, the inbox for
+   * externally reported issues.
+   */
+  public async createAdvisory(request: CreateAdvisoryRequest): Promise<AdvisoryDetail> {
+    return this.client.createAdvisory(request);
+  }
+
+  public async updateAdvisory(advisoryId: string, request: CreateUpdateAdvisoryRequest): Promise<AdvisoryDetail> {
+    return this.client.updateAdvisory(advisoryId, request);
+  }
+
+  /**
+   * Moves an advisory to the given status. Only the transitions allowed by the workflow are
+   * accepted, and publishing makes the advisory visible to entitled customers.
+   */
+  public async updateAdvisoryStatus(advisoryId: string, status: AdvisoryStatus): Promise<AdvisoryDetail> {
+    return this.client.updateAdvisoryStatus(advisoryId, {status});
+  }
+
+  public async commentOnAdvisory(advisoryId: string, content: string): Promise<AdvisoryEvent> {
+    return this.client.createAdvisoryComment(advisoryId, {content});
   }
 }

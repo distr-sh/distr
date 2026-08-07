@@ -57,6 +57,7 @@ When working with the SDK:
 - **Log storage**: Deployment and deployment target log records are stored in Grafana Loki (not PostgreSQL), accessed through the `internal/logstore` package (`LogStore` interface, Loki implementation, in-memory fake for tests). The log record types (`logstore.DeploymentLogRecord`, `logstore.DeploymentTargetLogRecord`) live in this package, not in `internal/types`, since they are not database entities. The org ID is passed explicitly to every store method and maps to the Loki tenant (`X-Scope-OrgID`). Log retention is time-based and managed by the Loki config (shipped default: 30 days); read queries are limited to a subscription-dependent query window (`subscription.GetLogQueryWindow`: 24 hours for Community/Starter, 7 days otherwise). Log exports (deployment logs, deployment target logs and deployment status) honor the `before`/`after`/`filter` query parameters of the log viewer and are hard-capped at `subscription.MaxLogExportRows` (1,000,000 lines) for every subscription type; truncated exports end with a notice in the downloaded file
 - **Migrations**: SQL migrations in `internal/migrations/sql/` managed by golang-migrate
 - **Database queries**: All database interactions are in `internal/db/` with transaction support
+- **Security advisories**: The entity is called `Advisory` everywhere (model, table, API path `/advisories`, frontend route `/advisories`), and the UI label is "Security Advisory". The feature gate keeps the wider category name: the org-level feature is `vulnerabilities` / `types.FeatureVulnerabilities` ("Vulnerability Management", Business plan), because a vulnerability scan log will be added to the same category later. Do not rename the feature to match the entity. There is no per-customer toggle. Customer visibility is derived, not configured, by the pure predicate in `internal/advisory` (`advisory.IsVisibleToCustomer`, fed by the loaders in `internal/db/advisory_visibility.go`) rather than in SQL: a customer sees an advisory only when it is `published` or `resolved`, it has at least one affected version, and they either deployed an affected application version or hold an unexpired entitlement to one. Both applications and artifacts keep the usual "everything is visible if the vendor configured no entitlements of that kind at all" fallback, so vendors who do not use the licensing feature still reach their customers. An `ApplicationEntitlement` with no explicit version rows covers every version of its application. The event timeline is vendor-internal and must never be serialized for customer users. Partners may read advisories but see impact tables scoped to their own customers
 
 Key internal packages:
 
@@ -69,6 +70,7 @@ Key internal packages:
 - `internal/middleware/`: HTTP middleware (logging, auth, Sentry, etc.)
 - `internal/svc/`: Business logic services
 - `internal/mapping/`: Mapping logic for data transformations between DTOs and domain models
+- `internal/advisory/`: Storage-independent security advisory rules, most importantly the customer visibility predicate
 - `api/`: All request structs used by HTTP handlers should be in the api package and not in the handler package
 
 ### Frontend Architecture (Angular)
@@ -98,6 +100,7 @@ The database schema is managed through SQL migrations in `internal/migrations/sq
 - `applications`: Artifact collections
 - `licensekey`: License keys that vendors can generate for its customers
 - `application_entitlements` & `artifact_entitlements`: Access entitlements for applications and artifacts
+- `advisory`: Security advisories a vendor tracks and discloses, with link tables for tags, references, affected/fixed versions, and an append-only event timeline
 
 This database stores timestamps as `TIMESTAMP` (without time zone), not `TIMESTAMPTZ`.
 
@@ -156,6 +159,8 @@ Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Pret
 - Use reactive forms for all form handling
 - Use as little `undefined` types as possible, always use the actual type
 - Don't use any svg path icons, always look for a matching icon in the icon library used. These icons should always be the same in the import, the component and template e.g. `faServer` and not `serverIcon`.
+  This applies to CSS too: never hand-write an inline SVG or an `url("data:image/svg+xml,...")` background, not even to restyle a browser or Flowbite default.
+- Before inventing a new pattern for a shared control, look at how the same control is already used elsewhere and reuse that. The indeterminate "select all" checkbox, for example, needs nothing beyond `distr-checkbox`; the sizing and centering of the dash is already handled there.
 - Use [Angular Signals](https://angular.dev/guide/signals) for inputs, child views and everywhere where the current Angular version supports signals.
   If you find usages of non signal usages for inputs, child views etc. change them to signals in the files you would edit anyway.
 - Don't use any responsive design classes in modals. They should always be optimized for the none mobile use case.
@@ -171,7 +176,7 @@ Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Pret
   </ng-container>
   ```
 
-- Reuse the shared global `distr-*` component classes defined in `frontend/ui/src/styles/theme.scss` (e.g. `distr-checkbox`, `distr-radio`, `distr-label`) instead of repeating their Tailwind utility chains inline, and add a new one there when an element's styling is repeated across the app. Append only element-specific extra utilities when needed (e.g. `class="distr-checkbox indeterminate:bg-[length:65%_65%]"`).
+- Reuse the shared global `distr-*` component classes defined in `frontend/ui/src/styles/theme.scss` (e.g. `distr-checkbox`, `distr-radio`, `distr-label`) instead of repeating their Tailwind utility chains inline, and add a new one there when an element's styling is repeated across the app. Append only element-specific extra utilities when needed (e.g. `class="distr-input font-mono"`). Keep in mind that Tailwind scans this file too, so any class name written here is emitted into the stylesheet: prefer describing a class to pasting a full `class="..."` attribute.
 
 ### Database Access
 

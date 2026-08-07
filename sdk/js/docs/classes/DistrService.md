@@ -40,6 +40,45 @@ Strategy for determining the latest version of an application (default: 'semver'
 
 ## Methods
 
+### commentOnAdvisory()
+
+> **commentOnAdvisory**(`advisoryId`, `content`): `Promise`\<[`AdvisoryEvent`](../interfaces/AdvisoryEvent.md)\>
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+##### content
+
+`string`
+
+#### Returns
+
+`Promise`\<[`AdvisoryEvent`](../interfaces/AdvisoryEvent.md)\>
+
+---
+
+### createAdvisory()
+
+> **createAdvisory**(`request`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+Creates an advisory. Without an explicit status it starts in `triage`, the inbox for
+externally reported issues.
+
+#### Parameters
+
+##### request
+
+[`CreateAdvisoryRequest`](../interfaces/CreateAdvisoryRequest.md)
+
+#### Returns
+
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+---
+
 ### createDeployment()
 
 > **createDeployment**(`params`): `Promise`\<[`CreateDeploymentResult`](../type-aliases/CreateDeploymentResult.md)\>
@@ -161,6 +200,59 @@ Creates a new application version for the given Kubernetes application using a H
 
 ---
 
+### getAdvisories()
+
+> **getAdvisories**(`filter?`): `Promise`\<[`Advisory`](../interfaces/Advisory.md)[]\>
+
+Returns the advisories of the organization. Customers only ever receive published and
+resolved advisories affecting a version they are entitled to.
+
+#### Parameters
+
+##### filter?
+
+[`AdvisoryFilter`](../interfaces/AdvisoryFilter.md) = `{}`
+
+#### Returns
+
+`Promise`\<[`Advisory`](../interfaces/Advisory.md)[]\>
+
+---
+
+### getAdvisory()
+
+> **getAdvisory**(`advisoryId`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+#### Returns
+
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+---
+
+### getAdvisoryImpact()
+
+> **getAdvisoryImpact**(`advisoryId`): `Promise`\<[`AdvisoryImpact`](../interfaces/AdvisoryImpact.md)\>
+
+Returns the customers who deployed or pulled an affected version. Not available to customers.
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+#### Returns
+
+`Promise`\<[`AdvisoryImpact`](../interfaces/AdvisoryImpact.md)\>
+
+---
+
 ### getLatestVersion()
 
 > **getLatestVersion**(`appId`): `Promise`\<[`ApplicationVersion`](../interfaces/ApplicationVersion.md) \| `undefined`\>
@@ -218,6 +310,49 @@ Returns results for all deployments on the target. Each result contains versions
 #### Returns
 
 `Promise`\<[`IsOutdatedResult`](../type-aliases/IsOutdatedResult.md)\>
+
+---
+
+### updateAdvisory()
+
+> **updateAdvisory**(`advisoryId`, `request`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+##### request
+
+[`CreateUpdateAdvisoryRequest`](../interfaces/CreateUpdateAdvisoryRequest.md)
+
+#### Returns
+
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+---
+
+### updateAdvisoryStatus()
+
+> **updateAdvisoryStatus**(`advisoryId`, `status`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+Moves an advisory to the given status. Only the transitions allowed by the workflow are
+accepted, and publishing makes the advisory visible to entitled customers.
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+##### status
+
+[`AdvisoryStatus`](../type-aliases/AdvisoryStatus.md)
+
+#### Returns
+
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
 
 ---
 
