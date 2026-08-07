@@ -94,7 +94,11 @@ export class AuthService {
     return this.getClaims()?.org !== undefined;
   }
 
-  public login(email: string, password: string, mfaCode?: string): Observable<{requiresMfa: boolean}> {
+  public login(
+    email: string,
+    password: string,
+    mfaCode?: string
+  ): Observable<{requiresMfa: boolean; redirectUrl?: string}> {
     return this.httpClient.post<LoginResponse>(`${authBaseUrl}/login`, {email, password, mfaCode}).pipe(
       tap((r) => {
         if (!r.requiresMfa) {
@@ -102,7 +106,7 @@ export class AuthService {
           this.actionToken = null;
         }
       }),
-      map((r) => ({requiresMfa: r.requiresMfa}))
+      map((r) => (r.requiresMfa ? {requiresMfa: true} : {requiresMfa: false, redirectUrl: r.redirectUrl}))
     );
   }
 

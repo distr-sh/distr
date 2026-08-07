@@ -243,6 +243,16 @@ func DeleteCustomerOrganizationWithID(ctx context.Context, id uuid.UUID, organiz
 			return err
 		}
 
+		// CustomOIDCConfiguration references CustomDomain with ON DELETE RESTRICT, blocking the cascade.
+		if _, err := db.Exec(ctx,
+			`DELETE FROM CustomOIDCConfiguration c
+			USING CustomDomain d
+			WHERE c.custom_domain_id = d.id AND d.customer_organization_id = @customerOrganizationId`,
+			pgx.NamedArgs{"customerOrganizationId": id},
+		); err != nil {
+			return fmt.Errorf("could not delete CustomOIDCConfiguration for customer: %w", err)
+		}
+
 		cmd, err := db.Exec(
 			ctx,
 			`DELETE FROM CustomerOrganization WHERE id = @id AND organization_id = @organizationId`,

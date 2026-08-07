@@ -1,7 +1,17 @@
-import {ChangeDetectionStrategy, Component, computed, inject, OnInit, signal, viewChild} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {ActivatedRoute, RouterLink} from '@angular/router';
-import {firstValueFrom} from 'rxjs';
+import {ActivatedRoute, Router, RouterLink} from '@angular/router';
+import {firstValueFrom, take} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {OidcButtonsComponent} from '../components/oidc-buttons.component';
 import {PortalLogoComponent} from '../components/portal-logo/portal-logo.component';
@@ -27,13 +37,15 @@ import {PortalService} from '../services/portal.service';
 })
 export class RegisterComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
-  private readonly loginConfig = inject(PortalService).loginConfig;
+  private readonly portalService = inject(PortalService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly errorMessage = signal<string | undefined>(undefined);
   protected readonly loading = signal(false);
 
-  protected readonly turnstileSiteKey = computed(() => this.loginConfig().turnstileSiteKey);
+  protected readonly turnstileSiteKey = computed(() => this.portalService.loginConfig().turnstileSiteKey);
   private readonly turnstile = viewChild(TurnstileComponent);
   private readonly turnstileToken = signal<string | undefined>(undefined);
 
@@ -53,6 +65,12 @@ export class RegisterComponent implements OnInit {
     if (email) {
       this.form.patchValue({email});
     }
+
+    this.portalService.portal$.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe(({loginConfig}) => {
+      if (!loginConfig.registrationEnabled) {
+        this.router.navigate(['/login'], {replaceUrl: true});
+      }
+    });
   }
 
   protected onTurnstileToken(token: string | undefined): void {

@@ -18,30 +18,34 @@ This is a living document (v1, draft). Each issue gets a short summary and a det
 ```mermaid
 graph TD
     DEV283["Stage 0: Business plan gating + DEV-283 plan switching"] --> DEV592
-    DEV592["DEV-592 Vendor custom domains"] --> DEV593["DEV-593 Customer custom domains"]
+    DEV592["DEV-592 Vendor custom domains"] --> DEV593["DEV-593 Customer portal domains"]
     DEV592 --> DEV596["DEV-596 Vendor-scoped OIDC configuration"]
     DEV592 --> DEV594["DEV-594 Route53 NS → CNAME migration"]
     DEV283 --> DEV595
     DEV595["DEV-595 Custom email providers"] --> DEV594
-    DEV593 --> DEV597["DEV-597 Customer-scoped OIDC"]
+    DEV593 --> PORTALOIDC["Customer portal OIDC, vendor-configured (level 3)"]
+    DEV596 --> PORTALOIDC
+    DEV593 --> DEV597["DEV-597 Customer-configured OIDC (level 4)"]
+    DEV596 --> DEV597
     DEV592 --> DEV644["DEV-644 Hide instance OIDC on custom domains"]
     DEV720["DEV-720 IdP group mapping (backlog)"]
 ```
 
 ## Proposed order of work
 
-| Stage | Issue   | Title                                           | Why now                                                               |
-| ----- | ------- | ----------------------------------------------- | --------------------------------------------------------------------- |
-| 0     | DEV-283 | Business plan gating + subscription switching   | Prerequisite: defines how all enterprise features below are gated.    |
-| 1     | DEV-641 | Improve handling of IdP-provided UID            | **Implemented** as a standalone stage. Foundation for DEV-596.        |
-| 2     | DEV-592 | Automated custom domain configuration (vendors) | **Implemented** (PRs 1–4 in one change). Root of the dependency tree. |
-| 3     | DEV-595 | Custom email provider configurations            | Independent of OIDC; needed before the Route53 migration.             |
-| 4     | DEV-596 | Vendor-scoped OIDC configuration                | First multi-tenant OIDC deliverable; needs DEV-592 and DEV-641.       |
-| 5     | DEV-593 | Automated customer domain configuration         | Extends DEV-592 to customer orgs.                                     |
-| 6     | DEV-594 | Migrate Route53 NS zones to CNAME setup         | Customer self-service migration; needs DEV-592 + DEV-595.             |
-| 7     | DEV-597 | Customer-scoped OIDC configuration              | Needs DEV-593; reuses DEV-596 machinery.                              |
-| 8     | DEV-644 | Hide instance-scoped OIDC on custom domains     | **Implemented**, pulled forward: needs only DEV-592, not DEV-596.     |
-| —     | DEV-720 | User group mapping from IdP                     | In backlog. Not planned.                                              |
+| Stage | Issue   | Title                                           | Why now                                                                                  |
+| ----- | ------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| 0     | DEV-283 | Business plan gating + subscription switching   | Prerequisite: defines how all enterprise features below are gated.                       |
+| 1     | DEV-641 | Improve handling of IdP-provided UID            | **Implemented** as a standalone stage. Foundation for DEV-596.                           |
+| 2     | DEV-592 | Automated custom domain configuration (vendors) | **Implemented** (PRs 1–4 in one change). Root of the dependency tree.                    |
+| 3     | DEV-595 | Custom email provider configurations            | **Implemented** (PRs 1–4 in one change, SMTP only). Needed before the Route53 migration. |
+| 4     | DEV-596 | Vendor-scoped OIDC configuration                | **Implemented** except role mapping; needed DEV-592 and DEV-641.                         |
+| 5     | DEV-593 | Customer portal domain configuration            | Extends DEV-592 to the customer portal.                                                  |
+| 6     | DEV-594 | Migrate Route53 NS zones to CNAME setup         | Customer self-service migration; needs DEV-592 + DEV-595.                                |
+| 7     | —       | Customer portal OIDC, vendor-configured         | Level 3 below; needs DEV-593 + DEV-596. No Linear issue yet.                             |
+| 8     | DEV-597 | Customer-configured OIDC (customer feature)     | Level 4 below; needs DEV-593 + DEV-596.                                                  |
+| 9     | DEV-644 | Hide instance-scoped OIDC on custom domains     | **Implemented**, pulled forward: needs only DEV-592, not DEV-596.                        |
+| —     | DEV-720 | User group mapping from IdP                     | In backlog. Not planned.                                                                 |
 
 ---
 
@@ -58,7 +62,7 @@ Before shipping any of the enterprise features below, introduce the **business p
 **Business plan + feature mapping (with starter plan removal)**
 
 - `SubscriptionTypeBusiness` added to `types.SubscriptionType`; `SubscriptionTypeStarter` **removed** entirely. Migration `113_business_subscription_type` converts existing `starter` orgs to `pro` and recreates the enum as `('community', 'pro', 'business', 'enterprise', 'trial')`. **Pre-deploy check**: there must be no active Starter Stripe subscriptions — the starter price lookup keys were removed, so a webhook for such a subscription would fail with "no subscription type found".
-- Per-plan feature sets: `types.FeaturesForSubscriptionType(st)` (community → none; trial/pro/enterprise → `licensing`; business → `licensing`, `partner_management`). Subscription reconciliation (the Stripe webhook) is **additive only** — plan changes grant the new plan's features but never revoke any, so manually granted flags (e.g. `vendor_billing`) and previously granted plan features survive; only community organizations get their features stripped, by `ReconcileEditionFeatures` at startup. Trial → pro is a no-op feature-wise since the sets are identical. The new features from this project (`custom_domains`, `custom_email_provider`, `custom_authentication`) are added to the business set by the respective later stages.
+- Per-plan feature sets: `types.FeaturesForSubscriptionType(st)` (community → none; trial/pro/enterprise → `licensing`; business → `licensing`, `partner_management`). Subscription reconciliation (the Stripe webhook) is **additive only** — plan changes grant the new plan's features but never revoke any, so manually granted flags (e.g. `vendor_billing`) and previously granted plan features survive; only community organizations get their features stripped, by `ReconcileEditionFeatures` at startup. Trial → pro is a no-op feature-wise since the sets are identical. The new features from this project (`custom_domains`, `custom_emails`, `custom_oidc_providers`) are added to the business set by the respective later stages.
 - Gating generalized: `SubscriptionType.IsPro()` includes business; `NonProSubscriptionTypes` is now just `[community]`; `middleware.ProFeature` includes business; `ReconcileStarterFeaturesForOrganizationID` was deleted.
 - Limits (`internal/subscription/global_limits.go`): business = unlimited customers, 25 users/customer, 8 deployments/customer, 10,000 log export rows, **30-day log query window** (Loki retention).
 - Stripe wiring: lookup keys `distr_business_customer_monthly|yearly`, `distr_business_user_monthly|yearly` in `internal/billing/price.go` (**ops task**: create the corresponding Stripe products/prices — monthly $39 user / $159 customer; yearly $384 user / $1,536 customer). All shared key slices (`CustomerPriceKeys`, `UserPriceKeys`, `MonthlyPriceKeys`, `YearlyPriceKeys`) include the business keys, so quantity/period parsing works for business-keys-only subscriptions (covered by unit tests in `internal/billing/subscription_test.go`).
@@ -118,7 +122,7 @@ OIDC logins used to be matched by email address only, which created a duplicate 
 
 ## Stage 2 — DEV-592: Automated custom domain configuration for vendors
 
-> **Status: implemented and e2e-validated.** All four PR scopes below landed in a single change: `CustomDomain` table (migration 114) + CRUD API + validation, the internal caddy-ask server (`INTERNAL_SERVER_ADDR`), the Helm chart Caddy deployment with `distr-internal-caddy-ask` Service, and the org settings "Custom Domains" UI with CNAME instructions. Legacy `OrganizationBranding` domain columns remain supported as fallback (migration is the follow-up ticket 0). CNAME pre-verification and the host-context middleware were not included.
+> **Status: implemented and e2e-validated.** All four PR scopes below landed in a single change: `CustomDomain` table (migration 114) + CRUD API + validation, the internal caddy-ask server (`INTERNAL_SERVER_ADDR`), the Helm chart Caddy deployment with `distr-internal-caddy-ask` Service, and the org settings "Custom Domains" UI with CNAME instructions. Legacy `OrganizationBranding` domain columns remain supported as fallback (migration is the follow-up ticket 0). The host-context middleware was not included (see the cross-cutting note below — none was needed). **CNAME pre-verification landed later** (alongside DEV-593): `internal/dns.VerifyCNAME` resolves each domain's CNAME live (no persistence, 5s timeout) and the list/create/verify responses carry the result (`api.CustomDomainWithVerification`), fanned out concurrently via `errgroup` since a vendor's list can include every customer's portal domain; the settings UI shows a green/red panel per domain with the reason, a "Checked Xs/m/h ago" timestamp, and a manual recheck button.
 >
 > **The table is vendor-org scoped only**: the `customer_organization_id` / `partner_organization_id` columns of the appendix §5.3 shape were left out, since nothing sets or reads them yet. DEV-593 adds them (plus the API surface) in its own migration, which also replaces the `UNIQUE (organization_id, domain_type)` constraint with the partial unique indexes per scope.
 >
@@ -142,7 +146,7 @@ Follows the "recommended shape" in appendix §5: a dedicated `CustomDomain` tabl
 - Org-admin CRUD for app + registry domains: RFC-1123 hostname validation, global uniqueness via the `UNIQUE (domain)` constraint, rejection of platform-owned domains (`*.distr.sh`).
 - The registry domain is **optional**: the `/v2/*` path routing (PR 3) means every custom app domain already serves registry traffic, so `RegistryDomainOrDefault` resolves dedicated registry domain → custom app domain → instance default. A dedicated registry domain is only for vendors who want a separate hostname.
 - Gated on the new `custom_domains` feature flag (business plan), introduced by this stage (Stage 0 only prepared the gating mechanism, not the flag).
-- Optional CNAME pre-verification (resolve domain → expected target) for better UX; the `ask` gate keeps it safe either way.
+- CNAME pre-verification (resolve domain → expected target) for better UX; the `ask` gate keeps it safe either way. **Landed later** as `internal/dns.VerifyCNAME`, live and unpersisted rather than a cached/background-checked status.
 
 **PR 2 — Caddy on-demand TLS `ask` endpoint (appendix §3.3/§5.4, security-critical)**
 
@@ -159,7 +163,7 @@ Follows the "recommended shape" in appendix §5: a dedicated `CustomDomain` tabl
 
 **PR 4 — frontend (appendix §5.6)**
 
-- Org settings section "Custom domains" with an app domain field and an **optional** registry domain field (with a hint that the app domain already serves the registry under `/v2/`), live validation, and explicit CNAME record instructions per field (targets from the env endpoint); verification status if PR 1 includes pre-verification.
+- Org settings section "Custom domains" with an app domain field and an **optional** registry domain field (with a hint that the app domain already serves the registry under `/v2/`), live validation, and explicit CNAME record instructions per field (targets from the env endpoint); verification status if PR 1 includes pre-verification. **Landed later**: a green/red status pill per domain field with the check's detail message as a tooltip, a "Checked Xs/m/h ago" label, and a small reload icon next to the pill for a manual recheck.
 
 ### Open questions
 
@@ -169,6 +173,16 @@ Follows the "recommended shape" in appendix §5: a dedicated `CustomDomain` tabl
 ---
 
 ## Stage 3 — DEV-595: Custom email provider configurations
+
+> **Status: implemented**, with the scope reduced to SMTP. All four PR scopes below landed in a single change: the `CustomEmailConfiguration` table (migration 115), the `custom_emails` feature flag on the business plan, the CRUD + test-send API under `/api/v1/custom-email`, per-org mailer resolution in `internal/custommail`, and the org settings "Custom Email" section.
+>
+> **Deltas from the plan below**, all deliberate:
+>
+> - **SMTP only.** SES with static credentials was dropped from v1, so the table has **no `provider` column** — nothing would read it, the same reasoning that kept the customer/partner scope columns out of `CustomDomain` in Stage 2. Adding SES is an additive migration: a `provider` enum, nullable `smtp_*` columns and a per-provider `CHECK`.
+> - **The feature flag is `custom_emails`**, not `custom_email_provider`.
+> - **The from address moved onto the new table** (`from_address`, `NOT NULL`) instead of staying on branding. `OrganizationBranding.email_from_address` was never writable through the API, so it could only be set by support; it stays untouched as a **legacy fallback**, exactly like the legacy branding domain columns, and is not migrated. Resolution order is custom email configuration → branding column → `MAILER_FROM_ADDRESS`, implemented by `custommail.FromAddressOrDefault`, which replaced `customdomains.EmailFromAddressParsedOrDefault`.
+> - **The endpoints live under their own router** `/api/v1/custom-email` (`handlers.CustomEmailsRouter`, mounted behind `middleware.CustomEmailsFeatureMiddleware`) rather than under the settings router, mirroring `/api/v1/custom-domains`.
+> - **Resolution is threaded explicitly through every sender** (`custommail.MailerForOrganization(ctx, orgID)`): invites, verification, password reset, the e-mail change confirmation, license key revisions (org from `licenseKey.OrganizationID`) and both notification senders (`sendNotificationWithQuota` gained an `orgID` parameter). The `authOrgOverrideFromAddress` hook in `internal/svc/mailer.go` now also consults the new configuration, but only covers authenticated requests — background jobs have no authentication in their context, which is why the explicit threading is required.
 
 ### Summary
 
@@ -233,7 +247,7 @@ CREATE TABLE OrganizationEmailConfiguration (
   - `DELETE /api/v1/settings/email-configuration`,
   - `POST /api/v1/settings/email-configuration/test` — send a test mail to the current user via the submitted (or stored) config and report the provider error verbatim.
 - Config validation (**decided**): the **test send is the only validation** — no provider-side checks like SES `GetIdentityVerificationAttributes` for the from-address domain. Keeps v1 provider-agnostic and simple; a failed test send with the verbatim provider error tells the admin what to fix.
-- Feature gating (**decided**): available on the **business plan only** (`custom_email_provider` feature from Stage 0), consistent with DEV-592.
+- Feature gating (**decided**): available on the **business plan only** (`custom_emails` feature), consistent with DEV-592.
 
 **PR 4 — frontend + docs**
 
@@ -250,103 +264,135 @@ CREATE TABLE OrganizationEmailConfiguration (
 
 ## Stage 4 — DEV-596: Vendor-scoped OIDC configuration
 
+> **Status: implemented**, except for role mapping (PR 3), which stays deferred — only `default_user_role` ships. The sections below are the as-built description; where the implementation departed from the plan, the reason is stated inline.
+
 ### Summary
 
 An organization admin configures **one or more** (generic) OIDC providers, tied to the custom domain they configured in DEV-592. Users visiting the vendor's domain log in via one of the vendor's IdPs; a user can be linked to multiple of them.
 
 The IdP identity handling this builds on shipped with **Stage 1 (DEV-641)**: identities live on the user account in `UserAccountOIDCIdentity`, keyed by `(issuer, subject)`. Storage level (**decided there**): on the user account, not on the `Organization_UserAccount` membership row — `(issuer, subject)` identifies the person at the IdP independent of org membership, user accounts are global and belong to many orgs, instance providers have no org context at all, and storing per membership would duplicate the same identity N times. Which org an org-IdP login lands in is determined by resolving the OIDC config from the Host, not by the identity row.
 
-This stage also introduces the **`custom_authentication`** feature flag (business plan, added to `types.FeaturesForSubscriptionType` when this stage is developed — deliberately _not_ pre-created by Stage 2).
+The feature flag is **`custom_oidc_providers`** (business plan, in `types.FeaturesForSubscriptionType` and therefore in `PlanManagedFeatures`). It is named after the feature rather than the earlier working title `custom_authentication`, which would also have covered the SMTP work of Stage 3.
 
-### Detailed plan
+### What shipped
 
-**PR 0 — extend the identity schema for org-scoped configs**
+**Schema** (migrations `117_custom_oidc_enum` and `118_custom_oidc_configuration`)
 
-Stage 1 shaped the schema so this is additive:
+- `ALTER TYPE FEATURE ADD VALUE 'custom_oidc_providers'` and `ALTER TYPE OIDC_PROVIDER ADD VALUE 'custom'`, in their own migration because `ALTER TYPE ADD VALUE` may not be used in the same transaction as a statement that references the new value. `generic` stays reserved for the env-configured instance provider.
+- `CustomOIDCConfiguration` (`organization_id`, `custom_domain_id`, `name`, `enabled`, `issuer`, `client_id`, `client_secret`, `scopes`, `pkce_enabled` (nullable — null means "from the discovery document"), `sp_initiated`, `create_unknown_users`, `default_user_role`, `allowed_email_domains`, timestamps). Named `CustomOIDCConfiguration`, not `OrganizationOIDCConfiguration`, to match the `CustomDomain` and `CustomEmailConfiguration` it sits next to.
+- The `custom_domain_id` FK is what ties a configuration to a domain, and it is the reason levels 3 and 4 need no schema change: the domain decides who sees the provider and who may edit it. `ON DELETE RESTRICT` from the domain, **revised** from the `ON DELETE CASCADE` this plan first called for: deleting a configuration cascades to the identities linked to it, so cascading from the domain as well would mean that removing a domain silently takes away the sign-in of everyone who used it, and leaves users without a password locked out. Deleting the domain answers `409` and points at the Identity Provider tab instead, so the destructive step has to be taken deliberately.
+- **Multiple configurations per org**: `UNIQUE (organization_id, name)` and `UNIQUE (organization_id, slug)`. At most one may be `sp_initiated`, enforced by a partial unique index on `(organization_id) WHERE sp_initiated`.
+- The `slug`, together with the organization slug, addresses a provider in its login and callback URL. An id would have worked, but the callback URL has to be registered as a redirect URI at the IdP, read and typed by an administrator, and known before the provider is saved — the URL is now shown in the form while it is being filled in. Configuring a provider therefore requires the organization to have a slug.
+- Every URL this feature builds for a host other than the one of the current request takes its scheme from `env.HostScheme()`, the scheme of `DISTR_HOST` (https unless it explicitly says http) — the callback URL shown in the settings (`oidc.CustomCallbackURL`), the login forwarding target, and `customdomains.withScheme`. `handlerutil.GetRequestSchemeAndHost`, which builds the `redirect_uri` the login actually sends, uses the same scheme with the request's host, so what an administrator registers at the IdP and what the login sends can no longer disagree. The settings form previews the URL with the protocol of the page it runs on for the same reason.
+- `allowed_email_domains` was added during implementation and is **mandatory whenever `create_unknown_users` is set**, enforced by the API and by `CustomOIDCConfiguration_provisioning_domains_check`. Without it, provisioning means "everyone this IdP can assert an address for", which for a misconfigured multi-tenant IdP is the whole internet — and since a provisioned account joins the vendor's own team, the customer users who reach the same domain through the customer portal are the first ones it would hand a team membership to.
+- On `UserAccountOIDCIdentity`, a nullable `custom_oidc_configuration_id` with `CHECK ((provider = 'custom') = (custom_oidc_configuration_id IS NOT NULL))`, so `provider` stays a single-column discriminator and deleting a configuration unlinks its identities. Uniqueness moved to `(custom_oidc_configuration_id, issuer, subject) NULLS NOT DISTINCT`, because an org configuration may point at an issuer that is also reachable through an instance provider (Google Workspace) and the second login has to create a second identity instead of colliding.
+- On `OIDCState`, `custom_oidc_configuration_id` (so the callback knows which configuration to use without trusting the URL) and `nonce`. The state TTL is now the shared `db.OIDCStateMaxAge` = 10 minutes; the previous 60 seconds were measured from before the redirect and could not survive an IdP that asks for MFA or first-time consent.
 
-- `ALTER TYPE OIDC_PROVIDER ADD VALUE 'custom'` for identities that come from an `OrganizationOIDCConfiguration`, matching the `/api/v1/auth/oidc/custom/{id}` route of PR 2. `generic` stays reserved for the env-configured instance provider.
-- Nullable `organization_oidc_configuration_id UUID REFERENCES OrganizationOIDCConfiguration(id) ON DELETE CASCADE` on `UserAccountOIDCIdentity`, plus a check that the two agree, so `provider` remains a single-column discriminator and deleting a config unlinks its identities:
+**Provider construction** (`internal/oidc/discovery.go`, `internal/oidc/custom.go`)
 
-```sql
-ALTER TABLE UserAccountOIDCIdentity ADD CONSTRAINT UserAccountOIDCIdentity_custom_config_check
-  CHECK ((provider = 'custom') = (organization_oidc_configuration_id IS NOT NULL));
-```
+- **No provider cache** (revised decision): a provider is constructed per request from the configuration row. The lazily-initialized per-org registry the plan called for would have needed invalidation on every edit, and constructing one costs a single discovery request: `oidc.Discover` parses the document itself and builds the provider from `oidc.ProviderConfig`, rather than reading the issuer and then letting `go-oidc` fetch the same document again. This also means a configuration change takes effect immediately rather than on cache expiry.
+- The issuer is **canonicalized from the discovery document** and stored as the provider states it, which absorbs the differences that would otherwise be support tickets: Auth0's trailing slash, Entra ID's tenant GUID for a domain name. The document has to come from the host that was entered, otherwise a provider could claim somebody else's issuer and collide with their identities on `(issuer, subject)`.
+- Multi-tenant Entra ID endpoints (`common`, `organizations`, `consumers`) are rejected with an error that names the single-tenant issuer, because their document states the literal template `https://login.microsoftonline.com/{tenantid}/v2.0`, which can never be verified.
+- The issuer is administrator-controlled input that this server fetches, so it is validated as SSRF-relevant: https only, no credentials, no query or fragment, and a dialer that rejects loopback, private, link-local and multicast targets after DNS resolution (which also covers redirects and DNS rebinding). A redirect may change neither the host nor the scheme of the discovery request, otherwise the anti-collision check above and the https requirement could be redirected away. The endpoints named by the document are administrator-controlled too, so `oidc.RestrictedClientContext` puts the same guarded client on the token exchange, JWKS and userinfo requests. Both restrictions are lifted on an instance whose own `DISTR_HOST` is an `http` URL, i.e. a local or internal installation — the `CUSTOM_OIDC_ALLOW_PRIVATE_ISSUERS` env var this plan first introduced was **removed** in favor of that signal, since an instance which is not served over https itself has nothing to protect here, and an operator with an internal identity provider configures it as the instance-wide generic provider.
+- PKCE defaults to what the provider announces (`code_challenge_methods_supported`), overridable per configuration. A nonce is generated, stored with the state and verified on the ID token — for the instance providers as well, which is `identityFromIDToken`, the one function every flow with an ID token goes through. When the ID token carries no email, the userinfo endpoint is used as a fallback.
 
-- Scope the uniqueness by config, because an org config may point at an issuer that is also reachable via an instance provider (Google Workspace, say) and the second login must create a second identity instead of colliding. Postgres 18 means one index covers both cases:
+**Login flow** (`internal/handlers/auth_oidc.go`)
 
-```sql
-DROP INDEX UserAccountOIDCIdentity_issuer_subject_uq;
-CREATE UNIQUE INDEX UserAccountOIDCIdentity_config_issuer_subject_uq
-  ON UserAccountOIDCIdentity (organization_oidc_configuration_id, issuer, subject) NULLS NOT DISTINCT;
-```
+- `/api/v1/auth/oidc/custom/{organizationSlug}/{providerSlug}` and its callback; `/api/v1/auth/oidc/{provider}` stays for the instance providers. Both are rejected unless the request Host is the custom domain the configuration hangs off, so a provider is only usable where it is offered.
+- Providers are listed per host in `api.PortalResponse.LoginConfig` next to the instance flags, which DEV-644 had already prepared. The portal response is cached per Host (`Vary: Host`, `max-age=60`), so a configuration change can take up to a minute to show up on the login page.
+- **SP-initiated auto-redirect** in the frontend, with `/login?manual=1` as the escape hatch that reveals the form (and the provider list) — the way back in for an administrator when the provider is broken, and the reason a failed login always carries a `reason` param and is never redirected again.
+- A user signing in through a custom provider lands **in that organization**, never in a fresh personal one: `userauth.GenerateLoginTokenForOrganization` is used instead of the primary-organization fallback, which would otherwise have created one.
+- **Auto-provisioning** per configuration (`create_unknown_users`), restricted to `allowed_email_domains` (which is why an empty list allows nothing rather than everything), with the configuration's `default_user_role`. Beyond the billable seats (`subscription.IsBillableUserAccountLimitReached`) the login fails with `oidc-user-limit`; seats are never raised automatically. Without auto-provisioning, an unknown user gets `oidc-no-account`.
 
-- Observability (optional, small follow-up): metrics/log fields for "matched by identity" vs "matched by email" vs "signed up".
+**Account exclusivity** (`internal/handlers/account_exclusivity.go`)
 
-**PR 1 — data model + dynamic provider registry**
+The mechanism that replaced the planned org-scoped token, in response to the PAT attack described in the cross-cutting notes: a custom provider may only authenticate an account whose memberships are exclusively in that provider's organization.
 
-- New table `OrganizationOIDCConfiguration` (`organization_id`, `name` (display label shown on the login button), `issuer`, `client_id`, `client_secret` (plaintext for now — never serialized to JSON; encryption at rest is a follow-up ticket), `scopes`, `pkce_enabled`, `sp_initiated`, `create_unknown_users BOOLEAN NOT NULL DEFAULT FALSE` (auto-provisioning toggle, see PR 2), `default_user_role` (`read_only` | `read_write` | `admin`, default `read_write` — role for auto-provisioned users), `enabled`, timestamps). **Multiple configs per org** are supported from the start: `UNIQUE (organization_id, name)`, and each config has its own stable id used in the auth routes and identity records.
-- `sp_initiated` marks a config as **service-provider initiated**: visitors of the org's custom domain are automatically redirected to that IdP instead of seeing the login form (see PR 2). **At most one config per org may be `sp_initiated`** — enforce with a partial unique index (`ON (organization_id) WHERE sp_initiated`).
-- Refactor `internal/oidc.OIDCer` from a fixed startup map to a resolver that can lazily initialize + cache per-org providers (discovery document fetch, verifier). Instance-scoped env providers remain the default set.
-- Reuse the existing `OIDCState` mechanism (**decided**): it already provides server-side state + PKCE verifier storage and a cleanup cron (`CLEANUP_OIDC_STATE_CRON`) — extend it with the org/OIDC-config context so the callback knows which config to use (add columns rather than encoding in the URL), and raise the 60-second TTL (PR 2). No parallel state store for org providers.
+- Login is refused (`oidc-account-not-exclusive`) when the account is a member of another organization or is a super admin. Existing multi-org members keep their password login, and the settings page reports how many there are so a vendor sees it before switching anyone over.
+- Organization creation is refused for an account that holds a custom identity, and an invite is refused when it would create a membership that breaks exclusivity in either direction (the invitee holds a custom identity of **another** organization, or the target org has a custom provider and the invitee belongs to another org). An identity of the inviting organization itself does not block the invite: a removed member keeps their identity, and requiring an administrator to delete it before re-inviting them would be a dead end with no UI.
+- Exclusivity and membership are checked on every login, not only when an identity is created, so an identity that outlives its membership grants nothing and the user is told so (`oidc-no-account`) instead of running into a generic failure.
+- Removing a member deletes their identities of that organization's providers (`db.DeleteCustomOIDCIdentitiesOfUserInOrg`), in the same transaction as the access tokens and tutorial progress that removal already cleans up. An identity nobody can use is not only dead data: while it exists, the account is refused an organization of its own, which is a restriction on somebody the organization no longer has any relationship with. It is an explicit delete and not a cascade from the membership row, which would need a denormalized `organization_id` on the identity to hang a foreign key on and would then fire invisibly for anything that rewrites an assignment row rather than updating it.
+- `GET /context` reports `canCreateOrganization` so the nav bar hides the action. It is a server-side answer rather than a token claim, so it cannot assert a state that has changed since login.
+- Identity resolution is strictly same-organization: an email match only counts for a member of the provider's organization. Matching across organizations is what the whole attack needed.
 
-**PR 2 — login flow on custom domains**
+**Registration and forwarding**
 
-- Auth initiation + callback resolve the org from the Host (host-context middleware, see DEV-592 open questions) and use the requested org OIDC config; since an org can have several configs, the org routes address them by config id (`/api/v1/auth/oidc/custom/{id}` + callback), while `/api/v1/auth/oidc/{provider}` stays for the instance providers. Callback URL is on the vendor's domain.
-- Per-host provider discovery via the existing **`GET /api/public/v1/portal`** endpoint (`internal/handlers/portal.go`, already resolves the org branding by CNAME/Host): extend `api.PortalResponse.LoginConfig` with the **list** of OIDC providers available on this host (config id, display name, `sp_initiated` flag). The consolidation groundwork is done — DEV-644 already retired `/auth/login/config` and moved `registrationEnabled` plus the instance provider flags into `PortalResponse.LoginConfig`, so this stage only adds the per-org list next to them.
-- **Login UI**: the login page renders one button per provider from the portal list (display name from the config) — but **only when no provider is marked `sp_initiated`**; if one is, the auto-redirect below kicks in and the list is not shown (except via the `?manual=1` escape hatch, which reveals the full form including the provider list).
-- Raise the OIDC state TTL: `verifyOIDCState` rejects states older than 60 seconds, measured from before the redirect to the IdP — enterprise IdPs with MFA or first-time consent easily exceed that, and with SP-initiated auto-redirect a failure bounces back to the login page. Increase to e.g. 10 minutes in this stage.
-- **SP-initiated auto-redirect**: when the portal response contains a provider marked `sp_initiated` (at most one, see PR 1), the frontend immediately redirects unauthenticated visitors to that provider's auth route instead of rendering the login form. Escape hatch: a query param (e.g. `/login?manual=1`, also used after `oidc-failed` redirects) shows the regular login form — including the provider list — to avoid redirect loops and admin lockout.
-- Mind caching: the portal response is cached per Host (`Vary: Host`, `max-age=60`) — OIDC config changes may take up to the cache TTL to apply.
-- Signup/first-login semantics (**decided**): a user signing in via a vendor-scoped IdP lands **in that vendor's org** (not a fresh personal org). **Auto-provisioning of unknown users is a per-config setting** (`create_unknown_users`): when disabled, unknown users get a clear error page ("no account for this organization — contact your admin"); when enabled, the user is created with the config's `default_user_role`. Invited users keep their invited role.
-- **Billing on auto-provisioning** (**decided**): when `create_unknown_users` is enabled and a new user would exceed the org's billable user seats (`SubscriptionUserAccountQty`, checked via `subscription.IsBillableUserAccountLimitReached`), the login **fails with a clear error page** ("user limit exceeded — please contact your administrator") — the subscription's user quantity is **never increased automatically**. The org admin raises the seat count in the billing settings, after which the user can simply retry the login. Deliberate trade-off: billing changes stay explicit, at the cost that new employees in an IdP-managed org are blocked until an admin acts.
-- **Org switching and org creation are disabled** for sessions established via an org-scoped OIDC provider: the login token is scoped to that org, the org switcher and the "create organization" action are hidden, and both the switch endpoint and the org-creation endpoint reject such tokens. (The user's identity/authorization only exists in the context of that org's IdP.)
+- Self-registration is off on self-service custom domains, in `portalLoginConfig` and enforced in `authRegisterHandler`: on a domain that belongs to one organization, a stranger signing themselves up would land in a fresh personal organization on somebody else's branded host.
+- A login on the default host is forwarded to the organization's **self-service** app domain with the token as a parameter, the same handover the OIDC callback already used (`internal/handlers/login_forwarding.go`). A legacy branding app domain is never a forwarding target: it is a hostname the organization configured for links, hosted in a way this instance knows nothing about, unlike a `CustomDomain` row it serves and terminates TLS for itself. Only a user who belongs to **exactly one** organization is forwarded, and a super admin never is: an app domain brands the whole product for its one organization, so forwarding a member of several would move them into one of them without having asked. This **reverses the earlier "no redirect" decision**: the objection was that the organization is unknown before the user is identified, but the redirect happens _after_ authentication, so it is neither an enumeration oracle nor a lockout — `?stay=1` keeps the session on the default host when the custom domain is broken.
 
-**PR 3 — role / privilege mapping (foundation)**
+**Admin API and UI**
 
-- Add an optional role-mapping config to `OrganizationOIDCConfiguration`: a claim name (e.g. `groups` or `roles`) plus mapping rules claim-value → Distr role (`read_only` | `read_write` | `admin`), evaluated on every login (so demotions at the IdP take effect).
-- Default when no mapping configured: the config's `default_user_role` on first login, role never touched afterwards.
+- `/api/v1/custom-oidc` CRUD behind `middleware.CustomOidcProvidersFeatureMiddleware`, plus a `POST /{id}/test` that runs discovery.
+- Settings → Organization → Custom Identity Provider: the provider list with the per-configuration callback URL to register at the IdP, and a single form with no provider selection at all — the issuer decides everything, so choosing a vendor first would only be a step that changes nothing. The per-IdP issuer formats live in the docs instead. The section is only offered once an app domain and an organization slug exist, which it states instead of failing later.
+- User Settings → Connected Identity Providers labels a custom identity with its configuration name and the organization that controls it, so it is visible that this login is not the user's own.
+
+**Deferred to a follow-up: PR 3 — role / privilege mapping**
+
+- An optional claim name (e.g. `groups`) plus mapping rules claim-value → Distr role, evaluated on every login so demotions at the IdP take effect. Only `default_user_role` shipped: it is applied on first login and the role is never touched afterwards.
 - Designed so DEV-720 (full IdP group sync) can build on it later.
-
-**PR 4 — admin API + frontend**
-
-- Org-admin CRUD endpoints for the OIDC configs (list + create/update/delete per config id, + "test connection" doing discovery).
-- Org settings page "SSO / OIDC": list of configured providers with add/edit; per-config form with display name, issuer, client ID/secret, scopes, PKCE toggle, SP-initiated toggle (with a warning about the auto-redirect behavior and the one-per-org constraint), **"create unknown users" checkbox with a prominent warning** that every unknown user signing in via this IdP is created automatically **up to the org's billed user seats — beyond that, logins fail with a "please contact your administrator" error** (seats are never increased automatically), a **default role** select for auto-provisioned users, and role-mapping rules; shows the exact per-config callback URL to register at the IdP.
-- Docs page for vendors.
 
 ### Open questions
 
-- ~~**Consolidate `GET /api/v1/auth/login/config` into the portal request**~~ — **done, pulled forward into DEV-644** (Stage 8). The login config now lives in `api.PortalResponse.LoginConfig` and `/auth/login/config` is gone.
-- **Redirect logins to the org's custom domain? Decided: no.** When an organization has a custom domain configured and one of its users tries to log in on the default host (app.distr.sh), they are **not** redirected to the custom domain — each host only offers the login methods available on that host. Rationale: the org is only known _after_ the user is identified (email entry), an automatic redirect could lock users out entirely if the custom domain breaks on the DNS level (CNAME removed, cert no longer issuable), and it would act as an email-enumeration oracle (the redirect reveals that an account exists). Vendors should communicate their custom domain as the login URL themselves.
-- Vendor OIDC config as the **default** for all customer/partner organizations on the vendor's shared custom domain, inherited automatically by newly created customer/partner orgs; customer-scoped configs (DEV-597) override it on dedicated customer domains (see the appendix, "Shared custom domains" decision). Precedence + opt-out rules to be settled.
-- Only "generic" per-org OIDC at first, or also branded Google/Microsoft per org?
-- Role mapping: is claim-value → role sufficient for v1, or do we need expression-based rules?
-- Should vendor-scoped OIDC also work on app.distr.sh (e.g. via email-domain discovery), or strictly custom-domain-only? (DEV-644 suggests strictly domain-scoped.)
+- ~~**Consolidate `GET /api/v1/auth/login/config` into the portal request**~~ — **done, pulled forward into DEV-644** (Stage 9).
+- ~~**Redirect logins to the org's custom domain? Decided: no.**~~ — **reversed and implemented**, see "Registration and forwarding" above: the redirect happens after authentication, which answers the enumeration and lockout objections.
+- ~~Vendor OIDC config as the inherited **default** for customer/partner organizations~~ — **answered** by "The four levels of OIDC for a customer user": a configuration belongs to the domain it hangs off, so customer users on the vendor's domain use the vendor's providers, and nothing is inherited or overridden per customer.
+- ~~Only "generic" per-org OIDC at first, or also branded Google/Microsoft per org?~~ — **answered during implementation**: one generic form covers every IdP that supports OIDC discovery, including Entra ID (single-tenant issuer) and Google, and nothing provider-specific is persisted or even asked for — the form has no provider selection. GitHub is the exception — it implements no OIDC at all, so it cannot be a variant of this form and stays instance-only.
+- ~~Should vendor-scoped OIDC also work on app.distr.sh (e.g. via email-domain discovery)?~~ — **answered: strictly domain-scoped**, and the login forwarding above is what makes that acceptable: a user who starts on app.distr.sh with a password ends up on their organization's domain, where their provider is offered.
+- Role mapping: is claim-value → role sufficient for v1, or do we need expression-based rules? (Still open, with the mapping itself deferred.)
+- Observability: metrics or log fields for "matched by identity" vs "matched by email" vs "provisioned", to see whether email matching is still load-bearing. Small, not done.
 
 ---
 
-## Stage 5 — DEV-593: Automated customer domain configuration for customers
+## The four levels of OIDC for a customer user
+
+> **Decided** — this supersedes the "vendor OIDC config as the inherited default for customer orgs" idea recorded in the appendix. Stages 5, 7 and 8 implement levels 3 and 4.
+
+A customer user ends up with one of four sets of login methods, decided **by the host they log in on**. Every `CustomDomain` row carries its own OIDC configurations, so there is no inheritance and no fallback between levels:
+
+1. **`app.distr.sh`** — the instance-scoped providers from the `OIDC_*` env vars (plus password login).
+2. **The vendor's own custom domain** (DEV-592) — the vendor's configurations from DEV-596; these apply to customer users who log in there too.
+3. **The vendor's customer portal domain** (DEV-593) — configurations the **vendor** attaches to that domain, applying to all of its customers including newly created ones, with no per-customer setup.
+4. **A customer's own domain** — configurations the **customer** attaches to it themselves, unlocked by a per-customer feature.
+
+Two rules that follow from this and are easy to get wrong:
+
+- **Vendors never configure a provider for one specific customer.** Level 3 is a single shared set for the whole customer portal; anything customer-specific belongs to the customer at level 4. This is the deliberate difference from the earlier draft of this document, which had the vendor's configuration inherited per customer org with opt-outs.
+- **Precedence is about link generation, not about login.** Each host has exactly one set of providers, so the login flow never chooses between levels. What does need an order is "which URL do we send this customer user to" (notification mails, portal links, agent manifests): customer's own domain → vendor's customer portal domain → vendor's app domain → instance default, resolved the way `customdomains.AppDomainOrDefault` already resolves the vendor case.
+
+Levels 2 to 4 are the same table, the same login flow and the same settings components from DEV-596, differing only in which `CustomDomain` row a configuration hangs off and who may edit it. The `CustomOIDCConfiguration.custom_domain_id` FK from DEV-596 is what makes that work without a schema change per level.
+
+---
+
+## Stage 5 — DEV-593: Customer portal domain configuration
+
+> **Status: implemented**, together with stages 7 and 8, in one change. `CustomDomain` gained a
+> `customer_organization_id` column instead of a separate scope table: a `customer_portal` row with it
+> NULL is the vendor's shared portal, with it set is one customer's own domain (that decision was pulled
+> forward from stage 8, since the two needed the same migration). `customdomains.CustomerPortalDomainOrDefault`
+> resolves customer-facing links: the customer's own domain, then the vendor's shared portal domain, then
+> the vendor's app domain (via `AppDomainOrDefault`, so the legacy branding fallback still applies).
 
 ### Summary
 
-A vendor admin configures a custom domain for each of their customers, e.g. vendor on `distribution.vendor.com`, customer on `customer.distribution.vendor.com` or `vendor.customer.com` (no restrictions on shape).
+A vendor admin configures **one customer portal domain** for all of their customers, e.g. the vendor UI on `distribution.vendor.com` and the customer portal on `portal.vendor.com`. Per-customer domains are deliberately **not** part of this stage: a customer that wants its own hostname gets it at level 4, together with its own OIDC configuration.
 
 ### Detailed plan
 
 **PR 1 — data model + API**
 
-- Extend the `CustomDomain` table with the scope columns of appendix §5.3 (`customer_organization_id`, `partner_organization_id`, the mutual-exclusion check, and per-scope partial unique indexes replacing the vendor-only `UNIQUE (organization_id, domain_type)`), so a domain can be dedicated to a **customer organization** managed by the vendor — and wire up the API surface for it.
-- Vendor-admin endpoints to create/verify/remove customer domains, reusing the DEV-592 verification machinery.
-- Host-resolution middleware maps customer domains to the customer org context (login page branding, scoping).
+- Add a `customer_portal` value to `CUSTOM_DOMAIN_TYPE` instead of the per-customer scope columns of appendix §5.3 — `customer_organization_id` is only needed once level 4 exists, and level 4 owns that migration.
+- Vendor-admin CRUD reusing everything from DEV-592: hostname validation, global uniqueness, platform-domain rejection, and the `ask` endpoint unchanged (it only answers whether a domain is registered at all).
+- Host resolution: a request on the customer portal domain resolves to the vendor organization plus a "customer portal" marker, so the login page shows customer branding and the app renders the portal for whichever customer the authenticated user belongs to. `resolvePortalHost` (DEV-644) is where this slots in.
 
 **PR 2 — frontend**
 
-- In the vendor's customer management UI: per-customer "Custom domain" section (add/verify/remove, CNAME instructions) — mirroring the org-level UI from DEV-592 PR 4.
+- Organization settings: the customer portal domain next to the app and registry domains in the existing Custom Domains section, same CNAME instructions.
 
 ### Open questions
 
-- Do wildcard setups (`*.distribution.vendor.com`) need first-class support, or is per-customer explicit CNAME enough for v1?
-- What exactly is scoped by a customer domain besides login/OIDC (branding, registry too?)?
-- **Do customers get custom registry domains at all, or only custom portal URLs?** Registry access for customers works through the vendor's (custom or default) registry domain either way — org resolution is path-based, and the portal/login experience is the thing a customer-facing domain is actually for. And since even for vendors the registry domain is optional (any custom domain serves `/v2/` traffic, Stage 2), a per-customer app/portal domain already covers registry access too. Supporting dedicated per-customer registry domains would mean per-customer `domain_type = 'registry'` rows, per-customer CNAME instructions for a second record, and more `ask`-endpoint surface, for unclear benefit. Leaning: customer domains are **app/portal only** for v1; `CustomDomain` scoping (`customer_organization_id` + `domain_type`) already permits adding registry rows later without a schema change.
+- May vendor users log in on the customer portal domain, or is it customer-only? Customer-only keeps the domain unambiguous, but vendor admins will want to see what their customers see.
+- Wildcards (`*.portal.vendor.com`) as a shortcut for level-4 domains later, or strictly explicit CNAMEs?
+- **Do customers get custom registry domains at all, or only custom portal URLs?** Registry access for customers works through the vendor's (custom or default) registry domain either way — org resolution is path-based, and the portal/login experience is the thing a customer-facing domain is actually for. And since even for vendors the registry domain is optional (any custom domain serves `/v2/` traffic, Stage 2), a customer portal domain already covers registry access too. **Decided: app/portal only** — `customer_portal` is the only domain type a customer or a customer portal row can take; `registry` stays vendor-only.
 
 ---
 
@@ -381,36 +427,95 @@ A vendor admin configures a custom domain for each of their customers, e.g. vend
 
 ---
 
-## Stage 7 — DEV-597: Customer-scoped OIDC configuration
+## Stage 7 — Customer portal OIDC, vendor-configured (level 3)
+
+> **Status: implemented** together with stages 5 and 8. `validateCustomOIDCConfigurationRequest` refuses
+> `create_unknown_users` on a `customer_portal` domain with a NULL `customer_organization_id` (the shared
+> portal), and `provisionCustomOIDCUser` refuses it again at login time as a second guard against the
+> domain being re-pointed after a provider was configured. Everything else answered below as planned.
+
+No Linear issue yet. Needs DEV-593 (the customer portal domain) and DEV-596 (the configuration machinery).
 
 ### Summary
 
-A **customer admin** sets up OIDC for their own organization, on their customer-scoped custom domain (DEV-593). Same machinery as vendor-scoped OIDC (DEV-596), applied to customer orgs.
+The vendor attaches OIDC configurations to its customer portal domain. They apply to **every** customer of that vendor, including customers created afterwards, without any per-customer setup — and the vendor cannot single out one customer, which is what keeps this simple. A customer that needs its own IdP goes to level 4.
 
 ### Detailed plan
 
-**PR 1 — backend**
-
-- Allow `OrganizationOIDCConfiguration` for customer organizations; resolve config via the customer domain in the login flow.
-- Permissions: customer admins manage their own config; decide whether vendor admins may manage it on the customer's behalf.
-- Auto-provisioned users (only when the config's `create_unknown_users` is enabled) land in the customer org with the config's `default_user_role` — concretely: an `Organization_UserAccount` row on the **vendor** org with `customer_organization_id` set (the membership/constraint model from migrations 52/104); the DEV-596 role/privilege mapping and the seat-limit behavior (login fails with "please contact your administrator" when the billed user seats are exhausted; no automatic increase) apply unchanged.
-- Org switching and org creation are disabled for these sessions too (same org-scoped token mechanism as DEV-596 PR 2).
-- SP-initiated auto-redirect works the same on customer domains: the `/api/v1/portal` response for the customer's CNAME carries the customer org's OIDC config.
-
-**PR 2 — frontend + docs**
-
-- Customer-side settings page (customer portal) for OIDC configs, same list + form components as DEV-596 PR 4, reused.
-- Vendor-side visibility (read-only status of customer SSO?) — to be decided.
-- Docs for customer admins.
+- Allow `CustomOIDCConfiguration.custom_domain_id` to reference a `customer_portal` domain. Nothing else in the data model changes.
+- Vendor-admin CRUD is the same surface as DEV-596, just listing the configurations of the portal domain next to those of the app domain, so the settings UI grows a domain column rather than a second component.
+- Auto-provisioning (`create_unknown_users`) is the interesting part: a user created here is a **customer** user, i.e. an `Organization_UserAccount` row on the vendor org with `customer_organization_id` set (the model from migrations 52/104). Which customer? Nothing in the OIDC response says, so either the configuration names a default customer organization, or provisioning stays off for level 3 and customers are invited as today. Decide before building.
+- Seat limits: customer users are counted by `IsCustomerUserAccountLimitReached`, not the billable vendor seat check from DEV-596 — different limit, same "login fails, seats are never raised automatically" behaviour.
 
 ### Open questions
 
-- May vendors configure/override customer OIDC, or strictly customer-managed?
-- Does the customer portal currently have a settings area where this fits naturally?
+- Auto-provisioning without a customer to provision into (above) — **decided: provisioning stays off for
+  the shared portal domain**, refused at both configuration time and login time. A customer that needs
+  provisioning gets its own domain (stage 8).
+- Do partner organizations get the same treatment, or their own domain type? Not addressed by this change;
+  partner organizations do not get a portal domain or providers of their own yet.
 
 ---
 
-## Stage 8 — DEV-644: Hide instance-scoped OIDC config on custom domains
+## Stage 8 — DEV-597: Customer-configured OIDC (level 4)
+
+> **Status: implemented** together with stages 5 and 7, as a single change (not the three separate PRs
+> below). The account-exclusivity decision landed as **account-wide, unchanged from DEV-596**, not the
+> customer-scoped guard the summary below leans towards — see the consequences called out under Open
+> questions. A per-customer nested router (`/customer/{id}/...`) shipped first, then was folded into the
+> vendor's own `/api/v1/custom-domains` and `/api/v1/custom-oidc` endpoints to match the existing
+> `SecretsRouter` convention: one flat endpoint per resource, scope taken from the caller's own auth for
+> everything except create, which accepts an explicit `customerOrganizationId` for a vendor or partner
+> naming a target (see `internal/handlers/customer_scope.go`). Vendor admins can fully edit a customer's
+> domain and providers this way, reachable both from the customer's own settings and from a button in the
+> customer list.
+
+### Summary
+
+A customer configures **its own** IdP for **its own** domain, unlocked by a per-customer feature the vendor grants. Per-customer features already exist as `CustomerOrganization.features` (`CUSTOMER_ORGANIZATION_FEATURE`, migration 70), so this is a new enum value there — the vendor decides _whether_ a customer may bring its own IdP, the customer decides _which_. The vendor never configures the provider itself.
+
+### Detailed plan
+
+**PR 1 — customer domains**
+
+- Add the `customer_organization_id` scope column to `CustomDomain` (appendix §5.3) with the per-scope partial unique indexes, so a domain can belong to one customer of a vendor.
+- Who registers the domain, and who proves ownership? The customer owns the DNS record, so customer self-service in the portal is the coherent answer, with the vendor able to see the state. To be settled together with whether the feature alone is enough or the vendor has to approve each domain.
+
+**PR 2 — customer-configured OIDC**
+
+- `CustomOIDCConfiguration` rows referencing a customer domain, editable by admins of that customer organization when the feature is granted, read-only for the vendor.
+- Auto-provisioned users land in that customer organization with the configuration's `default_user_role` — unambiguous here, unlike level 3.
+- **The account-exclusivity invariant from DEV-596 needs a decision at customer granularity, and it is the hard part of this stage.** DEV-596 refuses a custom-provider login for any account that is a member of another organization, which is what stops a poisoned provider from bridging into someone else's data. Customer memberships live on the _vendor_ org, so a person who is a customer user of two Distr vendors is a member of two organizations and would be refused by both — plausibly common. Loosening it to "all memberships within this customer scope" reopens the bridge (`switch-context` into the other vendor's customer portal), so the guard has to move down a level with it: reject the login when the account holds any membership outside the scope the provider belongs to, and reject invites that would create one. Whichever way it goes, it has to be decided before implementation, not during.
+  **Decided: kept account-wide**, unchanged from `internal/handlers/account_exclusivity.go`, rather than
+  narrowed to customer scope. Two consequences follow and are documented on the customer-facing docs page:
+  a person who is a customer user of two Distr vendors can use SSO at neither, and
+  `db.ExistsCustomOIDCConfigurationForOrganization` is vendor-org-wide, so a single customer enabling SSO
+  makes the whole vendor organization refuse invites for anyone already a member of another Distr
+  organization, not just invites into that one customer. `isOrganizationMember` was still narrowed to the
+  customer's membership scope (via `db.GetUserAccountWithRole`'s existing `customerOrgID` parameter) so
+  that one customer's provider cannot authenticate another customer's users — that is a different guard
+  from account exclusivity and had to change regardless.
+
+**PR 3 — frontend + docs**
+
+- Customer portal settings page reusing the DEV-596 list and form components, plus the vendor-side read-only view of a customer's SSO state.
+- Docs for customer admins, and for vendors on granting the feature.
+
+### Open questions
+
+- May vendors configure/override customer OIDC, or strictly customer-managed? **Decided: vendors may
+  fully edit**, from the same page a customer admin sees, reached via a button in the customer list.
+- Does the customer portal currently have a settings area where this fits naturally? **Decided: a new
+  `settings/customer` route** (component `CustomerSettingsComponent`, shared with the vendor-side view at
+  `customers/:customerOrganizationId/settings`), gated on the `requireCustomer` guard and the customer's
+  `oidc_providers` feature; the customer sidebar gained a **Settings** entry next to Users. It ended up
+  hosting domain management alongside the identity providers (DEV-593's own settings page merged into
+  this one rather than staying separate), so the route and nav label stayed generic instead of naming
+  OIDC specifically.
+
+---
+
+## Stage 9 — DEV-644: Hide instance-scoped OIDC config on custom domains
 
 > **Status: PR 1 implemented, pulled forward ahead of DEV-596.** It turned out not to depend on DEV-596 at all: the only thing DEV-644 needs is a host → "is this a self-service custom domain" decision, which `internal/handlers/portal.go` already made for branding. The org-scoped providers that DEV-596 will add simply slot into the same response. It also does not need the `legacy` column yet — see the scoping decision below.
 >
@@ -458,11 +563,12 @@ Mapping IdP groups to Distr users/roles. Currently not possible — users must b
 
 ## Cross-cutting notes
 
-- **Feature gating** (decided): plan-based via Stage 0 — the business plan (and above) grants the new `Feature` flags (`custom_domains`, `custom_email_provider`, `custom_authentication`); DEV-283 plan switching is the prerequisite deliverable. Each flag is introduced by the stage that develops the feature (`custom_domains` by DEV-592, `custom_email_provider` by DEV-595, `custom_authentication` by DEV-596) — flags are never pre-created.
+- **Feature gating** (decided): plan-based via Stage 0 — the business plan (and above) grants the new `Feature` flags (`custom_domains`, `custom_emails`, `custom_oidc_providers`); DEV-283 plan switching is the prerequisite deliverable. Each flag is introduced by the stage that develops the feature (`custom_domains` by DEV-592, `custom_emails` by DEV-595, `custom_oidc_providers` by DEV-596) — flags are never pre-created.
 - **Secret storage** (decided): OIDC client secrets (DEV-596/597) and SMTP/SES credentials (DEV-595) are stored as plaintext for v1, consistent with the existing `Secret` table — never serialized to JSON or returned by the API. Encryption at rest for all of them together is a follow-up ticket.
-- **Host-context middleware** is the shared backbone for DEV-593, DEV-596, DEV-597 and DEV-644 — it is new for both app and registry (the registry resolves orgs from the repository path, not the Host header); decide whether it lands in DEV-592 or DEV-596 (open question in Stage 2).
-- **Org-scoped sessions**: logins via org-scoped OIDC providers produce org-scoped tokens without org switching or org creation (DEV-596 PR 2); the same mechanism serves customer-scoped OIDC (DEV-597).
-- **Role/privilege mapping**: introduced in DEV-596 PR 3 (claim → role rules, fallback to the config's `default_user_role`), reused by DEV-597, and the foundation for DEV-720 if it gets picked up.
+- ~~**Host-context middleware** is the shared backbone for DEV-593, DEV-596, DEV-597 and DEV-644~~ — **no middleware was needed**. DEV-644 and DEV-596 both resolve the host in the handful of handlers that care (`resolvePortalHost` in `internal/handlers/portal.go`, reused by the auth and registration handlers), and the registry resolves organizations from the repository path rather than the Host header. A middleware would have put a database lookup on every request for the benefit of a few. Levels 3 and 4 should reuse `resolvePortalHost` rather than revive the idea.
+- **Ownership of an OIDC configuration follows the domain it hangs off**, never a customer relationship: the vendor owns what sits on its app and customer portal domains, a customer owns what sits on its own domain. See "The four levels of OIDC for a customer user" above; vendors never configure a provider for one specific customer.
+- **Account exclusivity instead of org-scoped tokens** (implemented in DEV-596, replaces the earlier "org-scoped session token" idea): a custom provider may only authenticate an account whose memberships are exclusively in the scope the provider belongs to, and the guards that keep that true are refusing organization creation and refusing invites that would break it. This removes the need for a token claim entirely, and it is what stops a configured IdP from becoming a bridge into another organization's data. The generalization to customer scope is the hard open question of Stage 8.
+- **Role/privilege mapping**: deferred out of the DEV-596 implementation (only `default_user_role` ships), then reused by levels 3 and 4, and the foundation for DEV-720 if it gets picked up.
 - **Docs**: every stage updates `website/src/content/docs/` (self-hosting configuration reference for new env vars, plus product docs for the new org settings).
 
 ---
@@ -478,7 +584,7 @@ Cleanup and nice-to-have work that intentionally stays out of the delivery stage
 4. **Introduce secrets-at-rest encryption** for all secret storage in one go: the existing `Secret` table, the DEV-595 email provider credentials, and the DEV-596/597 OIDC client secrets (all plaintext for now). Sketch: `internal/crypto` helper, AES-256-GCM, key from a new `SECRETS_ENCRYPTION_KEY` env var (base64, 32 bytes), ciphertexts prefixed with a key-ID/version byte so the key can become a keyring (rotation) without another migration; update `configuration.mdx`.
 5. **Connect an OIDC provider from the user settings page** (DEV-641 left this out): the settings page lists and disconnects connected accounts, but connecting one requires signing in with it. A settings-initiated link flow needs a user-scoped `OIDCState` and conflict handling for identities already owned by another account. An org-admin view of the identities of other users is a separate question.
 6. **Require a provider-verified email for the email fallback match** (DEV-641 kept the previous semantics): the fallback that links an identity to an account found by email does not check `email_verified`, because generic IdPs may omit the claim. Tightening this would harden linking against IdPs that report unverified addresses.
-7. **Additional mail providers (Resend/Brevo)** as new mailx adapters (DEV-595 summary).
+7. **Additional mail providers** for the custom email configuration: **SES with static credentials** (dropped from the DEV-595 v1 scope — needs a `provider` enum column, nullable `smtp_*` columns and a per-provider `CHECK`, plus `ses.New(aws.Config)` with `credentials.NewStaticCredentialsProvider`), and Resend/Brevo as new mailx adapters (DEV-595 summary).
 8. **Per-org notification quota override** for organizations with their own email provider that need more than the instance-wide `NOTIFICATION_EMAIL_HOURLY_QUOTA` (DEV-595 PR 2 keeps the quota for all transports).
 9. **DEV-720 IdP group mapping** — in backlog; builds on the DEV-641 identity table + DEV-596 role mapping.
 10. **Remove this plan document** (`hack/oidc-plan.md`) from the repository once all stages have shipped and the remaining follow-ups are tracked in Linear.
@@ -1333,11 +1439,7 @@ Notes:
 
 Why this works: an email address can't belong to a customer and a vendor user of the same organization at the same time — the org membership row (`UserAccountWithUserRole`) carries at most one `customer_organization_id` / `partner_organization_id`. So on a shared domain like `distribution.vendor.com`, the login flow is always unambiguous: the Host resolves the vendor org context, and once the user is identified (email entry or OIDC callback), their membership determines whether they land in the vendor UI, a customer portal, or a partner view. Dedicated per-customer domains (DEV-593 style, e.g. `customer.distribution.vendor.com`) remain possible as an optional narrowing for branding and customer-scoped OIDC (DEV-597), but they are not required for login to work.
 
-Follow-up consequence for OIDC (DEV-596/597): **the vendor's OIDC config should act as the default** on the vendor's shared domain(s) — applying to all customer and partner organizations under that vendor, including **newly created ones, which inherit it automatically** without per-customer setup. A customer-scoped OIDC config (DEV-597) on a dedicated customer domain then overrides the vendor default for that customer only. Points to settle:
-
-- Precedence rules: instance OIDC (app.distr.sh) vs. vendor default (shared custom domain) vs. customer-scoped config (dedicated customer domain).
-- Whether the vendor default is opt-out per customer org (a customer with their own IdP but no dedicated domain).
-- Whether partner organizations get the same inherit-by-default behavior as customer organizations.
+Follow-up consequence for OIDC — **superseded by "The four levels of OIDC for a customer user" above.** The idea recorded here was that a vendor's OIDC configuration acts as an inherited default for its customer and partner organizations, overridable per customer. That is not what we are building: a configuration belongs to the `CustomDomain` row it hangs off, so the set of providers is a property of the host and nothing is inherited or overridden. The three points that were open here are answered by that model — precedence only applies to which URL a customer user is sent to, there is no per-customer opt-out because there is no per-customer default, and partner organizations either share the customer portal domain or get their own domain type.
 
 #### Should the region (eu) be encoded into the CNAME target domains?
 

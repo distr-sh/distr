@@ -27,10 +27,12 @@ When enabled, the corresponding sign-in button appears on both the login and sig
   Providers configured this way belong to the instance, not to a single
   organization, so they are only offered on the instance's own host. On a
   [custom domain](/docs/platform/branding/#custom-domains) that an organization
-  set up itself, the sign-in buttons are hidden and the auth routes are rejected
-  — users sign in there with email and password. Domains configured for an
-  organization by an instance operator before self-service custom domains
-  existed are exempt and keep offering the instance providers.
+  set up itself, the sign-in buttons are hidden and the auth routes are
+  rejected. Users sign in there with email and password, or with a [custom
+  identity provider](/docs/platform/custom-identity-provider/) the organization
+  configured itself. Domains configured for an organization by an instance
+  operator before self-service custom domains existed are exempt and keep
+  offering the instance providers.
 </Aside>
 
 ## Connected accounts
@@ -125,14 +127,14 @@ Create an app registration in the [Microsoft Entra admin center](https://entra.m
 
 Any OIDC-compliant identity provider can be configured with the generic options. The issuer must expose a `/.well-known/openid-configuration` discovery document.
 
-| Variable                     | Required | Default | Description                                                                         |
-| ---------------------------- | -------- | ------- | ----------------------------------------------------------------------------------- |
-| `OIDC_GENERIC_ENABLED`       | yes      | (none)  | Set to `true` to enable the generic provider.                                       |
-| `OIDC_GENERIC_ISSUER`        | yes      | (none)  | Issuer URL, e.g. `https://auth.example.com/`.                                       |
-| `OIDC_GENERIC_CLIENT_ID`     | yes      | (none)  | Client ID issued by the provider.                                                   |
-| `OIDC_GENERIC_CLIENT_SECRET` | yes      | (none)  | Client secret issued by the provider.                                               |
-| `OIDC_GENERIC_SCOPES`        | yes      | (none)  | Comma-separated scopes to request. Typically `openid,email,profile`.                |
-| `OIDC_GENERIC_PKCE_ENABLED`  | no       | `false` | Enable PKCE (`S256`). Recommended for public clients and providers that support it. |
+| Variable                     | Required | Default | Description                                                                                      |
+| ---------------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------ |
+| `OIDC_GENERIC_ENABLED`       | yes      | (none)  | Set to `true` to enable the generic provider.                                                    |
+| `OIDC_GENERIC_ISSUER`        | yes      | (none)  | Issuer URL, e.g. `https://auth.example.com/`.                                                    |
+| `OIDC_GENERIC_CLIENT_ID`     | yes      | (none)  | Client ID issued by the provider.                                                                |
+| `OIDC_GENERIC_CLIENT_SECRET` | yes      | (none)  | Client secret issued by the provider.                                                            |
+| `OIDC_GENERIC_SCOPES`        | yes      | (none)  | Comma- or space-separated scopes to request, e.g. `email,profile`. `openid` is always requested. |
+| `OIDC_GENERIC_PKCE_ENABLED`  | no       | `false` | Enable PKCE (`S256`). Recommended for public clients and providers that support it.              |
 
 Callback URL: `{DISTR_HOST}/api/v1/auth/oidc/generic/callback`
 

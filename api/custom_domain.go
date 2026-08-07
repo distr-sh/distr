@@ -2,9 +2,12 @@ package api
 
 import (
 	"fmt"
+	"slices"
+	"time"
 
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/validation"
+	"github.com/google/uuid"
 )
 
 type CreateCustomDomainRequest struct {
@@ -18,10 +21,16 @@ func (r *CreateCustomDomainRequest) Normalize() {
 	r.Domain = validation.NormalizeHostname(r.Domain)
 }
 
+var customDomainTypes = []types.DomainType{
+	types.DomainTypeApp,
+	types.DomainTypeRegistry,
+	types.DomainTypeCustomerPortal,
+}
+
 func (r *CreateCustomDomainRequest) Validate() error {
-	if r.DomainType != types.DomainTypeApp && r.DomainType != types.DomainTypeRegistry {
+	if !slices.Contains(customDomainTypes, r.DomainType) {
 		return validation.NewValidationFailedError(
-			fmt.Sprintf("domainType must be %q or %q", types.DomainTypeApp, types.DomainTypeRegistry),
+			fmt.Sprintf("domainType must be one of %v", customDomainTypes),
 		)
 	}
 	return validation.ValidateHostname(r.Domain)
@@ -29,6 +38,9 @@ func (r *CreateCustomDomainRequest) Validate() error {
 
 type CreateCustomDomainsRequest struct {
 	Domains []CreateCustomDomainRequest `json:"domains"`
+	// CustomerOrganizationID targets a customer's own domain instead of the caller's organization.
+	// Only a vendor or partner admin may set it; a customer caller may only ever target itself.
+	CustomerOrganizationID *uuid.UUID `json:"customerOrganizationId,omitempty"`
 }
 
 func (r *CreateCustomDomainsRequest) Normalize() {
@@ -47,4 +59,14 @@ func (r *CreateCustomDomainsRequest) Validate() error {
 		}
 	}
 	return nil
+}
+
+// CustomDomainWithVerification adds the result of a live CNAME check to a CustomDomain. It is
+// computed fresh on every request and never persisted, so DNSCheckedAt is the time of this response,
+// not of some earlier check.
+type CustomDomainWithVerification struct {
+	types.CustomDomain
+	DNSVerified  bool      `json:"dnsVerified"`
+	DNSDetail    string    `json:"dnsDetail"`
+	DNSCheckedAt time.Time `json:"dnsCheckedAt"`
 }

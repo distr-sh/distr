@@ -193,6 +193,17 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			userHasExisted = true
 			userAccount = *existingUA
+
+			if err := checkMembershipAllowed(ctx, userAccount.ID, organization.ID); errors.Is(
+				err, apierrors.ErrBadRequest) {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return err
+			} else if err != nil {
+				err = fmt.Errorf("failed to check membership: %w", err)
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return err
+			}
 		}
 
 		if err := db.CreateUserAccountOrganizationAssignment(
@@ -213,12 +224,14 @@ func createUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !userHasExisted || userAccount.EmailVerifiedAt == nil {
-			if emailInviteURL, err = generateUserInviteUrl(ctx, userAccount, *organization, true); err != nil {
+			if emailInviteURL, err = generateUserInviteUrl(
+				ctx, userAccount, *organization, body.CustomerOrganizationID, true); err != nil {
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return err
 			}
-			if responseInviteURL, err = generateUserInviteUrl(ctx, userAccount, *organization, false); err != nil {
+			if responseInviteURL, err = generateUserInviteUrl(
+				ctx, userAccount, *organization, body.CustomerOrganizationID, false); err != nil {
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return err
@@ -447,13 +460,15 @@ func resendUserInviteHandler() http.HandlerFunc {
 			return
 		}
 
-		emailInviteURL, err := generateUserInviteUrl(ctx, userAccount.AsUserAccount(), *organization, true)
+		emailInviteURL, err := generateUserInviteUrl(
+			ctx, userAccount.AsUserAccount(), *organization, userAccount.CustomerOrganizationID, true)
 		if err != nil {
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		responseInviteURL, err := generateUserInviteUrl(ctx, userAccount.AsUserAccount(), *organization, false)
+		responseInviteURL, err := generateUserInviteUrl(
+			ctx, userAccount.AsUserAccount(), *organization, userAccount.CustomerOrganizationID, false)
 		if err != nil {
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -506,6 +521,9 @@ func deleteUserAccountHandler(w http.ResponseWriter, r *http.Request) {
 		} else if err := db.DeleteAccessTokensOfUserInOrg(ctx, userAccount.ID, *auth.CurrentOrgID()); err != nil {
 			return err
 		} else if err := db.DeleteTutorialProgressesOfUserInOrg(ctx, userAccount.ID, *auth.CurrentOrgID()); err != nil {
+			return err
+		} else if err := db.DeleteCustomOIDCIdentitiesOfUserInOrg(
+			ctx, userAccount.ID, *auth.CurrentOrgID()); err != nil {
 			return err
 		} else {
 			w.WriteHeader(http.StatusNoContent)
@@ -570,6 +588,7 @@ func generateUserInviteUrl(
 	ctx context.Context,
 	userAccount types.UserAccount,
 	organization types.OrganizationWithBranding,
+	customerOrgID *uuid.UUID,
 	emailVerified bool,
 ) (string, error) {
 	if _, token, err := authjwt.GenerateInviteToken(userAccount, emailVerified); err != nil {
@@ -577,7 +596,7 @@ func generateUserInviteUrl(
 	} else {
 		return fmt.Sprintf(
 			"%v/join?jwt=%v",
-			customdomains.AppDomainOrDefault(ctx, organization.ID, organization.Branding),
+			customdomains.CustomerPortalDomainOrDefault(ctx, organization.ID, customerOrgID, organization.Branding),
 			url.QueryEscape(token),
 		), nil
 	}

@@ -230,6 +230,12 @@ The only exceptions are plan-specific billing UI (checkout, plan comparison) and
 
 Organization features (`types.Feature`) come from two sources and must not be mixed up. Plan-managed features are granted by `types.FeaturesForSubscriptionType` and collected in `types.PlanManagedFeatures`; they are the only ones that may be revoked when an organization loses its plan. Everything else is granted out of band — `vendor_billing` by staff, `pre_post_scripts` and `artifact_version_mutable` by an organization admin in the settings — and must survive plan changes and edition reconciliation. Never overwrite the whole `features` array to revoke a plan; remove `types.PlanManagedFeatures` from it.
 
+### Sending Mail
+
+Never take the mailer straight from the context. An organization can configure its own SMTP server (`CustomEmailConfiguration`), which overrides the instance mailer built from the `MAILER_*` env vars, so every sender resolves its transport with `custommail.MailerForOrganization(ctx, orgID)` and its sender address with `custommail.FromAddressOrDefault(ctx, orgID, branding)`. Both fall back to the instance defaults when the organization has no enabled configuration, and neither falls back when sending through a configured server fails — the instance mailer would send from a domain that server's sender address does not belong to, which fails SPF/DKIM/DMARC and hides the misconfiguration.
+
+The organization must be passed explicitly rather than read from the authentication: background jobs have no authentication in their context (`internal/jobs/runner.go`), and notification mail is sent from exactly there.
+
 ### API Routes
 
 API routes are defined in `internal/routing/`. Routes are grouped by authentication requirements:
@@ -241,6 +247,15 @@ API routes are defined in `internal/routing/`. Routes are grouped by authenticat
 - Registry routes (special OCI auth)
 
 When adding new routes, ensure the OpenAPI spec remains valid. The `chiopenapi` router generates the spec from route definitions. Endpoints that have path parameters, query parameters, or a request body must declare them via `option.Request()` with a struct using the appropriate tags (`path:`, `query:`, `json:`). Endpoints without any parameters or body do not need `option.Request()`. Follow the existing pattern of composing path param structs with body request structs via embedding.
+
+### Generated URLs
+
+Never hard-wire `https://` into a URL that is built for this instance. The scheme is `env.HostScheme()`, taken from `DISTR_HOST` (https unless it explicitly says http). It returns the `env.URLScheme` enum (`env.SchemeHTTP` / `env.SchemeHTTPS`), which is also what a parsed URL's scheme is compared against, rather than a bare `"https"` string:
+
+- For a URL on the host of the current request use `handlerutil.GetRequestSchemeAndHost(r)`. It keeps the request's host, so a request on a custom domain stays on it, and takes the scheme from the configuration rather than the request, which arrives as plain http behind a TLS-terminating proxy.
+- For a URL on another host — an organization's custom domain in `customdomains.withScheme`, the login forwarding target, the OIDC callback URL an administrator has to register (`oidc.CustomCallbackURL`) — use `env.HostScheme()` directly.
+
+A hard-wired https breaks every locally running instance, and for the OIDC callback URL it produces a URL that disagrees with the `redirect_uri` the login actually sends. In the frontend, use the protocol of the current page for the same reason.
 
 ### Host-resolved Bootstrap Configuration
 
@@ -283,6 +298,7 @@ Only write a test that could fail for a real reason. Every test is code that has
 - If you read code that doesn't follow these rules, please fix it.
 - If you see any typos, or spelling mistakes, please fix them.
 - If you fetch data from GitHub always use the GitHub cli (`gh`) instead of the web interface.
+- Scripting language preference, for anything from a one-off command to a checked-in script: shell first (like `hack/validate-migrations.sh`), Node when a task outgrows shell (like `hack/agent-changelog.mjs`). Avoid Python, and never use Perl (e.g. `perl -pi -e`). Edit existing files directly instead of piping them through a stream editor.
 - When you resolve merge conflicts (whether during a merge or rebase), always ensure that the conflict resolutions are committed before continuing, or at least prompt the user to commit them, so that unrelated new changes are not unintentionally included in that commit.
 
 ## Code Review Instructions

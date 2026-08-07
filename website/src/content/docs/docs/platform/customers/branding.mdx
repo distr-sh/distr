@@ -82,33 +82,56 @@ None of these settings require a custom domain: they apply to all logged-in user
 For a fully white-labeled experience, Distr supports custom domains for the Customer Portal and the artifact registry.
 When your portal is accessed via your custom domain, all Distr-specific branding is removed and your white-label settings also apply to unauthenticated pages such as the login page.
 
-Organization admins can set up custom domains self-service under **Settings → Organization → Custom Domains**:
+Organization admins can set up custom domains self-service under **Settings → Organization → Custom Domains & Identity Provider**, in the Vendor Portal, Customer Portal and Registry sections:
 
-1. **App domain** (e.g. `app.your-company.com`): Serves the web UI and API, including the Customer Portal. It also serves the artifact registry under the `/v2/` path, so a single domain is usually all you need.
-2. **Registry domain** (optional, e.g. `registry.your-company.com`): Only needed if you want a separate hostname for the artifact registry.
+1. **App domain** (e.g. `app.your-company.com`): Serves the web UI and API for your own team (and your partners, if partner management is enabled). It also serves the artifact registry under the `/v2/` path, so a single domain is usually all you need.
+2. **Customer portal domain** (optional, e.g. `portal.your-company.com`): Serves the Customer Portal for all of your customers. When it is set, invitation links, password resets and notification mails sent to customer users point at it instead of your app domain; without it, they use your app domain like everyone else.
+3. **Registry domain** (optional, e.g. `registry.your-company.com`): Only needed if you want a separate hostname for the artifact registry.
 
 Enter the domain as a bare hostname (no `https://`) and add it.
 Then create the CNAME record shown below the domain at your DNS provider, pointing your domain at the displayed target.
 The TLS certificate is issued automatically on the first request once the DNS record has propagated — no certificate upload or renewal handling required.
 
+Each domain shows a status panel — green once its CNAME record resolves to the expected target, red with the reason otherwise (e.g. no record found, or it points somewhere else) — along with when it was last checked. Use the reload icon next to the panel to check again after updating your DNS record, without waiting for propagation to be picked up on its own.
+
 <Aside type="note">
   Custom domains are available on the Business plan. Each domain can only be
-  registered by one organization. Removing a domain makes it stop working
+  registered once, instance-wide. Removing a domain makes it stop working
   immediately and its TLS certificate is no longer renewed.
 </Aside>
 
-<Aside type="caution" title="Login methods on your custom domain">
-  OIDC sign-in buttons such as Google, GitHub and Microsoft are configured for
-  the Distr instance as a whole, not for a single organization, so they are not
-  offered on your domain — visitors there sign in with email and password. Make
-  sure your users have a password set before you point them at your custom
-  domain.
-</Aside>
+A customer that needs its own hostname and its own identity provider, rather than sharing your customer portal domain, can get one: grant it the Custom Identity Provider feature in the customer list, described in [Custom Identity Provider](/docs/platform/custom-identity-provider/#letting-a-customer-bring-its-own-provider).
 
-<Aside type="tip">
-  A custom sender address for transactional e-mails is currently still
-  configured by Distr support. Contact us at support@distr.sh for setup.
+<Aside type="caution" title="Login methods on your custom domain">
+  The Google, GitHub and Microsoft sign-in buttons are configured for the Distr
+  instance as a whole, not for a single organization, so they are not offered on
+  your domain. Visitors there sign in with email and password, or with a [custom
+  identity provider](/docs/platform/custom-identity-provider/) you configure
+  yourself. Self-registration is also disabled on your domain: new users are
+  invited or provisioned by your identity provider.
 </Aside>
 
 On self-hosted instances, the Custom Domains section only appears when the instance is configured for custom domain self-service.
 See the [configuration reference](/docs/self-hosting/configuration/#custom-domains) for the required setup.
+
+## Custom Email
+
+By default, all transactional e-mails — invitations, e-mail verifications, password resets, license key updates and deployment notifications — are sent by Distr.
+To send them from your own domain instead, configure your SMTP server under **Settings → Organization → Email Sending Provider**:
+
+1. **Sender address** (e.g. `notifications@your-company.com`): The address your users and customers see as the sender.
+2. **SMTP host and port**: Your mail provider's SMTP endpoint, e.g. `smtp.your-company.com` on port `587`.
+3. **Username and password**: Leave both empty to connect without authentication.
+4. **Use implicit TLS**: Enable it if your provider expects a TLS connection right away instead of an upgrade via STARTTLS, which is usually the case on port `465`.
+
+Use **Send test email** to send a test message to your own address before saving.
+A failed test reports the error from your SMTP server verbatim, so you can see exactly what to fix.
+
+Your SMTP server must be authorized to send for the domain of your sender address.
+Set up SPF, DKIM and DMARC records for that domain at your DNS provider as documented by your mail provider — otherwise recipients may reject your e-mails or classify them as spam.
+
+<Aside type="note">
+  Custom email is available on the Business plan. Unchecking "Send emails
+  through this SMTP server" keeps the configuration but makes Distr send the
+  e-mails again, which is useful while you are debugging a delivery problem.
+</Aside>

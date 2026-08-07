@@ -66,8 +66,7 @@
                       [disabled]="!auth.hasAnyRole('read_write', 'admin')"
                       [checked]="config.enabled"
                       (change)="toggleConfigEnabled(config)" />
-                    <div
-                      class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+                    <div class="distr-toggle peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
                   </label>
                 </td>
                 <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
@@ -176,8 +175,7 @@
 
         <label class="flex items-center cursor-pointer">
           <input type="checkbox" class="sr-only peer" formControlName="enabled" />
-          <div
-            class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+          <div class="distr-toggle"></div>
           <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Enabled</span>
         </label>
 
@@ -186,16 +184,14 @@
           <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 space-y-3">
             <label class="inline-flex items-center cursor-pointer">
               <input type="checkbox" class="sr-only peer" formControlName="statusTriggerEnabled" />
-              <div
-                class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+              <div class="distr-toggle"></div>
               <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Deployment status changes</span>
             </label>
 
             <div class="space-y-1">
               <label class="flex items-center cursor-pointer">
                 <input type="checkbox" class="sr-only peer" formControlName="cpuTriggerEnabled" />
-                <div
-                  class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+                <div class="distr-toggle"></div>
                 <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">CPU usage threshold</span>
               </label>
               @if (editConfigForm.controls.cpuTriggerThresholdPercent.enabled) {
@@ -225,8 +221,7 @@
             <div class="space-y-1">
               <label class="flex items-center cursor-pointer">
                 <input type="checkbox" class="sr-only peer" formControlName="memoryTriggerEnabled" />
-                <div
-                  class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+                <div class="distr-toggle"></div>
                 <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Memory usage threshold</span>
               </label>
               @if (editConfigForm.controls.memoryTriggerThresholdPercent.enabled) {
@@ -256,8 +251,7 @@
             <div class="space-y-1">
               <label class="flex items-center cursor-pointer">
                 <input type="checkbox" class="sr-only peer" formControlName="diskTriggerEnabled" />
-                <div
-                  class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+                <div class="distr-toggle"></div>
                 <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Disk usage threshold</span>
               </label>
               @if (editConfigForm.controls.diskTriggerThresholdPercent.enabled) {

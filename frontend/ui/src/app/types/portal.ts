@@ -1,3 +1,9 @@
+export interface PortalOIDCProvider {
+  name: string;
+  loginPath: string;
+  spInitiated: boolean;
+}
+
 export interface PortalLoginConfig {
   registrationEnabled: boolean;
   turnstileSiteKey?: string;
@@ -5,6 +11,7 @@ export interface PortalLoginConfig {
   oidcGoogleEnabled: boolean;
   oidcMicrosoftEnabled: boolean;
   oidcGenericEnabled: boolean;
+  oidcProviders: PortalOIDCProvider[];
 }
 
 export interface Portal {

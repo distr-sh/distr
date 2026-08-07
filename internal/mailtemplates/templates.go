@@ -15,6 +15,7 @@ import (
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
+	"github.com/google/uuid"
 )
 
 var (
@@ -74,6 +75,7 @@ func InviteUser(
 	ctx context.Context,
 	userAccount types.UserAccount,
 	organization types.OrganizationWithBranding,
+	customerOrgID *uuid.UUID,
 	invitingUser types.UserAccount,
 	targetOrgName string,
 	inviteURL string,
@@ -84,9 +86,10 @@ func InviteUser(
 			"Organization":  organization,
 			"InvitingUser":  invitingUser,
 			"TargetOrgName": targetOrgName,
-			"Host":          customdomains.AppDomainOrDefault(ctx, organization.ID, organization.Branding),
-			"InviteURL":     inviteURL,
-			"LogoDataUrl":   BrandingLogoDataURL(ctx, organization.Branding),
+			"Host": customdomains.CustomerPortalDomainOrDefault(
+				ctx, organization.ID, customerOrgID, organization.Branding),
+			"InviteURL":   inviteURL,
+			"LogoDataUrl": BrandingLogoDataURL(ctx, organization.Branding),
 		}
 }
 
@@ -94,6 +97,7 @@ func VerifyEmail(
 	ctx context.Context,
 	userAccount types.UserAccount,
 	org types.OrganizationWithBranding,
+	customerOrgID *uuid.UUID,
 	token string,
 	greetWithOrgName bool,
 ) (*template.Template, any) {
@@ -106,7 +110,7 @@ func VerifyEmail(
 		"UserAccount":  userAccount,
 		"Organization": org,
 		"Signature":    signature,
-		"Host":         customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding),
+		"Host":         customdomains.CustomerPortalDomainOrDefault(ctx, org.ID, customerOrgID, org.Branding),
 		"Token":        token,
 		"LogoDataUrl":  BrandingLogoDataURL(ctx, org.Branding),
 	}
@@ -116,12 +120,14 @@ func PasswordReset(
 	ctx context.Context,
 	userAccount types.UserAccount,
 	organization *types.OrganizationWithBranding,
+	customerOrgID *uuid.UUID,
 	token string,
 ) (*template.Template, any) {
 	host := env.Host()
 	var branding *types.OrganizationBranding
 	if organization != nil {
-		host = customdomains.AppDomainOrDefault(ctx, organization.ID, organization.Branding)
+		host = customdomains.CustomerPortalDomainOrDefault(
+			ctx, organization.ID, customerOrgID, organization.Branding)
 		branding = organization.Branding
 	}
 	return templates.Lookup("password-reset.html"), map[string]any{
@@ -137,14 +143,33 @@ func UpdateEmail(
 	ctx context.Context,
 	userAccount types.UserAccount,
 	org types.OrganizationWithBranding,
+	customerOrgID *uuid.UUID,
 	token string,
 ) (*template.Template, any) {
 	return templates.Lookup("update-email.html"), map[string]any{
 		"UserAccount":  userAccount,
 		"Organization": org,
-		"Host":         customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding),
+		"Host":         customdomains.CustomerPortalDomainOrDefault(ctx, org.ID, customerOrgID, org.Branding),
 		"Token":        token,
 		"LogoDataUrl":  BrandingLogoDataURL(ctx, org.Branding),
+	}
+}
+
+func CustomEmailTest(
+	ctx context.Context,
+	userAccount types.UserAccount,
+	org types.OrganizationWithBranding,
+	config types.CustomEmailConfiguration,
+) (*template.Template, any) {
+	return templates.Lookup("custom-email-test.html"), map[string]any{
+		"UserAccount":   userAccount,
+		"Organization":  org,
+		"Configuration": config,
+		// Distr reports the result of the test to the admin, so the organization name must not be
+		// used as the signature here.
+		"Signature":   "Distr",
+		"Host":        customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding),
+		"LogoDataUrl": BrandingLogoDataURL(ctx, org.Branding),
 	}
 }
 

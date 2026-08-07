@@ -12,6 +12,7 @@ const portalResponse: Portal = {
     oidcGoogleEnabled: true,
     oidcMicrosoftEnabled: false,
     oidcGenericEnabled: false,
+    oidcProviders: [{name: 'Acme SSO', loginPath: '/api/v1/auth/oidc/custom/acme/acme-sso', spInitiated: false}],
   },
 };
 
@@ -38,6 +39,16 @@ describe('PortalService', () => {
 
     expect(service.loginConfig().registrationEnabled).toBe(false);
     expect(service.loginConfig().oidcGithubEnabled).toBe(false);
+    expect(service.loginConfig().oidcProviders).toEqual([]);
+  });
+
+  it('defaults the organization provider list when the response omits it', () => {
+    const service = TestBed.inject(PortalService);
+    httpTesting
+      .expectOne('/api/public/v1/portal')
+      .flush({...portalResponse, loginConfig: {...portalResponse.loginConfig, oidcProviders: undefined}});
+
+    expect(service.loginConfig().oidcProviders).toEqual([]);
   });
 
   it('requests the portal configuration once and replays it to every consumer', () => {

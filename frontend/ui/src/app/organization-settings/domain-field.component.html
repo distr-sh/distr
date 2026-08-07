@@ -1,0 +1,71 @@
+<div>
+  <label [for]="fieldId()" class="distr-label mb-2">{{ label() }}</label>
+  @if (domain(); as domain) {
+    <div class="flex items-center gap-2">
+      <code class="px-2 py-1.5 rounded-sm bg-gray-100 dark:bg-gray-600 text-sm font-mono dark:text-white">
+        {{ domain.domain }}
+      </code>
+      <button
+        type="button"
+        (click)="remove.emit()"
+        [attr.aria-label]="removeAriaLabel()"
+        class="text-red-600 dark:text-red-500 hover:text-red-800 dark:hover:text-red-400">
+        <fa-icon [icon]="faTrash" />
+      </button>
+    </div>
+    <div class="mt-2 flex items-center gap-2">
+      @if (domain.dnsVerified) {
+        <span
+          class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+          [title]="domain.dnsDetail">
+          <fa-icon [icon]="faCircleCheck" />
+          CNAME verified
+        </span>
+      } @else {
+        <span
+          class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+          [title]="domain.dnsDetail">
+          <fa-icon [icon]="faTriangleExclamation" />
+          Not configured
+        </span>
+      }
+      <button
+        type="button"
+        title="Recheck"
+        (click)="recheck.emit()"
+        [disabled]="verifying()"
+        class="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white disabled:opacity-60">
+        <fa-icon [icon]="faRotate" [class.animate-spin]="verifying()" />
+        <span class="sr-only">Recheck</span>
+      </button>
+      <span class="text-xs font-normal text-gray-500 dark:text-gray-400">
+        Checked {{ checkedAtLabel(domain.dnsCheckedAt) }}
+      </span>
+    </div>
+    <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+      Create a CNAME record: <code class="font-mono">{{ domain.domain }}</code> &rarr;
+      <code class="font-mono">{{ cnameTarget() }}</code>
+    </p>
+  } @else {
+    <form (submit)="submit($event)">
+      <input
+        [formControl]="control"
+        autotrim
+        type="text"
+        [id]="fieldId()"
+        class="distr-input"
+        [placeholder]="placeholder()" />
+      @if (control.invalid && control.touched) {
+        <p class="mt-1 text-sm text-red-600 dark:text-red-500">{{ invalidHint() }}</p>
+      }
+      <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+        <ng-content />
+        You will have to create a CNAME record pointing to <code class="font-mono">{{ cnameTarget() }}</code
+        >.
+      </p>
+      <button type="submit" [disabled]="saving()" class="distr-btn-primary mt-4 disabled:opacity-60">
+        Save domain
+      </button>
+    </form>
+  }
+</div>

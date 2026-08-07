@@ -1,5 +1,5 @@
 -- Instance-wide providers configured via environment variables. Organization-scoped
--- providers add a 'custom' value plus an organization_oidc_configuration_id FK;
+-- providers add a 'custom' value plus a custom_oidc_configuration_id FK;
 -- 'generic' therefore stays reserved for the single env-configured generic provider
 -- behind /api/v1/auth/oidc/generic.
 CREATE TYPE OIDC_PROVIDER AS ENUM ('github', 'google', 'microsoft', 'generic');
