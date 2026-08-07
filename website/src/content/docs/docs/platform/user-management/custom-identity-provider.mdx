@@ -13,8 +13,8 @@ Your organization can connect its own OpenID Connect identity provider, so your 
 
 <Aside type="note">
   A custom identity provider is available on the Business plan and requires a
-  custom domain, because a provider is only offered on the domain it is
-  attached to. See the [pricing page](/pricing/) for a comparison.
+  custom domain, because a provider is only offered on the domain it is attached
+  to. See the [pricing page](/pricing/) for a comparison.
 </Aside>
 
 ## Where a provider applies
@@ -23,9 +23,9 @@ Every domain carries its own set of providers. Nothing is inherited between them
 
 | Domain                                       | Providers configured by | Applies to                                          |
 | -------------------------------------------- | ----------------------- | --------------------------------------------------- |
-| Your app domain, e.g. `app.your-company.com` | you                     | your own team                                        |
+| Your app domain, e.g. `app.your-company.com` | you                     | your own team                                       |
 | Your customer portal domain                  | you                     | all of your customers, including ones created later |
-| A customer's own portal domain               | you or that customer    | that one customer                                    |
+| A customer's own portal domain               | you or that customer    | that one customer                                   |
 
 All three are configured under **Settings → Organization → Custom Domains & Identity Provider**, which is also where the domains themselves are registered. A customer's own domain additionally needs the **Custom Identity Provider** feature, which you grant per customer in the customer list.
 
@@ -79,7 +79,9 @@ Once it exists, it replaces your app domain in everything sent to a customer use
 
 Providers you attach to this domain apply to every customer at once. You cannot single out one customer here; a customer that needs its own provider gets its own domain instead.
 
-<Aside type="note" title="No automatic provisioning on the shared portal domain">
+<Aside
+  type="note"
+  title="No automatic provisioning on the shared portal domain">
   A provider on the shared customer portal domain cannot create accounts on
   first sign-in. Nothing in an OpenID response says which of your customers a
   new user belongs to, so there is no organization to create them in. Invite
@@ -106,15 +108,15 @@ Distr matches an account either by an identity it has connected before or by the
   data, so they apply to every custom provider, including a customer's own.
   Two things follow that are easy to be surprised by:
 
-  - A person who is a customer user of two Distr vendors is a member of two
-    organizations and can therefore use single sign-on at neither of them. They
-    keep their password login at both.
-  - As soon as any provider is configured in your organization, including one
-    configured by a single customer, you can no longer invite anyone who is
-    already a member of another Distr organization. Removing that member from
-    the other organization, or deleting the provider, makes the invitation
-    possible again.
-</Aside>
+- A person who is a customer user of two Distr vendors is a member of two
+  organizations and can therefore use single sign-on at neither of them. They
+  keep their password login at both.
+- As soon as any provider is configured in your organization, including one
+  configured by a single customer, you can no longer invite anyone who is
+  already a member of another Distr organization. Removing that member from
+  the other organization, or deleting the provider, makes the invitation
+  possible again.
+  </Aside>
 
 ## Provisioning accounts automatically
 
