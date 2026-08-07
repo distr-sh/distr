@@ -107,17 +107,22 @@ Distr matches an account either by an identity it has connected before or by the
 
 <Aside type="caution" title="Two consequences worth planning for">
   These rules are what stops a provider from reaching another organization's
-  data, so they apply to every custom provider, including a customer's own.
-  Two things follow that are easy to be surprised by:
-
-  - A person who is a customer user of two Distr vendors is a member of two
-    organizations and can therefore use single sign-on at neither of them. They
-    keep their password login at both.
-  - As soon as any provider is configured in your organization, including one
-    configured by a single customer, you can no longer invite anyone who is
-    already a member of another Distr organization. Removing that member from
-    the other organization, or deleting the provider, makes the invitation
-    possible again.
+  data, so they apply to every custom provider, including a customer's own. Two
+  things follow that are easy to be surprised by:
+  <ul>
+    <li>
+      A person who is a customer user of two Distr vendors is a member of two
+      organizations and can therefore use single sign-on at neither of them.
+      They keep their password login at both.
+    </li>
+    <li>
+      As soon as any provider is configured in your organization, including one
+      configured by a single customer, you can no longer invite anyone who is
+      already a member of another Distr organization. Removing that member from
+      the other organization, or deleting the provider, makes the invitation
+      possible again.
+    </li>
+  </ul>
 </Aside>
 
 ## Provisioning accounts automatically
