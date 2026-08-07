@@ -297,6 +297,11 @@ func validateCustomOIDCConfigurationRequest(
 		http.Error(w, "unknown custom domain", http.StatusBadRequest)
 		return false
 	}
+	// Gates on the destination domain's own customer, so update can't move a provider onto a
+	// different reachable customer that lacks oidc_providers (create already implies this).
+	if domain.CustomerOrganizationID != nil && !requireCustomerOidcProvidersFeature(w, r, *domain.CustomerOrganizationID) {
+		return false
+	}
 	if domain.Type == types.DomainTypeRegistry {
 		http.Error(w, "the OIDC provider must be bound to an app or customer portal domain",
 			http.StatusBadRequest)

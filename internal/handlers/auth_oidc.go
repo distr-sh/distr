@@ -400,7 +400,7 @@ func checkCustomOIDCLoginAllowed(
 	} else if !exclusive {
 		return redirectToLoginOIDCNotExclusive, nil
 	}
-	if member, err := isOrganizationMember(ctx, user, organizationID, login.customerOrgID()); err != nil {
+	if member, err := isOrganizationMember(ctx, user, login); err != nil {
 		return "", err
 	} else if !member {
 		return redirectToLoginOIDCNoAccount, nil
@@ -497,19 +497,23 @@ func isExclusiveToOrganization(ctx context.Context, user types.UserAccount, orgI
 	return count == 0, nil
 }
 
-func isOrganizationMember(
-	ctx context.Context,
-	user types.UserAccount,
-	orgID uuid.UUID,
-	customerOrgID *uuid.UUID,
-) (bool, error) {
-	_, err := db.GetUserAccountWithRole(ctx, user.ID, orgID, customerOrgID, nil)
+// isOrganizationMember also tells an app-domain membership apart from a shared-portal one:
+// GetUserAccountWithRole's customerOrgID leaves the customer scope unfiltered when nil, which both pass.
+func isOrganizationMember(ctx context.Context, user types.UserAccount, login customOIDCLogin) (bool, error) {
+	member, err := db.GetUserAccountWithRole(
+		ctx, user.ID, login.configuration.OrganizationID, login.customerOrgID(), nil)
 	if errors.Is(err, apierrors.ErrNotFound) {
 		return false, nil
 	} else if err != nil {
 		return false, err
 	}
-	return true, nil
+	if login.customerOrgID() != nil {
+		return true, nil
+	}
+	if login.sharedCustomerPortal() {
+		return member.CustomerOrganizationID != nil, nil
+	}
+	return member.CustomerOrganizationID == nil, nil
 }
 
 func emailDomainAllowed(configuration types.CustomOIDCConfiguration, email string) bool {
