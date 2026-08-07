@@ -1,5 +1,27 @@
 # Changelog
 
+## [3.2.0-rc.1](https://github.com/distr-sh/distr/compare/3.1.0...3.2.0-rc.1) (2026-08-07)
+
+
+### Features
+
+* custom email sending provider ([#2933](https://github.com/distr-sh/distr/issues/2933)) ([2d49a3e](https://github.com/distr-sh/distr/commit/2d49a3e888ffc4b366b8c236a0d4dbdaf2d1f9f6))
+* custom identity provider ([#2936](https://github.com/distr-sh/distr/issues/2936)) ([041ac88](https://github.com/distr-sh/distr/commit/041ac88ab8d9c20f2de017186577f76702ba0585))
+* customer portal domains incl. DNS check and customer oidc ([#2938](https://github.com/distr-sh/distr/issues/2938)) ([280c785](https://github.com/distr-sh/distr/commit/280c785becdd80aebc12156e6288f71bc2e3f49e))
+
+
+### Other
+
+* configure v3.2.0-rc.1 prerelease ([1420c42](https://github.com/distr-sh/distr/commit/1420c4292fdaf2bc75904a4b5e737b6b97976a18))
+* disable built-in oidc login for custom domains ([#2928](https://github.com/distr-sh/distr/issues/2928)) ([b250d6c](https://github.com/distr-sh/distr/commit/b250d6c28de89c942af856705f0d7b477acd634b))
+* display connected OIDC providers ([#2930](https://github.com/distr-sh/distr/issues/2930)) ([114c339](https://github.com/distr-sh/distr/commit/114c339290348bf0807d48257e403441b9cb3775))
+
+
+### Docs
+
+* put more emphasis on unneccasry comments and tests ([#2937](https://github.com/distr-sh/distr/issues/2937)) ([de21d97](https://github.com/distr-sh/distr/commit/de21d9784e40aa535068f0807ad6bf34df6792b1))
+* **website:** clarifiy in subscription management docs that you can self-host every plan ([#2929](https://github.com/distr-sh/distr/issues/2929)) ([3b582bf](https://github.com/distr-sh/distr/commit/3b582bff7ec404875cb2c02a6f89b67b0c17a68b))
+
 ## [3.1.0](https://github.com/distr-sh/distr/compare/3.0.4...3.1.0) (2026-07-31)
 
 
