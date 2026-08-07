@@ -101,7 +101,8 @@ func authVerifyRequestHandler(w http.ResponseWriter, r *http.Request) {
 	userAccount := auth.CurrentUser()
 	if userAccount.EmailVerifiedAt != nil {
 		w.WriteHeader(http.StatusNoContent)
-	} else if err := mailsending.SendUserVerificationMail(ctx, *userAccount, *auth.CurrentOrg(), true); err != nil {
+	} else if err := mailsending.SendUserVerificationMail(
+		ctx, *userAccount, *auth.CurrentOrg(), auth.CurrentCustomerOrgID(), true); err != nil {
 		log.Error("failed to send verification mail", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -200,7 +201,8 @@ func setPasswordAndLogin(w http.ResponseWriter, r *http.Request, password string
 		if org, err := userauth.PrimaryOrganization(ctx, *user); err != nil {
 			log.Warn("could not resolve organization for verification mail", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
-		} else if err := mailsending.SendUserVerificationMail(ctx, *user, org.Organization, true); err != nil {
+		} else if err := mailsending.SendUserVerificationMail(
+			ctx, *user, org.Organization, org.CustomerOrganizationID, true); err != nil {
 			log.Warn("could not send verification mail", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 		}
@@ -439,7 +441,7 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		// so they need the verification mail. When it is disabled they are logged in directly and the mail would
 		// be pointless.
 		if env.UserEmailVerificationRequired() {
-			if err := mailsending.SendUserVerificationMail(ctx, userAccount, org, false); err != nil {
+			if err := mailsending.SendUserVerificationMail(ctx, userAccount, org, nil, false); err != nil {
 				log.Warn("could not send verification mail", zap.Error(err))
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 			}
@@ -476,12 +478,14 @@ func authResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "something went wrong", http.StatusInternalServerError)
 	} else {
 		var organization *types.OrganizationWithBranding
+		var customerOrgID *uuid.UUID
 		mailer := internalctx.GetMailer(ctx)
 		mailOpts := []mailx.MailOpt{
 			mailx.To(user.Email),
 			mailx.Subject("Password reset"),
 		}
 		if len(orgs) > 0 {
+			customerOrgID = orgs[0].CustomerOrganizationID
 			if result, err := db.GetOrganizationWithBranding(ctx, orgs[0].ID); err != nil {
 				err = fmt.Errorf("failed to get org with branding: %w", err)
 				sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -508,7 +512,8 @@ func authResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 				log.Warn("error parsing custom from address", zap.Error(err))
 			}
 		}
-		mailOpts = append(mailOpts, mailx.HtmlBodyTemplate(mailtemplates.PasswordReset(ctx, *user, organization, token)))
+		mailOpts = append(mailOpts,
+			mailx.HtmlBodyTemplate(mailtemplates.PasswordReset(ctx, *user, organization, customerOrgID, token)))
 		if err := mailer.Send(ctx, mailOpts...); err != nil {
 			log.Warn("could not send reset mail", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)

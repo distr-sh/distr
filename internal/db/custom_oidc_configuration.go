@@ -115,17 +115,37 @@ func mapCustomOIDCConfigurationError(err error) error {
 	return fmt.Errorf("could not save CustomOIDCConfiguration: %w", err)
 }
 
+// customOIDCConfigurationScopeExpr restricts configurations to the domains of one scope: everything for
+// a vendor, one customer's own for a customer, or the domains of the customers assigned to a partner.
+const customOIDCConfigurationScopeExpr = `
+	JOIN CustomDomain d ON d.id = c.custom_domain_id
+		AND (@isVendor
+			OR d.customer_organization_id = @customerOrganizationId
+			OR EXISTS (
+				SELECT 1 FROM CustomerOrganization co
+				WHERE co.id = d.customer_organization_id AND co.partner_organization_id = @partnerOrganizationId
+			))
+`
+
+func customOIDCConfigurationScopeArgs(args pgx.NamedArgs, customerOrgID, partnerOrgID *uuid.UUID) pgx.NamedArgs {
+	args["customerOrganizationId"] = customerOrgID
+	args["partnerOrganizationId"] = partnerOrgID
+	args["isVendor"] = customerOrgID == nil && partnerOrgID == nil
+	return args
+}
+
 func GetCustomOIDCConfigurations(
 	ctx context.Context,
 	organizationID uuid.UUID,
+	customerOrgID, partnerOrgID *uuid.UUID,
 ) ([]types.CustomOIDCConfiguration, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		"SELECT"+customOIDCConfigurationOutputExpr+
-			`FROM CustomOIDCConfiguration c
-			WHERE c.organization_id = @organizationId
+			`FROM CustomOIDCConfiguration c`+customOIDCConfigurationScopeExpr+
+			`WHERE c.organization_id = @organizationId
 			ORDER BY c.name`,
-		pgx.NamedArgs{"organizationId": organizationID},
+		customOIDCConfigurationScopeArgs(pgx.NamedArgs{"organizationId": organizationID}, customerOrgID, partnerOrgID),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not query CustomOIDCConfiguration: %w", err)
@@ -162,13 +182,15 @@ func GetCustomOIDCConfigurationsForDomain(
 func GetCustomOIDCConfigurationOfOrganization(
 	ctx context.Context,
 	id, organizationID uuid.UUID,
+	customerOrgID, partnerOrgID *uuid.UUID,
 ) (*types.CustomOIDCConfiguration, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		"SELECT"+customOIDCConfigurationOutputExpr+
-			`FROM CustomOIDCConfiguration c
-			WHERE c.id = @id AND c.organization_id = @organizationId`,
-		pgx.NamedArgs{"id": id, "organizationId": organizationID},
+			`FROM CustomOIDCConfiguration c`+customOIDCConfigurationScopeExpr+
+			`WHERE c.id = @id AND c.organization_id = @organizationId`,
+		customOIDCConfigurationScopeArgs(
+			pgx.NamedArgs{"id": id, "organizationId": organizationID}, customerOrgID, partnerOrgID),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not query CustomOIDCConfiguration: %w", err)
@@ -206,11 +228,24 @@ func GetCustomOIDCConfigurationBySlug(
 	return &result, nil
 }
 
-func DeleteCustomOIDCConfiguration(ctx context.Context, id, organizationID uuid.UUID) error {
+func DeleteCustomOIDCConfiguration(
+	ctx context.Context,
+	id, organizationID uuid.UUID,
+	customerOrgID, partnerOrgID *uuid.UUID,
+) error {
 	db := internalctx.GetDb(ctx)
 	cmd, err := db.Exec(ctx,
-		"DELETE FROM CustomOIDCConfiguration WHERE id = @id AND organization_id = @organizationId",
-		pgx.NamedArgs{"id": id, "organizationId": organizationID},
+		`DELETE FROM CustomOIDCConfiguration c
+		USING CustomDomain d
+		WHERE c.id = @id AND c.organization_id = @organizationId AND d.id = c.custom_domain_id
+			AND (@isVendor
+				OR d.customer_organization_id = @customerOrganizationId
+				OR EXISTS (
+					SELECT 1 FROM CustomerOrganization co
+					WHERE co.id = d.customer_organization_id AND co.partner_organization_id = @partnerOrganizationId
+				))`,
+		customOIDCConfigurationScopeArgs(
+			pgx.NamedArgs{"id": id, "organizationId": organizationID}, customerOrgID, partnerOrgID),
 	)
 	if err != nil {
 		return fmt.Errorf("could not delete CustomOIDCConfiguration: %w", err)

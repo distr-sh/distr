@@ -122,7 +122,7 @@ OIDC logins used to be matched by email address only, which created a duplicate 
 
 ## Stage 2 — DEV-592: Automated custom domain configuration for vendors
 
-> **Status: implemented and e2e-validated.** All four PR scopes below landed in a single change: `CustomDomain` table (migration 114) + CRUD API + validation, the internal caddy-ask server (`INTERNAL_SERVER_ADDR`), the Helm chart Caddy deployment with `distr-internal-caddy-ask` Service, and the org settings "Custom Domains" UI with CNAME instructions. Legacy `OrganizationBranding` domain columns remain supported as fallback (migration is the follow-up ticket 0). CNAME pre-verification and the host-context middleware were not included.
+> **Status: implemented and e2e-validated.** All four PR scopes below landed in a single change: `CustomDomain` table (migration 114) + CRUD API + validation, the internal caddy-ask server (`INTERNAL_SERVER_ADDR`), the Helm chart Caddy deployment with `distr-internal-caddy-ask` Service, and the org settings "Custom Domains" UI with CNAME instructions. Legacy `OrganizationBranding` domain columns remain supported as fallback (migration is the follow-up ticket 0). The host-context middleware was not included (see the cross-cutting note below — none was needed). **CNAME pre-verification landed later** (alongside DEV-593): `internal/dns.VerifyCNAME` resolves each domain's CNAME live (no persistence, 5s timeout) and the list/create/verify responses carry the result (`api.CustomDomainWithVerification`), fanned out concurrently via `errgroup` since a vendor's list can include every customer's portal domain; the settings UI shows a green/red panel per domain with the reason, a "Checked Xs/m/h ago" timestamp, and a manual recheck button.
 >
 > **The table is vendor-org scoped only**: the `customer_organization_id` / `partner_organization_id` columns of the appendix §5.3 shape were left out, since nothing sets or reads them yet. DEV-593 adds them (plus the API surface) in its own migration, which also replaces the `UNIQUE (organization_id, domain_type)` constraint with the partial unique indexes per scope.
 >
@@ -146,7 +146,7 @@ Follows the "recommended shape" in appendix §5: a dedicated `CustomDomain` tabl
 - Org-admin CRUD for app + registry domains: RFC-1123 hostname validation, global uniqueness via the `UNIQUE (domain)` constraint, rejection of platform-owned domains (`*.distr.sh`).
 - The registry domain is **optional**: the `/v2/*` path routing (PR 3) means every custom app domain already serves registry traffic, so `RegistryDomainOrDefault` resolves dedicated registry domain → custom app domain → instance default. A dedicated registry domain is only for vendors who want a separate hostname.
 - Gated on the new `custom_domains` feature flag (business plan), introduced by this stage (Stage 0 only prepared the gating mechanism, not the flag).
-- Optional CNAME pre-verification (resolve domain → expected target) for better UX; the `ask` gate keeps it safe either way.
+- CNAME pre-verification (resolve domain → expected target) for better UX; the `ask` gate keeps it safe either way. **Landed later** as `internal/dns.VerifyCNAME`, live and unpersisted rather than a cached/background-checked status.
 
 **PR 2 — Caddy on-demand TLS `ask` endpoint (appendix §3.3/§5.4, security-critical)**
 
@@ -163,7 +163,7 @@ Follows the "recommended shape" in appendix §5: a dedicated `CustomDomain` tabl
 
 **PR 4 — frontend (appendix §5.6)**
 
-- Org settings section "Custom domains" with an app domain field and an **optional** registry domain field (with a hint that the app domain already serves the registry under `/v2/`), live validation, and explicit CNAME record instructions per field (targets from the env endpoint); verification status if PR 1 includes pre-verification.
+- Org settings section "Custom domains" with an app domain field and an **optional** registry domain field (with a hint that the app domain already serves the registry under `/v2/`), live validation, and explicit CNAME record instructions per field (targets from the env endpoint); verification status if PR 1 includes pre-verification. **Landed later**: a green/red status pill per domain field with the check's detail message as a tooltip, a "Checked Xs/m/h ago" label, and a small reload icon next to the pill for a manual recheck.
 
 ### Open questions
 
@@ -365,6 +365,13 @@ Levels 2 to 4 are the same table, the same login flow and the same settings comp
 
 ## Stage 5 — DEV-593: Customer portal domain configuration
 
+> **Status: implemented**, together with stages 7 and 8, in one change. `CustomDomain` gained a
+> `customer_organization_id` column instead of a separate scope table: a `customer_portal` row with it
+> NULL is the vendor's shared portal, with it set is one customer's own domain (that decision was pulled
+> forward from stage 8, since the two needed the same migration). `customdomains.CustomerPortalDomainOrDefault`
+> resolves customer-facing links: the customer's own domain, then the vendor's shared portal domain, then
+> the vendor's app domain (via `AppDomainOrDefault`, so the legacy branding fallback still applies).
+
 ### Summary
 
 A vendor admin configures **one customer portal domain** for all of their customers, e.g. the vendor UI on `distribution.vendor.com` and the customer portal on `portal.vendor.com`. Per-customer domains are deliberately **not** part of this stage: a customer that wants its own hostname gets it at level 4, together with its own OIDC configuration.
@@ -385,7 +392,7 @@ A vendor admin configures **one customer portal domain** for all of their custom
 
 - May vendor users log in on the customer portal domain, or is it customer-only? Customer-only keeps the domain unambiguous, but vendor admins will want to see what their customers see.
 - Wildcards (`*.portal.vendor.com`) as a shortcut for level-4 domains later, or strictly explicit CNAMEs?
-- **Do customers get custom registry domains at all, or only custom portal URLs?** Registry access for customers works through the vendor's (custom or default) registry domain either way — org resolution is path-based, and the portal/login experience is the thing a customer-facing domain is actually for. And since even for vendors the registry domain is optional (any custom domain serves `/v2/` traffic, Stage 2), a customer portal domain already covers registry access too. Leaning: customer-facing domains are **app/portal only**.
+- **Do customers get custom registry domains at all, or only custom portal URLs?** Registry access for customers works through the vendor's (custom or default) registry domain either way — org resolution is path-based, and the portal/login experience is the thing a customer-facing domain is actually for. And since even for vendors the registry domain is optional (any custom domain serves `/v2/` traffic, Stage 2), a customer portal domain already covers registry access too. **Decided: app/portal only** — `customer_portal` is the only domain type a customer or a customer portal row can take; `registry` stays vendor-only.
 
 ---
 
@@ -422,6 +429,11 @@ A vendor admin configures **one customer portal domain** for all of their custom
 
 ## Stage 7 — Customer portal OIDC, vendor-configured (level 3)
 
+> **Status: implemented** together with stages 5 and 8. `validateCustomOIDCConfigurationRequest` refuses
+> `create_unknown_users` on a `customer_portal` domain with a NULL `customer_organization_id` (the shared
+> portal), and `provisionCustomOIDCUser` refuses it again at login time as a second guard against the
+> domain being re-pointed after a provider was configured. Everything else answered below as planned.
+
 No Linear issue yet. Needs DEV-593 (the customer portal domain) and DEV-596 (the configuration machinery).
 
 ### Summary
@@ -437,12 +449,26 @@ The vendor attaches OIDC configurations to its customer portal domain. They appl
 
 ### Open questions
 
-- Auto-provisioning without a customer to provision into (above) — the one blocking design question.
-- Do partner organizations get the same treatment, or their own domain type?
+- Auto-provisioning without a customer to provision into (above) — **decided: provisioning stays off for
+  the shared portal domain**, refused at both configuration time and login time. A customer that needs
+  provisioning gets its own domain (stage 8).
+- Do partner organizations get the same treatment, or their own domain type? Not addressed by this change;
+  partner organizations do not get a portal domain or providers of their own yet.
 
 ---
 
 ## Stage 8 — DEV-597: Customer-configured OIDC (level 4)
+
+> **Status: implemented** together with stages 5 and 7, as a single change (not the three separate PRs
+> below). The account-exclusivity decision landed as **account-wide, unchanged from DEV-596**, not the
+> customer-scoped guard the summary below leans towards — see the consequences called out under Open
+> questions. A per-customer nested router (`/customer/{id}/...`) shipped first, then was folded into the
+> vendor's own `/api/v1/custom-domains` and `/api/v1/custom-oidc` endpoints to match the existing
+> `SecretsRouter` convention: one flat endpoint per resource, scope taken from the caller's own auth for
+> everything except create, which accepts an explicit `customerOrganizationId` for a vendor or partner
+> naming a target (see `internal/handlers/customer_scope.go`). Vendor admins can fully edit a customer's
+> domain and providers this way, reachable both from the customer's own settings and from a button in the
+> customer list.
 
 ### Summary
 
@@ -460,6 +486,15 @@ A customer configures **its own** IdP for **its own** domain, unlocked by a per-
 - `CustomOIDCConfiguration` rows referencing a customer domain, editable by admins of that customer organization when the feature is granted, read-only for the vendor.
 - Auto-provisioned users land in that customer organization with the configuration's `default_user_role` — unambiguous here, unlike level 3.
 - **The account-exclusivity invariant from DEV-596 needs a decision at customer granularity, and it is the hard part of this stage.** DEV-596 refuses a custom-provider login for any account that is a member of another organization, which is what stops a poisoned provider from bridging into someone else's data. Customer memberships live on the _vendor_ org, so a person who is a customer user of two Distr vendors is a member of two organizations and would be refused by both — plausibly common. Loosening it to "all memberships within this customer scope" reopens the bridge (`switch-context` into the other vendor's customer portal), so the guard has to move down a level with it: reject the login when the account holds any membership outside the scope the provider belongs to, and reject invites that would create one. Whichever way it goes, it has to be decided before implementation, not during.
+  **Decided: kept account-wide**, unchanged from `internal/handlers/account_exclusivity.go`, rather than
+  narrowed to customer scope. Two consequences follow and are documented on the customer-facing docs page:
+  a person who is a customer user of two Distr vendors can use SSO at neither, and
+  `db.ExistsCustomOIDCConfigurationForOrganization` is vendor-org-wide, so a single customer enabling SSO
+  makes the whole vendor organization refuse invites for anyone already a member of another Distr
+  organization, not just invites into that one customer. `isOrganizationMember` was still narrowed to the
+  customer's membership scope (via `db.GetUserAccountWithRole`'s existing `customerOrgID` parameter) so
+  that one customer's provider cannot authenticate another customer's users — that is a different guard
+  from account exclusivity and had to change regardless.
 
 **PR 3 — frontend + docs**
 
@@ -468,8 +503,15 @@ A customer configures **its own** IdP for **its own** domain, unlocked by a per-
 
 ### Open questions
 
-- May vendors configure/override customer OIDC, or strictly customer-managed?
-- Does the customer portal currently have a settings area where this fits naturally?
+- May vendors configure/override customer OIDC, or strictly customer-managed? **Decided: vendors may
+  fully edit**, from the same page a customer admin sees, reached via a button in the customer list.
+- Does the customer portal currently have a settings area where this fits naturally? **Decided: a new
+  `settings/customer` route** (component `CustomerSettingsComponent`, shared with the vendor-side view at
+  `customers/:customerOrganizationId/settings`), gated on the `requireCustomer` guard and the customer's
+  `oidc_providers` feature; the customer sidebar gained a **Settings** entry next to Users. It ended up
+  hosting domain management alongside the identity providers (DEV-593's own settings page merged into
+  this one rather than staying separate), so the route and nav label stayed generic instead of naming
+  OIDC specifically.
 
 ---
 

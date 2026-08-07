@@ -215,7 +215,7 @@ func userSettingsUpdateEmailHandler() http.HandlerFunc {
 		if err := mailer.Send(ctx,
 			mailx.To(body.Email),
 			mailx.Subject("[Action required] Distr E-Mail address change"),
-			mailx.HtmlBodyTemplate(mailtemplates.UpdateEmail(ctx, *user, owb, token)),
+			mailx.HtmlBodyTemplate(mailtemplates.UpdateEmail(ctx, *user, owb, auth.CurrentCustomerOrgID(), token)),
 		); err != nil {
 			log.Error("failed to send email verification", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)

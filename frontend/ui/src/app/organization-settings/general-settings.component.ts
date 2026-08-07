@@ -13,19 +13,12 @@ import {OrganizationService} from '../services/organization.service';
 import {OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
 import {Organization} from '../types/organization';
-import {CustomDomainsComponent} from './custom-domains.component';
 
 @Component({
   selector: 'app-general-settings',
   templateUrl: './general-settings.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [
-    FaIconComponent,
-    ReactiveFormsModule,
-    AutotrimDirective,
-    DeleteOrganizationComponent,
-    CustomDomainsComponent,
-  ],
+  imports: [FaIconComponent, ReactiveFormsModule, AutotrimDirective, DeleteOrganizationComponent],
 })
 export class GeneralSettingsComponent implements OnInit {
   protected readonly faFloppyDisk = faFloppyDisk;
@@ -37,7 +30,6 @@ export class GeneralSettingsComponent implements OnInit {
   protected readonly auth = inject(AuthService);
 
   private readonly preflightConfirmTemplate = viewChild.required<TemplateRef<unknown>>('preflightConfirmTemplate');
-  private readonly customDomains = viewChild.required(CustomDomainsComponent);
 
   private organization?: Organization;
 
@@ -79,9 +71,8 @@ export class GeneralSettingsComponent implements OnInit {
   }
 
   async save() {
-    const customDomainsValid = this.customDomains().validate();
     this.form.markAllAsTouched();
-    if (this.form.valid && customDomainsValid) {
+    if (this.form.valid) {
       const wasPrePostScriptsEnabled = this.organization?.features?.includes('pre_post_scripts') ?? false;
       const isNowPrePostScriptsEnabled = this.form.value.prePostScriptsEnabled ?? false;
 
@@ -117,7 +108,6 @@ export class GeneralSettingsComponent implements OnInit {
             prePostScriptsEnabled: this.form.value.prePostScriptsEnabled ?? false,
           })
         );
-        await this.customDomains().save();
         this.toast.success('Settings saved successfully');
       } catch (e) {
         const msg = getFormDisplayedError(e);

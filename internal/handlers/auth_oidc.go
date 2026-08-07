@@ -209,7 +209,7 @@ func authLoginCustomOidcCallbackHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	err = db.RunTx(ctx, func(ctx context.Context) error {
-		user, failure, err := resolveCustomOIDCUser(ctx, log, configuration, identity)
+		user, failure, err := resolveCustomOIDCUser(ctx, log, login, identity)
 		if err != nil {
 			return err
 		}
@@ -246,7 +246,20 @@ func authLoginCustomOidcCallbackHandler(w http.ResponseWriter, r *http.Request) 
 
 type customOIDCLogin struct {
 	configuration types.CustomOIDCConfiguration
-	redirectURL   string
+	// domain is the CustomDomain the provider hangs off. Its customer organization is the scope every
+	// membership check and every provisioned account is bound to.
+	domain      types.CustomDomain
+	redirectURL string
+}
+
+func (l customOIDCLogin) customerOrgID() *uuid.UUID {
+	return l.domain.CustomerOrganizationID
+}
+
+// sharedCustomerPortal reports whether the provider is offered on the vendor's portal domain for all of
+// its customers, where nothing in the OIDC response says which customer a new user would belong to.
+func (l customOIDCLogin) sharedCustomerPortal() bool {
+	return l.domain.Type == types.DomainTypeCustomerPortal && l.domain.CustomerOrganizationID == nil
 }
 
 func resolveCustomOIDCConfigurationForHost(
@@ -299,8 +312,29 @@ func resolveCustomOIDCConfigurationForHost(
 		http.Redirect(w, r, redirectToLoginOIDCUnavailable, http.StatusFound)
 		return customOIDCLogin{}, false
 	}
+
+	// A customer's provider stops working the moment the vendor revokes the feature, so a login is
+	// refused for an identity that outlives the grant, the same way it is for one that outlives a
+	// membership.
+	if customerOrgID := host.customDomainRow.CustomerOrganizationID; customerOrgID != nil {
+		customerOrganization, err := db.GetCustomerOrganizationByID(ctx, *customerOrgID)
+		if err != nil {
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			log.Error("could not get customer organization of custom OIDC configuration", zap.Error(err))
+			http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
+			return customOIDCLogin{}, false
+		}
+		if !customerOrganization.HasFeature(types.CustomerOrganizationFeatureOidcProviders) {
+			log.Info("rejecting custom OIDC login without the customer feature",
+				zap.Any("customerOrganizationId", *customerOrgID))
+			http.Redirect(w, r, redirectToLoginOIDCUnavailable, http.StatusFound)
+			return customOIDCLogin{}, false
+		}
+	}
+
 	return customOIDCLogin{
 		configuration: *configuration,
+		domain:        *host.customDomainRow,
 		redirectURL:   oidc.CustomRedirectURL(r, organizationSlug, configuration.Slug),
 	}, true
 }
@@ -308,13 +342,14 @@ func resolveCustomOIDCConfigurationForHost(
 func resolveCustomOIDCUser(
 	ctx context.Context,
 	log *zap.Logger,
-	configuration types.CustomOIDCConfiguration,
+	login customOIDCLogin,
 	identity oidc.Identity,
 ) (*types.UserAccount, string, error) {
+	configuration := login.configuration
 	user, existingIdentity, err := db.GetUserAccountWithOIDCIdentity(
 		ctx, &configuration.ID, identity.Issuer, identity.Subject)
 	if err == nil {
-		if failure, err := checkCustomOIDCLoginAllowed(ctx, *user, configuration.OrganizationID); err != nil {
+		if failure, err := checkCustomOIDCLoginAllowed(ctx, *user, login); err != nil {
 			return nil, "", err
 		} else if failure != "" {
 			return nil, failure, nil
@@ -326,7 +361,7 @@ func resolveCustomOIDCUser(
 
 	user, err = db.GetUserAccountByEmail(ctx, identity.Email)
 	if errors.Is(err, apierrors.ErrNotFound) {
-		if user, failure, err := provisionCustomOIDCUser(ctx, log, configuration, identity); err != nil {
+		if user, failure, err := provisionCustomOIDCUser(ctx, log, login, identity); err != nil {
 			return nil, "", err
 		} else if user == nil {
 			return nil, failure, nil
@@ -337,7 +372,7 @@ func resolveCustomOIDCUser(
 		return nil, "", err
 	}
 
-	if failure, err := checkCustomOIDCLoginAllowed(ctx, *user, configuration.OrganizationID); err != nil {
+	if failure, err := checkCustomOIDCLoginAllowed(ctx, *user, login); err != nil {
 		return nil, "", err
 	} else if failure != "" {
 		return nil, failure, nil
@@ -350,17 +385,22 @@ func resolveCustomOIDCUser(
 // checkCustomOIDCLoginAllowed returns the login redirect to answer with when the user must not sign in
 // through the organization's identity provider, or an empty string when the login may proceed. Membership
 // is required for every login, so an identity that outlives the membership does not keep access alive.
+//
+// A provider bound to one customer only ever matches a membership in that customer. Customer memberships
+// all live on the vendor organization, so without the customer scope every customer's provider would
+// authenticate every other customer's users.
 func checkCustomOIDCLoginAllowed(
 	ctx context.Context,
 	user types.UserAccount,
-	organizationID uuid.UUID,
+	login customOIDCLogin,
 ) (string, error) {
+	organizationID := login.configuration.OrganizationID
 	if exclusive, err := isExclusiveToOrganization(ctx, user, organizationID); err != nil {
 		return "", err
 	} else if !exclusive {
 		return redirectToLoginOIDCNotExclusive, nil
 	}
-	if member, err := isOrganizationMember(ctx, user, organizationID); err != nil {
+	if member, err := isOrganizationMember(ctx, user, login); err != nil {
 		return "", err
 	} else if !member {
 		return redirectToLoginOIDCNoAccount, nil
@@ -371,10 +411,17 @@ func checkCustomOIDCLoginAllowed(
 func provisionCustomOIDCUser(
 	ctx context.Context,
 	log *zap.Logger,
-	configuration types.CustomOIDCConfiguration,
+	login customOIDCLogin,
 	identity oidc.Identity,
 ) (*types.UserAccount, string, error) {
+	configuration := login.configuration
 	if !configuration.CreateUnknownUsers {
+		return nil, redirectToLoginOIDCNoAccount, nil
+	}
+	// Refused at configuration time as well; this is the guard that survives a domain being re-pointed.
+	if login.sharedCustomerPortal() {
+		log.Info("rejecting custom OIDC provisioning on the shared customer portal domain",
+			zap.Any("customOidcConfigurationId", configuration.ID))
 		return nil, redirectToLoginOIDCNoAccount, nil
 	}
 	if !emailDomainAllowed(configuration, identity.Email) {
@@ -386,11 +433,24 @@ func provisionCustomOIDCUser(
 	if err != nil {
 		return nil, "", err
 	}
-	if limitReached, err := subscription.IsBillableUserAccountLimitReached(ctx, *organization); err != nil {
+	// A customer user counts against the per-customer limit, not the vendor's billable seats.
+	customerOrgID := login.customerOrgID()
+	var limitReached bool
+	if customerOrgID != nil {
+		customerOrganization, err := db.GetCustomerOrganizationByID(ctx, *customerOrgID)
+		if err != nil {
+			return nil, "", err
+		}
+		limitReached, err = subscription.IsCustomerUserAccountLimitReached(*organization, *customerOrganization)
+		if err != nil {
+			return nil, "", err
+		}
+	} else if limitReached, err = subscription.IsBillableUserAccountLimitReached(ctx, *organization); err != nil {
 		return nil, "", err
-	} else if limitReached {
+	}
+	if limitReached {
 		log.Info("rejecting custom OIDC login, user account limit reached",
-			zap.Any("organizationId", organization.ID))
+			zap.Any("organizationId", organization.ID), zap.Any("customerOrganizationId", customerOrgID))
 		return nil, redirectToLoginOIDCUserLimit, nil
 	}
 
@@ -402,7 +462,7 @@ func provisionCustomOIDCUser(
 		return nil, "", err
 	}
 	if err := db.CreateUserAccountOrganizationAssignment(
-		ctx, user.ID, configuration.OrganizationID, configuration.DefaultUserRole, nil, nil); err != nil {
+		ctx, user.ID, configuration.OrganizationID, configuration.DefaultUserRole, customerOrgID, nil); err != nil {
 		return nil, "", err
 	}
 	log.Info("provisioned user account for custom OIDC identity", zap.Any("userId", user.ID))
@@ -437,13 +497,23 @@ func isExclusiveToOrganization(ctx context.Context, user types.UserAccount, orgI
 	return count == 0, nil
 }
 
-func isOrganizationMember(ctx context.Context, user types.UserAccount, orgID uuid.UUID) (bool, error) {
-	if _, err := db.GetUserAccountWithRole(ctx, user.ID, orgID, nil, nil); errors.Is(err, apierrors.ErrNotFound) {
+// isOrganizationMember also tells an app-domain membership apart from a shared-portal one:
+// GetUserAccountWithRole's customerOrgID leaves the customer scope unfiltered when nil, which both pass.
+func isOrganizationMember(ctx context.Context, user types.UserAccount, login customOIDCLogin) (bool, error) {
+	member, err := db.GetUserAccountWithRole(
+		ctx, user.ID, login.configuration.OrganizationID, login.customerOrgID(), nil)
+	if errors.Is(err, apierrors.ErrNotFound) {
 		return false, nil
 	} else if err != nil {
 		return false, err
 	}
-	return true, nil
+	if login.customerOrgID() != nil {
+		return true, nil
+	}
+	if login.sharedCustomerPortal() {
+		return member.CustomerOrganizationID != nil, nil
+	}
+	return member.CustomerOrganizationID == nil, nil
 }
 
 func emailDomainAllowed(configuration types.CustomOIDCConfiguration, email string) bool {

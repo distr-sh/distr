@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"slices"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
@@ -176,6 +177,16 @@ func updateCustomerOrganizationHandler() http.HandlerFunc {
 			}
 		} else {
 			features = request.Features
+		}
+
+		// The customer's providers are configured on the vendor's own plan, so the vendor cannot hand
+		// out a feature it does not have itself. This cannot live in request.Validate(), which sees
+		// neither the context nor the organization.
+		if slices.Contains(features, types.CustomerOrganizationFeatureOidcProviders) &&
+			!auth.CurrentOrg().HasFeature(types.FeatureCustomOidcProviders) {
+			http.Error(w, "the custom identity provider feature is not available on your plan",
+				http.StatusForbidden)
+			return
 		}
 
 		customerOrganization := types.CustomerOrganization{

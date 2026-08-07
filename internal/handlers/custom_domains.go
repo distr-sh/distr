@@ -5,13 +5,16 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/dns"
 	"github.com/distr-sh/distr/internal/env"
+	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/validation"
@@ -20,24 +23,34 @@ import (
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 func CustomDomainsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Custom Domains"))
-	r.Use(middleware.RequireVendor, middleware.RequireOrgAndRole, middleware.RequireAdmin)
+	r.Use(middleware.RequireOrgAndRole, middleware.RequireAdmin)
 	r.Get("/", getCustomDomainsHandler).
-		With(option.Description("List all custom domains of the current organization")).
-		With(option.Response(http.StatusOK, []types.CustomDomain{}))
+		With(option.Description("List the custom domains within the caller's scope: every domain for a " +
+			"vendor, one customer's own for a customer, or the domains of the customers assigned to a partner")).
+		With(option.Response(http.StatusOK, []api.CustomDomainWithVerification{}))
 	r.With(middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
 		r.With(middleware.RequireCustomDomainsConfigured).Post("/", createCustomDomainsHandler).
-			With(option.Description("Register new custom domains for the current organization")).
+			With(option.Description("Register new custom domains for the caller's organization, or for a " +
+				"customer named in the request")).
 			With(option.Request(api.CreateCustomDomainsRequest{})).
-			With(option.Response(http.StatusOK, []types.CustomDomain{}))
+			With(option.Response(http.StatusOK, []api.CustomDomainWithVerification{}))
 		r.Delete("/{customDomainId}", deleteCustomDomainHandler).
 			With(option.Description("Delete a custom domain")).
 			With(option.Request(struct {
 				CustomDomainID uuid.UUID `path:"customDomainId"`
 			}{}))
+		r.Post("/{customDomainId}/verify", verifyCustomDomainHandler).
+			With(option.Description("Re-check whether a custom domain's CNAME record points at the " +
+				"expected target")).
+			With(option.Request(struct {
+				CustomDomainID uuid.UUID `path:"customDomainId"`
+			}{})).
+			With(option.Response(http.StatusOK, api.CustomDomainWithVerification{}))
 	})
 }
 
@@ -45,14 +58,40 @@ func getCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
-	customDomains, err := db.GetCustomDomains(ctx, *auth.CurrentOrgID())
+	customDomains, err := db.GetCustomDomainsForScope(
+		ctx, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
 	if err != nil {
 		log.Error("failed to get custom domains", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	RespondJSON(w, customDomains)
+	RespondJSON(w, withVerifications(ctx, customDomains))
+}
+
+func verifyCustomDomainHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(r.PathValue("customDomainId"))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+	auth := auth.Authentication.Require(ctx)
+
+	domain, err := db.GetCustomDomainOfOrganization(
+		ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
+	if errors.Is(err, apierrors.ErrNotFound) {
+		http.NotFound(w, r)
+		return
+	} else if err != nil {
+		log.Error("failed to get custom domain", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	RespondJSON(w, withVerification(ctx, *domain))
 }
 
 func createCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
@@ -69,9 +108,17 @@ func createCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	customerOrgID, ok := resolveCustomerScopeForWrite(w, r, request.CustomerOrganizationID)
+	if !ok {
+		return
+	}
 
 	customDomains := make([]types.CustomDomain, len(request.Domains))
 	for i, domain := range request.Domains {
+		if customerOrgID != nil && domain.DomainType != types.DomainTypeCustomerPortal {
+			http.Error(w, "a customer can only register a customer portal domain", http.StatusBadRequest)
+			return
+		}
 		if isPlatformOwnedDomain(domain.Domain) {
 			http.Error(w, "this domain is owned by the platform and cannot be registered", http.StatusBadRequest)
 			return
@@ -86,9 +133,10 @@ func createCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		customDomains[i] = types.CustomDomain{
-			Domain:         domain.Domain,
-			Type:           domain.DomainType,
-			OrganizationID: *auth.CurrentOrgID(),
+			Domain:                 domain.Domain,
+			Type:                   domain.DomainType,
+			OrganizationID:         *auth.CurrentOrgID(),
+			CustomerOrganizationID: customerOrgID,
 		}
 	}
 
@@ -99,7 +147,7 @@ func createCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
-		RespondJSON(w, created)
+		RespondJSON(w, withVerifications(ctx, created))
 	}
 }
 
@@ -114,12 +162,13 @@ func deleteCustomDomainHandler(w http.ResponseWriter, r *http.Request) {
 	log := internalctx.GetLogger(ctx)
 	auth := auth.Authentication.Require(ctx)
 
-	if err := db.DeleteCustomDomain(ctx, id, *auth.CurrentOrgID()); errors.Is(err, apierrors.ErrNotFound) {
+	err = db.DeleteCustomDomain(ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
+	if errors.Is(err, apierrors.ErrNotFound) {
 		http.NotFound(w, r)
 	} else if errors.Is(err, apierrors.ErrConflict) {
 		http.Error(w,
 			"this domain still has an identity provider configured, please delete it on the "+
-				"Identity Provider tab first",
+				"Custom Domains & Identity Provider tab first",
 			http.StatusConflict)
 	} else if err != nil {
 		log.Error("failed to delete custom domain", zap.Error(err))
@@ -175,4 +224,49 @@ func isPlatformOwnedDomain(domain string) bool {
 		}
 	}
 	return false
+}
+
+// withVerifications runs withVerification for every domain concurrently, so the caller waits for
+// at most one DNS lookup timeout rather than len(domains) of them; a vendor's list can include every
+// customer's portal domain.
+func withVerifications(ctx context.Context, domains []types.CustomDomain) []api.CustomDomainWithVerification {
+	result := make([]api.CustomDomainWithVerification, len(domains))
+	g, gCtx := errgroup.WithContext(ctx)
+	g.SetLimit(10)
+	for i, domain := range domains {
+		g.Go(func() error {
+			result[i] = withVerification(gCtx, domain)
+			return nil
+		})
+	}
+	_ = g.Wait() // withVerification never returns an error
+	return result
+}
+
+// withVerification checks whether a domain's CNAME currently points at the expected target and
+// stamps the result with the time of this check. Nothing is persisted: the check is always live.
+func withVerification(ctx context.Context, domain types.CustomDomain) api.CustomDomainWithVerification {
+	verified, detail := checkCNAME(ctx, domain)
+	return mapping.CustomDomainWithVerificationToAPI(domain, verified, detail, time.Now())
+}
+
+// expectedCNAMETarget returns the DNS name a domain of the given type must be CNAMEd to. A registry
+// domain falls back to the app target when no dedicated registry target is configured, the same
+// fallback the frontend already applies (custom-oidc.component.ts's registryCnameTarget). Takes the
+// configured targets as parameters, rather than reading the env package itself, so it is a pure
+// function to unit test.
+func expectedCNAMETarget(domainType types.DomainType, appTarget, registryTarget *string) *string {
+	if domainType == types.DomainTypeRegistry && registryTarget != nil {
+		return registryTarget
+	}
+	return appTarget
+}
+
+// checkCNAME reports whether domain.Domain currently resolves, via CNAME, to its expected target.
+func checkCNAME(ctx context.Context, domain types.CustomDomain) (verified bool, detail string) {
+	target := expectedCNAMETarget(domain.Type, env.CustomDomainAppCNAMETarget(), env.CustomDomainRegistryCNAMETarget())
+	if target == nil {
+		return false, "no CNAME target is configured on this instance"
+	}
+	return dns.VerifyCNAME(ctx, domain.Domain, *target)
 }

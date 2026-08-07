@@ -117,12 +117,21 @@ export class CustomerOrganizationsComponent {
   protected createFormLoading = false;
   protected readonly savingCustomerId = signal<string | undefined>(undefined);
 
-  protected readonly allCustomerFeatures: readonly CustomerOrganizationFeature[] = [
+  private readonly allCustomerFeaturesList: readonly CustomerOrganizationFeature[] = [
     'deployment_targets',
     'alerts',
     'artifacts',
     'support_bundles',
+    'oidc_providers',
   ];
+
+  // A customer can only bring its own identity provider while the vendor's own plan includes the
+  // machinery, so the checkbox is hidden rather than shown as a grantable feature that the API refuses.
+  protected readonly allCustomerFeatures = computed(() =>
+    this.allCustomerFeaturesList.filter(
+      (feature) => feature !== 'oidc_providers' || this.featureFlags.isCustomOidcProvidersEnabled()
+    )
+  );
 
   protected readonly openCustomerFeaturesDropdownId = signal<string | void>(undefined);
   protected readonly openCustomerFeaturesDropdownCustomer = computed(() => {
@@ -257,6 +266,8 @@ export class CustomerOrganizationsComponent {
         return 'Alerts';
       case 'support_bundles':
         return 'Support Bundles';
+      case 'oidc_providers':
+        return 'Identity Provider';
       default:
         return feature;
     }

@@ -1,158 +1,287 @@
 @if (visible()) {
-  <div class="space-y-4">
-    <h2 class="text-xl font-bold dark:text-white">Identity Provider</h2>
-    <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-      Let your team sign in with your own identity provider instead of a Distr password. A provider is offered on your
-      custom app domain and nowhere else &mdash; which includes the Customer Portal served from that domain, so your
-      customers see the sign-in button as well and use it whenever your identity provider authenticates them. Sign-in
-      only works for accounts that belong to no other Distr organization.
-    </p>
-
-    @if (!configurable()) {
-      <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-        @if (!appDomain()) {
-          Configure a custom app domain on the General tab first &mdash; your identity provider is offered on that
-          domain only.
+  <div class="space-y-8">
+    <div class="space-y-4">
+      <h2 class="text-xl font-bold dark:text-white">
+        @if (oidcProvidersEnabled()) {
+          Custom Domains &amp; Identity Provider
         } @else {
+          Custom Domains
+        }
+      </h2>
+      <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+        @if (customerScoped() && viewerIsCustomer()) {
+          Let your users sign in with their own identity provider instead of a Distr password. A provider is offered on
+          your own portal domain and nowhere else.
+        } @else if (customerScoped()) {
+          Let this customer's users sign in with their own identity provider instead of a Distr password. A provider is
+          offered on the customer's own portal domain and nowhere else.
+        } @else {
+          Let your team and your customers sign in with your own identity provider instead of a Distr password. Every
+          domain carries its own providers: the ones on your app domain apply to your team, the ones on your customer
+          portal domain to all of your customers.
+        }
+        A custom domain is required first: an identity provider is only offered on the domain it is attached to, and
+        nowhere else on Distr. Sign-in only works for accounts that belong to no other Distr organization.
+      </p>
+
+      @if (oidcProvidersEnabled() && !configurable()) {
+        <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
           Set an organization slug on the General tab first &mdash; it is part of every provider's login and callback
           URL.
-        }
-      </p>
-    } @else {
-      @if (membersWithOtherOrganizations().length > 0) {
-        <div
-          class="flex items-start p-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-600"
-          role="alert">
-          <fa-icon [icon]="faCircleExclamation" class="mt-0.5 shrink-0" />
-          <div class="ms-3 text-sm space-y-2">
-            <p>
-              <ng-container [ngPlural]="membersWithOtherOrganizations().length">
-                <ng-template ngPluralCase="=1">This member is</ng-template>
-                <ng-template ngPluralCase="other">These members are</ng-template>
-              </ng-container>
-              also
-              <ng-container [ngPlural]="membersWithOtherOrganizations().length">
-                <ng-template ngPluralCase="=1">a member</ng-template>
-                <ng-template ngPluralCase="other">members</ng-template>
-              </ng-container>
-              of another Distr organization. They keep their password login, but they cannot sign in through your
-              identity provider until they leave that other organization.
-            </p>
-            <ul class="list-disc list-inside">
-              @for (member of membersWithOtherOrganizations(); track member.id) {
-                <li>
-                  @if (member.name) {
-                    {{ member.name }} &lt;{{ member.email }}&gt;
-                  } @else {
-                    {{ member.email }}
-                  }
-                </li>
-              }
-            </ul>
-          </div>
+        </p>
+      }
+    </div>
+
+    @if (showBusinessOidcBanner()) {
+      <div
+        class="px-3 py-2 text-xs rounded-lg border border-primary-200 bg-primary-50 text-primary-800 dark:border-primary-800 dark:bg-gray-800 dark:text-primary-300 flex items-center justify-between gap-2">
+        <span>
+          Unlock custom identity providers with the
+          <a routerLink="/subscription" class="font-semibold underline">Distr Business plan</a>.
+        </span>
+        <button
+          type="button"
+          title="Dismiss"
+          (click)="dismissBusinessOidcBanner()"
+          class="shrink-0 p-1 leading-none rounded-lg hover:bg-primary-100 dark:hover:bg-gray-700">
+          <fa-icon [icon]="faXmark" />
+          <span class="sr-only">Dismiss</span>
+        </button>
+      </div>
+    }
+
+    @if (oidcProvidersEnabled() && configurable() && membersWithOtherOrganizations().length > 0) {
+      <div
+        class="flex items-start p-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-600"
+        role="alert">
+        <fa-icon [icon]="faCircleExclamation" class="mt-0.5 shrink-0" />
+        <div class="ms-3 text-sm space-y-2">
+          <p>
+            <ng-container [ngPlural]="membersWithOtherOrganizations().length">
+              <ng-template ngPluralCase="=1">This member is</ng-template>
+              <ng-template ngPluralCase="other">These members are</ng-template>
+            </ng-container>
+            also
+            <ng-container [ngPlural]="membersWithOtherOrganizations().length">
+              <ng-template ngPluralCase="=1">a member</ng-template>
+              <ng-template ngPluralCase="other">members</ng-template>
+            </ng-container>
+            of another Distr organization. They keep their password login, but they cannot sign in through your identity
+            provider until they leave that other organization.
+          </p>
+          <ul class="list-disc list-inside">
+            @for (member of membersWithOtherOrganizations(); track member.id) {
+              <li>
+                @if (member.name) {
+                  {{ member.name }} &lt;{{ member.email }}&gt;
+                } @else {
+                  {{ member.email }}
+                }
+              </li>
+            }
+          </ul>
         </div>
+      </div>
+    }
+
+    @if (!customerScoped()) {
+      <section class="space-y-4">
+        <h3 class="text-lg font-bold dark:text-white">
+          @if (partnerManagementEnabled()) {
+            Vendor &amp; Partner Portal
+          } @else {
+            Vendor Portal
+          }
+        </h3>
+        <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+          @if (partnerManagementEnabled()) {
+            The domain your own team and your partners use for the Distr web UI and API.
+          } @else {
+            The domain your own team uses for the Distr web UI and API.
+          }
+        </p>
+
+        @if (customDomainsConfigured()) {
+          <app-domain-field
+            fieldId="appDomain"
+            label="General Portal domain"
+            placeholder="deploy.your-company.com"
+            invalidHint="Must be a valid hostname without scheme, e.g. deploy.your-company.com"
+            removeAriaLabel="Remove app domain"
+            [domain]="appDomain()"
+            [cnameTarget]="appCnameTarget()"
+            [saving]="savingDomain()"
+            [verifying]="checkingDomainIds().has(appDomain()?.id ?? '')"
+            (save)="saveDomain($event, 'app')"
+            (remove)="removeDomain(appDomain())"
+            (recheck)="recheckDomain(appDomain()!)">
+            The domain for the Distr web UI and API.
+          </app-domain-field>
+        }
+
+        @if (oidcProvidersEnabled() && configurable() && appDomain(); as domain) {
+          <h4 class="text-base font-semibold text-gray-900 dark:text-white mt-8">Identity Providers</h4>
+          <ng-container [ngTemplateOutlet]="providerSection" [ngTemplateOutletContext]="{$implicit: domain}" />
+        }
+      </section>
+    }
+
+    <section class="space-y-4">
+      @if (!customerScoped()) {
+        <h3 class="text-lg font-bold dark:text-white">Customer Portal</h3>
+        <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+          One domain for all of your customers. Providers configured here apply to every customer, including ones you
+          create later. A customer that needs its own provider gets the Identity Provider feature instead.
+        </p>
       }
 
-      <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
-        <table class="distr-table">
-          <thead class="distr-table-head border-t-0">
-            <tr>
-              <th scope="col" class="ps-4 py-3 w-px">Enabled</th>
-              <th scope="col" class="px-4 py-3">Provider</th>
-              <th scope="col" class="px-4 py-3">Callback URL</th>
-              <th scope="col" class="px-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (configuration of configurations(); track configuration.id) {
-              <tr class="distr-table-row">
-                <td class="ps-4 py-3">
-                  <label class="inline-flex items-center cursor-pointer align-middle">
-                    <input
-                      #enabledToggle
-                      type="checkbox"
-                      class="sr-only peer"
-                      aria-label="Enabled"
-                      [disabled]="toggling() === configuration.id"
-                      [checked]="configuration.enabled"
-                      (change)="toggleEnabled(configuration, enabledToggle)" />
-                    <div class="distr-toggle peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
-                  </label>
-                </td>
-                <td class="px-4 py-3">
-                  <div class="flex items-center gap-2">
-                    <span
-                      class="font-medium whitespace-nowrap"
-                      [class]="
-                        configuration.enabled ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'
-                      ">
-                      {{ configuration.name }}
-                    </span>
-                    @if (configuration.spInitiated) {
-                      <span
-                        class="text-xs font-medium px-2 py-0.5 rounded-sm bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300">
-                        Automatic
-                      </span>
-                    }
-                  </div>
-                  <code class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ configuration.slug }}</code>
-                </td>
-                <td class="px-4 py-3">
-                  <div class="flex items-center gap-2">
-                    <code
-                      class="font-mono text-xs text-gray-500 dark:text-gray-400 truncate max-w-64"
-                      [title]="configuration.callbackUrl">
-                      {{ configuration.callbackUrl }}
-                    </code>
-                    <app-clip [clip]="configuration.callbackUrl" />
-                  </div>
-                </td>
-                <td class="px-4 py-3 flex gap-2 justify-end">
-                  <button
-                    type="button"
-                    (click)="test(configuration)"
-                    class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                    Test
-                  </button>
-                  <button
-                    type="button"
-                    (click)="showDialog(configuration)"
-                    class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                    <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Delete"
-                    (click)="remove(configuration)"
-                    class="py-2 px-3 distr-btn-danger">
-                    <fa-icon [icon]="faTrash" class="h-4 w-4" />
-                  </button>
-                </td>
-              </tr>
-            } @empty {
-              <tr class="border-t border-gray-200 dark:border-gray-600">
-                <td
-                  colspan="4"
-                  class="px-4 py-6 font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap text-center">
-                  No identity provider configured
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+      @if (customDomainsConfigured()) {
+        <app-domain-field
+          fieldId="customerPortalDomain"
+          label="Customer Portal domain"
+          placeholder="<slug>-portal.yourcompany.com"
+          invalidHint="Must be a valid hostname without scheme, e.g. <slug>-portal.yourcompany.com"
+          removeAriaLabel="Remove portal domain"
+          [domain]="customerPortalDomain()"
+          [cnameTarget]="appCnameTarget()"
+          [saving]="savingDomain()"
+          [verifying]="checkingDomainIds().has(customerPortalDomain()?.id ?? '')"
+          (save)="saveDomain($event, 'customer_portal')"
+          (remove)="removeDomain(customerPortalDomain())"
+          (recheck)="recheckDomain(customerPortalDomain()!)">
+          @if (customerScoped()) {
+            The domain this customer's users sign in on. Links in invitations, password resets and notification mails
+            use it.
+          } @else {
+            The domain all of your customers sign in on. Links in invitations, password resets and notification mails
+            use it instead of your app domain.
+          }
+        </app-domain-field>
+      }
 
-      <button
-        type="button"
-        (click)="showDialog()"
-        class="py-2 px-4 flex items-center text-sm font-medium text-center distr-btn-secondary">
-        <fa-icon [icon]="faPlus" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
-        Add identity provider
-      </button>
+      @if (oidcProvidersEnabled() && configurable() && customerPortalDomain(); as domain) {
+        <h4 class="text-base font-semibold text-gray-900 dark:text-white mt-8">Identity Providers</h4>
+        <ng-container [ngTemplateOutlet]="providerSection" [ngTemplateOutletContext]="{$implicit: domain}" />
+      }
+    </section>
+
+    @if (!customerScoped() && customDomainsConfigured()) {
+      <section class="space-y-4">
+        <h3 class="text-lg font-bold dark:text-white">Registry</h3>
+        <app-registry-domain-field
+          [domain]="registryDomain()"
+          [cnameTarget]="registryCnameTarget()"
+          [saving]="savingDomain()"
+          [verifying]="checkingDomainIds().has(registryDomain()?.id ?? '')"
+          (save)="saveDomain($event, 'registry')"
+          (remove)="removeDomain(registryDomain())"
+          (recheck)="recheckDomain(registryDomain()!)" />
+      </section>
     }
   </div>
 }
+
+<ng-template #providerSection let-domain>
+  <div class="space-y-4">
+    <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
+      <table class="distr-table">
+        <thead class="distr-table-head border-t-0">
+          <tr>
+            <th scope="col" class="ps-4 py-3 w-px">Enabled</th>
+            <th scope="col" class="px-4 py-3">Provider</th>
+            <th scope="col" class="px-4 py-3">Callback URL</th>
+            <th scope="col" class="px-4 py-3"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (configuration of configurationsFor(domain); track configuration.id) {
+            <tr class="distr-table-row">
+              <td class="ps-4 py-3">
+                <label class="inline-flex items-center cursor-pointer align-middle">
+                  <input
+                    #enabledToggle
+                    type="checkbox"
+                    class="sr-only peer"
+                    aria-label="Enabled"
+                    [disabled]="toggling() === configuration.id"
+                    [checked]="configuration.enabled"
+                    (change)="toggleEnabled(configuration, enabledToggle)" />
+                  <div class="distr-toggle peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+                </label>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <span
+                    class="font-medium whitespace-nowrap"
+                    [class]="
+                      configuration.enabled ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'
+                    ">
+                    {{ configuration.name }}
+                  </span>
+                  @if (configuration.spInitiated) {
+                    <span
+                      class="text-xs font-medium px-2 py-0.5 rounded-sm bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300">
+                      Automatic
+                    </span>
+                  }
+                </div>
+                <code class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ configuration.slug }}</code>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <code
+                    class="font-mono text-xs text-gray-500 dark:text-gray-400 truncate max-w-64"
+                    [title]="configuration.callbackUrl">
+                    {{ configuration.callbackUrl }}
+                  </code>
+                  <app-clip [clip]="configuration.callbackUrl" />
+                </div>
+              </td>
+              <td class="px-4 py-3 flex gap-2 justify-end">
+                <button
+                  type="button"
+                  (click)="test(configuration)"
+                  class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                  Test
+                </button>
+                <button
+                  type="button"
+                  (click)="showDialog(domain, configuration)"
+                  class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                  <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  aria-label="Delete"
+                  (click)="remove(configuration)"
+                  class="py-2 px-3 distr-btn-danger">
+                  <fa-icon [icon]="faTrash" class="h-4 w-4" />
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr class="border-t border-gray-200 dark:border-gray-600">
+              <td
+                colspan="4"
+                class="px-4 py-6 font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap text-center">
+                No identity provider configured
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <button
+      type="button"
+      (click)="showDialog(domain)"
+      class="py-2 px-4 flex items-center text-sm font-medium text-center distr-btn-secondary">
+      <fa-icon [icon]="faPlus" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
+      Add identity provider
+    </button>
+  </div>
+</ng-template>
 
 <ng-template #formDialog>
   <div
@@ -309,23 +438,35 @@
           </div>
         </div>
 
-        <div class="space-y-2">
-          <div class="flex items-center">
-            <input
-              type="checkbox"
-              id="oidcCreateUnknownUsers"
-              formControlName="createUnknownUsers"
-              class="distr-checkbox" />
-            <label for="oidcCreateUnknownUsers" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-              Create accounts on first sign-in
-            </label>
+        @if (provisioningAvailable()) {
+          <div class="space-y-2">
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                id="oidcCreateUnknownUsers"
+                formControlName="createUnknownUsers"
+                class="distr-checkbox" />
+              <label for="oidcCreateUnknownUsers" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                Create accounts on first sign-in
+              </label>
+            </div>
+            <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
+              @if (customerScoped()) {
+                Everyone this provider authenticates joins this customer organization, up to its user limit.
+              } @else {
+                Everyone your provider authenticates joins your own team, never a customer organization, up to your
+                billed user seats.
+              }
+              Seats are never raised automatically: beyond them, sign-in fails until an administrator raises them. This
+              requires the allowed email domains below.
+            </p>
           </div>
+        } @else {
           <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
-            Everyone your provider authenticates joins your own team, never a customer organization, up to your billed
-            user seats. Seats are never raised automatically: beyond them, sign-in fails until an administrator raises
-            them. Because a new member is a member of your team, this requires the allowed email domains below.
+            Accounts cannot be created automatically on the shared customer portal domain, because the provider does not
+            say which customer a new user belongs to. Invite them, or give the customer its own portal domain.
           </p>
-        </div>
+        }
 
         <div class="grid grid-cols-2 gap-4">
           <div class="space-y-2">
@@ -376,10 +517,10 @@
             </label>
           </div>
           <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
-            Usually not recommended: the login page on your domain redirects here without asking, so everyone reaching
-            it, including your customers' users, ends up at your provider instead of the login form. Only one provider
-            per organization can do this. <code class="font-mono">/login?manual=1</code> still shows the form, which is
-            how anyone with a password gets in when your provider is unavailable.
+            Usually not recommended: the login page on this domain redirects here without asking, so everyone reaching
+            it ends up at the provider instead of the login form. Only one provider per domain can do this.
+            <code class="font-mono">/login?manual=1</code> still shows the form, which is how anyone with a password
+            gets in when the provider is unavailable.
           </p>
         </div>
 

@@ -15,9 +15,10 @@ import (
 	"go.uber.org/zap"
 )
 
-// loginAppDomainRedirect forwards a login on the default host to the organization's app domain. The target is
-// resolved with customdomains.AppDomain and never with AppDomainOrDefault: only a self-service CustomDomain row
-// is a domain this instance serves itself (it is what Caddy's on-demand TLS asks for), whereas a legacy
+// loginAppDomainRedirect forwards a login on the default host to the domain of the user's organization: the
+// portal domain for a customer user, the app domain otherwise. The target is resolved with the nil-able
+// resolvers and never with their OrDefault variants: only a self-service CustomDomain row is a domain this
+// instance serves itself (it is what Caddy's on-demand TLS asks for), whereas a legacy
 // OrganizationBranding.app_domain is a hostname an organization once configured for links and branding, hosted
 // in a way Distr knows nothing about. Sending a freshly issued token there could strand the user.
 //
@@ -44,7 +45,13 @@ func loginAppDomainRedirect(ctx context.Context, r *http.Request, user types.Use
 	if len(organizations) != 1 {
 		return nil
 	}
-	domain := customdomains.AppDomain(ctx, organizations[0].ID)
+	organization := organizations[0]
+	var domain *string
+	if organization.CustomerOrganizationID != nil {
+		domain = customdomains.CustomerPortalDomain(ctx, organization.ID, organization.CustomerOrganizationID)
+	} else {
+		domain = customdomains.AppDomain(ctx, organization.ID)
+	}
 	if domain == nil {
 		return nil
 	}
