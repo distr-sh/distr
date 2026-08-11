@@ -78,11 +78,50 @@ func TestUserRoleRankPanicsOnUnknown(t *testing.T) {
 	g.Expect(func() { UserRole("").Rank() }).To(Panic())
 }
 
+func TestFeaturesForSubscriptionType(t *testing.T) {
+	g := NewWithT(t)
+
+	businessFeatures := []Feature{
+		FeatureLicensing,
+		FeaturePartnerManagement,
+		FeatureCustomDomains,
+		FeatureVulnerabilities,
+		FeatureCustomEmails,
+		FeatureCustomOidcProviders,
+	}
+	cases := []struct {
+		subscriptionType SubscriptionType
+		expected         []Feature
+	}{
+		{SubscriptionTypeCommunity, []Feature{}},
+		{SubscriptionTypeTrial, []Feature{FeatureLicensing}},
+		{SubscriptionTypePro, []Feature{FeatureLicensing}},
+		{SubscriptionTypeBusiness, businessFeatures},
+		{SubscriptionTypeEnterprise, businessFeatures},
+	}
+	for _, tc := range cases {
+		g.Expect(FeaturesForSubscriptionType(tc.subscriptionType)).
+			To(ConsistOf(tc.expected), "features for %q", tc.subscriptionType)
+	}
+}
+
+func TestEnterpriseIncludesAllBusinessFeatures(t *testing.T) {
+	g := NewWithT(t)
+	g.Expect(FeaturesForSubscriptionType(SubscriptionTypeEnterprise)).
+		To(ContainElements(FeaturesForSubscriptionType(SubscriptionTypeBusiness)))
+}
+
 func TestPlanManagedFeatures(t *testing.T) {
 	g := NewWithT(t)
 
-	g.Expect(PlanManagedFeatures).To(ConsistOf(FeatureLicensing, FeaturePartnerManagement,
-		FeatureCustomDomains, FeatureCustomEmails, FeatureCustomOidcProviders))
+	g.Expect(PlanManagedFeatures).To(ConsistOf(
+		FeatureLicensing,
+		FeaturePartnerManagement,
+		FeatureCustomDomains,
+		FeatureVulnerabilities,
+		FeatureCustomEmails,
+		FeatureCustomOidcProviders,
+	))
 
 	for _, st := range AllSubscriptionTypes() {
 		g.Expect(PlanManagedFeatures).To(ContainElements(FeaturesForSubscriptionType(st)),

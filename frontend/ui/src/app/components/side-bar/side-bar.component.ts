@@ -23,6 +23,7 @@ import {
   faLifeRing,
   faLightbulb,
   faPalette,
+  faShieldHalved,
   faUsers,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
@@ -93,6 +94,7 @@ export class SideBarComponent {
   protected readonly faChevronDown = faChevronDown;
   protected readonly faAsterisk = faAsterisk;
   protected readonly faLifeRing = faLifeRing;
+  protected readonly faShieldHalved = faShieldHalved;
   protected readonly faHandHoldingDollar = faHandHoldingDollar;
   protected readonly faXmark = faXmark;
   protected feedbackAlert = true;
@@ -114,6 +116,7 @@ export class SideBarComponent {
   protected readonly isLicensingFeatureEnabled = toSignal(this.featureFlags.isLicensingEnabled$);
   protected readonly isNotificationsFeatureEnabled = toSignal(this.featureFlags.isNotificationsEnabled$);
   protected readonly isSupportBundlesFeatureEnabled = toSignal(this.featureFlags.isSupportBundlesEnabled$);
+  protected readonly isVulnerabilitiesFeatureEnabled = this.featureFlags.isVulnerabilitiesEnabled;
   protected readonly isVendorBillingFeatureEnabled = this.featureFlags.isVendorBillingEnabled;
   protected readonly isPartnerManagementEnabled = this.featureFlags.isPartnerManagementEnabled;
 

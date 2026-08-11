@@ -4,6 +4,8 @@ import {UserRole} from '@distr-sh/distr-sdk';
 import {firstValueFrom, map} from 'rxjs';
 import {getRemoteEnvironment} from '../env/remote';
 import {AccessTokensComponent} from './access-tokens/access-tokens.component';
+import {AdvisoryDetailComponent} from './advisories/advisory-detail.component';
+import {AdvisoryListComponent} from './advisories/advisory-list.component';
 import {AlertConfigurationsComponent} from './alert-configurations/alert-configurations.component';
 import {ApplicationDetailComponent} from './applications/application-detail.component';
 import {ApplicationsPageComponent} from './applications/applications-page.component';
@@ -149,6 +151,13 @@ function partnerManagementEnabledGuard(): CanActivateFn {
   return async () => {
     const featureFlags = inject(FeatureFlagService);
     return await firstValueFrom(featureFlags.isPartnerManagementEnabled$);
+  };
+}
+
+function vulnerabilitiesEnabledGuard(): CanActivateFn {
+  return async () => {
+    const featureFlags = inject(FeatureFlagService);
+    return await firstValueFrom(featureFlags.isVulnerabilitiesEnabled$);
   };
 }
 
@@ -437,6 +446,36 @@ export const routes: Routes = [
           {
             path: ':supportBundleId',
             component: SupportBundleDetailComponent,
+          },
+        ],
+      },
+      {
+        path: 'advisories',
+        canActivate: [requireVendorOrPartner, vulnerabilitiesEnabledGuard()],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            component: AdvisoryListComponent,
+          },
+          {
+            path: ':advisoryId',
+            component: AdvisoryDetailComponent,
+          },
+        ],
+      },
+      {
+        path: 'security',
+        canActivate: [requireCustomer, vulnerabilitiesEnabledGuard()],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            component: AdvisoryListComponent,
+          },
+          {
+            path: ':advisoryId',
+            component: AdvisoryDetailComponent,
           },
         ],
       },

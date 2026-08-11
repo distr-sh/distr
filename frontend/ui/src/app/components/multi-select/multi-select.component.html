@@ -1,0 +1,68 @@
+<button
+  type="button"
+  cdkOverlayOrigin
+  #origin="cdkOverlayOrigin"
+  #trigger
+  (click)="toggleOpen()"
+  class="w-full inline-flex items-center justify-between gap-2 p-2 text-sm font-normal text-left text-gray-700 bg-gray-50 border border-gray-300 rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white dark:focus:ring-gray-700">
+  <span class="truncate">{{ triggerLabel() }}</span>
+  <fa-icon class="transition duration-150 ease-in-out" [class.rotate-x-180]="open()" [icon]="faChevronDown" />
+</button>
+
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayHasBackdrop]="true"
+  (backdropClick)="open.set(false)"
+  [cdkConnectedOverlayBackdropClass]="'transparent'"
+  [cdkConnectedOverlayOrigin]="origin"
+  [cdkConnectedOverlayMinWidth]="width + 'px'"
+  [cdkConnectedOverlayOpen]="open()">
+  <div
+    class="z-10 w-full max-h-128 overflow-y-auto bg-white divide-y divide-gray-100 rounded-lg shadow-xs dark:bg-gray-700 origin-top"
+    animate.enter="animate-flip-in-top"
+    animate.leave="animate-flip-out-top">
+    <ul class="py-2 text-sm text-gray-700 dark:text-gray-200">
+      @if (options().length > 1) {
+        <li class="w-full">
+          <div class="flex items-center px-4">
+            <input
+              [id]="idPrefix() + '-all'"
+              type="checkbox"
+              [checked]="allSelected()"
+              [indeterminate]="someSelected()"
+              (change)="toggleAll()"
+              class="distr-checkbox" />
+            <label
+              [for]="idPrefix() + '-all'"
+              class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+              @if (allSelected()) {
+                Select none
+              } @else {
+                Select all
+              }
+            </label>
+          </div>
+        </li>
+      }
+      @for (option of options(); track option.value) {
+        <li class="w-full border-t border-gray-100 dark:border-gray-600">
+          <div class="flex items-center px-4">
+            <input
+              [id]="idPrefix() + '-' + option.value"
+              type="checkbox"
+              [checked]="isSelected(option.value)"
+              (change)="toggle(option.value)"
+              class="distr-checkbox" />
+            <label
+              [for]="idPrefix() + '-' + option.value"
+              class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+              {{ option.label }}
+            </label>
+          </div>
+        </li>
+      } @empty {
+        <li class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">Nothing to filter by.</li>
+      }
+    </ul>
+  </div>
+</ng-template>
