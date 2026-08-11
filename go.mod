@@ -38,9 +38,9 @@ require (
 	github.com/lestrrat-go/jwx/v3 v3.1.1
 	github.com/moby/moby/api v1.55.0
 	github.com/moby/moby/client v0.5.1
-	github.com/oaswrap/spec v0.5.1
-	github.com/oaswrap/spec-ui v0.2.0
-	github.com/oaswrap/spec/adapter/chiopenapi v0.5.1
+	github.com/oaswrap/spec v0.5.2
+	github.com/oaswrap/spec-ui v0.2.1
+	github.com/oaswrap/spec/adapter/chiopenapi v0.5.2
 	github.com/onsi/gomega v1.42.1
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.156.0
 	github.com/pquerna/otp v1.5.0
