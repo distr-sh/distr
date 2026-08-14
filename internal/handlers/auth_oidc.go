@@ -143,7 +143,10 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 			return nil
 		}
 	})
-	if err != nil {
+	if errors.Is(err, subscription.ErrGlobalOrganizationLimitReached) {
+		log.Info("rejecting OIDC login, global organization limit reached")
+		http.Redirect(w, r, redirectToLoginOIDCOrgLimit, http.StatusFound)
+	} else if err != nil {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		log.Warn("user login failed", zap.Error(err))
 		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)

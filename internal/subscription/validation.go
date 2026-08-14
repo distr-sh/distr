@@ -4,11 +4,19 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/license"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 )
+
+const GlobalOrganizationLimitReachedMessage = "global organization limit has been reached"
+
+// ErrGlobalOrganizationLimitReached is returned instead of creating an organization when the license's global
+// organization limit has been reached. Organization-less users run into it by design once the limit is hit, so
+// it is a bad request that callers report to the user rather than an unexpected error.
+var ErrGlobalOrganizationLimitReached = apierrors.NewBadRequest(GlobalOrganizationLimitReachedMessage)
 
 // IsGlobalOrganizationLimitReached reports whether the license's global limit on the total number of
 // organizations across the whole instance has been reached, meaning no further organization may be created

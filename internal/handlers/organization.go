@@ -153,7 +153,7 @@ func createOrganization(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	} else if reached {
-		http.Error(w, "global organization limit has been reached", http.StatusBadRequest)
+		http.Error(w, subscription.GlobalOrganizationLimitReachedMessage, http.StatusBadRequest)
 		return
 	}
 
