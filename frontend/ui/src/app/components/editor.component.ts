@@ -14,12 +14,19 @@ import {defaultKeymap, history, historyKeymap, indentWithTab} from '@codemirror/
 import {json} from '@codemirror/lang-json';
 import {yaml} from '@codemirror/lang-yaml';
 import {HighlightStyle, indentOnInput, syntaxHighlighting} from '@codemirror/language';
-import {EditorState, Extension, StateEffect} from '@codemirror/state';
+import {Compartment, EditorState, Extension} from '@codemirror/state';
 import {EditorView, highlightSpecialChars, keymap} from '@codemirror/view';
 import {tags} from '@lezer/highlight';
 import {never} from '../../util/exhaust';
 
 export type EditorLanguage = 'yaml' | 'json';
+
+// The content stays contenteditable when read-only (see setDisabledState), so the browser would
+// keep drawing its blinking caret and suggest that the editor accepts input.
+const readOnlyExtension: Extension = [
+  EditorState.readOnly.of(true),
+  EditorView.theme({'.cm-content': {caretColor: 'transparent'}}),
+];
 
 @Component({
   selector: 'app-editor',
@@ -37,6 +44,7 @@ export class EditorComponent implements OnInit, OnDestroy, ControlValueAccessor 
   language = input<EditorLanguage>();
   private readonly host = inject(ElementRef);
   private view!: EditorView;
+  private readonly readOnlyCompartment = new Compartment();
 
   private readonly languageExtension = computed((): Extension => {
     const lang = this.language();
@@ -77,6 +85,7 @@ export class EditorComponent implements OnInit, OnDestroy, ControlValueAccessor 
           }
         }),
         this.languageExtension(),
+        this.readOnlyCompartment.of([]),
       ],
       parent: this.host.nativeElement,
     });
@@ -100,13 +109,9 @@ export class EditorComponent implements OnInit, OnDestroy, ControlValueAccessor 
   }
 
   setDisabledState(isDisabled: boolean) {
-    const tr = this.view.state.update({
-      effects: [
-        StateEffect.appendConfig.of(EditorState.readOnly.of(isDisabled)),
-        StateEffect.appendConfig.of(EditorView.editable.of(!isDisabled)),
-      ],
+    this.view.dispatch({
+      effects: this.readOnlyCompartment.reconfigure(isDisabled ? readOnlyExtension : []),
     });
-    this.view.dispatch(tr);
   }
 
   private onChange = (_: any) => {};
