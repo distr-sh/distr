@@ -32,6 +32,7 @@ const (
 	redirectToLoginOIDCUnavailable          = "/login?reason=oidc-unavailable"
 	redirectToLoginOIDCNoAccount            = "/login?reason=oidc-no-account"
 	redirectToLoginOIDCUserLimit            = "/login?reason=oidc-user-limit"
+	redirectToLoginOIDCOrgLimit             = "/login?reason=oidc-org-limit"
 	redirectToLoginOIDCNotExclusive         = "/login?reason=oidc-account-not-exclusive"
 )
 
@@ -115,14 +116,16 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = db.RunTx(ctx, func(ctx context.Context) error {
-		user, err := resolveOIDCUser(ctx, log, identity)
+		user, redirect, err := resolveOIDCUser(ctx, log, identity)
 		if err != nil {
 			return err
 		}
-		if user == nil {
-			http.Redirect(w, r, redirectToLoginOIDCRegistrationDisabled, http.StatusFound)
+
+		if redirect != "" {
+			http.Redirect(w, r, redirect, http.StatusFound)
 			return nil
 		}
+
 		log = log.With(zap.Any("userId", user.ID))
 
 		if user.EmailVerifiedAt == nil && identity.EmailVerified {
@@ -130,6 +133,7 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 				return err
 			}
 		}
+
 		if tokenString, err := userauth.GenerateLoginToken(ctx, *user); err != nil {
 			return fmt.Errorf("token creation failed: %w", err)
 		} else if err = db.UpdateUserAccountLastLoggedIn(ctx, user.ID); err != nil {
@@ -521,28 +525,29 @@ func emailDomainAllowed(configuration types.CustomOIDCConfiguration, email strin
 	return found && slices.Contains(configuration.AllowedEmailDomains, domain)
 }
 
+// resolveOIDCUser returns the user account for the given OIDC identity, linking or registering it as needed.
+// A non-empty redirect return means the login must be aborted with that redirect instead of proceeding.
 func resolveOIDCUser(
 	ctx context.Context,
 	log *zap.Logger,
 	identity oidc.Identity,
-) (*types.UserAccount, error) {
+) (*types.UserAccount, string, error) {
 	user, existingIdentity, err := db.GetUserAccountWithOIDCIdentity(ctx, nil, identity.Issuer, identity.Subject)
 	if err == nil {
-		return user, db.UpdateUserAccountOIDCIdentityOnLogin(ctx, existingIdentity.ID, new(identity.Email))
+		return user, "", db.UpdateUserAccountOIDCIdentityOnLogin(ctx, existingIdentity.ID, new(identity.Email))
 	} else if !errors.Is(err, apierrors.ErrNotFound) {
-		return nil, err
+		return nil, "", err
 	}
 
 	user, err = db.GetUserAccountByEmail(ctx, identity.Email)
 	if errors.Is(err, apierrors.ErrNotFound) {
-		if user, err = registerOIDCUser(ctx, identity.Email); err != nil {
-			return nil, err
-		} else if user == nil {
-			return nil, nil
+		var redirect string
+		if user, redirect, err = registerOIDCUser(ctx, log, identity.Email); err != nil || redirect != "" {
+			return nil, redirect, err
 		}
 		log.Info("registered new user account for OIDC identity", zap.Any("userId", user.ID))
 	} else if err != nil {
-		return nil, err
+		return nil, "", err
 	} else {
 		log.Info("linking OIDC identity to existing user account matched by email",
 			zap.Any("userId", user.ID))
@@ -555,24 +560,36 @@ func resolveOIDCUser(
 		Subject:       identity.Subject,
 		Email:         new(identity.Email),
 	}
+
 	if err := db.CreateUserAccountOIDCIdentity(ctx, &newIdentity); err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	return user, nil
+
+	return user, "", nil
 }
 
-func registerOIDCUser(ctx context.Context, email string) (*types.UserAccount, error) {
+func registerOIDCUser(ctx context.Context, log *zap.Logger, email string) (*types.UserAccount, string, error) {
 	if env.Registration() == env.RegistrationDisabled {
-		return nil, nil
+		return nil, redirectToLoginOIDCRegistrationDisabled, nil
 	}
+
+	if reached, err := subscription.IsGlobalOrganizationLimitReached(ctx); err != nil {
+		return nil, "", err
+	} else if reached {
+		log.Info("rejecting OIDC registration, global organization limit reached")
+		return nil, redirectToLoginOIDCOrgLimit, nil
+	}
+
 	userAccount := types.UserAccount{
 		Email:           email,
 		EmailVerifiedAt: new(time.Now()),
 	}
+
 	if err := db.CreateUserAccountWithOrganization(ctx, &userAccount, &types.Organization{}); err != nil {
-		return nil, fmt.Errorf("failed to create OIDC user: %w", err)
+		return nil, "", fmt.Errorf("failed to create OIDC user: %w", err)
 	}
-	return &userAccount, nil
+
+	return &userAccount, "", nil
 }
 
 func oidcCallbackCode(w http.ResponseWriter, r *http.Request, log *zap.Logger) (string, bool) {

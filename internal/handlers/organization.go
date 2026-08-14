@@ -12,9 +12,9 @@ import (
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/db"
-	"github.com/distr-sh/distr/internal/license"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
+	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/util"
 	"github.com/distr-sh/distr/internal/validation"
@@ -147,16 +147,14 @@ func createOrganization(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if limit := license.GetLicenseData().MaxOrganizations; !limit.IsUnlimited() {
-		if count, err := db.CountAllOrganizations(ctx); err != nil {
-			log.Error("could not get organization count", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		} else if limit.IsReached(count) {
-			http.Error(w, "global organization limit has been reached", http.StatusBadRequest)
-			return
-		}
+	if reached, err := subscription.IsGlobalOrganizationLimitReached(ctx); err != nil {
+		log.Error("could not check global organization limit", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	} else if reached {
+		http.Error(w, "global organization limit has been reached", http.StatusBadRequest)
+		return
 	}
 
 	organization := types.Organization{

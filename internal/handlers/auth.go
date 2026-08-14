@@ -20,6 +20,7 @@ import (
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/security"
+	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/userauth"
 	"github.com/distr-sh/distr/internal/validation"
@@ -414,7 +415,14 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		var token string
 
 		if err := db.RunTx(ctx, func(ctx context.Context) error {
-			if err := security.HashPassword(&userAccount); err != nil {
+			if reached, err := subscription.IsGlobalOrganizationLimitReached(ctx); err != nil {
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return err
+			} else if reached {
+				http.Error(w, "global organization limit has been reached", http.StatusBadRequest)
+				return apierrors.ErrBadRequest
+			} else if err := security.HashPassword(&userAccount); err != nil {
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return err

@@ -8,6 +8,7 @@ import (
 	"github.com/distr-sh/distr/internal/authjwt"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/security"
+	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 )
@@ -79,6 +80,12 @@ func EnsurePrimaryOrganization(ctx context.Context, user types.UserAccount) (typ
 
 	if user.IsSuperAdmin {
 		return types.OrganizationWithUserRole{}, errors.New("super admin has no organizations, this should never happen")
+	}
+
+	if reached, err := subscription.IsGlobalOrganizationLimitReached(ctx); err != nil {
+		return types.OrganizationWithUserRole{}, err
+	} else if reached {
+		return types.OrganizationWithUserRole{}, apierrors.NewBadRequest("global organization limit has been reached")
 	}
 
 	org := types.OrganizationWithUserRole{UserRole: types.UserRoleAdmin}

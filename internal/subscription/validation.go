@@ -5,9 +5,25 @@ import (
 	"fmt"
 
 	"github.com/distr-sh/distr/internal/db"
+	"github.com/distr-sh/distr/internal/license"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 )
+
+// IsGlobalOrganizationLimitReached reports whether the license's global limit on the total number of
+// organizations across the whole instance has been reached, meaning no further organization may be created
+// (including a personal organization auto-created for a new user). It returns false when the license does
+// not define a global limit.
+func IsGlobalOrganizationLimitReached(ctx context.Context) (bool, error) {
+	limit := license.GetLicenseData().MaxOrganizations
+	if limit.IsUnlimited() {
+		return false, nil
+	} else if count, err := db.CountAllOrganizations(ctx); err != nil {
+		return false, fmt.Errorf("could not query Organization: %w", err)
+	} else {
+		return limit.IsReached(count), nil
+	}
+}
 
 func IsBillableUserAccountLimitReached(ctx context.Context, org types.Organization) (bool, error) {
 	if !org.HasActiveSubscription() {
