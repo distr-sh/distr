@@ -68,7 +68,7 @@
     "@types/jasmine": "~6.0.0",
     "@types/semver": "^7.7.1",
     "autoprefixer": "^10.5.4",
-    "jasmine-core": "~6.3.0",
+    "jasmine-core": "~7.0.0",
     "jsdom": "^30.0.0",
     "postcss": "^8.5.23",
     "prettier": "^3.9.6",
