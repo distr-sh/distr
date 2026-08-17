@@ -9,6 +9,13 @@
   "minimumReleaseAge": "1 day",
   "packageRules": [
     {
+      "description": "Registries other than Docker Hub do not expose release timestamps, which would make minimumReleaseAge unsatisfiable",
+      "matchDatasources": [
+        "docker"
+      ],
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
+    },
+    {
       "matchPackageNames": [
         "github.com/go-mailx/**"
       ],
