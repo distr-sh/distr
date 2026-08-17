@@ -86,6 +86,7 @@
     },
     {
       "matchFileNames": ["website/**"],
+      "matchPackageNames": ["!pnpm"],
       "groupName": "website dependencies"
     }
   ],
