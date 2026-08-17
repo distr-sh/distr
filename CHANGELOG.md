@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.26.2](https://github.com/distr-sh/distr/compare/2.26.1...2.26.2) (2026-08-17)
+
+
+### Bug Fixes
+
+* password reset links sometimes displayed as expired ([#2906](https://github.com/distr-sh/distr/issues/2906); cherry-picked 192cc69) ([a09b476](https://github.com/distr-sh/distr/commit/a09b4762b2284cea5f3cf3e5ae815a6eec7df62e))
+
 ## [2.26.1](https://github.com/distr-sh/distr/compare/2.26.0...2.26.1) (2026-07-20)
 
 
