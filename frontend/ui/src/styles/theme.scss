@@ -85,6 +85,10 @@
     @apply text-gray-400 hover:text-gray-400 hover:border-transparent dark:text-gray-500 dark:hover:text-gray-500;
   }
 
+  .distr-avatar-placeholder {
+    @apply flex items-center justify-center bg-gray-400 text-white dark:bg-gray-400 dark:text-gray-800;
+  }
+
   .distr-plan-badge {
     @apply bg-gray-200 text-gray-600 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-gray-500 dark:text-gray-100;
   }
