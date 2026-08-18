@@ -405,9 +405,9 @@
       >?
     </p>
 
-    @if (agentUpdateChangelogReleases().length > 0) {
-      <div>
-        <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Agent release notes</h4>
+    <div>
+      <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Agent release notes</h4>
+      @if (agentUpdateChangelogReleases().length > 0) {
         <div class="max-h-72 overflow-y-auto pr-1 space-y-4">
           @for (release of agentUpdateChangelogReleases(); track release.version) {
             <div>
@@ -425,8 +425,10 @@
             </div>
           }
         </div>
-      </div>
-    }
+      } @else {
+        <p>General platform changes and dependency updates.</p>
+      }
+    </div>
 
     <p class="text-xs text-gray-500 dark:text-gray-400">
       Visit our
