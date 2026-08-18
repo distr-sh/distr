@@ -17,6 +17,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/spf13/cobra"
 	"github.com/stripe/stripe-go/v86"
+	"go.uber.org/zap"
 )
 
 type ServeOptions struct{ Migrate bool }
@@ -71,6 +72,8 @@ func runServe(ctx context.Context, opts ServeOptions) {
 	dbCtx := internalctx.WithDb(ctx, registry.GetDbPool())
 	dbLogCtx := internalctx.WithLogger(dbCtx, registry.GetLogger())
 	util.Must(db.CreateAgentVersion(dbLogCtx))
+	updatedTargets := util.Require(db.ApplyAutomaticAgentUpdates(dbLogCtx))
+	registry.GetLogger().Info("applied automatic agent updates", zap.Int64("deploymentTargets", updatedTargets))
 	util.Must(subscription.ReconcileEditionFeatures(dbLogCtx))
 
 	if env.MetricsEnabled() {

@@ -420,6 +420,26 @@
                     Enable log collection
                   </label>
                 </div>
+
+                <!-- Automatic Agent Updates (all deployment types) -->
+                <div>
+                  <div class="flex items-center">
+                    <input
+                      id="automatic-updates-enabled"
+                      type="checkbox"
+                      [formControl]="deploymentTargetForm.controls.automaticUpdatesEnabled"
+                      class="distr-checkbox" />
+                    <label
+                      for="automatic-updates-enabled"
+                      class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                      Enable automatic agent updates
+                    </label>
+                  </div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    When enabled, the agent is updated to the latest version as soon as one becomes available. Updating
+                    the agent does not restart or update the deployed application.
+                  </p>
+                </div>
               </div>
             </div>
           </cdk-step>

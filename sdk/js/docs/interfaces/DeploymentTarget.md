@@ -24,6 +24,12 @@
 
 ---
 
+### automaticUpdatesEnabled?
+
+> `optional` **automaticUpdatesEnabled?**: `boolean`
+
+---
+
 ### createdAt?
 
 > `optional` **createdAt?**: `string`

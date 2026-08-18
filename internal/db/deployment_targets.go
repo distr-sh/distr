@@ -29,6 +29,7 @@ const (
 		dt.metrics_enabled,
 		dt.image_cleanup_enabled,
 		dt.autoheal_enabled,
+		dt.automatic_updates_enabled,
 		dt.deployment_logs_enabled,
 		dt.deployment_logs_after,
 		CASE WHEN dt.resources_cpu_request IS NOT NULL THEN (
@@ -222,6 +223,7 @@ func CreateDeploymentTarget(
 		"deploymentLogsEnabled": dt.DeploymentLogsEnabled,
 		"deploymentLogsAfter":   dt.DeploymentLogsAfter,
 		"autohealEnabled":       dt.AutohealEnabled,
+		"automaticUpdates":      dt.AutomaticUpdatesEnabled,
 		"customerOrgId":         customerOrgID,
 	}
 
@@ -237,11 +239,13 @@ func CreateDeploymentTarget(
 		`WITH inserted AS (
 			INSERT INTO DeploymentTarget
 			(name, type, organization_id, namespace, scope, agent_version_id, metrics_enabled, image_cleanup_enabled,
-				deployment_logs_enabled, deployment_logs_after, autoheal_enabled, customer_organization_id,
-				resources_cpu_request, resources_memory_request, resources_cpu_limit, resources_memory_limit)
+				deployment_logs_enabled, deployment_logs_after, autoheal_enabled, automatic_updates_enabled,
+				customer_organization_id, resources_cpu_request, resources_memory_request, resources_cpu_limit,
+				resources_memory_limit)
 			VALUES (@name, @type, @orgId, @namespace, @scope, @agentVersionId, @metricsEnabled, @imageCleanupEnabled,
-				@deploymentLogsEnabled, @deploymentLogsAfter, @autohealEnabled, @customerOrgId,
-				@resourcesCpuRequest, @resourcesMemoryRequest, @resourcesCpuLimit, @resourcesMemoryLimit)
+				@deploymentLogsEnabled, @deploymentLogsAfter, @autohealEnabled, @automaticUpdates,
+				@customerOrgId, @resourcesCpuRequest, @resourcesMemoryRequest, @resourcesCpuLimit,
+				@resourcesMemoryLimit)
 			RETURNING *
 		)
 		SELECT `+deploymentTargetFullOutputExpr+` FROM inserted dt`+deploymentTargetJoinExpr,
@@ -270,6 +274,7 @@ func UpdateDeploymentTarget(ctx context.Context, dt *types.DeploymentTargetFull,
 		"imageCleanupEnabled":   dt.ImageCleanupEnabled,
 		"deploymentLogsEnabled": dt.DeploymentLogsEnabled,
 		"deploymentLogsAfter":   dt.DeploymentLogsAfter,
+		"automaticUpdates":      dt.AutomaticUpdatesEnabled,
 	}
 	if dt.AgentVersionID != nil {
 		args["agentVersionId"] = dt.AgentVersionID
@@ -289,6 +294,7 @@ func UpdateDeploymentTarget(ctx context.Context, dt *types.DeploymentTargetFull,
 				image_cleanup_enabled = @imageCleanupEnabled,
 				deployment_logs_enabled = @deploymentLogsEnabled,
 				deployment_logs_after = @deploymentLogsAfter,
+				automatic_updates_enabled = @automaticUpdates,
 				resources_cpu_request = @cpuRequest,
 				resources_cpu_limit = @cpuLimit,
 				resources_memory_request = @memoryRequest,

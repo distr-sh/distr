@@ -17,6 +17,7 @@ export interface DeploymentTarget extends BaseModel, Named {
   deploymentLogsEnabled: boolean;
   deploymentLogsAfter?: string;
   autohealEnabled?: boolean;
+  automaticUpdatesEnabled?: boolean;
   resources?: DeploymentTargetResources;
 }
 

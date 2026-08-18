@@ -10,24 +10,25 @@ import (
 )
 
 type DeploymentTarget struct {
-	ID                     uuid.UUID                  `db:"id" json:"id"`
-	CreatedAt              time.Time                  `db:"created_at" json:"createdAt"`
-	Name                   string                     `db:"name" json:"name"`
-	Type                   DeploymentType             `db:"type" json:"type"`
-	AccessKeySalt          *[]byte                    `db:"access_key_salt" json:"-"`
-	AccessKeyHash          *[]byte                    `db:"access_key_hash" json:"-"`
-	Namespace              *string                    `db:"namespace" json:"namespace,omitempty"`
-	Scope                  *DeploymentTargetScope     `db:"scope" json:"scope,omitempty"`
-	OrganizationID         uuid.UUID                  `db:"organization_id" json:"-"`
-	CustomerOrganizationID *uuid.UUID                 `db:"customer_organization_id" json:"customerOrganizationId,omitempty"` //nolint:lll
-	AgentVersionID         *uuid.UUID                 `db:"agent_version_id" json:"-"`
-	ReportedAgentVersionID *uuid.UUID                 `db:"reported_agent_version_id" json:"reportedAgentVersionId,omitempty"` //nolint:lll
-	MetricsEnabled         bool                       `db:"metrics_enabled" json:"metricsEnabled"`
-	ImageCleanupEnabled    bool                       `db:"image_cleanup_enabled" json:"imageCleanupEnabled"`
-	AutohealEnabled        bool                       `db:"autoheal_enabled" json:"autohealEnabled"`
-	DeploymentLogsEnabled  bool                       `db:"deployment_logs_enabled" json:"deploymentLogsEnabled"`
-	DeploymentLogsAfter    *time.Time                 `db:"deployment_logs_after" json:"deploymentLogsAfter,omitempty"`
-	Resources              *DeploymentTargetResources `db:"resources" json:"resources,omitempty"`
+	ID                      uuid.UUID                  `db:"id" json:"id"`
+	CreatedAt               time.Time                  `db:"created_at" json:"createdAt"`
+	Name                    string                     `db:"name" json:"name"`
+	Type                    DeploymentType             `db:"type" json:"type"`
+	AccessKeySalt           *[]byte                    `db:"access_key_salt" json:"-"`
+	AccessKeyHash           *[]byte                    `db:"access_key_hash" json:"-"`
+	Namespace               *string                    `db:"namespace" json:"namespace,omitempty"`
+	Scope                   *DeploymentTargetScope     `db:"scope" json:"scope,omitempty"`
+	OrganizationID          uuid.UUID                  `db:"organization_id" json:"-"`
+	CustomerOrganizationID  *uuid.UUID                 `db:"customer_organization_id" json:"customerOrganizationId,omitempty"` //nolint:lll
+	AgentVersionID          *uuid.UUID                 `db:"agent_version_id" json:"-"`
+	ReportedAgentVersionID  *uuid.UUID                 `db:"reported_agent_version_id" json:"reportedAgentVersionId,omitempty"` //nolint:lll
+	MetricsEnabled          bool                       `db:"metrics_enabled" json:"metricsEnabled"`
+	ImageCleanupEnabled     bool                       `db:"image_cleanup_enabled" json:"imageCleanupEnabled"`
+	AutohealEnabled         bool                       `db:"autoheal_enabled" json:"autohealEnabled"`
+	AutomaticUpdatesEnabled bool                       `db:"automatic_updates_enabled" json:"automaticUpdatesEnabled"`
+	DeploymentLogsEnabled   bool                       `db:"deployment_logs_enabled" json:"deploymentLogsEnabled"`
+	DeploymentLogsAfter     *time.Time                 `db:"deployment_logs_after" json:"deploymentLogsAfter,omitempty"`
+	Resources               *DeploymentTargetResources `db:"resources" json:"resources,omitempty"`
 }
 
 type DeploymentTargetResources struct {

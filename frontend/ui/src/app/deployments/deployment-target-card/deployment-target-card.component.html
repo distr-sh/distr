@@ -428,6 +428,21 @@
       </div>
     }
 
+    @if (!deploymentTarget().automaticUpdatesEnabled) {
+      <div class="flex items-center">
+        <input
+          id="agent-update-automatic-updates-checkbox"
+          type="checkbox"
+          [formControl]="agentUpdateAutomaticUpdatesEnabled"
+          class="distr-checkbox" />
+        <label
+          for="agent-update-automatic-updates-checkbox"
+          class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+          Update this agent automatically in the future
+        </label>
+      </div>
+    }
+
     <p class="text-xs text-gray-500 dark:text-gray-400">
       Visit our
       <a
@@ -589,6 +604,23 @@
           }
           <p class="text-xs text-gray-500 dark:text-gray-400">
             Changing metrics reporting requires the agent to reconnect. Metrics reporting is not supported on macOS.
+          </p>
+        </div>
+
+        <div class="space-y-1">
+          <div class="flex items-center">
+            <input
+              id="automatic-updates-checkbox"
+              type="checkbox"
+              formControlName="automaticUpdatesEnabled"
+              class="distr-checkbox" />
+            <label for="automatic-updates-checkbox" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+              Enable automatic agent updates
+            </label>
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            When enabled, the agent is updated to the latest version as soon as one becomes available. Updating the
+            agent does not restart or update the deployed application.
           </p>
         </div>
 
