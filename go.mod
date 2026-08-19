@@ -28,7 +28,7 @@ require (
 	github.com/go-co-op/gocron/v2 v2.22.0
 	github.com/go-logr/zapr v1.3.0
 	github.com/go-mailx/mailx v1.0.2
-	github.com/go-mailx/mailx-ses v1.0.7
+	github.com/go-mailx/mailx-ses v1.0.8
 	github.com/go-mailx/mailx-smtp v1.0.5
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/google/uuid v1.6.0
@@ -137,7 +137,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/endpoint-discovery v1.12.11 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.37 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.38 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ses v1.37.4 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ses v1.37.6 // indirect
 	github.com/aws/aws-sdk-go-v2/service/signin v1.5.6 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sns v1.42.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.46.3 // indirect
