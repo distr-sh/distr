@@ -96,6 +96,7 @@ func main() {
 func mainLoop(ctx context.Context) {
 	tick := time.Tick(agentenv.Interval)
 	logsGoroutine := util.NewToggleableGoroutine(logWatcher.Watch)
+	workloadMetricsGoroutine := util.NewToggleableGoroutine(watchWorkloadMetrics)
 
 loop:
 	for ctx.Err() == nil {
@@ -122,6 +123,7 @@ loop:
 			} else {
 				stopMetrics(ctx)
 			}
+			workloadMetricsGoroutine.GoOrCancel(ctx, resource.MetricsEnabled)
 
 			deployments, err := GetExistingDeployments()
 			if err != nil {

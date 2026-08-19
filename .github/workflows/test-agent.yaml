@@ -70,6 +70,7 @@ jobs:
           DISTR_RESOURCE_ENDPOINT: http://localhost:8080/api/v1/agent/resources
           DISTR_STATUS_ENDPOINT: http://localhost:8080/api/v1/agent/status
           DISTR_METRICS_ENDPOINT: http://localhost:8080/api/v1/agent/metrics
+          DISTR_DEPLOYMENT_METRICS_ENDPOINT: http://localhost:8080/api/v1/agent/deployments
           DISTR_LOGS_ENDPOINT: http://localhost:8080/api/v1/agent/logs
           DISTR_AGENT_LOGS_ENDPOINT: http://localhost:8080/api/v1/agent/deployment-target-logs
           DISTR_INTERVAL: 5s

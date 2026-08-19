@@ -94,6 +94,7 @@ The database schema is managed through SQL migrations in `internal/migrations/sq
 - `organizations`: Multi-tenant organizations
 - `deployments`: Application deployments
 - `deployment_targets`: Customer environments (agents)
+- `deploymentmetrics` & `deploymentworkloadmetrics`: Per-deployment workload usage reports (one parent row per agent push, one child row per container with CPU millicores and memory bytes, plus nullable limits)
 - `artifacts`: Software artifacts (Docker images, Helm charts)
 - `applications`: Artifact collections
 - `licensekey`: License keys that vendors can generate for its customers
