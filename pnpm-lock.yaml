@@ -91,7 +91,7 @@ importers:
         version: 4.0.0
       marked:
         specifier: ^18.0.7
-        version: 18.0.9
+        version: 18.0.10
       posthog-js:
         specifier: ^1.407.3
         version: 1.407.3
@@ -2617,8 +2617,8 @@ packages:
   magic-string@1.0.0:
     resolution: {integrity: sha512-CGvjzMN08iv6w1mm4/x3Gh1hLb4VnyRUA15FFpl6CsCIGGoe36k7kY5KNz9QDbSBN5I/fWHM6ZlIkUTa5xdUEA==}
 
-  marked@18.0.9:
-    resolution: {integrity: sha512-/Sa4qiiHZxf0/FQdBBowr9q4r10krCwMvpK48FUBdXdUXScDxiQGR9zCPrFgRVR5LU3iySOiIjy09ZQvADir1w==}
+  marked@18.0.10:
+    resolution: {integrity: sha512-FJeH4bRpYoXiggcgriCGItKCSv3xkngJc4QCZ/rkQCogU3VYaLxYJoZl8Nw/b4+x7iij/pd+09mZ6A1dXzpL0A==}
     engines: {node: '>= 20'}
     hasBin: true
 
@@ -5515,7 +5515,7 @@ snapshots:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  marked@18.0.9: {}
+  marked@18.0.10: {}
 
   math-intrinsics@1.1.0: {}
 
