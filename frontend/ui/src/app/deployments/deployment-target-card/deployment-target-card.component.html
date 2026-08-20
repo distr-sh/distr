@@ -294,12 +294,12 @@
                               type="button"
                               class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
                               (click)="
-                                showDeploymentDropdownForId.set(undefined); showWorkloadMetricsModal(deployment)
+                                showDeploymentDropdownForId.set(undefined); showResourceMetricsModal(deployment)
                               ">
                               <fa-icon
                                 [icon]="faGauge"
                                 class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
-                              Workload metrics
+                              Resource metrics
                             </button>
                           </li>
                           @if (auth.hasAnyRole('read_write', 'admin')) {
@@ -886,14 +886,14 @@
   </div>
 </ng-template>
 
-<ng-template #workloadMetricsModal>
+<ng-template #resourceMetricsModal>
   <div
     animate.enter="animate-fly-in-top"
     animate.leave="animate-fly-out-top"
     class="w-3xl max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-700">
     <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
       <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
-        {{ selectedDeployment()?.application?.name }} workload metrics
+        {{ selectedDeployment()?.application?.name }} resource metrics
       </h3>
       <button
         type="button"
@@ -905,7 +905,7 @@
     </div>
     <div class="overflow-y-auto max-h-[70vh]">
       @if (selectedDeployment()?.id; as deploymentId) {
-        <app-deployment-workload-metrics [deploymentId]="deploymentId" />
+        <app-deployment-resource-metrics [deploymentId]="deploymentId" />
       }
     </div>
   </div>

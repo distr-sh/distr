@@ -71,9 +71,9 @@ import {DeploymentModalComponent} from '../deployment-modal.component';
 import {DeploymentRevisionDetailsComponent} from '../deployment-revisions/deployment-revision-details.component';
 import {DeploymentRevisionsTimelineComponent} from '../deployment-revisions/deployment-revisions-timeline.component';
 import {DeploymentAppNameComponent} from './deployment-app-name.component';
+import {DeploymentResourceMetricsComponent} from './deployment-resource-metrics.component';
 import {DeploymentStatusTextComponent} from './deployment-status-text.component';
 import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.component';
-import {DeploymentWorkloadMetricsComponent} from './deployment-workload-metrics.component';
 
 @Component({
   selector: 'app-deployment-target-card',
@@ -89,7 +89,7 @@ import {DeploymentWorkloadMetricsComponent} from './deployment-workload-metrics.
     ReactiveFormsModule,
     DeploymentModalComponent,
     DeploymentTargetMetricsComponent,
-    DeploymentWorkloadMetricsComponent,
+    DeploymentResourceMetricsComponent,
     TextFieldModule,
     DeploymentAppNameComponent,
     DeploymentStatusTextComponent,
@@ -127,7 +127,7 @@ export class DeploymentTargetCardComponent {
     viewChild.required<TemplateRef<unknown>>('deploymentTargetNotesDrawer');
   protected readonly revisionsDrawer = viewChild.required<TemplateRef<unknown>>('revisionsDrawer');
   protected readonly revisionDetailsModal = viewChild.required<TemplateRef<unknown>>('revisionDetailsModal');
-  protected readonly workloadMetricsModal = viewChild.required<TemplateRef<unknown>>('workloadMetricsModal');
+  protected readonly resourceMetricsModal = viewChild.required<TemplateRef<unknown>>('resourceMetricsModal');
   protected readonly deleteDeploymentProgressModal = viewChild.required<TemplateRef<unknown>>(
     'deleteDeploymentProgressModal'
   );
@@ -282,9 +282,9 @@ export class DeploymentTargetCardComponent {
     this.showModal(this.deploymentModal());
   }
 
-  protected showWorkloadMetricsModal(deployment: DeploymentWithLatestRevision) {
+  protected showResourceMetricsModal(deployment: DeploymentWithLatestRevision) {
     this.selectedDeployment.set(deployment);
-    this.showModal(this.workloadMetricsModal());
+    this.showModal(this.resourceMetricsModal());
   }
 
   protected async saveDeploymentTarget() {

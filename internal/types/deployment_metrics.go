@@ -10,12 +10,12 @@ type DeploymentMetrics struct {
 	ID           uuid.UUID                  `db:"id"`
 	CreatedAt    time.Time                  `db:"created_at"`
 	DeploymentID uuid.UUID                  `db:"deployment_id"`
-	Workloads    []DeploymentWorkloadMetric `db:"workloads"`
+	Resources    []DeploymentResourceMetric `db:"resources"`
 }
 
-type DeploymentWorkloadMetric struct {
-	Workload         string
-	Name             string
+type DeploymentResourceMetric struct {
+	Resource         string
+	Container        string
 	CPUUsageMillis   int64
 	MemoryBytes      int64
 	CPULimitMillis   *int64

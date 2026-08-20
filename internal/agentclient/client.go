@@ -236,12 +236,12 @@ func (c *Client) ReportMetrics(ctx context.Context, metrics api.AgentDeploymentT
 	}
 }
 
-func (c *Client) ReportWorkloadMetrics(
+func (c *Client) ReportDeploymentMetrics(
 	ctx context.Context,
 	deploymentID uuid.UUID,
-	metrics api.AgentDeploymentWorkloadMetricsRequest,
+	metrics api.AgentDeploymentResourceMetricsRequest,
 ) error {
-	endpoint, err := url.JoinPath(c.deploymentMetricsEndpoint, deploymentID.String(), "workload-metrics")
+	endpoint, err := url.JoinPath(c.deploymentMetricsEndpoint, deploymentID.String(), "metrics")
 	if err != nil {
 		return err
 	}

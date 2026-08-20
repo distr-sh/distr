@@ -82,7 +82,7 @@ func AgentRouter(r chiopenapi.Router) {
 			r.With(middleware.UseReadonlyDB).Get("/resources", agentResourcesHandler)
 			r.Post("/status", agentPostStatusHandler)
 			r.Post("/metrics", agentPostMetricsHander)
-			r.Post("/deployments/{deploymentId}/workload-metrics", agentPostWorkloadMetricsHandler)
+			r.Post("/deployments/{deploymentId}/metrics", agentPostDeploymentMetricsHandler)
 			r.Put("/logs", agentPutDeploymentLogsHandler())
 			r.Put("/deployment-target-logs", agentPutDeploymentTargetLogsHandler())
 		})
@@ -543,7 +543,7 @@ func agentPostMetricsHander(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func agentPostWorkloadMetricsHandler(w http.ResponseWriter, r *http.Request) {
+func agentPostDeploymentMetricsHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 
@@ -562,12 +562,12 @@ func agentPostWorkloadMetricsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := JsonBody[api.AgentDeploymentWorkloadMetricsRequest](w, r)
+	body, err := JsonBody[api.AgentDeploymentResourceMetricsRequest](w, r)
 	if err != nil {
 		return
 	}
 
-	metrics := mapping.DeploymentWorkloadMetricsRequestToInternal(deploymentID, body)
+	metrics := mapping.DeploymentResourceMetricsRequestToInternal(deploymentID, body)
 
 	if err := db.CreateDeploymentMetrics(ctx, &metrics); err != nil {
 		sentry.GetHubFromContext(ctx).CaptureException(err)

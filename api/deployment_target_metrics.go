@@ -17,21 +17,21 @@ type DeploymentTargetMetrics struct {
 	DiskMetrics         []DeploymentTargetDiskMetric `json:"diskMetrics,omitempty"`
 }
 
-type AgentDeploymentWorkloadMetricsRequest struct {
-	Workloads []DeploymentWorkloadMetric `json:"workloads"`
+type AgentDeploymentResourceMetricsRequest struct {
+	Resources []DeploymentResourceMetric `json:"resources"`
 }
 
-type DeploymentWorkloadMetrics struct {
+type DeploymentResourceMetrics struct {
 	DeploymentID uuid.UUID                  `json:"deploymentId"`
 	CreatedAt    time.Time                  `json:"createdAt"`
-	Workloads    []DeploymentWorkloadMetric `json:"workloads"`
+	Resources    []DeploymentResourceMetric `json:"resources"`
 }
 
-type DeploymentWorkloadMetric struct {
-	// Workload is the compose service name or the kubernetes workload (e.g. "Deployment/foo").
-	Workload string `json:"workload"`
-	// Name is the container name (docker) or "podName/containerName" (kubernetes).
-	Name           string `json:"name"`
+type DeploymentResourceMetric struct {
+	// Resource is the compose service name or the kubernetes workload (e.g. "Deployment/foo").
+	Resource string `json:"resource"`
+	// Container is the container name (docker) or "podName/containerName" (kubernetes).
+	Container      string `json:"container"`
 	CPUUsageMillis int64  `json:"cpuUsageMillis"`
 	MemoryBytes    int64  `json:"memoryBytes"`
 	// CPULimitMillis and MemoryLimitBytes are nil when the container has no limit configured.

@@ -11,22 +11,22 @@ import {isStale} from '../../../util/model';
 import {BytesPipe} from '../../../util/units';
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {DeploymentTargetsMetricsService} from '../../services/deployment-target-metrics.service';
-import {DeploymentWorkloadMetric} from '../../types/deployment-target-metrics';
+import {DeploymentResourceMetric} from '../../types/deployment-target-metrics';
 
-interface WorkloadGroup {
-  workload: string;
-  containers: DeploymentWorkloadMetric[];
+interface ResourceGroup {
+  resource: string;
+  containers: DeploymentResourceMetric[];
 }
 
 const staleThreshold = dayjs.duration(2, 'minutes');
 
 @Component({
-  selector: 'app-deployment-workload-metrics',
-  templateUrl: './deployment-workload-metrics.component.html',
+  selector: 'app-deployment-resource-metrics',
+  templateUrl: './deployment-resource-metrics.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [OverlayModule, PercentPipe, BytesPipe, SpinnerComponent, FaIconComponent, RelativeDatePipe],
 })
-export class DeploymentWorkloadMetricsComponent {
+export class DeploymentResourceMetricsComponent {
   public readonly deploymentId = input.required<string>();
 
   protected readonly faCircleQuestion = faCircleQuestion;
@@ -38,7 +38,7 @@ export class DeploymentWorkloadMetricsComponent {
   protected readonly metrics = rxResource({
     params: () => ({deploymentId: this.deploymentId()}),
     stream: ({params}) =>
-      timer(0, 30_000).pipe(switchMap(() => this.metricsService.getWorkloadMetrics(params.deploymentId))),
+      timer(0, 30_000).pipe(switchMap(() => this.metricsService.getDeploymentMetrics(params.deploymentId))),
   });
 
   protected readonly createdAt = computed(() => this.metrics.value()?.createdAt);
@@ -47,13 +47,13 @@ export class DeploymentWorkloadMetricsComponent {
     return metrics !== undefined && isStale(metrics, staleThreshold);
   });
 
-  protected readonly groups = computed<WorkloadGroup[]>(() => {
-    const groups = new Map<string, WorkloadGroup>();
-    for (const container of this.metrics.value()?.workloads ?? []) {
-      let group = groups.get(container.workload);
+  protected readonly groups = computed<ResourceGroup[]>(() => {
+    const groups = new Map<string, ResourceGroup>();
+    for (const container of this.metrics.value()?.resources ?? []) {
+      let group = groups.get(container.resource);
       if (!group) {
-        group = {workload: container.workload, containers: []};
-        groups.set(container.workload, group);
+        group = {resource: container.resource, containers: []};
+        groups.set(container.resource, group);
       }
       group.containers.push(container);
     }

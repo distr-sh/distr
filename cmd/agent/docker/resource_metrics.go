@@ -21,83 +21,83 @@ import (
 // sequential collection would not fit into the collection interval.
 const statsConcurrency = 8
 
-func watchWorkloadMetrics(ctx context.Context) {
-	logger.Info("starting workload metrics watch")
+func watchDeploymentMetrics(ctx context.Context) {
+	logger.Info("starting deployment metrics watch")
 	tick := time.Tick(30 * time.Second)
 	for ctx.Err() == nil {
 		select {
 		case <-tick:
-			reportWorkloadMetrics(ctx)
+			reportDeploymentMetrics(ctx)
 		case <-ctx.Done():
-			logger.Info("stopping to watch workload metrics")
+			logger.Info("stopping to watch deployment metrics")
 			return
 		}
 	}
 }
 
-func reportWorkloadMetrics(ctx context.Context) {
+func reportDeploymentMetrics(ctx context.Context) {
 	deployments, err := GetExistingDeployments()
 	if err != nil {
-		logger.Error("failed to get existing deployments for workload metrics", zap.Error(err))
+		logger.Error("failed to get existing deployments for deployment metrics", zap.Error(err))
 		return
 	}
 
 	for _, deployment := range deployments {
-		var containers []workloadContainer
+		var containers []resourceContainer
 		var err error
 		switch deployment.DockerType {
 		case types.DockerTypeCompose:
-			containers, err = composeWorkloadContainers(ctx, deployment)
+			containers, err = composeResourceContainers(ctx, deployment)
 		case types.DockerTypeSwarm:
-			containers, err = swarmWorkloadContainers(ctx, deployment)
+			containers, err = swarmResourceContainers(ctx, deployment)
 		default:
 			continue
 		}
 		if err != nil {
-			logger.Warn("failed to list containers for workload metrics",
+			logger.Warn("failed to list containers for deployment metrics",
 				zap.String("project", deployment.ProjectName), zap.Error(err))
 			continue
 		}
 
-		workloads := collectContainerMetrics(ctx, containers)
-		request := api.AgentDeploymentWorkloadMetricsRequest{Workloads: workloads}
-		if err := client.ReportWorkloadMetrics(ctx, deployment.ID, request); err != nil {
-			logger.Error("failed to report workload metrics",
+		resources := collectContainerMetrics(ctx, containers)
+		request := api.AgentDeploymentResourceMetricsRequest{Resources: resources}
+		if err := client.ReportDeploymentMetrics(ctx, deployment.ID, request); err != nil {
+			logger.Error("failed to report deployment metrics",
 				zap.String("project", deployment.ProjectName), zap.Error(err))
 		}
 	}
 }
 
-type workloadContainer struct {
-	ID       string
-	Workload string
-	Name     string
+type resourceContainer struct {
+	ID        string
+	Resource  string
+	Container string
 }
 
-func composeWorkloadContainers(ctx context.Context, deployment AgentDeployment) ([]workloadContainer, error) {
+func composeResourceContainers(ctx context.Context, deployment AgentDeployment) ([]resourceContainer, error) {
 	summaries, err := composeService.Ps(ctx, deployment.ProjectName, composeapi.PsOptions{})
 	if err != nil {
 		return nil, err
 	}
-	var result []workloadContainer
+	var result []resourceContainer
 	for _, summary := range summaries {
 		if summary.State == container.StateRunning {
-			result = append(result, workloadContainer{ID: summary.ID, Workload: summary.Service, Name: summary.Name})
+			result = append(result, resourceContainer{ID: summary.ID, Resource: summary.Service, Container: summary.Name})
 		}
 	}
 	return result, nil
 }
 
-func swarmWorkloadContainers(ctx context.Context, deployment AgentDeployment) ([]workloadContainer, error) {
-	return nil, errors.New("workload metrics are not supported in swarm mode")
+func swarmResourceContainers(ctx context.Context, deployment AgentDeployment) ([]resourceContainer, error) {
+	return nil, errors.New("deployment metrics are not supported in swarm mode")
 }
 
 // collectContainerMetrics fetches stats for the given containers. Containers that fail (e.g.
 // because they stopped between listing and stats collection) are logged and skipped so the
-// remaining workloads are still reported.
-func collectContainerMetrics(ctx context.Context, containers []workloadContainer) []api.DeploymentWorkloadMetric {
+// remaining containers are still reported.
+func collectContainerMetrics(ctx context.Context, containers []resourceContainer) []api.DeploymentResourceMetric {
 	var mutex sync.Mutex
-	var result []api.DeploymentWorkloadMetric
+	var result []api.DeploymentResourceMetric
 	var eg errgroup.Group
 	eg.SetLimit(statsConcurrency)
 	for _, c := range containers {
@@ -105,19 +105,19 @@ func collectContainerMetrics(ctx context.Context, containers []workloadContainer
 			cpuUsageMillis, memoryBytes, err := containerUsage(ctx, c.ID)
 			if err != nil {
 				logger.Warn("failed to get container stats",
-					zap.String("container", c.Name), zap.Error(err))
+					zap.String("container", c.Container), zap.Error(err))
 				return nil
 			}
-			metric := api.DeploymentWorkloadMetric{
-				Workload:       c.Workload,
-				Name:           c.Name,
+			metric := api.DeploymentResourceMetric{
+				Resource:       c.Resource,
+				Container:      c.Container,
 				CPUUsageMillis: cpuUsageMillis,
 				MemoryBytes:    memoryBytes,
 			}
 			// Limits are optional extra data: report the usage even if the inspect fails.
 			if cpuLimitMillis, memoryLimitBytes, err := containerLimits(ctx, c.ID); err != nil {
 				logger.Warn("failed to get container limits",
-					zap.String("container", c.Name), zap.Error(err))
+					zap.String("container", c.Container), zap.Error(err))
 			} else {
 				metric.CPULimitMillis = cpuLimitMillis
 				metric.MemoryLimitBytes = memoryLimitBytes

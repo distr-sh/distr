@@ -63,10 +63,10 @@ func DeploymentsRouter(r chiopenapi.Router) {
 					TimeseriesRangeRequest
 				}{})).
 				With(option.Response(http.StatusOK, nil, option.ContentType("text/plain")))
-			r.Get("/workload-metrics", getDeploymentWorkloadMetrics).
-				With(option.Description("Get the latest workload metrics reported for a deployment")).
+			r.Get("/metrics", getDeploymentMetrics).
+				With(option.Description("Get the latest resource metrics reported for a deployment")).
 				With(option.Request(DeploymentIDRequest{})).
-				With(option.Response(http.StatusOK, api.DeploymentWorkloadMetrics{}))
+				With(option.Response(http.StatusOK, api.DeploymentResourceMetrics{}))
 			r.Get("/logs", getDeploymentLogsHandler()).
 				With(option.Description("Get deployment logs")).
 				With(option.Request(struct {
@@ -554,11 +554,11 @@ func getDeploymentStatus(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getDeploymentWorkloadMetrics(w http.ResponseWriter, r *http.Request) {
+func getDeploymentMetrics(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	deployment := internalctx.GetDeployment(ctx)
 	if metrics, err := db.GetLatestDeploymentMetricsForDeploymentID(ctx, deployment.ID); err != nil {
-		internalctx.GetLogger(ctx).Error("failed to get deployment workload metrics", zap.Error(err))
+		internalctx.GetLogger(ctx).Error("failed to get deployment resource metrics", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	} else if metrics == nil {

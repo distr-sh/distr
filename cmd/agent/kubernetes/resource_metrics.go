@@ -13,20 +13,20 @@ import (
 	metricsv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
-// workloadMetricsNamespace is shared by the main loop with the metrics goroutines, which have
+// deploymentMetricsNamespace is shared by the main loop with the metrics goroutines, which have
 // no access to the resource polling themselves. Deployments are read from the agent's tracking
 // secrets via GetExistingDeployments, like the logs watcher does.
-var workloadMetricsNamespace atomic.Pointer[string]
+var deploymentMetricsNamespace atomic.Pointer[string]
 
-func watchWorkloadMetrics(ctx context.Context) {
-	logger.Info("starting workload metrics watch")
+func watchDeploymentMetrics(ctx context.Context) {
+	logger.Info("starting deployment metrics watch")
 	tick := time.Tick(30 * time.Second)
 	for ctx.Err() == nil {
 		select {
 		case <-tick:
-			doReportWorkloadMetrics(ctx)
+			reportDeploymentMetrics(ctx)
 		case <-ctx.Done():
-			logger.Info("stopping to watch workload metrics")
+			logger.Info("stopping to watch deployment metrics")
 			return
 		}
 	}
@@ -37,8 +37,8 @@ type podUsage struct {
 	memoryBytes    int64
 }
 
-func doReportWorkloadMetrics(ctx context.Context) {
-	namespacePtr := workloadMetricsNamespace.Load()
+func reportDeploymentMetrics(ctx context.Context) {
+	namespacePtr := deploymentMetricsNamespace.Load()
 	if namespacePtr == nil {
 		return
 	}
@@ -46,7 +46,7 @@ func doReportWorkloadMetrics(ctx context.Context) {
 
 	deployments, err := GetExistingDeployments(ctx, namespace)
 	if err != nil {
-		logger.Error("could not get existing deployments for workload metrics", zap.Error(err))
+		logger.Error("could not get existing deployments for deployment metrics", zap.Error(err))
 		return
 	}
 	if len(deployments) == 0 {
@@ -55,7 +55,7 @@ func doReportWorkloadMetrics(ctx context.Context) {
 
 	pods, err := k8sClient.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		logger.Error("listing pods for workload metrics failed", zap.Error(err))
+		logger.Error("listing pods for deployment metrics failed", zap.Error(err))
 		return
 	}
 
@@ -70,32 +70,32 @@ func doReportWorkloadMetrics(ctx context.Context) {
 		metricsByPod[podMetricses.Items[i].Name] = &podMetricses.Items[i]
 	}
 
-	workloadByPod := resolvePodWorkloads(ctx, namespace, pods.Items)
+	resourceByPod := resolvePodResources(ctx, namespace, pods.Items)
 
 	for _, deployment := range deployments {
 		// Deployments created by very old agent versions may miss the ID (see isSameDeployment).
 		if deployment.ID == uuid.Nil {
 			continue
 		}
-		resources, err := GetHelmManifest(ctx, namespace, deployment.ReleaseName)
+		manifest, err := GetHelmManifest(ctx, namespace, deployment.ReleaseName)
 		if err != nil {
-			logger.Warn("could not get helm manifest for workload metrics",
+			logger.Warn("could not get helm manifest for deployment metrics",
 				zap.String("releaseName", deployment.ReleaseName), zap.Error(err))
 			continue
 		}
 
-		manifestWorkloads := make(map[string]struct{})
-		for _, resource := range resources {
+		manifestResources := make(map[string]struct{})
+		for _, resource := range manifest {
 			switch resource.GetKind() {
 			case "Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Job", "CronJob", "Pod":
-				manifestWorkloads[resource.GetKind()+"/"+resource.GetName()] = struct{}{}
+				manifestResources[resource.GetKind()+"/"+resource.GetName()] = struct{}{}
 			}
 		}
 
-		var workloads []api.DeploymentWorkloadMetric
+		var resources []api.DeploymentResourceMetric
 		for _, pod := range pods.Items {
-			workload := workloadByPod[pod.Name]
-			if _, ok := manifestWorkloads[workload]; !ok {
+			resource := resourceByPod[pod.Name]
+			if _, ok := manifestResources[resource]; !ok {
 				continue
 			}
 			podMetrics, ok := metricsByPod[pod.Name]
@@ -104,9 +104,9 @@ func doReportWorkloadMetrics(ctx context.Context) {
 			}
 			for _, containerMetrics := range podMetrics.Containers {
 				cpuLimitMillis, memoryLimitBytes := containerLimits(pod, containerMetrics.Name)
-				workloads = append(workloads, api.DeploymentWorkloadMetric{
-					Workload:         workload,
-					Name:             workloadMetricsName(pod, containerMetrics),
+				resources = append(resources, api.DeploymentResourceMetric{
+					Resource:         resource,
+					Container:        containerName(pod, containerMetrics),
 					CPUUsageMillis:   containerMetrics.Usage.Cpu().MilliValue(),
 					MemoryBytes:      containerMetrics.Usage.Memory().Value(),
 					CPULimitMillis:   cpuLimitMillis,
@@ -115,15 +115,15 @@ func doReportWorkloadMetrics(ctx context.Context) {
 			}
 		}
 
-		request := api.AgentDeploymentWorkloadMetricsRequest{Workloads: workloads}
-		if err := agentClient.ReportWorkloadMetrics(ctx, deployment.ID, request); err != nil {
-			logger.Error("failed to report workload metrics",
+		request := api.AgentDeploymentResourceMetricsRequest{Resources: resources}
+		if err := agentClient.ReportDeploymentMetrics(ctx, deployment.ID, request); err != nil {
+			logger.Error("failed to report deployment metrics",
 				zap.String("releaseName", deployment.ReleaseName), zap.Error(err))
 		}
 	}
 }
 
-func workloadMetricsName(pod corev1.Pod, metrics metricsv1beta1.ContainerMetrics) string {
+func containerName(pod corev1.Pod, metrics metricsv1beta1.ContainerMetrics) string {
 	if len(pod.Spec.Containers) <= 1 {
 		return pod.Name
 	}
@@ -161,13 +161,13 @@ func containerLimits(pod corev1.Pod, containerName string) (cpuLimitMillis, memo
 	return cpuLimitMillis, memoryLimitBytes
 }
 
-// resolvePodWorkloads maps each pod to its workload key ("Kind/name") by resolving the
+// resolvePodResources maps each pod to its resource key ("Kind/name") by resolving the
 // controller owner chain: Pod -> ReplicaSet -> Deployment and Pod -> Job -> CronJob.
 // Pods without a controller map to themselves ("Pod/name").
-func resolvePodWorkloads(ctx context.Context, namespace string, pods []corev1.Pod) map[string]string {
+func resolvePodResources(ctx context.Context, namespace string, pods []corev1.Pod) map[string]string {
 	replicaSetOwners := make(map[string]*metav1.OwnerReference)
 	if replicaSets, err := k8sClient.AppsV1().ReplicaSets(namespace).List(ctx, metav1.ListOptions{}); err != nil {
-		logger.Warn("listing replicasets for workload metrics failed", zap.Error(err))
+		logger.Warn("listing replicasets for deployment metrics failed", zap.Error(err))
 	} else {
 		for _, replicaSet := range replicaSets.Items {
 			replicaSetOwners[replicaSet.Name] = metav1.GetControllerOf(&replicaSet)
@@ -176,7 +176,7 @@ func resolvePodWorkloads(ctx context.Context, namespace string, pods []corev1.Po
 
 	jobOwners := make(map[string]*metav1.OwnerReference)
 	if jobs, err := k8sClient.BatchV1().Jobs(namespace).List(ctx, metav1.ListOptions{}); err != nil {
-		logger.Warn("listing jobs for workload metrics failed", zap.Error(err))
+		logger.Warn("listing jobs for deployment metrics failed", zap.Error(err))
 	} else {
 		for _, job := range jobs.Items {
 			jobOwners[job.Name] = metav1.GetControllerOf(&job)

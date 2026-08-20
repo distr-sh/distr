@@ -17,10 +17,10 @@ const deploymentMetricsOutputExpr = `
 	dm.created_at,
 	dm.deployment_id,
 	array_agg(
-		row(dwm.workload, dwm.name, dwm.cpu_usage_millis, dwm.memory_bytes, dwm.cpu_limit_millis, dwm.memory_limit_bytes)
-		ORDER BY dwm.workload, dwm.name
-	) FILTER (WHERE dwm.id IS NOT NULL)
-		AS workloads
+		row(drm.resource, drm.container, drm.cpu_usage_millis, drm.memory_bytes, drm.cpu_limit_millis, drm.memory_limit_bytes)
+		ORDER BY drm.resource, drm.container
+	) FILTER (WHERE drm.id IS NOT NULL)
+		AS resources
 `
 
 func CreateDeploymentMetrics(ctx context.Context, metrics *types.DeploymentMetrics) error {
@@ -35,22 +35,22 @@ func CreateDeploymentMetrics(ctx context.Context, metrics *types.DeploymentMetri
 			return fmt.Errorf("failed to insert DeploymentMetrics: %w", err)
 		}
 
-		if len(metrics.Workloads) == 0 {
+		if len(metrics.Resources) == 0 {
 			return nil
 		}
 
 		_, err = db.CopyFrom(
 			ctx,
-			pgx.Identifier{"deploymentworkloadmetrics"},
+			pgx.Identifier{"deploymentresourcemetrics"},
 			[]string{
-				"deployment_metrics_id", "workload", "name",
+				"deployment_metrics_id", "resource", "container",
 				"cpu_usage_millis", "memory_bytes", "cpu_limit_millis", "memory_limit_bytes",
 			},
-			pgx.CopyFromSlice(len(metrics.Workloads), func(i int) ([]any, error) {
-				w := metrics.Workloads[i]
+			pgx.CopyFromSlice(len(metrics.Resources), func(i int) ([]any, error) {
+				r := metrics.Resources[i]
 				return []any{
-					metrics.ID, w.Workload, w.Name,
-					w.CPUUsageMillis, w.MemoryBytes, w.CPULimitMillis, w.MemoryLimitBytes,
+					metrics.ID, r.Resource, r.Container,
+					r.CPUUsageMillis, r.MemoryBytes, r.CPULimitMillis, r.MemoryLimitBytes,
 				}, nil
 			}),
 		)
@@ -72,7 +72,7 @@ func GetLatestDeploymentMetricsForDeploymentID(
 			ORDER BY created_at DESC, id
 			LIMIT 1
 		) dm
-		LEFT JOIN DeploymentWorkloadMetrics dwm ON dm.id = dwm.deployment_metrics_id
+		LEFT JOIN DeploymentResourceMetrics drm ON dm.id = drm.deployment_metrics_id
 		GROUP BY dm.id, dm.created_at, dm.deployment_id`,
 		pgx.NamedArgs{"deploymentId": deploymentID},
 	)

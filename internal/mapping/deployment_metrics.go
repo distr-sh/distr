@@ -6,42 +6,42 @@ import (
 	"github.com/google/uuid"
 )
 
-func DeploymentWorkloadMetricsRequestToInternal(
+func DeploymentResourceMetricsRequestToInternal(
 	deploymentID uuid.UUID,
-	req api.AgentDeploymentWorkloadMetricsRequest,
+	req api.AgentDeploymentResourceMetricsRequest,
 ) types.DeploymentMetrics {
 	return types.DeploymentMetrics{
 		DeploymentID: deploymentID,
-		Workloads:    List(req.Workloads, DeploymentWorkloadMetricToInternal),
+		Resources:    List(req.Resources, DeploymentResourceMetricToInternal),
 	}
 }
 
-func DeploymentWorkloadMetricToInternal(workload api.DeploymentWorkloadMetric) types.DeploymentWorkloadMetric {
-	return types.DeploymentWorkloadMetric{
-		Workload:         workload.Workload,
-		Name:             workload.Name,
-		CPUUsageMillis:   workload.CPUUsageMillis,
-		MemoryBytes:      workload.MemoryBytes,
-		CPULimitMillis:   workload.CPULimitMillis,
-		MemoryLimitBytes: workload.MemoryLimitBytes,
+func DeploymentResourceMetricToInternal(resource api.DeploymentResourceMetric) types.DeploymentResourceMetric {
+	return types.DeploymentResourceMetric{
+		Resource:         resource.Resource,
+		Container:        resource.Container,
+		CPUUsageMillis:   resource.CPUUsageMillis,
+		MemoryBytes:      resource.MemoryBytes,
+		CPULimitMillis:   resource.CPULimitMillis,
+		MemoryLimitBytes: resource.MemoryLimitBytes,
 	}
 }
 
-func DeploymentMetricsToAPI(metrics types.DeploymentMetrics) api.DeploymentWorkloadMetrics {
-	return api.DeploymentWorkloadMetrics{
+func DeploymentMetricsToAPI(metrics types.DeploymentMetrics) api.DeploymentResourceMetrics {
+	return api.DeploymentResourceMetrics{
 		DeploymentID: metrics.DeploymentID,
 		CreatedAt:    metrics.CreatedAt,
-		Workloads:    List(metrics.Workloads, DeploymentWorkloadMetricToAPI),
+		Resources:    List(metrics.Resources, DeploymentResourceMetricToAPI),
 	}
 }
 
-func DeploymentWorkloadMetricToAPI(workload types.DeploymentWorkloadMetric) api.DeploymentWorkloadMetric {
-	return api.DeploymentWorkloadMetric{
-		Workload:         workload.Workload,
-		Name:             workload.Name,
-		CPUUsageMillis:   workload.CPUUsageMillis,
-		MemoryBytes:      workload.MemoryBytes,
-		CPULimitMillis:   workload.CPULimitMillis,
-		MemoryLimitBytes: workload.MemoryLimitBytes,
+func DeploymentResourceMetricToAPI(resource types.DeploymentResourceMetric) api.DeploymentResourceMetric {
+	return api.DeploymentResourceMetric{
+		Resource:         resource.Resource,
+		Container:        resource.Container,
+		CPUUsageMillis:   resource.CPUUsageMillis,
+		MemoryBytes:      resource.MemoryBytes,
+		CPULimitMillis:   resource.CPULimitMillis,
+		MemoryLimitBytes: resource.MemoryLimitBytes,
 	}
 }

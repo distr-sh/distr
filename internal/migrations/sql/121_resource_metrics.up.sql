@@ -12,11 +12,11 @@ CREATE TABLE DeploymentMetrics (
 CREATE INDEX IF NOT EXISTS DeploymentMetrics_deployment_id_created_at_id
   ON DeploymentMetrics (deployment_id, created_at DESC, id);
 
-CREATE TABLE DeploymentWorkloadMetrics (
+CREATE TABLE DeploymentResourceMetrics (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   deployment_metrics_id UUID NOT NULL REFERENCES DeploymentMetrics(id) ON DELETE CASCADE,
-  workload TEXT NOT NULL,
-  name TEXT NOT NULL,
+  resource TEXT NOT NULL,
+  container TEXT NOT NULL,
   cpu_usage_millis BIGINT NOT NULL,
   memory_bytes BIGINT NOT NULL,
   -- NULL when the container (or any container of the pod) has no limit configured
@@ -24,8 +24,8 @@ CREATE TABLE DeploymentWorkloadMetrics (
   memory_limit_bytes BIGINT
 );
 
-CREATE INDEX IF NOT EXISTS DeploymentWorkloadMetrics_metrics_id
-  ON DeploymentWorkloadMetrics(deployment_metrics_id);
+CREATE INDEX IF NOT EXISTS DeploymentResourceMetrics_metrics_id
+  ON DeploymentResourceMetrics(deployment_metrics_id);
 
 ALTER TABLE DeploymentTargetMetrics
   ADD COLUMN agent_cpu_usage_millis BIGINT,

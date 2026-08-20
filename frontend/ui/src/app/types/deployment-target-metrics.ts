@@ -9,15 +9,15 @@ export interface DeploymentTargetLatestMetrics {
   diskMetrics?: DeploymentTargetDiskMetric[];
 }
 
-export interface DeploymentWorkloadMetrics {
+export interface DeploymentResourceMetrics {
   deploymentId: string;
   createdAt: string;
-  workloads: DeploymentWorkloadMetric[];
+  resources: DeploymentResourceMetric[];
 }
 
-export interface DeploymentWorkloadMetric {
-  workload: string;
-  name: string;
+export interface DeploymentResourceMetric {
+  resource: string;
+  container: string;
   cpuUsageMillis: number;
   memoryBytes: number;
   cpuLimitMillis?: number;
