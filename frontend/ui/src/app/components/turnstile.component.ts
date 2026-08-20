@@ -1,6 +1,5 @@
 import {
   afterNextRender,
-  ChangeDetectionStrategy,
   Component,
   computed,
   DestroyRef,
@@ -84,7 +83,6 @@ function requestTurnstile(): Promise<TurnstileApi> {
  */
 @Component({
   selector: 'app-turnstile',
-  changeDetection: ChangeDetectionStrategy.Eager,
   host: {class: 'flex justify-center'},
   template: `<div #widget class="cf-turnstile" data-action="turnstile-spin-v2"></div>`,
 })
@@ -105,18 +103,15 @@ export class TurnstileComponent {
   private readonly widget = viewChild.required<ElementRef<HTMLElement>>('widget');
   private turnstile?: TurnstileApi;
   private widgetId?: string;
-  private renderedTheme?: TurnstileTheme;
 
   constructor() {
-    afterNextRender(() => this.render());
-    // The theme is fixed when a widget is rendered, so switching the color scheme means rendering it again. That
-    // discards the current token: challenges are solved per widget, and this is a new one.
+    afterNextRender(() => this.render(this.theme()));
     effect(() => {
       const theme = this.theme();
-      if (this.widgetId !== undefined && theme !== this.renderedTheme) {
+      if (this.widgetId !== undefined) {
         this.remove();
         this.token.emit(undefined);
-        void this.render();
+        void this.render(theme);
       }
     });
     inject(DestroyRef).onDestroy(() => this.remove());
@@ -130,17 +125,16 @@ export class TurnstileComponent {
     }
   }
 
-  private async render(): Promise<void> {
+  private async render(theme: TurnstileTheme): Promise<void> {
+    let turnstile: TurnstileApi;
     try {
-      this.turnstile = await loadTurnstile();
-      this.loadFailed.set(false);
+      turnstile = this.turnstile ??= await loadTurnstile();
     } catch (e) {
       console.error(e);
       this.loadFailed.set(true);
       return;
     }
-    const theme = this.theme();
-    this.widgetId = this.turnstile.render(this.widget().nativeElement, {
+    this.widgetId = turnstile.render(this.widget().nativeElement, {
       sitekey: this.siteKey(),
       action,
       theme,
@@ -150,14 +144,12 @@ export class TurnstileComponent {
       'error-callback': () => this.token.emit(undefined),
       'expired-callback': () => this.token.emit(undefined),
     });
-    this.renderedTheme = theme;
   }
 
   private remove(): void {
     if (this.widgetId !== undefined) {
       this.turnstile?.remove(this.widgetId);
       this.widgetId = undefined;
-      this.renderedTheme = undefined;
     }
   }
 }
