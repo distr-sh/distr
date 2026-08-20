@@ -373,6 +373,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '/docs/guides/onboarding-a-new-customer/': '/docs/platform/rbac/',
     '/docs/guides/onboarding-a-docker-app/': '/docs/agents/application/',
     '/docs/guides/onboarding-a-helm-app/': '/docs/agents/application/',
+    '/docs/guides/distr-on-macos/': '/docs/agents/distr-on-macos/',
 
     // Integration redirects
     '/docs/integrations/mcp/': '/docs/integrations/',

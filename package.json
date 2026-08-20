@@ -20,7 +20,7 @@
     "format": "prettier --write --list-different ."
   },
   "private": true,
-  "packageManager": "pnpm@11.15.1",
+  "packageManager": "pnpm@11.22.0",
   "engines": {
     "node": "26.x"
   },
@@ -65,11 +65,9 @@
     "@angular/compiler-cli": "^22.0.8",
     "@sentry/cli": "^3.6.2",
     "@tailwindcss/postcss": "^4.3.3",
-    "@types/jasmine": "~6.0.0",
     "@types/semver": "^7.7.1",
     "autoprefixer": "^10.5.4",
-    "jasmine-core": "~6.3.0",
-    "jsdom": "^29.1.1",
+    "jsdom": "^30.0.0",
     "postcss": "^8.5.23",
     "prettier": "^3.9.6",
     "prettier-plugin-go-template": "^0.0.15",
