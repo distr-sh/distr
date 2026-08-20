@@ -5,19 +5,19 @@ description: 'Complete guide to software distribution platforms: what they are, 
 term: Software Distribution Platform
 alternateNames:
   - Software Distribution
-shortDefinition: 'A software distribution platform is the system software vendors use to get their applications into customer environments. It sits on dedicated infrastructure built to distribute software into customer-controlled environments: on-premises data centers, customer cloud accounts (BYOC), air-gapped networks, edge locations, and hybrid setups.'
-lastUpdated: 2026-07-23
+shortDefinition: 'A software distribution platform is the system software vendors use to get their applications into customer environments. It sits on dedicated infrastructure built to distribute software into self-hosted environments: on-premises data centers, customer cloud accounts (including BYOC), air-gapped networks, edge locations, and hybrid setups.'
+lastUpdated: 2026-08-20
 faq:
   - question: What is a software distribution platform?
-    answer: "It's the system software vendors use to distribute, deploy, and manage applications in customer-controlled environments (on-premises, BYOC, air-gapped, edge)."
+    answer: "It's the system software vendors use to distribute, deploy, and manage applications in self-hosted customer environments (on-premises, BYOC, air-gapped, edge)."
   - question: What is software distribution?
     answer: 'The process of getting software applications from software vendors to their customers. Packaging, delivery, deployment, licensing, updates, and ongoing management are all part of it.'
   - question: What is the difference between internal and vendor-to-customer distribution platforms?
-    answer: 'Internal distribution platforms (SCCM, ManageEngine) help IT departments deploy software to employees inside one organization. Vendor-to-customer platforms help software companies distribute commercial products to external paying customers who run the software in their own infrastructure.'
+    answer: 'Internal distribution platforms (SCCM, ManageEngine) help IT departments deploy software to employees inside one organization. Vendor-to-customer platforms help software companies distribute commercial products to external paying customers who host the software in their own environments (operation may sit with the vendor or the customer).'
   - question: What is a software distribution system?
     answer: 'The technical infrastructure and processes used to move software from source to destination. Distribution platforms are effectively comprehensive software distribution systems.'
   - question: Why do software vendors need distribution platforms?
-    answer: 'Modern enterprise customers want deployment options beyond SaaS: on-premises, BYOC, air-gapped, edge. Distribution platforms make managing software across all of those tractable.'
+    answer: 'Modern enterprise customers want deployment options beyond multi-tenant SaaS: self-hosted postures across on-premises, BYOC, air-gapped, and edge. Distribution platforms make managing software across that spectrum tractable.'
   - question: What is application distribution?
     answer: "Moving complete applications (rather than individual code files or libraries) to end users. In a B2B context, it's synonymous with software distribution."
   - question: What are software distribution tools?
@@ -36,7 +36,7 @@ import TestimonialCTA from '~/components/cta/TestimonialCTA.astro';
 
 ## What is a Software Distribution Platform?
 
-A **software distribution platform** is the system software vendors use to get their applications into customer environments. It's not the same as file hosting or a download link. These platforms sit on top of dedicated infrastructure built to distribute software into customer-controlled environments: [on-premises](/glossary/on-premises-definition/) data centers, customer cloud accounts (BYOC), [air-gapped](/glossary/air-gapped-meaning/) networks, edge locations, and hybrid setups.
+A **software distribution platform** is the system software vendors use to get their applications into customer environments. It's not the same as file hosting or a download link. These platforms sit on top of dedicated infrastructure built to distribute software into [self-hosted](/glossary/self-hosted-software/) environments across the spectrum: [on-premises](/glossary/on-premises-definition/) data centers, customer cloud accounts ([BYOC](/glossary/byoc-definition/)), [air-gapped](/glossary/air-gapped-meaning/) networks, edge locations, and hybrid setups. [The self-hosted spectrum](/blog/self-hosted-spectrum/) explains how those postures relate.
 
 The core problem they solve is the gap between vendor infrastructure and customer infrastructure. That covers version management, licensing enforcement, automated updates, deployment orchestration, health monitoring, and customer self-service, all stretched across the full software lifecycle.
 
@@ -239,7 +239,7 @@ Marketplace platforms (AppDirect, CloudBlue) focus on reseller ecosystems, billi
 
 ## Distribute Software to Customer Environments with Distr
 
-Distr is an open-source software distribution platform built specifically for software vendors distributing applications to [self-hosted](/glossary/self-hosted-software/), BYOC, [on-premises](/glossary/on-premises-definition/), [air-gapped](/glossary/air-gapped-meaning/), and edge customer environments.
+Distr is an open-source software distribution platform built specifically for software vendors distributing applications across [self-hosted](/glossary/self-hosted-software/) environments, including [BYOC](/glossary/byoc-definition/), [on-premises](/glossary/on-premises-definition/), [air-gapped](/glossary/air-gapped-meaning/), and edge.
 
 **Key capabilities:**
 

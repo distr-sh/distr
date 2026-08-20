@@ -1,70 +1,78 @@
 ---
 title: Air-Gapped Deployments
-description: Deploy your software to highly secure environments with no internet access using physical media transfers or IP whitelisting.
+description: Ship into true air-gapped and restricted networks with Distr. For Kubernetes, build a Zarf package in CI, publish it to Distr, transfer it across the gap, and deploy offline. Docker Compose can follow the same offline transfer pattern.
 slug: docs/use-cases/air-gapped-deployments
 sidebar:
   label: Air-Gapped Deployments
   order: 4
 ---
 
-import {Aside, Steps, Tabs, TabItem} from '@astrojs/starlight/components';
-import ThemedImage from '~/components/util/ThemedImage.astro';
-import airgappedLight from '~/assets/docs/getting-started/distribution-scenarios/air-gapped/airgapped-light.png';
-import airgappedDark from '~/assets/docs/getting-started/distribution-scenarios/air-gapped/airgapped-dark.png';
+import {Steps} from '@astrojs/starlight/components';
 
-Distr supports [air-gapped](/glossary/air-gapped-meaning/) deployments where strict security requirements demand physical or logical isolation from public networks.
-This deployment model is ideal for organizations in regulated industries, such as defense, finance, and critical infrastructure,
-where external connectivity or the use of agents is not permitted.
+[Air-gapped](/glossary/air-gapped-meaning/) deployments sit at the far end of the [self-hosted spectrum](/blog/self-hosted-spectrum/): the product runs in the customer's environment with **no vendor access** and no live path to your SaaS control plane.
 
-Distr offers two approaches to support these environments:
+Two problems to solve:
 
-1. **IP Whitelisting**: For environments that can allow limited outbound connections.
-2. **[Self-Managed](/glossary/self-hosted-software/) Registry with Physical Transfers**: For fully isolated environments, Distr supports a workflow where updates are packaged, encrypted, and physically transferred (e.g., via USB or secure media).
+1. **Create a complete offline package** (application + every image and dependency).
+2. **Move that package across the gap** (USB, exchange/staging server, or another customer-approved transfer), then deploy inside the isolated network.
 
-## Solution Architecture
+A Compose file or Helm chart alone is not enough. Images have to travel with the recipe, or be pullable from a place the customer is allowed to reach.
 
-<ThemedImage
-  lightSrc={airgappedLight}
-  darkSrc={airgappedDark}
-  alt="Air-gapped deployment architecture diagram"
-  dropShadow={false}
-/>
+## True air-gap: Kubernetes with Zarf (recommended)
 
-## Implementation Steps
+For Kubernetes, [Zarf](/docs/integrations/zarf/) is the path we recommend. A Zarf package is the offline bundle: Helm chart, container images, dependencies, and SBOMs in one archive.
 
-<Tabs>
-  <TabItem label="IP Whitelisting Approach">
-    <Aside type="note">
-      This approach works for environments where limited external connectivity is permitted
-      and the Distr's IP addresses can be whitelisted for secure access.
-    </Aside>
-    <Steps>
-    1. Set Up Your [Registry](/docs/registry/configuration/)
-    2. Create Your [Application](/docs/agents/application/)
-    3. White-label the [Customer portal](/docs/platform/branding/)
-    4. Onboard your first [customer](/docs/platform/rbac/#inviting-customer-organization-users)
-    5. Request IP Allowlist for Customer Access
-    6. Customer creates a [Personal Access token](/docs/integrations/personal-access-token/)
-    7. Customer can [access and pull](/docs/platform/customer-portal/registry/#registry-quickstart-from-the-customer-portal) your private artifacts
-    </Steps>
-  </TabItem>
+<Steps>
 
-  <TabItem label="Physical Transfer Approach">
-    <Aside type="note">
-      This approach is ideal for completely isolated environments with no external network
-      connectivity, using cryptographically verified physical transfers instead.
-    </Aside>
-    <Steps>
-    1. End-customer [self hosts Distr](/docs/self-hosting/) in their internal environment
-    2. Vendors deliver media to customer environment to be deployed internally via Distr
-    3. Reach out to support@distr.sh for more detailed information of how Distr can enable this end-customer use case
-    </Steps>
-  </TabItem>
-</Tabs>
+1. **Create the Zarf package with Distr.** Build it in CI (for example the GitHub Actions job in the [Zarf integration guide](/docs/integrations/zarf/#step-4-automate-with-github-actions)) so every release produces a versioned archive, then publish it to your Distr registry. Control who can pull which versions with [artifact entitlements](/docs/platform/artifact-entitlements/).
+2. **Customer moves it across the gap** on a connected staging machine they control: pull the entitled package from Distr, then transfer via USB/removable media, an exchange/DMZ server, or whatever one-way process they already trust.
+3. **Deploy offline** inside the air-gapped cluster with `zarf package deploy` from the local archive. No vendor access, no pull from Distr at install time.
 
-<Aside type="tip">
-  For Kubernetes applications, [Zarf](/docs/integrations/zarf/) can package your
-  Helm chart and all container images into a single self-contained archive that
-  customers deploy without any external registry access, distributed through the
-  Distr registry or via physical media.
-</Aside>
+</Steps>
+
+Commands, `zarf.yaml`, and the full GitHub Actions example live in the [Zarf integration guide](/docs/integrations/zarf/). This use-case page is the model; that page is the how-to.
+
+## True air-gap: Docker Compose
+
+Same idea as Kubernetes, without a Zarf-style single archive from Distr today: the customer must get **the Compose file and every image** onto a connected machine, then carry that set across the gap.
+
+**Vendor side.** Upload to Distr everything the app needs: the Compose file **and** every image it references (frontend, backend, Redis, Postgres, sidecars, …). Compose alone is not enough. If only Compose is on Distr, the customer would still have to pull images from somewhere else (often Docker Hub). Put all images on Distr, point Compose at those Distr image references, and entitle the customer for those artifacts.
+
+**Customer side (true air gap).**
+
+<Steps>
+
+1. On a **connected** staging host, pull everything they are entitled to from Distr: Compose file + all images.
+2. Export the images (for example `docker save`) into an archive; keep the Compose file and config/license material with it.
+3. Transfer that set across the gap (USB, exchange server, or approved one-way process).
+4. Inside the air gap: `docker load` the images, then `docker compose up`. Compose uses the `image:` names in the file. Those names must match the tags you loaded (your Distr tags). If the image is already present locally, Compose does not need network access and does not pull. You usually do **not** rewrite Compose after load, as long as it already referenced Distr image names. (Optional: load into their internal registry and retarget Compose there.)
+
+</Steps>
+
+## Crossing the gap
+
+How the package enters the isolated network is the customer's process. Common patterns:
+
+- **USB / removable media:** download on a connected host, carry media in, deploy from local files.
+- **Exchange / staging server:** download to a customer-controlled DMZ or jump host, then move through their approved transfer into the air gap.
+- **Data diode / one-way:** same idea: content only moves inbound under their controls.
+
+## Restricted outbound to Distr (not a true air gap)
+
+If the customer allows outbound access **only** to Distr, the environment is restricted, not air-gapped. They authenticate and pull entitled Compose + images directly from your [Distr registry](/docs/registry/) (see the [customer portal registry](/docs/platform/customer-portal/registry/) flow), then run Compose there.
+
+That only works when every `image:` in Compose points at Distr. If Compose still references Docker Hub (or another registry), whitelist Distr is not enough.
+
+Prefer the true air-gap paths above when there is no outbound path at all. Use restricted pulls when the buyer allows Distr but nothing else.
+
+## Customer-hosted Distr
+
+Some end customers run a [self-hosted Distr](/docs/self-hosting/) instance inside their own network so distribution stays inside their boundary. That is a special enablement path. Contact support@distr.sh if you need it.
+
+## Related
+
+- [Zarf integration (build, publish, deploy)](/docs/integrations/zarf/)
+- [Artifact entitlements](/docs/platform/artifact-entitlements/)
+- [Offline license keys](/docs/platform/license-keys/)
+- [Air-gapped glossary](/glossary/air-gapped-meaning/)
+- [The self-hosted spectrum](/blog/self-hosted-spectrum/)
