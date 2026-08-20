@@ -44,6 +44,10 @@ const action = 'turnstile-spin-v2';
 
 let api: Promise<TurnstileApi> | undefined;
 
+function turnstileApi(): TurnstileApi | undefined {
+  return (window as TurnstileWindow).turnstile;
+}
+
 function loadTurnstile(): Promise<TurnstileApi> {
   // A failed load is not cached: a single page application session outlives it, and the next attempt gets a fresh
   // script element instead of the rejection of the first one.
@@ -65,7 +69,7 @@ function requestTurnstile(): Promise<TurnstileApi> {
       reject(new Error(message));
     };
     script.addEventListener('load', () => {
-      const loaded = (window as TurnstileWindow).turnstile;
+      const loaded = turnstileApi();
       if (loaded) {
         resolve(loaded);
       } else {
@@ -101,7 +105,6 @@ export class TurnstileComponent {
   private readonly theme = computed<TurnstileTheme>(() => (this.colorScheme() === 'dark' ? 'dark' : 'light'));
 
   private readonly widget = viewChild.required<ElementRef<HTMLElement>>('widget');
-  private turnstile?: TurnstileApi;
   private widgetId?: string;
 
   constructor() {
@@ -120,7 +123,7 @@ export class TurnstileComponent {
   /** Discards the current token and shows a fresh challenge. A token can only be redeemed once. */
   public reset(): void {
     if (this.widgetId !== undefined) {
-      this.turnstile?.reset(this.widgetId);
+      turnstileApi()?.reset(this.widgetId);
       this.token.emit(undefined);
     }
   }
@@ -128,7 +131,7 @@ export class TurnstileComponent {
   private async render(theme: TurnstileTheme): Promise<void> {
     let turnstile: TurnstileApi;
     try {
-      turnstile = this.turnstile ??= await loadTurnstile();
+      turnstile = await loadTurnstile();
     } catch (e) {
       console.error(e);
       this.loadFailed.set(true);
@@ -148,7 +151,7 @@ export class TurnstileComponent {
 
   private remove(): void {
     if (this.widgetId !== undefined) {
-      this.turnstile?.remove(this.widgetId);
+      turnstileApi()?.remove(this.widgetId);
       this.widgetId = undefined;
     }
   }
