@@ -33,6 +33,7 @@ import {
   faComment,
   faEllipsisVertical,
   faFileLines,
+  faGauge,
   faGear,
   faHeartPulse,
   faLink,
@@ -72,6 +73,7 @@ import {DeploymentRevisionsTimelineComponent} from '../deployment-revisions/depl
 import {DeploymentAppNameComponent} from './deployment-app-name.component';
 import {DeploymentStatusTextComponent} from './deployment-status-text.component';
 import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.component';
+import {DeploymentWorkloadMetricsComponent} from './deployment-workload-metrics.component';
 
 @Component({
   selector: 'app-deployment-target-card',
@@ -87,6 +89,7 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
     ReactiveFormsModule,
     DeploymentModalComponent,
     DeploymentTargetMetricsComponent,
+    DeploymentWorkloadMetricsComponent,
     TextFieldModule,
     DeploymentAppNameComponent,
     DeploymentStatusTextComponent,
@@ -124,6 +127,7 @@ export class DeploymentTargetCardComponent {
     viewChild.required<TemplateRef<unknown>>('deploymentTargetNotesDrawer');
   protected readonly revisionsDrawer = viewChild.required<TemplateRef<unknown>>('revisionsDrawer');
   protected readonly revisionDetailsModal = viewChild.required<TemplateRef<unknown>>('revisionDetailsModal');
+  protected readonly workloadMetricsModal = viewChild.required<TemplateRef<unknown>>('workloadMetricsModal');
   protected readonly deleteDeploymentProgressModal = viewChild.required<TemplateRef<unknown>>(
     'deleteDeploymentProgressModal'
   );
@@ -137,6 +141,7 @@ export class DeploymentTargetCardComponent {
   protected readonly faClockRotateLeft = faClockRotateLeft;
   protected readonly faEllipsisVertical = faEllipsisVertical;
   protected readonly faFileLines = faFileLines;
+  protected readonly faGauge = faGauge;
   protected readonly faGear = faGear;
   protected readonly faHeartPulse = faHeartPulse;
   protected readonly faLink = faLink;
@@ -275,6 +280,11 @@ export class DeploymentTargetCardComponent {
     this.selectedDeploymentTarget.set(this.deploymentTarget());
     this.selectedDeployment.set(deployment);
     this.showModal(this.deploymentModal());
+  }
+
+  protected showWorkloadMetricsModal(deployment: DeploymentWithLatestRevision) {
+    this.selectedDeployment.set(deployment);
+    this.showModal(this.workloadMetricsModal());
   }
 
   protected async saveDeploymentTarget() {

@@ -1,0 +1,89 @@
+@if (metrics.isLoading()) {
+  <div class="flex items-center justify-center p-8">
+    <app-spinner class="size-8" />
+  </div>
+} @else if (metrics.error()) {
+  <p class="p-4 text-sm text-red-600 dark:text-red-500">Failed to load workload metrics.</p>
+} @else if (groups().length === 0) {
+  <p class="p-4 text-sm text-gray-500 dark:text-gray-400">No workload metrics have been reported yet.</p>
+} @else {
+  @if (stale()) {
+    <div
+      class="m-4 p-3 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300 flex items-center gap-2"
+      role="alert">
+      <fa-icon [icon]="faTriangleExclamation" />
+      <span>These workload metrics were reported {{ createdAt() | relativeDate }}.</span>
+    </div>
+  }
+  <div class="overflow-x-auto">
+    <table class="distr-table">
+      <thead class="distr-table-head bg-transparent dark:bg-transparent">
+        <tr>
+          <th scope="col" class="p-4">Container</th>
+          <th scope="col" class="p-4">
+            <span class="inline-flex items-center gap-1">
+              CPU
+              <button
+                type="button"
+                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                cdkOverlayOrigin
+                #cpuHelpOrigin="cdkOverlayOrigin"
+                (mouseenter)="cpuHelpHovered.set(true)"
+                (mouseleave)="cpuHelpHovered.set(false)"
+                (focus)="cpuHelpHovered.set(true)"
+                (blur)="cpuHelpHovered.set(false)">
+                <fa-icon [icon]="faCircleQuestion" />
+                <span class="sr-only">About CPU usage</span>
+              </button>
+            </span>
+            <ng-template
+              cdkConnectedOverlay
+              [cdkConnectedOverlayOrigin]="cpuHelpOrigin"
+              [cdkConnectedOverlayOpen]="cpuHelpHovered()"
+              [cdkConnectedOverlayPush]="true"
+              [cdkConnectedOverlayPositions]="[
+                {originX: 'center', originY: 'bottom', overlayX: 'center', overlayY: 'top'},
+                {originX: 'center', originY: 'top', overlayX: 'center', overlayY: 'bottom'},
+              ]">
+              <div
+                class="mt-1 px-3 py-2 text-xs font-normal normal-case tracking-normal rounded-lg shadow-lg bg-gray-50 dark:bg-gray-800 dark:text-white max-w-64">
+                CPU usage in millicores (<code>1000m</code> = one full core), averaged over the last sampling interval.
+                The percentage is relative to the container's CPU limit.
+              </div>
+            </ng-template>
+          </th>
+          <th scope="col" class="p-4">Memory</th>
+        </tr>
+      </thead>
+      @for (group of groups(); track group.workload) {
+        <tbody class="border-t-2 border-gray-200 dark:border-gray-600">
+          <tr class="bg-gray-50 dark:bg-gray-800">
+            <th
+              scope="colgroup"
+              colspan="3"
+              class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              {{ group.workload }}
+            </th>
+          </tr>
+          @for (container of group.containers; track container.name) {
+            <tr class="distr-table-row">
+              <td class="px-4 py-3 pl-8 font-medium text-gray-900 dark:text-white">{{ container.name }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-white">
+                {{ container.cpuUsageMillis }}m
+                @if (cpuUsageRatio(container.cpuUsageMillis, container.cpuLimitMillis); as ratio) {
+                  <span class="text-gray-500 dark:text-gray-400">({{ ratio | percent }})</span>
+                }
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-white">
+                {{ container.memoryBytes | bytes: '1.0-1' }}
+                @if (memoryUsageRatio(container.memoryBytes, container.memoryLimitBytes); as ratio) {
+                  <span class="text-gray-500 dark:text-gray-400">({{ ratio | percent }})</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      }
+    </table>
+  </div>
+}
