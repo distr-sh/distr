@@ -53,17 +53,9 @@
       @for (user of users$ | async; track user.id) {
         <tr class="distr-table-row">
           <td class="pl-4">
-            @if (user.imageUrl) {
-              <img
-                (click)="uploadImage(user)"
-                class="w-8 h-8 rounded-full cursor-pointer"
-                [attr.src]="user.imageUrl | secureImage | async"
-                alt="" />
-            } @else {
-              <div class="shrink-0 text-gray-400">
-                <fa-icon (click)="uploadImage(user)" [icon]="faUserCircle" size="xl" class="text-xl cursor-pointer" />
-              </div>
-            }
+            <button type="button" (click)="uploadImage(user)" aria-label="Upload user avatar" class="cursor-pointer">
+              <app-avatar [image]="user.imageUrl" [name]="user.name" [icon]="faUser" class="size-8 rounded-full" />
+            </button>
           </td>
           <td
             class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-32 lg:max-w-64 xl:max-w-128 overflow-hidden text-ellipsis">

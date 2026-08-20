@@ -12,12 +12,13 @@ import {AuthService} from '../../services/auth.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {PartnerOrganizationsService} from '../../services/partner-organizations.service';
 import {ToastService} from '../../services/toast.service';
+import {AvatarComponent} from '../avatar.component';
 import {InlineEditComponent} from '../inline-edit.component';
 
 @Component({
   templateUrl: './partner-organizations.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [ReactiveFormsModule, FontAwesomeModule, DecimalPipe, RouterLink, InlineEditComponent],
+  imports: [ReactiveFormsModule, FontAwesomeModule, DecimalPipe, RouterLink, InlineEditComponent, AvatarComponent],
 })
 export class PartnerOrganizationsComponent {
   protected readonly faMagnifyingGlass = faMagnifyingGlass;

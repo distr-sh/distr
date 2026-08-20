@@ -5,7 +5,7 @@ import {FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faDocker} from '@fortawesome/free-brands-svg-icons';
 import {
-  faBuildingUser,
+  faAddressBook,
   faCheckCircle,
   faCog,
   faDharmachakra,
@@ -31,7 +31,7 @@ export class DeploymentWizardStepperComponent extends CdkStepper {
   protected readonly faShip = faShip;
   protected readonly faServer = faServer;
   protected readonly faNetworkWired = faNetworkWired;
-  protected readonly faBuildingUser = faBuildingUser;
+  protected readonly faAddressBook = faAddressBook;
   protected readonly faCog = faCog;
   protected readonly faCheckCircle = faCheckCircle;
 

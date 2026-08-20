@@ -5,7 +5,7 @@
       @if (customer().imageUrl; as imageUrl) {
         <img class="size-10 rounded-sm" [attr.src]="imageUrl | secureImage | async" alt="" />
       } @else {
-        <fa-icon [icon]="faBuildingUser" class="size-10 flex items-center justify-center text-2xl text-gray-400" />
+        <fa-icon [icon]="faAddressBook" class="size-10 flex items-center justify-center text-2xl text-gray-400" />
       }
       <div>
         <div class="flex gap-2">

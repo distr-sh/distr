@@ -62,17 +62,12 @@
                     type="button"
                     (click)="uploadImage(customer)"
                     aria-label="Upload customer avatar"
-                    class="size-8 rounded-sm overflow-hidden">
-                    @if (customer.imageUrl) {
-                      <img
-                        [src]="customer.imageUrl | secureImage | async"
-                        alt="customer avatar"
-                        class="size-full object-cover" />
-                    } @else {
-                      <span class="distr-avatar-placeholder size-full">
-                        <fa-icon [icon]="faBuildingUser" size="lg" />
-                      </span>
-                    }
+                    class="cursor-pointer">
+                    <app-avatar
+                      [image]="customer.imageUrl"
+                      [name]="customer.name"
+                      [icon]="faAddressBook"
+                      class="size-8 rounded-sm" />
                   </button>
                 </td>
                 <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
