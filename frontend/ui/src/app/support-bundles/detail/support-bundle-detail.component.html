@@ -139,7 +139,7 @@
           <div class="space-y-4 mb-6">
             @for (comment of bundle.comments; track comment.id) {
               <div class="flex gap-3">
-                <app-user-avatar [image]="comment.userImageUrl" [name]="comment.userName" class="size-8" />
+                <app-avatar [image]="comment.userImageUrl" [name]="comment.userName" class="size-8 rounded-full" />
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-1">
                     <span class="text-sm font-medium text-gray-900 dark:text-white">{{ comment.userName }}</span>

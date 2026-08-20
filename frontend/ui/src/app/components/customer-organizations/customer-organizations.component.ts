@@ -16,7 +16,7 @@ import {RouterLink} from '@angular/router';
 import {CustomerOrganization, CustomerOrganizationFeature, CustomerOrganizationWithUsage} from '@distr-sh/distr-sdk';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {
-  faBuildingUser,
+  faAddressBook,
   faChevronDown,
   faCircleExclamation,
   faEdit,
@@ -27,7 +27,6 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, filter, firstValueFrom, map, of, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
-import {SecureImagePipe} from '../../../util/secureImage';
 import {ApplicationEntitlementsService} from '../../services/application-entitlements.service';
 import {ArtifactEntitlementsService} from '../../services/artifact-entitlements.service';
 import {AuthService} from '../../services/auth.service';
@@ -38,6 +37,7 @@ import {OrganizationService} from '../../services/organization.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {PartnerOrganizationsService} from '../../services/partner-organizations.service';
 import {ToastService} from '../../services/toast.service';
+import {AvatarComponent} from '../avatar.component';
 import {InlineEditComponent} from '../inline-edit.component';
 import {QuotaLimitComponent} from '../quota-limit.component';
 
@@ -48,19 +48,19 @@ import {QuotaLimitComponent} from '../quota-limit.component';
     ReactiveFormsModule,
     FontAwesomeModule,
     DatePipe,
-    SecureImagePipe,
     AsyncPipe,
     DecimalPipe,
     RouterLink,
     QuotaLimitComponent,
     OverlayModule,
     InlineEditComponent,
+    AvatarComponent,
   ],
 })
 export class CustomerOrganizationsComponent {
   protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faPlus = faPlus;
-  protected readonly faBuildingUser = faBuildingUser;
+  protected readonly faAddressBook = faAddressBook;
   protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
   protected readonly faCircleExclamation = faCircleExclamation;

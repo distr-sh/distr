@@ -3,14 +3,14 @@ import {ChangeDetectionStrategy, Component, inject, input, output} from '@angula
 import {rxResource} from '@angular/core/rxjs-interop';
 import {DeploymentRevisionResponse, DeploymentTarget} from '@distr-sh/distr-sdk';
 import {OrganizationKindPipe} from '../../../util/organization-kind';
-import {UserAvatarComponent} from '../../components/user-avatar.component';
+import {AvatarComponent} from '../../components/avatar.component';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
 
 @Component({
   selector: 'app-deployment-revisions-timeline',
   templateUrl: './deployment-revisions-timeline.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [DatePipe, OrganizationKindPipe, UserAvatarComponent],
+  imports: [DatePipe, OrganizationKindPipe, AvatarComponent],
 })
 export class DeploymentRevisionsTimelineComponent {
   public readonly deploymentId = input.required<string>();
