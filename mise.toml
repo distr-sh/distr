@@ -5,7 +5,7 @@ task.output = "prefix"
 [tools]
 node = "26"
 go = "1.27.0"
-golangci-lint = "2.13.0"
+golangci-lint = "2.13.1"
 helm-docs = "1.14.2"
 watchexec = "2.5.1"
 pnpm = "11.22.0"
