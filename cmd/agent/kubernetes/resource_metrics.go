@@ -115,6 +115,9 @@ func reportDeploymentMetrics(ctx context.Context) {
 			}
 		}
 
+		if len(resources) == 0 {
+			continue
+		}
 		request := api.AgentDeploymentResourceMetricsRequest{Resources: resources}
 		if err := agentClient.ReportDeploymentMetrics(ctx, deployment.ID, request); err != nil {
 			logger.Error("failed to report deployment metrics",
@@ -124,11 +127,25 @@ func reportDeploymentMetrics(ctx context.Context) {
 }
 
 func containerName(pod corev1.Pod, metrics metricsv1beta1.ContainerMetrics) string {
-	if len(pod.Spec.Containers) <= 1 {
+	if metricContainerCount(pod) <= 1 {
 		return pod.Name
 	}
 
 	return pod.Name + "/" + metrics.Name
+}
+
+func metricContainerCount(pod corev1.Pod) int {
+	n := len(pod.Spec.Containers)
+	for i := range pod.Spec.InitContainers {
+		if isRestartableInitContainer(&pod.Spec.InitContainers[i]) {
+			n++
+		}
+	}
+	return n
+}
+
+func isRestartableInitContainer(container *corev1.Container) bool {
+	return container.RestartPolicy != nil && *container.RestartPolicy == corev1.ContainerRestartPolicyAlways
 }
 
 // containerLimits returns the limits declared for one container of the pod. Init containers are

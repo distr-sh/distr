@@ -60,6 +60,9 @@ func reportDeploymentMetrics(ctx context.Context) {
 		}
 
 		resources := collectContainerMetrics(ctx, containers)
+		if len(resources) == 0 {
+			continue
+		}
 		request := api.AgentDeploymentResourceMetricsRequest{Resources: resources}
 		if err := client.ReportDeploymentMetrics(ctx, deployment.ID, request); err != nil {
 			logger.Error("failed to report deployment metrics",

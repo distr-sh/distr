@@ -24,6 +24,10 @@ const deploymentMetricsOutputExpr = `
 `
 
 func CreateDeploymentMetrics(ctx context.Context, metrics *types.DeploymentMetrics) error {
+	if len(metrics.Resources) == 0 {
+		return nil
+	}
+
 	return RunTx(ctx, func(ctx context.Context) error {
 		db := internalctx.GetDb(ctx)
 
@@ -33,10 +37,6 @@ func CreateDeploymentMetrics(ctx context.Context, metrics *types.DeploymentMetri
 		).Scan(&metrics.ID, &metrics.CreatedAt)
 		if err != nil {
 			return fmt.Errorf("failed to insert DeploymentMetrics: %w", err)
-		}
-
-		if len(metrics.Resources) == 0 {
-			return nil
 		}
 
 		_, err = db.CopyFrom(
