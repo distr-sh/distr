@@ -24,6 +24,25 @@ func CreateAgentVersion(ctx context.Context) error {
 	return err
 }
 
+// ApplyAutomaticAgentUpdates points every DeploymentTarget with automatic updates enabled at the agent version of
+// the running hub. Agents self-update as soon as the version they receive differs from the one they run.
+func ApplyAutomaticAgentUpdates(ctx context.Context) (int64, error) {
+	db := internalctx.GetDb(ctx)
+	cmd, err := db.Exec(ctx,
+		`UPDATE DeploymentTarget dt
+		SET agent_version_id = av.id
+		FROM AgentVersion av
+		WHERE av.name = @name
+			AND dt.automatic_updates_enabled
+			AND dt.agent_version_id IS DISTINCT FROM av.id`,
+		pgx.NamedArgs{"name": buildconfig.Version()},
+	)
+	if err != nil {
+		return 0, err
+	}
+	return cmd.RowsAffected(), nil
+}
+
 func GetAgentVersions(ctx context.Context) ([]types.AgentVersion, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(

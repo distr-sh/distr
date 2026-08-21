@@ -110,6 +110,7 @@ export class DeploymentWizardComponent implements OnInit {
     clusterScope: new FormControl<boolean>(true, {nonNullable: true}),
     imageCleanupEnabled: new FormControl<boolean>(true, {nonNullable: true}),
     deploymentLogsEnabled: new FormControl<boolean>(true, {nonNullable: true}),
+    automaticUpdatesEnabled: new FormControl<boolean>(true, {nonNullable: true}),
     customDockerEndpoint: new FormControl<boolean>(false, {nonNullable: true}),
     dockerEndpoint: new FormControl<string>('', {
       nonNullable: true,
@@ -432,6 +433,7 @@ export class DeploymentWizardComponent implements OnInit {
             metricsEnabled: this.deploymentTargetForm.value.scope !== 'namespace',
             imageCleanupEnabled: app.type === 'docker' && this.deploymentTargetForm.controls.imageCleanupEnabled.value,
             deploymentLogsEnabled: this.deploymentTargetForm.controls.deploymentLogsEnabled.value,
+            automaticUpdatesEnabled: this.deploymentTargetForm.controls.automaticUpdatesEnabled.value,
             autohealEnabled: app.type === 'docker' ? (this.deploymentTargetForm.value.autohealEnabled ?? true) : false,
             customerOrganization: customerOrgId ? ({id: customerOrgId} as CustomerOrganization) : undefined,
             resources: this.deploymentTargetForm.value.customResources
