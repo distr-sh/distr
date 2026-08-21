@@ -106,7 +106,7 @@ func reportDeploymentMetrics(ctx context.Context) {
 				cpuLimitMillis, memoryLimitBytes := containerLimits(pod, containerMetrics.Name)
 				resources = append(resources, api.DeploymentResourceMetric{
 					Resource:         resource,
-					Container:        containerName(pod, containerMetrics),
+					Container:        containerName(pod, *podMetrics, containerMetrics),
 					CPUUsageMillis:   containerMetrics.Usage.Cpu().MilliValue(),
 					MemoryBytes:      containerMetrics.Usage.Memory().Value(),
 					CPULimitMillis:   cpuLimitMillis,
@@ -123,8 +123,15 @@ func reportDeploymentMetrics(ctx context.Context) {
 	}
 }
 
-func containerName(pod corev1.Pod, metrics metricsv1beta1.ContainerMetrics) string {
-	if len(pod.Spec.Containers) <= 1 {
+// containerName qualifies the pod name for multi-container pods. Whether the pod has more than
+// one container is decided by the reported metrics, not by pod.Spec.Containers, because
+// restartable init containers (sidecars) report usage but are not part of the spec list.
+func containerName(
+	pod corev1.Pod,
+	podMetrics metricsv1beta1.PodMetrics,
+	metrics metricsv1beta1.ContainerMetrics,
+) string {
+	if len(podMetrics.Containers) <= 1 {
 		return pod.Name
 	}
 
