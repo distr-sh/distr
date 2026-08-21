@@ -14,6 +14,11 @@ func RunDeploymentTargetMetricsCleanup(ctx context.Context) error {
 		return err
 	} else {
 		log.Info("DeploymentTargetMetrics cleanup finished", zap.Int64("rowsDeleted", count))
+	}
+	if count, err := db.CleanupDeploymentMetrics(ctx); err != nil {
+		return err
+	} else {
+		log.Info("DeploymentMetrics cleanup finished", zap.Int64("rowsDeleted", count))
 		return nil
 	}
 }

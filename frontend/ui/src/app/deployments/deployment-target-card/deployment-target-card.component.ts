@@ -33,6 +33,7 @@ import {
   faComment,
   faEllipsisVertical,
   faFileLines,
+  faGauge,
   faGear,
   faHeartPulse,
   faLink,
@@ -70,6 +71,7 @@ import {DeploymentModalComponent} from '../deployment-modal.component';
 import {DeploymentRevisionDetailsComponent} from '../deployment-revisions/deployment-revision-details.component';
 import {DeploymentRevisionsTimelineComponent} from '../deployment-revisions/deployment-revisions-timeline.component';
 import {DeploymentAppNameComponent} from './deployment-app-name.component';
+import {DeploymentResourceMetricsComponent} from './deployment-resource-metrics.component';
 import {DeploymentStatusTextComponent} from './deployment-status-text.component';
 import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.component';
 
@@ -87,6 +89,7 @@ import {DeploymentTargetMetricsComponent} from './deployment-target-metrics.comp
     ReactiveFormsModule,
     DeploymentModalComponent,
     DeploymentTargetMetricsComponent,
+    DeploymentResourceMetricsComponent,
     TextFieldModule,
     DeploymentAppNameComponent,
     DeploymentStatusTextComponent,
@@ -124,6 +127,7 @@ export class DeploymentTargetCardComponent {
     viewChild.required<TemplateRef<unknown>>('deploymentTargetNotesDrawer');
   protected readonly revisionsDrawer = viewChild.required<TemplateRef<unknown>>('revisionsDrawer');
   protected readonly revisionDetailsModal = viewChild.required<TemplateRef<unknown>>('revisionDetailsModal');
+  protected readonly resourceMetricsModal = viewChild.required<TemplateRef<unknown>>('resourceMetricsModal');
   protected readonly deleteDeploymentProgressModal = viewChild.required<TemplateRef<unknown>>(
     'deleteDeploymentProgressModal'
   );
@@ -137,6 +141,7 @@ export class DeploymentTargetCardComponent {
   protected readonly faClockRotateLeft = faClockRotateLeft;
   protected readonly faEllipsisVertical = faEllipsisVertical;
   protected readonly faFileLines = faFileLines;
+  protected readonly faGauge = faGauge;
   protected readonly faGear = faGear;
   protected readonly faHeartPulse = faHeartPulse;
   protected readonly faLink = faLink;
@@ -275,6 +280,11 @@ export class DeploymentTargetCardComponent {
     this.selectedDeploymentTarget.set(this.deploymentTarget());
     this.selectedDeployment.set(deployment);
     this.showModal(this.deploymentModal());
+  }
+
+  protected showResourceMetricsModal(deployment: DeploymentWithLatestRevision) {
+    this.selectedDeployment.set(deployment);
+    this.showModal(this.resourceMetricsModal());
   }
 
   protected async saveDeploymentTarget() {

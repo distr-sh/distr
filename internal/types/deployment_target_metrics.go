@@ -5,13 +5,15 @@ import (
 )
 
 type DeploymentTargetMetrics struct {
-	ID                 uuid.UUID                    `db:"id"`
-	DeploymentTargetID uuid.UUID                    `db:"deployment_target_id"`
-	CPUCoresMillis     int64                        `db:"cpu_cores_millis"`
-	CPUUsage           float64                      `db:"cpu_usage"`
-	MemoryBytes        int64                        `db:"memory_bytes"`
-	MemoryUsage        float64                      `db:"memory_usage"`
-	DiskMetrics        []DeploymentTargetDiskMetric `db:"disk_metrics"`
+	ID                  uuid.UUID                    `db:"id"`
+	DeploymentTargetID  uuid.UUID                    `db:"deployment_target_id"`
+	CPUCoresMillis      int64                        `db:"cpu_cores_millis"`
+	CPUUsage            float64                      `db:"cpu_usage"`
+	MemoryBytes         int64                        `db:"memory_bytes"`
+	MemoryUsage         float64                      `db:"memory_usage"`
+	AgentCPUUsageMillis *int64                       `db:"agent_cpu_usage_millis"`
+	AgentMemoryBytes    *int64                       `db:"agent_memory_bytes"`
+	DiskMetrics         []DeploymentTargetDiskMetric `db:"disk_metrics"`
 }
 
 type DeploymentTargetDiskMetric struct {

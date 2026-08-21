@@ -56,9 +56,11 @@ type AgentDeploymentStatus struct {
 }
 
 type AgentDeploymentTargetMetricsRequest struct {
-	CPUCoresMillis int64                        `json:"cpuCoresMillis"`
-	CPUUsage       float64                      `json:"cpuUsage"`
-	MemoryBytes    int64                        `json:"memoryBytes"`
-	MemoryUsage    float64                      `json:"memoryUsage"`
-	DiskMetrics    []DeploymentTargetDiskMetric `json:"diskMetrics,omitempty"`
+	CPUCoresMillis      int64                        `json:"cpuCoresMillis"`
+	CPUUsage            float64                      `json:"cpuUsage"`
+	MemoryBytes         int64                        `json:"memoryBytes"`
+	MemoryUsage         float64                      `json:"memoryUsage"`
+	AgentCPUUsageMillis *int64                       `json:"agentCpuUsageMillis,omitempty"`
+	AgentMemoryBytes    *int64                       `json:"agentMemoryBytes,omitempty"`
+	DiskMetrics         []DeploymentTargetDiskMetric `json:"diskMetrics,omitempty"`
 }

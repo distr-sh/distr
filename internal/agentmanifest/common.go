@@ -39,13 +39,14 @@ func getTemplateData(
 	secret *string,
 ) (map[string]any, error) {
 	var (
-		loginEndpoint     string
-		manifestEndpoint  string
-		resourcesEndpoint string
-		statusEndpoint    string
-		metricsEndpoint   string
-		logsEndpoint      string
-		agentLogsEndpoint string
+		loginEndpoint             string
+		manifestEndpoint          string
+		resourcesEndpoint         string
+		statusEndpoint            string
+		metricsEndpoint           string
+		deploymentMetricsEndpoint string
+		logsEndpoint              string
+		agentLogsEndpoint         string
 	)
 
 	if u, err := url.Parse(customdomains.AppDomainOrDefault(ctx, org.ID, org.Branding)); err != nil {
@@ -57,29 +58,31 @@ func getTemplateData(
 		resourcesEndpoint = u.JoinPath("resources").String()
 		statusEndpoint = u.JoinPath("status").String()
 		metricsEndpoint = u.JoinPath("metrics").String()
+		deploymentMetricsEndpoint = u.JoinPath("deployments").String()
 		logsEndpoint = u.JoinPath("logs").String()
 		agentLogsEndpoint = u.JoinPath("deployment-target-logs").String()
 	}
 
 	result := map[string]any{
-		"agentDockerConfig": base64.StdEncoding.EncodeToString(env.AgentDockerConfig()),
-		"agentInterval":     env.AgentInterval(),
-		"agentVersion":      deploymentTarget.AgentVersion.Name,
-		"agentVersionId":    deploymentTarget.AgentVersion.ID,
-		"autohealAll":       deploymentTarget.AutohealEnabled,
-		"loginEndpoint":     loginEndpoint,
-		"manifestEndpoint":  manifestEndpoint,
-		"metricsEndpoint":   metricsEndpoint,
-		"registryEnabled":   env.RegistryEnabled(),
-		"registryHost":      customdomains.RegistryDomainOrDefault(ctx, org.ID, org.Branding),
-		"registryPlainHttp": buildconfig.IsDevelopment(),
-		"resourcesEndpoint": resourcesEndpoint,
-		"statusEndpoint":    statusEndpoint,
-		"targetId":          deploymentTarget.ID,
-		"targetSecret":      secret,
-		"logsEndpoint":      logsEndpoint,
-		"agentLogsEndpoint": agentLogsEndpoint,
-		"metricsEnabled":    deploymentTarget.MetricsEnabled,
+		"agentDockerConfig":         base64.StdEncoding.EncodeToString(env.AgentDockerConfig()),
+		"agentInterval":             env.AgentInterval(),
+		"agentVersion":              deploymentTarget.AgentVersion.Name,
+		"agentVersionId":            deploymentTarget.AgentVersion.ID,
+		"autohealAll":               deploymentTarget.AutohealEnabled,
+		"loginEndpoint":             loginEndpoint,
+		"manifestEndpoint":          manifestEndpoint,
+		"metricsEndpoint":           metricsEndpoint,
+		"deploymentMetricsEndpoint": deploymentMetricsEndpoint,
+		"registryEnabled":           env.RegistryEnabled(),
+		"registryHost":              customdomains.RegistryDomainOrDefault(ctx, org.ID, org.Branding),
+		"registryPlainHttp":         buildconfig.IsDevelopment(),
+		"resourcesEndpoint":         resourcesEndpoint,
+		"statusEndpoint":            statusEndpoint,
+		"targetId":                  deploymentTarget.ID,
+		"targetSecret":              secret,
+		"logsEndpoint":              logsEndpoint,
+		"agentLogsEndpoint":         agentLogsEndpoint,
+		"metricsEnabled":            deploymentTarget.MetricsEnabled,
 	}
 	if deploymentTarget.Namespace != nil {
 		result["targetNamespace"] = *deploymentTarget.Namespace
