@@ -80,11 +80,12 @@ desktop-linux   Docker Desktop                            unix:///Users/you/.doc
 Instead of switching contexts, you can tell the agent which socket to use. Check **Use a custom Docker endpoint** on the deployment target and enter the endpoint of the context you want to use, for example `unix:///Users/you/.docker/run/docker.sock` for `desktop-linux`. See [Custom Docker Endpoint](/docs/agents/docker-agent/#custom-docker-endpoint).
 
 <Aside type="tip">
-  This is also how you point the agent at a Docker-compatible runtime that has no
-  `/var/run/docker.sock` at all. If you run [Apple
+  This is also how you point the agent at a Docker-compatible runtime that has
+  no `/var/run/docker.sock` at all. If you run [Apple
   Container](https://github.com/apple/container) with
-  [socktainer](https://github.com/socktainer/socktainer), enter socktainer's socket
-  as the endpoint, for example `unix:///Users/you/.socktainer/container.sock`.
+  [socktainer](https://github.com/socktainer/socktainer), enter socktainer's
+  socket as the endpoint, for example
+  `unix:///Users/you/.socktainer/container.sock`.
 </Aside>
 
 ### 3. Disable `credStore` usage for authentication
