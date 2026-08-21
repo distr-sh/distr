@@ -60,6 +60,12 @@ func reportDeploymentMetrics(ctx context.Context) {
 		}
 
 		resources := collectContainerMetrics(ctx, containers)
+		// An empty report would become the latest snapshot and hide the previous one, which is
+		// still the more useful information while containers are being recreated.
+		if len(resources) == 0 {
+			continue
+		}
+
 		request := api.AgentDeploymentResourceMetricsRequest{Resources: resources}
 		if err := client.ReportDeploymentMetrics(ctx, deployment.ID, request); err != nil {
 			logger.Error("failed to report deployment metrics",

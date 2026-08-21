@@ -115,6 +115,12 @@ func reportDeploymentMetrics(ctx context.Context) {
 			}
 		}
 
+		// An empty report would become the latest snapshot and hide the previous one, which is
+		// still the more useful information while metrics-server catches up with new pods.
+		if len(resources) == 0 {
+			continue
+		}
+
 		request := api.AgentDeploymentResourceMetricsRequest{Resources: resources}
 		if err := agentClient.ReportDeploymentMetrics(ctx, deployment.ID, request); err != nil {
 			logger.Error("failed to report deployment metrics",
