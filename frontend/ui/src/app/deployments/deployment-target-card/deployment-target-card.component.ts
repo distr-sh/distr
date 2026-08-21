@@ -52,7 +52,7 @@ import {agentChangelog} from '../../../data';
 import {maxBy} from '../../../util/arrays';
 import {dateTimeLocalToISO, isArchived, isoToDateTimeLocal} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
-import {RESOURCE_QUANTITY_REGEX} from '../../../util/validation';
+import {DOCKER_ENDPOINT_REGEX, RESOURCE_QUANTITY_REGEX} from '../../../util/validation';
 import {ConnectInstructionsComponent} from '../../components/connect-instructions/connect-instructions.component';
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {UuidComponent} from '../../components/uuid';
@@ -169,6 +169,11 @@ export class DeploymentTargetCardComponent {
     imageCleanupEnabled: new FormControl<boolean>(false, {nonNullable: true}),
     deploymentLogsEnabled: new FormControl<boolean>(true, {nonNullable: true}),
     deploymentLogsAfter: new FormControl<string | null>(null),
+    customDockerEndpoint: new FormControl<boolean>(false, {nonNullable: true}),
+    dockerEndpoint: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.pattern(DOCKER_ENDPOINT_REGEX)],
+    }),
     customResources: new FormControl<boolean>(false, {nonNullable: true}),
     resources: new FormGroup({
       cpuRequest: new FormControl<string>('100m', {
@@ -269,6 +274,13 @@ export class DeploymentTargetCardComponent {
         this.editForm.controls.resources.disable();
       }
     });
+    this.editForm.controls.customDockerEndpoint.valueChanges.pipe(takeUntilDestroyed()).subscribe((value) => {
+      if (value) {
+        this.editForm.controls.dockerEndpoint.enable();
+      } else {
+        this.editForm.controls.dockerEndpoint.disable();
+      }
+    });
   }
 
   protected async showDeploymentModal(deployment?: DeploymentWithLatestRevision) {
@@ -297,6 +309,7 @@ export class DeploymentTargetCardComponent {
           memoryRequest: val.resources.memoryRequest!,
           memoryLimit: val.resources.memoryLimit!,
         },
+        dockerEndpoint: val.dockerEndpoint,
       };
 
       try {
@@ -608,6 +621,8 @@ export class DeploymentTargetCardComponent {
       deploymentLogsEnabled: dt.deploymentLogsEnabled,
       deploymentLogsAfter: isoToDateTimeLocal(dt.deploymentLogsAfter) || null,
       customResources: !!dt.resources,
+      customDockerEndpoint: !!dt.dockerEndpoint,
+      dockerEndpoint: dt.dockerEndpoint ?? '',
     });
     if (dt.scope === 'namespace') {
       this.editForm.controls.metricsEnabled.disable();
@@ -617,10 +632,13 @@ export class DeploymentTargetCardComponent {
     if (dt.type === 'kubernetes') {
       this.editForm.controls.imageCleanupEnabled.disable();
       this.editForm.controls.customResources.enable();
+      this.editForm.controls.customDockerEndpoint.setValue(false);
+      this.editForm.controls.customDockerEndpoint.disable();
     } else {
       this.editForm.controls.imageCleanupEnabled.enable();
       this.editForm.controls.customResources.setValue(false);
       this.editForm.controls.customResources.disable();
+      this.editForm.controls.customDockerEndpoint.enable();
     }
   }
 

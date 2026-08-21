@@ -1,8 +1,13 @@
 package types
 
 import (
+	"errors"
 	"fmt"
+	"net/url"
+	"path"
+	"strings"
 	"time"
+	"unicode"
 
 	"github.com/distr-sh/distr/internal/validation"
 	"github.com/google/uuid"
@@ -28,6 +33,7 @@ type DeploymentTarget struct {
 	DeploymentLogsEnabled  bool                       `db:"deployment_logs_enabled" json:"deploymentLogsEnabled"`
 	DeploymentLogsAfter    *time.Time                 `db:"deployment_logs_after" json:"deploymentLogsAfter,omitempty"`
 	Resources              *DeploymentTargetResources `db:"resources" json:"resources,omitempty"`
+	DockerEndpoint         *string                    `db:"docker_endpoint" json:"dockerEndpoint,omitempty"`
 }
 
 type DeploymentTargetResources struct {
@@ -77,6 +83,56 @@ func (dt *DeploymentTarget) Validate() error {
 		}
 	default:
 		return validation.NewValidationFailedError("invalid deployment target type")
+	}
+	return ValidateDockerEndpoint(dt.DockerEndpoint, dt.Type)
+}
+
+const DefaultDockerSocketPath = "/var/run/docker.sock"
+
+// ParseDockerEndpoint only supports unix sockets because the endpoint is applied by bind-mounting
+// the socket into the agent container.
+func ParseDockerEndpoint(endpoint string) (string, error) {
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return "", fmt.Errorf("invalid docker endpoint: %w", err)
+	}
+	if u.Scheme != "unix" {
+		return "", errors.New("docker endpoint must have scheme \"unix\"")
+	}
+	if u.Host != "" {
+		return "", errors.New("docker endpoint must not have a host")
+	}
+	if !path.IsAbs(u.Path) {
+		return "", errors.New("docker endpoint must have an absolute socket path")
+	}
+	// The path is rendered into Compose's short "SOURCE:TARGET" volume syntax.
+	if strings.Contains(u.Path, ":") || strings.ContainsFunc(u.Path, unicode.IsSpace) {
+		return "", errors.New("docker endpoint socket path must not contain a colon or whitespace")
+	}
+	return u.Path, nil
+}
+
+func (dt *DeploymentTarget) DockerSocketPath() string {
+	if dt.DockerEndpoint != nil {
+		if socketPath, err := ParseDockerEndpoint(*dt.DockerEndpoint); err == nil {
+			return socketPath
+		}
+	}
+	return DefaultDockerSocketPath
+}
+
+// ValidateDockerEndpoint takes the type separately because updates do not carry it in the body.
+func ValidateDockerEndpoint(endpoint *string, deploymentType DeploymentType) error {
+	if endpoint == nil {
+		return nil
+	}
+	if deploymentType != DeploymentTypeDocker {
+		return validation.NewValidationFailedError(
+			fmt.Sprintf("DeploymentTarget with type %q must not have a docker endpoint", deploymentType),
+		)
+	}
+	if _, err := ParseDockerEndpoint(*endpoint); err != nil {
+		return validation.NewValidationFailedError(err.Error())
 	}
 	return nil
 }
