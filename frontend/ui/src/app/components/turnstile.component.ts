@@ -129,13 +129,15 @@ export class TurnstileComponent {
   }
 
   private async render(theme: TurnstileTheme): Promise<void> {
-    let turnstile: TurnstileApi;
-    try {
-      turnstile = await loadTurnstile();
-    } catch (e) {
-      console.error(e);
-      this.loadFailed.set(true);
-      return;
+    let turnstile = turnstileApi();
+    if (turnstile === undefined) {
+      try {
+        turnstile = await loadTurnstile();
+      } catch (e) {
+        console.error(e);
+        this.loadFailed.set(true);
+        return;
+      }
     }
     this.widgetId = turnstile.render(this.widget().nativeElement, {
       sitekey: this.siteKey(),
