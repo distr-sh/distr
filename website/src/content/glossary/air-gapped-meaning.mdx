@@ -29,9 +29,9 @@ faq:
   - question: What are air-gapped backups?
     answer: 'Air-gapped backups are copies of critical data stored on systems completely isolated from production networks. They protect backups from ransomware and cyberattacks specifically designed to hit backup systems.'
   - question: How do you update software in air-gapped environments?
-    answer: 'True air-gap updates use offline or customer-controlled transfer: physical media, controlled transfer stations, one-way diodes, or a private staging path the customer operates. Outbound-only access to a vendor registry is a restricted network, not a true air gap. Vendors have to bundle all dependencies for offline installation.'
+    answer: 'A true air-gapped update uses offline or customer-controlled transfer: physical media, controlled transfer stations, one-way diodes or a private staging path the customer operates. Outbound-only access to a vendor registry is a restricted network, not a true air-gapped deployment. Vendors have to bundle all dependencies for offline installation.'
   - question: What is air-gapped cloud?
-    answer: 'Often means cloud environments with strong isolation: private VPCs with no internet access, dedicated accounts, strict network controls. That is restricted or air-gap-style cloud, not always a true air gap. True air-gap still means no vendor path and no reliable live connection to untrusted networks.'
+    answer: 'Often means cloud environments with strong isolation: private VPCs with no internet access, dedicated accounts and strict network controls. That is restricted or air-gapped-style cloud, not always a true air-gapped deployment. A true air-gapped deployment still means no vendor path and no reliable live connection to untrusted networks.'
   - question: Is air-gapping still relevant in 2026?
     answer: 'Yes. Air-gapping remains essential for government, military, critical infrastructure, healthcare, and financial systems. The implementations have evolved (logical air gaps, cloud-based isolation), but the fundamental principle of protecting critical systems through isolation is more important than ever given current cyber threats.'
 ---
@@ -42,7 +42,7 @@ import TestimonialCTA from '~/components/cta/TestimonialCTA.astro';
 
 **Air-gapped** (written variously as air gapped, air-gapped, or airgapped) describes a computer system, network, or device that is physically or logically isolated from unsecured networks, including the internet and any untrusted local networks. The isolation creates a literal "air gap" between secure systems and potential threats, which prevents unauthorized remote access, data exfiltration, and most forms of cyberattack.
 
-On the [self-hosted spectrum](/blog/self-hosted-spectrum/), air-gap is the fully customer-operated pole: **no vendor access** and no reliable live path to a vendor SaaS control plane.
+On the [self-hosted spectrum](/blog/self-hosted-spectrum/), air-gapped is the fully customer-operated pole: **no vendor access** and no reliable live path to a vendor SaaS control plane.
 
 The term comes from physical separation, a gap of air between systems, although modern air-gapping can also be achieved logically through software controls.
 
@@ -102,7 +102,7 @@ Network connectivity exists only insofar as the design still eliminates routes t
 - API gateways with controlled access
 - Network policies preventing unauthorized communication
 
-Segmentation alone (VLANs, firewalls, RBAC) without removing untrusted routes is **restricted networking**, not a true air gap.
+Segmentation alone (VLANs, firewalls, RBAC) without removing untrusted routes is **restricted networking**, not a true air-gapped deployment.
 
 **Advantages**: easier to maintain, supports automation, better scalability.
 **Disadvantages**: requires meticulous configuration, vulnerable to misconfiguration.
@@ -121,15 +121,15 @@ Controlled one-way communication using hardware-based isolation:
 **Disadvantages**: complex to implement, still requires careful security protocols.
 **Example**: industrial SCADA systems receiving sensor data without exposing control systems.
 
-### 4. Restricted / air-gap-style cloud
+### 4. Restricted / air-gapped-style cloud
 
-Cloud services operating with strong isolation principles. This is adjacent to true air-gap on the [self-hosted spectrum](/blog/self-hosted-spectrum/), not the same thing:
+Cloud services operating with strong isolation principles. This is adjacent to true air-gapped deployments on the [self-hosted spectrum](/blog/self-hosted-spectrum/), not the same thing:
 
 - Private VPCs with no internet gateway
 - Dedicated cloud accounts with strict network policies
 - Cloud-native security controls enforcing isolation
 
-Encrypted tunnels for **vendor** management access make this a restricted private-cloud posture, not a true air gap.
+Encrypted tunnels for **vendor** management access make this a restricted private-cloud posture, not a true air-gapped deployment.
 
 **Advantages**: combines cloud scalability with isolation principles.
 **Disadvantages**: not truly air-gapped; depends on cloud provider controls and whether any vendor path remains.
@@ -302,7 +302,7 @@ The traditional definition of air-gapping (physical disconnection) clashes with 
 
 **Cloud-native data vaults:**
 
-- Managed services designed for air-gap-style protection
+- Managed services designed for air-gapped-style protection
 - AWS Backup Vault Lock, Google Cloud Assured Workloads
 - Compliance-focused isolation with audit trails
 

@@ -21,7 +21,7 @@ faq:
   - question: Can I migrate from BYOC to SaaS or vice versa?
     answer: 'Yes, with planning. BYOC to SaaS means data migration into vendor infrastructure. SaaS to BYOC means setting up customer infrastructure and transferring data. Vendors that offer both paths typically provide migration support.'
   - question: Does BYOC work with air-gapped environments?
-    answer: 'Standard BYOC needs connectivity for vendor control plane access. True [air-gapped](/glossary/air-gapped-meaning/) deployments sit at the other end of the [self-hosted spectrum](/blog/self-hosted-spectrum/): fully customer-operated, offline updates, no vendor access.'
+    answer: 'Standard BYOC needs connectivity for vendor control plane access. True [air-gapped](/glossary/air-gapped-meaning/) deployments sit at the other end of the [self-hosted spectrum](/blog/self-hosted-spectrum/): fully customer-operated, offline updates and no vendor access.'
   - question: How does BYOC handle software updates?
     answer: 'Vendors manage updates through the control plane, usually with automated updates gated by customer approval workflows. Update strategies vary: vendor-scheduled maintenance windows, customer-controlled timing, or prioritized security patches.'
   - question: What cloud providers support BYOC?
@@ -35,7 +35,7 @@ import TestimonialCTA from '~/components/cta/TestimonialCTA.astro';
 :::note
 BYOC (Bring Your Own Cloud) is a deployment model where software vendors provision and manage their applications inside a customer's own cloud infrastructure instead of in the vendor's cloud environment. Customer data and workloads run in the customer's own AWS, Azure, or Google Cloud account, while the vendor handles operational tasks like updates, monitoring, and maintenance remotely.
 
-BYOC is the vendor-operated end of [self-hosted](/glossary/self-hosted-software/): the app runs in the customer's cloud, and you still operate it so it can feel like [SaaS](/glossary/saas-definition/). The contrast is multi-tenant SaaS, where workloads live in your cloud. For how BYOC sits next to customer-operated and [air-gapped](/glossary/air-gapped-meaning/) postures, read [The self-hosted spectrum](/blog/self-hosted-spectrum/).
+BYOC is the vendor-operated end of [self-hosted](/glossary/self-hosted-software/): the app runs in the customer's cloud and you still operate it so it can feel like [SaaS](/glossary/saas-definition/). The contrast is multi-tenant SaaS, where workloads live in your cloud. For how BYOC sits next to customer-operated and [air-gapped](/glossary/air-gapped-meaning/) postures, read [The self-hosted spectrum](/blog/self-hosted-spectrum/).
 :::
 
 ## What Does BYOC Stand For?

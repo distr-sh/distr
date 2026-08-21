@@ -1,6 +1,6 @@
 ---
-title: 'The self-hosted spectrum: from BYOC to air-gap'
-description: 'Self-hosted is the opposite of multi-tenant SaaS. Inside that, there is still a spectrum: BYOC on one end, air-gap on the other.'
+title: 'The self-hosted spectrum: from BYOC to air-gapped'
+description: 'Self-hosted is the opposite of multi-tenant SaaS. Inside that, there is still a spectrum: BYOC on one end, air-gapped on the other.'
 publishDate: 2026-08-19
 lastUpdated: 2026-08-19
 slug: 'self-hosted-spectrum'
@@ -29,9 +29,9 @@ In [our research on B2B startups shipping self-hosted](/blog/why-b2b-startups-sh
 
 ## Multi-tenant SaaS vs self-hosted
 
-**[Multi-tenant SaaS](/glossary/saas-definition/)** means you run one cloud service that serves many customers. Their data and workloads live in _your_ environment. You own uptime, upgrades, and most of the security boundary. Customers get speed and less ops, and give up where the data lives.
+**[Multi-tenant SaaS](/glossary/saas-definition/)** means you run one cloud service that serves many customers. Their data and workloads live in _your_ environment. You own uptime, upgrades and most of the security boundary. Customers get speed with less ops, but give up where the data lives.
 
-**[Self-hosted](/glossary/self-hosted-software/)** means the product runs inside the **customer’s trust boundary**: their cloud account, their data center, or a network that never touches the public internet. Data stays with them. That is the contrast that matters.
+**[Self-hosted](/glossary/self-hosted-software/)** means the product runs inside the **customer’s trust boundary**: their cloud account, their data center or a network that never touches the public internet. Data stays with them. That is the contrast that matters.
 
 Self-hosted is not one offering. It is a **spectrum**.
 
@@ -41,21 +41,21 @@ On one end, you still run the product for the customer, just inside their cloud 
 
 ## BYOC: self-hosted that should feel like SaaS
 
-**[Bring Your Own Cloud](/glossary/byoc-definition/)** means the application (and usually a chunk of the infrastructure around it) runs in the **customer’s** AWS, GCP, or Azure account, often a dedicated sub-account or VPC, while **you** still operate it.
+**[Bring Your Own Cloud](/glossary/byoc-definition/)** means the application (and usually a chunk of the infrastructure around it) runs in the **customer’s** AWS, GCP or Azure account, often a dedicated sub-account or VPC, while **you** still operate it.
 
 ### What the customer expects
 
 - Data never sits in your multi-tenant cloud
-- They keep cloud billing, IAM, network policies, and residency under their org
-- Day-to-day, it still feels managed: someone else handles upgrades, health, and a lot of the grunt work
+- They keep cloud billing, IAM, network policies and residency under their org
+- Day-to-day, it still feels managed: someone else handles upgrades, health and a lot of the grunt work
 
 ### What actually happens under the hood
 
 1. **Control plane** stays with you: console, releases, config, fleet view, entitlements, sometimes billing.
 2. **Data plane** lands in the customer’s cloud: the real workloads and the data.
-3. The customer grants **scoped access**, usually by accepting a bootstrap stack into their account (CloudFormation, Terraform, or equivalent), not by handing over a root user. That creates a management role or trust your controllers can assume.
+3. The customer grants **scoped access**, usually by accepting a bootstrap stack into their account (CloudFormation, Terraform or equivalent), not by handing over a root user. That creates a management role or trust your controllers can assume.
 4. From there you (or an **agent / management VM** running with those permissions inside the customer org) **provision** what the product needs: VPC pieces or attachment to an existing network, subnets, storage, a Kubernetes cluster or VMs, IAM roles for the app, object storage buckets, then the application itself. In some setups that agent is literally a VM you land first; it then spins up the rest of the stack.
-5. After bootstrap, day-2 ops run over a **constrained channel**. Egress-only from the customer environment is common. Broad standing inbound access is what security teams fight, and what mature BYOC designs avoid.
+5. After bootstrap, day-2 ops run over a **constrained channel**. Egress-only from the customer environment is common. Broad standing inbound access is what security teams fight and what mature BYOC designs avoid.
 
 <ThemedImage
   lightSrc={byocLight}
@@ -66,7 +66,7 @@ On one end, you still run the product for the customer, just inside their cloud 
 
 _BYOC architecture: you operate the product; data and workloads stay in the customer’s cloud. See [how Distr implements this pole](/docs/use-cases/byoc-bring-your-own-cloud/)._
 
-So the customer’s mental model is: “It runs in my cloud.” Yours is: “I still own install, infra bootstrap, and day-2 ops, inside someone else’s account.”
+So the customer’s mental model is: “It runs in my cloud.” Yours is: “I still own install, infra bootstrap and day-2 ops, inside someone else’s account.”
 
 Variants matter. Some buyers want you to create the network too. Others already have a locked-down VPC and only want the app and compute inside it (**BYOVPC** / bring-your-own-network style). Same idea, different shared-responsibility line.
 
@@ -82,10 +82,10 @@ That changes packaging completely.
 
 ### What you have to ship
 
-You cannot “pull latest from our registry” at install time. You typically need an **offline bundle** that can move across the gap: USB, an exchange server, a data diode, or whatever one-way transfer process the customer already trusts. A serious bundle is not just a binary. It usually includes:
+You cannot “pull latest from our registry” at install time. You typically need an **offline bundle** that can move across the gap: USB, an exchange server, a data diode or whatever one-way transfer process the customer already trusts. A serious bundle is not just a binary. It usually includes:
 
 - Application container images (often as an OCI layout or image archive)
-- Helm charts, Compose files, or Kubernetes manifests at a pinned version
+- Helm charts, Compose files or Kubernetes manifests at a pinned version
 - Dependencies the install would otherwise download (operators, sidecars, base images)
 - Install / upgrade tooling and release notes
 - Checksums or signatures so the customer can verify nothing was tampered with in transit
@@ -94,22 +94,22 @@ Updates are the same problem again: a new bundle, a new transfer, a customer-con
 
 ### What support looks like
 
-You will not SSH into the cluster. Debugging often means **[support bundles](/blog/support-bundles/)** the customer generates and sends out (logs, versions, config redacted to their policy), then you diagnose offline and send a fix back the same way. If you say yes to air-gap, you are signing up for release logistics and support without live access, not for a slightly stricter VPC checkbox.
+You will not SSH into the cluster. Debugging often means **[support bundles](/blog/support-bundles/)** the customer generates and sends out (logs, versions and config redacted to their policy), then you diagnose offline and send a fix back the same way. If you say yes to air-gapped, you are signing up for release logistics and support without live access, not for a slightly stricter VPC checkbox.
 
-Because install and update are this cumbersome, tooling matters more here, not less: a way to build air-gapped bundles, [licenses that work offline](/blog/license-key/), an overview of which customer is on which version, and support without a live connection. Distr’s [air-gapped deployment docs](/docs/use-cases/air-gapped-deployments/) cover the product side of that.
+Because install and update are this cumbersome, tooling matters more here, not less: a way to build air-gapped bundles, [licenses that work offline](/blog/license-key/), an overview of which customer is on which version and support without a live connection. Distr’s [air-gapped deployment docs](/docs/use-cases/air-gapped-deployments/) cover the product side of that.
 
 Air-gap is still self-hosted. It is just the end of the spectrum where managed-SaaS habits stop working.
 
 ## The middle: where most deals actually live
 
-Most conversations are not pure BYOC and not true air-gap. The customer wants the product in **their VPC** or **[on their hardware](/docs/use-cases/assisted-self-managed/)**, and then you invent a distribution stack.
+Most conversations are not pure BYOC and not true air-gapped. The customer wants the product in **their VPC** or **[on their hardware](/docs/use-cases/assisted-self-managed/)**, and then you invent a distribution stack.
 
 A typical vendor-built middle looks like this in practice:
 
 - An **install script** the customer’s IT runs
 - Containers pulled from a **mirrored [registry](/blog/container-registry-pull-through-cache/)** you grant them access to (ACR, GAR, ECR, …)
 - Config pulled from somewhere you control (often object storage)
-- Some customers allow **outbound logs**; others are closer to air-gap and need a one-shot **[support bundle](/blog/support-bundles/)**
+- Some customers allow **outbound logs**; others are closer to air-gapped and need a one-shot **[support bundle](/blog/support-bundles/)**
 - You still need **[licensing](/blog/license-key/):** grant and revoke entitlement, control which versions a customer can pull (previews vs GA)
 - At dozens of customers, you feel the missing pieces: no fleet view, painful targeted updates, every install a little different
 
@@ -128,7 +128,7 @@ So the muddy middle spans “we run the full distribution stack for less mature 
 
 And the fun part is, you might have all of the variations above among your customers.
 
-You can build all of that yourself, or use a distribution control plane built for it. That is what Distr is for: ship the same SaaS into customer environments across these postures without a parallel product per deal.
+You can build all of that yourself or use a distribution control plane built for it. That is what Distr is for: ship the same SaaS into customer environments across these postures without a parallel product per deal.
 
 ## How the words map (roughly)
 
@@ -140,7 +140,7 @@ You can build all of that yourself, or use a distribution control plane built fo
 
 ## One product, many postures
 
-The trap is treating each point as a different product: a BYOC fork, an on-prem fork, an air-gap fork.
+The trap is treating each point as a different product: a BYOC fork, an on-prem fork, an air-gapped fork.
 
 The workable model is the opposite of multi-tenant sprawl and the opposite of infinite forks: **one product**, shipped into the customer’s boundary, with postures you can configure: who operates, what can be seen, how updates arrive.
 

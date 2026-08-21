@@ -22,9 +22,9 @@ faq:
   - question: Is on-premises deployment dying?
     answer: 'No. It has changed, and remains essential. Regulated industries, government agencies, enterprises with data-sovereignty requirements, and organizations running air-gapped deployments all continue to demand on-prem. What is different is that modern on-prem often means Kubernetes running in customer cloud accounts rather than physical data centers.'
   - question: Can on-premises software work without internet?
-    answer: 'It can be designed to. On-prem is not air-gapped by default. True air-gap is a separate, stricter posture with offline packaging and no vendor access.'
+    answer: 'It can be designed to. On-prem is not air-gapped by default. A true air-gapped deployment is a separate, stricter posture with offline packaging and no vendor access.'
   - question: What is the difference between on-premises and self-hosted?
-    answer: 'Related, not identical. On-prem usually means the customer controls the environment (middle of the spectrum). Self-hosted is the umbrella for anything in the customer trust boundary, including BYOC and air-gap. See the self-hosted spectrum.'
+    answer: 'Related, not identical. On-prem usually means the customer controls the environment (middle of the spectrum). Self-hosted is the umbrella for anything in the customer trust boundary, including BYOC and air-gapped. See the self-hosted spectrum.'
   - question: How do software vendors distribute on-premises software?
     answer: 'Through software distribution platforms (Distr, for example) that distribute containers, automate artifact distribution, track versions across customer installations, enforce licenses, and optionally collect telemetry. This is what lets vendors support both SaaS and [self-hosted deployment](/glossary/self-hosted-software/) efficiently.'
 ---
@@ -74,7 +74,7 @@ Understanding the distinction is essential for both vendors and customers pickin
 | **Control**                  | Full control over configuration and access         | Limited to vendor-provided options            |
 | **Data Location**            | Customer chooses exactly where data resides        | Data stored in vendor's chosen regions        |
 | **Updates**                  | Customer usually controls timing and rollout       | Vendor updates automatically                  |
-| **Internet Requirement**     | Can be designed for offline / air-gap              | Requires internet connectivity                |
+| **Internet Requirement**     | Can be designed for offline / air-gapped           | Requires internet connectivity                |
 | **Customization**            | Deep customization and integration possible        | Limited to platform capabilities              |
 | **Security**                 | Customer implements policies                       | Vendor handles security (with certifications) |
 | **Compliance**               | Easier for industry-specific regulations           | Depends on vendor compliance certifications   |

@@ -1,6 +1,6 @@
 ---
 title: 'Why more and more B2B startups are shipping self-hosted'
-description: 'Research on YC-backed companies public offers for on-prem, self-hosted, BYOC, and related deployment models. August 2026.'
+description: 'Research on YC-backed companies public offers for on-prem, self-hosted, BYOC and related deployment models. August 2026.'
 publishDate: 2026-08-19
 lastUpdated: 2026-08-19
 slug: 'why-b2b-startups-shipping-self-hosted'
@@ -19,7 +19,9 @@ tags:
 
 import TestimonialCTA from '~/components/cta/TestimonialCTA.astro';
 
-We've seen a clear jump in inbound and interest around [self-hosted](/glossary/self-hosted-software/), [on-prem](/glossary/on-premises-definition/), and [BYOC](/glossary/byoc-definition/). The same conversations showing up again and again with B2B and AI startups selling into enterprises. We wanted to put numbers behind that sentiment and explain publicly **why** this is happening.
+We've seen a clear jump in inbound and interest around [self-hosted](/glossary/self-hosted-software/), [on-prem](/glossary/on-premises-definition/) and [BYOC](/glossary/byoc-definition/). The same conversations are showing up again and again with B2B and AI startups selling into enterprises.
+
+We see it in our own customer base as well: roughly 30% of Distr customers self-host Distr itself instead of using the hosted version. But our customer base is only one signal, so we wanted to put numbers behind that sentiment and explain publicly **why** this is happening.
 
 ## Why this is rising now
 
@@ -31,17 +33,17 @@ Buyers know that. They are less willing to pipe their most sensitive context int
 
 ### Enterprises still buy control
 
-Security reviews, procurement, and industry rules did not disappear because founders prefer SaaS. If anything, AI made the conversation sharper: more data in, more risk out. "Where does this run?" shows up earlier in the sales cycle than it used to.
+Security reviews, procurement and industry rules did not disappear because founders prefer SaaS. If anything, AI made the conversation sharper: more data in, more risk out. "Where does this run?" shows up earlier in the sales cycle than it used to.
 
 For a startup, that means self-hosted is not a niche enterprise checkbox anymore. It is often the difference between a pilot that dies in security and a deal that closes.
 
 ### Privacy and residency are product requirements
 
-Data residency, industry isolation, and "nothing leaves our environment" are not edge cases for fintech, health, gov, and a growing share of AI tooling. Buyers ask for self-hosted because they need a boundary they control: their cloud account, their data center, or a network that never touches the public internet.
+Data residency, industry isolation and "nothing leaves our environment" are not edge cases for fintech, health, gov and a growing share of AI tooling. Buyers ask for self-hosted because they need a boundary they control: their cloud account, their data center or a network that never touches the public internet.
 
 Young startups feel this earlier than classic enterprise vendors did. Their first serious customers are already asking.
 
-None of that means every company should build a second product for on-prem. It means saying yes to self-hosted is becoming a normal growth path, and more of those companies are putting it on the website.
+None of that means every company should build a second product for on-prem. It means saying yes to self-hosted is becoming a normal growth path and more of those companies are putting it on the website.
 
 <TestimonialCTA name="weave" />
 
@@ -49,7 +51,7 @@ None of that means every company should build a second product for on-prem. It m
 
 We do not have access to private roadmaps. We looked at what companies are willing to say in public: pricing pages, enterprise pages, docs, trust centers.
 
-As a broad startup proxy, we used the full public YC company list from the YC OSS API (refreshed 6 August 2026: **6,124** companies). For each company with a website, we searched for packaging language that means a self-hosted offer in the broad sense: the product can run in the customer's environment ([self-hosted](/glossary/self-hosted-software/), [on-prem](/glossary/on-premises-definition/), [BYOC](/glossary/byoc-definition/), private cloud, [air-gapped](/glossary/air-gapped-meaning/), and similar). The words on those pages jump around. To understand what they actually mean, read [The self-hosted spectrum](/blog/self-hosted-spectrum/), where we walk through the full range from BYOC to air-gap. Here we counted them together as one public self-hosted offer. Hits went through review and a deeper page check when ambiguous.
+As a broad startup proxy, we used the full public YC company list from the YC OSS API (refreshed 6 August 2026: **6,124** companies). For each company with a website, we searched for packaging language that means a self-hosted offer in the broad sense: the product can run in the customer's environment ([self-hosted](/glossary/self-hosted-software/), [on-prem](/glossary/on-premises-definition/), [BYOC](/glossary/byoc-definition/), private cloud, [air-gapped](/glossary/air-gapped-meaning/) and similar). The words on those pages jump around. To understand what they actually mean, read [The self-hosted spectrum](/blog/self-hosted-spectrum/), where we walk through the full range from BYOC to air-gapped. Here we counted them together as one public self-hosted offer. Hits went through review and a deeper page check when ambiguous.
 
 This only measures public claims. Marketing pages lag reality and sometimes oversell. Brand-new companies often have thin enterprise docs. Treat the rates as a lower bound on companies that bother to advertise this, not on who would say yes in a sales call.
 
@@ -57,7 +59,7 @@ This only measures public claims. Marketing pages lag reality and sometimes over
 
 **359** companies cleared the bar, about **5.9%** of the full list. Among companies from 2019 and earlier, **2.4%** had a public self-hosted offer. Among companies from 2024-25, that rose to **9.6%**, roughly four times as common.
 
-The 2026+ row is lower at **6.9%**, but those companies are still new, and many barely have an enterprise page yet. We would not read that as demand going backwards.
+The 2026+ row is lower at **6.9%**, but those companies are still new and many barely have an enterprise page yet. We would not read that as demand going backwards.
 
 Here are the numbers grouped:
 
@@ -75,15 +77,15 @@ Same ending in a lot of these stories: the product runs in the customer's enviro
 
 ### The product has to sit on data that cannot leave
 
-Some products only work if they can reach data the customer will not send out: source code, internal databases, financial records, business logic, customer history, model prompts, or other sensitive context.
+Some products only work if they can reach data the customer will not send out: source code, internal databases, financial records, business logic, customer history, model prompts or other sensitive context.
 
 The buyer is not asking for more infrastructure to manage. They need the software next to data that has to stay where it already is.
 
-For the vendor, that means running in the customer's environment and making the install repeatable. A first setup call might work once. It does not work when every customer needs a different walkthrough, a different version, and a different support process.
+For the vendor, that means running in the customer's environment and making the install repeatable. A first setup call might work once. It does not work when every customer needs a different walkthrough, a different version and a different support process.
 
 ### Regulated markets already consume software this way
 
-If you sell into banking, healthcare, insurance, government, or similar spaces, this conversation will come up. There is usually no way around it.
+If you sell into banking, healthcare, insurance, government or similar spaces, this conversation will come up. There is usually no way around it.
 
 A lot of those buyers already run important software in their own infrastructure. They have a setup. They will want your product to fit that same predetermined way of consuming software, not invent a special path just for you.
 
@@ -91,17 +93,17 @@ For vendors in those markets, self-hosted is often the default path to getting p
 
 ### A normal SaaS deal gets blocked by security
 
-Some companies start as normal SaaS. The vendor runs the product, the customer logs in, and the team can move quickly.
+Some companies start as normal SaaS. The vendor runs the product, the customer logs in and the team can move quickly.
 
-Then a large enterprise likes the product, but security will not approve the deployment model. That buyer might be in a regulated industry. They might just be a big company that will not run this tool as shared SaaS. It does not always mean they self-host everything, or that they already have a mature process for it. It means for this deal, the software has to run in their cloud account, their data center, or a network they control.
+Then a large enterprise likes the product, but security will not approve the deployment model. That buyer might be in a regulated industry. They might just be a big company that will not run this tool as shared SaaS. It does not always mean they self-host everything or that they already have a mature process for it. It means for this deal, the software has to run in their cloud account, their data center or a network they control.
 
-The better answer is not a parallel on-prem product. It is the same product, packaged so the customer can run it, while the vendor still has a sane way to ship updates, see install status, debug issues, and keep customers current.
+The better answer is not a parallel on-prem product. It is the same product, packaged so the customer can run it, while the vendor still has a sane way to ship updates, see install status, debug issues and keep customers current.
 
 ### Open source becomes enterprise self-hosted in two different ways
 
-One path is open core. There is a real community edition that people can run for free, and a paid enterprise edition with the parts a company needs in production: licenses, support, admin controls, compliance features, audit logs, SSO, governance.
+One path is open core. There is a real community edition that people can run for free and a paid enterprise edition with the parts a company needs in production: licenses, support, admin controls, compliance features, audit logs, SSO, governance.
 
-That is different from a developer tool becoming a platform. In that path, the project starts as something a developer runs themselves: a library, CLI, framework, agent, or small local app. Later, the company builds a larger platform around it. At that point the buyer changes. It is no longer one developer running a tool locally. It is a company asking whether the platform can run under its own security and infrastructure rules.
+That is different from a developer tool becoming a platform. In that path, the project starts as something a developer runs themselves: a library, CLI, framework, agent or small local app. Later, the company builds a larger platform around it. At that point the buyer changes. It is no longer one developer running a tool locally. It is a company asking whether the platform can run under its own security and infrastructure rules.
 
 Both paths can end in enterprise self-hosted. They just get there differently.
 
@@ -111,4 +113,4 @@ If you sell to enterprises, especially with AI or sensitive data, the self-hoste
 
 The architecture decision is the one that matters. Design early so the same product can run in a customer environment. Then you do not have to invent a parallel on-prem stack when the deal needs it. That is especially true if your product sits on private data, regulated workflows, or anything the buyer will not put in a shared cloud.
 
-And when someone asks for self-hosted, get clear on what they actually mean. BYOC, customer-operated, air-gap: different points on the same map. Read our article on [the self-hosted spectrum](/blog/self-hosted-spectrum/), where we walk through that whole range.
+And when someone asks for self-hosted, get clear on what they actually mean. BYOC, customer-operated, air-gapped: different points on the same map. Read our article on [the self-hosted spectrum](/blog/self-hosted-spectrum/), where we walk through that whole range.
