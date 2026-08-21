@@ -50,6 +50,13 @@ export const DURATION_REGEX =
 export const RESOURCE_QUANTITY_REGEX =
   /^(\d+|\d+\.\d+|\d+\.|\.\d+)(m|k|M|G|T|P|E|Ki|Mi|Gi|Ti|Pi|Ei|((e|E)(\d+|\d+\.\d+|\d+\.|\.\d+)))?$/;
 
+/**
+ * A Docker endpoint URI pointing at a unix socket, e.g. `unix:///var/run/docker.sock`. Only unix
+ * sockets are supported because the endpoint is applied by mounting the socket into the agent
+ * container. Mirrors `types.ParseDockerEndpoint` in `internal/types/deployment_target.go`.
+ */
+export const DOCKER_ENDPOINT_REGEX = /^unix:\/\/\/\S+$/;
+
 export function jsonObjectValidator(control: AbstractControl): ValidationErrors | null {
   try {
     const parsed = JSON.parse(control.value);

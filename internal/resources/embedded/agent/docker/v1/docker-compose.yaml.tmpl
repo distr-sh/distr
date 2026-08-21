@@ -24,11 +24,14 @@ services:
       DISTR_REGISTRY_PLAIN_HTTP: '{{ .registryPlainHttp }}'
       {{- end }}
       HOST_DOCKER_CONFIG_DIR: ${HOST_DOCKER_CONFIG_DIR-${HOME}/.docker}
+      # The mounted Docker config may select a context whose endpoint is a host path that does not
+      # exist in this container, so the socket is addressed directly instead.
+      DOCKER_HOST: 'unix:///var/run/docker.sock'
       {{- if .metricsEnabled }}
       HOST_ROOT_DIR: /hostfs
       {{- end }}
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - {{ .dockerSocketPath }}:/var/run/docker.sock
       - scratch:/scratch
       - ${HOST_DOCKER_CONFIG_DIR-${HOME}/.docker}:/root/.docker:ro
       {{- if .metricsEnabled }}
@@ -46,7 +49,7 @@ services:
     network_mode: none
     restart: always
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - {{ .dockerSocketPath }}:/var/run/docker.sock
 
 volumes:
   scratch:
