@@ -67,10 +67,10 @@ require (
 	helm.sh/helm/v4 v4.2.4
 	k8s.io/api v0.36.4
 	k8s.io/apimachinery v0.36.4
-	k8s.io/cli-runtime v0.36.3
+	k8s.io/cli-runtime v0.36.4
 	k8s.io/client-go v0.36.4
 	k8s.io/kubectl v0.36.3
-	k8s.io/metrics v0.36.3
+	k8s.io/metrics v0.36.4
 	oras.land/oras-go/v2 v2.6.2
 )
 
