@@ -18,7 +18,7 @@ Two problems to solve:
 
 A Compose file or Helm chart alone is not enough. Images have to travel with the recipe, or be pullable from a place the customer is allowed to reach.
 
-## True air-gap: Kubernetes with Zarf (recommended)
+## True air-gapped deployments: Kubernetes with Zarf (recommended)
 
 For Kubernetes, [Zarf](/docs/integrations/zarf/) is the path we recommend. A Zarf package is the offline bundle: Helm chart, container images, dependencies, and SBOMs in one archive.
 
@@ -32,20 +32,20 @@ For Kubernetes, [Zarf](/docs/integrations/zarf/) is the path we recommend. A Zar
 
 Commands, `zarf.yaml`, and the full GitHub Actions example live in the [Zarf integration guide](/docs/integrations/zarf/). This use-case page is the model; that page is the how-to.
 
-## True air-gap: Docker Compose
+## True air-gapped deployments: Docker Compose
 
 Same idea as Kubernetes, without a Zarf-style single archive from Distr today: the customer must get **the Compose file and every image** onto a connected machine, then carry that set across the gap.
 
 **Vendor side.** Upload to Distr everything the app needs: the Compose file **and** every image it references (frontend, backend, Redis, Postgres, sidecars, …). Compose alone is not enough. If only Compose is on Distr, the customer would still have to pull images from somewhere else (often Docker Hub). Put all images on Distr, point Compose at those Distr image references, and entitle the customer for those artifacts.
 
-**Customer side (true air gap).**
+**Customer side (true air-gapped deployment).**
 
 <Steps>
 
 1. On a **connected** staging host, pull everything they are entitled to from Distr: Compose file + all images.
 2. Export the images (for example `docker save`) into an archive; keep the Compose file and config/license material with it.
 3. Transfer that set across the gap (USB, exchange server, or approved one-way process).
-4. Inside the air gap: `docker load` the images, then `docker compose up`. Compose uses the `image:` names in the file. Those names must match the tags you loaded (your Distr tags). If the image is already present locally, Compose does not need network access and does not pull. You usually do **not** rewrite Compose after load, as long as it already referenced Distr image names. (Optional: load into their internal registry and retarget Compose there.)
+4. Inside the isolated network: `docker load` the images, then `docker compose up`. Compose uses the `image:` names in the file. Those names must match the tags you loaded (your Distr tags). If the image is already present locally, Compose does not need network access and does not pull. You usually do **not** rewrite Compose after load, as long as it already referenced Distr image names. (Optional: load into their internal registry and retarget Compose there.)
 
 </Steps>
 
@@ -54,16 +54,16 @@ Same idea as Kubernetes, without a Zarf-style single archive from Distr today: t
 How the package enters the isolated network is the customer's process. Common patterns:
 
 - **USB / removable media:** download on a connected host, carry media in, deploy from local files.
-- **Exchange / staging server:** download to a customer-controlled DMZ or jump host, then move through their approved transfer into the air gap.
+- **Exchange / staging server:** download to a customer-controlled DMZ or jump host, then move through their approved transfer into the isolated network.
 - **Data diode / one-way:** same idea: content only moves inbound under their controls.
 
-## Restricted outbound to Distr (not a true air gap)
+## Restricted outbound to Distr (not a true air-gapped deployment)
 
 If the customer allows outbound access **only** to Distr, the environment is restricted, not air-gapped. They authenticate and pull entitled Compose + images directly from your [Distr registry](/docs/registry/) (see the [customer portal registry](/docs/platform/customer-portal/registry/) flow), then run Compose there.
 
 That only works when every `image:` in Compose points at Distr. If Compose still references Docker Hub (or another registry), whitelist Distr is not enough.
 
-Prefer the true air-gap paths above when there is no outbound path at all. Use restricted pulls when the buyer allows Distr but nothing else.
+Prefer the true air-gapped paths above when there is no outbound path at all. Use restricted pulls when the buyer allows Distr but nothing else.
 
 ## Customer-hosted Distr
 
