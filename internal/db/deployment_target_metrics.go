@@ -15,6 +15,7 @@ import (
 const (
 	deploymentTargetMetricsOutputExpr = `
 		dtm.id,
+		dtm.created_at,
 		dtm.deployment_target_id AS deployment_target_id,
 		dtm.cpu_cores_millis,
 		dtm.cpu_usage,
@@ -40,7 +41,7 @@ func GetLatestDeploymentTargetMetrics(
 		LEFT JOIN CustomerOrganization co
 			ON dt.customer_organization_id = co.id
 		INNER JOIN LATERAL (
-			SELECT id, deployment_target_id, cpu_cores_millis, cpu_usage, memory_bytes, memory_usage
+			SELECT id, created_at, deployment_target_id, cpu_cores_millis, cpu_usage, memory_bytes, memory_usage
 			FROM DeploymentTargetMetrics
 			WHERE deployment_target_id = dt.id
 			ORDER BY created_at DESC, id
@@ -53,8 +54,8 @@ func GetLatestDeploymentTargetMetrics(
 			OR dt.customer_organization_id = @customerOrganizationId
 			OR co.partner_organization_id = @partnerOrganizationId)
 		AND dt.metrics_enabled = true
-		GROUP BY dtm.id, dtm.deployment_target_id, dtm.cpu_cores_millis, dtm.cpu_usage, dtm.memory_bytes, dtm.memory_usage,
-			co.name, dt.name
+		GROUP BY dtm.id, dtm.created_at, dtm.deployment_target_id, dtm.cpu_cores_millis, dtm.cpu_usage, dtm.memory_bytes,
+			dtm.memory_usage, co.name, dt.name
 		ORDER BY co.name, dt.name`,
 		pgx.NamedArgs{
 			"orgId":                  orgID,
@@ -81,7 +82,7 @@ func GetLatestDeploymentTargetMetricsForID(ctx context.Context, id uuid.UUID) (*
 	rows, err := db.Query(ctx,
 		`SELECT `+deploymentTargetMetricsOutputExpr+` FROM DeploymentTarget dt
 		INNER JOIN LATERAL (
-			SELECT id, deployment_target_id, cpu_cores_millis, cpu_usage, memory_bytes, memory_usage
+			SELECT id, created_at, deployment_target_id, cpu_cores_millis, cpu_usage, memory_bytes, memory_usage
 			FROM DeploymentTargetMetrics
 			WHERE deployment_target_id = @deploymentTargetId
 			ORDER BY created_at DESC, id
@@ -91,7 +92,8 @@ func GetLatestDeploymentTargetMetricsForID(ctx context.Context, id uuid.UUID) (*
 			ON dtm.id = dtdm.deployment_target_metrics_id
 		WHERE dt.id = @deploymentTargetId
 			AND dt.metrics_enabled = true
-		GROUP BY dtm.id, dtm.deployment_target_id, dtm.cpu_cores_millis, dtm.cpu_usage, dtm.memory_bytes, dtm.memory_usage`,
+		GROUP BY dtm.id, dtm.created_at, dtm.deployment_target_id, dtm.cpu_cores_millis, dtm.cpu_usage,
+			dtm.memory_bytes, dtm.memory_usage`,
 		pgx.NamedArgs{"deploymentTargetId": id},
 	)
 	if err != nil {
@@ -120,14 +122,14 @@ func CreateDeploymentTargetMetrics(
 		"INSERT INTO DeploymentTargetMetrics "+
 			"(deployment_target_id, cpu_cores_millis, cpu_usage, memory_bytes, memory_usage) "+
 			"VALUES (@deploymentTargetId, @cpuCoresMillis, @cpuUsage, @memoryBytes, @memoryUsage) "+
-			"RETURNING id",
+			"RETURNING id, created_at",
 		pgx.NamedArgs{
 			"deploymentTargetId": metrics.DeploymentTargetID,
 			"cpuCoresMillis":     metrics.CPUCoresMillis,
 			"cpuUsage":           metrics.CPUUsage,
 			"memoryBytes":        metrics.MemoryBytes,
 			"memoryUsage":        metrics.MemoryUsage,
-		}).Scan(&metrics.ID)
+		}).Scan(&metrics.ID, &metrics.CreatedAt)
 	if err != nil {
 		return err
 	}

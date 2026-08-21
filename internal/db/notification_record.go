@@ -145,6 +145,7 @@ func GetNotificationRecords(
 			) END current_deployment_revision_status,
 			CASE WHEN dtm.id IS NOT NULL THEN (
 				dtm.id,
+				dtm.created_at,
 				dtm.deployment_target_id,
 				dtm.cpu_cores_millis,
 				dtm.cpu_usage,
