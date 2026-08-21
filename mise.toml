@@ -153,10 +153,14 @@ depends = "build:hub:enterprise"
 run = 'cp dist/distr dist/distr-$(go env GOARCH) && docker build -f Dockerfile.hub --tag ghcr.io/distr-sh/distr:$VERSION .'
 
 [tasks."docker-build:agent:docker"]
-run = 'docker build -f Dockerfile.docker-agent --tag ghcr.io/distr-sh/distr/docker-agent:$VERSION --build-arg VERSION=$VERSION --build-arg COMMIT=$COMMIT --network host .'
+run = 'docker build -f Dockerfile.docker-agent --tag ghcr.io/distr-sh/distr/docker-agent:$VERSION --build-arg VERSION=$VERSION --build-arg COMMIT=$COMMIT .'
 
 [tasks."docker-build:agent:kubernetes"]
-run = 'docker build -f Dockerfile.kubernetes-agent --tag ghcr.io/distr-sh/distr/kubernetes-agent:$VERSION --build-arg VERSION=$VERSION --build-arg COMMIT=$COMMIT --network host .'
+run = 'docker build -f Dockerfile.kubernetes-agent --tag ghcr.io/distr-sh/distr/kubernetes-agent:$VERSION --build-arg VERSION=$VERSION --build-arg COMMIT=$COMMIT .'
 
 [tasks."docker-build:docker-autoheal"]
-run = 'docker build --tag ghcr.io/distr-sh/distr/docker-autoheal:$VERSION --network host docker-autoheal'
+run = 'docker build --tag ghcr.io/distr-sh/distr/docker-autoheal:$VERSION docker-autoheal'
+
+[tasks."docker-build:agents"]
+depends = ["docker-build:agent:docker", "docker-build:agent:kubernetes", "docker-build:docker-autoheal"]
+description = 'Build the docker agent, kubernetes agent, and docker-autoheal images in parallel'

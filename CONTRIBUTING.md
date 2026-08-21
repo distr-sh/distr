@@ -31,6 +31,14 @@ mise watch serve -r
 Open your browser and navigate to [`http://localhost:8080/register`](http://localhost:8080/register) to register a user
 and receive the E-Mail verification link via Mailpit on [`http://localhost:8025`](http://localhost:8025).
 
+### Build Distr on macOS
+
+When building Distr on macOS without Docker Desktop (e.g. using Apple's `container` driver [`socktainer/socktainer`](https://github.com/socktainer/socktainer)), make sure to disable BuildKit. E.g.:
+
+```shell
+DOCKER_BUILDKIT=0 mise run docker-build:agents
+```
+
 ### Stripe Integration
 
 In order to use the Stripe integration during development, the `stripe` CLI tool must be installed.
