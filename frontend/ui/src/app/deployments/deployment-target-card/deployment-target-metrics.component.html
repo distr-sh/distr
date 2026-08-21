@@ -54,11 +54,17 @@
         <span class="inline-block size-2 me-1" [appStatusDot]="metrics().cpuUsage > 0.75 ? 'danger' : 'ok'"></span>
         <span class="font-semibold">CPU:</span>
         {{ metrics().cpuUsage | percent: '1.1-1' }} of {{ metrics().cpuCoresMillis / 1000 }} Cores
+        @if (agentUsage(); as agent) {
+          <span class="text-gray-300 dark:text-gray-400">(Agent usage: {{ agent.cpuUsageMillis }}m)</span>
+        }
       </div>
       <div>
         <span class="inline-block size-2 me-1" [appStatusDot]="metrics().memoryUsage > 0.75 ? 'danger' : 'ok'"></span>
         <span class="font-semibold">RAM:</span>
         {{ metrics().memoryUsage | percent: '1.1-1' }} of {{ metrics().memoryBytes | bytes: '1.0-0' }}
+        @if (agentUsage(); as agent) {
+          <span class="text-gray-300 dark:text-gray-400">(Agent usage: {{ agent.memoryBytes | bytes: '1.0-1' }})</span>
+        }
       </div>
       @for (disk of metrics().diskMetrics; track disk.path) {
         @let diskUsage = disk.bytesUsed / disk.bytesTotal;

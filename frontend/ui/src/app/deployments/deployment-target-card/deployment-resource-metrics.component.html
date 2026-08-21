@@ -75,7 +75,7 @@
                 }
               </td>
               <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-white">
-                {{ container.memoryBytes | bytes }}
+                {{ container.memoryBytes | bytes: '1.0-1' }}
                 @if (memoryUsageRatio(container.memoryBytes, container.memoryLimitBytes); as ratio) {
                   <span class="text-gray-500 dark:text-gray-400">({{ ratio | percent }})</span>
                 }
