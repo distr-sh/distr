@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/url"
 	"path"
+	"strings"
 	"time"
+	"unicode"
 
 	"github.com/distr-sh/distr/internal/validation"
 	"github.com/google/uuid"
@@ -87,8 +89,8 @@ func (dt *DeploymentTarget) Validate() error {
 
 const DefaultDockerSocketPath = "/var/run/docker.sock"
 
-// ParseDockerEndpoint returns the socket path of a Docker endpoint URI. Only unix sockets are
-// supported because the endpoint is applied by bind-mounting the socket into the agent container.
+// ParseDockerEndpoint only supports unix sockets because the endpoint is applied by bind-mounting
+// the socket into the agent container.
 func ParseDockerEndpoint(endpoint string) (string, error) {
 	u, err := url.Parse(endpoint)
 	if err != nil {
@@ -103,10 +105,13 @@ func ParseDockerEndpoint(endpoint string) (string, error) {
 	if !path.IsAbs(u.Path) {
 		return "", errors.New("docker endpoint must have an absolute socket path")
 	}
+	// The path is rendered into Compose's short "SOURCE:TARGET" volume syntax.
+	if strings.Contains(u.Path, ":") || strings.ContainsFunc(u.Path, unicode.IsSpace) {
+		return "", errors.New("docker endpoint socket path must not contain a colon or whitespace")
+	}
 	return u.Path, nil
 }
 
-// DockerSocketPath returns the host socket path that has to be mounted into the agent container.
 func (dt *DeploymentTarget) DockerSocketPath() string {
 	if dt.DockerEndpoint != nil {
 		if socketPath, err := ParseDockerEndpoint(*dt.DockerEndpoint); err == nil {
@@ -116,8 +121,7 @@ func (dt *DeploymentTarget) DockerSocketPath() string {
 	return DefaultDockerSocketPath
 }
 
-// ValidateDockerEndpoint takes the deployment type separately because updates do not carry it in
-// the request body.
+// ValidateDockerEndpoint takes the type separately because updates do not carry it in the body.
 func ValidateDockerEndpoint(endpoint *string, deploymentType DeploymentType) error {
 	if endpoint == nil {
 		return nil

@@ -133,7 +133,7 @@ The generated Compose file then mounts that socket into the agent and autoheal c
 
 The setting is available both in the deployment wizard and when editing an existing deployment target. Changes only take effect after the customer re-applies the generated Compose file.
 
-Only unix socket URIs are supported. Remote endpoints such as `tcp://` cannot be used, because the endpoint is applied by mounting the socket into the agent container.
+Only unix socket URIs are supported. Remote endpoints such as `tcp://` cannot be used, because the endpoint is applied by mounting the socket into the agent container. For the same reason the socket path may contain neither whitespace nor a colon.
 
 <Aside type="note">
   A custom Docker endpoint is only available for Docker deployments.

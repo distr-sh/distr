@@ -24,8 +24,8 @@ services:
       DISTR_REGISTRY_PLAIN_HTTP: '{{ .registryPlainHttp }}'
       {{- end }}
       HOST_DOCKER_CONFIG_DIR: ${HOST_DOCKER_CONFIG_DIR-${HOME}/.docker}
-      # The mounted Docker config may select a context whose endpoint is a host path that does not
-      # exist in this container, so the socket is addressed directly instead.
+      # Overrides the Docker context of the mounted config, whose endpoint may be a host path that
+      # does not exist in this container.
       DOCKER_HOST: 'unix:///var/run/docker.sock'
       {{- if .metricsEnabled }}
       HOST_ROOT_DIR: /hostfs

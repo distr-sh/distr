@@ -52,10 +52,10 @@ export const RESOURCE_QUANTITY_REGEX =
 
 /**
  * A Docker endpoint URI pointing at a unix socket, e.g. `unix:///var/run/docker.sock`. Only unix
- * sockets are supported because the endpoint is applied by mounting the socket into the agent
- * container. Mirrors `types.ParseDockerEndpoint` in `internal/types/deployment_target.go`.
+ * sockets are supported because the socket is mounted into the agent container, and the path is
+ * rendered into Compose's short `SOURCE:TARGET` volume syntax, so it must not contain a colon.
  */
-export const DOCKER_ENDPOINT_REGEX = /^unix:\/\/\/\S+$/;
+export const DOCKER_ENDPOINT_REGEX = /^unix:\/\/\/[^:\s]+$/;
 
 export function jsonObjectValidator(control: AbstractControl): ValidationErrors | null {
   try {

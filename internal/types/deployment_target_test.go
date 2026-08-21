@@ -28,6 +28,9 @@ func TestParseDockerEndpoint(t *testing.T) {
 		"ssh://user@host",
 		"unix://var/run/docker.sock",
 		"unix://",
+		"unix:///tmp/docker:desktop.sock",
+		"unix:///tmp/docker%3Adesktop.sock",
+		"unix:///tmp/docker desktop.sock",
 	}
 	for _, endpoint := range invalid {
 		t.Run(endpoint, func(t *testing.T) {
