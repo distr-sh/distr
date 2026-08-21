@@ -14,7 +14,7 @@ import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faBuildingUser, faCopy, faKey, faMagnifyingGlass, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faAddressBook, faCopy, faKey, faMagnifyingGlass, faXmark} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {firstValueFrom, forkJoin, startWith} from 'rxjs';
 import {isExpired} from '../../util/dates';
@@ -56,7 +56,7 @@ export class LicensesOverviewComponent {
   protected readonly auth = inject(AuthService);
 
   protected readonly faMagnifyingGlass = faMagnifyingGlass;
-  protected readonly faBuildingUser = faBuildingUser;
+  protected readonly faAddressBook = faAddressBook;
   protected readonly faKey = faKey;
   protected readonly faCopy = faCopy;
   protected readonly faXmark = faXmark;

@@ -20,6 +20,7 @@ import (
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/security"
+	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/userauth"
 	"github.com/distr-sh/distr/internal/validation"
@@ -186,6 +187,9 @@ func setPasswordAndLogin(w http.ResponseWriter, r *http.Request, password string
 	if err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
 			http.Error(w, "could not update user", http.StatusBadRequest)
+		} else if errors.Is(err, subscription.ErrGlobalOrganizationLimitReached) {
+			log.Warn("could not set password, global organization limit reached")
+			http.Error(w, subscription.GlobalOrganizationLimitReachedMessage, http.StatusBadRequest)
 		} else {
 			log.Error("failed to set password", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -371,7 +375,10 @@ func authLoginHandler(w http.ResponseWriter, r *http.Request) {
 			return nil
 		}
 	})
-	if err != nil {
+	if errors.Is(err, subscription.ErrGlobalOrganizationLimitReached) {
+		log.Warn("user login rejected, global organization limit reached")
+		http.Error(w, subscription.GlobalOrganizationLimitReachedMessage, http.StatusBadRequest)
+	} else if err != nil {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		log.Warn("user login failed", zap.Error(err))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -414,7 +421,14 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		var token string
 
 		if err := db.RunTx(ctx, func(ctx context.Context) error {
-			if err := security.HashPassword(&userAccount); err != nil {
+			if reached, err := subscription.IsGlobalOrganizationLimitReached(ctx); err != nil {
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return err
+			} else if reached {
+				http.Error(w, subscription.GlobalOrganizationLimitReachedMessage, http.StatusBadRequest)
+				return subscription.ErrGlobalOrganizationLimitReached
+			} else if err := security.HashPassword(&userAccount); err != nil {
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return err

@@ -6,8 +6,8 @@ import {RouterLink} from '@angular/router';
 import {CustomerOrganization} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {
+  faAddressBook,
   faBox,
-  faBuildingUser,
   faCircleExclamation,
   faHeartPulse,
   faPen,
@@ -77,5 +77,5 @@ export class ArtifactsByCustomerCardComponent {
   protected readonly faXmark = faXmark;
   protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faBox = faBox;
-  protected readonly faBuildingUser = faBuildingUser;
+  protected readonly faAddressBook = faAddressBook;
 }

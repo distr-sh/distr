@@ -25,13 +25,12 @@ import {
   faPlus,
   faRepeat,
   faTrash,
-  faUserCircle,
+  faUser,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import {catchError, filter, firstValueFrom, NEVER, switchMap, tap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
-import {SecureImagePipe} from '../../../util/secureImage';
 import {UserRoleLabelPipe} from '../../../util/user-role';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {PlaceholderDirective} from '../../directives/placeholder.directive';
@@ -43,6 +42,7 @@ import {DialogRef, OverlayService} from '../../services/overlay.service';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
 import {isProSubscription} from '../../types/subscription';
+import {AvatarComponent} from '../avatar.component';
 import {InlineEditComponent} from '../inline-edit.component';
 import {QuotaLimitComponent} from '../quota-limit.component';
 import {UserRoleSelectComponent} from '../user-role-select.component';
@@ -57,7 +57,7 @@ import {UserRoleSelectComponent} from '../user-role-select.component';
     RequireVendorDirective,
     AutotrimDirective,
     PlaceholderDirective,
-    SecureImagePipe,
+    AvatarComponent,
     QuotaLimitComponent,
     UserRoleSelectComponent,
     UserRoleLabelPipe,
@@ -90,7 +90,7 @@ export class UsersComponent {
   protected readonly faPlus = faPlus;
   protected readonly faRepeat = faRepeat;
   protected readonly faTrash = faTrash;
-  protected readonly faUserCircle = faUserCircle;
+  protected readonly faUser = faUser;
   protected readonly faXmark = faXmark;
 
   protected readonly filterForm = this.fb.group({
