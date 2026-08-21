@@ -18,6 +18,7 @@ export interface DeploymentTarget extends BaseModel, Named {
   deploymentLogsAfter?: string;
   autohealEnabled?: boolean;
   resources?: DeploymentTargetResources;
+  dockerEndpoint?: string;
 }
 
 export interface DeploymentTargetResources {

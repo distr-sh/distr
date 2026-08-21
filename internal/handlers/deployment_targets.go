@@ -221,6 +221,11 @@ func updateDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := types.ValidateDockerEndpoint(dt.DockerEndpoint, existing.Type); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	if err := db.UpdateDeploymentTarget(ctx, &dt, *auth.CurrentOrgID()); err != nil {
 		log.Warn("could not update DeploymentTarget", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
