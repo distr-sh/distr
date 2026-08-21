@@ -37,7 +37,8 @@ const (
 			dt.resources_memory_request,
 			dt.resources_cpu_limit,
 			dt.resources_memory_limit
-		) END
+		) END,
+		dt.docker_endpoint
 	`
 	deploymentTargetOutputExpr = deploymentTargetOutputExprBase +
 		", CASE WHEN co.id IS NOT NULL THEN (" + customerOrganizationOutputExpr + ") END AS customer_organization"
@@ -225,6 +226,7 @@ func CreateDeploymentTarget(
 		"autohealEnabled":       dt.AutohealEnabled,
 		"automaticUpdates":      dt.AutomaticUpdatesEnabled,
 		"customerOrgId":         customerOrgID,
+		"dockerEndpoint":        dt.DockerEndpoint,
 	}
 
 	if dt.Resources != nil {
@@ -241,11 +243,11 @@ func CreateDeploymentTarget(
 			(name, type, organization_id, namespace, scope, agent_version_id, metrics_enabled, image_cleanup_enabled,
 				deployment_logs_enabled, deployment_logs_after, autoheal_enabled, automatic_updates_enabled,
 				customer_organization_id, resources_cpu_request, resources_memory_request, resources_cpu_limit,
-				resources_memory_limit)
+				resources_memory_limit, docker_endpoint)
 			VALUES (@name, @type, @orgId, @namespace, @scope, @agentVersionId, @metricsEnabled, @imageCleanupEnabled,
 				@deploymentLogsEnabled, @deploymentLogsAfter, @autohealEnabled, @automaticUpdates,
 				@customerOrgId, @resourcesCpuRequest, @resourcesMemoryRequest, @resourcesCpuLimit,
-				@resourcesMemoryLimit)
+				@resourcesMemoryLimit, @dockerEndpoint)
 			RETURNING *
 		)
 		SELECT `+deploymentTargetFullOutputExpr+` FROM inserted dt`+deploymentTargetJoinExpr,
@@ -275,6 +277,7 @@ func UpdateDeploymentTarget(ctx context.Context, dt *types.DeploymentTargetFull,
 		"deploymentLogsEnabled": dt.DeploymentLogsEnabled,
 		"deploymentLogsAfter":   dt.DeploymentLogsAfter,
 		"automaticUpdates":      dt.AutomaticUpdatesEnabled,
+		"dockerEndpoint":        dt.DockerEndpoint,
 	}
 	if dt.AgentVersionID != nil {
 		args["agentVersionId"] = dt.AgentVersionID
@@ -298,7 +301,8 @@ func UpdateDeploymentTarget(ctx context.Context, dt *types.DeploymentTargetFull,
 				resources_cpu_request = @cpuRequest,
 				resources_cpu_limit = @cpuLimit,
 				resources_memory_request = @memoryRequest,
-				resources_memory_limit = @memoryLimit `+agentUpdateStr+`
+				resources_memory_limit = @memoryLimit,
+				docker_endpoint = @dockerEndpoint `+agentUpdateStr+`
 			WHERE id = @id AND organization_id = @orgId RETURNING *
 		)
 		SELECT `+deploymentTargetFullOutputExpr+` FROM updated dt`+deploymentTargetJoinExpr,

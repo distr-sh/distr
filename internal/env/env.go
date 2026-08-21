@@ -46,6 +46,8 @@ var (
 	userEmailVerificationRequired          bool
 	serverShutdownDelayDuration            *time.Duration
 	registration                           RegistrationMode
+	turnstileSiteKey                       *string
+	turnstileSecret                        *string
 	registryEnabled                        bool
 	registryS3Config                       S3Config
 	registryScratchDir                     *string
@@ -130,6 +132,16 @@ func Initialize() {
 	)
 	serverShutdownDelayDuration = envutil.GetEnvParsedOrNil("SERVER_SHUTDOWN_DELAY_DURATION", envparse.PositiveDuration)
 	registration = envutil.GetEnvParsedOrDefault("REGISTRATION", parseRegistrationMode, RegistrationEnabled)
+	// Turnstile needs the site key in the browser and the secret on the server, so a half-configured widget
+	// can only ever fail: either the form has no widget to solve, or its token cannot be verified.
+	if siteKey, secret := envutil.GetEnv("TURNSTILE_SITE_KEY"), envutil.GetEnv("TURNSTILE_SECRET"); siteKey != "" &&
+		secret != "" {
+		turnstileSiteKey = &siteKey
+		turnstileSecret = &secret
+	} else if siteKey != "" || secret != "" {
+		fmt.Fprintln(os.Stderr,
+			"WARNING: TURNSTILE_SITE_KEY and TURNSTILE_SECRET must both be set, Turnstile has been disabled")
+	}
 	inviteTokenValidDuration = envutil.GetEnvParsedOrDefault(
 		"INVITE_TOKEN_VALID_DURATION", envparse.PositiveDuration, 24*time.Hour,
 	)
@@ -413,6 +425,14 @@ func ServerShutdownDelayDuration() *time.Duration {
 
 func Registration() RegistrationMode {
 	return registration
+}
+
+func TurnstileSiteKey() *string {
+	return turnstileSiteKey
+}
+
+func TurnstileSecret() *string {
+	return turnstileSecret
 }
 
 func RegistryEnabled() bool {

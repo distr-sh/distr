@@ -8,6 +8,7 @@ import (
 	"github.com/distr-sh/distr/internal/authjwt"
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/security"
+	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 )
@@ -69,7 +70,8 @@ func PrimaryOrganization(ctx context.Context, user types.UserAccount) (types.Org
 // EnsurePrimaryOrganization returns the organization a login should default to, creating a personal organization
 // for the user when they are not part of any organization yet. This mirrors the behavior of a regular login, so
 // that a user who was removed from all of their organizations can still complete an invite or password reset.
-// A super admin without an organization is an unexpected state and results in an error.
+// It fails with subscription.ErrGlobalOrganizationLimitReached when the license does not allow another
+// organization. A super admin without an organization is an unexpected state and results in an error.
 func EnsurePrimaryOrganization(ctx context.Context, user types.UserAccount) (types.OrganizationWithUserRole, error) {
 	if org, err := PrimaryOrganization(ctx, user); err == nil {
 		return org, nil
@@ -79,6 +81,12 @@ func EnsurePrimaryOrganization(ctx context.Context, user types.UserAccount) (typ
 
 	if user.IsSuperAdmin {
 		return types.OrganizationWithUserRole{}, errors.New("super admin has no organizations, this should never happen")
+	}
+
+	if reached, err := subscription.IsGlobalOrganizationLimitReached(ctx); err != nil {
+		return types.OrganizationWithUserRole{}, err
+	} else if reached {
+		return types.OrganizationWithUserRole{}, subscription.ErrGlobalOrganizationLimitReached
 	}
 
 	org := types.OrganizationWithUserRole{UserRole: types.UserRoleAdmin}
@@ -94,7 +102,8 @@ func EnsurePrimaryOrganization(ctx context.Context, user types.UserAccount) (typ
 }
 
 // GenerateLoginToken generates a default login token scoped to the user's primary organization, the same kind
-// of token that is issued on a regular login. A personal organization is created when the user has none.
+// of token that is issued on a regular login. A personal organization is created when the user has none, so
+// callers must handle subscription.ErrGlobalOrganizationLimitReached as a rejection instead of a failure.
 func GenerateLoginToken(ctx context.Context, user types.UserAccount) (string, error) {
 	org, err := EnsurePrimaryOrganization(ctx, user)
 	if err != nil {

@@ -137,7 +137,8 @@ export class AuthService {
     email: string,
     name: string | null | undefined,
     organizationName: string | null | undefined,
-    password: string
+    password: string,
+    turnstileToken?: string
   ): Observable<void> {
     let body: any = {email, password};
     if (name) {
@@ -145,6 +146,9 @@ export class AuthService {
     }
     if (organizationName) {
       body = {...body, organizationName};
+    }
+    if (turnstileToken) {
+      body = {...body, turnstileToken};
     }
     return this.httpClient.post<TokenResponse>(`${authBaseUrl}/register`, body).pipe(
       tap((r) => this.loginWithToken(r.token)),

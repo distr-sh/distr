@@ -64,6 +64,12 @@
 
 ---
 
+### dockerEndpoint?
+
+> `optional` **dockerEndpoint?**: `string`
+
+---
+
 ### id?
 
 > `optional` **id?**: `string`

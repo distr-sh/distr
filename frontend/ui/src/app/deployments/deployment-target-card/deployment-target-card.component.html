@@ -405,9 +405,9 @@
       >?
     </p>
 
-    @if (agentUpdateChangelogReleases().length > 0) {
-      <div>
-        <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Agent release notes</h4>
+    <div>
+      <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Agent release notes</h4>
+      @if (agentUpdateChangelogReleases().length > 0) {
         <div class="max-h-72 overflow-y-auto pr-1 space-y-4">
           @for (release of agentUpdateChangelogReleases(); track release.version) {
             <div>
@@ -425,8 +425,10 @@
             </div>
           }
         </div>
-      </div>
-    }
+      } @else {
+        <p>General platform changes and dependency updates.</p>
+      }
+    </div>
 
     @if (!deploymentTarget().automaticUpdatesEnabled) {
       <div class="flex items-center">
@@ -700,6 +702,48 @@
               Enable container image cleanup
             </label>
           </div>
+        }
+
+        @if (editForm.controls.customDockerEndpoint.enabled) {
+          <div class="flex items-center">
+            <input
+              id="custom-docker-endpoint"
+              type="checkbox"
+              formControlName="customDockerEndpoint"
+              class="distr-checkbox" />
+            <label for="custom-docker-endpoint" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+              Use a custom Docker endpoint
+            </label>
+          </div>
+        }
+
+        @if (editForm.controls.dockerEndpoint.enabled) {
+          <div>
+            <label for="dockerEndpoint" class="distr-label mb-2">Docker Endpoint</label>
+            <input
+              type="text"
+              id="dockerEndpoint"
+              formControlName="dockerEndpoint"
+              placeholder="unix:///var/run/docker.sock"
+              autotrim
+              autocomplete="off"
+              class="distr-input disabled:opacity-50 disabled:cursor-not-allowed disabled:select-none" />
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              The Docker socket on the host that the agent should use. Defaults to
+              <code>unix:///var/run/docker.sock</code>.
+            </p>
+            @if (editForm.controls.dockerEndpoint.invalid && editForm.controls.dockerEndpoint.touched) {
+              <p class="mt-1 text-sm text-red-600 dark:text-red-500">
+                Field is required and must be a unix socket URI.
+              </p>
+            }
+          </div>
+
+          @if (editForm.controls.dockerEndpoint.dirty) {
+            <div class="text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400" role="alert">
+              Changes to the Docker endpoint are only applied after a reconnect!
+            </div>
+          }
         }
 
         @if (editForm.controls.customResources.enabled) {

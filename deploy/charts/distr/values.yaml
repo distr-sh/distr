@@ -119,6 +119,11 @@ hub:
     # User Registration Mode – can be one of "enabled" (default), "hidden", "disabled"
     # - name: REGISTRATION
     #   value: enabled
+    # Protect registrations with a Cloudflare Turnstile widget. Both variables must be set to enable it.
+    # - name: TURNSTILE_SITE_KEY
+    #   value: ''
+    # - name: TURNSTILE_SECRET
+    #   value: ''
     - name: USER_EMAIL_VERIFICATION_REQUIRED
       value: 'false'
     - name: METRICS_ENTRIES_MAX_AGE

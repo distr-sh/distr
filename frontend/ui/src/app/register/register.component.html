@@ -88,12 +88,15 @@
               <span class="text-sm text-red-500">Password mismatch</span>
             }
           </div>
-          @if (errorMessage) {
-            <div class="text-sm text-red-500">{{ errorMessage }}</div>
+          @if (errorMessage()) {
+            <div class="text-sm text-red-500">{{ errorMessage() }}</div>
+          }
+          @if (turnstileSiteKey(); as siteKey) {
+            <app-turnstile class="-mt-2 mb-2 md:-mt-3 md:mb-3" [siteKey]="siteKey" (token)="onTurnstileToken($event)" />
           }
           <button
             type="submit"
-            [disabled]="loading"
+            [disabled]="loading()"
             class="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
             Create an account
           </button>

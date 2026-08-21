@@ -6,6 +6,7 @@ export interface PortalOIDCProvider {
 
 export interface PortalLoginConfig {
   registrationEnabled: boolean;
+  turnstileSiteKey?: string;
   oidcGithubEnabled: boolean;
   oidcGoogleEnabled: boolean;
   oidcMicrosoftEnabled: boolean;
