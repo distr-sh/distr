@@ -25,7 +25,7 @@ export class DeploymentTargetsMetricsService {
   // The endpoint responds with 204 (and thus an empty body) when no metrics have been reported yet.
   getDeploymentMetrics(deploymentId: string): Observable<DeploymentResourceMetrics | undefined> {
     return this.httpClient
-      .get<DeploymentResourceMetrics>(`/api/v1/deployments/${deploymentId}/metrics`)
+      .get<DeploymentResourceMetrics | null>(`/api/v1/deployments/${deploymentId}/metrics`)
       .pipe(map((metrics) => metrics ?? undefined));
   }
 }
