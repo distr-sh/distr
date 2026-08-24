@@ -47,8 +47,8 @@ helm upgrade --install --wait --namespace distr --create-namespace \
 | Repository                                  | Name       | Version    |
 | ------------------------------------------- | ---------- | ---------- |
 | https://charts.rustfs.com                   | rustfs     | 1.0.0-rc.3 |
-| oci://ghcr.io/grafana-community/helm-charts | loki       | 18.11.0    |
-| oci://registry-1.docker.io/bitnamicharts    | postgresql | 18.8.12    |
+| oci://ghcr.io/grafana-community/helm-charts | loki       | 18.11.2    |
+| oci://registry-1.docker.io/bitnamicharts    | postgresql | 18.8.13    |
 
 ## Values
 
