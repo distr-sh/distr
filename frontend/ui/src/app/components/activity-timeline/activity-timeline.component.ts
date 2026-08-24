@@ -3,7 +3,7 @@ import {ChangeDetectionStrategy, Component, input, output} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent, IconDefinition} from '@fortawesome/angular-fontawesome';
 import {faPaperPlane} from '@fortawesome/free-solid-svg-icons';
-import {UserAvatarComponent} from '../user-avatar.component';
+import {AvatarComponent} from '../avatar.component';
 
 /**
  * A single entry in an activity timeline. Features map their own event or comment type onto
@@ -28,7 +28,7 @@ export interface ActivityTimelineEntry {
   // Without an explicit display the host stays inline, which silently drops the vertical
   // margins that the surrounding space-y and mb utilities put on it.
   host: {class: 'block'},
-  imports: [DatePipe, ReactiveFormsModule, FaIconComponent, UserAvatarComponent],
+  imports: [DatePipe, ReactiveFormsModule, FaIconComponent, AvatarComponent],
 })
 export class ActivityTimelineComponent {
   public readonly entries = input.required<ActivityTimelineEntry[]>();

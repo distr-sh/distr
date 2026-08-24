@@ -10,9 +10,9 @@ import (
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
-	"github.com/lestrrat-go/jwx/v3/jwa"
-	"github.com/lestrrat-go/jwx/v3/jwk"
-	"github.com/lestrrat-go/jwx/v3/jwt"
+	"github.com/lestrrat-go/jwx/v4/jwa"
+	"github.com/lestrrat-go/jwx/v4/jwk"
+	"github.com/lestrrat-go/jwx/v4/jwt"
 )
 
 // OrganizationIDClaimName is the JWT claim under which the organization ID a license key
@@ -32,7 +32,7 @@ var signingKey = sync.OnceValues(func() (jwk.Key, error) {
 	if pemBytes == nil {
 		return nil, ErrNoSigningKey
 	}
-	return jwk.ParseKey(pemBytes, jwk.WithPEM(true))
+	return jwk.ParseKey(pemBytes, jwk.WithX509(true))
 })
 
 func PublicKey() (jwk.Key, error) {

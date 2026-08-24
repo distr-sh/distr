@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"errors"
+	"os"
 	"time"
 
 	"github.com/distr-sh/distr/api"
@@ -56,13 +58,47 @@ func doReportMetrics(ctx context.Context) {
 		zap.Any("memUsageSum", memoryUsageBytes))
 
 	if cpuCapacityM > 0 && memoryCapacityBytes > 0 {
-		if err := agentClient.ReportMetrics(ctx, api.AgentDeploymentTargetMetricsRequest{
+		reportMetrics := api.AgentDeploymentTargetMetricsRequest{
 			CPUCoresMillis: cpuCapacityM,
 			CPUUsage:       float64(cpuUsageM) / float64(cpuCapacityM),
 			MemoryBytes:    memoryCapacityBytes,
 			MemoryUsage:    float64(memoryUsageBytes) / float64(memoryCapacityBytes),
-		}); err != nil {
+		}
+
+		if usage, err := agentSelfUsage(ctx); err != nil {
+			logger.Warn("failed to collect agent self metrics", zap.Error(err))
+		} else {
+			reportMetrics.AgentCPUUsageMillis = &usage.cpuUsageMillis
+			reportMetrics.AgentMemoryBytes = &usage.memoryBytes
+		}
+
+		if err := agentClient.ReportMetrics(ctx, reportMetrics); err != nil {
 			logger.Error("failed to report metrics", zap.Error(err))
 		}
 	}
+}
+
+// agentSelfUsage returns the usage of the agent's own pod. The pod name is the hostname
+// (the agent pod does not override it), the namespace comes from the state shared by the
+// main loop, which is always stored before the metrics goroutine is started.
+func agentSelfUsage(ctx context.Context) (*podUsage, error) {
+	namespace := deploymentMetricsNamespace.Load()
+	if namespace == nil {
+		return nil, errors.New("namespace is not known yet")
+	}
+	podName, err := os.Hostname()
+	if err != nil {
+		return nil, err
+	}
+	podMetrics, err := metricsClientSet.MetricsV1beta1().PodMetricses(*namespace).
+		Get(ctx, podName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	var usage podUsage
+	for _, container := range podMetrics.Containers {
+		usage.cpuUsageMillis += container.Usage.Cpu().MilliValue()
+		usage.memoryBytes += container.Usage.Memory().Value()
+	}
+	return &usage, nil
 }

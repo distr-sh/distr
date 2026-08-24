@@ -50,6 +50,13 @@ export const DURATION_REGEX =
 export const RESOURCE_QUANTITY_REGEX =
   /^(\d+|\d+\.\d+|\d+\.|\.\d+)(m|k|M|G|T|P|E|Ki|Mi|Gi|Ti|Pi|Ei|((e|E)(\d+|\d+\.\d+|\d+\.|\.\d+)))?$/;
 
+/**
+ * A Docker endpoint URI pointing at a unix socket, e.g. `unix:///var/run/docker.sock`. Only unix
+ * sockets are supported because the socket is mounted into the agent container, and the path is
+ * rendered into Compose's short `SOURCE:TARGET` volume syntax, so it must not contain a colon.
+ */
+export const DOCKER_ENDPOINT_REGEX = /^unix:\/\/\/[^:\s]+$/;
+
 export function jsonObjectValidator(control: AbstractControl): ValidationErrors | null {
   try {
     const parsed = JSON.parse(control.value);

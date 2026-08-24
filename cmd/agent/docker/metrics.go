@@ -10,6 +10,9 @@ import (
 	"strings"
 
 	"github.com/distr-sh/distr/api"
+	composeapi "github.com/docker/compose/v5/pkg/api"
+	"github.com/moby/moby/api/types/container"
+	mobyClient "github.com/moby/moby/client"
 	hmr "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver"
 	"github.com/shirou/gopsutil/v4/disk"
 	"go.opentelemetry.io/collector/component"
@@ -22,6 +25,11 @@ import (
 )
 
 var metrics receiver.Metrics
+
+// agentComposeProject is the fixed project name of the agent's own compose stack from the
+// connect manifest ("name: distr"). Deployment projects are renamed to "distr-<id>" by the hub
+// (see patchProjectName), so the exact label match cannot collide with a deployment.
+const agentComposeProject = "distr"
 
 const hostMetricsReceiverConfig = `
 collection_interval: 30s
@@ -125,6 +133,13 @@ func startMetrics(ctx context.Context) {
 			MemoryUsage:    memoryUsed,
 		}
 
+		if agentCPUUsageMillis, agentMemoryBytes, err := agentSelfUsage(ctx); err != nil {
+			logger.Warn("failed to collect agent self metrics", zap.Error(err))
+		} else {
+			reportMetrics.AgentCPUUsageMillis = &agentCPUUsageMillis
+			reportMetrics.AgentMemoryBytes = &agentMemoryBytes
+		}
+
 		if dm, err := diskMetrics(ctx); err != nil {
 			logger.Warn("failed to collect disk metrics", zap.Error(err))
 		} else {
@@ -167,6 +182,30 @@ func startMetrics(ctx context.Context) {
 	if err != nil {
 		logger.Error("failed to start metrics", zap.Error(err))
 	}
+}
+
+// agentSelfUsage returns the summed usage of the agent's own compose stack, which includes the
+// autoheal sidecar. The own container cannot be found via hostname because the agent runs with
+// host networking, so the compose project label is used instead.
+func agentSelfUsage(ctx context.Context) (cpuUsageMillis, memoryBytes int64, err error) {
+	list, err := dockerCli.Client().ContainerList(ctx, mobyClient.ContainerListOptions{
+		Filters: mobyClient.Filters{}.Add("label", composeapi.ProjectLabel+"="+agentComposeProject),
+	})
+	if err != nil {
+		return 0, 0, err
+	}
+	for _, summary := range list.Items {
+		if summary.State != container.StateRunning {
+			continue
+		}
+		cpu, memory, err := containerUsage(ctx, summary.ID)
+		if err != nil {
+			return 0, 0, err
+		}
+		cpuUsageMillis += cpu
+		memoryBytes += memory
+	}
+	return cpuUsageMillis, memoryBytes, nil
 }
 
 func diskMetrics(ctx context.Context) ([]api.DeploymentTargetDiskMetric, error) {

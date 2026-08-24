@@ -14,9 +14,9 @@ import (
 	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/go-viper/mapstructure/v2"
-	"github.com/lestrrat-go/jwx/v3/jwa"
-	"github.com/lestrrat-go/jwx/v3/jwk"
-	"github.com/lestrrat-go/jwx/v3/jwt"
+	"github.com/lestrrat-go/jwx/v4/jwa"
+	"github.com/lestrrat-go/jwx/v4/jwk"
+	"github.com/lestrrat-go/jwx/v4/jwt"
 )
 
 var (
@@ -40,7 +40,7 @@ var (
 			return nil, err
 		}
 
-		return jwk.ParseKey(rawPubKey, jwk.WithPEM(true))
+		return jwk.ParseKey(rawPubKey, jwk.WithX509(true))
 	})
 )
 
@@ -145,8 +145,8 @@ func parseAndValidate(pubKeySrc func() (jwk.Key, error), licenseKey string) (*Li
 		return nil, err
 	}
 
-	var licenseDataMap map[string]any
-	if err := token.Get(licenseDataClaimName, &licenseDataMap); err != nil {
+	licenseDataMap, err := jwt.Get[map[string]any](token, licenseDataClaimName)
+	if err != nil {
 		return nil, fmt.Errorf("invalid license key: %w", err)
 	}
 
@@ -178,8 +178,7 @@ func validateOrganizationScope(token jwt.Token, expectedOrgID string, cutoff tim
 		return nil
 	}
 
-	var orgID string
-	if err := token.Get(licensekey.OrganizationIDClaimName, &orgID); err != nil {
+	if orgID, err := jwt.Get[string](token, licensekey.OrganizationIDClaimName); err != nil {
 		return fmt.Errorf("invalid license key: missing organization ID claim")
 	} else if orgID != expectedOrgID {
 		return fmt.Errorf("invalid license key: organization ID mismatch")

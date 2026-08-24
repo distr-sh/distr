@@ -20,6 +20,8 @@ import (
 	"github.com/distr-sh/distr/internal/mailtemplates"
 	"github.com/distr-sh/distr/internal/middleware"
 	"github.com/distr-sh/distr/internal/security"
+	"github.com/distr-sh/distr/internal/subscription"
+	"github.com/distr-sh/distr/internal/turnstile"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/userauth"
 	"github.com/distr-sh/distr/internal/validation"
@@ -186,6 +188,9 @@ func setPasswordAndLogin(w http.ResponseWriter, r *http.Request, password string
 	if err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
 			http.Error(w, "could not update user", http.StatusBadRequest)
+		} else if errors.Is(err, subscription.ErrGlobalOrganizationLimitReached) {
+			log.Warn("could not set password, global organization limit reached")
+			http.Error(w, subscription.GlobalOrganizationLimitReachedMessage, http.StatusBadRequest)
 		} else {
 			log.Error("failed to set password", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
@@ -371,7 +376,10 @@ func authLoginHandler(w http.ResponseWriter, r *http.Request) {
 			return nil
 		}
 	})
-	if err != nil {
+	if errors.Is(err, subscription.ErrGlobalOrganizationLimitReached) {
+		log.Warn("user login rejected, global organization limit reached")
+		http.Error(w, subscription.GlobalOrganizationLimitReachedMessage, http.StatusBadRequest)
+	} else if err != nil {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		log.Warn("user login failed", zap.Error(err))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -402,6 +410,8 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	} else if err := request.Validate(); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
+	} else if !verifyRegistrationChallenge(w, r, request.TurnstileToken) {
+		return
 	} else {
 		userAccount := types.UserAccount{
 			Name:     request.Name,
@@ -414,7 +424,14 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		var token string
 
 		if err := db.RunTx(ctx, func(ctx context.Context) error {
-			if err := security.HashPassword(&userAccount); err != nil {
+			if reached, err := subscription.IsGlobalOrganizationLimitReached(ctx); err != nil {
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return err
+			} else if reached {
+				http.Error(w, subscription.GlobalOrganizationLimitReachedMessage, http.StatusBadRequest)
+				return subscription.ErrGlobalOrganizationLimitReached
+			} else if err := security.HashPassword(&userAccount); err != nil {
 				sentry.GetHubFromContext(ctx).CaptureException(err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return err
@@ -449,6 +466,31 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 		RespondJSON(w, api.AuthLoginResponse{Token: token})
 	}
+}
+
+func verifyRegistrationChallenge(w http.ResponseWriter, r *http.Request, token string) bool {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+
+	// Resolution is best-effort in the same way as in the portal endpoint: a failed lookup leaves the default
+	// host, which is the one that requires a challenge.
+	host, err := resolvePortalHost(ctx, validation.NormalizeHostname(r.Host))
+	if err != nil {
+		log.Warn("failed to resolve host for challenge verification", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+	}
+	if host.turnstileSiteKey() == nil {
+		return true
+	}
+
+	if err := turnstile.Verify(ctx, token, chimiddleware.GetClientIP(ctx)); err != nil {
+		log.Info("turnstile verification failed", zap.Error(err))
+		// The frontend shows the message of a 4xx response as-is, so it has to be one a user can act on.
+		http.Error(w, "could not verify that you are human, please reload the page and try again",
+			http.StatusForbidden)
+		return false
+	}
+	return true
 }
 
 func authResetPasswordHandler(w http.ResponseWriter, r *http.Request) {

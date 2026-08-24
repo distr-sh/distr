@@ -222,6 +222,7 @@ export class DistrService {
       imageCleanupEnabled: false,
       deploymentLogsEnabled: false,
       autohealEnabled: false,
+      automaticUpdatesEnabled: true,
     });
     await this.client.createOrUpdateDeployment({
       deploymentTargetId: deploymentTarget.id!,

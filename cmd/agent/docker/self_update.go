@@ -118,6 +118,7 @@ func ApplyAgentComposeFile(ctx context.Context, manifest map[string]any) error {
 		"--name", updateContainerName,
 		"--entrypoint", "/usr/local/bin/docker-entrypoint.sh",
 		"--env", "HOST_DOCKER_CONFIG_DIR="+os.Getenv("HOST_DOCKER_CONFIG_DIR"),
+		"--env", "DOCKER_HOST="+os.Getenv("DOCKER_HOST"),
 		"--volumes-from", containerID,
 		imageName,
 		"docker", "compose", "-f", file.Name(), "up", "-d",

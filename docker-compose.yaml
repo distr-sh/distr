@@ -2,7 +2,7 @@ name: distr-dev
 
 services:
   postgres:
-    image: 'postgres:18.4-alpine3.23'
+    image: 'postgres:18.6-alpine3.23'
     environment:
       POSTGRES_USER: local
       POSTGRES_PASSWORD: local
@@ -12,7 +12,7 @@ services:
     ports:
       - '5432:5432'
   mailpit:
-    image: 'axllent/mailpit:v1.30.6'
+    image: 'axllent/mailpit:v1.31.0'
     ports:
       - '1025:1025'
       - '8025:8025'
@@ -38,7 +38,7 @@ services:
   # (single-binary) mode and persists chunks + TSDB index in the rustfs "loki" bucket.
   # The bucket is created by a pre_start init container (requires Docker Compose >= 5.3.0).
   loki:
-    image: 'grafana/loki:3.7.4'
+    image: 'grafana/loki:3.7.6'
     command: ['-config.file=/etc/loki/distr-config.yaml']
     configs:
       - source: loki-config

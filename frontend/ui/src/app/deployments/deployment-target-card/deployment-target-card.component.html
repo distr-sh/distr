@@ -289,6 +289,19 @@
                               Deployment history
                             </button>
                           </li>
+                          <li>
+                            <button
+                              type="button"
+                              class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                              (click)="
+                                showDeploymentDropdownForId.set(undefined); showResourceMetricsModal(deployment)
+                              ">
+                              <fa-icon
+                                [icon]="faGauge"
+                                class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
+                              Resource metrics
+                            </button>
+                          </li>
                           @if (auth.hasAnyRole('read_write', 'admin')) {
                             <li>
                               <button
@@ -405,9 +418,9 @@
       >?
     </p>
 
-    @if (agentUpdateChangelogReleases().length > 0) {
-      <div>
-        <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Agent release notes</h4>
+    <div>
+      <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Agent release notes</h4>
+      @if (agentUpdateChangelogReleases().length > 0) {
         <div class="max-h-72 overflow-y-auto pr-1 space-y-4">
           @for (release of agentUpdateChangelogReleases(); track release.version) {
             <div>
@@ -425,6 +438,23 @@
             </div>
           }
         </div>
+      } @else {
+        <p>General platform changes and dependency updates.</p>
+      }
+    </div>
+
+    @if (!deploymentTarget().automaticUpdatesEnabled) {
+      <div class="flex items-center">
+        <input
+          id="agent-update-automatic-updates-checkbox"
+          type="checkbox"
+          [formControl]="agentUpdateAutomaticUpdatesEnabled"
+          class="distr-checkbox" />
+        <label
+          for="agent-update-automatic-updates-checkbox"
+          class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+          Update this agent automatically in the future
+        </label>
       </div>
     }
 
@@ -595,6 +625,23 @@
         <div class="space-y-1">
           <div class="flex items-center">
             <input
+              id="automatic-updates-checkbox"
+              type="checkbox"
+              formControlName="automaticUpdatesEnabled"
+              class="distr-checkbox" />
+            <label for="automatic-updates-checkbox" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+              Enable automatic agent updates
+            </label>
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            When enabled, the agent is updated to the latest version as soon as one becomes available. Updating the
+            agent does not restart or update the deployed application.
+          </p>
+        </div>
+
+        <div class="space-y-1">
+          <div class="flex items-center">
+            <input
               id="logs-enabled-checkbox"
               type="checkbox"
               formControlName="deploymentLogsEnabled"
@@ -668,6 +715,48 @@
               Enable container image cleanup
             </label>
           </div>
+        }
+
+        @if (editForm.controls.customDockerEndpoint.enabled) {
+          <div class="flex items-center">
+            <input
+              id="custom-docker-endpoint"
+              type="checkbox"
+              formControlName="customDockerEndpoint"
+              class="distr-checkbox" />
+            <label for="custom-docker-endpoint" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+              Use a custom Docker endpoint
+            </label>
+          </div>
+        }
+
+        @if (editForm.controls.dockerEndpoint.enabled) {
+          <div>
+            <label for="dockerEndpoint" class="distr-label mb-2">Docker Endpoint</label>
+            <input
+              type="text"
+              id="dockerEndpoint"
+              formControlName="dockerEndpoint"
+              placeholder="unix:///var/run/docker.sock"
+              autotrim
+              autocomplete="off"
+              class="distr-input disabled:opacity-50 disabled:cursor-not-allowed disabled:select-none" />
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              The Docker socket on the host that the agent should use. Defaults to
+              <code>unix:///var/run/docker.sock</code>.
+            </p>
+            @if (editForm.controls.dockerEndpoint.invalid && editForm.controls.dockerEndpoint.touched) {
+              <p class="mt-1 text-sm text-red-600 dark:text-red-500">
+                Field is required and must be a unix socket URI.
+              </p>
+            }
+          </div>
+
+          @if (editForm.controls.dockerEndpoint.dirty) {
+            <div class="text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400" role="alert">
+              Changes to the Docker endpoint are only applied after a reconnect!
+            </div>
+          }
         }
 
         @if (editForm.controls.customResources.enabled) {
@@ -868,6 +957,31 @@
     <div class="p-4 md:p-5 overflow-y-auto max-h-[70vh]">
       @if (selectedRevision(); as revision) {
         <app-deployment-revision-details [revision]="revision" [deploymentTarget]="deploymentTarget()" />
+      }
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #resourceMetricsModal>
+  <div
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top"
+    class="w-3xl max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-700">
+    <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+      <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+        {{ selectedDeployment()?.application?.name }} resource metrics
+      </h3>
+      <button
+        type="button"
+        (click)="hideModal()"
+        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+        <fa-icon [icon]="faXmark" />
+        <span class="sr-only">Close modal</span>
+      </button>
+    </div>
+    <div class="overflow-y-auto max-h-[70vh]">
+      @if (selectedDeployment()?.id; as deploymentId) {
+        <app-deployment-resource-metrics [deploymentId]="deploymentId" />
       }
     </div>
   </div>

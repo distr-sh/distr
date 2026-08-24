@@ -23,7 +23,7 @@ import (
 var Authentication = authn.New(
 	authn.Chain4(
 		token.NewExtractor(token.WithExtractorFuncs(token.FromHeader("Bearer"))),
-		jwt.Authenticator(authjwt.JWTAuth),
+		jwt.Authenticator(authjwt.VerifyToken),
 		authinfo.UserJWTAuthenticator(),
 		authinfo.DbAuthenticator(),
 	),
@@ -39,7 +39,7 @@ var Authentication = authn.New(
 var AgentAuthentication = authn.New(
 	authn.Chain3(
 		token.NewExtractor(token.WithExtractorFuncs(token.FromHeader("Bearer"))),
-		jwt.Authenticator(authjwt.JWTAuth),
+		jwt.Authenticator(authjwt.VerifyToken),
 		authinfo.AgentJWTAuthenticator(),
 		// for agents, db check is done in the agent auth middleware, therefore no DbAuthenticator here
 	),
@@ -63,7 +63,7 @@ var ArtifactsAuthentication = authn.New(
 			),
 			// Authenticate with Agent JWT
 			authn.Chain3(
-				jwt.Authenticator(authjwt.JWTAuth),
+				jwt.Authenticator(authjwt.VerifyToken),
 				authinfo.AgentJWTAuthenticator(),
 				authinfo.AgentDbAuthenticator(),
 			),

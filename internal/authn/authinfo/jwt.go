@@ -8,7 +8,7 @@ import (
 	"github.com/distr-sh/distr/internal/authn"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
-	"github.com/lestrrat-go/jwx/v3/jwt"
+	"github.com/lestrrat-go/jwx/v4/jwt"
 )
 
 func FromUserJWT(token jwt.Token) (*SimpleAuthInfo, error) {
@@ -23,8 +23,7 @@ func FromUserJWT(token jwt.Token) (*SimpleAuthInfo, error) {
 		result.userID = userID
 	}
 
-	var orgIDStr string
-	if err := token.Get(authjwt.OrgIdKey, &orgIDStr); err == nil {
+	if orgIDStr, err := jwt.Get[string](token, authjwt.OrgIdKey); err == nil {
 		if orgID, err := uuid.Parse(orgIDStr); err != nil {
 			return nil, fmt.Errorf("%w: JWT orgId is invalid: %w", authn.ErrBadAuthentication, err)
 		} else {
@@ -32,8 +31,7 @@ func FromUserJWT(token jwt.Token) (*SimpleAuthInfo, error) {
 		}
 	}
 
-	var userRoleStr string
-	if err := token.Get(authjwt.UserRoleKey, &userRoleStr); err == nil {
+	if userRoleStr, err := jwt.Get[string](token, authjwt.UserRoleKey); err == nil {
 		if userRole, err := types.ParseUserRole(userRoleStr); err != nil {
 			return nil, fmt.Errorf("%w: JWT userRole is invalid: %w", authn.ErrBadAuthentication, err)
 		} else {
@@ -41,8 +39,7 @@ func FromUserJWT(token jwt.Token) (*SimpleAuthInfo, error) {
 		}
 	}
 
-	var partnerOrgIDStr string
-	if err := token.Get(authjwt.PartnerOrgIDKey, &partnerOrgIDStr); err == nil {
+	if partnerOrgIDStr, err := jwt.Get[string](token, authjwt.PartnerOrgIDKey); err == nil {
 		if partnerOrgID, err := uuid.Parse(partnerOrgIDStr); err != nil {
 			return nil, fmt.Errorf("%w: JWT partnerOrgId is invalid: %w", authn.ErrBadAuthentication, err)
 		} else {
@@ -50,12 +47,11 @@ func FromUserJWT(token jwt.Token) (*SimpleAuthInfo, error) {
 		}
 	}
 
-	_ = token.Get(authjwt.UserEmailKey, &result.userEmail)
-	_ = token.Get(authjwt.UserEmailVerifiedKey, &result.emailVerified)
-	_ = token.Get(authjwt.SuperAdminKey, &result.isSuperAdmin)
+	result.userEmail, _ = jwt.Get[string](token, authjwt.UserEmailKey)
+	result.emailVerified, _ = jwt.Get[bool](token, authjwt.UserEmailVerifiedKey)
+	result.isSuperAdmin, _ = jwt.Get[bool](token, authjwt.SuperAdminKey)
 
-	var scope string
-	if err := token.Get(authjwt.TokenScopeKey, &scope); err == nil {
+	if scope, err := jwt.Get[string](token, authjwt.TokenScopeKey); err == nil {
 		result.tokenScope = authjwt.TokenScope(scope)
 	}
 
@@ -82,8 +78,7 @@ func FromAgentJWT(token jwt.Token) (*SimpleAgentAuthInfo, error) {
 		result.deploymentTargetID = deploymentTargetID
 	}
 
-	var orgIDStr string
-	if err := token.Get(authjwt.OrgIdKey, &orgIDStr); err == nil {
+	if orgIDStr, err := jwt.Get[string](token, authjwt.OrgIdKey); err == nil {
 		if orgID, err := uuid.Parse(orgIDStr); err != nil {
 			return nil, fmt.Errorf("%w: JWT orgId is invalid: %w", authn.ErrBadAuthentication, err)
 		} else {

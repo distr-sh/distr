@@ -58,6 +58,7 @@ When working with the SDK:
 - **Migrations**: SQL migrations in `internal/migrations/sql/` managed by golang-migrate
 - **Database queries**: All database interactions are in `internal/db/` with transaction support
 - **Security advisories**: The entity is called `Advisory` everywhere (model, table, API path `/advisories`, frontend route `/advisories`), and the UI label is "Security Advisory". The feature gate keeps the wider category name: the org-level feature is `vulnerabilities` / `types.FeatureVulnerabilities` ("Vulnerability Management", Business plan), because a vulnerability scan log will be added to the same category later. Do not rename the feature to match the entity. There is no per-customer toggle. Customer visibility is derived, not configured, by the pure predicate in `internal/advisory` (`advisory.IsVisibleToCustomer`, fed by the loaders in `internal/db/advisory_visibility.go`) rather than in SQL: a customer sees an advisory only when it is `published` or `resolved`, it has at least one affected version, and they either deployed an affected application version or hold an unexpired entitlement to one. Both applications and artifacts keep the usual "everything is visible if the vendor configured no entitlements of that kind at all" fallback, so vendors who do not use the licensing feature still reach their customers. An `ApplicationEntitlement` with no explicit version rows covers every version of its application. The event timeline is vendor-internal and must never be serialized for customer users. Partners may read advisories but see impact tables scoped to their own customers
+- **Agent versions**: Every deployment target points at an `AgentVersion` row, which determines the image tag of the rendered agent manifest, and agents self-update as soon as the version they receive differs from the one they run. On startup the hub upserts its own version (`db.CreateAgentVersion`) and then assigns it to every target that has automatic updates enabled (`db.ApplyAutomaticAgentUpdates`), so upgrading the hub upgrades those agents with it. Enabling the option through the API applies the current version right away instead of waiting for the next restart
 
 Key internal packages:
 
@@ -96,6 +97,7 @@ The database schema is managed through SQL migrations in `internal/migrations/sq
 - `organizations`: Multi-tenant organizations
 - `deployments`: Application deployments
 - `deployment_targets`: Customer environments (agents)
+- `deploymentmetrics` & `deploymentresourcemetrics`: Per-deployment resource usage reports (one parent row per agent push, one child row per container with CPU millicores and memory bytes, plus nullable limits)
 - `artifacts`: Software artifacts (Docker images, Helm charts)
 - `applications`: Artifact collections
 - `licensekey`: License keys that vendors can generate for its customers
@@ -147,6 +149,7 @@ Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Pret
 - When performing data transformations between DTOs and domain models, use `mapping.List(...)` inside the `internal/mapping` package
 - Always use [Gomega](https://onsi.github.io/gomega/) for test assertions in Go tests
 - Do not use `util.PtrTo`. Use `new(value)` to obtain a `*T` from a typed value (e.g. `new(types.UserRoleReadOnly)`).
+- The body of a 4xx response is displayed verbatim in the frontend forms (`getFormDisplayedError`), so write those messages for the end user and put anything only a developer can use into the log instead.
 
 ### Frontend Code
 

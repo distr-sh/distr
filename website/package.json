@@ -15,19 +15,22 @@
     "astro": "astro",
     "check": "astro check",
     "screenshots:homepage": "node scripts/capture-homepage-screenshots.mjs",
+    "images:unused": "node scripts/find-unused-images.mjs",
+    "images:prune": "node scripts/find-unused-images.mjs --delete",
     "lint": "prettier --check .",
+    "preformat": "pnpm images:prune",
     "format": "prettier --write --list-different ."
   },
   "dependencies": {
-    "@astrojs/markdown-remark": "7.2.2",
-    "@astrojs/mdx": "7.0.5",
-    "@astrojs/preact": "6.0.2",
+    "@astrojs/markdown-remark": "7.2.3",
+    "@astrojs/mdx": "7.0.6",
+    "@astrojs/preact": "6.0.3",
     "@astrojs/sitemap": "3.7.3",
-    "@astrojs/starlight": "0.41.5",
+    "@astrojs/starlight": "0.41.7",
     "@astrojs/starlight-tailwind": "5.0.0",
     "@iconify-json/lucide": "^1.2.120",
     "@tailwindcss/vite": "^4.2.4",
-    "astro": "7.1.6",
+    "astro": "7.2.3",
     "astro-icon": "^1.1.5",
     "embla-carousel": "^8.6.0",
     "embla-carousel-autoplay": "^8.6.0",
@@ -52,7 +55,7 @@
     "prettier-plugin-organize-imports": "^4.3.0",
     "typescript": "^6.0.3"
   },
-  "packageManager": "pnpm@11.15.1",
+  "packageManager": "pnpm@11.22.0",
   "engines": {
     "node": "26.x"
   }

@@ -52,6 +52,7 @@ services:
       DISTR_RESOURCE_ENDPOINT: 'https://<distr-hub>/api/v1/agent/resources'
       DISTR_STATUS_ENDPOINT: 'https://<distr-hub>/api/v1/agent/status'
       DISTR_METRICS_ENDPOINT: 'https://<distr-hub>/api/v1/agent/metrics'
+      DISTR_DEPLOYMENT_METRICS_ENDPOINT: 'https://<distr-hub>/api/v1/agent/deployments'
       # how often the agent fetches deployments
       DISTR_INTERVAL: '5s'
       # agent versioning information, needed for agent self-updates:
@@ -68,7 +69,7 @@ volumes:
   scratch:
 ```
 
-All requests to the Distr Hub are authenticated with a JWT token obtained by calling `DISTR_LOGIN_ENDPOINT` with the `targetId` and `targetSecret` credentials. The Docker socket is mounted so the agent can manage containers on the host.
+All requests to the Distr Hub are authenticated with a JWT token obtained by calling `DISTR_LOGIN_ENDPOINT` with the `targetId` and `targetSecret` credentials. The Docker socket is mounted so the agent can manage containers on the host. Which socket that is can be configured per deployment target, see [Custom Docker Endpoint](#custom-docker-endpoint).
 
 ## Core Logic
 
@@ -123,6 +124,20 @@ Image cleanup only runs after a successful update. If a deployment fails, the pr
 
 <Aside type="note">
   Image cleanup is only available for Docker deployments.
+</Aside>
+
+## Custom Docker Endpoint
+
+By default the agent uses the host's standard Docker socket, `unix:///var/run/docker.sock`. If the Docker daemon on the target host listens on a different socket, check **Use a custom Docker endpoint** and enter its URI, for example `unix:///Users/you/.docker/run/docker.sock`.
+
+The generated Compose file then mounts that socket into the agent and autoheal containers as `/var/run/docker.sock` instead of the default one. The agent always addresses the socket through `DOCKER_HOST=unix:///var/run/docker.sock`, so the Docker context selected in the host's Docker config, which is mounted into the agent container, cannot send it to a host path that does not exist inside the container.
+
+The setting is available both in the deployment wizard and when editing an existing deployment target. Changes only take effect after the customer re-applies the generated Compose file.
+
+Only unix socket URIs are supported. Remote endpoints such as `tcp://` cannot be used, because the endpoint is applied by mounting the socket into the agent container. For the same reason the socket path may contain neither whitespace nor a colon.
+
+<Aside type="note">
+  A custom Docker endpoint is only available for Docker deployments.
 </Aside>
 
 ## Docker Swarm
