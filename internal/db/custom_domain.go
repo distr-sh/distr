@@ -18,8 +18,8 @@ const customDomainOutputExpr = `
 	d.id, d.created_at, d.domain, d.domain_type, d.organization_id, d.customer_organization_id
 `
 
-// CreateCustomDomains inserts all given custom domains with a single statement, so either all
-// of them are created or none (e.g. on a unique constraint violation, mapped to ErrConflict).
+// CreateCustomDomains inserts with a single statement so that a conflict on any one domain leaves
+// none of them created.
 func CreateCustomDomains(ctx context.Context, customDomains []types.CustomDomain) ([]types.CustomDomain, error) {
 	db := internalctx.GetDb(ctx)
 	domains := make([]string, len(customDomains))
@@ -56,11 +56,9 @@ func CreateCustomDomains(ctx context.Context, customDomains []types.CustomDomain
 	return result, nil
 }
 
-// GetCustomDomains returns the custom domains of one scope: the vendor's own rows when customerOrgID
-// is nil, otherwise that customer's rows. A nil customerOrgID must not return customer rows, or a
-// customer hostname would end up in the vendor's app and registry URLs. Used only by the internal
-// customdomains resolvers; a caller-facing listing belongs in GetCustomDomainsForScope instead, which
-// answers a different question (what may this caller see) and must not be substituted here.
+// GetCustomDomains backs the internal customdomains resolvers. A nil customerOrgID must not return
+// customer rows, or a customer hostname would end up in the vendor's app and registry URLs, so
+// GetCustomDomainsForScope — which answers what a caller may see — must never be substituted here.
 func GetCustomDomains(
 	ctx context.Context,
 	organizationID uuid.UUID,
@@ -91,11 +89,9 @@ func GetCustomDomains(
 	return result, nil
 }
 
-// GetCustomDomainsForScope lists the custom domains a caller may see: everything in the organization
-// for a vendor (own domains and every customer's), one customer's own for a customer, and the domains
-// of the customers assigned to a partner for a partner. This is the caller-facing counterpart to
-// GetCustomDomains, which is instead used internally to resolve vendor-only hostnames for links and
-// manifests and must never be widened the same way.
+// GetCustomDomainsForScope lists the custom domains a caller may see. It is the caller-facing
+// counterpart to GetCustomDomains, which resolves vendor-only hostnames for links and manifests
+// and must never be widened the same way.
 func GetCustomDomainsForScope(
 	ctx context.Context,
 	organizationID uuid.UUID,
@@ -130,8 +126,6 @@ func GetCustomDomainsForScope(
 	return result, nil
 }
 
-// GetCustomDomainOfOrganization returns one domain within the caller's scope: any domain for a vendor,
-// its own domain for a customer, or a domain of an assigned customer for a partner.
 func GetCustomDomainOfOrganization(
 	ctx context.Context,
 	id, organizationID uuid.UUID,
@@ -168,8 +162,6 @@ func GetCustomDomainOfOrganization(
 	return &result, nil
 }
 
-// DeleteCustomDomain removes a domain within the caller's scope: any domain for a vendor, own domain
-// for a customer, or a domain of an assigned customer for a partner.
 func DeleteCustomDomain(
 	ctx context.Context,
 	id, organizationID uuid.UUID,
@@ -206,13 +198,15 @@ func DeleteCustomDomain(
 	return nil
 }
 
-// ExistsCustomDomain reports whether the given (normalized) domain is registered. It backs the
-// Caddy on-demand TLS "ask" endpoint and runs during TLS handshakes, so it must stay a single
-// indexed lookup (the unique constraint on CustomDomain.domain provides the index).
+// ExistsCustomDomain expects an already normalized domain. It runs during TLS handshakes (see
+// TLSAskHandler), so it must stay an index lookup, and it excludes soft-deleted organizations,
+// whose domains would otherwise keep getting certificates issued.
 func ExistsCustomDomain(ctx context.Context, domain string) (bool, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		"SELECT true FROM CustomDomain WHERE domain = @domain",
+		`SELECT true FROM CustomDomain d
+		JOIN Organization o ON o.id = d.organization_id
+		WHERE d.domain = @domain AND o.deleted_at IS NULL`,
 		pgx.NamedArgs{"domain": domain},
 	)
 	if err != nil {
@@ -230,7 +224,10 @@ func ExistsCustomDomain(ctx context.Context, domain string) (bool, error) {
 func GetCustomDomainByDomain(ctx context.Context, domain string) (*types.CustomDomain, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		"SELECT"+customDomainOutputExpr+"FROM CustomDomain d WHERE d.domain = @domain",
+		"SELECT"+customDomainOutputExpr+
+			`FROM CustomDomain d
+			JOIN Organization o ON o.id = d.organization_id
+			WHERE d.domain = @domain AND o.deleted_at IS NULL`,
 		pgx.NamedArgs{"domain": domain},
 	)
 	if err != nil {

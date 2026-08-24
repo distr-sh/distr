@@ -10,11 +10,11 @@ import (
 	"go.uber.org/zap"
 )
 
-// TLSAskHandler answers the Caddy on-demand TLS "ask" request (GET ...?domain=<sni>): 200 iff
-// the domain is a registered custom domain, 404 otherwise. This is the only guard preventing
-// arbitrary certificate issuance on the platform's ACME account, and it runs during TLS
-// handshakes, so it must stay a single indexed lookup. It is served by the internal HTTP
-// server, which must never be exposed outside the cluster.
+// TLSAskHandler answers the Caddy on-demand TLS "ask" request (GET ...?domain=<sni>): 200 iff the
+// domain is a custom domain of an organization that still exists, 404 otherwise. This is the only
+// guard preventing arbitrary certificate issuance on the platform's ACME account, and it runs during
+// TLS handshakes, so it must stay cheap. It is served by the internal HTTP server, which must never
+// be exposed outside the cluster.
 func TLSAskHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
