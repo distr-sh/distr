@@ -20,7 +20,7 @@ import (
 	"github.com/distr-sh/distr/internal/httpstatus"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
-	"github.com/lestrrat-go/jwx/v3/jwt"
+	"github.com/lestrrat-go/jwx/v4/jwt"
 	"go.uber.org/zap"
 )
 

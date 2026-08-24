@@ -14,7 +14,8 @@ COPY cmd/agent/kubernetes/ cmd/agent/kubernetes/
 # doesn't exist (yet?)
 # COPY pkg/ pkg/
 COPY internal/ internal/
-RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} \
+# GOEXPERIMENT=jsonv2: encoding/json/v2 (required by jwx v4) is experimental in Go 1.26
+RUN CGO_ENABLED=0 GOEXPERIMENT=jsonv2 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} \
   go build -a -o agent \
   -ldflags="-s -w -X github.com/distr-sh/distr/internal/buildconfig.version=${VERSION:-snapshot} -X github.com/distr-sh/distr/internal/buildconfig.commit=${COMMIT}" \
   ./cmd/agent/kubernetes/

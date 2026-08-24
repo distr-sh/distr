@@ -10,9 +10,9 @@ import (
 
 	"github.com/distr-sh/distr/internal/limit"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/lestrrat-go/jwx/v3/jwa"
-	"github.com/lestrrat-go/jwx/v3/jwk"
-	"github.com/lestrrat-go/jwx/v3/jwt"
+	"github.com/lestrrat-go/jwx/v4/jwa"
+	"github.com/lestrrat-go/jwx/v4/jwk"
+	"github.com/lestrrat-go/jwx/v4/jwt"
 	. "github.com/onsi/gomega"
 )
 
@@ -35,7 +35,7 @@ func testKeyPair(t *testing.T) (jwk.Key, ed25519.PrivateKey) {
 	}
 	pemBlock := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: der})
 
-	jwkPubKey, err := jwk.ParseKey(pemBlock, jwk.WithPEM(true))
+	jwkPubKey, err := jwk.ParseKey(pemBlock, jwk.WithX509(true))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +53,7 @@ func signToken(t *testing.T, privKey ed25519.PrivateKey, expiration time.Time, c
 		t.Fatal(err)
 	}
 
-	privJWK, err := jwk.Import(privKey)
+	privJWK, err := jwk.Import[jwk.Key](privKey)
 	if err != nil {
 		t.Fatal(err)
 	}

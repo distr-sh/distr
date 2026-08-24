@@ -18,6 +18,10 @@ on:
       - 'docker-autoheal/**'
       - 'sdk/**'
 
+env:
+  # encoding/json/v2 (required by jwx v4) is experimental in Go 1.26
+  GOEXPERIMENT: jsonv2
+
 jobs:
   validate-migrations:
     name: Validate migrations
