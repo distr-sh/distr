@@ -151,7 +151,10 @@ func main() {
 		logsWatcher.SetLogsAfter(res.DeploymentLogsAfter)
 		logsGoroutine.GoOrCancel(ctx, res.DeploymentLogsEnabled)
 		metricsGoroutine.GoOrCancel(ctx, res.MetricsEnabled)
-		deploymentMetricsNamespace.Store(&res.Namespace)
+		{
+			ns := res.Namespace
+			deploymentMetricsNamespace.Store(&ns)
+		}
 		deploymentMetricsGoroutine.GoOrCancel(ctx, res.MetricsEnabled)
 
 		existingDeployments, err := GetExistingDeployments(ctx, res.Namespace)
