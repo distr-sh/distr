@@ -1,4 +1,3 @@
-import {never} from '../../util/exhaust';
 import {
   AdvisoryApplicationVersion,
   AdvisoryArtifactVersion,
@@ -6,7 +5,8 @@ import {
   AdvisoryImpactState,
   AdvisorySeverity,
   AdvisoryStatus,
-} from '../types/advisory';
+} from '@distr-sh/distr-sdk';
+import {never} from '../../util/exhaust';
 
 /**
  * The full name of a marked version. The version panel truncates these to keep the sidebar
@@ -62,8 +62,8 @@ export function affectedLabel(affected: boolean | undefined): string {
 
 export function affectedBadgeClass(affected: boolean | undefined): string {
   return affected
-    ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-    : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+    ? 'bg-red-100 text-red-800 border-red-400 dark:bg-red-900 dark:text-red-300 dark:border-red-800'
+    : 'bg-green-100 text-green-800 border-green-400 dark:bg-green-900 dark:text-green-300 dark:border-green-800';
 }
 
 export function severityLabel(severity: AdvisorySeverity): string {
@@ -86,15 +86,15 @@ export function severityLabel(severity: AdvisorySeverity): string {
 export function statusBadgeClass(status: AdvisoryStatus): string {
   switch (status) {
     case 'triage':
-      return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+      return 'bg-gray-100 text-gray-800 border-gray-400 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-600';
     case 'draft':
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      return 'bg-blue-100 text-blue-800 border-blue-400 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-800';
     case 'published':
-      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+      return 'bg-yellow-100 text-yellow-800 border-yellow-400 dark:bg-yellow-900 dark:text-yellow-300 dark:border-yellow-800';
     case 'resolved':
-      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      return 'bg-green-100 text-green-800 border-green-400 dark:bg-green-900 dark:text-green-300 dark:border-green-800';
     case 'canceled':
-      return 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400';
+      return 'bg-gray-200 text-gray-500 border-gray-400 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600';
     default:
       return never(status);
   }
@@ -103,15 +103,15 @@ export function statusBadgeClass(status: AdvisoryStatus): string {
 export function severityBadgeClass(severity: AdvisorySeverity): string {
   switch (severity) {
     case 'none':
-      return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+      return 'bg-gray-100 text-gray-800 border-gray-400 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-600';
     case 'low':
-      return 'bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-300';
+      return 'bg-sky-100 text-sky-800 border-sky-400 dark:bg-sky-900 dark:text-sky-300 dark:border-sky-800';
     case 'medium':
-      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+      return 'bg-yellow-100 text-yellow-800 border-yellow-400 dark:bg-yellow-900 dark:text-yellow-300 dark:border-yellow-800';
     case 'high':
-      return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
+      return 'bg-orange-100 text-orange-800 border-orange-400 dark:bg-orange-900 dark:text-orange-300 dark:border-orange-800';
     case 'critical':
-      return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      return 'bg-red-100 text-red-800 border-red-400 dark:bg-red-900 dark:text-red-300 dark:border-red-800';
     default:
       return never(severity);
   }
@@ -133,11 +133,11 @@ export function impactStateLabel(state: AdvisoryImpactState): string {
 export function impactStateBadgeClass(state: AdvisoryImpactState): string {
   switch (state) {
     case 'affected':
-      return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      return 'bg-red-100 text-red-800 border-red-400 dark:bg-red-900 dark:text-red-300 dark:border-red-800';
     case 'fixed':
-      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      return 'bg-green-100 text-green-800 border-green-400 dark:bg-green-900 dark:text-green-300 dark:border-green-800';
     case 'not_affected':
-      return 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200';
+      return 'bg-gray-100 text-gray-800 border-gray-400 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500';
     default:
       return never(state);
   }
@@ -159,7 +159,7 @@ export function allowedStatusTransitions(status: AdvisoryStatus): AdvisoryStatus
 /**
  * The transitions offered directly in the list, which are the ones that move an advisory
  * along its expected path. The rarer corrections, such as unpublishing or pushing a draft
- * back into triage, stay on the detail page where there is room to explain them.
+ * into triage, stay on the detail page where there is room to explain them.
  */
 const quickStatusTransitions: Record<AdvisoryStatus, AdvisoryStatus[]> = {
   triage: ['draft', 'canceled'],
@@ -176,7 +176,7 @@ export function quickStatusTransitionsFor(status: AdvisoryStatus): AdvisoryStatu
 export function statusActionLabel(target: AdvisoryStatus): string {
   switch (target) {
     case 'triage':
-      return 'Move back to triage';
+      return 'Move to triage';
     case 'draft':
       return 'Move to draft';
     case 'published':

@@ -16,8 +16,10 @@
 
 > `optional` **affected?**: `boolean`
 
-Whether the requesting customer or partner still has a deployment running an affected
-version. Absent for vendors, who see the status instead.
+Whether the advisory is still a live problem for the requesting customer or partner: a
+deployment of theirs runs an affected version, or they pulled an affected artifact version
+without since pulling one that carries the fix. Absent for vendors, who see the status
+instead.
 
 #### Inherited from
 
@@ -71,6 +73,8 @@ version. Absent for vendors, who see the status instead.
 
 > `optional` **createdByUserName?**: `string`
 
+Only ever sent to the vendor organization that owns the advisory.
+
 #### Inherited from
 
 [`Advisory`](Advisory.md).[`createdByUserName`](Advisory.md#createdbyusername)
@@ -96,6 +100,8 @@ version. Absent for vendors, who see the status instead.
 ### events
 
 > **events**: [`AdvisoryEvent`](AdvisoryEvent.md)[]
+
+The vendor-internal timeline. Empty for customer and partner users.
 
 ---
 

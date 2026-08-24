@@ -1,328 +1,321 @@
 <!-- A definite width rather than w-full: the overlay pane shrink-wraps its content, so a
      percentage width would make the dialog as wide as whichever tab is showing. -->
-<div class="relative p-4 w-4xl max-w-full max-h-full lg:mt-16">
-  <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
-    <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
-      <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-        {{ advisory() ? 'Edit Security Advisory' : 'New Security Advisory' }}
-      </h3>
-      <button
-        type="button"
-        (click)="dismissed.emit()"
-        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
-        <fa-icon [icon]="faXmark" />
-        <span class="sr-only">Close dialog</span>
-      </button>
+<div class="w-4xl max-w-full max-h-full mt-16 bg-white rounded-lg shadow-sm dark:bg-gray-900">
+  <div class="flex items-center justify-between p-4 border-b border-gray-200 rounded-t dark:border-gray-600">
+    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+      {{ advisory() ? 'Edit Security Advisory' : 'New Security Advisory' }}
+    </h3>
+    <button
+      type="button"
+      (click)="dismissed.emit()"
+      class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+      <fa-icon [icon]="faXmark" />
+      <span class="sr-only">Close dialog</span>
+    </button>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <div class="px-4 text-gray-500 dark:text-gray-400">
+      <div class="flex flex-wrap gap-4 border-b border-gray-200 dark:border-gray-600">
+        <button
+          type="button"
+          (click)="activeTab.set('details')"
+          class="text-sm font-medium cursor-pointer inline-flex items-center justify-center py-3 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+          [class.text-blue-600]="activeTab() === 'details'"
+          [class.dark:text-blue-500]="activeTab() === 'details'"
+          [class.border-blue-600]="activeTab() === 'details'"
+          [class.border-transparent]="activeTab() !== 'details'">
+          Details
+        </button>
+        <button
+          type="button"
+          (click)="activeTab.set('versions')"
+          class="text-sm font-medium cursor-pointer inline-flex items-center justify-center py-3 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
+          [class.text-blue-600]="activeTab() === 'versions'"
+          [class.dark:text-blue-500]="activeTab() === 'versions'"
+          [class.border-blue-600]="activeTab() === 'versions'"
+          [class.border-transparent]="activeTab() !== 'versions'">
+          Versions
+          @if (selectedCount() > 0) {
+            <span class="ms-2 distr-tag-badge">{{ selectedCount() }}</span>
+          }
+        </button>
+      </div>
     </div>
 
-    <form [formGroup]="form" (ngSubmit)="submit()">
-      <div class="px-4 md:px-5 text-gray-500 dark:text-gray-400">
-        <div class="flex flex-wrap gap-4 border-b border-gray-200 dark:border-gray-600">
-          <button
-            type="button"
-            (click)="activeTab.set('details')"
-            class="text-sm font-medium cursor-pointer inline-flex items-center justify-center py-3 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
-            [class.text-blue-600]="activeTab() === 'details'"
-            [class.dark:text-blue-500]="activeTab() === 'details'"
-            [class.border-blue-600]="activeTab() === 'details'"
-            [class.border-transparent]="activeTab() !== 'details'">
-            Details
-          </button>
-          <button
-            type="button"
-            (click)="activeTab.set('versions')"
-            class="text-sm font-medium cursor-pointer inline-flex items-center justify-center py-3 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
-            [class.text-blue-600]="activeTab() === 'versions'"
-            [class.dark:text-blue-500]="activeTab() === 'versions'"
-            [class.border-blue-600]="activeTab() === 'versions'"
-            [class.border-transparent]="activeTab() !== 'versions'">
-            Versions
-            @if (selectedCount() > 0) {
-              <span class="ms-2 distr-badge bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200">
-                {{ selectedCount() }}
-              </span>
-            }
-          </button>
-        </div>
-      </div>
-
-      <!-- A fixed height rather than a maximum, so that switching tabs or adding a reference
+    <!-- A fixed height rather than a maximum, so that switching tabs or adding a reference
            scrolls the body instead of resizing the dialog around the pointer. The reserved
            scrollbar gutter keeps the fields from shifting when the scrollbar appears. -->
-      <div class="p-4 md:p-5 h-[60vh] overflow-y-auto [scrollbar-gutter:stable]">
-        @if (activeTab() === 'details') {
-          <div class="space-y-4">
+    <div class="p-4 h-[60vh] overflow-y-auto [scrollbar-gutter:stable]">
+      @if (activeTab() === 'details') {
+        <div class="space-y-4">
+          <div>
+            <label for="title" class="distr-label mb-2">Title <span class="text-red-500">*</span></label>
+            <input
+              formControlName="title"
+              autotrim
+              type="text"
+              id="title"
+              class="distr-input"
+              placeholder="Short summary of the advisory" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
             <div>
-              <label for="title" class="distr-label mb-2">Title <span class="text-red-500">*</span></label>
+              <label for="severity" class="distr-label mb-2">Severity</label>
+              <select formControlName="severity" id="severity" class="distr-input">
+                @for (severity of severities; track severity) {
+                  <option [value]="severity">{{ severityLabel(severity) }}</option>
+                }
+              </select>
+            </div>
+            <div>
+              <label for="cveId" class="distr-label mb-2">CVE ID</label>
               <input
-                formControlName="title"
+                formControlName="cveId"
                 autotrim
                 type="text"
-                id="title"
+                id="cveId"
                 class="distr-input"
-                placeholder="Short summary of the advisory" />
+                placeholder="CVE-2024-12345" />
             </div>
+          </div>
 
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label for="severity" class="distr-label mb-2">Severity</label>
-                <select formControlName="severity" id="severity" class="distr-input capitalize">
-                  @for (severity of severities; track severity) {
-                    <option [value]="severity" class="capitalize">{{ severity }}</option>
-                  }
-                </select>
-              </div>
-              <div>
-                <label for="cveId" class="distr-label mb-2">CVE ID</label>
-                <input
-                  formControlName="cveId"
-                  autotrim
-                  type="text"
-                  id="cveId"
-                  class="distr-input"
-                  placeholder="CVE-2024-12345" />
-              </div>
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label for="description" class="distr-label">Description</label>
+              <button
+                type="button"
+                (click)="descriptionPreview.set(!descriptionPreview())"
+                class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                {{ descriptionPreview() ? 'Write' : 'Preview' }}
+              </button>
             </div>
+            @if (descriptionPreview()) {
+              <div
+                class="markdown min-h-40 p-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
+                [innerMarkdown]="form.controls.description.value"></div>
+            } @else {
+              <textarea
+                formControlName="description"
+                id="description"
+                rows="10"
+                class="distr-input font-mono text-sm"
+                placeholder="Describe the vulnerability, its impact and any workarounds. Markdown is supported."></textarea>
+            }
+          </div>
 
-            <div>
-              <div class="flex items-center justify-between mb-2">
-                <label for="description" class="distr-label">Description</label>
-                <button
-                  type="button"
-                  (click)="descriptionPreview.set(!descriptionPreview())"
-                  class="text-sm text-primary-600 hover:underline dark:text-primary-500">
-                  {{ descriptionPreview() ? 'Write' : 'Preview' }}
-                </button>
+          <div>
+            <label for="tagInput" class="distr-label mb-2">Tags</label>
+            @if (tags().length > 0) {
+              <div class="flex flex-wrap gap-2 mb-2">
+                @for (tag of tags(); track tag) {
+                  <span class="distr-tag-badge gap-1">
+                    {{ tag }}
+                    <button type="button" (click)="removeTag(tag)" class="hover:text-red-600">
+                      <fa-icon [icon]="faXmark" />
+                      <span class="sr-only">Remove tag {{ tag }}</span>
+                    </button>
+                  </span>
+                }
               </div>
-              @if (descriptionPreview()) {
-                <div
-                  class="markdown min-h-40 p-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
-                  [innerMarkdown]="form.controls.description.value"></div>
-              } @else {
-                <textarea
-                  formControlName="description"
-                  id="description"
-                  rows="10"
-                  class="distr-input font-mono text-sm"
-                  placeholder="Describe the vulnerability, its impact and any workarounds. Markdown is supported."></textarea>
+            }
+            <input
+              [formControl]="tagInput"
+              (keydown.enter)="$event.preventDefault(); addTag()"
+              (blur)="addTag()"
+              type="text"
+              id="tagInput"
+              class="distr-input"
+              placeholder="Add a tag and press Enter" />
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="distr-label">References</span>
+              <button
+                type="button"
+                (click)="addReference()"
+                class="py-2 px-3 flex gap-2 items-center text-sm font-medium text-center distr-btn-secondary">
+                <fa-icon [icon]="faPlus" />
+                Add reference
+              </button>
+            </div>
+            @if (form.controls.references.length === 0) {
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                Link to a public CVE database entry, an upstream advisory or your own release notes.
+              </p>
+            }
+            <div class="space-y-2" formArrayName="references">
+              @for (reference of form.controls.references.controls; track $index) {
+                <div class="flex items-center gap-2" [formGroupName]="$index">
+                  <input
+                    formControlName="url"
+                    autotrim
+                    type="url"
+                    class="distr-input flex-1"
+                    placeholder="https://nvd.nist.gov/vuln/detail/CVE-2024-12345" />
+                  <input
+                    formControlName="label"
+                    autotrim
+                    type="text"
+                    class="distr-input w-48"
+                    placeholder="Label (optional)" />
+                  <button
+                    type="button"
+                    (click)="removeReference($index)"
+                    class="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400">
+                    <fa-icon [icon]="faTrash" />
+                    <span class="sr-only">Remove reference</span>
+                  </button>
+                </div>
               }
             </div>
+          </div>
+        </div>
+      } @else {
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Mark the versions affected by this advisory, and the versions that contain the fix. Affected versions
+          determine which customers see the advisory and appear in the impact analysis.
+        </p>
 
-            <div>
-              <label for="tagInput" class="distr-label mb-2">Tags</label>
-              @if (tags().length > 0) {
-                <div class="flex flex-wrap gap-2 mb-2">
-                  @for (tag of tags(); track tag) {
-                    <span
-                      class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200">
-                      {{ tag }}
-                      <button type="button" (click)="removeTag(tag)" class="hover:text-red-600">
-                        <fa-icon [icon]="faXmark" />
-                        <span class="sr-only">Remove tag {{ tag }}</span>
-                      </button>
-                    </span>
+        <div
+          class="inline-flex p-1 mb-4 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400">
+          <button
+            type="button"
+            (click)="versionsTab.set('applications')"
+            class="cursor-pointer px-3 py-1.5 rounded-md"
+            [class.bg-white]="versionsTab() === 'applications'"
+            [class.dark:bg-gray-600]="versionsTab() === 'applications'"
+            [class.text-gray-900]="versionsTab() === 'applications'"
+            [class.dark:text-white]="versionsTab() === 'applications'"
+            [class.shadow-sm]="versionsTab() === 'applications'">
+            Applications
+          </button>
+          <button
+            type="button"
+            (click)="versionsTab.set('artifacts')"
+            class="cursor-pointer px-3 py-1.5 rounded-md"
+            [class.bg-white]="versionsTab() === 'artifacts'"
+            [class.dark:bg-gray-600]="versionsTab() === 'artifacts'"
+            [class.text-gray-900]="versionsTab() === 'artifacts'"
+            [class.dark:text-white]="versionsTab() === 'artifacts'"
+            [class.shadow-sm]="versionsTab() === 'artifacts'">
+            Artifacts
+          </button>
+        </div>
+
+        @if (versionsTab() === 'applications') {
+          @for (application of applications(); track application.id) {
+            <div class="border border-gray-200 dark:border-gray-600 rounded-lg mb-2">
+              <button
+                type="button"
+                (click)="toggleApplication(application.id!)"
+                class="w-full flex items-center justify-between gap-2 p-3 text-left text-sm font-medium text-gray-900 dark:text-white">
+                <span class="flex items-center gap-2 min-w-0">
+                  <app-application-logo
+                    class="size-6 shrink-0"
+                    [imageUrl]="application.imageUrl"
+                    [type]="application.type" />
+                  <span class="truncate">{{ application.name }}</span>
+                  <span class="distr-deployment-type-badge capitalize">{{ application.type }}</span>
+                </span>
+                <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">
+                  {{ application.versions?.length ?? 0 }} versions
+                </span>
+              </button>
+              @if (expandedApplicationId() === application.id) {
+                <div
+                  class="border-t border-gray-200 dark:border-gray-600 divide-y divide-gray-200 dark:divide-gray-600">
+                  @for (version of application.versions ?? []; track version.id) {
+                    <div class="flex items-center justify-between gap-4 p-3">
+                      <span class="text-sm text-gray-900 dark:text-white">{{ version.name }}</span>
+                      <select
+                        class="distr-input w-32 px-2 py-1 text-xs"
+                        [value]="relationOf(applicationVersionSelection(), version.id!)"
+                        (change)="setApplicationVersionRelation(version.id!, $any($event.target).value)">
+                        <option value="">Not affected</option>
+                        <option value="affected">Affected</option>
+                        <option value="fixed">Fixed</option>
+                      </select>
+                    </div>
                   }
                 </div>
               }
-              <input
-                [formControl]="tagInput"
-                (keydown.enter)="$event.preventDefault(); addTag()"
-                (blur)="addTag()"
-                type="text"
-                id="tagInput"
-                class="distr-input"
-                placeholder="Add a tag and press Enter" />
             </div>
-
-            <div>
-              <div class="flex items-center justify-between mb-2">
-                <span class="distr-label">References</span>
-                <button
-                  type="button"
-                  (click)="addReference()"
-                  class="text-sm text-primary-600 hover:underline dark:text-primary-500">
-                  <fa-icon [icon]="faPlus" class="me-1" />
-                  Add reference
-                </button>
-              </div>
-              @if (form.controls.references.length === 0) {
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  Link to a public CVE database entry, an upstream advisory or your own release notes.
-                </p>
-              }
-              <div class="space-y-2" formArrayName="references">
-                @for (reference of form.controls.references.controls; track $index) {
-                  <div class="flex items-center gap-2" [formGroupName]="$index">
-                    <input
-                      formControlName="url"
-                      autotrim
-                      type="url"
-                      class="distr-input flex-1"
-                      placeholder="https://nvd.nist.gov/vuln/detail/CVE-2024-12345" />
-                    <input
-                      formControlName="label"
-                      autotrim
-                      type="text"
-                      class="distr-input w-48"
-                      placeholder="Label (optional)" />
-                    <button
-                      type="button"
-                      (click)="removeReference($index)"
-                      class="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400">
-                      <fa-icon [icon]="faTrash" />
-                      <span class="sr-only">Remove reference</span>
-                    </button>
-                  </div>
-                }
-              </div>
-            </div>
-          </div>
+          } @empty {
+            <p class="text-sm text-gray-500 dark:text-gray-400">No applications yet.</p>
+          }
         } @else {
-          <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            Mark the versions affected by this advisory, and the versions that contain the fix. Affected versions
-            determine which customers see the advisory and appear in the impact analysis.
-          </p>
-
-          <div
-            class="inline-flex p-1 mb-4 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400">
-            <button
-              type="button"
-              (click)="versionsTab.set('applications')"
-              class="cursor-pointer px-3 py-1.5 rounded-md"
-              [class.bg-white]="versionsTab() === 'applications'"
-              [class.dark:bg-gray-600]="versionsTab() === 'applications'"
-              [class.text-gray-900]="versionsTab() === 'applications'"
-              [class.dark:text-white]="versionsTab() === 'applications'"
-              [class.shadow-sm]="versionsTab() === 'applications'">
-              Applications
-            </button>
-            <button
-              type="button"
-              (click)="versionsTab.set('artifacts')"
-              class="cursor-pointer px-3 py-1.5 rounded-md"
-              [class.bg-white]="versionsTab() === 'artifacts'"
-              [class.dark:bg-gray-600]="versionsTab() === 'artifacts'"
-              [class.text-gray-900]="versionsTab() === 'artifacts'"
-              [class.dark:text-white]="versionsTab() === 'artifacts'"
-              [class.shadow-sm]="versionsTab() === 'artifacts'">
-              Artifacts
-            </button>
-          </div>
-
-          @if (versionsTab() === 'applications') {
-            @for (application of applications(); track application.id) {
-              <div class="border border-gray-200 dark:border-gray-600 rounded-lg mb-2">
-                <button
-                  type="button"
-                  (click)="toggleApplication(application.id!)"
-                  class="w-full flex items-center justify-between gap-2 p-3 text-left text-sm font-medium text-gray-900 dark:text-white">
-                  <span class="flex items-center gap-2 min-w-0">
-                    <app-application-logo
-                      class="size-6 shrink-0"
-                      [imageUrl]="application.imageUrl"
-                      [type]="application.type" />
-                    <span class="truncate">{{ application.name }}</span>
-                    <span class="distr-deployment-type-badge capitalize">{{ application.type }}</span>
-                  </span>
-                  <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">
-                    {{ application.versions?.length ?? 0 }} versions
-                  </span>
-                </button>
-                @if (expandedApplicationId() === application.id) {
-                  <div
-                    class="border-t border-gray-200 dark:border-gray-600 divide-y divide-gray-200 dark:divide-gray-600">
-                    @for (version of application.versions ?? []; track version.id) {
+          @for (artifact of artifacts(); track artifact.id) {
+            <div class="border border-gray-200 dark:border-gray-600 rounded-lg mb-2">
+              <button
+                type="button"
+                (click)="toggleArtifact(artifact.id)"
+                class="w-full flex items-center justify-between p-3 text-left text-sm font-medium text-gray-900 dark:text-white">
+                {{ artifact.name }}
+              </button>
+              @if (expandedArtifactId() === artifact.id) {
+                <div
+                  class="border-t border-gray-200 dark:border-gray-600 divide-y divide-gray-200 dark:divide-gray-600">
+                  @if (isLoadingArtifactVersions(artifact.id)) {
+                    <p class="p-3 text-sm text-gray-500 dark:text-gray-400">Loading versions...</p>
+                  } @else {
+                    @for (version of artifactVersions()[artifact.id] ?? []; track version.id) {
                       <div class="flex items-center justify-between gap-4 p-3">
-                        <span class="text-sm text-gray-900 dark:text-white">{{ version.name }}</span>
+                        <div class="flex-1 min-w-0">
+                          @if (version.tags.length > 0) {
+                            <div class="flex flex-row flex-wrap gap-1">
+                              @for (tag of version.tags; track tag.name) {
+                                <span
+                                  [class]="tag.name === 'latest' ? 'distr-artifact-tag-latest' : 'distr-artifact-tag'">
+                                  {{ tag.name }}
+                                </span>
+                              }
+                            </div>
+                          } @else {
+                            <span class="text-xs text-gray-500 dark:text-gray-400 italic">Untagged</span>
+                          }
+                          <ul class="flex gap-3 mt-1 text-xs font-normal text-gray-500 truncate dark:text-gray-400">
+                            <li>{{ version.createdAt | relativeDate }}</li>
+                            <li>
+                              <app-artifacts-hash [hash]="version.digest" [expandable]="false" />
+                            </li>
+                          </ul>
+                        </div>
                         <select
-                          class="distr-input w-32 px-2 py-1 text-xs"
-                          [value]="relationOf(applicationVersionSelection(), version.id!)"
-                          (change)="setApplicationVersionRelation(version.id!, $any($event.target).value)">
+                          class="distr-input w-32 shrink-0 px-2 py-1 text-xs"
+                          [value]="relationOf(artifactVersionSelection(), version.id)"
+                          (change)="setArtifactVersionRelation(version.id, $any($event.target).value)">
                           <option value="">Not affected</option>
                           <option value="affected">Affected</option>
                           <option value="fixed">Fixed</option>
                         </select>
                       </div>
+                    } @empty {
+                      <p class="p-3 text-sm text-gray-500 dark:text-gray-400">This artifact has no versions yet.</p>
                     }
-                  </div>
-                }
-              </div>
-            } @empty {
-              <p class="text-sm text-gray-500 dark:text-gray-400">No applications yet.</p>
-            }
-          } @else {
-            @for (artifact of artifacts(); track artifact.id) {
-              <div class="border border-gray-200 dark:border-gray-600 rounded-lg mb-2">
-                <button
-                  type="button"
-                  (click)="toggleArtifact(artifact.id)"
-                  class="w-full flex items-center justify-between p-3 text-left text-sm font-medium text-gray-900 dark:text-white">
-                  {{ artifact.name }}
-                </button>
-                @if (expandedArtifactId() === artifact.id) {
-                  <div
-                    class="border-t border-gray-200 dark:border-gray-600 divide-y divide-gray-200 dark:divide-gray-600">
-                    @if (isLoadingArtifactVersions(artifact.id)) {
-                      <p class="p-3 text-sm text-gray-500 dark:text-gray-400">Loading versions...</p>
-                    } @else {
-                      @for (version of artifactVersions()[artifact.id] ?? []; track version.id) {
-                        <div class="flex items-center justify-between gap-4 p-3">
-                          <div class="flex-1 min-w-0">
-                            @if (version.tags.length > 0) {
-                              <div class="flex flex-row flex-wrap gap-1">
-                                @for (tag of version.tags; track tag.name) {
-                                  <span
-                                    [class]="
-                                      tag.name === 'latest' ? 'distr-artifact-tag-latest' : 'distr-artifact-tag'
-                                    ">
-                                    {{ tag.name }}
-                                  </span>
-                                }
-                              </div>
-                            } @else {
-                              <span class="text-xs text-gray-500 dark:text-gray-400 italic">Untagged</span>
-                            }
-                            <ul class="flex gap-3 mt-1 text-xs font-normal text-gray-500 truncate dark:text-gray-400">
-                              <li>{{ version.createdAt | relativeDate }}</li>
-                              <li>
-                                <app-artifacts-hash [hash]="version.digest" [expandable]="false" />
-                              </li>
-                            </ul>
-                          </div>
-                          <select
-                            class="distr-input w-32 shrink-0 px-2 py-1 text-xs"
-                            [value]="relationOf(artifactVersionSelection(), version.id)"
-                            (change)="setArtifactVersionRelation(version.id, $any($event.target).value)">
-                            <option value="">Not affected</option>
-                            <option value="affected">Affected</option>
-                            <option value="fixed">Fixed</option>
-                          </select>
-                        </div>
-                      } @empty {
-                        <p class="p-3 text-sm text-gray-500 dark:text-gray-400">This artifact has no versions yet.</p>
-                      }
-                    }
-                  </div>
-                }
-              </div>
-            } @empty {
-              <p class="text-sm text-gray-500 dark:text-gray-400">No artifacts yet.</p>
-            }
+                  }
+                </div>
+              }
+            </div>
+          } @empty {
+            <p class="text-sm text-gray-500 dark:text-gray-400">No artifacts yet.</p>
           }
         }
-      </div>
+      }
+    </div>
 
-      <div class="flex items-center justify-end p-4 md:p-5 border-t border-gray-200 dark:border-gray-600 gap-2">
-        <button type="button" (click)="cancel()" class="py-2.5 px-5 text-sm font-medium distr-btn-secondary">
-          Cancel
-        </button>
-        <button
-          type="submit"
-          [disabled]="loading() || form.invalid"
-          class="text-white inline-flex items-center justify-center distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
-          {{ advisory() ? 'Save' : 'Create' }}
-        </button>
-      </div>
-    </form>
-  </div>
+    <div class="flex items-center justify-end p-4 border-t border-gray-200 dark:border-gray-600 gap-2">
+      <button type="button" (click)="cancel()" class="py-2.5 px-5 text-sm font-medium distr-btn-secondary">
+        Cancel
+      </button>
+      <button
+        type="submit"
+        [disabled]="loading() || form.invalid"
+        class="text-white inline-flex items-center justify-center distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
+        {{ advisory() ? 'Save' : 'Create' }}
+      </button>
+    </div>
+  </form>
 </div>

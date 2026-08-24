@@ -70,7 +70,7 @@ const advisoryWithDetailsOutputExpr = `
 `
 
 // applyScope applies everything about a result set that depends on who is asking: it drops the
-// advisories a customer may not see, and stamps CallerAffected for the callers who are shown
+// advisories the caller may not see, and stamps CallerAffected for the callers who are shown
 // their own exposure instead of the editorial status. Both need the advisories' affected
 // versions, so those are loaded once and shared.
 //
@@ -97,27 +97,39 @@ func applyScope(
 		return nil, err
 	}
 
+	var view advisory.CustomerView
 	if scope.CustomerOrgID != nil {
-		view, err := GetCustomerView(ctx, orgID, *scope.CustomerOrgID)
+		view, err = GetCustomerView(ctx, orgID, *scope.CustomerOrgID)
 		if err != nil {
 			return nil, err
 		}
-		now := time.Now()
-		visible := make([]types.AdvisoryWithDetails, 0, len(advisories))
-		for _, v := range advisories {
-			versions := marked[v.ID]
-			if advisory.IsVisibleToCustomer(
+	}
+
+	now := time.Now()
+	visible := make([]types.AdvisoryWithDetails, 0, len(advisories))
+	for _, v := range advisories {
+		versions := marked[v.ID]
+		maySee := false
+		if scope.CustomerOrgID != nil {
+			maySee = advisory.IsVisibleToCustomer(
 				v.Status,
 				versions.AffectedApplicationVersions,
 				versions.AffectedArtifactVersions,
 				view,
 				now,
-			) {
-				visible = append(visible, v)
-			}
+			)
+		} else {
+			maySee = advisory.IsDisclosed(
+				v.Status,
+				versions.AffectedApplicationVersions,
+				versions.AffectedArtifactVersions,
+			)
 		}
-		advisories = visible
+		if maySee {
+			visible = append(visible, v)
+		}
 	}
+	advisories = visible
 
 	exposure, err := getExposure(ctx, orgID, scope, marked)
 	if err != nil {

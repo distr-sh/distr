@@ -11,29 +11,36 @@
       <div class="bg-white dark:bg-gray-800 shadow-md sm:rounded-lg p-4 md:p-6 mb-4">
         <div class="flex items-start justify-between gap-4">
           <div>
-            <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ advisory.title }}</h1>
-            <div class="flex flex-wrap items-center gap-2 mt-3">
-              <span class="distr-badge capitalize" [ngClass]="severityBadgeClass(advisory.severity)">
+            <div class="flex flex-wrap items-center gap-3">
+              <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ advisory.title }}</h1>
+              <span class="distr-status-badge capitalize" [ngClass]="severityBadgeClass(advisory.severity)">
                 {{ advisory.severity }}
               </span>
               @if (showsAffectedState) {
-                <span class="distr-badge" [ngClass]="affectedBadgeClass(advisory.affected)">
+                <span class="distr-status-badge" [ngClass]="affectedBadgeClass(advisory.affected)">
                   {{ affectedLabel(advisory.affected) }}
                 </span>
+                @if (advisory.resolvedAt) {
+                  <span class="distr-status-badge" [ngClass]="statusBadgeClass('resolved')">
+                    {{ statusLabel('resolved') }}
+                  </span>
+                }
               } @else {
-                <span class="distr-badge" [ngClass]="statusBadgeClass(advisory.status)">
+                <span class="distr-status-badge" [ngClass]="statusBadgeClass(advisory.status)">
                   {{ statusLabel(advisory.status) }}
                 </span>
               }
-              @if (advisory.cveId) {
-                <span class="font-mono text-xs text-gray-600 dark:text-gray-300">{{ advisory.cveId }}</span>
-              }
-              @for (tag of advisory.tags; track tag) {
-                <span class="distr-badge bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200">
-                  {{ tag }}
-                </span>
-              }
             </div>
+            @if (advisory.cveId || advisory.tags.length > 0) {
+              <div class="flex flex-wrap items-center gap-2 mt-3">
+                @if (advisory.cveId) {
+                  <span class="font-mono text-xs text-gray-600 dark:text-gray-300">{{ advisory.cveId }}</span>
+                }
+                @for (tag of advisory.tags; track tag) {
+                  <span class="distr-tag-badge">{{ tag }}</span>
+                }
+              </div>
+            }
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-3">
               Created {{ advisory.createdAt | date: 'medium' }}
               @if (advisory.createdByUserName) {
@@ -62,8 +69,8 @@
               <button
                 type="button"
                 (click)="openEditDialog(editAdvisoryDialog)"
-                class="py-2 px-4 text-sm font-medium distr-btn-secondary">
-                <fa-icon [icon]="faPen" class="me-2" />
+                class="py-2 px-4 flex gap-2 items-center text-sm font-medium distr-btn-secondary">
+                <fa-icon [icon]="faPen" />
                 Edit
               </button>
             </div>
@@ -138,7 +145,7 @@
                         <th scope="col" class="p-3">State</th>
                         <th scope="col" class="p-3">Affected Version</th>
                         <th scope="col" class="p-3">Current Version</th>
-                        <th scope="col" class="p-3">Last Ran Affected</th>
+                        <th scope="col" class="p-3">Affected Version Deployed</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -150,7 +157,7 @@
                           <td class="px-3 py-2">{{ deployment.deploymentTargetName }}</td>
                           <td class="px-3 py-2">{{ deployment.applicationName }}</td>
                           <td class="px-3 py-2">
-                            <span class="distr-badge" [ngClass]="impactStateBadgeClass(deployment.state)">
+                            <span class="distr-status-badge" [ngClass]="impactStateBadgeClass(deployment.state)">
                               {{ impactStateLabel(deployment.state) }}
                             </span>
                           </td>
@@ -216,7 +223,7 @@
             }
           </div>
 
-          @if (!auth.isCustomer()) {
+          @if (auth.isVendor()) {
             <app-activity-timeline
               [entries]="timelineEntries()"
               emptyText="No activity yet."
@@ -270,7 +277,7 @@
                       [href]="reference.url"
                       target="_blank"
                       rel="noopener noreferrer"
-                      class="inline-flex items-center gap-1 text-sm text-primary-600 hover:underline dark:text-primary-500 break-all">
+                      class="text-sm text-primary-600 hover:underline dark:text-primary-500 break-all">
                       {{ reference.label || reference.url }}
                       <fa-icon [icon]="faUpRightFromSquare" class="text-xs" />
                     </a>

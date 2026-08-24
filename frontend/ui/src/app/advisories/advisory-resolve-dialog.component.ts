@@ -1,5 +1,4 @@
-import {ChangeDetectionStrategy, Component, computed} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {ChangeDetectionStrategy, Component} from '@angular/core';
 import {FormControl, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faXmark} from '@fortawesome/free-solid-svg-icons';
@@ -27,18 +26,9 @@ export class AdvisoryResolveDialogComponent extends ClosableDialog<AdvisoryResol
   protected readonly faXmark = faXmark;
 
   protected readonly comment = new FormControl('', {nonNullable: true});
-  private readonly commentValue = toSignal(this.comment.valueChanges, {initialValue: ''});
-  protected readonly hasComment = computed(() => this.commentValue().trim().length > 0);
 
   protected resolve(): void {
-    this.dialogRef.close({});
-  }
-
-  protected resolveWithComment(): void {
     const comment = this.comment.value.trim();
-    if (!comment) {
-      return;
-    }
-    this.dialogRef.close({comment});
+    this.dialogRef.close({comment: comment || undefined});
   }
 }

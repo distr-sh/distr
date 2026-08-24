@@ -38,8 +38,15 @@
 
   @if (canComment()) {
     <form [formGroup]="commentForm" (ngSubmit)="submit()" class="mt-2">
-      <textarea formControlName="content" rows="3" [placeholder]="placeholder()" class="w-full distr-input"></textarea>
-      <div class="flex justify-end mt-3">
+      <textarea
+        formControlName="content"
+        rows="3"
+        [placeholder]="placeholder()"
+        (keydown.control.enter)="$event.preventDefault(); submit()"
+        (keydown.meta.enter)="$event.preventDefault(); submit()"
+        class="w-full distr-input"></textarea>
+      <div class="flex items-center justify-end gap-3 mt-3">
+        <span class="text-xs text-gray-500 dark:text-gray-400">Ctrl + Enter</span>
         <button
           type="submit"
           [disabled]="submitting() || commentForm.invalid"

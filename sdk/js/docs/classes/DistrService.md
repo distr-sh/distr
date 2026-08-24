@@ -204,8 +204,9 @@ Creates a new application version for the given Kubernetes application using a H
 
 > **getAdvisories**(`filter?`): `Promise`\<[`Advisory`](../interfaces/Advisory.md)[]\>
 
-Returns the advisories of the organization. Customers only ever receive published and
-resolved advisories affecting a version they are entitled to.
+Returns the advisories of the organization. Customers and partners only ever receive
+published and resolved advisories that mark an affected version, and a customer only those
+affecting a version they deployed or are entitled to.
 
 #### Parameters
 
@@ -239,7 +240,8 @@ resolved advisories affecting a version they are entitled to.
 
 > **getAdvisoryImpact**(`advisoryId`): `Promise`\<[`AdvisoryImpact`](../interfaces/AdvisoryImpact.md)\>
 
-Returns the customers who deployed or pulled an affected version. Not available to customers.
+Returns who deployed or pulled an affected version: every customer for a vendor, their own
+customers for a partner, and only their own deployments and pulls for a customer.
 
 #### Parameters
 
@@ -338,7 +340,7 @@ Returns results for all deployments on the target. Each result contains versions
 > **updateAdvisoryStatus**(`advisoryId`, `status`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
 
 Moves an advisory to the given status. Only the transitions allowed by the workflow are
-accepted, and publishing makes the advisory visible to entitled customers.
+accepted, and publishing makes the advisory visible to the customers it affects.
 
 #### Parameters
 

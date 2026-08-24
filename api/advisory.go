@@ -34,8 +34,10 @@ type Advisory struct {
 	ReferenceCount       int64                  `json:"referenceCount"`
 	PublishedAt          *time.Time             `json:"publishedAt,omitempty"`
 	ResolvedAt           *time.Time             `json:"resolvedAt,omitempty"`
-	// Affected reports whether the requesting customer or partner still has a deployment
-	// running an affected version. Omitted for vendors, who see the status instead.
+	// Affected reports whether the advisory is still a live problem for the requesting
+	// customer or partner: a deployment of theirs runs an affected version, or they pulled an
+	// affected artifact version without since pulling one that carries the fix. Omitted for
+	// vendors, who see the status instead.
 	Affected *bool `json:"affected,omitempty"`
 }
 

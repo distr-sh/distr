@@ -69,7 +69,7 @@
                 <tr>
                   <th scope="col" class="p-4">Title</th>
                   <th scope="col" class="p-4">Severity</th>
-                  <th scope="col" class="p-4">Status</th>
+                  <th scope="col" class="p-4">{{ showsAffectedState ? 'Exposure' : 'Status' }}</th>
                   <th scope="col" class="p-4">CVE</th>
                   <th scope="col" class="p-4">Tags</th>
                   <th scope="col" class="p-4">Affected Versions</th>
@@ -90,28 +90,33 @@
                       {{ advisory.title }}
                     </td>
                     <td class="px-4 py-3">
-                      <span class="distr-badge capitalize" [ngClass]="severityBadgeClass(advisory.severity)">
+                      <span class="distr-status-badge capitalize" [ngClass]="severityBadgeClass(advisory.severity)">
                         {{ advisory.severity }}
                       </span>
                     </td>
                     <td class="px-4 py-3">
-                      @if (showsAffectedState) {
-                        <span class="distr-badge" [ngClass]="affectedBadgeClass(advisory.affected)">
-                          {{ affectedLabel(advisory.affected) }}
-                        </span>
-                      } @else {
-                        <span class="distr-badge" [ngClass]="statusBadgeClass(advisory.status)">
-                          {{ statusLabel(advisory.status) }}
-                        </span>
-                      }
+                      <div class="flex flex-wrap gap-1">
+                        @if (showsAffectedState) {
+                          <span class="distr-status-badge" [ngClass]="affectedBadgeClass(advisory.affected)">
+                            {{ affectedLabel(advisory.affected) }}
+                          </span>
+                          @if (advisory.resolvedAt) {
+                            <span class="distr-status-badge" [ngClass]="statusBadgeClass('resolved')">
+                              {{ statusLabel('resolved') }}
+                            </span>
+                          }
+                        } @else {
+                          <span class="distr-status-badge" [ngClass]="statusBadgeClass(advisory.status)">
+                            {{ statusLabel(advisory.status) }}
+                          </span>
+                        }
+                      </div>
                     </td>
                     <td class="px-4 py-3 font-mono text-xs">{{ advisory.cveId || '-' }}</td>
                     <td class="px-4 py-3">
                       <div class="flex flex-wrap gap-1">
                         @for (tag of advisory.tags; track tag) {
-                          <span class="distr-badge bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200">
-                            {{ tag }}
-                          </span>
+                          <span class="distr-tag-badge">{{ tag }}</span>
                         } @empty {
                           -
                         }

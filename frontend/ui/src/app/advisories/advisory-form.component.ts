@@ -1,6 +1,12 @@
 import {ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
+import {
+  AdvisoryDetail,
+  AdvisorySeverity,
+  AdvisoryVersionRelation,
+  CreateUpdateAdvisoryRequest,
+} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
@@ -14,13 +20,7 @@ import {AdvisoriesService} from '../services/advisories.service';
 import {ApplicationsService} from '../services/applications.service';
 import {ArtifactsService, TaggedArtifactVersion} from '../services/artifacts.service';
 import {ToastService} from '../services/toast.service';
-import {
-  AdvisoryDetail,
-  AdvisorySeverity,
-  AdvisoryVersionRelation,
-  CreateUpdateAdvisoryRequest,
-} from '../types/advisory';
-import {advisorySeverities} from './advisory-display';
+import {advisorySeverities, severityLabel} from './advisory-display';
 
 /** Maps a version id to the relation it has with the advisory. Absent means unselected. */
 type VersionSelection = Record<string, AdvisoryVersionRelation>;
@@ -66,6 +66,7 @@ export class AdvisoryFormComponent {
   protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
   protected readonly severities = advisorySeverities;
+  protected readonly severityLabel = severityLabel;
 
   /** The advisory to edit, or undefined to create a new one. */
   public readonly advisory = input<AdvisoryDetail>();

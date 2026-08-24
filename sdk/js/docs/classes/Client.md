@@ -202,6 +202,8 @@ The low-level Distr API client. Each method represents on API endpoint.
 
 > **getAdvisoryTags**(): `Promise`\<`string`[]\>
 
+Spans undisclosed advisories and is therefore available to the vendor organization only.
+
 #### Returns
 
 `Promise`\<`string`[]\>

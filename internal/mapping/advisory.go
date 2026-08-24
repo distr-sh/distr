@@ -3,26 +3,38 @@ package mapping
 import (
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/google/uuid"
 )
 
-func AdvisoryToAPI(advisory types.AdvisoryWithDetails) api.Advisory {
-	return api.Advisory{
-		ID:                   advisory.ID,
-		CreatedAt:            advisory.CreatedAt,
-		UpdatedAt:            advisory.UpdatedAt,
-		CreatedByUserName:    advisory.CreatedByUserName,
-		CreatedByImageURL:    CreateImageURL(advisory.CreatedByImageID),
-		Title:                advisory.Title,
-		Status:               advisory.Status,
-		Severity:             advisory.Severity,
-		CveID:                advisory.CveID,
-		Tags:                 advisory.Tags,
-		AffectedVersionCount: advisory.AffectedVersionCount,
-		FixedVersionCount:    advisory.FixedVersionCount,
-		ReferenceCount:       advisory.ReferenceCount,
-		PublishedAt:          advisory.PublishedAt,
-		ResolvedAt:           advisory.ResolvedAt,
-		Affected:             advisory.CallerAffected,
+// AdvisoryToAPI returns a mapper that withholds the creator from customer and partner viewers,
+// the same way DeploymentRevisionToAPI does.
+func AdvisoryToAPI(
+	viewerCustomerOrgID *uuid.UUID,
+	viewerPartnerOrgID *uuid.UUID,
+) func(types.AdvisoryWithDetails) api.Advisory {
+	showCreator := viewerCustomerOrgID == nil && viewerPartnerOrgID == nil
+	return func(advisory types.AdvisoryWithDetails) api.Advisory {
+		result := api.Advisory{
+			ID:                   advisory.ID,
+			CreatedAt:            advisory.CreatedAt,
+			UpdatedAt:            advisory.UpdatedAt,
+			Title:                advisory.Title,
+			Status:               advisory.Status,
+			Severity:             advisory.Severity,
+			CveID:                advisory.CveID,
+			Tags:                 advisory.Tags,
+			AffectedVersionCount: advisory.AffectedVersionCount,
+			FixedVersionCount:    advisory.FixedVersionCount,
+			ReferenceCount:       advisory.ReferenceCount,
+			PublishedAt:          advisory.PublishedAt,
+			ResolvedAt:           advisory.ResolvedAt,
+			Affected:             advisory.CallerAffected,
+		}
+		if showCreator {
+			result.CreatedByUserName = advisory.CreatedByUserName
+			result.CreatedByImageURL = CreateImageURL(advisory.CreatedByImageID)
+		}
+		return result
 	}
 }
 

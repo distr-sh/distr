@@ -175,6 +175,20 @@ func FilterVisibleVersions[T any](
 	})
 }
 
+// IsDisclosed reports whether an advisory is published or resolved and identifies at least one
+// affected version. It is what a partner sees, and the customer-independent half of
+// IsVisibleToCustomer.
+func IsDisclosed(
+	status types.AdvisoryStatus,
+	affectedApplicationVersions []VersionRef,
+	affectedArtifactVersions []VersionRef,
+) bool {
+	if !status.IsCustomerVisible() {
+		return false
+	}
+	return len(affectedApplicationVersions) > 0 || len(affectedArtifactVersions) > 0
+}
+
 // IsVisibleToCustomer reports whether a customer organization may see an advisory.
 //
 // The rule is:
@@ -202,11 +216,7 @@ func IsVisibleToCustomer(
 	view CustomerView,
 	now time.Time,
 ) bool {
-	if !status.IsCustomerVisible() {
-		return false
-	}
-
-	if len(affectedApplicationVersions) == 0 && len(affectedArtifactVersions) == 0 {
+	if !IsDisclosed(status, affectedApplicationVersions, affectedArtifactVersions) {
 		return false
 	}
 

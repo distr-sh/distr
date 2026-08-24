@@ -24,7 +24,8 @@ import {AuthService} from '../../services/auth.service';
 import {OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService, supportBundleZipFileName} from '../../services/support-bundles.service';
 import {ToastService} from '../../services/toast.service';
-import {SupportBundleDetail, SupportBundleStatus} from '../../types/support-bundle';
+import {SupportBundleDetail} from '../../types/support-bundle';
+import {supportBundleStatusBadgeClass} from '../support-bundle-display';
 
 @Component({
   selector: 'app-support-bundle-detail',
@@ -46,6 +47,7 @@ export class SupportBundleDetailComponent {
   protected readonly faComment = faComment;
   protected readonly faDownload = faDownload;
   protected readonly faXmark = faXmark;
+  protected readonly statusBadgeClass = supportBundleStatusBadgeClass;
 
   private readonly timeline = viewChild(ActivityTimelineComponent);
 
@@ -105,21 +107,6 @@ export class SupportBundleDetailComponent {
 
   protected isResourceExpanded(resourceId: string): boolean {
     return this.expandedResources().has(resourceId);
-  }
-
-  protected statusClass(status: SupportBundleStatus): string {
-    switch (status) {
-      case 'initialized':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-      case 'created':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
-      case 'resolved':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-      case 'canceled':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
-      default:
-        return '';
-    }
   }
 
   protected shortId(id: string): string {

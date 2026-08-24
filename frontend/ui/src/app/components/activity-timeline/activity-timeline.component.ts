@@ -49,10 +49,12 @@ export class ActivityTimelineComponent {
 
   protected submit(): void {
     this.commentForm.markAllAsTouched();
-    if (!this.commentForm.valid) {
+    // Validators.required accepts whitespace, which the API rejects.
+    const content = this.commentForm.controls.content.value.trim();
+    if (!content) {
       return;
     }
-    this.commentSubmitted.emit(this.commentForm.controls.content.value);
+    this.commentSubmitted.emit(content);
   }
 
   /**

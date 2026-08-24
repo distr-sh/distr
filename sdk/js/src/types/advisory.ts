@@ -20,6 +20,7 @@ export interface Advisory {
   id: string;
   createdAt: string;
   updatedAt: string;
+  /** Only ever sent to the vendor organization that owns the advisory. */
   createdByUserName?: string;
   createdByImageUrl?: string;
   title: string;
@@ -33,8 +34,10 @@ export interface Advisory {
   publishedAt?: string;
   resolvedAt?: string;
   /**
-   * Whether the requesting customer or partner still has a deployment running an affected
-   * version. Absent for vendors, who see the status instead.
+   * Whether the advisory is still a live problem for the requesting customer or partner: a
+   * deployment of theirs runs an affected version, or they pulled an affected artifact version
+   * without since pulling one that carries the fix. Absent for vendors, who see the status
+   * instead.
    */
   affected?: boolean;
 }
@@ -81,6 +84,7 @@ export interface AdvisoryDetail extends Advisory {
   references: AdvisoryReference[];
   applicationVersions: AdvisoryApplicationVersion[];
   artifactVersions: AdvisoryArtifactVersion[];
+  /** The vendor-internal timeline. Empty for customer and partner users. */
   events: AdvisoryEvent[];
 }
 

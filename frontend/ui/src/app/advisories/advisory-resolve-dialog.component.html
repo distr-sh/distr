@@ -1,11 +1,11 @@
 @if (!isClosing()) {
   <div
-    class="relative p-4 w-full max-w-2xl max-h-full lg:mt-32"
+    class="relative p-4 w-full max-w-2xl max-h-full mt-32"
     animate.enter="animate-fly-in-top"
     animate.leave="animate-fly-out-top"
     (animationend)="animationComplete()">
     <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
-      <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+      <div class="flex items-center justify-between p-4 border-b border-gray-200 rounded-t dark:border-gray-600">
         <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Resolve Advisory</h3>
         <button
           type="button"
@@ -16,10 +16,10 @@
         </button>
       </div>
 
-      <div class="p-4 md:p-5 space-y-4">
+      <div class="p-4 space-y-4">
         <p class="text-base leading-relaxed text-gray-500 dark:text-gray-200">
-          Resolving records that a fix has shipped. The advisory stays visible to customers so they can confirm they are
-          covered.
+          Resolving closes the advisory on your side. It stays visible to customers, and everyone who still runs or has
+          downloaded an affected version keeps being shown as affected until they move to a fixed one.
         </p>
         <div>
           <label for="resolveComment" class="distr-label mb-2">Note (optional)</label>
@@ -35,21 +35,11 @@
         </div>
       </div>
 
-      <div
-        class="flex items-center justify-end p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600 gap-2">
+      <div class="flex items-center justify-end p-4 border-t border-gray-200 rounded-b dark:border-gray-600 gap-2">
         <button type="button" (click)="dialogRef.dismiss()" class="py-2.5 px-5 text-sm font-medium distr-btn-secondary">
           Cancel
         </button>
-        <button type="button" (click)="resolve()" class="py-2.5 px-5 text-sm font-medium distr-btn-secondary">
-          Resolve
-        </button>
-        <button
-          type="button"
-          (click)="resolveWithComment()"
-          [disabled]="!hasComment()"
-          class="text-white distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
-          Resolve with comment
-        </button>
+        <button type="button" (click)="resolve()" class="text-white distr-btn-primary">Resolve</button>
       </div>
     </div>
   </div>

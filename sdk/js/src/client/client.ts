@@ -136,6 +136,7 @@ export class Client {
     return this.get<AdvisoryDetail>(`advisories/${advisoryId}`);
   }
 
+  /** Spans undisclosed advisories and is therefore available to the vendor organization only. */
   public async getAdvisoryTags(): Promise<string[]> {
     return this.get<string[]>('advisories/tags');
   }

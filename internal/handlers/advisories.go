@@ -44,7 +44,7 @@ func AdvisoriesRouter(r chiopenapi.Router) {
 			With(option.Request(api.ListAdvisoriesRequest{})).
 			With(option.Response(http.StatusOK, []api.Advisory{}))
 
-		r.With(middleware.RequireVendorOrPartner).
+		r.With(middleware.RequireVendor).
 			Get("/tags", getAdvisoryTagsHandler()).
 			With(option.Description("List all advisory tags used in the organization")).
 			With(option.Response(http.StatusOK, []string{}))
@@ -132,7 +132,10 @@ func getAdvisoriesHandler() http.HandlerFunc {
 			return
 		}
 
-		RespondJSON(w, mapping.List(advisories, mapping.AdvisoryToAPI))
+		RespondJSON(w, mapping.List(
+			advisories,
+			mapping.AdvisoryToAPI(a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID()),
+		))
 	}
 }
 
@@ -516,8 +519,8 @@ func respondAdvisoryDetail(w http.ResponseWriter, r *http.Request, id uuid.UUID)
 	RespondJSON(w, detail)
 }
 
-// buildAdvisoryDetail loads the child collections of an advisory. The event
-// timeline is vendor-internal and is therefore omitted for customer users.
+// buildAdvisoryDetail loads the child collections of an advisory. The event timeline is
+// vendor-internal and is therefore omitted for customer and partner users.
 func buildAdvisoryDetail(
 	w http.ResponseWriter, r *http.Request, advisory types.AdvisoryWithDetails,
 ) (api.AdvisoryDetail, bool) {
@@ -543,7 +546,7 @@ func buildAdvisoryDetail(
 	}
 
 	events := []types.AdvisoryEventWithUser{}
-	if a.CurrentCustomerOrgID() == nil {
+	if a.CurrentCustomerOrgID() == nil && a.CurrentPartnerOrgID() == nil {
 		events, err = db.GetAdvisoryEvents(ctx, advisory.ID)
 		if err != nil {
 			return fail("failed to get advisory events", err)
@@ -551,7 +554,7 @@ func buildAdvisoryDetail(
 	}
 
 	return api.AdvisoryDetail{
-		Advisory:            mapping.AdvisoryToAPI(advisory),
+		Advisory:            mapping.AdvisoryToAPI(a.CurrentCustomerOrgID(), a.CurrentPartnerOrgID())(advisory),
 		Description:         advisory.Description,
 		References:          mapping.List(references, mapping.AdvisoryReferenceToAPI),
 		ApplicationVersions: mapping.List(versions.ApplicationVersions, mapping.AdvisoryApplicationVersionToAPI),

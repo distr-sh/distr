@@ -2,6 +2,7 @@ import {DatePipe, NgClass, NgTemplateOutlet} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, RouterLink} from '@angular/router';
+import {AdvisoryDetail, AdvisoryImpact, AdvisoryStatus} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faArrowLeft, faPen, faUpRightFromSquare} from '@fortawesome/free-solid-svg-icons';
 import {catchError, firstValueFrom, map, of, startWith, Subject, switchMap, take} from 'rxjs';
@@ -17,7 +18,6 @@ import {AdvisoriesService} from '../services/advisories.service';
 import {AuthService} from '../services/auth.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
-import {AdvisoryDetail, AdvisoryImpact, AdvisoryStatus} from '../types/advisory';
 import {
   affectedBadgeClass,
   affectedLabel,

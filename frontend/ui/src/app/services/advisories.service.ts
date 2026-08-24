@@ -10,7 +10,7 @@ import {
   CreateAdvisoryRequest,
   CreateUpdateAdvisoryRequest,
   UpdateAdvisoryStatusRequest,
-} from '../types/advisory';
+} from '@distr-sh/distr-sdk';
 
 const baseUrl = '/api/v1/advisories';
 

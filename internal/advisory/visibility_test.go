@@ -55,6 +55,31 @@ func TestIsVisibleToCustomerStatusGating(t *testing.T) {
 	}
 }
 
+func TestIsDisclosed(t *testing.T) {
+	g := NewWithT(t)
+
+	affected := []advisory.VersionRef{appVersion(versionOneID)}
+
+	cases := []struct {
+		status    types.AdvisoryStatus
+		disclosed bool
+	}{
+		{types.AdvisoryStatusTriage, false},
+		{types.AdvisoryStatusDraft, false},
+		{types.AdvisoryStatusPublished, true},
+		{types.AdvisoryStatusResolved, true},
+		{types.AdvisoryStatusCanceled, false},
+	}
+	for _, tc := range cases {
+		g.Expect(advisory.IsDisclosed(tc.status, affected, nil)).
+			To(Equal(tc.disclosed), "status %q", tc.status)
+		g.Expect(advisory.IsDisclosed(tc.status, nil, affected)).
+			To(Equal(tc.disclosed), "status %q with an affected artifact", tc.status)
+	}
+
+	g.Expect(advisory.IsDisclosed(types.AdvisoryStatusPublished, nil, nil)).To(BeFalse())
+}
+
 func TestIsVisibleToCustomerNoAffectedVersions(t *testing.T) {
 	g := NewWithT(t)
 

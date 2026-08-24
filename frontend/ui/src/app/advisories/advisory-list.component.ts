@@ -3,6 +3,7 @@ import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRe
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {RouterLink} from '@angular/router';
+import {Advisory, AdvisorySeverity, AdvisoryStatus} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faMagnifyingGlass, faPlus} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatest, firstValueFrom, of, shareReplay, startWith, Subject, switchMap, take} from 'rxjs';
@@ -14,7 +15,6 @@ import {AdvisoriesService} from '../services/advisories.service';
 import {AuthService} from '../services/auth.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
-import {Advisory, AdvisorySeverity, AdvisoryStatus} from '../types/advisory';
 import {
   advisorySeverities,
   advisoryStatuses,
@@ -68,18 +68,13 @@ export class AdvisoryListComponent {
 
   protected readonly routePrefix = this.auth.isCustomer() ? '/security' : '/advisories';
   protected readonly canEdit = this.auth.isVendor() && this.auth.hasAnyRole('read_write', 'admin');
-  // Filtering by a status that the column does not show would be a dropdown of terms the
-  // reader never sees anywhere else.
   protected readonly canFilterByStatus = !this.showsAffectedState;
 
   protected readonly filterForm = new FormGroup({
     search: new FormControl(''),
   });
 
-  // Sending customers a status filter would be noise, since the backend already limits them to
-  // published and resolved. Partners keep the default even though their dropdown is hidden, so
-  // that advisories nobody has disclosed stay out of their list too.
-  private readonly defaultStatuses: AdvisoryStatus[] = this.auth.isCustomer() ? [] : defaultAdvisoryStatusFilter;
+  private readonly defaultStatuses: AdvisoryStatus[] = this.showsAffectedState ? [] : defaultAdvisoryStatusFilter;
 
   protected readonly selectedStatuses = signal<AdvisoryStatus[]>([...this.defaultStatuses]);
   protected readonly selectedSeverities = signal<AdvisorySeverity[]>([]);
@@ -94,14 +89,19 @@ export class AdvisoryListComponent {
     label: severityLabel(severity),
   }));
 
-  // The tags endpoint is vendor and partner only, so customers must not request it.
-  protected readonly tags = toSignal(
-    this.auth.isCustomer() ? of<string[]>([]) : this.advisoriesService.listTags().pipe(catchError(() => of([]))),
+  // The tags endpoint spans undisclosed advisories and is therefore vendor only.
+  private readonly vendorTags = toSignal(
+    this.auth.isVendor()
+      ? this.advisoriesService.listTags().pipe(catchError(() => of<string[]>([])))
+      : of<string[]>([]),
     {initialValue: [] as string[]}
   );
-  protected readonly tagOptions = computed<MultiSelectOption[]>(() =>
-    this.tags().map((tag) => ({value: tag, label: tag}))
-  );
+  protected readonly tagOptions = computed<MultiSelectOption[]>(() => {
+    const tags = this.auth.isVendor()
+      ? this.vendorTags()
+      : [...new Set(this.advisories().flatMap((advisory) => advisory.tags))].sort();
+    return tags.map((tag) => ({value: tag, label: tag}));
+  });
 
   private readonly searchValue = toSignal(this.filterForm.controls.search.valueChanges, {initialValue: ''});
 
