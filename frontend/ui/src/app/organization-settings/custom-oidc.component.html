@@ -10,18 +10,19 @@
       </h2>
       <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
         @if (customerScoped() && viewerIsCustomer()) {
-          Let your users sign in with their own identity provider instead of a Distr password. A provider is offered on
-          your own portal domain and nowhere else.
+          Let your users sign in with their own identity provider via OIDC (OpenID Connect) instead of a Distr password.
+          A provider is offered on your own portal domain and nowhere else.
         } @else if (customerScoped()) {
-          Let this customer's users sign in with their own identity provider instead of a Distr password. A provider is
-          offered on the customer's own portal domain and nowhere else.
+          Let this customer's users sign in with their own identity provider via OIDC (OpenID Connect) instead of a
+          Distr password. A provider is offered on the customer's own portal domain and nowhere else.
         } @else {
-          Let your team and your customers sign in with your own identity provider instead of a Distr password. Every
-          domain carries its own providers: the ones on your app domain apply to your team, the ones on your customer
-          portal domain to all of your customers.
+          Let your team and your customers sign in with your own identity provider via OIDC (OpenID Connect) instead of
+          a Distr password. Every domain carries its own providers: the ones on your app domain apply to your team, the
+          ones on your customer portal domain to all of your customers. Individual customers can also have providers of
+          their own.
         }
         A custom domain is required first: an identity provider is only offered on the domain it is attached to, and
-        nowhere else on Distr. Sign-in only works for accounts that belong to no other Distr organization.
+        nowhere else on Distr.
       </p>
 
       @if (oidcProvidersEnabled() && !configurable()) {
