@@ -114,6 +114,9 @@ mise run build:hub:community        # Community edition
 # Build agents
 mise run build:agent:docker
 mise run build:agent:kubernetes
+
+# Build the website (website/)
+mise run build:website
 ```
 
 Binaries are output to `dist/`.
@@ -122,12 +125,19 @@ Binaries are output to `dist/`.
 
 ```sh
 # Auto-fix linting issues
-mise run format              # All
+mise run format              # All, including the website
+mise run format:app          # Hub and agents, without the website
 mise run format:go           # Go only
 mise run format:frontend     # Frontend only
+mise run format:website      # Website only, also prunes unused images
+
+# Lint
+mise run lint                # All, including the website
+mise run lint:app            # Hub and agents, without the website
 ```
 
 Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Prettier with config in `.prettierrc.mjs`.
+The website is a separate pnpm project with its own Prettier config; the root config ignores `website/`.
 
 ## Code Patterns and Conventions
 
