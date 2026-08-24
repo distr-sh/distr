@@ -240,16 +240,6 @@ type AdvisoryFilter struct {
 	Tags       []string
 }
 
-// stringsOf converts a slice of a string-based enum type into plain strings, so that it can be
-// passed as a text[] query parameter.
-func stringsOf[T ~string](values []T) []string {
-	result := make([]string, len(values))
-	for i, value := range values {
-		result[i] = string(value)
-	}
-	return result
-}
-
 func GetAdvisories(
 	ctx context.Context, orgID uuid.UUID, filter AdvisoryFilter,
 ) ([]types.AdvisoryWithDetails, error) {
@@ -264,15 +254,13 @@ func GetAdvisories(
 		WHERE v.organization_id = @orgId`,
 		advisoryWithDetailsOutputExpr)
 
-	// The enum columns are compared as text so that the parameter is a plain text[], which
-	// avoids having to teach pgx how to encode an array of a custom enum type.
 	if len(filter.Statuses) > 0 {
-		args["statuses"] = stringsOf(filter.Statuses)
-		query += ` AND v.status::text = any(@statuses)`
+		args["statuses"] = filter.Statuses
+		query += ` AND v.status = any(@statuses::advisory_status[])`
 	}
 	if len(filter.Severities) > 0 {
-		args["severities"] = stringsOf(filter.Severities)
-		query += ` AND v.severity::text = any(@severities)`
+		args["severities"] = filter.Severities
+		query += ` AND v.severity = any(@severities::advisory_severity[])`
 	}
 	if len(filter.Tags) > 0 {
 		args["tags"] = filter.Tags
