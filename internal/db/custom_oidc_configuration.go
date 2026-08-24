@@ -71,7 +71,7 @@ func UpdateCustomOIDCConfiguration(ctx context.Context, c *types.CustomOIDCConfi
 	args["id"] = c.ID
 	rows, err := db.Query(ctx,
 		`UPDATE CustomOIDCConfiguration AS c SET
-			updated_at = current_timestamp,
+			updated_at = now(),
 			updated_by_user_account_id = @updatedByUserAccountId,
 			custom_domain_id = @customDomainId,
 			name = @name,
@@ -258,20 +258,4 @@ func DeleteCustomOIDCConfiguration(
 		return apierrors.ErrNotFound
 	}
 	return nil
-}
-
-func ExistsCustomOIDCConfigurationForOrganization(ctx context.Context, organizationID uuid.UUID) (bool, error) {
-	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(ctx,
-		`SELECT EXISTS (SELECT 1 FROM CustomOIDCConfiguration WHERE organization_id = @organizationId)`,
-		pgx.NamedArgs{"organizationId": organizationID},
-	)
-	if err != nil {
-		return false, fmt.Errorf("could not query CustomOIDCConfiguration: %w", err)
-	}
-	exists, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[bool])
-	if err != nil {
-		return false, fmt.Errorf("could not query CustomOIDCConfiguration: %w", err)
-	}
-	return exists, nil
 }

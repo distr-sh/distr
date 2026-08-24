@@ -138,7 +138,13 @@
                         <div
                           class="flex items-center text-start px-4 py-2 text-sm text-gray-700 dark:text-gray-300"
                           role="menuitem">
-                          You are not part of any other organization.
+                          @if (auth.isCustomOidcSession()) {
+                            You signed in through your organization's identity provider,<br />
+                            so you cannot switch to another organization or create one.<br />
+                            Sign in with a password to do that.
+                          } @else {
+                            You are not part of any other organization.
+                          }
                         </div>
                       </li>
                     </ul>

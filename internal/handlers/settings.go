@@ -33,7 +33,8 @@ func SettingsRouter(r chiopenapi.Router) {
 			With(option.Request(api.UpdateUserAccountRequest{})).
 			With(option.Response(http.StatusOK, types.UserAccount{}))
 
-		r.Post("/email", userSettingsUpdateEmailHandler()).
+		r.With(middleware.BlockCredentialChange).
+			Post("/email", userSettingsUpdateEmailHandler()).
 			With(option.Description("Update current user email address")).
 			With(option.Request(api.UpdateUserAccountEmailRequest{})).
 			With(option.Response(http.StatusAccepted, nil))
@@ -47,7 +48,8 @@ func SettingsRouter(r chiopenapi.Router) {
 				With(option.Description("List the identity provider accounts connected to the current user")).
 				With(option.Response(http.StatusOK, []api.UserAccountOIDCIdentity{}))
 
-			r.Delete("/{oidcIdentityId}", deleteOIDCIdentityHandler).
+			r.With(middleware.BlockCredentialChange).
+				Delete("/{oidcIdentityId}", deleteOIDCIdentityHandler).
 				With(option.Description("Disconnect an identity provider account from the current user")).
 				With(option.Request(OIDCIdentityIDRequest{}))
 		})
@@ -56,11 +58,16 @@ func SettingsRouter(r chiopenapi.Router) {
 	r.Route("/mfa", func(r chiopenapi.Router) {
 		r.WithOptions(option.GroupTags("Security"))
 
-		r.Post("/setup", mfaSetupHandler).
+		// Enrollment is gated because it needs no password and would hand whoever performs it a second
+		// factor the account's owner does not have. Disabling MFA and regenerating the recovery codes
+		// verify the password, which is proof of ownership on its own.
+		r.With(middleware.BlockCredentialChange).
+			Post("/setup", mfaSetupHandler).
 			With(option.Description("Setup a new TOTP secret for the current user. MFA must still be enabled afterwards")).
 			With(option.Response(http.StatusOK, api.SetupMFAResponse{}))
 
-		r.Post("/enable", mfaEnableHandler).
+		r.With(middleware.BlockCredentialChange).
+			Post("/enable", mfaEnableHandler).
 			With(option.Description("Enable MFA for the current user and receive recovery codes")).
 			With(option.Request(api.EnableMFARequest{})).
 			With(option.Response(http.StatusOK, api.EnableMFAResponse{}))
@@ -117,6 +124,12 @@ func userSettingsUpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := body.Validate(); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Only the password is a credential change; the name and the image stay available to every session.
+	if body.Password != nil && auth.OrganizationScoped() {
+		http.Error(w, middleware.CredentialChangeBlockedMessage, http.StatusForbidden)
 		return
 	}
 

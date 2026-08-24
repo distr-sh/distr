@@ -184,6 +184,8 @@ Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Pret
 
 All database access should go through `internal/db/` functions. Never write raw SQL in handlers or services. If you need a new query, add it to the appropriate file in `internal/db/`.
 
+Always use `now()` for the current time, never `current_timestamp`. This applies to queries in `internal/db/` as well as to SQL migrations in `internal/migrations/sql/`, including column defaults.
+
 Transaction pattern:
 
 ```go
