@@ -99,10 +99,13 @@ func getPortalHandler(w http.ResponseWriter, r *http.Request) {
 // registration are suppressed on self-service custom domains, where only the organization's own providers apply.
 func portalLoginConfig(ctx context.Context, host portalHost) api.PortalLoginConfig {
 	if !host.instanceAuthAllowed() {
-		return api.PortalLoginConfig{OIDCProviders: portalOIDCProviders(ctx, host)}
+		return api.PortalLoginConfig{
+			Registration:  env.RegistrationDisabled,
+			OIDCProviders: portalOIDCProviders(ctx, host),
+		}
 	}
 	return api.PortalLoginConfig{
-		RegistrationEnabled:  env.Registration() == env.RegistrationEnabled,
+		Registration:         env.Registration(),
 		TurnstileSiteKey:     host.turnstileSiteKey(),
 		OIDCGithubEnabled:    env.OIDCGithubEnabled(),
 		OIDCGoogleEnabled:    env.OIDCGoogleEnabled(),
