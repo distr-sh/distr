@@ -82,9 +82,9 @@ func getCustomOIDCConfigurationsHandler(w http.ResponseWriter, r *http.Request) 
 	RespondJSON(w, api.CustomOIDCConfigurationsResponse{
 		Configurations: mapping.List(configurations,
 			func(c types.CustomOIDCConfiguration) api.CustomOIDCConfiguration {
-				return mapping.CustomOIDCConfigurationToDTO(c, auth.CurrentOrg().Slug, domains[c.CustomDomainID].Domain)
+				return mapping.CustomOIDCConfigurationToAPI(c, auth.CurrentOrg().Slug, domains[c.CustomDomainID].Domain)
 			}),
-		MembersWithOtherOrganizations: members,
+		MembersWithOtherOrganizations: mapping.List(members, mapping.OrganizationMemberToAPI),
 	})
 }
 
@@ -114,7 +114,7 @@ func createCustomOIDCConfigurationHandler(w http.ResponseWriter, r *http.Request
 		UpdatedByUserAccountID: new(auth.CurrentUserID()),
 		ClientSecret:           *request.ClientSecret,
 	}
-	applyCustomOIDCConfigurationRequest(&configuration, request)
+	mapping.CustomOIDCConfigurationToInternal(request, &configuration)
 
 	issuer, ok := resolveCustomOIDCIssuer(w, r, configuration)
 	if !ok {
@@ -167,7 +167,7 @@ func updateCustomOIDCConfigurationHandler(w http.ResponseWriter, r *http.Request
 	if request.ClientSecret != nil {
 		configuration.ClientSecret = *request.ClientSecret
 	}
-	applyCustomOIDCConfigurationRequest(&configuration, request)
+	mapping.CustomOIDCConfigurationToInternal(request, &configuration)
 
 	if configuration.Issuer != existing.Issuer {
 		issuer, ok := resolveCustomOIDCIssuer(w, r, configuration)
@@ -230,24 +230,6 @@ func testCustomOIDCConfigurationHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func applyCustomOIDCConfigurationRequest(
-	configuration *types.CustomOIDCConfiguration,
-	request api.CustomOIDCConfigurationRequest,
-) {
-	configuration.CustomDomainID = request.CustomDomainID
-	configuration.Name = request.Name
-	configuration.Slug = request.Slug
-	configuration.Enabled = request.Enabled
-	configuration.Issuer = request.Issuer
-	configuration.ClientID = request.ClientID
-	configuration.Scopes = request.Scopes
-	configuration.PKCEEnabled = request.PKCEEnabled
-	configuration.SPInitiated = request.SPInitiated
-	configuration.CreateUnknownUsers = request.CreateUnknownUsers
-	configuration.DefaultUserRole = request.DefaultUserRole
-	configuration.AllowedEmailDomains = request.AllowedEmailDomains
 }
 
 // enforceExactScope must be true on create: the domain lookup below runs through the caller's own
@@ -344,7 +326,7 @@ func respondCustomOIDCConfiguration(
 		return
 	}
 	organizationSlug := auth.Authentication.Require(ctx).CurrentOrg().Slug
-	RespondJSON(w, mapping.CustomOIDCConfigurationToDTO(
+	RespondJSON(w, mapping.CustomOIDCConfigurationToAPI(
 		configuration, organizationSlug, domains[configuration.CustomDomainID].Domain))
 }
 

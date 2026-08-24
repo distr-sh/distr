@@ -35,7 +35,7 @@ func CustomDomainsRouter(r chiopenapi.Router) {
 	r.Get("/", getCustomDomainsHandler).
 		With(option.Description("List the custom domains within the caller's scope: every domain for a " +
 			"vendor, one customer's own for a customer, or the domains of the customers assigned to a partner")).
-		With(option.Response(http.StatusOK, []types.CustomDomain{}))
+		With(option.Response(http.StatusOK, []api.CustomDomain{}))
 	r.Get("/{customDomainId}/verification", getCustomDomainVerificationHandler).
 		With(option.Description("Check whether a custom domain's CNAME record currently points at the " +
 			"expected target. This performs a live DNS lookup and is therefore a separate request from " +
@@ -47,7 +47,7 @@ func CustomDomainsRouter(r chiopenapi.Router) {
 			With(option.Description("Register new custom domains for the caller's organization, or for a " +
 				"customer named in the request")).
 			With(option.Request(api.CreateCustomDomainsRequest{})).
-			With(option.Response(http.StatusOK, []types.CustomDomain{}))
+			With(option.Response(http.StatusOK, []api.CustomDomain{}))
 		r.Delete("/{customDomainId}", deleteCustomDomainHandler).
 			With(option.Description("Delete a custom domain")).
 			With(option.Request(customDomainPathRequest{}))
@@ -66,7 +66,7 @@ func getCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	RespondJSON(w, customDomains)
+	RespondJSON(w, mapping.List(customDomains, mapping.CustomDomainToAPI))
 }
 
 func getCustomDomainVerificationHandler(w http.ResponseWriter, r *http.Request) {
@@ -92,7 +92,7 @@ func getCustomDomainVerificationHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	verified, detail := checkCNAME(ctx, *domain)
-	RespondJSON(w, mapping.CustomDomainVerificationToAPI(*domain, verified, detail, time.Now()))
+	RespondJSON(w, mapping.CustomDomainVerificationToAPI(domain.ID, verified, detail, time.Now()))
 }
 
 func createCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
@@ -133,12 +133,7 @@ func createCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "this domain is already in use", http.StatusConflict)
 			return
 		}
-		customDomains[i] = types.CustomDomain{
-			Domain:                 domain.Domain,
-			Type:                   domain.DomainType,
-			OrganizationID:         *auth.CurrentOrgID(),
-			CustomerOrganizationID: customerOrgID,
-		}
+		customDomains[i] = mapping.CustomDomainToInternal(domain, *auth.CurrentOrgID(), customerOrgID)
 	}
 
 	if created, err := db.CreateCustomDomains(ctx, customDomains); errors.Is(err, apierrors.ErrConflict) {
@@ -148,7 +143,7 @@ func createCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
-		RespondJSON(w, created)
+		RespondJSON(w, mapping.List(created, mapping.CustomDomainToAPI))
 	}
 }
 

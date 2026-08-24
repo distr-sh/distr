@@ -56,7 +56,7 @@ func AuthOIDCRouter(r chiopenapi.Router) {
 }
 
 func authLoginOidcHandler(w http.ResponseWriter, r *http.Request) {
-	provider := oidc.Provider(r.PathValue("oidcProvider"))
+	provider := types.OIDCProvider(r.PathValue("oidcProvider"))
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 
@@ -98,7 +98,7 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	provider := oidc.Provider(r.PathValue("oidcProvider"))
+	provider := types.OIDCProvider(r.PathValue("oidcProvider"))
 	log = log.With(zap.String("provider", string(provider)))
 
 	code, ok := oidcCallbackCode(w, r, log)
