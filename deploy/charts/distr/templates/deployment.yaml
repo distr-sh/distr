@@ -106,14 +106,8 @@ spec:
               value: {{ .Values.hub.scratch.mountPath | quote }}
             {{- end }}
             {{- if .Values.caddy.enabled }}
-            {{- /* Derived from the caddy values so the hub, the Caddyfile and the caddy-ask
+            {{- /* Derived from caddy.askServerPort so the hub, the Caddyfile and the caddy-ask
                    Service cannot drift apart. */}}
-            - name: CUSTOM_DOMAIN_APP_CNAME_TARGET
-              value: {{ required "caddy.appCnameTarget is required when caddy.enabled is true" .Values.caddy.appCnameTarget | quote }}
-            {{- with .Values.caddy.registryCnameTarget }}
-            - name: CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET
-              value: {{ . | quote }}
-            {{- end }}
             - name: INTERNAL_SERVER_ADDR
               value: ":{{ .Values.caddy.askServerPort }}"
             {{- end }}
