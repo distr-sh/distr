@@ -33,6 +33,7 @@ func DeploymentTargetDiskMetricToInternal(disk api.DeploymentTargetDiskMetric) t
 func DeploymentTargetMetricsToAPI(metrics types.DeploymentTargetMetrics) api.DeploymentTargetMetrics {
 	return api.DeploymentTargetMetrics{
 		DeploymentTargetID: metrics.DeploymentTargetID,
+		CreatedAt:          metrics.CreatedAt,
 		CPUCoresMillis:     metrics.CPUCoresMillis,
 		CPUUsage:           metrics.CPUUsage,
 		MemoryBytes:        metrics.MemoryBytes,

@@ -55,10 +55,10 @@ func ApplicationsRouter(r chiopenapi.Router) {
 						With(option.Request(ApplicationRequest{}))
 					r.Put("/", updateApplication).
 						With(option.Description("Update an application")).
-						With((option.Request(struct {
+						With(option.Request(struct {
 							ApplicationRequest
 							types.Application
-						}{}))).
+						}{})).
 						With(option.Response(http.StatusOK, api.ApplicationResponse{}))
 					r.Patch("/", patchApplicationHandler()).
 						With(option.Description("Partially update an application")).

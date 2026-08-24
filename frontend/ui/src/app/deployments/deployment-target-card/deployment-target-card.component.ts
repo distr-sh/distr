@@ -169,6 +169,7 @@ export class DeploymentTargetCardComponent {
     imageCleanupEnabled: new FormControl<boolean>(false, {nonNullable: true}),
     deploymentLogsEnabled: new FormControl<boolean>(true, {nonNullable: true}),
     deploymentLogsAfter: new FormControl<string | null>(null),
+    automaticUpdatesEnabled: new FormControl<boolean>(false, {nonNullable: true}),
     customDockerEndpoint: new FormControl<boolean>(false, {nonNullable: true}),
     dockerEndpoint: new FormControl<string>('', {
       nonNullable: true,
@@ -215,6 +216,7 @@ export class DeploymentTargetCardComponent {
   protected readonly agentUpdateFromVersion = signal<string | undefined>(undefined);
   protected readonly agentUpdateToVersion = signal<string | undefined>(undefined);
   protected readonly agentUpdateChangelogReleases = signal<typeof agentChangelog.releases>([]);
+  protected readonly agentUpdateAutomaticUpdatesEnabled = new FormControl<boolean>(false, {nonNullable: true});
 
   protected readonly isUndeploySupported = this.isAgentVersionAtLeast('1.3.0');
   protected readonly isMultiDeploymentSupported = this.isAgentVersionAtLeast('1.6.0');
@@ -303,6 +305,7 @@ export class DeploymentTargetCardComponent {
         imageCleanupEnabled: this.editForm.controls.imageCleanupEnabled.value,
         deploymentLogsEnabled: this.editForm.controls.deploymentLogsEnabled.value,
         deploymentLogsAfter: dateTimeLocalToISO(this.editForm.controls.deploymentLogsAfter.value) ?? undefined,
+        automaticUpdatesEnabled: this.editForm.controls.automaticUpdatesEnabled.value,
         resources: val.resources && {
           cpuRequest: val.resources.cpuRequest!,
           cpuLimit: val.resources.cpuLimit!,
@@ -480,6 +483,7 @@ export class DeploymentTargetCardComponent {
         this.agentUpdateFromVersion.set(fromVersion);
         this.agentUpdateToVersion.set(targetVersion.name);
         this.agentUpdateChangelogReleases.set(this.loadChangelogReleases(fromVersion, targetVersion.name, dt.type));
+        this.agentUpdateAutomaticUpdatesEnabled.setValue(dt.automaticUpdatesEnabled ?? false);
 
         if (
           await firstValueFrom(
@@ -490,6 +494,7 @@ export class DeploymentTargetCardComponent {
           )
         ) {
           dt.agentVersion = targetVersion;
+          dt.automaticUpdatesEnabled = this.agentUpdateAutomaticUpdatesEnabled.value;
           await firstValueFrom(this.deploymentTargets.update(dt));
         }
       }
@@ -620,6 +625,7 @@ export class DeploymentTargetCardComponent {
       ...dt,
       deploymentLogsEnabled: dt.deploymentLogsEnabled,
       deploymentLogsAfter: isoToDateTimeLocal(dt.deploymentLogsAfter) || null,
+      automaticUpdatesEnabled: dt.automaticUpdatesEnabled ?? false,
       customResources: !!dt.resources,
       customDockerEndpoint: !!dt.dockerEndpoint,
       dockerEndpoint: dt.dockerEndpoint ?? '',

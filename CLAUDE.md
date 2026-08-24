@@ -57,6 +57,7 @@ When working with the SDK:
 - **Log storage**: Deployment and deployment target log records are stored in Grafana Loki (not PostgreSQL), accessed through the `internal/logstore` package (`LogStore` interface, Loki implementation, in-memory fake for tests). The log record types (`logstore.DeploymentLogRecord`, `logstore.DeploymentTargetLogRecord`) live in this package, not in `internal/types`, since they are not database entities. The org ID is passed explicitly to every store method and maps to the Loki tenant (`X-Scope-OrgID`). Log retention is time-based and managed by the Loki config (shipped default: 30 days); read queries are limited to a subscription-dependent query window (`subscription.GetLogQueryWindow`: 24 hours for Community/Starter, 7 days otherwise). Log exports (deployment logs, deployment target logs and deployment status) honor the `before`/`after`/`filter` query parameters of the log viewer and are hard-capped at `subscription.MaxLogExportRows` (1,000,000 lines) for every subscription type; truncated exports end with a notice in the downloaded file
 - **Migrations**: SQL migrations in `internal/migrations/sql/` managed by golang-migrate
 - **Database queries**: All database interactions are in `internal/db/` with transaction support
+- **Agent versions**: Every deployment target points at an `AgentVersion` row, which determines the image tag of the rendered agent manifest, and agents self-update as soon as the version they receive differs from the one they run. On startup the hub upserts its own version (`db.CreateAgentVersion`) and then assigns it to every target that has automatic updates enabled (`db.ApplyAutomaticAgentUpdates`), so upgrading the hub upgrades those agents with it. Enabling the option through the API applies the current version right away instead of waiting for the next restart
 
 Key internal packages:
 
@@ -144,6 +145,7 @@ Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Pret
 - When performing data transformations between DTOs and domain models, use `mapping.List(...)` inside the `internal/mapping` package
 - Always use [Gomega](https://onsi.github.io/gomega/) for test assertions in Go tests
 - Do not use `util.PtrTo`. Use `new(value)` to obtain a `*T` from a typed value (e.g. `new(types.UserRoleReadOnly)`).
+- The body of a 4xx response is displayed verbatim in the frontend forms (`getFormDisplayedError`), so write those messages for the end user and put anything only a developer can use into the log instead.
 
 ### Frontend Code
 
