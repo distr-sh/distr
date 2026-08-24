@@ -1,5 +1,7 @@
 package api
 
+import "github.com/distr-sh/distr/internal/env"
+
 // PortalResponse is the host-resolved bootstrap configuration for the unauthenticated pages: the portal branding
 // (browser tab title, favicon and logo) that applies to everyone visiting an organization's custom app domain, plus
 // the login methods available on this host. The branding fields are empty unless the host matches a custom app
@@ -18,7 +20,7 @@ type PortalResponse struct {
 // are configured per instance via environment variables, but are only offered on the default host and on legacy
 // branding app domains -- never on a self-service custom domain, where only that organization's own providers apply.
 type PortalLoginConfig struct {
-	RegistrationEnabled  bool                 `json:"registrationEnabled"`
+	Registration         env.RegistrationMode `json:"registration"`
 	TurnstileSiteKey     *string              `json:"turnstileSiteKey,omitempty"`
 	OIDCGithubEnabled    bool                 `json:"oidcGithubEnabled"`
 	OIDCGoogleEnabled    bool                 `json:"oidcGoogleEnabled"`
