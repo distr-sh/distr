@@ -149,6 +149,7 @@ Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Pret
 - Reference shared string enums (`types.UserRole`, `types.DomainType`, `types.OIDCProvider`) from `api` directly instead of duplicating them
 - Always use [Gomega](https://onsi.github.io/gomega/) for test assertions in Go tests
 - Do not use `util.PtrTo`. Use `new(value)` to obtain a `*T` from a typed value (e.g. `new(types.UserRoleReadOnly)`).
+- Use `errors.AsType[E](err)` instead of `errors.As(err, &target)` wherever the target type is known at the call site, since it needs no pre-declared variable: `if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation`. `errors.As` remains correct where the target is an interface a caller passes in.
 - The body of a 4xx response is displayed verbatim in the frontend forms (`getFormDisplayedError`), so write those messages for the end user and put anything only a developer can use into the log instead.
 
 ### Frontend Code

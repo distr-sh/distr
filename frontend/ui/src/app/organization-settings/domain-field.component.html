@@ -16,9 +16,7 @@
     <div class="mt-2 flex items-center gap-2">
       @if (verification(); as verification) {
         @if (verification.dnsVerified) {
-          <span
-            class="distr-status-badge bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-            [title]="verification.dnsDetail">
+          <span class="distr-status-badge bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
             <fa-icon [icon]="faCircleCheck" />
             CNAME verified
           </span>
