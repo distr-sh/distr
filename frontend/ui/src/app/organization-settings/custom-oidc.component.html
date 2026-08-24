@@ -21,8 +21,8 @@
           portal domain to all of your customers.
         }
         A custom domain is required first: an identity provider is only offered on the domain it is attached to, and
-        nowhere else on Distr. A session it authenticates stays within this organization and cannot change the account's
-        sign-in methods.
+        nowhere else on Distr. A session it authenticates stays within this organization; it cannot change the account's
+        e-mail address, enroll in MFA or disconnect identity providers, while password-confirmed MFA actions remain available.
       </p>
 
       @if (oidcProvidersEnabled() && !configurable()) {
