@@ -6,6 +6,19 @@
         User Settings
       </h1>
 
+      @if (customOidcSession) {
+        <div
+          class="flex items-start gap-3 p-4 text-sm rounded-lg border border-primary-200 bg-primary-50 text-primary-800 dark:border-primary-800 dark:bg-gray-700 dark:text-primary-300"
+          role="alert">
+          <fa-icon [icon]="faCircleExclamation" class="mt-0.5 shrink-0" />
+          <span>
+            You signed in through your organization's identity provider, so your e-mail address, multi-factor
+            authentication and connected providers cannot be changed here. Request a password reset below to sign in
+            with a password instead, which also lets you set your first one.
+          </span>
+        </div>
+      }
+
       <form [formGroup]="generalForm" (ngSubmit)="saveGeneral()">
         <div class="space-y-4">
           <h2 class="text-xl font-bold dark:text-white">General</h2>
@@ -82,29 +95,33 @@
             </div>
           </div>
 
-          <div class="space-y-2">
-            <label for="email" class="distr-label"> New E-Mail Address </label>
-            <div class="flex gap-2">
-              <input
-                formControlName="email"
-                autotrim
-                type="email"
-                name="email"
-                id="email"
-                class="distr-input"
-                placeholder="E-Mail Address" />
-              <button
-                type="submit"
-                [disabled]="formLoading() || emailForm.invalid || emailForm.pristine"
-                class="flex-0 text-white w-full inline-flex items-center justify-center distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
-                Verify
-              </button>
+          @if (!customOidcSession) {
+            <div class="space-y-2">
+              <label for="email" class="distr-label"> New E-Mail Address </label>
+              <div class="flex gap-2">
+                <input
+                  formControlName="email"
+                  autotrim
+                  type="email"
+                  name="email"
+                  id="email"
+                  class="distr-input"
+                  placeholder="E-Mail Address" />
+                <button
+                  type="submit"
+                  [disabled]="formLoading() || emailForm.invalid || emailForm.pristine"
+                  class="flex-0 text-white w-full inline-flex items-center justify-center distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
+                  Verify
+                </button>
+              </div>
+              @if (emailForm.controls.email.errors?.['email'] && emailForm.controls.email.touched) {
+                <div class="text-red-500 text-sm">Invalid E-Mail Address</div>
+              }
+              <div class="text-gray-500 text-sm">
+                Your e-mail address will be updated after successful verification.
+              </div>
             </div>
-            @if (emailForm.controls.email.errors?.['email'] && emailForm.controls.email.touched) {
-              <div class="text-red-500 text-sm">Invalid E-Mail Address</div>
-            }
-            <div class="text-gray-500 text-sm">Your e-mail address will be updated after successful verification.</div>
-          </div>
+          }
         </div>
       </form>
 
@@ -161,13 +178,15 @@
                     }
                   </div>
                 </div>
-                <button
-                  type="button"
-                  [disabled]="formLoading()"
-                  (click)="showDisconnectOidcIdentityDialog(identity)"
-                  class="text-gray-900 inline-flex items-center justify-center bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700 disabled:opacity-60 disabled:cursor-not-allowed">
-                  Disconnect
-                </button>
+                @if (!customOidcSession) {
+                  <button
+                    type="button"
+                    [disabled]="formLoading()"
+                    (click)="showDisconnectOidcIdentityDialog(identity)"
+                    class="text-gray-900 inline-flex items-center justify-center bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700 disabled:opacity-60 disabled:cursor-not-allowed">
+                    Disconnect
+                  </button>
+                }
               </li>
             }
           </ul>
@@ -303,12 +322,14 @@
             Multi-factor authentication is currently disabled on your account.
           </div>
 
-          <button
-            type="button"
-            (click)="startMfaSetup()"
-            class="text-white inline-flex items-center justify-center distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
-            Start Setup
-          </button>
+          @if (!customOidcSession) {
+            <button
+              type="button"
+              (click)="startMfaSetup()"
+              class="text-white inline-flex items-center justify-center distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
+              Start Setup
+            </button>
+          }
         }
       </div>
     </div>

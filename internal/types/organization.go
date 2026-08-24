@@ -70,14 +70,6 @@ type OrganizationWithUserRole struct {
 	JoinedOrgAt              time.Time  `db:"joined_org_at" json:"joinedOrgAt"`
 }
 
-// OrganizationMember names a member of an organization without loading the whole user account,
-// whose password hash and MFA secret have no business in a list that only names people.
-type OrganizationMember struct {
-	ID    uuid.UUID `db:"id"`
-	Email string    `db:"email"`
-	Name  string    `db:"name"`
-}
-
 type OrganizationWithBranding struct {
 	Organization
 	Branding *OrganizationBranding `db:"branding"`

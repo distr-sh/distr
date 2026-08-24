@@ -21,7 +21,8 @@
           portal domain to all of your customers.
         }
         A custom domain is required first: an identity provider is only offered on the domain it is attached to, and
-        nowhere else on Distr. Sign-in only works for accounts that belong to no other Distr organization.
+        nowhere else on Distr. A session it authenticates stays within this organization and cannot change the account's
+        sign-in methods.
       </p>
 
       @if (oidcProvidersEnabled() && !configurable()) {
@@ -47,40 +48,6 @@
           <fa-icon [icon]="faXmark" />
           <span class="sr-only">Dismiss</span>
         </button>
-      </div>
-    }
-
-    @if (oidcProvidersEnabled() && configurable() && membersWithOtherOrganizations().length > 0) {
-      <div
-        class="flex items-start p-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-600"
-        role="alert">
-        <fa-icon [icon]="faCircleExclamation" class="mt-0.5 shrink-0" />
-        <div class="ms-3 text-sm space-y-2">
-          <p>
-            <ng-container [ngPlural]="membersWithOtherOrganizations().length">
-              <ng-template ngPluralCase="=1">This member is</ng-template>
-              <ng-template ngPluralCase="other">These members are</ng-template>
-            </ng-container>
-            also
-            <ng-container [ngPlural]="membersWithOtherOrganizations().length">
-              <ng-template ngPluralCase="=1">a member</ng-template>
-              <ng-template ngPluralCase="other">members</ng-template>
-            </ng-container>
-            of another Distr organization. They keep their password login, but they cannot sign in through your identity
-            provider until they leave that other organization.
-          </p>
-          <ul class="list-disc list-inside">
-            @for (member of membersWithOtherOrganizations(); track member.id) {
-              <li>
-                @if (member.name) {
-                  {{ member.name }} &lt;{{ member.email }}&gt;
-                } @else {
-                  {{ member.email }}
-                }
-              </li>
-            }
-          </ul>
-        </div>
       </div>
     }
 

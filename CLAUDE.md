@@ -260,6 +260,7 @@ When adding new routes, ensure the OpenAPI spec remains valid. The `chiopenapi` 
 - Apply `middleware.BlockCrossOrganizationAction` to a route that would leave the current organization (switching context, creating an organization).
 - Apply `middleware.BlockCredentialChange` to a route that changes the account's sign-in methods (password, email address, MFA enrollment, connected identities). Without it the restriction is decoration: a session that can set a password or move the email address to another inbox produces an unrestricted session of the same account. An endpoint where only part of the body is a credential change rejects it in the handler with `middleware.CredentialChangeBlockedMessage`. Endpoints that verify the password themselves (disabling MFA, regenerating recovery codes) need neither, since the password is proof of ownership.
 - Filter every organization list through `handlers.visibleOrganizations`.
+- In the frontend, hide what such a session cannot do with `AuthService.isCustomOidcSession()` (the `canCreateOrganization` flag of the context response already accounts for it). The server enforces the rules; the frontend only avoids offering an action that would be rejected.
 
 The restriction belongs to the session, not to the account: the same user signing in with a password gets an unrestricted one. Never derive it from the identities of the user in the database.
 

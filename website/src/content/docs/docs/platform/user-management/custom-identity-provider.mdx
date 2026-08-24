@@ -100,30 +100,27 @@ The feature can only be granted while your own plan includes custom identity pro
 
 ## Who can sign in
 
-Distr matches an account either by an identity it has connected before or by the email address the provider asserts. Two rules make sure a provider never reaches an account outside the organization it belongs to:
+Distr matches an account either by an identity it has connected before or by the email address the provider asserts. Sign-in requires a membership in the organization the provider belongs to, so a provider can only ever authenticate its own members, and never a Distr staff account.
 
-- An account that is also a member of another Distr organization cannot sign in through a custom provider. Such members keep their password login. The settings page reports how many of your members this affects, so you can see it before you switch anyone over.
-- An account that has signed in through a custom provider cannot create another organization or be invited into one, and it cannot be invited into your organization if it already belongs to another one.
+A member of several organizations can use your provider, but the session it produces stays inside your organization. Such a session:
 
-<Aside type="caution" title="Two consequences worth planning for">
-  These rules are what stops a provider from reaching another organization's
-  data, so they apply to every custom provider, including a customer's own. Two
-  things follow that are easy to be surprised by:
-  <ul>
-    <li>
-      A person who is a customer user of two Distr vendors is a member of two
-      organizations and can therefore use single sign-on at neither of them.
-      They keep their password login at both.
-    </li>
-    <li>
-      As soon as any provider is configured in your organization, including one
-      configured by a single customer, you can no longer invite anyone who is
-      already a member of another Distr organization. Removing that member from
-      the other organization, or deleting the provider, makes the invitation
-      possible again.
-    </li>
-  </ul>
+- works only in the organization the provider belongs to, and cannot switch to another one or see which others the account is a member of,
+- cannot create an organization,
+- cannot change the account's email address, its multi-factor authentication, or the identity providers it is connected to.
+
+<Aside type="caution" title="Why a single sign-on session is confined">
+  A provider is controlled by the organization that registers it, not by the
+  people it authenticates: it can assert any email address, including one that
+  belongs to a member of a different organization. Confining the session is what
+  keeps such an assertion from reaching data outside your organization, so it
+  applies to every custom provider, including a customer's own.
+
+  The last rule follows from the others: a password or an email address the
+  session could set would let its owner sign in again without the provider, and
+  the new session would not be confined.
 </Aside>
+
+Members who work in another organization as well, or who want to change their sign-in methods, sign in with a password instead. The **Request password reset** button on the user settings page sends a link that also sets a first password for an account that has only ever used single sign-on.
 
 ## Provisioning accounts automatically
 

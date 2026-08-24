@@ -130,16 +130,6 @@ func createOrganization(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := checkOrganizationCreationAllowed(ctx, auth.CurrentUserID()); errors.Is(err, apierrors.ErrBadRequest) {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	} else if err != nil {
-		log.Error("failed to check organization creation", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
 	body, err := JsonBody[api.CreateUpdateOrganizationRequest](w, r)
 	if err != nil {
 		return

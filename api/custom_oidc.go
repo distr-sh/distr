@@ -36,9 +36,6 @@ type CustomOIDCConfiguration struct {
 
 type CustomOIDCConfigurationsResponse struct {
 	Configurations []CustomOIDCConfiguration `json:"configurations"`
-	// MembersWithOtherOrganizations are the members that a custom provider cannot authenticate, because
-	// account exclusivity refuses an account that belongs to another organization as well.
-	MembersWithOtherOrganizations []OrganizationMember `json:"membersWithOtherOrganizations"`
 }
 
 type CustomOIDCConfigurationRequest struct {

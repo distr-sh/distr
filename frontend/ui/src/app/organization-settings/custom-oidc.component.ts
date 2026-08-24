@@ -1,4 +1,4 @@
-import {NgPlural, NgPluralCase, NgTemplateOutlet} from '@angular/common';
+import {NgTemplateOutlet} from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -13,7 +13,7 @@ import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-int
 import {AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCircleExclamation, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {BehaviorSubject, combineLatest, distinct, firstValueFrom, from, map, mergeMap, of, switchMap} from 'rxjs';
 import {getRemoteEnvironment} from '../../env/remote';
 import {getFormDisplayedError} from '../../util/errors';
@@ -44,8 +44,6 @@ const BUSINESS_OIDC_BANNER_DISMISSED_KEY = 'customOidc.businessOidcBannerDismiss
     ReactiveFormsModule,
     AutotrimDirective,
     ClipComponent,
-    NgPlural,
-    NgPluralCase,
     NgTemplateOutlet,
     DomainFieldComponent,
     RegistryDomainFieldComponent,
@@ -57,7 +55,6 @@ export class CustomOidcComponent {
   protected readonly faPen = faPen;
   protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
-  protected readonly faCircleExclamation = faCircleExclamation;
 
   private readonly customOidcService = inject(CustomOidcService);
   private readonly customDomainsService = inject(CustomDomainsService);
@@ -126,15 +123,12 @@ export class CustomOidcComponent {
   private readonly response = toSignal(
     combineLatest([this.featureFlags.isCustomOidcProvidersEnabled$, this.refresh$]).pipe(
       switchMap(([enabled]) =>
-        enabled
-          ? this.customOidcService.list()
-          : of({configurations: [], membersWithOtherOrganizations: []} as CustomOidcConfigurationsResponse)
+        enabled ? this.customOidcService.list() : of({configurations: []} as CustomOidcConfigurationsResponse)
       )
     ),
-    {initialValue: {configurations: [], membersWithOtherOrganizations: []} as CustomOidcConfigurationsResponse}
+    {initialValue: {configurations: []} as CustomOidcConfigurationsResponse}
   );
   protected readonly configurations = computed(() => this.response().configurations);
-  protected readonly membersWithOtherOrganizations = computed(() => this.response().membersWithOtherOrganizations);
 
   private readonly domains = toSignal(
     combineLatest([

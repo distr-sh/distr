@@ -72,19 +72,11 @@ func getCustomOIDCConfigurationsHandler(w http.ResponseWriter, r *http.Request) 
 		respondCustomOIDCConfigurationError(w, r, err)
 		return
 	}
-	// Only reflects the caller's own scope (the vendor's team, or one customer): once a vendor's list
-	// spans every customer, a single flat exclusion warning could no longer point at one clear owner.
-	members, err := db.GetOrganizationMembersWithOtherOrganizations(ctx, orgID, customerOrgID)
-	if err != nil {
-		respondCustomOIDCConfigurationError(w, r, err)
-		return
-	}
 	RespondJSON(w, api.CustomOIDCConfigurationsResponse{
 		Configurations: mapping.List(configurations,
 			func(c types.CustomOIDCConfiguration) api.CustomOIDCConfiguration {
 				return mapping.CustomOIDCConfigurationToAPI(c, auth.CurrentOrg().Slug, domains[c.CustomDomainID].Domain)
 			}),
-		MembersWithOtherOrganizations: mapping.List(members, mapping.OrganizationMemberToAPI),
 	})
 }
 
