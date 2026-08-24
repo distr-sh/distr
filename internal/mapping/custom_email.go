@@ -5,7 +5,7 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 )
 
-func CustomEmailConfigurationToResponse(c types.CustomEmailConfiguration) api.CustomEmailConfiguration {
+func CustomEmailConfigurationToAPI(c types.CustomEmailConfiguration) api.CustomEmailConfiguration {
 	return api.CustomEmailConfiguration{
 		ID:              c.ID,
 		CreatedAt:       c.CreatedAt,

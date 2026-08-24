@@ -6,9 +6,10 @@ import (
 
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/handlerutil"
+	"github.com/distr-sh/distr/internal/types"
 )
 
-func getRedirectURL(r *http.Request, provider Provider) string {
+func getRedirectURL(r *http.Request, provider types.OIDCProvider) string {
 	return fmt.Sprintf("%v/api/v1/auth/oidc/%v/callback", handlerutil.GetRequestSchemeAndHost(r), provider)
 }
 

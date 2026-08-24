@@ -15,13 +15,13 @@ const (
 )
 
 type CustomDomain struct {
-	ID        uuid.UUID  `db:"id"          json:"id"`
-	CreatedAt time.Time  `db:"created_at"  json:"createdAt"`
-	Domain    string     `db:"domain"      json:"domain"`
-	Type      DomainType `db:"domain_type" json:"domainType"`
+	ID        uuid.UUID  `db:"id"`
+	CreatedAt time.Time  `db:"created_at"`
+	Domain    string     `db:"domain"`
+	Type      DomainType `db:"domain_type"`
 	// OrganizationID references the vendor organization that owns the domain.
-	OrganizationID uuid.UUID `db:"organization_id" json:"organizationId"`
+	OrganizationID uuid.UUID `db:"organization_id"`
 	// CustomerOrganizationID is set on a customer_portal domain that belongs to one customer. When it is
 	// nil, a customer_portal domain is the vendor's shared portal for all of its customers.
-	CustomerOrganizationID *uuid.UUID `db:"customer_organization_id" json:"customerOrganizationId,omitempty"`
+	CustomerOrganizationID *uuid.UUID `db:"customer_organization_id"`
 }
