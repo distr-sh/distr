@@ -1,5 +1,6 @@
 export interface DeploymentTargetLatestMetrics {
   deploymentTargetId: string;
+  createdAt: string;
   cpuCoresMillis: number;
   cpuUsage: number;
   memoryBytes: number;

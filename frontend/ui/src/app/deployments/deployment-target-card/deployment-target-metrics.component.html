@@ -12,7 +12,7 @@
   cdkOverlayOrigin
   #metricsOverlayOrigin="cdkOverlayOrigin">
   @if (anyDiskWarning()) {
-    <div class="text-red-400">
+    <div class="text-red-400" [class.grayscale]="outdated()">
       <fa-icon [icon]="faHardDrive" />
       <fa-icon class="-ms-2" [icon]="faExclamation" />
     </div>
@@ -21,6 +21,7 @@
   <div class="relative">
     <div
       class="gauge relative size-10 rounded-full bg-conic from-green-700 via-yellow-300 to-red-600"
+      [class.grayscale]="outdated()"
       [style.--deg]="getUsageDegrees(metrics().cpuUsage)"></div>
     <div class="absolute inset-1 rounded-full bg-white dark:bg-gray-800"></div>
     <div class="absolute inset-0 flex items-center justify-center text-xs font-thin text-black dark:text-white">
@@ -31,6 +32,7 @@
   <div class="relative">
     <div
       class="gauge relative size-10 rounded-full bg-conic from-green-700 via-yellow-300 to-red-600"
+      [class.grayscale]="outdated()"
       [style.--deg]="getUsageDegrees(metrics().memoryUsage)"></div>
     <div class="absolute inset-1 rounded-full bg-white dark:bg-gray-800"></div>
     <div class="absolute inset-0 flex items-center justify-center text-xs font-thin text-black dark:text-white">
@@ -50,6 +52,12 @@
   ]">
   <div class="mt-1 px-3 py-2 text-xs rounded-lg shadow-lg bg-gray-800 dark:bg-gray-700 text-white whitespace-nowrap">
     <div class="flex flex-col gap-2">
+      @if (outdated()) {
+        <div class="flex items-center gap-1.5 text-yellow-300">
+          <fa-icon [icon]="faTriangleExclamation" />
+          <span>Outdated metrics, last reported {{ metrics().createdAt | relativeDate }}</span>
+        </div>
+      }
       <div>
         <span class="inline-block size-2 me-1" [appStatusDot]="metrics().cpuUsage > 0.75 ? 'danger' : 'ok'"></span>
         <span class="font-semibold">CPU:</span>

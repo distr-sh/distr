@@ -8,6 +8,7 @@ import (
 
 type DeploymentTargetMetrics struct {
 	DeploymentTargetID  uuid.UUID                    `json:"deploymentTargetId"`
+	CreatedAt           time.Time                    `json:"createdAt"`
 	CPUCoresMillis      int64                        `json:"cpuCoresMillis"`
 	CPUUsage            float64                      `json:"cpuUsage"`
 	MemoryBytes         int64                        `json:"memoryBytes"`

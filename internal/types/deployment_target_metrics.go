@@ -1,11 +1,14 @@
 package types
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 )
 
 type DeploymentTargetMetrics struct {
 	ID                  uuid.UUID                    `db:"id"`
+	CreatedAt           time.Time                    `db:"created_at"`
 	DeploymentTargetID  uuid.UUID                    `db:"deployment_target_id"`
 	CPUCoresMillis      int64                        `db:"cpu_cores_millis"`
 	CPUUsage            float64                      `db:"cpu_usage"`

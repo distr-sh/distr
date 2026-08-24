@@ -69,7 +69,7 @@ require (
 	k8s.io/apimachinery v0.36.4
 	k8s.io/cli-runtime v0.36.4
 	k8s.io/client-go v0.36.4
-	k8s.io/kubectl v0.36.3
+	k8s.io/kubectl v0.36.4
 	k8s.io/metrics v0.36.4
 	oras.land/oras-go/v2 v2.6.2
 )
@@ -379,8 +379,8 @@ require (
 	gotest.tools/v3 v3.5.2 // indirect
 	k8s.io/apiextensions-apiserver v0.36.1 // indirect
 	k8s.io/apiserver v0.36.1 // indirect
-	k8s.io/component-base v0.36.3 // indirect
-	k8s.io/component-helpers v0.36.3 // indirect
+	k8s.io/component-base v0.36.4 // indirect
+	k8s.io/component-helpers v0.36.4 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260319004828-5883c5ee87b9 // indirect
 	k8s.io/utils v0.0.0-20260319190234-28399d86e0b5 // indirect
