@@ -7,16 +7,16 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 )
 
-func CustomDomainWithVerificationToAPI(
+func CustomDomainVerificationToAPI(
 	domain types.CustomDomain,
 	dnsVerified bool,
 	dnsDetail string,
 	dnsCheckedAt time.Time,
-) api.CustomDomainWithVerification {
-	return api.CustomDomainWithVerification{
-		CustomDomain: domain,
-		DNSVerified:  dnsVerified,
-		DNSDetail:    dnsDetail,
-		DNSCheckedAt: dnsCheckedAt,
+) api.CustomDomainVerification {
+	return api.CustomDomainVerification{
+		CustomDomainID: domain.ID,
+		DNSVerified:    dnsVerified,
+		DNSDetail:      dnsDetail,
+		DNSCheckedAt:   dnsCheckedAt,
 	}
 }
