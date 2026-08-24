@@ -180,9 +180,16 @@ hub:
     #   value: '...'
     # - name: METRICS_BEARER_TOKEN
     #   value: '...'
-    # Self-service custom domains are configured in the "caddy" section below, which also
-    # sets CUSTOM_DOMAIN_APP_CNAME_TARGET, CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET and
-    # INTERNAL_SERVER_ADDR for the hub.
+    # Self-service custom domains, terminated by the Caddy deployment in the "caddy" section
+    # below. CUSTOM_DOMAIN_APP_CNAME_TARGET is the DNS name customers point their app domain
+    # CNAME records at; it must resolve to that Caddy's LoadBalancer and is what enables the
+    # feature in the UI. CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET does the same for the optional
+    # dedicated registry domain and falls back to the app target when unset. The chart derives
+    # INTERNAL_SERVER_ADDR from caddy.askServerPort itself.
+    # - name: CUSTOM_DOMAIN_APP_CNAME_TARGET
+    #   value: cname.example.com
+    # - name: CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET
+    #   value: cname.example.com
   # -- Sources to populate the hub environment from, e.g. a ConfigMap or Secret reference.
   envFrom: []
   scratch:
@@ -395,15 +402,10 @@ cronJobs:
 # app. Disabled by default.
 caddy:
   # -- Deploy the Caddy reverse proxy that terminates TLS for customer-configured custom domains.
+  # The CNAME targets customers point their domains at are configured as
+  # CUSTOM_DOMAIN_APP_CNAME_TARGET and CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET in `hub.env`, and the
+  # former is required for the feature to be offered in the UI.
   enabled: false
-  # -- The DNS name customers point their app domain CNAME records at. It must resolve to the
-  # LoadBalancer of this Caddy. Required when caddy.enabled is true, and passed to the hub as
-  # CUSTOM_DOMAIN_APP_CNAME_TARGET, which is what enables custom domain self-service.
-  appCnameTarget: ''
-  # -- The DNS name customers point their (optional) dedicated registry domain CNAME records at,
-  # passed to the hub as CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET. Usually the same LoadBalancer.
-  # Falls back to appCnameTarget when unset.
-  registryCnameTarget: ''
   # -- Number of Caddy replicas. Anything above 1 requires certificate storage that all replicas
   # share, either a `ReadWriteMany` volume (see `caddy.persistence.accessModes`) or a `caddy.storage`
   # module: Caddy instances coordinate certificate issuance and solve each other's ACME challenges
@@ -463,7 +465,8 @@ caddy:
     accessModes:
       - ReadWriteOnce
   service:
-    # -- Type of the public Caddy Service. It must be reachable under the CNAME targets above.
+    # -- Type of the public Caddy Service. It must be reachable under the CNAME targets configured
+    # in `hub.env`.
     type: LoadBalancer
     # -- Annotations of the public Caddy Service. The chart stays generic: set cloud-specific
     # annotations here. The commented-out ones provision an AWS Network Load Balancer. The Service
