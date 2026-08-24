@@ -6,34 +6,36 @@ term: On-Premises
 alternateNames:
   - On-Prem
   - On-Premise
-shortDefinition: 'On-premises (or on-prem) describes software and IT infrastructure that organizations run inside environments they control. The organization owns the hardware, runs the software, sets the security policy, and owns the data.'
-lastUpdated: 2026-07-23
+shortDefinition: 'On-premises (or on-prem) describes software and IT infrastructure that organizations run inside environments they control. The organization controls the environment (traditionally their hardware; today often their cloud account), sets the security policy, and owns the data. Who operates the application can vary.'
+lastUpdated: 2026-08-20
 faq:
   - question: What does on-premise deployment mean?
-    answer: "It means software runs on infrastructure controlled by the customer. That can be physical data centers or their own cloud accounts. The customer manages infrastructure, security, and maintenance instead of relying on the vendor's SaaS platform."
+    answer: "It means software runs on infrastructure controlled by the customer. That can be physical data centers or their own cloud accounts. The customer controls the environment instead of relying on the vendor's multi-tenant SaaS platform. Application operation may still be customer-led, shared, or vendor-assisted."
   - question: Is on-premise the same as on-premises?
     answer: 'In IT contexts, yes. "On-premises" is the grammatically correct version ("premises" is a noun meaning a property). "On-premise" is the widely-used variant. Both refer to software deployed in customer-controlled infrastructure.'
   - question: What is on-prem short for?
     answer: 'On-prem is the abbreviated form of on-premises. Common in technical discussions, DevOps contexts, and B2B software conversations.'
   - question: What is the difference between on-premise and cloud?
-    answer: 'On-premise, the customer owns and manages the infrastructure. Cloud (SaaS), the vendor operates the software in their multi-tenant environment. The difference is control. On-premise customers control their deployment. Cloud customers access a shared service.'
+    answer: 'On-premise, the customer controls the infrastructure. Cloud (multi-tenant SaaS), the vendor operates the software in their environment. The difference is control. On-premise customers control their deployment environment. SaaS customers access a shared service.'
   - question: Why do companies still use on-premises software?
     answer: 'Data sovereignty (keeping data in specific locations), regulatory compliance (HIPAA, GDPR, PCI-DSS), security requirements (air-gapped networks), performance needs (low latency), deep customization, and occasionally long-term cost optimization.'
   - question: Is on-premises deployment dying?
     answer: 'No. It has changed, and remains essential. Regulated industries, government agencies, enterprises with data-sovereignty requirements, and organizations running air-gapped deployments all continue to demand on-prem. What is different is that modern on-prem often means Kubernetes running in customer cloud accounts rather than physical data centers.'
   - question: Can on-premises software work without internet?
-    answer: 'Yes, and that is a key advantage. On-premises software can usually run fully offline (air-gapped) after initial installation, which suits classified networks, remote locations, or critical infrastructure that must remain independent of internet connectivity.'
+    answer: 'It can be designed to. On-prem is not air-gapped by default. A true air-gapped deployment is a separate, stricter posture with offline packaging and no vendor access.'
   - question: What is the difference between on-premises and self-hosted?
-    answer: 'Often synonymous. "On-premises" emphasizes the location (the customer''s infrastructure). "Self-hosted" emphasizes the operation (the customer manages everything). Both stand in contrast to SaaS, where the vendor operates the software.'
+    answer: 'Related, not identical. On-prem usually means the customer controls the environment (middle of the spectrum). Self-hosted is the umbrella for anything in the customer trust boundary, including BYOC and air-gapped. See the self-hosted spectrum.'
   - question: How do software vendors distribute on-premises software?
     answer: 'Through software distribution platforms (Distr, for example) that distribute containers, automate artifact distribution, track versions across customer installations, enforce licenses, and optionally collect telemetry. This is what lets vendors support both SaaS and [self-hosted deployment](/glossary/self-hosted-software/) efficiently.'
 ---
 
 ## What does on-premises mean?
 
-**On-premises** (often shortened to **on-prem**) describes software and IT infrastructure that organizations run inside environments they control. The organization owns the hardware, runs the software, sets the security policy, and owns the data. The vendor does not.
+**On-premises** (often shortened to **on-prem**) describes software and IT infrastructure that organizations run inside environments they control. The organization controls the environment (traditionally their hardware; today often their cloud account), sets the security policy, and owns the data. The vendor does not own that environment. Application lifecycle may still be customer-led, shared, or vendor-assisted.
 
-On-premises today covers two setups. The traditional case is physical servers and infrastructure inside the organization's own data centers or facilities. The modern case is self-hosted infrastructure inside the organization's own cloud accounts: AWS VPCs, Azure subscriptions, GCP projects. Either way, the distinguishing factor is control. On-premises means the customer controls the deployment environment. [SaaS](/glossary/saas-definition/) means the vendor does.
+On-premises today covers two setups. The traditional case is physical servers and infrastructure inside the organization's own data centers or facilities. The modern case is infrastructure inside the organization's own cloud accounts: AWS VPCs, Azure subscriptions, GCP projects. Either way, the distinguishing factor is control. On-premises means the customer controls the deployment environment. [SaaS](/glossary/saas-definition/) means the vendor does.
+
+On the [self-hosted spectrum](/blog/self-hosted-spectrum/), on-prem / VPC / private cloud usually sit in the middle: customer-controlled environment, with application operation negotiated deal by deal.
 
 ---
 
@@ -65,20 +67,20 @@ Modern [software distribution platforms](/glossary/software-distribution-platfor
 
 Understanding the distinction is essential for both vendors and customers picking a deployment model.
 
-| **Aspect**                   | **On-Premises**                                   | **Cloud (SaaS)**                              |
-| ---------------------------- | ------------------------------------------------- | --------------------------------------------- |
-| **Infrastructure Ownership** | Customer owns/manages                             | Vendor manages multi-tenant environment       |
-| **Deployment Location**      | Customer's data center or cloud account           | Vendor's cloud platform                       |
-| **Control**                  | Full control over configuration and access        | Limited to vendor-provided options            |
-| **Data Location**            | Customer chooses exactly where data resides       | Data stored in vendor's chosen regions        |
-| **Updates**                  | Customer usually controls timing and rollout      | Vendor updates automatically                  |
-| **Internet Requirement**     | Can run fully offline (air-gapped)                | Requires internet connectivity                |
-| **Customization**            | Deep customization and integration possible       | Limited to platform capabilities              |
-| **Security**                 | Customer implements policies                      | Vendor handles security (with certifications) |
-| **Compliance**               | Easier for industry-specific regulations          | Depends on vendor compliance certifications   |
-| **Scalability**              | More manual, often requires planning and hardware | Automatic, on-demand resources                |
-| **Maintenance**              | Customer IT / Platform team responsibility        | Vendor handles all maintenance                |
-| **Vendor Access**            | No access without explicit customer permission    | Vendor has backend infrastructure access      |
+| **Aspect**                   | **On-Premises**                                    | **Cloud (SaaS)**                              |
+| ---------------------------- | -------------------------------------------------- | --------------------------------------------- |
+| **Infrastructure Ownership** | Customer owns/manages                              | Vendor manages multi-tenant environment       |
+| **Deployment Location**      | Customer's data center or cloud account            | Vendor's cloud platform                       |
+| **Control**                  | Full control over configuration and access         | Limited to vendor-provided options            |
+| **Data Location**            | Customer chooses exactly where data resides        | Data stored in vendor's chosen regions        |
+| **Updates**                  | Customer usually controls timing and rollout       | Vendor updates automatically                  |
+| **Internet Requirement**     | Can be designed for offline / air-gapped           | Requires internet connectivity                |
+| **Customization**            | Deep customization and integration possible        | Limited to platform capabilities              |
+| **Security**                 | Customer implements policies                       | Vendor handles security (with certifications) |
+| **Compliance**               | Easier for industry-specific regulations           | Depends on vendor compliance certifications   |
+| **Scalability**              | More manual, often requires planning and hardware  | Automatic, on-demand resources                |
+| **Maintenance**              | Usually customer; may be shared or vendor-assisted | Vendor handles all maintenance                |
+| **Vendor Access**            | No access without explicit customer permission     | Vendor has backend infrastructure access      |
 
 On-premises deployment is not legacy technology. It has changed. Enterprises in regulated industries (healthcare, finance, government), security-conscious organizations, and companies with data-sovereignty requirements continue to want on-prem options. What's changed is how vendors distribute them: modern distribution platforms make it possible to serve on-prem customers profitably instead of treating each deployment as a bespoke engagement.
 

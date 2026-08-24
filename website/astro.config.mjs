@@ -387,9 +387,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     // CRA hub: early slug renamed guide → introduction
     '/cyber-resilience-act/guide/': '/cyber-resilience-act/introduction/',
 
-    // Renamed blog posts
-    '/blog/self-managed-vs-cloud-vs-byoc/':
-      '/blog/self-hosted-vs-saas-vs-byoc/',
+    // Renamed / superseded blog posts
+    '/blog/self-managed-vs-cloud-vs-byoc/': '/blog/self-hosted-spectrum/',
+    '/blog/self-hosted-vs-saas-vs-byoc/': '/blog/self-hosted-spectrum/',
 
     // Glossary redirects
     '/glossary/self-managed-software/': '/glossary/self-hosted-software/',
