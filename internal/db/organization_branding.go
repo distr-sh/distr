@@ -87,14 +87,14 @@ type OrganizationLegacyBrandingDomains struct {
 	RegistryDomain *string   `db:"registry_domain"`
 }
 
-// GetOrganizationLegacyBrandingDomains returns the legacy branding domain columns of all organizations
-// that have at least one of them configured. The stored values are not guaranteed to be normalized
+// GetOrganizationLegacyBrandingDomains returns values that are not guaranteed to be normalized
 // (legacy app domains may contain a scheme), so callers must normalize them before comparing.
 func GetOrganizationLegacyBrandingDomains(ctx context.Context) ([]OrganizationLegacyBrandingDomains, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		`SELECT b.organization_id, b.app_domain, b.registry_domain FROM OrganizationBranding b
-			WHERE b.app_domain IS NOT NULL OR b.registry_domain IS NOT NULL`,
+			JOIN Organization o ON o.id = b.organization_id
+			WHERE o.deleted_at IS NULL AND (b.app_domain IS NOT NULL OR b.registry_domain IS NOT NULL)`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not query legacy branding domains: %w", err)
@@ -106,13 +106,15 @@ func GetOrganizationLegacyBrandingDomains(ctx context.Context) ([]OrganizationLe
 	return result, nil
 }
 
-// GetOrganizationBrandingByAppDomain resolves the branding for the organization whose branding app_domain matches
-// the given host. Both the stored app_domain and the given host must be normalized (lower-case, without scheme or
-// port). It returns nil when no organization matches the host.
+// GetOrganizationBrandingByAppDomain requires both the stored app_domain and the given host to be
+// normalized (lower-case, without scheme or port).
 func GetOrganizationBrandingByAppDomain(ctx context.Context, host string) (*types.OrganizationBranding, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		"SELECT "+organizationBrandingOutputExpr+" FROM OrganizationBranding b WHERE b.app_domain = @host",
+		"SELECT "+organizationBrandingOutputExpr+
+			` FROM OrganizationBranding b
+			JOIN Organization o ON o.id = b.organization_id
+			WHERE b.app_domain = @host AND o.deleted_at IS NULL`,
 		pgx.NamedArgs{"host": host},
 	)
 	if err != nil {

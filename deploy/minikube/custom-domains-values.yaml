@@ -1,10 +1,9 @@
-# Helm values for testing self-service custom domains on a local minikube cluster.
+# Helm values for trying self-service custom domains on a local minikube cluster. Everything runs
+# in-cluster, including PostgreSQL and RustFS, so this is a local test setup and not a starting
+# point for a production installation.
 #
-#   mise run docker-build:hub
-#   minikube image load ghcr.io/distr-sh/distr:snapshot
-#   helm dependency build deploy/charts/distr
-#   helm upgrade --install distr deploy/charts/distr -n distr --create-namespace \
-#     -f hack/minikube-custom-domains-values.yaml
+#   helm upgrade --install distr oci://ghcr.io/distr-sh/charts/distr -n distr --create-namespace \
+#     -f deploy/minikube/custom-domains-values.yaml
 #
 # The distr-caddy Service stays pending without "minikube tunnel" (needs root), so reach it
 # through its node ports instead, e.g. for a domain registered as "app.test.local":
@@ -12,21 +11,20 @@
 #   PORT=$(kubectl -n distr get svc distr-caddy -o jsonpath='{.spec.ports[?(@.name=="https")].nodePort}')
 #   curl -k --resolve app.test.local:$PORT:$(minikube ip) https://app.test.local:$PORT/
 #
-# Certificates are issued by Caddy's internal CA (caddy.issuer=internal) because a local
-# cluster has no publicly resolvable domain to pass an ACME challenge for. Everything else
-# (the ask endpoint, on-demand issuance, path routing) behaves exactly like in production,
-# so use curl -k / --cacert with the Caddy root from /data/caddy/pki.
+# The ask endpoint, on-demand issuance and path routing behave exactly like in production. Only the
+# certificates differ: they come from Caddy's internal CA, because a local cluster has no publicly
+# resolvable domain to pass an ACME challenge for. Use curl -k, or --cacert with the Caddy root
+# from /data/caddy/pki.
 
 replicaCount: 1
 
 image:
-  # Enterprise edition build: the community edition would force every organization to the
-  # community subscription type and strip the custom_domains feature on startup.
+  # Custom domains are not part of the community edition, which puts every organization on the
+  # community subscription type on startup and strips the feature.
   repository: ghcr.io/distr-sh/distr
-  tag: snapshot
-  pullPolicy: IfNotPresent
 
 hub:
+  # Helm replaces the whole list rather than merging it, so this repeats the defaults it needs.
   env:
     - name: DISTR_HOST
       value: http://distr.local
@@ -62,7 +60,6 @@ caddy:
   appCnameTarget: custom-app.distr.local
   registryCnameTarget: custom-registry.distr.local
   issuer: internal
-  acmeEmail: dev@distr.local
 
 postgresql:
   enabled: true

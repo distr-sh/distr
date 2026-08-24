@@ -213,7 +213,7 @@ func GetCustomOIDCConfigurationBySlug(
 		"SELECT"+customOIDCConfigurationOutputExpr+
 			`FROM CustomOIDCConfiguration c
 			JOIN Organization o ON o.id = c.organization_id
-			WHERE o.slug = @organizationSlug AND c.slug = @slug`,
+			WHERE o.slug = @organizationSlug AND c.slug = @slug AND o.deleted_at IS NULL`,
 		pgx.NamedArgs{"organizationSlug": organizationSlug, "slug": slug},
 	)
 	if err != nil {

@@ -9,12 +9,12 @@ import {
   TemplateRef,
   viewChild,
 } from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleExclamation, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {BehaviorSubject, combineLatest, firstValueFrom, from, map, of, switchMap} from 'rxjs';
+import {BehaviorSubject, combineLatest, distinct, firstValueFrom, from, map, mergeMap, of, switchMap} from 'rxjs';
 import {getRemoteEnvironment} from '../../env/remote';
 import {getFormDisplayedError} from '../../util/errors';
 import {slugMaxLength, slugPattern} from '../../util/slug';
@@ -28,7 +28,7 @@ import {FeatureFlagService} from '../services/feature-flag.service';
 import {OrganizationService} from '../services/organization.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
-import {CustomDomain, CustomDomainType} from '../types/custom-domain';
+import {CustomDomain, CustomDomainType, CustomDomainVerification} from '../types/custom-domain';
 import {CustomOidcConfiguration, CustomOidcConfigurationsResponse} from '../types/custom-oidc';
 import {DomainFieldComponent} from './domain-field.component';
 import {RegistryDomainFieldComponent} from './registry-domain-field.component';
@@ -136,7 +136,7 @@ export class CustomOidcComponent {
   protected readonly configurations = computed(() => this.response().configurations);
   protected readonly membersWithOtherOrganizations = computed(() => this.response().membersWithOtherOrganizations);
 
-  private readonly fetchedDomains = toSignal(
+  private readonly domains = toSignal(
     combineLatest([
       this.featureFlags.isCustomDomainsEnabled$,
       this.featureFlags.isCustomOidcProvidersEnabled$,
@@ -148,12 +148,6 @@ export class CustomOidcComponent {
     ),
     {initialValue: [] as CustomDomain[]}
   );
-  // Recheck results land here instead of triggering a full refetch, so clicking the reload icon on
-  // one domain updates only that domain's panel.
-  private readonly domainOverrides = signal<Record<string, CustomDomain>>({});
-  private readonly domains = computed(() =>
-    this.fetchedDomains().map((domain) => this.domainOverrides()[domain.id] ?? domain)
-  );
   protected readonly scopedDomains = computed(() =>
     this.domains().filter((d) => (d.customerOrganizationId ?? undefined) === this.customerOrganizationId())
   );
@@ -164,6 +158,48 @@ export class CustomOidcComponent {
   protected readonly customerPortalDomain = computed(() =>
     this.scopedDomains().find((domain) => domain.domainType === 'customer_portal')
   );
+
+  // Verifying a domain is a live DNS lookup that can take seconds, so it is requested per domain
+  // once the list has arrived instead of being part of it. The panels render immediately and fill
+  // their status in as the checks come back.
+  private readonly verifications = signal<Record<string, CustomDomainVerification>>({});
+  protected readonly checkingDomainIds = signal<ReadonlySet<string>>(new Set());
+
+  constructor() {
+    // Every domain is checked once, as soon as it appears in the list. distinct is what keeps the
+    // refetches caused by unrelated changes (saving an identity provider re-emits the same domains)
+    // from checking it over and over; a failed check is retried through the button, not silently.
+    toObservable(this.scopedDomains)
+      .pipe(
+        mergeMap((domains) => domains),
+        distinct((domain) => domain.id),
+        takeUntilDestroyed()
+      )
+      .subscribe((domain) => void this.verifyDomain(domain));
+  }
+
+  protected verificationFor(domain: CustomDomain | undefined): CustomDomainVerification | undefined {
+    return domain ? this.verifications()[domain.id] : undefined;
+  }
+
+  protected async verifyDomain(domain: CustomDomain) {
+    this.checkingDomainIds.update((ids) => new Set(ids).add(domain.id));
+    try {
+      const verification = await firstValueFrom(this.customDomainsService.verification(domain.id));
+      this.verifications.update((verifications) => ({...verifications, [domain.id]: verification}));
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    } finally {
+      this.checkingDomainIds.update((ids) => {
+        const next = new Set(ids);
+        next.delete(domain.id);
+        return next;
+      });
+    }
+  }
 
   protected readonly savingDomain = signal(false);
 
@@ -209,27 +245,6 @@ export class CustomOidcComponent {
       if (msg) {
         this.toast.error(msg);
       }
-    }
-  }
-
-  protected readonly checkingDomainIds = signal<ReadonlySet<string>>(new Set());
-
-  protected async recheckDomain(domain: CustomDomain) {
-    this.checkingDomainIds.update((ids) => new Set(ids).add(domain.id));
-    try {
-      const updated = await firstValueFrom(this.customDomainsService.verify(domain.id));
-      this.domainOverrides.update((overrides) => ({...overrides, [domain.id]: updated}));
-    } catch (e) {
-      const msg = getFormDisplayedError(e);
-      if (msg) {
-        this.toast.error(msg);
-      }
-    } finally {
-      this.checkingDomainIds.update((ids) => {
-        const next = new Set(ids);
-        next.delete(domain.id);
-        return next;
-      });
     }
   }
 

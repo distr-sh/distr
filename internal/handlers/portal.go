@@ -11,7 +11,6 @@ import (
 	"github.com/distr-sh/distr/internal/db"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/mapping"
-	"github.com/distr-sh/distr/internal/oidc"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/validation"
 	"github.com/getsentry/sentry-go"
@@ -132,11 +131,7 @@ func portalOIDCProviders(ctx context.Context, host portalHost) []api.PortalOIDCP
 		return nil
 	}
 	return mapping.List(configurations, func(c types.CustomOIDCConfiguration) api.PortalOIDCProvider {
-		return api.PortalOIDCProvider{
-			Name:        c.Name,
-			LoginPath:   oidc.CustomLoginPath(*organization.Slug, c.Slug),
-			SPInitiated: c.SPInitiated,
-		}
+		return mapping.CustomOIDCConfigurationToPortalOIDCProvider(c, *organization.Slug)
 	})
 }
 

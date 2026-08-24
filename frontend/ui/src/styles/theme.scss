@@ -115,6 +115,11 @@
     @apply bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-md border border-green-400 dark:bg-gray-700 dark:text-green-400;
   }
 
+  // the Flowbite badge shape, with the colors of the state it shows applied by the caller
+  .distr-status-badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-sm text-xs font-medium;
+  }
+
   .distr-table {
     @apply w-full text-sm text-left text-gray-500 dark:text-gray-400;
   }

@@ -5,7 +5,7 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 )
 
-func UserAccountOIDCIdentityToDTO(
+func UserAccountOIDCIdentityToAPI(
 	model types.UserAccountOIDCIdentityWithConfiguration,
 ) api.UserAccountOIDCIdentity {
 	return api.UserAccountOIDCIdentity{

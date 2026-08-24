@@ -6,7 +6,7 @@ import (
 	"github.com/distr-sh/distr/internal/types"
 )
 
-func CustomOIDCConfigurationToDTO(
+func CustomOIDCConfigurationToAPI(
 	model types.CustomOIDCConfiguration,
 	organizationSlug *string,
 	domain string,
@@ -30,4 +30,35 @@ func CustomOIDCConfigurationToDTO(
 		AllowedEmailDomains: model.AllowedEmailDomains,
 		CallbackURL:         oidc.CustomCallbackURL(domain, organizationSlug, model.Slug),
 	}
+}
+
+func CustomOIDCConfigurationToPortalOIDCProvider(
+	model types.CustomOIDCConfiguration,
+	organizationSlug string,
+) api.PortalOIDCProvider {
+	return api.PortalOIDCProvider{
+		Name:        model.Name,
+		LoginPath:   oidc.CustomLoginPath(organizationSlug, model.Slug),
+		SPInitiated: model.SPInitiated,
+	}
+}
+
+// CustomOIDCConfigurationToInternal applies the request onto an existing model, so that everything the
+// request does not carry -- the id, the organization and the stored client secret -- survives an update.
+func CustomOIDCConfigurationToInternal(
+	request api.CustomOIDCConfigurationRequest,
+	model *types.CustomOIDCConfiguration,
+) {
+	model.CustomDomainID = request.CustomDomainID
+	model.Name = request.Name
+	model.Slug = request.Slug
+	model.Enabled = request.Enabled
+	model.Issuer = request.Issuer
+	model.ClientID = request.ClientID
+	model.Scopes = request.Scopes
+	model.PKCEEnabled = request.PKCEEnabled
+	model.SPInitiated = request.SPInitiated
+	model.CreateUnknownUsers = request.CreateUnknownUsers
+	model.DefaultUserRole = request.DefaultUserRole
+	model.AllowedEmailDomains = request.AllowedEmailDomains
 }
