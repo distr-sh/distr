@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.2.1](https://github.com/distr-sh/distr/compare/3.2.0...3.2.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* improve DNS verification error messages ([#3058](https://github.com/distr-sh/distr/issues/3058)) ([680f71d](https://github.com/distr-sh/distr/commit/680f71d219d3177bb28d4ae534b72544efe3b37b))
+* registration mode regression ([#3064](https://github.com/distr-sh/distr/issues/3064)) ([de97e3d](https://github.com/distr-sh/distr/commit/de97e3dc3db9dc9b78c75a8b93f7fbb12de281a4))
+* remove custom OIDC single-org restriction and lock down org-scoped sessions (PAT, custom OIDC) instead ([#3057](https://github.com/distr-sh/distr/issues/3057)) ([9ccfdf9](https://github.com/distr-sh/distr/commit/9ccfdf94e5bfc859260249c706fa3e2ad821229b))
+
+
+### Other
+
+* **backend:** use `now()` instead of `current_timestamp` in all queries ([#3062](https://github.com/distr-sh/distr/issues/3062)) ([199c532](https://github.com/distr-sh/distr/commit/199c5327d5fb4e035aa4fed0f488c5b7d6258550))
+* **deploy/chart:** move cname target config to hub env ([#3061](https://github.com/distr-sh/distr/issues/3061)) ([5a5f380](https://github.com/distr-sh/distr/commit/5a5f380862f564791cf49e5d06e31cf2f15250fd))
+* improve oidc settings page, make slug unique on domain, not org ([#3059](https://github.com/distr-sh/distr/issues/3059)) ([d8cfa2b](https://github.com/distr-sh/distr/commit/d8cfa2b21da83719bca28c3f1a4c55e15ee31d1e))
+
 ## [3.2.0](https://github.com/distr-sh/distr/compare/3.1.0...3.2.0) (2026-08-24)
 
 
