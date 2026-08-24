@@ -235,10 +235,20 @@ func expectedCNAMETarget(domainType types.DomainType, appTarget, registryTarget 
 }
 
 // checkCNAME reports whether domain.Domain currently resolves, via CNAME, to its expected target.
+// The detail is shown to the user, so it explains a problem with the record itself; a lookup that
+// did not complete is something only the log can do anything with.
 func checkCNAME(ctx context.Context, domain types.CustomDomain) (verified bool, detail string) {
 	target := expectedCNAMETarget(domain.Type, env.CustomDomainAppCNAMETarget(), env.CustomDomainRegistryCNAMETarget())
 	if target == nil {
 		return false, "no CNAME target is configured on this instance"
 	}
-	return dns.VerifyCNAME(ctx, domain.Domain, *target)
+	err := dns.VerifyCNAME(ctx, domain.Domain, *target)
+	if err == nil {
+		return true, ""
+	} else if cnameErr, ok := errors.AsType[*dns.CNAMEError](err); ok {
+		return false, cnameErr.Error()
+	}
+	internalctx.GetLogger(ctx).Warn("custom domain CNAME lookup failed",
+		zap.Error(err), zap.String("domain", domain.Domain))
+	return false, "the DNS lookup could not be completed, please try again"
 }

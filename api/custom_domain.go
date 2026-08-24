@@ -80,6 +80,7 @@ func (r *CreateCustomDomainsRequest) Validate() error {
 type CustomDomainVerification struct {
 	CustomDomainID uuid.UUID `json:"customDomainId"`
 	DNSVerified    bool      `json:"dnsVerified"`
-	DNSDetail      string    `json:"dnsDetail"`
-	DNSCheckedAt   time.Time `json:"dnsCheckedAt"`
+	// DNSDetail explains why the check failed and is empty when it succeeded.
+	DNSDetail    string    `json:"dnsDetail"`
+	DNSCheckedAt time.Time `json:"dnsCheckedAt"`
 }
