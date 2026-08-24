@@ -8,9 +8,10 @@ import (
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/go-chi/jwtauth/v5"
 	"github.com/google/uuid"
-	"github.com/lestrrat-go/jwx/v3/jwt"
+	"github.com/lestrrat-go/jwx/v4/jwa"
+	"github.com/lestrrat-go/jwx/v4/jwk"
+	"github.com/lestrrat-go/jwx/v4/jwt"
 )
 
 const (
@@ -42,14 +43,42 @@ const (
 	TokenScopeInvite        TokenScope = "invite"
 )
 
-// JWTAuth is for generating/validating JWTs.
+// signingKey is the symmetric key for generating/validating JWTs.
 // Here we use symmetric encryption for now. This has the downside that the token can not be validated by clients,
 // which should be OK for now.
 //
 // TODO: Maybe migrate to asymmetric encryption at some point.
-var JWTAuth = sync.OnceValue(func() *jwtauth.JWTAuth {
-	return jwtauth.New("HS256", env.JWTSecret(), nil)
+var signingKey = sync.OnceValues(func() (jwk.SymmetricKey, error) {
+	return jwk.Import[jwk.SymmetricKey](env.JWTSecret())
 })
+
+func VerifyToken(token string) (jwt.Token, error) {
+	key, err := signingKey()
+	if err != nil {
+		return nil, err
+	}
+	return jwt.ParseString(token, jwt.WithKey(jwa.HS256(), key))
+}
+
+func encode(claims map[string]any) (jwt.Token, string, error) {
+	key, err := signingKey()
+	if err != nil {
+		return nil, "", err
+	}
+	builder := jwt.NewBuilder()
+	for k, v := range claims {
+		builder = builder.Claim(k, v)
+	}
+	token, err := builder.Build()
+	if err != nil {
+		return nil, "", err
+	}
+	signed, err := jwt.Sign(token, jwt.WithKey(jwa.HS256(), key))
+	if err != nil {
+		return nil, "", err
+	}
+	return token, string(signed), nil
+}
 
 func GenerateDefaultToken(user types.UserAccount, org types.OrganizationWithUserRole) (jwt.Token, string, error) {
 	return generateUserToken(user, &org, defaultTokenExpiration, nil)
@@ -115,7 +144,7 @@ func generateUserToken(
 		}
 	}
 	maps.Copy(claims, extraClaims)
-	return JWTAuth().Encode(claims)
+	return encode(claims)
 }
 
 func GenerateAgentTokenValidFor(targetID, orgID uuid.UUID, validFor time.Duration) (jwt.Token, string, error) {
@@ -128,5 +157,5 @@ func GenerateAgentTokenValidFor(targetID, orgID uuid.UUID, validFor time.Duratio
 		jwt.AudienceKey:   audienceAgentValue,
 		OrgIdKey:          orgID.String(),
 	}
-	return JWTAuth().Encode(claims)
+	return encode(claims)
 }

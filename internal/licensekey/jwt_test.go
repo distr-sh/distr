@@ -7,9 +7,9 @@ import (
 
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
-	"github.com/lestrrat-go/jwx/v3/jwa"
-	"github.com/lestrrat-go/jwx/v3/jwk"
-	"github.com/lestrrat-go/jwx/v3/jwt"
+	"github.com/lestrrat-go/jwx/v4/jwa"
+	"github.com/lestrrat-go/jwx/v4/jwk"
+	"github.com/lestrrat-go/jwx/v4/jwt"
 	. "github.com/onsi/gomega"
 )
 
@@ -22,7 +22,7 @@ MC4CAQAwBQYDK2VwBCIEID0kZeYRX/KmYFMZNfHly8KODNz8dDKQfPn33W0gkori
 
 func testKey(t *testing.T) jwk.Key {
 	t.Helper()
-	key, err := jwk.ParseKey([]byte(testPrivateKeyPEM), jwk.WithPEM(true))
+	key, err := jwk.ParseKey([]byte(testPrivateKeyPEM), jwk.WithX509(true))
 	NewWithT(t).Expect(err).ToNot(HaveOccurred())
 	return key
 }
@@ -58,8 +58,7 @@ func TestGenerateToken(t *testing.T) {
 	g.Expect(ok).To(BeTrue())
 	g.Expect(issuer).To(Equal("test-issuer"))
 
-	var plan string
-	err = parsed.Get("plan", &plan)
+	plan, err := jwt.Get[string](parsed, "plan")
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(plan).To(Equal("enterprise"))
 }
@@ -87,8 +86,8 @@ func TestGenerateToken_OrganizationClaim(t *testing.T) {
 	parsed, err := jwt.Parse([]byte(token), jwt.WithKey(jwa.EdDSA(), pubKey))
 	g.Expect(err).ToNot(HaveOccurred())
 
-	var org string
-	g.Expect(parsed.Get(OrganizationIDClaimName, &org)).To(Succeed())
+	org, err := jwt.Get[string](parsed, OrganizationIDClaimName)
+	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(org).To(Equal(orgID.String()))
 }
 
@@ -111,8 +110,8 @@ func TestGenerateToken_NoOrganizationClaimWhenUnset(t *testing.T) {
 	parsed, err := jwt.Parse([]byte(token), jwt.WithKey(jwa.EdDSA(), pubKey))
 	g.Expect(err).ToNot(HaveOccurred())
 
-	var org string
-	g.Expect(parsed.Get(OrganizationIDClaimName, &org)).ToNot(Succeed())
+	_, err = jwt.Get[string](parsed, OrganizationIDClaimName)
+	g.Expect(err).To(HaveOccurred())
 }
 
 func TestGenerateToken_ReservedClaimsStripped(t *testing.T) {
