@@ -232,7 +232,7 @@ func authLoginCustomOidcCallbackHandler(w http.ResponseWriter, r *http.Request) 
 				return err
 			}
 		}
-		tokenString, err := userauth.GenerateLoginTokenForOrganization(ctx, *user, configuration.OrganizationID)
+		tokenString, err := userauth.GenerateCustomOIDCLoginToken(ctx, *user, configuration)
 		if err != nil {
 			return fmt.Errorf("token creation failed: %w", err)
 		}

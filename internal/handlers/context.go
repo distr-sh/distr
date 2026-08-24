@@ -134,7 +134,6 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
 	RespondJSON(w, api.ContextResponse{
 		User: mapping.UserAccountToAPI(
 			auth.CurrentUser().AsUserAccountWithRole(*userRole, customerOrgID, auth.CurrentPartnerOrgID(), joinDate),
@@ -143,8 +142,8 @@ func getContextHandler(w http.ResponseWriter, r *http.Request) {
 		CustomerOrganization:  customerOrg,
 		PartnerOrganization:   partnerOrg,
 		SidebarLinks:          sidebarLinks,
-		AvailableContexts:     orgs,
+		AvailableContexts:     visibleOrganizations(auth, orgs),
 		RegistryHost:          registryHost,
-		CanCreateOrganization: !governedByCustomOIDC,
+		CanCreateOrganization: !governedByCustomOIDC && !auth.OrganizationScoped(),
 	})
 }

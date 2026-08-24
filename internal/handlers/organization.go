@@ -34,7 +34,7 @@ func OrganizationRouter(r chiopenapi.Router) {
 		With(option.Response(http.StatusOK, api.OrganizationResponse{}))
 
 	r.With(middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
-		r.Post("/", createOrganization).
+		r.With(middleware.BlockCrossOrganizationAction).Post("/", createOrganization).
 			With(option.Description("Create a new organization")).
 			With(option.Request(api.CreateUpdateOrganizationRequest{})).
 			With(option.Response(http.StatusOK, types.OrganizationWithUserRole{}))

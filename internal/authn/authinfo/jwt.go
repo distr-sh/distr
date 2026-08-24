@@ -55,6 +55,10 @@ func FromUserJWT(token jwt.Token) (*SimpleAuthInfo, error) {
 		result.tokenScope = authjwt.TokenScope(scope)
 	}
 
+	// Only the presence of the claim is evaluated, and deliberately without reading its value: a claim
+	// this server cannot make sense of must confine the session just the same.
+	result.organizationScoped = token.Has(authjwt.CustomOIDCConfigurationIDKey)
+
 	return &result, nil
 }
 

@@ -253,6 +253,16 @@ API routes are defined in `internal/routing/`. Routes are grouped by authenticat
 
 When adding new routes, ensure the OpenAPI spec remains valid. The `chiopenapi` router generates the spec from route definitions. Endpoints that have path parameters, query parameters, or a request body must declare them via `option.Request()` with a struct using the appropriate tags (`path:`, `query:`, `json:`). Endpoints without any parameters or body do not need `option.Request()`. Follow the existing pattern of composing path param structs with body request structs via embedding.
 
+### Organization-scoped Credentials
+
+`authinfo.AuthInfo.OrganizationScoped` reports a credential that is confined to the organization it was issued for and is not proof that the account's owner is present: an access token, which is created for one organization, or a session authenticated by an organization's own identity provider, carrying the `oidc` claim of `authjwt.GenerateCustomOIDCToken`. Such a provider is controlled by the organization rather than by the user and authenticates every address its configuration allows, so a session it produces must stay inside that organization even though the account may well be a member of others.
+
+- Apply `middleware.BlockCrossOrganizationAction` to a route that would leave the current organization (switching context, creating an organization).
+- Apply `middleware.BlockCredentialChange` to a route that changes the account's sign-in methods (password, email address, MFA enrollment, connected identities). Without it the restriction is decoration: a session that can set a password or move the email address to another inbox produces an unrestricted session of the same account. An endpoint where only part of the body is a credential change rejects it in the handler with `middleware.CredentialChangeBlockedMessage`. Endpoints that verify the password themselves (disabling MFA, regenerating recovery codes) need neither, since the password is proof of ownership.
+- Filter every organization list through `handlers.visibleOrganizations`.
+
+The restriction belongs to the session, not to the account: the same user signing in with a password gets an unrestricted one. Never derive it from the identities of the user in the database.
+
 ### Generated URLs
 
 Never hard-wire `https://` into a URL that is built for this instance. The scheme is `env.HostScheme()`, taken from `DISTR_HOST` (https unless it explicitly says http). It returns the `env.URLScheme` enum (`env.SchemeHTTP` / `env.SchemeHTTPS`), which is also what a parsed URL's scheme is compared against, rather than a bare `"https"` string:
