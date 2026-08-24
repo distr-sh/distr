@@ -283,8 +283,8 @@ func BlockCrossOrganizationAction(handler http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		if auth.Authentication.Require(r.Context()).OrganizationScoped() {
 			http.Error(w,
-				"this session is signed in through an organization's identity provider and can therefore only "+
-					"act within that organization",
+				"you are signed in with a credential that belongs to a single organization and can "+
+					"therefore only act within that organization",
 				http.StatusForbidden)
 			return
 		}
