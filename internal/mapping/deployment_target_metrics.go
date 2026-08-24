@@ -11,12 +11,14 @@ func DeploymentTargetMetricsRequestToInternal(
 	req api.AgentDeploymentTargetMetricsRequest,
 ) types.DeploymentTargetMetrics {
 	return types.DeploymentTargetMetrics{
-		DeploymentTargetID: deploymentTargetID,
-		CPUCoresMillis:     req.CPUCoresMillis,
-		CPUUsage:           req.CPUUsage,
-		MemoryBytes:        req.MemoryBytes,
-		MemoryUsage:        req.MemoryUsage,
-		DiskMetrics:        List(req.DiskMetrics, DeploymentTargetDiskMetricToInternal),
+		DeploymentTargetID:  deploymentTargetID,
+		CPUCoresMillis:      req.CPUCoresMillis,
+		CPUUsage:            req.CPUUsage,
+		MemoryBytes:         req.MemoryBytes,
+		MemoryUsage:         req.MemoryUsage,
+		AgentCPUUsageMillis: req.AgentCPUUsageMillis,
+		AgentMemoryBytes:    req.AgentMemoryBytes,
+		DiskMetrics:         List(req.DiskMetrics, DeploymentTargetDiskMetricToInternal),
 	}
 }
 
@@ -32,13 +34,15 @@ func DeploymentTargetDiskMetricToInternal(disk api.DeploymentTargetDiskMetric) t
 
 func DeploymentTargetMetricsToAPI(metrics types.DeploymentTargetMetrics) api.DeploymentTargetMetrics {
 	return api.DeploymentTargetMetrics{
-		DeploymentTargetID: metrics.DeploymentTargetID,
-		CreatedAt:          metrics.CreatedAt,
-		CPUCoresMillis:     metrics.CPUCoresMillis,
-		CPUUsage:           metrics.CPUUsage,
-		MemoryBytes:        metrics.MemoryBytes,
-		MemoryUsage:        metrics.MemoryUsage,
-		DiskMetrics:        List(metrics.DiskMetrics, DeploymentTargetDiskMetricToAPI),
+		DeploymentTargetID:  metrics.DeploymentTargetID,
+		CreatedAt:           metrics.CreatedAt,
+		CPUCoresMillis:      metrics.CPUCoresMillis,
+		CPUUsage:            metrics.CPUUsage,
+		MemoryBytes:         metrics.MemoryBytes,
+		MemoryUsage:         metrics.MemoryUsage,
+		AgentCPUUsageMillis: metrics.AgentCPUUsageMillis,
+		AgentMemoryBytes:    metrics.AgentMemoryBytes,
+		DiskMetrics:         List(metrics.DiskMetrics, DeploymentTargetDiskMetricToAPI),
 	}
 }
 

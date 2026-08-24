@@ -26,6 +26,13 @@ export class DeploymentTargetMetricsComponent {
   protected readonly anyDiskWarning = computed(() =>
     this.metrics().diskMetrics?.some((disk) => disk.bytesUsed / disk.bytesTotal > 0.75)
   );
+  protected readonly agentUsage = computed(() => {
+    const {agentCpuUsageMillis, agentMemoryBytes} = this.metrics();
+    if (agentCpuUsageMillis === undefined || agentMemoryBytes === undefined) {
+      return undefined;
+    }
+    return {cpuUsageMillis: agentCpuUsageMillis, memoryBytes: agentMemoryBytes};
+  });
   protected readonly outdated = computed(() => isStale(this.metrics(), metricsStaleThreshold));
 
   protected readonly faHardDrive = faHardDrive;

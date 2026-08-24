@@ -112,6 +112,7 @@ func main() {
 	var logsWatcher *logsWatcher
 	var logsGoroutine *util.ToggleableGoroutine
 	metricsGoroutine := util.NewToggleableGoroutine(watchMetrics)
+	deploymentMetricsGoroutine := util.NewToggleableGoroutine(watchDeploymentMetrics)
 
 	tick := time.Tick(agentenv.Interval)
 
@@ -150,6 +151,11 @@ func main() {
 		logsWatcher.SetLogsAfter(res.DeploymentLogsAfter)
 		logsGoroutine.GoOrCancel(ctx, res.DeploymentLogsEnabled)
 		metricsGoroutine.GoOrCancel(ctx, res.MetricsEnabled)
+		{
+			ns := res.Namespace
+			deploymentMetricsNamespace.Store(&ns)
+		}
+		deploymentMetricsGoroutine.GoOrCancel(ctx, res.MetricsEnabled)
 
 		existingDeployments, err := GetExistingDeployments(ctx, res.Namespace)
 		if err != nil {

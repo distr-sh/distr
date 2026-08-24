@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"sync"
 	"time"
@@ -32,6 +33,7 @@ type clientData struct {
 	resourceEndpoint             string
 	statusEndpoint               string
 	metricsEndpoint              string
+	deploymentMetricsEndpoint    string
 	deploymentLogsEndpoint       string
 	deploymentTargetLogsEndpoint string
 }
@@ -234,6 +236,31 @@ func (c *Client) ReportMetrics(ctx context.Context, metrics api.AgentDeploymentT
 	}
 }
 
+func (c *Client) ReportDeploymentMetrics(
+	ctx context.Context,
+	deploymentID uuid.UUID,
+	metrics api.AgentDeploymentResourceMetricsRequest,
+) error {
+	endpoint, err := url.JoinPath(c.deploymentMetricsEndpoint, deploymentID.String(), "metrics")
+	if err != nil {
+		return err
+	}
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(metrics); err != nil {
+		return err
+	} else if req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, &buf); err != nil {
+		return err
+	} else {
+		req.Header.Set("Content-Type", "application/json")
+		if resp, err := c.doAuthenticated(ctx, req, true); err != nil {
+			return err
+		} else {
+			drainAndClose(resp)
+			return nil
+		}
+	}
+}
+
 func (c *Client) doAuthenticated(ctx context.Context, r *http.Request, loggingEnabled bool) (*http.Response, error) {
 	if resp, err := c.doAuthenticatedNoRetry(ctx, r, loggingEnabled); resp == nil || resp.StatusCode != 401 {
 		return resp, err
@@ -299,6 +326,8 @@ func (c *Client) ReloadFromEnv() (changed bool, err error) {
 	} else if d.statusEndpoint, err = readEnvVar("DISTR_STATUS_ENDPOINT"); err != nil {
 		return changed, err
 	} else if d.metricsEndpoint, err = readEnvVar("DISTR_METRICS_ENDPOINT"); err != nil {
+		return changed, err
+	} else if d.deploymentMetricsEndpoint, err = readEnvVar("DISTR_DEPLOYMENT_METRICS_ENDPOINT"); err != nil {
 		return changed, err
 	} else if d.deploymentLogsEndpoint, err = readEnvVar("DISTR_LOGS_ENDPOINT"); err != nil {
 		return changed, err
