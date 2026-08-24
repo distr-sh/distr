@@ -259,12 +259,6 @@ Never hard-wire `https://` into a URL that is built for this instance. The schem
 
 A hard-wired https breaks every locally running instance, and for the OIDC callback URL it produces a URL that disagrees with the `redirect_uri` the login actually sends. In the frontend, use the protocol of the current page for the same reason.
 
-### Host-resolved Bootstrap Configuration
-
-`GET /api/public/v1/portal` (`internal/handlers/portal.go`) is the single endpoint the unauthenticated pages boot from: it resolves the request Host to an organization and returns its portal branding plus the login methods available on that host. Anything the login/register pages need before a user exists belongs here, not in a new endpoint — on the frontend it is owned by `PortalService`, which requests it once and replays it.
-
-`resolvePortalHost` distinguishes three host sources. Self-service `CustomDomain` rows and legacy `OrganizationBranding.app_domain` values are **not** interchangeable: both drop Distr's own branding, but the instance-scoped OIDC providers stay available on the legacy domains, since they predate self-service domains and their users would otherwise be locked out. The response is cached per Host (`Vary: Host`, `max-age=60`), so it must not carry anything user- or organization-specific.
-
 ## Comments
 
 Write as few comments as possible. A comment has to earn its place by saying something the code cannot, and every comment that does not is noise that goes stale and has to be reviewed forever.
@@ -294,6 +288,7 @@ Only write a test that could fail for a real reason. Every test is code that has
 ## General rules
 
 - Always ensure this file is up-to-date.
+- This file holds instructions and conventions for the agent, not technical documentation. Add a rule that changes what an agent does; never a description of how a feature, endpoint or subsystem works. That belongs in the code, in a doc comment, or on the website.
 - Always build, test, lint and format through mise tasks (`mise run build:hub:community`, `mise run test:go`, `mise run test:frontend`, `mise run lint`, `mise run format`). Never invoke `go build`, `go test`, `golangci-lint` or `pnpm` directly.
 - When you add, remove, or change an environment variable in `internal/env/env.go` (name, default, required/optional status, or accepted values), update the configuration reference page at `website/src/content/docs/docs/self-hosting/configuration.mdx` in the same change so it stays complete and accurate.
 - If a user requests you to do something differently, add the difference to a new rule / convention in this file
