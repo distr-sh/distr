@@ -18,8 +18,6 @@ _.source = ['hack/current-commit.sh']
 DISTR_ENV = '.env.development.local'
 VERSION = 'snapshot'
 CGO_ENABLED = "0"
-# encoding/json/v2 (required by jwx v4) is experimental in Go 1.26
-GOEXPERIMENT = "jsonv2"
 
 [vars]
 ldflags = "-s -w -X github.com/distr-sh/distr/internal/buildconfig.version=$VERSION -X github.com/distr-sh/distr/internal/buildconfig.commit=$COMMIT"
