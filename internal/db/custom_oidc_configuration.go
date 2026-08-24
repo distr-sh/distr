@@ -254,19 +254,3 @@ func DeleteCustomOIDCConfiguration(
 	}
 	return nil
 }
-
-func ExistsCustomOIDCConfigurationForOrganization(ctx context.Context, organizationID uuid.UUID) (bool, error) {
-	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(ctx,
-		`SELECT EXISTS (SELECT 1 FROM CustomOIDCConfiguration WHERE organization_id = @organizationId)`,
-		pgx.NamedArgs{"organizationId": organizationID},
-	)
-	if err != nil {
-		return false, fmt.Errorf("could not query CustomOIDCConfiguration: %w", err)
-	}
-	exists, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[bool])
-	if err != nil {
-		return false, fmt.Errorf("could not query CustomOIDCConfiguration: %w", err)
-	}
-	return exists, nil
-}

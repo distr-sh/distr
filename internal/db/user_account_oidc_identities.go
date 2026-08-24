@@ -88,45 +88,6 @@ func GetUserAccountOIDCIdentities(ctx context.Context, userID uuid.UUID) (
 	return result, nil
 }
 
-func ExistsUserAccountCustomOIDCIdentity(ctx context.Context, userID uuid.UUID) (bool, error) {
-	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(ctx,
-		`SELECT EXISTS (
-			SELECT 1 FROM UserAccountOIDCIdentity
-			WHERE user_account_id = @userId AND custom_oidc_configuration_id IS NOT NULL
-		)`,
-		pgx.NamedArgs{"userId": userID},
-	)
-	if err != nil {
-		return false, fmt.Errorf("could not query UserAccountOIDCIdentity: %w", err)
-	}
-	exists, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[bool])
-	if err != nil {
-		return false, fmt.Errorf("could not query UserAccountOIDCIdentity: %w", err)
-	}
-	return exists, nil
-}
-
-func ExistsUserAccountCustomOIDCIdentityExcept(ctx context.Context, userID, organizationID uuid.UUID) (bool, error) {
-	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(ctx,
-		`SELECT EXISTS (
-			SELECT 1 FROM UserAccountOIDCIdentity i
-			INNER JOIN CustomOIDCConfiguration c ON c.id = i.custom_oidc_configuration_id
-			WHERE i.user_account_id = @userId AND c.organization_id != @organizationId
-		)`,
-		pgx.NamedArgs{"userId": userID, "organizationId": organizationID},
-	)
-	if err != nil {
-		return false, fmt.Errorf("could not query UserAccountOIDCIdentity: %w", err)
-	}
-	exists, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[bool])
-	if err != nil {
-		return false, fmt.Errorf("could not query UserAccountOIDCIdentity: %w", err)
-	}
-	return exists, nil
-}
-
 func CountUserAccountOIDCIdentities(ctx context.Context, userID uuid.UUID) (int64, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,

@@ -14,6 +14,7 @@ type SimpleAuthInfo struct {
 	partnerOrganizationID  *uuid.UUID
 	emailVerified          bool
 	tokenScope             authjwt.TokenScope
+	organizationScoped     bool
 	userRole               *types.UserRole
 	isSuperAdmin           bool
 	rawToken               any
@@ -33,6 +34,9 @@ func (i *SimpleAuthInfo) CurrentUserEmailVerified() bool { return i.emailVerifie
 
 // TokenScope implements AuthInfo.
 func (i *SimpleAuthInfo) TokenScope() authjwt.TokenScope { return i.tokenScope }
+
+// OrganizationScoped implements AuthInfo.
+func (i *SimpleAuthInfo) OrganizationScoped() bool { return i.organizationScoped }
 
 // CurrentUserID implements AuthInfo.
 func (i *SimpleAuthInfo) CurrentUserID() uuid.UUID { return i.userID }

@@ -5,7 +5,6 @@ import (
 
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/distr-sh/distr/internal/validation"
-	"github.com/google/uuid"
 )
 
 type CreateUpdateOrganizationRequest struct {
@@ -23,13 +22,6 @@ type OrganizationResponse struct {
 	SubscriptionLimits               SubscriptionLimits `json:"subscriptionLimits"`
 	CurrentBillableUserAccountCount  int64              `json:"currentBillableUserAccountCount"`
 	CurrentCustomerOrganizationCount int64              `json:"currentCustomerOrganizationCount"`
-}
-
-// OrganizationMember names a member of an organization without exposing the whole user account.
-type OrganizationMember struct {
-	ID    uuid.UUID `json:"id"`
-	Email string    `json:"email"`
-	Name  string    `json:"name,omitempty"`
 }
 
 type OrganizationWebhookResponse struct {

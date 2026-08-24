@@ -114,12 +114,6 @@ export class LoginComponent implements OnInit {
             'Please contact your administrator.'
         );
         break;
-      case 'oidc-account-not-exclusive':
-        this.toast.error(
-          'Your account is a member of another Distr organization, so it cannot sign in through this ' +
-            'organization’s identity provider. Please contact your administrator.'
-        );
-        break;
     }
 
     const jwt = this.route.snapshot.queryParamMap.get('jwt');
