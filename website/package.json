@@ -15,7 +15,10 @@
     "astro": "astro",
     "check": "astro check",
     "screenshots:homepage": "node scripts/capture-homepage-screenshots.mjs",
+    "images:unused": "node scripts/find-unused-images.mjs",
+    "images:prune": "node scripts/find-unused-images.mjs --delete",
     "lint": "prettier --check .",
+    "preformat": "pnpm images:prune",
     "format": "prettier --write --list-different ."
   },
   "dependencies": {
