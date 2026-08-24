@@ -286,7 +286,14 @@ func resolveCustomOIDCConfigurationForHost(
 		return customOIDCLogin{}, false
 	}
 
-	configuration, err := db.GetCustomOIDCConfigurationBySlug(ctx, organizationSlug, providerSlug)
+	if host.customDomainRow == nil {
+		log.Info("rejecting custom OIDC login on a host without a custom domain", zap.String("host", r.Host))
+		http.Redirect(w, r, redirectToLoginOIDCUnavailable, http.StatusFound)
+		return customOIDCLogin{}, false
+	}
+
+	configuration, err := db.GetCustomOIDCConfigurationForHost(
+		ctx, host.customDomainRow.ID, organizationSlug, providerSlug)
 	if errors.Is(err, apierrors.ErrNotFound) {
 		http.Redirect(w, r, redirectToLoginOIDCUnavailable, http.StatusFound)
 		return customOIDCLogin{}, false
@@ -297,10 +304,9 @@ func resolveCustomOIDCConfigurationForHost(
 		return customOIDCLogin{}, false
 	}
 
-	if !configuration.Enabled ||
-		host.customDomainRow == nil || host.customDomainRow.ID != configuration.CustomDomainID {
-		log.Info("rejecting custom OIDC login on foreign host",
-			zap.Any("customOidcConfigurationId", configuration.ID), zap.String("host", r.Host))
+	if !configuration.Enabled {
+		log.Info("rejecting custom OIDC login for a disabled provider",
+			zap.Any("customOidcConfigurationId", configuration.ID))
 		http.Redirect(w, r, redirectToLoginOIDCUnavailable, http.StatusFound)
 		return customOIDCLogin{}, false
 	}

@@ -204,8 +204,12 @@ func GetCustomOIDCConfigurationOfOrganization(
 	return &result, nil
 }
 
-func GetCustomOIDCConfigurationBySlug(
+// GetCustomOIDCConfigurationForHost looks a provider up by the domain of the host the login arrived on,
+// because the slug is only unique per domain. The organization slug is matched as well, even though the
+// domain already determines the organization, so that the slug in the URL cannot be an arbitrary one.
+func GetCustomOIDCConfigurationForHost(
 	ctx context.Context,
+	customDomainID uuid.UUID,
 	organizationSlug, slug string,
 ) (*types.CustomOIDCConfiguration, error) {
 	db := internalctx.GetDb(ctx)
@@ -213,8 +217,9 @@ func GetCustomOIDCConfigurationBySlug(
 		"SELECT"+customOIDCConfigurationOutputExpr+
 			`FROM CustomOIDCConfiguration c
 			JOIN Organization o ON o.id = c.organization_id
-			WHERE o.slug = @organizationSlug AND c.slug = @slug AND o.deleted_at IS NULL`,
-		pgx.NamedArgs{"organizationSlug": organizationSlug, "slug": slug},
+			WHERE c.custom_domain_id = @customDomainId AND c.slug = @slug
+				AND o.slug = @organizationSlug AND o.deleted_at IS NULL`,
+		pgx.NamedArgs{"customDomainId": customDomainID, "organizationSlug": organizationSlug, "slug": slug},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not query CustomOIDCConfiguration: %w", err)
