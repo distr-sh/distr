@@ -7,7 +7,7 @@ import {PortalService} from './portal.service';
 const portalResponse: Portal = {
   customDomain: false,
   loginConfig: {
-    registrationEnabled: true,
+    registration: 'enabled',
     oidcGithubEnabled: true,
     oidcGoogleEnabled: true,
     oidcMicrosoftEnabled: false,
@@ -37,7 +37,7 @@ describe('PortalService', () => {
     const service = TestBed.inject(PortalService);
     httpTesting.expectOne('/api/public/v1/portal').flush(null, {status: 204, statusText: 'No Content'});
 
-    expect(service.loginConfig().registrationEnabled).toBe(false);
+    expect(service.loginConfig().registration).toBe('hidden');
     expect(service.loginConfig().oidcGithubEnabled).toBe(false);
     expect(service.loginConfig().oidcProviders).toEqual([]);
   });

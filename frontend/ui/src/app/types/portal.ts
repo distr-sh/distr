@@ -4,8 +4,10 @@ export interface PortalOIDCProvider {
   spInitiated: boolean;
 }
 
+export type RegistrationMode = 'enabled' | 'hidden' | 'disabled';
+
 export interface PortalLoginConfig {
-  registrationEnabled: boolean;
+  registration: RegistrationMode;
   turnstileSiteKey?: string;
   oidcGithubEnabled: boolean;
   oidcGoogleEnabled: boolean;

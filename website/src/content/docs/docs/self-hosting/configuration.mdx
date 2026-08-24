@@ -28,10 +28,21 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
 | `JWT_SECRET`                       | yes      | —         | Base64-encoded secret used to sign JWTs. Generate with `openssl rand -base64 32`.               |
 | `DISTR_HOST`                       | yes      | —         | Base URL of your Distr instance. Its scheme is used for every link, callback URL and email.     |
 | `DISTR_ENV`                        | no       | —         | Path to a dotenv file to load on startup (a matching `.secret` file is also loaded if present). |
-| `REGISTRATION`                     | no       | `enabled` | Sign-up mode: `enabled`, `hidden` or `disabled`.                                                |
+| `REGISTRATION`                     | no       | `enabled` | Sign-up mode, see below: `enabled`, `hidden` or `disabled`.                                     |
 | `USER_EMAIL_VERIFICATION_REQUIRED` | no       | `true`    | Whether new users must verify their email address before signing in.                            |
 | `SERVER_SHUTDOWN_DELAY_DURATION`   | no       | —         | Delay between receiving a shutdown signal and stopping the server (useful for rolling deploys). |
 | `ENABLE_QUERY_LOGGING`             | no       | `false`   | Logs all database queries. Intended for debugging only.                                         |
+
+### Sign-up modes
+
+`REGISTRATION` accepts three values:
+
+- `enabled`: the login page links to the registration page and anyone can sign up.
+- `hidden`: the link is removed from the login page, but the registration page stays reachable at `/register` and
+  sign-ups still succeed. Use it when you want to hand out the registration URL yourself instead of offering it to
+  every visitor.
+- `disabled`: sign-up is rejected, both on `/register` and for OIDC logins with an unknown email address. Existing
+  users can still sign in, and new users can still be added through an invitation.
 
 ## Tokens & Sessions
 
