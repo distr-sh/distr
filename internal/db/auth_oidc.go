@@ -76,7 +76,7 @@ func CleanupOIDCStates(ctx context.Context) (int64, error) {
 	db := internalctx.GetDb(ctx)
 	cmd, err := db.Exec(
 		ctx,
-		`DELETE FROM OIDCState WHERE current_timestamp - created_at > @maxAge`,
+		`DELETE FROM OIDCState WHERE now() - created_at > @maxAge`,
 		pgx.NamedArgs{"maxAge": OIDCStateMaxAge},
 	)
 	if err != nil {

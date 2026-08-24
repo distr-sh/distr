@@ -79,12 +79,12 @@ func SaveTutorialProgress(
 		VALUES (
 			@userId,
 			@tutorial,
-			jsonb_build_array(@event::jsonb), CASE WHEN @markCompleted THEN current_timestamp ELSE NULL END,
+			jsonb_build_array(@event::jsonb), CASE WHEN @markCompleted THEN now() ELSE NULL END,
 		    @orgId
 		)
 		ON CONFLICT (useraccount_id, tutorial, organization_id) DO UPDATE
 			SET events = uat.events::jsonb || @event::jsonb,
-			    completed_at = CASE WHEN @markCompleted THEN current_timestamp ELSE uat.completed_at END
+			    completed_at = CASE WHEN @markCompleted THEN now() ELSE uat.completed_at END
 		RETURNING `+tutorialProgressOutExpr,
 		pgx.NamedArgs{
 			"userId":        userID,
