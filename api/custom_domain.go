@@ -61,12 +61,13 @@ func (r *CreateCustomDomainsRequest) Validate() error {
 	return nil
 }
 
-// CustomDomainWithVerification adds the result of a live CNAME check to a CustomDomain. It is
-// computed fresh on every request and never persisted, so DNSCheckedAt is the time of this response,
-// not of some earlier check.
-type CustomDomainWithVerification struct {
-	types.CustomDomain
-	DNSVerified  bool      `json:"dnsVerified"`
-	DNSDetail    string    `json:"dnsDetail"`
-	DNSCheckedAt time.Time `json:"dnsCheckedAt"`
+// CustomDomainVerification is the result of a live CNAME check for one domain. It is deliberately
+// not part of the domain itself: the check is a DNS lookup that may take seconds, so it is requested
+// separately from the listing it belongs to. Nothing is persisted, so DNSCheckedAt is the time of
+// this response, not of some earlier check.
+type CustomDomainVerification struct {
+	CustomDomainID uuid.UUID `json:"customDomainId"`
+	DNSVerified    bool      `json:"dnsVerified"`
+	DNSDetail      string    `json:"dnsDetail"`
+	DNSCheckedAt   time.Time `json:"dnsCheckedAt"`
 }

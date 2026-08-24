@@ -1,6 +1,6 @@
 import {ChangeDetectionStrategy, Component, input, output, signal} from '@angular/core';
 import {FormsModule} from '@angular/forms';
-import {CustomDomain} from '../types/custom-domain';
+import {CustomDomain, CustomDomainVerification} from '../types/custom-domain';
 import {DomainFieldComponent} from './domain-field.component';
 
 // The registry domain is optional and starts hidden behind a checkbox, since most organizations serve
@@ -14,6 +14,7 @@ import {DomainFieldComponent} from './domain-field.component';
 })
 export class RegistryDomainFieldComponent {
   public readonly domain = input<CustomDomain>();
+  public readonly verification = input<CustomDomainVerification>();
   public readonly cnameTarget = input<string>();
   public readonly saving = input(false);
   public readonly verifying = input(false);

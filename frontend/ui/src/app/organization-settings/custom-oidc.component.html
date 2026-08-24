@@ -109,12 +109,13 @@
             invalidHint="Must be a valid hostname without scheme, e.g. deploy.your-company.com"
             removeAriaLabel="Remove app domain"
             [domain]="appDomain()"
+            [verification]="verificationFor(appDomain())"
             [cnameTarget]="appCnameTarget()"
             [saving]="savingDomain()"
             [verifying]="checkingDomainIds().has(appDomain()?.id ?? '')"
             (save)="saveDomain($event, 'app')"
             (remove)="removeDomain(appDomain())"
-            (recheck)="recheckDomain(appDomain()!)">
+            (recheck)="verifyDomain(appDomain()!)">
             The domain for the Distr web UI and API.
           </app-domain-field>
         }
@@ -143,12 +144,13 @@
           invalidHint="Must be a valid hostname without scheme, e.g. <slug>-portal.yourcompany.com"
           removeAriaLabel="Remove portal domain"
           [domain]="customerPortalDomain()"
+          [verification]="verificationFor(customerPortalDomain())"
           [cnameTarget]="appCnameTarget()"
           [saving]="savingDomain()"
           [verifying]="checkingDomainIds().has(customerPortalDomain()?.id ?? '')"
           (save)="saveDomain($event, 'customer_portal')"
           (remove)="removeDomain(customerPortalDomain())"
-          (recheck)="recheckDomain(customerPortalDomain()!)">
+          (recheck)="verifyDomain(customerPortalDomain()!)">
           @if (customerScoped()) {
             The domain this customer's users sign in on. Links in invitations, password resets and notification mails
             use it.
@@ -170,12 +172,13 @@
         <h3 class="text-lg font-bold dark:text-white">Registry</h3>
         <app-registry-domain-field
           [domain]="registryDomain()"
+          [verification]="verificationFor(registryDomain())"
           [cnameTarget]="registryCnameTarget()"
           [saving]="savingDomain()"
           [verifying]="checkingDomainIds().has(registryDomain()?.id ?? '')"
           (save)="saveDomain($event, 'registry')"
           (remove)="removeDomain(registryDomain())"
-          (recheck)="recheckDomain(registryDomain()!)" />
+          (recheck)="verifyDomain(registryDomain()!)" />
       </section>
     }
   </div>

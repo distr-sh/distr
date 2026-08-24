@@ -7,8 +7,13 @@ export interface CustomDomain {
   domainType: CustomDomainType;
   organizationId: string;
   customerOrganizationId?: string;
-  // Computed live on every response, never persisted, so dnsCheckedAt is when the server last
-  // answered this request, not necessarily a check the admin explicitly triggered.
+}
+
+// The result of a live DNS lookup, requested per domain instead of being part of the domain itself,
+// so a slow resolver never delays the domain list. Nothing is persisted, so dnsCheckedAt is when the
+// server answered the verification request.
+export interface CustomDomainVerification {
+  customDomainId: string;
   dnsVerified: boolean;
   dnsDetail: string;
   dnsCheckedAt: string;

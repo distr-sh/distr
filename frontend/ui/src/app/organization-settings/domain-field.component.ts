@@ -5,7 +5,7 @@ import {faCircleCheck, faRotate, faTrash, faTriangleExclamation} from '@fortawes
 import dayjs from 'dayjs';
 import {HOSTNAME_MAX_LENGTH, HOSTNAME_REGEX} from '../../util/validation';
 import {AutotrimDirective} from '../directives/autotrim.directive';
-import {CustomDomain} from '../types/custom-domain';
+import {CustomDomain, CustomDomainVerification} from '../types/custom-domain';
 
 // A single CNAME-configurable domain field: shows the existing domain with a remove button once
 // configured, or a validated hostname input beforehand. Purely presentational — the domain list and
@@ -30,6 +30,8 @@ export class DomainFieldComponent {
   public readonly invalidHint = input.required<string>();
   public readonly removeAriaLabel = input.required<string>();
   public readonly domain = input<CustomDomain>();
+  // Arrives after the domain: the parent requests it separately, since it is a live DNS lookup.
+  public readonly verification = input<CustomDomainVerification>();
   public readonly cnameTarget = input<string>();
   public readonly saving = input(false);
   public readonly verifying = input(false);
