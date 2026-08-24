@@ -71,7 +71,7 @@ func UpdateCustomOIDCConfiguration(ctx context.Context, c *types.CustomOIDCConfi
 	args["id"] = c.ID
 	rows, err := db.Query(ctx,
 		`UPDATE CustomOIDCConfiguration AS c SET
-			updated_at = current_timestamp,
+			updated_at = now(),
 			updated_by_user_account_id = @updatedByUserAccountId,
 			custom_domain_id = @customDomainId,
 			name = @name,

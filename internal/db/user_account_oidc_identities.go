@@ -148,7 +148,7 @@ func CreateUserAccountOIDCIdentity(ctx context.Context, identity *types.UserAcco
 	rows, err := db.Query(ctx,
 		`INSERT INTO UserAccountOIDCIdentity AS i
 			(user_account_id, provider, issuer, subject, email, last_login_at, custom_oidc_configuration_id)
-		VALUES (@userId, @provider, @issuer, @subject, @email, current_timestamp, @customOidcConfigurationId)
+		VALUES (@userId, @provider, @issuer, @subject, @email, now(), @customOidcConfigurationId)
 		RETURNING `+userAccountOIDCIdentityOutputExpr,
 		pgx.NamedArgs{
 			"userId":                    identity.UserAccountID,
@@ -180,7 +180,7 @@ func UpdateUserAccountOIDCIdentityOnLogin(ctx context.Context, id uuid.UUID, ema
 	db := internalctx.GetDb(ctx)
 	cmd, err := db.Exec(ctx,
 		`UPDATE UserAccountOIDCIdentity
-		SET last_login_at = current_timestamp, email = @email
+		SET last_login_at = now(), email = @email
 		WHERE id = @id`,
 		pgx.NamedArgs{"id": id, "email": email},
 	)
