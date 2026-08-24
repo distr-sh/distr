@@ -60,6 +60,11 @@ give all of them the same storage in one of two ways:
 
 The chart refuses to render a `caddy.replicaCount` above 1 without either of them.
 
+To try custom domains on a local cluster, where no certificate authority can validate an ACME
+challenge for a domain that does not resolve publicly, see
+[`github.com/distr-sh/distr/deploy/minikube`](https://github.com/distr-sh/distr/blob/main/deploy/minikube/custom-domains-values.yaml).
+It runs everything in-cluster, including PostgreSQL and RustFS, and is meant for local testing only.
+
 ## Log processing (Loki)
 
 The chart includes a bundled [Grafana Loki](https://grafana.com/oss/loki/) instance (enabled by default) that stores deployment and deployment target logs with a 30-day retention.
