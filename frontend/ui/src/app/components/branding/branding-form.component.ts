@@ -61,7 +61,7 @@ export class BrandingFormComponent implements OnInit {
   );
   protected readonly customDomainsData = computed(() => [
     {
-      label: 'App domain',
+      label: 'Vendor Portal domain',
       value: this.appDomain(),
       description: 'Where users and customers access the Distr web application.',
     },

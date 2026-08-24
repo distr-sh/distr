@@ -17,9 +17,9 @@
           Distr password. A provider is offered on the customer's own portal domain and nowhere else.
         } @else {
           Let your team and your customers sign in with your own identity provider via OIDC (OpenID Connect) instead of
-          a Distr password. Every domain carries its own providers: the ones on your app domain apply to your team, the
-          ones on your customer portal domain to all of your customers. Individual customers can also have providers of
-          their own.
+          a Distr password. Every domain carries its own providers: the ones on your
+          <span class="lowercase">{{ appDomainLabel() }}</span> apply to your team, the ones on your customer portal
+          domain to all of your customers. Customers can also have providers of their own.
         }
         A custom domain is required first: an identity provider is only offered on the domain it is attached to, and
         nowhere else on Distr. A session it authenticates stays within this organization; it cannot change the account's
@@ -76,7 +76,7 @@
             [label]="appDomainLabel()"
             placeholder="deploy.your-company.com"
             invalidHint="Must be a valid hostname without scheme, e.g. deploy.your-company.com"
-            removeAriaLabel="Remove app domain"
+            [removeAriaLabel]="'Remove ' + appDomainLabel()"
             [domain]="appDomain()"
             [verification]="verificationFor(appDomain())"
             [cnameTarget]="appCnameTarget()"
@@ -100,16 +100,15 @@
       @if (!customerScoped()) {
         <h3 class="text-lg font-bold dark:text-white">Customer Portal</h3>
         <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-          One domain default for all of your customers. A provider is only ever offered on the domain it is attached to,
-          so the customer portal domain below has to exist before you can configure one here; once it does, the
-          providers you add apply to every customer, including ones you create later.
+          One domain that all of your customers sign in on by default. A provider is only ever offered on the domain it
+          is attached to, so the customer portal domain below has to exist before you can configure one here; once it
+          does, the providers you add apply to every customer, including ones you create later.
         </p>
         <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-          A single customer can override all of this with a domain and providers of its own, configured on that
-          customer's own settings page, which you reach from the
-          <a routerLink="/customers" class="font-semibold underline">customer list</a> once you have granted it the
-          Identity Provider feature. Its own domain then takes precedence: every link Distr sends its users points
-          there, and only the providers configured for it are offered.
+          Customers can override all of this with their own domain and providers, configured on their own settings page,
+          which you reach from the <a routerLink="/customers" class="font-semibold underline">customer list</a> once you
+          have granted them the Identity Provider feature. Their own domain then takes precedence: every link Distr
+          sends their users points there, and only the providers configured for them are offered.
         </p>
       }
 
@@ -134,7 +133,8 @@
             use it.
           } @else {
             The domain all of your customers sign in on. Links in invitations, password resets and notification mails
-            use it instead of your app domain.
+            use it instead of your <span class="lowercase">{{ appDomainLabel() }}</span
+            >.
           }
         </app-domain-field>
       }

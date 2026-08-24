@@ -85,10 +85,10 @@ When your portal is accessed via your custom domain, all Distr-specific branding
 Organization admins can set up custom domains self-service under **Settings → Organization → Custom Domains & Identity Provider**, in the Vendor Portal, Customer Portal and Registry sections:
 
 1. **Vendor Portal domain** (e.g. `app.your-company.com`): Serves the web UI and API for your own team (and your partners, if partner management is enabled). It also serves the artifact registry under the `/v2/` path, so a single domain is usually all you need.
-2. **Customer Portal domain** (optional, e.g. `portal.your-company.com`): Serves the Customer Portal for all of your customers. When it is set, invitation links, password resets and notification mails sent to customer users point at it instead of your app domain; without it, they use your app domain like everyone else.
+2. **Customer Portal domain** (optional, e.g. `portal.your-company.com`): Serves the Customer Portal for all of your customers. When it is set, invitation links, password resets and notification mails sent to customer users point at it instead of your Vendor Portal domain; without it, they use your Vendor Portal domain like everyone else.
 3. **Registry domain** (optional, e.g. `registry.your-company.com`): Only needed if you want a separate hostname for the artifact registry.
 
-The two optional domains start collapsed behind a checkbox, so the page only asks for the one domain most organizations need. Tick it to enter one.
+Each of the two optional domains starts collapsed behind its own checkbox, so the page only asks for the one domain most organizations need. Tick a checkbox to enter that domain.
 
 Enter the domain as a bare hostname (no `https://`) and add it.
 Then create a CNAME record at your DNS provider, pointing your domain at the target shown below it; the copy button next to the target puts it on your clipboard.

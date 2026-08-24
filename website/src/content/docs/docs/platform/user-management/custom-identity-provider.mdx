@@ -23,9 +23,9 @@ Every domain carries its own set of providers. Nothing is inherited between them
 
 | Domain                                       | Providers configured by | Applies to                                          |
 | -------------------------------------------- | ----------------------- | --------------------------------------------------- |
-| Your app domain, e.g. `app.your-company.com` | you                     | your own team                                       |
-| Your customer portal domain                  | you                     | all of your customers, including ones created later |
-| A customer's own portal domain               | you or that customer    | that one customer                                   |
+| Your Vendor Portal domain, e.g. `app.your-company.com` | you                     | your own team                                       |
+| Your customer portal domain                            | you                     | all of your customers, including ones created later |
+| A customer's own portal domain                         | you or that customer    | that one customer                                   |
 
 All three are configured under **Settings → Organization → Custom Domains & Identity Provider**, which is also where the domains themselves are registered. A customer's own domain additionally needs the **Custom Identity Provider** feature, which you grant per customer in the customer list.
 
@@ -53,7 +53,7 @@ https://app.your-company.com/api/v1/auth/oidc/custom/<organization-slug>/<provid
 https://app.your-company.com/api/v1/auth/oidc/custom/<organization-slug>/<provider-slug>/callback
 ```
 
-The provider slug is derived from the display name (`Acme SSO` becomes `acme-sso`) and shown as part of the callback URL. Use the pencil next to it if you want a different one; changing it later changes both URLs, so your provider needs the new redirect URI. A name and a slug only have to be unique per domain, so the same provider can be offered under the same name on your app domain and on your customer portal domain.
+The provider slug is derived from the display name (`Acme SSO` becomes `acme-sso`) and shown as part of the callback URL. Use the pencil next to it if you want a different one; changing it later changes both URLs, so your provider needs the new redirect URI. A name and a slug only have to be unique per domain, so the same provider can be offered under the same name on your Vendor Portal domain and on your customer portal domain.
 
 The requested scopes (`openid profile email`) and PKCE need no configuration: PKCE is used automatically when the provider announces support for it. Both can be changed through the [Distr API](/docs/integrations/api/) if your provider needs something else.
 
@@ -76,9 +76,9 @@ Issuer URLs for the most common providers:
 
 ## Customer portal domain
 
-A customer portal domain (e.g. `portal.your-company.com`) is the host all of your customers sign in on. Tick **Use a customer portal domain** in the **Customer Portal** section of the Custom Domains & Identity Provider tab, register it, and create the shown CNAME record.
+A customer portal domain (e.g. `portal.your-company.com`) is the host all of your customers sign in on. Tick **Use a customer portal domain** in the **Customer Portal** section of the Custom Domains & Identity Provider tab, register it and create the shown CNAME record.
 
-Once it exists, it replaces your app domain in everything sent to a customer user: invitation links, password resets, email verification and notification mails. Your own team keeps the app domain, and agent manifests, connect commands and the artifact registry keep using it as well.
+Once it exists, it replaces your Vendor Portal domain in everything sent to a customer user: invitation links, password resets, email verification and notification mails. Your own team keeps the Vendor Portal domain, and agent manifests, connect commands and the artifact registry keep using it as well.
 
 Providers you attach to this domain apply to every customer at once. You cannot single out one customer here; a customer that needs its own provider gets its own domain instead.
 
@@ -126,7 +126,7 @@ Members who work in another organization as well, or who want to change their si
 
 ## Provisioning accounts automatically
 
-With **Create accounts on first sign-in**, everyone the provider authenticates gets an account with the role you select, so you do not have to invite people one by one. Where such an account lands depends on the domain the provider is attached to: your app domain creates a member of your own team, a customer's own portal domain a user of that customer.
+With **Create accounts on first sign-in**, everyone the provider authenticates gets an account with the role you select, so you do not have to invite people one by one. Where such an account lands depends on the domain the provider is attached to: your Vendor Portal domain creates a member of your own team, a customer's own portal domain a user of that customer.
 
 - **Allowed email domains** appear once you enable it and are required: an account created this way is not something to hand out to every address an identity provider can assert. Accounts are only created for addresses in the domains you name here; existing members sign in regardless of their address.
 - Accounts for your own team are created up to your billed user seats, accounts for a customer up to that customer's user limit. Limits are never raised automatically: beyond them, sign-in fails until an administrator raises them.
