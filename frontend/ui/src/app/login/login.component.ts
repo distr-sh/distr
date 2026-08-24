@@ -108,6 +108,12 @@ export class LoginComponent implements OnInit {
             'Please contact your administrator.'
         );
         break;
+      case 'oidc-org-limit':
+        this.toast.error(
+          'This instance has reached its organization limit, so no account could be created. ' +
+            'Please contact your administrator.'
+        );
+        break;
       case 'oidc-account-not-exclusive':
         this.toast.error(
           'Your account is a member of another Distr organization, so it cannot sign in through this ' +

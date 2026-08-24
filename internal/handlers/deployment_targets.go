@@ -210,6 +210,16 @@ func updateDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 
 	if dt.AgentVersion.ID != uuid.Nil {
 		dt.AgentVersionID = &dt.AgentVersion.ID
+	} else if dt.AutomaticUpdatesEnabled {
+		// Without this, enabling automatic updates would only take effect on the next hub restart.
+		agentVersion, err := db.GetCurrentAgentVersion(ctx)
+		if err != nil {
+			log.Warn("could not get current agent version", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		dt.AgentVersionID = &agentVersion.ID
 	}
 
 	existing := internalctx.GetDeploymentTarget(ctx)
@@ -218,6 +228,11 @@ func updateDeploymentTarget(w http.ResponseWriter, r *http.Request) {
 	} else if dt.ID != existing.ID {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, "wrong id")
+		return
+	}
+
+	if err := types.ValidateDockerEndpoint(dt.DockerEndpoint, existing.Type); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 

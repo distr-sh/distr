@@ -83,6 +83,7 @@ func getTemplateData(
 		"logsEndpoint":              logsEndpoint,
 		"agentLogsEndpoint":         agentLogsEndpoint,
 		"metricsEnabled":            deploymentTarget.MetricsEnabled,
+		"dockerSocketPath":          deploymentTarget.DockerSocketPath(),
 	}
 	if deploymentTarget.Namespace != nil {
 		result["targetNamespace"] = *deploymentTarget.Namespace

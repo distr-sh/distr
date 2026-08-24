@@ -217,8 +217,9 @@ func agentResourcesHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			agentDeployment := api.AgentDeployment{
-				ID:                 deployment.ID,
-				RevisionID:         deployment.DeploymentRevisionID,
+				ID:         deployment.ID,
+				RevisionID: deployment.DeploymentRevisionID,
+				//nolint:staticcheck // deprecated field kept for agents that don't read AgentResource.DeploymentLogsEnabled yet
 				LogsEnabled:        deploymentTarget.DeploymentLogsEnabled,
 				ForceRestart:       deployment.ForceRestart,
 				IgnoreRevisionSkew: deployment.IgnoreRevisionSkew,

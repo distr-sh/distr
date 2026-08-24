@@ -17,7 +17,10 @@
           @let targetKind = deploymentTarget() | organizationKind;
           @if (createdBy.name || createdBy.email) {
             <div class="flex items-center gap-1 mt-0.5">
-              <app-user-avatar [image]="createdBy.imageId" [name]="createdBy.name || createdBy.email" class="size-5" />
+              <app-avatar
+                [image]="createdBy.imageId"
+                [name]="createdBy.name || createdBy.email"
+                class="size-5 rounded-full" />
               <span>{{ createdBy.name || createdBy.email }}</span>
               @if (createdBy.deleted) {
                 <span class="text-gray-500 dark:text-gray-400">(deleted)</span>

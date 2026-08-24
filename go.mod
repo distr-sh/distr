@@ -2,7 +2,7 @@ module github.com/distr-sh/distr
 
 go 1.26.3
 
-toolchain go1.26.6
+toolchain go1.27.0
 
 require (
 	github.com/Masterminds/semver/v3 v3.5.0
@@ -22,7 +22,7 @@ require (
 	github.com/getsentry/sentry-go v0.48.0
 	github.com/getsentry/sentry-go/otel/otlp v0.48.0
 	github.com/glasskube/pkg/seekbuf v0.1.1
-	github.com/go-chi/chi/v5 v5.3.1
+	github.com/go-chi/chi/v5 v5.3.2
 	github.com/go-chi/httprate v0.16.0
 	github.com/go-chi/jwtauth/v5 v5.4.0
 	github.com/go-co-op/gocron/v2 v2.22.0
@@ -65,12 +65,12 @@ require (
 	golang.org/x/crypto v0.55.0
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v4 v4.2.4
-	k8s.io/api v0.36.3
-	k8s.io/apimachinery v0.36.3
-	k8s.io/cli-runtime v0.36.3
-	k8s.io/client-go v0.36.3
+	k8s.io/api v0.36.4
+	k8s.io/apimachinery v0.36.4
+	k8s.io/cli-runtime v0.36.4
+	k8s.io/client-go v0.36.4
 	k8s.io/kubectl v0.36.3
-	k8s.io/metrics v0.36.3
+	k8s.io/metrics v0.36.4
 	oras.land/oras-go/v2 v2.6.2
 )
 
