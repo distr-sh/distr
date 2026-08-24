@@ -33,7 +33,7 @@ Domains added anywhere show a status panel next to them — green once the CNAME
 
 ## Requirements
 
-1. A custom app domain (e.g. `app.your-company.com`) set up under **Settings → Organization → Custom Domains & Identity Provider**, and an organization slug, because both are part of every provider's URLs.
+1. A Vendor Portal domain (e.g. `app.your-company.com`) set up under **Settings → Organization → Custom Domains & Identity Provider**, and an organization slug, because both are part of every provider's URLs.
 2. An identity provider that serves an OpenID configuration under `<issuer>/.well-known/openid-configuration`. Microsoft Entra ID, Google Workspace, Okta, Auth0, Keycloak, JumpCloud, Authentik and any other OpenID Connect provider work with the same fields.
 3. An application (client) registered with that provider, using the authorization code flow.
 
@@ -42,10 +42,9 @@ Domains added anywhere show a status panel next to them — green once the CNAME
 Go to **Settings → Organization → Custom Domains & Identity Provider** and add a provider:
 
 1. **Display name**: Shown on the sign-in button, e.g. `Acme SSO`.
-2. **Slug**: Identifies the provider in its URLs, unique within your organization, e.g. `acme-sso`. Changing it later changes both URLs, so your provider needs the new redirect URI.
-3. **Issuer URL**: The provider's issuer. Distr fetches its OpenID configuration when you save, verifies that the document belongs to that host, and stores the issuer exactly as the provider states it. So a URL that is a little off is corrected rather than rejected.
-4. **Client ID** and **Client secret**: From the application you registered. The secret is never shown again; leave the field empty when editing to keep it.
-5. Copy the **Callback URL** and register it as a redirect URI with your provider.
+2. **Issuer URL**: The provider's issuer. Distr fetches its OpenID configuration when you save, verifies that the document belongs to that host, and stores the issuer exactly as the provider states it. So a URL that is a little off is corrected rather than rejected.
+3. **Client ID** and **Client secret**: From the application you registered. The secret is never shown again; leave the field empty when editing to keep it.
+4. Copy the **Callback URL** and register it as a redirect URI with your provider.
 
 The URLs of a provider are built from your organization slug and the provider slug:
 
@@ -54,7 +53,9 @@ https://app.your-company.com/api/v1/auth/oidc/custom/<organization-slug>/<provid
 https://app.your-company.com/api/v1/auth/oidc/custom/<organization-slug>/<provider-slug>/callback
 ```
 
-The additional scopes (`profile email` by default) and PKCE are prefilled sensibly: PKCE is used automatically when the provider announces support for it.
+The provider slug is derived from the display name (`Acme SSO` becomes `acme-sso`) and shown as part of the callback URL. Use the pencil next to it if you want a different one; changing it later changes both URLs, so your provider needs the new redirect URI. A name and a slug only have to be unique per domain, so the same provider can be offered under the same name on your app domain and on your customer portal domain.
+
+The requested scopes (`openid profile email`) and PKCE need no configuration: PKCE is used automatically when the provider announces support for it. Both can be changed through the [Distr API](/docs/integrations/api/) if your provider needs something else.
 
 Issuer URLs for the most common providers:
 
@@ -75,7 +76,7 @@ Issuer URLs for the most common providers:
 
 ## Customer portal domain
 
-A customer portal domain (e.g. `portal.your-company.com`) is the host all of your customers sign in on. Register it in the **Customer Portal** section of the Custom Domains & Identity Provider tab and create the shown CNAME record.
+A customer portal domain (e.g. `portal.your-company.com`) is the host all of your customers sign in on. Tick **Use a customer portal domain** in the **Customer Portal** section of the Custom Domains & Identity Provider tab, register it, and create the shown CNAME record.
 
 Once it exists, it replaces your app domain in everything sent to a customer user: invitation links, password resets, email verification and notification mails. Your own team keeps the app domain, and agent manifests, connect commands and the artifact registry keep using it as well.
 
@@ -129,7 +130,7 @@ Distr matches an account either by an identity it has connected before or by the
 
 With **Create accounts on first sign-in**, everyone the provider authenticates gets an account with the role you select, so you do not have to invite people one by one. Where such an account lands depends on the domain the provider is attached to: your app domain creates a member of your own team, a customer's own portal domain a user of that customer.
 
-- **Allowed email domains** are therefore required for this: an account created this way is not something to hand out to every address an identity provider can assert. Accounts are only created for addresses in the domains you name here; existing members sign in regardless of their address.
+- **Allowed email domains** appear once you enable it and are required: an account created this way is not something to hand out to every address an identity provider can assert. Accounts are only created for addresses in the domains you name here; existing members sign in regardless of their address.
 - Accounts for your own team are created up to your billed user seats, accounts for a customer up to that customer's user limit. Limits are never raised automatically: beyond them, sign-in fails until an administrator raises them.
 - The shared customer portal domain cannot provision accounts at all, as described above.
 
