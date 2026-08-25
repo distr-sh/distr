@@ -1,11 +1,11 @@
 import {NgTemplateOutlet} from '@angular/common';
 import {Component, computed, inject, input, signal, TemplateRef, viewChild} from '@angular/core';
-import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {BehaviorSubject, combineLatest, distinct, firstValueFrom, from, map, mergeMap, of, switchMap} from 'rxjs';
+import {BehaviorSubject, combineLatest, firstValueFrom, from, map, of, switchMap} from 'rxjs';
 import {getRemoteEnvironment} from '../../env/remote';
 import {getFormDisplayedError} from '../../util/errors';
 import {slugMaxLength, slugPattern, toSlug} from '../../util/slug';
@@ -19,7 +19,7 @@ import {FeatureFlagService} from '../services/feature-flag.service';
 import {OrganizationService} from '../services/organization.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
-import {CustomDomain, CustomDomainType, CustomDomainVerification} from '../types/custom-domain';
+import {CustomDomain, CustomDomainType} from '../types/custom-domain';
 import {CustomOidcConfiguration, CustomOidcConfigurationsResponse} from '../types/custom-oidc';
 import {DomainFieldComponent} from './domain-field.component';
 
@@ -145,22 +145,12 @@ export class CustomOidcComponent {
     this.scopedDomains().find((domain) => domain.domainType === 'customer_portal')
   );
 
-  // Verifying a domain is a live DNS lookup that can take seconds, so it is requested per domain
-  // once the list has arrived instead of being part of it.
-  private readonly verifications = signal<Record<string, CustomDomainVerification>>({});
+  // The domains a check was asked for and has not come back from. A domain carries the outcome of
+  // its last check, kept up to date by a background job, so the page renders a status without ever
+  // looking up DNS itself.
   protected readonly checkingDomainIds = signal<ReadonlySet<string>>(new Set());
 
   constructor() {
-    // distinct keeps the refetches caused by unrelated changes (saving an identity provider re-emits
-    // the same domains) from checking every domain again; a failed check is retried through the button.
-    toObservable(this.scopedDomains)
-      .pipe(
-        mergeMap((domains) => domains),
-        distinct((domain) => domain.id),
-        takeUntilDestroyed()
-      )
-      .subscribe((domain) => void this.verifyDomain(domain));
-
     this.form.controls.name.valueChanges.pipe(takeUntilDestroyed()).subscribe((name) => {
       if (!this.slugEdited()) {
         this.form.controls.slug.setValue(toSlug(name));
@@ -168,15 +158,17 @@ export class CustomOidcComponent {
     });
   }
 
-  protected verificationFor(domain: CustomDomain | undefined): CustomDomainVerification | undefined {
-    return domain ? this.verifications()[domain.id] : undefined;
-  }
-
   protected async verifyDomain(domain: CustomDomain) {
     this.checkingDomainIds.update((ids) => new Set(ids).add(domain.id));
     try {
-      const verification = await firstValueFrom(this.customDomainsService.verification(domain.id));
-      this.verifications.update((verifications) => ({...verifications, [domain.id]: verification}));
+      const verification = await firstValueFrom(this.customDomainsService.verify(domain.id));
+      this.refresh$.next();
+      if (verification.inconclusive) {
+        this.toast.error('The DNS lookup could not be completed, please try again');
+      } else if (verification.verified) {
+        // The organization's effective registry host may have changed with a domain becoming usable.
+        this.contextService.reload();
+      }
     } catch (e) {
       const msg = getFormDisplayedError(e);
       if (msg) {

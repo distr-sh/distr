@@ -31,7 +31,9 @@ func (e *CNAMEError) Error() string {
 	return fmt.Sprintf("CNAME points to %v instead of %v", e.Resolved, e.Expected)
 }
 
-// VerifyCNAME checks that domain resolves, via CNAME, to expectedTarget.
+// VerifyCNAME checks that domain resolves, via CNAME, to expectedTarget. A *CNAMEError means the
+// record was read and does not point at the target. Any other error means the lookup did not
+// complete and therefore says nothing about the record.
 func VerifyCNAME(ctx context.Context, domain, expectedTarget string) error {
 	lookupCtx, cancel := context.WithTimeout(ctx, LookupTimeout)
 	defer cancel()

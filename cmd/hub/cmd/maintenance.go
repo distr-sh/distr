@@ -9,6 +9,7 @@ import (
 
 	"github.com/distr-sh/distr/internal/buildconfig"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/registry/upstream"
 	"github.com/distr-sh/distr/internal/svc"
@@ -25,35 +26,56 @@ func NewMaintenanceCommand() *cobra.Command {
 		Short: "run maintenance tasks",
 	}
 	cmd.AddCommand(NewSyncArtifactsUpstreamCommand())
+	cmd.AddCommand(NewVerifyCustomDomainsCommand())
 	return cmd
 }
 
-type SyncArtifactsUpstreamOptions struct {
-	Timeout time.Duration
-}
-
-func NewSyncArtifactsUpstreamCommand() *cobra.Command {
-	var opts SyncArtifactsUpstreamOptions
+func newMaintenanceTaskCommand(
+	use, short string,
+	run func(ctx context.Context) error,
+) *cobra.Command {
+	var timeout time.Duration
 	cmd := &cobra.Command{
-		Use:    "sync-artifacts-upstream",
-		Short:  "sync artifact tags from upstream registries",
+		Use:    use,
+		Short:  short,
 		Args:   cobra.NoArgs,
 		PreRun: func(cmd *cobra.Command, args []string) { env.Initialize() },
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := runSyncArtifactsUpstream(cmd.Context(), opts); err != nil {
+			if err := runMaintenanceTask(cmd.Context(), use, timeout, run); err != nil {
 				os.Exit(1)
 			}
 		},
 	}
-	cmd.Flags().DurationVar(&opts.Timeout, "timeout", 0, "timeout for the sync operation. 0 means no timeout (default)")
+	cmd.Flags().DurationVar(&timeout, "timeout", 0, "timeout for the operation. 0 means no timeout (default)")
 	return cmd
+}
+
+func NewSyncArtifactsUpstreamCommand() *cobra.Command {
+	return newMaintenanceTaskCommand(
+		"sync-artifacts-upstream",
+		"sync artifact tags from upstream registries",
+		func(ctx context.Context) error { return upstream.RunUpstreamSync(ctx, true) },
+	)
+}
+
+func NewVerifyCustomDomainsCommand() *cobra.Command {
+	return newMaintenanceTaskCommand(
+		"verify-custom-domains",
+		"check the CNAME records of custom domains",
+		customdomains.RunCustomDomainVerification,
+	)
 }
 
 func init() {
 	RootCommand.AddCommand(NewMaintenanceCommand())
 }
 
-func runSyncArtifactsUpstream(ctx context.Context, opts SyncArtifactsUpstreamOptions) error {
+func runMaintenanceTask(
+	ctx context.Context,
+	name string,
+	timeout time.Duration,
+	run func(ctx context.Context) error,
+) error {
 	registry := util.Require(svc.NewDefault(ctx))
 	defer func() { util.Must(registry.Shutdown(ctx)) }()
 	log := registry.GetLogger()
@@ -67,23 +89,23 @@ func runSyncArtifactsUpstream(ctx context.Context, opts SyncArtifactsUpstreamOpt
 
 	ctx, span := registry.GetTracers().Always().
 		Tracer("github.com/distr-sh/distr/cmd/hub/cmd", trace.WithInstrumentationVersion(buildconfig.Version())).
-		Start(ctx, "maintenance_sync-artifacts-upstream", trace.WithSpanKind(trace.SpanKindInternal))
+		Start(ctx, "maintenance_"+name, trace.WithSpanKind(trace.SpanKindInternal))
 	defer span.End()
 
-	if opts.Timeout > 0 {
+	if timeout > 0 {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, opts.Timeout)
+		ctx, cancel = context.WithTimeout(ctx, timeout)
 		defer cancel()
 	}
 
-	log.Info("starting upstream sync", zap.Duration("timeout", opts.Timeout))
+	log.Info("starting maintenance task", zap.String("task", name), zap.Duration("timeout", timeout))
 
-	if err := upstream.RunUpstreamSync(ctx, true); err != nil {
-		log.Error("upstream sync failed", zap.Error(err))
-		span.SetStatus(codes.Error, "upstream sync error")
+	if err := run(ctx); err != nil {
+		log.Error("maintenance task failed", zap.String("task", name), zap.Error(err))
+		span.SetStatus(codes.Error, "maintenance task error")
 		span.RecordError(err)
 		return err
 	}
-	span.SetStatus(codes.Ok, "upstream sync finished")
+	span.SetStatus(codes.Ok, "maintenance task finished")
 	return nil
 }

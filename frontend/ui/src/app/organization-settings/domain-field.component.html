@@ -27,56 +27,58 @@
         </button>
       </div>
       <div class="mt-2 flex items-center gap-2">
-        @if (verification(); as verification) {
-          @if (verification.dnsVerified) {
-            <span class="distr-status-badge bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
-              <fa-icon [icon]="faCircleCheck" />
-              CNAME verified
-            </span>
-          } @else {
-            <span
-              class="distr-status-badge bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
-              [title]="verification.dnsDetail">
-              <fa-icon [icon]="faTriangleExclamation" />
-              Not configured
-            </span>
-          }
-          <button
-            type="button"
-            title="Recheck"
-            (click)="recheck.emit()"
-            [disabled]="verifying()"
-            class="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white disabled:opacity-60">
-            <fa-icon [icon]="faRotate" [class.animate-spin]="verifying()" />
-            <span class="sr-only">Recheck</span>
-          </button>
-          <span class="text-xs font-normal text-gray-500 dark:text-gray-400">
-            Checked {{ checkedAtLabel(verification.dnsCheckedAt) }}
+        @if (domain.verified) {
+          <span class="distr-status-badge bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+            <fa-icon [icon]="faCircleCheck" />
+            Verified
           </span>
-        } @else if (verifying()) {
-          <span class="distr-status-badge bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
-            <fa-icon [icon]="faRotate" class="animate-spin" />
-            Checking CNAME
+        } @else if (domain.verificationError) {
+          <span
+            class="distr-status-badge bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+            [title]="domain.verificationError">
+            <fa-icon [icon]="faTriangleExclamation" />
+            Verification failed
           </span>
         } @else {
           <span class="distr-status-badge bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
-            CNAME not checked
+            Not checked yet
           </span>
-          <button
-            type="button"
-            title="Check now"
-            (click)="recheck.emit()"
-            class="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white">
-            <fa-icon [icon]="faRotate" />
-            <span class="sr-only">Check now</span>
-          </button>
+        }
+        <button
+          type="button"
+          title="Check now"
+          (click)="recheck.emit()"
+          [disabled]="verifying()"
+          class="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white disabled:opacity-60">
+          <fa-icon [icon]="faRotate" [class.animate-spin]="verifying()" />
+          <span class="sr-only">Check now</span>
+        </button>
+        @if (domain.verificationCheckedAt; as checkedAt) {
+          <span class="text-xs font-normal text-gray-500 dark:text-gray-400">
+            @if (domain.verified) {
+              Checked
+            } @else {
+              Last attempted
+            }
+            {{ checkedAt | relativeDate }}
+          </span>
         }
       </div>
-      <div class="mt-1 flex items-center gap-2 text-xs font-normal text-gray-500 dark:text-gray-400">
-        <span>CNAME target (alias data)</span>
+
+      <div class="mt-1 flex items-baseline gap-2 text-xs font-normal text-gray-500 dark:text-gray-400">
+        <span>CNAME target (alias data):</span>
         <code class="font-mono">{{ cnameTarget() }}</code>
         <app-clip [clip]="cnameTarget() ?? ''" />
       </div>
+
+      @if (!domain.verified) {
+        <div
+          class="flex items-center p-4 mt-1 text-sm text-yellow-800 border border-yellow-300 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300 dark:border-yellow-800"
+          role="alert">
+          Until this domain points at the CNAME target above, links, mails, agent manifests and registry URLs keep using
+          your previous host.
+        </div>
+      }
     } @else {
       <form (submit)="submit($event)">
         <input

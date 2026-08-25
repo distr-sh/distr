@@ -28,9 +28,9 @@ export class CustomDomainsService {
     return this.httpClient.delete<void>(`${baseUrl}/${id}`);
   }
 
-  // A live DNS lookup that can take seconds, which is why it is its own request: callers render the
-  // domain first and fill the verification in once it arrives.
-  public verification(id: string): Observable<CustomDomainVerification> {
-    return this.httpClient.get<CustomDomainVerification>(`${baseUrl}/${id}/verification`);
+  // Runs a live DNS lookup that can take seconds and stores its outcome. The stored state a domain
+  // already carries comes with the domain itself, so this is only for checking on demand.
+  public verify(id: string): Observable<CustomDomainVerification> {
+    return this.httpClient.post<CustomDomainVerification>(`${baseUrl}/${id}/verification`, {});
   }
 }

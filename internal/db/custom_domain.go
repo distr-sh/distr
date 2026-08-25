@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
@@ -15,7 +16,8 @@ import (
 )
 
 const customDomainOutputExpr = `
-	d.id, d.created_at, d.domain, d.domain_type, d.organization_id, d.customer_organization_id
+	d.id, d.created_at, d.domain, d.domain_type, d.organization_id, d.customer_organization_id,
+	d.verified_at, d.verification_checked_at, d.verification_error
 `
 
 // CreateCustomDomains inserts with a single statement so that a conflict on any one domain leaves
@@ -59,6 +61,9 @@ func CreateCustomDomains(ctx context.Context, customDomains []types.CustomDomain
 // GetCustomDomains backs the internal customdomains resolvers. A nil customerOrgID must not return
 // customer rows, or a customer hostname would end up in the vendor's app and registry URLs, so
 // GetCustomDomainsForScope — which answers what a caller may see — must never be substituted here.
+//
+// It returns unverified domains as well. Build outbound URLs through the internal/customdomains
+// resolvers, which drop those, and never from this function directly.
 func GetCustomDomains(
 	ctx context.Context,
 	organizationID uuid.UUID,
@@ -219,6 +224,89 @@ func ExistsCustomDomain(ctx context.Context, domain string) (bool, error) {
 		return false, fmt.Errorf("could not query CustomDomain: %w", err)
 	}
 	return exists, nil
+}
+
+// GetCustomDomainsDueForVerification lists the domains the verification job has to check. A domain
+// that is currently usable is only rechecked once its last check has aged past refreshAfter, whereas
+// one that is failing or has never been verified is due on every run: an organization that has just
+// fixed its record would otherwise stay on the fallback host for a whole refresh interval.
+func GetCustomDomainsDueForVerification(
+	ctx context.Context,
+	refreshAfter time.Duration,
+) ([]types.CustomDomain, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		"SELECT"+customDomainOutputExpr+
+			`FROM CustomDomain d
+			JOIN Organization o ON o.id = d.organization_id
+			WHERE o.deleted_at IS NULL
+				AND (d.verified_at IS NULL
+					OR d.verification_error IS NOT NULL
+					OR d.verification_checked_at IS NULL
+					OR now() - d.verification_checked_at > @refreshAfter)
+			ORDER BY d.verification_checked_at NULLS FIRST`,
+		pgx.NamedArgs{"refreshAfter": refreshAfter},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query CustomDomains due for verification: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.CustomDomain])
+	if err != nil {
+		return nil, fmt.Errorf("could not collect CustomDomains: %w", err)
+	}
+	return result, nil
+}
+
+// SetCustomDomainVerificationResult records a completed check. A nil verificationError marks the
+// domain verified; a non-nil one is the reason its record is wrong. A lookup that did not complete
+// is not a result at all and must not be passed here, see SetCustomDomainVerificationAttempted.
+func SetCustomDomainVerificationResult(
+	ctx context.Context,
+	id uuid.UUID,
+	verificationError *string,
+) (*types.CustomDomain, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`UPDATE CustomDomain AS d SET
+			verification_checked_at = current_timestamp,
+			verification_error = @verificationError,
+			verified_at = CASE WHEN @verificationError::TEXT IS NULL THEN current_timestamp ELSE verified_at END
+		WHERE d.id = @id
+		RETURNING`+customDomainOutputExpr,
+		pgx.NamedArgs{"id": id, "verificationError": verificationError},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not update CustomDomain verification result: %w", err)
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.CustomDomain])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, apierrors.ErrNotFound
+	} else if err != nil {
+		return nil, fmt.Errorf("could not update CustomDomain verification result: %w", err)
+	}
+	return &result, nil
+}
+
+// SetCustomDomainVerificationAttempted records that a check ran without reaching a conclusion, so
+// that the job's schedule moves on while the domain keeps whatever state it was in.
+func SetCustomDomainVerificationAttempted(ctx context.Context, id uuid.UUID) (*types.CustomDomain, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(ctx,
+		`UPDATE CustomDomain AS d SET verification_checked_at = current_timestamp
+		WHERE d.id = @id
+		RETURNING`+customDomainOutputExpr,
+		pgx.NamedArgs{"id": id},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not update CustomDomain verification attempt: %w", err)
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.CustomDomain])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, apierrors.ErrNotFound
+	} else if err != nil {
+		return nil, fmt.Errorf("could not update CustomDomain verification attempt: %w", err)
+	}
+	return &result, nil
 }
 
 func GetCustomDomainByDomain(ctx context.Context, domain string) (*types.CustomDomain, error) {

@@ -7,16 +7,25 @@ export interface CustomDomain {
   domainType: CustomDomainType;
   organizationId: string;
   customerOrganizationId?: string;
+  // Whether the domain is currently used for links, mails, agent manifests and registry URLs. The
+  // server decides this, so the rule behind it lives in one place.
+  verified: boolean;
+  verifiedAt?: string;
+  verificationCheckedAt?: string;
+  // Why the domain's CNAME record was last found not to point at this instance.
+  verificationError?: string;
 }
 
-// The result of a live DNS lookup, requested per domain instead of being part of the domain itself,
-// so a slow resolver never delays the domain list. Nothing is persisted, so dnsCheckedAt is when the
-// server answered the verification request.
+// The stored outcome of the last CNAME check, returned by the check that runs on demand. Inconclusive
+// means that check did not complete, in which case the domain keeps the state it had before and the
+// timestamps still describe an earlier check.
 export interface CustomDomainVerification {
   customDomainId: string;
-  dnsVerified: boolean;
-  dnsDetail: string;
-  dnsCheckedAt: string;
+  verified: boolean;
+  verifiedAt?: string;
+  verificationCheckedAt?: string;
+  verificationError?: string;
+  inconclusive: boolean;
 }
 
 export interface CreateCustomDomainRequest {

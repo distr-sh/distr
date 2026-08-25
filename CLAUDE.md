@@ -147,7 +147,7 @@ The website is a separate pnpm project with its own Prettier config; the root co
 - Use `internal/context` helpers to retrieve logger, database, user from context
 - Do not add new context accessors to `internal/context`. Following idiomatic Go, they belong in the package that defines the stored type (e.g. `logstore.NewContext`/`logstore.FromContext`), which also avoids import cycles
 - Use structured logging with zap: `logger.Info("message", zap.String("key", value))`
-- Send exceptions to sentry with: `sentry.GetHubFromContext(ctx).CaptureException(err)`
+- Send exceptions to sentry with: `sentry.GetHubFromContext(ctx).CaptureException(err)`. In a background job use `sentry.CurrentHub()` instead: a job context carries no hub, and taking one from it panics
 - When performing data transformations between DTOs and domain models, use `mapping.List(...)` inside the `internal/mapping` package
 - Give types in `internal/types` `db:` tags only. Never serialize one into a response and never embed one in an `api` type. Do not copy the existing embeddings (`api.OrganizationResponse`, `api.LicenseKeyRevision`); they are legacy
 - Give every endpoint its own struct in `api/` and put both conversion directions in `internal/mapping`: `XToAPI` for model to response, `XToInternal` for request to model. Do not assemble an `api.*` or `types.*` struct field by field in a handler
@@ -233,6 +233,10 @@ _, err := db.CopyFrom(
 )
 ```
 
+### Scheduled Jobs
+
+A job has to be runnable from outside the hub process, because a high-availability installation would otherwise run it once per replica. Register it in `internal/svc/jobs_scheduler.go` behind its own `*_CRON` env var that defaults to unscheduled, give it a subcommand (`cleanup` for pruning, `maintenance` for everything else), and add a `cronJobs` entry to `deploy/charts/distr/values.yaml` that calls it. Never make behaviour outside the job itself depend on whether its cron is scheduled: in the chart it never is, since the CronJob runs it.
+
 ### Subscription Gating
 
 Never gate a feature by listing the subscription types that are allowed to use it. Every such allowlist has to be touched again whenever a new plan is introduced, and the plan silently loses the feature if it is forgotten. Always express gating as a denylist of the lower plans instead, so a new plan gets access by default:
@@ -270,6 +274,8 @@ Never hard-wire `https://` into a URL that is built for this instance. The schem
 - For a URL on another host — an organization's custom domain in `customdomains.withScheme`, the login forwarding target, the OIDC callback URL an administrator has to register (`oidc.CustomCallbackURL`) — use `env.HostScheme()` directly.
 
 A hard-wired https breaks every locally running instance, and for the OIDC callback URL it produces a URL that disagrees with the `redirect_uri` the login actually sends. In the frontend, use the protocol of the current page for the same reason.
+
+Build the host of such a URL through the `internal/customdomains` resolvers and never from `db.GetCustomDomains` directly. Only the resolvers drop the domains that have not been verified, and a URL built on an unverified domain sends users, mail recipients and agents to a host this instance does not serve. `db.GetCustomDomainsForScope` stays unfiltered on purpose: the settings page has to list a domain before it works. Resolving an incoming request's host (portal branding, OIDC gating, the Caddy TLS ask) is not gated either, since the request arriving is itself the evidence, and gating the TLS ask would keep a new domain from ever getting a certificate.
 
 ## Comments
 
