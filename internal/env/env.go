@@ -675,8 +675,6 @@ func CustomDomainVerificationTimeout() time.Duration {
 	return customDomainVerificationTimeout
 }
 
-// CustomDomainVerificationRefreshAfter is how long a verified domain is left alone before it is
-// checked again. Domains that are failing or have never been verified are checked on every run.
 func CustomDomainVerificationRefreshAfter() time.Duration {
 	return customDomainVerificationRefreshAfter
 }
