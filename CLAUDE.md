@@ -275,7 +275,7 @@ Never hard-wire `https://` into a URL that is built for this instance. The schem
 
 A hard-wired https breaks every locally running instance, and for the OIDC callback URL it produces a URL that disagrees with the `redirect_uri` the login actually sends. In the frontend, use the protocol of the current page for the same reason.
 
-Build the host of such a URL through the `internal/customdomains` resolvers and never from `db.GetCustomDomains` directly. Only the resolvers drop the domains that have not been verified, and a URL built on an unverified domain sends users, mail recipients and agents to a host this instance does not serve. `db.GetCustomDomainsForScope` stays unfiltered on purpose: the settings page has to list a domain before it works. Resolving an incoming request's host (portal branding, OIDC gating, the Caddy TLS ask) is not gated either, since the request arriving is itself the evidence, and gating the TLS ask would keep a new domain from ever getting a certificate.
+Build the host of such a URL through the `internal/customdomains` resolvers and never from `db.GetCustomDomains` directly: only the resolvers drop the domains that have not been verified yet. Do not add that filter anywhere else. Listing a caller's domains and resolving the host of an incoming request deliberately accept unverified domains.
 
 ## Comments
 

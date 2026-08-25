@@ -15,6 +15,10 @@ import (
 // guard preventing arbitrary certificate issuance on the platform's ACME account, and it runs during
 // TLS handshakes, so it must stay cheap. It is served by the internal HTTP server, which must never
 // be exposed outside the cluster.
+//
+// Whether the domain is verified must not be part of this decision. Verification lags a corrected
+// DNS record by up to a verification interval, and without a certificate the domain answers no
+// https request at all in the meantime.
 func TLSAskHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
