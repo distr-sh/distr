@@ -88,9 +88,15 @@
           </app-domain-field>
         }
 
-        @if (oidcProvidersEnabled() && configurable() && appDomain(); as domain) {
+        @if (oidcProvidersEnabled()) {
           <h4 class="text-base font-semibold text-gray-900 dark:text-white mt-8">Identity Providers</h4>
-          <ng-container [ngTemplateOutlet]="providerSection" [ngTemplateOutletContext]="{$implicit: domain}" />
+          @if (configurable() && appDomain(); as domain) {
+            <ng-container [ngTemplateOutlet]="providerSection" [ngTemplateOutletContext]="{$implicit: domain}" />
+          } @else if (!appDomain()) {
+            <p class="text-sm font-normal italic text-gray-500 dark:text-gray-400">
+              A custom domain is required to configure identity providers.
+            </p>
+          }
         }
       </section>
     }
@@ -135,9 +141,15 @@
         </app-domain-field>
       }
 
-      @if (oidcProvidersEnabled() && configurable() && customerPortalDomain(); as domain) {
+      @if (oidcProvidersEnabled()) {
         <h4 class="text-base font-semibold text-gray-900 dark:text-white mt-8">Identity Providers</h4>
-        <ng-container [ngTemplateOutlet]="providerSection" [ngTemplateOutletContext]="{$implicit: domain}" />
+        @if (configurable() && customerPortalDomain(); as domain) {
+          <ng-container [ngTemplateOutlet]="providerSection" [ngTemplateOutletContext]="{$implicit: domain}" />
+        } @else if (!customerPortalDomain()) {
+          <p class="text-sm font-normal italic text-gray-500 dark:text-gray-400">
+            A custom domain is required to configure identity providers.
+          </p>
+        }
       }
     </section>
 
