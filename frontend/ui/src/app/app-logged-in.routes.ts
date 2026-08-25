@@ -50,6 +50,9 @@ import {RegistryTutorialComponent} from './tutorials/registry/registry-tutorial.
 import {TutorialsComponent} from './tutorials/tutorials.component';
 import {UsersTutorialComponent} from './tutorials/users/users-tutorial.component';
 import {isSubscriptionExpired} from './types/organization';
+import {UserGeneralSettingsComponent} from './user-settings/user-general-settings.component';
+import {UserIdentityProvidersComponent} from './user-settings/user-identity-providers.component';
+import {UserSecuritySettingsComponent} from './user-settings/user-security-settings.component';
 import {UserSettingsComponent} from './user-settings/user-settings.component';
 
 function requiredRoleGuard(...userRole: UserRole[]): CanActivateFn {
@@ -356,6 +359,25 @@ export const routes: Routes = [
           {
             path: 'profile',
             component: UserSettingsComponent,
+            children: [
+              {
+                path: '',
+                pathMatch: 'full',
+                redirectTo: 'general',
+              },
+              {
+                path: 'general',
+                component: UserGeneralSettingsComponent,
+              },
+              {
+                path: 'security',
+                component: UserSecuritySettingsComponent,
+              },
+              {
+                path: 'identity-providers',
+                component: UserIdentityProvidersComponent,
+              },
+            ],
           },
           {
             path: 'access-tokens',
