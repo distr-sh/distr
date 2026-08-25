@@ -1,5 +1,5 @@
 import {NgTemplateOutlet} from '@angular/common';
-import {Component, computed, inject, input, signal, TemplateRef, viewChild} from '@angular/core';
+import {Component, computed, inject, input, linkedSignal, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
@@ -19,7 +19,7 @@ import {FeatureFlagService} from '../services/feature-flag.service';
 import {OrganizationService} from '../services/organization.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
-import {CustomDomain, CustomDomainType} from '../types/custom-domain';
+import {CustomDomain, CustomDomainType, CustomDomainVerification} from '../types/custom-domain';
 import {CustomOidcConfiguration, CustomOidcConfigurationsResponse} from '../types/custom-oidc';
 import {DomainFieldComponent} from './domain-field.component';
 
@@ -59,7 +59,10 @@ export class CustomOidcComponent {
   private readonly remoteEnv = toSignal(from(getRemoteEnvironment()));
   protected readonly cnameTarget = computed(() => this.remoteEnv()?.customDomainTarget);
 
-  private readonly refresh$ = new BehaviorSubject<void>(undefined);
+  // Separate, because domains and the identity providers on them change independently: only removing
+  // a domain takes its providers with it.
+  private readonly domainsRefresh$ = new BehaviorSubject<void>(undefined);
+  private readonly configurationsRefresh$ = new BehaviorSubject<void>(undefined);
 
   // Set on the customer-scoped page, where only the customer's own portal domain is managed.
   public readonly customerOrganizationId = input<string>();
@@ -113,7 +116,7 @@ export class CustomOidcComponent {
   // alike, which is why configurationsFor narrows to the one domain being rendered. Requested only
   // with the feature enabled, because the endpoint 403s without it.
   private readonly response = toSignal(
-    combineLatest([this.featureFlags.isCustomOidcProvidersEnabled$, this.refresh$]).pipe(
+    combineLatest([this.featureFlags.isCustomOidcProvidersEnabled$, this.configurationsRefresh$]).pipe(
       switchMap(([enabled]) =>
         enabled ? this.customOidcService.list() : of({configurations: []} as CustomOidcConfigurationsResponse)
       )
@@ -122,11 +125,11 @@ export class CustomOidcComponent {
   );
   protected readonly configurations = computed(() => this.response().configurations);
 
-  private readonly domains = toSignal(
+  private readonly fetchedDomains = toSignal(
     combineLatest([
       this.featureFlags.isCustomDomainsEnabled$,
       this.featureFlags.isCustomOidcProvidersEnabled$,
-      this.refresh$,
+      this.domainsRefresh$,
     ]).pipe(
       switchMap(([domainsEnabled, oidcEnabled]) =>
         domainsEnabled || oidcEnabled ? this.customDomainsService.list() : of([] as CustomDomain[])
@@ -134,6 +137,9 @@ export class CustomOidcComponent {
     ),
     {initialValue: [] as CustomDomain[]}
   );
+  // Writable so that a check can be applied to the domain it was run for, which is cheaper than
+  // fetching the whole list back for a state the check itself returns. Resets on every fetch.
+  private readonly domains = linkedSignal(() => this.fetchedDomains());
   protected readonly scopedDomains = computed(() =>
     this.domains().filter((d) => (d.customerOrganizationId ?? undefined) === this.customerOrganizationId())
   );
@@ -162,12 +168,12 @@ export class CustomOidcComponent {
     this.checkingDomainIds.update((ids) => new Set(ids).add(domain.id));
     try {
       const verification = await firstValueFrom(this.customDomainsService.verify(domain.id));
-      this.refresh$.next();
+      this.applyVerification(verification);
       if (verification.inconclusive) {
         this.toast.error('The DNS lookup could not be completed, please try again');
-      } else {
-        // The organization's effective registry host may have changed in either direction: a domain
-        // becoming usable, or one that was usable falling back to the default host.
+      } else if (verification.verified !== domain.verified) {
+        // Only then can the organization's effective registry host have changed, in either direction:
+        // a domain becoming usable, or one that was usable falling back to the default host.
         this.contextService.reload();
       }
     } catch (e) {
@@ -184,6 +190,22 @@ export class CustomOidcComponent {
     }
   }
 
+  private applyVerification(verification: CustomDomainVerification) {
+    this.domains.update((domains) =>
+      domains.map((domain) =>
+        domain.id === verification.customDomainId
+          ? {
+              ...domain,
+              verified: verification.verified,
+              verifiedAt: verification.verifiedAt,
+              verificationCheckedAt: verification.verificationCheckedAt,
+              verificationError: verification.verificationError,
+            }
+          : domain
+      )
+    );
+  }
+
   protected readonly savingDomain = signal(false);
 
   protected async saveDomain(value: string, domainType: CustomDomainType) {
@@ -192,7 +214,7 @@ export class CustomOidcComponent {
       await firstValueFrom(
         this.customDomainsService.create([{domain: value, domainType}], this.customerOrganizationId())
       );
-      this.refresh$.next();
+      this.domainsRefresh$.next();
       // The effective registry host of the organization may have changed with the new domain.
       this.contextService.reload();
       this.toast.success('Custom domain saved');
@@ -220,7 +242,9 @@ export class CustomOidcComponent {
     }
     try {
       await firstValueFrom(this.customDomainsService.delete(domain.id));
-      this.refresh$.next();
+      this.domainsRefresh$.next();
+      // The domain took its identity providers with it.
+      this.configurationsRefresh$.next();
       this.contextService.reload();
       this.toast.success('Custom domain removed');
     } catch (e) {
@@ -374,7 +398,7 @@ export class CustomOidcComponent {
         await firstValueFrom(this.customOidcService.create(request));
       }
       this.toast.success(existing ? 'Identity provider updated' : 'Identity provider created');
-      this.refresh$.next();
+      this.configurationsRefresh$.next();
       this.closeDialog();
     } catch (e) {
       const msg = getFormDisplayedError(e);
@@ -405,7 +429,7 @@ export class CustomOidcComponent {
           allowedEmailDomains: configuration.allowedEmailDomains,
         })
       );
-      this.refresh$.next();
+      this.configurationsRefresh$.next();
     } catch (e) {
       // the browser has already flipped the checkbox, and re-rendering the row does not undo that
       toggle.checked = configuration.enabled;
@@ -442,7 +466,7 @@ export class CustomOidcComponent {
     }
     try {
       await firstValueFrom(this.customOidcService.delete(configuration.id));
-      this.refresh$.next();
+      this.configurationsRefresh$.next();
       this.toast.success('Identity provider deleted');
     } catch (e) {
       const msg = getFormDisplayedError(e);
