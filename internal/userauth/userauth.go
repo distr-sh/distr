@@ -121,15 +121,15 @@ func GenerateCustomOIDCLoginToken(
 	user types.UserAccount,
 	configuration types.CustomOIDCConfiguration,
 ) (string, error) {
-	orgs, err := db.GetOrganizationsForUser(ctx, user.ID)
+	member, org, err := db.GetUserAccountAndOrg(ctx, user.ID, configuration.OrganizationID)
 	if err != nil {
 		return "", err
 	}
-	for _, org := range orgs {
-		if org.ID == configuration.OrganizationID {
-			_, token, err := authjwt.GenerateCustomOIDCToken(user, org, configuration.ID)
-			return token, err
-		}
-	}
-	return "", apierrors.ErrNotFound
+	_, token, err := authjwt.GenerateCustomOIDCToken(user, types.OrganizationWithUserRole{
+		Organization:           org.Organization,
+		UserRole:               member.UserRole,
+		CustomerOrganizationID: member.CustomerOrganizationID,
+		PartnerOrganizationID:  member.PartnerOrganizationID,
+	}, configuration.ID)
+	return token, err
 }
