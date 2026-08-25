@@ -124,10 +124,19 @@ Custom domain self-service lets vendor organizations serve Distr under their own
 It requires an edge proxy with on-demand TLS (e.g. Caddy, included in the Helm chart) in front of the Hub.
 The feature is only offered in the UI when `CUSTOM_DOMAIN_TARGET` is set.
 
-| Variable               | Required | Default | Description                                                                                                                      |
-| ---------------------- | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `CUSTOM_DOMAIN_TARGET` | no       | —       | Hostname customers point every custom domain's CNAME record at (e.g. `whitelabel.distr.sh`). Enables custom domain self-service. |
-| `INTERNAL_SERVER_ADDR` | no       | `:8085` | Listen address of the internal server exposing the Caddy on-demand TLS ask endpoint. Never expose it outside the cluster.        |
+A domain is only used for links, mails, agent manifests and registry URLs once a CNAME check has
+found it to point at the CNAME target; until then the organization keeps the default host. The check runs
+when a domain is registered, can be triggered from the organization settings, and needs to be
+[scheduled](/docs/self-hosting/maintenance#custom-domain-verification) so that domains recover on
+their own once a record is fixed. Serving requests on a domain does not depend on the check.
+
+| Variable                                   | Required | Default | Description                                                                                                                      |
+| ------------------------------------------ | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `CUSTOM_DOMAIN_TARGET`                     | no       | —       | Hostname customers point every custom domain's CNAME record at (e.g. `whitelabel.distr.sh`). Enables custom domain self-service. |
+| `CUSTOM_DOMAIN_VERIFICATION_CRON`          | no       | —       | Cron schedule of the built-in domain verification job. If unset, no verification is scheduled in the Hub.                        |
+| `CUSTOM_DOMAIN_VERIFICATION_TIMEOUT`       | no       | `4m`    | Timeout for a single verification run. Must be greater than `0`.                                                                 |
+| `CUSTOM_DOMAIN_VERIFICATION_REFRESH_AFTER` | no       | `12h`   | How long a verified domain is left alone before it is checked again. Failing domains are checked on every run.                   |
+| `INTERNAL_SERVER_ADDR`                     | no       | `:8085` | Listen address of the internal server exposing the Caddy on-demand TLS ask endpoint. Never expose it outside the cluster.        |
 
 ## Support Bundles
 
@@ -154,7 +163,8 @@ the Loki configuration (`limits_config.retention_period`).
 
 These control the built-in job scheduler and retention limits.
 See [Maintenance Jobs](/docs/self-hosting/maintenance/) for details and Kubernetes CronJob alternatives.
-If a `*_CRON` variable is unset, the corresponding job is not scheduled. A `*_TIMEOUT` of `0` means no timeout.
+If a `*_CRON` variable is unset, the corresponding job is not scheduled. For the timeout variables listed below,
+`0` means no timeout.
 
 | Variable                                     | Required | Default | Description                                                                 |
 | -------------------------------------------- | -------- | ------- | --------------------------------------------------------------------------- |

@@ -5,14 +5,13 @@ import (
 	"errors"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/apierrors"
 	"github.com/distr-sh/distr/internal/auth"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/customdomains"
 	"github.com/distr-sh/distr/internal/db"
-	"github.com/distr-sh/distr/internal/dns"
 	"github.com/distr-sh/distr/internal/env"
 	"github.com/distr-sh/distr/internal/mapping"
 	"github.com/distr-sh/distr/internal/middleware"
@@ -37,12 +36,16 @@ func CustomDomainsRouter(r chiopenapi.Router) {
 			"vendor, one customer's own for a customer, or the domains of the customers assigned to a partner")).
 		With(option.Response(http.StatusOK, []api.CustomDomain{}))
 	r.Get("/{customDomainId}/verification", getCustomDomainVerificationHandler).
-		With(option.Description("Check whether a custom domain's CNAME record currently points at the " +
-			"expected target. This performs a live DNS lookup and is therefore a separate request from " +
-			"listing the domains")).
+		With(option.Description("Get the stored result of the last CNAME check of a custom domain, without " +
+			"performing a lookup")).
 		With(option.Request(customDomainPathRequest{})).
 		With(option.Response(http.StatusOK, api.CustomDomainVerification{}))
 	r.With(middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
+		r.Post("/{customDomainId}/verification", verifyCustomDomainHandler).
+			With(option.Description("Check whether a custom domain's CNAME record currently points at the " +
+				"expected target and store the result. This performs a live DNS lookup and can take seconds")).
+			With(option.Request(customDomainPathRequest{})).
+			With(option.Response(http.StatusOK, api.CustomDomainVerification{}))
 		r.With(middleware.RequireCustomDomainsConfigured).Post("/", createCustomDomainsHandler).
 			With(option.Description("Register new custom domains for the caller's organization, or for a " +
 				"customer named in the request")).
@@ -70,29 +73,51 @@ func getCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getCustomDomainVerificationHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := uuid.Parse(r.PathValue("customDomainId"))
-	if err != nil {
-		http.NotFound(w, r)
+	domain, ok := customDomainOfCaller(w, r)
+	if !ok {
+		return
+	}
+	RespondJSON(w, mapping.CustomDomainVerificationToAPI(*domain, false))
+}
+
+func verifyCustomDomainHandler(w http.ResponseWriter, r *http.Request) {
+	domain, ok := customDomainOfCaller(w, r)
+	if !ok {
 		return
 	}
 
 	ctx := r.Context()
-	log := internalctx.GetLogger(ctx)
-	auth := auth.Authentication.Require(ctx)
-
-	domain, err := db.GetCustomDomainOfOrganization(
-		ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
-	if errors.Is(err, apierrors.ErrNotFound) {
-		http.NotFound(w, r)
-		return
-	} else if err != nil {
-		log.Error("failed to get custom domain", zap.Error(err))
+	updated, inconclusive, err := customdomains.CheckAndStore(ctx, *domain)
+	if err != nil {
+		internalctx.GetLogger(ctx).Error("failed to verify custom domain", zap.Error(err))
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	verified, detail := checkCNAME(ctx, *domain)
-	RespondJSON(w, mapping.CustomDomainVerificationToAPI(domain.ID, verified, detail, time.Now()))
+	RespondJSON(w, mapping.CustomDomainVerificationToAPI(*updated, inconclusive))
+}
+
+func customDomainOfCaller(w http.ResponseWriter, r *http.Request) (*types.CustomDomain, bool) {
+	id, err := uuid.Parse(r.PathValue("customDomainId"))
+	if err != nil {
+		http.NotFound(w, r)
+		return nil, false
+	}
+
+	ctx := r.Context()
+	auth := auth.Authentication.Require(ctx)
+	domain, err := db.GetCustomDomainOfOrganization(
+		ctx, id, *auth.CurrentOrgID(), auth.CurrentCustomerOrgID(), auth.CurrentPartnerOrgID())
+	if errors.Is(err, apierrors.ErrNotFound) {
+		http.NotFound(w, r)
+		return nil, false
+	} else if err != nil {
+		internalctx.GetLogger(ctx).Error("failed to get custom domain", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil, false
+	}
+	return domain, true
 }
 
 func createCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
@@ -143,8 +168,22 @@ func createCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
-		RespondJSON(w, mapping.List(created, mapping.CustomDomainToAPI))
+		RespondJSON(w, mapping.List(verifyCreatedDomains(ctx, created), mapping.CustomDomainToAPI))
 	}
+}
+
+func verifyCreatedDomains(ctx context.Context, created []types.CustomDomain) []types.CustomDomain {
+	log := internalctx.GetLogger(ctx)
+	result := make([]types.CustomDomain, len(created))
+	for i, domain := range created {
+		if updated, _, err := customdomains.CheckAndStore(ctx, domain); err != nil {
+			log.Warn("failed to verify created custom domain", zap.Error(err), zap.String("domain", domain.Domain))
+			result[i] = domain
+		} else {
+			result[i] = *updated
+		}
+	}
+	return result
 }
 
 func deleteCustomDomainHandler(w http.ResponseWriter, r *http.Request) {
@@ -217,23 +256,4 @@ func isPlatformOwnedDomain(domain string) bool {
 		}
 	}
 	return false
-}
-
-// checkCNAME reports whether domain.Domain currently resolves, via CNAME, to its expected target.
-// The detail is shown to the user, so it explains a problem with the record itself; a lookup that
-// did not complete is something only the log can do anything with.
-func checkCNAME(ctx context.Context, domain types.CustomDomain) (verified bool, detail string) {
-	target := env.CustomDomainTarget()
-	if target == nil {
-		return false, "no CNAME target is configured on this instance"
-	}
-	err := dns.VerifyCNAME(ctx, domain.Domain, *target)
-	if err == nil {
-		return true, ""
-	} else if cnameErr, ok := errors.AsType[*dns.CNAMEError](err); ok {
-		return false, cnameErr.Error()
-	}
-	internalctx.GetLogger(ctx).Warn("custom domain CNAME lookup failed",
-		zap.Error(err), zap.String("domain", domain.Domain))
-	return false, "the DNS lookup could not be completed, please try again"
 }

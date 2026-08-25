@@ -101,6 +101,9 @@ var (
 	lokiBasicAuthPassword                  *string
 	lokiRequestTimeout                     time.Duration
 	customDomainTarget                     *string
+	customDomainVerificationCron           *string
+	customDomainVerificationTimeout        time.Duration
+	customDomainVerificationRefreshAfter   time.Duration
 	internalServerAddr                     string
 )
 
@@ -299,6 +302,11 @@ func Initialize() {
 	lokiRequestTimeout = envutil.GetEnvParsedOrDefault("LOKI_REQUEST_TIMEOUT", envparse.PositiveDuration, 30*time.Second)
 
 	customDomainTarget = envutil.GetEnvOrNil("CUSTOM_DOMAIN_TARGET")
+	customDomainVerificationCron = envutil.GetEnvOrNil("CUSTOM_DOMAIN_VERIFICATION_CRON")
+	customDomainVerificationTimeout = envutil.GetEnvParsedOrDefault("CUSTOM_DOMAIN_VERIFICATION_TIMEOUT",
+		envparse.PositiveDuration, 4*time.Minute)
+	customDomainVerificationRefreshAfter = envutil.GetEnvParsedOrDefault("CUSTOM_DOMAIN_VERIFICATION_REFRESH_AFTER",
+		envparse.PositiveDuration, 12*time.Hour)
 	internalServerAddr = envutil.GetEnvOrDefault("INTERNAL_SERVER_ADDR", ":8085", envutil.GetEnvOpts{})
 }
 
@@ -657,6 +665,18 @@ func CustomDomainTarget() *string {
 // configured on this instance. The internal caddy-ask server is only started when it is.
 func CustomDomainsConfigured() bool {
 	return customDomainTarget != nil
+}
+
+func CustomDomainVerificationCron() *string {
+	return customDomainVerificationCron
+}
+
+func CustomDomainVerificationTimeout() time.Duration {
+	return customDomainVerificationTimeout
+}
+
+func CustomDomainVerificationRefreshAfter() time.Duration {
+	return customDomainVerificationRefreshAfter
 }
 
 // InternalServerAddr is the listen address of the internal HTTP server, which currently

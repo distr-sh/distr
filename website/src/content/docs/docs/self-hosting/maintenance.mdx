@@ -142,6 +142,41 @@ Tags are still fetched on demand when a client pulls an image, but the tag list 
   CronJob to trigger syncs externally instead.
 </Aside>
 
+## Custom Domain Verification
+
+When [custom domains](/docs/self-hosting/configuration#custom-domains) are enabled, a job checks that
+each registered domain still points at your CNAME target. A domain is only used for links, mails,
+agent manifests and registry URLs while that check succeeds.
+
+```shell
+distr maintenance verify-custom-domains --timeout 10m
+```
+
+For single instance deployments, schedule it with the built-in scheduler:
+
+```dotenv
+CUSTOM_DOMAIN_VERIFICATION_CRON="*/15 * * * *"
+CUSTOM_DOMAIN_VERIFICATION_TIMEOUT="4m"
+```
+
+For high-availability deployments, use a CronJob instead, as our Helm Chart does:
+
+```yaml
+cronJobs:
+  - name: custom-domain-verification
+    labels:
+      distr.sh/job: custom-domain-verification
+    schedule: '*/15 * * * *'
+    args: [maintenance, verify-custom-domains, --timeout, 10m]
+```
+
+<Aside type="caution">
+  If you set `CUSTOM_DOMAIN_TARGET` without scheduling this job, domains are
+  only ever checked when they are registered or when a vendor triggers the check
+  from the organization settings. A domain whose record is fixed afterwards
+  keeps falling back to your instance host until someone does.
+</Aside>
+
 ## Removed features
 
 ### Deployment & Deployment Target Log Cleanup (removed in v3.0.0)

@@ -1,8 +1,6 @@
 package mapping
 
 import (
-	"time"
-
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
@@ -16,6 +14,10 @@ func CustomDomainToAPI(domain types.CustomDomain) api.CustomDomain {
 		DomainType:             domain.Type,
 		OrganizationID:         domain.OrganizationID,
 		CustomerOrganizationID: domain.CustomerOrganizationID,
+		Verified:               domain.Verified(),
+		VerifiedAt:             domain.VerifiedAt,
+		VerificationCheckedAt:  domain.VerificationCheckedAt,
+		VerificationError:      domain.VerificationError,
 	}
 }
 
@@ -32,16 +34,13 @@ func CustomDomainToInternal(
 	}
 }
 
-func CustomDomainVerificationToAPI(
-	customDomainID uuid.UUID,
-	dnsVerified bool,
-	dnsDetail string,
-	dnsCheckedAt time.Time,
-) api.CustomDomainVerification {
+func CustomDomainVerificationToAPI(domain types.CustomDomain, inconclusive bool) api.CustomDomainVerification {
 	return api.CustomDomainVerification{
-		CustomDomainID: customDomainID,
-		DNSVerified:    dnsVerified,
-		DNSDetail:      dnsDetail,
-		DNSCheckedAt:   dnsCheckedAt,
+		CustomDomainID:        domain.ID,
+		Verified:              domain.Verified(),
+		VerifiedAt:            domain.VerifiedAt,
+		VerificationCheckedAt: domain.VerificationCheckedAt,
+		VerificationError:     domain.VerificationError,
+		Inconclusive:          inconclusive,
 	}
 }

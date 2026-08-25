@@ -187,6 +187,12 @@ hub:
     # caddy.askServerPort itself.
     # - name: CUSTOM_DOMAIN_TARGET
     #   value: whitelabel.example.com
+    # Once a target is set, a registered domain is only used for links, mails, agent manifests and
+    # registry URLs while the custom-domain-verification CronJob below finds its CNAME record
+    # pointing at that target, so removing that job leaves every domain unverified. A verified domain
+    # is left alone for 12h before it is checked again; failing ones are checked on every run.
+    # - name: CUSTOM_DOMAIN_VERIFICATION_REFRESH_AFTER
+    #   value: 12h
   # -- Sources to populate the hub environment from, e.g. a ConfigMap or Secret reference.
   envFrom: []
   scratch:
@@ -387,6 +393,14 @@ cronJobs:
   #   labels:
   #     distr.sh/job: organization-cleanup
   #   args: [cleanup, Organization, --timeout, 10m]
+  # Keeps the state that decides whether a custom domain is used for links, mails, agent manifests
+  # and registry URLs. It is a no-op while no CNAME target is configured, and runs more often than
+  # the hourly default so that a domain whose record was just fixed starts being used again quickly.
+  - name: custom-domain-verification
+    labels:
+      distr.sh/job: custom-domain-verification
+    schedule: '*/15 * * * *'
+    args: [maintenance, verify-custom-domains, --timeout, 10m]
   - name: registry-upstream-sync
     labels:
       distr.sh/job: registry-upstream-sync
