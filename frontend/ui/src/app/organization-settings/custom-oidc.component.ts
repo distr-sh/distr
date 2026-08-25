@@ -67,10 +67,7 @@ export class CustomOidcComponent {
   private readonly fb = inject(FormBuilder).nonNullable;
 
   private readonly remoteEnv = toSignal(from(getRemoteEnvironment()));
-  protected readonly appCnameTarget = computed(() => this.remoteEnv()?.customDomainAppCnameTarget);
-  protected readonly registryCnameTarget = computed(
-    () => this.remoteEnv()?.customDomainRegistryCnameTarget ?? this.appCnameTarget()
-  );
+  protected readonly cnameTarget = computed(() => this.remoteEnv()?.customDomainTarget);
 
   private readonly refresh$ = new BehaviorSubject<void>(undefined);
 
@@ -92,12 +89,10 @@ export class CustomOidcComponent {
   );
   // Self-hosted instances that never configured a CNAME target have nothing to serve a custom domain
   // with, so the domain fields (not the identity providers of ones already configured) stay hidden.
-  protected readonly customDomainsConfigured = computed(() => !!this.appCnameTarget());
+  protected readonly customDomainsConfigured = computed(() => !!this.cnameTarget());
 
   // The tab and its route guard open on either feature (see organization-settings.component.ts /
-  // app-logged-in.routes.ts), so this must too, or an org with only custom_domains gets an enabled
-  // tab that stays blank. The identity-provider-specific parts of the page (the list of providers,
-  // the "add provider" action) stay gated on oidcProvidersEnabled separately.
+  // app-logged-in.routes.ts), so an org with only custom_domains must not end up on a blank page.
   protected readonly domainsEnabled = computed(() => this.featureFlags.isCustomDomainsEnabled());
   protected readonly oidcProvidersEnabled = computed(() => this.featureFlags.isCustomOidcProvidersEnabled());
 
@@ -124,10 +119,9 @@ export class CustomOidcComponent {
       this.auth.hasRole('admin')
   );
 
-  // The server returns everything within the caller's scope (a vendor's own and every customer's
-  // providers); configurationsFor narrows to the one domain being rendered, the same way scopedDomains
-  // below narrows the domain list. Fetched only when the OIDC feature is on: the /custom-oidc route
-  // itself is gated on it, so fetching without it would just 403.
+  // The server returns every provider within the caller's scope, a vendor's own and each customer's
+  // alike, which is why configurationsFor narrows to the one domain being rendered. Requested only
+  // with the feature enabled, because the endpoint 403s without it.
   private readonly response = toSignal(
     combineLatest([this.featureFlags.isCustomOidcProvidersEnabled$, this.refresh$]).pipe(
       switchMap(([enabled]) =>
@@ -162,15 +156,13 @@ export class CustomOidcComponent {
   );
 
   // Verifying a domain is a live DNS lookup that can take seconds, so it is requested per domain
-  // once the list has arrived instead of being part of it. The panels render immediately and fill
-  // their status in as the checks come back.
+  // once the list has arrived instead of being part of it.
   private readonly verifications = signal<Record<string, CustomDomainVerification>>({});
   protected readonly checkingDomainIds = signal<ReadonlySet<string>>(new Set());
 
   constructor() {
-    // Every domain is checked once, as soon as it appears in the list. distinct is what keeps the
-    // refetches caused by unrelated changes (saving an identity provider re-emits the same domains)
-    // from checking it over and over; a failed check is retried through the button, not silently.
+    // distinct keeps the refetches caused by unrelated changes (saving an identity provider re-emits
+    // the same domains) from checking every domain again; a failed check is retried through the button.
     toObservable(this.scopedDomains)
       .pipe(
         mergeMap((domains) => domains),
@@ -267,8 +259,8 @@ export class CustomOidcComponent {
     return this.configurations().filter((configuration) => configuration.customDomainId === domain.id);
   }
 
-  // The domain the dialog is currently adding or editing a provider for. Each host carries its own
-  // provider set, so it is the domain and not the organization that a provider belongs to.
+  // Each host carries its own provider set, so a provider belongs to the domain and not to the
+  // organization.
   private readonly activeDomain = signal<CustomDomain | undefined>(undefined);
   protected readonly editing = signal<CustomOidcConfiguration | undefined>(undefined);
   protected readonly saving = signal(false);
@@ -300,8 +292,6 @@ export class CustomOidcComponent {
   });
 
   protected readonly slugValue = toSignal(this.form.controls.slug.valueChanges, {initialValue: ''});
-  // The protocol of the current page, not a hard-wired https, so that the preview matches the callback URL the
-  // hub reports for a saved provider, which follows the scheme the instance is configured with.
   protected readonly callbackUrlPrefix = computed(() => {
     const domain = this.activeDomain()?.domain;
     const organizationSlug = this.organizationSlug();

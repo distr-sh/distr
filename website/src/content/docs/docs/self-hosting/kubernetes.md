@@ -29,24 +29,23 @@ certificate for every domain a vendor registers, so the chart ships an optional
 ```yaml
 hub:
   env:
-    # DNS records your vendors point their domains at
-    - name: CUSTOM_DOMAIN_APP_CNAME_TARGET
-      value: cname.example.com
-    - name: CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET
-      value: cname.example.com
+    # DNS record your vendors point their domains at
+    - name: CUSTOM_DOMAIN_TARGET
+      value: whitelabel.example.com
 
 caddy:
   enabled: true
   acmeEmail: ops@example.com
 ```
 
-Point both hostnames at the external address of the `<release>-caddy` `LoadBalancer` Service. Before
-issuing a certificate, Caddy asks the Hub whether a domain is registered, using an internal Service
-that must never be exposed publicly. `CUSTOM_DOMAIN_APP_CNAME_TARGET` is what enables the feature in
-the UI, so the chart refuses to render a Caddy deployment without it;
-`CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET` is optional and falls back to the app target. Helm replaces
-the `hub.env` list rather than merging it, so add the two variables to the rest of your hub
-environment instead of setting them on their own.
+Point that hostname at the external address of the `<release>-caddy` `LoadBalancer` Service. One
+target covers every domain a vendor registers, registry domains included, because Caddy routes
+registry traffic by the `/v2/` path prefix the OCI distribution API mandates rather than by
+hostname. Before issuing a certificate, Caddy asks the Hub whether a domain is registered, using an
+internal Service that must never be exposed publicly. `CUSTOM_DOMAIN_TARGET` is what enables the
+feature in the UI, so the chart refuses to render a Caddy deployment without it. Helm replaces the
+`hub.env` list rather than merging it, so add the variable to the rest of your hub environment
+instead of setting it on its own.
 
 Caddy stores the certificates it obtains on a persistent volume, which the chart keeps when the
 release is uninstalled so that a reinstall does not have to reissue a certificate for every custom

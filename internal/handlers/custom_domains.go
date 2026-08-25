@@ -201,17 +201,14 @@ func legacyDomainOwnedByOtherOrg(ctx context.Context, domain string, orgID uuid.
 
 // isPlatformOwnedDomain reports whether the given normalized domain is owned by the platform
 // and must therefore not be registrable as a custom domain: distr.sh (and subdomains), the
-// instance's own app and registry hosts, and the CNAME target hosts.
+// instance's own app and registry hosts, and the CNAME target host.
 func isPlatformOwnedDomain(domain string) bool {
 	platformHosts := []string{
 		"distr.sh",
 		validation.NormalizeHostname(env.Host()),
 		validation.NormalizeHostname(env.RegistryHost()),
 	}
-	if target := env.CustomDomainAppCNAMETarget(); target != nil {
-		platformHosts = append(platformHosts, validation.NormalizeHostname(*target))
-	}
-	if target := env.CustomDomainRegistryCNAMETarget(); target != nil {
+	if target := env.CustomDomainTarget(); target != nil {
 		platformHosts = append(platformHosts, validation.NormalizeHostname(*target))
 	}
 	for _, host := range platformHosts {
@@ -222,23 +219,11 @@ func isPlatformOwnedDomain(domain string) bool {
 	return false
 }
 
-// expectedCNAMETarget returns the DNS name a domain of the given type must be CNAMEd to. A registry
-// domain falls back to the app target when no dedicated registry target is configured, the same
-// fallback the frontend already applies (custom-oidc.component.ts's registryCnameTarget). Takes the
-// configured targets as parameters, rather than reading the env package itself, so it is a pure
-// function to unit test.
-func expectedCNAMETarget(domainType types.DomainType, appTarget, registryTarget *string) *string {
-	if domainType == types.DomainTypeRegistry && registryTarget != nil {
-		return registryTarget
-	}
-	return appTarget
-}
-
 // checkCNAME reports whether domain.Domain currently resolves, via CNAME, to its expected target.
 // The detail is shown to the user, so it explains a problem with the record itself; a lookup that
 // did not complete is something only the log can do anything with.
 func checkCNAME(ctx context.Context, domain types.CustomDomain) (verified bool, detail string) {
-	target := expectedCNAMETarget(domain.Type, env.CustomDomainAppCNAMETarget(), env.CustomDomainRegistryCNAMETarget())
+	target := env.CustomDomainTarget()
 	if target == nil {
 		return false, "no CNAME target is configured on this instance"
 	}
