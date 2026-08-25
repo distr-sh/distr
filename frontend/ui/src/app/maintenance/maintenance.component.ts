@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core';
+import {Component, inject, signal} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faScrewdriverWrench} from '@fortawesome/free-solid-svg-icons';
@@ -11,7 +11,6 @@ const POLL_INTERVAL_MS = 5000;
 @Component({
   selector: 'app-maintenance',
   imports: [FaIconComponent, PortalLogoComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './maintenance.component.html',
 })
 export class MaintenanceComponent {

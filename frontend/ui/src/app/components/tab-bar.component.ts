@@ -1,6 +1,6 @@
 import {CdkOverlayOrigin} from '@angular/cdk/overlay';
 import {NgTemplateOutlet} from '@angular/common';
-import {ChangeDetectionStrategy, Component, contentChild, input, model, output, TemplateRef} from '@angular/core';
+import {Component, contentChild, input, model, output, TemplateRef} from '@angular/core';
 
 export interface TabItem<T extends string = string> {
   readonly id: T;
@@ -10,7 +10,6 @@ export interface TabItem<T extends string = string> {
 
 @Component({
   selector: 'app-tab-bar',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CdkOverlayOrigin, NgTemplateOutlet],
   template: `
     <div role="tablist" class="flex flex-wrap border-b border-gray-200 dark:border-gray-700">

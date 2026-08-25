@@ -1,5 +1,5 @@
 import {OverlayModule} from '@angular/cdk/overlay';
-import {ChangeDetectionStrategy, Component, computed, ElementRef, inject, signal, viewChild} from '@angular/core';
+import {Component, computed, ElementRef, inject, signal, viewChild} from '@angular/core';
 import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
@@ -12,7 +12,6 @@ import {CustomerOrganizationsService} from '../services/customer-organizations.s
 @Component({
   selector: 'app-customer-settings',
   templateUrl: './customer-settings.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CustomOidcComponent, RouterLink, FontAwesomeModule, OverlayModule],
 })
 export class CustomerSettingsComponent {

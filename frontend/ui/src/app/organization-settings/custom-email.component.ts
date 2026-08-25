@@ -1,5 +1,5 @@
 import {HttpErrorResponse} from '@angular/common/http';
-import {ChangeDetectionStrategy, Component, inject, OnInit, signal} from '@angular/core';
+import {Component, inject, OnInit, signal} from '@angular/core';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faFloppyDisk, faPaperPlane, faTrash} from '@fortawesome/free-solid-svg-icons';
@@ -15,7 +15,6 @@ import {CustomEmailConfiguration, CustomEmailSettings} from '../types/custom-ema
 @Component({
   selector: 'app-custom-email',
   templateUrl: './custom-email.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FaIconComponent, ReactiveFormsModule, AutotrimDirective],
 })
 export class CustomEmailComponent implements OnInit {
