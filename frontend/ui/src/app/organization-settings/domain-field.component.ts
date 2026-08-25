@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal} from '@angular/core';
+import {Component, computed, effect, inject, input, output, signal} from '@angular/core';
 import {FormBuilder, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleCheck, faRotate, faTrash, faTriangleExclamation} from '@fortawesome/free-solid-svg-icons';
@@ -14,7 +14,6 @@ import {CustomDomain, CustomDomainVerification} from '../types/custom-domain';
 @Component({
   selector: 'app-domain-field',
   templateUrl: './domain-field.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FaIconComponent, FormsModule, ReactiveFormsModule, AutotrimDirective, ClipComponent],
 })
 export class DomainFieldComponent {

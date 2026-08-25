@@ -1,11 +1,10 @@
-import {ChangeDetectionStrategy, Component, input} from '@angular/core';
+import {Component, input} from '@angular/core';
 import {WEBSITE_URL} from '../../constants';
 import {SubscriptionType} from '../types/subscription';
 import {PlanBadgeComponent} from './plan-badge.component';
 
 @Component({
   selector: 'app-plan-feature-hint',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PlanBadgeComponent],
   template: `
     <div

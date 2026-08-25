@@ -161,6 +161,7 @@ The website is a separate pnpm project with its own Prettier config; the root co
 
 - Always use self-closing tags for Angular components when they have no content (e.g. `<fa-icon [icon]="faPlus" />` instead of `<fa-icon [icon]="faPlus"></fa-icon>`)
 - Use standalone components (no NgModules) - This is the default so `standalone: true` is not needed
+- `ChangeDetectionStrategy.OnPush` is the default, so never write `changeDetection: ChangeDetectionStrategy.OnPush`. Only set `changeDetection` to opt a component out with `ChangeDetectionStrategy.Eager`, and remove that opt-out whenever the component's state is fully signal-based
 - Services are singleton by default (`providedIn: 'root'`)
 - Use Angular's `inject()` function for dependency injection (e.g. `private readonly http = inject(HttpClient)`). Do not use constructor injection.
 - Component file structure: `component-name.component.ts`, `component-name.component.html` (no need for scss files)

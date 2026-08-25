@@ -1,14 +1,5 @@
 import {NgTemplateOutlet} from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  input,
-  signal,
-  TemplateRef,
-  viewChild,
-} from '@angular/core';
+import {Component, computed, inject, input, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
@@ -39,7 +30,6 @@ const DEFAULT_SCOPES = ['openid', 'profile', 'email'];
 @Component({
   selector: 'app-custom-oidc',
   templateUrl: './custom-oidc.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FaIconComponent,
     ReactiveFormsModule,

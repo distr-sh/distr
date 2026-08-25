@@ -1,6 +1,6 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {PercentPipe} from '@angular/common';
-import {ChangeDetectionStrategy, Component, computed, inject, input, signal} from '@angular/core';
+import {Component, computed, inject, input, signal} from '@angular/core';
 import {rxResource} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleQuestion, faTriangleExclamation} from '@fortawesome/free-solid-svg-icons';
@@ -23,7 +23,6 @@ const staleThreshold = dayjs.duration(2, 'minutes');
 @Component({
   selector: 'app-deployment-resource-metrics',
   templateUrl: './deployment-resource-metrics.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [OverlayModule, PercentPipe, BytesPipe, SpinnerComponent, FaIconComponent, RelativeDatePipe],
 })
 export class DeploymentResourceMetricsComponent {
