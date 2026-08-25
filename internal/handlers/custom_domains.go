@@ -172,11 +172,6 @@ func createCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// verifyCreatedDomains checks the freshly created domains right away, so that one whose CNAME record
-// already exists — the usual case, since the record is what the form asks for — is in use
-// immediately instead of after the next run of the verification job. A check that fails only leaves
-// the domain unverified, which is the state it was created in, so it is not worth failing the
-// request over.
 func verifyCreatedDomains(ctx context.Context, created []types.CustomDomain) []types.CustomDomain {
 	log := internalctx.GetLogger(ctx)
 	result := make([]types.CustomDomain, len(created))
