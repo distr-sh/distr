@@ -7,7 +7,7 @@ import {filter} from 'rxjs';
 import {TabBarComponent, TabItem} from '../components/tab-bar.component';
 import {AuthService} from '../services/auth.service';
 
-const userSettingsTabs = ['general', 'security', 'identity-providers'] as const;
+const userSettingsTabs = ['general', 'security', 'identities'] as const;
 const defaultTab: UserSettingsTab = 'general';
 
 type UserSettingsTab = (typeof userSettingsTabs)[number];
@@ -30,7 +30,7 @@ export class UserSettingsComponent {
   protected readonly tabs: TabItem<UserSettingsTab>[] = [
     {id: 'general', label: 'General'},
     {id: 'security', label: 'Security'},
-    {id: 'identity-providers', label: 'Connected Identity Providers'},
+    {id: 'identities', label: 'Connected identities'},
   ];
 
   protected readonly activeTab = signal(this.tabFromRoute());

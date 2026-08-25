@@ -27,12 +27,12 @@ const oidcProviderIcons: Record<OIDCProvider, IconDefinition> = {
 };
 
 @Component({
-  selector: 'app-user-identity-providers',
-  templateUrl: './user-identity-providers.component.html',
+  selector: 'app-user-identities',
+  templateUrl: './user-identities.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [FaIconComponent, DatePipe],
 })
-export class UserIdentityProvidersComponent {
+export class UserIdentitiesComponent {
   protected readonly faXmark = faXmark;
   protected readonly faCircleExclamation = faCircleExclamation;
 

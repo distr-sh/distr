@@ -51,7 +51,7 @@ import {TutorialsComponent} from './tutorials/tutorials.component';
 import {UsersTutorialComponent} from './tutorials/users/users-tutorial.component';
 import {isSubscriptionExpired} from './types/organization';
 import {UserGeneralSettingsComponent} from './user-settings/user-general-settings.component';
-import {UserIdentityProvidersComponent} from './user-settings/user-identity-providers.component';
+import {UserIdentitiesComponent} from './user-settings/user-identities.component';
 import {UserSecuritySettingsComponent} from './user-settings/user-security-settings.component';
 import {UserSettingsComponent} from './user-settings/user-settings.component';
 
@@ -374,8 +374,8 @@ export const routes: Routes = [
                 component: UserSecuritySettingsComponent,
               },
               {
-                path: 'identity-providers',
-                component: UserIdentityProvidersComponent,
+                path: 'identities',
+                component: UserIdentitiesComponent,
               },
             ],
           },

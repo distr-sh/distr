@@ -1,14 +1,14 @@
 <div class="space-y-4">
-  <h2 class="text-xl font-bold dark:text-white">Connected Identity Providers</h2>
+  <h2 class="text-xl font-bold dark:text-white">Connected identities</h2>
 
   <div class="text-gray-500 text-sm">
-    These identity providers can be used to sign in to Distr. A provider is connected the first time you sign in with
-    it, matched to your Distr account by the e-mail address it reports. From then on it stays connected even if the
-    e-mail address changes on either side.
+    These identities can be used to sign in to Distr. An identity is connected the first time you sign in with it,
+    matched to your Distr account by the e-mail address it reports. From then on it stays connected even if the e-mail
+    address changes on either side.
   </div>
 
   @if (oidcIdentities().length === 0) {
-    <div class="text-sm dark:text-white">You have no connected identity providers.</div>
+    <div class="text-sm dark:text-white">You have no connected identities.</div>
   } @else {
     <ul class="space-y-2">
       @for (identity of oidcIdentities(); track identity.id) {
