@@ -17,8 +17,9 @@ export interface CustomDomain {
 }
 
 // The stored outcome of the last CNAME check, returned by the check that runs on demand. Inconclusive
-// means that check did not complete, in which case the domain keeps the state it had before and the
-// timestamps still describe an earlier check.
+// means that check did not complete, in which case the domain keeps the state it had before:
+// verificationCheckedAt is the inconclusive attempt, while verifiedAt and verificationError still
+// describe the last check that reached a conclusion.
 export interface CustomDomainVerification {
   customDomainId: string;
   verified: boolean;

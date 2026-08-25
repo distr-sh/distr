@@ -82,7 +82,8 @@ func (r *CreateCustomDomainsRequest) Validate() error {
 
 // CustomDomainVerification is the stored outcome of the last CNAME check of one domain. Inconclusive
 // reports that the last check did not complete, in which case the domain keeps the state it had
-// before and the timestamps below still describe the check before that one.
+// before: VerificationCheckedAt is the inconclusive attempt, while VerifiedAt and VerificationError
+// still describe the last check that reached a conclusion.
 type CustomDomainVerification struct {
 	CustomDomainID        uuid.UUID  `json:"customDomainId"`
 	Verified              bool       `json:"verified"`
