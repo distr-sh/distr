@@ -268,9 +268,9 @@ func SetCustomDomainVerificationResult(
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		`UPDATE CustomDomain AS d SET
-			verification_checked_at = current_timestamp,
+			verification_checked_at = now(),
 			verification_error = @verificationError,
-			verified_at = CASE WHEN @verificationError::TEXT IS NULL THEN current_timestamp ELSE verified_at END
+			verified_at = CASE WHEN @verificationError::TEXT IS NULL THEN now() ELSE verified_at END
 		WHERE d.id = @id
 		RETURNING`+customDomainOutputExpr,
 		pgx.NamedArgs{"id": id, "verificationError": verificationError},
@@ -292,7 +292,7 @@ func SetCustomDomainVerificationResult(
 func SetCustomDomainVerificationAttempted(ctx context.Context, id uuid.UUID) (*types.CustomDomain, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		`UPDATE CustomDomain AS d SET verification_checked_at = current_timestamp
+		`UPDATE CustomDomain AS d SET verification_checked_at = now()
 		WHERE d.id = @id
 		RETURNING`+customDomainOutputExpr,
 		pgx.NamedArgs{"id": id},

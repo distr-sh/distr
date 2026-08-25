@@ -165,8 +165,9 @@ export class CustomOidcComponent {
       this.refresh$.next();
       if (verification.inconclusive) {
         this.toast.error('The DNS lookup could not be completed, please try again');
-      } else if (verification.verified) {
-        // The organization's effective registry host may have changed with a domain becoming usable.
+      } else {
+        // The organization's effective registry host may have changed in either direction: a domain
+        // becoming usable, or one that was usable falling back to the default host.
         this.contextService.reload();
       }
     } catch (e) {
