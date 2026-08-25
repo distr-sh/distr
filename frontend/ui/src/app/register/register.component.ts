@@ -67,7 +67,7 @@ export class RegisterComponent implements OnInit {
     }
 
     this.portalService.portal$.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe(({loginConfig}) => {
-      if (!loginConfig.registrationEnabled) {
+      if (loginConfig.registration === 'disabled') {
         this.router.navigate(['/login'], {replaceUrl: true});
       }
     });

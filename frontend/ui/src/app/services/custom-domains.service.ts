@@ -1,7 +1,7 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {Observable} from 'rxjs';
-import {CreateCustomDomainRequest, CustomDomain} from '../types/custom-domain';
+import {CreateCustomDomainRequest, CustomDomain, CustomDomainVerification} from '../types/custom-domain';
 
 const baseUrl = '/api/v1/custom-domains';
 
@@ -28,7 +28,9 @@ export class CustomDomainsService {
     return this.httpClient.delete<void>(`${baseUrl}/${id}`);
   }
 
-  public verify(id: string): Observable<CustomDomain> {
-    return this.httpClient.post<CustomDomain>(`${baseUrl}/${id}/verify`, {});
+  // A live DNS lookup that can take seconds, which is why it is its own request: callers render the
+  // domain first and fill the verification in once it arrives.
+  public verification(id: string): Observable<CustomDomainVerification> {
+    return this.httpClient.get<CustomDomainVerification>(`${baseUrl}/${id}/verification`);
   }
 }

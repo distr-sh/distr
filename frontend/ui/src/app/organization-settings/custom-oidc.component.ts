@@ -1,4 +1,4 @@
-import {NgPlural, NgPluralCase, NgTemplateOutlet} from '@angular/common';
+import {NgTemplateOutlet} from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -9,15 +9,15 @@ import {
   TemplateRef,
   viewChild,
 } from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faCircleExclamation, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
-import {BehaviorSubject, combineLatest, firstValueFrom, from, map, of, switchMap} from 'rxjs';
+import {faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {BehaviorSubject, combineLatest, distinct, firstValueFrom, from, map, mergeMap, of, switchMap} from 'rxjs';
 import {getRemoteEnvironment} from '../../env/remote';
 import {getFormDisplayedError} from '../../util/errors';
-import {slugMaxLength, slugPattern} from '../../util/slug';
+import {slugMaxLength, slugPattern, toSlug} from '../../util/slug';
 import {ClipComponent} from '../components/clip.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AuthService} from '../services/auth.service';
@@ -28,12 +28,13 @@ import {FeatureFlagService} from '../services/feature-flag.service';
 import {OrganizationService} from '../services/organization.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
-import {CustomDomain, CustomDomainType} from '../types/custom-domain';
+import {CustomDomain, CustomDomainType, CustomDomainVerification} from '../types/custom-domain';
 import {CustomOidcConfiguration, CustomOidcConfigurationsResponse} from '../types/custom-oidc';
 import {DomainFieldComponent} from './domain-field.component';
-import {RegistryDomainFieldComponent} from './registry-domain-field.component';
 
 const BUSINESS_OIDC_BANNER_DISMISSED_KEY = 'customOidc.businessOidcBannerDismissed';
+
+const DEFAULT_SCOPES = ['openid', 'profile', 'email'];
 
 @Component({
   selector: 'app-custom-oidc',
@@ -44,11 +45,8 @@ const BUSINESS_OIDC_BANNER_DISMISSED_KEY = 'customOidc.businessOidcBannerDismiss
     ReactiveFormsModule,
     AutotrimDirective,
     ClipComponent,
-    NgPlural,
-    NgPluralCase,
     NgTemplateOutlet,
     DomainFieldComponent,
-    RegistryDomainFieldComponent,
     RouterLink,
   ],
 })
@@ -57,7 +55,6 @@ export class CustomOidcComponent {
   protected readonly faPen = faPen;
   protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
-  protected readonly faCircleExclamation = faCircleExclamation;
 
   private readonly customOidcService = inject(CustomOidcService);
   private readonly customDomainsService = inject(CustomDomainsService);
@@ -85,6 +82,14 @@ export class CustomOidcComponent {
   // customer on their behalf; the copy addresses "your users" only for the former.
   protected readonly viewerIsCustomer = computed(() => this.auth.isCustomer());
   protected readonly partnerManagementEnabled = computed(() => this.featureFlags.isPartnerManagementEnabled());
+  protected readonly appDomainLabel = computed(() =>
+    this.partnerManagementEnabled() ? 'Vendor & Partner Portal domain' : 'Vendor Portal domain'
+  );
+  // On a customer's own settings page the portal domain is the reason the page exists, so it is not
+  // hidden behind a checkbox there the way the vendor's optional domains are.
+  protected readonly customerPortalCheckboxLabel = computed(() =>
+    this.customerScoped() ? undefined : 'Use a customer portal domain'
+  );
   // Self-hosted instances that never configured a CNAME target have nothing to serve a custom domain
   // with, so the domain fields (not the identity providers of ones already configured) stay hidden.
   protected readonly customDomainsConfigured = computed(() => !!this.appCnameTarget());
@@ -126,17 +131,14 @@ export class CustomOidcComponent {
   private readonly response = toSignal(
     combineLatest([this.featureFlags.isCustomOidcProvidersEnabled$, this.refresh$]).pipe(
       switchMap(([enabled]) =>
-        enabled
-          ? this.customOidcService.list()
-          : of({configurations: [], membersWithOtherOrganizations: []} as CustomOidcConfigurationsResponse)
+        enabled ? this.customOidcService.list() : of({configurations: []} as CustomOidcConfigurationsResponse)
       )
     ),
-    {initialValue: {configurations: [], membersWithOtherOrganizations: []} as CustomOidcConfigurationsResponse}
+    {initialValue: {configurations: []} as CustomOidcConfigurationsResponse}
   );
   protected readonly configurations = computed(() => this.response().configurations);
-  protected readonly membersWithOtherOrganizations = computed(() => this.response().membersWithOtherOrganizations);
 
-  private readonly fetchedDomains = toSignal(
+  private readonly domains = toSignal(
     combineLatest([
       this.featureFlags.isCustomDomainsEnabled$,
       this.featureFlags.isCustomOidcProvidersEnabled$,
@@ -148,12 +150,6 @@ export class CustomOidcComponent {
     ),
     {initialValue: [] as CustomDomain[]}
   );
-  // Recheck results land here instead of triggering a full refetch, so clicking the reload icon on
-  // one domain updates only that domain's panel.
-  private readonly domainOverrides = signal<Record<string, CustomDomain>>({});
-  private readonly domains = computed(() =>
-    this.fetchedDomains().map((domain) => this.domainOverrides()[domain.id] ?? domain)
-  );
   protected readonly scopedDomains = computed(() =>
     this.domains().filter((d) => (d.customerOrganizationId ?? undefined) === this.customerOrganizationId())
   );
@@ -164,6 +160,54 @@ export class CustomOidcComponent {
   protected readonly customerPortalDomain = computed(() =>
     this.scopedDomains().find((domain) => domain.domainType === 'customer_portal')
   );
+
+  // Verifying a domain is a live DNS lookup that can take seconds, so it is requested per domain
+  // once the list has arrived instead of being part of it. The panels render immediately and fill
+  // their status in as the checks come back.
+  private readonly verifications = signal<Record<string, CustomDomainVerification>>({});
+  protected readonly checkingDomainIds = signal<ReadonlySet<string>>(new Set());
+
+  constructor() {
+    // Every domain is checked once, as soon as it appears in the list. distinct is what keeps the
+    // refetches caused by unrelated changes (saving an identity provider re-emits the same domains)
+    // from checking it over and over; a failed check is retried through the button, not silently.
+    toObservable(this.scopedDomains)
+      .pipe(
+        mergeMap((domains) => domains),
+        distinct((domain) => domain.id),
+        takeUntilDestroyed()
+      )
+      .subscribe((domain) => void this.verifyDomain(domain));
+
+    this.form.controls.name.valueChanges.pipe(takeUntilDestroyed()).subscribe((name) => {
+      if (!this.slugEdited()) {
+        this.form.controls.slug.setValue(toSlug(name));
+      }
+    });
+  }
+
+  protected verificationFor(domain: CustomDomain | undefined): CustomDomainVerification | undefined {
+    return domain ? this.verifications()[domain.id] : undefined;
+  }
+
+  protected async verifyDomain(domain: CustomDomain) {
+    this.checkingDomainIds.update((ids) => new Set(ids).add(domain.id));
+    try {
+      const verification = await firstValueFrom(this.customDomainsService.verification(domain.id));
+      this.verifications.update((verifications) => ({...verifications, [domain.id]: verification}));
+    } catch (e) {
+      const msg = getFormDisplayedError(e);
+      if (msg) {
+        this.toast.error(msg);
+      }
+    } finally {
+      this.checkingDomainIds.update((ids) => {
+        const next = new Set(ids);
+        next.delete(domain.id);
+        return next;
+      });
+    }
+  }
 
   protected readonly savingDomain = signal(false);
 
@@ -212,27 +256,6 @@ export class CustomOidcComponent {
     }
   }
 
-  protected readonly checkingDomainIds = signal<ReadonlySet<string>>(new Set());
-
-  protected async recheckDomain(domain: CustomDomain) {
-    this.checkingDomainIds.update((ids) => new Set(ids).add(domain.id));
-    try {
-      const updated = await firstValueFrom(this.customDomainsService.verify(domain.id));
-      this.domainOverrides.update((overrides) => ({...overrides, [domain.id]: updated}));
-    } catch (e) {
-      const msg = getFormDisplayedError(e);
-      if (msg) {
-        this.toast.error(msg);
-      }
-    } finally {
-      this.checkingDomainIds.update((ids) => {
-        const next = new Set(ids);
-        next.delete(domain.id);
-        return next;
-      });
-    }
-  }
-
   protected readonly organizationSlug = toSignal(
     this.organizationService.get().pipe(map((organization) => organization.slug)),
     {initialValue: undefined}
@@ -264,8 +287,6 @@ export class CustomOidcComponent {
       issuer: this.fb.control('', [Validators.required, Validators.pattern(/^https?:\/\/\S+$/)]),
       clientId: this.fb.control('', [Validators.required]),
       clientSecret: this.fb.control(''),
-      scopes: this.fb.control('profile email'),
-      pkce: this.fb.control<'auto' | 'on' | 'off'>('auto'),
       spInitiated: this.fb.control(false),
       createUnknownUsers: this.fb.control(false),
       defaultUserRole: this.fb.control<'read_only' | 'read_write' | 'admin'>('read_write'),
@@ -274,22 +295,42 @@ export class CustomOidcComponent {
     {validators: [provisioningNeedsEmailDomains]}
   );
 
-  private readonly slugValue = toSignal(this.form.controls.slug.valueChanges, {initialValue: ''});
-  protected readonly callbackUrl = computed(() => {
+  protected readonly createUnknownUsers = toSignal(this.form.controls.createUnknownUsers.valueChanges, {
+    initialValue: false,
+  });
+
+  protected readonly slugValue = toSignal(this.form.controls.slug.valueChanges, {initialValue: ''});
+  // The protocol of the current page, not a hard-wired https, so that the preview matches the callback URL the
+  // hub reports for a saved provider, which follows the scheme the instance is configured with.
+  protected readonly callbackUrlPrefix = computed(() => {
     const domain = this.activeDomain()?.domain;
     const organizationSlug = this.organizationSlug();
-    const slug = this.slugValue();
-    if (!domain || !organizationSlug || !slug) {
+    if (!domain || !organizationSlug) {
       return undefined;
     }
-    // The protocol of the current page, not a hard-wired https, so that the preview matches the callback URL the
-    // hub reports for a saved provider, which follows the scheme the instance is configured with.
-    return `${location.protocol}//${domain}/api/v1/auth/oidc/custom/${organizationSlug}/${slug}/callback`;
+    return `${location.protocol}//${domain}/api/v1/auth/oidc/custom/${organizationSlug}/`;
   });
+  protected readonly callbackUrl = computed(() => {
+    const prefix = this.callbackUrlPrefix();
+    const slug = this.slugValue();
+    return prefix && slug ? `${prefix}${slug}/callback` : undefined;
+  });
+
+  // An existing provider counts as hand-edited: its slug is part of the redirect URI registered with the
+  // identity provider, so renaming the provider must not silently invalidate it.
+  private readonly slugEdited = signal(false);
+  protected readonly editingSlug = signal(false);
+
+  protected editSlug() {
+    this.slugEdited.set(true);
+    this.editingSlug.set(true);
+  }
 
   protected showDialog(domain: CustomDomain, configuration?: CustomOidcConfiguration) {
     this.activeDomain.set(domain);
     this.editing.set(configuration);
+    this.slugEdited.set(!!configuration);
+    this.editingSlug.set(false);
     this.form.controls.clientSecret.setValidators(configuration ? [] : [Validators.required]);
     if (configuration) {
       this.form.setValue({
@@ -298,10 +339,9 @@ export class CustomOidcComponent {
         issuer: configuration.issuer,
         clientId: configuration.clientId,
         clientSecret: '',
-        scopes: configuration.scopes.filter((scope) => scope !== 'openid').join(' '),
-        pkce: configuration.pkceEnabled === undefined ? 'auto' : configuration.pkceEnabled ? 'on' : 'off',
         spInitiated: configuration.spInitiated,
-        createUnknownUsers: configuration.createUnknownUsers,
+        // The checkbox is not rendered when provisioning is unavailable, so a stored true could not be cleared.
+        createUnknownUsers: configuration.createUnknownUsers && this.provisioningAvailable(),
         defaultUserRole: configuration.defaultUserRole,
         allowedEmailDomains: configuration.allowedEmailDomains.join(' '),
       });
@@ -343,8 +383,10 @@ export class CustomOidcComponent {
       issuer: value.issuer,
       clientId: value.clientId,
       clientSecret: value.clientSecret || undefined,
-      scopes: splitList(value.scopes),
-      pkceEnabled: value.pkce === 'auto' ? undefined : value.pkce === 'on',
+      // Not offered in the dialog: the defaults work with every provider, and an organization that needs
+      // something else sets it through the API, which this must not overwrite.
+      scopes: existing?.scopes ?? DEFAULT_SCOPES,
+      pkceEnabled: existing?.pkceEnabled,
       spInitiated: value.spInitiated,
       createUnknownUsers: value.createUnknownUsers,
       defaultUserRole: value.defaultUserRole,

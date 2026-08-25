@@ -19,6 +19,7 @@ import {filter, firstValueFrom, take} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {SecureImagePipe} from '../../util/secureImage';
 import {AutotrimDirective} from '../directives/autotrim.directive';
+import {AuthService} from '../services/auth.service';
 import {ContextService} from '../services/context.service';
 import {ImageUploadService} from '../services/image-upload.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
@@ -57,12 +58,16 @@ export class UserSettingsComponent {
 
   private readonly fb = inject(FormBuilder);
   private readonly ctx = inject(ContextService);
+  private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly imageUploadService = inject(ImageUploadService);
   private readonly settingsService = inject(SettingsService);
   private readonly overlay = inject(OverlayService);
 
   protected readonly user = toSignal(this.ctx.getUser());
+
+  // A session cannot become one, or stop being one, without a new login, so this is read once.
+  protected readonly customOidcSession = this.auth.isCustomOidcSession();
 
   protected readonly generalForm = this.fb.group({
     name: this.fb.control(''),

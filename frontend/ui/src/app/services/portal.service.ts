@@ -7,7 +7,7 @@ import {Portal} from '../types/portal';
 const defaultPortal: Portal = {
   customDomain: false,
   loginConfig: {
-    registrationEnabled: false,
+    registration: 'hidden',
     oidcGithubEnabled: false,
     oidcGoogleEnabled: false,
     oidcMicrosoftEnabled: false,

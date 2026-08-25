@@ -24,7 +24,7 @@ func getOIDCIdentitiesHandler(w http.ResponseWriter, r *http.Request) {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
-		RespondJSON(w, mapping.List(identities, mapping.UserAccountOIDCIdentityToDTO))
+		RespondJSON(w, mapping.List(identities, mapping.UserAccountOIDCIdentityToAPI))
 	}
 }
 

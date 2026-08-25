@@ -23,8 +23,11 @@ import (
 	"github.com/oaswrap/spec/adapter/chiopenapi"
 	"github.com/oaswrap/spec/option"
 	"go.uber.org/zap"
-	"golang.org/x/sync/errgroup"
 )
+
+type customDomainPathRequest struct {
+	CustomDomainID uuid.UUID `path:"customDomainId"`
+}
 
 func CustomDomainsRouter(r chiopenapi.Router) {
 	r.WithOptions(option.GroupTags("Custom Domains"))
@@ -32,25 +35,22 @@ func CustomDomainsRouter(r chiopenapi.Router) {
 	r.Get("/", getCustomDomainsHandler).
 		With(option.Description("List the custom domains within the caller's scope: every domain for a " +
 			"vendor, one customer's own for a customer, or the domains of the customers assigned to a partner")).
-		With(option.Response(http.StatusOK, []api.CustomDomainWithVerification{}))
+		With(option.Response(http.StatusOK, []api.CustomDomain{}))
+	r.Get("/{customDomainId}/verification", getCustomDomainVerificationHandler).
+		With(option.Description("Check whether a custom domain's CNAME record currently points at the " +
+			"expected target. This performs a live DNS lookup and is therefore a separate request from " +
+			"listing the domains")).
+		With(option.Request(customDomainPathRequest{})).
+		With(option.Response(http.StatusOK, api.CustomDomainVerification{}))
 	r.With(middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
 		r.With(middleware.RequireCustomDomainsConfigured).Post("/", createCustomDomainsHandler).
 			With(option.Description("Register new custom domains for the caller's organization, or for a " +
 				"customer named in the request")).
 			With(option.Request(api.CreateCustomDomainsRequest{})).
-			With(option.Response(http.StatusOK, []api.CustomDomainWithVerification{}))
+			With(option.Response(http.StatusOK, []api.CustomDomain{}))
 		r.Delete("/{customDomainId}", deleteCustomDomainHandler).
 			With(option.Description("Delete a custom domain")).
-			With(option.Request(struct {
-				CustomDomainID uuid.UUID `path:"customDomainId"`
-			}{}))
-		r.Post("/{customDomainId}/verify", verifyCustomDomainHandler).
-			With(option.Description("Re-check whether a custom domain's CNAME record points at the " +
-				"expected target")).
-			With(option.Request(struct {
-				CustomDomainID uuid.UUID `path:"customDomainId"`
-			}{})).
-			With(option.Response(http.StatusOK, api.CustomDomainWithVerification{}))
+			With(option.Request(customDomainPathRequest{}))
 	})
 }
 
@@ -66,10 +66,10 @@ func getCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	RespondJSON(w, withVerifications(ctx, customDomains))
+	RespondJSON(w, mapping.List(customDomains, mapping.CustomDomainToAPI))
 }
 
-func verifyCustomDomainHandler(w http.ResponseWriter, r *http.Request) {
+func getCustomDomainVerificationHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(r.PathValue("customDomainId"))
 	if err != nil {
 		http.NotFound(w, r)
@@ -91,7 +91,8 @@ func verifyCustomDomainHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	RespondJSON(w, withVerification(ctx, *domain))
+	verified, detail := checkCNAME(ctx, *domain)
+	RespondJSON(w, mapping.CustomDomainVerificationToAPI(domain.ID, verified, detail, time.Now()))
 }
 
 func createCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
@@ -132,12 +133,7 @@ func createCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "this domain is already in use", http.StatusConflict)
 			return
 		}
-		customDomains[i] = types.CustomDomain{
-			Domain:                 domain.Domain,
-			Type:                   domain.DomainType,
-			OrganizationID:         *auth.CurrentOrgID(),
-			CustomerOrganizationID: customerOrgID,
-		}
+		customDomains[i] = mapping.CustomDomainToInternal(domain, *auth.CurrentOrgID(), customerOrgID)
 	}
 
 	if created, err := db.CreateCustomDomains(ctx, customDomains); errors.Is(err, apierrors.ErrConflict) {
@@ -147,7 +143,7 @@ func createCustomDomainsHandler(w http.ResponseWriter, r *http.Request) {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
-		RespondJSON(w, withVerifications(ctx, created))
+		RespondJSON(w, mapping.List(created, mapping.CustomDomainToAPI))
 	}
 }
 
@@ -226,30 +222,6 @@ func isPlatformOwnedDomain(domain string) bool {
 	return false
 }
 
-// withVerifications runs withVerification for every domain concurrently, so the caller waits for
-// at most one DNS lookup timeout rather than len(domains) of them; a vendor's list can include every
-// customer's portal domain.
-func withVerifications(ctx context.Context, domains []types.CustomDomain) []api.CustomDomainWithVerification {
-	result := make([]api.CustomDomainWithVerification, len(domains))
-	g, gCtx := errgroup.WithContext(ctx)
-	g.SetLimit(10)
-	for i, domain := range domains {
-		g.Go(func() error {
-			result[i] = withVerification(gCtx, domain)
-			return nil
-		})
-	}
-	_ = g.Wait() // withVerification never returns an error
-	return result
-}
-
-// withVerification checks whether a domain's CNAME currently points at the expected target and
-// stamps the result with the time of this check. Nothing is persisted: the check is always live.
-func withVerification(ctx context.Context, domain types.CustomDomain) api.CustomDomainWithVerification {
-	verified, detail := checkCNAME(ctx, domain)
-	return mapping.CustomDomainWithVerificationToAPI(domain, verified, detail, time.Now())
-}
-
 // expectedCNAMETarget returns the DNS name a domain of the given type must be CNAMEd to. A registry
 // domain falls back to the app target when no dedicated registry target is configured, the same
 // fallback the frontend already applies (custom-oidc.component.ts's registryCnameTarget). Takes the
@@ -263,10 +235,20 @@ func expectedCNAMETarget(domainType types.DomainType, appTarget, registryTarget 
 }
 
 // checkCNAME reports whether domain.Domain currently resolves, via CNAME, to its expected target.
+// The detail is shown to the user, so it explains a problem with the record itself; a lookup that
+// did not complete is something only the log can do anything with.
 func checkCNAME(ctx context.Context, domain types.CustomDomain) (verified bool, detail string) {
 	target := expectedCNAMETarget(domain.Type, env.CustomDomainAppCNAMETarget(), env.CustomDomainRegistryCNAMETarget())
 	if target == nil {
 		return false, "no CNAME target is configured on this instance"
 	}
-	return dns.VerifyCNAME(ctx, domain.Domain, *target)
+	err := dns.VerifyCNAME(ctx, domain.Domain, *target)
+	if err == nil {
+		return true, ""
+	} else if cnameErr, ok := errors.AsType[*dns.CNAMEError](err); ok {
+		return false, cnameErr.Error()
+	}
+	internalctx.GetLogger(ctx).Warn("custom domain CNAME lookup failed",
+		zap.Error(err), zap.String("domain", domain.Domain))
+	return false, "the DNS lookup could not be completed, please try again"
 }

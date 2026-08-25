@@ -21,15 +21,6 @@ import (
 	"golang.org/x/oauth2/microsoft"
 )
 
-type Provider = types.OIDCProvider
-
-const (
-	ProviderGithub    = types.OIDCProviderGithub
-	ProviderGoogle    = types.OIDCProviderGoogle
-	ProviderMicrosoft = types.OIDCProviderMicrosoft
-	ProviderGeneric   = types.OIDCProviderGeneric
-)
-
 // githubIssuer is a synthetic issuer, because GitHub is plain OAuth2 and does not issue
 // an ID token that could provide one.
 const githubIssuer = "https://github.com"
@@ -37,7 +28,7 @@ const githubIssuer = "https://github.com"
 // Identity is the user identity as reported by an identity provider. Issuer and Subject
 // identify the user at the provider and remain stable when the email address changes.
 type Identity struct {
-	Provider      Provider
+	Provider      types.OIDCProvider
 	Issuer        string
 	Subject       string
 	Email         string
@@ -63,7 +54,7 @@ func NormalizeScopes(values []string) []string {
 }
 
 func idTokenIdentityExtractor(
-	provider Provider,
+	provider types.OIDCProvider,
 	oidcProvider *oidc.Provider,
 	verifier *oidc.IDTokenVerifier,
 ) IdentityExtractorFunc {
@@ -77,7 +68,7 @@ func idTokenIdentityExtractor(
 // another login. Providers that only expose the email on their userinfo endpoint are asked for it there.
 func identityFromIDToken(
 	ctx context.Context,
-	provider Provider,
+	provider types.OIDCProvider,
 	oidcProvider *oidc.Provider,
 	verifier *oidc.IDTokenVerifier,
 	token *oauth2.Token,
@@ -140,7 +131,7 @@ type providerContext struct {
 }
 
 type OIDCer struct {
-	providers map[Provider]*providerContext
+	providers map[types.OIDCProvider]*providerContext
 }
 
 type config struct {
@@ -149,7 +140,7 @@ type config struct {
 }
 
 func NewOIDCer(ctx context.Context, log *zap.Logger) (*OIDCer, error) {
-	p := make(map[Provider]*providerContext)
+	p := make(map[types.OIDCProvider]*providerContext)
 	if env.OIDCGoogleEnabled() {
 		log.Info("initializing google OIDC")
 		googleProvider, err := oidc.NewProvider(ctx, "https://accounts.google.com")
@@ -158,9 +149,9 @@ func NewOIDCer(ctx context.Context, log *zap.Logger) (*OIDCer, error) {
 		}
 		googleOidcConfig := &oidc.Config{ClientID: *env.OIDCGoogleClientID()}
 		googleVerifier := googleProvider.Verifier(googleOidcConfig)
-		p[ProviderGoogle] = &providerContext{
+		p[types.OIDCProviderGoogle] = &providerContext{
 			oauth2Config:      getGoogleOauth2Config,
-			identityExtractor: idTokenIdentityExtractor(ProviderGoogle, googleProvider, googleVerifier),
+			identityExtractor: idTokenIdentityExtractor(types.OIDCProviderGoogle, googleProvider, googleVerifier),
 			nonceSupported:    true,
 		}
 	}
@@ -173,16 +164,16 @@ func NewOIDCer(ctx context.Context, log *zap.Logger) (*OIDCer, error) {
 		}
 		microsoftOidcConfig := &oidc.Config{ClientID: *env.OIDCMicrosoftClientID()}
 		microsoftVerifier := microsoftProvider.Verifier(microsoftOidcConfig)
-		p[ProviderMicrosoft] = &providerContext{
+		p[types.OIDCProviderMicrosoft] = &providerContext{
 			oauth2Config: getMicrosoftOauth2Config,
 			identityExtractor: idTokenIdentityExtractor(
-				ProviderMicrosoft, microsoftProvider, microsoftVerifier),
+				types.OIDCProviderMicrosoft, microsoftProvider, microsoftVerifier),
 			nonceSupported: true,
 		}
 	}
 	if env.OIDCGithubEnabled() {
 		log.Info("initializing github OIDC")
-		p[ProviderGithub] = &providerContext{
+		p[types.OIDCProviderGithub] = &providerContext{
 			oauth2Config:      getGithubOauth2Config,
 			identityExtractor: getIdentityFromGithubAccessToken,
 		}
@@ -195,20 +186,20 @@ func NewOIDCer(ctx context.Context, log *zap.Logger) (*OIDCer, error) {
 		}
 		genericOidcConfig := &oidc.Config{ClientID: *env.OIDCGenericClientID()}
 		genericVerifier := genericProvider.Verifier(genericOidcConfig)
-		p[ProviderGeneric] = &providerContext{
+		p[types.OIDCProviderGeneric] = &providerContext{
 			oauth2Config: func(r *http.Request) *config {
 				return &config{
 					Config: oauth2.Config{
 						ClientID:     *env.OIDCGenericClientID(),
 						ClientSecret: *env.OIDCGenericClientSecret(),
-						RedirectURL:  getRedirectURL(r, ProviderGeneric),
+						RedirectURL:  getRedirectURL(r, types.OIDCProviderGeneric),
 						Endpoint:     genericProvider.Endpoint(),
 						Scopes:       NormalizeScopes([]string{*env.OIDCGenericScopes()}),
 					},
 					pkceEnabled: env.OIDCGenericPKCEEnabled(),
 				}
 			},
-			identityExtractor: idTokenIdentityExtractor(ProviderGeneric, genericProvider, genericVerifier),
+			identityExtractor: idTokenIdentityExtractor(types.OIDCProviderGeneric, genericProvider, genericVerifier),
 			nonceSupported:    true,
 		}
 	}
@@ -220,7 +211,7 @@ func getGoogleOauth2Config(r *http.Request) *config {
 		Config: oauth2.Config{
 			ClientID:     *env.OIDCGoogleClientID(),
 			ClientSecret: *env.OIDCGoogleClientSecret(),
-			RedirectURL:  getRedirectURL(r, ProviderGoogle),
+			RedirectURL:  getRedirectURL(r, types.OIDCProviderGoogle),
 			Endpoint:     google.Endpoint,
 			Scopes:       []string{oidc.ScopeOpenID, "email"},
 		},
@@ -233,7 +224,7 @@ func getMicrosoftOauth2Config(r *http.Request) *config {
 		Config: oauth2.Config{
 			ClientID:     *env.OIDCMicrosoftClientID(),
 			ClientSecret: *env.OIDCMicrosoftClientSecret(),
-			RedirectURL:  getRedirectURL(r, ProviderMicrosoft),
+			RedirectURL:  getRedirectURL(r, types.OIDCProviderMicrosoft),
 			Endpoint:     microsoft.AzureADEndpoint(*env.OIDCMicrosoftTenantID()),
 			Scopes:       []string{oidc.ScopeOpenID, "email"},
 		},
@@ -246,7 +237,7 @@ func getGithubOauth2Config(r *http.Request) *config {
 		Config: oauth2.Config{
 			ClientID:     *env.OIDCGithubClientID(),
 			ClientSecret: *env.OIDCGithubClientSecret(),
-			RedirectURL:  getRedirectURL(r, ProviderGithub),
+			RedirectURL:  getRedirectURL(r, types.OIDCProviderGithub),
 			Endpoint:     github.Endpoint,
 			Scopes:       []string{oidc.ScopeOpenID, "email", "user:email"},
 		},
@@ -256,7 +247,7 @@ func getGithubOauth2Config(r *http.Request) *config {
 
 // GetIdentityForCode exchanges the code for a token and extracts the user's identity at the provider.
 func (o *OIDCer) GetIdentityForCode(
-	ctx context.Context, provider Provider, code, pkceVerifier, nonce string, r *http.Request,
+	ctx context.Context, provider types.OIDCProvider, code, pkceVerifier, nonce string, r *http.Request,
 ) (Identity, error) {
 	prov := o.providers[provider]
 	if prov == nil || prov.oauth2Config == nil {
@@ -305,7 +296,7 @@ func getIdentityFromGithubAccessToken(ctx context.Context, token *oauth2.Token, 
 	for _, email := range emails {
 		if email.Primary && email.Verified {
 			return Identity{
-				Provider: ProviderGithub,
+				Provider: types.OIDCProviderGithub,
 				Issuer:   githubIssuer,
 				// the numeric user id is stable across username and email changes
 				Subject:       strconv.FormatInt(user.ID, 10),
@@ -339,7 +330,7 @@ func getGithubResource(ctx context.Context, accessToken, url string, out any) er
 
 // GetAuthCodeURL returns the OIDC provider's AuthCodeURL for the given state and provider.
 func (o *OIDCer) GetAuthCodeURL(
-	r *http.Request, provider Provider, state, pkceVerifier, nonce string,
+	r *http.Request, provider types.OIDCProvider, state, pkceVerifier, nonce string,
 ) (string, error) {
 	prov := o.providers[provider]
 	if prov == nil || prov.oauth2Config == nil {

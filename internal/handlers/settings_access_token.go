@@ -26,7 +26,7 @@ func getAccessTokensHandler() http.HandlerFunc {
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
-			RespondJSON(w, mapping.List(tokens, mapping.AccessTokenToDTO))
+			RespondJSON(w, mapping.List(tokens, mapping.AccessTokenToAPI))
 		}
 	}
 }
@@ -70,7 +70,7 @@ func createAccessTokenHandler() http.HandlerFunc {
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
-			RespondJSON(w, mapping.AccessTokenToDTO(token).WithKey(token.Key))
+			RespondJSON(w, mapping.AccessTokenToAPI(token).WithKey(token.Key))
 		}
 	}
 }

@@ -44,7 +44,7 @@ The delivery pipeline looks like this:
 1. Your release workflow builds and pushes your container images and Helm chart
 2. `zarf package create` reads your `zarf.yaml`, resolves the chart (from a local path in this guide, but Helm repositories and Git are also supported), pulls all referenced images, and writes a single `.tar.zst` archive that also includes SBOMs for every image
 3. `zarf package publish` pushes the archive to the Distr registry as an OCI artifact
-4. Your customers deploy directly from the registry with `zarf package deploy oci://...`, or download the package once and carry it across the air gap
+4. Your customers deploy directly from the registry with `zarf package deploy oci://...`, or download the package once and carry it across the gap
 
 Once published, the package shows up in your Distr registry UI like any other artifact, including tags, size, and per-customer pull analytics.
 
@@ -208,13 +208,13 @@ zarf package deploy oci://registry.distr.sh/your-slug/hello-distr:1.0.0 --confir
 
 ### Fully Air-Gapped Clusters
 
-For environments without any internet access, customers pull the package on a machine that can reach the Distr registry, transfer it across the air gap (for example on physical media), and deploy from the local file:
+For environments without any internet access, customers pull the package on a machine that can reach the Distr registry, transfer it across the gap (for example on physical media), and deploy from the local file:
 
 ```shell
 # On a machine with registry access
 zarf package pull oci://registry.distr.sh/your-slug/hello-distr:1.0.0
 
-# Transfer zarf-package-hello-distr-*.tar.zst across the air gap, then:
+# Transfer zarf-package-hello-distr-*.tar.zst across the gap, then:
 zarf init --confirm
 zarf package deploy zarf-package-hello-distr-amd64-1.0.0.tar.zst --confirm
 ```

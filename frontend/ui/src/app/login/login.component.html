@@ -62,7 +62,7 @@
               <app-oidc-buttons
                 class="block space-y-4 md:space-y-6 empty:hidden"
                 label="Or use one of these to sign in:" />
-              @if (loginConfig().registrationEnabled) {
+              @if (loginConfig().registration === 'enabled') {
                 <p class="text-sm text-center font-light text-gray-500 dark:text-gray-400">
                   Don’t have an account yet?<br />
                   <a routerLink="/register" class="font-medium text-primary-600 hover:underline dark:text-primary-500"

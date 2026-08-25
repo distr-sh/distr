@@ -54,7 +54,7 @@ func getCustomEmailConfigurationHandler(w http.ResponseWriter, r *http.Request) 
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
-		RespondJSON(w, mapping.CustomEmailConfigurationToResponse(*config))
+		RespondJSON(w, mapping.CustomEmailConfigurationToAPI(*config))
 	}
 }
 
@@ -88,7 +88,7 @@ func updateCustomEmailConfigurationHandler(w http.ResponseWriter, r *http.Reques
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
-		RespondJSON(w, mapping.CustomEmailConfigurationToResponse(config))
+		RespondJSON(w, mapping.CustomEmailConfigurationToAPI(config))
 	}
 }
 

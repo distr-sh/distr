@@ -84,12 +84,14 @@ When your portal is accessed via your custom domain, all Distr-specific branding
 
 Organization admins can set up custom domains self-service under **Settings → Organization → Custom Domains & Identity Provider**, in the Vendor Portal, Customer Portal and Registry sections:
 
-1. **App domain** (e.g. `app.your-company.com`): Serves the web UI and API for your own team (and your partners, if partner management is enabled). It also serves the artifact registry under the `/v2/` path, so a single domain is usually all you need.
-2. **Customer portal domain** (optional, e.g. `portal.your-company.com`): Serves the Customer Portal for all of your customers. When it is set, invitation links, password resets and notification mails sent to customer users point at it instead of your app domain; without it, they use your app domain like everyone else.
+1. **Vendor Portal domain** (e.g. `app.your-company.com`): Serves the web UI and API for your own team (and your partners, if partner management is enabled). It also serves the artifact registry under the `/v2/` path, so a single domain is usually all you need.
+2. **Customer Portal domain** (optional, e.g. `portal.your-company.com`): Serves the Customer Portal for all of your customers. When it is set, invitation links, password resets and notification mails sent to customer users point at it instead of your Vendor Portal domain; without it, they use your Vendor Portal domain like everyone else.
 3. **Registry domain** (optional, e.g. `registry.your-company.com`): Only needed if you want a separate hostname for the artifact registry.
 
+Each of the two optional domains starts collapsed behind its own checkbox, so the page only asks for the one domain most organizations need. Tick a checkbox to enter that domain.
+
 Enter the domain as a bare hostname (no `https://`) and add it.
-Then create the CNAME record shown below the domain at your DNS provider, pointing your domain at the displayed target.
+Then create a CNAME record at your DNS provider, pointing your domain at the target shown below it; the copy button next to the target puts it on your clipboard.
 The TLS certificate is issued automatically on the first request once the DNS record has propagated — no certificate upload or renewal handling required.
 
 Each domain shows a status panel — green once its CNAME record resolves to the expected target, red with the reason otherwise (e.g. no record found, or it points somewhere else) — along with when it was last checked. Use the reload icon next to the panel to check again after updating your DNS record, without waiting for propagation to be picked up on its own.

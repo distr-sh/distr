@@ -82,6 +82,7 @@ func AgentRouter(r chiopenapi.Router) {
 			r.With(middleware.UseReadonlyDB).Get("/resources", agentResourcesHandler)
 			r.Post("/status", agentPostStatusHandler)
 			r.Post("/metrics", agentPostMetricsHander)
+			r.Post("/deployments/{deploymentId}/metrics", agentPostDeploymentMetricsHandler)
 			r.Put("/logs", agentPutDeploymentLogsHandler())
 			r.Put("/deployment-target-logs", agentPutDeploymentTargetLogsHandler())
 		})
@@ -539,6 +540,42 @@ func agentPostMetricsHander(w http.ResponseWriter, r *http.Request) {
 			log.Error("send metrics alerts failed", zap.Error(err))
 		}
 	}(context.WithoutCancel(ctx))
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func agentPostDeploymentMetricsHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := internalctx.GetLogger(ctx)
+
+	deploymentID, err := uuid.Parse(r.PathValue("deploymentId"))
+	if err != nil {
+		http.Error(w, "deploymentId is not a valid UUID", http.StatusBadRequest)
+		return
+	}
+
+	dt := internalctx.GetDeploymentTarget(ctx)
+	if !slices.ContainsFunc(
+		dt.Deployments,
+		func(d types.DeploymentWithLatestRevision) bool { return d.ID == deploymentID },
+	) {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	body, err := JsonBody[api.AgentDeploymentResourceMetricsRequest](w, r)
+	if err != nil {
+		return
+	}
+
+	metrics := mapping.DeploymentResourceMetricsRequestToInternal(deploymentID, body)
+
+	if err := db.CreateDeploymentMetrics(ctx, &metrics); err != nil {
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		log.Error("failed to create deployment metrics", zap.Error(err), zap.Any("metrics", body))
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 }

@@ -1,11 +1,12 @@
-import {ChangeDetectionStrategy, Component, effect, inject, input, output} from '@angular/core';
-import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
+import {ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal} from '@angular/core';
+import {FormBuilder, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleCheck, faRotate, faTrash, faTriangleExclamation} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {HOSTNAME_MAX_LENGTH, HOSTNAME_REGEX} from '../../util/validation';
+import {ClipComponent} from '../components/clip.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
-import {CustomDomain} from '../types/custom-domain';
+import {CustomDomain, CustomDomainVerification} from '../types/custom-domain';
 
 // A single CNAME-configurable domain field: shows the existing domain with a remove button once
 // configured, or a validated hostname input beforehand. Purely presentational — the domain list and
@@ -14,7 +15,7 @@ import {CustomDomain} from '../types/custom-domain';
   selector: 'app-domain-field',
   templateUrl: './domain-field.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FaIconComponent, ReactiveFormsModule, AutotrimDirective],
+  imports: [FaIconComponent, FormsModule, ReactiveFormsModule, AutotrimDirective, ClipComponent],
 })
 export class DomainFieldComponent {
   protected readonly faTrash = faTrash;
@@ -30,22 +31,39 @@ export class DomainFieldComponent {
   public readonly invalidHint = input.required<string>();
   public readonly removeAriaLabel = input.required<string>();
   public readonly domain = input<CustomDomain>();
+  // Arrives after the domain: the parent requests it separately, since it is a live DNS lookup.
+  public readonly verification = input<CustomDomainVerification>();
   public readonly cnameTarget = input<string>();
   public readonly saving = input(false);
   public readonly verifying = input(false);
 
+  // When set, the field stays collapsed behind a checkbox with this label until it is ticked. A domain
+  // that already exists is always shown, checkbox or not.
+  public readonly optionalCheckboxLabel = input<string>();
+
   public readonly save = output<string>();
   public readonly remove = output<void>();
   public readonly recheck = output<void>();
+
+  protected readonly checkboxId = computed(() => `${this.fieldId()}Enabled`);
+  protected readonly enabled = signal(false);
+  protected readonly expanded = computed(() => !this.optionalCheckboxLabel() || !!this.domain() || this.enabled());
 
   protected checkedAtLabel(dnsCheckedAt: string): string {
     return dayjs(dnsCheckedAt).fromNow();
   }
 
   protected readonly control = this.fb.control('', [
+    Validators.required,
     Validators.pattern(HOSTNAME_REGEX),
     Validators.maxLength(HOSTNAME_MAX_LENGTH),
   ]);
+
+  // Not control.invalid: an empty field only disables the save button, and telling someone who has not
+  // typed anything that their hostname is invalid would be wrong.
+  protected malformed(): boolean {
+    return this.control.hasError('pattern') || this.control.hasError('maxlength');
+  }
 
   constructor() {
     // Clear only once saved; the parent's async save may fail and the typed value must survive that.
@@ -57,11 +75,11 @@ export class DomainFieldComponent {
   }
 
   protected submit(event: Event) {
-    // ngSubmit needs FormsModule to intercept the native submit and prevent the page from
-    // reloading; this form only uses ReactiveFormsModule, so preventDefault directly instead.
+    // Not (ngSubmit): that would attach a template-driven NgForm to a form whose only control is
+    // reactive, so the native submit is intercepted here instead.
     event.preventDefault();
     this.control.markAsTouched();
-    if (this.control.invalid || !this.control.value) {
+    if (this.control.invalid) {
       return;
     }
     this.save.emit(this.control.value.toLowerCase());

@@ -349,67 +349,6 @@ func ExistsVendorOrganizationWithUserID(ctx context.Context, userID uuid.UUID) (
 	return
 }
 
-func CountUserAccountOrganizationsExcept(ctx context.Context, userID, orgID uuid.UUID) (int64, error) {
-	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(ctx,
-		`SELECT count(*)
-		FROM Organization_UserAccount j
-		INNER JOIN Organization o ON o.id = j.organization_id
-		WHERE j.user_account_id = @userId AND j.organization_id != @orgId AND o.deleted_at IS NULL`,
-		pgx.NamedArgs{"userId": userID, "orgId": orgID},
-	)
-	if err != nil {
-		return 0, fmt.Errorf("could not count organizations of user account: %w", err)
-	}
-	count, err := pgx.CollectExactlyOneRow(rows, pgx.RowTo[int64])
-	if err != nil {
-		return 0, fmt.Errorf("could not count organizations of user account: %w", err)
-	}
-	return count, nil
-}
-
-// GetOrganizationMembersWithOtherOrganizations lists the members of one scope who are also a member of a
-// different organization, i.e. the accounts a custom provider of that scope refuses to sign in. A nil
-// customerOrgID scopes to the vendor's own team, matching a custom provider on the vendor's own domain; a
-// non-nil one scopes to that customer, matching a provider on that customer's own domain.
-func GetOrganizationMembersWithOtherOrganizations(
-	ctx context.Context,
-	orgID uuid.UUID,
-	customerOrgID *uuid.UUID,
-) ([]types.OrganizationMember, error) {
-	db := internalctx.GetDb(ctx)
-	rows, err := db.Query(ctx,
-		`SELECT u.id, u.email, u.name
-		FROM Organization_UserAccount j
-		INNER JOIN UserAccount u ON u.id = j.user_account_id
-		WHERE j.organization_id = @orgId
-			AND (CASE WHEN @checkCustomerOrgId
-				THEN j.customer_organization_id = @customerOrganizationId
-				ELSE j.customer_organization_id IS NULL END)
-			AND EXISTS (
-				SELECT 1 FROM Organization_UserAccount other
-				INNER JOIN Organization o ON o.id = other.organization_id
-				WHERE other.user_account_id = j.user_account_id
-					AND other.organization_id != @orgId
-					AND o.deleted_at IS NULL
-			)
-		ORDER BY u.email`,
-		pgx.NamedArgs{
-			"orgId":                  orgID,
-			"customerOrganizationId": customerOrgID,
-			"checkCustomerOrgId":     customerOrgID != nil,
-		},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("could not query organization members with other organizations: %w", err)
-	}
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.OrganizationMember])
-	if err != nil {
-		return nil, fmt.Errorf("could not map organization members with other organizations: %w", err)
-	}
-	return result, nil
-}
-
 func GetOrganizationByID(ctx context.Context, orgID uuid.UUID) (*types.Organization, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,

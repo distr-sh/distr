@@ -95,6 +95,7 @@ The database schema is managed through SQL migrations in `internal/migrations/sq
 - `organizations`: Multi-tenant organizations
 - `deployments`: Application deployments
 - `deployment_targets`: Customer environments (agents)
+- `deploymentmetrics` & `deploymentresourcemetrics`: Per-deployment resource usage reports (one parent row per agent push, one child row per container with CPU millicores and memory bytes, plus nullable limits)
 - `artifacts`: Software artifacts (Docker images, Helm charts)
 - `applications`: Artifact collections
 - `licensekey`: License keys that vendors can generate for its customers
@@ -113,20 +114,25 @@ mise run build:hub:community        # Community edition
 # Build agents
 mise run build:agent:docker
 mise run build:agent:kubernetes
+
+# Build the website (website/)
+mise run build:website
 ```
 
 Binaries are output to `dist/`.
 
-### Linting and Formatting
+### Formatting
 
 ```sh
-# Auto-fix linting issues
-mise run format              # All
+mise run format              # All, including the website
+mise run format:app          # Hub and agents, without the website
 mise run format:go           # Go only
 mise run format:frontend     # Frontend only
+mise run format:website      # Website only, also prunes unused images
 ```
 
-Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Prettier with config in `.prettierrc.mjs`.
+Go formatting is configured in `.golangci.yml`, the frontend uses Prettier with config in `.prettierrc.mjs`.
+The website is a separate pnpm project with its own Prettier config; the root config ignores `website/`.
 
 ## Code Patterns and Conventions
 
@@ -143,8 +149,12 @@ Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Pret
 - Use structured logging with zap: `logger.Info("message", zap.String("key", value))`
 - Send exceptions to sentry with: `sentry.GetHubFromContext(ctx).CaptureException(err)`
 - When performing data transformations between DTOs and domain models, use `mapping.List(...)` inside the `internal/mapping` package
+- Give types in `internal/types` `db:` tags only. Never serialize one into a response and never embed one in an `api` type. Do not copy the existing embeddings (`api.OrganizationResponse`, `api.LicenseKeyRevision`); they are legacy
+- Give every endpoint its own struct in `api/` and put both conversion directions in `internal/mapping`: `XToAPI` for model to response, `XToInternal` for request to model. Do not assemble an `api.*` or `types.*` struct field by field in a handler
+- Reference shared string enums (`types.UserRole`, `types.DomainType`, `types.OIDCProvider`) from `api` directly instead of duplicating them
 - Always use [Gomega](https://onsi.github.io/gomega/) for test assertions in Go tests
 - Do not use `util.PtrTo`. Use `new(value)` to obtain a `*T` from a typed value (e.g. `new(types.UserRoleReadOnly)`).
+- Use `errors.AsType[E](err)` instead of `errors.As(err, &target)` wherever the target type is known at the call site, since it needs no pre-declared variable: `if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation`. `errors.As` remains correct where the target is an interface a caller passes in.
 - The body of a 4xx response is displayed verbatim in the frontend forms (`getFormDisplayedError`), so write those messages for the end user and put anything only a developer can use into the log instead.
 
 ### Frontend Code
@@ -178,6 +188,8 @@ Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Pret
 ### Database Access
 
 All database access should go through `internal/db/` functions. Never write raw SQL in handlers or services. If you need a new query, add it to the appropriate file in `internal/db/`.
+
+Always use `now()` for the current time, never `current_timestamp`. This applies to queries in `internal/db/` as well as to SQL migrations in `internal/migrations/sql/`, including column defaults.
 
 Transaction pattern:
 
@@ -258,12 +270,6 @@ Never hard-wire `https://` into a URL that is built for this instance. The schem
 
 A hard-wired https breaks every locally running instance, and for the OIDC callback URL it produces a URL that disagrees with the `redirect_uri` the login actually sends. In the frontend, use the protocol of the current page for the same reason.
 
-### Host-resolved Bootstrap Configuration
-
-`GET /api/public/v1/portal` (`internal/handlers/portal.go`) is the single endpoint the unauthenticated pages boot from: it resolves the request Host to an organization and returns its portal branding plus the login methods available on that host. Anything the login/register pages need before a user exists belongs here, not in a new endpoint — on the frontend it is owned by `PortalService`, which requests it once and replays it.
-
-`resolvePortalHost` distinguishes three host sources. Self-service `CustomDomain` rows and legacy `OrganizationBranding.app_domain` values are **not** interchangeable: both drop Distr's own branding, but the instance-scoped OIDC providers stay available on the legacy domains, since they predate self-service domains and their users would otherwise be locked out. The response is cached per Host (`Vary: Host`, `max-age=60`), so it must not carry anything user- or organization-specific.
-
 ## Comments
 
 Write as few comments as possible. A comment has to earn its place by saying something the code cannot, and every comment that does not is noise that goes stale and has to be reviewed forever.
@@ -293,7 +299,8 @@ Only write a test that could fail for a real reason. Every test is code that has
 ## General rules
 
 - Always ensure this file is up-to-date.
-- Always build, test, lint and format through mise tasks (`mise run build:hub:community`, `mise run test:go`, `mise run test:frontend`, `mise run lint`, `mise run format`). Never invoke `go build`, `go test`, `golangci-lint` or `pnpm` directly.
+- This file holds instructions and conventions for the agent, not technical documentation. Add a rule that changes what an agent does; never a description of how a feature, endpoint or subsystem works. That belongs in the code, in a doc comment, or on the website.
+- Always build, test and format through mise tasks (`mise run build:hub:community`, `mise run test:go`, `mise run test:frontend`, `mise run format`). Never invoke `go build`, `go test`, `golangci-lint` or `pnpm` directly.
 - When you add, remove, or change an environment variable in `internal/env/env.go` (name, default, required/optional status, or accepted values), update the configuration reference page at `website/src/content/docs/docs/self-hosting/configuration.mdx` in the same change so it stays complete and accurate.
 - If a user requests you to do something differently, add the difference to a new rule / convention in this file
 - If you read code that doesn't follow these rules, please fix it.

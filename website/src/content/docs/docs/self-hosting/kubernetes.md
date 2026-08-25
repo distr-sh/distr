@@ -27,19 +27,26 @@ certificate for every domain a vendor registers, so the chart ships an optional
 [on-demand TLS](https://caddyserver.com/docs/automatic-https#on-demand-tls):
 
 ```yaml
+hub:
+  env:
+    # DNS records your vendors point their domains at
+    - name: CUSTOM_DOMAIN_APP_CNAME_TARGET
+      value: cname.example.com
+    - name: CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET
+      value: cname.example.com
+
 caddy:
   enabled: true
   acmeEmail: ops@example.com
-  # DNS records your vendors point their domains at
-  appCnameTarget: cname.example.com
-  registryCnameTarget: cname.example.com
 ```
 
-Point the `appCnameTarget` and `registryCnameTarget` hostnames at the external address of the
-`<release>-caddy` `LoadBalancer` Service. Before issuing a certificate, Caddy asks the Hub whether a
-domain is registered, using an internal Service that must never be exposed publicly. Setting the two
-CNAME targets is what enables the feature in the UI, so both values are required when
-`caddy.enabled` is `true`.
+Point both hostnames at the external address of the `<release>-caddy` `LoadBalancer` Service. Before
+issuing a certificate, Caddy asks the Hub whether a domain is registered, using an internal Service
+that must never be exposed publicly. `CUSTOM_DOMAIN_APP_CNAME_TARGET` is what enables the feature in
+the UI, so the chart refuses to render a Caddy deployment without it;
+`CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET` is optional and falls back to the app target. Helm replaces
+the `hub.env` list rather than merging it, so add the two variables to the rest of your hub
+environment instead of setting them on their own.
 
 Caddy stores the certificates it obtains on a persistent volume, which the chart keeps when the
 release is uninstalled so that a reinstall does not have to reissue a certificate for every custom
@@ -59,6 +66,11 @@ give all of them the same storage in one of two ways:
   plugins.
 
 The chart refuses to render a `caddy.replicaCount` above 1 without either of them.
+
+To try custom domains on a local cluster, where no certificate authority can validate an ACME
+challenge for a domain that does not resolve publicly, see
+[`github.com/distr-sh/distr/deploy/minikube`](https://github.com/distr-sh/distr/blob/main/deploy/minikube/custom-domains-values.yaml).
+It runs everything in-cluster, including PostgreSQL and RustFS, and is meant for local testing only.
 
 ## Log processing (Loki)
 

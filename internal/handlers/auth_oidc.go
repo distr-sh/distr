@@ -33,7 +33,6 @@ const (
 	redirectToLoginOIDCNoAccount            = "/login?reason=oidc-no-account"
 	redirectToLoginOIDCUserLimit            = "/login?reason=oidc-user-limit"
 	redirectToLoginOIDCOrgLimit             = "/login?reason=oidc-org-limit"
-	redirectToLoginOIDCNotExclusive         = "/login?reason=oidc-account-not-exclusive"
 )
 
 func AuthOIDCRouter(r chiopenapi.Router) {
@@ -56,7 +55,7 @@ func AuthOIDCRouter(r chiopenapi.Router) {
 }
 
 func authLoginOidcHandler(w http.ResponseWriter, r *http.Request) {
-	provider := oidc.Provider(r.PathValue("oidcProvider"))
+	provider := types.OIDCProvider(r.PathValue("oidcProvider"))
 	ctx := r.Context()
 	log := internalctx.GetLogger(ctx)
 
@@ -98,7 +97,7 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	provider := oidc.Provider(r.PathValue("oidcProvider"))
+	provider := types.OIDCProvider(r.PathValue("oidcProvider"))
 	log = log.With(zap.String("provider", string(provider)))
 
 	code, ok := oidcCallbackCode(w, r, log)
@@ -232,7 +231,7 @@ func authLoginCustomOidcCallbackHandler(w http.ResponseWriter, r *http.Request) 
 				return err
 			}
 		}
-		tokenString, err := userauth.GenerateLoginTokenForOrganization(ctx, *user, configuration.OrganizationID)
+		tokenString, err := userauth.GenerateCustomOIDCLoginToken(ctx, *user, configuration)
 		if err != nil {
 			return fmt.Errorf("token creation failed: %w", err)
 		}
@@ -287,7 +286,14 @@ func resolveCustomOIDCConfigurationForHost(
 		return customOIDCLogin{}, false
 	}
 
-	configuration, err := db.GetCustomOIDCConfigurationBySlug(ctx, organizationSlug, providerSlug)
+	if host.customDomainRow == nil {
+		log.Info("rejecting custom OIDC login on a host without a custom domain", zap.String("host", r.Host))
+		http.Redirect(w, r, redirectToLoginOIDCUnavailable, http.StatusFound)
+		return customOIDCLogin{}, false
+	}
+
+	configuration, err := db.GetCustomOIDCConfigurationForHost(
+		ctx, host.customDomainRow.ID, organizationSlug, providerSlug)
 	if errors.Is(err, apierrors.ErrNotFound) {
 		http.Redirect(w, r, redirectToLoginOIDCUnavailable, http.StatusFound)
 		return customOIDCLogin{}, false
@@ -298,10 +304,9 @@ func resolveCustomOIDCConfigurationForHost(
 		return customOIDCLogin{}, false
 	}
 
-	if !configuration.Enabled ||
-		host.customDomainRow == nil || host.customDomainRow.ID != configuration.CustomDomainID {
-		log.Info("rejecting custom OIDC login on foreign host",
-			zap.Any("customOidcConfigurationId", configuration.ID), zap.String("host", r.Host))
+	if !configuration.Enabled {
+		log.Info("rejecting custom OIDC login for a disabled provider",
+			zap.Any("customOidcConfigurationId", configuration.ID))
 		http.Redirect(w, r, redirectToLoginOIDCUnavailable, http.StatusFound)
 		return customOIDCLogin{}, false
 	}
@@ -392,6 +397,8 @@ func resolveCustomOIDCUser(
 // checkCustomOIDCLoginAllowed returns the login redirect to answer with when the user must not sign in
 // through the organization's identity provider, or an empty string when the login may proceed. Membership
 // is required for every login, so an identity that outlives the membership does not keep access alive.
+// The session a login produces is confined to the organization of the provider (authjwt.GenerateCustomOIDCToken),
+// which is what allows a member of several organizations to use one at all.
 //
 // A provider bound to one customer only ever matches a membership in that customer. Customer memberships
 // all live on the vendor organization, so without the customer scope every customer's provider would
@@ -401,11 +408,12 @@ func checkCustomOIDCLoginAllowed(
 	user types.UserAccount,
 	login customOIDCLogin,
 ) (string, error) {
-	organizationID := login.configuration.OrganizationID
-	if exclusive, err := isExclusiveToOrganization(ctx, user, organizationID); err != nil {
-		return "", err
-	} else if !exclusive {
-		return redirectToLoginOIDCNotExclusive, nil
+	// A super admin is refused explicitly rather than by the membership check below, which they fail
+	// already for not being assigned to any organization: their reach does not stop at an organization,
+	// so confining the session confines nothing. The answer is the same as for an unknown account, so a
+	// provider is not told which of the addresses it can assert belongs to a super admin.
+	if user.IsSuperAdmin {
+		return redirectToLoginOIDCNoAccount, nil
 	}
 	if member, err := isOrganizationMember(ctx, user, login); err != nil {
 		return "", err
@@ -491,17 +499,6 @@ func linkCustomOIDCIdentity(
 		CustomOIDCConfigurationID: new(configuration.ID),
 	}
 	return db.CreateUserAccountOIDCIdentity(ctx, &newIdentity)
-}
-
-func isExclusiveToOrganization(ctx context.Context, user types.UserAccount, orgID uuid.UUID) (bool, error) {
-	if user.IsSuperAdmin {
-		return false, nil
-	}
-	count, err := db.CountUserAccountOrganizationsExcept(ctx, user.ID, orgID)
-	if err != nil {
-		return false, err
-	}
-	return count == 0, nil
 }
 
 // isOrganizationMember also tells an app-domain membership apart from a shared-portal one:

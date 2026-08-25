@@ -289,6 +289,19 @@
                               Deployment history
                             </button>
                           </li>
+                          <li>
+                            <button
+                              type="button"
+                              class="text-start block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                              (click)="
+                                showDeploymentDropdownForId.set(undefined); showResourceMetricsModal(deployment)
+                              ">
+                              <fa-icon
+                                [icon]="faGauge"
+                                class="inline-block w-4 mr-2 text-gray-500 dark:text-gray-400" />
+                              Resource metrics
+                            </button>
+                          </li>
                           @if (auth.hasAnyRole('read_write', 'admin')) {
                             <li>
                               <button
@@ -944,6 +957,31 @@
     <div class="p-4 md:p-5 overflow-y-auto max-h-[70vh]">
       @if (selectedRevision(); as revision) {
         <app-deployment-revision-details [revision]="revision" [deploymentTarget]="deploymentTarget()" />
+      }
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #resourceMetricsModal>
+  <div
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top"
+    class="w-3xl max-h-full bg-white rounded-lg shadow-sm dark:bg-gray-700">
+    <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+      <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+        {{ selectedDeployment()?.application?.name }} resource metrics
+      </h3>
+      <button
+        type="button"
+        (click)="hideModal()"
+        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+        <fa-icon [icon]="faXmark" />
+        <span class="sr-only">Close modal</span>
+      </button>
+    </div>
+    <div class="overflow-y-auto max-h-[70vh]">
+      @if (selectedDeployment()?.id; as deploymentId) {
+        <app-deployment-resource-metrics [deploymentId]="deploymentId" />
       }
     </div>
   </div>

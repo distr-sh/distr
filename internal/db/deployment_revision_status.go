@@ -278,7 +278,7 @@ func CleanupDeploymentRevisionStatus(ctx context.Context) (int64, error) {
 		) max_created_at
 		WHERE drs.deployment_revision_id = max_created_at.deployment_revision_id
 			AND drs.created_at < max_created_at.max_created_at
-			AND current_timestamp - drs.created_at > @statusEntriesMaxAge`,
+			AND now() - drs.created_at > @statusEntriesMaxAge`,
 		pgx.NamedArgs{"statusEntriesMaxAge": env.StatusEntriesMaxAge()},
 	); err != nil {
 		return 0, err

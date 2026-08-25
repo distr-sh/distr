@@ -55,6 +55,7 @@ func AuthRouter(r chiopenapi.Router) {
 		middleware.SetSentryUserFromUserAuth,
 		middleware.RequireEmailVerified,
 		middleware.RequireOrgAndRole,
+		middleware.BlockCrossOrganizationAction,
 	).Post("/switch-context", authSwitchContextHandler())
 	r.Group(func(r chiopenapi.Router) {
 		r.Use(auth.Authentication.Middleware, middleware.SetSentryUserFromUserAuth)

@@ -10,6 +10,18 @@ import (
 	"github.com/google/uuid"
 )
 
+type CustomDomain struct {
+	ID         uuid.UUID        `json:"id"`
+	CreatedAt  time.Time        `json:"createdAt"`
+	Domain     string           `json:"domain"`
+	DomainType types.DomainType `json:"domainType"`
+	// OrganizationID references the vendor organization that owns the domain.
+	OrganizationID uuid.UUID `json:"organizationId"`
+	// CustomerOrganizationID is set on a customer_portal domain that belongs to one customer. When it is
+	// nil, a customer_portal domain is the vendor's shared portal for all of its customers.
+	CustomerOrganizationID *uuid.UUID `json:"customerOrganizationId,omitempty"`
+}
+
 type CreateCustomDomainRequest struct {
 	Domain     string           `json:"domain"`
 	DomainType types.DomainType `json:"domainType"`
@@ -61,12 +73,14 @@ func (r *CreateCustomDomainsRequest) Validate() error {
 	return nil
 }
 
-// CustomDomainWithVerification adds the result of a live CNAME check to a CustomDomain. It is
-// computed fresh on every request and never persisted, so DNSCheckedAt is the time of this response,
-// not of some earlier check.
-type CustomDomainWithVerification struct {
-	types.CustomDomain
-	DNSVerified  bool      `json:"dnsVerified"`
+// CustomDomainVerification is the result of a live CNAME check for one domain. It is deliberately
+// not part of the domain itself: the check is a DNS lookup that may take seconds, so it is requested
+// separately from the listing it belongs to. Nothing is persisted, so DNSCheckedAt is the time of
+// this response, not of some earlier check.
+type CustomDomainVerification struct {
+	CustomDomainID uuid.UUID `json:"customDomainId"`
+	DNSVerified    bool      `json:"dnsVerified"`
+	// DNSDetail explains why the check failed and is empty when it succeeded.
 	DNSDetail    string    `json:"dnsDetail"`
 	DNSCheckedAt time.Time `json:"dnsCheckedAt"`
 }

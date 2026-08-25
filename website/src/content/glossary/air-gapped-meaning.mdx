@@ -8,7 +8,7 @@ alternateNames:
   - Air Gapped
   - Airgapped
 shortDefinition: 'Air-gapped describes a computer system, network, or device that is physically or logically isolated from unsecured networks, including the internet and any untrusted local networks. The isolation prevents unauthorized remote access, data exfiltration, and most forms of cyberattack.'
-lastUpdated: 2026-07-23
+lastUpdated: 2026-08-20
 faq:
   - question: What does air-gapped mean?
     answer: 'Air-gapped means a computer, network, or device is completely isolated from unsecured networks, including the internet. That isolation prevents unauthorized remote access and protects against most cyberattacks.'
@@ -29,9 +29,9 @@ faq:
   - question: What are air-gapped backups?
     answer: 'Air-gapped backups are copies of critical data stored on systems completely isolated from production networks. They protect backups from ransomware and cyberattacks specifically designed to hit backup systems.'
   - question: How do you update software in air-gapped environments?
-    answer: 'Software updates in air-gapped environments need offline delivery: physical media (USB drives, DVDs), controlled transfer stations, private container registries, or semi-permeable boundaries allowing outbound-only connections to trusted sources. Vendors have to bundle all dependencies for offline installation.'
+    answer: 'A true air-gapped update uses offline or customer-controlled transfer: physical media, controlled transfer stations, one-way diodes or a private staging path the customer operates. Outbound-only access to a vendor registry is a restricted network, not a true air-gapped deployment. Vendors have to bundle all dependencies for offline installation.'
   - question: What is air-gapped cloud?
-    answer: 'Air-gapped cloud refers to cloud services operating with isolation principles: private VPCs with no internet access, immutable object storage, cross-account backup isolation, or dedicated cloud environments with strict network controls. Logical air-gapping rather than physical disconnection.'
+    answer: 'Often means cloud environments with strong isolation: private VPCs with no internet access, dedicated accounts and strict network controls. That is restricted or air-gapped-style cloud, not always a true air-gapped deployment. A true air-gapped deployment still means no vendor path and no reliable live connection to untrusted networks.'
   - question: Is air-gapping still relevant in 2026?
     answer: 'Yes. Air-gapping remains essential for government, military, critical infrastructure, healthcare, and financial systems. The implementations have evolved (logical air gaps, cloud-based isolation), but the fundamental principle of protecting critical systems through isolation is more important than ever given current cyber threats.'
 ---
@@ -41,6 +41,8 @@ import TestimonialCTA from '~/components/cta/TestimonialCTA.astro';
 ## What is Air-Gapped? (Air Gap Meaning)
 
 **Air-gapped** (written variously as air gapped, air-gapped, or airgapped) describes a computer system, network, or device that is physically or logically isolated from unsecured networks, including the internet and any untrusted local networks. The isolation creates a literal "air gap" between secure systems and potential threats, which prevents unauthorized remote access, data exfiltration, and most forms of cyberattack.
+
+On the [self-hosted spectrum](/blog/self-hosted-spectrum/), air-gapped is the fully customer-operated pole: **no vendor access** and no reliable live path to a vendor SaaS control plane.
 
 The term comes from physical separation, a gap of air between systems, although modern air-gapping can also be achieved logically through software controls.
 
@@ -92,7 +94,7 @@ Complete hardware disconnection, with zero network interfaces:
 
 ### 2. Logical air gap
 
-Network connectivity exists, but strict software-defined boundaries enforce isolation:
+Network connectivity exists only insofar as the design still eliminates routes to untrusted networks. Strict software-defined boundaries enforce that isolation:
 
 - Firewalls with explicit deny-all rules
 - VLANs creating network segmentation
@@ -100,9 +102,11 @@ Network connectivity exists, but strict software-defined boundaries enforce isol
 - API gateways with controlled access
 - Network policies preventing unauthorized communication
 
+Segmentation alone (VLANs, firewalls, RBAC) without removing untrusted routes is **restricted networking**, not a true air-gapped deployment.
+
 **Advantages**: easier to maintain, supports automation, better scalability.
 **Disadvantages**: requires meticulous configuration, vulnerable to misconfiguration.
-**Example**: a financial institution's backup infrastructure in a separate security zone.
+**Example**: a financial institution's backup infrastructure in a separate security zone with no path to the public internet.
 
 ### 3. Network air gap (data diodes)
 
@@ -117,17 +121,18 @@ Controlled one-way communication using hardware-based isolation:
 **Disadvantages**: complex to implement, still requires careful security protocols.
 **Example**: industrial SCADA systems receiving sensor data without exposing control systems.
 
-### 4. Air-gapped cloud (modern hybrid)
+### 4. Restricted / air-gapped-style cloud
 
-Cloud services operating with isolation principles:
+Cloud services operating with strong isolation principles. This is adjacent to true air-gapped deployments on the [self-hosted spectrum](/blog/self-hosted-spectrum/), not the same thing:
 
 - Private VPCs with no internet gateway
 - Dedicated cloud accounts with strict network policies
-- Encrypted tunnels for controlled management access
 - Cloud-native security controls enforcing isolation
 
-**Advantages**: combines cloud scalability with air-gap security principles.
-**Disadvantages**: not truly air-gapped, depends on cloud provider controls.
+Encrypted tunnels for **vendor** management access make this a restricted private-cloud posture, not a true air-gapped deployment.
+
+**Advantages**: combines cloud scalability with isolation principles.
+**Disadvantages**: not truly air-gapped; depends on cloud provider controls and whether any vendor path remains.
 **Example**: a healthcare organization running patient data processing in an isolated AWS VPC.
 
 ---
@@ -145,7 +150,7 @@ Air-gapped systems run on a straightforward principle: what isn't connected can'
 
 ### Data transfer protocols
 
-- **Dedicated sanitized media**: USB drives used exclusively for air-gap transfers
+- **Dedicated sanitized media**: USB drives used exclusively for air-gapped transfers
 - **Media scanning stations**: isolated systems checking files before production transfer
 - **Write-once media**: CD-R discs that prevent malware persistence
 - **Cryptographic signing**: validating file integrity during transfer so tampered files are detected before they reach production
@@ -297,7 +302,7 @@ The traditional definition of air-gapping (physical disconnection) clashes with 
 
 **Cloud-native data vaults:**
 
-- Managed services designed for air-gap-style protection
+- Managed services designed for air-gapped-style protection
 - AWS Backup Vault Lock, Google Cloud Assured Workloads
 - Compliance-focused isolation with audit trails
 
@@ -337,7 +342,7 @@ Traditional software distribution assumes internet connectivity. Air-gapped envi
 - **Offline license enforcement**: license keys work without internet connectivity
 - **Controlled update delivery**: ship updates via physical media or controlled transfer with automated unpacking
 - **Customer self-service**: customers access download portals for generating offline packages
-- **Minimal vendor access**: no need for the vendor to access customer air-gapped networks
+- **No vendor access**: the isolated environment has no vendor path in
 
 The result is that ISVs can profitably serve air-gapped customers while meeting their security and compliance requirements.
 
@@ -443,7 +448,7 @@ Organizations running air-gapped systems should follow these principles.
 
 **Media controls:**
 
-- Use dedicated, sanitized devices exclusively for air-gap transfers
+- Use dedicated, sanitized devices exclusively for air-gapped transfers
 - Scan all media on isolated systems before production transfer
 - Consider write-once media (CD-R) for one-way transfers
 - Implement cryptographic signing for integrity verification

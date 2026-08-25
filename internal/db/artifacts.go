@@ -1304,7 +1304,7 @@ func UpsertArtifactVersionForSync(ctx context.Context, av *types.ArtifactVersion
 			manifest_blob_size = EXCLUDED.manifest_blob_size,
 			manifest_content_type = EXCLUDED.manifest_content_type,
 			manifest_data = EXCLUDED.manifest_data,
-			updated_at = current_timestamp
+			updated_at = now()
 		RETURNING *`,
 		pgx.NamedArgs{
 			"name":                av.Name,

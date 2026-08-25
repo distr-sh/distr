@@ -51,7 +51,7 @@ func UpsertCustomEmailConfiguration(ctx context.Context, config *types.CustomEma
 			@updatedByUserAccountId, @organizationId, @enabled, @fromAddress,
 			@smtpHost, @smtpPort, @smtpUsername, @smtpPassword, @smtpImplicitTls
 		) ON CONFLICT (organization_id) DO UPDATE SET
-			updated_at = current_timestamp,
+			updated_at = now(),
 			updated_by_user_account_id = excluded.updated_by_user_account_id,
 			enabled = excluded.enabled,
 			from_address = excluded.from_address,
