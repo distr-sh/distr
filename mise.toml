@@ -68,6 +68,17 @@ depends = ["go-tidy", "build:frontend:community"]
 run = 'go build -ldflags="{{vars.ldflags}} -X github.com/distr-sh/distr/internal/buildconfig.edition=enterprise" -o dist/distr ./cmd/hub'
 depends = ["go-tidy", "build:frontend:enterprise"]
 
+[tasks."build:website"]
+run = 'pnpm build'
+dir = "website"
+sources = [
+  "website/src/**/*",
+  "website/public/**/*",
+  "website/astro.config.mjs",
+  "website/package.json",
+  "CHANGELOG.md",
+]
+
 [tasks."build:agent:docker"]
 run = 'go build -ldflags="{{vars.ldflags}}" -o dist/docker-agent ./cmd/agent/docker'
 depends = ["go-tidy"]
@@ -86,8 +97,16 @@ run = 'pnpm lint'
 [tasks."lint:migrations"]
 run = 'hack/validate-migrations.sh'
 
-[tasks.lint]
+[tasks."lint:website"]
+run = 'pnpm lint'
+dir = "website"
+
+[tasks."lint:app"]
 run = { tasks = ["lint:go", "lint:frontend", "lint:migrations"] }
+description = 'Lint hub and agents, without the website'
+
+[tasks.lint]
+run = { tasks = ["lint:app", "lint:website"] }
 
 [tasks."test:go"]
 run = 'go test ./...'
@@ -118,8 +137,17 @@ outputs = ["deploy/charts/distr/README.md"]
 run = 'pnpm format'
 depends = ["build:helm-docs"]
 
-[tasks.format]
+[tasks."format:website"]
+run = 'pnpm format'
+dir = "website"
+description = 'Format the website. Also deletes unused images'
+
+[tasks."format:app"]
 run = { tasks = ["format:go", "format:frontend"] }
+description = 'Format hub and agents, without the website'
+
+[tasks.format]
+run = { tasks = ["format:app", "format:website"] }
 
 [tasks."run:hub:serve"]
 run = 'go run -ldflags="{{vars.ldflags}}" ./cmd/hub/ serve'
