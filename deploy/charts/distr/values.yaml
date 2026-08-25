@@ -181,15 +181,12 @@ hub:
     # - name: METRICS_BEARER_TOKEN
     #   value: '...'
     # Self-service custom domains, terminated by the Caddy deployment in the "caddy" section
-    # below. CUSTOM_DOMAIN_APP_CNAME_TARGET is the DNS name customers point their app domain
-    # CNAME records at; it must resolve to that Caddy's LoadBalancer and is what enables the
-    # feature in the UI. CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET does the same for the optional
-    # dedicated registry domain and falls back to the app target when unset. The chart derives
-    # INTERNAL_SERVER_ADDR from caddy.askServerPort itself.
-    # - name: CUSTOM_DOMAIN_APP_CNAME_TARGET
-    #   value: cname.example.com
-    # - name: CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET
-    #   value: cname.example.com
+    # below. CUSTOM_DOMAIN_TARGET is the DNS name customers point every custom domain's CNAME
+    # record at, registry domains included; it must resolve to that Caddy's LoadBalancer and is
+    # what enables the feature in the UI. The chart derives INTERNAL_SERVER_ADDR from
+    # caddy.askServerPort itself.
+    # - name: CUSTOM_DOMAIN_TARGET
+    #   value: whitelabel.example.com
   # -- Sources to populate the hub environment from, e.g. a ConfigMap or Secret reference.
   envFrom: []
   scratch:
@@ -402,9 +399,8 @@ cronJobs:
 # app. Disabled by default.
 caddy:
   # -- Deploy the Caddy reverse proxy that terminates TLS for customer-configured custom domains.
-  # The CNAME targets customers point their domains at are configured as
-  # CUSTOM_DOMAIN_APP_CNAME_TARGET and CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET in `hub.env`, and the
-  # former is required for the feature to be offered in the UI.
+  # The CNAME target customers point their domains at is configured as CUSTOM_DOMAIN_TARGET in
+  # `hub.env`, which is also what makes the feature available in the UI.
   enabled: false
   # -- Number of Caddy replicas. Anything above 1 requires certificate storage that all replicas
   # share, either a `ReadWriteMany` volume (see `caddy.persistence.accessModes`) or a `caddy.storage`

@@ -54,10 +54,8 @@ hub:
       value: 'false'
     - name: LOKI_URL
       value: http://distr-loki:3100
-    - name: CUSTOM_DOMAIN_APP_CNAME_TARGET
-      value: custom-app.distr.local
-    - name: CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET
-      value: custom-registry.distr.local
+    - name: CUSTOM_DOMAIN_TARGET
+      value: whitelabel.distr.local
 
 caddy:
   enabled: true

@@ -122,13 +122,12 @@ See [Registry Configuration](/docs/registry/configuration/) for a feature overvi
 
 Custom domain self-service lets vendor organizations serve Distr under their own domains.
 It requires an edge proxy with on-demand TLS (e.g. Caddy, included in the Helm chart) in front of the Hub.
-The feature is only offered in the UI when `CUSTOM_DOMAIN_APP_CNAME_TARGET` is set.
+The feature is only offered in the UI when `CUSTOM_DOMAIN_TARGET` is set.
 
-| Variable                              | Required | Default | Description                                                                                                               |
-| ------------------------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `CUSTOM_DOMAIN_APP_CNAME_TARGET`      | no       | —       | Hostname customers point their app domain CNAME records at (e.g. `cname.distr.sh`). Enables custom domain self-service.   |
-| `CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET` | no       | —       | Hostname customers point their registry domain CNAME records at. Falls back to the app CNAME target if unset.             |
-| `INTERNAL_SERVER_ADDR`                | no       | `:8085` | Listen address of the internal server exposing the Caddy on-demand TLS ask endpoint. Never expose it outside the cluster. |
+| Variable               | Required | Default | Description                                                                                                                      |
+| ---------------------- | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `CUSTOM_DOMAIN_TARGET` | no       | —       | Hostname customers point every custom domain's CNAME record at (e.g. `whitelabel.distr.sh`). Enables custom domain self-service. |
+| `INTERNAL_SERVER_ADDR` | no       | `:8085` | Listen address of the internal server exposing the Caddy on-demand TLS ask endpoint. Never expose it outside the cluster.        |
 
 ## Support Bundles
 
