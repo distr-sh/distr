@@ -125,7 +125,7 @@ It requires an edge proxy with on-demand TLS (e.g. Caddy, included in the Helm c
 The feature is only offered in the UI when `CUSTOM_DOMAIN_TARGET` is set.
 
 A domain is only used for links, mails, agent manifests and registry URLs once a CNAME check has
-found it to point at the CNAME target; until then the organization keeps its previous host. The check runs
+found it to point at the CNAME target; until then the organization keeps the default host. The check runs
 when a domain is registered, can be triggered from the organization settings, and needs to be
 [scheduled](/docs/self-hosting/maintenance#custom-domain-verification) so that domains recover on
 their own once a record is fixed. Serving requests on a domain does not depend on the check.

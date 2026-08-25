@@ -47,7 +47,7 @@ func verifyDomain(ctx context.Context, domain types.CustomDomain) error {
 	if err != nil {
 		return err
 	}
-	// Only the transition is worth reporting: the fallback to the previous host is silent by design,
+	// Only the transition is worth reporting: the fallback to the default host is silent by design,
 	// so this is what turns "our mails suddenly link somewhere else" into something answerable.
 	if domain.Verified() && !updated.Verified() {
 		err := fmt.Errorf("custom domain %v is no longer verified: %v", domain.Domain, *updated.VerificationError)

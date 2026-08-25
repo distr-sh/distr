@@ -72,12 +72,9 @@
       </div>
 
       @if (!domain.verified) {
-        <div
-          class="flex items-center p-4 mt-1 text-sm text-yellow-800 border border-yellow-300 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300 dark:border-yellow-800"
-          role="alert">
-          Until this domain points at the CNAME target above, links, mails, agent manifests and registry URLs keep using
-          your previous host.
-        </div>
+        <p class="mt-1 text-xs font-normal text-yellow-700 dark:text-yellow-300">
+          Links and mails keep using the default host until the CNAME record points here.
+        </p>
       }
     } @else {
       <form (submit)="submit($event)">
