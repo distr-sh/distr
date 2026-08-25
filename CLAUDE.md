@@ -121,22 +121,17 @@ mise run build:website
 
 Binaries are output to `dist/`.
 
-### Linting and Formatting
+### Formatting
 
 ```sh
-# Auto-fix linting issues
 mise run format              # All, including the website
 mise run format:app          # Hub and agents, without the website
 mise run format:go           # Go only
 mise run format:frontend     # Frontend only
 mise run format:website      # Website only, also prunes unused images
-
-# Lint
-mise run lint                # All, including the website
-mise run lint:app            # Hub and agents, without the website
 ```
 
-Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Prettier with config in `.prettierrc.mjs`.
+Go formatting is configured in `.golangci.yml`, the frontend uses Prettier with config in `.prettierrc.mjs`.
 The website is a separate pnpm project with its own Prettier config; the root config ignores `website/`.
 
 ## Code Patterns and Conventions
@@ -305,7 +300,7 @@ Only write a test that could fail for a real reason. Every test is code that has
 
 - Always ensure this file is up-to-date.
 - This file holds instructions and conventions for the agent, not technical documentation. Add a rule that changes what an agent does; never a description of how a feature, endpoint or subsystem works. That belongs in the code, in a doc comment, or on the website.
-- Always build, test, lint and format through mise tasks (`mise run build:hub:community`, `mise run test:go`, `mise run test:frontend`, `mise run lint`, `mise run format`). Never invoke `go build`, `go test`, `golangci-lint` or `pnpm` directly.
+- Always build, test and format through mise tasks (`mise run build:hub:community`, `mise run test:go`, `mise run test:frontend`, `mise run format`). Never invoke `go build`, `go test`, `golangci-lint` or `pnpm` directly.
 - When you add, remove, or change an environment variable in `internal/env/env.go` (name, default, required/optional status, or accepted values), update the configuration reference page at `website/src/content/docs/docs/self-hosting/configuration.mdx` in the same change so it stays complete and accurate.
 - If a user requests you to do something differently, add the difference to a new rule / convention in this file
 - If you read code that doesn't follow these rules, please fix it.
