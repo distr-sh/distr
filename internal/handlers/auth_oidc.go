@@ -384,14 +384,56 @@ func resolveCustomOIDCUser(
 		return nil, "", err
 	}
 
-	if failure, err := checkCustomOIDCLoginAllowed(ctx, *user, login); err != nil {
+	if failure, err := admitExistingCustomOIDCUser(ctx, log, login, identity, *user); err != nil {
 		return nil, "", err
 	} else if failure != "" {
 		return nil, failure, nil
 	}
 	log.Info("linking custom OIDC identity to existing user account matched by email",
-		zap.Any("userId", user.ID))
+		zap.Stringer("userId", user.ID))
 	return user, "", linkCustomOIDCIdentity(ctx, configuration, identity, *user)
+}
+
+// admitExistingCustomOIDCUser gives an account that exists but is not a member of the provider's
+// organization scope the same first sign-in an unknown account gets. Only a first sign-in: a revoked
+// membership has to keep an already linked identity out for good.
+func admitExistingCustomOIDCUser(
+	ctx context.Context,
+	log *zap.Logger,
+	login customOIDCLogin,
+	identity oidc.Identity,
+	user types.UserAccount,
+) (string, error) {
+	// Refused before provisioning, for the reason given in checkCustomOIDCLoginAllowed.
+	if user.IsSuperAdmin {
+		return redirectToLoginOIDCNoAccount, nil
+	}
+
+	if member, err := isOrganizationMember(ctx, user, login); err != nil {
+		return "", err
+	} else if member {
+		return "", nil
+	}
+
+	if failure, err := checkCustomOIDCProvisioningAllowed(ctx, log, login, identity); err != nil || failure != "" {
+		return failure, err
+	}
+
+	err := db.CreateUserAccountOrganizationAssignment(ctx, user.ID, login.configuration.OrganizationID,
+		login.configuration.DefaultUserRole, login.customerOrgID(), nil)
+	// One assignment exists per user and organization, so a user already in another scope of it cannot get
+	// the provider's scope on top. Re-scoping instead would hand a customer's provider a member of the
+	// vendor or of another customer.
+	if errors.Is(err, apierrors.ErrAlreadyExists) {
+		log.Info("rejecting custom OIDC login for a user assigned to another scope of the organization",
+			zap.Stringer("userId", user.ID))
+		return redirectToLoginOIDCNoAccount, nil
+	} else if err != nil {
+		return "", err
+	}
+	log.Info("assigned existing user account to the organization of a custom OIDC provider",
+		zap.Stringer("userId", user.ID))
+	return "", nil
 }
 
 // checkCustomOIDCLoginAllowed returns the login redirect to answer with when the user must not sign in
@@ -423,30 +465,32 @@ func checkCustomOIDCLoginAllowed(
 	return "", nil
 }
 
-func provisionCustomOIDCUser(
+// checkCustomOIDCProvisioningAllowed returns the redirect to refuse a membership in the provider's
+// organization scope with, or an empty string when the provider may hand one out.
+func checkCustomOIDCProvisioningAllowed(
 	ctx context.Context,
 	log *zap.Logger,
 	login customOIDCLogin,
 	identity oidc.Identity,
-) (*types.UserAccount, string, error) {
+) (string, error) {
 	configuration := login.configuration
 	if !configuration.CreateUnknownUsers {
-		return nil, redirectToLoginOIDCNoAccount, nil
+		return redirectToLoginOIDCNoAccount, nil
 	}
 	// Refused at configuration time as well; this is the guard that survives a domain being re-pointed.
 	if login.sharedCustomerPortal() {
 		log.Info("rejecting custom OIDC provisioning on the shared customer portal domain",
-			zap.Any("customOidcConfigurationId", configuration.ID))
-		return nil, redirectToLoginOIDCNoAccount, nil
+			zap.Stringer("customOidcConfigurationId", configuration.ID))
+		return redirectToLoginOIDCNoAccount, nil
 	}
 	if !emailDomainAllowed(configuration, identity.Email) {
 		log.Info("rejecting custom OIDC login for a disallowed email domain")
-		return nil, redirectToLoginOIDCNoAccount, nil
+		return redirectToLoginOIDCNoAccount, nil
 	}
 
 	organization, err := db.GetOrganizationByID(ctx, configuration.OrganizationID)
 	if err != nil {
-		return nil, "", err
+		return "", err
 	}
 	// A customer user counts against the per-customer limit, not the vendor's billable seats.
 	customerOrgID := login.customerOrgID()
@@ -454,19 +498,33 @@ func provisionCustomOIDCUser(
 	if customerOrgID != nil {
 		customerOrganization, err := db.GetCustomerOrganizationByID(ctx, *customerOrgID)
 		if err != nil {
-			return nil, "", err
+			return "", err
 		}
 		limitReached, err = subscription.IsCustomerUserAccountLimitReached(*organization, *customerOrganization)
 		if err != nil {
-			return nil, "", err
+			return "", err
 		}
 	} else if limitReached, err = subscription.IsBillableUserAccountLimitReached(ctx, *organization); err != nil {
-		return nil, "", err
+		return "", err
 	}
 	if limitReached {
 		log.Info("rejecting custom OIDC login, user account limit reached",
-			zap.Any("organizationId", organization.ID), zap.Any("customerOrganizationId", customerOrgID))
-		return nil, redirectToLoginOIDCUserLimit, nil
+			zap.Stringer("organizationId", organization.ID),
+			zap.Stringer("customerOrganizationId", customerOrgID))
+		return redirectToLoginOIDCUserLimit, nil
+	}
+	return "", nil
+}
+
+func provisionCustomOIDCUser(
+	ctx context.Context,
+	log *zap.Logger,
+	login customOIDCLogin,
+	identity oidc.Identity,
+) (*types.UserAccount, string, error) {
+	configuration := login.configuration
+	if failure, err := checkCustomOIDCProvisioningAllowed(ctx, log, login, identity); err != nil || failure != "" {
+		return nil, failure, err
 	}
 
 	user := types.UserAccount{Email: identity.Email}
@@ -476,8 +534,8 @@ func provisionCustomOIDCUser(
 	if err := db.CreateUserAccount(ctx, &user); err != nil {
 		return nil, "", err
 	}
-	if err := db.CreateUserAccountOrganizationAssignment(
-		ctx, user.ID, configuration.OrganizationID, configuration.DefaultUserRole, customerOrgID, nil); err != nil {
+	if err := db.CreateUserAccountOrganizationAssignment(ctx, user.ID, configuration.OrganizationID,
+		configuration.DefaultUserRole, login.customerOrgID(), nil); err != nil {
 		return nil, "", err
 	}
 	log.Info("provisioned user account for custom OIDC identity", zap.Any("userId", user.ID))
