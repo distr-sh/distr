@@ -275,6 +275,10 @@
         <p class="text-xs font-normal text-yellow-700 dark:text-yellow-300">
           Identity providers only work on custom domains. Configure and verify one first.
         </p>
+      } @else if (!configurable()) {
+        <p class="text-xs font-normal text-yellow-700 dark:text-yellow-300">
+          An organization slug is required. Set one on the General tab first.
+        </p>
       }
     </div>
   </div>
