@@ -25,7 +25,7 @@
         A custom domain has to exist first.
       </p>
 
-      @if (oidcProvidersEnabled() && !configurable()) {
+      @if (oidcProvidersEnabled() && viewerIsVendor() && !configurable()) {
         <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
           Set an organization slug on the General tab first. It is part of every login and callback URL.
         </p>
@@ -271,7 +271,7 @@
         <p class="text-xs font-normal text-yellow-700 dark:text-yellow-300">
           Identity providers only work on custom domains. Configure and verify one first.
         </p>
-      } @else if (!configurable()) {
+      } @else if (viewerIsVendor() && !configurable()) {
         <p class="text-xs font-normal text-yellow-700 dark:text-yellow-300">
           An organization slug is required. Set one on the
           <a routerLink="/settings/organization/general" class="font-semibold underline">General tab</a> first.

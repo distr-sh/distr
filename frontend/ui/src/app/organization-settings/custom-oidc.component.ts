@@ -60,33 +60,23 @@ export class CustomOidcComponent {
   private readonly remoteEnv = toSignal(from(getRemoteEnvironment()));
   protected readonly cnameTarget = computed(() => this.remoteEnv()?.customDomainTarget);
 
-  // Separate, because domains and the identity providers on them change independently: only removing
-  // a domain takes its providers with it.
   private readonly domainsRefresh$ = new BehaviorSubject<void>(undefined);
   private readonly configurationsRefresh$ = new BehaviorSubject<void>(undefined);
 
-  // Set on the customer-scoped page, where only the customer's own portal domain is managed.
   public readonly customerOrganizationId = input<string>();
 
   protected readonly customerScoped = computed(() => !!this.customerOrganizationId());
-  // A customer-scoped page is reached both by the customer's own admins and by a vendor managing that
-  // customer on their behalf; the copy addresses "your users" only for the former.
   protected readonly viewerIsCustomer = computed(() => this.auth.isCustomer());
+  protected readonly viewerIsVendor = computed(() => this.auth.isVendor());
   protected readonly partnerManagementEnabled = computed(() => this.featureFlags.isPartnerManagementEnabled());
   protected readonly appDomainLabel = computed(() =>
     this.partnerManagementEnabled() ? 'Vendor & Partner Portal domain' : 'Vendor Portal domain'
   );
-  // On a customer's own settings page the portal domain is the reason the page exists, so it is not
-  // hidden behind a checkbox there the way the vendor's optional domains are.
   protected readonly customerPortalCheckboxLabel = computed(() =>
     this.customerScoped() ? undefined : 'Use a customer portal domain'
   );
-  // Self-hosted instances that never configured a CNAME target have nothing to serve a custom domain
-  // with, so the domain fields (not the identity providers of ones already configured) stay hidden.
   protected readonly customDomainsConfigured = computed(() => !!this.cnameTarget());
 
-  // The tab and its route guard open on either feature (see organization-settings.component.ts /
-  // app-logged-in.routes.ts), so an org with only custom_domains must not end up on a blank page.
   protected readonly domainsEnabled = computed(() => this.featureFlags.isCustomDomainsEnabled());
   protected readonly oidcProvidersEnabled = computed(() => this.featureFlags.isCustomOidcProvidersEnabled());
 
@@ -113,9 +103,6 @@ export class CustomOidcComponent {
       this.auth.hasRole('admin')
   );
 
-  // The server returns every provider within the caller's scope, a vendor's own and each customer's
-  // alike, which is why configurationsFor narrows to the one domain being rendered. Requested only
-  // with the feature enabled, because the endpoint 403s without it.
   private readonly response = toSignal(
     combineLatest([this.featureFlags.isCustomOidcProvidersEnabled$, this.configurationsRefresh$]).pipe(
       switchMap(([enabled]) =>
@@ -138,8 +125,6 @@ export class CustomOidcComponent {
     ),
     {initialValue: [] as CustomDomain[]}
   );
-  // Writable so that a check can be applied to the domain it was run for, which is cheaper than
-  // fetching the whole list back for a state the check itself returns. Resets on every fetch.
   private readonly domains = linkedSignal(() => this.fetchedDomains());
   protected readonly scopedDomains = computed(() =>
     this.domains().filter((d) => (d.customerOrganizationId ?? undefined) === this.customerOrganizationId())
@@ -152,9 +137,6 @@ export class CustomOidcComponent {
     this.scopedDomains().find((domain) => domain.domainType === 'customer_portal')
   );
 
-  // The domains a check was asked for and has not come back from. A domain carries the outcome of
-  // its last check, kept up to date by a background job, so the page renders a status without ever
-  // looking up DNS itself.
   protected readonly checkingDomainIds = signal<ReadonlySet<string>>(new Set());
 
   constructor() {
@@ -173,8 +155,6 @@ export class CustomOidcComponent {
       if (verification.inconclusive) {
         this.toast.error('The DNS lookup could not be completed, please try again');
       } else if (verification.verified !== domain.verified) {
-        // Only then can the organization's effective registry host have changed, in either direction:
-        // a domain becoming usable, or one that was usable falling back to the default host.
         this.contextService.reload();
       }
     } catch (e) {
@@ -216,7 +196,6 @@ export class CustomOidcComponent {
         this.customDomainsService.create([{domain: value, domainType}], this.customerOrganizationId())
       );
       this.domainsRefresh$.next();
-      // The effective registry host of the organization may have changed with the new domain.
       this.contextService.reload();
       this.toast.success('Custom domain saved');
     } catch (e) {
@@ -244,7 +223,6 @@ export class CustomOidcComponent {
     try {
       await firstValueFrom(this.customDomainsService.delete(domain.id));
       this.domainsRefresh$.next();
-      // The domain took its identity providers with it.
       this.configurationsRefresh$.next();
       this.contextService.reload();
       this.toast.success('Custom domain removed');
@@ -267,8 +245,6 @@ export class CustomOidcComponent {
     return domain ? this.configurations().filter((configuration) => configuration.customDomainId === domain.id) : [];
   }
 
-  // Each host carries its own provider set, so a provider belongs to the domain and not to the
-  // organization.
   private readonly activeDomain = signal<CustomDomain | undefined>(undefined);
   protected readonly editing = signal<CustomOidcConfiguration | undefined>(undefined);
   protected readonly saving = signal(false);
@@ -314,8 +290,6 @@ export class CustomOidcComponent {
     return prefix && slug ? `${prefix}${slug}/callback` : undefined;
   });
 
-  // An existing provider counts as hand-edited: its slug is part of the redirect URI registered with the
-  // identity provider, so renaming the provider must not silently invalidate it.
   private readonly slugEdited = signal(false);
   protected readonly editingSlug = signal(false);
 
@@ -338,7 +312,6 @@ export class CustomOidcComponent {
         clientId: configuration.clientId,
         clientSecret: '',
         spInitiated: configuration.spInitiated,
-        // The checkbox is not rendered when provisioning is unavailable, so a stored true could not be cleared.
         createUnknownUsers: configuration.createUnknownUsers && this.provisioningAvailable(),
         defaultUserRole: configuration.defaultUserRole,
         allowedEmailDomains: configuration.allowedEmailDomains.join(' '),
@@ -356,7 +329,6 @@ export class CustomOidcComponent {
     this.dialogRef?.close();
   }
 
-  // Automatic provisioning has no customer to provision into on the vendor's shared portal domain.
   protected readonly provisioningAvailable = computed(() => {
     const domain = this.activeDomain();
     return !!domain && (domain.domainType !== 'customer_portal' || !!domain.customerOrganizationId);
@@ -372,8 +344,6 @@ export class CustomOidcComponent {
     const existing = this.editing();
     const request = {
       customDomainId,
-      // Only meaningful on create; the server ignores it on update, since the existing row already
-      // pins the scope.
       customerOrganizationId: this.customerOrganizationId(),
       name: value.name,
       slug: value.slug,
@@ -381,8 +351,6 @@ export class CustomOidcComponent {
       issuer: value.issuer,
       clientId: value.clientId,
       clientSecret: value.clientSecret || undefined,
-      // Not offered in the dialog: the defaults work with every provider, and an organization that needs
-      // something else sets it through the API, which this must not overwrite.
       scopes: existing?.scopes ?? DEFAULT_SCOPES,
       pkceEnabled: existing?.pkceEnabled,
       spInitiated: value.spInitiated,
@@ -432,7 +400,6 @@ export class CustomOidcComponent {
       );
       this.configurationsRefresh$.next();
     } catch (e) {
-      // the browser has already flipped the checkbox, and re-rendering the row does not undo that
       toggle.checked = configuration.enabled;
       const msg = getFormDisplayedError(e);
       if (msg) {
