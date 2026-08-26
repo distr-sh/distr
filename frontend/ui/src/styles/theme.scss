@@ -1,37 +1,3 @@
-@theme {
-  --spacing-108: 27rem;
-  --spacing-128: 32rem;
-  --spacing-144: 36rem;
-  --spacing-160: 40rem;
-  --spacing-180: 45rem;
-  --spacing-200: 50rem;
-  --spacing-256: 64rem;
-
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
-  --color-primary-950: #172554;
-
-  --font-sans: 'Inter', 'system-ui', 'sans-serif';
-  --font-display: 'Poppins', 'Inter', 'system-ui', 'sans-serif';
-  --font-mono: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-
-  --breakpoint-3xl: 112rem;
-  --breakpoint-4xl: 128rem;
-  --breakpoint-5xl: 144rem;
-}
-
-@custom-variant dark (&:where(.dark, .dark *));
-
-@plugin 'flowbite/plugin';
-
 @layer base {
   button:not(:disabled),
   [role='button']:not(:disabled) {
@@ -75,18 +41,6 @@
 
   .distr-btn-danger-solid {
     @apply text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800;
-  }
-
-  .distr-tab {
-    @apply inline-flex items-center justify-center p-4 -mb-px text-sm font-medium text-center text-gray-500 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300;
-  }
-
-  .distr-tab[aria-selected='true'] {
-    @apply text-primary-600 border-primary-600 dark:text-primary-500 dark:border-primary-500;
-  }
-
-  .distr-tab[aria-disabled='true'] {
-    @apply text-gray-400 hover:text-gray-400 hover:border-transparent dark:text-gray-500 dark:hover:text-gray-500;
   }
 
   .distr-plan-badge {
