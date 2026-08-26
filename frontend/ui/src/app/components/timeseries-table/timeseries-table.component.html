@@ -3,7 +3,7 @@
     <ng-container *ngTemplateOutlet="liveIndicator" />
   }
   <div class="flex flex-col gap-4">
-    @if (hasMore && !newestFirst() && live()) {
+    @if (hasMore() && !newestFirst() && !paginateForward()) {
       <ng-container *ngTemplateOutlet="loadMoreButton" />
     }
     <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
@@ -80,7 +80,7 @@
     }
     <div #tableBottom></div>
 
-    @if (hasMore && (newestFirst() || !live())) {
+    @if (hasMore() && (newestFirst() || paginateForward())) {
       <ng-container *ngTemplateOutlet="loadMoreButton" />
     }
   </div>
@@ -122,7 +122,7 @@
       type="button"
       class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary"
       (click)="loadMore()">
-      {{ !newestFirst() && !live() ? 'Load newer' : 'Load older' }}
+      {{ paginateForward() ? 'Load newer' : 'Load older' }}
     </button>
   </div>
 </ng-template>
