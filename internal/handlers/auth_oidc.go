@@ -396,7 +396,7 @@ func resolveCustomOIDCUser(
 
 // admitExistingCustomOIDCUser gives an account that exists but is not a member of the provider's
 // organization scope the same first sign-in an unknown account gets. Only a first sign-in: a revoked
-// membership has to keep an already linked identity out for good.
+// membership has to keep an identity already linked to this provider out for good.
 func admitExistingCustomOIDCUser(
 	ctx context.Context,
 	log *zap.Logger,
