@@ -134,15 +134,17 @@
                       <span class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Enabled</span>
                     </label>
                     @if (auth.hasAnyRole('read_write', 'admin')) {
-                      <button
-                        type="button"
-                        (click)="openScriptModal(scriptModal, script)"
-                        class="py-2 px-3 distr-btn-secondary">
-                        <fa-icon [icon]="faPen" class="h-4 w-4" />
-                      </button>
-                      <button type="button" (click)="deleteScript(script)" class="py-2 px-3 distr-btn-danger">
-                        <fa-icon [icon]="faTrash" class="h-4 w-4" />
-                      </button>
+                      <div class="flex items-center gap-2">
+                        <button
+                          type="button"
+                          (click)="openScriptModal(scriptModal, script)"
+                          class="py-2 px-3 text-sm font-medium distr-btn-secondary">
+                          <fa-icon [icon]="faPen" class="h-4 w-4" />
+                        </button>
+                        <button type="button" (click)="deleteScript(script)" class="py-2 px-3 distr-btn-danger">
+                          <fa-icon [icon]="faTrash" class="h-4 w-4" />
+                        </button>
+                      </div>
                     }
                   </div>
                 }
@@ -160,8 +162,11 @@
 </section>
 
 <ng-template #scriptModal>
-  <div class="relative p-4 w-full max-w-3xl max-h-full lg:mt-16">
-    <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+  <div
+    class="relative p-4 w-3xl max-w-full max-h-full lg:mt-16"
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top">
+    <div class="relative p-4 bg-white rounded-lg shadow dark:bg-gray-900">
       <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Custom Script</h3>
         <button
@@ -175,7 +180,7 @@
       <form [formGroup]="scriptForm" (ngSubmit)="saveScript()">
         <div class="p-4 md:p-5 space-y-4">
           <div>
-            <label for="scriptName" class="distr-label">Name</label>
+            <label for="scriptName" class="distr-label mb-1">Name <span class="text-red-500">*</span></label>
             <input
               id="scriptName"
               type="text"
@@ -183,12 +188,15 @@
               formControlName="name"
               placeholder="database-status"
               class="distr-input" />
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
               The collected output is attached to the bundle under this name.
             </p>
+            @if (scriptForm.controls.name.touched && scriptForm.controls.name.errors) {
+              <p class="mt-1 text-xs text-red-500">Please enter a name.</p>
+            }
           </div>
           <div>
-            <label for="scriptDescription" class="distr-label">Description</label>
+            <label for="scriptDescription" class="distr-label mb-1">Description</label>
             <input
               id="scriptDescription"
               type="text"
@@ -198,13 +206,13 @@
               class="distr-input" />
           </div>
           <div>
-            <label for="scriptContent" class="distr-label">Script</label>
+            <label for="scriptContent" class="distr-label mb-1">Script</label>
             <app-editor
               id="scriptContent"
               language="shell"
               formControlName="content"
-              class="block max-h-96 overflow-auto distr-input p-0" />
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              class="block w-full min-w-0 max-h-96 overflow-auto distr-input p-0" />
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
               Runs with the interpreter from its shebang, or with <code>sh</code> when it has none.
             </p>
           </div>
@@ -214,17 +222,8 @@
             <span class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Enabled</span>
           </label>
         </div>
-        <div class="flex items-center justify-end p-4 md:p-5 border-t border-gray-200 dark:border-gray-600 gap-2">
-          <button
-            type="button"
-            (click)="closeScriptModal()"
-            class="py-2.5 px-5 text-sm font-medium distr-btn-secondary">
-            Cancel
-          </button>
-          <button type="submit" [disabled]="savingScript()" class="text-white distr-btn-primary">
-            <fa-icon [icon]="faFloppyDisk" class="mr-2" />
-            Save
-          </button>
+        <div class="flex items-center justify-end p-4 md:p-5 border-t border-gray-200 dark:border-gray-600">
+          <button type="submit" [disabled]="savingScript()" class="text-white distr-btn-primary">Save</button>
         </div>
       </form>
     </div>
@@ -232,7 +231,10 @@
 </ng-template>
 
 <ng-template #importModal>
-  <div class="relative p-4 w-full max-w-2xl max-h-full lg:mt-32">
+  <div
+    class="relative p-4 w-full max-w-2xl max-h-full lg:mt-32"
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top">
     <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
       <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Import Environment Variables</h3>
