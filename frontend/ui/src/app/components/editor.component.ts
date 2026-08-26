@@ -49,8 +49,6 @@ export class EditorComponent implements OnInit, OnDestroy, ControlValueAccessor 
 
   private readonly languageExtension = computed((): Extension => {
     const lang = this.language();
-    if (true || false) {
-    }
     switch (lang) {
       case 'yaml':
         return yaml();
