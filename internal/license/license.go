@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"slices"
 	"sync"
 	"time"
 
@@ -77,8 +78,9 @@ type LicenseData struct {
 	// Global limits
 	MaxOrganizations limit.Limit              `mapstructure:"mo"`
 	Period           types.SubscriptionPeriod `mapstructure:"p"`
+	SubscriptionType types.SubscriptionType   `mapstructure:"t"`
 
-	// Limits for organizations with subscription type Enterprise
+	// Limits of every organization on an instance that enforces the limits of its license key
 	MaxUsersPerOrganization                     limit.Limit `mapstructure:"mou"`
 	MaxCustomersPerOrganization                 limit.Limit `mapstructure:"moc"`
 	MaxUsersPerCustomerOrganization             limit.Limit `mapstructure:"mcu"`
@@ -88,11 +90,24 @@ type LicenseData struct {
 	ExpirationDate time.Time
 }
 
+// Plan is the subscription every organization of the instance is on when the license key
+// enforces its limits.
+func (ld LicenseData) Plan() types.SubscriptionPlan {
+	return types.SubscriptionPlan{
+		Type:                    ld.SubscriptionType,
+		Period:                  ld.Period,
+		EndsAt:                  ld.ExpirationDate,
+		CustomerOrganizationQty: ld.MaxCustomersPerOrganization,
+		UserAccountQty:          ld.MaxUsersPerOrganization,
+	}
+}
+
 var (
 	cachedLicense      *LicenseData
 	defaultLicenseData = LicenseData{
 		EnforceLimitsOnStartup:                      false,
 		Period:                                      types.SubscriptionPeriodYearly,
+		SubscriptionType:                            types.SubscriptionTypeEnterprise,
 		MaxOrganizations:                            limit.Unlimited,
 		MaxUsersPerOrganization:                     limit.Unlimited,
 		MaxCustomersPerOrganization:                 limit.Unlimited,
@@ -153,6 +168,10 @@ func parseAndValidate(pubKeySrc func() (jwk.Key, error), licenseKey string) (*Li
 	licenseData := defaultLicenseData
 	if err := mapstructure.Decode(licenseDataMap, &licenseData); err != nil {
 		return nil, fmt.Errorf("invalid license key: %w", err)
+	}
+
+	if !slices.Contains(types.AllSubscriptionTypes(), licenseData.SubscriptionType) {
+		return nil, fmt.Errorf("invalid license key: unknown subscription type %q", licenseData.SubscriptionType)
 	}
 
 	if exp, ok := token.Expiration(); !ok {

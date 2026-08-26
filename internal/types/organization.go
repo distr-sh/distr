@@ -52,6 +52,33 @@ func (org *Organization) SetFeature(feature Feature, enabled bool) {
 	}
 }
 
+// SubscriptionPlan is everything an organization's subscription is made of, whatever grants it:
+// a Stripe subscription, the license key of a self-hosted instance, or the defaults of a new
+// organization.
+type SubscriptionPlan struct {
+	Type                    SubscriptionType
+	Period                  SubscriptionPeriod
+	EndsAt                  time.Time
+	CustomerOrganizationQty limit.Limit
+	UserAccountQty          limit.Limit
+}
+
+func (plan SubscriptionPlan) Features() []Feature {
+	return FeaturesForSubscriptionType(plan.Type)
+}
+
+// ApplyPlan puts the organization on the given plan. The features of the plan are added but none
+// are ever removed, so a feature granted outside of a plan survives, and so does a feature of a
+// plan the organization is no longer on.
+func (org *Organization) ApplyPlan(plan SubscriptionPlan) {
+	org.SubscriptionType = plan.Type
+	org.SubscriptionPeriod = plan.Period
+	org.SubscriptionEndsAt = plan.EndsAt
+	org.SubscriptionCustomerOrganizationQty = plan.CustomerOrganizationQty
+	org.SubscriptionUserAccountQty = plan.UserAccountQty
+	org.AddFeatures(plan.Features()...)
+}
+
 func (org *Organization) HasActiveSubscription() bool {
 	return org.SubscriptionType == SubscriptionTypeCommunity || org.SubscriptionEndsAt.After(time.Now())
 }
