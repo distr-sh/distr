@@ -1,5 +1,5 @@
-<div class="p-4 bg-gray-50 dark:bg-gray-900">
-  <div class="mx-auto max-w-screen-lg text-gray-900 dark:text-white">
+<app-page variant="narrow">
+  <div class="text-gray-900 dark:text-white">
     @if (brandingDescription$ | async; as description) {
       <div class="markdown" [innerMarkdown]="description"></div>
     } @else {
@@ -8,4 +8,4 @@
       </div>
     }
   </div>
-</div>
+</app-page>

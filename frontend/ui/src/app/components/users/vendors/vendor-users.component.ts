@@ -8,12 +8,13 @@ import {organizationKind} from '../../../../util/organization-kind';
 import {AuthService} from '../../../services/auth.service';
 import {CustomerOrganizationsService} from '../../../services/customer-organizations.service';
 import {UsersService} from '../../../services/users.service';
+import {PageComponent} from '../../page.component';
 import {UsersComponent} from '../users.component';
 
 @Component({
   templateUrl: './vendor-users.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [UsersComponent, RouterLink, FaIconComponent],
+  imports: [UsersComponent, RouterLink, FaIconComponent, PageComponent],
 })
 export class VendorUsersComponent {
   protected readonly faUsers = faUsers;

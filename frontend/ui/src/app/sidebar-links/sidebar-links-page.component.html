@@ -1,129 +1,127 @@
-<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
-  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
-    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
-      @if (customerOrganization(); as customer) {
-        <nav class="flex justify-between m-4" aria-label="Breadcrumb">
-          <ol class="inline-flex items-center mb-3 sm:mb-0">
-            <li class="flex items-center">
-              <a
-                [routerLink]="['/', 'customers']"
-                class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
-                <fa-icon class="mr-2" [icon]="faBoxesStacked" />
-                Customers
-              </a>
-            </li>
-            <span class="mx-2 text-gray-400">/</span>
-            <li aria-current="page">
-              <div class="flex items-center">
-                <button
-                  id="application-dropdown"
-                  cdkOverlayOrigin
-                  #dropdownTrigger="cdkOverlayOrigin"
-                  #dropdownTriggerButton
-                  (click)="toggleBreadcrumbDropdown()"
-                  class="inline-flex items-center px-3 py-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
-                  {{ customer.name }}
-                  <fa-icon class="ml-2" [icon]="faChevronDown" />
-                </button>
-                <ng-template
-                  cdkConnectedOverlay
-                  [cdkConnectedOverlayHasBackdrop]="true"
-                  (backdropClick)="breadcrumbDropdown.set(false)"
-                  [cdkConnectedOverlayBackdropClass]="'transparent'"
-                  [cdkConnectedOverlayOrigin]="dropdownTrigger"
-                  [cdkConnectedOverlayMinWidth]="breadcrumbDropdownWidth + 'px'"
-                  [cdkConnectedOverlayOpen]="breadcrumbDropdown()">
-                  <div
-                    animate.enter="animate-flip-in-top"
-                    animate.leave="animate-flip-out-top"
-                    class="origin-top z-10 w-full bg-white divide-y divide-gray-100 rounded-lg shadow-xs dark:bg-gray-700">
-                    <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownDefault">
-                      @for (customer of customerOrganizations(); track customer.id) {
-                        <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
-                          <a class="px-4 flex items-stretch" [routerLink]="['/', 'customers', customer.id, 'links']">
-                            {{ customer.name }}
-                          </a>
-                        </li>
-                      }
-                    </ul>
-                  </div>
-                </ng-template>
-              </div>
-            </li>
-          </ol>
-          @if (auth.hasAnyRole('read_write', 'admin')) {
-            <button
-              type="button"
-              (click)="showDialog()"
-              class="flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-              <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
-              Create Link
-            </button>
-          }
-        </nav>
-      }
+<app-page>
+  <div class="distr-table-panel">
+    @if (customerOrganization(); as customer) {
+      <nav class="flex justify-between m-4" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center mb-3 sm:mb-0">
+          <li class="flex items-center">
+            <a
+              [routerLink]="['/', 'customers']"
+              class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
+              <fa-icon class="mr-2" [icon]="faBoxesStacked" />
+              Customers
+            </a>
+          </li>
+          <span class="mx-2 text-gray-400">/</span>
+          <li aria-current="page">
+            <div class="flex items-center">
+              <button
+                id="application-dropdown"
+                cdkOverlayOrigin
+                #dropdownTrigger="cdkOverlayOrigin"
+                #dropdownTriggerButton
+                (click)="toggleBreadcrumbDropdown()"
+                class="inline-flex items-center px-3 py-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
+                {{ customer.name }}
+                <fa-icon class="ml-2" [icon]="faChevronDown" />
+              </button>
+              <ng-template
+                cdkConnectedOverlay
+                [cdkConnectedOverlayHasBackdrop]="true"
+                (backdropClick)="breadcrumbDropdown.set(false)"
+                [cdkConnectedOverlayBackdropClass]="'transparent'"
+                [cdkConnectedOverlayOrigin]="dropdownTrigger"
+                [cdkConnectedOverlayMinWidth]="breadcrumbDropdownWidth + 'px'"
+                [cdkConnectedOverlayOpen]="breadcrumbDropdown()">
+                <div
+                  animate.enter="animate-flip-in-top"
+                  animate.leave="animate-flip-out-top"
+                  class="origin-top z-10 w-full bg-white divide-y divide-gray-100 rounded-lg shadow-xs dark:bg-gray-700">
+                  <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownDefault">
+                    @for (customer of customerOrganizations(); track customer.id) {
+                      <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                        <a class="px-4 flex items-stretch" [routerLink]="['/', 'customers', customer.id, 'links']">
+                          {{ customer.name }}
+                        </a>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              </ng-template>
+            </div>
+          </li>
+        </ol>
+        @if (auth.hasAnyRole('read_write', 'admin')) {
+          <button
+            type="button"
+            (click)="showDialog()"
+            class="flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+            <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
+            Create Link
+          </button>
+        }
+      </nav>
+    }
 
-      <div class="overflow-x-auto">
-        <table class="distr-table">
-          <thead class="distr-table-head">
-            <tr>
-              <th scope="col" class="p-4">Name</th>
-              <th scope="col" class="p-4">Link</th>
-              <th scope="col" class="p-4">Created at</th>
-              <th scope="col" class="p-4"></th>
+    <div class="overflow-x-auto">
+      <table class="distr-table">
+        <thead class="distr-table-head">
+          <tr>
+            <th scope="col" class="p-4">Name</th>
+            <th scope="col" class="p-4">Link</th>
+            <th scope="col" class="p-4">Created at</th>
+            <th scope="col" class="p-4"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (link of links(); track link.id) {
+            <tr class="distr-table-row">
+              <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">{{ link.name }}</td>
+              <td
+                class="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap max-w-96 overflow-hidden text-ellipsis">
+                <a
+                  [href]="link.link"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-blue-600 dark:text-blue-400 hover:underline">
+                  {{ link.link }}
+                </a>
+              </td>
+              <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
+                {{ link.createdAt | date }}
+              </td>
+              <td class="px-4 py-3 flex gap-2 justify-end">
+                @if (auth.hasAnyRole('read_write', 'admin')) {
+                  <button
+                    type="button"
+                    (click)="showDialog(link)"
+                    class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                    <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Delete"
+                    (click)="deleteLink(link)"
+                    class="py-2 px-3 distr-btn-danger">
+                    <fa-icon [icon]="faTrash" class="h-4 w-4" />
+                  </button>
+                }
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            @for (link of links(); track link.id) {
-              <tr class="distr-table-row">
-                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">{{ link.name }}</td>
-                <td
-                  class="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap max-w-96 overflow-hidden text-ellipsis">
-                  <a
-                    [href]="link.link"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="text-blue-600 dark:text-blue-400 hover:underline">
-                    {{ link.link }}
-                  </a>
-                </td>
-                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
-                  {{ link.createdAt | date }}
-                </td>
-                <td class="px-4 py-3 flex gap-2 justify-end">
-                  @if (auth.hasAnyRole('read_write', 'admin')) {
-                    <button
-                      type="button"
-                      (click)="showDialog(link)"
-                      class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                      <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Delete"
-                      (click)="deleteLink(link)"
-                      class="py-2 px-3 distr-btn-danger">
-                      <fa-icon [icon]="faTrash" class="h-4 w-4" />
-                    </button>
-                  }
-                </td>
-              </tr>
-            } @empty {
-              <tr class="border-t border-gray-200 dark:border-gray-600">
-                <td
-                  colspan="4"
-                  class="px-4 py-3 font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap text-center">
-                  No links found
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+          } @empty {
+            <tr class="border-t border-gray-200 dark:border-gray-600">
+              <td
+                colspan="4"
+                class="px-4 py-3 font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap text-center">
+                No links found
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
     </div>
   </div>
-</section>
+</app-page>
 
 <ng-template #createUpdateDialog>
   <div

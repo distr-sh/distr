@@ -14,14 +14,15 @@ import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faAddressBook, faCopy, faKey, faMagnifyingGlass, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faAddressBook, faCopy, faKey, faXmark} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {firstValueFrom, forkJoin, startWith} from 'rxjs';
 import {isExpired} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
 import {SecureImagePipe} from '../../util/secureImage';
 import {ExpiresAtPickerComponent} from '../components/expires-at-picker/expires-at-picker.component';
-import {AutotrimDirective} from '../directives/autotrim.directive';
+import {PageComponent} from '../components/page.component';
+import {SearchBarComponent} from '../components/search-bar.component';
 import {ApplicationEntitlementsService} from '../services/application-entitlements.service';
 import {ArtifactEntitlementsService} from '../services/artifact-entitlements.service';
 import {AuthService} from '../services/auth.service';
@@ -38,9 +39,10 @@ import {License} from '../types/license';
     DatePipe,
     ReactiveFormsModule,
     FaIconComponent,
-    AutotrimDirective,
     SecureImagePipe,
     ExpiresAtPickerComponent,
+    PageComponent,
+    SearchBarComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './licenses-overview.component.html',
@@ -55,7 +57,6 @@ export class LicensesOverviewComponent {
   private readonly toast = inject(ToastService);
   protected readonly auth = inject(AuthService);
 
-  protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faAddressBook = faAddressBook;
   protected readonly faKey = faKey;
   protected readonly faCopy = faCopy;

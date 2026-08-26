@@ -4,6 +4,7 @@ import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faArrowRight, faAsterisk} from '@fortawesome/free-solid-svg-icons';
 import {map, of, startWith, Subject, switchMap} from 'rxjs';
+import {PageComponent} from '../components/page.component';
 import {AuthService} from '../services/auth.service';
 import {CustomerOrganizationsService} from '../services/customer-organizations.service';
 import {SecretsService} from '../services/secrets.service';
@@ -12,7 +13,7 @@ import {SecretsComponent} from './secrets.component';
 @Component({
   templateUrl: './secrets-page.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [SecretsComponent, RouterLink, FaIconComponent],
+  imports: [SecretsComponent, RouterLink, FaIconComponent, PageComponent],
 })
 export class SecretsPage {
   protected readonly faArrowRight = faArrowRight;

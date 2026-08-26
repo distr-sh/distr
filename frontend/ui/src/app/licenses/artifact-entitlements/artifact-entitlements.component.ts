@@ -3,19 +3,13 @@ import {ChangeDetectionStrategy, Component, inject, input, TemplateRef} from '@a
 import {takeUntilDestroyed, toObservable} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {
-  faCircleExclamation,
-  faEye,
-  faMagnifyingGlass,
-  faPen,
-  faPlus,
-  faTrash,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
+import {faCircleExclamation, faEye, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, shareReplay, switchMap} from 'rxjs';
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
+import {PageComponent} from '../../components/page.component';
+import {SearchBarComponent} from '../../components/search-bar.component';
 import {ArtifactEntitlementsService} from '../../services/artifact-entitlements.service';
 import {ArtifactsService} from '../../services/artifacts.service';
 import {AuthService} from '../../services/auth.service';
@@ -27,7 +21,15 @@ import {EditArtifactEntitlementComponent} from './edit-artifact-entitlement.comp
 
 @Component({
   selector: 'app-artifact-entitlements',
-  imports: [ReactiveFormsModule, AsyncPipe, FaIconComponent, DatePipe, EditArtifactEntitlementComponent],
+  imports: [
+    ReactiveFormsModule,
+    AsyncPipe,
+    FaIconComponent,
+    DatePipe,
+    EditArtifactEntitlementComponent,
+    PageComponent,
+    SearchBarComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './artifact-entitlements.component.html',
 })
@@ -43,7 +45,6 @@ export class ArtifactEntitlementsComponent {
 
   protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faEye = faEye;
-  protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faPen = faPen;
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;

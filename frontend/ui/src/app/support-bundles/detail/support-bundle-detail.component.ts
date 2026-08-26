@@ -19,6 +19,7 @@ import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
 import {AvatarComponent} from '../../components/avatar.component';
 import {ClipComponent} from '../../components/clip.component';
+import {PageComponent} from '../../components/page.component';
 import {AuthService} from '../../services/auth.service';
 import {OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService, supportBundleZipFileName} from '../../services/support-bundles.service';
@@ -29,7 +30,16 @@ import {SupportBundleDetail, SupportBundleStatus} from '../../types/support-bund
   selector: 'app-support-bundle-detail',
   templateUrl: './support-bundle-detail.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [DatePipe, NgClass, ReactiveFormsModule, RouterLink, FaIconComponent, ClipComponent, AvatarComponent],
+  imports: [
+    DatePipe,
+    NgClass,
+    ReactiveFormsModule,
+    RouterLink,
+    FaIconComponent,
+    ClipComponent,
+    AvatarComponent,
+    PageComponent,
+  ],
 })
 export class SupportBundleDetailComponent {
   private readonly route = inject(ActivatedRoute);

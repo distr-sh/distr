@@ -14,18 +14,12 @@ import {FormBuilder, FormControl, ReactiveFormsModule, Validators} from '@angula
 import {RouterLink} from '@angular/router';
 import {CustomerOrganization, DeploymentTarget, Named} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {
-  faCheck,
-  faClockRotateLeft,
-  faMagnifyingGlass,
-  faPen,
-  faPlus,
-  faTrash,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
+import {faCheck, faClockRotateLeft, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {validateRecordAtLeast} from '../../util/validation';
+import {PageComponent} from '../components/page.component';
+import {SearchBarComponent} from '../components/search-bar.component';
 import {AlertConfigurationsService} from '../services/alert-configurations.service';
 import {AuthService} from '../services/auth.service';
 import {CustomerOrganizationsService} from '../services/customer-organizations.service';
@@ -38,7 +32,7 @@ import {AlertConfiguration, CreateUpdateAlertConfigurationRequest} from '../type
 @Component({
   templateUrl: './alert-configurations.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [FaIconComponent, ReactiveFormsModule, DatePipe, RouterLink],
+  imports: [FaIconComponent, ReactiveFormsModule, DatePipe, RouterLink, PageComponent, SearchBarComponent],
 })
 export class AlertConfigurationsComponent {
   protected readonly auth = inject(AuthService);
@@ -146,7 +140,6 @@ export class AlertConfigurationsComponent {
     return !value ? configs : configs?.filter((it) => it.name.toLowerCase().includes(value));
   });
 
-  protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faPlus = faPlus;
   protected readonly faPen = faPen;
   protected readonly faTrash = faTrash;

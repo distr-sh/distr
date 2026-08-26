@@ -5,6 +5,7 @@ import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faBoxesStacked, faChevronDown} from '@fortawesome/free-solid-svg-icons';
 import {map, of, switchMap} from 'rxjs';
+import {PageComponent} from '../components/page.component';
 import {CustomOidcComponent} from '../organization-settings/custom-oidc.component';
 import {ContextService} from '../services/context.service';
 import {CustomerOrganizationsService} from '../services/customer-organizations.service';
@@ -12,7 +13,7 @@ import {CustomerOrganizationsService} from '../services/customer-organizations.s
 @Component({
   selector: 'app-customer-settings',
   templateUrl: './customer-settings.component.html',
-  imports: [CustomOidcComponent, RouterLink, FontAwesomeModule, OverlayModule],
+  imports: [CustomOidcComponent, RouterLink, FontAwesomeModule, OverlayModule, PageComponent],
 })
 export class CustomerSettingsComponent {
   protected readonly faBoxesStacked = faBoxesStacked;

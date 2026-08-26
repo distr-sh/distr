@@ -6,12 +6,13 @@ import {faBuilding} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, map, startWith, Subject, switchMap} from 'rxjs';
 import {PartnerOrganizationsService} from '../../../services/partner-organizations.service';
 import {UsersService} from '../../../services/users.service';
+import {PageComponent} from '../../page.component';
 import {UsersComponent} from '../users.component';
 
 @Component({
   templateUrl: './partner-users.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [UsersComponent, RouterLink, FontAwesomeModule],
+  imports: [UsersComponent, RouterLink, FontAwesomeModule, PageComponent],
 })
 export class PartnerUsersComponent {
   protected readonly faBuilding = faBuilding;

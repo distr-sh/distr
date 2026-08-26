@@ -3,6 +3,7 @@ import {ChangeDetectionStrategy, Component, computed, inject, signal} from '@ang
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, NavigationEnd, Router, RouterOutlet} from '@angular/router';
 import {filter} from 'rxjs';
+import {PageComponent} from '../components/page.component';
 import {PlanBadgeComponent} from '../components/plan-badge.component';
 import {PlanFeatureHintComponent} from '../components/plan-feature-hint.component';
 import {TabBarComponent, TabItem} from '../components/tab-bar.component';
@@ -18,7 +19,14 @@ type OrganizationSettingsTab = (typeof organizationSettingsTabs)[number];
   selector: 'app-organization-settings',
   templateUrl: './organization-settings.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [CdkConnectedOverlay, TabBarComponent, PlanBadgeComponent, PlanFeatureHintComponent, RouterOutlet],
+  imports: [
+    CdkConnectedOverlay,
+    TabBarComponent,
+    PlanBadgeComponent,
+    PlanFeatureHintComponent,
+    RouterOutlet,
+    PageComponent,
+  ],
 })
 export class OrganizationSettingsComponent {
   private readonly featureFlags = inject(FeatureFlagService);

@@ -7,6 +7,7 @@ import {faArrowLeft, faCheck, faCircleXmark, faCopy} from '@fortawesome/free-sol
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {ClipDirective} from '../../components/clip.component';
+import {PageComponent} from '../../components/page.component';
 import {AuthService} from '../../services/auth.service';
 import {OrganizationService} from '../../services/organization.service';
 import {OverlayService} from '../../services/overlay.service';
@@ -16,7 +17,7 @@ import {ToastService} from '../../services/toast.service';
   selector: 'app-billing-settings',
   templateUrl: './billing-settings.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [FaIconComponent, ReactiveFormsModule, ClipDirective, RouterLink],
+  imports: [FaIconComponent, ReactiveFormsModule, ClipDirective, RouterLink, PageComponent],
 })
 export class BillingSettingsComponent {
   protected readonly auth = inject(AuthService);
