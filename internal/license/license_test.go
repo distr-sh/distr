@@ -120,6 +120,7 @@ func TestParseAndValidate_AllFields(t *testing.T) {
 		"ld": map[string]any{
 			"enf": true,
 			"p":   "yearly",
+			"t":   "business",
 			"mo":  10,
 			"mou": 20,
 			"moc": 30,
@@ -136,6 +137,7 @@ func TestParseAndValidate_AllFields(t *testing.T) {
 	g.Expect(*got).To(Equal(LicenseData{
 		EnforceLimitsOnStartup:                      true,
 		Period:                                      types.SubscriptionPeriodYearly,
+		SubscriptionType:                            types.SubscriptionTypeBusiness,
 		MaxOrganizations:                            limit.New(10),
 		MaxUsersPerOrganization:                     limit.New(20),
 		MaxCustomersPerOrganization:                 limit.New(30),
@@ -162,6 +164,7 @@ func TestParseAndValidate_PartialClaims_DefaultsForUnspecifiedFields(t *testing.
 	g.Expect(*got).To(Equal(LicenseData{
 		EnforceLimitsOnStartup:                      false,
 		Period:                                      defaultLicenseData.Period,
+		SubscriptionType:                            types.SubscriptionTypeEnterprise,
 		MaxOrganizations:                            limit.New(5),
 		MaxUsersPerOrganization:                     defaultLicenseData.MaxUsersPerOrganization,
 		MaxCustomersPerOrganization:                 defaultLicenseData.MaxCustomersPerOrganization,
@@ -192,6 +195,7 @@ func TestParseAndValidate_ZeroLimits(t *testing.T) {
 	g.Expect(*got).To(Equal(LicenseData{
 		EnforceLimitsOnStartup:                      false,
 		Period:                                      types.SubscriptionPeriodYearly,
+		SubscriptionType:                            types.SubscriptionTypeEnterprise,
 		MaxOrganizations:                            limit.New(0),
 		MaxUsersPerOrganization:                     limit.New(0),
 		MaxCustomersPerOrganization:                 limit.New(0),
@@ -199,6 +203,33 @@ func TestParseAndValidate_ZeroLimits(t *testing.T) {
 		MaxDeploymentTargetsPerCustomerOrganization: limit.New(0),
 		MaxRegistryStorageBytes:                     limit.New(0),
 	}))
+}
+
+func TestParseAndValidate_SubscriptionType(t *testing.T) {
+	pub, priv := testKeyPair(t)
+
+	for _, st := range types.AllSubscriptionTypes() {
+		t.Run(string(st), func(t *testing.T) {
+			g := NewWithT(t)
+			token := signToken(t, priv, time.Now().Add(time.Hour), map[string]any{
+				"ld": map[string]any{"t": string(st)},
+			})
+
+			got, err := parseAndValidate(pubKeyFunc(pub), token)
+			g.Expect(err).ToNot(HaveOccurred())
+			g.Expect(got.SubscriptionType).To(Equal(st))
+		})
+	}
+
+	t.Run("rejects unknown subscription type", func(t *testing.T) {
+		g := NewWithT(t)
+		token := signToken(t, priv, time.Now().Add(time.Hour), map[string]any{
+			"ld": map[string]any{"t": "ultimate"},
+		})
+
+		_, err := parseAndValidate(pubKeyFunc(pub), token)
+		g.Expect(err).To(HaveOccurred())
+	})
 }
 
 func TestParseAndValidate_ExpirationDate(t *testing.T) {
