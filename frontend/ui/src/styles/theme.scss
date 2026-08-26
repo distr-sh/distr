@@ -4,19 +4,11 @@
     cursor: pointer;
   }
 
-  // Chrome on Linux and Windows lays the viewport scrollbar out inline, so a page long enough to
-  // scroll is a scrollbar narrower than one that is not and the centered content jumps on
-  // navigation. A true overlay scrollbar cannot be requested from CSS there, so the gutter is
-  // reserved on every page instead and the track left transparent, which keeps the width constant
-  // and makes the reserved strip invisible.
   html {
-    scrollbar-gutter: stable;
     scrollbar-width: thin;
     scrollbar-color: var(--color-gray-400) transparent;
   }
 
-  // the color scheme is toggled on `body`, but only the root element's scrollbar styling
-  // propagates to the viewport
   html:has(body.dark) {
     scrollbar-color: var(--color-gray-600) transparent;
   }
