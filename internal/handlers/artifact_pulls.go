@@ -43,6 +43,7 @@ func ArtifactPullsRouter(r chiopenapi.Router) {
 			RemoteAddress          *string    `query:"remoteAddress"`
 			ArtifactID             *string    `query:"artifactId"`
 			ArtifactVersionID      *string    `query:"artifactVersionId"`
+			DeploymentTargetID     *string    `query:"deploymentTargetId"`
 		}{})).
 		With(option.Response(http.StatusOK, []api.ArtifactVersionPullResponse{}))
 	r.Get("/filter-options", getArtifactPullFilterOptionsHandler()).
@@ -132,6 +133,14 @@ func parseArtifactPullFilters(w http.ResponseWriter, r *http.Request) (types.Art
 		return fail(apierrors.NewBadRequest("artifactVersionId must be a valid UUID"))
 	} else {
 		filter.ArtifactVersionID = &id
+	}
+
+	if id, err := QueryParam(r, "deploymentTargetId", uuid.Parse); errors.Is(err, ErrParamNotDefined) {
+		// use default
+	} else if err != nil {
+		return fail(apierrors.NewBadRequest("deploymentTargetId must be a valid UUID"))
+	} else {
+		filter.DeploymentTargetID = &id
 	}
 
 	if partnerOrgID := authInfo.CurrentPartnerOrgID(); partnerOrgID != nil {
@@ -261,7 +270,9 @@ func exportArtifactPullsHandler() http.HandlerFunc {
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 
 		csvWriter := csv.NewWriter(w)
-		header := []string{"Date", "Customer", "User", "Email", "Address", "Artifact", "Version"}
+		header := []string{
+			"Date", "Customer", "User", "Email", "Deployment Target", "Address", "Artifact", "Version",
+		}
 		if err := csvWriter.Write(header); err != nil {
 			log.Warn("could not write CSV header", zap.Error(err))
 			return
@@ -274,6 +285,7 @@ func exportArtifactPullsHandler() http.HandlerFunc {
 				util.PtrDerefOrDefault(apiPull.CustomerOrganizationName),
 				util.PtrDerefOrDefault(apiPull.UserAccountName),
 				util.PtrDerefOrDefault(apiPull.UserAccountEmail),
+				util.PtrDerefOrDefault(apiPull.DeploymentTargetName),
 				util.PtrDerefOrDefault(apiPull.RemoteAddress),
 				apiPull.Artifact.Name,
 				apiPull.ArtifactVersion.Name,

@@ -767,6 +767,7 @@ func CreateArtifactPullLogEntry(
 	userID uuid.UUID,
 	remoteAddress string,
 	customerOrgID *uuid.UUID,
+	deploymentTargetID *uuid.UUID,
 ) error {
 	db := internalctx.GetDb(ctx)
 	remoteAddressPtr := &remoteAddress
@@ -775,9 +776,10 @@ func CreateArtifactPullLogEntry(
 	}
 
 	args := pgx.NamedArgs{
-		"versionId":     versionID,
-		"remoteAddress": remoteAddressPtr,
-		"customerOrgId": customerOrgID,
+		"versionId":          versionID,
+		"remoteAddress":      remoteAddressPtr,
+		"customerOrgId":      customerOrgID,
+		"deploymentTargetId": deploymentTargetID,
 	}
 
 	if userID != uuid.Nil {
@@ -792,13 +794,15 @@ func CreateArtifactPullLogEntry(
 			artifact_version_id,
 			useraccount_id,
 			remote_address,
-			customer_organization_id
+			customer_organization_id,
+			deployment_target_id
 		)
 		VALUES (
 			@versionId,
 			@userId,
 			@remoteAddress,
-			@customerOrgId
+			@customerOrgId,
+			@deploymentTargetId
 		)`,
 		args,
 	)
@@ -924,6 +928,23 @@ func GetArtifactVersionPullFilterOptions(
 		return nil, fmt.Errorf("could not scan artifacts for filter options: %w", err)
 	}
 
+	// Deployment targets
+	rows, err = db.Query(
+		ctx,
+		`SELECT dt.id, dt.name FROM `+baseFromExpr+
+			` JOIN DeploymentTarget dt ON dt.id = p.deployment_target_id`+
+			` LEFT JOIN CustomerOrganization co ON co.id = p.customer_organization_id`+
+			` WHERE `+baseWhereExpr+
+			` GROUP BY dt.id, dt.name ORDER BY dt.name`,
+		args,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query deployment targets for filter options: %w", err)
+	}
+	if result.DeploymentTargets, err = pgx.CollectRows(rows, pgx.RowToStructByPos[types.FilterOption]); err != nil {
+		return nil, fmt.Errorf("could not scan deployment targets for filter options: %w", err)
+	}
+
 	return result, nil
 }
 
@@ -1004,17 +1025,23 @@ func GetArtifactVersionPulls(
 		conditions = append(conditions, "v.id = @artifactVersionId")
 		args["artifactVersionId"] = *filter.ArtifactVersionID
 	}
+	if filter.DeploymentTargetID != nil {
+		conditions = append(conditions, "p.deployment_target_id = @deploymentTargetId")
+		args["deploymentTargetId"] = *filter.DeploymentTargetID
+	}
 
 	query := `SELECT
 			p.created_at,
 			p.remote_address,
 			CASE WHEN u.id IS NOT NULL THEN (` + userAccountOutputExpr + `) ELSE NULL END,
 			CASE WHEN co.id IS NOT NULL THEN (` + customerOrganizationOutputExpr + `) ELSE NULL END,
+			CASE WHEN dt.id IS NOT NULL THEN (dt.id, dt.name) ELSE NULL END,
 			(` + artifactOutputExpr + `),
 			(` + artifactVersionOutputExpr + `)
 		FROM ArtifactVersionPull p
 			LEFT JOIN UserAccount u ON u.id = p.useraccount_id
 			LEFT JOIN CustomerOrganization co ON co.id = p.customer_organization_id
+			LEFT JOIN DeploymentTarget dt ON dt.id = p.deployment_target_id
 			JOIN ArtifactVersion v ON v.id = p.artifact_version_id
 			JOIN Artifact a ON a.id = v.artifact_id
 		WHERE ` + strings.Join(conditions, " AND ") + `

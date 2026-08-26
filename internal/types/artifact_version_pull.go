@@ -7,12 +7,20 @@ import (
 )
 
 type ArtifactVersionPull struct {
-	CreatedAt            time.Time             `json:"createdAt"`
-	RemoteAddress        *string               `json:"remoteAddress,omitempty"`
-	UserAccount          *UserAccount          `json:"userAccount,omitempty"`
-	CustomerOrganization *CustomerOrganization `json:"customerOrganization,omitempty"`
-	Artifact             Artifact              `json:"artifact"`
-	ArtifactVersion      ArtifactVersion       `json:"artifactVersion"`
+	CreatedAt     time.Time
+	RemoteAddress *string
+	// UserAccount is nil when an agent pulled the artifact with its own token, in which case
+	// DeploymentTarget identifies it instead.
+	UserAccount          *UserAccount
+	CustomerOrganization *CustomerOrganization
+	DeploymentTarget     *ArtifactPullDeploymentTarget
+	Artifact             Artifact
+	ArtifactVersion      ArtifactVersion
+}
+
+type ArtifactPullDeploymentTarget struct {
+	ID   uuid.UUID
+	Name string
 }
 
 type FilterOption struct {
@@ -25,6 +33,7 @@ type ArtifactVersionPullFilterOptions struct {
 	UserAccounts          []FilterOption
 	RemoteAddresses       []string
 	Artifacts             []FilterOption
+	DeploymentTargets     []FilterOption
 }
 
 type ArtifactVersionPullFilter struct {
@@ -38,4 +47,5 @@ type ArtifactVersionPullFilter struct {
 	RemoteAddress          *string
 	ArtifactID             *uuid.UUID
 	ArtifactVersionID      *uuid.UUID
+	DeploymentTargetID     *uuid.UUID
 }

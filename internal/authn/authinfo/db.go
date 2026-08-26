@@ -141,9 +141,11 @@ func AgentDbAuthenticator() authn.Authenticator[AgentAuthInfo, AuthInfoWithOrgan
 		} else if err != nil {
 			return nil, err
 		}
+		deploymentTargetID := a.CurrentDeploymentTargetID()
 		info := &SimpleAuthInfo{
-			organizationID: &org.ID,
-			rawToken:       a.Token(),
+			organizationID:     &org.ID,
+			deploymentTargetID: &deploymentTargetID,
+			rawToken:           a.Token(),
 		}
 		if customer != nil {
 			info.customerOrganizationID = &customer.ID
