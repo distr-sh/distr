@@ -10,6 +10,7 @@ import {firstValueFrom, lastValueFrom} from 'rxjs';
 import {WEBSITE_URL} from '../../../constants';
 import {getFormDisplayedError} from '../../../util/errors';
 import {BrandingFormComponent} from '../../components/branding/branding-form.component';
+import {PageComponent} from '../../components/page.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
@@ -45,6 +46,7 @@ const customerTaskLogin = 'login';
     CdkStepperPrevious,
     AutotrimDirective,
     BrandingFormComponent,
+    PageComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './branding-tutorial.component.html',

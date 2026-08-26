@@ -1,336 +1,314 @@
-<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
-  <div class="mx-auto max-w-screen-lg px-4">
-    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
-      <div class="overflow-x-auto">
-        <app-tutorial-stepper #stepper class="mx-auto max-w-5xl space-y-6 lg:space-y-8">
-          <cdk-step label="Welcome" [stepControl]="welcomeFormGroup">
-            <div class="px-20 py-8 w-full">
-              <h3 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
-                Agents, Applications and Deployments
-              </h3>
+<app-page variant="panel">
+  <div class="distr-table-panel">
+    <div class="overflow-x-auto">
+      <app-tutorial-stepper #stepper class="mx-auto max-w-5xl space-y-6 lg:space-y-8">
+        <cdk-step label="Welcome" [stepControl]="welcomeFormGroup">
+          <div class="px-20 py-8 w-full">
+            <h3 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
+              Agents, Applications and Deployments
+            </h3>
 
-              <div class="text-gray-900 dark:text-white mb-12">
-                <p>
-                  In this tutorial, you will learn how to set up the Distr agent deploy a Docker Compose app with it.
-                </p>
-                <p>
-                  We have already prepared a sample application called
-                  <a href="https://github.com/distr-sh/hello-distr" class="text-primary-600 underline" target="_blank"
-                    >hello-distr</a
-                  >.
-                </p>
-              </div>
+            <div class="text-gray-900 dark:text-white mb-12">
+              <p>In this tutorial, you will learn how to set up the Distr agent deploy a Docker Compose app with it.</p>
+              <p>
+                We have already prepared a sample application called
+                <a href="https://github.com/distr-sh/hello-distr" class="text-primary-600 underline" target="_blank"
+                  >hello-distr</a
+                >.
+              </p>
+            </div>
+
+            <div class="gap-4 sm:flex sm:items-center sm:justify-between">
+              <button
+                (click)="navigateToOverviewPage()"
+                class="flex-1 sm:flex-none items-center justify-center w-full rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 sm:w-auto">
+                Exit Tutorial
+              </button>
+              <button
+                (click)="continueFromWelcome()"
+                type="submit"
+                class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
+                Let's Go
+                <fa-icon class="ml-2" [icon]="faArrowRight" />
+              </button>
+            </div>
+          </div>
+        </cdk-step>
+        <cdk-step label="Deploy hello-distr" [stepControl]="deployFormGroup">
+          <div class="p-8 w-full">
+            <form [formGroup]="deployFormGroup" (ngSubmit)="continueFromDeploy()">
+              <ol
+                class="ml-4 relative text-gray-900 dark:text-white mb-12 border-s border-gray-200 dark:border-gray-700">
+                <li class="mb-10 ms-8">
+                  <span
+                    class="absolute flex items-center justify-center size-8 bg-gray-100 dark:bg-gray-700 rounded-full -start-4 ring-4 ring-white dark:ring-gray-800">
+                    <fa-icon [icon]="faLightbulb" />
+                  </span>
+                  <h3 class="text-lg font-medium leading-tight">Deploy hello-distr</h3>
+                  @if (showMacOsWarning) {
+                    <div
+                      class="flex p-4 mb-2 mt-2 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-red-300 dark:text-red-600"
+                      role="alert">
+                      <fa-icon [icon]="faWarning" class="me-4" />
+                      <div>
+                        <p class="text-sm">
+                          If you are on Mac, please make sure to check
+                          <a
+                            [href]="websiteUrl + '/docs/agents/distr-on-macos/'"
+                            class="text-primary-600 underline"
+                            target="_blank"
+                            >this guide</a
+                          >
+                          first!
+                        </p>
+                      </div>
+                    </div>
+                  }
+                </li>
+                <li class="mb-10 ms-8">
+                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                    <input
+                      type="checkbox"
+                      id="deployDone"
+                      [formControl]="deployFormGroup.controls.deployDone"
+                      class="distr-checkbox" />
+                  </span>
+                  <label for="deployDone" class="text-lg font-medium leading-tight">Install Agent</label>
+                  <p class="mt-1 text-sm">
+                    In your terminal, execute the setup command to start the Distr agent and have it connect to the
+                    Distr Hub.
+                  </p>
+                  <p class="mt-1 text-sm">
+                    As the command contains sensitive information, you will only see it once after you have clicked the
+                    button below:
+                  </p>
+                  <div class="mt-2 flex">
+                    @if (deployFormGroup.controls.deployDone.value !== true && !connectCommand) {
+                      <button
+                        type="button"
+                        [disabled]="loading()"
+                        (click)="requestAccess()"
+                        class="flex items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
+                        Generate Setup Command
+                      </button>
+                    }
+
+                    @if (connectCommand) {
+                      <code
+                        class="mt-2 select-all text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line"
+                        data-ph-mask-text="true">
+                        {{ connectCommand }}
+                      </code>
+                      <app-clip class="mx-2" [clip]="connectCommand" />
+                    }
+                  </div>
+                  @if (deployFormGroup.controls.deployDone.touched && deployFormGroup.controls.deployDone.invalid) {
+                    <div class="mt-2 text-sm text-red-500">Please mark this as checked when you are done with it.</div>
+                  }
+                </li>
+
+                <li class="mb-10 ms-8">
+                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                    <input
+                      id="verifyDone"
+                      type="checkbox"
+                      [formControl]="deployFormGroup.controls.verifyDone"
+                      class="distr-checkbox" />
+                  </span>
+                  <label for="verifyDone" class="text-lg font-medium leading-tight">Verify Deployment Status</label>
+                  <p class="mt-1 text-sm">
+                    Now head over to the
+                    <a
+                      [routerLink]="['/deployments']"
+                      [queryParams]="{tutorial: this.route.snapshot.url[0].path}"
+                      class="text-primary-600 underline"
+                      >Deployments</a
+                    >
+                    page, and look for the "hello-distr-tutorial" deployment. It should show a healthy status and the
+                    information that hello-distr is deployed. If this is correct, mark this step as done and move on.
+                    You have successfully deployed your first application with distr.
+                  </p>
+                  @if (deployFormGroup.controls.verifyDone.touched && deployFormGroup.controls.verifyDone.invalid) {
+                    <div class="mt-2 text-sm text-red-500">Please mark this as checked when you are done with it.</div>
+                  }
+                </li>
+
+                <li class="mb-10 ms-8">
+                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                    <input
+                      id="dockerPsDone"
+                      type="checkbox"
+                      [formControl]="deployFormGroup.controls.dockerPsDone"
+                      class="distr-checkbox" />
+                  </span>
+                  <label for="dockerPsDone" class="text-lg font-medium leading-tight"
+                    >Check your docker containers</label
+                  >
+                  <p class="mt-1 text-sm">
+                    Execute <code class="select-all">docker ps</code> on your machine and check that the three
+                    hello-distr containers are now running.
+                  </p>
+                  @if (deployFormGroup.controls.dockerPsDone.touched && deployFormGroup.controls.dockerPsDone.invalid) {
+                    <div class="mt-2 text-sm text-red-500">Please mark this as checked when you are done with it.</div>
+                  }
+                </li>
+
+                <li class="mb-10 ms-8">
+                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                    <input
+                      id="openDone"
+                      type="checkbox"
+                      [formControl]="deployFormGroup.controls.openDone"
+                      class="distr-checkbox" />
+                  </span>
+                  <label for="openDone" class="text-lg font-medium leading-tight">Open hello-distr</label>
+                  <p class="mt-1 text-sm">
+                    hello-distr is now deployed on
+                    <a href="http://localhost" target="_blank" class="text-primary-600 underline">http://localhost</a>
+                  </p>
+                  @if (deployFormGroup.controls.openDone.touched && deployFormGroup.controls.openDone.invalid) {
+                    <div class="mt-2 text-sm text-red-500">Please mark this as checked when you are done with it.</div>
+                  }
+                </li>
+              </ol>
 
               <div class="gap-4 sm:flex sm:items-center sm:justify-between">
                 <button
-                  (click)="navigateToOverviewPage()"
+                  cdkStepperPrevious
                   class="flex-1 sm:flex-none items-center justify-center w-full rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 sm:w-auto">
-                  Exit Tutorial
+                  Back
                 </button>
                 <button
-                  (click)="continueFromWelcome()"
                   type="submit"
+                  [disabled]="loading()"
                   class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
-                  Let's Go
+                  Continue
                   <fa-icon class="ml-2" [icon]="faArrowRight" />
                 </button>
               </div>
-            </div>
-          </cdk-step>
-          <cdk-step label="Deploy hello-distr" [stepControl]="deployFormGroup">
-            <div class="p-8 w-full">
-              <form [formGroup]="deployFormGroup" (ngSubmit)="continueFromDeploy()">
-                <ol
-                  class="ml-4 relative text-gray-900 dark:text-white mb-12 border-s border-gray-200 dark:border-gray-700">
-                  <li class="mb-10 ms-8">
-                    <span
-                      class="absolute flex items-center justify-center size-8 bg-gray-100 dark:bg-gray-700 rounded-full -start-4 ring-4 ring-white dark:ring-gray-800">
-                      <fa-icon [icon]="faLightbulb" />
-                    </span>
-                    <h3 class="text-lg font-medium leading-tight">Deploy hello-distr</h3>
-                    @if (showMacOsWarning) {
-                      <div
-                        class="flex p-4 mb-2 mt-2 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-red-300 dark:text-red-600"
-                        role="alert">
-                        <fa-icon [icon]="faWarning" class="me-4" />
-                        <div>
-                          <p class="text-sm">
-                            If you are on Mac, please make sure to check
-                            <a
-                              [href]="websiteUrl + '/docs/agents/distr-on-macos/'"
-                              class="text-primary-600 underline"
-                              target="_blank"
-                              >this guide</a
-                            >
-                            first!
-                          </p>
-                        </div>
-                      </div>
-                    }
-                  </li>
-                  <li class="mb-10 ms-8">
-                    <span class="absolute flex items-center justify-center -start-2 mt-0.75">
-                      <input
-                        type="checkbox"
-                        id="deployDone"
-                        [formControl]="deployFormGroup.controls.deployDone"
-                        class="distr-checkbox" />
-                    </span>
-                    <label for="deployDone" class="text-lg font-medium leading-tight">Install Agent</label>
-                    <p class="mt-1 text-sm">
-                      In your terminal, execute the setup command to start the Distr agent and have it connect to the
-                      Distr Hub.
-                    </p>
-                    <p class="mt-1 text-sm">
-                      As the command contains sensitive information, you will only see it once after you have clicked
-                      the button below:
-                    </p>
-                    <div class="mt-2 flex">
-                      @if (deployFormGroup.controls.deployDone.value !== true && !connectCommand) {
-                        <button
-                          type="button"
-                          [disabled]="loading()"
-                          (click)="requestAccess()"
-                          class="flex items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
-                          Generate Setup Command
-                        </button>
-                      }
+            </form>
+          </div>
+        </cdk-step>
 
-                      @if (connectCommand) {
-                        <code
-                          class="mt-2 select-all text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line"
-                          data-ph-mask-text="true">
-                          {{ connectCommand }}
-                        </code>
-                        <app-clip class="mx-2" [clip]="connectCommand" />
-                      }
-                    </div>
-                    @if (deployFormGroup.controls.deployDone.touched && deployFormGroup.controls.deployDone.invalid) {
-                      <div class="mt-2 text-sm text-red-500">
-                        Please mark this as checked when you are done with it.
-                      </div>
-                    }
-                  </li>
+        <cdk-step label="Automate Releases" [stepControl]="releaseFormGroup">
+          <div class="p-8 w-full">
+            <form [formGroup]="releaseFormGroup" (ngSubmit)="completeAndExit()">
+              <ol
+                class="ml-4 relative text-gray-900 dark:text-white mb-12 border-s border-gray-200 dark:border-gray-700">
+                <li class="mb-10 ms-8">
+                  <span
+                    class="absolute flex items-center justify-center size-8 bg-gray-100 dark:bg-gray-700 rounded-full -start-4 ring-4 ring-white dark:ring-gray-800">
+                    <fa-icon [icon]="faLightbulb" />
+                  </span>
+                  <h3 class="text-lg font-medium leading-tight">Automate Releases</h3>
+                  <p class="text-sm mt-2">
+                    In this last step, it's time for you to experiment with the hello-distr repository.
+                  </p>
+                  <p class="text-sm mt-2">
+                    For future releases of your applications (in this case hello-distr), you probaly want to automate
+                    the creation of a new Distr application version, to avoid manually copying the released compose file
+                    to Distr.
+                  </p>
+                </li>
 
-                  <li class="mb-10 ms-8">
-                    <span class="absolute flex items-center justify-center -start-2 mt-0.75">
-                      <input
-                        id="verifyDone"
-                        type="checkbox"
-                        [formControl]="deployFormGroup.controls.verifyDone"
-                        class="distr-checkbox" />
-                    </span>
-                    <label for="verifyDone" class="text-lg font-medium leading-tight">Verify Deployment Status</label>
-                    <p class="mt-1 text-sm">
-                      Now head over to the
-                      <a
-                        [routerLink]="['/deployments']"
-                        [queryParams]="{tutorial: this.route.snapshot.url[0].path}"
-                        class="text-primary-600 underline"
-                        >Deployments</a
-                      >
-                      page, and look for the "hello-distr-tutorial" deployment. It should show a healthy status and the
-                      information that hello-distr is deployed. If this is correct, mark this step as done and move on.
-                      You have successfully deployed your first application with distr.
-                    </p>
-                    @if (deployFormGroup.controls.verifyDone.touched && deployFormGroup.controls.verifyDone.invalid) {
-                      <div class="mt-2 text-sm text-red-500">
-                        Please mark this as checked when you are done with it.
-                      </div>
-                    }
-                  </li>
-
-                  <li class="mb-10 ms-8">
-                    <span class="absolute flex items-center justify-center -start-2 mt-0.75">
-                      <input
-                        id="dockerPsDone"
-                        type="checkbox"
-                        [formControl]="deployFormGroup.controls.dockerPsDone"
-                        class="distr-checkbox" />
-                    </span>
-                    <label for="dockerPsDone" class="text-lg font-medium leading-tight"
-                      >Check your docker containers</label
+                <li class="mb-10 ms-8">
+                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                    <input
+                      id="forkDone"
+                      type="checkbox"
+                      [formControl]="releaseFormGroup.controls.forkDone"
+                      class="distr-checkbox" />
+                  </span>
+                  <label for="forkDone" class="text-lg font-medium leading-tight"
+                    >Fork the hello-distr Application</label
+                  >
+                  <p class="mt-1 text-sm">
+                    Fork the previously deployed
+                    <a
+                      href="https://github.com/distr-sh/hello-distr"
+                      class="text-gray-600 dark:text-gray-400 underline"
+                      target="_blank"
+                      >hello-distr application</a
                     >
-                    <p class="mt-1 text-sm">
-                      Execute <code class="select-all">docker ps</code> on your machine and check that the three
-                      hello-distr containers are now running.
-                    </p>
-                    @if (
-                      deployFormGroup.controls.dockerPsDone.touched && deployFormGroup.controls.dockerPsDone.invalid
-                    ) {
-                      <div class="mt-2 text-sm text-red-500">
-                        Please mark this as checked when you are done with it.
-                      </div>
-                    }
-                  </li>
+                    on GitHub. You will use this fork to release a new version of your own hello-distr, and then sync
+                    this release into Distr.
+                  </p>
+                  @if (releaseFormGroup.controls.forkDone.touched && releaseFormGroup.controls.forkDone.invalid) {
+                    <div class="mt-2 text-sm text-red-500">Please mark this as checked when you are done with it.</div>
+                  }
+                </li>
 
-                  <li class="mb-10 ms-8">
-                    <span class="absolute flex items-center justify-center -start-2 mt-0.75">
-                      <input
-                        id="openDone"
-                        type="checkbox"
-                        [formControl]="deployFormGroup.controls.openDone"
-                        class="distr-checkbox" />
-                    </span>
-                    <label for="openDone" class="text-lg font-medium leading-tight">Open hello-distr</label>
-                    <p class="mt-1 text-sm">
-                      hello-distr is now deployed on
-                      <a href="http://localhost" target="_blank" class="text-primary-600 underline">http://localhost</a>
-                    </p>
-                    @if (deployFormGroup.controls.openDone.touched && deployFormGroup.controls.openDone.invalid) {
-                      <div class="mt-2 text-sm text-red-500">
-                        Please mark this as checked when you are done with it.
-                      </div>
-                    }
-                  </li>
-                </ol>
-
-                <div class="gap-4 sm:flex sm:items-center sm:justify-between">
-                  <button
-                    cdkStepperPrevious
-                    class="flex-1 sm:flex-none items-center justify-center w-full rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 sm:w-auto">
-                    Back
-                  </button>
-                  <button
-                    type="submit"
-                    [disabled]="loading()"
-                    class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
-                    Continue
-                    <fa-icon class="ml-2" [icon]="faArrowRight" />
-                  </button>
-                </div>
-              </form>
-            </div>
-          </cdk-step>
-
-          <cdk-step label="Automate Releases" [stepControl]="releaseFormGroup">
-            <div class="p-8 w-full">
-              <form [formGroup]="releaseFormGroup" (ngSubmit)="completeAndExit()">
-                <ol
-                  class="ml-4 relative text-gray-900 dark:text-white mb-12 border-s border-gray-200 dark:border-gray-700">
-                  <li class="mb-10 ms-8">
-                    <span
-                      class="absolute flex items-center justify-center size-8 bg-gray-100 dark:bg-gray-700 rounded-full -start-4 ring-4 ring-white dark:ring-gray-800">
-                      <fa-icon [icon]="faLightbulb" />
-                    </span>
-                    <h3 class="text-lg font-medium leading-tight">Automate Releases</h3>
-                    <p class="text-sm mt-2">
-                      In this last step, it's time for you to experiment with the hello-distr repository.
-                    </p>
-                    <p class="text-sm mt-2">
-                      For future releases of your applications (in this case hello-distr), you probaly want to automate
-                      the creation of a new Distr application version, to avoid manually copying the released compose
-                      file to Distr.
-                    </p>
-                  </li>
-
-                  <li class="mb-10 ms-8">
-                    <span class="absolute flex items-center justify-center -start-2 mt-0.75">
-                      <input
-                        id="forkDone"
-                        type="checkbox"
-                        [formControl]="releaseFormGroup.controls.forkDone"
-                        class="distr-checkbox" />
-                    </span>
-                    <label for="forkDone" class="text-lg font-medium leading-tight"
-                      >Fork the hello-distr Application</label
+                <li class="mb-10 ms-8">
+                  <span class="absolute flex items-center justify-center -start-2 mt-0.75">
+                    <input
+                      id="releaseDone"
+                      type="checkbox"
+                      [formControl]="releaseFormGroup.controls.releaseDone"
+                      class="distr-checkbox" />
+                  </span>
+                  <label for="releaseDone" class="text-lg font-medium leading-tight"
+                    >Push a hello-distr version to Distr</label
+                  >
+                  <p class="mt-1 text-sm">
+                    The hello-distr README describes how all the pieces fit together. Experiment on your own and try to
+                    get to a state, where a release of your forked repository will create a new application version in
+                    Distr.
+                  </p>
+                  <p class="mt-1 text-sm">
+                    If you need any help or in case you have questions, don't hesitate to
+                    <a
+                      [href]="githubUrl + '/discussions'"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="text-gray-600 dark:text-gray-400 hover:underline"
+                      >get help</a
                     >
-                    <p class="mt-1 text-sm">
-                      Fork the previously deployed
-                      <a
-                        href="https://github.com/distr-sh/hello-distr"
-                        class="text-gray-600 dark:text-gray-400 underline"
-                        target="_blank"
-                        >hello-distr application</a
-                      >
-                      on GitHub. You will use this fork to release a new version of your own hello-distr, and then sync
-                      this release into Distr.
-                    </p>
-                    @if (releaseFormGroup.controls.forkDone.touched && releaseFormGroup.controls.forkDone.invalid) {
-                      <div class="mt-2 text-sm text-red-500">
-                        Please mark this as checked when you are done with it.
-                      </div>
+                    in our community forum!
+                  </p>
+                  <p class="mt-1 text-sm">
+                    When you are done, you can show us by dropping the URL of your hello-distr fork in the text field
+                    below:
+                  </p>
+                  <div class="mt-2">
+                    <input
+                      [formControl]="releaseFormGroup.controls.forkedRepo"
+                      autotrim
+                      type="url"
+                      name="title"
+                      id="title"
+                      class="distr-input" />
+                    @if (releaseFormGroup.controls.forkedRepo.touched && releaseFormGroup.controls.forkedRepo.errors) {
+                      <div class="mt-2 text-sm text-red-500">Please enter this field.</div>
                     }
-                  </li>
+                  </div>
+                  @if (releaseFormGroup.controls.releaseDone.touched && releaseFormGroup.controls.releaseDone.invalid) {
+                    <div class="mt-2 text-sm text-red-500">Please mark this as checked when you are done with it.</div>
+                  }
+                </li>
+              </ol>
 
-                  <li class="mb-10 ms-8">
-                    <span class="absolute flex items-center justify-center -start-2 mt-0.75">
-                      <input
-                        id="releaseDone"
-                        type="checkbox"
-                        [formControl]="releaseFormGroup.controls.releaseDone"
-                        class="distr-checkbox" />
-                    </span>
-                    <label for="releaseDone" class="text-lg font-medium leading-tight"
-                      >Push a hello-distr version to Distr</label
-                    >
-                    <p class="mt-1 text-sm">
-                      The hello-distr README describes how all the pieces fit together. Experiment on your own and try
-                      to get to a state, where a release of your forked repository will create a new application version
-                      in Distr.
-                    </p>
-                    <p class="mt-1 text-sm">
-                      If you need any help or in case you have questions, don't hesitate to
-                      <a
-                        [href]="githubUrl + '/discussions'"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="text-gray-600 dark:text-gray-400 hover:underline"
-                        >get help</a
-                      >
-                      in our community forum!
-                    </p>
-                    <p class="mt-1 text-sm">
-                      When you are done, you can show us by dropping the URL of your hello-distr fork in the text field
-                      below:
-                    </p>
-                    <div class="mt-2">
-                      <input
-                        [formControl]="releaseFormGroup.controls.forkedRepo"
-                        autotrim
-                        type="url"
-                        name="title"
-                        id="title"
-                        class="distr-input" />
-                      @if (
-                        releaseFormGroup.controls.forkedRepo.touched && releaseFormGroup.controls.forkedRepo.errors
-                      ) {
-                        <div class="mt-2 text-sm text-red-500">Please enter this field.</div>
-                      }
-                    </div>
-                    @if (
-                      releaseFormGroup.controls.releaseDone.touched && releaseFormGroup.controls.releaseDone.invalid
-                    ) {
-                      <div class="mt-2 text-sm text-red-500">
-                        Please mark this as checked when you are done with it.
-                      </div>
-                    }
-                  </li>
-                </ol>
-
-                <div class="gap-4 sm:flex sm:items-center sm:justify-between">
-                  <button
-                    cdkStepperPrevious
-                    class="flex-1 sm:flex-none items-center justify-center w-full rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 sm:w-auto">
-                    Back
-                  </button>
-                  <button
-                    [disabled]="loading()"
-                    type="submit"
-                    class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
-                    <fa-icon class="mr-2" [icon]="faCheck" />
-                    @if (progress?.completedAt) {
-                      Done
-                    } @else {
-                      Complete Tutorial
-                    }
-                  </button>
-                </div>
-              </form>
-            </div>
-          </cdk-step>
-        </app-tutorial-stepper>
-      </div>
+              <div class="gap-4 sm:flex sm:items-center sm:justify-between">
+                <button
+                  cdkStepperPrevious
+                  class="flex-1 sm:flex-none items-center justify-center w-full rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 sm:w-auto">
+                  Back
+                </button>
+                <button
+                  [disabled]="loading()"
+                  type="submit"
+                  class="flex w-full items-center justify-center rounded-lg border border-primary-700 bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:border-primary-800 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-primary-700 dark:bg-primary-600 dark:hover:border-primary-700 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0 sm:w-auto">
+                  <fa-icon class="mr-2" [icon]="faCheck" />
+                  @if (progress?.completedAt) {
+                    Done
+                  } @else {
+                    Complete Tutorial
+                  }
+                </button>
+              </div>
+            </form>
+          </div>
+        </cdk-step>
+      </app-tutorial-stepper>
     </div>
   </div>
-</section>
+</app-page>

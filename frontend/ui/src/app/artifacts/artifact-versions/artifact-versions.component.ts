@@ -34,6 +34,7 @@ import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {BytesPipe} from '../../../util/units';
 import {ClipComponent} from '../../components/clip.component';
+import {PageComponent} from '../../components/page.component';
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
@@ -73,6 +74,7 @@ import {ArtifactsDownloadCountComponent, ArtifactsDownloadedByComponent, Artifac
     OverlayModule,
     ReactiveFormsModule,
     AutotrimDirective,
+    PageComponent,
   ],
   templateUrl: './artifact-versions.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,

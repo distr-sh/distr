@@ -1,33 +1,31 @@
-<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
-  <div class="mx-auto max-w-screen-lg px-4">
-    <div class="bg-white dark:bg-gray-800 relative shadow-md rounded-lg overflow-hidden p-10 mb-20">
-      <h1 class="mb-6 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl dark:text-white">
-        Organization Settings
-      </h1>
+<app-page variant="panel">
+  <div class="distr-panel">
+    <h1 class="mb-6 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl dark:text-white">
+      Organization Settings
+    </h1>
 
-      <app-tab-bar [tabs]="tabs()" [(active)]="activeTab" (tabClick)="onTabClick($event)">
-        <ng-template #tabSuffix let-tab let-origin="origin">
-          @if (tab.disabled) {
-            <app-plan-badge plan="business" class="ml-2" />
-            <ng-template
-              cdkConnectedOverlay
-              [cdkConnectedOverlayOrigin]="origin"
-              [cdkConnectedOverlayOpen]="planHintTab() === tab.id"
-              [cdkConnectedOverlayHasBackdrop]="true"
-              [cdkConnectedOverlayBackdropClass]="'transparent'"
-              (backdropClick)="planHintTab.set(null)"
-              [cdkConnectedOverlayPositions]="[
-                {originX: 'center', overlayX: 'center', originY: 'bottom', overlayY: 'top'},
-              ]">
-              <app-plan-feature-hint plan="business" />
-            </ng-template>
-          }
-        </ng-template>
-      </app-tab-bar>
+    <app-tab-bar [tabs]="tabs()" [(active)]="activeTab" (tabClick)="onTabClick($event)">
+      <ng-template #tabSuffix let-tab let-origin="origin">
+        @if (tab.disabled) {
+          <app-plan-badge plan="business" class="ml-2" />
+          <ng-template
+            cdkConnectedOverlay
+            [cdkConnectedOverlayOrigin]="origin"
+            [cdkConnectedOverlayOpen]="planHintTab() === tab.id"
+            [cdkConnectedOverlayHasBackdrop]="true"
+            [cdkConnectedOverlayBackdropClass]="'transparent'"
+            (backdropClick)="planHintTab.set(null)"
+            [cdkConnectedOverlayPositions]="[
+              {originX: 'center', overlayX: 'center', originY: 'bottom', overlayY: 'top'},
+            ]">
+            <app-plan-feature-hint plan="business" />
+          </ng-template>
+        }
+      </ng-template>
+    </app-tab-bar>
 
-      <div role="tabpanel" class="pt-6" [id]="'tabpanel-' + activeTab()" [attr.aria-labelledby]="'tab-' + activeTab()">
-        <router-outlet />
-      </div>
+    <div role="tabpanel" class="pt-6" [id]="'tabpanel-' + activeTab()" [attr.aria-labelledby]="'tab-' + activeTab()">
+      <router-outlet />
     </div>
   </div>
-</section>
+</app-page>

@@ -15,6 +15,7 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faArrowLeft, faFileImport, faFloppyDisk, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
+import {PageComponent} from '../../components/page.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AuthService} from '../../services/auth.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
@@ -51,7 +52,7 @@ function uniqueNamesValidator(): ValidatorFn {
   selector: 'app-support-bundle-settings',
   templateUrl: './support-bundle-settings.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective, RouterLink],
+  imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective, RouterLink, PageComponent],
 })
 export class SupportBundleSettingsComponent {
   protected readonly faFloppyDisk = faFloppyDisk;

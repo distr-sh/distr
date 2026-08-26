@@ -10,6 +10,7 @@ import {faArrowRight, faCheck, faLightbulb, faPlus, faUserGroup, faXmark} from '
 import {lastValueFrom} from 'rxjs';
 import {WEBSITE_URL} from '../../../constants';
 import {getFormDisplayedError} from '../../../util/errors';
+import {PageComponent} from '../../components/page.component';
 import {UserRoleSelectComponent} from '../../components/user-role-select.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {PlaceholderDirective} from '../../directives/placeholder.directive';
@@ -44,6 +45,7 @@ function userFormGroup() {
     AutotrimDirective,
     PlaceholderDirective,
     UserRoleSelectComponent,
+    PageComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './users-tutorial.component.html',

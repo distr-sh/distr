@@ -1,197 +1,176 @@
-<!-- Start block -->
-<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
-  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
-    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
-      <div
-        class="flex flex-col md:flex-row items-stretch md:items-center md:space-x-3 space-y-3 md:space-y-0 justify-between mx-4 py-4 dark:border-gray-700">
-        <div class="w-full md:w-1/2">
-          <form class="flex items-center" [formGroup]="filterForm">
-            <label for="simple-search" class="sr-only">Search</label>
-            <div class="relative w-full">
-              <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <fa-icon [icon]="faMagnifyingGlass" class="text-gray-500 dark:text-gray-400" />
-              </div>
-              <input
-                type="text"
-                id="simple-search"
-                placeholder="Filter customers"
-                [formControl]="filterForm.controls.search"
-                autotrim
-                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
-            </div>
-          </form>
-        </div>
-        <div
-          class="w-full md:w-auto flex flex-col md:flex-row items-stretch md:items-center justify-end gap-4 flex-shrink-0 flex-grow">
-          <app-quota-limit [usage]="currentCustomerOrganizationCount()" [limit]="limit()" label="customers" #quota />
-          @if (auth.hasAnyRole('read_write', 'admin')) {
-            <button
-              (click)="showCreateDialog()"
-              [disabled]="quota.isLimitReached()"
-              [title]="quota.isLimitReached() ? 'Customer limit reached' : 'Create Customer'"
-              type="button"
-              id="createCustomerButton"
-              class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
-              <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
-              Create Customer
-            </button>
-          }
-        </div>
+<app-page variant="table">
+  <div class="distr-table-panel">
+    <div class="distr-toolbar p-4">
+      <app-search-bar [control]="filterForm.controls.search" placeholder="Filter customers" />
+      <div class="distr-toolbar-actions">
+        <app-quota-limit [usage]="currentCustomerOrganizationCount()" [limit]="limit()" label="customers" #quota />
+        @if (auth.hasAnyRole('read_write', 'admin')) {
+          <button
+            (click)="showCreateDialog()"
+            [disabled]="quota.isLimitReached()"
+            [title]="quota.isLimitReached() ? 'Customer limit reached' : 'Create Customer'"
+            type="button"
+            id="createCustomerButton"
+            class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+            <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
+            Create Customer
+          </button>
+        }
       </div>
-      <div class="overflow-x-auto">
-        <table class="distr-table">
-          <thead class="distr-table-head">
-            <tr>
-              <th scope="col" class="p-4"></th>
-              <th scope="col" class="p-4">Name</th>
-              <th scope="col" class="p-4">Creation Date</th>
-              <th scope="col" class="p-4">Features</th>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="distr-table">
+        <thead class="distr-table-head">
+          <tr>
+            <th scope="col" class="p-4"></th>
+            <th scope="col" class="p-4">Name</th>
+            <th scope="col" class="p-4">Creation Date</th>
+            <th scope="col" class="p-4">Features</th>
+            @if (auth.isVendor() && featureFlags.isPartnerManagementEnabled()) {
+              <th scope="col" class="p-4">Partner</th>
+            }
+            <th scope="col" class="p-4 text-end"># of Users</th>
+            <th scope="col" class="p-4 text-end"># of Deployments</th>
+            <th scope="col" class="p-4"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (customer of customerOrganizations(); track customer.id) {
+            <tr class="distr-table-row">
+              <td class="pl-4">
+                <button
+                  type="button"
+                  (click)="uploadImage(customer)"
+                  aria-label="Upload customer avatar"
+                  class="cursor-pointer">
+                  <app-avatar
+                    [image]="customer.imageUrl"
+                    [name]="customer.name"
+                    [icon]="faAddressBook"
+                    class="size-8 rounded-sm" />
+                </button>
+              </td>
+              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                <app-inline-edit
+                  [value]="customer.name"
+                  [editable]="auth.hasAnyRole('read_write', 'admin')"
+                  placeholder="Enter a name&hellip;"
+                  textClass="truncate block max-w-32 lg:max-w-64 xl:max-w-128"
+                  [loading]="savingCustomerId() === customer.id"
+                  (save)="updateCustomerName(customer, $event)" />
+              </td>
+              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                {{ customer.createdAt | date: 'short' }}
+              </td>
+              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                <button
+                  class="flex gap-1 items-center py-2 px-3 text-sm font-medium text-center distr-btn-secondary"
+                  type="button"
+                  cdkOverlayOrigin
+                  #dropdownTriggerButton
+                  #dropdownTrigger="cdkOverlayOrigin"
+                  (click)="showCustomerFeaturesDropdown(customer, dropdownTriggerButton)">
+                  <span class="flex-grow"> {{ customer.features.length }} features enabled </span>
+                  <fa-icon
+                    class="transition duration-150 ease-in-out"
+                    [class.rotate-x-180]="openCustomerFeaturesDropdownId() === customer.id"
+                    [icon]="faChevronDown" />
+                </button>
+
+                <ng-template
+                  cdkConnectedOverlay
+                  [cdkConnectedOverlayHasBackdrop]="true"
+                  (backdropClick)="hideCustomerFeaturesDropdown()"
+                  [cdkConnectedOverlayBackdropClass]="'transparent'"
+                  [cdkConnectedOverlayOrigin]="dropdownTrigger"
+                  [cdkConnectedOverlayMinWidth]="dropdownWidth + 'px'"
+                  [cdkConnectedOverlayOpen]="openCustomerFeaturesDropdownId() === customer.id">
+                  <div
+                    animate.enter="animate-flip-in-top"
+                    animate.leave="animate-flip-out-top"
+                    class="origin-top w-full text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600">
+                    <ul
+                      class="w-full text-sm font-medium text-gray-900 bg-white border-gray-200 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                      @for (f of allCustomerFeatures(); track f) {
+                        <li class="w-full border-t border-gray-200 dark:border-gray-600">
+                          <label class="flex items-center ps-3" [class.ms-4]="isFeatureIndent(f)">
+                            <input
+                              type="checkbox"
+                              [checked]="openCustomerFeaturesDropdownCustomer()?.features?.includes(f)"
+                              (change)="toggleFeature(customer, f)"
+                              class="distr-checkbox" />
+                            <span class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                              {{ getFeatureLabel(f) }}
+                            </span>
+                          </label>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                </ng-template>
+              </td>
               @if (auth.isVendor() && featureFlags.isPartnerManagementEnabled()) {
-                <th scope="col" class="p-4">Partner</th>
-              }
-              <th scope="col" class="p-4 text-end"># of Users</th>
-              <th scope="col" class="p-4 text-end"># of Deployments</th>
-              <th scope="col" class="p-4"></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (customer of customerOrganizations(); track customer.id) {
-              <tr class="distr-table-row">
-                <td class="pl-4">
-                  <button
-                    type="button"
-                    (click)="uploadImage(customer)"
-                    aria-label="Upload customer avatar"
-                    class="cursor-pointer">
-                    <app-avatar
-                      [image]="customer.imageUrl"
-                      [name]="customer.name"
-                      [icon]="faAddressBook"
-                      class="size-8 rounded-sm" />
-                  </button>
-                </td>
                 <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                  <app-inline-edit
-                    [value]="customer.name"
-                    [editable]="auth.hasAnyRole('read_write', 'admin')"
-                    placeholder="Enter a name&hellip;"
-                    textClass="truncate block max-w-32 lg:max-w-64 xl:max-w-128"
-                    [loading]="savingCustomerId() === customer.id"
-                    (save)="updateCustomerName(customer, $event)" />
-                </td>
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                  {{ customer.createdAt | date: 'short' }}
-                </td>
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                  <button
-                    class="flex gap-1 items-center py-2 px-3 text-sm font-medium text-center distr-btn-secondary"
-                    type="button"
-                    cdkOverlayOrigin
-                    #dropdownTriggerButton
-                    #dropdownTrigger="cdkOverlayOrigin"
-                    (click)="showCustomerFeaturesDropdown(customer, dropdownTriggerButton)">
-                    <span class="flex-grow"> {{ customer.features.length }} features enabled </span>
-                    <fa-icon
-                      class="transition duration-150 ease-in-out"
-                      [class.rotate-x-180]="openCustomerFeaturesDropdownId() === customer.id"
-                      [icon]="faChevronDown" />
-                  </button>
-
-                  <ng-template
-                    cdkConnectedOverlay
-                    [cdkConnectedOverlayHasBackdrop]="true"
-                    (backdropClick)="hideCustomerFeaturesDropdown()"
-                    [cdkConnectedOverlayBackdropClass]="'transparent'"
-                    [cdkConnectedOverlayOrigin]="dropdownTrigger"
-                    [cdkConnectedOverlayMinWidth]="dropdownWidth + 'px'"
-                    [cdkConnectedOverlayOpen]="openCustomerFeaturesDropdownId() === customer.id">
-                    <div
-                      animate.enter="animate-flip-in-top"
-                      animate.leave="animate-flip-out-top"
-                      class="origin-top w-full text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600">
-                      <ul
-                        class="w-full text-sm font-medium text-gray-900 bg-white border-gray-200 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                        @for (f of allCustomerFeatures(); track f) {
-                          <li class="w-full border-t border-gray-200 dark:border-gray-600">
-                            <label class="flex items-center ps-3" [class.ms-4]="isFeatureIndent(f)">
-                              <input
-                                type="checkbox"
-                                [checked]="openCustomerFeaturesDropdownCustomer()?.features?.includes(f)"
-                                (change)="toggleFeature(customer, f)"
-                                class="distr-checkbox" />
-                              <span class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                                {{ getFeatureLabel(f) }}
-                              </span>
-                            </label>
-                          </li>
-                        }
-                      </ul>
-                    </div>
-                  </ng-template>
-                </td>
-                @if (auth.isVendor() && featureFlags.isPartnerManagementEnabled()) {
-                  <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                    @if (getPartnerName(customer.partnerOrganizationId); as name) {
-                      {{ name }}
-                    } @else {
-                      <span class="text-gray-500">–</span>
-                    }
-
-                    @if (auth.hasAnyRole('read_write', 'admin')) {
-                      <button type="button" class="text-gray-400 ml-1" (click)="showPartnerAssignDialog(customer)">
-                        <fa-icon [icon]="faEdit" />
-                      </button>
-                    }
-                  </td>
-                }
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white text-end">
-                  {{ customer.userCount | number }}
-                </td>
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white text-end">
-                  {{ customer.deploymentTargetCount | number }}
-                </td>
-                <td
-                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">
-                  <a
-                    [routerLink]="[customer.id, 'users']"
-                    class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                    Users
-                  </a>
-                  <a
-                    [routerLink]="[customer.id, 'secrets']"
-                    class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                    Secrets
-                  </a>
-                  <a
-                    [routerLink]="[customer.id, 'links']"
-                    class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                    Links
-                  </a>
-                  @if (auth.hasAnyRole('admin') && customer.features.includes('oidc_providers')) {
-                    <a
-                      [routerLink]="[customer.id, 'settings']"
-                      class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                      Settings
-                    </a>
+                  @if (getPartnerName(customer.partnerOrganizationId); as name) {
+                    {{ name }}
+                  } @else {
+                    <span class="text-gray-500">–</span>
                   }
-                  @if (auth.hasAnyRole('admin') && (auth.isVendor() || auth.isPartner())) {
-                    <button
-                      type="button"
-                      aria-label="Delete"
-                      (click)="delete(customer)"
-                      class="py-2 px-3 distr-btn-danger">
-                      <fa-icon [icon]="faTrash" class="h-4 w-4" />
+
+                  @if (auth.hasAnyRole('read_write', 'admin')) {
+                    <button type="button" class="text-gray-400 ml-1" (click)="showPartnerAssignDialog(customer)">
+                      <fa-icon [icon]="faEdit" />
                     </button>
                   }
                 </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+              }
+              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white text-end">
+                {{ customer.userCount | number }}
+              </td>
+              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white text-end">
+                {{ customer.deploymentTargetCount | number }}
+              </td>
+              <td
+                class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex justify-end space-x-2">
+                <a
+                  [routerLink]="[customer.id, 'users']"
+                  class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                  Users
+                </a>
+                <a
+                  [routerLink]="[customer.id, 'secrets']"
+                  class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                  Secrets
+                </a>
+                <a
+                  [routerLink]="[customer.id, 'links']"
+                  class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                  Links
+                </a>
+                @if (auth.hasAnyRole('admin') && customer.features.includes('oidc_providers')) {
+                  <a
+                    [routerLink]="[customer.id, 'settings']"
+                    class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                    Settings
+                  </a>
+                }
+                @if (auth.hasAnyRole('admin') && (auth.isVendor() || auth.isPartner())) {
+                  <button
+                    type="button"
+                    aria-label="Delete"
+                    (click)="delete(customer)"
+                    class="py-2 px-3 distr-btn-danger">
+                    <fa-icon [icon]="faTrash" class="h-4 w-4" />
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
     </div>
   </div>
-</section>
+</app-page>
 
 <ng-template #createCustomerDialog>
   <div

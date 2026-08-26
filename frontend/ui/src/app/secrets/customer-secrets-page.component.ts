@@ -5,6 +5,7 @@ import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faBoxesStacked, faChevronDown} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, map, startWith, Subject, switchMap} from 'rxjs';
+import {PageComponent} from '../components/page.component';
 import {CustomerOrganizationsService} from '../services/customer-organizations.service';
 import {SecretsService} from '../services/secrets.service';
 import {SecretsComponent} from './secrets.component';
@@ -12,7 +13,7 @@ import {SecretsComponent} from './secrets.component';
 @Component({
   templateUrl: './customer-secrets-page.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [SecretsComponent, RouterLink, FontAwesomeModule, OverlayModule],
+  imports: [SecretsComponent, RouterLink, FontAwesomeModule, OverlayModule, PageComponent],
 })
 export class CustomerSecretsPageComponent {
   protected readonly faBoxesStacked = faBoxesStacked;

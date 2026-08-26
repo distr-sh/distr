@@ -1,96 +1,94 @@
-<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
-  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
-    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="distr-table">
-          <thead class="distr-table-head">
-            <tr>
-              <th scope="col" class="p-4">Date</th>
-              <th scope="col" class="p-4">Customer</th>
-              <th scope="col" class="p-4">Deployment</th>
-              <th scope="col" class="p-4">Application</th>
-              <th scope="col" class="p-4">Trigger</th>
-              <th scope="col" class="p-4">Notification Errors</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (record of notificationRecords(); track record.id) {
-              <tr class="distr-table-row">
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                  {{ record.createdAt | date: 'short' }}
-                </td>
-                <td
-                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
-                  @if (record.customerOrganizationName) {
-                    {{ record.customerOrganizationName }}
-                  } @else {
-                    <span class="text-gray-500">-</span>
+<app-page variant="table">
+  <div class="distr-table-panel">
+    <div class="overflow-x-auto">
+      <table class="distr-table">
+        <thead class="distr-table-head">
+          <tr>
+            <th scope="col" class="p-4">Date</th>
+            <th scope="col" class="p-4">Customer</th>
+            <th scope="col" class="p-4">Deployment</th>
+            <th scope="col" class="p-4">Application</th>
+            <th scope="col" class="p-4">Trigger</th>
+            <th scope="col" class="p-4">Notification Errors</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (record of notificationRecords(); track record.id) {
+            <tr class="distr-table-row">
+              <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                {{ record.createdAt | date: 'short' }}
+              </td>
+              <td
+                class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
+                @if (record.customerOrganizationName) {
+                  {{ record.customerOrganizationName }}
+                } @else {
+                  <span class="text-gray-500">-</span>
+                }
+              </td>
+              <td
+                class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
+                {{ record.deploymentTargetName }}
+              </td>
+              <td
+                class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
+                @if (record.applicationName) {
+                  {{ record.applicationName }}@{{ record.applicationVersionName }}
+                } @else {
+                  <span class="text-gray-500">-</span>
+                }
+              </td>
+              <td
+                class="px-4 py-3 font-medium text-gray-900 whitespace-pre-wrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
+                @switch (record.type) {
+                  @case ('alert') {
+                    <span class="text-red-500">Alert:</span>
                   }
-                </td>
-                <td
-                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
-                  {{ record.deploymentTargetName }}
-                </td>
-                <td
-                  class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
-                  @if (record.applicationName) {
-                    {{ record.applicationName }}@{{ record.applicationVersionName }}
-                  } @else {
-                    <span class="text-gray-500">-</span>
+                  @case ('warning') {
+                    <span class="text-yellow-500 dark:text-yellow-300">Warning:</span>
                   }
-                </td>
-                <td
-                  class="px-4 py-3 font-medium text-gray-900 whitespace-pre-wrap dark:text-white max-w-48 xl:max-w-58 2xl:max-w-96 overflow-hidden text-ellipsis">
-                  @switch (record.type) {
-                    @case ('alert') {
-                      <span class="text-red-500">Alert:</span>
-                    }
-                    @case ('warning') {
-                      <span class="text-yellow-500 dark:text-yellow-300">Warning:</span>
-                    }
-                    @case ('resolved') {
-                      <span class="text-green-500">Resolved:</span>
-                    }
+                  @case ('resolved') {
+                    <span class="text-green-500">Resolved:</span>
                   }
+                }
 
-                  @if (record.currentDeploymentRevisionStatus; as s) {
-                    {{ s.message }}
-                  } @else if (record.currentDeploymentTargetMetrics; as m) {
-                    @switch (record.metricType) {
-                      @case ('cpu') {
-                        CPU utilization is {{ m.cpuUsage | percent }}
-                      }
-                      @case ('memory') {
-                        Memory utilization is {{ m.memoryUsage | percent }}
-                      }
-                      @case ('disk') {
-                        @for (d of m.diskMetrics; track d.device + ':' + d.path) {
-                          @if (d.device === record.diskDevice && d.path === record.diskPath) {
-                            @if (d.bytesTotal > 0) {
-                              Disk utilization is {{ d.bytesUsed / d.bytesTotal | percent }}
-                            } @else {
-                              Disk utilization is N/A
-                            }
+                @if (record.currentDeploymentRevisionStatus; as s) {
+                  {{ s.message }}
+                } @else if (record.currentDeploymentTargetMetrics; as m) {
+                  @switch (record.metricType) {
+                    @case ('cpu') {
+                      CPU utilization is {{ m.cpuUsage | percent }}
+                    }
+                    @case ('memory') {
+                      Memory utilization is {{ m.memoryUsage | percent }}
+                    }
+                    @case ('disk') {
+                      @for (d of m.diskMetrics; track d.device + ':' + d.path) {
+                        @if (d.device === record.diskDevice && d.path === record.diskPath) {
+                          @if (d.bytesTotal > 0) {
+                            Disk utilization is {{ d.bytesUsed / d.bytesTotal | percent }}
+                          } @else {
+                            Disk utilization is N/A
                           }
                         }
                       }
                     }
-                  } @else {
-                    Stale
                   }
-                </td>
-                <td class="px-4 py-3 font-medium text-gray-900 whitespace-pre-wrap dark:text-white">
-                  @if (record.message; as m) {
-                    <div>{{ m }}</div>
-                  } @else {
-                    <span class="text-gray-500">-</span>
-                  }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+                } @else {
+                  Stale
+                }
+              </td>
+              <td class="px-4 py-3 font-medium text-gray-900 whitespace-pre-wrap dark:text-white">
+                @if (record.message; as m) {
+                  <div>{{ m }}</div>
+                } @else {
+                  <span class="text-gray-500">-</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
     </div>
   </div>
-</section>
+</app-page>

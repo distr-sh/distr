@@ -4,6 +4,7 @@ import {ActivatedRoute, NavigationEnd, Router, RouterOutlet} from '@angular/rout
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircleExclamation} from '@fortawesome/free-solid-svg-icons';
 import {filter} from 'rxjs';
+import {PageComponent} from '../components/page.component';
 import {TabBarComponent, TabItem} from '../components/tab-bar.component';
 import {AuthService} from '../services/auth.service';
 
@@ -15,7 +16,7 @@ type UserSettingsTab = (typeof userSettingsTabs)[number];
 @Component({
   templateUrl: './user-settings.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [FaIconComponent, TabBarComponent, RouterOutlet],
+  imports: [FaIconComponent, TabBarComponent, RouterOutlet, PageComponent],
 })
 export class UserSettingsComponent {
   protected readonly faCircleExclamation = faCircleExclamation;

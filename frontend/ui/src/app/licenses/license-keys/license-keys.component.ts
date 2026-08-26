@@ -5,23 +5,15 @@ import {ChangeDetectionStrategy, Component, inject, input, signal, TemplateRef, 
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {
-  faCircleExclamation,
-  faCopy,
-  faEye,
-  faMagnifyingGlass,
-  faPen,
-  faPlus,
-  faTrash,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
+import {faCircleExclamation, faCopy, faEye, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatest, EMPTY, filter, firstValueFrom, map, Observable, shareReplay, switchMap} from 'rxjs';
 import {isExpired} from '../../../util/dates';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
 import {ClipComponent} from '../../components/clip.component';
+import {PageComponent} from '../../components/page.component';
+import {SearchBarComponent} from '../../components/search-bar.component';
 import {UuidComponent} from '../../components/uuid';
-import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AuthService} from '../../services/auth.service';
 import {CustomerOrganizationsService} from '../../services/customer-organizations.service';
 import {FeatureFlagService} from '../../services/feature-flag.service';
@@ -42,9 +34,10 @@ import {ViewLicenseKeyModalComponent} from './view-license-key-modal.component';
     FaIconComponent,
     EditLicenseKeyComponent,
     ViewLicenseKeyModalComponent,
-    AutotrimDirective,
     UuidComponent,
     ClipComponent,
+    PageComponent,
+    SearchBarComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './license-keys.component.html',
@@ -59,7 +52,6 @@ export class LicenseKeysComponent {
   private readonly toast = inject(ToastService);
   private readonly customerOrganizationService = inject(CustomerOrganizationsService);
 
-  protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faPen = faPen;
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;

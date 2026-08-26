@@ -1,152 +1,135 @@
-<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
-  <div class="mx-auto max-w-screen-lg px-4">
-    @if (auth.hasAnyRole('admin') && (!hasSubscription() || hasNoArtifact())) {
-      <div
-        class="flex p-4 mb-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400"
-        role="alert">
-        <fa-icon [icon]="faLightbulb" class="me-4" />
-        <div>
-          @if (registrySlug$ | async; as slug) {
-            @if (registryHost$ | async; as host) {
-              <div class="font-medium">
-                To use the OCI Registry, make sure to create a
-                <a class="text-gray-600 dark:text-gray-400 underline" routerLink="/settings/access-tokens"
-                  >personal access token</a
-                >
-                and log in to the registry from your machine:
-                <code class="mt-1 select-all block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
-                  echo "YOUR-ACCESS-TOKEN" | docker login {{ host }} --password-stdin -u -
-                </code>
+<app-page variant="cards">
+  @if (auth.hasAnyRole('admin') && (!hasSubscription() || hasNoArtifact())) {
+    <div
+      class="flex p-4 mb-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400"
+      role="alert">
+      <fa-icon [icon]="faLightbulb" class="me-4" />
+      <div>
+        @if (registrySlug$ | async; as slug) {
+          @if (registryHost$ | async; as host) {
+            <div class="font-medium">
+              To use the OCI Registry, make sure to create a
+              <a class="text-gray-600 dark:text-gray-400 underline" routerLink="/settings/access-tokens"
+                >personal access token</a
+              >
+              and log in to the registry from your machine:
+              <code class="mt-1 select-all block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
+                echo "YOUR-ACCESS-TOKEN" | docker login {{ host }} --password-stdin -u -
+              </code>
+            </div>
+            <div class="font-medium mt-1" *appRequireVendor>
+              Then you can start tagging and pushing your images. For example, you can try the following commands to
+              push your own
+              <a
+                href="https://hub.docker.com/_/hello-world"
+                target="_blank"
+                class="text-gray-600 dark:text-gray-400 underline"
+                >hello-world</a
+              >
+              image:
+              <code class="select-all mt-1 block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
+                docker pull hello-world
+              </code>
+              <code class="select-all block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
+                docker tag hello-world {{ host }}/{{ slug }}/hello-world:v1.0.0
+              </code>
+              <code class="select-all block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
+                docker push {{ host }}/{{ slug }}/hello-world:v1.0.0
+              </code>
+            </div>
+            <div *appRequireCustomer>
+              <div class="font-medium mt-1">
+                After the login you can start pulling images from the registry. For example, you can try the following
               </div>
-              <div class="font-medium mt-1" *appRequireVendor>
-                Then you can start tagging and pushing your images. For example, you can try the following commands to
-                push your own
-                <a
-                  href="https://hub.docker.com/_/hello-world"
-                  target="_blank"
-                  class="text-gray-600 dark:text-gray-400 underline"
-                  >hello-world</a
-                >
-                image:
-                <code class="select-all mt-1 block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
-                  docker pull hello-world
-                </code>
-                <code class="select-all block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
-                  docker tag hello-world {{ host }}/{{ slug }}/hello-world:v1.0.0
-                </code>
-                <code class="select-all block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
-                  docker push {{ host }}/{{ slug }}/hello-world:v1.0.0
-                </code>
-              </div>
-              <div *appRequireCustomer>
-                <div class="font-medium mt-1">
-                  After the login you can start pulling images from the registry. For example, you can try the following
-                </div>
-                <code class="mt-1 select-all block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
-                  docker pull {{ host }}/{{ slug }}/IMAGE:VERSION
-                </code>
-              </div>
-            } @else {
-              Your Distr Hub does not have the registry enabled.
-              <ng-container *appRequireVendor
-                >You can enable it by setting the corresponding environment variables of the Distr Hub.
-                <!-- TODO link to docs -->
-              </ng-container>
-            }
+              <code class="mt-1 select-all block text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
+                docker pull {{ host }}/{{ slug }}/IMAGE:VERSION
+              </code>
+            </div>
           } @else {
-            It seems your organization does not have a slug set yet.
+            Your Distr Hub does not have the registry enabled.
             <ng-container *appRequireVendor
-              >To use the registry, please set a slug in
-              <a class="text-gray-600 dark:text-gray-400 underline" routerLink="/settings">Settings</a>.
+              >You can enable it by setting the corresponding environment variables of the Distr Hub.
+              <!-- TODO link to docs -->
             </ng-container>
           }
-        </div>
+        } @else {
+          It seems your organization does not have a slug set yet.
+          <ng-container *appRequireVendor
+            >To use the registry, please set a slug in
+            <a class="text-gray-600 dark:text-gray-400 underline" routerLink="/settings">Settings</a>.
+          </ng-container>
+        }
       </div>
-    }
-
-    <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between dark:border-gray-700 mb-4">
-      <div class="w-full md:w-1/2">
-        <form class="flex items-center" [formGroup]="filterForm">
-          <label for="simple-search" class="sr-only">Search</label>
-          <div class="relative w-full">
-            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <fa-icon [icon]="faMagnifyingGlass" class="text-gray-500 dark:text-gray-400" />
-            </div>
-            <input
-              [formControl]="filterForm.controls.search"
-              autotrim
-              type="text"
-              id="simple-search"
-              placeholder="Filter artifacts"
-              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
-          </div>
-        </form>
-      </div>
-      @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
-        <div class="mt-3 md:mt-0 md:ms-4">
-          <button
-            (click)="openCreateModal(newArtifactModal)"
-            type="button"
-            class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-            <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
-            Add artifact
-          </button>
-        </div>
-      }
     </div>
+  }
 
-    @if (filteredArtifacts(); as artifacts) {
-      <div class="overflow-x-auto">
-        <ul role="list" class="flex flex-col gap-4">
-          @for (artifact of artifacts; track artifact.id) {
-            <li class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg py-3 px-6 sm:py-4">
-              <div class="flex items-center">
-                @if (artifact.imageUrl) {
-                  <img
-                    [routerLink]="artifact.id"
-                    class="w-8 h-8 rounded-full cursor-pointer"
-                    [attr.src]="artifact.imageUrl | secureImage | async"
-                    alt="" />
-                } @else {
-                  <div class="shrink-0 text-gray-900 dark:text-gray-400">
-                    <fa-icon [routerLink]="artifact.id" [icon]="faBox" size="xl" class="text-xl cursor-pointer" />
-                  </div>
-                }
-                <div class="flex-1 min-w-0 ms-4">
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <a
-                      class="font-semibold text-gray-900 truncate dark:text-white hover:underline hover:text-blue-600 dark:hover:text-blue-500"
-                      [routerLink]="artifact.id">
-                      {{ artifact.name }}
-                    </a>
-                  </div>
-                  <p class="flex items-center gap-1 text-sm text-gray-500 truncate dark:text-gray-400 mt-1">
-                    <app-uuid [uuid]="artifact.id" [small]="true" />
-                    @if (auth.isVendor() && artifact.upstreamUrl) {
-                      <span
-                        class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-blue-900 dark:text-blue-300">
-                        pull-through
-                      </span>
-                    }
-                  </p>
-                </div>
-                <div class="flex flex-col items-end gap-1" *appRequireVendor>
-                  <app-artifacts-download-count [source]="artifact" />
-                  <app-artifacts-downloaded-by [source]="artifact" />
-                </div>
-              </div>
-            </li>
-          }
-        </ul>
-      </div>
-    } @else {
-      <div class="flex justify-center items-center py-8 text-gray-500 dark:text-gray-400">
-        <app-spinner class="size-6 me-2" />
-        <span>Loading&hellip;</span>
+  <div class="distr-toolbar mb-4">
+    <app-search-bar [control]="filterForm.controls.search" placeholder="Filter artifacts" />
+
+    @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
+      <div class="distr-toolbar-actions">
+        <button
+          (click)="openCreateModal(newArtifactModal)"
+          type="button"
+          class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+          <fa-icon [icon]="faPlus" class="text-gray-500 dark:text-gray-400 mr-2" />
+          Add artifact
+        </button>
       </div>
     }
   </div>
-</section>
+
+  @if (filteredArtifacts(); as artifacts) {
+    <div class="overflow-x-auto">
+      <ul role="list" class="distr-card-grid-wide">
+        @for (artifact of artifacts; track artifact.id) {
+          <li class="distr-card py-3 px-6 sm:py-4">
+            <div class="flex items-center">
+              @if (artifact.imageUrl) {
+                <img
+                  [routerLink]="artifact.id"
+                  class="w-8 h-8 rounded-full cursor-pointer"
+                  [attr.src]="artifact.imageUrl | secureImage | async"
+                  alt="" />
+              } @else {
+                <div class="shrink-0 text-gray-900 dark:text-gray-400">
+                  <fa-icon [routerLink]="artifact.id" [icon]="faBox" size="xl" class="text-xl cursor-pointer" />
+                </div>
+              }
+              <div class="flex-1 min-w-0 ms-4">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <a
+                    class="font-semibold text-gray-900 truncate dark:text-white hover:underline hover:text-blue-600 dark:hover:text-blue-500"
+                    [routerLink]="artifact.id">
+                    {{ artifact.name }}
+                  </a>
+                </div>
+                <p class="flex items-center gap-1 text-sm text-gray-500 truncate dark:text-gray-400 mt-1">
+                  <app-uuid [uuid]="artifact.id" [small]="true" />
+                  @if (auth.isVendor() && artifact.upstreamUrl) {
+                    <span
+                      class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-blue-900 dark:text-blue-300">
+                      pull-through
+                    </span>
+                  }
+                </p>
+              </div>
+              <div class="flex flex-col items-end gap-1" *appRequireVendor>
+                <app-artifacts-download-count [source]="artifact" />
+                <app-artifacts-downloaded-by [source]="artifact" />
+              </div>
+            </div>
+          </li>
+        }
+      </ul>
+    </div>
+  } @else {
+    <div class="flex justify-center items-center py-8 text-gray-500 dark:text-gray-400">
+      <app-spinner class="size-6 me-2" />
+      <span>Loading&hellip;</span>
+    </div>
+  }
+</app-page>
 
 <ng-template #newArtifactModal>
   @let formGroup = createForm;

@@ -1,115 +1,96 @@
-<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
-  <div class="mx-auto max-w-screen-2xl px-4 mb-32 lg:px-12">
-    <div class="w-full mb-4">
-      <div class="items-center justify-between flex flex-col md:flex-row gap-2 md:gap-4">
-        <form class="w-full flex-1 md:mr-4 md:max-w-md" [formGroup]="filterForm">
-          <label for="default-search" class="sr-only text-sm font-medium text-gray-900 dark:text-white">Search</label>
-          <div class="relative">
-            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <fa-icon [icon]="faMagnifyingGlass" class="text-gray-500 dark:text-gray-400" />
-            </div>
-            <input
-              type="search"
-              id="default-search"
-              class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2 pl-10 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
-              placeholder="Filter Agents"
-              autotrim
-              formControlName="search" />
-          </div>
-        </form>
+<app-page variant="cards">
+  <div class="distr-toolbar mb-4">
+    <app-search-bar [control]="filterForm.controls.search" placeholder="Filter agents" />
 
+    <div class="distr-toolbar-actions">
+      @if (isAlertsVisible()) {
+        <a
+          routerLink="/notifications/alert-configurations"
+          class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+          <fa-icon [icon]="faBullhorn" class="text-gray-500 dark:text-gray-400 mr-2" />
+          Alerts
+        </a>
+      }
+      @if (auth.hasAnyRole('read_write', 'admin')) {
+        <app-quota-limit [usage]="count()" [limit]="limit()" label="agents" #quota />
+        <button
+          (click)="openWizard()"
+          [disabled]="auth.isCustomer() && quota.isLimitReached()"
+          [title]="quota.isLimitReached() ? 'Limit reached' : ''"
+          type="button"
+          id="createDeploymentTargetButton2"
+          class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+          <fa-icon [icon]="plusIcon" class="text-gray-500 dark:text-gray-400 mr-2" />
+          New Deployment
+        </button>
+      }
+    </div>
+  </div>
+
+  @for (
+    customerDeploymentTargets of filteredDeploymentTargets$ | async;
+    track customerDeploymentTargets.customerOrganization?.id
+  ) {
+    @let customerOrgId = customerDeploymentTargets.customerOrganization?.id;
+    @let isCollapsed = customerOrgId && collapsedCustomerIds().includes(customerOrgId);
+
+    @if ((auth.isVendor() || auth.isPartner()) && customerDeploymentTargets.customerOrganization; as customer) {
+      <div class="flex flex-row gap-2 items-start mb-3 mt-6" [class.items-center]="isCollapsed">
+        <button
+          class="inline-flex items-center text-gray-900 text-xl dark:text-white"
+          (click)="toggleCustomerCollapsed(customer.id)">
+          <fa-icon
+            [icon]="faChevronDown"
+            [class.-rotate-90]="isCollapsed"
+            class="transition duration-150 ease-in-out" />
+        </button>
         <div
-          class="w-full md:w-auto flex flex-col md:flex-row items-stretch md:items-center justify-end gap-2 shrink-0 grow">
-          @if (isAlertsVisible()) {
-            <a
-              routerLink="/notifications/alert-configurations"
-              class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-              <fa-icon [icon]="faBullhorn" class="text-gray-500 dark:text-gray-400 mr-2" />
-              Alerts
-            </a>
-          }
-          @if (auth.hasAnyRole('read_write', 'admin')) {
-            <app-quota-limit [usage]="count()" [limit]="limit()" label="agents" #quota />
-            <button
-              (click)="openWizard()"
-              [disabled]="auth.isCustomer() && quota.isLimitReached()"
-              [title]="quota.isLimitReached() ? 'Limit reached' : ''"
-              type="button"
-              id="createDeploymentTargetButton2"
-              class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
-              <fa-icon [icon]="plusIcon" class="text-gray-500 dark:text-gray-400 mr-2" />
-              New Deployment
-            </button>
-          }
+          class="flex gap-2 items-center"
+          [class.flex-col]="!isCollapsed"
+          [class.items-start]="!isCollapsed"
+          [class.gap-8]="isCollapsed">
+          <h2 class="text-xl font-extrabold leading-none tracking-tight text-gray-900 md:text-2xl dark:text-white">
+            @if (customer.imageId) {
+              <img class="inline size-8 rounded-sm me-1" [attr.src]="customer.imageId | secureImage | async" alt="" />
+            }
+
+            {{ customer.name }}
+          </h2>
+          <app-quota-limit
+            [usage]="customerDeploymentTargets.deploymentTargets.length"
+            [limit]="limit()"
+            label="agents" />
         </div>
       </div>
-    </div>
-
-    @for (
-      customerDeploymentTargets of filteredDeploymentTargets$ | async;
-      track customerDeploymentTargets.customerOrganization?.id
-    ) {
-      @let customerOrgId = customerDeploymentTargets.customerOrganization?.id;
-      @let isCollapsed = customerOrgId && collapsedCustomerIds().includes(customerOrgId);
-
-      @if ((auth.isVendor() || auth.isPartner()) && customerDeploymentTargets.customerOrganization; as customer) {
-        <div class="flex flex-row gap-2 items-start mb-3 mt-6" [class.items-center]="isCollapsed">
-          <button
-            class="inline-flex items-center text-gray-900 text-xl dark:text-white"
-            (click)="toggleCustomerCollapsed(customer.id)">
-            <fa-icon
-              [icon]="faChevronDown"
-              [class.-rotate-90]="isCollapsed"
-              class="transition duration-150 ease-in-out" />
-          </button>
-          <div
-            class="flex gap-2 items-center"
-            [class.flex-col]="!isCollapsed"
-            [class.items-start]="!isCollapsed"
-            [class.gap-8]="isCollapsed">
-            <h2 class="text-xl font-extrabold leading-none tracking-tight text-gray-900 md:text-2xl dark:text-white">
-              @if (customer.imageId) {
-                <img class="inline size-8 rounded-sm me-1" [attr.src]="customer.imageId | secureImage | async" alt="" />
-              }
-
-              {{ customer.name }}
-            </h2>
-            <app-quota-limit
-              [usage]="customerDeploymentTargets.deploymentTargets.length"
-              [limit]="limit()"
-              label="agents" />
-          </div>
-        </div>
-      }
-
-      @if (!isCollapsed) {
-        <div class="grid gap-4 items-stretch grid-cols-1 2xl:grid-cols-2">
-          @for (deploymentTarget of customerDeploymentTargets.deploymentTargets; track deploymentTarget.id) {
-            <app-deployment-target-card
-              [deploymentTarget]="deploymentTarget"
-              [deploymentTargetMetrics]="deploymentTarget.metrics" />
-          }
-        </div>
-      }
-    } @empty {
-      <div class="text-gray-500 dark:text-gray-400">No agents found.</div>
     }
 
-    <ng-template #deploymentModal>
-      <app-deployment-modal
-        animate.enter="animate-fly-in-top"
-        animate.leave="animate-fly-out-top"
-        [deploymentTarget]="selectedDeploymentTarget()!"
-        [deployment]="selectedDeployment()"
-        [versionId]="selectedApplicationVersionId()"
-        (closed)="hideModal()" />
-    </ng-template>
+    @if (!isCollapsed) {
+      <div class="distr-card-grid-wide">
+        @for (deploymentTarget of customerDeploymentTargets.deploymentTargets; track deploymentTarget.id) {
+          <app-deployment-target-card
+            [deploymentTarget]="deploymentTarget"
+            [deploymentTargetMetrics]="deploymentTarget.metrics" />
+        }
+      </div>
+    }
+  } @empty {
+    <div class="text-gray-500 dark:text-gray-400">No agents found.</div>
+  }
 
-    <ng-template #deploymentWizard>
-      <app-deployment-wizard
-        animate.enter="animate-fly-in-top"
-        animate.leave="animate-fly-out-top"
-        (closed)="hideModal()" />
-    </ng-template>
-  </div>
-</section>
+  <ng-template #deploymentModal>
+    <app-deployment-modal
+      animate.enter="animate-fly-in-top"
+      animate.leave="animate-fly-out-top"
+      [deploymentTarget]="selectedDeploymentTarget()!"
+      [deployment]="selectedDeployment()"
+      [versionId]="selectedApplicationVersionId()"
+      (closed)="hideModal()" />
+  </ng-template>
+
+  <ng-template #deploymentWizard>
+    <app-deployment-wizard
+      animate.enter="animate-fly-in-top"
+      animate.leave="animate-fly-out-top"
+      (closed)="hideModal()" />
+  </ng-template>
+</app-page>

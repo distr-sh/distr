@@ -6,10 +6,11 @@ import {getFormDisplayedError} from '../../../util/errors';
 import {InnerMarkdownDirective} from '../../directives/inner-markdown.directive';
 import {OrganizationBrandingService} from '../../services/organization-branding.service';
 import {ToastService} from '../../services/toast.service';
+import {PageComponent} from '../page.component';
 
 @Component({
   selector: 'app-home',
-  imports: [AsyncPipe, InnerMarkdownDirective],
+  imports: [AsyncPipe, InnerMarkdownDirective, PageComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './home.component.html',
 })

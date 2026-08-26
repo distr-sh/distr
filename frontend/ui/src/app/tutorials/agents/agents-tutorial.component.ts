@@ -29,6 +29,7 @@ import {firstValueFrom, lastValueFrom, Subject, switchMap, takeUntil, tap} from 
 import {GITHUB_URL, WEBSITE_URL} from '../../../constants';
 import {getFormDisplayedError} from '../../../util/errors';
 import {ClipComponent} from '../../components/clip.component';
+import {PageComponent} from '../../components/page.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {ApplicationsService} from '../../services/applications.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
@@ -61,6 +62,7 @@ const releaseStepTaskRelease = 'release';
     ClipComponent,
     AutotrimDirective,
     RouterLink,
+    PageComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './agents-tutorial.component.html',

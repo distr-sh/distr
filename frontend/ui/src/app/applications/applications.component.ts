@@ -5,19 +5,12 @@ import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/
 import {Router, RouterLink} from '@angular/router';
 import {Application, DeploymentType} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {
-  faBox,
-  faBoxArchive,
-  faMagnifyingGlass,
-  faPen,
-  faPlus,
-  faTrash,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
+import {faBox, faBoxArchive, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {lastValueFrom, Observable, Subject, takeUntil} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {filteredByFormControl} from '../../util/filter';
 import {SecureImagePipe} from '../../util/secureImage';
+import {SearchBarComponent} from '../components/search-bar.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {
   PermissionsDirective,
@@ -43,6 +36,7 @@ import {ToastService} from '../services/toast.service';
     PermissionsDirective,
     RouterLink,
     SecureImagePipe,
+    SearchBarComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './applications.component.html',
@@ -50,7 +44,6 @@ import {ToastService} from '../services/toast.service';
 export class ApplicationsComponent implements OnDestroy {
   readonly fullVersion = input<boolean>(false);
   private readonly router = inject(Router);
-  protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faPlus = faPlus;
   protected readonly faPen = faPen;
   protected readonly faXmark = faXmark;

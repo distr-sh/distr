@@ -1,4 +1,7 @@
-<nav class="fixed top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+<!-- 100vw ignores the scrollbar gutter the root reserves, so the bar reaches the window edge where
+`w-full` would stop short of it. A fixed box is not part of the document's scrollable overflow, so
+the extra width cannot cause a horizontal scrollbar. -->
+<nav class="fixed top-0 z-50 w-screen bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
   @let organization = currentOrg();
   @if (isSubscriptionBannerVisible() && organization) {
     <app-nav-bar-subscription-banner

@@ -3,6 +3,23 @@
   [role='button']:not(:disabled) {
     cursor: pointer;
   }
+
+  // Chrome on Linux and Windows lays the viewport scrollbar out inline, so a page long enough to
+  // scroll is a scrollbar narrower than one that is not and the centered content jumps on
+  // navigation. A true overlay scrollbar cannot be requested from CSS there, so the gutter is
+  // reserved on every page instead and the track left transparent, which keeps the width constant
+  // and makes the reserved strip invisible.
+  html {
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-gray-400) transparent;
+  }
+
+  // the color scheme is toggled on `body`, but only the root element's scrollbar styling
+  // propagates to the viewport
+  html:has(body.dark) {
+    scrollbar-color: var(--color-gray-600) transparent;
+  }
 }
 
 @layer components {
@@ -50,6 +67,41 @@
   // the Flowbite badge shape, with the colors of the state it shows applied by the caller
   .distr-status-badge {
     @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-sm text-xs font-medium;
+  }
+
+  // the white surface of a page. `distr-panel` is padded for prose and forms, `distr-table-panel`
+  // is flush so that a table or list can span its full width.
+  // No `overflow-hidden` here, unlike `distr-table-panel`: a padded panel has nothing to clip at its
+  // rounded corners, and clipping would break `position: sticky` for its children.
+  .distr-panel {
+    @apply relative p-6 bg-white rounded-lg shadow-md sm:p-10 dark:bg-gray-800;
+  }
+
+  .distr-table-panel {
+    @apply relative overflow-hidden bg-white rounded-lg shadow-md dark:bg-gray-800;
+  }
+
+  .distr-card-grid {
+    @apply grid items-stretch grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3 3xl:grid-cols-4 4xl:grid-cols-5 5xl:grid-cols-6;
+  }
+
+  // for cards whose content is too wide for the columns of `distr-card-grid`
+  .distr-card-grid-wide {
+    @apply grid items-stretch grid-cols-1 gap-4 2xl:grid-cols-2;
+  }
+
+  .distr-card {
+    @apply flex flex-col h-full overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 dark:bg-gray-800;
+  }
+
+  // the row above a table or card grid that holds `app-search-bar` and the page actions. Inside a
+  // `distr-table-panel` add `p-4`, above a `distr-card-grid` add `mb-4`.
+  .distr-toolbar {
+    @apply flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3;
+  }
+
+  .distr-toolbar-actions {
+    @apply w-full md:w-auto flex flex-col md:flex-row items-stretch md:items-center justify-end gap-3 shrink-0;
   }
 
   .distr-table {

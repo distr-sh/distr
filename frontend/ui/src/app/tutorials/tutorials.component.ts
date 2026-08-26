@@ -5,11 +5,12 @@ import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCircle, faCircleCheck} from '@fortawesome/free-regular-svg-icons';
 import {faArrowRight, faCheck, faLightbulb} from '@fortawesome/free-solid-svg-icons';
+import {PageComponent} from '../components/page.component';
 import {TutorialsService} from '../services/tutorials.service';
 
 @Component({
   selector: 'app-tutorials',
-  imports: [ReactiveFormsModule, FaIconComponent, RouterLink, AsyncPipe],
+  imports: [ReactiveFormsModule, FaIconComponent, RouterLink, AsyncPipe, PageComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './tutorials.component.html',
 })

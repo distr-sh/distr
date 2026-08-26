@@ -4,13 +4,14 @@ import {ChangeDetectionStrategy, Component, computed, inject, TemplateRef} from 
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {AccessToken, AccessTokenWithKey, CreateAccessTokenRequest, UserRole} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faClipboard, faMagnifyingGlass, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faClipboard, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {firstValueFrom, startWith, Subject, switchMap} from 'rxjs';
 import {isExpired, RelativeDatePipe} from '../../util/dates';
 import {USER_ROLE_LABELS, UserRoleLabelPipe} from '../../util/user-role';
 import {CreatedAccessTokenComponent} from '../components/created-access-token.component';
 import {ExpiresAtPickerComponent} from '../components/expires-at-picker/expires-at-picker.component';
+import {PageComponent} from '../components/page.component';
 import {UserRoleSelectComponent} from '../components/user-role-select.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AccessTokensService} from '../services/access-tokens.service';
@@ -32,12 +33,12 @@ import {ToastService} from '../services/toast.service';
     ExpiresAtPickerComponent,
     UserRoleSelectComponent,
     UserRoleLabelPipe,
+    PageComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './access-tokens.component.html',
 })
 export class AccessTokensComponent {
-  protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faTrash = faTrash;
   protected readonly faPlus = faPlus;
   protected readonly faXmark = faXmark;

@@ -7,12 +7,13 @@ import {faBoxesStacked, faChevronDown} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, map, startWith, Subject, switchMap} from 'rxjs';
 import {CustomerOrganizationsService} from '../../../services/customer-organizations.service';
 import {UsersService} from '../../../services/users.service';
+import {PageComponent} from '../../page.component';
 import {UsersComponent} from '../users.component';
 
 @Component({
   templateUrl: './customer-users.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [UsersComponent, RouterLink, FontAwesomeModule, OverlayModule],
+  imports: [UsersComponent, RouterLink, FontAwesomeModule, OverlayModule, PageComponent],
 })
 export class CustomerUsersComponent {
   protected readonly faBoxesStacked = faBoxesStacked;

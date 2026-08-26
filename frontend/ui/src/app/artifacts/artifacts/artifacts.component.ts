@@ -5,18 +5,12 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {
-  faBox,
-  faLightbulb,
-  faMagnifyingGlass,
-  faPlus,
-  faTrash,
-  faUserCircle,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
+import {faBox, faLightbulb, faPlus, faTrash, faUserCircle, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, lastValueFrom, map, startWith} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
+import {PageComponent} from '../../components/page.component';
+import {SearchBarComponent} from '../../components/search-bar.component';
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
@@ -46,6 +40,8 @@ import {ArtifactsDownloadCountComponent, ArtifactsDownloadedByComponent} from '.
     SecureImagePipe,
     OverlayModule,
     SpinnerComponent,
+    PageComponent,
+    SearchBarComponent,
   ],
   templateUrl: './artifacts.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -58,7 +54,6 @@ export class ArtifactsComponent {
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder).nonNullable;
 
-  protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faBox = faBox;
   protected readonly faTrash = faTrash;
   protected readonly faPlus = faPlus;

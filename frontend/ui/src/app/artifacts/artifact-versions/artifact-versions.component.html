@@ -1,448 +1,439 @@
-<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased text-gray-900 dark:text-white">
-  <div class="mx-auto max-w-screen-lg px-4">
-    @if (artifact(); as artifact) {
-      <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
-        <div class="overflow-x-auto">
-          <div class="flex flex-col gap-3 py-3 px-6 sm:py-4">
-            <div class="flex items-center">
-              <div class="shrink-0">
-                @if (artifact.imageUrl) {
-                  <img
-                    (click)="uploadImage(artifact)"
-                    class="w-16 h-16 rounded-sm cursor-pointer"
-                    height="199"
-                    width="199"
-                    [attr.src]="artifact.imageUrl | secureImage | async"
-                    alt="" />
-                } @else {
-                  <div class="shrink-0 text-gray-900 dark:text-gray-400">
-                    <fa-icon (click)="uploadImage(artifact)" [icon]="faBox" size="xl" class="text-xl cursor-pointer" />
-                  </div>
-                }
-              </div>
-              <div class="flex-1 min-w-0 ms-4">
-                <h2 class="text-2xl font-semibold truncate">
-                  {{ artifact.name }}
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400 truncate mt-1">
-                  <app-uuid [uuid]="artifact.id" [small]="true" />
-                </p>
-              </div>
-
-              @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
-                <button
-                  type="button"
-                  class="text-gray-500 dark:text-gray-400 self-start px-1"
-                  cdkOverlayOrigin
-                  #dropdownTrigger="cdkOverlayOrigin"
-                  (click)="showDropdown.set(true)">
-                  <fa-icon [icon]="faEllipsisVertical" />
-                </button>
-
-                <ng-template
-                  cdkConnectedOverlay
-                  [cdkConnectedOverlayHasBackdrop]="true"
-                  (backdropClick)="showDropdown.set(false)"
-                  (detach)="showDropdown.set(false)"
-                  cdkConnectedOverlayBackdropClass="transparent"
-                  [cdkConnectedOverlayOrigin]="dropdownTrigger"
-                  [cdkConnectedOverlayPositions]="[
-                    {originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top'},
-                  ]"
-                  [cdkConnectedOverlayOpen]="showDropdown()">
-                  <div
-                    class="bg-white divide-y divide-gray-100 rounded-lg shadow-sm dark:bg-gray-700 origin-top"
-                    animate.enter="animate-flip-in-top"
-                    animate.leave="animate-flip-out-top">
-                    <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownDefaultButton">
-                      @if (artifact.upstreamUrl) {
-                        <li>
-                          <button
-                            class="block w-full flex items-center gap-2 text-start px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white disabled:opacity-60 disabled:cursor-not-allowed"
-                            (click)="openUpstreamURLModal(artifact, upstreamURLModal)">
-                            <fa-icon [icon]="faPen" />
-                            Edit upstream URL
-                          </button>
-                        </li>
-                        <li>
-                          <button
-                            class="block w-full flex items-center gap-2 text-start px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white disabled:opacity-60 disabled:cursor-not-allowed"
-                            (click)="openUpstreamAuthModal(artifact, upstreamAuthModal)">
-                            <fa-icon [icon]="faKey" />
-                            Edit upstream credentials
-                          </button>
-                        </li>
-                      }
-                      <li>
-                        <button
-                          class="block w-full flex items-center gap-2 text-start px-4 py-2 text-sm text-red-700 enabled:hover:text-white enabled:hover:bg-red-800 dark:text-red-500 dark:enabled:hover:text-white dark:enabled:hover:bg-red-600 disabled:opacity-60 disabled:cursor-not-allowed"
-                          (click)="deleteArtifact(artifact)">
-                          <fa-icon [icon]="faTrash" />
-                          Delete
-                        </button>
-                      </li>
-                    </ul>
-                  </div>
-                </ng-template>
+<app-page variant="table" class="text-gray-900 dark:text-white">
+  @if (artifact(); as artifact) {
+    <div class="distr-table-panel">
+      <div class="overflow-x-auto">
+        <div class="flex flex-col gap-3 py-3 px-6 sm:py-4">
+          <div class="flex items-center">
+            <div class="shrink-0">
+              @if (artifact.imageUrl) {
+                <img
+                  (click)="uploadImage(artifact)"
+                  class="w-16 h-16 rounded-sm cursor-pointer"
+                  height="199"
+                  width="199"
+                  [attr.src]="artifact.imageUrl | secureImage | async"
+                  alt="" />
+              } @else {
+                <div class="shrink-0 text-gray-900 dark:text-gray-400">
+                  <fa-icon (click)="uploadImage(artifact)" [icon]="faBox" size="xl" class="text-xl cursor-pointer" />
+                </div>
               }
-
-              <app-artifacts-download-count class="self-start" [source]="artifact" />
+            </div>
+            <div class="flex-1 min-w-0 ms-4">
+              <h2 class="text-2xl font-semibold truncate">
+                {{ artifact.name }}
+              </h2>
+              <p class="text-sm text-gray-500 dark:text-gray-400 truncate mt-1">
+                <app-uuid [uuid]="artifact.id" [small]="true" />
+              </p>
             </div>
 
-            @if (auth.isVendor() && artifact.upstreamUrl) {
-              <div class="flex flex-col gap-1 text-sm">
-                <div class="flex items-center gap-3 flex-wrap">
-                  <div>
-                    <span class="text-gray-500 dark:text-gray-400">Upstream: </span>
-                    <span class="font-mono text-gray-900 dark:text-white">{{ artifact.upstreamUrl }}</span>
-                  </div>
-                  @if (artifact.upstreamAuthType) {
-                    @switch (artifact.upstreamAuthType) {
-                      @case ('aws_ecr') {
-                        <span
-                          class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-yellow-900 dark:text-yellow-300">
-                          AWS ECR
-                        </span>
-                      }
-                      @case ('basic') {
-                        <span
-                          class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-blue-900 dark:text-blue-300">
-                          Basic Auth
-                        </span>
-                      }
-                    }
-                  }
-                </div>
-                @if (artifact.lastSyncError) {
-                  <p class="text-xs text-red-600 dark:text-red-400">{{ artifact.lastSyncError }}</p>
-                }
-                <div class="flex items-center gap-3 flex-wrap">
-                  <span class="text-gray-500 dark:text-gray-400 text-xs">
-                    @if (artifact.lastSyncedAt) {
-                      <fa-icon [icon]="faCheck" class="text-green-600 dark:text-green-400" />
-                      Last synced {{ artifact.lastSyncedAt | relativeDate }}
-                    } @else if (artifact.lastSyncError) {
-                      <fa-icon [icon]="faExclamationTriangle" class="text-red-500" />
-                      Sync error
-                    } @else {
-                      Not synced yet
-                    }
-                  </span>
-                  @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
-                    <button
-                      type="button"
-                      (click)="syncArtifact(artifact)"
-                      [disabled]="syncing()"
-                      class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed">
-                      <fa-icon [icon]="faRotate" [class.animate-spin]="syncing()" />
-                      Sync now
-                    </button>
-                  }
-                </div>
+            @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
+              <button
+                type="button"
+                class="text-gray-500 dark:text-gray-400 self-start px-1"
+                cdkOverlayOrigin
+                #dropdownTrigger="cdkOverlayOrigin"
+                (click)="showDropdown.set(true)">
+                <fa-icon [icon]="faEllipsisVertical" />
+              </button>
 
-                @if (syncing()) {
-                  <span
-                    class="p-2 text-xs text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
-                    >Do not close this window while syncing</span
-                  >
-                }
-              </div>
-            }
-            @if (getArtifactUsage(artifact); as usage) {
-              <div class="text-sm">
-                <div class="text-gray-500 dark:text-gray-400">Use this artifact with:</div>
-                <div class="font-mono mt-1">
-                  {{ usage }}
-                  <app-clip [clip]="usage" />
+              <ng-template
+                cdkConnectedOverlay
+                [cdkConnectedOverlayHasBackdrop]="true"
+                (backdropClick)="showDropdown.set(false)"
+                (detach)="showDropdown.set(false)"
+                cdkConnectedOverlayBackdropClass="transparent"
+                [cdkConnectedOverlayOrigin]="dropdownTrigger"
+                [cdkConnectedOverlayPositions]="[{originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top'}]"
+                [cdkConnectedOverlayOpen]="showDropdown()">
+                <div
+                  class="bg-white divide-y divide-gray-100 rounded-lg shadow-sm dark:bg-gray-700 origin-top"
+                  animate.enter="animate-flip-in-top"
+                  animate.leave="animate-flip-out-top">
+                  <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownDefaultButton">
+                    @if (artifact.upstreamUrl) {
+                      <li>
+                        <button
+                          class="block w-full flex items-center gap-2 text-start px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                          (click)="openUpstreamURLModal(artifact, upstreamURLModal)">
+                          <fa-icon [icon]="faPen" />
+                          Edit upstream URL
+                        </button>
+                      </li>
+                      <li>
+                        <button
+                          class="block w-full flex items-center gap-2 text-start px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                          (click)="openUpstreamAuthModal(artifact, upstreamAuthModal)">
+                          <fa-icon [icon]="faKey" />
+                          Edit upstream credentials
+                        </button>
+                      </li>
+                    }
+                    <li>
+                      <button
+                        class="block w-full flex items-center gap-2 text-start px-4 py-2 text-sm text-red-700 enabled:hover:text-white enabled:hover:bg-red-800 dark:text-red-500 dark:enabled:hover:text-white dark:enabled:hover:bg-red-600 disabled:opacity-60 disabled:cursor-not-allowed"
+                        (click)="deleteArtifact(artifact)">
+                        <fa-icon [icon]="faTrash" />
+                        Delete
+                      </button>
+                    </li>
+                  </ul>
                 </div>
-              </div>
+              </ng-template>
             }
+
+            <app-artifacts-download-count class="self-start" [source]="artifact" />
           </div>
-        </div>
-      </div>
 
-      <div class="mt-4 bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
-        <div class="overflow-x-auto">
-          @if (filteredVersions().length === 0 && artifact.upstreamUrl) {
-            <div
-              class="flex flex-col items-center justify-center py-10 px-6 text-center text-gray-500 dark:text-gray-400">
-              <p class="text-sm">
-                Versions for this artifact will be automatically synced from
-                <span class="font-mono text-gray-700 dark:text-gray-300">{{ artifact.upstreamUrl }}</span
-                >.
-              </p>
-              @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
-                <p class="mt-1 text-sm">
-                  To sync now, click
+          @if (auth.isVendor() && artifact.upstreamUrl) {
+            <div class="flex flex-col gap-1 text-sm">
+              <div class="flex items-center gap-3 flex-wrap">
+                <div>
+                  <span class="text-gray-500 dark:text-gray-400">Upstream: </span>
+                  <span class="font-mono text-gray-900 dark:text-white">{{ artifact.upstreamUrl }}</span>
+                </div>
+                @if (artifact.upstreamAuthType) {
+                  @switch (artifact.upstreamAuthType) {
+                    @case ('aws_ecr') {
+                      <span
+                        class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-yellow-900 dark:text-yellow-300">
+                        AWS ECR
+                      </span>
+                    }
+                    @case ('basic') {
+                      <span
+                        class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-sm dark:bg-blue-900 dark:text-blue-300">
+                        Basic Auth
+                      </span>
+                    }
+                  }
+                }
+              </div>
+              @if (artifact.lastSyncError) {
+                <p class="text-xs text-red-600 dark:text-red-400">{{ artifact.lastSyncError }}</p>
+              }
+              <div class="flex items-center gap-3 flex-wrap">
+                <span class="text-gray-500 dark:text-gray-400 text-xs">
+                  @if (artifact.lastSyncedAt) {
+                    <fa-icon [icon]="faCheck" class="text-green-600 dark:text-green-400" />
+                    Last synced {{ artifact.lastSyncedAt | relativeDate }}
+                  } @else if (artifact.lastSyncError) {
+                    <fa-icon [icon]="faExclamationTriangle" class="text-red-500" />
+                    Sync error
+                  } @else {
+                    Not synced yet
+                  }
+                </span>
+                @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
                   <button
                     type="button"
                     (click)="syncArtifact(artifact)"
                     [disabled]="syncing()"
-                    class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed">
-                    Sync now</button
-                  >.
-                </p>
+                    class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <fa-icon [icon]="faRotate" [class.animate-spin]="syncing()" />
+                    Sync now
+                  </button>
+                }
+              </div>
+
+              @if (syncing()) {
+                <span class="p-2 text-xs text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
+                  >Do not close this window while syncing</span
+                >
               }
             </div>
           }
-          <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
-            @for (version of filteredVersions(); track version.digest) {
-              @if (version.tags.length) {
-                <li class="py-3 px-6 sm:py-4">
-                  <div class="flex items-center gap-2">
-                    <div class="flex-1 min-w-0">
-                      <div class="flex flex-row gap-1 flex-wrap items-center">
-                        @for (label of version.tags; track label.name) {
-                          <span
-                            class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-md dark:bg-gray-700 dark:text-blue-400 border border-blue-400 flex items-center gap-1">
-                            {{ label.name }}
-                            @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
-                              <button
-                                type="button"
-                                [attr.aria-label]="'Delete tag ' + label.name"
-                                (click)="deleteArtifactTag(artifact, version, label.name)"
-                                class="-mr-1 text-red-400 hover:text-red-600 transition-colors">
-                                <fa-icon [icon]="faXmark" />
-                              </button>
-                            }
-                          </span>
-                        }
-                      </div>
-                      <ul class="flex gap-3 mt-1 text-xs font-normal text-gray-500 truncate dark:text-gray-400">
-                        <li>{{ version.createdAt | relativeDate }}</li>
-                        @if (version.size > 0) {
-                          <li>{{ version.size | bytes }}</li>
-                        }
-                        @if (version.signatureVersion) {
-                          <li>
-                            <button
-                              class="hover:dark:text-gray-300"
-                              aria-label="Signed artifact"
-                              #signatureBtn
-                              (click)="showSignatureOverlay(version)">
-                              <fa-icon [icon]="faFileSignature" />
-                            </button>
+          @if (getArtifactUsage(artifact); as usage) {
+            <div class="text-sm">
+              <div class="text-gray-500 dark:text-gray-400">Use this artifact with:</div>
+              <div class="font-mono mt-1">
+                {{ usage }}
+                <app-clip [clip]="usage" />
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
 
-                            <ng-template
-                              cdkConnectedOverlay
-                              [cdkConnectedOverlayHasBackdrop]="true"
-                              (backdropClick)="hideSignatureOverlay()"
-                              [cdkConnectedOverlayOrigin]="signatureBtn"
-                              [cdkConnectedOverlayBackdropClass]="'transparent'"
-                              [cdkConnectedOverlayPositions]="[
-                                {originX: 'start', overlayX: 'start', originY: 'bottom', overlayY: 'top'},
-                              ]"
-                              [cdkConnectedOverlayOpen]="signatureOverlayDigest() === version.digest">
-                              <div
-                                role="tooltip"
-                                class="p-3 text-sm font-medium text-gray-900 bg-white border border-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-w-64">
-                                This artifact has been signed with Cosign. Learn how to verify the signature at the
-                                <a
-                                  class="font-medium text-primary-600 hover:underline dark:text-primary-500"
-                                  href="https://docs.sigstore.dev/cosign/verifying/verify/"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  >Cosign docs</a
-                                >.
-                              </div>
-                            </ng-template>
-                          </li>
-                        }
-                        <li>
-                          <app-artifacts-hash [hash]="version.digest" />
-                        </li>
-                      </ul>
-                    </div>
-                    <div class="flex flex-col items-end gap-1" *appRequireVendor>
-                      <app-artifacts-download-count [source]="version" />
-                      <app-artifacts-downloaded-by [source]="version" />
-                    </div>
-                  </div>
-                </li>
-              }
+    <div class="mt-4 distr-table-panel">
+      <div class="overflow-x-auto">
+        @if (filteredVersions().length === 0 && artifact.upstreamUrl) {
+          <div
+            class="flex flex-col items-center justify-center py-10 px-6 text-center text-gray-500 dark:text-gray-400">
+            <p class="text-sm">
+              Versions for this artifact will be automatically synced from
+              <span class="font-mono text-gray-700 dark:text-gray-300">{{ artifact.upstreamUrl }}</span
+              >.
+            </p>
+            @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
+              <p class="mt-1 text-sm">
+                To sync now, click
+                <button
+                  type="button"
+                  (click)="syncArtifact(artifact)"
+                  [disabled]="syncing()"
+                  class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                  Sync now</button
+                >.
+              </p>
             }
-          </ul>
-        </div>
-      </div>
-      <ng-template #upstreamURLModal>
-        @let formGroup = upstreamURLForm;
-
-        <div
-          animate.enter="animate-fly-in-top"
-          animate.leave="animate-fly-out-top"
-          class="p-4 w-128 my-auto max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900">
-          <div class="relative w-full max-h-full">
-            <div class="relative rounded-lg">
-              <div
-                class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Upstream URL</h3>
-                <button
-                  type="button"
-                  class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
-                  (click)="upstreamURLModalRef?.close()">
-                  <fa-icon [icon]="faXmark" />
-                  <span class="sr-only">Close modal</span>
-                </button>
-              </div>
-              <div class="p-4 md:p-5">
-                <form [formGroup]="formGroup" (ngSubmit)="saveUpstreamURL(artifact)">
-                  <div class="space-y-4">
-                    <div>
-                      <div>
-                        <label for="artifact-upstream-url" class="distr-label mb-2">
-                          Upstream URL
-                          <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                          formControlName="upstreamUrl"
-                          autotrim
-                          autocomplete="off"
-                          type="text"
-                          id="artifact-upstream-url"
-                          placeholder="e.g. registry-1.docker.io/library/nginx"
-                          class="distr-input" />
-                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                          Tags are automatically synced from the upstream OCI repository.
-                        </p>
-                        @if (formGroup.controls.upstreamUrl.invalid && formGroup.controls.upstreamUrl.touched) {
-                          <p class="mt-1 text-xs text-red-600 dark:text-red-500">Field is required.</p>
-                        }
-                      </div>
+          </div>
+        }
+        <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
+          @for (version of filteredVersions(); track version.digest) {
+            @if (version.tags.length) {
+              <li class="py-3 px-6 sm:py-4">
+                <div class="flex items-center gap-2">
+                  <div class="flex-1 min-w-0">
+                    <div class="flex flex-row gap-1 flex-wrap items-center">
+                      @for (label of version.tags; track label.name) {
+                        <span
+                          class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-md dark:bg-gray-700 dark:text-blue-400 border border-blue-400 flex items-center gap-1">
+                          {{ label.name }}
+                          @if (auth.isVendor() && auth.hasAnyRole('read_write', 'admin')) {
+                            <button
+                              type="button"
+                              [attr.aria-label]="'Delete tag ' + label.name"
+                              (click)="deleteArtifactTag(artifact, version, label.name)"
+                              class="-mr-1 text-red-400 hover:text-red-600 transition-colors">
+                              <fa-icon [icon]="faXmark" />
+                            </button>
+                          }
+                        </span>
+                      }
                     </div>
-                    <div class="flex justify-end gap-2">
-                      <button
-                        type="button"
-                        (click)="upstreamURLModalRef?.close()"
-                        class="py-2 px-4 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700">
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        [disabled]="upstreamURLFormLoading"
-                        class="py-2 px-4 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 disabled:opacity-60 disabled:cursor-not-allowed">
-                        Save
-                      </button>
+                    <ul class="flex gap-3 mt-1 text-xs font-normal text-gray-500 truncate dark:text-gray-400">
+                      <li>{{ version.createdAt | relativeDate }}</li>
+                      @if (version.size > 0) {
+                        <li>{{ version.size | bytes }}</li>
+                      }
+                      @if (version.signatureVersion) {
+                        <li>
+                          <button
+                            class="hover:dark:text-gray-300"
+                            aria-label="Signed artifact"
+                            #signatureBtn
+                            (click)="showSignatureOverlay(version)">
+                            <fa-icon [icon]="faFileSignature" />
+                          </button>
+
+                          <ng-template
+                            cdkConnectedOverlay
+                            [cdkConnectedOverlayHasBackdrop]="true"
+                            (backdropClick)="hideSignatureOverlay()"
+                            [cdkConnectedOverlayOrigin]="signatureBtn"
+                            [cdkConnectedOverlayBackdropClass]="'transparent'"
+                            [cdkConnectedOverlayPositions]="[
+                              {originX: 'start', overlayX: 'start', originY: 'bottom', overlayY: 'top'},
+                            ]"
+                            [cdkConnectedOverlayOpen]="signatureOverlayDigest() === version.digest">
+                            <div
+                              role="tooltip"
+                              class="p-3 text-sm font-medium text-gray-900 bg-white border border-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-w-64">
+                              This artifact has been signed with Cosign. Learn how to verify the signature at the
+                              <a
+                                class="font-medium text-primary-600 hover:underline dark:text-primary-500"
+                                href="https://docs.sigstore.dev/cosign/verifying/verify/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                >Cosign docs</a
+                              >.
+                            </div>
+                          </ng-template>
+                        </li>
+                      }
+                      <li>
+                        <app-artifacts-hash [hash]="version.digest" />
+                      </li>
+                    </ul>
+                  </div>
+                  <div class="flex flex-col items-end gap-1" *appRequireVendor>
+                    <app-artifacts-download-count [source]="version" />
+                    <app-artifacts-downloaded-by [source]="version" />
+                  </div>
+                </div>
+              </li>
+            }
+          }
+        </ul>
+      </div>
+    </div>
+    <ng-template #upstreamURLModal>
+      @let formGroup = upstreamURLForm;
+
+      <div
+        animate.enter="animate-fly-in-top"
+        animate.leave="animate-fly-out-top"
+        class="p-4 w-128 my-auto max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900">
+        <div class="relative w-full max-h-full">
+          <div class="relative rounded-lg">
+            <div
+              class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Upstream URL</h3>
+              <button
+                type="button"
+                class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                (click)="upstreamURLModalRef?.close()">
+                <fa-icon [icon]="faXmark" />
+                <span class="sr-only">Close modal</span>
+              </button>
+            </div>
+            <div class="p-4 md:p-5">
+              <form [formGroup]="formGroup" (ngSubmit)="saveUpstreamURL(artifact)">
+                <div class="space-y-4">
+                  <div>
+                    <div>
+                      <label for="artifact-upstream-url" class="distr-label mb-2">
+                        Upstream URL
+                        <span class="text-red-500">*</span>
+                      </label>
+                      <input
+                        formControlName="upstreamUrl"
+                        autotrim
+                        autocomplete="off"
+                        type="text"
+                        id="artifact-upstream-url"
+                        placeholder="e.g. registry-1.docker.io/library/nginx"
+                        class="distr-input" />
+                      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Tags are automatically synced from the upstream OCI repository.
+                      </p>
+                      @if (formGroup.controls.upstreamUrl.invalid && formGroup.controls.upstreamUrl.touched) {
+                        <p class="mt-1 text-xs text-red-600 dark:text-red-500">Field is required.</p>
+                      }
                     </div>
                   </div>
-                </form>
-              </div>
+                  <div class="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      (click)="upstreamURLModalRef?.close()"
+                      class="py-2 px-4 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700">
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      [disabled]="upstreamURLFormLoading"
+                      class="py-2 px-4 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 disabled:opacity-60 disabled:cursor-not-allowed">
+                      Save
+                    </button>
+                  </div>
+                </div>
+              </form>
             </div>
           </div>
         </div>
-      </ng-template>
+      </div>
+    </ng-template>
 
-      <ng-template #upstreamAuthModal>
-        @let formGroup = upstreamAuthForm;
+    <ng-template #upstreamAuthModal>
+      @let formGroup = upstreamAuthForm;
 
-        <div
-          animate.enter="animate-fly-in-top"
-          animate.leave="animate-fly-out-top"
-          class="p-4 w-128 my-auto max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900">
-          <div class="relative w-full max-h-full">
-            <div class="relative rounded-lg">
-              <div
-                class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Upstream Credentials</h3>
-                <button
-                  type="button"
-                  class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
-                  (click)="upstreamAuthModalRef?.close()">
-                  <fa-icon [icon]="faXmark" />
-                  <span class="sr-only">Close modal</span>
-                </button>
-              </div>
-              <div class="p-4 md:p-5">
-                <form [formGroup]="formGroup" (ngSubmit)="saveUpstreamAuth(artifact)">
-                  <div class="space-y-4">
-                    <div>
-                      <label for="artifact-upstream-auth-type" class="distr-label mb-2">Upstream Authentication</label>
-                      <select
-                        formControlName="upstreamAuthType"
-                        id="artifact-upstream-auth-type"
-                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
-                        <option value="none">No authentication</option>
-                        <option value="basic">Basic (Username/Password)</option>
-                        <option value="aws_ecr">AWS ECR (IAM Access Key)</option>
-                      </select>
-                    </div>
-
-                    @if (formGroup.controls.upstreamAuthType.value !== 'none') {
-                      <div>
-                        <label for="artifact-upstream-username" class="distr-label mb-2">
-                          @switch (formGroup.controls.upstreamAuthType.value) {
-                            @case ('basic') {
-                              Username
-                            }
-                            @case ('aws_ecr') {
-                              AWS Access Key ID
-                            }
-                          }
-                          <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                          formControlName="upstreamUsername"
-                          autotrim
-                          autocomplete="off"
-                          type="text"
-                          id="artifact-upstream-username"
-                          class="distr-input" />
-                        @if (
-                          formGroup.controls.upstreamUsername.invalid && formGroup.controls.upstreamUsername.touched
-                        ) {
-                          <p class="mt-1 text-xs text-red-600 dark:text-red-500">Field is required.</p>
-                        }
-                      </div>
-                      <div>
-                        <label for="artifact-upstream-password" class="distr-label mb-2">
-                          @switch (formGroup.controls.upstreamAuthType.value) {
-                            @case ('basic') {
-                              Password
-                            }
-                            @case ('aws_ecr') {
-                              AWS Secret Access Key
-                            }
-                          }
-                          <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                          formControlName="upstreamPassword"
-                          autocomplete="new-password"
-                          type="password"
-                          id="artifact-upstream-password"
-                          class="distr-input" />
-                        @if (
-                          formGroup.controls.upstreamPassword.invalid && formGroup.controls.upstreamPassword.touched
-                        ) {
-                          <p class="mt-1 text-xs text-red-600 dark:text-red-500">Field is required.</p>
-                        }
-                      </div>
-                    }
-                    <div class="flex justify-end gap-2">
-                      <button
-                        type="button"
-                        (click)="upstreamAuthModalRef?.close()"
-                        class="py-2 px-4 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700">
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        [disabled]="upstreamAuthFormLoading"
-                        class="py-2 px-4 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 disabled:opacity-60 disabled:cursor-not-allowed">
-                        Save
-                      </button>
-                    </div>
+      <div
+        animate.enter="animate-fly-in-top"
+        animate.leave="animate-fly-out-top"
+        class="p-4 w-128 my-auto max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900">
+        <div class="relative w-full max-h-full">
+          <div class="relative rounded-lg">
+            <div
+              class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Upstream Credentials</h3>
+              <button
+                type="button"
+                class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                (click)="upstreamAuthModalRef?.close()">
+                <fa-icon [icon]="faXmark" />
+                <span class="sr-only">Close modal</span>
+              </button>
+            </div>
+            <div class="p-4 md:p-5">
+              <form [formGroup]="formGroup" (ngSubmit)="saveUpstreamAuth(artifact)">
+                <div class="space-y-4">
+                  <div>
+                    <label for="artifact-upstream-auth-type" class="distr-label mb-2">Upstream Authentication</label>
+                    <select
+                      formControlName="upstreamAuthType"
+                      id="artifact-upstream-auth-type"
+                      class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                      <option value="none">No authentication</option>
+                      <option value="basic">Basic (Username/Password)</option>
+                      <option value="aws_ecr">AWS ECR (IAM Access Key)</option>
+                    </select>
                   </div>
-                </form>
-              </div>
+
+                  @if (formGroup.controls.upstreamAuthType.value !== 'none') {
+                    <div>
+                      <label for="artifact-upstream-username" class="distr-label mb-2">
+                        @switch (formGroup.controls.upstreamAuthType.value) {
+                          @case ('basic') {
+                            Username
+                          }
+                          @case ('aws_ecr') {
+                            AWS Access Key ID
+                          }
+                        }
+                        <span class="text-red-500">*</span>
+                      </label>
+                      <input
+                        formControlName="upstreamUsername"
+                        autotrim
+                        autocomplete="off"
+                        type="text"
+                        id="artifact-upstream-username"
+                        class="distr-input" />
+                      @if (formGroup.controls.upstreamUsername.invalid && formGroup.controls.upstreamUsername.touched) {
+                        <p class="mt-1 text-xs text-red-600 dark:text-red-500">Field is required.</p>
+                      }
+                    </div>
+                    <div>
+                      <label for="artifact-upstream-password" class="distr-label mb-2">
+                        @switch (formGroup.controls.upstreamAuthType.value) {
+                          @case ('basic') {
+                            Password
+                          }
+                          @case ('aws_ecr') {
+                            AWS Secret Access Key
+                          }
+                        }
+                        <span class="text-red-500">*</span>
+                      </label>
+                      <input
+                        formControlName="upstreamPassword"
+                        autocomplete="new-password"
+                        type="password"
+                        id="artifact-upstream-password"
+                        class="distr-input" />
+                      @if (formGroup.controls.upstreamPassword.invalid && formGroup.controls.upstreamPassword.touched) {
+                        <p class="mt-1 text-xs text-red-600 dark:text-red-500">Field is required.</p>
+                      }
+                    </div>
+                  }
+                  <div class="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      (click)="upstreamAuthModalRef?.close()"
+                      class="py-2 px-4 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700">
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      [disabled]="upstreamAuthFormLoading"
+                      class="py-2 px-4 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 disabled:opacity-60 disabled:cursor-not-allowed">
+                      Save
+                    </button>
+                  </div>
+                </div>
+              </form>
             </div>
           </div>
         </div>
-      </ng-template>
-    } @else {
-      <div class="flex justify-center items-center py-8 text-gray-500 dark:text-gray-400">
-        <app-spinner class="size-6 me-2" />
-        <span>Loading&hellip;</span>
       </div>
-    }
-  </div>
-</section>
+    </ng-template>
+  } @else {
+    <div class="flex justify-center items-center py-8 text-gray-500 dark:text-gray-400">
+      <app-spinner class="size-6 me-2" />
+      <span>Loading&hellip;</span>
+    </div>
+  }
+</app-page>
