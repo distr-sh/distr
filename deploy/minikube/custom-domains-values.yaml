@@ -15,6 +15,9 @@
 # certificates differ: they come from Caddy's internal CA, because a local cluster has no publicly
 # resolvable domain to pass an ACME challenge for. Use curl -k, or --cacert with the Caddy root
 # from /data/caddy/pki.
+#
+# The CNAME check cannot pass here either, for the same reason, so links, mails and agent manifests
+# keep pointing at DISTR_HOST no matter which domains are registered.
 
 replicaCount: 1
 
@@ -54,11 +57,11 @@ hub:
       value: 'false'
     - name: LOKI_URL
       value: http://distr-loki:3100
+    - name: CUSTOM_DOMAIN_TARGET
+      value: whitelabel.distr.local
 
 caddy:
   enabled: true
-  appCnameTarget: custom-app.distr.local
-  registryCnameTarget: custom-registry.distr.local
   issuer: internal
 
 postgresql:

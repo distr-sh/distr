@@ -19,6 +19,8 @@ export interface JWTClaims {
   email: string;
   // Purpose a special token was minted for; absent on regular login tokens.
   scope?: 'password_reset' | 'invite';
+  // The custom OIDC configuration that authenticated the session; absent on every other login.
+  oidc?: string;
   email_verified: boolean;
   name: string;
   exp: string;
@@ -83,6 +85,16 @@ export class AuthService {
 
   public isSuperAdmin(): boolean {
     return this.getClaims()?.is_super_admin === true;
+  }
+
+  /**
+   * Whether the session was authenticated by an organization's own identity provider. Such a session stays inside
+   * that organization and cannot change the account's sign-in methods, because the provider is controlled by the
+   * organization rather than by the account's owner. The server enforces both; this only keeps the UI from
+   * offering actions that would be rejected.
+   */
+  public isCustomOidcSession(): boolean {
+    return this.getClaims()?.oidc !== undefined;
   }
 
   /**

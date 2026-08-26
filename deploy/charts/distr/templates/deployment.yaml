@@ -1,3 +1,10 @@
+{{- /* Checked here rather than in caddy-deployment.yaml so it also reaches installations that
+terminate custom domains with their own proxy instead of the chart's Caddy. */}}
+{{- range .Values.hub.env }}
+{{- if or (eq .name "CUSTOM_DOMAIN_APP_CNAME_TARGET") (eq .name "CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET") }}
+{{- fail "CUSTOM_DOMAIN_APP_CNAME_TARGET and CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET have been replaced by a single CUSTOM_DOMAIN_TARGET: one proxy serves every custom domain, registry traffic included, so there was never a second target to point at" }}
+{{- end }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -106,14 +113,8 @@ spec:
               value: {{ .Values.hub.scratch.mountPath | quote }}
             {{- end }}
             {{- if .Values.caddy.enabled }}
-            {{- /* Derived from the caddy values so the hub, the Caddyfile and the caddy-ask
+            {{- /* Derived from caddy.askServerPort so the hub, the Caddyfile and the caddy-ask
                    Service cannot drift apart. */}}
-            - name: CUSTOM_DOMAIN_APP_CNAME_TARGET
-              value: {{ required "caddy.appCnameTarget is required when caddy.enabled is true" .Values.caddy.appCnameTarget | quote }}
-            {{- with .Values.caddy.registryCnameTarget }}
-            - name: CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET
-              value: {{ . | quote }}
-            {{- end }}
             - name: INTERNAL_SERVER_ADDR
               value: ":{{ .Values.caddy.askServerPort }}"
             {{- end }}

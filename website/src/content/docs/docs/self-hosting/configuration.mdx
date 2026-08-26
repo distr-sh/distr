@@ -28,10 +28,21 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
 | `JWT_SECRET`                       | yes      | —         | Base64-encoded secret used to sign JWTs. Generate with `openssl rand -base64 32`.               |
 | `DISTR_HOST`                       | yes      | —         | Base URL of your Distr instance. Its scheme is used for every link, callback URL and email.     |
 | `DISTR_ENV`                        | no       | —         | Path to a dotenv file to load on startup (a matching `.secret` file is also loaded if present). |
-| `REGISTRATION`                     | no       | `enabled` | Sign-up mode: `enabled`, `hidden` or `disabled`.                                                |
+| `REGISTRATION`                     | no       | `enabled` | Sign-up mode, see below: `enabled`, `hidden` or `disabled`.                                     |
 | `USER_EMAIL_VERIFICATION_REQUIRED` | no       | `true`    | Whether new users must verify their email address before signing in.                            |
 | `SERVER_SHUTDOWN_DELAY_DURATION`   | no       | —         | Delay between receiving a shutdown signal and stopping the server (useful for rolling deploys). |
 | `ENABLE_QUERY_LOGGING`             | no       | `false`   | Logs all database queries. Intended for debugging only.                                         |
+
+### Sign-up modes
+
+`REGISTRATION` accepts three values:
+
+- `enabled`: the login page links to the registration page and anyone can sign up.
+- `hidden`: the link is removed from the login page, but the registration page stays reachable at `/register` and
+  sign-ups still succeed. Use it when you want to hand out the registration URL yourself instead of offering it to
+  every visitor.
+- `disabled`: sign-up is rejected, both on `/register` and for OIDC logins with an unknown email address. Existing
+  users can still sign in, and new users can still be added through an invitation.
 
 ## Tokens & Sessions
 
@@ -111,13 +122,21 @@ See [Registry Configuration](/docs/registry/configuration/) for a feature overvi
 
 Custom domain self-service lets vendor organizations serve Distr under their own domains.
 It requires an edge proxy with on-demand TLS (e.g. Caddy, included in the Helm chart) in front of the Hub.
-The feature is only offered in the UI when `CUSTOM_DOMAIN_APP_CNAME_TARGET` is set.
+The feature is only offered in the UI when `CUSTOM_DOMAIN_TARGET` is set.
 
-| Variable                              | Required | Default | Description                                                                                                               |
-| ------------------------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `CUSTOM_DOMAIN_APP_CNAME_TARGET`      | no       | —       | Hostname customers point their app domain CNAME records at (e.g. `cname.distr.sh`). Enables custom domain self-service.   |
-| `CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET` | no       | —       | Hostname customers point their registry domain CNAME records at. Falls back to the app CNAME target if unset.             |
-| `INTERNAL_SERVER_ADDR`                | no       | `:8085` | Listen address of the internal server exposing the Caddy on-demand TLS ask endpoint. Never expose it outside the cluster. |
+A domain is only used for links, mails, agent manifests and registry URLs once a CNAME check has
+found it to point at the CNAME target; until then the organization keeps the default host. The check runs
+when a domain is registered, can be triggered from the organization settings, and needs to be
+[scheduled](/docs/self-hosting/maintenance#custom-domain-verification) so that domains recover on
+their own once a record is fixed. Serving requests on a domain does not depend on the check.
+
+| Variable                                   | Required | Default | Description                                                                                                                      |
+| ------------------------------------------ | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `CUSTOM_DOMAIN_TARGET`                     | no       | —       | Hostname customers point every custom domain's CNAME record at (e.g. `whitelabel.distr.sh`). Enables custom domain self-service. |
+| `CUSTOM_DOMAIN_VERIFICATION_CRON`          | no       | —       | Cron schedule of the built-in domain verification job. If unset, no verification is scheduled in the Hub.                        |
+| `CUSTOM_DOMAIN_VERIFICATION_TIMEOUT`       | no       | `4m`    | Timeout for a single verification run. Must be greater than `0`.                                                                 |
+| `CUSTOM_DOMAIN_VERIFICATION_REFRESH_AFTER` | no       | `12h`   | How long a verified domain is left alone before it is checked again. Failing domains are checked on every run.                   |
+| `INTERNAL_SERVER_ADDR`                     | no       | `:8085` | Listen address of the internal server exposing the Caddy on-demand TLS ask endpoint. Never expose it outside the cluster.        |
 
 ## Support Bundles
 
@@ -144,7 +163,8 @@ the Loki configuration (`limits_config.retention_period`).
 
 These control the built-in job scheduler and retention limits.
 See [Maintenance Jobs](/docs/self-hosting/maintenance/) for details and Kubernetes CronJob alternatives.
-If a `*_CRON` variable is unset, the corresponding job is not scheduled. A `*_TIMEOUT` of `0` means no timeout.
+If a `*_CRON` variable is unset, the corresponding job is not scheduled. For the timeout variables listed below,
+`0` means no timeout.
 
 | Variable                                     | Required | Default | Description                                                                 |
 | -------------------------------------------- | -------- | ------- | --------------------------------------------------------------------------- |

@@ -20,15 +20,8 @@ export interface CustomOidcConfiguration {
   callbackUrl: string;
 }
 
-export interface OrganizationMember {
-  id: string;
-  email: string;
-  name?: string;
-}
-
 export interface CustomOidcConfigurationsResponse {
   configurations: CustomOidcConfiguration[];
-  membersWithOtherOrganizations: OrganizationMember[];
 }
 
 export interface CustomOidcConfigurationRequest {

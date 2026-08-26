@@ -180,9 +180,19 @@ hub:
     #   value: '...'
     # - name: METRICS_BEARER_TOKEN
     #   value: '...'
-    # Self-service custom domains are configured in the "caddy" section below, which also
-    # sets CUSTOM_DOMAIN_APP_CNAME_TARGET, CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET and
-    # INTERNAL_SERVER_ADDR for the hub.
+    # Self-service custom domains, terminated by the Caddy deployment in the "caddy" section
+    # below. CUSTOM_DOMAIN_TARGET is the DNS name customers point every custom domain's CNAME
+    # record at, registry domains included; it must resolve to that Caddy's LoadBalancer and is
+    # what enables the feature in the UI. The chart derives INTERNAL_SERVER_ADDR from
+    # caddy.askServerPort itself.
+    # - name: CUSTOM_DOMAIN_TARGET
+    #   value: whitelabel.example.com
+    # Once a target is set, a registered domain is only used for links, mails, agent manifests and
+    # registry URLs while the custom-domain-verification CronJob below finds its CNAME record
+    # pointing at that target, so removing that job leaves every domain unverified. A verified domain
+    # is left alone for 12h before it is checked again; failing ones are checked on every run.
+    # - name: CUSTOM_DOMAIN_VERIFICATION_REFRESH_AFTER
+    #   value: 12h
   # -- Sources to populate the hub environment from, e.g. a ConfigMap or Secret reference.
   envFrom: []
   scratch:
@@ -383,6 +393,14 @@ cronJobs:
   #   labels:
   #     distr.sh/job: organization-cleanup
   #   args: [cleanup, Organization, --timeout, 10m]
+  # Keeps the state that decides whether a custom domain is used for links, mails, agent manifests
+  # and registry URLs. It is a no-op while no CNAME target is configured, and runs more often than
+  # the hourly default so that a domain whose record was just fixed starts being used again quickly.
+  - name: custom-domain-verification
+    labels:
+      distr.sh/job: custom-domain-verification
+    schedule: '*/15 * * * *'
+    args: [maintenance, verify-custom-domains, --timeout, 10m]
   - name: registry-upstream-sync
     labels:
       distr.sh/job: registry-upstream-sync
@@ -395,15 +413,9 @@ cronJobs:
 # app. Disabled by default.
 caddy:
   # -- Deploy the Caddy reverse proxy that terminates TLS for customer-configured custom domains.
+  # The CNAME target customers point their domains at is configured as CUSTOM_DOMAIN_TARGET in
+  # `hub.env`, which is also what makes the feature available in the UI.
   enabled: false
-  # -- The DNS name customers point their app domain CNAME records at. It must resolve to the
-  # LoadBalancer of this Caddy. Required when caddy.enabled is true, and passed to the hub as
-  # CUSTOM_DOMAIN_APP_CNAME_TARGET, which is what enables custom domain self-service.
-  appCnameTarget: ''
-  # -- The DNS name customers point their (optional) dedicated registry domain CNAME records at,
-  # passed to the hub as CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET. Usually the same LoadBalancer.
-  # Falls back to appCnameTarget when unset.
-  registryCnameTarget: ''
   # -- Number of Caddy replicas. Anything above 1 requires certificate storage that all replicas
   # share, either a `ReadWriteMany` volume (see `caddy.persistence.accessModes`) or a `caddy.storage`
   # module: Caddy instances coordinate certificate issuance and solve each other's ACME challenges
@@ -463,7 +475,8 @@ caddy:
     accessModes:
       - ReadWriteOnce
   service:
-    # -- Type of the public Caddy Service. It must be reachable under the CNAME targets above.
+    # -- Type of the public Caddy Service. It must be reachable under the CNAME targets configured
+    # in `hub.env`.
     type: LoadBalancer
     # -- Annotations of the public Caddy Service. The chart stays generic: set cloud-specific
     # annotations here. The commented-out ones provision an AWS Network Load Balancer. The Service

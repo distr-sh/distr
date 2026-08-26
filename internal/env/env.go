@@ -100,8 +100,10 @@ var (
 	lokiBasicAuthUsername                  *string
 	lokiBasicAuthPassword                  *string
 	lokiRequestTimeout                     time.Duration
-	customDomainAppCNAMETarget             *string
-	customDomainRegistryCNAMETarget        *string
+	customDomainTarget                     *string
+	customDomainVerificationCron           *string
+	customDomainVerificationTimeout        time.Duration
+	customDomainVerificationRefreshAfter   time.Duration
 	internalServerAddr                     string
 )
 
@@ -299,8 +301,12 @@ func Initialize() {
 	lokiBasicAuthPassword = envutil.GetEnvOrNil("LOKI_BASIC_AUTH_PASSWORD")
 	lokiRequestTimeout = envutil.GetEnvParsedOrDefault("LOKI_REQUEST_TIMEOUT", envparse.PositiveDuration, 30*time.Second)
 
-	customDomainAppCNAMETarget = envutil.GetEnvOrNil("CUSTOM_DOMAIN_APP_CNAME_TARGET")
-	customDomainRegistryCNAMETarget = envutil.GetEnvOrNil("CUSTOM_DOMAIN_REGISTRY_CNAME_TARGET")
+	customDomainTarget = envutil.GetEnvOrNil("CUSTOM_DOMAIN_TARGET")
+	customDomainVerificationCron = envutil.GetEnvOrNil("CUSTOM_DOMAIN_VERIFICATION_CRON")
+	customDomainVerificationTimeout = envutil.GetEnvParsedOrDefault("CUSTOM_DOMAIN_VERIFICATION_TIMEOUT",
+		envparse.PositiveDuration, 4*time.Minute)
+	customDomainVerificationRefreshAfter = envutil.GetEnvParsedOrDefault("CUSTOM_DOMAIN_VERIFICATION_REFRESH_AFTER",
+		envparse.PositiveDuration, 12*time.Hour)
 	internalServerAddr = envutil.GetEnvOrDefault("INTERNAL_SERVER_ADDR", ":8085", envutil.GetEnvOpts{})
 }
 
@@ -648,22 +654,29 @@ func LokiRequestTimeout() time.Duration {
 	return lokiRequestTimeout
 }
 
-// CustomDomainAppCNAMETarget is the DNS name (pointing at the Caddy LoadBalancer) that
-// vendors CNAME their custom app domains to, e.g. "custom-app.distr.sh".
-func CustomDomainAppCNAMETarget() *string {
-	return customDomainAppCNAMETarget
-}
-
-// CustomDomainRegistryCNAMETarget is the DNS name that vendors CNAME their (optional)
-// dedicated custom registry domains to, e.g. "custom-registry.distr.sh".
-func CustomDomainRegistryCNAMETarget() *string {
-	return customDomainRegistryCNAMETarget
+// CustomDomainTarget is the DNS name (pointing at the Caddy LoadBalancer) that vendors CNAME
+// every custom domain to, e.g. "whitelabel.distr.sh". One target serves all domain types: Caddy
+// routes registry traffic to the registry by its mandatory /v2/ path prefix, not by hostname.
+func CustomDomainTarget() *string {
+	return customDomainTarget
 }
 
 // CustomDomainsConfigured reports whether the self-service custom domain feature is
 // configured on this instance. The internal caddy-ask server is only started when it is.
 func CustomDomainsConfigured() bool {
-	return customDomainAppCNAMETarget != nil
+	return customDomainTarget != nil
+}
+
+func CustomDomainVerificationCron() *string {
+	return customDomainVerificationCron
+}
+
+func CustomDomainVerificationTimeout() time.Duration {
+	return customDomainVerificationTimeout
+}
+
+func CustomDomainVerificationRefreshAfter() time.Duration {
+	return customDomainVerificationRefreshAfter
 }
 
 // InternalServerAddr is the listen address of the internal HTTP server, which currently

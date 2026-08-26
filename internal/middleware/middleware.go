@@ -277,6 +277,42 @@ func RequireTokenScope(scope authjwt.TokenScope) func(http.Handler) http.Handler
 	)
 }
 
+// BlockCrossOrganizationAction rejects an action that would leave the organization the credential is
+// confined to, for the credentials described by authinfo.AuthInfo.OrganizationScoped.
+func BlockCrossOrganizationAction(handler http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		if auth.Authentication.Require(r.Context()).OrganizationScoped() {
+			http.Error(w,
+				"you are signed in with a credential that belongs to a single organization and can "+
+					"therefore only act within that organization",
+				http.StatusForbidden)
+			return
+		}
+		handler.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
+}
+
+// CredentialChangeBlockedMessage is the response of BlockCredentialChange, exported for the endpoints that
+// reject only part of their request body and therefore cannot apply the middleware.
+const CredentialChangeBlockedMessage = "your sign-in methods cannot be changed from this session. " +
+	"Request a password reset to receive a link to your email address that lets you change them"
+
+// BlockCredentialChange rejects a change to the account's sign-in methods for the credentials described by
+// authinfo.AuthInfo.OrganizationScoped, which are not proof that the account's owner is present. Without
+// it, such a credential could set a password or move the email address to an inbox somebody else controls,
+// and thereby produce an unrestricted session of the same account.
+func BlockCredentialChange(handler http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		if auth.Authentication.Require(r.Context()).OrganizationScoped() {
+			http.Error(w, CredentialChangeBlockedMessage, http.StatusForbidden)
+			return
+		}
+		handler.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
+}
+
 // RequireEmailVerified rejects requests with 403 when USER_EMAIL_VERIFICATION_REQUIRED is
 // enabled and the authenticated user's DB record has no EmailVerifiedAt. It must run after
 // auth.Authentication.Middleware so the DB-loaded user is available in the context; if

@@ -1,4 +1,16 @@
 {{- if .Values.caddy.enabled }}
+{{- if or .Values.caddy.appCnameTarget .Values.caddy.registryCnameTarget }}
+{{- fail "caddy.appCnameTarget and caddy.registryCnameTarget have moved into the hub environment: set CUSTOM_DOMAIN_TARGET in hub.env instead" }}
+{{- end }}
+{{- $hubEnvNames := list }}
+{{- range .Values.hub.env }}
+{{- $hubEnvNames = append $hubEnvNames .name }}
+{{- end }}
+{{- /* Skipped when hub.envFrom is used, because the chart cannot see what a referenced
+ConfigMap or Secret contains. */}}
+{{- if and (not (has "CUSTOM_DOMAIN_TARGET" $hubEnvNames)) (not .Values.hub.envFrom) }}
+{{- fail "caddy.enabled is true but CUSTOM_DOMAIN_TARGET is not set in hub.env: without it custom domain self-service stays disabled and this Caddy has nothing to serve" }}
+{{- end }}
 {{- $sharedVolume := and .Values.caddy.persistence.enabled (has "ReadWriteMany" .Values.caddy.persistence.accessModes) }}
 {{- if gt (int .Values.caddy.replicaCount) 1 }}
 {{- if .Values.caddy.persistence.enabled }}

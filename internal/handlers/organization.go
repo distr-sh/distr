@@ -34,7 +34,7 @@ func OrganizationRouter(r chiopenapi.Router) {
 		With(option.Response(http.StatusOK, api.OrganizationResponse{}))
 
 	r.With(middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
-		r.Post("/", createOrganization).
+		r.With(middleware.BlockCrossOrganizationAction).Post("/", createOrganization).
 			With(option.Description("Create a new organization")).
 			With(option.Request(api.CreateUpdateOrganizationRequest{})).
 			With(option.Response(http.StatusOK, types.OrganizationWithUserRole{}))
@@ -127,16 +127,6 @@ func createOrganization(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if !ok {
 		http.Error(w, "only vendors can create organizations", http.StatusForbidden)
-		return
-	}
-
-	if err := checkOrganizationCreationAllowed(ctx, auth.CurrentUserID()); errors.Is(err, apierrors.ErrBadRequest) {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	} else if err != nil {
-		log.Error("failed to check organization creation", zap.Error(err))
-		sentry.GetHubFromContext(ctx).CaptureException(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 

@@ -1,6 +1,6 @@
 {
   "name": "@distr-sh/distr",
-  "version": "3.1.0",
+  "version": "3.2.1",
   "type": "module",
   "license": "Apache-2.0",
   "description": "Distr",
@@ -20,7 +20,7 @@
     "format": "prettier --write --list-different ."
   },
   "private": true,
-  "packageManager": "pnpm@11.22.0",
+  "packageManager": "pnpm@11.23.0",
   "engines": {
     "node": "26.x"
   },

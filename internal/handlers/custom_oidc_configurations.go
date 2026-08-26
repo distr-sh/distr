@@ -72,19 +72,11 @@ func getCustomOIDCConfigurationsHandler(w http.ResponseWriter, r *http.Request) 
 		respondCustomOIDCConfigurationError(w, r, err)
 		return
 	}
-	// Only reflects the caller's own scope (the vendor's team, or one customer): once a vendor's list
-	// spans every customer, a single flat exclusion warning could no longer point at one clear owner.
-	members, err := db.GetOrganizationMembersWithOtherOrganizations(ctx, orgID, customerOrgID)
-	if err != nil {
-		respondCustomOIDCConfigurationError(w, r, err)
-		return
-	}
 	RespondJSON(w, api.CustomOIDCConfigurationsResponse{
 		Configurations: mapping.List(configurations,
 			func(c types.CustomOIDCConfiguration) api.CustomOIDCConfiguration {
 				return mapping.CustomOIDCConfigurationToAPI(c, auth.CurrentOrg().Slug, domains[c.CustomDomainID].Domain)
 			}),
-		MembersWithOtherOrganizations: mapping.List(members, mapping.OrganizationMemberToAPI),
 	})
 }
 
@@ -334,8 +326,8 @@ func respondCustomOIDCConfigurationError(w http.ResponseWriter, r *http.Request,
 	ctx := r.Context()
 	switch {
 	case errors.Is(err, apierrors.ErrConflict):
-		http.Error(w, "a provider with this name already exists, or another one is already the default",
-			http.StatusConflict)
+		http.Error(w, "this domain already has a provider with this name or slug, "+
+			"or another one is already its default", http.StatusConflict)
 	case errors.Is(err, apierrors.ErrBadRequest):
 		http.Error(w, "invalid custom OIDC configuration", http.StatusBadRequest)
 	default:

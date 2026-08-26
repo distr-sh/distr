@@ -104,15 +104,17 @@ func registryDomainOrDefault(vendorDomains []types.CustomDomain, b *types.Organi
 	return env.RegistryHost()
 }
 
-// Errors are swallowed so callers fall back to the legacy branding columns / instance defaults
-// instead of failing outright.
+// customDomains returns the domains that may be used in outbound URLs, which is why it drops the
+// unverified ones: a domain that does not point here yet would send users, mail recipients and
+// agents to a host this instance does not serve. Errors are swallowed so callers fall back to the
+// legacy branding columns / instance defaults instead of failing outright.
 func customDomains(ctx context.Context, orgID uuid.UUID, customerOrgID *uuid.UUID) []types.CustomDomain {
 	domains, err := db.GetCustomDomains(ctx, orgID, customerOrgID)
 	if err != nil {
 		internalctx.GetLogger(ctx).Warn("failed to resolve custom domains", zap.Error(err))
 		return nil
 	}
-	return domains
+	return filterVerified(domains)
 }
 
 func domainOfType(domains []types.CustomDomain, domainType types.DomainType) *string {

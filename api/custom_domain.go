@@ -20,6 +20,13 @@ type CustomDomain struct {
 	// CustomerOrganizationID is set on a customer_portal domain that belongs to one customer. When it is
 	// nil, a customer_portal domain is the vendor's shared portal for all of its customers.
 	CustomerOrganizationID *uuid.UUID `json:"customerOrganizationId,omitempty"`
+	// Verified reports whether the domain is currently used for links, mails, agent manifests and
+	// registry URLs. It is decided by the server so that no client has to restate the rule.
+	Verified              bool       `json:"verified"`
+	VerifiedAt            *time.Time `json:"verifiedAt,omitempty"`
+	VerificationCheckedAt *time.Time `json:"verificationCheckedAt,omitempty"`
+	// VerificationError is why the domain's CNAME record was last found not to point at this instance.
+	VerificationError *string `json:"verificationError,omitempty"`
 }
 
 type CreateCustomDomainRequest struct {
@@ -73,13 +80,15 @@ func (r *CreateCustomDomainsRequest) Validate() error {
 	return nil
 }
 
-// CustomDomainVerification is the result of a live CNAME check for one domain. It is deliberately
-// not part of the domain itself: the check is a DNS lookup that may take seconds, so it is requested
-// separately from the listing it belongs to. Nothing is persisted, so DNSCheckedAt is the time of
-// this response, not of some earlier check.
+// CustomDomainVerification is the stored outcome of the last CNAME check of one domain. Inconclusive
+// reports that the last check did not complete, in which case the domain keeps the state it had
+// before: VerificationCheckedAt is the inconclusive attempt, while VerifiedAt and VerificationError
+// still describe the last check that reached a conclusion.
 type CustomDomainVerification struct {
-	CustomDomainID uuid.UUID `json:"customDomainId"`
-	DNSVerified    bool      `json:"dnsVerified"`
-	DNSDetail      string    `json:"dnsDetail"`
-	DNSCheckedAt   time.Time `json:"dnsCheckedAt"`
+	CustomDomainID        uuid.UUID  `json:"customDomainId"`
+	Verified              bool       `json:"verified"`
+	VerifiedAt            *time.Time `json:"verifiedAt,omitempty"`
+	VerificationCheckedAt *time.Time `json:"verificationCheckedAt,omitempty"`
+	VerificationError     *string    `json:"verificationError,omitempty"`
+	Inconclusive          bool       `json:"inconclusive"`
 }

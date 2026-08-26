@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, computed, inject, input} from '@angular/core';
+import {Component, computed, inject, input} from '@angular/core';
 import {WEBSITE_URL} from '../../../constants';
 import {PortalBrandingService} from '../../services/portal-branding.service';
 
@@ -9,7 +9,6 @@ import {PortalBrandingService} from '../../services/portal-branding.service';
 @Component({
   selector: 'app-portal-logo',
   templateUrl: './portal-logo.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PortalLogoComponent {
   private readonly portalBranding = inject(PortalBrandingService);

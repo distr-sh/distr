@@ -116,20 +116,25 @@ mise run build:hub:community        # Community edition
 # Build agents
 mise run build:agent:docker
 mise run build:agent:kubernetes
+
+# Build the website (website/)
+mise run build:website
 ```
 
 Binaries are output to `dist/`.
 
-### Linting and Formatting
+### Formatting
 
 ```sh
-# Auto-fix linting issues
-mise run format              # All
+mise run format              # All, including the website
+mise run format:app          # Hub and agents, without the website
 mise run format:go           # Go only
 mise run format:frontend     # Frontend only
+mise run format:website      # Website only, also prunes unused images
 ```
 
-Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Prettier with config in `.prettierrc.mjs`.
+Go formatting is configured in `.golangci.yml`, the frontend uses Prettier with config in `.prettierrc.mjs`.
+The website is a separate pnpm project with its own Prettier config; the root config ignores `website/`.
 
 ## Code Patterns and Conventions
 
@@ -144,19 +149,21 @@ Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Pret
 - Use `internal/context` helpers to retrieve logger, database, user from context
 - Do not add new context accessors to `internal/context`. Following idiomatic Go, they belong in the package that defines the stored type (e.g. `logstore.NewContext`/`logstore.FromContext`), which also avoids import cycles
 - Use structured logging with zap: `logger.Info("message", zap.String("key", value))`
-- Send exceptions to sentry with: `sentry.GetHubFromContext(ctx).CaptureException(err)`
+- Send exceptions to sentry with: `sentry.GetHubFromContext(ctx).CaptureException(err)`. In a background job use `sentry.CurrentHub()` instead: a job context carries no hub, and taking one from it panics
 - When performing data transformations between DTOs and domain models, use `mapping.List(...)` inside the `internal/mapping` package
 - Give types in `internal/types` `db:` tags only. Never serialize one into a response and never embed one in an `api` type. Do not copy the existing embeddings (`api.OrganizationResponse`, `api.LicenseKeyRevision`); they are legacy
 - Give every endpoint its own struct in `api/` and put both conversion directions in `internal/mapping`: `XToAPI` for model to response, `XToInternal` for request to model. Do not assemble an `api.*` or `types.*` struct field by field in a handler
 - Reference shared string enums (`types.UserRole`, `types.DomainType`, `types.OIDCProvider`) from `api` directly instead of duplicating them
 - Always use [Gomega](https://onsi.github.io/gomega/) for test assertions in Go tests
 - Do not use `util.PtrTo`. Use `new(value)` to obtain a `*T` from a typed value (e.g. `new(types.UserRoleReadOnly)`).
+- Use `errors.AsType[E](err)` instead of `errors.As(err, &target)` wherever the target type is known at the call site, since it needs no pre-declared variable: `if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation`. `errors.As` remains correct where the target is an interface a caller passes in.
 - The body of a 4xx response is displayed verbatim in the frontend forms (`getFormDisplayedError`), so write those messages for the end user and put anything only a developer can use into the log instead.
 
 ### Frontend Code
 
 - Always use self-closing tags for Angular components when they have no content (e.g. `<fa-icon [icon]="faPlus" />` instead of `<fa-icon [icon]="faPlus"></fa-icon>`)
 - Use standalone components (no NgModules) - This is the default so `standalone: true` is not needed
+- `ChangeDetectionStrategy.OnPush` is the default, so never write `changeDetection: ChangeDetectionStrategy.OnPush`. Only set `changeDetection` to opt a component out with `ChangeDetectionStrategy.Eager`, and remove that opt-out whenever the component's state is fully signal-based
 - Services are singleton by default (`providedIn: 'root'`)
 - Use Angular's `inject()` function for dependency injection (e.g. `private readonly http = inject(HttpClient)`). Do not use constructor injection.
 - Component file structure: `component-name.component.ts`, `component-name.component.html` (no need for scss files)
@@ -187,6 +194,8 @@ Go linting uses golangci-lint with config in `.golangci.yml`. Frontend uses Pret
 ### Database Access
 
 All database access should go through `internal/db/` functions. Never write raw SQL in handlers or services. If you need a new query, add it to the appropriate file in `internal/db/`.
+
+Always use `now()` for the current time, never `current_timestamp`. This applies to queries in `internal/db/` as well as to SQL migrations in `internal/migrations/sql/`, including column defaults.
 
 Transaction pattern:
 
@@ -229,6 +238,10 @@ _, err := db.CopyFrom(
 )
 ```
 
+### Scheduled Jobs
+
+A job has to be runnable from outside the hub process, because a high-availability installation would otherwise run it once per replica. Register it in `internal/svc/jobs_scheduler.go` behind its own `*_CRON` env var that defaults to unscheduled, give it a subcommand (`cleanup` for pruning, `maintenance` for everything else), and add a `cronJobs` entry to `deploy/charts/distr/values.yaml` that calls it. Never make behaviour outside the job itself depend on whether its cron is scheduled: in the chart it never is, since the CronJob runs it.
+
 ### Subscription Gating
 
 Never gate a feature by listing the subscription types that are allowed to use it. Every such allowlist has to be touched again whenever a new plan is introduced, and the plan silently loses the feature if it is forgotten. Always express gating as a denylist of the lower plans instead, so a new plan gets access by default:
@@ -267,6 +280,8 @@ Never hard-wire `https://` into a URL that is built for this instance. The schem
 
 A hard-wired https breaks every locally running instance, and for the OIDC callback URL it produces a URL that disagrees with the `redirect_uri` the login actually sends. In the frontend, use the protocol of the current page for the same reason.
 
+Build the host of such a URL through the `internal/customdomains` resolvers and never from `db.GetCustomDomains` directly: only the resolvers drop the domains that have not been verified yet. Do not add that filter anywhere else. Listing a caller's domains and resolving the host of an incoming request deliberately accept unverified domains.
+
 ## Comments
 
 Write as few comments as possible. A comment has to earn its place by saying something the code cannot, and every comment that does not is noise that goes stale and has to be reviewed forever.
@@ -297,7 +312,7 @@ Only write a test that could fail for a real reason. Every test is code that has
 
 - Always ensure this file is up-to-date.
 - This file holds instructions and conventions for the agent, not technical documentation. Add a rule that changes what an agent does; never a description of how a feature, endpoint or subsystem works. That belongs in the code, in a doc comment, or on the website.
-- Always build, test, lint and format through mise tasks (`mise run build:hub:community`, `mise run test:go`, `mise run test:frontend`, `mise run lint`, `mise run format`). Never invoke `go build`, `go test`, `golangci-lint` or `pnpm` directly.
+- Always build, test and format through mise tasks (`mise run build:hub:community`, `mise run test:go`, `mise run test:frontend`, `mise run format`). Never invoke `go build`, `go test`, `golangci-lint` or `pnpm` directly.
 - When you add, remove, or change an environment variable in `internal/env/env.go` (name, default, required/optional status, or accepted values), update the configuration reference page at `website/src/content/docs/docs/self-hosting/configuration.mdx` in the same change so it stays complete and accurate.
 - If a user requests you to do something differently, add the difference to a new rule / convention in this file
 - If you read code that doesn't follow these rules, please fix it.

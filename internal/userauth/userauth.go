@@ -10,7 +10,6 @@ import (
 	"github.com/distr-sh/distr/internal/security"
 	"github.com/distr-sh/distr/internal/subscription"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/google/uuid"
 )
 
 // SetUserPassword hashes the given password, optionally updates the name (when name is non-nil and non-empty),
@@ -113,20 +112,24 @@ func GenerateLoginToken(ctx context.Context, user types.UserAccount) (string, er
 	return token, err
 }
 
-func GenerateLoginTokenForOrganization(
+// GenerateCustomOIDCLoginToken generates the login token for a sign-in through an organization's own
+// identity provider, scoped to the organization the configuration belongs to. Unlike GenerateLoginToken it
+// never falls back to another organization and never creates one: the session belongs to the organization
+// whose provider authenticated it. It fails with apierrors.ErrNotFound when the user is not a member of it.
+func GenerateCustomOIDCLoginToken(
 	ctx context.Context,
 	user types.UserAccount,
-	organizationID uuid.UUID,
+	configuration types.CustomOIDCConfiguration,
 ) (string, error) {
-	orgs, err := db.GetOrganizationsForUser(ctx, user.ID)
+	member, org, err := db.GetUserAccountAndOrg(ctx, user.ID, configuration.OrganizationID)
 	if err != nil {
 		return "", err
 	}
-	for _, org := range orgs {
-		if org.ID == organizationID {
-			_, token, err := authjwt.GenerateDefaultToken(user, org)
-			return token, err
-		}
-	}
-	return "", apierrors.ErrNotFound
+	_, token, err := authjwt.GenerateCustomOIDCToken(user, types.OrganizationWithUserRole{
+		Organization:           org.Organization,
+		UserRole:               member.UserRole,
+		CustomerOrganizationID: member.CustomerOrganizationID,
+		PartnerOrganizationID:  member.PartnerOrganizationID,
+	}, configuration.ID)
+	return token, err
 }

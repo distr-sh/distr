@@ -14,11 +14,3 @@ func OrganizationToAPI(o types.Organization, billableUserCount, customerOrgCount
 		CurrentCustomerOrganizationCount: customerOrgCount,
 	}
 }
-
-func OrganizationMemberToAPI(member types.OrganizationMember) api.OrganizationMember {
-	return api.OrganizationMember{
-		ID:    member.ID,
-		Email: member.Email,
-		Name:  member.Name,
-	}
-}

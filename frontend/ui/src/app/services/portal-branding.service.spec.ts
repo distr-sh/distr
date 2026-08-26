@@ -12,7 +12,7 @@ import {PortalBrandingService} from './portal-branding.service';
 const portalResponse: Portal = {
   customDomain: false,
   loginConfig: {
-    registrationEnabled: true,
+    registration: 'enabled',
     oidcGithubEnabled: false,
     oidcGoogleEnabled: false,
     oidcMicrosoftEnabled: false,

@@ -30,6 +30,11 @@ const (
 	TokenScopeKey        = "scope"
 	SuperAdminKey        = "is_super_admin"
 
+	// CustomOIDCConfigurationIDKey marks a session as authenticated by an organization's own identity
+	// provider. Only its presence is ever evaluated; the configuration ID it carries is for support and
+	// for logging.
+	CustomOIDCConfigurationIDKey = "oidc"
+
 	audienceUserValue  = "user"
 	audienceAgentValue = "agent"
 )
@@ -82,6 +87,21 @@ func encode(claims map[string]any) (jwt.Token, string, error) {
 
 func GenerateDefaultToken(user types.UserAccount, org types.OrganizationWithUserRole) (jwt.Token, string, error) {
 	return generateUserToken(user, &org, defaultTokenExpiration, nil)
+}
+
+// GenerateCustomOIDCToken generates a login token for a sign-in through an organization's own identity
+// provider. Such a provider is controlled by the organization rather than by the account's owner and
+// authenticates every address its configuration allows, so the token is marked to confine the session to
+// that organization: it must not reach another organization the account happens to be a member of, and it
+// is not proof that the owner of the account is present.
+func GenerateCustomOIDCToken(
+	user types.UserAccount,
+	org types.OrganizationWithUserRole,
+	customOIDCConfigurationID uuid.UUID,
+) (jwt.Token, string, error) {
+	return generateUserToken(user, &org, defaultTokenExpiration, map[string]any{
+		CustomOIDCConfigurationIDKey: customOIDCConfigurationID.String(),
+	})
 }
 
 func GenerateResetToken(user types.UserAccount) (jwt.Token, string, error) {

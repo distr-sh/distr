@@ -10,18 +10,21 @@
       </h2>
       <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
         @if (customerScoped() && viewerIsCustomer()) {
-          Let your users sign in with their own identity provider instead of a Distr password. A provider is offered on
-          your own portal domain and nowhere else.
+          Let your users sign in with their own identity provider via OIDC (OpenID Connect) instead of a Distr password.
+          A provider is offered on your own portal domain and nowhere else.
         } @else if (customerScoped()) {
-          Let this customer's users sign in with their own identity provider instead of a Distr password. A provider is
-          offered on the customer's own portal domain and nowhere else.
+          Let this customer's users sign in with their own identity provider via OIDC (OpenID Connect) instead of a
+          Distr password. A provider is offered on the customer's own portal domain and nowhere else.
         } @else {
-          Let your team and your customers sign in with your own identity provider instead of a Distr password. Every
-          domain carries its own providers: the ones on your app domain apply to your team, the ones on your customer
-          portal domain to all of your customers.
+          Let your team and your customers sign in with your own identity provider via OIDC (OpenID Connect) instead of
+          a Distr password. Every domain carries its own providers: the ones on your
+          <span class="lowercase">{{ appDomainLabel() }}</span> apply to your team, the ones on your customer portal
+          domain to all of your customers. Customers can also have providers of their own.
         }
         A custom domain is required first: an identity provider is only offered on the domain it is attached to, and
-        nowhere else on Distr. Sign-in only works for accounts that belong to no other Distr organization.
+        nowhere else on Distr. A session it authenticates stays within this organization; it cannot change the account's
+        e-mail address, enroll in MFA or disconnect identity providers, while password-confirmed MFA actions remain
+        available.
       </p>
 
       @if (oidcProvidersEnabled() && !configurable()) {
@@ -50,40 +53,6 @@
       </div>
     }
 
-    @if (oidcProvidersEnabled() && configurable() && membersWithOtherOrganizations().length > 0) {
-      <div
-        class="flex items-start p-4 text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-600"
-        role="alert">
-        <fa-icon [icon]="faCircleExclamation" class="mt-0.5 shrink-0" />
-        <div class="ms-3 text-sm space-y-2">
-          <p>
-            <ng-container [ngPlural]="membersWithOtherOrganizations().length">
-              <ng-template ngPluralCase="=1">This member is</ng-template>
-              <ng-template ngPluralCase="other">These members are</ng-template>
-            </ng-container>
-            also
-            <ng-container [ngPlural]="membersWithOtherOrganizations().length">
-              <ng-template ngPluralCase="=1">a member</ng-template>
-              <ng-template ngPluralCase="other">members</ng-template>
-            </ng-container>
-            of another Distr organization. They keep their password login, but they cannot sign in through your identity
-            provider until they leave that other organization.
-          </p>
-          <ul class="list-disc list-inside">
-            @for (member of membersWithOtherOrganizations(); track member.id) {
-              <li>
-                @if (member.name) {
-                  {{ member.name }} &lt;{{ member.email }}&gt;
-                } @else {
-                  {{ member.email }}
-                }
-              </li>
-            }
-          </ul>
-        </div>
-      </div>
-    }
-
     @if (!customerScoped()) {
       <section class="space-y-4">
         <h3 class="text-lg font-bold dark:text-white">
@@ -104,13 +73,12 @@
         @if (customDomainsConfigured()) {
           <app-domain-field
             fieldId="appDomain"
-            label="General Portal domain"
+            [label]="appDomainLabel()"
             placeholder="deploy.your-company.com"
             invalidHint="Must be a valid hostname without scheme, e.g. deploy.your-company.com"
-            removeAriaLabel="Remove app domain"
+            [removeAriaLabel]="'Remove ' + appDomainLabel()"
             [domain]="appDomain()"
-            [verification]="verificationFor(appDomain())"
-            [cnameTarget]="appCnameTarget()"
+            [cnameTarget]="cnameTarget()"
             [saving]="savingDomain()"
             [verifying]="checkingDomainIds().has(appDomain()?.id ?? '')"
             (save)="saveDomain($event, 'app')"
@@ -131,8 +99,13 @@
       @if (!customerScoped()) {
         <h3 class="text-lg font-bold dark:text-white">Customer Portal</h3>
         <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-          One domain for all of your customers. Providers configured here apply to every customer, including ones you
-          create later. A customer that needs its own provider gets the Identity Provider feature instead.
+          One domain that all of your customers sign in on by default. A provider is only ever offered on the domain it
+          is attached to, so the customer portal domain below has to exist before you can configure one here; once it
+          does, the providers you add apply to every customer, including ones you create later.
+        </p>
+        <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+          Customers can override all of this with their own domain and providers, configured on their own
+          <a routerLink="/customers" class="font-semibold underline">settings page</a>.
         </p>
       }
 
@@ -143,9 +116,9 @@
           placeholder="<slug>-portal.yourcompany.com"
           invalidHint="Must be a valid hostname without scheme, e.g. <slug>-portal.yourcompany.com"
           removeAriaLabel="Remove portal domain"
+          [optionalCheckboxLabel]="customerPortalCheckboxLabel()"
           [domain]="customerPortalDomain()"
-          [verification]="verificationFor(customerPortalDomain())"
-          [cnameTarget]="appCnameTarget()"
+          [cnameTarget]="cnameTarget()"
           [saving]="savingDomain()"
           [verifying]="checkingDomainIds().has(customerPortalDomain()?.id ?? '')"
           (save)="saveDomain($event, 'customer_portal')"
@@ -156,7 +129,8 @@
             use it.
           } @else {
             The domain all of your customers sign in on. Links in invitations, password resets and notification mails
-            use it instead of your app domain.
+            use it instead of your <span class="lowercase">{{ appDomainLabel() }}</span
+            >.
           }
         </app-domain-field>
       }
@@ -170,10 +144,20 @@
     @if (!customerScoped() && customDomainsConfigured()) {
       <section class="space-y-4">
         <h3 class="text-lg font-bold dark:text-white">Registry</h3>
-        <app-registry-domain-field
+        <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
+          Only needed if you want a separate hostname for the artifact registry. Your
+          <span class="lowercase">{{ appDomainLabel() }}</span> already serves registry traffic under
+          <code class="font-mono">/v2/</code>, so a single domain is usually all you need.
+        </p>
+        <app-domain-field
+          fieldId="registryDomain"
+          label="Registry domain"
+          placeholder="registry.your-company.com"
+          invalidHint="Must be a valid hostname without scheme, e.g. registry.your-company.com"
+          removeAriaLabel="Remove registry domain"
+          optionalCheckboxLabel="Use a separate registry domain"
           [domain]="registryDomain()"
-          [verification]="verificationFor(registryDomain())"
-          [cnameTarget]="registryCnameTarget()"
+          [cnameTarget]="cnameTarget()"
           [saving]="savingDomain()"
           [verifying]="checkingDomainIds().has(registryDomain()?.id ?? '')"
           (save)="saveDomain($event, 'registry')"
@@ -288,7 +272,7 @@
 
 <ng-template #formDialog>
   <div
-    class="p-4 w-2xl max-w-full mt-12 max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900"
+    class="p-4 w-4xl max-w-full mt-12 max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900"
     animate.enter="animate-fly-in-top"
     animate.leave="animate-fly-out-top">
     <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
@@ -320,56 +304,65 @@
           </div>
 
           <div class="space-y-2">
-            <label for="oidcSlug" class="distr-label">Slug <span class="text-red-500">*</span></label>
+            <label for="oidcIssuer" class="distr-label">Issuer URL <span class="text-red-500">*</span></label>
             <input
               type="text"
-              id="oidcSlug"
-              formControlName="slug"
+              id="oidcIssuer"
+              formControlName="issuer"
               autotrim
-              placeholder="acme-sso"
+              placeholder="https://login.microsoftonline.com/<tenant-id>/v2.0"
               class="distr-input" />
-            @if (form.controls.slug.invalid && form.controls.slug.touched) {
-              <p class="text-xs font-normal text-red-600 dark:text-red-500">
-                Lowercase letters and digits, separated by <code class="font-mono">-</code>,
-                <code class="font-mono">_</code> or <code class="font-mono">.</code>, at most 64 characters.
-              </p>
-            } @else {
-              <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
-                Part of the login and callback URL, unique within your organization.
-              </p>
-            }
+            <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
+              The provider has to serve an OpenID configuration under this URL. It is verified and normalized when you
+              save.
+            </p>
           </div>
         </div>
 
         <div class="space-y-2">
-          <label for="oidcIssuer" class="distr-label">Issuer URL <span class="text-red-500">*</span></label>
-          <input
-            type="text"
-            id="oidcIssuer"
-            formControlName="issuer"
-            autotrim
-            placeholder="https://login.microsoftonline.com/<tenant-id>/v2.0"
-            class="distr-input" />
-          <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
-            The provider has to serve an OpenID configuration under this URL. It is verified and normalized when you
-            save.
-          </p>
-        </div>
-
-        <div class="space-y-2">
           <span class="distr-label">Callback URL</span>
-          @if (callbackUrl(); as url) {
-            <div class="flex items-center gap-2">
-              <code class="font-mono text-sm text-gray-900 dark:text-white">{{ url }}</code>
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="font-mono text-sm text-gray-900 dark:text-white break-all">
+              <span>{{ callbackUrlPrefix() }}</span>
+              @if (editingSlug()) {
+                <input
+                  type="text"
+                  id="oidcSlug"
+                  formControlName="slug"
+                  autotrim
+                  aria-label="Slug"
+                  placeholder="acme-sso"
+                  [attr.size]="slugValue().length || 8"
+                  class="distr-input inline w-auto px-1 py-0 font-mono text-sm" />
+              } @else {
+                <span class="font-semibold">{{ slugValue() || 'acme-sso' }}</span>
+              }
+              <span>/callback</span>
+            </span>
+            @if (!editingSlug()) {
+              <button
+                type="button"
+                title="Edit slug"
+                (click)="editSlug()"
+                class="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white">
+                <fa-icon [icon]="faPen" />
+                <span class="sr-only">Edit slug</span>
+              </button>
+            }
+            @if (callbackUrl(); as url) {
               <app-clip [clip]="url" />
-            </div>
-            <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
-              Register this as a redirect URI with your provider.
+            }
+          </div>
+          @if (form.controls.slug.invalid && form.controls.slug.touched) {
+            <p class="text-xs font-normal text-red-600 dark:text-red-500">
+              The slug must consist of lowercase letters and digits, separated by
+              <code class="font-mono">-</code>, <code class="font-mono">_</code> or <code class="font-mono">.</code>, at
+              most 64 characters.
             </p>
           } @else {
             <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
-              Pick a slug to see the callback URL. Register it as a redirect URI with your provider before anyone signs
-              in.
+              Register this as a redirect URI with your provider. The slug follows the display name and is unique on
+              this domain; edit it with the pencil if you need a different one.
             </p>
           }
         </div>
@@ -422,25 +415,6 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
-          <div class="space-y-2">
-            <label for="oidcScopes" class="distr-label">Additional scopes</label>
-            <input type="text" id="oidcScopes" formControlName="scopes" autotrim class="distr-input" />
-            <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
-              Space separated. <code class="font-mono">openid</code> is always requested.
-            </p>
-          </div>
-
-          <div class="space-y-2">
-            <label for="oidcPkce" class="distr-label">PKCE</label>
-            <select id="oidcPkce" formControlName="pkce" class="distr-input">
-              <option value="auto">Automatic (from the OpenID configuration)</option>
-              <option value="on">Always</option>
-              <option value="off">Never</option>
-            </select>
-          </div>
-        </div>
-
         @if (provisioningAvailable()) {
           <div class="space-y-2">
             <div class="flex items-center">
@@ -471,46 +445,40 @@
           </p>
         }
 
-        <div class="grid grid-cols-2 gap-4">
-          <div class="space-y-2">
-            <label for="oidcAllowedEmailDomains" class="distr-label">
-              Allowed email domains
-              @if (form.controls.createUnknownUsers.value) {
-                <span class="text-red-500">*</span>
+        @if (createUnknownUsers()) {
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label for="oidcAllowedEmailDomains" class="distr-label">
+                Allowed email domains <span class="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="oidcAllowedEmailDomains"
+                formControlName="allowedEmailDomains"
+                autotrim
+                placeholder="your-company.com"
+                class="distr-input" />
+              @if (form.hasError('emailDomainsRequired') && form.controls.allowedEmailDomains.touched) {
+                <p class="text-xs font-normal text-red-600 dark:text-red-500">
+                  Name the domains you own before letting your provider create accounts.
+                </p>
+              } @else {
+                <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
+                  Space separated. Accounts are only created for addresses in these domains.
+                </p>
               }
-            </label>
-            <input
-              type="text"
-              id="oidcAllowedEmailDomains"
-              formControlName="allowedEmailDomains"
-              autotrim
-              placeholder="your-company.com"
-              class="distr-input" />
-            @if (form.hasError('emailDomainsRequired') && form.controls.allowedEmailDomains.touched) {
-              <p class="text-xs font-normal text-red-600 dark:text-red-500">
-                Name the domains you own before letting your provider create accounts.
-              </p>
-            } @else if (form.controls.createUnknownUsers.value) {
-              <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
-                Space separated, required while accounts are created on first sign-in. Accounts are only created for
-                addresses in these domains.
-              </p>
-            } @else {
-              <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
-                Space separated. Accounts are only created for addresses in these domains.
-              </p>
-            }
-          </div>
+            </div>
 
-          <div class="space-y-2">
-            <label for="oidcDefaultUserRole" class="distr-label">Role for new users</label>
-            <select id="oidcDefaultUserRole" formControlName="defaultUserRole" class="distr-input">
-              <option value="read_only">Read only</option>
-              <option value="read_write">Read &amp; write</option>
-              <option value="admin">Admin</option>
-            </select>
+            <div class="space-y-2">
+              <label for="oidcDefaultUserRole" class="distr-label">Role for new users</label>
+              <select id="oidcDefaultUserRole" formControlName="defaultUserRole" class="distr-input">
+                <option value="read_only">Read only</option>
+                <option value="read_write">Read &amp; write</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
           </div>
-        </div>
+        }
 
         <div class="space-y-2">
           <div class="flex items-center">

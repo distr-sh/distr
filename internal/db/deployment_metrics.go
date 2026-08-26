@@ -109,7 +109,7 @@ func CleanupDeploymentMetrics(ctx context.Context) (int64, error) {
 		) max_created_at
 		WHERE dm.deployment_id = max_created_at.deployment_id
 			AND dm.created_at < max_created_at.max_created_at
-			AND current_timestamp - dm.created_at > @metricsEntriesMaxAge`,
+			AND now() - dm.created_at > @metricsEntriesMaxAge`,
 		pgx.NamedArgs{"metricsEntriesMaxAge": env.MetricsEntriesMaxAge()},
 	); err != nil {
 		return 0, err
