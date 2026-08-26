@@ -10,27 +10,24 @@
       </h2>
       <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
         @if (customerScoped() && viewerIsCustomer()) {
-          Let your users sign in with their own identity provider via OIDC (OpenID Connect) instead of a Distr password.
-          A provider is offered on your own portal domain and nowhere else.
+          Let your users additionally sign in with their own identity provider via OIDC (OpenID Connect). A provider
+          only works on your own portal domain.
         } @else if (customerScoped()) {
-          Let this customer's users sign in with their own identity provider via OIDC (OpenID Connect) instead of a
-          Distr password. A provider is offered on the customer's own portal domain and nowhere else.
+          Let this customer's users additonally sign in with their own identity provider via OIDC (OpenID Connect). A
+          provider only works on the customer's own portal domain.
         } @else {
-          Let your team and your customers sign in with your own identity provider via OIDC (OpenID Connect) instead of
-          a Distr password. Every domain carries its own providers: the ones on your
-          <span class="lowercase">{{ appDomainLabel() }}</span> apply to your team, the ones on your customer portal
-          domain to all of your customers. Customers can also have providers of their own.
+          Let your team and your customers additionally sign in with your own identity provider via OIDC (OpenID
+          Connect). Each domain has its own providers. The ones on your
+          <span class="lowercase">{{ appDomainLabel() }}</span>
+          apply to your team, the ones on your customer portal domain to all of your customers. Customers can add their
+          own.
         }
-        A custom domain is required first: an identity provider is only offered on the domain it is attached to, and
-        nowhere else on Distr. A session it authenticates stays within this organization; it cannot change the account's
-        e-mail address, enroll in MFA or disconnect identity providers, while password-confirmed MFA actions remain
-        available.
+        A custom domain has to exist first.
       </p>
 
-      @if (oidcProvidersEnabled() && !configurable()) {
+      @if (oidcProvidersEnabled() && viewerIsVendor() && !configurable()) {
         <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-          Set an organization slug on the General tab first &mdash; it is part of every provider's login and callback
-          URL.
+          Set an organization slug on the General tab first. It is part of every login and callback URL.
         </p>
       }
     </div>
@@ -88,9 +85,9 @@
           </app-domain-field>
         }
 
-        @if (oidcProvidersEnabled() && configurable() && appDomain(); as domain) {
+        @if (oidcProvidersEnabled()) {
           <h4 class="text-base font-semibold text-gray-900 dark:text-white mt-8">Identity Providers</h4>
-          <ng-container [ngTemplateOutlet]="providerSection" [ngTemplateOutletContext]="{$implicit: domain}" />
+          <ng-container [ngTemplateOutlet]="providerSection" [ngTemplateOutletContext]="{$implicit: appDomain()}" />
         }
       </section>
     }
@@ -99,12 +96,12 @@
       @if (!customerScoped()) {
         <h3 class="text-lg font-bold dark:text-white">Customer Portal</h3>
         <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-          One domain that all of your customers sign in on by default. A provider is only ever offered on the domain it
-          is attached to, so the customer portal domain below has to exist before you can configure one here; once it
-          does, the providers you add apply to every customer, including ones you create later.
+          One domain that all of your customers sign in on by default. Without it they keep using your
+          <span class="lowercase">{{ appDomainLabel() }}</span> or the default Distr host. Add it below first. Providers
+          on it apply to every customer, including the ones you create later.
         </p>
         <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-          Customers can override all of this with their own domain and providers, configured on their own
+          Customers can override this with their own domain and providers on their
           <a routerLink="/customers" class="font-semibold underline">settings page</a>.
         </p>
       }
@@ -126,7 +123,7 @@
           (recheck)="verifyDomain(customerPortalDomain()!)">
           @if (customerScoped()) {
             The domain this customer's users sign in on. Links in invitations, password resets and notification mails
-            use it.
+            use it. Without it they sign in on the vendor's domain.
           } @else {
             The domain all of your customers sign in on. Links in invitations, password resets and notification mails
             use it instead of your <span class="lowercase">{{ appDomainLabel() }}</span
@@ -135,9 +132,11 @@
         </app-domain-field>
       }
 
-      @if (oidcProvidersEnabled() && configurable() && customerPortalDomain(); as domain) {
+      @if (oidcProvidersEnabled()) {
         <h4 class="text-base font-semibold text-gray-900 dark:text-white mt-8">Identity Providers</h4>
-        <ng-container [ngTemplateOutlet]="providerSection" [ngTemplateOutletContext]="{$implicit: domain}" />
+        <ng-container
+          [ngTemplateOutlet]="providerSection"
+          [ngTemplateOutletContext]="{$implicit: customerPortalDomain()}" />
       }
     </section>
 
@@ -145,9 +144,8 @@
       <section class="space-y-4">
         <h3 class="text-lg font-bold dark:text-white">Registry</h3>
         <p class="text-sm font-normal text-gray-500 dark:text-gray-400">
-          Only needed if you want a separate hostname for the artifact registry. Your
-          <span class="lowercase">{{ appDomainLabel() }}</span> already serves registry traffic under
-          <code class="font-mono">/v2/</code>, so a single domain is usually all you need.
+          You only need this if the artifact registry should have its own hostname. The hostname is part of the OCI
+          artifact name.
         </p>
         <app-domain-field
           fieldId="registryDomain"
@@ -212,7 +210,6 @@
                     </span>
                   }
                 </div>
-                <code class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ configuration.slug }}</code>
               </td>
               <td class="px-4 py-3">
                 <div class="flex items-center gap-2">
@@ -229,13 +226,14 @@
                   type="button"
                   (click)="test(configuration)"
                   class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                  <fa-icon [icon]="faPlug" class="mr-2 text-gray-500 dark:text-gray-400" />
                   Test
                 </button>
                 <button
                   type="button"
                   (click)="showDialog(domain, configuration)"
                   class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                  <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
+                  <fa-icon [icon]="faPen" class="mr-2 text-gray-500 dark:text-gray-400" />
                   Edit
                 </button>
                 <button
@@ -260,13 +258,26 @@
       </table>
     </div>
 
-    <button
-      type="button"
-      (click)="showDialog(domain)"
-      class="py-2 px-4 flex items-center text-sm font-medium text-center distr-btn-secondary">
-      <fa-icon [icon]="faPlus" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
-      Add identity provider
-    </button>
+    <div class="space-y-2">
+      <button
+        type="button"
+        [disabled]="!domain || !configurable()"
+        (click)="showDialog(domain)"
+        class="py-2 px-4 flex items-center text-sm font-medium text-center distr-btn-secondary disabled:opacity-60 disabled:cursor-not-allowed">
+        <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
+        Add identity provider
+      </button>
+      @if (!domain) {
+        <p class="text-xs font-normal text-yellow-700 dark:text-yellow-300">
+          Identity providers only work on custom domains. Configure and verify one first.
+        </p>
+      } @else if (viewerIsVendor() && !configurable()) {
+        <p class="text-xs font-normal text-yellow-700 dark:text-yellow-300">
+          An organization slug is required. Set one on the
+          <a routerLink="/settings/organization/general" class="font-semibold underline">General tab</a> first.
+        </p>
+      }
+    </div>
   </div>
 </ng-template>
 
@@ -313,8 +324,7 @@
               placeholder="https://login.microsoftonline.com/<tenant-id>/v2.0"
               class="distr-input" />
             <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
-              The provider has to serve an OpenID configuration under this URL. It is verified and normalized when you
-              save.
+              The provider has to serve an OpenID configuration here. Distr checks and normalizes it when you save.
             </p>
           </div>
         </div>
@@ -362,7 +372,7 @@
           } @else {
             <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
               Register this as a redirect URI with your provider. The slug follows the display name and is unique on
-              this domain; edit it with the pencil if you need a different one.
+              this domain. Edit it with the pencil if you need another one.
             </p>
           }
         </div>
@@ -434,14 +444,14 @@
                 Everyone your provider authenticates joins your own team, never a customer organization, up to your
                 billed user seats.
               }
-              Seats are never raised automatically: beyond them, sign-in fails until an administrator raises them. This
-              requires the allowed email domains below.
+              Seats are never added automatically, so sign-in fails until an administrator raises the limit. Name the
+              allowed email domains below.
             </p>
           </div>
         } @else {
           <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
-            Accounts cannot be created automatically on the shared customer portal domain, because the provider does not
-            say which customer a new user belongs to. Invite them, or give the customer its own portal domain.
+            Distr cannot create accounts on the shared customer portal domain, because the provider does not say which
+            customer a new user belongs to. Invite them, or give the customer its own portal domain.
           </p>
         }
 
@@ -464,7 +474,7 @@
                 </p>
               } @else {
                 <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
-                  Space separated. Accounts are only created for addresses in these domains.
+                  Space separated. Distr only creates accounts for addresses in these domains.
                 </p>
               }
             </div>
@@ -488,10 +498,10 @@
             </label>
           </div>
           <p class="text-xs font-normal text-gray-500 dark:text-gray-400">
-            Usually not recommended: the login page on this domain redirects here without asking, so everyone reaching
-            it ends up at the provider instead of the login form. Only one provider per domain can do this.
+            Usually not recommended. The login page on this domain then redirects here without asking, so nobody sees
+            the login form. Only one provider per domain can do this.
             <code class="font-mono">/login?manual=1</code> still shows the form, which is how anyone with a password
-            gets in when the provider is unavailable.
+            gets in while the provider is unavailable.
           </p>
         </div>
 
