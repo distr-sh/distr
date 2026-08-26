@@ -100,3 +100,49 @@ func TestRenderPayload(t *testing.T) {
 		g.Expect(string(result)).To(MatchJSON(`{"plan": "business", "seats": 3}`))
 	})
 }
+
+//nolint:lll // kept verbatim so it can be pasted into the license template form unchanged
+const distrLicenseTemplate = `{
+  "ld": {
+    "enf": true,
+    "t": "{{ if hasItem "distr_business_customer_monthly" "distr_business_customer_yearly" }}business{{ else }}pro{{ end }}",
+    "p": "{{ if hasItem "distr_pro_customer_yearly" "distr_business_customer_yearly" }}yearly{{ else }}monthly{{ end }}",
+    "mo": 1,
+    "mou": {{ or (itemQuantity "distr_pro_user_monthly") (itemQuantity "distr_pro_user_yearly") (itemQuantity "distr_business_user_monthly") (itemQuantity "distr_business_user_yearly") }},
+    "moc": {{ or (itemQuantity "distr_pro_customer_monthly") (itemQuantity "distr_pro_customer_yearly") (itemQuantity "distr_business_customer_monthly") (itemQuantity "distr_business_customer_yearly") }}
+  }
+}`
+
+func TestRenderPayload_DistrLicenseTemplate(t *testing.T) {
+	t.Run("pro monthly subscription", func(t *testing.T) {
+		g := NewWithT(t)
+		sub := subscriptionWithItems(
+			subscriptionItem("distr_pro_customer_monthly", 5),
+			subscriptionItem("distr_pro_user_monthly", 3),
+		)
+		result, err := RenderPayload(tmpl(distrLicenseTemplate), sub)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(string(result)).To(MatchJSON(
+			`{"ld":{"enf":true,"t":"pro","p":"monthly","mo":1,"mou":3,"moc":5}}`))
+	})
+
+	t.Run("business yearly subscription", func(t *testing.T) {
+		g := NewWithT(t)
+		sub := subscriptionWithItems(
+			subscriptionItem("distr_business_customer_yearly", 20),
+			subscriptionItem("distr_business_user_yearly", 7),
+		)
+		result, err := RenderPayload(tmpl(distrLicenseTemplate), sub)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(string(result)).To(MatchJSON(
+			`{"ld":{"enf":true,"t":"business","p":"yearly","mo":1,"mou":7,"moc":20}}`))
+	})
+
+	t.Run("subscription without any known price key", func(t *testing.T) {
+		g := NewWithT(t)
+		result, err := RenderPayload(tmpl(distrLicenseTemplate), stripe.Subscription{})
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(string(result)).To(MatchJSON(
+			`{"ld":{"enf":true,"t":"pro","p":"monthly","mo":1,"mou":0,"moc":0}}`))
+	})
+}

@@ -138,43 +138,42 @@ func handleStripeSubscription(ctx context.Context, sub stripe.Subscription) erro
 		org.StripeSubscriptionID = &sub.ID
 		org.StripeCustomerID = &sub.Customer.ID
 
+		var plan types.SubscriptionPlan
+
 		if sub.Status == stripe.SubscriptionStatusCanceled {
-			org.SubscriptionEndsAt = time.Now()
+			plan.EndsAt = time.Now()
 		} else if currentPeriodEnd, err := billing.GetCurrentPeriodEnd(sub); err != nil {
 			return fmt.Errorf("%w: %w", apierrors.ErrBadRequest, err)
 		} else {
-			org.SubscriptionEndsAt = *currentPeriodEnd
+			plan.EndsAt = *currentPeriodEnd
 		}
 
 		if subscriptionType, err := billing.GetSubscriptionType(sub); err != nil {
 			return fmt.Errorf("%w: %w", apierrors.ErrBadRequest, err)
 		} else {
-			org.SubscriptionType = *subscriptionType
+			plan.Type = *subscriptionType
 		}
 
 		if qty, err := billing.GetCustomerOrganizationQty(sub); err != nil {
 			log.Warn("could not get customer organization quantity", zap.Error(err))
-			org.SubscriptionCustomerOrganizationQty = 0
+			plan.CustomerOrganizationQty = 0
 		} else {
-			org.SubscriptionCustomerOrganizationQty = qty
+			plan.CustomerOrganizationQty = qty
 		}
 
 		if qty, err := billing.GetUserAccountQty(sub); err != nil {
 			return fmt.Errorf("%w: %w", apierrors.ErrBadRequest, err)
 		} else {
-			org.SubscriptionUserAccountQty = qty
+			plan.UserAccountQty = qty
 		}
 
 		if subscriptionPeriod, err := billing.GetSubscriptionPeriod(sub); err != nil {
 			return fmt.Errorf("%w: %w", apierrors.ErrBadRequest, err)
 		} else {
-			org.SubscriptionPeriod = subscriptionPeriod
+			plan.Period = subscriptionPeriod
 		}
 
-		// Grant the features of the (possibly new) plan. Features are intentionally never
-		// revoked here: only the community edition strips features (ReconcileEditionFeatures),
-		// and manually granted features (e.g. vendor_billing) must survive plan changes.
-		org.AddFeatures(types.FeaturesForSubscriptionType(org.SubscriptionType)...)
+		org.ApplyPlan(plan)
 
 		log.Info("updated organization subscription",
 			zap.Stringer("organizationId", org.ID),

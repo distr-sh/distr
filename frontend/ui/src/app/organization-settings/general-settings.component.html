@@ -46,9 +46,8 @@
           placeholder="slug" />
         <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
           The slug is part of the URLs that belong to your organization: your artifact registry repositories and the
-          login and callback URL of every identity provider you configure. It must start with a lower case letter or
-          digit and consist only of lowercase letters, digits, as well as the following special characters: “.”, “_”,
-          “__”, “-”.
+          login and callback URL of every identity provider you configure. It has to start with a lowercase letter or
+          digit and may otherwise contain lowercase letters, digits and the characters ".", "_", "__" and "-".
         </p>
         @if (form.controls.slug.invalid && form.controls.slug.touched) {
           <p class="mt-1 text-sm text-red-600 dark:text-red-500">Slug must be url safe.</p>
@@ -82,8 +81,8 @@
           Enable Pre- and Post-Connect Scripts (Pre-Flight Checks)
         </label>
         <p class="mt-1 mb-3 text-xs font-normal text-gray-500 dark:text-gray-400">
-          When enabled, Docker agent install commands will use a shell script that wraps docker compose, allowing pre-
-          and post-connect scripts to run during agent setup.
+          When enabled, Docker agent install commands use a shell script that wraps docker compose, so that pre- and
+          post-connect scripts can run during agent setup.
         </p>
       </div>
     </div>
