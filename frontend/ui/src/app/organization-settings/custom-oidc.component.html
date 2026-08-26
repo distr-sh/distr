@@ -90,13 +90,7 @@
 
         @if (oidcProvidersEnabled()) {
           <h4 class="text-base font-semibold text-gray-900 dark:text-white mt-8">Identity Providers</h4>
-          @if (configurable() && appDomain(); as domain) {
-            <ng-container [ngTemplateOutlet]="providerSection" [ngTemplateOutletContext]="{$implicit: domain}" />
-          } @else if (!appDomain()) {
-            <p class="text-sm font-normal italic text-gray-500 dark:text-gray-400">
-              A custom domain is required to configure identity providers.
-            </p>
-          }
+          <ng-container [ngTemplateOutlet]="providerSection" [ngTemplateOutletContext]="{$implicit: appDomain()}" />
         }
       </section>
     }
@@ -143,13 +137,9 @@
 
       @if (oidcProvidersEnabled()) {
         <h4 class="text-base font-semibold text-gray-900 dark:text-white mt-8">Identity Providers</h4>
-        @if (configurable() && customerPortalDomain(); as domain) {
-          <ng-container [ngTemplateOutlet]="providerSection" [ngTemplateOutletContext]="{$implicit: domain}" />
-        } @else if (!customerPortalDomain()) {
-          <p class="text-sm font-normal italic text-gray-500 dark:text-gray-400">
-            A custom domain is required to configure identity providers.
-          </p>
-        }
+        <ng-container
+          [ngTemplateOutlet]="providerSection"
+          [ngTemplateOutletContext]="{$implicit: customerPortalDomain()}" />
       }
     </section>
 
@@ -224,7 +214,6 @@
                     </span>
                   }
                 </div>
-                <code class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ configuration.slug }}</code>
               </td>
               <td class="px-4 py-3">
                 <div class="flex items-center gap-2">
@@ -241,13 +230,14 @@
                   type="button"
                   (click)="test(configuration)"
                   class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
+                  <fa-icon [icon]="faPlug" class="mr-2 text-gray-500 dark:text-gray-400" />
                   Test
                 </button>
                 <button
                   type="button"
                   (click)="showDialog(domain, configuration)"
                   class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-                  <fa-icon [icon]="faPen" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
+                  <fa-icon [icon]="faPen" class="mr-2 text-gray-500 dark:text-gray-400" />
                   Edit
                 </button>
                 <button
@@ -272,13 +262,21 @@
       </table>
     </div>
 
-    <button
-      type="button"
-      (click)="showDialog(domain)"
-      class="py-2 px-4 flex items-center text-sm font-medium text-center distr-btn-secondary">
-      <fa-icon [icon]="faPlus" class="h-4 w-4 mr-2 -ml-0.5 text-gray-500 dark:text-gray-400" />
-      Add identity provider
-    </button>
+    <div class="space-y-2">
+      <button
+        type="button"
+        [disabled]="!domain || !configurable()"
+        (click)="showDialog(domain)"
+        class="py-2 px-4 flex items-center text-sm font-medium text-center distr-btn-secondary disabled:opacity-60 disabled:cursor-not-allowed">
+        <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
+        Add identity provider
+      </button>
+      @if (!domain) {
+        <p class="text-xs font-normal text-yellow-700 dark:text-yellow-300">
+          Identity providers only work on custom domains. Configure and verify one first.
+        </p>
+      }
+    </div>
   </div>
 </ng-template>
 

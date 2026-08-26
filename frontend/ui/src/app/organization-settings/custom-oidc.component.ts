@@ -4,7 +4,7 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faPen, faPlug, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {BehaviorSubject, combineLatest, firstValueFrom, from, map, of, switchMap} from 'rxjs';
 import {getRemoteEnvironment} from '../../env/remote';
 import {getFormDisplayedError} from '../../util/errors';
@@ -43,6 +43,7 @@ const DEFAULT_SCOPES = ['openid', 'profile', 'email'];
 export class CustomOidcComponent {
   protected readonly faPlus = faPlus;
   protected readonly faPen = faPen;
+  protected readonly faPlug = faPlug;
   protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
 
@@ -262,8 +263,8 @@ export class CustomOidcComponent {
 
   protected readonly configurable = computed(() => !!this.organizationSlug());
 
-  protected configurationsFor(domain: CustomDomain): CustomOidcConfiguration[] {
-    return this.configurations().filter((configuration) => configuration.customDomainId === domain.id);
+  protected configurationsFor(domain: CustomDomain | undefined): CustomOidcConfiguration[] {
+    return domain ? this.configurations().filter((configuration) => configuration.customDomainId === domain.id) : [];
   }
 
   // Each host carries its own provider set, so a provider belongs to the domain and not to the
