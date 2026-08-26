@@ -72,11 +72,12 @@
                     </div>
                     <label class="inline-flex items-center cursor-pointer">
                       <input
+                        #enabledToggle
                         type="checkbox"
                         class="sr-only peer"
                         [checked]="script.enabled"
                         [disabled]="!auth.hasAnyRole('read_write', 'admin')"
-                        (change)="toggleScriptEnabled(script)" />
+                        (change)="toggleScriptEnabled(script, enabledToggle)" />
                       <div class="distr-toggle"></div>
                       <span class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Enabled</span>
                     </label>

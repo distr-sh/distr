@@ -236,7 +236,7 @@ export class SupportBundleSettingsComponent {
     }
   }
 
-  protected async toggleScriptEnabled(script: SupportBundleConfigurationScript) {
+  protected async toggleScriptEnabled(script: SupportBundleConfigurationScript, toggle: HTMLInputElement) {
     try {
       const updated = await firstValueFrom(
         this.svc.updateScript(script.id, {
@@ -248,6 +248,7 @@ export class SupportBundleSettingsComponent {
       );
       this.scripts.update((scripts) => scripts.map((s) => (s.id === updated.id ? updated : s)));
     } catch (e) {
+      toggle.checked = script.enabled;
       const msg = getFormDisplayedError(e);
       if (msg) {
         this.toast.error(msg);
