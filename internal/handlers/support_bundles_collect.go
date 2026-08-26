@@ -79,9 +79,23 @@ func getCollectScriptHandler() http.HandlerFunc {
 			return
 		}
 
-		script, err := supportbundle.GenerateCollectScript(
-			baseURL, bundle.ID, bundleSecret, envVars, env.SupportBundleLogTailLines(),
-		)
+		scripts, err := db.GetEnabledSupportBundleConfigurationScripts(ctx, bundle.OrganizationID)
+		if err != nil {
+			log.Error("failed to get support bundle config scripts", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		script, err := supportbundle.GenerateCollectScript(supportbundle.CollectScriptParams{
+			BaseURL:              baseURL,
+			BundleID:             bundle.ID,
+			BundleSecret:         bundleSecret,
+			EnvVars:              envVars,
+			Scripts:              scripts,
+			LogTailLines:         env.SupportBundleLogTailLines(),
+			ScriptOutputMaxBytes: env.SupportBundleScriptOutputMaxBytes(),
+		})
 		if err != nil {
 			log.Error("failed to generate collect script", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)

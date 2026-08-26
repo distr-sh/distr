@@ -95,6 +95,7 @@ var (
 	metricsAddr                            string
 	metricsBearerToken                     *string
 	supportBundleLogTailLines              int
+	supportBundleScriptOutputMaxBytes      int
 	lokiURL                                string
 	lokiBearerToken                        *string
 	lokiBasicAuthUsername                  *string
@@ -293,6 +294,9 @@ func Initialize() {
 	metricsBearerToken = envutil.GetEnvOrNil("METRICS_BEARER_TOKEN")
 	supportBundleLogTailLines = envutil.GetEnvParsedOrDefault(
 		"SUPPORT_BUNDLE_LOG_TAIL_LINES", envparse.PositiveNumber, 1000,
+	)
+	supportBundleScriptOutputMaxBytes = envutil.GetEnvParsedOrDefault(
+		"SUPPORT_BUNDLE_SCRIPT_OUTPUT_MAX_BYTES", envparse.PositiveNumber, 1024*1024,
 	)
 
 	lokiURL = envutil.RequireEnv("LOKI_URL")
@@ -630,6 +634,12 @@ func MetricsBearerToken() *string {
 // collected by the support bundle collect script.
 func SupportBundleLogTailLines() int {
 	return supportBundleLogTailLines
+}
+
+// SupportBundleScriptOutputMaxBytes is the maximum amount of output collected per custom script
+// by the support bundle collect script.
+func SupportBundleScriptOutputMaxBytes() int {
+	return supportBundleScriptOutputMaxBytes
 }
 
 // LokiURL is the base URL of the Loki instance storing deployment and deployment

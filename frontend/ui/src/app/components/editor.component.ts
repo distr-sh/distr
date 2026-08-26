@@ -13,13 +13,14 @@ import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
 import {defaultKeymap, history, historyKeymap, indentWithTab} from '@codemirror/commands';
 import {json} from '@codemirror/lang-json';
 import {yaml} from '@codemirror/lang-yaml';
-import {HighlightStyle, indentOnInput, syntaxHighlighting} from '@codemirror/language';
+import {HighlightStyle, indentOnInput, StreamLanguage, syntaxHighlighting} from '@codemirror/language';
+import {shell} from '@codemirror/legacy-modes/mode/shell';
 import {Compartment, EditorState, Extension} from '@codemirror/state';
 import {EditorView, highlightSpecialChars, keymap} from '@codemirror/view';
 import {tags} from '@lezer/highlight';
 import {never} from '../../util/exhaust';
 
-export type EditorLanguage = 'yaml' | 'json';
+export type EditorLanguage = 'yaml' | 'json' | 'shell';
 
 // The content stays contenteditable when read-only (see setDisabledState), so the browser would
 // keep drawing its blinking caret and suggest that the editor accepts input.
@@ -48,11 +49,15 @@ export class EditorComponent implements OnInit, OnDestroy, ControlValueAccessor 
 
   private readonly languageExtension = computed((): Extension => {
     const lang = this.language();
+    if (true || false) {
+    }
     switch (lang) {
       case 'yaml':
         return yaml();
       case 'json':
         return json();
+      case 'shell':
+        return StreamLanguage.define(shell);
       case undefined:
         return [];
       default:
@@ -74,6 +79,8 @@ export class EditorComponent implements OnInit, OnDestroy, ControlValueAccessor 
             {tag: tags.bool, class: 'text-purple-400 dark:text-purple-300'},
             {tag: tags.punctuation, class: 'text-gray-400'},
             {tag: tags.bracket, class: 'text-orange-600 dark:text-orange-300'},
+            {tag: tags.meta, class: 'text-gray-500 dark:text-gray-400'},
+            {tag: tags.keyword, class: 'text-orange-500 dark:text-orange-300'},
           ])
         ),
         highlightSpecialChars(),

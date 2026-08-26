@@ -18,15 +18,13 @@ BUNDLE_SECRET="{{.Token}}"
 _tmpdir=$(mktemp -d)
 trap 'rm -rf "$_tmpdir"' EXIT
 
-upload_resource() {
+upload_resource_file() {
   _name="$1"
-  _content="$2"
-  _tmpfile="${_tmpdir}/upload_content.tmp"
+  _file="$2"
   _errfile="${_tmpdir}/upload_err.tmp"
-  printf '%s' "$_content" > "$_tmpfile"
   if ! curl -fsSL -X POST \
     -F "name=${_name}" \
-    -F "content=@${_tmpfile}" \
+    -F "content=@${_file}" \
     "${BASE_URL}/resources?bundleSecret=${BUNDLE_SECRET}" > /dev/null 2>"$_errfile"; then
     _err=$(cat "$_errfile" 2>/dev/null)
     if [ -n "$_err" ]; then
@@ -35,9 +33,28 @@ upload_resource() {
       echo "    Warning: failed to upload ${_name}"
     fi
   fi
-  rm -f "$_tmpfile" "$_errfile"
+  rm -f "$_errfile"
 }
 
+upload_resource() {
+  _tmpfile="${_tmpdir}/upload_content.tmp"
+  printf '%s' "$2" > "$_tmpfile"
+  upload_resource_file "$1" "$_tmpfile"
+  rm -f "$_tmpfile"
+}
+{{if .Scripts}}
+# Run a custom script with the interpreter named in its shebang, falling back to sh. The
+# interpreter is deliberately unquoted so that "#!/usr/bin/env bash" splits into command and
+# argument. Executing the file directly instead would fail when the temp dir is mounted noexec.
+run_custom_script() {
+  _interp=$(sed -n '1s/^#![[:space:]]*//p' "$1" | tr -d '\r')
+  if [ -n "$_interp" ] && command -v "${_interp%% *}" > /dev/null 2>&1; then
+    $_interp "$1"
+  else
+    sh "$1"
+  fi
+}
+{{end}}
 # Parse a comma-separated list of numbers and validate each is in range 1..max.
 # Outputs a validated comma set like ",1,3," for use with grep.
 parse_exclude_input() {
@@ -291,6 +308,121 @@ if [ -n "$INCLUDED_CONTAINERS" ]; then
 $INCLUDED_CONTAINERS
 EOF_INCLUDED
 fi
+
+{{- if .Scripts}}
+
+# Run the custom scripts configured by the vendor and collect their output. The scripts are
+# embedded base64-encoded so that nothing in them can terminate the heredoc above.
+echo ""
+echo "Preparing custom scripts..."
+SCRIPT_COUNT=0
+if ! command -v base64 > /dev/null 2>&1; then
+  echo "  Warning: base64 is not available, skipping custom scripts"
+else
+  mkdir -p "${_tmpdir}/scripts"
+{{- range .Scripts}}
+  SCRIPT_COUNT=$((SCRIPT_COUNT + 1))
+  printf '%s' {{.NameQuoted}} > "${_tmpdir}/scripts/${SCRIPT_COUNT}.name"
+  printf '%s' {{.DescriptionQuoted}} > "${_tmpdir}/scripts/${SCRIPT_COUNT}.desc"
+  printf '%s' '{{.ContentBase64}}' | base64 -d > "${_tmpdir}/scripts/${SCRIPT_COUNT}.sh"
+{{- end}}
+fi
+
+if [ "$SCRIPT_COUNT" -gt 0 ]; then
+  echo ""
+  echo "Your vendor provided the following scripts to run on this host:"
+  echo "---"
+  _s=1
+  while [ "$_s" -le "$SCRIPT_COUNT" ]; do
+    printf "  [%d] %s\n" "$_s" "$(cat "${_tmpdir}/scripts/${_s}.name")"
+    _sdesc=$(cat "${_tmpdir}/scripts/${_s}.desc")
+    if [ -n "$_sdesc" ]; then
+      printf "      %s\n" "$_sdesc"
+    fi
+    echo ""
+    while IFS= read -r _line; do
+      printf "      %s\n" "$_line"
+    done < "${_tmpdir}/scripts/${_s}.sh"
+    echo ""
+    _s=$((_s + 1))
+  done
+
+  echo "Enter script numbers to EXCLUDE from running (comma-separated), or press Enter to run all:"
+  read -r SCRIPT_EXCLUDE_INPUT
+  SCRIPT_EXCLUDE_SET=$(parse_exclude_input "$SCRIPT_EXCLUDE_INPUT" "$SCRIPT_COUNT")
+
+  echo ""
+  SCRIPT_OUTPUT_COUNT=0
+  _s=1
+  while [ "$_s" -le "$SCRIPT_COUNT" ]; do
+    _sname=$(cat "${_tmpdir}/scripts/${_s}.name")
+    _sbase="${_tmpdir}/scripts/${_s}"
+    if [ -n "$SCRIPT_EXCLUDE_SET" ] && echo "$SCRIPT_EXCLUDE_SET" | grep -q ",$_s,"; then
+      echo "  Skipping ${_sname}"
+    else
+      echo "  Running ${_sname}..."
+      # Custom scripts must not consume the stdin the collector reads its prompts from.
+      run_custom_script "${_sbase}.sh" > "${_sbase}.raw" 2> "${_sbase}.err" < /dev/null
+      _scode=$?
+      head -c {{.ScriptOutputMaxBytes}} "${_sbase}.raw" > "${_sbase}.out"
+      if [ "$(wc -c < "${_sbase}.raw")" -gt {{.ScriptOutputMaxBytes}} ]; then
+        printf '\n--- distr: output truncated at %s bytes ---\n' "{{.ScriptOutputMaxBytes}}" >> "${_sbase}.out"
+      fi
+      if [ "$_scode" -ne 0 ]; then
+        printf '\n--- distr: script exited with code %s ---\n' "$_scode" >> "${_sbase}.out"
+      fi
+      if [ -s "${_sbase}.err" ]; then
+        printf '\n--- distr: stderr ---\n' >> "${_sbase}.out"
+        head -c {{.ScriptOutputMaxBytes}} "${_sbase}.err" >> "${_sbase}.out"
+      fi
+      SCRIPT_OUTPUT_COUNT=$((SCRIPT_OUTPUT_COUNT + 1))
+    fi
+    _s=$((_s + 1))
+  done
+
+  if [ "$SCRIPT_OUTPUT_COUNT" -gt 0 ]; then
+    echo ""
+    echo "Script output to upload:"
+    echo "---"
+    _s=1
+    while [ "$_s" -le "$SCRIPT_COUNT" ]; do
+      _sbase="${_tmpdir}/scripts/${_s}"
+      if [ -f "${_sbase}.out" ]; then
+        printf "  %s\n" "$(cat "${_sbase}.name")"
+        _slines=$(wc -l < "${_sbase}.out")
+        head -n 30 "${_sbase}.out" | while IFS= read -r _line; do
+          printf "      %s\n" "$_line"
+        done
+        if [ "$_slines" -gt 30 ]; then
+          printf "      ... (%s more lines)\n" "$((_slines - 30))"
+        fi
+        echo ""
+      fi
+      _s=$((_s + 1))
+    done
+
+    printf "Upload script output? [Y/n]: "
+    read -r SCRIPT_CONFIRM
+    case "$SCRIPT_CONFIRM" in
+      [nN]*)
+        echo "  Skipping script output upload"
+        ;;
+      *)
+        _s=1
+        while [ "$_s" -le "$SCRIPT_COUNT" ]; do
+          _sbase="${_tmpdir}/scripts/${_s}"
+          if [ -f "${_sbase}.out" ]; then
+            _sname=$(cat "${_sbase}.name")
+            upload_resource_file "$_sname" "${_sbase}.out"
+            echo "  Uploaded output of ${_sname}"
+          fi
+          _s=$((_s + 1))
+        done
+        ;;
+    esac
+  fi
+fi
+{{- end}}
 
 # Finalize support bundle
 echo ""
