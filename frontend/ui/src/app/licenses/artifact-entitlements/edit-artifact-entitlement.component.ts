@@ -29,7 +29,7 @@ import {
   Validators,
 } from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faChevronDown, faMagnifyingGlass, faPen, faPlus, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faChevronDown, faPen, faPlus, faXmark} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
 import {distinctUntilChanged, first, firstValueFrom, of, Subject, switchMap, takeUntil} from 'rxjs';
 import {RelativeDatePipe} from '../../../util/dates';
@@ -100,7 +100,6 @@ export class EditArtifactEntitlementComponent
   dropdownWidth: number = 0;
   protected readonly dropdownTriggerButton = viewChild.required<ElementRef<HTMLElement>>('dropdownTriggerButton');
 
-  protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faChevronDown = faChevronDown;
   protected readonly faPlus = faPlus;
   protected readonly faXmark = faXmark;

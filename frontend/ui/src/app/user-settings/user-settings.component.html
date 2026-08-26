@@ -1,28 +1,26 @@
-<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
-  <div class="mx-auto max-w-screen-lg px-4">
-    <div class="bg-white dark:bg-gray-800 relative shadow-md rounded-lg overflow-hidden p-10 mb-20">
-      <h1 class="mb-6 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl dark:text-white">
-        User Settings
-      </h1>
+<app-page variant="narrow">
+  <div class="distr-panel">
+    <h1 class="mb-6 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl dark:text-white">
+      User Settings
+    </h1>
 
-      @if (customOidcSession) {
-        <div
-          class="flex items-start gap-3 mb-6 p-4 text-sm rounded-lg border border-primary-200 bg-primary-50 text-primary-800 dark:border-primary-800 dark:bg-gray-700 dark:text-primary-300"
-          role="alert">
-          <fa-icon [icon]="faCircleExclamation" class="mt-0.5 shrink-0" />
-          <span>
-            You signed in through your organization's identity provider, so you cannot change your e-mail address, set
-            up multi-factor authentication, or disconnect an identity here. Request a password reset on the Security tab
-            to sign in with a password instead, which also lets you set your first one.
-          </span>
-        </div>
-      }
-
-      <app-tab-bar [tabs]="tabs" [(active)]="activeTab" (tabClick)="onTabClick($event)" />
-
-      <div role="tabpanel" class="pt-6" [id]="'tabpanel-' + activeTab()" [attr.aria-labelledby]="'tab-' + activeTab()">
-        <router-outlet />
+    @if (customOidcSession) {
+      <div
+        class="flex items-start gap-3 mb-6 p-4 text-sm rounded-lg border border-primary-200 bg-primary-50 text-primary-800 dark:border-primary-800 dark:bg-gray-700 dark:text-primary-300"
+        role="alert">
+        <fa-icon [icon]="faCircleExclamation" class="mt-0.5 shrink-0" />
+        <span>
+          You signed in through your organization's identity provider, so you cannot change your e-mail address, set up
+          multi-factor authentication, or disconnect an identity here. Request a password reset on the Security tab to
+          sign in with a password instead, which also lets you set your first one.
+        </span>
       </div>
+    }
+
+    <app-tab-bar [tabs]="tabs" [(active)]="activeTab" (tabClick)="onTabClick($event)" />
+
+    <div role="tabpanel" class="pt-6" [id]="'tabpanel-' + activeTab()" [attr.aria-labelledby]="'tab-' + activeTab()">
+      <router-outlet />
     </div>
   </div>
-</section>
+</app-page>

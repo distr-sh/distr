@@ -25,6 +25,7 @@ import {
 import {firstValueFrom} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {EditorComponent} from '../../components/editor.component';
+import {PageComponent} from '../../components/page.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AuthService} from '../../services/auth.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
@@ -61,7 +62,7 @@ function uniqueNamesValidator(): ValidatorFn {
   selector: 'app-support-bundle-settings',
   templateUrl: './support-bundle-settings.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective, RouterLink, EditorComponent],
+  imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective, RouterLink, EditorComponent, PageComponent],
 })
 export class SupportBundleSettingsComponent {
   protected readonly faFloppyDisk = faFloppyDisk;

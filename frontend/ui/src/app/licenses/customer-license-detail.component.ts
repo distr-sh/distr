@@ -4,6 +4,7 @@ import {toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faBoxesStacked, faChevronDown} from '@fortawesome/free-solid-svg-icons';
+import {PageComponent} from '../components/page.component';
 import {CustomerOrganizationsService} from '../services/customer-organizations.service';
 import {ApplicationEntitlementsComponent} from './application-entitlements/application-entitlements.component';
 import {ArtifactEntitlementsComponent} from './artifact-entitlements/artifact-entitlements.component';
@@ -18,6 +19,7 @@ import {LicenseKeysComponent} from './license-keys/license-keys.component';
     LicenseKeysComponent,
     ApplicationEntitlementsComponent,
     ArtifactEntitlementsComponent,
+    PageComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './customer-license-detail.component.html',

@@ -20,7 +20,6 @@ import {
   faCheck,
   faCircleExclamation,
   faClipboard,
-  faMagnifyingGlass,
   faPen,
   faPlus,
   faRepeat,
@@ -45,6 +44,7 @@ import {isProSubscription} from '../../types/subscription';
 import {AvatarComponent} from '../avatar.component';
 import {InlineEditComponent} from '../inline-edit.component';
 import {QuotaLimitComponent} from '../quota-limit.component';
+import {SearchBarComponent} from '../search-bar.component';
 import {UserRoleSelectComponent} from '../user-role-select.component';
 
 @Component({
@@ -62,6 +62,7 @@ import {UserRoleSelectComponent} from '../user-role-select.component';
     UserRoleSelectComponent,
     UserRoleLabelPipe,
     InlineEditComponent,
+    SearchBarComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './users.component.html',
@@ -85,7 +86,6 @@ export class UsersComponent {
   protected readonly faCheck = faCheck;
   protected readonly faCircleExclamation = faCircleExclamation;
   protected readonly faClipboard = faClipboard;
-  protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faPen = faPen;
   protected readonly faPlus = faPlus;
   protected readonly faRepeat = faRepeat;

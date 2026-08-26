@@ -30,6 +30,7 @@ import {combineLatest, debounceTime, firstValueFrom, map, of, switchMap, timer} 
 import {MAX_LOG_EXPORT_LINES} from '../../../constants';
 import {dateTimeLocalToISO, isoToDateTimeLocal} from '../../../util/dates';
 import {ConfirmConfig} from '../../components/confirm-dialog/confirm-dialog.component';
+import {PageComponent} from '../../components/page.component';
 import {AuthService} from '../../services/auth.service';
 import {DeploymentLogsService} from '../../services/deployment-logs.service';
 import {DeploymentTargetsService} from '../../services/deployment-targets.service';
@@ -57,6 +58,7 @@ const BUSINESS_LOG_BANNER_DISMISSED_KEY = 'logViewer.businessLogBannerDismissed'
     OverlayModule,
     ReactiveFormsModule,
     RouterLink,
+    PageComponent,
   ],
   providers: [DecimalPipe],
 })

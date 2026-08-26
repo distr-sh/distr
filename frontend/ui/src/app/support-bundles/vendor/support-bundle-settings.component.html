@@ -1,95 +1,42 @@
-<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
-  <div class="mx-auto max-w-screen-lg px-4">
-    <div class="bg-white dark:bg-gray-800 relative shadow-md rounded-lg overflow-hidden p-10">
-      <a
-        routerLink="/support-bundles"
-        class="inline-flex items-center mb-4 text-sm font-medium text-primary-700 hover:text-primary-800 dark:text-primary-500 dark:hover:text-primary-400">
-        <fa-icon [icon]="faArrowLeft" class="mr-2" />
-        Back to Support Bundles
-      </a>
-      <h1
-        class="pb-4 mb-4 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl dark:text-white border-b border-gray-200 dark:border-gray-700">
-        Support Bundle Settings
-      </h1>
-      <p class="text-gray-500 dark:text-gray-400">
-        Configure the environment variables that should be collected from the host and Docker containers when customers
-        create support bundles. Only the variables listed below will be collected. Variables marked as redacted will
-        have their values replaced with [REDACTED] in the collected data.
-      </p>
+<app-page variant="narrow">
+  <div class="distr-panel">
+    <a
+      routerLink="/support-bundles"
+      class="inline-flex items-center mb-4 text-sm font-medium text-primary-700 hover:text-primary-800 dark:text-primary-500 dark:hover:text-primary-400">
+      <fa-icon [icon]="faArrowLeft" class="mr-2" />
+      Back to Support Bundles
+    </a>
+    <h1
+      class="pb-4 mb-4 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl dark:text-white border-b border-gray-200 dark:border-gray-700">
+      Support Bundle Settings
+    </h1>
+    <p class="text-gray-500 dark:text-gray-400">
+      Configure the environment variables that should be collected from the host and Docker containers when customers
+      create support bundles. Only the variables listed below will be collected. Variables marked as redacted will have
+      their values replaced with [REDACTED] in the collected data.
+    </p>
 
-      @if (!loading()) {
-        <div class="mt-6 space-y-4">
-          <div class="flex items-center justify-between">
-            <h2 class="text-xl font-bold dark:text-white">Environment Variables</h2>
-            @if (auth.hasAnyRole('read_write', 'admin')) {
-              <div class="flex gap-2">
-                <button
-                  type="button"
-                  (click)="openImportModal(importModal)"
-                  [disabled]="envVarsArray.dirty"
-                  [attr.title]="envVarsArray.dirty ? 'Save pending changes before importing' : null"
-                  class="inline-flex items-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 disabled:opacity-60 disabled:cursor-not-allowed dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                  <fa-icon [icon]="faFileImport" class="mr-2 text-gray-500 dark:text-gray-400" />
-                  Import
-                </button>
-                <button
-                  type="button"
-                  (click)="addEnvVar()"
-                  class="inline-flex items-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                  <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
-                  Add Variable
-                </button>
-              </div>
-            }
-          </div>
-
-          @if (envVarsArray.length > 0) {
-            <div class="space-y-3">
-              @for (group of envVarsArray.controls; track $index) {
-                <div class="flex items-center gap-4">
-                  <div class="flex-1">
-                    <input
-                      type="text"
-                      autotrim
-                      [formControl]="group.controls.name"
-                      placeholder="Variable name"
-                      class="bg-gray-50 border text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                      [class.border-gray-300]="!duplicateIndices.has($index)"
-                      [class.dark:border-gray-600]="!duplicateIndices.has($index)"
-                      [class.border-red-500]="duplicateIndices.has($index)"
-                      [class.dark:border-red-500]="duplicateIndices.has($index)" />
-                    @if (duplicateIndices.has($index)) {
-                      <p class="mt-1 text-sm text-red-600 dark:text-red-500">Duplicate variable name</p>
-                    }
-                  </div>
-                  <label class="inline-flex items-center cursor-pointer">
-                    <input type="checkbox" class="sr-only peer" [formControl]="group.controls.redacted" />
-                    <div class="distr-toggle"></div>
-                    <span class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Redacted</span>
-                  </label>
-                  @if (auth.hasAnyRole('read_write', 'admin')) {
-                    <button type="button" (click)="removeEnvVar($index)" class="py-2 px-3 distr-btn-danger">
-                      <fa-icon [icon]="faTrash" class="h-4 w-4" />
-                    </button>
-                  }
-                </div>
-              }
-            </div>
-          } @else {
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-              No environment variables configured. Click "Add Variable" to add one.
-            </p>
-          }
-
+    @if (!loading()) {
+      <div class="mt-6 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-bold dark:text-white">Environment Variables</h2>
           @if (auth.hasAnyRole('read_write', 'admin')) {
-            <div class="flex justify-center w-full space-x-4 mt-8 sm:mt-0">
+            <div class="flex gap-2">
               <button
                 type="button"
-                (click)="save()"
-                [disabled]="saving() || duplicateIndices.size > 0 || envVarsArray.pristine"
-                class="text-white w-full inline-flex items-center justify-center distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
-                <fa-icon [icon]="faFloppyDisk" class="mr-2" />
-                Save
+                (click)="openImportModal(importModal)"
+                [disabled]="envVarsArray.dirty"
+                [attr.title]="envVarsArray.dirty ? 'Save pending changes before importing' : null"
+                class="inline-flex items-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 disabled:opacity-60 disabled:cursor-not-allowed dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                <fa-icon [icon]="faFileImport" class="mr-2 text-gray-500 dark:text-gray-400" />
+                Import
+              </button>
+              <button
+                type="button"
+                (click)="addEnvVar()"
+                class="inline-flex items-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                <fa-icon [icon]="faPlus" class="mr-2 text-gray-500 dark:text-gray-400" />
+                Add Variable
               </button>
             </div>
           }
@@ -156,10 +103,61 @@
             }
           </div>
         </div>
-      }
-    </div>
+
+        @if (envVarsArray.length > 0) {
+          <div class="space-y-3">
+            @for (group of envVarsArray.controls; track $index) {
+              <div class="flex items-center gap-4">
+                <div class="flex-1">
+                  <input
+                    type="text"
+                    autotrim
+                    [formControl]="group.controls.name"
+                    placeholder="Variable name"
+                    class="bg-gray-50 border text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                    [class.border-gray-300]="!duplicateIndices.has($index)"
+                    [class.dark:border-gray-600]="!duplicateIndices.has($index)"
+                    [class.border-red-500]="duplicateIndices.has($index)"
+                    [class.dark:border-red-500]="duplicateIndices.has($index)" />
+                  @if (duplicateIndices.has($index)) {
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-500">Duplicate variable name</p>
+                  }
+                </div>
+                <label class="inline-flex items-center cursor-pointer">
+                  <input type="checkbox" class="sr-only peer" [formControl]="group.controls.redacted" />
+                  <div class="distr-toggle"></div>
+                  <span class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Redacted</span>
+                </label>
+                @if (auth.hasAnyRole('read_write', 'admin')) {
+                  <button type="button" (click)="removeEnvVar($index)" class="py-2 px-3 distr-btn-danger">
+                    <fa-icon [icon]="faTrash" class="h-4 w-4" />
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            No environment variables configured. Click "Add Variable" to add one.
+          </p>
+        }
+
+        @if (auth.hasAnyRole('read_write', 'admin')) {
+          <div class="flex justify-center w-full space-x-4 mt-8 sm:mt-0">
+            <button
+              type="button"
+              (click)="save()"
+              [disabled]="saving() || duplicateIndices.size > 0 || envVarsArray.pristine"
+              class="text-white w-full inline-flex items-center justify-center distr-btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
+              <fa-icon [icon]="faFloppyDisk" class="mr-2" />
+              Save
+            </button>
+          </div>
+        }
+      </div>
+    }
   </div>
-</section>
+</app-page>
 
 <ng-template #scriptModal>
   <div

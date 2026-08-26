@@ -6,6 +6,7 @@ import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faGear, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {catchError, EMPTY, filter, firstValueFrom, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
+import {PageComponent} from '../components/page.component';
 import {AuthService} from '../services/auth.service';
 import {LicenseTemplatesService} from '../services/license-templates.service';
 import {OrganizationService} from '../services/organization.service';
@@ -17,7 +18,7 @@ import {LicenseTemplate} from '../types/license-template';
   selector: 'app-billing',
   templateUrl: './billing.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [FaIconComponent, ReactiveFormsModule, RouterLink],
+  imports: [FaIconComponent, ReactiveFormsModule, RouterLink, PageComponent],
 })
 export class BillingComponent {
   protected readonly auth = inject(AuthService);
