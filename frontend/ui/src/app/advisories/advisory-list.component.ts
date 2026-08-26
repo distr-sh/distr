@@ -1,16 +1,17 @@
 import {DatePipe, NgClass} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
-import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
+import {FormControl, FormGroup} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {Advisory, AdvisorySeverity, AdvisoryStatus} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faMagnifyingGlass, faPlus} from '@fortawesome/free-solid-svg-icons';
+import {faPlus} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatest, firstValueFrom, of, shareReplay, startWith, Subject, switchMap, take} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {filteredByFormControl} from '../../util/filter';
 import {MultiSelectComponent, MultiSelectOption} from '../components/multi-select/multi-select.component';
-import {AutotrimDirective} from '../directives/autotrim.directive';
+import {PageComponent} from '../components/page.component';
+import {SearchBarComponent} from '../components/search-bar.component';
 import {AdvisoriesService} from '../services/advisories.service';
 import {AuthService} from '../services/auth.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
@@ -39,12 +40,12 @@ import {AdvisoryResolveDialogComponent, AdvisoryResolveResult} from './advisory-
   imports: [
     DatePipe,
     NgClass,
-    ReactiveFormsModule,
     RouterLink,
     FaIconComponent,
-    AutotrimDirective,
     AdvisoryFormComponent,
     MultiSelectComponent,
+    PageComponent,
+    SearchBarComponent,
   ],
 })
 export class AdvisoryListComponent {
@@ -53,7 +54,6 @@ export class AdvisoryListComponent {
   private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
 
-  protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faPlus = faPlus;
   protected readonly severityBadgeClass = severityBadgeClass;
   protected readonly statusBadgeClass = statusBadgeClass;

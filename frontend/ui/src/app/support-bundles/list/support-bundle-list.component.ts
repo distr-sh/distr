@@ -4,12 +4,14 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faDownload, faGear, faMagnifyingGlass, faPlus, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faDownload, faGear, faPlus, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom, map, of, startWith, Subject, switchMap, take} from 'rxjs';
 import {downloadBlob} from '../../../util/blob';
 import {getFormDisplayedError} from '../../../util/errors';
 import {filteredByFormControl} from '../../../util/filter';
 import {ClipComponent} from '../../components/clip.component';
+import {PageComponent} from '../../components/page.component';
+import {SearchBarComponent} from '../../components/search-bar.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AuthService} from '../../services/auth.service';
 import {DialogRef, OverlayService} from '../../services/overlay.service';
@@ -22,7 +24,17 @@ import {supportBundleStatusBadgeClass} from '../support-bundle-display';
   selector: 'app-support-bundle-list',
   templateUrl: './support-bundle-list.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [DatePipe, NgClass, ReactiveFormsModule, RouterLink, FaIconComponent, ClipComponent, AutotrimDirective],
+  imports: [
+    DatePipe,
+    NgClass,
+    ReactiveFormsModule,
+    RouterLink,
+    FaIconComponent,
+    ClipComponent,
+    AutotrimDirective,
+    PageComponent,
+    SearchBarComponent,
+  ],
 })
 export class SupportBundleListComponent {
   protected readonly auth = inject(AuthService);
@@ -32,7 +44,6 @@ export class SupportBundleListComponent {
 
   protected readonly faDownload = faDownload;
   protected readonly faGear = faGear;
-  protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faPlus = faPlus;
   protected readonly faXmark = faXmark;
   protected readonly statusBadgeClass = supportBundleStatusBadgeClass;

@@ -26,7 +26,6 @@ export interface CustomOidcConfigurationsResponse {
 
 export interface CustomOidcConfigurationRequest {
   customDomainId: string;
-  // Targets a customer's own provider instead of the caller's own; only meaningful on create.
   customerOrganizationId?: string;
   name: string;
   slug: string;

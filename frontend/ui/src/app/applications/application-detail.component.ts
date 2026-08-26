@@ -21,7 +21,6 @@ import {
   faBoxesStacked,
   faChevronDown,
   faEye,
-  faMagnifyingGlass,
   faPlus,
   faTrash,
 } from '@fortawesome/free-solid-svg-icons';
@@ -47,6 +46,7 @@ import {disableControlsWithoutEvent, enableControlsWithoutEvent} from '../../uti
 import {SecureImagePipe} from '../../util/secureImage';
 import {EditorComponent} from '../components/editor.component';
 import {InlineEditComponent} from '../components/inline-edit.component';
+import {PageComponent} from '../components/page.component';
 import {UuidComponent} from '../components/uuid';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
@@ -77,6 +77,7 @@ import {
     SecureImagePipe,
     ApplicationVersionDetailModalComponent,
     InnerMarkdownDirective,
+    PageComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './application-detail.component.html',
@@ -168,7 +169,6 @@ export class ApplicationDetailComponent implements OnInit, OnDestroy {
   protected readonly faChevronDown = faChevronDown;
   protected readonly faTrash = faTrash;
   protected readonly faArchive = faArchive;
-  protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faBox = faBox;
   protected readonly faEye = faEye;
   protected readonly faPlus = faPlus;

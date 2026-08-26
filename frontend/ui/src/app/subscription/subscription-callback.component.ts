@@ -4,13 +4,14 @@ import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faCheckCircle} from '@fortawesome/free-solid-svg-icons';
 import {map} from 'rxjs';
+import {PageComponent} from '../components/page.component';
 import {OrganizationService} from '../services/organization.service';
 
 @Component({
   selector: 'app-subscription-callback',
   templateUrl: './subscription-callback.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [FaIconComponent, RouterLink],
+  imports: [FaIconComponent, RouterLink, PageComponent],
 })
 export class SubscriptionCallbackComponent {
   private readonly organizationService = inject(OrganizationService);

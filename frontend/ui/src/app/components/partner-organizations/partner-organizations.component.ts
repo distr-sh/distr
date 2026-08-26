@@ -5,7 +5,7 @@ import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {PartnerOrganizationWithUsage} from '@distr-sh/distr-sdk';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
-import {faBuilding, faMagnifyingGlass, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
+import {faBuilding, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {filter, firstValueFrom, map, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
 import {AuthService} from '../../services/auth.service';
@@ -14,14 +14,24 @@ import {PartnerOrganizationsService} from '../../services/partner-organizations.
 import {ToastService} from '../../services/toast.service';
 import {AvatarComponent} from '../avatar.component';
 import {InlineEditComponent} from '../inline-edit.component';
+import {PageComponent} from '../page.component';
+import {SearchBarComponent} from '../search-bar.component';
 
 @Component({
   templateUrl: './partner-organizations.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [ReactiveFormsModule, FontAwesomeModule, DecimalPipe, RouterLink, InlineEditComponent, AvatarComponent],
+  imports: [
+    ReactiveFormsModule,
+    FontAwesomeModule,
+    DecimalPipe,
+    RouterLink,
+    InlineEditComponent,
+    AvatarComponent,
+    PageComponent,
+    SearchBarComponent,
+  ],
 })
 export class PartnerOrganizationsComponent {
-  protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faPlus = faPlus;
   protected readonly faBuilding = faBuilding;
   protected readonly faTrash = faTrash;

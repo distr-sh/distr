@@ -15,17 +15,10 @@ import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {SidebarLink} from '@distr-sh/distr-sdk';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
-import {
-  faBoxesStacked,
-  faChevronDown,
-  faMagnifyingGlass,
-  faPen,
-  faPlus,
-  faTrash,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
+import {faBoxesStacked, faChevronDown, faPen, faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {combineLatest, firstValueFrom, of, startWith, Subject, switchMap} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
+import {PageComponent} from '../components/page.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {AuthService} from '../services/auth.service';
 import {CustomerOrganizationsService} from '../services/customer-organizations.service';
@@ -36,12 +29,19 @@ import {ToastService} from '../services/toast.service';
 @Component({
   templateUrl: './sidebar-links-page.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [RouterLink, FontAwesomeModule, OverlayModule, ReactiveFormsModule, DatePipe, AutotrimDirective],
+  imports: [
+    RouterLink,
+    FontAwesomeModule,
+    OverlayModule,
+    ReactiveFormsModule,
+    DatePipe,
+    AutotrimDirective,
+    PageComponent,
+  ],
 })
 export class SidebarLinksPageComponent {
   protected readonly faBoxesStacked = faBoxesStacked;
   protected readonly faChevronDown = faChevronDown;
-  protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faXmark = faXmark;
   protected readonly faPlus = faPlus;
   protected readonly faTrash = faTrash;

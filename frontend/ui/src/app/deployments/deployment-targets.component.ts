@@ -12,7 +12,7 @@ import {
   viewChild,
 } from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
-import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
+import {FormControl, FormGroup} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {
   ApplicationVersion,
@@ -21,12 +21,14 @@ import {
   DeploymentWithLatestRevision,
 } from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faBullhorn, faChevronDown, faLightbulb, faMagnifyingGlass, faPlus} from '@fortawesome/free-solid-svg-icons';
+import {faBullhorn, faChevronDown, faLightbulb, faPlus} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatest, combineLatestWith, first, map, Observable, of} from 'rxjs';
 import {compareBy} from '../../util/arrays';
 import {filteredByFormControl} from '../../util/filter';
 import {SecureImagePipe} from '../../util/secureImage';
+import {PageComponent} from '../components/page.component';
 import {QuotaLimitComponent} from '../components/quota-limit.component';
+import {SearchBarComponent} from '../components/search-bar.component';
 import {ApplicationsService} from '../services/applications.service';
 import {AuthService} from '../services/auth.service';
 import {ContextService} from '../services/context.service';
@@ -56,7 +58,6 @@ const localStoragerCollapsedCustomerIds = 'collapsedCustomerIds';
   imports: [
     AsyncPipe,
     FaIconComponent,
-    ReactiveFormsModule,
     DeploymentWizardComponent,
     OverlayModule,
     DeploymentTargetCardComponent,
@@ -64,6 +65,8 @@ const localStoragerCollapsedCustomerIds = 'collapsedCustomerIds';
     SecureImagePipe,
     QuotaLimitComponent,
     RouterLink,
+    PageComponent,
+    SearchBarComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './deployment-targets.component.html',
@@ -79,7 +82,6 @@ export class DeploymentTargetsComponent implements AfterViewInit {
   private readonly featureFlags = inject(FeatureFlagService);
   private readonly route = inject(ActivatedRoute);
 
-  protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly plusIcon = faPlus;
   protected readonly faChevronDown = faChevronDown;
   protected readonly faLightbulb = faLightbulb;

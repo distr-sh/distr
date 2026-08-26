@@ -1,571 +1,567 @@
-<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
-  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
-    <div class="lg:p-8 p-4 bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
-      @if (application$ | async; as application) {
-        <nav class="flex justify-between" aria-label="Breadcrumb">
-          <ol class="inline-flex items-center mb-3 sm:mb-0">
-            <li class="flex items-center">
-              <a
-                [routerLink]="['/', 'applications']"
-                class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
-                <fa-icon class="mr-2" [icon]="faBoxesStacked" />
-                Applications
-              </a>
-            </li>
-            <span class="mx-2 text-gray-400">/</span>
-            <li aria-current="page">
-              <div class="flex items-center">
-                <button
-                  id="application-dropdown"
-                  cdkOverlayOrigin
-                  #dropdownTrigger="cdkOverlayOrigin"
-                  #dropdownTriggerButton
-                  (click)="toggleBreadcrumbDropdown()"
-                  class="inline-flex items-center px-3 py-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
-                  <span
-                    class="block max-w-64 overflow-hidden text-ellipsis whitespace-nowrap"
-                    [title]="application.name">
-                    {{ application.name }}
-                  </span>
-                  <fa-icon class="ml-2" [icon]="faChevronDown" />
-                </button>
-                <ng-template
-                  cdkConnectedOverlay
-                  [cdkConnectedOverlayHasBackdrop]="true"
-                  (backdropClick)="breadcrumbDropdown.set(false)"
-                  [cdkConnectedOverlayBackdropClass]="'transparent'"
-                  [cdkConnectedOverlayOrigin]="dropdownTrigger"
-                  [cdkConnectedOverlayMinWidth]="breadcrumbDropdownWidth + 'px'"
-                  [cdkConnectedOverlayOpen]="breadcrumbDropdown()">
-                  <div
-                    animate.enter="animate-flip-in-top"
-                    animate.leave="animate-flip-out-top"
-                    class="z-10 w-full max-w-80 bg-white divide-y divide-gray-100 rounded-lg shadow-xs dark:bg-gray-700 origin-top">
-                    <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownDefault">
-                      @for (app of applications$ | async; track app.id) {
-                        <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
-                          <a
-                            class="px-4 flex items-stretch overflow-hidden text-ellipsis whitespace-nowrap"
-                            [routerLink]="['/', 'applications', app.id]"
-                            [title]="app.name"
-                            >{{ app.name }}</a
-                          >
-                        </li>
-                      }
-                    </ul>
-                  </div>
-                </ng-template>
-              </div>
-            </li>
-          </ol>
-        </nav>
-
-        <div class="my-4 gap-4 md:my-6 md:gap-12">
-          <div class="space-y-4">
-            <div class="flex space-x-4">
+<app-page>
+  <div class="distr-panel">
+    @if (application$ | async; as application) {
+      <nav class="flex justify-between" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center mb-3 sm:mb-0">
+          <li class="flex items-center">
+            <a
+              [routerLink]="['/', 'applications']"
+              class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
+              <fa-icon class="mr-2" [icon]="faBoxesStacked" />
+              Applications
+            </a>
+          </li>
+          <span class="mx-2 text-gray-400">/</span>
+          <li aria-current="page">
+            <div class="flex items-center">
               <button
-                type="button"
-                class="w-16 h-16 rounded-sm cursor-pointer overflow-hidden"
-                (click)="uploadImage(application)"
-                [disabled]="!auth.hasAnyRole('read_write', 'admin')">
-                @if (application.imageUrl) {
-                  <img height="199" width="199" [attr.src]="application.imageUrl | secureImage | async" alt="" />
-                } @else {
-                  <img [ngSrc]="'/' + application.type + '.png'" [alt]="application.type" height="199" width="199" />
-                }
-              </button>
-              <div>
-                <app-inline-edit
-                  class="block"
-                  tag="h3"
-                  [value]="application.name ?? ''"
-                  [editable]="auth.hasAnyRole('read_write', 'admin')"
-                  placeholder="Application name"
-                  size="lg"
-                  textClass="block max-w-lg overflow-hidden text-ellipsis whitespace-nowrap text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
-                  [loading]="savingApplicationName()"
-                  (save)="updateApplicationName(application, $event)" />
-                @if (application.id) {
-                  <app-uuid class="mr-2" [uuid]="application.id" [small]="true" />
-                }
-                <span
-                  class="me-2 inline-block rounded-sm bg-primary-100 px-2.5 py-0.5 text-xs font-medium text-primary-800 dark:bg-primary-900 dark:text-primary-300">
-                  {{ application.type }}
+                id="application-dropdown"
+                cdkOverlayOrigin
+                #dropdownTrigger="cdkOverlayOrigin"
+                #dropdownTriggerButton
+                (click)="toggleBreadcrumbDropdown()"
+                class="inline-flex items-center px-3 py-2 text-sm font-normal text-center text-gray-700 dark:hover:text-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:focus:ring-gray-700">
+                <span class="block max-w-64 overflow-hidden text-ellipsis whitespace-nowrap" [title]="application.name">
+                  {{ application.name }}
                 </span>
-              </div>
-              @if (auth.hasAnyRole('read_write', 'admin')) {
-                <div class="inline-flex self-start items-end justify-end grow">
-                  <button
-                    type="button"
-                    aria-label="Delete"
-                    (click)="deleteApplication(application)"
-                    class="py-2 px-3 distr-btn-danger">
-                    <fa-icon [icon]="faTrash" class="h-4 w-4 mr-2" />
-                    Delete Application
-                  </button>
+                <fa-icon class="ml-2" [icon]="faChevronDown" />
+              </button>
+              <ng-template
+                cdkConnectedOverlay
+                [cdkConnectedOverlayHasBackdrop]="true"
+                (backdropClick)="breadcrumbDropdown.set(false)"
+                [cdkConnectedOverlayBackdropClass]="'transparent'"
+                [cdkConnectedOverlayOrigin]="dropdownTrigger"
+                [cdkConnectedOverlayMinWidth]="breadcrumbDropdownWidth + 'px'"
+                [cdkConnectedOverlayOpen]="breadcrumbDropdown()">
+                <div
+                  animate.enter="animate-flip-in-top"
+                  animate.leave="animate-flip-out-top"
+                  class="z-10 w-full max-w-80 bg-white divide-y divide-gray-100 rounded-lg shadow-xs dark:bg-gray-700 origin-top">
+                  <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownDefault">
+                    @for (app of applications$ | async; track app.id) {
+                      <li class="block py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                        <a
+                          class="px-4 flex items-stretch overflow-hidden text-ellipsis whitespace-nowrap"
+                          [routerLink]="['/', 'applications', app.id]"
+                          [title]="app.name"
+                          >{{ app.name }}</a
+                        >
+                      </li>
+                    }
+                  </ul>
                 </div>
-              }
+              </ng-template>
             </div>
+          </li>
+        </ol>
+      </nav>
+
+      <div class="my-4 gap-4 md:my-6 md:gap-12">
+        <div class="space-y-4">
+          <div class="flex space-x-4">
+            <button
+              type="button"
+              class="w-16 h-16 rounded-sm cursor-pointer overflow-hidden"
+              (click)="uploadImage(application)"
+              [disabled]="!auth.hasAnyRole('read_write', 'admin')">
+              @if (application.imageUrl) {
+                <img height="199" width="199" [attr.src]="application.imageUrl | secureImage | async" alt="" />
+              } @else {
+                <img [ngSrc]="'/' + application.type + '.png'" [alt]="application.type" height="199" width="199" />
+              }
+            </button>
+            <div>
+              <app-inline-edit
+                class="block"
+                tag="h3"
+                [value]="application.name ?? ''"
+                [editable]="auth.hasAnyRole('read_write', 'admin')"
+                placeholder="Application name"
+                size="lg"
+                textClass="block max-w-lg overflow-hidden text-ellipsis whitespace-nowrap text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
+                [loading]="savingApplicationName()"
+                (save)="updateApplicationName(application, $event)" />
+              @if (application.id) {
+                <app-uuid class="mr-2" [uuid]="application.id" [small]="true" />
+              }
+              <span
+                class="me-2 inline-block rounded-sm bg-primary-100 px-2.5 py-0.5 text-xs font-medium text-primary-800 dark:bg-primary-900 dark:text-primary-300">
+                {{ application.type }}
+              </span>
+            </div>
+            @if (auth.hasAnyRole('read_write', 'admin')) {
+              <div class="inline-flex self-start items-end justify-end grow">
+                <button
+                  type="button"
+                  aria-label="Delete"
+                  (click)="deleteApplication(application)"
+                  class="py-2 px-3 distr-btn-danger">
+                  <fa-icon [icon]="faTrash" class="h-4 w-4 mr-2" />
+                  Delete Application
+                </button>
+              </div>
+            }
           </div>
         </div>
+      </div>
 
-        <div>
-          @if ((application.versions || []).length > 0) {
-            <form class="flex items-center" [formGroup]="filterForm">
-              <div class="flex items-center h-5">
-                <input formControlName="showArchived" id="showArchived" type="checkbox" class="distr-checkbox" />
-              </div>
-              <div class="ml-3 my-3 text-sm">
-                <label for="showArchived" class="text-gray-500 dark:text-gray-300">Show Archived Versions</label>
-              </div>
-            </form>
+      <div>
+        @if ((application.versions || []).length > 0) {
+          <form class="flex items-center" [formGroup]="filterForm">
+            <div class="flex items-center h-5">
+              <input formControlName="showArchived" id="showArchived" type="checkbox" class="distr-checkbox" />
+            </div>
+            <div class="ml-3 my-3 text-sm">
+              <label for="showArchived" class="text-gray-500 dark:text-gray-300">Show Archived Versions</label>
+            </div>
+          </form>
 
-            <div class="mb-5 relative overflow-x-auto sm:rounded-lg">
-              <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                <thead
-                  class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-800 dark:text-gray-400">
-                  <tr>
+          <div class="mb-5 relative overflow-x-auto sm:rounded-lg">
+            <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+              <thead
+                class="border-t border-gray-200 dark:border-gray-600 text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-800 dark:text-gray-400">
+                <tr>
+                  @if (auth.hasAnyRole('read_write', 'admin')) {
+                    <td class="px-1 py-3">
+                      @let versions = this.visibleVersions$ | async;
+                      @let all = isAllVersionsSelected(versions ?? []);
+                      <input
+                        type="checkbox"
+                        class="distr-checkbox"
+                        [checked]="all"
+                        [indeterminate]="!all && selectedVersionIds().size > 0"
+                        (change)="toggleAllVersionsSelected(versions ?? [])" />
+                    </td>
+                  }
+                  @if (selectedVersionIds().size > 0) {
+                    <td class="px-3 normal-case text-sm" [attr.colspan]="application.type === 'kubernetes' ? 7 : 4">
+                      {{ selectedVersionIds().size }} selected
+                      <button
+                        (click)="bulkArchiveVersions(application)"
+                        class="py-1 px-3 ms-2 items-center text-sm font-medium text-center distr-btn-secondary">
+                        <fa-icon [icon]="faArchive" class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                        Archive
+                      </button>
+                    </td>
+                  } @else {
+                    <th scope="col" class="px-6 py-3">Version</th>
+                    @if (application.type === 'kubernetes') {
+                      <th scope="col" class="px-6 py-3">Chart URL</th>
+                      <th scope="col" class="px-6 py-3">Chart Name</th>
+                      <th scope="col" class="px-6 py-3">Chart Version</th>
+                    }
+                    <th scope="col" class="px-6 py-3">Created At</th>
+                    <th scope="col" class="px-6 py-3">Status</th>
+                    <th scope="col" class="px-6 py-3"></th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (version of visibleVersions$ | async; track version.id) {
+                  @let archived = isArchived(version);
+                  <tr
+                    [class.hover:bg-gray-50]="!archived"
+                    [class.dark:hover:bg-gray-600]="!archived"
+                    class="bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700">
                     @if (auth.hasAnyRole('read_write', 'admin')) {
-                      <td class="px-1 py-3">
-                        @let versions = this.visibleVersions$ | async;
-                        @let all = isAllVersionsSelected(versions ?? []);
-                        <input
-                          type="checkbox"
-                          class="distr-checkbox"
-                          [checked]="all"
-                          [indeterminate]="!all && selectedVersionIds().size > 0"
-                          (change)="toggleAllVersionsSelected(versions ?? [])" />
+                      <td class="px-1 py-4">
+                        @if (!archived) {
+                          <input
+                            type="checkbox"
+                            class="distr-checkbox"
+                            [checked]="isVersionSelected(version)"
+                            (change)="toggleVersionSelected(version)" />
+                        }
                       </td>
                     }
-                    @if (selectedVersionIds().size > 0) {
-                      <td class="px-3 normal-case text-sm" [attr.colspan]="application.type === 'kubernetes' ? 7 : 4">
-                        {{ selectedVersionIds().size }} selected
-                        <button
-                          (click)="bulkArchiveVersions(application)"
-                          class="py-1 px-3 ms-2 items-center text-sm font-medium text-center distr-btn-secondary">
-                          <fa-icon [icon]="faArchive" class="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                          Archive
-                        </button>
+                    <th
+                      scope="row"
+                      [class.text-gray-900]="!archived"
+                      [class.dark:text-white]="!archived"
+                      class="px-6 py-4 font-medium whitespace-nowrap max-w-64"
+                      [title]="version.name">
+                      <app-inline-edit
+                        [value]="version.name"
+                        [editable]="auth.hasAnyRole('read_write', 'admin')"
+                        placeholder="Version name"
+                        textClass="block max-w-64 overflow-hidden text-ellipsis whitespace-nowrap"
+                        [loading]="savingVersionId() === version.id"
+                        (save)="updateVersionName(application, version, $event)" />
+                    </th>
+                    @if (application.type === 'kubernetes') {
+                      <td class="px-6 py-4">
+                        {{ version.chartUrl }}
                       </td>
-                    } @else {
-                      <th scope="col" class="px-6 py-3">Version</th>
-                      @if (application.type === 'kubernetes') {
-                        <th scope="col" class="px-6 py-3">Chart URL</th>
-                        <th scope="col" class="px-6 py-3">Chart Name</th>
-                        <th scope="col" class="px-6 py-3">Chart Version</th>
-                      }
-                      <th scope="col" class="px-6 py-3">Created At</th>
-                      <th scope="col" class="px-6 py-3">Status</th>
-                      <th scope="col" class="px-6 py-3"></th>
+                      <td class="px-6 py-4">
+                        {{ version.chartName }}
+                      </td>
+                      <td class="px-6 py-4">
+                        {{ version.chartVersion }}
+                      </td>
                     }
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (version of visibleVersions$ | async; track version.id) {
-                    @let archived = isArchived(version);
-                    <tr
-                      [class.hover:bg-gray-50]="!archived"
-                      [class.dark:hover:bg-gray-600]="!archived"
-                      class="bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                    <td class="px-6 py-4">
+                      {{ version.createdAt | date: 'short' }}
+                    </td>
+                    <td class="px-6 py-4">
+                      {{ archived ? 'Archived' : 'Active' }}
+                    </td>
+                    <td class="px-6 py-2 text-right">
+                      <button
+                        (click)="openVersionDetails(application, version)"
+                        class="py-2 px-3 mr-2 items-center text-sm font-medium text-center distr-btn-secondary">
+                        <fa-icon [icon]="faEye" class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                      </button>
                       @if (auth.hasAnyRole('read_write', 'admin')) {
-                        <td class="px-1 py-4">
-                          @if (!archived) {
-                            <input
-                              type="checkbox"
-                              class="distr-checkbox"
-                              [checked]="isVersionSelected(version)"
-                              (change)="toggleVersionSelected(version)" />
-                          }
-                        </td>
-                      }
-                      <th
-                        scope="row"
-                        [class.text-gray-900]="!archived"
-                        [class.dark:text-white]="!archived"
-                        class="px-6 py-4 font-medium whitespace-nowrap max-w-64"
-                        [title]="version.name">
-                        <app-inline-edit
-                          [value]="version.name"
-                          [editable]="auth.hasAnyRole('read_write', 'admin')"
-                          placeholder="Version name"
-                          textClass="block max-w-64 overflow-hidden text-ellipsis whitespace-nowrap"
-                          [loading]="savingVersionId() === version.id"
-                          (save)="updateVersionName(application, version, $event)" />
-                      </th>
-                      @if (application.type === 'kubernetes') {
-                        <td class="px-6 py-4">
-                          {{ version.chartUrl }}
-                        </td>
-                        <td class="px-6 py-4">
-                          {{ version.chartName }}
-                        </td>
-                        <td class="px-6 py-4">
-                          {{ version.chartVersion }}
-                        </td>
-                      }
-                      <td class="px-6 py-4">
-                        {{ version.createdAt | date: 'short' }}
-                      </td>
-                      <td class="px-6 py-4">
-                        {{ archived ? 'Archived' : 'Active' }}
-                      </td>
-                      <td class="px-6 py-2 text-right">
-                        <button
-                          (click)="openVersionDetails(application, version)"
-                          class="py-2 px-3 mr-2 items-center text-sm font-medium text-center distr-btn-secondary">
-                          <fa-icon [icon]="faEye" class="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                        </button>
-                        @if (auth.hasAnyRole('read_write', 'admin')) {
-                          @if (!archived) {
-                            <button
-                              (click)="archiveVersion(application, version)"
-                              class="py-2 px-3 mr-2 items-center text-sm font-medium text-center distr-btn-secondary">
-                              <fa-icon [icon]="faArchive" class="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                              Archive
-                            </button>
-                          } @else {
-                            <button
-                              (click)="unArchiveVersion(application, version)"
-                              class="py-2 px-3 mr-4 items-center text-sm font-medium text-center distr-btn-secondary">
-                              <fa-icon [icon]="faArchive" class="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                              Unarchive
-                            </button>
-                          }
+                        @if (!archived) {
                           <button
-                            type="button"
-                            class="font-medium text-blue-600 dark:text-blue-500 hover:underline"
-                            (click)="fillVersionFormWith(application, version)">
-                            Copy from
+                            (click)="archiveVersion(application, version)"
+                            class="py-2 px-3 mr-2 items-center text-sm font-medium text-center distr-btn-secondary">
+                            <fa-icon [icon]="faArchive" class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                            Archive
+                          </button>
+                        } @else {
+                          <button
+                            (click)="unArchiveVersion(application, version)"
+                            class="py-2 px-3 mr-4 items-center text-sm font-medium text-center distr-btn-secondary">
+                            <fa-icon [icon]="faArchive" class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                            Unarchive
                           </button>
                         }
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          }
+                        <button
+                          type="button"
+                          class="font-medium text-blue-600 dark:text-blue-500 hover:underline"
+                          (click)="fillVersionFormWith(application, version)">
+                          Copy from
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
 
-          @if (auth.hasAnyRole('read_write', 'admin')) {
-            <h3 class="block mb-2 text-lg font-medium text-gray-900 dark:text-white">
-              <button
-                (click)="isVersionFormExpanded.set(!isVersionFormExpanded())"
-                [title]="'Click to ' + (isVersionFormExpanded() ? 'hide' : 'show') + ' the version form'">
-                <fa-icon
-                  class="inline-block transition duration-100 ease-in-out"
-                  [class.-rotate-90]="!isVersionFormExpanded()"
-                  [icon]="faChevronDown" />
-                New Version
-              </button>
-            </h3>
-          }
+        @if (auth.hasAnyRole('read_write', 'admin')) {
+          <h3 class="block mb-2 text-lg font-medium text-gray-900 dark:text-white">
+            <button
+              (click)="isVersionFormExpanded.set(!isVersionFormExpanded())"
+              [title]="'Click to ' + (isVersionFormExpanded() ? 'hide' : 'show') + ' the version form'">
+              <fa-icon
+                class="inline-block transition duration-100 ease-in-out"
+                [class.-rotate-90]="!isVersionFormExpanded()"
+                [icon]="faChevronDown" />
+              New Version
+            </button>
+          </h3>
+        }
 
-          @if (isVersionFormExpanded()) {
-            <form [formGroup]="newVersionForm" (ngSubmit)="createVersion(application)">
-              <div>
-                <div class="space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
-                  <div class="w-full">
-                    <label for="applicationVersion" class="distr-label mb-2">Version Name *</label>
-                    <input
-                      [formControl]="newVersionForm.controls.versionName"
-                      autotrim
-                      type="text"
-                      name="breadth"
-                      id="applicationVersion"
-                      class="distr-input" />
-                    @if (newVersionForm.controls.versionName.invalid && newVersionForm.controls.versionName.touched) {
-                      <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
-                    }
-                  </div>
-                </div>
-
-                <div class="space-y-4 sm:flex sm:space-x-4 sm:space-y-0 mt-4">
-                  <div class="w-full">
-                    <label for="applicationVersionLinkTemplate" class="distr-label mb-2">Link Template</label>
-                    <input
-                      [formControl]="newVersionForm.controls.linkTemplate"
-                      autotrim
-                      type="text"
-                      name="linkTemplate"
-                      id="applicationVersionLinkTemplate"
-                      placeholder="https://example.com/release-notes"
-                      class="distr-input" />
-                  </div>
-                </div>
-                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  You can use the Go template language to get a dynamic link based on
-                  @if (application.type === 'docker') {
-                    <span ngNonBindable
-                      >environment variables (<code>{{ .Env.HOSTNAME }}</code
-                      >).</span
-                    >
-                  } @else if (application.type === 'kubernetes') {
-                    <span ngNonBindable
-                      >user provided values (<code>{{ .Values.app.ingress.hostname }}</code
-                      >).</span
-                    >
+        @if (isVersionFormExpanded()) {
+          <form [formGroup]="newVersionForm" (ngSubmit)="createVersion(application)">
+            <div>
+              <div class="space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
+                <div class="w-full">
+                  <label for="applicationVersion" class="distr-label mb-2">Version Name *</label>
+                  <input
+                    [formControl]="newVersionForm.controls.versionName"
+                    autotrim
+                    type="text"
+                    name="breadth"
+                    id="applicationVersion"
+                    class="distr-input" />
+                  @if (newVersionForm.controls.versionName.invalid && newVersionForm.controls.versionName.touched) {
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
                   }
                 </div>
+              </div>
 
-                @if (application.type === 'kubernetes') {
-                  <div class="space-y-4 mt-4">
-                    <div class="grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
-                      <div class="w-full">
-                        <label for="chartTypeSelect" class="distr-label mb-2">Chart Type *</label>
-                        <select
-                          [formControl]="newVersionForm.controls.kubernetes.controls.chartType"
-                          id="chartTypeSelect"
-                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
-                          <option value="repository">Repository</option>
-                          <option value="oci">OCI</option>
-                        </select>
-                        @if (
-                          newVersionForm.controls.kubernetes.controls.chartType.invalid &&
-                          newVersionForm.controls.kubernetes.controls.chartType.touched
-                        ) {
-                          <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
-                        }
-                      </div>
-                      <div class="w-full">
-                        @if (newVersionForm.controls.kubernetes.controls.chartName.enabled) {
-                          <label for="kubernetesChartName" class="distr-label mb-2">Chart Name *</label>
-                          <input
-                            [formControl]="newVersionForm.controls.kubernetes.controls.chartName"
-                            autotrim
-                            type="text"
-                            name="chartName"
-                            id="kubernetesChartName"
-                            class="distr-input" />
-                          @if (
-                            newVersionForm.controls.kubernetes.controls.chartName.invalid &&
-                            newVersionForm.controls.kubernetes.controls.chartName.touched
-                          ) {
-                            <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
-                          }
-                        }
-                      </div>
-                    </div>
+              <div class="space-y-4 sm:flex sm:space-x-4 sm:space-y-0 mt-4">
+                <div class="w-full">
+                  <label for="applicationVersionLinkTemplate" class="distr-label mb-2">Link Template</label>
+                  <input
+                    [formControl]="newVersionForm.controls.linkTemplate"
+                    autotrim
+                    type="text"
+                    name="linkTemplate"
+                    id="applicationVersionLinkTemplate"
+                    placeholder="https://example.com/release-notes"
+                    class="distr-input" />
+                </div>
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                You can use the Go template language to get a dynamic link based on
+                @if (application.type === 'docker') {
+                  <span ngNonBindable
+                    >environment variables (<code>{{ .Env.HOSTNAME }}</code
+                    >).</span
+                  >
+                } @else if (application.type === 'kubernetes') {
+                  <span ngNonBindable
+                    >user provided values (<code>{{ .Values.app.ingress.hostname }}</code
+                    >).</span
+                  >
+                }
+              </div>
 
-                    <div class="grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
-                      <div class="w-full">
-                        <label for="kubernetesChartUrl" class="distr-label mb-2">Chart URL *</label>
-                        <input
-                          [formControl]="newVersionForm.controls.kubernetes.controls.chartUrl"
-                          autotrim
-                          type="text"
-                          name="chartUrl"
-                          id="kubernetesChartUrl"
-                          class="distr-input" />
-                        @let isChartTypeOci = newVersionForm.value.kubernetes?.chartType === 'oci';
-                        @let isChartUrlInvalid = newVersionForm.controls.kubernetes.controls.chartUrl.invalid;
-
-                        @let isChartUrlOciInvalid = newVersionForm.controls.kubernetes.errors?.['chartUrlOci'];
-                        @let isChartUrlHttpsInvalid = newVersionForm.controls.kubernetes.errors?.['chartUrlHttps'];
-                        <div class="mt-1 space-y-1">
-                          <div class="text-xs text-gray-400 dark:text-gray-500">
-                            @if (isChartTypeOci) {
-                              Must be a valid OCI URL (i.e. oci://&hellip;)
-                            } @else {
-                              Must be a valid HTTPS URL (i.e. https://&hellip;)
-                            }
-                          </div>
-                          @if (newVersionForm.controls.kubernetes.controls.chartUrl.touched) {
-                            @if (isChartUrlInvalid) {
-                              <p class="text-sm text-red-600 dark:text-red-500">Field is required.</p>
-                            } @else if (isChartUrlOciInvalid) {
-                              <p class="text-sm text-red-600 dark:text-red-500">
-                                Please enter a URL that starts with oci://.
-                              </p>
-                            } @else if (isChartUrlHttpsInvalid) {
-                              <p class="text-sm text-red-600 dark:text-red-500">
-                                Please enter a URL that starts with https://.
-                              </p>
-                            }
-                          }
-                        </div>
-                      </div>
-                      <div class="w-full">
-                        <label for="kubernetesChartVersion" class="distr-label mb-2">Chart Version *</label>
-                        <input
-                          [formControl]="newVersionForm.controls.kubernetes.controls.chartVersion"
-                          autotrim
-                          type="text"
-                          name="chartVersion"
-                          id="kubernetesChartVersion"
-                          class="distr-input" />
-                        @if (
-                          newVersionForm.controls.kubernetes.controls.chartVersion.invalid &&
-                          newVersionForm.controls.kubernetes.controls.chartVersion.touched
-                        ) {
-                          <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
-                        }
-                      </div>
-                    </div>
-
+              @if (application.type === 'kubernetes') {
+                <div class="space-y-4 mt-4">
+                  <div class="grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
                     <div class="w-full">
-                      <div class="mb-2">
-                        <label for="base_values_input" class="distr-label" aria-describedby="base-values-description"
-                          >Base Values</label
-                        >
-                        <div id="base-values-description" class="text-xs text-gray-400 dark:text-gray-500">
-                          Provide a values.yaml that should be shared across all deployments of this application.
-                          <br />
-                          The base values are not shown in the customer portal and can be overridden by customer values.
-                        </div>
-                      </div>
-                      <app-editor
-                        id="base_values_input"
-                        language="yaml"
-                        class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                        [formControl]="newVersionForm.controls.kubernetes.controls.baseValues" />
-                    </div>
-
-                    <div class="w-full">
-                      <div class="mb-2">
-                        <label for="template_input" class="distr-label" aria-describedby="values-template-description"
-                          >Template for Customer Values</label
-                        >
-                        <div
-                          id="values-template-description"
-                          class="text-xs text-gray-400 dark:text-gray-500 xl:max-w-1/2">
-                          Shown to your customers as a hint to supply their own values.yaml.
-                          <br />
-                          These customer values can override your base values.
-                        </div>
-                      </div>
-                      <app-editor
-                        id="template_input"
-                        class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                        [formControl]="newVersionForm.controls.kubernetes.controls.template" />
-                    </div>
-                  </div>
-                } @else {
-                  <div class="space-y-4 mt-4">
-                    <div class="w-full">
-                      <label for="compose_input" class="distr-label mb-2">Docker Compose *</label>
-                      <app-editor
-                        id="compose_input"
-                        language="yaml"
-                        class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                        [formControl]="newVersionForm.controls.docker.controls.compose" />
-                      <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Paste your docker compose file here.
-                      </div>
+                      <label for="chartTypeSelect" class="distr-label mb-2">Chart Type *</label>
+                      <select
+                        [formControl]="newVersionForm.controls.kubernetes.controls.chartType"
+                        id="chartTypeSelect"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                        <option value="repository">Repository</option>
+                        <option value="oci">OCI</option>
+                      </select>
                       @if (
-                        newVersionForm.controls.docker.controls.compose.invalid &&
-                        newVersionForm.controls.docker.controls.compose.touched
+                        newVersionForm.controls.kubernetes.controls.chartType.invalid &&
+                        newVersionForm.controls.kubernetes.controls.chartType.touched
                       ) {
                         <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
                       }
                     </div>
-
                     <div class="w-full">
-                      <label for="compose_template_input" class="distr-label mb-2">Template for Environment File</label>
-                      <app-editor
-                        id="compose_template_input"
-                        class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                        [formControl]="newVersionForm.controls.docker.controls.template" />
-                      <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        This template will be shown when somebody deploys this application.
-                      </div>
+                      @if (newVersionForm.controls.kubernetes.controls.chartName.enabled) {
+                        <label for="kubernetesChartName" class="distr-label mb-2">Chart Name *</label>
+                        <input
+                          [formControl]="newVersionForm.controls.kubernetes.controls.chartName"
+                          autotrim
+                          type="text"
+                          name="chartName"
+                          id="kubernetesChartName"
+                          class="distr-input" />
+                        @if (
+                          newVersionForm.controls.kubernetes.controls.chartName.invalid &&
+                          newVersionForm.controls.kubernetes.controls.chartName.touched
+                        ) {
+                          <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
+                        }
+                      }
                     </div>
                   </div>
-                  <div class="space-y-4 mt-4">
-                    <div class="w-full"></div>
+
+                  <div class="grid grid-cols-2 md:grid-cols-2 space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
+                    <div class="w-full">
+                      <label for="kubernetesChartUrl" class="distr-label mb-2">Chart URL *</label>
+                      <input
+                        [formControl]="newVersionForm.controls.kubernetes.controls.chartUrl"
+                        autotrim
+                        type="text"
+                        name="chartUrl"
+                        id="kubernetesChartUrl"
+                        class="distr-input" />
+                      @let isChartTypeOci = newVersionForm.value.kubernetes?.chartType === 'oci';
+                      @let isChartUrlInvalid = newVersionForm.controls.kubernetes.controls.chartUrl.invalid;
+
+                      @let isChartUrlOciInvalid = newVersionForm.controls.kubernetes.errors?.['chartUrlOci'];
+                      @let isChartUrlHttpsInvalid = newVersionForm.controls.kubernetes.errors?.['chartUrlHttps'];
+                      <div class="mt-1 space-y-1">
+                        <div class="text-xs text-gray-400 dark:text-gray-500">
+                          @if (isChartTypeOci) {
+                            Must be a valid OCI URL (i.e. oci://&hellip;)
+                          } @else {
+                            Must be a valid HTTPS URL (i.e. https://&hellip;)
+                          }
+                        </div>
+                        @if (newVersionForm.controls.kubernetes.controls.chartUrl.touched) {
+                          @if (isChartUrlInvalid) {
+                            <p class="text-sm text-red-600 dark:text-red-500">Field is required.</p>
+                          } @else if (isChartUrlOciInvalid) {
+                            <p class="text-sm text-red-600 dark:text-red-500">
+                              Please enter a URL that starts with oci://.
+                            </p>
+                          } @else if (isChartUrlHttpsInvalid) {
+                            <p class="text-sm text-red-600 dark:text-red-500">
+                              Please enter a URL that starts with https://.
+                            </p>
+                          }
+                        }
+                      </div>
+                    </div>
+                    <div class="w-full">
+                      <label for="kubernetesChartVersion" class="distr-label mb-2">Chart Version *</label>
+                      <input
+                        [formControl]="newVersionForm.controls.kubernetes.controls.chartVersion"
+                        autotrim
+                        type="text"
+                        name="chartVersion"
+                        id="kubernetesChartVersion"
+                        class="distr-input" />
+                      @if (
+                        newVersionForm.controls.kubernetes.controls.chartVersion.invalid &&
+                        newVersionForm.controls.kubernetes.controls.chartVersion.touched
+                      ) {
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
+                      }
+                    </div>
                   </div>
-                }
+
+                  <div class="w-full">
+                    <div class="mb-2">
+                      <label for="base_values_input" class="distr-label" aria-describedby="base-values-description"
+                        >Base Values</label
+                      >
+                      <div id="base-values-description" class="text-xs text-gray-400 dark:text-gray-500">
+                        Provide a values.yaml that should be shared across all deployments of this application.
+                        <br />
+                        The base values are not shown in the customer portal and can be overridden by customer values.
+                      </div>
+                    </div>
+                    <app-editor
+                      id="base_values_input"
+                      language="yaml"
+                      class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      [formControl]="newVersionForm.controls.kubernetes.controls.baseValues" />
+                  </div>
+
+                  <div class="w-full">
+                    <div class="mb-2">
+                      <label for="template_input" class="distr-label" aria-describedby="values-template-description"
+                        >Template for Customer Values</label
+                      >
+                      <div
+                        id="values-template-description"
+                        class="text-xs text-gray-400 dark:text-gray-500 xl:max-w-1/2">
+                        Shown to your customers as a hint to supply their own values.yaml.
+                        <br />
+                        These customer values can override your base values.
+                      </div>
+                    </div>
+                    <app-editor
+                      id="template_input"
+                      class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      [formControl]="newVersionForm.controls.kubernetes.controls.template" />
+                  </div>
+                </div>
+              } @else {
                 <div class="space-y-4 mt-4">
-                  <label class="distr-label">Additional Resources</label>
-                  @for (resource of newVersionForm.controls.resources.controls; track $index) {
-                    <div
-                      class="p-4 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 space-y-3">
-                      <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Resource {{ $index + 1 }}
-                        </span>
+                  <div class="w-full">
+                    <label for="compose_input" class="distr-label mb-2">Docker Compose *</label>
+                    <app-editor
+                      id="compose_input"
+                      language="yaml"
+                      class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      [formControl]="newVersionForm.controls.docker.controls.compose" />
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Paste your docker compose file here.
+                    </div>
+                    @if (
+                      newVersionForm.controls.docker.controls.compose.invalid &&
+                      newVersionForm.controls.docker.controls.compose.touched
+                    ) {
+                      <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
+                    }
+                  </div>
+
+                  <div class="w-full">
+                    <label for="compose_template_input" class="distr-label mb-2">Template for Environment File</label>
+                    <app-editor
+                      id="compose_template_input"
+                      class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      [formControl]="newVersionForm.controls.docker.controls.template" />
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      This template will be shown when somebody deploys this application.
+                    </div>
+                  </div>
+                </div>
+                <div class="space-y-4 mt-4">
+                  <div class="w-full"></div>
+                </div>
+              }
+              <div class="space-y-4 mt-4">
+                <label class="distr-label">Additional Resources</label>
+                @for (resource of newVersionForm.controls.resources.controls; track $index) {
+                  <div
+                    class="p-4 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 space-y-3">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Resource {{ $index + 1 }}
+                      </span>
+                      <button
+                        type="button"
+                        (click)="removeResource($index)"
+                        class="text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-400">
+                        <fa-icon [icon]="faTrash" />
+                      </button>
+                    </div>
+                    <div>
+                      <label class="distr-label mb-1">Name *</label>
+                      <input
+                        type="text"
+                        [formControl]="resource.controls.name"
+                        class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" />
+                      @if (resource.controls.name.invalid && resource.controls.name.touched) {
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
+                      }
+                    </div>
+                    <div>
+                      <div class="flex items-end justify-between mb-1">
+                        <label class="distr-label">Content (Markdown) *</label>
                         <button
                           type="button"
-                          (click)="removeResource($index)"
-                          class="text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-400">
-                          <fa-icon [icon]="faTrash" />
+                          class="py-1 px-2 text-xs font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+                          (click)="toggleResourcePreview($index)">
+                          @if (resourcePreviewIndices().has($index)) {
+                            Write
+                          } @else {
+                            Preview
+                          }
                         </button>
                       </div>
-                      <div>
-                        <label class="distr-label mb-1">Name *</label>
-                        <input
-                          type="text"
-                          [formControl]="resource.controls.name"
-                          class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" />
-                        @if (resource.controls.name.invalid && resource.controls.name.touched) {
-                          <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
-                        }
-                      </div>
-                      <div>
-                        <div class="flex items-end justify-between mb-1">
-                          <label class="distr-label">Content (Markdown) *</label>
-                          <button
-                            type="button"
-                            class="py-1 px-2 text-xs font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
-                            (click)="toggleResourcePreview($index)">
-                            @if (resourcePreviewIndices().has($index)) {
-                              Write
-                            } @else {
-                              Preview
-                            }
-                          </button>
-                        </div>
-                        @if (resourcePreviewIndices().has($index)) {
-                          <div
-                            class="markdown p-2.5 min-h-38 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white"
-                            [innerMarkdown]="resource.controls.content.value"></div>
-                        } @else {
-                          <textarea
-                            [formControl]="resource.controls.content"
-                            rows="6"
-                            class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"></textarea>
-                        }
-                        @if (resource.controls.content.invalid && resource.controls.content.touched) {
-                          <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
-                        }
-                      </div>
-                      <div>
-                        <label class="inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            [formControl]="resource.controls.visibleToCustomers"
-                            class="distr-checkbox" />
-                          <span class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-                            >Visible to customers</span
-                          >
-                        </label>
-                      </div>
+                      @if (resourcePreviewIndices().has($index)) {
+                        <div
+                          class="markdown p-2.5 min-h-38 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white"
+                          [innerMarkdown]="resource.controls.content.value"></div>
+                      } @else {
+                        <textarea
+                          [formControl]="resource.controls.content"
+                          rows="6"
+                          class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"></textarea>
+                      }
+                      @if (resource.controls.content.invalid && resource.controls.content.touched) {
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
+                      }
                     </div>
-                  }
-                  <button
-                    type="button"
-                    (click)="addResource()"
-                    class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-500 dark:hover:text-blue-400">
-                    <fa-icon [icon]="faPlus" class="mr-1" />
-                    Add Resource
-                  </button>
-                </div>
-
-                <div class="flex justify-stretch sm:justify-end mt-5 space-x-2.5">
-                  <button
-                    type="submit"
-                    [disabled]="newVersionFormLoading()"
-                    class="flex-1 sm:flex-none inline-flex items-center justify-center text-white distr-btn-primary">
-                    Create New Version
-                  </button>
-                </div>
+                    <div>
+                      <label class="inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          [formControl]="resource.controls.visibleToCustomers"
+                          class="distr-checkbox" />
+                        <span class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                          >Visible to customers</span
+                        >
+                      </label>
+                    </div>
+                  </div>
+                }
+                <button
+                  type="button"
+                  (click)="addResource()"
+                  class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-500 dark:hover:text-blue-400">
+                  <fa-icon [icon]="faPlus" class="mr-1" />
+                  Add Resource
+                </button>
               </div>
-            </form>
-          }
-        </div>
-      }
-    </div>
+
+              <div class="flex justify-stretch sm:justify-end mt-5 space-x-2.5">
+                <button
+                  type="submit"
+                  [disabled]="newVersionFormLoading()"
+                  class="flex-1 sm:flex-none inline-flex items-center justify-center text-white distr-btn-primary">
+                  Create New Version
+                </button>
+              </div>
+            </div>
+          </form>
+        }
+      </div>
+    }
   </div>
-</section>
+</app-page>
 
 <ng-template #versionDetailsModal>
   @if (versionDetail(); as detail) {

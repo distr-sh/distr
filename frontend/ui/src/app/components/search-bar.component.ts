@@ -1,0 +1,36 @@
+import {Component, input} from '@angular/core';
+import {FormControl, ReactiveFormsModule} from '@angular/forms';
+import {FaIconComponent} from '@fortawesome/angular-fontawesome';
+import {faMagnifyingGlass} from '@fortawesome/free-solid-svg-icons';
+import {AutotrimDirective} from '../directives/autotrim.directive';
+
+let nextId = 0;
+
+@Component({
+  selector: 'app-search-bar',
+  imports: [ReactiveFormsModule, FaIconComponent, AutotrimDirective],
+  host: {class: 'block w-full md:max-w-md'},
+  template: `
+    <div class="relative" role="search">
+      <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+        <fa-icon [icon]="faMagnifyingGlass" class="text-gray-500 dark:text-gray-400" />
+      </div>
+      <label [for]="id" class="sr-only">Search</label>
+      <input
+        [id]="id"
+        [formControl]="control()"
+        [placeholder]="placeholder()"
+        autotrim
+        type="search"
+        class="block w-full p-2 pl-10 text-sm text-gray-900 bg-gray-50 border border-gray-300 rounded-lg focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500" />
+    </div>
+  `,
+})
+export class SearchBarComponent {
+  public readonly control = input.required<FormControl>();
+  public readonly placeholder = input.required<string>();
+
+  // the label needs an id to point at, and more than one search bar can be on the page at a time
+  protected readonly id = `search-bar-${nextId++}`;
+  protected readonly faMagnifyingGlass = faMagnifyingGlass;
+}

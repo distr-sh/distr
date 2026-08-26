@@ -1,5 +1,43 @@
 # Changelog
 
+## [3.3.0](https://github.com/distr-sh/distr/compare/3.2.1...3.3.0) (2026-08-26)
+
+
+### Features
+
+* store custom domain verification result and fall back to default on failure ([#3073](https://github.com/distr-sh/distr/issues/3073)) ([166d6ba](https://github.com/distr-sh/distr/commit/166d6ba1c8ce2099f6b5a09192adecb8b2ab3044))
+
+
+### Bug Fixes
+
+* **backend:** add assigning existing users to org if CreateUnknownUsers true ([#3080](https://github.com/distr-sh/distr/issues/3080)) ([8354cff](https://github.com/distr-sh/distr/commit/8354cff053e02b5853b10ff80564e35039d57fb5))
+* **deps:** update module github.com/aws/smithy-go to v1.27.10 ([#3086](https://github.com/distr-sh/distr/issues/3086)) ([99335b3](https://github.com/distr-sh/distr/commit/99335b39fe9760a9f9cf45fdf415cd3105f9855f))
+* **deps:** update website dependencies ([#3026](https://github.com/distr-sh/distr/issues/3026)) ([98d6880](https://github.com/distr-sh/distr/commit/98d68806f80570184b5d7d3d7a964466f2ef0cf0))
+
+
+### Other
+
+* always display idendity providers section ([#3072](https://github.com/distr-sh/distr/issues/3072)) ([cc012e0](https://github.com/distr-sh/distr/commit/cc012e060f7f6ddbf31ef187cc817930ff9bf57f))
+* **deps:** update dependency marked to v18.0.11 ([#3076](https://github.com/distr-sh/distr/issues/3076)) ([2249d67](https://github.com/distr-sh/distr/commit/2249d67ea34fdde884e0ceb633eee92ef6108b7e))
+* **deps:** update dependency stripe to v1.50.5 ([#3077](https://github.com/distr-sh/distr/issues/3077)) ([3f3debc](https://github.com/distr-sh/distr/commit/3f3debc9fd1b37bc63fd9fd2176054817c369714))
+* **deps:** update dependency watchexec to v2.7.0 ([#3068](https://github.com/distr-sh/distr/issues/3068)) ([58918f8](https://github.com/distr-sh/distr/commit/58918f82c3d6de549fbbe2936eb38ea4619921b1))
+* **deps:** update jdx/mise-action action to v4.3.0 ([#3083](https://github.com/distr-sh/distr/issues/3083)) ([a5638c7](https://github.com/distr-sh/distr/commit/a5638c7d98731bd2fbc4ae7eebb52abba57a9a6a))
+* **deps:** update loki docker tag to v18.11.3 ([#3078](https://github.com/distr-sh/distr/issues/3078)) ([e7ecf39](https://github.com/distr-sh/distr/commit/e7ecf39a663861ead7c2a03168da7182a56334fd))
+* **deps:** update pnpm to v11.23.0 ([#3063](https://github.com/distr-sh/distr/issues/3063)) ([d7d90e9](https://github.com/distr-sh/distr/commit/d7d90e9bf793290ffd4ed92baaaae6e427f92248))
+* **deps:** update pnpm to v11.24.0 ([#3079](https://github.com/distr-sh/distr/issues/3079)) ([a4d958f](https://github.com/distr-sh/distr/commit/a4d958ff59a1a2ffce78ef145c82cc6ddfd71985))
+* **deps:** update website dependencies ([#3075](https://github.com/distr-sh/distr/issues/3075)) ([ae20a1c](https://github.com/distr-sh/distr/commit/ae20a1c155a5040e6eedf94080d51f3ec8cd43a8))
+* **frontend:** split user settings into tabs ([#3069](https://github.com/distr-sh/distr/issues/3069)) ([a21469a](https://github.com/distr-sh/distr/commit/a21469af4fc5839810a6b59b53e7b662a496ee23))
+* introduce subscription type to licenseData ([#3081](https://github.com/distr-sh/distr/issues/3081)) ([838403b](https://github.com/distr-sh/distr/commit/838403b69edb1a1b415eb26246078e13996ed6c8))
+* replace both custom domain CNAME targets with a single CUSTOM_DOMAIN_TARGET ([#3067](https://github.com/distr-sh/distr/issues/3067)) ([6b41523](https://github.com/distr-sh/distr/commit/6b415238ce7f83224e2e5daae9bd6c586c8c5ac3))
+
+
+### Refactoring
+
+* **backend:** remove not needed loop over all orgs in oidc login ([#3074](https://github.com/distr-sh/distr/issues/3074)) ([d60ee87](https://github.com/distr-sh/distr/commit/d60ee8737052f3d56e722b07371afd0a5b7ff5b4))
+* **frontend:** drop redundant ChangeDetectionStrategy.OnPush ([#3071](https://github.com/distr-sh/distr/issues/3071)) ([843a60f](https://github.com/distr-sh/distr/commit/843a60f26572a28e0bd9b45f437efd2a01516132))
+* **frontend:** introduce uniform page and search bar component  ([#3084](https://github.com/distr-sh/distr/issues/3084)) ([1e6ca4b](https://github.com/distr-sh/distr/commit/1e6ca4b651e3a665cdb64d6fb15d6802216fb0b4))
+* **frontend:** move distr tab styling to component ([#3082](https://github.com/distr-sh/distr/issues/3082)) ([1074962](https://github.com/distr-sh/distr/commit/1074962da25efa3aaaba2c29491987d1efa3087c))
+
 ## [3.2.1](https://github.com/distr-sh/distr/compare/3.2.0...3.2.1) (2026-08-24)
 
 

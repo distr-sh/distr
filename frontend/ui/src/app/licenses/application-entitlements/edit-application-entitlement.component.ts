@@ -33,7 +33,6 @@ import {
   faChevronDown,
   faExclamationTriangle,
   faLightbulb,
-  faMagnifyingGlass,
   faPen,
   faPlus,
   faXmark,
@@ -128,7 +127,6 @@ export class EditApplicationEntitlementComponent
 
   dropdownWidth: number = 0;
 
-  protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faChevronDown = faChevronDown;
   protected readonly faPlus = faPlus;
   protected readonly faXmark = faXmark;

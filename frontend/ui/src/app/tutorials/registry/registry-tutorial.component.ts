@@ -33,6 +33,7 @@ import {getFormDisplayedError} from '../../../util/errors';
 import {slugMaxLength, slugPattern} from '../../../util/slug';
 import {ClipComponent} from '../../components/clip.component';
 import {CreatedAccessTokenComponent} from '../../components/created-access-token.component';
+import {PageComponent} from '../../components/page.component';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
 import {AccessTokensService} from '../../services/access-tokens.service';
 import {ContextService} from '../../services/context.service';
@@ -76,6 +77,7 @@ function helloDistrProxyUrl(base: string): string {
     ClipComponent,
     CreatedAccessTokenComponent,
     RouterLink,
+    PageComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './registry-tutorial.component.html',

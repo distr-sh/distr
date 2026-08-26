@@ -12,21 +12,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// ensureEnterpriseFeatures grants the enterprise feature set to all organizations. It runs
-// directly after UpdateOrganizationEnterpriseLimits, which sets every organization to the
-// enterprise subscription type, so the enterprise set is the correct one for all of them.
-func ensureEnterpriseFeatures(ctx context.Context) error {
-	log := internalctx.GetLogger(ctx)
-	log.Info("ensuring enterprise features for all organizations")
-	features := types.FeaturesForSubscriptionType(types.SubscriptionTypeEnterprise)
-	updated, err := db.EnsureOrganizationFeatures(ctx, features)
-	if err != nil {
-		return err
-	}
-	log.Info("ensured enterprise features for organizations", zap.Int64("updated_count", updated))
-	return nil
-}
-
 func ReconcileEditionFeatures(ctx context.Context) error {
 	log := internalctx.GetLogger(ctx)
 	log.Info("reconciling edition features")
@@ -70,23 +55,16 @@ func ReconcileEditionFeatures(ctx context.Context) error {
 		}
 
 		if licenseData.EnforceLimitsOnStartup {
-			log.Info("updating enterprise edition limits",
-				zap.Any("max_customers", licenseData.MaxCustomersPerOrganization),
-				zap.Any("max_users", licenseData.MaxUsersPerOrganization),
-				zap.String("subscription_period", string(licenseData.Period)),
-				zap.Time("subscription_ends_at", licenseData.ExpirationDate),
+			plan := licenseData.Plan()
+			log.Info("applying the licensed plan to all organizations",
+				zap.String("subscription_type", string(plan.Type)),
+				zap.Any("features", plan.Features()),
+				zap.Any("max_customers", plan.CustomerOrganizationQty),
+				zap.Any("max_users", plan.UserAccountQty),
+				zap.String("subscription_period", string(plan.Period)),
+				zap.Time("subscription_ends_at", plan.EndsAt),
 			)
-			if err := db.UpdateOrganizationEnterpriseLimits(
-				ctx,
-				licenseData.MaxCustomersPerOrganization,
-				licenseData.MaxUsersPerOrganization,
-				licenseData.Period,
-				licenseData.ExpirationDate,
-			); err != nil {
-				return err
-			}
-
-			if err := ensureEnterpriseFeatures(ctx); err != nil {
+			if err := db.ApplyPlanToAllOrganizations(ctx, plan); err != nil {
 				return err
 			}
 

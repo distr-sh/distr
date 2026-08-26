@@ -20,6 +20,7 @@ import {
   ActivityTimelineEntry,
 } from '../../components/activity-timeline/activity-timeline.component';
 import {ClipComponent} from '../../components/clip.component';
+import {PageComponent} from '../../components/page.component';
 import {AuthService} from '../../services/auth.service';
 import {OverlayService} from '../../services/overlay.service';
 import {SupportBundlesService, supportBundleZipFileName} from '../../services/support-bundles.service';
@@ -31,7 +32,7 @@ import {supportBundleStatusBadgeClass} from '../support-bundle-display';
   selector: 'app-support-bundle-detail',
   templateUrl: './support-bundle-detail.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [DatePipe, NgClass, RouterLink, FaIconComponent, ClipComponent, ActivityTimelineComponent],
+  imports: [DatePipe, NgClass, RouterLink, FaIconComponent, ClipComponent, ActivityTimelineComponent, PageComponent],
 })
 export class SupportBundleDetailComponent {
   private readonly route = inject(ActivatedRoute);

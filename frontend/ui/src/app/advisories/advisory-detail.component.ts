@@ -13,6 +13,7 @@ import {
   ActivityTimelineComponent,
   ActivityTimelineEntry,
 } from '../components/activity-timeline/activity-timeline.component';
+import {PageComponent} from '../components/page.component';
 import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
 import {AdvisoriesService} from '../services/advisories.service';
 import {AuthService} from '../services/auth.service';
@@ -57,6 +58,7 @@ type ImpactState = {state: 'loading'} | {state: 'loaded'; impact: AdvisoryImpact
     ActivityTimelineComponent,
     ArtifactsHashComponent,
     ApplicationLogoComponent,
+    PageComponent,
   ],
 })
 export class AdvisoryDetailComponent {

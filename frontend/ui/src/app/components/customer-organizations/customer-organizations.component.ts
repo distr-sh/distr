@@ -20,7 +20,6 @@ import {
   faChevronDown,
   faCircleExclamation,
   faEdit,
-  faMagnifyingGlass,
   faPlus,
   faTrash,
   faXmark,
@@ -39,7 +38,9 @@ import {PartnerOrganizationsService} from '../../services/partner-organizations.
 import {ToastService} from '../../services/toast.service';
 import {AvatarComponent} from '../avatar.component';
 import {InlineEditComponent} from '../inline-edit.component';
+import {PageComponent} from '../page.component';
 import {QuotaLimitComponent} from '../quota-limit.component';
+import {SearchBarComponent} from '../search-bar.component';
 
 @Component({
   templateUrl: './customer-organizations.component.html',
@@ -55,10 +56,11 @@ import {QuotaLimitComponent} from '../quota-limit.component';
     OverlayModule,
     InlineEditComponent,
     AvatarComponent,
+    PageComponent,
+    SearchBarComponent,
   ],
 })
 export class CustomerOrganizationsComponent {
-  protected readonly faMagnifyingGlass = faMagnifyingGlass;
   protected readonly faPlus = faPlus;
   protected readonly faAddressBook = faAddressBook;
   protected readonly faTrash = faTrash;

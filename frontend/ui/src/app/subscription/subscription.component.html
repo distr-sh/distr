@@ -1,403 +1,393 @@
-<section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
-  <div class="mx-auto max-w-screen-lg">
-    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
-      <div class="justify-between m-4 sm:m-10 dark:border-gray-700">
-        <h1 class="mb-4 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl dark:text-white">
-          Subscription
-        </h1>
-        @if (auth.hasAnyRole('admin')) {
-          <p class="text-sm text-gray-500 dark:text-gray-400">Manage your Distr subscription and view usage.</p>
-        } @else {
-          <p class="p-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:p-0 dark:text-red-400">
-            You do not have sufficient permissions to manage this organization's subscription. Please contact your
-            organization's administrator.
-          </p>
-        }
-        @if (subscriptionInfo(); as subscriptionInfoData) {
-          <form [formGroup]="form" (ngSubmit)="checkout()">
-            <div class="grid gap-6 mb-4 sm:mb-6 mt-6">
-              <!-- Current Usage -->
-              <div class="space-y-4">
-                <h2 class="text-xl font-bold dark:text-white">Current Usage</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div
-                    class="grid grid-rows-3 gap-0 py-2 px-4 border border-gray-200 dark:border-gray-700 rounded-lg text-center">
-                    <p class="text-sm text-gray-600 dark:text-gray-400 self-center">Users</p>
-                    <p class="text-3xl font-bold text-gray-900 dark:text-white self-center">
-                      {{ subscriptionInfoData.currentUserAccountCount }}
-                    </p>
-                    <p class="text-xs text-gray-500 dark:text-gray-500 self-center">
-                      @if (subscriptionInfoData.subscriptionUserAccountQuantity !== unlimited) {
-                        of {{ subscriptionInfoData.subscriptionUserAccountQuantity }} Users used
-                      } @else {
-                        vendor team members
-                      }
-                    </p>
-                  </div>
-                  <div
-                    class="grid grid-rows-3 gap-0 py-2 px-4 border border-gray-200 dark:border-gray-700 rounded-lg text-center">
-                    <p class="text-sm text-gray-600 dark:text-gray-400 self-center">Customers</p>
-                    <p class="text-3xl font-bold text-gray-900 dark:text-white self-center">
-                      {{ subscriptionInfoData.currentCustomerOrganizationCount }}
-                    </p>
-                    <p class="text-xs text-gray-500 dark:text-gray-500 self-center">
-                      @if (subscriptionInfoData.subscriptionCustomerOrganizationQuantity !== unlimited) {
-                        of {{ subscriptionInfoData.subscriptionCustomerOrganizationQuantity }} Customers used
-                      } @else {
-                        invited customer organizations
-                      }
-                    </p>
-                  </div>
-                  <div
-                    class="grid grid-rows-3 gap-0 py-2 px-4 border border-gray-200 dark:border-gray-700 rounded-lg text-center">
-                    <p class="text-sm text-gray-600 dark:text-gray-400 self-center">Registry Storage</p>
-                    <p class="text-3xl font-bold text-gray-900 dark:text-white self-center">
-                      {{ subscriptionInfoData.currentRegistryStorageBytes | bytes: '1.0-1' }}
-                    </p>
-                    <p class="text-xs text-gray-500 dark:text-gray-500 self-center">
-                      @if (registryStorageLimit(); as storageLimit) {
-                        of {{ storageLimit | bytes: '1.0-0' }} used
-                      } @else {
-                        artifacts stored
-                      }
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Current Subscription Info -->
-              <div class="space-y-4">
-                <h2 class="text-xl font-bold dark:text-white">Current Subscription</h2>
-                <div class="grid grid-cols-3 gap-4">
-                  <div>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Plan</p>
-                    <p class="text-lg font-semibold text-gray-900 dark:text-white">
-                      {{ subscriptionInfoData.subscriptionType | titlecase }}
-                    </p>
-                  </div>
-                  <div>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Period</p>
-                    <p class="text-lg font-semibold text-gray-900 dark:text-white">
-                      {{ subscriptionInfoData.subscriptionPeriod | titlecase }}
-                    </p>
-                  </div>
-                  <div>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Renews On</p>
-                    <p class="text-lg font-semibold text-gray-900 dark:text-white">
-                      {{ subscriptionInfoData.subscriptionEndsAt | date: 'longDate' }}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              @if (auth.hasAnyRole('admin')) {
-                @if (hasActiveSubscription()) {
-                  <div class="space-y-4">
-                    <h2 class="text-xl font-bold dark:text-white">Manage Subscription</h2>
-                    <div
-                      class="p-6 bg-linear-to-r from-primary-50 to-blue-50 dark:from-gray-700 dark:to-gray-800 rounded-lg">
-                      <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                        Access the Stripe Customer Portal to manage your subscription, download invoices, and update
-                        your payment method.
-                      </p>
-                      <button
-                        type="button"
-                        (click)="manageSubscription()"
-                        class="text-white inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-6 py-3 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
-                        <fa-icon [icon]="faCreditCard" size="lg" class="h-4 w-4 mr-2" />
-                        Manage Subscription & Billing
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- Change Subscription Quantities -->
-                  <div class="space-y-4">
-                    <h2 class="text-xl font-bold dark:text-white">Change Subscription Quantities</h2>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">
-                      Prorated adjustments will be reflected on your next invoice (<a
-                        [href]="websiteUrl + '/docs/subscription-management/#pro-rata-adjustment'"
-                        class="underline"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        >read more</a
-                      >).
-                    </p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label for="userAccountQuantity-update" class="distr-label mb-2"> Vendor Team Members * </label>
-                        <input
-                          formControlName="userAccountQuantity"
-                          type="number"
-                          name="userAccountQuantity"
-                          id="userAccountQuantity-update"
-                          [min]="subscriptionInfoData.currentUserAccountCount"
-                          class="distr-input"
-                          [placeholder]="subscriptionInfoData.currentUserAccountCount.toString()"
-                          required />
-                        <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-                          Number of vendor team members
-                          @if (isPartnerManagementEnabled()) {
-                            and partner users
-                          }
-                          (min: {{ subscriptionInfoData.currentUserAccountCount }})
-                        </p>
-                      </div>
-                      <div>
-                        <label for="customerOrganizationQuantity-update" class="distr-label mb-2"> Customers * </label>
-                        <input
-                          formControlName="customerOrganizationQuantity"
-                          type="number"
-                          name="customerOrganizationQuantity"
-                          id="customerOrganizationQuantity-update"
-                          [min]="subscriptionInfoData.currentCustomerOrganizationCount"
-                          [max]="getCurrentCustomerOrganizationsLimit()"
-                          class="distr-input"
-                          [placeholder]="subscriptionInfoData.currentCustomerOrganizationCount.toString()"
-                          required />
-                        <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-                          Number of external customers (min:
-                          {{ subscriptionInfoData.currentCustomerOrganizationCount }}, max:
-                          {{ getCurrentCustomerOrganizationsLimit() }})
-                        </p>
-                      </div>
-                    </div>
-                    <div class="flex justify-end">
-                      <button
-                        type="button"
-                        (click)="updateQuantities()"
-                        [disabled]="form.invalid || !hasQuantitiesChanged()"
-                        class="text-white inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-6 py-3 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60 disabled:cursor-not-allowed">
-                        <fa-icon [icon]="faShoppingCart" size="lg" class="h-4 w-4 mr-2" />
-                        Proceed
-                      </button>
-                    </div>
-                  </div>
-
-                  @if (canUpgradeToBusiness()) {
-                    <!-- Upgrade to Business -->
-                    <div class="space-y-4">
-                      <h2 class="text-xl font-bold dark:text-white">Upgrade to Business</h2>
-                      <div
-                        class="p-6 bg-linear-to-r from-primary-50 to-blue-50 dark:from-gray-700 dark:to-gray-800 rounded-lg">
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                          The Distr Business plan is built for vendors distributing at scale:
-                        </p>
-                        <ul class="space-y-1 text-sm text-gray-600 dark:text-gray-400 mb-4">
-                          <li>
-                            <fa-icon [icon]="faCheck" class="text-green-500" />
-                            {{ getPlanCustomerLimitDescription('business') }} (up from
-                            {{ getCustomerOrganizationsLimit('pro') }})
-                          </li>
-                          @for (feature of businessPlanFeatures; track feature) {
-                            <li>
-                              <fa-icon [icon]="faCheck" class="text-green-500" />
-                              {{ feature }}
-                            </li>
-                          }
-                        </ul>
-                        <div class="flex justify-between items-center">
-                          <div>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">Estimated Cost</p>
-                            <p class="text-3xl font-bold text-gray-900 dark:text-white">
-                              {{
-                                getPreviewPriceFor('business', subscriptionInfoData.subscriptionPeriod)
-                                  | currency: 'USD'
-                              }}
-                              <span class="text-lg font-normal text-gray-600 dark:text-gray-400">
-                                / {{ subscriptionInfoData.subscriptionPeriod === 'monthly' ? 'month' : 'year' }}
-                              </span>
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            (click)="upgradeToBusiness()"
-                            [disabled]="form.invalid"
-                            class="text-white inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-6 py-3 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60 disabled:cursor-not-allowed">
-                            <fa-icon [icon]="faShoppingCart" size="lg" class="h-4 w-4 mr-2" />
-                            Upgrade to Business
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+<app-page variant="narrow">
+  <div class="distr-panel">
+    <h1 class="mb-4 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl dark:text-white">
+      Subscription
+    </h1>
+    @if (auth.hasAnyRole('admin')) {
+      <p class="text-sm text-gray-500 dark:text-gray-400">Manage your Distr subscription and view usage.</p>
+    } @else {
+      <p class="p-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:p-0 dark:text-red-400">
+        You do not have sufficient permissions to manage this organization's subscription. Please contact your
+        organization's administrator.
+      </p>
+    }
+    @if (subscriptionInfo(); as subscriptionInfoData) {
+      <form [formGroup]="form" (ngSubmit)="checkout()">
+        <div class="grid gap-6 mb-4 sm:mb-6 mt-6">
+          <!-- Current Usage -->
+          <div class="space-y-4">
+            <h2 class="text-xl font-bold dark:text-white">Current Usage</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div
+                class="grid grid-rows-3 gap-0 py-2 px-4 border border-gray-200 dark:border-gray-700 rounded-lg text-center">
+                <p class="text-sm text-gray-600 dark:text-gray-400 self-center">Users</p>
+                <p class="text-3xl font-bold text-gray-900 dark:text-white self-center">
+                  {{ subscriptionInfoData.currentUserAccountCount }}
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-500 self-center">
+                  @if (subscriptionInfoData.subscriptionUserAccountQuantity !== unlimited) {
+                    of {{ subscriptionInfoData.subscriptionUserAccountQuantity }} Users used
+                  } @else {
+                    vendor team members
                   }
-                } @else if (isTrialSubscription()) {
-                  <div class="space-y-4">
-                    <h2 class="text-xl font-bold dark:text-white">Choose Your Plan</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <!-- Pro Plan -->
-                      <label
-                        [class.ring-2]="form.value.subscriptionType === 'pro'"
-                        [class.ring-primary-600]="form.value.subscriptionType === 'pro'"
-                        class="flex flex-col p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-primary-300 dark:border-gray-700 dark:hover:border-primary-700">
-                        <input type="radio" formControlName="subscriptionType" value="pro" class="sr-only" />
-                        <div class="flex justify-between items-start mb-2">
-                          <h3 class="text-lg font-bold text-gray-900 dark:text-white">Pro</h3>
-                        </div>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Production rollouts with governance</p>
-                        <ul class="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                          <li>
-                            <fa-icon [icon]="faCheck" class="text-green-500" />
-                            {{ getPlanCustomerLimitDescription('pro') }}
-                            <span class="text-xs"
-                              >(current: {{ subscriptionInfoData.currentCustomerOrganizationCount }})</span
-                            >
-                          </li>
-                          @for (feature of proPlanFeatures; track feature) {
-                            <li>
-                              <fa-icon [icon]="faCheck" class="text-green-500" />
-                              {{ feature }}
-                            </li>
-                          }
-                        </ul>
-                      </label>
+                </p>
+              </div>
+              <div
+                class="grid grid-rows-3 gap-0 py-2 px-4 border border-gray-200 dark:border-gray-700 rounded-lg text-center">
+                <p class="text-sm text-gray-600 dark:text-gray-400 self-center">Customers</p>
+                <p class="text-3xl font-bold text-gray-900 dark:text-white self-center">
+                  {{ subscriptionInfoData.currentCustomerOrganizationCount }}
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-500 self-center">
+                  @if (subscriptionInfoData.subscriptionCustomerOrganizationQuantity !== unlimited) {
+                    of {{ subscriptionInfoData.subscriptionCustomerOrganizationQuantity }} Customers used
+                  } @else {
+                    invited customer organizations
+                  }
+                </p>
+              </div>
+              <div
+                class="grid grid-rows-3 gap-0 py-2 px-4 border border-gray-200 dark:border-gray-700 rounded-lg text-center">
+                <p class="text-sm text-gray-600 dark:text-gray-400 self-center">Registry Storage</p>
+                <p class="text-3xl font-bold text-gray-900 dark:text-white self-center">
+                  {{ subscriptionInfoData.currentRegistryStorageBytes | bytes: '1.0-1' }}
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-500 self-center">
+                  @if (registryStorageLimit(); as storageLimit) {
+                    of {{ storageLimit | bytes: '1.0-0' }} used
+                  } @else {
+                    artifacts stored
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
 
-                      <!-- Business Plan -->
-                      <label
-                        [class.ring-2]="form.value.subscriptionType === 'business'"
-                        [class.ring-primary-600]="form.value.subscriptionType === 'business'"
-                        class="flex flex-col p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-primary-300 dark:border-gray-700 dark:hover:border-primary-700">
-                        <input type="radio" formControlName="subscriptionType" value="business" class="sr-only" />
-                        <div class="flex justify-between items-start mb-2">
-                          <h3 class="text-lg font-bold text-gray-900 dark:text-white">Business</h3>
-                          <span class="text-sm text-gray-500 dark:text-gray-400">Most Popular</span>
-                        </div>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">For vendors distributing at scale</p>
-                        <ul class="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                          <li>
-                            <fa-icon [icon]="faCheck" class="text-green-500" />
-                            {{ getPlanCustomerLimitDescription('business') }}
-                            <span class="text-xs"
-                              >(current: {{ subscriptionInfoData.currentCustomerOrganizationCount }})</span
-                            >
-                          </li>
-                          @for (feature of businessPlanFeatures; track feature) {
-                            <li>
-                              <fa-icon [icon]="faCheck" class="text-green-500" />
-                              {{ feature }}
-                            </li>
-                          }
-                        </ul>
-                      </label>
-                    </div>
+          <!-- Current Subscription Info -->
+          <div class="space-y-4">
+            <h2 class="text-xl font-bold dark:text-white">Current Subscription</h2>
+            <div class="grid grid-cols-3 gap-4">
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Plan</p>
+                <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                  {{ subscriptionInfoData.subscriptionType | titlecase }}
+                </p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Period</p>
+                <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                  {{ subscriptionInfoData.subscriptionPeriod | titlecase }}
+                </p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Renews On</p>
+                <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                  {{ subscriptionInfoData.subscriptionEndsAt | date: 'longDate' }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          @if (auth.hasAnyRole('admin')) {
+            @if (hasActiveSubscription()) {
+              <div class="space-y-4">
+                <h2 class="text-xl font-bold dark:text-white">Manage Subscription</h2>
+                <div
+                  class="p-6 bg-linear-to-r from-primary-50 to-blue-50 dark:from-gray-700 dark:to-gray-800 rounded-lg">
+                  <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Access the Stripe Customer Portal to manage your subscription, download invoices, and update your
+                    payment method.
+                  </p>
+                  <button
+                    type="button"
+                    (click)="manageSubscription()"
+                    class="text-white inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-6 py-3 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+                    <fa-icon [icon]="faCreditCard" size="lg" class="h-4 w-4 mr-2" />
+                    Manage Subscription & Billing
+                  </button>
+                </div>
+              </div>
+
+              <!-- Change Subscription Quantities -->
+              <div class="space-y-4">
+                <h2 class="text-xl font-bold dark:text-white">Change Subscription Quantities</h2>
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                  Prorated adjustments will be reflected on your next invoice (<a
+                    [href]="websiteUrl + '/docs/subscription-management/#pro-rata-adjustment'"
+                    class="underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >read more</a
+                  >).
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label for="userAccountQuantity-update" class="distr-label mb-2"> Vendor Team Members * </label>
+                    <input
+                      formControlName="userAccountQuantity"
+                      type="number"
+                      name="userAccountQuantity"
+                      id="userAccountQuantity-update"
+                      [min]="subscriptionInfoData.currentUserAccountCount"
+                      class="distr-input"
+                      [placeholder]="subscriptionInfoData.currentUserAccountCount.toString()"
+                      required />
+                    <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+                      Number of vendor team members
+                      @if (isPartnerManagementEnabled()) {
+                        and partner users
+                      }
+                      (min: {{ subscriptionInfoData.currentUserAccountCount }})
+                    </p>
                   </div>
-
-                  <!-- subscription period (for trial subscriptions) -->
-                  <div class="space-y-4">
-                    <h2 class="text-xl font-bold dark:text-white">Billing Period</h2>
-                    <div class="flex gap-4">
-                      <label class="flex items-center cursor-pointer">
-                        <input type="radio" formControlName="subscriptionPeriod" value="monthly" class="distr-radio" />
-                        <span class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Monthly</span>
-                      </label>
-                      <label class="flex items-center cursor-pointer">
-                        <input type="radio" formControlName="subscriptionPeriod" value="yearly" class="distr-radio" />
-                        <span class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                          Yearly
-                          <span class="text-green-600 dark:text-green-400">(Save 20%)</span>
-                        </span>
-                      </label>
-                    </div>
+                  <div>
+                    <label for="customerOrganizationQuantity-update" class="distr-label mb-2"> Customers * </label>
+                    <input
+                      formControlName="customerOrganizationQuantity"
+                      type="number"
+                      name="customerOrganizationQuantity"
+                      id="customerOrganizationQuantity-update"
+                      [min]="subscriptionInfoData.currentCustomerOrganizationCount"
+                      [max]="getCurrentCustomerOrganizationsLimit()"
+                      class="distr-input"
+                      [placeholder]="subscriptionInfoData.currentCustomerOrganizationCount.toString()"
+                      required />
+                    <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+                      Number of external customers (min:
+                      {{ subscriptionInfoData.currentCustomerOrganizationCount }}, max:
+                      {{ getCurrentCustomerOrganizationsLimit() }})
+                    </p>
                   </div>
+                </div>
+                <div class="flex justify-end">
+                  <button
+                    type="button"
+                    (click)="updateQuantities()"
+                    [disabled]="form.invalid || !hasQuantitiesChanged()"
+                    class="text-white inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-6 py-3 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60 disabled:cursor-not-allowed">
+                    <fa-icon [icon]="faShoppingCart" size="lg" class="h-4 w-4 mr-2" />
+                    Proceed
+                  </button>
+                </div>
+              </div>
 
-                  <!-- Quantities -->
-                  <div class="space-y-4">
-                    <h2 class="text-xl font-bold dark:text-white">Subscription Quantities</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label for="userAccountQuantity-checkout" class="distr-label mb-2">
-                          Vendor Team Members *
-                        </label>
-                        <input
-                          formControlName="userAccountQuantity"
-                          type="number"
-                          name="userAccountQuantity"
-                          id="userAccountQuantity-checkout"
-                          min="1"
-                          class="distr-input"
-                          placeholder="1"
-                          required />
-                        <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-                          Number of vendor team members
-                          @if (isPartnerManagementEnabled()) {
-                            and partner users
-                          }
-                          accessing Distr
-                        </p>
-                      </div>
-                      <div>
-                        <label for="customerOrganizationQuantity-checkout" class="distr-label mb-2">
-                          Customers *
-                        </label>
-                        <input
-                          formControlName="customerOrganizationQuantity"
-                          type="number"
-                          name="customerOrganizationQuantity"
-                          id="customerOrganizationQuantity-checkout"
-                          min="1"
-                          class="distr-input"
-                          placeholder="1"
-                          required />
-                        <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-                          Number of external customers
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Price Preview -->
+              @if (canUpgradeToBusiness()) {
+                <!-- Upgrade to Business -->
+                <div class="space-y-4">
+                  <h2 class="text-xl font-bold dark:text-white">Upgrade to Business</h2>
                   <div
                     class="p-6 bg-linear-to-r from-primary-50 to-blue-50 dark:from-gray-700 dark:to-gray-800 rounded-lg">
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      The Distr Business plan is built for vendors distributing at scale:
+                    </p>
+                    <ul class="space-y-1 text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      <li>
+                        <fa-icon [icon]="faCheck" class="text-green-500" />
+                        {{ getPlanCustomerLimitDescription('business') }} (up from
+                        {{ getCustomerOrganizationsLimit('pro') }})
+                      </li>
+                      @for (feature of businessPlanFeatures; track feature) {
+                        <li>
+                          <fa-icon [icon]="faCheck" class="text-green-500" />
+                          {{ feature }}
+                        </li>
+                      }
+                    </ul>
                     <div class="flex justify-between items-center">
                       <div>
                         <p class="text-sm text-gray-600 dark:text-gray-400">Estimated Cost</p>
                         <p class="text-3xl font-bold text-gray-900 dark:text-white">
-                          {{ getPreviewPrice() | currency: 'USD' }}
+                          {{
+                            getPreviewPriceFor('business', subscriptionInfoData.subscriptionPeriod) | currency: 'USD'
+                          }}
                           <span class="text-lg font-normal text-gray-600 dark:text-gray-400">
-                            / {{ form.value.subscriptionPeriod === 'monthly' ? 'month' : 'year' }}
+                            / {{ subscriptionInfoData.subscriptionPeriod === 'monthly' ? 'month' : 'year' }}
                           </span>
                         </p>
                       </div>
                       <button
-                        type="submit"
+                        type="button"
+                        (click)="upgradeToBusiness()"
                         [disabled]="form.invalid"
                         class="text-white inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-6 py-3 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60 disabled:cursor-not-allowed">
                         <fa-icon [icon]="faShoppingCart" size="lg" class="h-4 w-4 mr-2" />
-                        Proceed to Checkout
+                        Upgrade to Business
                       </button>
                     </div>
                   </div>
+                </div>
+              }
+            } @else if (isTrialSubscription()) {
+              <div class="space-y-4">
+                <h2 class="text-xl font-bold dark:text-white">Choose Your Plan</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <!-- Pro Plan -->
+                  <label
+                    [class.ring-2]="form.value.subscriptionType === 'pro'"
+                    [class.ring-primary-600]="form.value.subscriptionType === 'pro'"
+                    class="flex flex-col p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-primary-300 dark:border-gray-700 dark:hover:border-primary-700">
+                    <input type="radio" formControlName="subscriptionType" value="pro" class="sr-only" />
+                    <div class="flex justify-between items-start mb-2">
+                      <h3 class="text-lg font-bold text-gray-900 dark:text-white">Pro</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Production rollouts with governance</p>
+                    <ul class="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                      <li>
+                        <fa-icon [icon]="faCheck" class="text-green-500" />
+                        {{ getPlanCustomerLimitDescription('pro') }}
+                        <span class="text-xs"
+                          >(current: {{ subscriptionInfoData.currentCustomerOrganizationCount }})</span
+                        >
+                      </li>
+                      @for (feature of proPlanFeatures; track feature) {
+                        <li>
+                          <fa-icon [icon]="faCheck" class="text-green-500" />
+                          {{ feature }}
+                        </li>
+                      }
+                    </ul>
+                  </label>
 
-                  <div class="p-4 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                    <p>
-                      <strong>Note:</strong>
-                      For Enterprise plans with unlimited usage, please
-                      <a [href]="websiteUrl + '/contact/'" target="_blank" class="text-primary-600 hover:underline"
-                        >contact our sales team</a
-                      >.
+                  <!-- Business Plan -->
+                  <label
+                    [class.ring-2]="form.value.subscriptionType === 'business'"
+                    [class.ring-primary-600]="form.value.subscriptionType === 'business'"
+                    class="flex flex-col p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-primary-300 dark:border-gray-700 dark:hover:border-primary-700">
+                    <input type="radio" formControlName="subscriptionType" value="business" class="sr-only" />
+                    <div class="flex justify-between items-start mb-2">
+                      <h3 class="text-lg font-bold text-gray-900 dark:text-white">Business</h3>
+                      <span class="text-sm text-gray-500 dark:text-gray-400">Most Popular</span>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">For vendors distributing at scale</p>
+                    <ul class="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                      <li>
+                        <fa-icon [icon]="faCheck" class="text-green-500" />
+                        {{ getPlanCustomerLimitDescription('business') }}
+                        <span class="text-xs"
+                          >(current: {{ subscriptionInfoData.currentCustomerOrganizationCount }})</span
+                        >
+                      </li>
+                      @for (feature of businessPlanFeatures; track feature) {
+                        <li>
+                          <fa-icon [icon]="faCheck" class="text-green-500" />
+                          {{ feature }}
+                        </li>
+                      }
+                    </ul>
+                  </label>
+                </div>
+              </div>
+
+              <!-- subscription period (for trial subscriptions) -->
+              <div class="space-y-4">
+                <h2 class="text-xl font-bold dark:text-white">Billing Period</h2>
+                <div class="flex gap-4">
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" formControlName="subscriptionPeriod" value="monthly" class="distr-radio" />
+                    <span class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Monthly</span>
+                  </label>
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" formControlName="subscriptionPeriod" value="yearly" class="distr-radio" />
+                    <span class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                      Yearly
+                      <span class="text-green-600 dark:text-green-400">(Save 20%)</span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Quantities -->
+              <div class="space-y-4">
+                <h2 class="text-xl font-bold dark:text-white">Subscription Quantities</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label for="userAccountQuantity-checkout" class="distr-label mb-2"> Vendor Team Members * </label>
+                    <input
+                      formControlName="userAccountQuantity"
+                      type="number"
+                      name="userAccountQuantity"
+                      id="userAccountQuantity-checkout"
+                      min="1"
+                      class="distr-input"
+                      placeholder="1"
+                      required />
+                    <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+                      Number of vendor team members
+                      @if (isPartnerManagementEnabled()) {
+                        and partner users
+                      }
+                      accessing Distr
                     </p>
                   </div>
-                }
-              }
-            </div>
-          </form>
-        }
+                  <div>
+                    <label for="customerOrganizationQuantity-checkout" class="distr-label mb-2"> Customers * </label>
+                    <input
+                      formControlName="customerOrganizationQuantity"
+                      type="number"
+                      name="customerOrganizationQuantity"
+                      id="customerOrganizationQuantity-checkout"
+                      min="1"
+                      class="distr-input"
+                      placeholder="1"
+                      required />
+                    <p class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+                      Number of external customers
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-        @if (isSubscriptionExpired() && (auth.hasAnyRole('admin') || auth.isSuperAdmin())) {
-          <h2 class="text-xl font-bold dark:text-white mt-8 mb-2">Danger Zone</h2>
-          <app-delete-organization />
-        }
-      </div>
-    </div>
-  </div>
+              <!-- Price Preview -->
+              <div class="p-6 bg-linear-to-r from-primary-50 to-blue-50 dark:from-gray-700 dark:to-gray-800 rounded-lg">
+                <div class="flex justify-between items-center">
+                  <div>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Estimated Cost</p>
+                    <p class="text-3xl font-bold text-gray-900 dark:text-white">
+                      {{ getPreviewPrice() | currency: 'USD' }}
+                      <span class="text-lg font-normal text-gray-600 dark:text-gray-400">
+                        / {{ form.value.subscriptionPeriod === 'monthly' ? 'month' : 'year' }}
+                      </span>
+                    </p>
+                  </div>
+                  <button
+                    type="submit"
+                    [disabled]="form.invalid"
+                    class="text-white inline-flex items-center justify-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-6 py-3 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-60 disabled:cursor-not-allowed">
+                    <fa-icon [icon]="faShoppingCart" size="lg" class="h-4 w-4 mr-2" />
+                    Proceed to Checkout
+                  </button>
+                </div>
+              </div>
 
-  <ng-template #updateModal>
-    @if (pendingUpdate(); as update) {
-      <app-subscription-update-modal
-        animate.enter="animate-fly-in-top"
-        animate.leave="animate-fly-out-top"
-        [pendingUpdate]="update"
-        (closed)="hideModal()"
-        (confirmed)="onModalConfirmed($event)" />
+              <div class="p-4 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                <p>
+                  <strong>Note:</strong>
+                  For Enterprise plans with unlimited usage, please
+                  <a [href]="websiteUrl + '/contact/'" target="_blank" class="text-primary-600 hover:underline"
+                    >contact our sales team</a
+                  >.
+                </p>
+              </div>
+            }
+          }
+        </div>
+      </form>
     }
-  </ng-template>
-</section>
+
+    @if (isSubscriptionExpired() && (auth.hasAnyRole('admin') || auth.isSuperAdmin())) {
+      <h2 class="text-xl font-bold dark:text-white mt-8 mb-2">Danger Zone</h2>
+      <app-delete-organization />
+    }
+  </div>
+</app-page>
+
+<ng-template #updateModal>
+  @if (pendingUpdate(); as update) {
+    <app-subscription-update-modal
+      animate.enter="animate-fly-in-top"
+      animate.leave="animate-fly-out-top"
+      [pendingUpdate]="update"
+      (closed)="hideModal()"
+      (confirmed)="onModalConfirmed($event)" />
+  }
+</ng-template>

@@ -47,7 +47,20 @@ const (
 	LogQueryWindowDefault   = 7 * 24 * time.Hour
 )
 
+// licenseLimitsApply reports whether the limits of the license key define the limits of an
+// organization with the given subscription type. A license key that enforces its limits defines
+// them for every organization, since reconciliation puts them all on the plan that key grants.
+// A key that does not enforce them, as on the hosted instance where plans are managed through
+// Stripe, only defines them for the enterprise plan, whose limits are negotiated rather than
+// listed among the constants above.
+func licenseLimitsApply(st types.SubscriptionType, licenseData license.LicenseData) bool {
+	return licenseData.EnforceLimitsOnStartup || st == types.SubscriptionTypeEnterprise
+}
+
 func GetCustomersPerOrganizationLimit(st types.SubscriptionType) limit.Limit {
+	if licenseData := license.GetLicenseData(); licenseLimitsApply(st, licenseData) {
+		return licenseData.MaxCustomersPerOrganization
+	}
 	switch st {
 	case types.SubscriptionTypeCommunity:
 		return MaxCustomersPerOrganizationCommunity
@@ -57,14 +70,15 @@ func GetCustomersPerOrganizationLimit(st types.SubscriptionType) limit.Limit {
 		return MaxCustomersPerOrganizationPro
 	case types.SubscriptionTypeBusiness:
 		return MaxCustomersPerOrganizationBusiness
-	case types.SubscriptionTypeEnterprise:
-		return license.GetLicenseData().MaxCustomersPerOrganization
 	default:
 		panic(fmt.Sprintf("invalid subscription type: %v", st))
 	}
 }
 
 func GetUsersPerCustomerOrganizationLimit(st types.SubscriptionType) limit.Limit {
+	if licenseData := license.GetLicenseData(); licenseLimitsApply(st, licenseData) {
+		return licenseData.MaxUsersPerCustomerOrganization
+	}
 	switch st {
 	case types.SubscriptionTypeCommunity:
 		return MaxUsersPerCustomerOrganizationCommunity
@@ -74,14 +88,15 @@ func GetUsersPerCustomerOrganizationLimit(st types.SubscriptionType) limit.Limit
 		return MaxUsersPerCustomerOrganizationPro
 	case types.SubscriptionTypeBusiness:
 		return MaxUsersPerCustomerOrganizationBusiness
-	case types.SubscriptionTypeEnterprise:
-		return license.GetLicenseData().MaxUsersPerCustomerOrganization
 	default:
 		panic(fmt.Sprintf("invalid subscription type: %v", st))
 	}
 }
 
 func GetDeploymentTargetsPerCustomerOrganizationLimit(st types.SubscriptionType) limit.Limit {
+	if licenseData := license.GetLicenseData(); licenseLimitsApply(st, licenseData) {
+		return licenseData.MaxDeploymentTargetsPerCustomerOrganization
+	}
 	switch st {
 	case types.SubscriptionTypeCommunity:
 		return MaxDeploymentTargetsPerCustomerOrganizationCommunity
@@ -91,14 +106,15 @@ func GetDeploymentTargetsPerCustomerOrganizationLimit(st types.SubscriptionType)
 		return MaxDeploymentTargetsPerCustomerOrganizationPro
 	case types.SubscriptionTypeBusiness:
 		return MaxDeploymentTargetsPerCustomerOrganizationBusiness
-	case types.SubscriptionTypeEnterprise:
-		return license.GetLicenseData().MaxDeploymentTargetsPerCustomerOrganization
 	default:
 		panic(fmt.Sprintf("invalid subscription type: %v", st))
 	}
 }
 
 func GetRegistryStorageLimit(st types.SubscriptionType) limit.Limit {
+	if licenseData := license.GetLicenseData(); licenseLimitsApply(st, licenseData) {
+		return licenseData.MaxRegistryStorageBytes
+	}
 	switch st {
 	case types.SubscriptionTypeCommunity:
 		return MaxRegistryStorageBytesCommunity
@@ -108,8 +124,6 @@ func GetRegistryStorageLimit(st types.SubscriptionType) limit.Limit {
 		return MaxRegistryStorageBytesPro
 	case types.SubscriptionTypeBusiness:
 		return MaxRegistryStorageBytesBusiness
-	case types.SubscriptionTypeEnterprise:
-		return license.GetLicenseData().MaxRegistryStorageBytes
 	default:
 		panic(fmt.Sprintf("invalid subscription type: %v", st))
 	}
