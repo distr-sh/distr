@@ -1,19 +1,11 @@
 import {Component, computed, input} from '@angular/core';
 
-/**
- * Decides how wide the content of a page may grow:
- * - `full` for content that uses the whole viewport, e.g. the dashboard
- * - `panel` for a single `distr-panel` holding prose or a form, e.g. the organization settings
- * - `table` for one or more `distr-table-panel`
- * - `cards` for a `distr-card-grid`
- */
-export type PageVariant = 'full' | 'panel' | 'table' | 'cards';
+export type PageVariant = 'default' | 'full' | 'narrow';
 
 const maxWidths: Record<PageVariant, string> = {
+  default: 'max-w-screen-2xl',
   full: 'max-w-none',
-  panel: 'max-w-screen-lg',
-  table: 'max-w-screen-2xl',
-  cards: 'max-w-screen-2xl',
+  narrow: 'max-w-screen-lg',
 };
 
 @Component({
@@ -27,7 +19,7 @@ const maxWidths: Record<PageVariant, string> = {
   `,
 })
 export class PageComponent {
-  public readonly variant = input.required<PageVariant>();
+  public readonly variant = input<PageVariant>('default');
 
   protected readonly maxWidth = computed(() => maxWidths[this.variant()]);
 }

@@ -1,4 +1,4 @@
-<app-page variant="cards">
+<app-page>
   @if (auth.hasAnyRole('admin') && (!hasSubscription() || hasNoArtifact())) {
     <div
       class="flex p-4 mb-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400"
@@ -81,7 +81,7 @@
 
   @if (filteredArtifacts(); as artifacts) {
     <div class="overflow-x-auto">
-      <ul role="list" class="distr-card-grid-wide">
+      <ul role="list" class="distr-card-grid">
         @for (artifact of artifacts; track artifact.id) {
           <li class="distr-card py-3 px-6 sm:py-4">
             <div class="flex items-center">
