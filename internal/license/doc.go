@@ -11,6 +11,7 @@ A compatible Distr license key can be generated using the following JSON as a te
 		"ld": {
 			"enf": true,
 			"p": "monthly",
+			"t": "enterprise",
 			"mo": 123,
 			"mou": 123,
 			"moc": 123,
@@ -19,6 +20,12 @@ A compatible Distr license key can be generated using the following JSON as a te
 			"mrs": 123
 		}
 	}
+
+The "t" claim is the subscription type the instance is licensed for and accepts any of
+[types.AllSubscriptionTypes]. It defaults to enterprise, which is the plan every license key
+granted before the claim was introduced. When "enf" is true, every organization is set to that
+subscription type, is granted its features and uses the limits from the license key rather than
+the ones listed for the plan on Distr Cloud.
 
 After error-free initialization, a [LicenseData] object can be obtained via [GetLicenseData].
 If no public key is set at compile time, [GetLicenseData] always returns the default values for all limits.
