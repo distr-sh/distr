@@ -9,7 +9,7 @@ import {AutotrimDirective} from '../directives/autotrim.directive';
 import {CustomDomain} from '../types/custom-domain';
 
 // A single CNAME-configurable domain field: shows the existing domain with a remove button once
-// configured, or a validated hostname input beforehand. Purely presentational — the domain list and
+// configured, or a validated hostname input beforehand. Purely presentational. The domain list and
 // the actual create/delete calls belong to the parent, which knows the domain type and scope.
 @Component({
   selector: 'app-domain-field',
