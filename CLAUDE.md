@@ -164,7 +164,7 @@ The website is a separate pnpm project with its own Prettier config; the root co
 - `ChangeDetectionStrategy.OnPush` is the default, so never write `changeDetection: ChangeDetectionStrategy.OnPush`. Only set `changeDetection` to opt a component out with `ChangeDetectionStrategy.Eager`, and remove that opt-out whenever the component's state is fully signal-based
 - Services are singleton by default (`providedIn: 'root'`)
 - Use Angular's `inject()` function for dependency injection (e.g. `private readonly http = inject(HttpClient)`). Do not use constructor injection.
-- Component file structure: `component-name.component.ts`, `component-name.component.html` (no need for scss files)
+- Component file structure: `component-name.component.ts`, `component-name.component.html`, and a `component-name.component.scss` only when the component needs styling of its own beyond utility classes in the template
 - Use TypeScript interfaces from `app/types/` for API models
 - Use reactive forms for all form handling
 - Use as little `undefined` types as possible, always use the actual type
@@ -185,6 +185,7 @@ The website is a separate pnpm project with its own Prettier config; the root co
   ```
 
 - Reuse the shared global `distr-*` component classes defined in `frontend/ui/src/styles/theme.scss` (e.g. `distr-checkbox`, `distr-radio`, `distr-label`) instead of repeating their Tailwind utility chains inline, and add a new one there when an element's styling is repeated across the app. Append only element-specific extra utilities when needed (e.g. `class="distr-checkbox indeterminate:bg-[length:65%_65%]"`).
+- Styling used by a single component belongs to that component's `component-name.component.scss`, not to `theme.scss`. Tailwind compiles every component stylesheet on its own, so `@apply` there needs `@reference '<path>/styles/tailwind.css'` (the Tailwind entry point, which holds the `@theme` tokens and the `dark` variant) as the first line of the file. Without it the build fails with `Cannot apply unknown utility class`. Keep that entry point plain CSS, since `@reference` cannot read Sass. Prefer the `.scss` file over an inline `styles` block: Tailwind scans `.ts` files for class names, so utilities that appear only inside an inline `@apply` are also emitted into the global stylesheet, where nothing uses them.
 
 ### Database Access
 

@@ -17,7 +17,7 @@ export interface TabItem<T extends string = string> {
         <button
           type="button"
           role="tab"
-          class="distr-tab"
+          class="tab"
           cdkOverlayOrigin
           #origin="cdkOverlayOrigin"
           [id]="'tab-' + tab.id"
@@ -33,6 +33,7 @@ export interface TabItem<T extends string = string> {
       }
     </div>
   `,
+  styleUrl: './tab-bar.component.scss',
 })
 export class TabBarComponent<T extends string> {
   public readonly tabs = input.required<readonly TabItem<T>[]>();
