@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.3.1](https://github.com/distr-sh/distr/compare/3.3.0...3.3.1) (2026-08-27)
+
+
+### Bug Fixes
+
+* **deps:** update aws-sdk-go-v2 monorepo ([#3090](https://github.com/distr-sh/distr/issues/3090)) ([5de824d](https://github.com/distr-sh/distr/commit/5de824db86351e7fc54f8b03947ac0905d8d4088))
+
 ## [3.3.0](https://github.com/distr-sh/distr/compare/3.2.1...3.3.0) (2026-08-26)
 
 
