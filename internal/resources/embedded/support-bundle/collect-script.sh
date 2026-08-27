@@ -262,7 +262,7 @@ if [ "$ENV_GROUP_COUNT" -gt 0 ]; then
   while [ "$_g" -le "$ENV_GROUP_COUNT" ]; do
     _gname=$(cat "${_tmpdir}/envgroup_${_g}.name")
     printf "  [%d] %s\n" "$_g" "$_gname"
-    while IFS= read -r _line; do
+    while IFS= read -r _line || [ -n "$_line" ]; do
       printf "      %s\n" "$_line"
     done < "${_tmpdir}/envgroup_${_g}.txt"
     echo ""
@@ -341,7 +341,7 @@ if [ "$SCRIPT_COUNT" -gt 0 ]; then
       printf "      %s\n" "$_sdesc"
     fi
     echo ""
-    while IFS= read -r _line; do
+    while IFS= read -r _line || [ -n "$_line" ]; do
       printf "      %s\n" "$_line"
     done < "${_tmpdir}/scripts/${_s}.sh"
     echo ""
@@ -391,7 +391,7 @@ if [ "$SCRIPT_COUNT" -gt 0 ]; then
       if [ -f "${_sbase}.out" ]; then
         printf "  %s\n" "$(cat "${_sbase}.name")"
         _slines=$(wc -l < "${_sbase}.out")
-        head -n 30 "${_sbase}.out" | while IFS= read -r _line; do
+        head -n 30 "${_sbase}.out" | while IFS= read -r _line || [ -n "$_line" ]; do
           printf "      %s\n" "$_line"
         done
         if [ "$_slines" -gt 30 ]; then
