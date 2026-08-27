@@ -48,8 +48,9 @@ func (r *CreateUpdateSupportBundleConfigurationRequest) Validate() error {
 var scriptNamePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9 ._-]*$`)
 
 const (
-	maxScriptNameLength   = 64
-	maxScriptContentBytes = 64 * 1024
+	maxScriptNameLength        = 64
+	maxScriptDescriptionLength = 256
+	maxScriptContentBytes      = 64 * 1024
 )
 
 type SupportBundleConfigurationScript struct {
@@ -87,6 +88,10 @@ func (r *CreateUpdateSupportBundleConfigurationScriptRequest) Validate() error {
 		if trimmed == "" {
 			r.Description = nil
 		} else {
+			if len(trimmed) > maxScriptDescriptionLength {
+				return validation.NewValidationFailedError(
+					fmt.Sprintf("script description must not be longer than %v characters", maxScriptDescriptionLength))
+			}
 			r.Description = &trimmed
 		}
 	}

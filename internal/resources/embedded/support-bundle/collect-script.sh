@@ -311,8 +311,9 @@ fi
 
 {{- if .Scripts}}
 
-# Run the custom scripts configured by the vendor and collect their output. The scripts are
-# embedded base64-encoded so that nothing in them can terminate the heredoc above.
+# Run the custom scripts configured by the vendor and collect their output. Their names,
+# descriptions and bodies are embedded base64-encoded so that nothing in them can terminate the
+# heredoc above, which would make the rest of this file run as the outer script.
 echo ""
 echo "Preparing custom scripts..."
 SCRIPT_COUNT=0
@@ -322,8 +323,8 @@ else
   mkdir -p "${_tmpdir}/scripts"
 {{- range .Scripts}}
   SCRIPT_COUNT=$((SCRIPT_COUNT + 1))
-  printf '%s' {{.NameQuoted}} > "${_tmpdir}/scripts/${SCRIPT_COUNT}.name"
-  printf '%s' {{.DescriptionQuoted}} > "${_tmpdir}/scripts/${SCRIPT_COUNT}.desc"
+  printf '%s' '{{.NameBase64}}' | base64 -d > "${_tmpdir}/scripts/${SCRIPT_COUNT}.name"
+  printf '%s' '{{.DescriptionBase64}}' | base64 -d > "${_tmpdir}/scripts/${SCRIPT_COUNT}.desc"
   printf '%s' '{{.ContentBase64}}' | base64 -d > "${_tmpdir}/scripts/${SCRIPT_COUNT}.sh"
 {{- end}}
 fi

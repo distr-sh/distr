@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"strings"
 
 	"github.com/distr-sh/distr/internal/resources"
 	"github.com/distr-sh/distr/internal/types"
@@ -21,12 +20,12 @@ type CollectScriptParams struct {
 	ScriptOutputMaxBytes int
 }
 
-// collectScriptCustomScript holds a custom script in the form the template needs: the name and
-// description as ready-to-use shell literals, and the body base64-encoded so that no content can
-// terminate the heredoc the collect script is written with.
+// collectScriptCustomScript holds a custom script in the form the template needs. Every field is
+// base64-encoded so that no vendor-controlled content can terminate the heredoc the collect script
+// is written with, which would make the remainder of the rendered file run as the outer script.
 type collectScriptCustomScript struct {
-	NameQuoted        string
-	DescriptionQuoted string
+	NameBase64        string
+	DescriptionBase64 string
 	ContentBase64     string
 }
 
@@ -41,8 +40,8 @@ func GenerateCollectScript(params CollectScriptParams) (string, error) {
 			description = *script.Description
 		}
 		scripts[i] = collectScriptCustomScript{
-			NameQuoted:        shellQuote(script.Name),
-			DescriptionQuoted: shellQuote(description),
+			NameBase64:        base64.StdEncoding.EncodeToString([]byte(script.Name)),
+			DescriptionBase64: base64.StdEncoding.EncodeToString([]byte(description)),
 			ContentBase64:     base64.StdEncoding.EncodeToString([]byte(script.Content)),
 		}
 	}
@@ -67,10 +66,4 @@ func GenerateCollectScript(params CollectScriptParams) (string, error) {
 		return "", err
 	}
 	return buf.String(), nil
-}
-
-// shellQuote turns s into a single-quoted shell literal. A single quote cannot be escaped inside
-// single quotes, so every occurrence ends the literal, appends an escaped quote and starts a new one.
-func shellQuote(s string) string {
-	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }
