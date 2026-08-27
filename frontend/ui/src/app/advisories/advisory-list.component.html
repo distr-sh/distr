@@ -9,7 +9,7 @@
           idPrefix="severity-filter"
           placeholder="All severities"
           itemLabel="severities"
-          [options]="severityOptions"
+          [options]="severitySelectOptions"
           [(selected)]="selectedSeverities" />
 
         @if (canFilterByStatus) {
@@ -18,7 +18,7 @@
             idPrefix="status-filter"
             placeholder="All statuses"
             itemLabel="statuses"
-            [options]="statusOptions"
+            [options]="statusSelectOptions"
             [(selected)]="selectedStatuses" />
         }
 
@@ -58,11 +58,6 @@
                 <th scope="col" class="p-4">Tags</th>
                 <th scope="col" class="p-4">Affected Versions</th>
                 <th scope="col" class="p-4">Last Updated At</th>
-                @if (canEdit) {
-                  <th scope="col" class="p-4">
-                    <span class="sr-only">Actions</span>
-                  </th>
-                }
               </tr>
             </thead>
             <tbody>
@@ -74,9 +69,18 @@
                     {{ advisory.title }}
                   </td>
                   <td class="px-4 py-3">
-                    <span class="distr-status-badge capitalize" [ngClass]="severityBadgeClass(advisory.severity)">
-                      {{ advisory.severity }}
-                    </span>
+                    @if (canEdit) {
+                      <app-badge-select
+                        ariaLabel="Change severity"
+                        [options]="severitySelectOptions"
+                        [value]="advisory.severity"
+                        [disabled]="isPatching(advisory.id)"
+                        (selected)="changeSeverity(advisory, $event)" />
+                    } @else {
+                      <span class="distr-status-badge capitalize" [ngClass]="severityBadgeClass(advisory.severity)">
+                        {{ advisory.severity }}
+                      </span>
+                    }
                   </td>
                   <td class="px-4 py-3">
                     <div class="flex flex-wrap gap-1">
@@ -89,6 +93,13 @@
                             {{ statusLabel('resolved') }}
                           </span>
                         }
+                      } @else if (canEdit) {
+                        <app-badge-select
+                          ariaLabel="Change status"
+                          [options]="statusSelectOptions"
+                          [value]="advisory.status"
+                          [disabled]="isPatching(advisory.id)"
+                          (selected)="changeStatus(advisory, $event)" />
                       } @else {
                         <span class="distr-status-badge" [ngClass]="statusBadgeClass(advisory.status)">
                           {{ statusLabel(advisory.status) }}
@@ -108,21 +119,6 @@
                   </td>
                   <td class="px-4 py-3">{{ advisory.affectedVersionCount }}</td>
                   <td class="px-4 py-3">{{ advisory.updatedAt | date: 'medium' }}</td>
-                  @if (canEdit) {
-                    <td class="px-4 py-3">
-                      <div class="flex items-center justify-end gap-2">
-                        @for (target of quickStatusTransitionsFor(advisory.status); track target) {
-                          <button
-                            type="button"
-                            (click)="$event.stopPropagation(); changeStatus(advisory, target)"
-                            [disabled]="isChangingStatus(advisory.id)"
-                            class="whitespace-nowrap px-3 py-1.5 text-xs font-medium distr-btn-secondary disabled:opacity-60 disabled:cursor-not-allowed">
-                            {{ statusActionShortLabel(advisory.status, target) }}
-                          </button>
-                        }
-                      </div>
-                    </td>
-                  }
                 </tr>
               }
             </tbody>

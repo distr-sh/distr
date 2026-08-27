@@ -6,10 +6,6 @@
 
 # Interface: CreateUpdateAdvisoryRequest
 
-## Extended by
-
-- [`CreateAdvisoryRequest`](CreateAdvisoryRequest.md)
-
 ## Properties
 
 ### affectedApplicationVersionIds
@@ -60,6 +56,15 @@ carries is rejected with 409 Conflict.
 ### severity
 
 > **severity**: [`AdvisorySeverity`](../type-aliases/AdvisorySeverity.md)
+
+---
+
+### status?
+
+> `optional` **status?**: [`AdvisoryStatus`](../type-aliases/AdvisoryStatus.md)
+
+Defaults to `triage` on create, where issues reported through the API wait to be assessed,
+and leaves the status untouched when omitted on update.
 
 ---
 

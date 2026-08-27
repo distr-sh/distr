@@ -383,8 +383,10 @@ func UpdateAdvisory(ctx context.Context, advisory *types.Advisory) error {
 		`UPDATE Advisory
 		SET title = @title,
 			description = @description,
+			status = @status::advisory_status,
 			severity = @severity,
 			cve_id = @cveId,
+			`+advisoryStatusTimestamps+`,
 			updated_at = now()
 		WHERE id = @id AND organization_id = @orgId
 		RETURNING id, created_at, updated_at, organization_id, created_by_user_account_id,
@@ -394,6 +396,7 @@ func UpdateAdvisory(ctx context.Context, advisory *types.Advisory) error {
 			"orgId":       advisory.OrganizationID,
 			"title":       advisory.Title,
 			"description": advisory.Description,
+			"status":      advisory.Status,
 			"severity":    advisory.Severity,
 			"cveId":       advisory.CveID,
 		},
@@ -412,35 +415,45 @@ func UpdateAdvisory(ctx context.Context, advisory *types.Advisory) error {
 	return nil
 }
 
-// UpdateAdvisoryStatus applies a status change and maintains the published_at and
-// resolved_at timestamps. published_at is only set the first time an advisory is
-// published so that unpublishing and republishing keeps the original disclosure date.
-func UpdateAdvisoryStatus(
-	ctx context.Context, id, orgID uuid.UUID, status types.AdvisoryStatus,
+// advisoryStatusTimestamps maintains published_at and resolved_at for every query that writes
+// a status. Both are stamped only on the way in, so that republishing keeps the original
+// disclosure date and re-saving a resolved advisory keeps the date the fix was announced.
+//
+// Every occurrence of the status parameter carries the same explicit cast. NamedArgs collapses
+// them into one placeholder, and without the cast Postgres deduces the enum from the assignment
+// but text from the IN list and rejects the statement (42P08). The coalesce is what lets a
+// patch leave the status alone.
+const advisoryStatusTimestamps = `published_at = CASE
+				WHEN coalesce(@status::advisory_status, status) IN ('published', 'resolved')
+					AND published_at IS NULL THEN now()
+				ELSE published_at
+			END,
+			resolved_at = CASE
+				WHEN coalesce(@status::advisory_status, status) <> 'resolved' THEN NULL
+				WHEN resolved_at IS NULL THEN now()
+				ELSE resolved_at
+			END`
+
+// PatchAdvisory changes the status, the severity, or both, leaving an absent one as it is.
+func PatchAdvisory(
+	ctx context.Context,
+	id, orgID uuid.UUID,
+	status *types.AdvisoryStatus,
+	severity *types.AdvisorySeverity,
 ) error {
 	db := internalctx.GetDb(ctx)
 	result, err := db.Exec(
 		ctx,
-		// Every occurrence of the status parameter carries the same explicit cast. NamedArgs
-		// collapses them into one placeholder, and without the cast Postgres deduces the enum
-		// from the assignment but text from the IN list and rejects the statement (42P08).
 		`UPDATE Advisory
-		SET status = @status::advisory_status,
-			published_at = CASE
-				WHEN @status::advisory_status IN ('published', 'resolved') AND published_at IS NULL
-					THEN now()
-				ELSE published_at
-			END,
-			resolved_at = CASE
-				WHEN @status::advisory_status = 'resolved' THEN now()
-				ELSE NULL
-			END,
+		SET status = coalesce(@status::advisory_status, status),
+			severity = coalesce(@severity::advisory_severity, severity),
+			`+advisoryStatusTimestamps+`,
 			updated_at = now()
 		WHERE id = @id AND organization_id = @orgId`,
-		pgx.NamedArgs{"id": id, "orgId": orgID, "status": status},
+		pgx.NamedArgs{"id": id, "orgId": orgID, "status": status, "severity": severity},
 	)
 	if err != nil {
-		return fmt.Errorf("could not update advisory status: %w", err)
+		return fmt.Errorf("could not patch advisory: %w", err)
 	}
 	if result.RowsAffected() == 0 {
 		return apierrors.ErrNotFound

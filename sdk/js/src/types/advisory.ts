@@ -6,15 +6,7 @@ export type AdvisorySeverity = 'none' | 'low' | 'medium' | 'high' | 'critical';
 
 export type AdvisoryVersionRelation = 'affected' | 'fixed';
 
-export type AdvisoryEventType =
-  | 'created'
-  | 'status_changed'
-  | 'edited'
-  | 'tags_changed'
-  | 'versions_changed'
-  | 'reference_added'
-  | 'reference_removed'
-  | 'comment';
+export type AdvisoryEventType = 'created' | 'status_changed' | 'edited' | 'comment';
 
 export interface Advisory {
   id: string;
@@ -137,6 +129,11 @@ export interface CreateUpdateAdvisoryRequest {
   description: string;
   severity: AdvisorySeverity;
   /**
+   * Defaults to `triage` on create, where issues reported through the API wait to be assessed,
+   * and leaves the status untouched when omitted on update.
+   */
+  status?: AdvisoryStatus;
+  /**
    * Unique per organization, ignoring case. Reusing one that another advisory already
    * carries is rejected with 409 Conflict.
    */
@@ -149,19 +146,13 @@ export interface CreateUpdateAdvisoryRequest {
   fixedArtifactVersionIds: string[];
 }
 
-/** The statuses an advisory may be created in. Publishing is always a separate step. */
-export type InitialAdvisoryStatus = Extract<AdvisoryStatus, 'triage' | 'draft'>;
-
-export interface CreateAdvisoryRequest extends CreateUpdateAdvisoryRequest {
-  /**
-   * Status the advisory starts in. Defaults to `triage`, where issues reported through
-   * the API wait to be assessed. Pass `draft` for an advisory you are writing yourself.
-   */
-  status?: InitialAdvisoryStatus;
-}
-
-export interface UpdateAdvisoryStatusRequest {
-  status: AdvisoryStatus;
+/**
+ * Changes the status, the severity, or both, leaving the rest of the advisory as it is.
+ * At least one of the two must be given.
+ */
+export interface PatchAdvisoryRequest {
+  status?: AdvisoryStatus;
+  severity?: AdvisorySeverity;
 }
 
 export interface CreateAdvisoryCommentRequest {

@@ -44,41 +44,6 @@ func (s AdvisoryStatus) IsCustomerVisible() bool {
 	return s == AdvisoryStatusPublished || s == AdvisoryStatusResolved
 }
 
-// IsInitial reports whether an advisory may be created in this status. Only the two
-// statuses that precede disclosure qualify, so publishing always remains a separate and
-// deliberate step. Triage is the inbox for issues reported through the API, while something
-// a vendor writes themselves starts as a draft.
-func (s AdvisoryStatus) IsInitial() bool {
-	return s == AdvisoryStatusTriage || s == AdvisoryStatusDraft
-}
-
-// advisoryStatusTransitions lists the statuses reachable from each status.
-// Publishing is reversible (published -> draft retracts customer visibility) and
-// a resolved advisory can be reopened, but nothing may jump straight from
-// triage to a customer-visible status.
-//
-// Canceling is only possible while the advisory has never been disclosed. Once customers
-// have seen it, the way back is unpublishing or resolving, so that Distr never claims an
-// advisory was never issued. A canceled advisory reopens into draft rather than triage:
-// triage is the inbox for externally reported issues, and reopening is a deliberate
-// decision to work on the advisory again.
-var advisoryStatusTransitions = map[AdvisoryStatus][]AdvisoryStatus{
-	AdvisoryStatusTriage:    {AdvisoryStatusDraft, AdvisoryStatusCanceled},
-	AdvisoryStatusDraft:     {AdvisoryStatusTriage, AdvisoryStatusPublished, AdvisoryStatusCanceled},
-	AdvisoryStatusPublished: {AdvisoryStatusDraft, AdvisoryStatusResolved},
-	AdvisoryStatusResolved:  {AdvisoryStatusPublished},
-	AdvisoryStatusCanceled:  {AdvisoryStatusDraft},
-}
-
-func (s AdvisoryStatus) CanTransitionTo(target AdvisoryStatus) bool {
-	for _, allowed := range advisoryStatusTransitions[s] {
-		if allowed == target {
-			return true
-		}
-	}
-	return false
-}
-
 type AdvisorySeverity string
 
 const (
@@ -116,14 +81,10 @@ const (
 type AdvisoryEventType string
 
 const (
-	AdvisoryEventTypeCreated          AdvisoryEventType = "created"
-	AdvisoryEventTypeStatusChanged    AdvisoryEventType = "status_changed"
-	AdvisoryEventTypeEdited           AdvisoryEventType = "edited"
-	AdvisoryEventTypeTagsChanged      AdvisoryEventType = "tags_changed"
-	AdvisoryEventTypeVersionsChanged  AdvisoryEventType = "versions_changed"
-	AdvisoryEventTypeReferenceAdded   AdvisoryEventType = "reference_added"
-	AdvisoryEventTypeReferenceRemoved AdvisoryEventType = "reference_removed"
-	AdvisoryEventTypeComment          AdvisoryEventType = "comment"
+	AdvisoryEventTypeCreated       AdvisoryEventType = "created"
+	AdvisoryEventTypeStatusChanged AdvisoryEventType = "status_changed"
+	AdvisoryEventTypeEdited        AdvisoryEventType = "edited"
+	AdvisoryEventTypeComment       AdvisoryEventType = "comment"
 )
 
 type Advisory struct {

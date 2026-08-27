@@ -10,11 +10,20 @@
     <div class="distr-panel mb-4">
       <div class="flex items-start justify-between gap-4">
         <div>
-          <div class="flex flex-wrap items-center gap-3">
+          <div class="flex flex-wrap items-center gap-2">
             <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ advisory.title }}</h1>
-            <span class="distr-status-badge capitalize" [ngClass]="severityBadgeClass(advisory.severity)">
-              {{ advisory.severity }}
-            </span>
+            @if (canEdit) {
+              <app-badge-select
+                ariaLabel="Change severity"
+                [options]="severitySelectOptions"
+                [value]="advisory.severity"
+                [disabled]="patching()"
+                (selected)="changeSeverity($event)" />
+            } @else {
+              <span class="distr-status-badge capitalize" [ngClass]="severityBadgeClass(advisory.severity)">
+                {{ advisory.severity }}
+              </span>
+            }
             @if (showsAffectedState) {
               <span class="distr-status-badge" [ngClass]="affectedBadgeClass(advisory.affected)">
                 {{ affectedLabel(advisory.affected) }}
@@ -24,17 +33,21 @@
                   {{ statusLabel('resolved') }}
                 </span>
               }
+            } @else if (canEdit) {
+              <app-badge-select
+                ariaLabel="Change status"
+                [options]="statusSelectOptions"
+                [value]="advisory.status"
+                [disabled]="patching()"
+                (selected)="changeStatus($event)" />
             } @else {
               <span class="distr-status-badge" [ngClass]="statusBadgeClass(advisory.status)">
                 {{ statusLabel(advisory.status) }}
               </span>
             }
           </div>
-          @if (advisory.cveId || advisory.tags.length > 0) {
+          @if (advisory.tags.length > 0) {
             <div class="flex flex-wrap items-center gap-2 mt-3">
-              @if (advisory.cveId) {
-                <span class="font-mono text-xs text-gray-600 dark:text-gray-300">{{ advisory.cveId }}</span>
-              }
               @for (tag of advisory.tags; track tag) {
                 <span class="distr-tag-badge">{{ tag }}</span>
               }
@@ -55,24 +68,13 @@
         </div>
 
         @if (canEdit) {
-          <div class="flex flex-wrap items-center justify-end gap-2 shrink-0">
-            @for (status of nextStatuses(); track status) {
-              <button
-                type="button"
-                (click)="changeStatus(status)"
-                [disabled]="updatingStatus()"
-                class="py-2 px-4 text-sm font-medium distr-btn-secondary disabled:opacity-60 disabled:cursor-not-allowed">
-                {{ statusActionLabel(status) }}
-              </button>
-            }
-            <button
-              type="button"
-              (click)="openEditDialog(editAdvisoryDialog)"
-              class="py-2 px-4 flex gap-2 items-center text-sm font-medium distr-btn-secondary">
-              <fa-icon [icon]="faPen" />
-              Edit
-            </button>
-          </div>
+          <button
+            type="button"
+            (click)="openEditDialog(editAdvisoryDialog)"
+            class="shrink-0 py-2 px-4 flex gap-2 items-center text-sm font-medium distr-btn-secondary">
+            <fa-icon [icon]="faPen" />
+            Edit
+          </button>
         }
       </div>
     </div>
@@ -268,6 +270,15 @@
 
         <div class="distr-panel">
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">References</h2>
+
+          <h3 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">CVE ID</h3>
+          @if (advisory.cveId) {
+            <p class="font-mono text-sm text-gray-900 dark:text-white mb-4">{{ advisory.cveId }}</p>
+          } @else {
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">No CVE ID assigned.</p>
+          }
+
+          <h3 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Links</h3>
           @if (advisory.references.length > 0) {
             <ul class="space-y-2">
               @for (reference of advisory.references; track reference.url) {
@@ -284,7 +295,7 @@
               }
             </ul>
           } @else {
-            <p class="text-sm text-gray-500 dark:text-gray-400">No references linked.</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">No links added.</p>
           }
         </div>
       </div>

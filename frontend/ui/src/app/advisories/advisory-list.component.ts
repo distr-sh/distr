@@ -3,12 +3,13 @@ import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRe
 import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup} from '@angular/forms';
 import {RouterLink} from '@angular/router';
-import {Advisory, AdvisorySeverity, AdvisoryStatus} from '@distr-sh/distr-sdk';
+import {Advisory, AdvisorySeverity, AdvisoryStatus, PatchAdvisoryRequest} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faPlus} from '@fortawesome/free-solid-svg-icons';
 import {catchError, combineLatest, firstValueFrom, of, shareReplay, startWith, Subject, switchMap, take} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {filteredByFormControl} from '../../util/filter';
+import {BadgeSelectComponent} from '../components/badge-select/badge-select.component';
 import {MultiSelectComponent, MultiSelectOption} from '../components/multi-select/multi-select.component';
 import {PageComponent} from '../components/page.component';
 import {SearchBarComponent} from '../components/search-bar.component';
@@ -17,21 +18,16 @@ import {AuthService} from '../services/auth.service';
 import {DialogRef, OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
 import {
-  advisorySeverities,
-  advisoryStatuses,
   affectedBadgeClass,
   affectedLabel,
   defaultAdvisoryStatusFilter,
-  quickStatusTransitionsFor,
   severityBadgeClass,
-  severityLabel,
-  statusActionShortLabel,
+  severitySelectOptions,
   statusBadgeClass,
-  statusChangeConfirmation,
   statusLabel,
+  statusSelectOptions,
 } from './advisory-display';
 import {AdvisoryFormComponent, AdvisoryFormDraft} from './advisory-form.component';
-import {AdvisoryResolveDialogComponent, AdvisoryResolveResult} from './advisory-resolve-dialog.component';
 
 @Component({
   selector: 'app-advisory-list',
@@ -43,6 +39,7 @@ import {AdvisoryResolveDialogComponent, AdvisoryResolveResult} from './advisory-
     RouterLink,
     FaIconComponent,
     AdvisoryFormComponent,
+    BadgeSelectComponent,
     MultiSelectComponent,
     PageComponent,
     SearchBarComponent,
@@ -57,11 +54,11 @@ export class AdvisoryListComponent {
   protected readonly faPlus = faPlus;
   protected readonly severityBadgeClass = severityBadgeClass;
   protected readonly statusBadgeClass = statusBadgeClass;
-  protected readonly statusActionShortLabel = statusActionShortLabel;
-  protected readonly quickStatusTransitionsFor = quickStatusTransitionsFor;
   protected readonly statusLabel = statusLabel;
   protected readonly affectedLabel = affectedLabel;
   protected readonly affectedBadgeClass = affectedBadgeClass;
+  protected readonly statusSelectOptions = statusSelectOptions;
+  protected readonly severitySelectOptions = severitySelectOptions;
 
   /** Everyone outside the vendor organization is shown their own exposure, not the status. */
   protected readonly showsAffectedState = this.auth.isCustomer() || this.auth.isPartner();
@@ -79,15 +76,6 @@ export class AdvisoryListComponent {
   protected readonly selectedStatuses = signal<AdvisoryStatus[]>([...this.defaultStatuses]);
   protected readonly selectedSeverities = signal<AdvisorySeverity[]>([]);
   protected readonly selectedTags = signal<string[]>([]);
-
-  protected readonly statusOptions: MultiSelectOption<AdvisoryStatus>[] = advisoryStatuses.map((status) => ({
-    value: status,
-    label: statusLabel(status),
-  }));
-  protected readonly severityOptions: MultiSelectOption<AdvisorySeverity>[] = advisorySeverities.map((severity) => ({
-    value: severity,
-    label: severityLabel(severity),
-  }));
 
   // The tags endpoint spans undisclosed advisories and is therefore vendor only.
   private readonly vendorTags = toSignal(
@@ -162,43 +150,29 @@ export class AdvisoryListComponent {
   protected readonly advisories = computed(() => this.advisoriesResult() ?? []);
   protected readonly loading = computed(() => this.advisoriesResult() === undefined);
 
-  /** Id of the row whose status is currently being changed, so only its buttons disable. */
-  private readonly changingStatusFor = signal<string | undefined>(undefined);
+  /** Id of the row currently being changed, so that only its own dropdowns disable. */
+  private readonly patchingFor = signal<string | undefined>(undefined);
 
-  protected isChangingStatus(advisoryId: string): boolean {
-    return this.changingStatusFor() === advisoryId;
+  protected isPatching(advisoryId: string): boolean {
+    return this.patchingFor() === advisoryId;
   }
 
-  protected async changeStatus(advisory: Advisory, status: AdvisoryStatus): Promise<void> {
-    if (this.changingStatusFor()) {
+  protected changeStatus(advisory: Advisory, status: AdvisoryStatus): Promise<void> {
+    return this.patch(advisory, {status}, 'Status updated');
+  }
+
+  protected changeSeverity(advisory: Advisory, severity: AdvisorySeverity): Promise<void> {
+    return this.patch(advisory, {severity}, 'Severity updated');
+  }
+
+  private async patch(advisory: Advisory, request: PatchAdvisoryRequest, success: string): Promise<void> {
+    if (this.patchingFor()) {
       return;
     }
-
-    let comment: string | undefined;
-    if (status === 'resolved') {
-      const result = await firstValueFrom(
-        this.overlay.showModal<AdvisoryResolveResult>(AdvisoryResolveDialogComponent).result()
-      );
-      if (!result) {
-        return;
-      }
-      comment = result.comment;
-    } else {
-      const confirmation = statusChangeConfirmation(status);
-      if (confirmation && !(await firstValueFrom(this.overlay.confirm(confirmation)))) {
-        return;
-      }
-    }
-
-    this.changingStatusFor.set(advisory.id);
+    this.patchingFor.set(advisory.id);
     try {
-      await firstValueFrom(this.advisoriesService.updateStatus(advisory.id, {status}));
-      // Posted after the status change so that a failing comment cannot leave the advisory
-      // unresolved; the timeline then reads as the transition followed by its explanation.
-      if (comment) {
-        await firstValueFrom(this.advisoriesService.createComment(advisory.id, {content: comment}));
-      }
-      this.toast.success('Status updated');
+      await firstValueFrom(this.advisoriesService.patch(advisory.id, request));
+      this.toast.success(success);
       this.refresh$.next();
     } catch (e) {
       const message = getFormDisplayedError(e);
@@ -206,7 +180,7 @@ export class AdvisoryListComponent {
         this.toast.error(message);
       }
     } finally {
-      this.changingStatusFor.set(undefined);
+      this.patchingFor.set(undefined);
     }
   }
 

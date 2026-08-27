@@ -185,6 +185,9 @@ type CreateUpdateAdvisoryRequest struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	Severity    string `json:"severity"`
+	// Status defaults to "triage" on create, where issues reported through the API wait to be
+	// assessed, and leaves the status untouched when omitted on update.
+	Status types.AdvisoryStatus `json:"status,omitempty"`
 	// CveID is unique per organization, ignoring case. Reusing one that another advisory
 	// already carries is rejected with 409 Conflict.
 	CveID                         *string             `json:"cveId"`
@@ -210,6 +213,14 @@ func (r *CreateUpdateAdvisoryRequest) Validate() error {
 		return validation.NewValidationFailedError(err.Error())
 	}
 
+	if r.Status != "" {
+		status, err := types.ParseAdvisoryStatus(string(r.Status))
+		if err != nil {
+			return validation.NewValidationFailedError(err.Error())
+		}
+		r.Status = status
+	}
+
 	if r.CveID != nil {
 		cveID := strings.TrimSpace(*r.CveID)
 		if cveID == "" {
@@ -226,38 +237,6 @@ func (r *CreateUpdateAdvisoryRequest) Validate() error {
 		return err
 	}
 	return r.validateVersions()
-}
-
-// CreateAdvisoryRequest adds the initial status to the shared create and update body.
-// It exists separately so that an update cannot change the status as a side effect: every
-// later status change goes through the status endpoint, which enforces the workflow.
-type CreateAdvisoryRequest struct {
-	CreateUpdateAdvisoryRequest
-	// Status the advisory starts in, either "triage" or "draft". Defaults to "triage",
-	// where issues reported through the API wait to be assessed.
-	Status types.AdvisoryStatus `json:"status,omitempty"`
-}
-
-func (r *CreateAdvisoryRequest) Validate() error {
-	if err := r.CreateUpdateAdvisoryRequest.Validate(); err != nil {
-		return err
-	}
-
-	if r.Status == "" {
-		r.Status = types.AdvisoryStatusTriage
-		return nil
-	}
-
-	status, err := types.ParseAdvisoryStatus(string(r.Status))
-	if err != nil {
-		return validation.NewValidationFailedError(err.Error())
-	}
-	if !status.IsInitial() {
-		return validation.NewValidationFailedError(
-			fmt.Sprintf("an advisory cannot be created with status %v", status))
-	}
-	r.Status = status
-	return nil
 }
 
 func (r *CreateUpdateAdvisoryRequest) validateTags() error {
@@ -357,16 +336,32 @@ func deduplicate(ids []uuid.UUID) []uuid.UUID {
 	return result
 }
 
-type UpdateAdvisoryStatusRequest struct {
-	Status types.AdvisoryStatus `json:"status"`
+// PatchAdvisoryRequest changes the status, the severity, or both, without touching the rest
+// of the advisory. It is what the dropdowns in the list and on the detail page send, where
+// the full advisory is not at hand. An omitted field is left as it is.
+type PatchAdvisoryRequest struct {
+	Status   *types.AdvisoryStatus   `json:"status,omitempty"`
+	Severity *types.AdvisorySeverity `json:"severity,omitempty"`
 }
 
-func (r *UpdateAdvisoryStatusRequest) Validate() error {
-	status, err := types.ParseAdvisoryStatus(string(r.Status))
-	if err != nil {
-		return validation.NewValidationFailedError(err.Error())
+func (r *PatchAdvisoryRequest) Validate() error {
+	if r.Status == nil && r.Severity == nil {
+		return validation.NewValidationFailedError("either status or severity must be given")
 	}
-	r.Status = status
+	if r.Status != nil {
+		status, err := types.ParseAdvisoryStatus(string(*r.Status))
+		if err != nil {
+			return validation.NewValidationFailedError(err.Error())
+		}
+		r.Status = &status
+	}
+	if r.Severity != nil {
+		severity, err := types.ParseAdvisorySeverity(string(*r.Severity))
+		if err != nil {
+			return validation.NewValidationFailedError(err.Error())
+		}
+		r.Severity = &severity
+	}
 	return nil
 }
 

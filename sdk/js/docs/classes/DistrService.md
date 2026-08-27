@@ -71,7 +71,7 @@ externally reported issues.
 
 ##### request
 
-[`CreateAdvisoryRequest`](../interfaces/CreateAdvisoryRequest.md)
+[`CreateUpdateAdvisoryRequest`](../interfaces/CreateUpdateAdvisoryRequest.md)
 
 #### Returns
 
@@ -315,6 +315,49 @@ Returns results for all deployments on the target. Each result contains versions
 
 ---
 
+### setAdvisorySeverity()
+
+> **setAdvisorySeverity**(`advisoryId`, `severity`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+##### severity
+
+[`AdvisorySeverity`](../type-aliases/AdvisorySeverity.md)
+
+#### Returns
+
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+---
+
+### setAdvisoryStatus()
+
+> **setAdvisoryStatus**(`advisoryId`, `status`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+Sets the status of an advisory, leaving the rest of it as it is. `published` and `resolved`
+make the advisory visible to the customers it affects.
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+##### status
+
+[`AdvisoryStatus`](../type-aliases/AdvisoryStatus.md)
+
+#### Returns
+
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+---
+
 ### updateAdvisory()
 
 > **updateAdvisory**(`advisoryId`, `request`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
@@ -328,29 +371,6 @@ Returns results for all deployments on the target. Each result contains versions
 ##### request
 
 [`CreateUpdateAdvisoryRequest`](../interfaces/CreateUpdateAdvisoryRequest.md)
-
-#### Returns
-
-`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
-
----
-
-### updateAdvisoryStatus()
-
-> **updateAdvisoryStatus**(`advisoryId`, `status`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
-
-Moves an advisory to the given status. Only the transitions allowed by the workflow are
-accepted, and publishing makes the advisory visible to the customers it affects.
-
-#### Parameters
-
-##### advisoryId
-
-`string`
-
-##### status
-
-[`AdvisoryStatus`](../type-aliases/AdvisoryStatus.md)
 
 #### Returns
 

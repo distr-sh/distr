@@ -49,15 +49,27 @@
     <div class="p-4 h-[60vh] overflow-y-auto [scrollbar-gutter:stable]">
       @if (activeTab() === 'details') {
         <div class="space-y-4">
-          <div>
-            <label for="title" class="distr-label mb-2">Title <span class="text-red-500">*</span></label>
-            <input
-              formControlName="title"
-              autotrim
-              type="text"
-              id="title"
-              class="distr-input"
-              placeholder="Short summary of the advisory" />
+          <div class="grid grid-cols-3 gap-4">
+            <div class="col-span-2">
+              <label for="title" class="distr-label mb-2">Title <span class="text-red-500">*</span></label>
+              <input
+                formControlName="title"
+                autotrim
+                type="text"
+                id="title"
+                class="distr-input"
+                placeholder="Short summary of the advisory" />
+            </div>
+            <div>
+              <label for="cveId" class="distr-label mb-2">CVE ID</label>
+              <input
+                formControlName="cveId"
+                autotrim
+                type="text"
+                id="cveId"
+                class="distr-input"
+                placeholder="CVE-2024-12345" />
+            </div>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
@@ -70,14 +82,12 @@
               </select>
             </div>
             <div>
-              <label for="cveId" class="distr-label mb-2">CVE ID</label>
-              <input
-                formControlName="cveId"
-                autotrim
-                type="text"
-                id="cveId"
-                class="distr-input"
-                placeholder="CVE-2024-12345" />
+              <label for="status" class="distr-label mb-2">Status</label>
+              <select formControlName="status" id="status" class="distr-input">
+                @for (status of statuses; track status) {
+                  <option [value]="status">{{ statusLabel(status) }}</option>
+                }
+              </select>
             </div>
           </div>
 

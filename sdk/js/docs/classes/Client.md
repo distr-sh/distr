@@ -50,7 +50,7 @@ The low-level Distr API client. Each method represents on API endpoint.
 
 ##### request
 
-[`CreateAdvisoryRequest`](../interfaces/CreateAdvisoryRequest.md)
+[`CreateUpdateAdvisoryRequest`](../interfaces/CreateUpdateAdvisoryRequest.md)
 
 #### Returns
 
@@ -282,6 +282,26 @@ Spans undisclosed advisories and is therefore available to the vendor organizati
 
 ---
 
+### patchAdvisory()
+
+> **patchAdvisory**(`advisoryId`, `request`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+#### Parameters
+
+##### advisoryId
+
+`string`
+
+##### request
+
+[`PatchAdvisoryRequest`](../interfaces/PatchAdvisoryRequest.md)
+
+#### Returns
+
+`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
+
+---
+
 ### updateAdvisory()
 
 > **updateAdvisory**(`advisoryId`, `request`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
@@ -295,26 +315,6 @@ Spans undisclosed advisories and is therefore available to the vendor organizati
 ##### request
 
 [`CreateUpdateAdvisoryRequest`](../interfaces/CreateUpdateAdvisoryRequest.md)
-
-#### Returns
-
-`Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
-
----
-
-### updateAdvisoryStatus()
-
-> **updateAdvisoryStatus**(`advisoryId`, `request`): `Promise`\<[`AdvisoryDetail`](../interfaces/AdvisoryDetail.md)\>
-
-#### Parameters
-
-##### advisoryId
-
-`string`
-
-##### request
-
-[`UpdateAdvisoryStatusRequest`](../interfaces/UpdateAdvisoryStatusRequest.md)
 
 #### Returns
 

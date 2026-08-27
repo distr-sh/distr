@@ -4,6 +4,7 @@ import {FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators} from
 import {
   AdvisoryDetail,
   AdvisorySeverity,
+  AdvisoryStatus,
   AdvisoryVersionRelation,
   CreateUpdateAdvisoryRequest,
 } from '@distr-sh/distr-sdk';
@@ -20,7 +21,7 @@ import {AdvisoriesService} from '../services/advisories.service';
 import {ApplicationsService} from '../services/applications.service';
 import {ArtifactsService, TaggedArtifactVersion} from '../services/artifacts.service';
 import {ToastService} from '../services/toast.service';
-import {advisorySeverities, severityLabel} from './advisory-display';
+import {advisorySeverities, advisoryStatuses, severityLabel, statusLabel} from './advisory-display';
 
 /** Maps a version id to the relation it has with the advisory. Absent means unselected. */
 type VersionSelection = Record<string, AdvisoryVersionRelation>;
@@ -29,6 +30,7 @@ export interface AdvisoryFormDraft {
   title: string;
   description: string;
   severity: AdvisorySeverity;
+  status: AdvisoryStatus;
   cveId: string;
   references: {url: string; label: string}[];
   tags: string[];
@@ -67,6 +69,8 @@ export class AdvisoryFormComponent {
   protected readonly faXmark = faXmark;
   protected readonly severities = advisorySeverities;
   protected readonly severityLabel = severityLabel;
+  protected readonly statuses = advisoryStatuses;
+  protected readonly statusLabel = statusLabel;
 
   /** The advisory to edit, or undefined to create a new one. */
   public readonly advisory = input<AdvisoryDetail>();
@@ -84,6 +88,9 @@ export class AdvisoryFormComponent {
     title: new FormControl('', {nonNullable: true, validators: [Validators.required]}),
     description: new FormControl('', {nonNullable: true}),
     severity: new FormControl<AdvisorySeverity>('none', {nonNullable: true}),
+    // An advisory written here is the vendor's own, so it skips the triage inbox that exists
+    // for issues reported through the API.
+    status: new FormControl<AdvisoryStatus>('draft', {nonNullable: true}),
     cveId: new FormControl('', {nonNullable: true}),
     references: new FormArray<FormGroup<{url: FormControl<string>; label: FormControl<string>}>>([]),
   });
@@ -131,6 +138,7 @@ export class AdvisoryFormComponent {
         title: existing.title,
         description: existing.description,
         severity: existing.severity,
+        status: existing.status,
         cveId: existing.cveId ?? '',
       });
       this.form.controls.references.clear();
@@ -248,11 +256,7 @@ export class AdvisoryFormComponent {
       const request = this.buildRequest();
       const existing = this.advisory();
       const result = await firstValueFrom(
-        existing
-          ? this.advisoriesService.update(existing.id, request)
-          : // An advisory written here is the vendor's own, so it skips the triage inbox
-            // that exists for issues reported through the API.
-            this.advisoriesService.create({...request, status: 'draft'})
+        existing ? this.advisoriesService.update(existing.id, request) : this.advisoriesService.create(request)
       );
       this.toast.success(existing ? 'Advisory updated' : 'Advisory created');
       this.saved.emit(result);
@@ -273,6 +277,7 @@ export class AdvisoryFormComponent {
       title: value.title,
       description: value.description,
       severity: value.severity,
+      status: value.status,
       cveId: cveId || undefined,
       tags: this.tags(),
       references: value.references.map((reference) => ({
@@ -291,6 +296,7 @@ export class AdvisoryFormComponent {
       title: draft.title,
       description: draft.description,
       severity: draft.severity,
+      status: draft.status,
       cveId: draft.cveId,
     });
     this.form.controls.references.clear();
@@ -314,6 +320,7 @@ export class AdvisoryFormComponent {
       title: value.title,
       description: value.description,
       severity: value.severity,
+      status: value.status,
       cveId: value.cveId,
       references: value.references,
       tags: [...this.tags()],

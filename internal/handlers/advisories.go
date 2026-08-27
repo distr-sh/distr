@@ -52,7 +52,7 @@ func AdvisoriesRouter(r chiopenapi.Router) {
 		r.With(middleware.RequireVendor, middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).
 			Post("/", createAdvisoryHandler()).
 			With(option.Description("Create a new advisory")).
-			With(option.Request(api.CreateAdvisoryRequest{})).
+			With(option.Request(api.CreateUpdateAdvisoryRequest{})).
 			With(option.Response(http.StatusOK, api.AdvisoryDetail{}))
 
 		r.Route("/{advisoryId}", func(r chiopenapi.Router) {
@@ -79,11 +79,11 @@ func AdvisoriesRouter(r chiopenapi.Router) {
 						}{})).
 						With(option.Response(http.StatusOK, api.AdvisoryDetail{}))
 
-					r.Patch("/status", updateAdvisoryStatusHandler()).
-						With(option.Description("Update the status of an advisory")).
+					r.Patch("/", patchAdvisoryHandler()).
+						With(option.Description("Change the status or severity of an advisory")).
 						With(option.Request(struct {
 							api.AdvisoryIDRequest
-							api.UpdateAdvisoryStatusRequest
+							api.PatchAdvisoryRequest
 						}{})).
 						With(option.Response(http.StatusOK, api.AdvisoryDetail{}))
 
@@ -180,7 +180,7 @@ func createAdvisoryHandler() http.HandlerFunc {
 		orgID := *a.CurrentOrgID()
 		userID := a.CurrentUserID()
 
-		request, err := JsonBody[api.CreateAdvisoryRequest](w, r)
+		request, err := JsonBody[api.CreateUpdateAdvisoryRequest](w, r)
 		if err != nil {
 			return
 		} else if err := request.Validate(); err != nil {
@@ -188,17 +188,21 @@ func createAdvisoryHandler() http.HandlerFunc {
 			return
 		}
 
-		if !validateAdvisoryVersionsInOrg(w, r, orgID, &request.CreateUpdateAdvisoryRequest) {
+		if !validateAdvisoryVersionsInOrg(w, r, orgID, &request) {
 			return
 		}
 
+		status := request.Status
+		if status == "" {
+			status = types.AdvisoryStatusTriage
+		}
 		severity, _ := types.ParseAdvisorySeverity(request.Severity)
 		advisory := types.Advisory{
 			OrganizationID:         orgID,
 			CreatedByUserAccountID: &userID,
 			Title:                  request.Title,
 			Description:            request.Description,
-			Status:                 request.Status,
+			Status:                 status,
 			Severity:               severity,
 			CveID:                  request.CveID,
 		}
@@ -207,9 +211,7 @@ func createAdvisoryHandler() http.HandlerFunc {
 			if err := db.CreateAdvisory(ctx, &advisory); err != nil {
 				return err
 			}
-			if err := applyAdvisoryAssociations(
-				ctx, advisory.ID, request.CreateUpdateAdvisoryRequest,
-			); err != nil {
+			if err := applyAdvisoryAssociations(ctx, advisory.ID, request); err != nil {
 				return err
 			}
 			return db.CreateAdvisoryEvent(
@@ -266,7 +268,6 @@ func updateAdvisoryHandler() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		referencesAdded, referencesRemoved := referenceChangeMessages(existingReferences, request.References)
 
 		severity, _ := types.ParseAdvisorySeverity(request.Severity)
 		advisory := types.Advisory{
@@ -274,12 +275,17 @@ func updateAdvisoryHandler() http.HandlerFunc {
 			OrganizationID: orgID,
 			Title:          request.Title,
 			Description:    request.Description,
+			Status:         existing.Status,
 			Severity:       severity,
 			CveID:          request.CveID,
 		}
+		if request.Status != "" {
+			advisory.Status = request.Status
+		}
 
-		tagsMessage := tagsChangeMessage(existing.Tags, request.Tags)
-		detailsMessage := detailChangeMessage(existing.Advisory, request)
+		changes := detailChangeParts(existing.Advisory, request)
+		changes = append(changes, tagChangeParts(existing.Tags, request.Tags)...)
+		changes = append(changes, referenceChangeParts(existingReferences, request.References)...)
 
 		err = db.RunTxRR(ctx, func(ctx context.Context) error {
 			if err := db.UpdateAdvisory(ctx, &advisory); err != nil {
@@ -288,48 +294,26 @@ func updateAdvisoryHandler() http.HandlerFunc {
 			if err := applyAdvisoryAssociations(ctx, advisory.ID, request); err != nil {
 				return err
 			}
-			// Only recorded when something actually changed, so that opening the form and
-			// saving it unchanged does not leave a trace that suggests otherwise.
-			if detailsMessage != nil {
-				if err := db.CreateAdvisoryEvent(
-					ctx, advisory.ID, &userID, types.AdvisoryEventTypeEdited, detailsMessage,
-				); err != nil {
-					return err
-				}
-			}
-			if tagsMessage != nil {
-				if err := db.CreateAdvisoryEvent(
-					ctx, advisory.ID, &userID, types.AdvisoryEventTypeTagsChanged, tagsMessage,
-				); err != nil {
-					return err
-				}
-			}
-			if referencesAdded != nil {
-				if err := db.CreateAdvisoryEvent(
-					ctx, advisory.ID, &userID, types.AdvisoryEventTypeReferenceAdded, referencesAdded,
-				); err != nil {
-					return err
-				}
-			}
-			if referencesRemoved != nil {
-				if err := db.CreateAdvisoryEvent(
-					ctx, advisory.ID, &userID, types.AdvisoryEventTypeReferenceRemoved, referencesRemoved,
-				); err != nil {
-					return err
-				}
-			}
 			// Read back rather than derived from the request, so that the names in the
 			// message come from the database instead of being looked up separately.
 			versionsAfter, err := advisoryVersionMarkings(ctx, advisory.ID, advisory.OrganizationID)
 			if err != nil {
 				return err
 			}
-			if versionsMessage := versionChangeMessage(versionsBefore, versionsAfter); versionsMessage != nil {
+			// One entry for the whole save, so that an edit reads as the single action it was.
+			// Nothing is recorded when nothing changed, so that opening the form and saving it
+			// unchanged does not leave a trace that suggests otherwise.
+			parts := slices.Concat(changes, versionChangeParts(versionsBefore, versionsAfter))
+			if len(parts) > 0 {
+				message := strings.Join(parts, "; ")
 				if err := db.CreateAdvisoryEvent(
-					ctx, advisory.ID, &userID, types.AdvisoryEventTypeVersionsChanged, versionsMessage,
+					ctx, advisory.ID, &userID, types.AdvisoryEventTypeEdited, &message,
 				); err != nil {
 					return err
 				}
+			}
+			if advisory.Status != existing.Status {
+				return createAdvisoryStatusEvent(ctx, advisory.ID, userID, existing.Status, advisory.Status)
 			}
 			return nil
 		})
@@ -350,7 +334,7 @@ func updateAdvisoryHandler() http.HandlerFunc {
 	}
 }
 
-func updateAdvisoryStatusHandler() http.HandlerFunc {
+func patchAdvisoryHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		existing := requireAdvisory(w, r)
 		if existing == nil {
@@ -362,7 +346,7 @@ func updateAdvisoryStatusHandler() http.HandlerFunc {
 		a := auth.Authentication.Require(ctx)
 		userID := a.CurrentUserID()
 
-		request, err := JsonBody[api.UpdateAdvisoryStatusRequest](w, r)
+		request, err := JsonBody[api.PatchAdvisoryRequest](w, r)
 		if err != nil {
 			return
 		} else if err := request.Validate(); err != nil {
@@ -370,28 +354,33 @@ func updateAdvisoryStatusHandler() http.HandlerFunc {
 			return
 		}
 
-		status := request.Status
-		if !existing.Status.CanTransitionTo(status) {
-			http.Error(w, fmt.Sprintf("cannot change status from %v to %v", existing.Status, status),
-				http.StatusBadRequest)
-			return
-		}
+		statusChanged := request.Status != nil && *request.Status != existing.Status
+		severityChanged := request.Severity != nil && *request.Severity != existing.Severity
 
-		message := fmt.Sprintf("changed status from %v to %v", existing.Status, status)
 		err = db.RunTxRR(ctx, func(ctx context.Context) error {
-			if err := db.UpdateAdvisoryStatus(
-				ctx, existing.ID, existing.OrganizationID, status,
+			if err := db.PatchAdvisory(
+				ctx, existing.ID, existing.OrganizationID, request.Status, request.Severity,
 			); err != nil {
 				return err
 			}
-			return db.CreateAdvisoryEvent(
-				ctx, existing.ID, &userID, types.AdvisoryEventTypeStatusChanged, &message)
+			if severityChanged {
+				message := fmt.Sprintf("changed the severity from %v to %v", existing.Severity, *request.Severity)
+				if err := db.CreateAdvisoryEvent(
+					ctx, existing.ID, &userID, types.AdvisoryEventTypeEdited, &message,
+				); err != nil {
+					return err
+				}
+			}
+			if statusChanged {
+				return createAdvisoryStatusEvent(ctx, existing.ID, userID, existing.Status, *request.Status)
+			}
+			return nil
 		})
 		if errors.Is(err, apierrors.ErrNotFound) {
 			http.NotFound(w, r)
 			return
 		} else if err != nil {
-			log.Error("failed to update advisory status", zap.Error(err))
+			log.Error("failed to patch advisory", zap.Error(err))
 			sentry.GetHubFromContext(ctx).CaptureException(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -399,6 +388,13 @@ func updateAdvisoryStatusHandler() http.HandlerFunc {
 
 		respondAdvisoryDetail(w, r, existing.ID)
 	}
+}
+
+func createAdvisoryStatusEvent(
+	ctx context.Context, advisoryID, userID uuid.UUID, before, after types.AdvisoryStatus,
+) error {
+	message := fmt.Sprintf("changed status from %v to %v", before, after)
+	return db.CreateAdvisoryEvent(ctx, advisoryID, &userID, types.AdvisoryEventTypeStatusChanged, &message)
 }
 
 func createAdvisoryCommentHandler() http.HandlerFunc {
@@ -671,10 +667,10 @@ func loadAdvisoryVersionMarkings(
 // once must not write a message nobody can read.
 const maxVersionChangeMessageParts = 10
 
-// versionChangeMessage describes how the affected and fixed markings changed, or returns nil
-// when they are the same. Versions are matched by id, so one that switches between affected
-// and fixed reads as a change rather than as a removal plus an addition.
-func versionChangeMessage(before, after []versionMarking) *string {
+// versionChangeParts describes how the affected and fixed markings changed. Versions are
+// matched by id, so one that switches between affected and fixed reads as a change rather
+// than as a removal plus an addition.
+func versionChangeParts(before, after []versionMarking) []string {
 	beforeByID := make(map[uuid.UUID]versionMarking, len(before))
 	for _, marking := range before {
 		beforeByID[marking.id] = marking
@@ -700,22 +696,17 @@ func versionChangeMessage(before, after []versionMarking) *string {
 		}
 	}
 
-	if len(parts) == 0 {
-		return nil
-	}
 	if len(parts) > maxVersionChangeMessageParts {
 		remaining := len(parts) - maxVersionChangeMessageParts
 		parts = append(parts[:maxVersionChangeMessageParts], fmt.Sprintf("and %v more", remaining))
 	}
-
-	message := strings.Join(parts, "; ")
-	return &message
+	return parts
 }
 
-// detailChangeMessage describes which of the editable detail fields changed, or returns nil
-// when none did. The description is only reported as changed: a diff of free-form Markdown
-// does not belong in a one-line timeline entry.
-func detailChangeMessage(before types.Advisory, after api.CreateUpdateAdvisoryRequest) *string {
+// detailChangeParts describes which of the editable detail fields changed. The description is
+// only reported as changed: a diff of free-form Markdown does not belong in a one-line
+// timeline entry.
+func detailChangeParts(before types.Advisory, after api.CreateUpdateAdvisoryRequest) []string {
 	var parts []string
 
 	if before.Title != after.Title {
@@ -731,11 +722,7 @@ func detailChangeMessage(before types.Advisory, after api.CreateUpdateAdvisoryRe
 		parts = append(parts, "updated the description")
 	}
 
-	if len(parts) == 0 {
-		return nil
-	}
-	message := strings.Join(parts, "; ")
-	return &message
+	return parts
 }
 
 func cveChangeMessage(before, after *string) string {
@@ -753,13 +740,9 @@ func cveChangeMessage(before, after *string) string {
 	}
 }
 
-// referenceChangeMessages compares the reference list of an update request against the stored
-// one and returns the message for the reference_added and the reference_removed event, or nil
-// where no event should be recorded. References are identified by their URL, which is what
-// makes a reference the same reference to a reader.
-func referenceChangeMessages(
-	before []types.AdvisoryReference, after []api.AdvisoryReference,
-) (added, removed *string) {
+// referenceChangeParts describes how the reference list changed. References are identified by
+// their URL, which is what makes a reference the same reference to a reader.
+func referenceChangeParts(before []types.AdvisoryReference, after []api.AdvisoryReference) []string {
 	beforeURLs := make([]string, len(before))
 	for i, reference := range before {
 		beforeURLs[i] = reference.URL
@@ -768,55 +751,33 @@ func referenceChangeMessages(
 	for i, reference := range after {
 		afterURLs[i] = reference.URL
 	}
-
-	var addedURLs, removedURLs []string
-	for _, url := range afterURLs {
-		if !slices.Contains(beforeURLs, url) {
-			addedURLs = append(addedURLs, url)
-		}
-	}
-	for _, url := range beforeURLs {
-		if !slices.Contains(afterURLs, url) {
-			removedURLs = append(removedURLs, url)
-		}
-	}
-
-	if len(addedURLs) > 0 {
-		message := "added " + strings.Join(addedURLs, ", ")
-		added = &message
-	}
-	if len(removedURLs) > 0 {
-		message := "removed " + strings.Join(removedURLs, ", ")
-		removed = &message
-	}
-	return added, removed
+	return changeParts("references", beforeURLs, afterURLs)
 }
 
-// tagsChangeMessage describes a tag change for the timeline, or returns nil when the tag set
-// is unchanged.
-func tagsChangeMessage(before, after []string) *string {
-	var added, removed []string
-	for _, tag := range after {
-		if !slices.Contains(before, tag) {
-			added = append(added, tag)
-		}
-	}
-	for _, tag := range before {
-		if !slices.Contains(after, tag) {
-			removed = append(removed, tag)
-		}
-	}
-	if len(added) == 0 && len(removed) == 0 {
-		return nil
-	}
+func tagChangeParts(before, after []string) []string {
+	return changeParts("tags", before, after)
+}
 
+// changeParts describes the additions and the removals between two lists as timeline message
+// parts, naming what was added or removed so that the parts stay readable next to each other
+// in the one message an edit writes.
+func changeParts(noun string, before, after []string) []string {
 	var parts []string
-	if len(added) > 0 {
-		parts = append(parts, "added "+strings.Join(added, ", "))
+	if added := missing(after, before); len(added) > 0 {
+		parts = append(parts, fmt.Sprintf("added the %v %v", noun, strings.Join(added, ", ")))
 	}
-	if len(removed) > 0 {
-		parts = append(parts, "removed "+strings.Join(removed, ", "))
+	if removed := missing(before, after); len(removed) > 0 {
+		parts = append(parts, fmt.Sprintf("removed the %v %v", noun, strings.Join(removed, ", ")))
 	}
-	message := strings.Join(parts, " and ")
-	return &message
+	return parts
+}
+
+func missing(values, from []string) []string {
+	var result []string
+	for _, value := range values {
+		if !slices.Contains(from, value) {
+			result = append(result, value)
+		}
+	}
+	return result
 }

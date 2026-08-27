@@ -7,9 +7,8 @@ import {
   AdvisoryFilter,
   AdvisoryImpact,
   CreateAdvisoryCommentRequest,
-  CreateAdvisoryRequest,
   CreateUpdateAdvisoryRequest,
-  UpdateAdvisoryStatusRequest,
+  PatchAdvisoryRequest,
 } from '@distr-sh/distr-sdk';
 
 const baseUrl = '/api/v1/advisories';
@@ -44,7 +43,7 @@ export class AdvisoriesService {
     return this.httpClient.get<AdvisoryImpact>(`${baseUrl}/${id}/impact`);
   }
 
-  public create(request: CreateAdvisoryRequest) {
+  public create(request: CreateUpdateAdvisoryRequest) {
     return this.httpClient.post<AdvisoryDetail>(baseUrl, request);
   }
 
@@ -52,8 +51,8 @@ export class AdvisoriesService {
     return this.httpClient.put<AdvisoryDetail>(`${baseUrl}/${id}`, request);
   }
 
-  public updateStatus(id: string, request: UpdateAdvisoryStatusRequest) {
-    return this.httpClient.patch<AdvisoryDetail>(`${baseUrl}/${id}/status`, request);
+  public patch(id: string, request: PatchAdvisoryRequest) {
+    return this.httpClient.patch<AdvisoryDetail>(`${baseUrl}/${id}`, request);
   }
 
   public createComment(id: string, request: CreateAdvisoryCommentRequest) {

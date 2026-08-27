@@ -8,12 +8,11 @@ import {
   ApplicationVersion,
   ApplicationVersionResource,
   CreateAdvisoryCommentRequest,
-  CreateAdvisoryRequest,
   CreateUpdateAdvisoryRequest,
   DeploymentRequest,
   DeploymentTarget,
   DeploymentTargetAccessResponse,
-  UpdateAdvisoryStatusRequest,
+  PatchAdvisoryRequest,
 } from '../types';
 import {ConditionalPartial, defaultClientConfig} from './config';
 
@@ -145,16 +144,16 @@ export class Client {
     return this.get<AdvisoryImpact>(`advisories/${advisoryId}/impact`);
   }
 
-  public async createAdvisory(request: CreateAdvisoryRequest): Promise<AdvisoryDetail> {
-    return this.post<AdvisoryDetail, CreateAdvisoryRequest>('advisories', request);
+  public async createAdvisory(request: CreateUpdateAdvisoryRequest): Promise<AdvisoryDetail> {
+    return this.post<AdvisoryDetail, CreateUpdateAdvisoryRequest>('advisories', request);
   }
 
   public async updateAdvisory(advisoryId: string, request: CreateUpdateAdvisoryRequest): Promise<AdvisoryDetail> {
     return this.put<AdvisoryDetail, CreateUpdateAdvisoryRequest>(`advisories/${advisoryId}`, request);
   }
 
-  public async updateAdvisoryStatus(advisoryId: string, request: UpdateAdvisoryStatusRequest): Promise<AdvisoryDetail> {
-    return this.patch<AdvisoryDetail, UpdateAdvisoryStatusRequest>(`advisories/${advisoryId}/status`, request);
+  public async patchAdvisory(advisoryId: string, request: PatchAdvisoryRequest): Promise<AdvisoryDetail> {
+    return this.patch<AdvisoryDetail, PatchAdvisoryRequest>(`advisories/${advisoryId}`, request);
   }
 
   public async createAdvisoryComment(

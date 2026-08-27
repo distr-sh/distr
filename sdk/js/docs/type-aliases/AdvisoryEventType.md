@@ -6,4 +6,4 @@
 
 # Type Alias: AdvisoryEventType
 
-> **AdvisoryEventType** = `"created"` \| `"status_changed"` \| `"edited"` \| `"tags_changed"` \| `"versions_changed"` \| `"reference_added"` \| `"reference_removed"` \| `"comment"`
+> **AdvisoryEventType** = `"created"` \| `"status_changed"` \| `"edited"` \| `"comment"`

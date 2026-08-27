@@ -7,6 +7,7 @@ import {
   AdvisoryStatus,
 } from '@distr-sh/distr-sdk';
 import {never} from '../../util/exhaust';
+import {BadgeSelectOption} from '../components/badge-select/badge-select.component';
 
 /**
  * The full name of a marked version. The version panel truncates these to keep the sidebar
@@ -143,92 +144,17 @@ export function impactStateBadgeClass(state: AdvisoryImpactState): string {
   }
 }
 
-/** Mirrors advisoryStatusTransitions in internal/types/advisory.go. */
-const statusTransitions: Record<AdvisoryStatus, AdvisoryStatus[]> = {
-  triage: ['draft', 'canceled'],
-  draft: ['triage', 'published', 'canceled'],
-  published: ['draft', 'resolved'],
-  resolved: ['published'],
-  canceled: ['draft'],
-};
+export const statusSelectOptions: BadgeSelectOption<AdvisoryStatus>[] = advisoryStatuses.map((status) => ({
+  value: status,
+  label: statusLabel(status),
+  badgeClass: statusBadgeClass(status),
+}));
 
-export function allowedStatusTransitions(status: AdvisoryStatus): AdvisoryStatus[] {
-  return statusTransitions[status];
-}
-
-/**
- * The transitions offered directly in the list, which are the ones that move an advisory
- * along its expected path. The rarer corrections, such as unpublishing or pushing a draft
- * into triage, stay on the detail page where there is room to explain them.
- */
-const quickStatusTransitions: Record<AdvisoryStatus, AdvisoryStatus[]> = {
-  triage: ['draft', 'canceled'],
-  draft: ['published', 'canceled'],
-  published: ['resolved'],
-  resolved: [],
-  canceled: ['draft'],
-};
-
-export function quickStatusTransitionsFor(status: AdvisoryStatus): AdvisoryStatus[] {
-  return quickStatusTransitions[status];
-}
-
-export function statusActionLabel(target: AdvisoryStatus): string {
-  switch (target) {
-    case 'triage':
-      return 'Move to triage';
-    case 'draft':
-      return 'Move to draft';
-    case 'published':
-      return 'Publish';
-    case 'resolved':
-      return 'Mark as resolved';
-    case 'canceled':
-      return 'Cancel';
-    default:
-      return never(target);
-  }
-}
-
-/**
- * Compact labels for the list, where the button sits in a table cell next to the status
- * badge that already says where the advisory is coming from.
- */
-export function statusActionShortLabel(from: AdvisoryStatus, target: AdvisoryStatus): string {
-  if (from === 'canceled' && target === 'draft') {
-    return 'Reopen';
-  }
-  switch (target) {
-    case 'triage':
-      return 'To triage';
-    case 'draft':
-      return 'To draft';
-    case 'published':
-      return 'Publish';
-    case 'resolved':
-      return 'Resolve';
-    case 'canceled':
-      return 'Cancel';
-    default:
-      return never(target);
-  }
-}
-
-/**
- * The confirmation to show before a status change, or undefined when it needs none. Both the
- * list and the detail page ask before a step that is visible to customers or that ends the
- * advisory's life, so the wording lives here rather than in either component.
- */
-export function statusChangeConfirmation(target: AdvisoryStatus): string | undefined {
-  switch (target) {
-    case 'published':
-      return 'Publishing makes this advisory visible to customers who deployed or are entitled to an affected version. Continue?';
-    case 'canceled':
-      return 'Canceling closes this advisory without disclosing it. You can reopen it into draft later. Continue?';
-    default:
-      return undefined;
-  }
-}
+export const severitySelectOptions: BadgeSelectOption<AdvisorySeverity>[] = advisorySeverities.map((severity) => ({
+  value: severity,
+  label: severityLabel(severity),
+  badgeClass: severityBadgeClass(severity),
+}));
 
 export function eventLabel(type: AdvisoryEventType): string {
   switch (type) {
@@ -237,15 +163,7 @@ export function eventLabel(type: AdvisoryEventType): string {
     case 'status_changed':
       return 'changed the status';
     case 'edited':
-      return 'edited the details';
-    case 'tags_changed':
-      return 'changed the tags';
-    case 'versions_changed':
-      return 'changed the affected versions';
-    case 'reference_added':
-      return 'added a reference';
-    case 'reference_removed':
-      return 'removed a reference';
+      return 'edited this advisory';
     case 'comment':
       return 'commented';
     default:

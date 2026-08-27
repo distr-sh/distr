@@ -5,11 +5,11 @@ import {
   AdvisoryEvent,
   AdvisoryFilter,
   AdvisoryImpact,
+  AdvisorySeverity,
   AdvisoryStatus,
   Application,
   ApplicationVersion,
   ApplicationVersionResource,
-  CreateAdvisoryRequest,
   CreateUpdateAdvisoryRequest,
   DeploymentRequest,
   DeploymentTarget,
@@ -449,7 +449,7 @@ export class DistrService {
    * Creates an advisory. Without an explicit status it starts in `triage`, the inbox for
    * externally reported issues.
    */
-  public async createAdvisory(request: CreateAdvisoryRequest): Promise<AdvisoryDetail> {
+  public async createAdvisory(request: CreateUpdateAdvisoryRequest): Promise<AdvisoryDetail> {
     return this.client.createAdvisory(request);
   }
 
@@ -458,11 +458,15 @@ export class DistrService {
   }
 
   /**
-   * Moves an advisory to the given status. Only the transitions allowed by the workflow are
-   * accepted, and publishing makes the advisory visible to the customers it affects.
+   * Sets the status of an advisory, leaving the rest of it as it is. `published` and `resolved`
+   * make the advisory visible to the customers it affects.
    */
-  public async updateAdvisoryStatus(advisoryId: string, status: AdvisoryStatus): Promise<AdvisoryDetail> {
-    return this.client.updateAdvisoryStatus(advisoryId, {status});
+  public async setAdvisoryStatus(advisoryId: string, status: AdvisoryStatus): Promise<AdvisoryDetail> {
+    return this.client.patchAdvisory(advisoryId, {status});
+  }
+
+  public async setAdvisorySeverity(advisoryId: string, severity: AdvisorySeverity): Promise<AdvisoryDetail> {
+    return this.client.patchAdvisory(advisoryId, {severity});
   }
 
   public async commentOnAdvisory(advisoryId: string, content: string): Promise<AdvisoryEvent> {

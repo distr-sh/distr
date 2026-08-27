@@ -2,7 +2,13 @@ import {DatePipe, NgClass, NgTemplateOutlet} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, RouterLink} from '@angular/router';
-import {AdvisoryDetail, AdvisoryImpact, AdvisoryStatus} from '@distr-sh/distr-sdk';
+import {
+  AdvisoryDetail,
+  AdvisoryImpact,
+  AdvisorySeverity,
+  AdvisoryStatus,
+  PatchAdvisoryRequest,
+} from '@distr-sh/distr-sdk';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faArrowLeft, faPen, faUpRightFromSquare} from '@fortawesome/free-solid-svg-icons';
 import {catchError, firstValueFrom, map, of, startWith, Subject, switchMap, take} from 'rxjs';
@@ -13,6 +19,7 @@ import {
   ActivityTimelineComponent,
   ActivityTimelineEntry,
 } from '../components/activity-timeline/activity-timeline.component';
+import {BadgeSelectComponent} from '../components/badge-select/badge-select.component';
 import {PageComponent} from '../components/page.component';
 import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
 import {AdvisoriesService} from '../services/advisories.service';
@@ -22,20 +29,18 @@ import {ToastService} from '../services/toast.service';
 import {
   affectedBadgeClass,
   affectedLabel,
-  allowedStatusTransitions,
   applicationVersionLabel,
   artifactVersionLabel,
   eventLabel,
   impactStateBadgeClass,
   impactStateLabel,
   severityBadgeClass,
-  statusActionLabel,
+  severitySelectOptions,
   statusBadgeClass,
-  statusChangeConfirmation,
   statusLabel,
+  statusSelectOptions,
 } from './advisory-display';
 import {AdvisoryFormComponent, AdvisoryFormDraft} from './advisory-form.component';
-import {AdvisoryResolveDialogComponent, AdvisoryResolveResult} from './advisory-resolve-dialog.component';
 
 /**
  * Impact is loaded separately from the advisory itself, so a failed query must stay
@@ -58,6 +63,7 @@ type ImpactState = {state: 'loading'} | {state: 'loaded'; impact: AdvisoryImpact
     ActivityTimelineComponent,
     ArtifactsHashComponent,
     ApplicationLogoComponent,
+    BadgeSelectComponent,
     PageComponent,
   ],
 })
@@ -74,7 +80,8 @@ export class AdvisoryDetailComponent {
 
   protected readonly severityBadgeClass = severityBadgeClass;
   protected readonly statusBadgeClass = statusBadgeClass;
-  protected readonly statusActionLabel = statusActionLabel;
+  protected readonly statusSelectOptions = statusSelectOptions;
+  protected readonly severitySelectOptions = severitySelectOptions;
   protected readonly impactStateBadgeClass = impactStateBadgeClass;
   protected readonly impactStateLabel = impactStateLabel;
   protected readonly applicationVersionLabel = applicationVersionLabel;
@@ -92,7 +99,7 @@ export class AdvisoryDetailComponent {
   private readonly timeline = viewChild(ActivityTimelineComponent);
 
   protected readonly advisory = signal<AdvisoryDetail | undefined>(undefined);
-  protected readonly updatingStatus = signal(false);
+  protected readonly patching = signal(false);
   protected readonly submittingComment = signal(false);
   protected readonly editDialogOpen = signal(false);
   protected readonly editDraft = signal<AdvisoryFormDraft | undefined>(undefined);
@@ -120,11 +127,6 @@ export class AdvisoryDetailComponent {
   protected readonly fixedArtifactVersions = computed(() =>
     (this.advisory()?.artifactVersions ?? []).filter((v) => v.relation === 'fixed')
   );
-
-  protected readonly nextStatuses = computed<AdvisoryStatus[]>(() => {
-    const advisory = this.advisory();
-    return advisory ? allowedStatusTransitions(advisory.status) : [];
-  });
 
   private readonly refresh$ = new Subject<void>();
   /** Impact only changes when the versions or status change, not when a comment is added. */
@@ -225,45 +227,30 @@ export class AdvisoryDetailComponent {
     this.refreshImpact$.next();
   }
 
-  protected async changeStatus(status: AdvisoryStatus): Promise<void> {
+  protected changeStatus(status: AdvisoryStatus): Promise<void> {
+    return this.patch({status}, 'Status updated');
+  }
+
+  protected changeSeverity(severity: AdvisorySeverity): Promise<void> {
+    return this.patch({severity}, 'Severity updated');
+  }
+
+  private async patch(request: PatchAdvisoryRequest, success: string): Promise<void> {
     const advisory = this.advisory();
     if (!advisory) {
       return;
     }
-    let comment: string | undefined;
-    if (status === 'resolved') {
-      const result = await firstValueFrom(
-        this.overlay.showModal<AdvisoryResolveResult>(AdvisoryResolveDialogComponent).result()
-      );
-      if (!result) {
-        return;
-      }
-      comment = result.comment;
-    } else {
-      const confirmation = statusChangeConfirmation(status);
-      if (confirmation && !(await firstValueFrom(this.overlay.confirm(confirmation)))) {
-        return;
-      }
-    }
-
-    this.updatingStatus.set(true);
+    this.patching.set(true);
     try {
-      const updated = await firstValueFrom(this.advisoriesService.updateStatus(advisory.id, {status}));
-      this.advisory.set(updated);
-      // Posted after the status change so that a failing comment cannot leave the advisory
-      // unresolved; the timeline then reads as the transition followed by its explanation.
-      if (comment) {
-        await firstValueFrom(this.advisoriesService.createComment(advisory.id, {content: comment}));
-      }
-      this.toast.success('Status updated');
-      this.refresh$.next();
+      this.advisory.set(await firstValueFrom(this.advisoriesService.patch(advisory.id, request)));
+      this.toast.success(success);
     } catch (e) {
       const message = getFormDisplayedError(e);
       if (message) {
         this.toast.error(message);
       }
     } finally {
-      this.updatingStatus.set(false);
+      this.patching.set(false);
     }
   }
 

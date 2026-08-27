@@ -1,0 +1,39 @@
+<button
+  type="button"
+  cdkOverlayOrigin
+  #origin="cdkOverlayOrigin"
+  (click)="toggleOpen($event)"
+  [disabled]="disabled()"
+  [attr.aria-label]="ariaLabel()"
+  class="distr-status-badge cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+  [ngClass]="current()?.badgeClass">
+  {{ current()?.label ?? value() }}
+  <fa-icon
+    [icon]="faChevronDown"
+    class="text-[0.5rem] transition duration-150 ease-in-out"
+    [class.rotate-x-180]="open()" />
+</button>
+
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayHasBackdrop]="true"
+  (backdropClick)="open.set(false)"
+  [cdkConnectedOverlayBackdropClass]="'transparent'"
+  [cdkConnectedOverlayOrigin]="origin"
+  [cdkConnectedOverlayOpen]="open()">
+  <ul
+    class="z-10 py-1 bg-white rounded-lg shadow-md dark:bg-gray-700 origin-top"
+    animate.enter="animate-flip-in-top"
+    animate.leave="animate-flip-out-top">
+    @for (option of options(); track option.value) {
+      <li>
+        <button
+          type="button"
+          (click)="select($event, option.value)"
+          class="w-full flex items-center px-3 py-1.5 text-left hover:bg-gray-100 dark:hover:bg-gray-600">
+          <span class="distr-status-badge whitespace-nowrap" [ngClass]="option.badgeClass">{{ option.label }}</span>
+        </button>
+      </li>
+    }
+  </ul>
+</ng-template>
