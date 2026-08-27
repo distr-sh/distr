@@ -1,11 +1,10 @@
-import {ChangeDetectionStrategy, Component, computed, inject, input, viewChild} from '@angular/core';
-import {map, Observable} from 'rxjs';
+import {Component, computed, inject, input, viewChild} from '@angular/core';
 import {
+  RangeTimeseriesSource,
   TimeseriesEntry,
   TimeseriesExporter,
-  TimeseriesSource,
-  TimeseriesTableComponent,
-} from '../../components/timeseries-table/timeseries-table.component';
+} from '../../components/timeseries-table/timeseries-source';
+import {TimeseriesTableComponent} from '../../components/timeseries-table/timeseries-table.component';
 import {DeploymentLogsService} from '../../services/deployment-logs.service';
 import {DeploymentLogRecord} from '../../types/deployment-log-record';
 import {OrderDirection} from '../../types/timeseries-options';
@@ -35,53 +34,12 @@ function logRecordToTimeseriesEntry(record: DeploymentLogRecord): TimeseriesEntr
   };
 }
 
-class LogsTimeseriesSource implements TimeseriesSource {
-  public readonly batchSize = 50;
-
-  constructor(
-    private readonly svc: DeploymentLogsService,
-    private readonly deploymentId: string,
-    private readonly resources: string[],
-    private readonly order: OrderDirection,
-    private readonly after?: Date,
-    private readonly before?: Date,
-    private readonly filter?: string
-  ) {}
-
-  load(): Observable<TimeseriesEntry[]> {
-    return this.svc
-      .get(this.deploymentId, this.resources, {
-        limit: this.batchSize,
-        after: this.after,
-        before: this.before,
-        filter: this.filter,
-        order: this.order,
-      })
-      .pipe(map((logs) => logs.map(logRecordToTimeseriesEntry)));
-  }
-
-  loadAfter(after: Date): Observable<TimeseriesEntry[]> {
-    return this.svc
-      .get(this.deploymentId, this.resources, {limit: this.batchSize, after, filter: this.filter, order: this.order})
-      .pipe(map((logs) => logs.map(logRecordToTimeseriesEntry)));
-  }
-
-  loadBefore(before: Date): Observable<TimeseriesEntry[]> {
-    return this.svc
-      .get(this.deploymentId, this.resources, {limit: this.batchSize, before, filter: this.filter, order: this.order})
-      .pipe(map((logs) => logs.map(logRecordToTimeseriesEntry)));
-  }
-}
-
 @Component({
   selector: 'app-deployment-logs-table',
   template: `<app-timeseries-table
     [source]="source()"
     [exporter]="exporter"
-    [live]="live()"
-    [orderDirection]="orderDirection()"
     [resourceColorMap]="resourceColorMap()" />`,
-  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [TimeseriesTableComponent],
 })
 export class DeploymentLogsTableComponent {
@@ -94,8 +52,6 @@ export class DeploymentLogsTableComponent {
   public readonly filter = input<string>();
   public readonly orderDirection = input<OrderDirection>('DESC');
 
-  protected readonly live = computed(() => !this.after() && !this.before());
-
   protected readonly resourceColorMap = computed(() => {
     const resources = this.resources();
     const map: Record<string, string> = {};
@@ -107,14 +63,10 @@ export class DeploymentLogsTableComponent {
 
   protected readonly source = computed(
     () =>
-      new LogsTimeseriesSource(
-        this.svc,
-        this.deploymentId(),
-        this.resources(),
-        this.orderDirection(),
-        this.after(),
-        this.before(),
-        this.filter()
+      new RangeTimeseriesSource(
+        (options) => this.svc.get(this.deploymentId(), this.resources(), options),
+        logRecordToTimeseriesEntry,
+        {order: this.orderDirection(), after: this.after(), before: this.before(), filter: this.filter()}
       )
   );
 
