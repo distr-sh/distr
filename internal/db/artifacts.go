@@ -39,6 +39,18 @@ const (
 			FILTER (WHERE avpl.customer_organization_id IS NOT NULL), ARRAY[]::UUID[])
 			AS downloaded_by_customer_organizations `
 
+	// artifactPullOfCustomerOrgExpr matches pulls of the customer organization given as
+	// @customerOrganizationId, including those of its agents, which have no user account.
+	// Pulls that predate the customer_organization_id column are attributed via the puller's membership.
+	artifactPullOfCustomerOrgExpr = `
+		(avpl.customer_organization_id = @customerOrganizationId
+			OR (avpl.customer_organization_id IS NULL AND EXISTS (
+				SELECT 1
+				FROM Organization_UserAccount oua
+				WHERE oua.user_account_id = avpl.useraccount_id
+					AND oua.customer_organization_id = @customerOrganizationId
+			))) `
+
 	artifactWithDownloadsOutputExpr = artifactOutputExpr +
 		", o.slug AS organization_slug," +
 		artifactDownloadsOutExpr
@@ -93,25 +105,24 @@ func GetArtifactsByEntitlementOwnerID(ctx context.Context, orgID uuid.UUID, owne
 			FROM Artifact a
 			JOIN Organization o
 				ON o.id = a.organization_id
-			LEFT JOIN Organization_UserAccount oua
-				ON oua.organization_id = a.organization_id AND oua.customer_organization_id = @ownerId
 			LEFT JOIN ArtifactVersion av
 				ON a.id = av.artifact_id
 			LEFT JOIN ArtifactVersionPull avpl
-				ON avpl.artifact_version_id = av.id AND avpl.useraccount_id = oua.user_account_id
+				ON avpl.artifact_version_id = av.id AND `+artifactPullOfCustomerOrgExpr+`
 			WHERE a.organization_id = @orgId
 			AND EXISTS(
 				SELECT ala.id
 				FROM ArtifactEntitlement_Artifact ala
 				INNER JOIN ArtifactEntitlement al ON ala.artifact_entitlement_id = al.id
-				WHERE al.customer_organization_id = @ownerId AND (al.expires_at IS NULL OR al.expires_at > now())
+				WHERE al.customer_organization_id = @customerOrganizationId
+				AND (al.expires_at IS NULL OR al.expires_at > now())
 				AND ala.artifact_id = a.id
 			)
 			GROUP BY a.id, a.created_at, a.organization_id, a.name, o.slug
 			ORDER BY max(av.created_at) DESC`,
 		pgx.NamedArgs{
-			"orgId":   orgID,
-			"ownerId": ownerID,
+			"orgId":                  orgID,
+			"customerOrganizationId": ownerID,
 		}); err != nil {
 		return nil, fmt.Errorf("failed to query artifacts: %w", err)
 	} else if artifacts, err := pgx.CollectRows(
