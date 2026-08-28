@@ -24,6 +24,11 @@ func ArtifactVersionPullToAPI(pull types.ArtifactVersionPull) api.ArtifactVersio
 		response.CustomerOrganizationName = &pull.CustomerOrganization.Name
 	}
 
+	if pull.DeploymentTarget != nil {
+		response.DeploymentTargetID = &pull.DeploymentTarget.ID
+		response.DeploymentTargetName = &pull.DeploymentTarget.Name
+	}
+
 	return response
 }
 
@@ -35,6 +40,7 @@ func ArtifactVersionPullFilterOptionsToAPI(
 		UserAccounts:          List(opts.UserAccounts, FilterOptionToAPI),
 		RemoteAddresses:       opts.RemoteAddresses,
 		Artifacts:             List(opts.Artifacts, FilterOptionToAPI),
+		DeploymentTargets:     List(opts.DeploymentTargets, FilterOptionToAPI),
 	}
 }
 
