@@ -65,6 +65,7 @@ func AdvisoryArtifactVersionToAPI(
 	return api.AdvisoryArtifactVersion{
 		ArtifactID:            version.ArtifactID,
 		ArtifactName:          version.ArtifactName,
+		ArtifactImageURL:      CreateImageURL(version.ArtifactImageID),
 		ArtifactVersionID:     version.ArtifactVersionID,
 		ArtifactVersionName:   version.ArtifactVersionName,
 		ArtifactVersionDigest: version.ArtifactVersionDigest,

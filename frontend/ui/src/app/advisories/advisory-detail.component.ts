@@ -14,7 +14,7 @@ import {faArrowLeft, faPen, faUpRightFromSquare} from '@fortawesome/free-solid-s
 import {catchError, firstValueFrom, map, of, startWith, Subject, switchMap, take} from 'rxjs';
 import {getFormDisplayedError} from '../../util/errors';
 import {ApplicationLogoComponent} from '../applications/components';
-import {ArtifactsHashComponent} from '../artifacts/components';
+import {ArtifactLogoComponent, ArtifactsHashComponent} from '../artifacts/components';
 import {
   ActivityTimelineComponent,
   ActivityTimelineEntry,
@@ -62,6 +62,7 @@ type ImpactState = {state: 'loading'} | {state: 'loaded'; impact: AdvisoryImpact
     AdvisoryFormComponent,
     ActivityTimelineComponent,
     ArtifactsHashComponent,
+    ArtifactLogoComponent,
     ApplicationLogoComponent,
     BadgeSelectComponent,
     PageComponent,

@@ -14,6 +14,14 @@
 
 ---
 
+### artifactImageUrl?
+
+> `optional` **artifactImageUrl?**: `string`
+
+Absent when the artifact has no uploaded logo and the generic artifact icon is used.
+
+---
+
 ### artifactName
 
 > **artifactName**: `string`

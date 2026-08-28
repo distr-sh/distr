@@ -70,6 +70,9 @@ type AdvisoryApplicationVersion struct {
 type AdvisoryArtifactVersion struct {
 	ArtifactID   uuid.UUID `json:"artifactId"`
 	ArtifactName string    `json:"artifactName"`
+	// ArtifactImageURL is absent when the artifact has no uploaded logo and the generic
+	// artifact icon is used instead.
+	ArtifactImageURL *string `json:"artifactImageUrl,omitempty"`
 	// ArtifactVersionName is the name of the marked row, which is a digest when the version
 	// was marked by digest rather than by tag.
 	ArtifactVersionID   uuid.UUID `json:"artifactVersionId"`

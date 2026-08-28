@@ -53,6 +53,8 @@ export interface AdvisoryApplicationVersion {
 export interface AdvisoryArtifactVersion {
   artifactId: string;
   artifactName: string;
+  /** Absent when the artifact has no uploaded logo and the generic artifact icon is used. */
+  artifactImageUrl?: string;
   artifactVersionId: string;
   /** Name of the marked row, which is a digest when the version was marked by digest. */
   artifactVersionName: string;

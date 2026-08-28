@@ -2,11 +2,30 @@ import {AsyncPipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, input, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faDownload, faEllipsis, faUserCircle} from '@fortawesome/free-solid-svg-icons';
+import {faBox, faDownload, faEllipsis, faUserCircle} from '@fortawesome/free-solid-svg-icons';
 import {SecureImagePipe} from '../../util/secureImage';
 import {HasDownloads} from '../services/artifacts.service';
 import {CustomerOrganizationsCache} from '../services/customer-organizations.service';
 import {UsersService} from '../services/users.service';
+
+@Component({
+  selector: 'app-artifact-logo',
+  template: `
+    @if (imageUrl(); as imageUrl) {
+      <img class="size-full rounded-sm object-contain" [attr.src]="imageUrl | secureImage | async" alt="" />
+    } @else {
+      <span class="flex size-full items-center justify-center text-gray-900 dark:text-gray-400">
+        <fa-icon [icon]="faBox" size="2x" />
+      </span>
+    }
+  `,
+  imports: [AsyncPipe, SecureImagePipe, FaIconComponent],
+})
+export class ArtifactLogoComponent {
+  public readonly imageUrl = input<string>();
+
+  protected readonly faBox = faBox;
+}
 
 @Component({
   selector: 'app-artifacts-download-count',

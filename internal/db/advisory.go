@@ -639,7 +639,7 @@ func getAdvisoryArtifactVersions(
 		// the same content travel with it. The name convention is the registry's: a tag row
 		// has no colon in its name, a digest row does.
 		`SELECT vrv.advisory_id, vrv.relation,
-			a.id AS artifact_id, a.name AS artifact_name,
+			a.id AS artifact_id, a.name AS artifact_name, a.image_id AS artifact_image_id,
 			av.id AS artifact_version_id, av.name AS artifact_version_name,
 			av.manifest_blob_digest AS artifact_version_digest,
 			coalesce((

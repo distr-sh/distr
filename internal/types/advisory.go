@@ -140,6 +140,9 @@ type AdvisoryArtifactVersion struct {
 	AdvisoryID   uuid.UUID `db:"advisory_id"`
 	ArtifactID   uuid.UUID `db:"artifact_id"`
 	ArtifactName string    `db:"artifact_name"`
+	// ArtifactImageID is the uploaded logo, absent when the artifact falls back to the generic
+	// artifact icon.
+	ArtifactImageID *uuid.UUID `db:"artifact_image_id"`
 	// ArtifactVersionID and ArtifactVersionName identify the row the vendor marked, whose name
 	// is a digest when they picked the version by digest rather than by tag.
 	ArtifactVersionID   uuid.UUID `db:"artifact_version_id"`

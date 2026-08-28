@@ -306,7 +306,7 @@
 <ng-template #applicationVersionItem let-version>
   <li class="flex items-center gap-2">
     <app-application-logo
-      class="size-8 shrink-0"
+      class="size-10 shrink-0"
       [imageUrl]="version.applicationImageUrl"
       [type]="version.applicationType" />
     <div class="min-w-0">
@@ -321,17 +321,22 @@
 <!-- A version marked by digest has no readable name of its own, so it is shown by the tags
      pointing at the same content, mirroring the artifact entitlement dropdown. -->
 <ng-template #artifactVersionItem let-version>
-  <li>
-    <div class="truncate" [title]="artifactVersionLabel(version)">{{ version.artifactName }}</div>
-    @if (version.artifactVersionTags.length > 0) {
-      <div class="flex flex-row flex-wrap gap-1 mt-1">
-        @for (tag of version.artifactVersionTags; track tag) {
-          <span [class]="tag === 'latest' ? 'distr-artifact-tag-latest' : 'distr-artifact-tag'">{{ tag }}</span>
-        }
+  <li class="flex items-center gap-2">
+    <app-artifact-logo class="size-10 shrink-0" [imageUrl]="version.artifactImageUrl" />
+    <div class="min-w-0">
+      <div class="flex items-baseline gap-2 min-w-0" [title]="artifactVersionLabel(version)">
+        <span class="truncate">{{ version.artifactName }}</span>
+        <span class="shrink-0 text-xs text-gray-500 dark:text-gray-400">
+          <app-artifacts-hash [hash]="version.artifactVersionDigest" [expandable]="false" />
+        </span>
       </div>
-    }
-    <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-      <app-artifacts-hash [hash]="version.artifactVersionDigest" [expandable]="false" />
+      @if (version.artifactVersionTags.length > 0) {
+        <div class="flex flex-row flex-wrap gap-1 mt-1">
+          @for (tag of version.artifactVersionTags; track tag) {
+            <span [class]="tag === 'latest' ? 'distr-artifact-tag-latest' : 'distr-artifact-tag'">{{ tag }}</span>
+          }
+        </div>
+      }
     </div>
   </li>
 </ng-template>
