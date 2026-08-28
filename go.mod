@@ -56,8 +56,8 @@ require (
 	go.opentelemetry.io/collector/consumer v1.65.0
 	go.opentelemetry.io/collector/pdata v1.65.0
 	go.opentelemetry.io/collector/receiver v1.65.0
-	go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws v0.70.0
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.70.0
+	go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws v0.71.0
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.71.0
 	go.opentelemetry.io/otel v1.46.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.46.0
 	go.opentelemetry.io/otel/sdk v1.46.0
@@ -98,16 +98,16 @@ require (
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.39 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.39 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/v4a v1.4.40 // indirect
-	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.62.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.63.5 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.18 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.9.32 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/endpoint-discovery v1.12.11 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/endpoint-discovery v1.12.16 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.39 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.40 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ses v1.37.6 // indirect
 	github.com/aws/aws-sdk-go-v2/service/signin v1.5.8 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sns v1.42.3 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sqs v1.46.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sns v1.42.8 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sqs v1.46.8 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.33.8 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.38.8 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.45.8 // indirect
