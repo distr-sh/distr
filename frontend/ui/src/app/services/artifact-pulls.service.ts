@@ -16,6 +16,7 @@ export interface ArtifactPullFilters {
   remoteAddress?: string;
   artifactId?: string;
   artifactVersionId?: string;
+  deploymentTargetId?: string;
 }
 
 @Injectable({providedIn: 'root'})
@@ -65,6 +66,9 @@ export class ArtifactPullsService {
     }
     if (filters.artifactVersionId) {
       params = params.set('artifactVersionId', filters.artifactVersionId);
+    }
+    if (filters.deploymentTargetId) {
+      params = params.set('deploymentTargetId', filters.deploymentTargetId);
     }
     return params;
   }

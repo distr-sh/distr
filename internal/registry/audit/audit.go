@@ -33,6 +33,7 @@ func (a *auditor) AuditPull(ctx context.Context, nameStr string, reference strin
 			auth.CurrentUserID(),
 			chimiddleware.GetClientIP(ctx),
 			auth.CurrentCustomerOrgID(),
+			auth.CurrentDeploymentTargetID(),
 		)
 	}
 }

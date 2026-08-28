@@ -6,6 +6,8 @@ export interface ArtifactVersionPull {
   userAccountName?: string;
   userAccountEmail?: string;
   customerOrganizationName?: string;
+  deploymentTargetId?: string;
+  deploymentTargetName?: string;
   artifact: BaseArtifact;
   artifactVersion: BaseArtifactVersion;
 }
@@ -20,4 +22,5 @@ export interface ArtifactVersionPullFilterOptions {
   userAccounts: ArtifactPullFilterOption[];
   remoteAddresses: string[];
   artifacts: ArtifactPullFilterOption[];
+  deploymentTargets: ArtifactPullFilterOption[];
 }

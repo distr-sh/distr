@@ -42,6 +42,8 @@ type ArtifactVersionPullResponse struct {
 	UserAccountName          *string               `json:"userAccountName,omitempty"`
 	UserAccountEmail         *string               `json:"userAccountEmail,omitempty"`
 	CustomerOrganizationName *string               `json:"customerOrganizationName,omitempty"`
+	DeploymentTargetID       *uuid.UUID            `json:"deploymentTargetId,omitempty"`
+	DeploymentTargetName     *string               `json:"deploymentTargetName,omitempty"`
 	Artifact                 types.Artifact        `json:"artifact"`
 	ArtifactVersion          types.ArtifactVersion `json:"artifactVersion"`
 }
@@ -56,4 +58,5 @@ type ArtifactVersionPullFilterOptions struct {
 	UserAccounts          []ArtifactPullFilterOption `json:"userAccounts"`
 	RemoteAddresses       []string                   `json:"remoteAddresses"`
 	Artifacts             []ArtifactPullFilterOption `json:"artifacts"`
+	DeploymentTargets     []ArtifactPullFilterOption `json:"deploymentTargets"`
 }
