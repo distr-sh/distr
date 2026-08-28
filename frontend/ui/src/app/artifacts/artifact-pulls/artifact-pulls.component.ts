@@ -6,7 +6,7 @@ import {ActivatedRoute, Params, Router} from '@angular/router';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faDownload, faFilterCircleXmark} from '@fortawesome/free-solid-svg-icons';
 import dayjs from 'dayjs';
-import {debounceTime, first, map, of, scan, shareReplay, startWith, Subject, switchMap, tap} from 'rxjs';
+import {debounceTime, filter, first, map, of, scan, shareReplay, startWith, Subject, switchMap, tap} from 'rxjs';
 import {downloadBlob} from '../../../util/blob';
 import {PageComponent} from '../../components/page.component';
 import {ArtifactPullFilters, ArtifactPullsService} from '../../services/artifact-pulls.service';
@@ -40,6 +40,7 @@ export class ArtifactPullsComponent {
     remoteAddress: new FormControl(''),
     artifactId: new FormControl(''),
     artifactVersionId: new FormControl(''),
+    deploymentTargetId: new FormControl(''),
     from: new FormControl(''),
     to: new FormControl(''),
   });
@@ -102,6 +103,18 @@ export class ArtifactPullsComponent {
 
   constructor() {
     this.initFromQueryParams();
+    this.filterForm.controls.userAccountId.valueChanges
+      .pipe(
+        takeUntilDestroyed(),
+        filter((value) => value !== null && value !== '')
+      )
+      .subscribe(() => this.filterForm.controls.deploymentTargetId.setValue(''));
+    this.filterForm.controls.deploymentTargetId.valueChanges
+      .pipe(
+        takeUntilDestroyed(),
+        filter((value) => value !== null && value !== '')
+      )
+      .subscribe(() => this.filterForm.controls.userAccountId.setValue(''));
   }
 
   protected showMore() {
@@ -115,6 +128,7 @@ export class ArtifactPullsComponent {
       remoteAddress: '',
       artifactId: '',
       artifactVersionId: '',
+      deploymentTargetId: '',
       from: '',
       to: '',
     });
@@ -199,6 +213,9 @@ export class ArtifactPullsComponent {
     }
     if (values.artifactVersionId) {
       filters.artifactVersionId = values.artifactVersionId;
+    }
+    if (values.deploymentTargetId) {
+      filters.deploymentTargetId = values.deploymentTargetId;
     }
     const from = values.from;
     const to = values.to;
