@@ -11,7 +11,6 @@ import (
 	"github.com/distr-sh/distr/internal/registry/manifest"
 	"github.com/distr-sh/distr/internal/registry/name"
 	"github.com/distr-sh/distr/internal/types"
-	"github.com/distr-sh/distr/internal/util"
 	"github.com/google/uuid"
 	"github.com/opencontainers/go-digest"
 )
@@ -41,38 +40,13 @@ func (h *handler) Delete(ctx context.Context, nameStr string, reference string) 
 		return err
 	}
 
-	return db.RunTx(ctx, func(ctx context.Context) error {
-		version, err := db.GetArtifactVersionByName(ctx, artifact.ID, reference)
-		if err != nil {
-			if errors.Is(err, apierrors.ErrNotFound) {
-				return fmt.Errorf("%w: %w", manifest.ErrManifestUnknown, err)
-			}
-			return err
+	if err := db.DeleteArtifactTag(ctx, artifact.ID, reference); err != nil {
+		if errors.Is(err, apierrors.ErrNotFound) {
+			return fmt.Errorf("%w: %w", manifest.ErrManifestUnknown, err)
 		}
-
-		versionsWithSameDigest, err := db.GetArtifactVersionsByDigest(ctx, artifact.ID, string(version.ManifestBlobDigest))
-		if err != nil {
-			return err
-		}
-
-		if err := db.CheckArtifactVersionDeletionForEntitlements(
-			ctx, artifact.ID, version, versionsWithSameDigest,
-		); err != nil {
-			return err
-		}
-
-		isLast, err := db.IsLastTagOfArtifact(ctx, artifact.ID, reference)
-		if err != nil {
-			return err
-		}
-		if isLast {
-			return apierrors.NewConflict(
-				"Cannot delete tag: it is the last tag of the artifact. At least one tag must remain for the artifact.",
-			)
-		}
-
-		return db.DeleteArtifactVersion(ctx, artifact.ID, reference)
-	})
+		return err
+	}
+	return nil
 }
 
 // Get implements manifest.ManifestHandler.
@@ -216,7 +190,7 @@ func (h *handler) Put(
 		}
 
 		version := types.ArtifactVersion{
-			CreatedByUserAccountID: util.PtrTo(auth.CurrentUserID()),
+			CreatedByUserAccountID: new(auth.CurrentUserID()),
 			Name:                   reference,
 			ManifestBlobDigest:     types.Digest(manifestData.Digest),
 			ManifestBlobSize:       manifestData.Size,

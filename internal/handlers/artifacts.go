@@ -266,41 +266,7 @@ func deleteArtifactTagHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := db.RunTx(ctx, func(ctx context.Context) error {
-		// Step 1: Validate version exists and fetch it
-		version, err := db.GetArtifactVersionByName(ctx, artifact.ID, tagName)
-		if err != nil {
-			return err
-		}
-
-		// Step 2: Fetch all versions with the same digest
-		versionsWithSameDigest, err := db.GetArtifactVersionsByDigest(ctx, artifact.ID, string(version.ManifestBlobDigest))
-		if err != nil {
-			return err
-		}
-
-		// Step 3: Enhanced license check
-		if err := db.CheckArtifactVersionDeletionForEntitlements(
-			ctx, artifact.ID, version, versionsWithSameDigest,
-		); err != nil {
-			return err
-		}
-
-		// Step 4: Check if this is the last non-SHA tag of the artifact
-		isLast, err := db.IsLastTagOfArtifact(ctx, artifact.ID, tagName)
-		if err != nil {
-			return err
-		}
-		if isLast {
-			return apierrors.NewConflict(
-				"Cannot delete tag: it is the last tag of the artifact. At least one tag must remain for the artifact.",
-			)
-		}
-
-		// Step 5: Delete the tag
-		return db.DeleteArtifactVersion(ctx, artifact.ID, tagName)
-	})
-	if err != nil {
+	if err := db.DeleteArtifactTag(ctx, artifact.ID, tagName); err != nil {
 		if errors.Is(err, apierrors.ErrNotFound) {
 			http.NotFound(w, r)
 			return

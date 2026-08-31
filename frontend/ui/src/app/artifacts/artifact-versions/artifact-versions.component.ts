@@ -327,7 +327,7 @@ export class ArtifactVersionsComponent {
   public deleteArtifactTag(artifact: ArtifactWithTags, version: TaggedArtifactVersion, tagName: string): void {
     this.overlay
       .confirm(
-        `This will untag "${tagName}" from ${artifact.name}. The artifact version SHA (${version.digest.substring(0, 12)}) will remain in the database. Are you sure?`
+        `This will untag "${tagName}" from ${artifact.name}. The artifact version (${version.digest.substring(0, 12)}) is deleted as well, unless another tag or a multi-arch index still references it. Are you sure?`
       )
       .pipe(
         filter((result) => result === true),

@@ -18,6 +18,7 @@ import (
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"go.uber.org/zap"
 )
 
 const (
@@ -1320,6 +1321,164 @@ func DeleteArtifactVersion(ctx context.Context, artifactID uuid.UUID, tagName st
 		return fmt.Errorf("could not delete tag: %w", err)
 	}
 
+	return nil
+}
+
+// DeleteArtifactTag deletes a tag of an artifact, together with every version that only the deleted
+// tag referenced.
+func DeleteArtifactTag(ctx context.Context, artifactID uuid.UUID, tagName string) error {
+	return RunTx(ctx, func(ctx context.Context) error {
+		if err := LockArtifactExclusive(ctx, artifactID); err != nil {
+			return err
+		}
+
+		version, err := GetArtifactVersionByName(ctx, artifactID, tagName)
+		if err != nil {
+			return err
+		}
+
+		versionsWithSameDigest, err := GetArtifactVersionsByDigest(ctx, artifactID, string(version.ManifestBlobDigest))
+		if err != nil {
+			return err
+		}
+
+		if err := CheckArtifactVersionDeletionForEntitlements(
+			ctx, artifactID, version, versionsWithSameDigest,
+		); err != nil {
+			return err
+		}
+
+		if isLast, err := IsLastTagOfArtifact(ctx, artifactID, tagName); err != nil {
+			return err
+		} else if isLast {
+			return apierrors.NewConflict(
+				"Cannot delete tag: it is the last tag of the artifact. At least one tag must remain for the artifact.",
+			)
+		}
+
+		// Has to run before the tag is gone: its parts are what leads to the referenced manifests.
+		digests, err := getReferencedManifestDigests(ctx, artifactID, version.ID)
+		if err != nil {
+			return err
+		}
+
+		if err := DeleteArtifactVersion(ctx, artifactID, tagName); err != nil {
+			return err
+		}
+
+		return deleteUnreferencedArtifactVersions(ctx, artifactID, digests)
+	})
+}
+
+// getReferencedManifestDigests returns the given version's manifest digest plus the digests of the
+// manifests it references, transitively. Layer and config digests are dropped from the result.
+func getReferencedManifestDigests(ctx context.Context, artifactID, versionID uuid.UUID) ([]string, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		`WITH RECURSIVE referenced (digest) AS (
+			SELECT av.manifest_blob_digest
+			FROM ArtifactVersion av
+			WHERE av.id = @versionId
+			-- UNION, not UNION ALL, so a cyclic manifest graph still terminates
+			UNION
+			SELECT avp.artifact_blob_digest
+			FROM referenced r
+			JOIN ArtifactVersion av
+				ON av.artifact_id = @artifactId AND av.manifest_blob_digest = r.digest
+			JOIN ArtifactVersionPart avp ON avp.artifact_version_id = av.id
+		)
+		SELECT r.digest
+		FROM referenced r
+		WHERE EXISTS (
+			SELECT 1
+			FROM ArtifactVersion av
+			WHERE av.artifact_id = @artifactId AND av.manifest_blob_digest = r.digest
+		)`,
+		pgx.NamedArgs{"artifactId": artifactID, "versionId": versionID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query referenced manifest digests: %w", err)
+	}
+	defer rows.Close()
+
+	digests, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
+		return nil, fmt.Errorf("could not collect referenced manifest digests: %w", err)
+	}
+	return digests, nil
+}
+
+// One pass per level of manifest nesting, which an index referencing an index makes unbounded.
+const maxUnreferencedArtifactVersionPasses = 8
+
+// deleteUnreferencedArtifactVersions deletes the digest-named versions among the given manifest digests
+// that nothing references any more. It repeats because a child of an index only becomes unreferenced
+// once the pass that deleted the index has finished.
+func deleteUnreferencedArtifactVersions(ctx context.Context, artifactID uuid.UUID, digests []string) error {
+	if len(digests) == 0 {
+		return nil
+	}
+
+	db := internalctx.GetDb(ctx)
+	for range maxUnreferencedArtifactVersionPasses {
+		cmd, err := db.Exec(
+			ctx,
+			`DELETE FROM ArtifactVersion av
+			WHERE av.artifact_id = @artifactId
+			AND av.name = av.manifest_blob_digest
+			AND av.manifest_blob_digest = any (@digests)
+			AND NOT EXISTS (
+				-- a tag points at it
+				SELECT 1
+				FROM ArtifactVersion tag
+				WHERE tag.artifact_id = av.artifact_id
+				AND tag.manifest_blob_digest = av.manifest_blob_digest
+				AND tag.name <> tag.manifest_blob_digest
+			)
+			AND NOT EXISTS (
+				-- another version references it, e.g. a multi-arch index its children
+				SELECT 1
+				FROM ArtifactVersionPart avp
+				JOIN ArtifactVersion other ON other.id = avp.artifact_version_id
+				WHERE avp.artifact_blob_digest = av.manifest_blob_digest
+				AND other.artifact_id = av.artifact_id
+				AND other.id <> av.id
+			)
+			AND NOT EXISTS (
+				-- an entitlement references it, which ON DELETE CASCADE would silently revoke
+				SELECT 1
+				FROM ArtifactEntitlement_Artifact aea
+				WHERE aea.artifact_version_id = av.id
+			)`,
+			pgx.NamedArgs{"artifactId": artifactID, "digests": digests},
+		)
+		if err != nil {
+			return fmt.Errorf("could not delete unreferenced artifact versions: %w", err)
+		} else if cmd.RowsAffected() == 0 {
+			return nil
+		}
+	}
+
+	internalctx.GetLogger(ctx).Warn("stopped deleting unreferenced artifact versions before the graph was empty",
+		zap.String("artifactId", artifactID.String()), zap.Int("passes", maxUnreferencedArtifactVersionPasses))
+	return nil
+}
+
+// LockArtifactExclusive locks an artifact against a concurrent deletion of one of its tags, which
+// deletes a different row and would therefore not conflict, but whose uncommitted tag each deletion
+// still reads as a reason to keep a manifest. It cannot cover a concurrent push, whose manifests are
+// unreferenced across several requests with no transaction spanning them.
+func LockArtifactExclusive(ctx context.Context, artifactID uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	// Advisory locks share one namespace instance-wide, hence the entity prefix in the key.
+	if _, err := db.Exec(
+		ctx,
+		`SELECT pg_advisory_xact_lock(hashtextextended('Artifact:' || @artifactId::TEXT, 0))`,
+		pgx.NamedArgs{"artifactId": artifactID},
+	); err != nil {
+		return fmt.Errorf("could not lock artifact: %w", err)
+	}
 	return nil
 }
 

@@ -131,6 +131,18 @@ Tag deletion succeeds when all of these conditions are met:
   version, if multiple tags point to it.
 </Aside>
 
+#### What Deleting a Tag Removes
+
+Deleting a tag also deletes the version the tag pointed at, so that its blobs can be reclaimed. For a
+multi-arch image, this extends to the per-architecture manifests the index referenced. A version is only
+deleted when nothing references it any more, that is when no other tag points at it, no other version
+references it (a per-architecture manifest shared with another index is kept), and no entitlement
+references it.
+
+Once a version is deleted, it can no longer be pulled by its digest. The blobs themselves are removed
+by the [blob cleanup job](/docs/self-hosting/maintenance/#database-cleanup-jobs), which a self-hosted
+instance has to schedule.
+
 #### Example: Tag Deletion Scenarios
 
 **Scenario 1: Safe deletion**
