@@ -10,7 +10,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.38
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.60.8
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.107.4
-	github.com/aws/smithy-go v1.28.0
+	github.com/aws/smithy-go v1.28.1
 	github.com/compose-spec/compose-go/v2 v2.14.0
 	github.com/containerd/log v0.1.0
 	github.com/containers/image/v5 v5.36.2
