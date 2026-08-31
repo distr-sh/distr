@@ -9,7 +9,7 @@ golangci-lint = "2.13.2"
 helm-docs = "1.14.2"
 watchexec = "2.7.0"
 pnpm = "11.24.0"
-stripe = "1.50.5"
+stripe = "1.50.6"
 "go:github.com/go-delve/delve/cmd/dlv" = "1.27.1"
 git-lfs = "3.7.1"
 
