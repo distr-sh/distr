@@ -6,7 +6,11 @@ export type AdvisorySeverity = 'none' | 'low' | 'medium' | 'high' | 'critical';
 
 export type AdvisoryVersionRelation = 'affected' | 'fixed';
 
-export type AdvisoryEventType = 'created' | 'status_changed' | 'edited' | 'comment';
+/**
+ * The timeline records what happened to an advisory after it was disclosed, so `published`
+ * is always its first entry. Everything a vendor did while still drafting it is not recorded.
+ */
+export type AdvisoryEventType = 'published' | 'status_changed' | 'edited' | 'comment';
 
 export interface Advisory {
   id: string;

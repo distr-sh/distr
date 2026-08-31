@@ -214,8 +214,7 @@ func createAdvisoryHandler() http.HandlerFunc {
 			if err := applyAdvisoryAssociations(ctx, advisory.ID, request); err != nil {
 				return err
 			}
-			return db.CreateAdvisoryEvent(
-				ctx, advisory.ID, &userID, types.AdvisoryEventTypeCreated, nil)
+			return recordAdvisoryPublication(ctx, &advisory, userID)
 		})
 		if errors.Is(err, apierrors.ErrConflict) {
 			http.Error(w, duplicateCveIDMessage, http.StatusConflict)
@@ -256,17 +255,30 @@ func updateAdvisoryHandler() http.HandlerFunc {
 			return
 		}
 
-		versionsBefore, ok := loadAdvisoryVersionMarkings(w, r, existing.ID)
-		if !ok {
-			return
-		}
+		// An advisory that has not been disclosed yet records nothing, so the change detection
+		// feeding the timeline message is only worth running once it has been.
+		wasPublished := existing.PublishedAt != nil
+		var changes []string
+		var versionsBefore []versionMarking
+		if wasPublished {
+			var ok bool
+			if versionsBefore, ok = loadAdvisoryVersionMarkings(w, r, existing.ID); !ok {
+				return
+			}
 
-		existingReferences, err := db.GetAdvisoryReferences(ctx, existing.ID)
-		if err != nil {
-			log.Error("failed to get advisory references", zap.Error(err))
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			existingReferences, err := db.GetAdvisoryReferences(ctx, existing.ID)
+			if err != nil {
+				log.Error("failed to get advisory references", zap.Error(err))
+				sentry.GetHubFromContext(ctx).CaptureException(err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			changes = slices.Concat(
+				detailChangeParts(existing.Advisory, request),
+				tagChangeParts(existing.Tags, request.Tags),
+				referenceChangeParts(existingReferences, request.References),
+			)
 		}
 
 		severity, _ := types.ParseAdvisorySeverity(request.Severity)
@@ -283,16 +295,15 @@ func updateAdvisoryHandler() http.HandlerFunc {
 			advisory.Status = request.Status
 		}
 
-		changes := detailChangeParts(existing.Advisory, request)
-		changes = append(changes, tagChangeParts(existing.Tags, request.Tags)...)
-		changes = append(changes, referenceChangeParts(existingReferences, request.References)...)
-
 		err = db.RunTxRR(ctx, func(ctx context.Context) error {
 			if err := db.UpdateAdvisory(ctx, &advisory); err != nil {
 				return err
 			}
 			if err := applyAdvisoryAssociations(ctx, advisory.ID, request); err != nil {
 				return err
+			}
+			if !wasPublished {
+				return recordAdvisoryPublication(ctx, &advisory, userID)
 			}
 			// Read back rather than derived from the request, so that the names in the
 			// message come from the database instead of being looked up separately.
@@ -354,14 +365,19 @@ func patchAdvisoryHandler() http.HandlerFunc {
 			return
 		}
 
+		wasPublished := existing.PublishedAt != nil
 		statusChanged := request.Status != nil && *request.Status != existing.Status
 		severityChanged := request.Severity != nil && *request.Severity != existing.Severity
 
 		err = db.RunTxRR(ctx, func(ctx context.Context) error {
-			if err := db.PatchAdvisory(
+			patched, err := db.PatchAdvisory(
 				ctx, existing.ID, existing.OrganizationID, request.Status, request.Severity,
-			); err != nil {
+			)
+			if err != nil {
 				return err
+			}
+			if !wasPublished {
+				return recordAdvisoryPublication(ctx, patched, userID)
 			}
 			if severityChanged {
 				message := fmt.Sprintf("changed the severity from %v to %v", existing.Severity, *request.Severity)
@@ -395,6 +411,20 @@ func createAdvisoryStatusEvent(
 ) error {
 	message := fmt.Sprintf("changed status from %v to %v", before, after)
 	return db.CreateAdvisoryEvent(ctx, advisoryID, &userID, types.AdvisoryEventTypeStatusChanged, &message)
+}
+
+// recordAdvisoryPublication writes the entry that opens the timeline.
+//
+// The timeline is the record of a disclosure and therefore starts at the disclosure: an
+// advisory under triage is rewritten until it is right, and none of that is worth reading
+// afterwards. Callers reach this only while the advisory had not been published before, so
+// one that is still being drafted records nothing at all. Comments are the exception and are
+// always kept, since a vendor writing a note means to keep it.
+func recordAdvisoryPublication(ctx context.Context, advisory *types.Advisory, userID uuid.UUID) error {
+	if advisory.PublishedAt == nil {
+		return nil
+	}
+	return db.CreateAdvisoryEvent(ctx, advisory.ID, &userID, types.AdvisoryEventTypePublished, nil)
 }
 
 func createAdvisoryCommentHandler() http.HandlerFunc {

@@ -158,8 +158,8 @@ export const severitySelectOptions: BadgeSelectOption<AdvisorySeverity>[] = advi
 
 export function eventLabel(type: AdvisoryEventType): string {
   switch (type) {
-    case 'created':
-      return 'created this advisory';
+    case 'published':
+      return 'published this advisory';
     case 'status_changed':
       return 'changed the status';
     case 'edited':

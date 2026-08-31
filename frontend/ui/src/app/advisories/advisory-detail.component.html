@@ -227,7 +227,9 @@
         @if (auth.isVendor()) {
           <app-activity-timeline
             [entries]="timelineEntries()"
-            emptyText="No activity yet."
+            [emptyText]="
+              advisory.publishedAt ? 'No activity yet.' : 'The timeline starts once this advisory is published.'
+            "
             placeholder="Add a note to the timeline"
             [canComment]="canEdit"
             [submitting]="submittingComment()"

@@ -435,30 +435,38 @@ const advisoryStatusTimestamps = `published_at = CASE
 			END`
 
 // PatchAdvisory changes the status, the severity, or both, leaving an absent one as it is.
+// It returns the patched advisory, whose published_at tells the caller whether this write is
+// the one that disclosed it.
 func PatchAdvisory(
 	ctx context.Context,
 	id, orgID uuid.UUID,
 	status *types.AdvisoryStatus,
 	severity *types.AdvisorySeverity,
-) error {
+) (*types.Advisory, error) {
 	db := internalctx.GetDb(ctx)
-	result, err := db.Exec(
+	rows, err := db.Query(
 		ctx,
 		`UPDATE Advisory
 		SET status = coalesce(@status::advisory_status, status),
 			severity = coalesce(@severity::advisory_severity, severity),
 			`+advisoryStatusTimestamps+`,
 			updated_at = now()
-		WHERE id = @id AND organization_id = @orgId`,
+		WHERE id = @id AND organization_id = @orgId
+		RETURNING id, created_at, updated_at, organization_id, created_by_user_account_id,
+			title, description, status, severity, cve_id, published_at, resolved_at`,
 		pgx.NamedArgs{"id": id, "orgId": orgID, "status": status, "severity": severity},
 	)
 	if err != nil {
-		return fmt.Errorf("could not patch advisory: %w", err)
+		return nil, fmt.Errorf("could not patch advisory: %w", err)
 	}
-	if result.RowsAffected() == 0 {
-		return apierrors.ErrNotFound
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.Advisory])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, apierrors.ErrNotFound
+		}
+		return nil, fmt.Errorf("could not patch advisory: %w", err)
 	}
-	return nil
+	return &result, nil
 }
 
 // Tags

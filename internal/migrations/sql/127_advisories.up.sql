@@ -4,7 +4,7 @@ CREATE TYPE advisory_severity AS ENUM ('none', 'low', 'medium', 'high', 'critica
 
 CREATE TYPE advisory_version_relation AS ENUM ('affected', 'fixed');
 
-CREATE TYPE advisory_event_type AS ENUM ('created', 'status_changed', 'edited', 'comment');
+CREATE TYPE advisory_event_type AS ENUM ('published', 'status_changed', 'edited', 'comment');
 
 CREATE TABLE Advisory (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

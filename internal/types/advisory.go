@@ -81,7 +81,7 @@ const (
 type AdvisoryEventType string
 
 const (
-	AdvisoryEventTypeCreated       AdvisoryEventType = "created"
+	AdvisoryEventTypePublished     AdvisoryEventType = "published"
 	AdvisoryEventTypeStatusChanged AdvisoryEventType = "status_changed"
 	AdvisoryEventTypeEdited        AdvisoryEventType = "edited"
 	AdvisoryEventTypeComment       AdvisoryEventType = "comment"
