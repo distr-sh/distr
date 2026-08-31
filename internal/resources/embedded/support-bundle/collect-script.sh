@@ -378,6 +378,8 @@ if [ "$SCRIPT_COUNT" -gt 0 ]; then
       run_custom_script "${_sbase}.sh" > "${_sbase}.raw" 2> "${_sbase}.err" < /dev/null
       _scode=$?
       head -c {{.ResourceMaxBytes}} "${_sbase}.raw" > "${_sbase}.out"
+      # stdout and stderr share the per-resource budget, so one script cannot contribute twice the cap.
+      _sbudget=$(({{.ResourceMaxBytes}} - $(wc -c < "${_sbase}.out")))
       if [ "$(wc -c < "${_sbase}.raw")" -gt {{.ResourceMaxBytes}} ]; then
         printf '\n--- distr: output truncated at %s bytes ---\n' "{{.ResourceMaxBytes}}" >> "${_sbase}.out"
       fi
@@ -386,7 +388,13 @@ if [ "$SCRIPT_COUNT" -gt 0 ]; then
       fi
       if [ -s "${_sbase}.err" ]; then
         printf '\n--- distr: stderr ---\n' >> "${_sbase}.out"
-        head -c {{.ResourceMaxBytes}} "${_sbase}.err" >> "${_sbase}.out"
+        if [ "$_sbudget" -gt 0 ]; then
+          head -c "$_sbudget" "${_sbase}.err" >> "${_sbase}.out"
+        fi
+        if [ "$(wc -c < "${_sbase}.err")" -gt "$_sbudget" ]; then
+          printf '\n--- distr: stderr truncated at %s bytes of total output ---\n' \
+            "{{.ResourceMaxBytes}}" >> "${_sbase}.out"
+        fi
       fi
       SCRIPT_OUTPUT_COUNT=$((SCRIPT_OUTPUT_COUNT + 1))
     fi
