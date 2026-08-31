@@ -28,5 +28,5 @@ dependencies:
     condition: rustfs.enabled
   - name: loki
     repository: oci://ghcr.io/grafana-community/helm-charts
-    version: 18.11.4
+    version: 18.11.7
     condition: loki.enabled
