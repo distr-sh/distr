@@ -38,7 +38,7 @@ func TestGenerateCollectScript_syntax(t *testing.T) {
 				BundleSecret:     "secret",
 				EnvVars:          []types.SupportBundleConfigurationEnvVar{{Name: "DB_HOST"}},
 				Scripts:          scripts,
-				LogTailLines:     new(100),
+				LogTailLines:     100,
 				ResourceMaxBytes: 1024,
 				ScriptTimeout:    time.Minute,
 			})

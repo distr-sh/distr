@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"math"
-	"strconv"
 	"time"
 
 	"github.com/distr-sh/distr/internal/resources"
@@ -19,7 +18,7 @@ type CollectScriptParams struct {
 	BundleSecret     string
 	EnvVars          []types.SupportBundleConfigurationEnvVar
 	Scripts          []types.SupportBundleConfigurationScript
-	LogTailLines     *int
+	LogTailLines     int
 	ResourceMaxBytes int
 	ScriptTimeout    time.Duration
 }
@@ -50,12 +49,6 @@ func GenerateCollectScript(params CollectScriptParams) (string, error) {
 		}
 	}
 
-	// "all" is what docker logs --tail defaults to, so the flag can be rendered unconditionally.
-	logTail := "all"
-	if params.LogTailLines != nil {
-		logTail = strconv.Itoa(*params.LogTailLines)
-	}
-
 	// timeout(1) takes whole seconds, and rounding down could turn a configured limit into 0, which
 	// disables the limit instead of tightening it.
 	scriptTimeoutSeconds := int(math.Ceil(params.ScriptTimeout.Seconds()))
@@ -69,7 +62,7 @@ func GenerateCollectScript(params CollectScriptParams) (string, error) {
 		"Token":                params.BundleSecret,
 		"EnvVars":              params.EnvVars,
 		"Scripts":              scripts,
-		"LogTail":              logTail,
+		"LogTail":              params.LogTailLines,
 		"ResourceMaxBytes":     params.ResourceMaxBytes,
 		"ScriptTimeoutSeconds": scriptTimeoutSeconds,
 	}

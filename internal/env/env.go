@@ -94,7 +94,7 @@ var (
 	metricsEnabled                         bool
 	metricsAddr                            string
 	metricsBearerToken                     *string
-	supportBundleLogTailLines              *int
+	supportBundleLogTailLines              int
 	supportBundleResourceMaxBytes          int
 	supportBundleScriptTimeout             time.Duration
 	lokiURL                                string
@@ -293,7 +293,9 @@ func Initialize() {
 	metricsEnabled = envutil.GetEnvParsedOrDefault("METRICS_ENABLED", strconv.ParseBool, false)
 	metricsAddr = envutil.GetEnvOrDefault("METRICS_ADDR", ":3000", envutil.GetEnvOpts{})
 	metricsBearerToken = envutil.GetEnvOrNil("METRICS_BEARER_TOKEN")
-	supportBundleLogTailLines = envutil.GetEnvParsedOrNil("SUPPORT_BUNDLE_LOG_TAIL_LINES", envparse.PositiveNumber)
+	supportBundleLogTailLines = envutil.GetEnvParsedOrDefault(
+		"SUPPORT_BUNDLE_LOG_TAIL_LINES", envparse.PositiveNumber, 1000,
+	)
 	supportBundleResourceMaxBytes = envutil.GetEnvParsedOrDefault(
 		"SUPPORT_BUNDLE_RESOURCE_MAX_BYTES", envparse.PositiveNumber, 1024*1024,
 	)
@@ -633,9 +635,8 @@ func MetricsBearerToken() *string {
 }
 
 // SupportBundleLogTailLines is the number of container log lines (per container) collected by the
-// support bundle collect script. When nil, the container logs are only limited by
-// SupportBundleResourceMaxBytes.
-func SupportBundleLogTailLines() *int {
+// support bundle collect script.
+func SupportBundleLogTailLines() int {
 	return supportBundleLogTailLines
 }
 
