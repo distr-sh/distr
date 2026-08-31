@@ -295,15 +295,27 @@ fi
 if [ -n "$INCLUDED_CONTAINERS" ]; then
   echo ""
   echo "Collecting and uploading container logs..."
+  _lograw="${_tmpdir}/container_logs.raw"
+  _logout="${_tmpdir}/container_logs.out"
   while IFS="$(printf '\t')" read -r CID CNAME; do
     [ -z "$CID" ] && continue
-    CONTAINER_LOGS=$(docker logs --tail {{.LogTailLines}} "$CID" 2>&1 || true)
-    if [ -n "$CONTAINER_LOGS" ]; then
-      upload_resource "${CNAME}-container-logs" "$CONTAINER_LOGS"
-      echo "  Uploaded logs for $CNAME (last {{.LogTailLines}} lines)"
+    docker logs --tail {{.LogTail}} "$CID" > "$_lograw" 2>&1 || true
+    if [ -s "$_lograw" ]; then
+      # Logs are cut off at the front, unlike script output: the most recent lines matter most.
+      if [ "$(wc -c < "$_lograw")" -gt {{.ResourceMaxBytes}} ]; then
+        printf '%s\n' "--- distr: earlier output truncated at {{.ResourceMaxBytes}} bytes ---" > "$_logout"
+        tail -c {{.ResourceMaxBytes}} "$_lograw" >> "$_logout"
+        _lognote=" (truncated to {{.ResourceMaxBytes}} bytes)"
+      else
+        cat "$_lograw" > "$_logout"
+        _lognote=""
+      fi
+      upload_resource_file "${CNAME}-container-logs" "$_logout"
+      echo "  Uploaded logs for $CNAME${_lognote}"
     else
       echo "  No logs available for $CNAME"
     fi
+    rm -f "$_lograw" "$_logout"
   done <<EOF_INCLUDED
 $INCLUDED_CONTAINERS
 EOF_INCLUDED
@@ -365,16 +377,16 @@ if [ "$SCRIPT_COUNT" -gt 0 ]; then
       # Custom scripts must not consume the stdin the collector reads its prompts from.
       run_custom_script "${_sbase}.sh" > "${_sbase}.raw" 2> "${_sbase}.err" < /dev/null
       _scode=$?
-      head -c {{.ScriptOutputMaxBytes}} "${_sbase}.raw" > "${_sbase}.out"
-      if [ "$(wc -c < "${_sbase}.raw")" -gt {{.ScriptOutputMaxBytes}} ]; then
-        printf '\n--- distr: output truncated at %s bytes ---\n' "{{.ScriptOutputMaxBytes}}" >> "${_sbase}.out"
+      head -c {{.ResourceMaxBytes}} "${_sbase}.raw" > "${_sbase}.out"
+      if [ "$(wc -c < "${_sbase}.raw")" -gt {{.ResourceMaxBytes}} ]; then
+        printf '\n--- distr: output truncated at %s bytes ---\n' "{{.ResourceMaxBytes}}" >> "${_sbase}.out"
       fi
       if [ "$_scode" -ne 0 ]; then
         printf '\n--- distr: script exited with code %s ---\n' "$_scode" >> "${_sbase}.out"
       fi
       if [ -s "${_sbase}.err" ]; then
         printf '\n--- distr: stderr ---\n' >> "${_sbase}.out"
-        head -c {{.ScriptOutputMaxBytes}} "${_sbase}.err" >> "${_sbase}.out"
+        head -c {{.ResourceMaxBytes}} "${_sbase}.err" >> "${_sbase}.out"
       fi
       SCRIPT_OUTPUT_COUNT=$((SCRIPT_OUTPUT_COUNT + 1))
     fi

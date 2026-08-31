@@ -94,8 +94,8 @@ var (
 	metricsEnabled                         bool
 	metricsAddr                            string
 	metricsBearerToken                     *string
-	supportBundleLogTailLines              int
-	supportBundleScriptOutputMaxBytes      int
+	supportBundleLogTailLines              *int
+	supportBundleResourceMaxBytes          int
 	lokiURL                                string
 	lokiBearerToken                        *string
 	lokiBasicAuthUsername                  *string
@@ -292,11 +292,9 @@ func Initialize() {
 	metricsEnabled = envutil.GetEnvParsedOrDefault("METRICS_ENABLED", strconv.ParseBool, false)
 	metricsAddr = envutil.GetEnvOrDefault("METRICS_ADDR", ":3000", envutil.GetEnvOpts{})
 	metricsBearerToken = envutil.GetEnvOrNil("METRICS_BEARER_TOKEN")
-	supportBundleLogTailLines = envutil.GetEnvParsedOrDefault(
-		"SUPPORT_BUNDLE_LOG_TAIL_LINES", envparse.PositiveNumber, 1000,
-	)
-	supportBundleScriptOutputMaxBytes = envutil.GetEnvParsedOrDefault(
-		"SUPPORT_BUNDLE_SCRIPT_OUTPUT_MAX_BYTES", envparse.PositiveNumber, 1024*1024,
+	supportBundleLogTailLines = envutil.GetEnvParsedOrNil("SUPPORT_BUNDLE_LOG_TAIL_LINES", envparse.PositiveNumber)
+	supportBundleResourceMaxBytes = envutil.GetEnvParsedOrDefault(
+		"SUPPORT_BUNDLE_RESOURCE_MAX_BYTES", envparse.PositiveNumber, 1024*1024,
 	)
 
 	lokiURL = envutil.RequireEnv("LOKI_URL")
@@ -630,16 +628,17 @@ func MetricsBearerToken() *string {
 	return metricsBearerToken
 }
 
-// SupportBundleLogTailLines is the number of container log lines (per container)
-// collected by the support bundle collect script.
-func SupportBundleLogTailLines() int {
+// SupportBundleLogTailLines is the number of container log lines (per container) collected by the
+// support bundle collect script. When nil, the container logs are only limited by
+// SupportBundleResourceMaxBytes.
+func SupportBundleLogTailLines() *int {
 	return supportBundleLogTailLines
 }
 
-// SupportBundleScriptOutputMaxBytes is the maximum amount of output collected per custom script
-// by the support bundle collect script.
-func SupportBundleScriptOutputMaxBytes() int {
-	return supportBundleScriptOutputMaxBytes
+// SupportBundleResourceMaxBytes is the maximum size of a single resource collected by the
+// support bundle collect script.
+func SupportBundleResourceMaxBytes() int {
+	return supportBundleResourceMaxBytes
 }
 
 // LokiURL is the base URL of the Loki instance storing deployment and deployment

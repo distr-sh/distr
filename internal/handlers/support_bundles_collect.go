@@ -88,13 +88,13 @@ func getCollectScriptHandler() http.HandlerFunc {
 		}
 
 		script, err := supportbundle.GenerateCollectScript(supportbundle.CollectScriptParams{
-			BaseURL:              baseURL,
-			BundleID:             bundle.ID,
-			BundleSecret:         bundleSecret,
-			EnvVars:              envVars,
-			Scripts:              scripts,
-			LogTailLines:         env.SupportBundleLogTailLines(),
-			ScriptOutputMaxBytes: env.SupportBundleScriptOutputMaxBytes(),
+			BaseURL:          baseURL,
+			BundleID:         bundle.ID,
+			BundleSecret:     bundleSecret,
+			EnvVars:          envVars,
+			Scripts:          scripts,
+			LogTailLines:     env.SupportBundleLogTailLines(),
+			ResourceMaxBytes: env.SupportBundleResourceMaxBytes(),
 		})
 		if err != nil {
 			log.Error("failed to generate collect script", zap.Error(err))

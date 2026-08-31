@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
+	"strconv"
 
 	"github.com/distr-sh/distr/internal/resources"
 	"github.com/distr-sh/distr/internal/types"
@@ -11,13 +12,13 @@ import (
 )
 
 type CollectScriptParams struct {
-	BaseURL              string
-	BundleID             uuid.UUID
-	BundleSecret         string
-	EnvVars              []types.SupportBundleConfigurationEnvVar
-	Scripts              []types.SupportBundleConfigurationScript
-	LogTailLines         int
-	ScriptOutputMaxBytes int
+	BaseURL          string
+	BundleID         uuid.UUID
+	BundleSecret     string
+	EnvVars          []types.SupportBundleConfigurationEnvVar
+	Scripts          []types.SupportBundleConfigurationScript
+	LogTailLines     *int
+	ResourceMaxBytes int
 }
 
 // collectScriptCustomScript holds a custom script in the form the template needs. Every field is
@@ -46,14 +47,20 @@ func GenerateCollectScript(params CollectScriptParams) (string, error) {
 		}
 	}
 
+	// "all" is what docker logs --tail defaults to, so the flag can be rendered unconditionally.
+	logTail := "all"
+	if params.LogTailLines != nil {
+		logTail = strconv.Itoa(*params.LogTailLines)
+	}
+
 	data := map[string]any{
-		"BundleID":             params.BundleID.String(),
-		"BaseURL":              apiBase,
-		"Token":                params.BundleSecret,
-		"EnvVars":              params.EnvVars,
-		"Scripts":              scripts,
-		"LogTailLines":         params.LogTailLines,
-		"ScriptOutputMaxBytes": params.ScriptOutputMaxBytes,
+		"BundleID":         params.BundleID.String(),
+		"BaseURL":          apiBase,
+		"Token":            params.BundleSecret,
+		"EnvVars":          params.EnvVars,
+		"Scripts":          scripts,
+		"LogTail":          logTail,
+		"ResourceMaxBytes": params.ResourceMaxBytes,
 	}
 
 	tmpl, err := resources.GetTemplate("support-bundle/collect-script.sh")

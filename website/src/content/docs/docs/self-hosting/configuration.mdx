@@ -140,10 +140,10 @@ their own once a record is fixed. Serving requests on a domain does not depend o
 
 ## Support Bundles
 
-| Variable                                 | Required | Default   | Description                                                                                   |
-| ---------------------------------------- | -------- | --------- | --------------------------------------------------------------------------------------------- |
-| `SUPPORT_BUNDLE_LOG_TAIL_LINES`          | no       | `1000`    | Number of container log lines (per container) collected by the support bundle collect script. |
-| `SUPPORT_BUNDLE_SCRIPT_OUTPUT_MAX_BYTES` | no       | `1048576` | Maximum amount of output collected per custom script by the support bundle collect script.    |
+| Variable                            | Required | Default   | Description                                                                                                                                             |
+| ----------------------------------- | -------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SUPPORT_BUNDLE_RESOURCE_MAX_BYTES` | no       | `1048576` | Maximum size of a single resource collected by the support bundle collect script, e.g. the logs of one container or the output of one script.           |
+| `SUPPORT_BUNDLE_LOG_TAIL_LINES`     | no       | —         | Additionally limits container logs to this number of lines per container. If unset, all lines are collected, up to `SUPPORT_BUNDLE_RESOURCE_MAX_BYTES`. |
 
 ## Log Processing (Loki)
 

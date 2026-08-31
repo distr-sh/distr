@@ -33,6 +33,8 @@ Support Bundles give your customers a structured way to share diagnostic data wh
 4. Once the script finishes, the bundle appears in the Vendor Portal with all collected resources attached.
 5. You and the customer can exchange comments on the bundle. When the issue is resolved, you mark it as resolved.
 
+Every collected resource is limited to 1 MB. Container logs keep the most recent 1 MB, script output the first, and a truncated resource says so in its content.
+
 ## Vendor setup
 
 ### Configure environment variables
@@ -70,7 +72,7 @@ Use the **Enabled** toggle to park a script without deleting it. Disabled script
   include credentials in them — anyone who can collect a bundle can read them.
 </Aside>
 
-If a script fails or writes to standard error, its exit code and standard error are appended to the collected output so you can tell an empty result apart from a broken script. Output is truncated at 1 MB per script.
+If a script fails or writes to standard error, its exit code and standard error are appended to the collected output so you can tell an empty result apart from a broken script.
 
 ### Enable the feature for a customer
 

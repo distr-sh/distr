@@ -32,13 +32,13 @@ func TestGenerateCollectScript_syntax(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			g := NewWithT(t)
 			script, err := supportbundle.GenerateCollectScript(supportbundle.CollectScriptParams{
-				BaseURL:              "https://app.example.com",
-				BundleID:             uuid.New(),
-				BundleSecret:         "secret",
-				EnvVars:              []types.SupportBundleConfigurationEnvVar{{Name: "DB_HOST"}},
-				Scripts:              scripts,
-				LogTailLines:         100,
-				ScriptOutputMaxBytes: 1024,
+				BaseURL:          "https://app.example.com",
+				BundleID:         uuid.New(),
+				BundleSecret:     "secret",
+				EnvVars:          []types.SupportBundleConfigurationEnvVar{{Name: "DB_HOST"}},
+				Scripts:          scripts,
+				LogTailLines:     new(100),
+				ResourceMaxBytes: 1024,
 			})
 			g.Expect(err).ToNot(HaveOccurred())
 
