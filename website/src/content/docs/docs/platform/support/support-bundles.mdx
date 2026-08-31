@@ -33,7 +33,7 @@ Support Bundles give your customers a structured way to share diagnostic data wh
 4. Once the script finishes, the bundle appears in the Vendor Portal with all collected resources attached.
 5. You and the customer can exchange comments on the bundle. When the issue is resolved, you mark it as resolved.
 
-Every collected resource is limited to 1 MB. Container logs keep the most recent 1 MB, script output the first, and a truncated resource says so in its content.
+Every collected resource is limited to 1 MiB by default. Container logs keep the most recent output, script output the first, and a truncated resource says so in its content. On a self-hosted instance, the limit can be changed with [`SUPPORT_BUNDLE_RESOURCE_MAX_BYTES`](/docs/self-hosting/configuration/#support-bundles).
 
 ## Vendor setup
 
