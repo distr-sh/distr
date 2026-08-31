@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/distr-sh/distr/internal/supportbundle"
 	"github.com/distr-sh/distr/internal/types"
@@ -39,6 +40,7 @@ func TestGenerateCollectScript_syntax(t *testing.T) {
 				Scripts:          scripts,
 				LogTailLines:     new(100),
 				ResourceMaxBytes: 1024,
+				ScriptTimeout:    time.Minute,
 			})
 			g.Expect(err).ToNot(HaveOccurred())
 

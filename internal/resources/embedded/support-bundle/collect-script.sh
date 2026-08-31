@@ -44,15 +44,15 @@ upload_resource() {
 }
 {{if .Scripts}}
 # Run a custom script with the interpreter named in its shebang, falling back to sh. The
-# interpreter is deliberately unquoted so that "#!/usr/bin/env bash" splits into command and
-# argument. Executing the file directly instead would fail when the temp dir is mounted noexec.
+# interpreter and the timeout prefix are deliberately unquoted so that "#!/usr/bin/env bash" splits
+# into command and argument. Executing the file directly instead would fail when the temp dir is
+# mounted noexec.
 run_custom_script() {
   _interp=$(sed -n '1s/^#![[:space:]]*//p' "$1" | tr -d '\r')
-  if [ -n "$_interp" ] && command -v "${_interp%% *}" > /dev/null 2>&1; then
-    $_interp "$1"
-  else
-    sh "$1"
+  if [ -z "$_interp" ] || ! command -v "${_interp%% *}" > /dev/null 2>&1; then
+    _interp=sh
   fi
+  $SCRIPT_TIMEOUT $_interp "$1"
 }
 {{end}}
 # Parse a comma-separated list of numbers and validate each is in range 1..max.
@@ -329,10 +329,19 @@ fi
 echo ""
 echo "Preparing custom scripts..."
 SCRIPT_COUNT=0
+SCRIPT_TIMEOUT=""
 if ! command -v base64 > /dev/null 2>&1; then
   echo "  Warning: base64 is not available, skipping custom scripts"
 else
   mkdir -p "${_tmpdir}/scripts"
+{{- if .ScriptTimeoutSeconds}}
+  # timeout is in coreutils and busybox, but not on every host (macOS ships without it).
+  if command -v timeout > /dev/null 2>&1; then
+    SCRIPT_TIMEOUT="timeout -k 5 {{.ScriptTimeoutSeconds}}"
+  else
+    echo "  Warning: timeout is not available, scripts run without a time limit"
+  fi
+{{- end}}
 {{- range .Scripts}}
   SCRIPT_COUNT=$((SCRIPT_COUNT + 1))
   printf '%s' '{{.NameBase64}}' | base64 -d > "${_tmpdir}/scripts/${SCRIPT_COUNT}.name"
@@ -383,7 +392,11 @@ if [ "$SCRIPT_COUNT" -gt 0 ]; then
       if [ "$(wc -c < "${_sbase}.raw")" -gt {{.ResourceMaxBytes}} ]; then
         printf '\n--- distr: output truncated at %s bytes ---\n' "{{.ResourceMaxBytes}}" >> "${_sbase}.out"
       fi
-      if [ "$_scode" -ne 0 ]; then
+      # coreutils reports a timeout as 124, and as 128+n when the script had to be signalled.
+      if [ -n "$SCRIPT_TIMEOUT" ] && { [ "$_scode" -eq 124 ] || [ "$_scode" -eq 137 ] || [ "$_scode" -eq 143 ]; }; then
+        printf '\n--- distr: script timed out after %ss ---\n' \
+          "{{.ScriptTimeoutSeconds}}" >> "${_sbase}.out"
+      elif [ "$_scode" -ne 0 ]; then
         printf '\n--- distr: script exited with code %s ---\n' "$_scode" >> "${_sbase}.out"
       fi
       if [ -s "${_sbase}.err" ]; then

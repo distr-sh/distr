@@ -95,6 +95,7 @@ func getCollectScriptHandler() http.HandlerFunc {
 			Scripts:          scripts,
 			LogTailLines:     env.SupportBundleLogTailLines(),
 			ResourceMaxBytes: env.SupportBundleResourceMaxBytes(),
+			ScriptTimeout:    env.SupportBundleScriptTimeout(),
 		})
 		if err != nil {
 			log.Error("failed to generate collect script", zap.Error(err))

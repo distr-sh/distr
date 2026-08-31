@@ -74,6 +74,8 @@ Use the **Enabled** toggle to park a script without deleting it. Disabled script
 
 If a script fails or writes to standard error, its exit code and standard error are appended to the collected output so you can tell an empty result apart from a broken script.
 
+A script is stopped after one minute so that a command waiting for something that never happens cannot leave the customer with a collection that never finishes. The collected output says so when a script was stopped, and self-hosted instances can change the limit with [`SUPPORT_BUNDLE_SCRIPT_TIMEOUT`](/docs/self-hosting/configuration/#support-bundles). Write scripts that finish quickly and never wait for input.
+
 ### Enable the feature for a customer
 
 Support Bundles must be enabled per customer organization before customers can create bundles. See [Enabling features per customer](/docs/platform/customer-management/#enabling-and-disabling-features-per-customer) for how to do this.
