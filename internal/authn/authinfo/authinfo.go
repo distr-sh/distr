@@ -13,6 +13,9 @@ type AuthInfo interface {
 	CurrentOrgID() *uuid.UUID
 	CurrentCustomerOrgID() *uuid.UUID
 	CurrentPartnerOrgID() *uuid.UUID
+	// CurrentDeploymentTargetID returns the deployment target an agent token was issued for, and nil for
+	// every credential that does not belong to an agent.
+	CurrentDeploymentTargetID() *uuid.UUID
 	CurrentUserEmailVerified() bool
 	// TokenScope returns the purpose a special, unscoped token was minted for, or the empty
 	// scope for regular login tokens, PATs and agent tokens.

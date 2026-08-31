@@ -18,12 +18,11 @@ func GetLatestPullOfArtifactByCustomerOrganization(
 	db := internalctx.GetDb(ctx)
 	if rows, err := db.Query(ctx, `
 		SELECT av.name
-		FROM Organization_UserAccount oua
-		JOIN ArtifactVersionPull avpl ON avpl.useraccount_id = oua.user_account_id
+		FROM ArtifactVersionPull avpl
 		JOIN ArtifactVersion av ON av.id = avpl.artifact_version_id
 		WHERE av.artifact_id = @artifactId
-			AND oua.customer_organization_id = @customerOrganizationId
 			AND av.name NOT LIKE '%:%'
+			AND `+artifactPullOfCustomerOrgExpr+`
 		ORDER BY avpl.created_at DESC
 		LIMIT 1;
 	`, pgx.NamedArgs{
