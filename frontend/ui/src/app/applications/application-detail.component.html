@@ -492,7 +492,7 @@
                       <input
                         type="text"
                         [formControl]="resource.controls.name"
-                        class="distr-input distr-input-raised bg-white" />
+                        class="distr-input distr-input-raised bg-white dark:bg-gray-600" />
                       @if (resource.controls.name.invalid && resource.controls.name.touched) {
                         <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
                       }
@@ -519,7 +519,7 @@
                         <textarea
                           [formControl]="resource.controls.content"
                           rows="6"
-                          class="distr-input distr-input-raised bg-white"></textarea>
+                          class="distr-input distr-input-raised bg-white dark:bg-gray-600"></textarea>
                       }
                       @if (resource.controls.content.invalid && resource.controls.content.touched) {
                         <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
