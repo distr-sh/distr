@@ -18,7 +18,7 @@
                   autotrim
                   id="email"
                   autocomplete="email"
-                  class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  class="distr-input"
                   appPlaceholder="email"
                   required />
                 @if (emailPasswordForm.controls.email.touched && emailPasswordForm.controls.email.errors) {
@@ -34,7 +34,7 @@
                   autocomplete="current-password"
                   placeholder="Your password"
                   autotrim
-                  class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  class="distr-input"
                   required />
                 @if (emailPasswordForm.controls.password.touched && emailPasswordForm.controls.password.errors) {
                   <div class="text-sm text-red-500">Please enter your password</div>
@@ -83,12 +83,7 @@
             <form class="space-y-4 md:space-y-6" [formGroup]="mfaCodeForm" (ngSubmit)="submit()">
               <div>
                 <label for="email" class="distr-label mb-2">Your email</label>
-                <input
-                  type="email"
-                  id="email"
-                  [value]="emailPasswordForm.value.email"
-                  disabled
-                  class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 disabled:opacity-50" />
+                <input type="email" id="email" [value]="emailPasswordForm.value.email" disabled class="distr-input" />
               </div>
               <div>
                 <label for="totp" class="distr-label mb-2">MFA Code</label>
@@ -103,7 +98,7 @@
                     id="totp"
                     autocomplete="one-time-code"
                     autotrim
-                    class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    class="distr-input"
                     placeholder="Enter code"
                     required />
                 </div>

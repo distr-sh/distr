@@ -577,10 +577,7 @@
         </div>
         <div>
           <label for="category" class="distr-label mb-2">Type *</label>
-          <select
-            formControlName="type"
-            id="category"
-            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:select-none">
+          <select formControlName="type" id="category" class="distr-input">
             <option value="docker">Docker</option>
             <option value="kubernetes">Kubernetes</option>
           </select>
@@ -588,19 +585,11 @@
         @if (editForm.controls.type.value === 'kubernetes') {
           <div>
             <label for="namespace" class="distr-label mb-2"> Namespace </label>
-            <input
-              type="text"
-              id="namespace"
-              formControlName="namespace"
-              class="distr-input disabled:opacity-50 disabled:cursor-not-allowed disabled:select-none" />
+            <input type="text" id="namespace" formControlName="namespace" class="distr-input" />
           </div>
           <div>
             <label for="scope" class="distr-label mb-2">Scope</label>
-            <input
-              type="text"
-              id="scope"
-              formControlName="scope"
-              class="distr-input disabled:opacity-50 disabled:cursor-not-allowed disabled:select-none" />
+            <input type="text" id="scope" formControlName="scope" class="distr-input" />
           </div>
         }
 
@@ -668,7 +657,7 @@
                 type="datetime-local"
                 id="deployment-logs-after"
                 formControlName="deploymentLogsAfter"
-                class="bg-gray-50 border leading-none border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+                class="distr-input leading-none" />
 
               <div class="flex gap-1 mt-1">
                 <button
@@ -739,7 +728,7 @@
               placeholder="unix:///var/run/docker.sock"
               autotrim
               autocomplete="off"
-              class="distr-input disabled:opacity-50 disabled:cursor-not-allowed disabled:select-none" />
+              class="distr-input" />
             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
               The Docker socket on the host that the agent should use. Defaults to
               <code>unix:///var/run/docker.sock</code>.
@@ -771,11 +760,7 @@
           <ng-container formGroupName="resources">
             <div>
               <label for="cpuRequest" class="distr-label mb-2">CPU Request</label>
-              <input
-                type="text"
-                id="cpuRequest"
-                formControlName="cpuRequest"
-                class="distr-input disabled:opacity-50 disabled:cursor-not-allowed disabled:select-none" />
+              <input type="text" id="cpuRequest" formControlName="cpuRequest" class="distr-input" />
               @if (
                 editForm.controls.resources.controls.cpuRequest.invalid &&
                 editForm.controls.resources.controls.cpuRequest.touched
@@ -788,11 +773,7 @@
 
             <div>
               <label for="memoryRequest" class="distr-label mb-2">Memory Request</label>
-              <input
-                type="text"
-                id="memoryRequest"
-                formControlName="memoryRequest"
-                class="distr-input disabled:opacity-50 disabled:cursor-not-allowed disabled:select-none" />
+              <input type="text" id="memoryRequest" formControlName="memoryRequest" class="distr-input" />
               @if (
                 editForm.controls.resources.controls.memoryRequest.invalid &&
                 editForm.controls.resources.controls.memoryRequest.touched
@@ -805,11 +786,7 @@
 
             <div>
               <label for="cpuLimit" class="distr-label mb-2">CPU Limit</label>
-              <input
-                type="text"
-                id="cpuLimit"
-                formControlName="cpuLimit"
-                class="distr-input disabled:opacity-50 disabled:cursor-not-allowed disabled:select-none" />
+              <input type="text" id="cpuLimit" formControlName="cpuLimit" class="distr-input" />
               @if (
                 editForm.controls.resources.controls.cpuLimit.invalid &&
                 editForm.controls.resources.controls.cpuLimit.touched
@@ -822,11 +799,7 @@
 
             <div>
               <label for="memoryLimit" class="distr-label mb-2">Memory Limit</label>
-              <input
-                type="text"
-                id="memoryLimit"
-                formControlName="memoryLimit"
-                class="distr-input disabled:opacity-50 disabled:cursor-not-allowed disabled:select-none" />
+              <input type="text" id="memoryLimit" formControlName="memoryLimit" class="distr-input" />
               @if (
                 editForm.controls.resources.controls.memoryLimit.invalid &&
                 editForm.controls.resources.controls.memoryLimit.touched
@@ -887,7 +860,7 @@
             placeholder="Enter notes"
             formControlName="notes"
             rows="15"
-            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full dark:bg-gray-700 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"></textarea>
+            class="distr-input"></textarea>
         </div>
       </div>
       @if (auth.hasAnyRole('read_write', 'admin')) {

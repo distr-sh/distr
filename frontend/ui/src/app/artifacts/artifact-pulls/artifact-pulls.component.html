@@ -9,7 +9,7 @@
           type="date"
           formControlName="from"
           [max]="filterForm.controls.to.value || today"
-          class="min-w-32 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 dark:[color-scheme:dark]" />
+          class="distr-input w-auto min-w-32 p-2 dark:[color-scheme:dark]" />
       </div>
       <div>
         <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">To</label>
@@ -18,14 +18,12 @@
           formControlName="to"
           [min]="filterForm.controls.from.value || ''"
           [max]="today"
-          class="min-w-32 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 dark:[color-scheme:dark]" />
+          class="distr-input w-auto min-w-32 p-2 dark:[color-scheme:dark]" />
       </div>
       @if (filterOptions(); as options) {
         <div>
           <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">Customer</label>
-          <select
-            formControlName="customerOrganizationId"
-            class="min-w-32 max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+          <select formControlName="customerOrganizationId" class="distr-input w-auto min-w-32 max-w-48 p-2">
             <option value="">All</option>
             @for (opt of options.customerOrganizations; track opt.id) {
               <option [value]="opt.id">{{ opt.name }}</option>
@@ -34,9 +32,7 @@
         </div>
         <div>
           <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">User</label>
-          <select
-            formControlName="userAccountId"
-            class="min-w-32 max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+          <select formControlName="userAccountId" class="distr-input w-auto min-w-32 max-w-48 p-2">
             <option value="">All</option>
             @for (opt of options.userAccounts; track opt.id) {
               <option [value]="opt.id">{{ opt.name }}</option>
@@ -45,9 +41,7 @@
         </div>
         <div>
           <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">Deployment</label>
-          <select
-            formControlName="deploymentTargetId"
-            class="min-w-32 max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+          <select formControlName="deploymentTargetId" class="distr-input w-auto min-w-32 max-w-48 p-2">
             <option value="">All</option>
             @for (opt of options.deploymentTargets; track opt.id) {
               <option [value]="opt.id">{{ opt.name }}</option>
@@ -56,9 +50,7 @@
         </div>
         <div>
           <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">Address</label>
-          <select
-            formControlName="remoteAddress"
-            class="min-w-32 max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+          <select formControlName="remoteAddress" class="distr-input w-auto min-w-32 max-w-48 p-2">
             <option value="">All</option>
             @for (addr of options.remoteAddresses; track addr) {
               <option [value]="addr">{{ addr }}</option>
@@ -67,9 +59,7 @@
         </div>
         <div>
           <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">Artifact</label>
-          <select
-            formControlName="artifactId"
-            class="min-w-32 max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+          <select formControlName="artifactId" class="distr-input w-auto min-w-32 max-w-48 p-2">
             <option value="">All</option>
             @for (opt of options.artifacts; track opt.id) {
               <option [value]="opt.id">{{ opt.name }}</option>
@@ -79,9 +69,7 @@
         @if (filterForm.controls.artifactId.value) {
           <div>
             <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">Version</label>
-            <select
-              formControlName="artifactVersionId"
-              class="min-w-32 max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+            <select formControlName="artifactVersionId" class="distr-input w-auto min-w-32 max-w-48 p-2">
               <option value="">All</option>
               @for (opt of versionOptions(); track opt.id) {
                 <option [value]="opt.id">{{ formatVersionName(opt.name) }}</option>
