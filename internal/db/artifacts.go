@@ -70,6 +70,17 @@ const (
 		v.artifact_id `
 )
 
+// An ArtifactVersion is named either after a tag or, for the row that makes a manifest pullable by
+// digest, after its own manifest digest. Every push creates both, and these expressions are the only
+// place that tells the two apart.
+func artifactVersionIsTagExpr(alias string) string {
+	return alias + ".name <> " + alias + ".manifest_blob_digest"
+}
+
+func artifactVersionIsDigestExpr(alias string) string {
+	return alias + ".name = " + alias + ".manifest_blob_digest"
+}
+
 func GetArtifactsByOrgID(ctx context.Context, orgID uuid.UUID) ([]types.ArtifactWithDownloads, error) {
 	db := internalctx.GetDb(ctx)
 	if artifactRows, err := db.Query(ctx, `
@@ -248,7 +259,7 @@ func GetVersionsForArtifact(ctx context.Context, artifactID uuid.UUID, customerO
 					FROM ArtifactVersion avt
 					WHERE avt.manifest_blob_digest = av.manifest_blob_digest
 					AND avt.artifact_id = av.artifact_id
-					AND avt.name NOT LIKE '%:%'
+					AND `+artifactVersionIsTagExpr("avt")+`
 				), ARRAY []::RECORD[]) AS tags,
 				av.manifest_blob_size + coalesce(max(avp.total_parts_size), 0) AS size,
 				`+artifactDownloadsOutExpr+`,
@@ -291,7 +302,7 @@ func GetVersionsForArtifact(ctx context.Context, artifactID uuid.UUID, customerO
 				ON oua_dl.organization_id = a.organization_id
 					AND oua_dl.user_account_id = avpl.useraccount_id
 			WHERE av.artifact_id = @artifactId
-			AND av.name LIKE '%:%'
+			AND `+artifactVersionIsDigestExpr("av")+`
 			AND (
 				@isVendorUser
 				-- only check entitlement if there is at least one entitlement in this organization
@@ -338,7 +349,7 @@ func GetVersionsForArtifact(ctx context.Context, artifactID uuid.UUID, customerO
 				FROM ArtifactVersion avt
 				WHERE avt.manifest_blob_digest = av.manifest_blob_digest
 				AND avt.artifact_id = av.artifact_id
-				AND avt.name NOT LIKE '%:%'
+				AND `+artifactVersionIsTagExpr("avt")+`
 			)
 			GROUP BY av.id, av.created_at, av.manifest_blob_digest, a.organization_id
 			ORDER BY av.created_at DESC
@@ -834,7 +845,7 @@ func EnsureArtifactTagLimitForInsert(ctx context.Context, orgID uuid.UUID) (bool
 		FROM ArtifactVersion av
 		JOIN Artifact a on av.artifact_id = a.id
 		JOIN Organization o ON a.organization_id = o.id
-		WHERE o.id = @orgId AND av.name NOT LIKE '%:%'
+		WHERE o.id = @orgId AND `+artifactVersionIsTagExpr("av")+`
 		GROUP BY o.id;`,
 		pgx.NamedArgs{
 			"orgId":        orgID,
@@ -1173,48 +1184,40 @@ func CheckArtifactVersionDeletionForEntitlements(
 ) error {
 	db := internalctx.GetDb(ctx)
 
-	// Find the SHA version (where name = manifest_blob_digest, i.e., starts with "sha256:")
-	var shaVersion *types.ArtifactVersion
+	var digestVersion *types.ArtifactVersion
 	for i := range versionsWithSameDigest {
-		if versionsWithSameDigest[i].Name == string(versionsWithSameDigest[i].ManifestBlobDigest) {
-			shaVersion = &versionsWithSameDigest[i]
+		if versionsWithSameDigest[i].IsDigestVersion() {
+			digestVersion = &versionsWithSameDigest[i]
 			break
 		}
 	}
 
-	// If there's no SHA version, we can't have entitlement references to it
-	if shaVersion == nil {
-		// Still check for all-versions entitlements
+	if digestVersion == nil {
 		return checkAllVersionsEntitlement(ctx, artifactID)
 	}
 
-	// Check if the SHA version is referenced in any entitlement
 	var isReferencedCount int64
 	err := db.QueryRow(ctx, `
 		SELECT count(*)
 		FROM ArtifactEntitlement_Artifact ala
-		WHERE ala.artifact_version_id = @shaVersionId`,
+		WHERE ala.artifact_version_id = @digestVersionId`,
 		pgx.NamedArgs{
-			"shaVersionId": shaVersion.ID,
+			"digestVersionId": digestVersion.ID,
 		},
 	).Scan(&isReferencedCount)
 	if err != nil {
 		return fmt.Errorf("could not check entitlement references: %w", err)
 	}
 
-	// If SHA version is referenced in entitlements
 	if isReferencedCount > 0 {
-		// Count other non-SHA tags pointing to the same digest (excluding the tag being deleted)
-		otherNonSHATags := 0
+		otherTags := 0
 		for _, v := range versionsWithSameDigest {
-			// Count non-SHA tags (names that don't contain ":")
-			if v.Name != version.Name && !isDigestName(v.Name) {
-				otherNonSHATags++
+			if v.Name != version.Name && !v.IsDigestVersion() {
+				otherTags++
 			}
 		}
 
-		// If there are no other non-SHA tags, deletion should fail
-		if otherNonSHATags == 0 {
+		if otherTags == 0 {
 			return apierrors.NewBadRequest(
 				"cannot delete tag: the manifest digest is referenced in one or more entitlements " +
 					"and this is the last non-SHA tag pointing to it",
@@ -1222,7 +1225,6 @@ func CheckArtifactVersionDeletionForEntitlements(
 		}
 	}
 
-	// Check for all-versions entitlements
 	return checkAllVersionsEntitlement(ctx, artifactID)
 }
 
@@ -1250,11 +1252,6 @@ func checkAllVersionsEntitlement(ctx context.Context, artifactID uuid.UUID) erro
 	return nil
 }
 
-// isDigestName checks if a version name is a digest (contains ":")
-func isDigestName(name string) bool {
-	return len(name) > 0 && strings.Contains(name, ":")
-}
-
 func DeleteArtifactWithID(ctx context.Context, id uuid.UUID) error {
 	db := internalctx.GetDb(ctx)
 	cmd, err := db.Exec(ctx, `DELETE FROM Artifact WHERE id = @id`, pgx.NamedArgs{"id": id})
@@ -1276,14 +1273,12 @@ func DeleteArtifactWithID(ctx context.Context, id uuid.UUID) error {
 func IsLastTagOfArtifact(ctx context.Context, artifactID uuid.UUID, tagName string) (bool, error) {
 	db := internalctx.GetDb(ctx)
 
-	// Count all non-SHA tags for this artifact
-	// Tags are ArtifactVersion records where name does NOT contain a colon
 	var tagCount int64
 	err := db.QueryRow(ctx, `
 		SELECT COUNT(*)
 		FROM ArtifactVersion
 		WHERE artifact_id = @artifactId
-		AND name NOT LIKE '%:%'`,
+		AND `+artifactVersionIsTagExpr("ArtifactVersion"),
 		pgx.NamedArgs{
 			"artifactId": artifactID,
 		}).Scan(&tagCount)
@@ -1291,20 +1286,17 @@ func IsLastTagOfArtifact(ctx context.Context, artifactID uuid.UUID, tagName stri
 		return false, fmt.Errorf("could not count tags: %w", err)
 	}
 
-	// If there is only 1 tag remaining, and we're trying to delete it, prevent deletion
 	return tagCount == 1, nil
 }
 
 func DeleteArtifactVersion(ctx context.Context, artifactID uuid.UUID, tagName string) error {
 	db := internalctx.GetDb(ctx)
 
-	// Delete only the tag, not the version SHA
-	// Tags are ArtifactVersion records where name does NOT contain a colon
 	cmd, err := db.Exec(ctx, `
 		DELETE FROM ArtifactVersion
 		WHERE artifact_id = @artifactId
 		AND name = @tagName
-		AND name NOT LIKE '%:%'`,
+		AND `+artifactVersionIsTagExpr("ArtifactVersion"),
 		pgx.NamedArgs{
 			"artifactId": artifactID,
 			"tagName":    tagName,
@@ -1426,7 +1418,7 @@ func deleteUnreferencedArtifactVersions(ctx context.Context, artifactID uuid.UUI
 			ctx,
 			`DELETE FROM ArtifactVersion av
 			WHERE av.artifact_id = @artifactId
-			AND av.name = av.manifest_blob_digest
+			AND `+artifactVersionIsDigestExpr("av")+`
 			AND av.manifest_blob_digest = any (@digests)
 			AND NOT EXISTS (
 				-- a tag points at it
@@ -1434,7 +1426,7 @@ func deleteUnreferencedArtifactVersions(ctx context.Context, artifactID uuid.UUI
 				FROM ArtifactVersion tag
 				WHERE tag.artifact_id = av.artifact_id
 				AND tag.manifest_blob_digest = av.manifest_blob_digest
-				AND tag.name <> tag.manifest_blob_digest
+				AND `+artifactVersionIsTagExpr("tag")+`
 			)
 			AND NOT EXISTS (
 				-- another version references it, e.g. a multi-arch index its children

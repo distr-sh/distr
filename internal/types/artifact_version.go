@@ -19,3 +19,9 @@ type ArtifactVersion struct {
 	ManifestData           []byte     `db:"manifest_data" json:"-"`
 	ArtifactID             uuid.UUID  `db:"artifact_id" json:"artifactId"`
 }
+
+// IsDigestVersion reports whether the version is named after its own manifest digest, which is the
+// row a push creates alongside the tag so that the manifest can be pulled by digest.
+func (av ArtifactVersion) IsDigestVersion() bool {
+	return av.Name == string(av.ManifestBlobDigest)
+}
