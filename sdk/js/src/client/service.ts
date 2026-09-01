@@ -425,9 +425,9 @@ export class DistrService {
   }
 
   /**
-   * Returns the advisories of the organization. Customers and partners only ever receive
-   * published and resolved advisories that mark an affected version, and a customer only those
-   * affecting a version they deployed or are entitled to.
+   * Customers and partners only ever receive published and resolved advisories that mark an
+   * affected version, and a customer only those affecting a version they deployed or are
+   * entitled to.
    */
   public async getAdvisories(filter: AdvisoryFilter = {}): Promise<Advisory[]> {
     return this.client.getAdvisories(filter);
@@ -439,16 +439,13 @@ export class DistrService {
 
   /**
    * Returns who deployed or pulled an affected version: every customer for a vendor, their own
-   * customers for a partner, and only their own deployments and pulls for a customer.
+   * customers for a partner and only their own deployments and pulls for a customer.
    */
   public async getAdvisoryImpact(advisoryId: string): Promise<AdvisoryImpact> {
     return this.client.getAdvisoryImpact(advisoryId);
   }
 
-  /**
-   * Creates an advisory. Without an explicit status it starts in `triage`, the inbox for
-   * externally reported issues.
-   */
+  /** Without an explicit status the advisory starts in `triage`. */
   public async createAdvisory(request: CreateUpdateAdvisoryRequest): Promise<AdvisoryDetail> {
     return this.client.createAdvisory(request);
   }
@@ -457,10 +454,7 @@ export class DistrService {
     return this.client.updateAdvisory(advisoryId, request);
   }
 
-  /**
-   * Sets the status of an advisory, leaving the rest of it as it is. `published` and `resolved`
-   * make the advisory visible to the customers it affects.
-   */
+  /** `published` and `resolved` make the advisory visible to the customers it affects. */
   public async setAdvisoryStatus(advisoryId: string, status: AdvisoryStatus): Promise<AdvisoryDetail> {
     return this.client.patchAdvisory(advisoryId, {status});
   }

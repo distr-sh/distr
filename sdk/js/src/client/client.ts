@@ -174,7 +174,6 @@ export class Client {
     return await this.handleResponse<T>(response, 'GET', path);
   }
 
-  /** TBody defaults to TResponse so that the many endpoints echoing back their input stay concise. */
   private async post<TResponse, TBody = TResponse>(path: string, body?: TBody): Promise<TResponse> {
     return this.send<TResponse, TBody>('POST', path, body);
   }

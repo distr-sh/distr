@@ -26,8 +26,6 @@ import (
 
 const duplicateCveIDMessage = "another advisory in this organization already covers this CVE ID"
 
-// advisoryScope narrows queries to what the caller may see. A vendor gets an empty scope and
-// sees the whole organization.
 func advisoryScope(a authinfo.AuthInfoWithUserAndOrganization) db.AdvisoryScope {
 	return db.AdvisoryScope{
 		PartnerOrgID:  a.CurrentPartnerOrgID(),
@@ -61,9 +59,8 @@ func AdvisoriesRouter(r chiopenapi.Router) {
 				With(option.Request(api.AdvisoryIDRequest{})).
 				With(option.Response(http.StatusOK, api.AdvisoryDetail{}))
 
-			// Deliberately not served from the read-only database: the detail view
-			// refetches impact right after a status or version change, and replica lag
-			// would show the state from before the edit.
+			// Deliberately not served from the read-only database: the detail view refetches
+			// impact right after an edit, and replica lag would show the state from before it.
 			r.Get("/impact", getAdvisoryImpactHandler()).
 				With(option.Description("Get the deployments and downloads affected by this advisory")).
 				With(option.Request(api.AdvisoryIDRequest{})).
@@ -305,15 +302,14 @@ func updateAdvisoryHandler() http.HandlerFunc {
 			if !wasPublished {
 				return recordAdvisoryPublication(ctx, &advisory, userID)
 			}
-			// Read back rather than derived from the request, so that the names in the
-			// message come from the database instead of being looked up separately.
+			// Read back rather than derived from the request, so that the names in the message
+			// come from the database instead of being looked up separately.
 			versionsAfter, err := advisoryVersionMarkings(ctx, advisory.ID, advisory.OrganizationID)
 			if err != nil {
 				return err
 			}
-			// One entry for the whole save, so that an edit reads as the single action it was.
-			// Nothing is recorded when nothing changed, so that opening the form and saving it
-			// unchanged does not leave a trace that suggests otherwise.
+			// One entry for the whole save, so that an edit reads as the single action it was,
+			// and none at all when the save changed nothing.
 			parts := slices.Concat(changes, versionChangeParts(versionsBefore, versionsAfter))
 			if len(parts) > 0 {
 				message := strings.Join(parts, "; ")
@@ -413,13 +409,10 @@ func createAdvisoryStatusEvent(
 	return db.CreateAdvisoryEvent(ctx, advisoryID, &userID, types.AdvisoryEventTypeStatusChanged, &message)
 }
 
-// recordAdvisoryPublication writes the entry that opens the timeline.
-//
-// The timeline is the record of a disclosure and therefore starts at the disclosure: an
-// advisory under triage is rewritten until it is right, and none of that is worth reading
-// afterwards. Callers reach this only while the advisory had not been published before, so
-// one that is still being drafted records nothing at all. Comments are the exception and are
-// always kept, since a vendor writing a note means to keep it.
+// recordAdvisoryPublication opens the timeline at the disclosure, because an advisory under
+// triage is rewritten until it is right and none of that is worth reading afterwards. Callers
+// reach this only while the advisory had not been published before, so one that is still being
+// drafted records nothing at all. Comments are the exception and are always kept.
 func recordAdvisoryPublication(ctx context.Context, advisory *types.Advisory, userID uuid.UUID) error {
 	if advisory.PublishedAt == nil {
 		return nil
@@ -497,9 +490,7 @@ func getAdvisoryImpactHandler() http.HandlerFunc {
 	}
 }
 
-// requireAdvisory parses the advisory ID from the path and loads it scoped to the
-// current organization, applying the customer entitlement filter for customer users.
-// Returns nil if an error response was already written.
+// requireAdvisory returns nil if an error response was already written.
 func requireAdvisory(w http.ResponseWriter, r *http.Request) *types.AdvisoryWithDetails {
 	id, err := uuid.Parse(r.PathValue("advisoryId"))
 	if err != nil {
@@ -545,8 +536,8 @@ func respondAdvisoryDetail(w http.ResponseWriter, r *http.Request, id uuid.UUID)
 	RespondJSON(w, detail)
 }
 
-// buildAdvisoryDetail loads the child collections of an advisory. The event timeline is
-// vendor-internal and is therefore omitted for customer and partner users.
+// buildAdvisoryDetail omits the event timeline for customer and partner users, since it is
+// vendor-internal.
 func buildAdvisoryDetail(
 	w http.ResponseWriter, r *http.Request, advisory types.AdvisoryWithDetails,
 ) (api.AdvisoryDetail, bool) {
@@ -610,8 +601,7 @@ func applyAdvisoryAssociations(
 	})
 }
 
-// validateAdvisoryVersionsInOrg rejects a request that references versions belonging to
-// another organization. Returns false if an error response was already written.
+// validateAdvisoryVersionsInOrg returns false if an error response was already written.
 func validateAdvisoryVersionsInOrg(
 	w http.ResponseWriter, r *http.Request, orgID uuid.UUID, request *api.CreateUpdateAdvisoryRequest,
 ) bool {
@@ -637,19 +627,15 @@ func validateAdvisoryVersionsInOrg(
 	return true
 }
 
-// versionMarking is an application or artifact version together with the relation it has to
-// the advisory, reduced to what a timeline message needs.
 type versionMarking struct {
 	id       uuid.UUID
 	label    string
 	relation types.AdvisoryVersionRelation
 }
 
-// advisoryVersionMarkings reads the currently marked application and artifact versions
-// as a single list.
-//
-// The scope is deliberately empty: these feed the timeline messages describing an edit, which
-// only vendors make and only vendors read, so they must show every marking.
+// advisoryVersionMarkings queries with an empty scope on purpose: the markings feed the
+// timeline messages describing an edit, which only vendors make and only vendors read, so they
+// must show every marking.
 func advisoryVersionMarkings(
 	ctx context.Context, advisoryID, orgID uuid.UUID,
 ) ([]versionMarking, error) {
@@ -697,9 +683,8 @@ func loadAdvisoryVersionMarkings(
 // once must not write a message nobody can read.
 const maxVersionChangeMessageParts = 10
 
-// versionChangeParts describes how the affected and fixed markings changed. Versions are
-// matched by id, so one that switches between affected and fixed reads as a change rather
-// than as a removal plus an addition.
+// versionChangeParts matches versions by id, so that one switching between affected and fixed
+// reads as a change rather than as a removal plus an addition.
 func versionChangeParts(before, after []versionMarking) []string {
 	beforeByID := make(map[uuid.UUID]versionMarking, len(before))
 	for _, marking := range before {
@@ -733,9 +718,8 @@ func versionChangeParts(before, after []versionMarking) []string {
 	return parts
 }
 
-// detailChangeParts describes which of the editable detail fields changed. The description is
-// only reported as changed: a diff of free-form Markdown does not belong in a one-line
-// timeline entry.
+// detailChangeParts reports the description as changed without saying how, since a diff of
+// free-form Markdown does not belong in a one-line timeline entry.
 func detailChangeParts(before types.Advisory, after api.CreateUpdateAdvisoryRequest) []string {
 	var parts []string
 
@@ -770,8 +754,8 @@ func cveChangeMessage(before, after *string) string {
 	}
 }
 
-// referenceChangeParts describes how the reference list changed. References are identified by
-// their URL, which is what makes a reference the same reference to a reader.
+// referenceChangeParts identifies references by their URL, which is what makes a reference the
+// same reference to a reader.
 func referenceChangeParts(before []types.AdvisoryReference, after []api.AdvisoryReference) []string {
 	beforeURLs := make([]string, len(before))
 	for i, reference := range before {
@@ -788,9 +772,6 @@ func tagChangeParts(before, after []string) []string {
 	return changeParts("tags", before, after)
 }
 
-// changeParts describes the additions and the removals between two lists as timeline message
-// parts, naming what was added or removed so that the parts stay readable next to each other
-// in the one message an edit writes.
 func changeParts(noun string, before, after []string) []string {
 	var parts []string
 	if added := missing(after, before); len(added) > 0 {

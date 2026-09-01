@@ -26,8 +26,8 @@ type AdvisoryScope struct {
 	CustomerOrgID *uuid.UUID
 }
 
-// bind adds the two parameters that every scoped query reads. They are always bound, because
-// the queries reference them whether or not the caller is scoped.
+// bind always binds both parameters, because the scoped queries reference them whether or not
+// the caller is scoped.
 func (s AdvisoryScope) bind(args pgx.NamedArgs) pgx.NamedArgs {
 	args["partnerOrgId"] = s.PartnerOrgID
 	args["customerOrgId"] = s.CustomerOrgID
@@ -69,10 +69,9 @@ const advisoryWithDetailsOutputExpr = `
 	(SELECT count(*) FROM AdvisoryReference vr WHERE vr.advisory_id = v.id) AS reference_count
 `
 
-// applyScope applies everything about a result set that depends on who is asking: it drops the
-// advisories the caller may not see, and stamps CallerAffected for the callers who are shown
-// their own exposure instead of the editorial status. Both need the advisories' affected
-// versions, so those are loaded once and shared.
+// applyScope drops the advisories the caller may not see and stamps CallerAffected for the
+// callers who are shown their own exposure instead of the editorial status. Both need the
+// advisories' affected versions, so those are loaded once and shared.
 //
 // The rules themselves live in the advisory package; this only loads what they need. They run
 // in Go rather than SQL because they are security critical and need to be unit testable, which
@@ -196,8 +195,6 @@ func applyVersionCounts(
 	return advisories, nil
 }
 
-// getExposure loads what the caller runs and has downloaded, which is the same for every
-// advisory in the result and is therefore loaded once.
 func getExposure(
 	ctx context.Context,
 	orgID uuid.UUID,
@@ -220,8 +217,6 @@ func getExposure(
 	return exposure, nil
 }
 
-// markedArtifactVersionIDs collects every artifact version the advisories mark, on either
-// side of the relation, so that the pull lookup can be narrowed to them.
 func markedArtifactVersionIDs(marked map[uuid.UUID]advisory.MarkedVersions) []uuid.UUID {
 	seen := make(map[uuid.UUID]struct{})
 	ids := make([]uuid.UUID, 0, len(marked))
@@ -333,9 +328,8 @@ func GetAdvisoryByID(
 	return &scoped[0], nil
 }
 
-// CreateAdvisory inserts the advisory. Status must be set by the caller; the column
-// default is not relied upon, because the initial status depends on how the advisory was
-// reported.
+// CreateAdvisory requires the caller to set the status, since the initial one depends on how
+// the advisory was reported rather than on the column default.
 func CreateAdvisory(ctx context.Context, advisory *types.Advisory) error {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
@@ -434,9 +428,8 @@ const advisoryStatusTimestamps = `published_at = CASE
 				ELSE resolved_at
 			END`
 
-// PatchAdvisory changes the status, the severity, or both, leaving an absent one as it is.
-// It returns the patched advisory, whose published_at tells the caller whether this write is
-// the one that disclosed it.
+// PatchAdvisory leaves an absent status or severity as it is. The published_at of the returned
+// advisory tells the caller whether this write is the one that disclosed it.
 func PatchAdvisory(
 	ctx context.Context,
 	id, orgID uuid.UUID,
@@ -705,8 +698,6 @@ func filterAdvisoryVersionsForCustomer(
 	return versions, nil
 }
 
-// AdvisoryVersionSelection is the set of versions an advisory applies to,
-// as submitted by the client.
 type AdvisoryVersionSelection struct {
 	AffectedApplicationVersionIDs []uuid.UUID
 	FixedApplicationVersionIDs    []uuid.UUID
@@ -783,9 +774,8 @@ func SetAdvisoryVersions(
 	return nil
 }
 
-// CountAdvisoryVersionsOutsideOrg reports how many of the given version IDs do not
-// belong to the organization. Callers use this to reject a selection that would attach
-// another tenant's versions to an advisory.
+// CountAdvisoryVersionsOutsideOrg lets callers reject a selection that would attach another
+// tenant's versions to an advisory.
 func CountAdvisoryVersionsOutsideOrg(
 	ctx context.Context, orgID uuid.UUID, applicationVersionIDs, artifactVersionIDs []uuid.UUID,
 ) (int64, error) {
@@ -904,19 +894,17 @@ func CreateAdvisoryCommentEvent(
 // Impact
 
 // GetAdvisoryImpactedDeployments returns one row per deployment that has ever run an
-// application version this advisory affects, classified by the version its current
-// revision runs: still affected, fixed, or moved onto a version marked neither.
+// application version this advisory affects, classified by the version its current revision
+// runs: still affected, fixed or moved onto a version marked neither.
 //
-// Each row also carries the most recent affected version the deployment ran and when, so
-// that the exposure window stays visible for deployments that have since moved on.
+// Each row also carries the most recent affected version the deployment ran and when, so that
+// the exposure window stays visible for deployments that have since moved on.
 func GetAdvisoryImpactedDeployments(
 	ctx context.Context, advisoryID, orgID uuid.UUID, scope AdvisoryScope,
 ) ([]types.AdvisoryImpactedDeployment, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(
 		ctx,
-		// marked holds both relations, because the state of a deployment depends on whether the
-		// version it runs now is affected, fixed, or neither.
 		`WITH marked AS (
 			SELECT vav.application_version_id, vav.relation
 			FROM AdvisoryApplicationVersion vav
@@ -989,15 +977,15 @@ func GetAdvisoryImpactedDeployments(
 	return result, nil
 }
 
-// GetAdvisoryImpactedPulls aggregates registry pulls of the artifact versions this
-// advisory affects.
+// GetAdvisoryImpactedPulls aggregates registry pulls of the artifact versions this advisory
+// affects.
 //
-// Two subtleties are handled here. A pull is recorded against whichever ArtifactVersion row
-// the client referenced, tag or digest, so the selected version is expanded to every row
-// sharing its manifest digest; otherwise selecting a digest would miss all tag-based pulls.
-// And ArtifactVersionPull.customer_organization_id only exists since migration 71 and was
-// never backfilled, so older pulls are attributed through the pulling user's customer
-// organization membership instead.
+// A pull is recorded against whichever ArtifactVersion row the client referenced, tag or
+// digest, so the selected version is expanded to every row sharing its manifest digest;
+// otherwise selecting a digest would miss all tag-based pulls. And
+// ArtifactVersionPull.customer_organization_id only exists since migration 71 and was never
+// backfilled, so older pulls are attributed through the pulling user's customer organization
+// membership instead.
 func GetAdvisoryImpactedPulls(
 	ctx context.Context, advisoryID, orgID uuid.UUID, scope AdvisoryScope,
 ) ([]types.AdvisoryImpactedPull, error) {

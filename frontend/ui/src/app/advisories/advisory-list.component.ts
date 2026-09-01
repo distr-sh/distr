@@ -20,6 +20,7 @@ import {ToastService} from '../services/toast.service';
 import {
   affectedBadgeClass,
   affectedLabel,
+  confirmAdvisoryVisibilityChange,
   defaultAdvisoryStatusFilter,
   severityBadgeClass,
   severitySelectOptions,
@@ -60,7 +61,6 @@ export class AdvisoryListComponent {
   protected readonly statusSelectOptions = statusSelectOptions;
   protected readonly severitySelectOptions = severitySelectOptions;
 
-  /** Everyone outside the vendor organization is shown their own exposure, not the status. */
   protected readonly showsAffectedState = this.auth.isCustomer() || this.auth.isPartner();
 
   protected readonly routePrefix = this.auth.isCustomer() ? '/security' : '/advisories';
@@ -94,8 +94,8 @@ export class AdvisoryListComponent {
   private readonly searchValue = toSignal(this.filterForm.controls.search.valueChanges, {initialValue: ''});
 
   // Compared against the default rather than against an empty selection, so that an
-  // organization with no advisories at all still gets the introductory empty state
-  // instead of being told nothing matched.
+  // organization with no advisories at all still gets the introductory empty state instead of
+  // being told nothing matched.
   private readonly statusFilterChanged = computed(() => {
     const selected = this.selectedStatuses();
     return (
@@ -112,8 +112,6 @@ export class AdvisoryListComponent {
 
   private readonly refresh$ = new Subject<void>();
 
-  // Recomputes only when a selection actually changes, so the list is not refetched on every
-  // unrelated signal write.
   private readonly serverFilter = computed(() => ({
     status: this.selectedStatuses(),
     severity: this.selectedSeverities(),
@@ -150,15 +148,16 @@ export class AdvisoryListComponent {
   protected readonly advisories = computed(() => this.advisoriesResult() ?? []);
   protected readonly loading = computed(() => this.advisoriesResult() === undefined);
 
-  /** Id of the row currently being changed, so that only its own dropdowns disable. */
   private readonly patchingFor = signal<string | undefined>(undefined);
 
   protected isPatching(advisoryId: string): boolean {
     return this.patchingFor() === advisoryId;
   }
 
-  protected changeStatus(advisory: Advisory, status: AdvisoryStatus): Promise<void> {
-    return this.patch(advisory, {status}, 'Status updated');
+  protected async changeStatus(advisory: Advisory, status: AdvisoryStatus): Promise<void> {
+    if (await confirmAdvisoryVisibilityChange(this.overlay, advisory.status, status)) {
+      await this.patch(advisory, {status}, 'Status updated');
+    }
   }
 
   protected changeSeverity(advisory: Advisory, severity: AdvisorySeverity): Promise<void> {

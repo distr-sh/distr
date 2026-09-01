@@ -10,8 +10,7 @@ export interface MultiSelectOption<T extends string = string> {
 
 /**
  * A dropdown that filters by any number of options at once, matching the services picker in the
- * deployment log viewer. Selecting nothing means "no filter" rather than "match nothing", which
- * is what every caller so far wants from a filter control.
+ * deployment log viewer. Selecting nothing means "no filter" rather than "match nothing".
  */
 @Component({
   selector: 'app-multi-select',
@@ -23,7 +22,6 @@ export interface MultiSelectOption<T extends string = string> {
 export class MultiSelectComponent<T extends string = string> {
   public readonly options = input.required<MultiSelectOption<T>[]>();
   public readonly selected = model<T[]>([]);
-  /** Shown on the trigger while nothing is selected, e.g. "All severities". */
   public readonly placeholder = input('Select');
   /** Plural noun for the trigger once more than one option is selected, e.g. "severities". */
   public readonly itemLabel = input('items');

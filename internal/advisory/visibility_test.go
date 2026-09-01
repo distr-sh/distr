@@ -256,9 +256,9 @@ func TestIsVisibleToCustomerArtifactEntitlements(t *testing.T) {
 	}
 }
 
-// A deployment is the strongest possible evidence that a customer is exposed, and it is
-// created without any entitlement. Deciding visibility on entitlements alone therefore hid
-// advisories from exactly the customers the vendor's impact report lists as affected.
+// A deployment is the strongest evidence that a customer is exposed, and it is created without
+// any entitlement. Entitlements alone would hide an advisory from exactly the customers the
+// vendor's impact report lists as affected.
 func TestIsVisibleToCustomerDeployments(t *testing.T) {
 	gatedVendor := func(deployed ...uuid.UUID) advisory.CustomerView {
 		return advisory.CustomerView{
@@ -282,8 +282,7 @@ func TestIsVisibleToCustomerDeployments(t *testing.T) {
 			visible:     true,
 		},
 		{
-			// The customer already upgraded, which is the "fixed" row of the vendor's
-			// impact report. They still need to read the advisory.
+			// The "fixed" row of the vendor's impact report, who still need to read the advisory.
 			name:        "deployed an affected version they have since upgraded away from",
 			appAffected: []advisory.VersionRef{appVersion(versionOneID)},
 			view:        gatedVendor(versionOneID, versionTwoID),
@@ -302,7 +301,6 @@ func TestIsVisibleToCustomerDeployments(t *testing.T) {
 			visible:     false,
 		},
 		{
-			// Deployments say nothing about artifact access, which stays entitlement gated.
 			name:        "deployments do not unlock an artifact only advisory",
 			artAffected: []advisory.VersionRef{artifactVersion(amd64VersionID)},
 			view:        gatedVendor(versionOneID),
@@ -383,9 +381,6 @@ func TestIsVisibleToCustomerEntitlementFallback(t *testing.T) {
 			visible:     true,
 		},
 		{
-			// The fallback is per kind. A vendor gating artifacts but not applications must
-			// not have its application advisories hidden, but equally must not have them
-			// exposed on the basis of the artifact side.
 			name:        "vendor gates artifacts only, application advisory falls back to visible",
 			appAffected: appAffected,
 			artAffected: nil,
@@ -393,8 +388,6 @@ func TestIsVisibleToCustomerEntitlementFallback(t *testing.T) {
 			visible:     true,
 		},
 		{
-			// The regression this rule exists for: an artifact-only advisory must stay
-			// gated even though the vendor configured no application entitlements.
 			name:        "vendor gates artifacts only, artifact advisory stays gated",
 			artAffected: artifactAffected,
 			view:        advisory.CustomerView{OrgHasArtifactEntitlements: true},
@@ -458,8 +451,6 @@ func TestVersionVisibilityAllows(t *testing.T) {
 		allowed    bool
 	}{
 		{
-			// The counterpart to the fallback in IsVisibleToCustomer: a vendor who does not
-			// gate this kind at all discloses every version of it.
 			name:       "vendor uses no entitlements of this kind",
 			visibility: advisory.VersionVisibility{},
 			ref:        appVersion(versionOneID),
@@ -477,8 +468,6 @@ func TestVersionVisibilityAllows(t *testing.T) {
 			allowed: true,
 		},
 		{
-			// The case from the review: entitled to one version line, so the other one and
-			// its fix must not be disclosed.
 			name: "entitlement pins a different version of the same application",
 			visibility: advisory.VersionVisibility{
 				OrgHasEntitlements: true,
@@ -526,8 +515,8 @@ func TestVersionVisibilityAllows(t *testing.T) {
 			allowed: true,
 		},
 		{
-			// Deployment grants visibility without an entitlement, so the version that
-			// granted it has to be disclosed or the advisory would list nothing as affected.
+			// Deployment grants visibility without an entitlement, so the version that granted
+			// it has to be disclosed or the advisory would list nothing as affected.
 			name: "customer deployed it without holding an entitlement",
 			visibility: advisory.VersionVisibility{
 				OrgHasEntitlements: true,
@@ -590,9 +579,8 @@ func TestIsStillAffectedDeployments(t *testing.T) {
 			affected:    true,
 		},
 		{
-			// The counterpart to TestIsVisibleToCustomerDeployments: having once run the
-			// affected version keeps the advisory visible, but no longer running it is what
-			// tells the customer they are in the clear.
+			// Having once run the affected version keeps the advisory visible, so this is what
+			// tells such a customer they are in the clear.
 			name:        "has upgraded away from the affected version",
 			appAffected: []advisory.VersionRef{appVersion(versionOneID)},
 			current:     []uuid.UUID{versionTwoID},
@@ -617,8 +605,8 @@ func TestIsStillAffectedDeployments(t *testing.T) {
 			affected:    false,
 		},
 		{
-			// An entitled customer who never deployed still sees the advisory, and must be
-			// told they are not affected rather than left guessing.
+			// An entitled customer who never deployed still sees the advisory and has to be
+			// told they are not affected.
 			name:        "advisory affects no application version",
 			appAffected: nil,
 			current:     []uuid.UUID{versionOneID},

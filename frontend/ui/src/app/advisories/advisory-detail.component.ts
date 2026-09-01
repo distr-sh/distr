@@ -31,6 +31,7 @@ import {
   affectedLabel,
   applicationVersionLabel,
   artifactVersionLabel,
+  confirmAdvisoryVisibilityChange,
   eventLabel,
   impactStateBadgeClass,
   impactStateLabel,
@@ -91,7 +92,6 @@ export class AdvisoryDetailComponent {
   protected readonly affectedLabel = affectedLabel;
   protected readonly affectedBadgeClass = affectedBadgeClass;
 
-  /** Everyone outside the vendor organization is shown their own exposure, not the status. */
   protected readonly showsAffectedState = this.auth.isCustomer() || this.auth.isPartner();
 
   protected readonly backRoute = this.auth.isCustomer() ? '/security' : '/advisories';
@@ -138,8 +138,6 @@ export class AdvisoryDetailComponent {
     this.route.paramMap.pipe(
       switchMap((params) => {
         const id = params.get('advisoryId')!;
-        // switchMap discards an in-flight request when a newer one starts, so a slow
-        // response for a previous advisory can never overwrite the current one.
         return this.refreshImpact$.pipe(
           startWith(0),
           switchMap(() =>
@@ -161,7 +159,6 @@ export class AdvisoryDetailComponent {
   });
   protected readonly impactFailed = computed(() => this.impact().state === 'failed');
 
-  /** Drives the customer-facing verdict: whether anything of theirs still runs an affected version. */
   protected readonly stillAffectedCount = computed(
     () => this.impactResult()?.deployments.filter((deployment) => deployment.state === 'affected').length ?? 0
   );
@@ -228,8 +225,11 @@ export class AdvisoryDetailComponent {
     this.refreshImpact$.next();
   }
 
-  protected changeStatus(status: AdvisoryStatus): Promise<void> {
-    return this.patch({status}, 'Status updated');
+  protected async changeStatus(status: AdvisoryStatus): Promise<void> {
+    const advisory = this.advisory();
+    if (advisory && (await confirmAdvisoryVisibilityChange(this.overlay, advisory.status, status))) {
+      await this.patch({status}, 'Status updated');
+    }
   }
 
   protected changeSeverity(severity: AdvisorySeverity): Promise<void> {

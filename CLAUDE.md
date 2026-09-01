@@ -293,6 +293,7 @@ Do not write a comment that:
 - Restates the code or the name below it, including doc comments on self-explanatory types, fields, functions and env getters. A getter named after the value it returns needs no comment saying that it returns that value.
 - Explains the change you are making, why it is correct, or what was there before. That belongs in the commit message or the pull request description, not in the code.
 - Narrates a step of an obvious sequence (`// send the request`, `// parse the response`).
+- Explains a styling or layout choice in a template, or a language detail a reader of that language already knows.
 - Repeats what the documentation, a rule in this file, or a linked ticket already says.
 
 Do write a comment when it records something a reader cannot see:

@@ -20,10 +20,17 @@ import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
 import {AdvisoriesService} from '../services/advisories.service';
 import {ApplicationsService} from '../services/applications.service';
 import {ArtifactsService, TaggedArtifactVersion} from '../services/artifacts.service';
+import {OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
-import {advisorySeverities, advisoryStatuses, severityLabel, statusLabel} from './advisory-display';
+import {
+  advisorySeverities,
+  advisoryStatuses,
+  confirmAdvisoryVisibilityChange,
+  severityLabel,
+  statusLabel,
+} from './advisory-display';
 
-/** Maps a version id to the relation it has with the advisory. Absent means unselected. */
+/** An absent version id is unselected. */
 type VersionSelection = Record<string, AdvisoryVersionRelation>;
 
 export interface AdvisoryFormDraft {
@@ -62,6 +69,7 @@ export class AdvisoryFormComponent {
   private readonly advisoriesService = inject(AdvisoriesService);
   private readonly applicationsService = inject(ApplicationsService);
   private readonly artifactsService = inject(ArtifactsService);
+  private readonly overlay = inject(OverlayService);
   private readonly toast = inject(ToastService);
 
   protected readonly faPlus = faPlus;
@@ -72,7 +80,6 @@ export class AdvisoryFormComponent {
   protected readonly statuses = advisoryStatuses;
   protected readonly statusLabel = statusLabel;
 
-  /** The advisory to edit, or undefined to create a new one. */
   public readonly advisory = input<AdvisoryDetail>();
   public readonly draft = input<AdvisoryFormDraft>();
 
@@ -251,10 +258,15 @@ export class AdvisoryFormComponent {
       return;
     }
 
+    const existing = this.advisory();
+    const from = existing?.status ?? 'draft';
+    if (!(await confirmAdvisoryVisibilityChange(this.overlay, from, this.form.controls.status.value))) {
+      return;
+    }
+
     this.loading.set(true);
     try {
       const request = this.buildRequest();
-      const existing = this.advisory();
       const result = await firstValueFrom(
         existing ? this.advisoriesService.update(existing.id, request) : this.advisoriesService.create(request)
       );

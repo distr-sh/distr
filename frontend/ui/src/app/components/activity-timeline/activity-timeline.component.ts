@@ -17,7 +17,6 @@ export interface ActivityTimelineEntry {
   userImageUrl?: string;
   /** What the user did, phrased to follow the name, e.g. "commented". */
   action: string;
-  /** Free text shown below the action, e.g. the comment itself. */
   body?: string;
 }
 

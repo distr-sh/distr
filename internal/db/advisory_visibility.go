@@ -13,8 +13,6 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// GetCustomerView loads everything about a customer organization's entitlements that
-// advisory.IsVisibleToCustomer needs to decide visibility.
 func GetCustomerView(
 	ctx context.Context, orgID, customerOrgID uuid.UUID,
 ) (advisory.CustomerView, error) {
@@ -43,11 +41,10 @@ func GetCustomerView(
 	return view, nil
 }
 
-// getCurrentApplicationVersionIDs returns the application versions the deployments in scope
-// run right now, one per deployment. This is the counterpart to
-// getDeployedApplicationVersionIDs: that one answers "were they ever exposed", which decides
-// visibility, and this one answers "are they still exposed", which decides what
-// advisory.IsStillAffected reports.
+// getCurrentApplicationVersionIDs returns the application versions the deployments in scope run
+// right now, one per deployment. getDeployedApplicationVersionIDs answers whether they were
+// ever exposed, which decides visibility, while this answers whether they still are, which is
+// what advisory.IsStillAffected reports.
 //
 // Vendors are not scoped and never ask for this, so an unscoped call returns nothing rather
 // than every deployment in the organization.
@@ -109,11 +106,8 @@ func getDeployedApplicationVersionIDs(
 	return result, nil
 }
 
-// getVersionVisibility loads what a customer may be told about the versions an advisory marks,
-// for applications and artifacts respectively.
-//
-// artifactVersionIDs are the artifact versions about to be filtered. They bound the pull
-// lookup, and they are the only ones whose digest siblings need resolving.
+// getVersionVisibility takes the artifact versions about to be filtered, which bound the pull
+// lookup and are the only ones whose digest siblings need resolving.
 func getVersionVisibility(
 	ctx context.Context, orgID, customerOrgID uuid.UUID, artifactVersionIDs []uuid.UUID,
 ) (advisory.VersionVisibility, advisory.VersionVisibility, error) {
@@ -182,8 +176,6 @@ func artifactVersionVisibility(
 	}
 	artifact.Entitlements = entitlements
 
-	// Ask about every version resolving to the same content as one the advisory marks, then
-	// translate the answer back to the marked versions themselves.
 	pulled, err := getPulledArtifactVersionIDs(
 		ctx, orgID, AdvisoryScope{CustomerOrgID: &customerOrgID}, siblingUnion(siblings))
 	if err != nil {
@@ -360,14 +352,11 @@ type markedVersionRow struct {
 	Relation types.AdvisoryVersionRelation `db:"relation"`
 }
 
-// GetMarkedVersions loads the versions several advisories mark, all at once.
-//
-// Artifact versions are expanded to every version resolving to the same content: first the
-// sibling tags sharing a manifest digest, then recursively the indexes that contain the
-// marked manifest as a part. This mirrors CheckEntitlementForArtifact so that visibility
-// and the actual pull entitlement agree for multi-arch images. It matters just as much for
-// the fixed side, where a customer who pulled the fix by tag must be recognised as having
-// taken it.
+// GetMarkedVersions expands artifact versions to every version resolving to the same content:
+// first the sibling tags sharing a manifest digest, then recursively the indexes that contain
+// the marked manifest as a part. This mirrors CheckEntitlementForArtifact so that visibility
+// and the actual pull entitlement agree for multi-arch images. It matters just as much for the
+// fixed side, where a customer who pulled the fix by tag must be recognised as having taken it.
 func GetMarkedVersions(
 	ctx context.Context, advisoryIDs []uuid.UUID,
 ) (map[uuid.UUID]advisory.MarkedVersions, error) {
@@ -448,15 +437,12 @@ func GetMarkedVersions(
 	return result, nil
 }
 
-// getPulledArtifactVersionIDs returns which of the given artifact versions the callers in
-// scope have pulled from the registry.
-//
-// It takes the versions to look for rather than returning everything pulled, because
-// ArtifactVersionPull is an append-only audit log that grows with every registry pull and is
-// by far the largest table involved here. Narrowing to the versions the advisories actually
-// mark drives the query off fk_ArtifactVersionPull_artifact_version_id and keeps it
-// proportional to the advisories on screen instead of the organization's pull history. It
-// costs nothing in accuracy: a pull of an unmarked version can never change the answer.
+// getPulledArtifactVersionIDs takes the versions to look for rather than returning everything
+// pulled, because ArtifactVersionPull is an append-only audit log that grows with every
+// registry pull and is by far the largest table involved here. Narrowing to the versions the
+// advisories actually mark drives the query off fk_ArtifactVersionPull_artifact_version_id and
+// keeps it proportional to the advisories on screen instead of the organization's pull history.
+// It costs nothing in accuracy: a pull of an unmarked version can never change the answer.
 //
 // The customer predicate cannot drive the query on its own, because coalescing the column
 // with the membership fallback makes it unindexable.

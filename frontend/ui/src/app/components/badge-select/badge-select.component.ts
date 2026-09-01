@@ -2,7 +2,7 @@ import {OverlayModule} from '@angular/cdk/overlay';
 import {NgClass} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, input, output, signal} from '@angular/core';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faChevronDown} from '@fortawesome/free-solid-svg-icons';
+import {faCheck, faChevronDown} from '@fortawesome/free-solid-svg-icons';
 
 export interface BadgeSelectOption<T extends string = string> {
   value: T;
@@ -12,11 +12,9 @@ export interface BadgeSelectOption<T extends string = string> {
 }
 
 /**
- * A status badge that is also the control changing it, so that the value and the way to set it
- * are the same element wherever a state is shown.
- *
- * Selecting an option only emits: the caller writes the value through the API and passes back
- * what the server returned, which keeps the badge from showing a change that failed.
+ * A status badge that is also the control changing it. Selecting an option only emits: the
+ * caller writes the value through the API and passes back what the server returned, which keeps
+ * the badge from showing a change that failed.
  */
 @Component({
   selector: 'app-badge-select',
@@ -33,6 +31,7 @@ export class BadgeSelectComponent<T extends string = string> {
 
   public readonly selected = output<T>();
 
+  protected readonly faCheck = faCheck;
   protected readonly faChevronDown = faChevronDown;
   protected readonly open = signal(false);
 

@@ -47,7 +47,6 @@ export interface AdvisoryApplicationVersion {
   applicationId: string;
   applicationName: string;
   applicationType: DeploymentType;
-  /** Absent when the application has no uploaded logo and the icon of its type is used. */
   applicationImageUrl?: string;
   applicationVersionId: string;
   applicationVersionName: string;
@@ -57,7 +56,6 @@ export interface AdvisoryApplicationVersion {
 export interface AdvisoryArtifactVersion {
   artifactId: string;
   artifactName: string;
-  /** Absent when the artifact has no uploaded logo and the generic artifact icon is used. */
   artifactImageUrl?: string;
   artifactVersionId: string;
   /** Name of the marked row, which is a digest when the version was marked by digest. */
@@ -88,8 +86,8 @@ export interface AdvisoryDetail extends Advisory {
 
 /**
  * Where a deployment stands relative to an advisory, derived from the version its current
- * revision runs: still on an affected version, on a version marked as containing the fix, or
- * on a version marked as neither.
+ * revision runs: still on an affected version, on a version marked as containing the fix or on
+ * a version marked as neither.
  */
 export type AdvisoryImpactState = 'affected' | 'fixed' | 'not_affected';
 
@@ -134,10 +132,7 @@ export interface CreateUpdateAdvisoryRequest {
   title: string;
   description: string;
   severity: AdvisorySeverity;
-  /**
-   * Defaults to `triage` on create, where issues reported through the API wait to be assessed,
-   * and leaves the status untouched when omitted on update.
-   */
+  /** Defaults to `triage` on create and leaves the status untouched when omitted on update. */
   status?: AdvisoryStatus;
   /**
    * Unique per organization, ignoring case. Reusing one that another advisory already
@@ -153,8 +148,7 @@ export interface CreateUpdateAdvisoryRequest {
 }
 
 /**
- * Changes the status, the severity, or both, leaving the rest of the advisory as it is.
- * At least one of the two must be given.
+ * Leaves the rest of the advisory as it is. At least one of the two fields must be given.
  */
 export interface PatchAdvisoryRequest {
   status?: AdvisoryStatus;
@@ -166,8 +160,8 @@ export interface CreateAdvisoryCommentRequest {
 }
 
 /**
- * Filters for the advisory list. Each field matches an advisory having any of the
- * given values; omitting a field, or passing an empty array, disables that filter.
+ * Each field matches an advisory having any of the given values. Omitting a field, or passing
+ * an empty array, disables that filter.
  */
 export interface AdvisoryFilter {
   status?: AdvisoryStatus[];

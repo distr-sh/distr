@@ -1,5 +1,3 @@
-<!-- A definite width rather than w-full: the overlay pane shrink-wraps its content, so a
-     percentage width would make the dialog as wide as whichever tab is showing. -->
 <div class="w-4xl max-w-full max-h-full mt-16 bg-white rounded-lg shadow-sm dark:bg-gray-900">
   <div class="flex items-center justify-between p-4 border-b border-gray-200 rounded-t dark:border-gray-600">
     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
@@ -43,9 +41,6 @@
       </div>
     </div>
 
-    <!-- A fixed height rather than a maximum, so that switching tabs or adding a reference
-           scrolls the body instead of resizing the dialog around the pointer. The reserved
-           scrollbar gutter keeps the fields from shifting when the scrollbar appears. -->
     <div class="p-4 h-[60vh] overflow-y-auto [scrollbar-gutter:stable]">
       @if (activeTab() === 'details') {
         <div class="space-y-4">

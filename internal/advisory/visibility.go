@@ -11,22 +11,19 @@ import (
 	"github.com/google/uuid"
 )
 
-// VersionRef identifies a single application or artifact version affected by a
-// advisory, together with the application or artifact it belongs to.
+// VersionRef is a version together with the application or artifact it belongs to.
 //
-// For artifacts the caller is expected to expand each affected version into every version
-// that resolves to the same content, so that an entitlement pinning a different tag or a
-// different manifest of the same multi-arch index still matches.
+// For artifacts the caller is expected to expand each marked version into every version that
+// resolves to the same content, so that an entitlement pinning a different tag or a different
+// manifest of the same multi-arch index still matches.
 type VersionRef struct {
 	VersionID uuid.UUID
 	ParentID  uuid.UUID
 }
 
-// EntitlementRef is a customer's entitlement to an application or artifact.
-// An empty VersionIDs covers every version of the parent, matching the behaviour of
-// ApplicationEntitlement rows without ApplicationEntitlement_ApplicationVersion children and
-// of ArtifactEntitlement_Artifact rows with a NULL artifact_version_id.
-// A nil ExpiresAt never expires.
+// EntitlementRef with an empty VersionIDs covers every version of the parent, matching the
+// behaviour of ApplicationEntitlement rows without ApplicationEntitlement_ApplicationVersion
+// children and of ArtifactEntitlement_Artifact rows with a NULL artifact_version_id.
 type EntitlementRef struct {
 	ParentID   uuid.UUID
 	VersionIDs []uuid.UUID
@@ -46,14 +43,12 @@ func (e EntitlementRef) coversVersion(ref VersionRef, now time.Time) bool {
 	return slices.Contains(e.VersionIDs, ref.VersionID)
 }
 
-// CustomerView is everything about a single customer organization that the visibility rule
-// depends on.
+// CustomerView is what the visibility rule knows about one customer organization.
 //
-// The two OrgHas* flags describe the vendor organization as a whole and drive the fallback
-// for vendors who do not use the licensing feature. They are deliberately tracked per
-// entitlement kind: a vendor may gate artifacts but not applications, and in that case the
-// application side must still fall back to "visible to everyone" while the artifact side
-// stays gated.
+// The two OrgHas* flags describe the vendor organization as a whole and drive the fallback for
+// vendors who do not use the licensing feature. They are tracked per entitlement kind because
+// a vendor may gate artifacts but not applications, and the application side must then still
+// fall back to "visible to everyone" while the artifact side stays gated.
 type CustomerView struct {
 	OrgHasApplicationEntitlements bool
 	OrgHasArtifactEntitlements    bool
@@ -78,9 +73,8 @@ func containsAnyVersion(refs []VersionRef, versionIDs []uuid.UUID) bool {
 // resolves to the same content.
 //
 // There are no fixed application versions because the application side is decided by what a
-// deployment runs right now, which needs no notion of a fix: a deployment that has moved off
-// every affected version is no longer exposed, whether or not the version it moved to is one
-// the vendor marked.
+// deployment runs right now: a deployment that has moved off every affected version is no
+// longer exposed, whether or not the version it moved to is one the vendor marked.
 type MarkedVersions struct {
 	AffectedApplicationVersions []VersionRef
 	AffectedArtifactVersions    []VersionRef
@@ -90,12 +84,11 @@ type MarkedVersions struct {
 // Exposure is what a customer or partner has actually done with the vendor's software.
 type Exposure struct {
 	// CurrentApplicationVersionIDs are the versions their deployments run right now, one per
-	// deployment. Not every version they ever ran: that distinction is the whole point, since
-	// visibility deliberately keeps the advisory in front of customers who have already
-	// upgraded, and this is what then tells them they are in the clear.
+	// deployment, not every version they ever ran. Visibility deliberately keeps an advisory in
+	// front of customers who have already upgraded, and this is what then tells them they are
+	// in the clear.
 	CurrentApplicationVersionIDs []uuid.UUID
-	// PulledArtifactVersionIDs are every artifact version they have pulled from the registry.
-	PulledArtifactVersionIDs []uuid.UUID
+	PulledArtifactVersionIDs     []uuid.UUID
 }
 
 // IsStillAffected reports whether an advisory is a live problem for whoever is asking, which
@@ -115,11 +108,8 @@ func IsStillAffected(marked MarkedVersions, exposure Exposure) bool {
 	return hasUnfixedPull(marked, exposure.PulledArtifactVersionIDs)
 }
 
-// hasUnfixedPull reports whether an affected version of some artifact was pulled without a
-// version of that same artifact carrying the fix also being pulled.
-//
-// The check is per artifact rather than across the advisory as a whole: an advisory covering
-// two artifacts is not settled by upgrading one of them.
+// hasUnfixedPull checks each artifact on its own rather than the advisory as a whole, so that
+// an advisory covering two artifacts is not settled by taking the fix for one of them.
 func hasUnfixedPull(marked MarkedVersions, pulledIDs []uuid.UUID) bool {
 	wasPulled := func(ref VersionRef) bool {
 		return slices.Contains(pulledIDs, ref.VersionID)
@@ -151,7 +141,6 @@ type VersionVisibility struct {
 	KnownVersionIDs []uuid.UUID
 }
 
-// Allows reports whether the version behind ref may be disclosed.
 func (v VersionVisibility) Allows(ref VersionRef, now time.Time) bool {
 	if !v.OrgHasEntitlements {
 		return true
@@ -164,9 +153,7 @@ func (v VersionVisibility) Allows(ref VersionRef, now time.Time) bool {
 	})
 }
 
-// FilterVisibleVersions keeps the rows whose version the customer may see, in order. The ref
-// function maps a row to the version it marks, so that the rule can be shared by the
-// application and artifact row types.
+// FilterVisibleVersions keeps the rows whose version the customer may see, in order.
 func FilterVisibleVersions[T any](
 	rows []T, ref func(T) VersionRef, visibility VersionVisibility, now time.Time,
 ) []T {
@@ -175,9 +162,9 @@ func FilterVisibleVersions[T any](
 	})
 }
 
-// IsDisclosed reports whether an advisory is published or resolved and identifies at least one
-// affected version. It is what a partner sees, and the customer-independent half of
-// IsVisibleToCustomer.
+// IsDisclosed is what a partner sees, and the customer-independent half of
+// IsVisibleToCustomer. A vendor must identify what is affected before publishing can disclose
+// an advisory.
 func IsDisclosed(
 	status types.AdvisoryStatus,
 	affectedApplicationVersions []VersionRef,
@@ -189,24 +176,18 @@ func IsDisclosed(
 	return len(affectedApplicationVersions) > 0 || len(affectedArtifactVersions) > 0
 }
 
-// IsVisibleToCustomer reports whether a customer organization may see an advisory.
+// IsVisibleToCustomer reports whether a customer organization may see an advisory. Beyond
+// disclosure, three parts of the rule are not evident from the code:
 //
-// The rule is:
-//
-//   - Only published and resolved advisories are ever customer visible.
-//   - An advisory without an affected version is not customer visible. A vendor must
-//     explicitly identify what is affected before publishing can disclose the advisory.
-//   - It is visible when the customer has deployed at least one affected application version.
-//     Deployments do not require an entitlement, so this is the only signal that keeps the
-//     customer's view in sync with the vendor's deployment-based impact report. Artifacts need
-//     no equivalent, because a gated artifact cannot be pulled without an entitlement anyway.
-//   - Otherwise it is visible when the customer is entitled to at least one affected version.
-//     Only affected versions grant visibility; versions recorded as fixed do not.
-//   - Per entitlement kind, a vendor who has configured no entitlements of that kind at all
-//     exposes every affected version of that kind to every customer. This mirrors
-//     CheckEntitlementForArtifact so that vendors who do not use licensing still reach their
-//     customers, and it is scoped per kind so that using one kind does not silently expose
-//     the other.
+//   - Having deployed an affected application version is enough. Deployments require no
+//     entitlement, and this is the only signal that keeps the customer's view in sync with
+//     the vendor's deployment-based impact report. Artifacts need no equivalent, because a
+//     gated artifact cannot be pulled without an entitlement anyway.
+//   - Only affected versions grant visibility. Versions recorded as fixed do not.
+//   - A vendor who has configured no entitlements of one kind exposes every affected version
+//     of that kind to every customer, mirroring CheckEntitlementForArtifact so that vendors
+//     who do not use licensing still reach their customers. Scoping that fallback per kind
+//     keeps using one kind from silently exposing the other.
 //
 // Callers must pass only affected versions, already scoped to the vendor organization.
 func IsVisibleToCustomer(

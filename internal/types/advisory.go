@@ -39,7 +39,6 @@ func ParseAdvisoryStatus(value string) (AdvisoryStatus, error) {
 	}
 }
 
-// IsCustomerVisible reports whether an advisory in this status may be shown to customers.
 func (s AdvisoryStatus) IsCustomerVisible() bool {
 	return s == AdvisoryStatusPublished || s == AdvisoryStatusResolved
 }
@@ -124,12 +123,10 @@ type AdvisoryReference struct {
 }
 
 type AdvisoryApplicationVersion struct {
-	AdvisoryID      uuid.UUID      `db:"advisory_id"`
-	ApplicationID   uuid.UUID      `db:"application_id"`
-	ApplicationName string         `db:"application_name"`
-	ApplicationType DeploymentType `db:"application_type"`
-	// ApplicationImageID is the uploaded logo, absent when the application falls back to the
-	// generic icon of its deployment type.
+	AdvisoryID             uuid.UUID               `db:"advisory_id"`
+	ApplicationID          uuid.UUID               `db:"application_id"`
+	ApplicationName        string                  `db:"application_name"`
+	ApplicationType        DeploymentType          `db:"application_type"`
 	ApplicationImageID     *uuid.UUID              `db:"application_image_id"`
 	ApplicationVersionID   uuid.UUID               `db:"application_version_id"`
 	ApplicationVersionName string                  `db:"application_version_name"`
@@ -137,18 +134,14 @@ type AdvisoryApplicationVersion struct {
 }
 
 type AdvisoryArtifactVersion struct {
-	AdvisoryID   uuid.UUID `db:"advisory_id"`
-	ArtifactID   uuid.UUID `db:"artifact_id"`
-	ArtifactName string    `db:"artifact_name"`
-	// ArtifactImageID is the uploaded logo, absent when the artifact falls back to the generic
-	// artifact icon.
+	AdvisoryID      uuid.UUID  `db:"advisory_id"`
+	ArtifactID      uuid.UUID  `db:"artifact_id"`
+	ArtifactName    string     `db:"artifact_name"`
 	ArtifactImageID *uuid.UUID `db:"artifact_image_id"`
-	// ArtifactVersionID and ArtifactVersionName identify the row the vendor marked, whose name
-	// is a digest when they picked the version by digest rather than by tag.
-	ArtifactVersionID   uuid.UUID `db:"artifact_version_id"`
-	ArtifactVersionName string    `db:"artifact_version_name"`
-	// ArtifactVersionDigest and ArtifactVersionTags describe the same content the way the
-	// registry views show it, so that a version marked by digest is still recognisable.
+	// ArtifactVersionName is a digest when the vendor marked the version by digest rather than
+	// by tag, in which case ArtifactVersionTags holds the tags pointing at the same content.
+	ArtifactVersionID     uuid.UUID               `db:"artifact_version_id"`
+	ArtifactVersionName   string                  `db:"artifact_version_name"`
 	ArtifactVersionDigest string                  `db:"artifact_version_digest"`
 	ArtifactVersionTags   []string                `db:"artifact_version_tags"`
 	Relation              AdvisoryVersionRelation `db:"relation"`
@@ -169,22 +162,18 @@ type AdvisoryEventWithUser struct {
 	UserImageID *uuid.UUID `db:"user_image_id"`
 }
 
-// AdvisoryImpactState describes where a deployment stands relative to an advisory,
-// derived from the version its current revision runs.
-//
-// It is computed per query rather than stored, so it always reflects the versions currently
-// marked affected and fixed. There is deliberately no state expressing that a version is
-// older or newer than an affected one: application versions have no authoritative ordering
-// in the schema, so the vendor's own affected and fixed markings are the only sound signal.
+// AdvisoryImpactState is derived from the version a deployment's current revision runs, per
+// query rather than stored, so it always reflects the versions currently marked affected and
+// fixed. There is deliberately no state expressing that a version is older or newer than an
+// affected one: application versions have no authoritative ordering in the schema, so the
+// vendor's own affected and fixed markings are the only sound signal.
 type AdvisoryImpactState string
 
 const (
-	// AdvisoryImpactStateAffected means the current revision runs a version marked affected.
 	AdvisoryImpactStateAffected AdvisoryImpactState = "affected"
-	// AdvisoryImpactStateFixed means the current revision runs a version marked fixed.
-	AdvisoryImpactStateFixed AdvisoryImpactState = "fixed"
-	// AdvisoryImpactStateNotAffected means the deployment ran an affected version at some
-	// point but has since moved to a version marked neither affected nor fixed.
+	AdvisoryImpactStateFixed    AdvisoryImpactState = "fixed"
+	// AdvisoryImpactStateNotAffected means the deployment ran an affected version at some point
+	// but has since moved to a version marked neither affected nor fixed.
 	AdvisoryImpactStateNotAffected AdvisoryImpactState = "not_affected"
 )
 

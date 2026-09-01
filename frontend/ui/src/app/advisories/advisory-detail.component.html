@@ -320,8 +320,6 @@
   </li>
 </ng-template>
 
-<!-- A version marked by digest has no readable name of its own, so it is shown by the tags
-     pointing at the same content, mirroring the artifact entitlement dropdown. -->
 <ng-template #artifactVersionItem let-version>
   <li class="flex items-center gap-2">
     <app-artifact-logo class="size-10 shrink-0" [imageUrl]="version.artifactImageUrl" />

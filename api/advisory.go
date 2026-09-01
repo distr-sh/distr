@@ -56,11 +56,9 @@ type AdvisoryReference struct {
 }
 
 type AdvisoryApplicationVersion struct {
-	ApplicationID   uuid.UUID            `json:"applicationId"`
-	ApplicationName string               `json:"applicationName"`
-	ApplicationType types.DeploymentType `json:"applicationType"`
-	// ApplicationImageURL is absent when the application has no uploaded logo and the generic
-	// icon of its deployment type is used instead.
+	ApplicationID          uuid.UUID                     `json:"applicationId"`
+	ApplicationName        string                        `json:"applicationName"`
+	ApplicationType        types.DeploymentType          `json:"applicationType"`
 	ApplicationImageURL    *string                       `json:"applicationImageUrl,omitempty"`
 	ApplicationVersionID   uuid.UUID                     `json:"applicationVersionId"`
 	ApplicationVersionName string                        `json:"applicationVersionName"`
@@ -68,17 +66,13 @@ type AdvisoryApplicationVersion struct {
 }
 
 type AdvisoryArtifactVersion struct {
-	ArtifactID   uuid.UUID `json:"artifactId"`
-	ArtifactName string    `json:"artifactName"`
-	// ArtifactImageURL is absent when the artifact has no uploaded logo and the generic
-	// artifact icon is used instead.
-	ArtifactImageURL *string `json:"artifactImageUrl,omitempty"`
-	// ArtifactVersionName is the name of the marked row, which is a digest when the version
-	// was marked by digest rather than by tag.
-	ArtifactVersionID   uuid.UUID `json:"artifactVersionId"`
-	ArtifactVersionName string    `json:"artifactVersionName"`
-	// ArtifactVersionDigest and ArtifactVersionTags describe the same content, so that a
-	// version marked by digest can still be shown by the tags pointing at it.
+	ArtifactID       uuid.UUID `json:"artifactId"`
+	ArtifactName     string    `json:"artifactName"`
+	ArtifactImageURL *string   `json:"artifactImageUrl,omitempty"`
+	// ArtifactVersionName is a digest when the vendor marked the version by digest rather than
+	// by tag, in which case ArtifactVersionTags holds the tags pointing at the same content.
+	ArtifactVersionID     uuid.UUID                     `json:"artifactVersionId"`
+	ArtifactVersionName   string                        `json:"artifactVersionName"`
 	ArtifactVersionDigest string                        `json:"artifactVersionDigest"`
 	ArtifactVersionTags   []string                      `json:"artifactVersionTags"`
 	Relation              types.AdvisoryVersionRelation `json:"relation"`
@@ -129,21 +123,18 @@ type AdvisoryImpactedPull struct {
 
 // Requests
 
-// AdvisoryIDRequest is the path parameter shared by all per-advisory routes.
 type AdvisoryIDRequest struct {
 	AdvisoryID uuid.UUID `path:"advisoryId"`
 }
 
-// ListAdvisoriesRequest holds the optional filters of the list endpoint. Each may be
-// repeated to match any of several values, and omitting it entirely disables that filter.
+// ListAdvisoriesRequest holds the filters of the list endpoint. Each may be repeated to match
+// any of several values, and omitting it entirely disables that filter.
 type ListAdvisoriesRequest struct {
 	Status   []string `query:"status"`
 	Severity []string `query:"severity"`
 	Tag      []string `query:"tag"`
 }
 
-// ParsedListAdvisoriesRequest is the validated form of ListAdvisoriesRequest, with
-// each absent filter left empty.
 type ParsedListAdvisoriesRequest struct {
 	Statuses   []types.AdvisoryStatus
 	Severities []types.AdvisorySeverity
@@ -188,8 +179,8 @@ type CreateUpdateAdvisoryRequest struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	Severity    string `json:"severity"`
-	// Status defaults to "triage" on create, where issues reported through the API wait to be
-	// assessed, and leaves the status untouched when omitted on update.
+	// Status defaults to "triage" on create and leaves the status untouched when omitted on
+	// update.
 	Status types.AdvisoryStatus `json:"status,omitempty"`
 	// CveID is unique per organization, ignoring case. Reusing one that another advisory
 	// already carries is rejected with 409 Conflict.
@@ -339,9 +330,8 @@ func deduplicate(ids []uuid.UUID) []uuid.UUID {
 	return result
 }
 
-// PatchAdvisoryRequest changes the status, the severity, or both, without touching the rest
-// of the advisory. It is what the dropdowns in the list and on the detail page send, where
-// the full advisory is not at hand. An omitted field is left as it is.
+// PatchAdvisoryRequest is what the status and severity dropdowns send, where the rest of the
+// advisory is not at hand. An omitted field is left as it is.
 type PatchAdvisoryRequest struct {
 	Status   *types.AdvisoryStatus   `json:"status,omitempty"`
 	Severity *types.AdvisorySeverity `json:"severity,omitempty"`

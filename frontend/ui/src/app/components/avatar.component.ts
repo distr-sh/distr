@@ -6,9 +6,8 @@ import {SecureImagePipe} from '../../util/secureImage';
 /**
  * A user's profile image, falling back to their initials.
  *
- * Both renderings fill the host, so the caller must give it a size (`class="size-8"`).
- * Without one the host collapses onto its content: an uploaded image renders at its
- * natural resolution, and the initials lose their circle.
+ * Both renderings fill the host, so the caller must give it a size (`class="size-8"`). Without
+ * one the host collapses onto its content, leaving an uploaded image at its natural resolution.
  */
 @Component({
   selector: 'app-avatar',

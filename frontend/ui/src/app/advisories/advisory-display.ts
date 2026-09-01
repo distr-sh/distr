@@ -6,13 +6,12 @@ import {
   AdvisorySeverity,
   AdvisoryStatus,
 } from '@distr-sh/distr-sdk';
+import {firstValueFrom} from 'rxjs';
 import {never} from '../../util/exhaust';
 import {BadgeSelectOption} from '../components/badge-select/badge-select.component';
+import {ConfirmConfig} from '../components/confirm-dialog/confirm-dialog.component';
+import {OverlayService} from '../services/overlay.service';
 
-/**
- * The full name of a marked version. The version panel truncates these to keep the sidebar
- * width stable, so the same string is also what goes into the title attribute.
- */
 export function applicationVersionLabel(version: AdvisoryApplicationVersion): string {
   return `${version.applicationName} ${version.applicationVersionName}`;
 }
@@ -27,9 +26,8 @@ export const advisorySeverities: AdvisorySeverity[] = ['none', 'low', 'medium', 
 export const advisoryStatuses: AdvisoryStatus[] = ['triage', 'draft', 'published', 'resolved', 'canceled'];
 
 /**
- * The statuses the list shows before anyone touches the filter. Canceled advisories were
- * closed without disclosure and are rarely what you are looking for, so they stay out of the
- * way until explicitly asked for.
+ * Canceled advisories were closed without disclosure, so they stay out of the way until a
+ * vendor asks for them explicitly.
  */
 export const defaultAdvisoryStatusFilter: AdvisoryStatus[] = advisoryStatuses.filter((status) => status !== 'canceled');
 
@@ -51,11 +49,8 @@ export function statusLabel(status: AdvisoryStatus): string {
 }
 
 /**
- * What customers and partners see in place of the status. The editorial workflow is the
- * vendor's business; the only thing that matters on the other side is whether a deployment
- * still runs an affected version, which is what the `affected` flag reports.
- *
- * A missing flag means the caller is a vendor, who never reaches this.
+ * What customers and partners see in place of the status. A missing flag means the caller is a
+ * vendor, who never reaches this.
  */
 export function affectedLabel(affected: boolean | undefined): string {
   return affected ? 'Affected' : 'Not affected';
@@ -155,6 +150,46 @@ export const severitySelectOptions: BadgeSelectOption<AdvisorySeverity>[] = advi
   label: severityLabel(severity),
   badgeClass: severityBadgeClass(severity),
 }));
+
+function isCustomerVisibleStatus(status: AdvisoryStatus): boolean {
+  return status === 'published' || status === 'resolved';
+}
+
+export async function confirmAdvisoryVisibilityChange(
+  overlay: OverlayService,
+  from: AdvisoryStatus,
+  to: AdvisoryStatus
+): Promise<boolean> {
+  if (isCustomerVisibleStatus(from) === isCustomerVisibleStatus(to)) {
+    return true;
+  }
+  const config: ConfirmConfig = isCustomerVisibleStatus(to)
+    ? {
+        message: {
+          message: `Set this advisory to ${statusLabel(to)}?`,
+          alert: {
+            type: 'danger',
+            message:
+              'Customers who deployed or are entitled to an affected version will see this advisory, ' +
+              'and so will their partners.',
+          },
+        },
+        confirmLabel: 'Disclose advisory',
+      }
+    : {
+        message: {
+          message: `Set this advisory to ${statusLabel(to)}?`,
+          alert: {
+            type: 'warning',
+            message:
+              'Customers and partners will no longer see this advisory. That does not retract what they ' +
+              'have already read or been notified about.',
+          },
+        },
+        confirmLabel: 'Withdraw advisory',
+      };
+  return (await firstValueFrom(overlay.confirm(config))) ?? false;
+}
 
 export function eventLabel(type: AdvisoryEventType): string {
   switch (type) {
