@@ -20,6 +20,7 @@ import {AutotrimDirective} from '../directives/autotrim.directive';
 import {PlaceholderDirective} from '../directives/placeholder.directive';
 import {AuthService} from '../services/auth.service';
 import {PortalService} from '../services/portal.service';
+import {ToastService} from '../services/toast.service';
 
 @Component({
   selector: 'app-register',
@@ -41,8 +42,8 @@ export class RegisterComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly portalService = inject(PortalService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly toast = inject(ToastService);
 
-  protected readonly errorMessage = signal<string | undefined>(undefined);
   protected readonly loading = signal(false);
 
   protected readonly turnstileSiteKey = computed(() => this.portalService.loginConfig().turnstileSiteKey);
@@ -79,14 +80,13 @@ export class RegisterComponent implements OnInit {
 
   public async submit(): Promise<void> {
     this.form.markAllAsTouched();
-    this.errorMessage.set(undefined);
     if (!this.form.valid) {
       return;
     }
     const turnstileToken = this.turnstileToken();
     if (this.turnstileSiteKey() && !turnstileToken) {
       // With an unavailable challenge there is nothing on the page to complete, so say what actually went wrong.
-      this.errorMessage.set(
+      this.toast.error(
         this.turnstile()?.unavailable()
           ? 'The challenge that proves you are human could not be loaded. Please reload the page and make sure that challenges.cloudflare.com is not blocked.'
           : 'Please complete the challenge that proves you are human, then try again'
@@ -102,7 +102,10 @@ export class RegisterComponent implements OnInit {
       );
       location.assign('/');
     } catch (e) {
-      this.errorMessage.set(getFormDisplayedError(e));
+      const error = getFormDisplayedError(e);
+      if (error) {
+        this.toast.error(error);
+      }
       this.loading.set(false);
       // A token can only be redeemed once, so a retry needs a new challenge.
       this.turnstile()?.reset();

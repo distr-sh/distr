@@ -409,7 +409,7 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	if request, err := JsonBody[api.AuthRegistrationRequest](w, r); err != nil {
 		return
 	} else if err := request.Validate(); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	} else if !verifyRegistrationChallenge(w, r, request.TurnstileToken) {
 		return
@@ -438,7 +438,8 @@ func authRegisterHandler(w http.ResponseWriter, r *http.Request) {
 				return err
 			} else if err = db.CreateUserAccountWithOrganization(ctx, &userAccount, &org); err != nil {
 				if errors.Is(err, apierrors.ErrAlreadyExists) {
-					w.WriteHeader(http.StatusBadRequest)
+					http.Error(w, "an account with this email address already exists, please log in instead",
+						http.StatusBadRequest)
 				} else {
 					sentry.GetHubFromContext(ctx).CaptureException(err)
 					w.WriteHeader(http.StatusInternalServerError)
