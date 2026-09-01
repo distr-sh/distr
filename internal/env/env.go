@@ -95,6 +95,8 @@ var (
 	metricsAddr                            string
 	metricsBearerToken                     *string
 	supportBundleLogTailLines              int
+	supportBundleResourceMaxBytes          int
+	supportBundleScriptTimeout             time.Duration
 	lokiURL                                string
 	lokiBearerToken                        *string
 	lokiBasicAuthUsername                  *string
@@ -293,6 +295,12 @@ func Initialize() {
 	metricsBearerToken = envutil.GetEnvOrNil("METRICS_BEARER_TOKEN")
 	supportBundleLogTailLines = envutil.GetEnvParsedOrDefault(
 		"SUPPORT_BUNDLE_LOG_TAIL_LINES", envparse.PositiveNumber, 1000,
+	)
+	supportBundleResourceMaxBytes = envutil.GetEnvParsedOrDefault(
+		"SUPPORT_BUNDLE_RESOURCE_MAX_BYTES", envparse.PositiveNumber, 1024*1024,
+	)
+	supportBundleScriptTimeout = envutil.GetEnvParsedOrDefault(
+		"SUPPORT_BUNDLE_SCRIPT_TIMEOUT", envparse.PositiveDuration, time.Minute,
 	)
 
 	lokiURL = envutil.RequireEnv("LOKI_URL")
@@ -626,10 +634,22 @@ func MetricsBearerToken() *string {
 	return metricsBearerToken
 }
 
-// SupportBundleLogTailLines is the number of container log lines (per container)
-// collected by the support bundle collect script.
+// SupportBundleLogTailLines is the number of container log lines (per container) collected by the
+// support bundle collect script.
 func SupportBundleLogTailLines() int {
 	return supportBundleLogTailLines
+}
+
+// SupportBundleResourceMaxBytes is the maximum size of a single resource collected by the
+// support bundle collect script.
+func SupportBundleResourceMaxBytes() int {
+	return supportBundleResourceMaxBytes
+}
+
+// SupportBundleScriptTimeout is how long a single custom script may run on the customer's host
+// before the collect script kills it. Rounded up to whole seconds when rendered.
+func SupportBundleScriptTimeout() time.Duration {
+	return supportBundleScriptTimeout
 }
 
 // LokiURL is the base URL of the Loki instance storing deployment and deployment

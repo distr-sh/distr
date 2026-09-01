@@ -9,7 +9,9 @@ import (
 	internalctx "github.com/distr-sh/distr/internal/context"
 	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // Configuration
@@ -82,6 +84,125 @@ func ExistsSupportBundleConfigurationEnvVars(ctx context.Context, orgID uuid.UUI
 		return false, fmt.Errorf("could not check support bundle config env vars existence: %w", err)
 	}
 	return exists, nil
+}
+
+const supportBundleConfigurationScriptOutputExpr = `
+	id, created_at, organization_id, name, description, content, enabled
+`
+
+func GetSupportBundleConfigurationScripts(
+	ctx context.Context, orgID uuid.UUID,
+) ([]types.SupportBundleConfigurationScript, error) {
+	return getSupportBundleConfigurationScripts(ctx, orgID, false)
+}
+
+func GetEnabledSupportBundleConfigurationScripts(
+	ctx context.Context, orgID uuid.UUID,
+) ([]types.SupportBundleConfigurationScript, error) {
+	return getSupportBundleConfigurationScripts(ctx, orgID, true)
+}
+
+func getSupportBundleConfigurationScripts(
+	ctx context.Context, orgID uuid.UUID, enabledOnly bool,
+) ([]types.SupportBundleConfigurationScript, error) {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		fmt.Sprintf(`SELECT %v
+		FROM SupportBundleConfigurationScript
+		WHERE organization_id = @orgId AND (NOT @enabledOnly OR enabled)
+		ORDER BY name`, supportBundleConfigurationScriptOutputExpr),
+		pgx.NamedArgs{"orgId": orgID, "enabledOnly": enabledOnly},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("could not query support bundle config scripts: %w", err)
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.SupportBundleConfigurationScript])
+	if err != nil {
+		return nil, fmt.Errorf("could not get support bundle config scripts: %w", err)
+	}
+	return result, nil
+}
+
+func CreateSupportBundleConfigurationScript(
+	ctx context.Context, script *types.SupportBundleConfigurationScript,
+) error {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		fmt.Sprintf(`INSERT INTO SupportBundleConfigurationScript
+			(organization_id, name, description, content, enabled)
+		VALUES (@orgId, @name, @description, @content, @enabled)
+		RETURNING %v`, supportBundleConfigurationScriptOutputExpr),
+		pgx.NamedArgs{
+			"orgId":       script.OrganizationID,
+			"name":        script.Name,
+			"description": script.Description,
+			"content":     script.Content,
+			"enabled":     script.Enabled,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("could not create support bundle config script: %w", err)
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.SupportBundleConfigurationScript])
+	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation {
+		return fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+	} else if err != nil {
+		return fmt.Errorf("could not create support bundle config script: %w", err)
+	}
+	*script = result
+	return nil
+}
+
+func UpdateSupportBundleConfigurationScript(
+	ctx context.Context, script *types.SupportBundleConfigurationScript,
+) error {
+	db := internalctx.GetDb(ctx)
+	rows, err := db.Query(
+		ctx,
+		fmt.Sprintf(`UPDATE SupportBundleConfigurationScript
+		SET name = @name, description = @description, content = @content, enabled = @enabled
+		WHERE id = @id AND organization_id = @orgId
+		RETURNING %v`, supportBundleConfigurationScriptOutputExpr),
+		pgx.NamedArgs{
+			"id":          script.ID,
+			"orgId":       script.OrganizationID,
+			"name":        script.Name,
+			"description": script.Description,
+			"content":     script.Content,
+			"enabled":     script.Enabled,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("could not update support bundle config script: %w", err)
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[types.SupportBundleConfigurationScript])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return apierrors.ErrNotFound
+	} else if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.UniqueViolation {
+		return fmt.Errorf("%w: %w", apierrors.ErrConflict, err)
+	} else if err != nil {
+		return fmt.Errorf("could not update support bundle config script: %w", err)
+	}
+	*script = result
+	return nil
+}
+
+func DeleteSupportBundleConfigurationScript(ctx context.Context, id, orgID uuid.UUID) error {
+	db := internalctx.GetDb(ctx)
+	result, err := db.Exec(
+		ctx,
+		`DELETE FROM SupportBundleConfigurationScript WHERE id = @id AND organization_id = @orgId`,
+		pgx.NamedArgs{"id": id, "orgId": orgID},
+	)
+	if err != nil {
+		return fmt.Errorf("could not delete support bundle config script: %w", err)
+	}
+	if result.RowsAffected() == 0 {
+		return apierrors.ErrNotFound
+	}
+	return nil
 }
 
 // Bundles

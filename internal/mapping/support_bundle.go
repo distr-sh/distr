@@ -3,6 +3,7 @@ package mapping
 import (
 	"github.com/distr-sh/distr/api"
 	"github.com/distr-sh/distr/internal/types"
+	"github.com/google/uuid"
 )
 
 func SupportBundleConfigurationEnvVarsToAPI(
@@ -14,6 +15,32 @@ func SupportBundleConfigurationEnvVarsToAPI(
 			Redacted: ev.Redacted,
 		}
 	})
+}
+
+func SupportBundleConfigurationScriptToAPI(
+	script types.SupportBundleConfigurationScript,
+) api.SupportBundleConfigurationScript {
+	return api.SupportBundleConfigurationScript{
+		ID:          script.ID,
+		CreatedAt:   script.CreatedAt,
+		Name:        script.Name,
+		Description: script.Description,
+		Content:     script.Content,
+		Enabled:     script.Enabled,
+	}
+}
+
+func SupportBundleConfigurationScriptToInternal(
+	request api.CreateUpdateSupportBundleConfigurationScriptRequest,
+	orgID uuid.UUID,
+) types.SupportBundleConfigurationScript {
+	return types.SupportBundleConfigurationScript{
+		OrganizationID: orgID,
+		Name:           request.Name,
+		Description:    request.Description,
+		Content:        request.Content,
+		Enabled:        request.Enabled,
+	}
 }
 
 func SupportBundleToAPI(bundle types.SupportBundleWithDetails) api.SupportBundle {

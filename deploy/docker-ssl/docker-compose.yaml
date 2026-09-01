@@ -119,7 +119,7 @@ services:
   # see https://distr.sh/docs/self-hosting/docker/ for a one-shot service alternative.
   # Loki only joins the private "internal" network and is not reachable from outside.
   loki:
-    image: 'grafana/loki:3.7.6'
+    image: 'grafana/loki:3.7.7'
     command: ['-config.file=/etc/loki/distr-config.yaml']
     configs:
       - source: loki-config

@@ -5,9 +5,11 @@ import {
   CreateSupportBundleRequest,
   CreateSupportBundleResponse,
   CreateUpdateSupportBundleConfigurationRequest,
+  CreateUpdateSupportBundleConfigurationScriptRequest,
   SupportBundle,
   SupportBundleComment,
   SupportBundleConfigurationEnvVar,
+  SupportBundleConfigurationScript,
   SupportBundleDetail,
   UpdateSupportBundleStatusRequest,
 } from '../types/support-bundle';
@@ -43,6 +45,22 @@ export class SupportBundlesService {
 
   public updateConfiguration(request: CreateUpdateSupportBundleConfigurationRequest) {
     return this.httpClient.put<SupportBundleConfigurationEnvVar[]>(`${baseUrl}/configuration`, request);
+  }
+
+  public getScripts() {
+    return this.httpClient.get<SupportBundleConfigurationScript[]>(`${baseUrl}/configuration/scripts`);
+  }
+
+  public createScript(request: CreateUpdateSupportBundleConfigurationScriptRequest) {
+    return this.httpClient.post<SupportBundleConfigurationScript>(`${baseUrl}/configuration/scripts`, request);
+  }
+
+  public updateScript(id: string, request: CreateUpdateSupportBundleConfigurationScriptRequest) {
+    return this.httpClient.put<SupportBundleConfigurationScript>(`${baseUrl}/configuration/scripts/${id}`, request);
+  }
+
+  public deleteScript(id: string) {
+    return this.httpClient.delete<void>(`${baseUrl}/configuration/scripts/${id}`);
   }
 
   public list() {
