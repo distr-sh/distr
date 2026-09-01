@@ -27,6 +27,11 @@
     @apply block text-sm font-medium text-gray-900 dark:text-white;
   }
 
+  // the label of a field in a compact filter row, above a `distr-input distr-input-sm`
+  .distr-label-sm {
+    @apply block text-xs font-medium text-gray-700 dark:text-gray-400;
+  }
+
   // the track of a toggle switch, following a `<input type="checkbox" class="sr-only peer">`
   .distr-toggle {
     @apply relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600;
@@ -40,6 +45,11 @@
   // be the same color as the surface in dark mode. Must stay below `.distr-input` to override it.
   .distr-input-raised {
     @apply dark:bg-gray-600 dark:border-gray-500;
+  }
+
+  // a `distr-input` in a compact filter row, next to a button of the same height
+  .distr-input-sm {
+    @apply p-2 text-xs leading-none;
   }
 
   .distr-btn-primary {
