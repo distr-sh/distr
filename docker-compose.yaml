@@ -38,7 +38,7 @@ services:
   # (single-binary) mode and persists chunks + TSDB index in the rustfs "loki" bucket.
   # The bucket is created by a pre_start init container (requires Docker Compose >= 5.3.0).
   loki:
-    image: 'grafana/loki:3.7.6'
+    image: 'grafana/loki:3.7.7'
     command: ['-config.file=/etc/loki/distr-config.yaml']
     configs:
       - source: loki-config

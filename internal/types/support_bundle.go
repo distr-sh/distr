@@ -21,6 +21,16 @@ type SupportBundleConfigurationEnvVar struct {
 	Redacted       bool      `db:"redacted"`
 }
 
+type SupportBundleConfigurationScript struct {
+	ID             uuid.UUID `db:"id"`
+	CreatedAt      time.Time `db:"created_at"`
+	OrganizationID uuid.UUID `db:"organization_id"`
+	Name           string    `db:"name"`
+	Description    *string   `db:"description"`
+	Content        string    `db:"content"`
+	Enabled        bool      `db:"enabled"`
+}
+
 type SupportBundle struct {
 	ID                           uuid.UUID           `db:"id"`
 	CreatedAt                    time.Time           `db:"created_at"`

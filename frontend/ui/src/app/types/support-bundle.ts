@@ -9,6 +9,22 @@ export interface CreateUpdateSupportBundleConfigurationRequest {
   envVars: SupportBundleConfigurationEnvVar[];
 }
 
+export interface SupportBundleConfigurationScript {
+  id: string;
+  createdAt: string;
+  name: string;
+  description?: string;
+  content: string;
+  enabled: boolean;
+}
+
+export interface CreateUpdateSupportBundleConfigurationScriptRequest {
+  name: string;
+  description?: string;
+  content: string;
+  enabled: boolean;
+}
+
 export interface SupportBundle {
   id: string;
   createdAt: string;

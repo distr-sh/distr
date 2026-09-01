@@ -220,8 +220,8 @@ func ApiRouter(
 				r.Group(func(r chiopenapi.Router) {
 					r.Use(
 						middleware.OTEL(tracers.Default()),
-						// Container logs (up to SUPPORT_BUNDLE_LOG_TAIL_LINES per container) can be sizeable,
-						// so allow a larger request body than the default.
+						// Collected resources (up to SUPPORT_BUNDLE_RESOURCE_MAX_BYTES each) can be
+						// sizeable, so allow a larger request body than the default.
 						requestSize10MiB,
 					)
 					r.Route("/support-bundle-collect", handlers.SupportBundleScriptRouter)
