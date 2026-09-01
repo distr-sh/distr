@@ -32,6 +32,7 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
 | `USER_EMAIL_VERIFICATION_REQUIRED` | no       | `true`    | Whether new users must verify their email address before signing in.                            |
 | `SERVER_SHUTDOWN_DELAY_DURATION`   | no       | —         | Delay between receiving a shutdown signal and stopping the server (useful for rolling deploys). |
 | `ENABLE_QUERY_LOGGING`             | no       | `false`   | Logs all database queries. Intended for debugging only.                                         |
+| `MAINTENANCE_MODE`                 | no       | `false`   | Answers every API and registry request with 503, see below. The frontend keeps being served.    |
 
 ### Sign-up modes
 
@@ -43,6 +44,16 @@ Durations use Go's duration syntax (e.g. `5s`, `10m`, `24h`) and cron values use
   every visitor.
 - `disabled`: sign-up is rejected, both on `/register` and for OIDC logins with an unknown email address. Existing
   users can still sign in, and new users can still be added through an invitation.
+
+### Maintenance mode
+
+`MAINTENANCE_MODE=true` announces planned downtime instead of stopping the instance. The Hub keeps serving the
+frontend, but answers every API request — including the ones from agents — and every request to the OCI registry with
+`503 Service Unavailable`, so that nothing reaches the database while you work on it. The frontend picks that up and
+shows a maintenance page that reconnects on its own once the instance is back.
+
+The Kubernetes probes target `/`, which keeps being served, so the pod stays in its service, while `/ready` reports
+`503` for the whole maintenance window.
 
 ## Tokens & Sessions
 
