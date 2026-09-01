@@ -15,13 +15,7 @@
   <div class="space-y-4 mt-4">
     <div>
       <label for="name" class="distr-label mb-2">Name *</label>
-      <input
-        formControlName="name"
-        autotrim
-        type="text"
-        id="name"
-        class="distr-input disabled:opacity-60"
-        placeholder="License name" />
+      <input formControlName="name" autotrim type="text" id="name" class="distr-input" placeholder="License name" />
       @if (editForm.controls.name.invalid && editForm.controls.name.touched) {
         <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
       }
@@ -65,7 +59,7 @@
       <div class="space-y-4">
         <div>
           <label for="notBefore" class="distr-label mb-2">Not Before *</label>
-          <input formControlName="notBefore" type="date" id="notBefore" class="distr-input disabled:opacity-60" />
+          <input formControlName="notBefore" type="date" id="notBefore" class="distr-input" />
           @if (editForm.errors?.['notBeforeRequired'] && editForm.controls.notBefore.touched) {
             <p class="mt-1 text-sm text-red-600 dark:text-red-500">Field is required.</p>
           }
