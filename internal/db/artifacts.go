@@ -1401,9 +1401,6 @@ func getReferencedManifestDigests(ctx context.Context, artifactID, versionID uui
 	return digests, nil
 }
 
-// One pass per level of manifest nesting, which an index referencing an index makes unbounded.
-const maxUnreferencedArtifactVersionPasses = 8
-
 // deleteUnreferencedArtifactVersions deletes the digest-named versions among the given manifest digests
 // that nothing references any more. It repeats because a child of an index only becomes unreferenced
 // once the pass that deleted the index has finished.
@@ -1413,7 +1410,7 @@ func deleteUnreferencedArtifactVersions(ctx context.Context, artifactID uuid.UUI
 	}
 
 	db := internalctx.GetDb(ctx)
-	for range maxUnreferencedArtifactVersionPasses {
+	for range len(digests) + 1 {
 		cmd, err := db.Exec(
 			ctx,
 			`DELETE FROM ArtifactVersion av
@@ -1447,7 +1444,7 @@ func deleteUnreferencedArtifactVersions(ctx context.Context, artifactID uuid.UUI
 	}
 
 	internalctx.GetLogger(ctx).Warn("stopped deleting unreferenced artifact versions before the graph was empty",
-		zap.String("artifactId", artifactID.String()), zap.Int("passes", maxUnreferencedArtifactVersionPasses))
+		zap.String("artifactId", artifactID.String()), zap.Int("passes", len(digests)+1))
 	return nil
 }
 
