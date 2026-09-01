@@ -28,6 +28,7 @@ import (
 
 const (
 	redirectToLoginOIDCFailed               = "/login?reason=oidc-failed"
+	redirectToLoginOIDCExpired              = "/login?reason=oidc-expired"
 	redirectToLoginOIDCRegistrationDisabled = "/login?reason=oidc-registration-disabled"
 	redirectToLoginOIDCUnavailable          = "/login?reason=oidc-unavailable"
 	redirectToLoginOIDCNoAccount            = "/login?reason=oidc-no-account"
@@ -677,10 +678,12 @@ func consumeOIDCState(
 
 	state, err := verifyOIDCState(r, customOIDCConfigurationID)
 	if err != nil {
-		if !errors.Is(err, apierrors.ErrBadRequest) {
-			sentry.GetHubFromContext(ctx).CaptureException(err)
-		}
 		log.Warn("could not verify OIDC state", zap.Error(err))
+		if errors.Is(err, apierrors.ErrBadRequest) {
+			http.Redirect(w, r, redirectToLoginOIDCExpired, http.StatusFound)
+			return db.OIDCState{}, false
+		}
+		sentry.GetHubFromContext(ctx).CaptureException(err)
 		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
 		return db.OIDCState{}, false
 	}

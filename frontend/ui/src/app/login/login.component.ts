@@ -91,7 +91,12 @@ export class LoginComponent implements OnInit {
         this.toast.success('You have been logged out because your session has expired.');
         break;
       case 'oidc-failed':
-        this.toast.error('Login with this provider failed unexpectedly.');
+        this.toast.error(
+          'Login with this provider failed. Please try again, or contact your administrator if the problem persists.'
+        );
+        break;
+      case 'oidc-expired':
+        this.toast.error('Your login attempt took too long or was already used. Please try again.');
         break;
       case 'oidc-registration-disabled':
         this.toast.error('Sign-up is disabled on this instance. Please contact your administrator.');

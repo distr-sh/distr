@@ -88,9 +88,6 @@
               <span class="text-sm text-red-500">Password mismatch</span>
             }
           </div>
-          @if (errorMessage()) {
-            <div class="text-sm text-red-500">{{ errorMessage() }}</div>
-          }
           @if (turnstileSiteKey(); as siteKey) {
             <app-turnstile class="-mt-2 mb-2 md:-mt-3 md:mb-3" [siteKey]="siteKey" (token)="onTurnstileToken($event)" />
           }
