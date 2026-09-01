@@ -1436,12 +1436,6 @@ func deleteUnreferencedArtifactVersions(ctx context.Context, artifactID uuid.UUI
 				WHERE avp.artifact_blob_digest = av.manifest_blob_digest
 				AND other.artifact_id = av.artifact_id
 				AND other.id <> av.id
-			)
-			AND NOT EXISTS (
-				-- an entitlement references it, which ON DELETE CASCADE would silently revoke
-				SELECT 1
-				FROM ArtifactEntitlement_Artifact aea
-				WHERE aea.artifact_version_id = av.id
 			)`,
 			pgx.NamedArgs{"artifactId": artifactID, "digests": digests},
 		)
