@@ -42,6 +42,35 @@ func SupportBundlesRouter(r chiopenapi.Router) {
 				With(option.Request(api.CreateUpdateSupportBundleConfigurationRequest{})).
 				With(option.Response(http.StatusOK, []api.SupportBundleConfigurationEnvVar{}))
 		})
+
+		r.Route("/scripts", func(r chiopenapi.Router) {
+			r.Get("/", getSupportBundleConfigurationScriptsHandler()).
+				With(option.Description("List support bundle custom scripts")).
+				With(option.Response(http.StatusOK, []api.SupportBundleConfigurationScript{}))
+
+			r.With(middleware.RequireReadWriteOrAdmin, middleware.BlockSuperAdmin).Group(func(r chiopenapi.Router) {
+				type ScriptIDRequest struct {
+					ScriptID uuid.UUID `path:"scriptId"`
+				}
+
+				r.Post("/", createSupportBundleConfigurationScriptHandler()).
+					With(option.Description("Create a support bundle custom script")).
+					With(option.Request(api.CreateUpdateSupportBundleConfigurationScriptRequest{})).
+					With(option.Response(http.StatusOK, api.SupportBundleConfigurationScript{}))
+
+				r.Put("/{scriptId}", updateSupportBundleConfigurationScriptHandler()).
+					With(option.Description("Update a support bundle custom script")).
+					With(option.Request(struct {
+						ScriptIDRequest
+						api.CreateUpdateSupportBundleConfigurationScriptRequest
+					}{})).
+					With(option.Response(http.StatusOK, api.SupportBundleConfigurationScript{}))
+
+				r.Delete("/{scriptId}", deleteSupportBundleConfigurationScriptHandler()).
+					With(option.Description("Delete a support bundle custom script")).
+					With(option.Request(ScriptIDRequest{}))
+			})
+		})
 	})
 
 	r.With(middleware.RequireOrgAndRole).Group(func(r chiopenapi.Router) {
@@ -149,6 +178,110 @@ func createOrUpdateSupportBundleConfigurationHandler() http.HandlerFunc {
 		}
 
 		RespondJSON(w, mapping.SupportBundleConfigurationEnvVarsToAPI(savedEnvVars))
+	}
+}
+
+func getSupportBundleConfigurationScriptsHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		log := internalctx.GetLogger(ctx)
+		a := auth.Authentication.Require(ctx)
+
+		scripts, err := db.GetSupportBundleConfigurationScripts(ctx, *a.CurrentOrgID())
+		if err != nil {
+			log.Error("failed to get support bundle config scripts", zap.Error(err))
+			sentry.GetHubFromContext(ctx).CaptureException(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		RespondJSON(w, mapping.List(scripts, mapping.SupportBundleConfigurationScriptToAPI))
+	}
+}
+
+func createSupportBundleConfigurationScriptHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		a := auth.Authentication.Require(ctx)
+
+		request, err := JsonBody[api.CreateUpdateSupportBundleConfigurationScriptRequest](w, r)
+		if err != nil {
+			return
+		} else if err := request.Validate(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		script := mapping.SupportBundleConfigurationScriptToInternal(request, *a.CurrentOrgID())
+		if err := db.CreateSupportBundleConfigurationScript(ctx, &script); err != nil {
+			respondSupportBundleConfigurationScriptError(w, r, err)
+			return
+		}
+
+		RespondJSON(w, mapping.SupportBundleConfigurationScriptToAPI(script))
+	}
+}
+
+func updateSupportBundleConfigurationScriptHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		scriptID, err := uuid.Parse(r.PathValue("scriptId"))
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+
+		ctx := r.Context()
+		a := auth.Authentication.Require(ctx)
+
+		request, err := JsonBody[api.CreateUpdateSupportBundleConfigurationScriptRequest](w, r)
+		if err != nil {
+			return
+		} else if err := request.Validate(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		script := mapping.SupportBundleConfigurationScriptToInternal(request, *a.CurrentOrgID())
+		script.ID = scriptID
+		if err := db.UpdateSupportBundleConfigurationScript(ctx, &script); err != nil {
+			respondSupportBundleConfigurationScriptError(w, r, err)
+			return
+		}
+
+		RespondJSON(w, mapping.SupportBundleConfigurationScriptToAPI(script))
+	}
+}
+
+func deleteSupportBundleConfigurationScriptHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		scriptID, err := uuid.Parse(r.PathValue("scriptId"))
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+
+		ctx := r.Context()
+		a := auth.Authentication.Require(ctx)
+
+		if err := db.DeleteSupportBundleConfigurationScript(ctx, scriptID, *a.CurrentOrgID()); err != nil {
+			respondSupportBundleConfigurationScriptError(w, r, err)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func respondSupportBundleConfigurationScriptError(w http.ResponseWriter, r *http.Request, err error) {
+	ctx := r.Context()
+	if errors.Is(err, apierrors.ErrNotFound) {
+		http.NotFound(w, r)
+	} else if errors.Is(err, apierrors.ErrConflict) {
+		http.Error(w, "a script with this name already exists", http.StatusConflict)
+	} else {
+		internalctx.GetLogger(ctx).Error("failed to save support bundle config script", zap.Error(err))
+		sentry.GetHubFromContext(ctx).CaptureException(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 

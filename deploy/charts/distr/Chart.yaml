@@ -24,7 +24,7 @@ dependencies:
     condition: postgresql.enabled
   - name: rustfs
     repository: https://charts.rustfs.com
-    version: 1.0.0-rc.3
+    version: 1.0.0-rc.4
     condition: rustfs.enabled
   - name: loki
     repository: oci://ghcr.io/grafana-community/helm-charts
