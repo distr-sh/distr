@@ -128,7 +128,10 @@
 </app-page>
 
 <ng-template #createBundleDialog>
-  <div class="relative p-4 w-full max-w-2xl max-h-full lg:mt-32">
+  <div
+    class="relative p-4 w-full max-w-2xl max-h-full lg:mt-32"
+    animate.enter="animate-fly-in-top"
+    animate.leave="animate-fly-out-top">
     <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
       <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t dark:border-gray-600">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">New Support Bundle</h3>
@@ -151,6 +154,10 @@
                 The script will collect vendor-defined environment variables and all Docker container logs. You will
                 have the choice to select the containers you want to collect data from. No data will be sent to the
                 server without your permission.
+              </p>
+              <p class="mb-2">
+                It may also include custom scripts provided by your vendor. You will see the source of every script and
+                can exclude any of them before it runs.
               </p>
               <p>Run the following command on the target system to collect and upload the support bundle:</p>
             </div>

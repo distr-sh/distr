@@ -35,8 +35,9 @@ As an end customer, you can create support bundles to share diagnostic data with
 4. Run the command on the affected deployment host. The interactive script will:
    - List available Docker containers and prompt for which ones to exclude
    - Show environment variable groups that will be collected, with redacted values already masked, and prompt for which groups to exclude
+   - Show the full source of any diagnostic script your vendor configured and prompt for which ones to exclude, then run the rest and show you their output before uploading it
    - Upload the remaining data to Distr
-5. Nothing is sent until you confirm each section.
+5. Nothing runs or is sent until you confirm each section.
 
 <Aside type="tip">
   The collect command is shown in the Customer Portal after creating the bundle
@@ -48,7 +49,7 @@ As an end customer, you can create support bundles to share diagnostic data with
 
 After the collection script runs, the bundle status changes from **Initialized** to **Created**. Click on any bundle to open the detail view where you can:
 
-- View all collected resources (container logs, environment variables)
+- View all collected resources (container logs, environment variables, script output)
 - Exchange comments with your vendor's support team
 - Track the bundle status (Initialized, Created, Resolved, Canceled)
 

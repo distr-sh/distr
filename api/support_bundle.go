@@ -45,6 +45,66 @@ func (r *CreateUpdateSupportBundleConfigurationRequest) Validate() error {
 	return nil
 }
 
+var scriptNamePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9 ._-]*$`)
+
+const (
+	maxScriptNameLength        = 64
+	maxScriptDescriptionLength = 256
+	maxScriptContentBytes      = 64 * 1024
+)
+
+type SupportBundleConfigurationScript struct {
+	ID          uuid.UUID `json:"id"`
+	CreatedAt   time.Time `json:"createdAt"`
+	Name        string    `json:"name"`
+	Description *string   `json:"description,omitempty"`
+	Content     string    `json:"content"`
+	Enabled     bool      `json:"enabled"`
+}
+
+type CreateUpdateSupportBundleConfigurationScriptRequest struct {
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+	Content     string  `json:"content"`
+	Enabled     bool    `json:"enabled"`
+}
+
+func (r *CreateUpdateSupportBundleConfigurationScriptRequest) Validate() error {
+	r.Name = strings.TrimSpace(r.Name)
+	if r.Name == "" {
+		return validation.NewValidationFailedError("script name must not be empty")
+	}
+	if len(r.Name) > maxScriptNameLength {
+		return validation.NewValidationFailedError(
+			fmt.Sprintf("script name must not be longer than %v characters", maxScriptNameLength))
+	}
+	if !scriptNamePattern.MatchString(r.Name) {
+		return validation.NewValidationFailedError(
+			"script name must start with a letter or digit and may only contain letters, digits, " +
+				"spaces, dots, dashes and underscores")
+	}
+	if description := r.Description; description != nil {
+		trimmed := strings.TrimSpace(*description)
+		if trimmed == "" {
+			r.Description = nil
+		} else {
+			if len(trimmed) > maxScriptDescriptionLength {
+				return validation.NewValidationFailedError(
+					fmt.Sprintf("script description must not be longer than %v characters", maxScriptDescriptionLength))
+			}
+			r.Description = &trimmed
+		}
+	}
+	if strings.TrimSpace(r.Content) == "" {
+		return validation.NewValidationFailedError("script content must not be empty")
+	}
+	if len(r.Content) > maxScriptContentBytes {
+		return validation.NewValidationFailedError(
+			fmt.Sprintf("script content must not be larger than %v KiB", maxScriptContentBytes/1024))
+	}
+	return nil
+}
+
 // Bundle
 
 type SupportBundle struct {
