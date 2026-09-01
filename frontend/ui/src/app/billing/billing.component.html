@@ -110,11 +110,7 @@
     <form [formGroup]="templateForm" (ngSubmit)="saveTemplate()" class="flex flex-col gap-4">
       <div>
         <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300" for="template-name">Name</label>
-        <input
-          id="template-name"
-          type="text"
-          formControlName="name"
-          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" />
+        <input id="template-name" type="text" formControlName="name" class="distr-input" />
         @if (templateForm.controls.name.invalid && templateForm.controls.name.touched) {
           <p class="mt-1 text-sm text-red-600 dark:text-red-400">Name is required</p>
         }
@@ -129,7 +125,7 @@
           type="number"
           min="0"
           formControlName="expirationGracePeriodDays"
-          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" />
+          class="distr-input" />
         <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
           Added to the subscription period end to calculate when the license expires.
         </p>
@@ -147,7 +143,7 @@
           id="template-payload"
           formControlName="payloadTemplate"
           rows="12"
-          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm font-mono rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+          class="distr-input font-mono"
           [attr.placeholder]="payloadTemplatePlaceholder"></textarea>
         @if (templateForm.controls.payloadTemplate.invalid && templateForm.controls.payloadTemplate.touched) {
           <p class="mt-1 text-sm text-red-600 dark:text-red-400">Payload template is required</p>

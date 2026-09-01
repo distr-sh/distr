@@ -211,10 +211,7 @@
 
               <div>
                 <label for="artifact-upstream-auth-type" class="distr-label mb-2">Upstream Authentication</label>
-                <select
-                  formControlName="upstreamAuthType"
-                  id="artifact-upstream-auth-type"
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                <select formControlName="upstreamAuthType" id="artifact-upstream-auth-type" class="distr-input">
                   <option value="none">No authentication</option>
                   <option value="basic">Basic (Username/Password)</option>
                   <option value="aws_ecr">AWS ECR (IAM Access Key)</option>

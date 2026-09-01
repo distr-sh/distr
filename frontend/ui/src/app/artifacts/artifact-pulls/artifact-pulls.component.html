@@ -1,31 +1,34 @@
 <app-page>
   <div class="distr-table-panel">
     <div
-      class="p-4 flex flex-wrap items-end gap-4 border-b border-gray-200 dark:border-gray-600"
+      class="p-4 flex flex-wrap items-start gap-4 border-b border-gray-200 dark:border-gray-600"
       [formGroup]="filterForm">
       <div>
-        <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">From</label>
+        <label for="pulls-from" class="distr-label-sm mb-1">From</label>
         <input
           type="date"
+          id="pulls-from"
           formControlName="from"
           [max]="filterForm.controls.to.value || today"
-          class="min-w-32 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 dark:[color-scheme:dark]" />
+          class="distr-input distr-input-sm w-auto min-w-32 dark:[color-scheme:dark]" />
       </div>
       <div>
-        <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">To</label>
+        <label for="pulls-to" class="distr-label-sm mb-1">To</label>
         <input
           type="date"
+          id="pulls-to"
           formControlName="to"
           [min]="filterForm.controls.from.value || ''"
           [max]="today"
-          class="min-w-32 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 dark:[color-scheme:dark]" />
+          class="distr-input distr-input-sm w-auto min-w-32 dark:[color-scheme:dark]" />
       </div>
       @if (filterOptions(); as options) {
         <div>
-          <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">Customer</label>
+          <label for="pulls-customer" class="distr-label-sm mb-1">Customer</label>
           <select
+            id="pulls-customer"
             formControlName="customerOrganizationId"
-            class="min-w-32 max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+            class="distr-input distr-input-sm w-auto min-w-32 max-w-48">
             <option value="">All</option>
             @for (opt of options.customerOrganizations; track opt.id) {
               <option [value]="opt.id">{{ opt.name }}</option>
@@ -33,10 +36,11 @@
           </select>
         </div>
         <div>
-          <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">User</label>
+          <label for="pulls-user" class="distr-label-sm mb-1">User</label>
           <select
+            id="pulls-user"
             formControlName="userAccountId"
-            class="min-w-32 max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+            class="distr-input distr-input-sm w-auto min-w-32 max-w-48">
             <option value="">All</option>
             @for (opt of options.userAccounts; track opt.id) {
               <option [value]="opt.id">{{ opt.name }}</option>
@@ -44,10 +48,11 @@
           </select>
         </div>
         <div>
-          <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">Deployment</label>
+          <label for="pulls-deployment" class="distr-label-sm mb-1">Deployment</label>
           <select
+            id="pulls-deployment"
             formControlName="deploymentTargetId"
-            class="min-w-32 max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+            class="distr-input distr-input-sm w-auto min-w-32 max-w-48">
             <option value="">All</option>
             @for (opt of options.deploymentTargets; track opt.id) {
               <option [value]="opt.id">{{ opt.name }}</option>
@@ -55,10 +60,11 @@
           </select>
         </div>
         <div>
-          <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">Address</label>
+          <label for="pulls-address" class="distr-label-sm mb-1">Address</label>
           <select
+            id="pulls-address"
             formControlName="remoteAddress"
-            class="min-w-32 max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+            class="distr-input distr-input-sm w-auto min-w-32 max-w-48">
             <option value="">All</option>
             @for (addr of options.remoteAddresses; track addr) {
               <option [value]="addr">{{ addr }}</option>
@@ -66,10 +72,11 @@
           </select>
         </div>
         <div>
-          <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">Artifact</label>
+          <label for="pulls-artifact" class="distr-label-sm mb-1">Artifact</label>
           <select
+            id="pulls-artifact"
             formControlName="artifactId"
-            class="min-w-32 max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+            class="distr-input distr-input-sm w-auto min-w-32 max-w-48">
             <option value="">All</option>
             @for (opt of options.artifacts; track opt.id) {
               <option [value]="opt.id">{{ opt.name }}</option>
@@ -78,10 +85,11 @@
         </div>
         @if (filterForm.controls.artifactId.value) {
           <div>
-            <label class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-400">Version</label>
+            <label for="pulls-version" class="distr-label-sm mb-1">Version</label>
             <select
+              id="pulls-version"
               formControlName="artifactVersionId"
-              class="min-w-32 max-w-48 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+              class="distr-input distr-input-sm w-auto min-w-32 max-w-48">
               <option value="">All</option>
               @for (opt of versionOptions(); track opt.id) {
                 <option [value]="opt.id">{{ formatVersionName(opt.name) }}</option>
@@ -90,25 +98,29 @@
           </div>
         }
       }
-      <div class="ml-auto flex items-center gap-2 self-center">
+      <div class="ml-auto flex items-center gap-2 self-end">
         <button
           type="button"
+          title="Reset"
           (click)="resetFilters()"
-          class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary">
-          <fa-icon [icon]="faFilterCircleXmark" class="mr-2 text-gray-500 dark:text-gray-400" />
-          Reset
+          class="p-2 leading-none flex items-center text-xs font-medium text-center distr-btn-secondary">
+          <fa-icon [icon]="faFilterCircleXmark" class="2xl:mr-2 text-gray-500 dark:text-gray-400" />
+          <span class="hidden 2xl:inline">Reset</span>
         </button>
         <button
           type="button"
+          [title]="isExporting() ? 'Exporting…' : 'Export CSV'"
           (click)="exportCsv()"
           [disabled]="isExporting()"
-          class="py-2 px-3 flex items-center text-sm font-medium text-center distr-btn-secondary disabled:opacity-50 disabled:cursor-not-allowed">
-          <fa-icon [icon]="faDownload" class="mr-2 text-gray-500 dark:text-gray-400" />
-          @if (isExporting()) {
-            Exporting...
-          } @else {
-            Export CSV
-          }
+          class="p-2 leading-none flex items-center text-xs font-medium text-center distr-btn-secondary disabled:opacity-50 disabled:cursor-not-allowed">
+          <fa-icon [icon]="faDownload" class="2xl:mr-2 text-gray-500 dark:text-gray-400" />
+          <span class="hidden 2xl:inline">
+            @if (isExporting()) {
+              Exporting…
+            } @else {
+              Export CSV
+            }
+          </span>
         </button>
       </div>
     </div>

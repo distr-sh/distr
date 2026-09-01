@@ -21,7 +21,7 @@
               autotrim
               autocomplete="name"
               id="name"
-              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              class="distr-input"
               appPlaceholder="name" />
           </div>
           <div>
@@ -31,7 +31,7 @@
               [value]="email"
               type="email"
               id="username"
-              class="bg-gray-50 border border-gray-300 text-gray-600 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-gray-400 dark:focus:ring-blue-500 dark:focus:border-blue-500 cursor-not-allowed" />
+              class="distr-input text-gray-600 dark:text-gray-400 cursor-not-allowed" />
           </div>
           <div>
             <label for="password" class="distr-label mb-2">Password</label>
@@ -41,10 +41,10 @@
               id="password"
               autotrim
               autocomplete="new-password"
-              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              class="distr-input"
               required="" />
             @if (form.controls.password.touched && form.controls.password.errors) {
-              <span class="text-red-500">Password is required and must have at leat 8 characters</span>
+              <span class="text-red-500">Password is required and must have at least 8 characters</span>
             }
           </div>
           <div>
@@ -55,7 +55,7 @@
               id="confirm-password"
               autotrim
               autocomplete="new-password"
-              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              class="distr-input"
               required="" />
             @if (form.controls.passwordConfirm.touched && form.errors?.['passwordMismatch']) {
               <span class="text-red-500">Password mismatch</span>

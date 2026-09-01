@@ -1,10 +1,7 @@
 <div class="grid gap-4 mb-4 grid-cols-2" [formGroup]="deployForm">
   <div class="col-span-2 sm:col-span-1">
     <label for="applicationId" class="distr-label mb-2"> Application </label>
-    <select
-      id="applicationId"
-      formControlName="applicationId"
-      class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-60">
+    <select id="applicationId" formControlName="applicationId" class="distr-input distr-input-raised">
       @for (app of applications$ | async; track app.id) {
         <option [value]="app.id">{{ app.name }}</option>
       }
@@ -15,10 +12,7 @@
   </div>
   <div class="col-span-2 sm:col-span-1">
     <label for="applicationVersion" class="distr-label mb-2">Version</label>
-    <select
-      id="applicationVersion"
-      formControlName="applicationVersionId"
-      class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-60">
+    <select id="applicationVersion" formControlName="applicationVersionId" class="distr-input distr-input-raised">
       @for (version of availableApplicationVersions$ | async; track version.id) {
         <option [value]="version.id">{{ version.name }}</option>
       }
@@ -33,7 +27,7 @@
       <select
         id="applicationEntitlement"
         formControlName="applicationEntitlementId"
-        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-60">
+        class="distr-input distr-input-raised">
         @for (license of applicationEntitlements$ | async; track license.id) {
           <option [value]="license.id">{{ license.name }}</option>
         }
@@ -53,7 +47,7 @@
         id="release-name"
         autotrim
         formControlName="releaseName"
-        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+        class="distr-input distr-input-raised" />
       @if (deployForm.controls.releaseName.invalid && deployForm.controls.releaseName.touched) {
         <p class="mt-1 text-sm text-red-600 dark:text-red-500">
           Field is required, must not be longer than 53 chars, and use lower case characters, numbers, and hyphens.
@@ -117,10 +111,7 @@
 
       <div class="mt-4">
         @if (activeTab() === 'environment') {
-          <app-editor
-            id="env-file"
-            class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            formControlName="envFileData" />
+          <app-editor id="env-file" class="distr-input distr-input-raised" formControlName="envFileData" />
           <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
             Set your environment variables here. Documentation:
             <a
@@ -144,17 +135,14 @@
           <app-editor
             id="compose-file"
             language="yaml"
-            class="cursor-not-allowed block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            class="distr-input distr-input-raised cursor-not-allowed"
             [formControl]="composeFile" />
           <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
             This Docker Compose file comes from the application version and is read-only.
           </div>
         }
         @if (activeTab() === 'values') {
-          <app-editor
-            language="yaml"
-            class="block p-2.5 w-full font-mono text-sm text-gray-900 caret-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:caret-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            formControlName="valuesYaml" />
+          <app-editor language="yaml" class="distr-input distr-input-raised" formControlName="valuesYaml" />
           @if (auth.hasAnyRole('read_write', 'admin')) {
             <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
               You can reference
@@ -242,7 +230,7 @@
             <select
               id="helm-options-wait-strategy"
               formControlName="waitStrategy"
-              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 disabled:opacity-60">
+              class="distr-input distr-input-raised">
               <option value="watcher">Watcher</option>
               <option value="hookOnly">Hook only</option>
               <option value="legacy">Legacy</option>
@@ -256,7 +244,7 @@
               id="helm-options-timeout"
               autotrim
               formControlName="timeout"
-              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" />
+              class="distr-input distr-input-raised" />
             @if (fg.controls.timeout.touched && fg.controls.timeout.invalid) {
               <p class="mt-1 text-sm text-red-600 dark:text-red-500">
                 Please enter a valid duration. Examples: <code>1h30m</code>, <code>5m</code>, <code>1m30s</code>
