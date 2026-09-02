@@ -6,8 +6,7 @@ import {isExpiredSubscription, SubscriptionType} from '../types/subscription';
   selector: 'app-subscription-badge',
   styleUrl: './subscription-badge.component.scss',
   host: {
-    '[attr.data-plan]': 'plan()',
-    '[attr.data-expired]': "expired() ? '' : null",
+    '[class]': 'planClass()',
     '[attr.title]': 'endDateHint()',
   },
   template: `{{ plan() }}`,
@@ -16,7 +15,11 @@ export class SubscriptionBadgeComponent {
   public readonly plan = input.required<SubscriptionType>();
   public readonly endsAt = input<string>();
 
-  protected readonly expired = computed(() => isExpiredSubscription(this.plan(), this.endsAt()));
+  private readonly expired = computed(() => isExpiredSubscription(this.plan(), this.endsAt()));
+
+  // an expired subscription is red whatever plan it was on, and community and a running trial take
+  // the gray of the stylesheet's base rule, so neither of them needs a class
+  protected readonly planClass = computed(() => (this.expired() ? 'plan-expired' : `plan-${this.plan()}`));
 
   protected readonly endDateHint = computed(() => {
     const plan = this.plan();

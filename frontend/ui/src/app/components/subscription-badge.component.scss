@@ -25,7 +25,7 @@
   }
 }
 
-:host([data-plan='pro']) {
+:host(.plan-pro) {
   @apply bg-green-100 text-green-800;
 
   @include dark {
@@ -33,7 +33,7 @@
   }
 }
 
-:host([data-plan='business']) {
+:host(.plan-business) {
   @apply bg-blue-100 text-blue-800;
 
   @include dark {
@@ -41,7 +41,7 @@
   }
 }
 
-:host([data-plan='enterprise']) {
+:host(.plan-enterprise) {
   @apply bg-purple-100 text-purple-800;
 
   @include dark {
@@ -51,7 +51,7 @@
 
 // an expired subscription is red whatever plan it was on, so this has to stay below the plan rules
 // that it overrides at equal specificity
-:host([data-expired]) {
+:host(.plan-expired) {
   @apply bg-red-100 text-red-800;
 
   @include dark {
