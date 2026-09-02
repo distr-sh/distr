@@ -117,8 +117,8 @@ export function impactStateLabel(state: AdvisoryImpactState): string {
   switch (state) {
     case 'affected':
       return 'Affected';
-    case 'fixed':
-      return 'Fixed';
+    case 'patched':
+      return 'Patched';
     case 'not_affected':
       return 'Not affected';
     default:
@@ -130,7 +130,7 @@ export function impactStateBadgeClass(state: AdvisoryImpactState): string {
   switch (state) {
     case 'affected':
       return 'bg-red-100 text-red-800 border-red-400 dark:bg-red-900 dark:text-red-300 dark:border-red-800';
-    case 'fixed':
+    case 'patched':
       return 'bg-green-100 text-green-800 border-green-400 dark:bg-green-900 dark:text-green-300 dark:border-green-800';
     case 'not_affected':
       return 'bg-gray-100 text-gray-800 border-gray-400 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500';

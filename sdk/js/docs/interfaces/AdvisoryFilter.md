@@ -6,8 +6,8 @@
 
 # Interface: AdvisoryFilter
 
-Filters for the advisory list. Each field matches an advisory having any of the
-given values; omitting a field, or passing an empty array, disables that filter.
+Each field matches an advisory having any of the given values. Omitting a field, or passing
+an empty array, disables that filter.
 
 ## Properties
 

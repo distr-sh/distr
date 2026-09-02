@@ -28,11 +28,6 @@
               <span class="distr-status-badge" [ngClass]="affectedBadgeClass(advisory.affected)">
                 {{ affectedLabel(advisory.affected) }}
               </span>
-              @if (advisory.resolvedAt) {
-                <span class="distr-status-badge" [ngClass]="statusBadgeClass('resolved')">
-                  {{ statusLabel('resolved') }}
-                </span>
-              }
             } @else if (canEdit) {
               <app-badge-select
                 ariaLabel="Change status"
@@ -61,7 +56,7 @@
             @if (advisory.publishedAt) {
               &middot; Published {{ advisory.publishedAt | date: 'medium' }}
             }
-            @if (advisory.resolvedAt) {
+            @if (!showsAffectedState && advisory.resolvedAt) {
               &middot; Resolved {{ advisory.resolvedAt | date: 'medium' }}
             }
           </p>
@@ -114,18 +109,26 @@
                   <span class="font-semibold">Action required.</span>
                   @if (stillAffectedCount() > 0) {
                     {{ stillAffectedCount() }} of your deployments still
-                    {{ stillAffectedCount() === 1 ? 'runs' : 'run' }} an affected version.
+                    <ng-container [ngPlural]="stillAffectedCount()">
+                      <ng-template ngPluralCase="=1">runs</ng-template>
+                      <ng-template ngPluralCase="other">run</ng-template>
+                    </ng-container>
+                    an affected version.
                   } @else {
-                    You downloaded an affected artifact version and have not downloaded one containing the fix.
+                    You downloaded an affected artifact version.
                   }
-                  Move to a version listed under Fixed In.
+                  @if (hasPatchedVersions()) {
+                    Move to a version listed under Patched In.
+                  } @else {
+                    No patched version has been released yet.
+                  }
                 </div>
               } @else {
                 <div
                   class="mb-4 p-4 text-sm rounded-lg bg-green-50 text-green-800 dark:bg-gray-700 dark:text-green-400"
                   role="alert">
-                  <span class="font-semibold">You are no longer affected.</span>
-                  Nothing you currently run or have downloaded is still exposed to this advisory.
+                  <span class="font-semibold">You might no longer be affected.</span>
+                  You have deployed or downloaded a patched version, so Distr no longer sees exposure to this advisory.
                 </div>
               }
             }
@@ -255,18 +258,18 @@
             <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">No affected versions recorded.</p>
           }
 
-          <h3 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Fixed In</h3>
-          @if (fixedApplicationVersions().length > 0 || fixedArtifactVersions().length > 0) {
+          <h3 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Patched In</h3>
+          @if (hasPatchedVersions()) {
             <ul class="text-sm text-gray-900 dark:text-white space-y-2">
-              @for (version of fixedApplicationVersions(); track version.applicationVersionId) {
+              @for (version of patchedApplicationVersions(); track version.applicationVersionId) {
                 <ng-container *ngTemplateOutlet="applicationVersionItem; context: {$implicit: version}" />
               }
-              @for (version of fixedArtifactVersions(); track version.artifactVersionId) {
+              @for (version of patchedArtifactVersions(); track version.artifactVersionId) {
                 <ng-container *ngTemplateOutlet="artifactVersionItem; context: {$implicit: version}" />
               }
             </ul>
           } @else {
-            <p class="text-sm text-gray-500 dark:text-gray-400">No fix released yet.</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">No patched version released yet.</p>
           }
         </div>
 

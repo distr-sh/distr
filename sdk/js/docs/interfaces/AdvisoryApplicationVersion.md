@@ -18,8 +18,6 @@
 
 > `optional` **applicationImageUrl?**: `string`
 
-Absent when the application has no uploaded logo and the icon of its type is used.
-
 ---
 
 ### applicationName

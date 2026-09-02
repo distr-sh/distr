@@ -74,7 +74,7 @@ type AdvisoryVersionRelation string
 
 const (
 	AdvisoryVersionRelationAffected AdvisoryVersionRelation = "affected"
-	AdvisoryVersionRelationFixed    AdvisoryVersionRelation = "fixed"
+	AdvisoryVersionRelationPatched  AdvisoryVersionRelation = "patched"
 )
 
 type AdvisoryEventType string
@@ -107,11 +107,11 @@ type AdvisoryWithDetails struct {
 	CreatedByImageID     *uuid.UUID `db:"created_by_image_id"`
 	Tags                 []string   `db:"tags"`
 	AffectedVersionCount int64      `db:"affected_version_count"`
-	FixedVersionCount    int64      `db:"fixed_version_count"`
+	PatchedVersionCount  int64      `db:"patched_version_count"`
 	ReferenceCount       int64      `db:"reference_count"`
 	// CallerAffected reports whether the requesting customer or partner is still exposed,
-	// either through a deployment or an unfixed pull. Nil for vendors, who see the status
-	// instead. Stamped by applyScope rather than selected, hence not a column.
+	// either through a deployment or a pull they never patched. Nil for vendors, who see the
+	// status instead. Stamped by applyScope rather than selected, hence not a column.
 	CallerAffected *bool `db:"-"`
 }
 
@@ -164,16 +164,16 @@ type AdvisoryEventWithUser struct {
 
 // AdvisoryImpactState is derived from the version a deployment's current revision runs, per
 // query rather than stored, so it always reflects the versions currently marked affected and
-// fixed. There is deliberately no state expressing that a version is older or newer than an
+// patched. There is deliberately no state expressing that a version is older or newer than an
 // affected one: application versions have no authoritative ordering in the schema, so the
-// vendor's own affected and fixed markings are the only sound signal.
+// vendor's own affected and patched markings are the only sound signal.
 type AdvisoryImpactState string
 
 const (
 	AdvisoryImpactStateAffected AdvisoryImpactState = "affected"
-	AdvisoryImpactStateFixed    AdvisoryImpactState = "fixed"
+	AdvisoryImpactStatePatched  AdvisoryImpactState = "patched"
 	// AdvisoryImpactStateNotAffected means the deployment ran an affected version at some point
-	// but has since moved to a version marked neither affected nor fixed.
+	// but has since moved to a version marked neither affected nor patched.
 	AdvisoryImpactStateNotAffected AdvisoryImpactState = "not_affected"
 )
 

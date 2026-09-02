@@ -356,7 +356,8 @@ type markedVersionRow struct {
 // first the sibling tags sharing a manifest digest, then recursively the indexes that contain
 // the marked manifest as a part. This mirrors CheckEntitlementForArtifact so that visibility
 // and the actual pull entitlement agree for multi-arch images. It matters just as much for the
-// fixed side, where a customer who pulled the fix by tag must be recognised as having taken it.
+// patched side, where a customer who pulled the patch by tag must be recognised as having
+// taken it.
 func GetMarkedVersions(
 	ctx context.Context, advisoryIDs []uuid.UUID,
 ) (map[uuid.UUID]advisory.MarkedVersions, error) {
@@ -427,8 +428,8 @@ func GetMarkedVersions(
 	for _, row := range artifactVersions {
 		marked := result[row.AdvisoryID]
 		ref := advisory.VersionRef{VersionID: row.VersionID, ParentID: row.ParentID}
-		if row.Relation == types.AdvisoryVersionRelationFixed {
-			marked.FixedArtifactVersions = append(marked.FixedArtifactVersions, ref)
+		if row.Relation == types.AdvisoryVersionRelationPatched {
+			marked.PatchedArtifactVersions = append(marked.PatchedArtifactVersions, ref)
 		} else {
 			marked.AffectedArtifactVersions = append(marked.AffectedArtifactVersions, ref)
 		}

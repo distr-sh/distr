@@ -6,8 +6,7 @@
 
 # Interface: PatchAdvisoryRequest
 
-Changes the status, the severity, or both, leaving the rest of the advisory as it is.
-At least one of the two must be given.
+Leaves the rest of the advisory as it is. At least one of the two fields must be given.
 
 ## Properties
 

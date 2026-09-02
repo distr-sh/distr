@@ -4,7 +4,7 @@ export type AdvisoryStatus = 'triage' | 'draft' | 'published' | 'resolved' | 'ca
 
 export type AdvisorySeverity = 'none' | 'low' | 'medium' | 'high' | 'critical';
 
-export type AdvisoryVersionRelation = 'affected' | 'fixed';
+export type AdvisoryVersionRelation = 'affected' | 'patched';
 
 /**
  * The timeline records what happened to an advisory after it was disclosed, so `published`
@@ -25,15 +25,15 @@ export interface Advisory {
   cveId?: string;
   tags: string[];
   affectedVersionCount: number;
-  fixedVersionCount: number;
+  patchedVersionCount: number;
   referenceCount: number;
   publishedAt?: string;
+  /** Only ever sent to the vendor organization that owns the advisory. */
   resolvedAt?: string;
   /**
    * Whether the advisory is still a live problem for the requesting customer or partner: a
    * deployment of theirs runs an affected version, or they pulled an affected artifact version
-   * without since pulling one that carries the fix. Absent for vendors, who see the status
-   * instead.
+   * without since pulling a patched one. Absent for vendors, who see the status instead.
    */
   affected?: boolean;
 }
@@ -86,10 +86,10 @@ export interface AdvisoryDetail extends Advisory {
 
 /**
  * Where a deployment stands relative to an advisory, derived from the version its current
- * revision runs: still on an affected version, on a version marked as containing the fix or on
- * a version marked as neither.
+ * revision runs: still on an affected version, on a version marked as patched or on a version
+ * marked as neither.
  */
-export type AdvisoryImpactState = 'affected' | 'fixed' | 'not_affected';
+export type AdvisoryImpactState = 'affected' | 'patched' | 'not_affected';
 
 /**
  * One deployment that has run an affected application version at some point. `applicationVersion*`
@@ -142,9 +142,9 @@ export interface CreateUpdateAdvisoryRequest {
   tags: string[];
   references: AdvisoryReference[];
   affectedApplicationVersionIds: string[];
-  fixedApplicationVersionIds: string[];
+  patchedApplicationVersionIds: string[];
   affectedArtifactVersionIds: string[];
-  fixedArtifactVersionIds: string[];
+  patchedArtifactVersionIds: string[];
 }
 
 /**

@@ -282,7 +282,7 @@ func TestIsVisibleToCustomerDeployments(t *testing.T) {
 			visible:     true,
 		},
 		{
-			// The "fixed" row of the vendor's impact report, who still need to read the advisory.
+			// The "patched" row of the vendor's impact report, who still need to read the advisory.
 			name:        "deployed an affected version they have since upgraded away from",
 			appAffected: []advisory.VersionRef{appVersion(versionOneID)},
 			view:        gatedVendor(versionOneID, versionTwoID),
@@ -630,41 +630,41 @@ func otherArtifactVersion(versionID uuid.UUID) advisory.VersionRef {
 
 func TestIsStillAffectedPulls(t *testing.T) {
 	otherAffectedID := uuid.New()
-	otherFixedID := uuid.New()
+	otherPatchedID := uuid.New()
 
 	cases := []struct {
 		name        string
 		artAffected []advisory.VersionRef
-		artFixed    []advisory.VersionRef
+		artPatched  []advisory.VersionRef
 		pulled      []uuid.UUID
 		affected    bool
 	}{
 		{
-			name:        "pulled an affected version and no fix exists yet",
+			name:        "pulled an affected version and no patch exists yet",
 			artAffected: []advisory.VersionRef{artifactVersion(amd64VersionID)},
 			pulled:      []uuid.UUID{amd64VersionID},
 			affected:    true,
 		},
 		{
-			name:        "pulled an affected version and has not pulled the fix",
+			name:        "pulled an affected version and has not pulled the patch",
 			artAffected: []advisory.VersionRef{artifactVersion(amd64VersionID)},
-			artFixed:    []advisory.VersionRef{artifactVersion(arm64VersionID)},
+			artPatched:  []advisory.VersionRef{artifactVersion(arm64VersionID)},
 			pulled:      []uuid.UUID{amd64VersionID},
 			affected:    true,
 		},
 		{
-			name:        "pulled the fix as well",
+			name:        "pulled the patch as well",
 			artAffected: []advisory.VersionRef{artifactVersion(amd64VersionID)},
-			artFixed:    []advisory.VersionRef{artifactVersion(arm64VersionID)},
+			artPatched:  []advisory.VersionRef{artifactVersion(arm64VersionID)},
 			pulled:      []uuid.UUID{amd64VersionID, arm64VersionID},
 			affected:    false,
 		},
 		{
-			// Pulling the fix by a sibling tag counts, which is why GetMarkedVersions expands
-			// the fixed side the same way it expands the affected side.
-			name:        "pulled the fix under a different tag of the same digest",
+			// Pulling the patch by a sibling tag counts, which is why GetMarkedVersions expands
+			// the patched side the same way it expands the affected side.
+			name:        "pulled the patch under a different tag of the same digest",
 			artAffected: []advisory.VersionRef{artifactVersion(amd64VersionID)},
-			artFixed:    []advisory.VersionRef{artifactVersion(arm64VersionID), artifactVersion(indexVersionID)},
+			artPatched:  []advisory.VersionRef{artifactVersion(arm64VersionID), artifactVersion(indexVersionID)},
 			pulled:      []uuid.UUID{amd64VersionID, indexVersionID},
 			affected:    false,
 		},
@@ -675,15 +675,15 @@ func TestIsStillAffectedPulls(t *testing.T) {
 			affected:    false,
 		},
 		{
-			// The fix is tracked per artifact: taking it for one does not settle the other.
-			name: "pulled the fix for one artifact but not the other",
+			// The patch is tracked per artifact: taking it for one does not settle the other.
+			name: "pulled the patch for one artifact but not the other",
 			artAffected: []advisory.VersionRef{
 				artifactVersion(amd64VersionID),
 				otherArtifactVersion(otherAffectedID),
 			},
-			artFixed: []advisory.VersionRef{artifactVersion(arm64VersionID), otherArtifactVersion(otherFixedID)},
-			pulled:   []uuid.UUID{amd64VersionID, arm64VersionID, otherAffectedID},
-			affected: true,
+			artPatched: []advisory.VersionRef{artifactVersion(arm64VersionID), otherArtifactVersion(otherPatchedID)},
+			pulled:     []uuid.UUID{amd64VersionID, arm64VersionID, otherAffectedID},
+			affected:   true,
 		},
 	}
 
@@ -692,7 +692,7 @@ func TestIsStillAffectedPulls(t *testing.T) {
 			g := NewWithT(t)
 			marked := advisory.MarkedVersions{
 				AffectedArtifactVersions: tc.artAffected,
-				FixedArtifactVersions:    tc.artFixed,
+				PatchedArtifactVersions:  tc.artPatched,
 			}
 			exposure := advisory.Exposure{PulledArtifactVersionIDs: tc.pulled}
 			g.Expect(advisory.IsStillAffected(marked, exposure)).To(Equal(tc.affected))

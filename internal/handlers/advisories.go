@@ -595,9 +595,9 @@ func applyAdvisoryAssociations(
 	}
 	return db.SetAdvisoryVersions(ctx, advisoryID, db.AdvisoryVersionSelection{
 		AffectedApplicationVersionIDs: request.AffectedApplicationVersionIDs,
-		FixedApplicationVersionIDs:    request.FixedApplicationVersionIDs,
+		PatchedApplicationVersionIDs:  request.PatchedApplicationVersionIDs,
 		AffectedArtifactVersionIDs:    request.AffectedArtifactVersionIDs,
-		FixedArtifactVersionIDs:       request.FixedArtifactVersionIDs,
+		PatchedArtifactVersionIDs:     request.PatchedArtifactVersionIDs,
 	})
 }
 
@@ -609,9 +609,9 @@ func validateAdvisoryVersionsInOrg(
 	log := internalctx.GetLogger(ctx)
 
 	applicationVersionIDs := slices.Concat(
-		request.AffectedApplicationVersionIDs, request.FixedApplicationVersionIDs)
+		request.AffectedApplicationVersionIDs, request.PatchedApplicationVersionIDs)
 	artifactVersionIDs := slices.Concat(
-		request.AffectedArtifactVersionIDs, request.FixedArtifactVersionIDs)
+		request.AffectedArtifactVersionIDs, request.PatchedArtifactVersionIDs)
 
 	count, err := db.CountAdvisoryVersionsOutsideOrg(ctx, orgID, applicationVersionIDs, artifactVersionIDs)
 	if err != nil {
@@ -683,8 +683,8 @@ func loadAdvisoryVersionMarkings(
 // once must not write a message nobody can read.
 const maxVersionChangeMessageParts = 10
 
-// versionChangeParts matches versions by id, so that one switching between affected and fixed
-// reads as a change rather than as a removal plus an addition.
+// versionChangeParts matches versions by id, so that one switching between affected and
+// patched reads as a change rather than as a removal plus an addition.
 func versionChangeParts(before, after []versionMarking) []string {
 	beforeByID := make(map[uuid.UUID]versionMarking, len(before))
 	for _, marking := range before {

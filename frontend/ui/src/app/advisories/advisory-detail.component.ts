@@ -1,4 +1,4 @@
-import {DatePipe, NgClass, NgTemplateOutlet} from '@angular/common';
+import {DatePipe, NgClass, NgPlural, NgPluralCase, NgTemplateOutlet} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, inject, signal, TemplateRef, viewChild} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, RouterLink} from '@angular/router';
@@ -56,6 +56,8 @@ type ImpactState = {state: 'loading'} | {state: 'loaded'; impact: AdvisoryImpact
   imports: [
     DatePipe,
     NgClass,
+    NgPlural,
+    NgPluralCase,
     NgTemplateOutlet,
     RouterLink,
     FaIconComponent,
@@ -119,14 +121,19 @@ export class AdvisoryDetailComponent {
   protected readonly affectedApplicationVersions = computed(() =>
     (this.advisory()?.applicationVersions ?? []).filter((v) => v.relation === 'affected')
   );
-  protected readonly fixedApplicationVersions = computed(() =>
-    (this.advisory()?.applicationVersions ?? []).filter((v) => v.relation === 'fixed')
+  protected readonly patchedApplicationVersions = computed(() =>
+    (this.advisory()?.applicationVersions ?? []).filter((v) => v.relation === 'patched')
   );
   protected readonly affectedArtifactVersions = computed(() =>
     (this.advisory()?.artifactVersions ?? []).filter((v) => v.relation === 'affected')
   );
-  protected readonly fixedArtifactVersions = computed(() =>
-    (this.advisory()?.artifactVersions ?? []).filter((v) => v.relation === 'fixed')
+  protected readonly patchedArtifactVersions = computed(() =>
+    (this.advisory()?.artifactVersions ?? []).filter((v) => v.relation === 'patched')
+  );
+  // The versions arrive filtered to what this viewer may see, so an entitlement they do not
+  // hold must not produce a patch the customer is told to move to.
+  protected readonly hasPatchedVersions = computed(
+    () => this.patchedApplicationVersions().length > 0 || this.patchedArtifactVersions().length > 0
   );
 
   private readonly refresh$ = new Subject<void>();

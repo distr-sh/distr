@@ -88,11 +88,6 @@
                         <span class="distr-status-badge" [ngClass]="affectedBadgeClass(advisory.affected)">
                           {{ affectedLabel(advisory.affected) }}
                         </span>
-                        @if (advisory.resolvedAt) {
-                          <span class="distr-status-badge" [ngClass]="statusBadgeClass('resolved')">
-                            {{ statusLabel('resolved') }}
-                          </span>
-                        }
                       } @else if (canEdit) {
                         <app-badge-select
                           ariaLabel="Change status"

@@ -18,8 +18,7 @@
 
 Whether the advisory is still a live problem for the requesting customer or partner: a
 deployment of theirs runs an affected version, or they pulled an affected artifact version
-without since pulling one that carries the fix. Absent for vendors, who see the status
-instead.
+without since pulling a patched one. Absent for vendors, who see the status instead.
 
 #### Inherited from
 
@@ -105,16 +104,6 @@ The vendor-internal timeline. Empty for customer and partner users.
 
 ---
 
-### fixedVersionCount
-
-> **fixedVersionCount**: `number`
-
-#### Inherited from
-
-[`Advisory`](Advisory.md).[`fixedVersionCount`](Advisory.md#fixedversioncount)
-
----
-
 ### id
 
 > **id**: `string`
@@ -122,6 +111,16 @@ The vendor-internal timeline. Empty for customer and partner users.
 #### Inherited from
 
 [`Advisory`](Advisory.md).[`id`](Advisory.md#id)
+
+---
+
+### patchedVersionCount
+
+> **patchedVersionCount**: `number`
+
+#### Inherited from
+
+[`Advisory`](Advisory.md).[`patchedVersionCount`](Advisory.md#patchedversioncount)
 
 ---
 
@@ -154,6 +153,8 @@ The vendor-internal timeline. Empty for customer and partner users.
 ### resolvedAt?
 
 > `optional` **resolvedAt?**: `string`
+
+Only ever sent to the vendor organization that owns the advisory.
 
 #### Inherited from
 

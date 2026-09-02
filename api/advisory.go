@@ -30,14 +30,15 @@ type Advisory struct {
 	CveID                *string                `json:"cveId,omitempty"`
 	Tags                 []string               `json:"tags"`
 	AffectedVersionCount int64                  `json:"affectedVersionCount"`
-	FixedVersionCount    int64                  `json:"fixedVersionCount"`
+	PatchedVersionCount  int64                  `json:"patchedVersionCount"`
 	ReferenceCount       int64                  `json:"referenceCount"`
 	PublishedAt          *time.Time             `json:"publishedAt,omitempty"`
-	ResolvedAt           *time.Time             `json:"resolvedAt,omitempty"`
+	// ResolvedAt is only sent to vendors, like the creator fields.
+	ResolvedAt *time.Time `json:"resolvedAt,omitempty"`
 	// Affected reports whether the advisory is still a live problem for the requesting
 	// customer or partner: a deployment of theirs runs an affected version, or they pulled an
-	// affected artifact version without since pulling one that carries the fix. Omitted for
-	// vendors, who see the status instead.
+	// affected artifact version without since pulling a patched one. Omitted for vendors, who
+	// see the status instead.
 	Affected *bool `json:"affected,omitempty"`
 }
 
@@ -188,9 +189,9 @@ type CreateUpdateAdvisoryRequest struct {
 	Tags                          []string            `json:"tags"`
 	References                    []AdvisoryReference `json:"references"`
 	AffectedApplicationVersionIDs []uuid.UUID         `json:"affectedApplicationVersionIds"`
-	FixedApplicationVersionIDs    []uuid.UUID         `json:"fixedApplicationVersionIds"`
+	PatchedApplicationVersionIDs  []uuid.UUID         `json:"patchedApplicationVersionIds"`
 	AffectedArtifactVersionIDs    []uuid.UUID         `json:"affectedArtifactVersionIds"`
-	FixedArtifactVersionIDs       []uuid.UUID         `json:"fixedArtifactVersionIds"`
+	PatchedArtifactVersionIDs     []uuid.UUID         `json:"patchedArtifactVersionIds"`
 }
 
 func (r *CreateUpdateAdvisoryRequest) Validate() error {
@@ -286,21 +287,21 @@ func (r *CreateUpdateAdvisoryRequest) validateReferences() error {
 	return nil
 }
 
-// validateVersions rejects a version that is listed as both affected and fixed, which the
+// validateVersions rejects a version that is listed as both affected and patched, which the
 // composite primary key on the link tables cannot represent.
 func (r *CreateUpdateAdvisoryRequest) validateVersions() error {
-	if overlap := firstOverlap(r.AffectedApplicationVersionIDs, r.FixedApplicationVersionIDs); overlap != nil {
+	if overlap := firstOverlap(r.AffectedApplicationVersionIDs, r.PatchedApplicationVersionIDs); overlap != nil {
 		return validation.NewValidationFailedError(
-			fmt.Sprintf("application version %v cannot be both affected and fixed", overlap))
+			fmt.Sprintf("application version %v cannot be both affected and patched", overlap))
 	}
-	if overlap := firstOverlap(r.AffectedArtifactVersionIDs, r.FixedArtifactVersionIDs); overlap != nil {
+	if overlap := firstOverlap(r.AffectedArtifactVersionIDs, r.PatchedArtifactVersionIDs); overlap != nil {
 		return validation.NewValidationFailedError(
-			fmt.Sprintf("artifact version %v cannot be both affected and fixed", overlap))
+			fmt.Sprintf("artifact version %v cannot be both affected and patched", overlap))
 	}
 	r.AffectedApplicationVersionIDs = deduplicate(r.AffectedApplicationVersionIDs)
-	r.FixedApplicationVersionIDs = deduplicate(r.FixedApplicationVersionIDs)
+	r.PatchedApplicationVersionIDs = deduplicate(r.PatchedApplicationVersionIDs)
 	r.AffectedArtifactVersionIDs = deduplicate(r.AffectedArtifactVersionIDs)
-	r.FixedArtifactVersionIDs = deduplicate(r.FixedArtifactVersionIDs)
+	r.PatchedArtifactVersionIDs = deduplicate(r.PatchedArtifactVersionIDs)
 	return nil
 }
 

@@ -72,13 +72,13 @@ func containsAnyVersion(refs []VersionRef, versionIDs []uuid.UUID) bool {
 // MarkedVersions are the versions an advisory marks, already expanded to every version that
 // resolves to the same content.
 //
-// There are no fixed application versions because the application side is decided by what a
+// There are no patched application versions because the application side is decided by what a
 // deployment runs right now: a deployment that has moved off every affected version is no
 // longer exposed, whether or not the version it moved to is one the vendor marked.
 type MarkedVersions struct {
 	AffectedApplicationVersions []VersionRef
 	AffectedArtifactVersions    []VersionRef
-	FixedArtifactVersions       []VersionRef
+	PatchedArtifactVersions     []VersionRef
 }
 
 // Exposure is what a customer or partner has actually done with the vendor's software.
@@ -99,28 +99,28 @@ type Exposure struct {
 // impact table cannot disagree.
 //
 // A pull cannot be observed the same way, because Distr sees that an artifact was downloaded
-// but never what became of it. Pulling a version carrying the fix is the closest thing to
-// evidence that the fix was taken, so it is what clears the artifact.
+// but never what became of it. Pulling a patched version is the closest thing to evidence that
+// the patch was taken, so it is what clears the artifact.
 func IsStillAffected(marked MarkedVersions, exposure Exposure) bool {
 	if containsAnyVersion(marked.AffectedApplicationVersions, exposure.CurrentApplicationVersionIDs) {
 		return true
 	}
-	return hasUnfixedPull(marked, exposure.PulledArtifactVersionIDs)
+	return hasUnpatchedPull(marked, exposure.PulledArtifactVersionIDs)
 }
 
-// hasUnfixedPull checks each artifact on its own rather than the advisory as a whole, so that
-// an advisory covering two artifacts is not settled by taking the fix for one of them.
-func hasUnfixedPull(marked MarkedVersions, pulledIDs []uuid.UUID) bool {
+// hasUnpatchedPull checks each artifact on its own rather than the advisory as a whole, so that
+// an advisory covering two artifacts is not settled by taking the patch for one of them.
+func hasUnpatchedPull(marked MarkedVersions, pulledIDs []uuid.UUID) bool {
 	wasPulled := func(ref VersionRef) bool {
 		return slices.Contains(pulledIDs, ref.VersionID)
 	}
-	fixTaken := func(artifactID uuid.UUID) bool {
-		return slices.ContainsFunc(marked.FixedArtifactVersions, func(ref VersionRef) bool {
+	patchTaken := func(artifactID uuid.UUID) bool {
+		return slices.ContainsFunc(marked.PatchedArtifactVersions, func(ref VersionRef) bool {
 			return ref.ParentID == artifactID && wasPulled(ref)
 		})
 	}
 	return slices.ContainsFunc(marked.AffectedArtifactVersions, func(ref VersionRef) bool {
-		return wasPulled(ref) && !fixTaken(ref.ParentID)
+		return wasPulled(ref) && !patchTaken(ref.ParentID)
 	})
 }
 
@@ -183,7 +183,7 @@ func IsDisclosed(
 //     entitlement, and this is the only signal that keeps the customer's view in sync with
 //     the vendor's deployment-based impact report. Artifacts need no equivalent, because a
 //     gated artifact cannot be pulled without an entitlement anyway.
-//   - Only affected versions grant visibility. Versions recorded as fixed do not.
+//   - Only affected versions grant visibility. Versions recorded as patched do not.
 //   - A vendor who has configured no entitlements of one kind exposes every affected version
 //     of that kind to every customer, mirroring CheckEntitlementForArtifact so that vendors
 //     who do not use licensing still reach their customers. Scoping that fallback per kind

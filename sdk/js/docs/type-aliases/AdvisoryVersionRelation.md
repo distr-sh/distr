@@ -6,4 +6,4 @@
 
 # Type Alias: AdvisoryVersionRelation
 
-> **AdvisoryVersionRelation** = `"affected"` \| `"fixed"`
+> **AdvisoryVersionRelation** = `"affected"` \| `"patched"`

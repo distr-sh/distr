@@ -7,12 +7,14 @@ import (
 )
 
 // AdvisoryToAPI returns a mapper that withholds the creator from customer and partner viewers,
-// the same way DeploymentRevisionToAPI does.
+// the same way DeploymentRevisionToAPI does, along with the resolved date: resolving is the
+// vendor's editorial decision, and those viewers are shown their own exposure instead of the
+// status. The published date stays, because disclosure is a fact about them too.
 func AdvisoryToAPI(
 	viewerCustomerOrgID *uuid.UUID,
 	viewerPartnerOrgID *uuid.UUID,
 ) func(types.AdvisoryWithDetails) api.Advisory {
-	showCreator := viewerCustomerOrgID == nil && viewerPartnerOrgID == nil
+	isVendorViewer := viewerCustomerOrgID == nil && viewerPartnerOrgID == nil
 	return func(advisory types.AdvisoryWithDetails) api.Advisory {
 		result := api.Advisory{
 			ID:                   advisory.ID,
@@ -24,13 +26,13 @@ func AdvisoryToAPI(
 			CveID:                advisory.CveID,
 			Tags:                 advisory.Tags,
 			AffectedVersionCount: advisory.AffectedVersionCount,
-			FixedVersionCount:    advisory.FixedVersionCount,
+			PatchedVersionCount:  advisory.PatchedVersionCount,
 			ReferenceCount:       advisory.ReferenceCount,
 			PublishedAt:          advisory.PublishedAt,
-			ResolvedAt:           advisory.ResolvedAt,
 			Affected:             advisory.CallerAffected,
 		}
-		if showCreator {
+		if isVendorViewer {
+			result.ResolvedAt = advisory.ResolvedAt
 			result.CreatedByUserName = advisory.CreatedByUserName
 			result.CreatedByImageURL = CreateImageURL(advisory.CreatedByImageID)
 		}

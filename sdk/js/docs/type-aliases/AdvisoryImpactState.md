@@ -6,8 +6,8 @@
 
 # Type Alias: AdvisoryImpactState
 
-> **AdvisoryImpactState** = `"affected"` \| `"fixed"` \| `"not_affected"`
+> **AdvisoryImpactState** = `"affected"` \| `"patched"` \| `"not_affected"`
 
 Where a deployment stands relative to an advisory, derived from the version its current
-revision runs: still on an affected version, on a version marked as containing the fix, or
-on a version marked as neither.
+revision runs: still on an affected version, on a version marked as patched or on a version
+marked as neither.

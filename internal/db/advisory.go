@@ -62,10 +62,10 @@ const advisoryWithDetailsOutputExpr = `
 	) AS affected_version_count,
 	(
 		(SELECT count(*) FROM AdvisoryApplicationVersion vav
-			WHERE vav.advisory_id = v.id AND vav.relation = 'fixed')
+			WHERE vav.advisory_id = v.id AND vav.relation = 'patched')
 		+ (SELECT count(*) FROM AdvisoryArtifactVersion vrv
-			WHERE vrv.advisory_id = v.id AND vrv.relation = 'fixed')
-	) AS fixed_version_count,
+			WHERE vrv.advisory_id = v.id AND vrv.relation = 'patched')
+	) AS patched_version_count,
 	(SELECT count(*) FROM AdvisoryReference vr WHERE vr.advisory_id = v.id) AS reference_count
 `
 
@@ -164,7 +164,7 @@ func applyVersionCounts(
 		return nil, err
 	}
 
-	type counts struct{ affected, fixed int64 }
+	type counts struct{ affected, patched int64 }
 	byAdvisory := make(map[uuid.UUID]*counts, len(advisories))
 	for i := range advisories {
 		byAdvisory[advisories[i].ID] = &counts{}
@@ -174,8 +174,8 @@ func applyVersionCounts(
 		if !ok {
 			return
 		}
-		if relation == types.AdvisoryVersionRelationFixed {
-			c.fixed++
+		if relation == types.AdvisoryVersionRelationPatched {
+			c.patched++
 		} else {
 			c.affected++
 		}
@@ -190,7 +190,7 @@ func applyVersionCounts(
 	for i := range advisories {
 		c := byAdvisory[advisories[i].ID]
 		advisories[i].AffectedVersionCount = c.affected
-		advisories[i].FixedVersionCount = c.fixed
+		advisories[i].PatchedVersionCount = c.patched
 	}
 	return advisories, nil
 }
@@ -231,7 +231,7 @@ func markedArtifactVersionIDs(marked map[uuid.UUID]advisory.MarkedVersions) []uu
 	}
 	for _, m := range marked {
 		collect(m.AffectedArtifactVersions)
-		collect(m.FixedArtifactVersions)
+		collect(m.PatchedArtifactVersions)
 	}
 	return ids
 }
@@ -411,7 +411,7 @@ func UpdateAdvisory(ctx context.Context, advisory *types.Advisory) error {
 
 // advisoryStatusTimestamps maintains published_at and resolved_at for every query that writes
 // a status. Both are stamped only on the way in, so that republishing keeps the original
-// disclosure date and re-saving a resolved advisory keeps the date the fix was announced.
+// disclosure date and re-saving a resolved advisory keeps the date it was first resolved.
 //
 // Every occurrence of the status parameter carries the same explicit cast. NamedArgs collapses
 // them into one placeholder, and without the cast Postgres deduces the enum from the assignment
@@ -700,9 +700,9 @@ func filterAdvisoryVersionsForCustomer(
 
 type AdvisoryVersionSelection struct {
 	AffectedApplicationVersionIDs []uuid.UUID
-	FixedApplicationVersionIDs    []uuid.UUID
+	PatchedApplicationVersionIDs  []uuid.UUID
 	AffectedArtifactVersionIDs    []uuid.UUID
-	FixedArtifactVersionIDs       []uuid.UUID
+	PatchedArtifactVersionIDs     []uuid.UUID
 }
 
 type versionRelationRow struct {
@@ -711,14 +711,14 @@ type versionRelationRow struct {
 }
 
 func relationRows(
-	affected, fixed []uuid.UUID,
+	affected, patched []uuid.UUID,
 ) []versionRelationRow {
-	rows := make([]versionRelationRow, 0, len(affected)+len(fixed))
+	rows := make([]versionRelationRow, 0, len(affected)+len(patched))
 	for _, id := range affected {
 		rows = append(rows, versionRelationRow{id, types.AdvisoryVersionRelationAffected})
 	}
-	for _, id := range fixed {
-		rows = append(rows, versionRelationRow{id, types.AdvisoryVersionRelationFixed})
+	for _, id := range patched {
+		rows = append(rows, versionRelationRow{id, types.AdvisoryVersionRelationPatched})
 	}
 	return rows
 }
@@ -743,7 +743,7 @@ func SetAdvisoryVersions(
 		return fmt.Errorf("could not delete existing advisory artifact versions: %w", err)
 	}
 
-	appRows := relationRows(selection.AffectedApplicationVersionIDs, selection.FixedApplicationVersionIDs)
+	appRows := relationRows(selection.AffectedApplicationVersionIDs, selection.PatchedApplicationVersionIDs)
 	if len(appRows) > 0 {
 		if _, err := db.CopyFrom(
 			ctx,
@@ -757,7 +757,7 @@ func SetAdvisoryVersions(
 		}
 	}
 
-	artifactRows := relationRows(selection.AffectedArtifactVersionIDs, selection.FixedArtifactVersionIDs)
+	artifactRows := relationRows(selection.AffectedArtifactVersionIDs, selection.PatchedArtifactVersionIDs)
 	if len(artifactRows) > 0 {
 		if _, err := db.CopyFrom(
 			ctx,
@@ -895,7 +895,7 @@ func CreateAdvisoryCommentEvent(
 
 // GetAdvisoryImpactedDeployments returns one row per deployment that has ever run an
 // application version this advisory affects, classified by the version its current revision
-// runs: still affected, fixed or moved onto a version marked neither.
+// runs: still affected, patched or moved onto a version marked neither.
 //
 // Each row also carries the most recent affected version the deployment ran and when, so that
 // the exposure window stays visible for deployments that have since moved on.
@@ -943,8 +943,8 @@ func GetAdvisoryImpactedDeployments(
 						SELECT application_version_id FROM marked WHERE relation = 'affected')
 						THEN 'affected'
 					WHEN cr.application_version_id IN (
-						SELECT application_version_id FROM marked WHERE relation = 'fixed')
-						THEN 'fixed'
+						SELECT application_version_id FROM marked WHERE relation = 'patched')
+						THEN 'patched'
 					ELSE 'not_affected'
 				END AS state,
 				i.last_deployed_at

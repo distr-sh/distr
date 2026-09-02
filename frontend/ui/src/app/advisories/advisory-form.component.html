@@ -178,7 +178,7 @@
         </div>
       } @else {
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Mark the versions affected by this advisory, and the versions that contain the fix. Affected versions
+          Mark the versions affected by this advisory, and the versions that carry the patch. Affected versions
           determine which customers see the advisory and appear in the impact analysis.
         </p>
 
@@ -223,8 +223,13 @@
                   <span class="truncate">{{ application.name }}</span>
                   <span class="distr-deployment-type-badge capitalize">{{ application.type }}</span>
                 </span>
+                @let versionCount = application.versions?.length ?? 0;
                 <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">
-                  {{ application.versions?.length ?? 0 }} versions
+                  {{ versionCount }}
+                  <ng-container [ngPlural]="versionCount">
+                    <ng-template ngPluralCase="=1">version</ng-template>
+                    <ng-template ngPluralCase="other">versions</ng-template>
+                  </ng-container>
                 </span>
               </button>
               @if (expandedApplicationId() === application.id) {
@@ -239,7 +244,7 @@
                         (change)="setApplicationVersionRelation(version.id!, $any($event.target).value)">
                         <option value="">Not affected</option>
                         <option value="affected">Affected</option>
-                        <option value="fixed">Fixed</option>
+                        <option value="patched">Patched</option>
                       </select>
                     </div>
                   }
@@ -255,8 +260,24 @@
               <button
                 type="button"
                 (click)="toggleArtifact(artifact.id)"
-                class="w-full flex items-center justify-between p-3 text-left text-sm font-medium text-gray-900 dark:text-white">
-                {{ artifact.name }}
+                class="w-full flex items-center justify-between gap-2 p-3 text-left text-sm font-medium text-gray-900 dark:text-white">
+                <span class="flex items-center gap-2 min-w-0">
+                  <app-artifact-logo class="size-6 shrink-0" [imageUrl]="artifact.imageUrl" />
+                  <span class="truncate">{{ artifact.name }}</span>
+                  @if (artifact.upstreamUrl) {
+                    <span class="distr-tag-badge">pull-through</span>
+                  }
+                </span>
+                @let tagCount = artifactTagCount(artifact);
+                @if (tagCount !== null) {
+                  <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">
+                    {{ tagCount }}
+                    <ng-container [ngPlural]="tagCount">
+                      <ng-template ngPluralCase="=1">tag</ng-template>
+                      <ng-template ngPluralCase="other">tags</ng-template>
+                    </ng-container>
+                  </span>
+                }
               </button>
               @if (expandedArtifactId() === artifact.id) {
                 <div
@@ -292,7 +313,7 @@
                           (change)="setArtifactVersionRelation(version.id, $any($event.target).value)">
                           <option value="">Not affected</option>
                           <option value="affected">Affected</option>
-                          <option value="fixed">Fixed</option>
+                          <option value="patched">Patched</option>
                         </select>
                       </div>
                     } @empty {

@@ -1,3 +1,4 @@
+import {NgPlural, NgPluralCase} from '@angular/common';
 import {ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
@@ -11,15 +12,16 @@ import {
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faPlus, faTrash, faXmark} from '@fortawesome/free-solid-svg-icons';
 import {firstValueFrom} from 'rxjs';
+import {compareBy} from '../../util/arrays';
 import {RelativeDatePipe} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
 import {ApplicationLogoComponent} from '../applications/components';
-import {ArtifactsHashComponent} from '../artifacts/components';
+import {ArtifactLogoComponent, ArtifactsHashComponent} from '../artifacts/components';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
 import {AdvisoriesService} from '../services/advisories.service';
 import {ApplicationsService} from '../services/applications.service';
-import {ArtifactsService, TaggedArtifactVersion} from '../services/artifacts.service';
+import {ArtifactsService, ArtifactWithTags, TaggedArtifactVersion} from '../services/artifacts.service';
 import {OverlayService} from '../services/overlay.service';
 import {ToastService} from '../services/toast.service';
 import {
@@ -61,8 +63,11 @@ export interface AdvisoryFormDraft {
     AutotrimDirective,
     InnerMarkdownDirective,
     ArtifactsHashComponent,
+    ArtifactLogoComponent,
     ApplicationLogoComponent,
     RelativeDatePipe,
+    NgPlural,
+    NgPluralCase,
   ],
 })
 export class AdvisoryFormComponent {
@@ -89,7 +94,10 @@ export class AdvisoryFormComponent {
   public readonly draftChanged = output<AdvisoryFormDraft>();
 
   protected readonly applications = toSignal(this.applicationsService.list(), {initialValue: []});
-  protected readonly artifacts = toSignal(this.artifactsService.list(), {initialValue: []});
+  // The artifact cache sorts by the date of the newest version, which is unknown until the
+  // versions of an artifact have been loaded, so its rows would reorder as they arrive.
+  private readonly unsortedArtifacts = toSignal(this.artifactsService.list(), {initialValue: []});
+  protected readonly artifacts = computed(() => [...this.unsortedArtifacts()].sort(compareBy((a) => a.name)));
 
   protected readonly form = new FormGroup({
     title: new FormControl('', {nonNullable: true, validators: [Validators.required]}),
@@ -209,6 +217,10 @@ export class AdvisoryFormComponent {
     return this.loadingArtifactIds().has(artifactId);
   }
 
+  protected artifactTagCount(artifact: ArtifactWithTags): number | null {
+    return artifact.versions?.reduce((count, version) => count + version.tags.length, 0) ?? null;
+  }
+
   protected async toggleArtifact(artifactId: string): Promise<void> {
     const next = this.expandedArtifactId() === artifactId ? null : artifactId;
     this.expandedArtifactId.set(next);
@@ -297,9 +309,9 @@ export class AdvisoryFormComponent {
         label: reference.label.trim() || undefined,
       })),
       affectedApplicationVersionIds: idsWithRelation(this.applicationVersionSelection(), 'affected'),
-      fixedApplicationVersionIds: idsWithRelation(this.applicationVersionSelection(), 'fixed'),
+      patchedApplicationVersionIds: idsWithRelation(this.applicationVersionSelection(), 'patched'),
       affectedArtifactVersionIds: idsWithRelation(this.artifactVersionSelection(), 'affected'),
-      fixedArtifactVersionIds: idsWithRelation(this.artifactVersionSelection(), 'fixed'),
+      patchedArtifactVersionIds: idsWithRelation(this.artifactVersionSelection(), 'patched'),
     };
   }
 
@@ -350,7 +362,7 @@ export class AdvisoryFormComponent {
 
 function updateSelection(selection: VersionSelection, versionId: string, relation: string): VersionSelection {
   const next = {...selection};
-  if (relation === 'affected' || relation === 'fixed') {
+  if (relation === 'affected' || relation === 'patched') {
     next[versionId] = relation;
   } else {
     delete next[versionId];

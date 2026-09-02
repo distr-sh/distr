@@ -18,8 +18,7 @@
 
 Whether the advisory is still a live problem for the requesting customer or partner: a
 deployment of theirs runs an affected version, or they pulled an affected artifact version
-without since pulling one that carries the fix. Absent for vendors, who see the status
-instead.
+without since pulling a patched one. Absent for vendors, who see the status instead.
 
 ---
 
@@ -55,15 +54,15 @@ Only ever sent to the vendor organization that owns the advisory.
 
 ---
 
-### fixedVersionCount
-
-> **fixedVersionCount**: `number`
-
----
-
 ### id
 
 > **id**: `string`
+
+---
+
+### patchedVersionCount
+
+> **patchedVersionCount**: `number`
 
 ---
 
@@ -82,6 +81,8 @@ Only ever sent to the vendor organization that owns the advisory.
 ### resolvedAt?
 
 > `optional` **resolvedAt?**: `string`
+
+Only ever sent to the vendor organization that owns the advisory.
 
 ---
 

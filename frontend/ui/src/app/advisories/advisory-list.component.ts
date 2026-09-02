@@ -136,7 +136,7 @@ export class AdvisoryListComponent {
       return (
         advisory.title.toLowerCase().includes(query) ||
         (advisory.cveId ?? '').toLowerCase().includes(query) ||
-        advisory.status.includes(query) ||
+        (!this.showsAffectedState && advisory.status.includes(query)) ||
         advisory.severity.includes(query) ||
         advisory.tags.some((tag) => tag.toLowerCase().includes(query))
       );

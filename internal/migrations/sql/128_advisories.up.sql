@@ -2,7 +2,7 @@ CREATE TYPE advisory_status AS ENUM ('triage', 'draft', 'published', 'resolved',
 
 CREATE TYPE advisory_severity AS ENUM ('none', 'low', 'medium', 'high', 'critical');
 
-CREATE TYPE advisory_version_relation AS ENUM ('affected', 'fixed');
+CREATE TYPE advisory_version_relation AS ENUM ('affected', 'patched');
 
 CREATE TYPE advisory_event_type AS ENUM ('published', 'status_changed', 'edited', 'comment');
 

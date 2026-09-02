@@ -96,8 +96,8 @@ func TestVersionChangeParts(t *testing.T) {
 	affected := func(id uuid.UUID, label string) versionMarking {
 		return versionMarking{id: id, label: label, relation: types.AdvisoryVersionRelationAffected}
 	}
-	fixed := func(id uuid.UUID, label string) versionMarking {
-		return versionMarking{id: id, label: label, relation: types.AdvisoryVersionRelationFixed}
+	patched := func(id uuid.UUID, label string) versionMarking {
+		return versionMarking{id: id, label: label, relation: types.AdvisoryVersionRelationPatched}
 	}
 
 	t.Run("is empty when the markings are the same", func(t *testing.T) {
@@ -114,26 +114,26 @@ func TestVersionChangeParts(t *testing.T) {
 
 	t.Run("reports an unmarked version", func(t *testing.T) {
 		g := NewWithT(t)
-		g.Expect(versionChangeParts([]versionMarking{fixed(one, "MyApp 1.1.0")}, nil)).
+		g.Expect(versionChangeParts([]versionMarking{patched(one, "MyApp 1.1.0")}, nil)).
 			To(ConsistOf("unmarked MyApp 1.1.0"))
 	})
 
 	// Matching on id keeps this as one change rather than an unmark plus a mark, which is how
-	// a reader thinks of a version that turned out to contain the fix.
+	// a reader thinks of a version that turned out to carry the patch.
 	t.Run("reports a version that switched relation", func(t *testing.T) {
 		g := NewWithT(t)
 		g.Expect(versionChangeParts(
 			[]versionMarking{affected(one, "MyApp 1.0.0")},
-			[]versionMarking{fixed(one, "MyApp 1.0.0")},
-		)).To(ConsistOf("changed MyApp 1.0.0 from affected to fixed"))
+			[]versionMarking{patched(one, "MyApp 1.0.0")},
+		)).To(ConsistOf("changed MyApp 1.0.0 from affected to patched"))
 	})
 
 	t.Run("reports additions and removals", func(t *testing.T) {
 		g := NewWithT(t)
 		g.Expect(versionChangeParts(
 			[]versionMarking{affected(one, "MyApp 1.0.0")},
-			[]versionMarking{fixed(two, "MyApp 1.1.0")},
-		)).To(Equal([]string{"marked MyApp 1.1.0 as fixed", "unmarked MyApp 1.0.0"}))
+			[]versionMarking{patched(two, "MyApp 1.1.0")},
+		)).To(Equal([]string{"marked MyApp 1.1.0 as patched", "unmarked MyApp 1.0.0"}))
 	})
 
 	t.Run("truncates a very long list", func(t *testing.T) {

@@ -35,15 +35,15 @@ carries is rejected with 409 Conflict.
 
 ---
 
-### fixedApplicationVersionIds
+### patchedApplicationVersionIds
 
-> **fixedApplicationVersionIds**: `string`[]
+> **patchedApplicationVersionIds**: `string`[]
 
 ---
 
-### fixedArtifactVersionIds
+### patchedArtifactVersionIds
 
-> **fixedArtifactVersionIds**: `string`[]
+> **patchedArtifactVersionIds**: `string`[]
 
 ---
 
@@ -63,8 +63,7 @@ carries is rejected with 409 Conflict.
 
 > `optional` **status?**: [`AdvisoryStatus`](../type-aliases/AdvisoryStatus.md)
 
-Defaults to `triage` on create, where issues reported through the API wait to be assessed,
-and leaves the status untouched when omitted on update.
+Defaults to `triage` on create and leaves the status untouched when omitted on update.
 
 ---
 
