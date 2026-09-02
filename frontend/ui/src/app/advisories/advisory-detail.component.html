@@ -348,6 +348,8 @@
   @if (editDialogOpen()) {
     @if (advisory(); as current) {
       <app-advisory-form
+        animate.enter="animate-fly-in-top"
+        animate.leave="animate-fly-out-top"
         [advisory]="current"
         [draft]="editDraft()"
         (draftChanged)="editDraft.set($event)"

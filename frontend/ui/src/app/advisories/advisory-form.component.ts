@@ -57,6 +57,8 @@ export interface AdvisoryFormDraft {
   selector: 'app-advisory-form',
   templateUrl: './advisory-form.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
+  // The dialog animations are set on this element, and a transform does not apply to an inline one.
+  host: {class: 'block'},
   imports: [
     ReactiveFormsModule,
     FaIconComponent,

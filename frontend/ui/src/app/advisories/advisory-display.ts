@@ -168,7 +168,7 @@ export async function confirmAdvisoryVisibilityChange(
         message: {
           message: `Set this advisory to ${statusLabel(to)}?`,
           alert: {
-            type: 'danger',
+            type: 'warning',
             message:
               'Customers who deployed or are entitled to an affected version will see this advisory, ' +
               'and so will their partners.',
@@ -181,9 +181,7 @@ export async function confirmAdvisoryVisibilityChange(
           message: `Set this advisory to ${statusLabel(to)}?`,
           alert: {
             type: 'warning',
-            message:
-              'Customers and partners will no longer see this advisory. That does not retract what they ' +
-              'have already read or been notified about.',
+            message: 'Customers and partners will no longer see this advisory.',
           },
         },
         confirmLabel: 'Withdraw advisory',

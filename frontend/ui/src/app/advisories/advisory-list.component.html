@@ -142,6 +142,8 @@
 <ng-template #createAdvisoryDialog>
   @if (dialogOpen()) {
     <app-advisory-form
+      animate.enter="animate-fly-in-top"
+      animate.leave="animate-fly-out-top"
       [draft]="createDraft()"
       (draftChanged)="createDraft.set($event)"
       (dismissed)="closeDialog()"
