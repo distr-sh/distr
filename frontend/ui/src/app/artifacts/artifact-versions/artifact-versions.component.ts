@@ -30,6 +30,7 @@ import {
   tap,
 } from 'rxjs';
 import {RelativeDatePipe} from '../../../util/dates';
+import {shortDigest} from '../../../util/digest';
 import {getFormDisplayedError} from '../../../util/errors';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {BytesPipe} from '../../../util/units';
@@ -325,10 +326,23 @@ export class ArtifactVersionsComponent {
   }
 
   public deleteArtifactTag(artifact: ArtifactWithTags, version: TaggedArtifactVersion, tagName: string): void {
+    const digest = shortDigest(version.digest);
     this.overlay
-      .confirm(
-        `This will untag "${tagName}" from ${artifact.name}. The artifact version (${version.digest.substring(0, 12)}) is deleted as well, unless another tag or a multi-arch index still references it. Are you sure?`
-      )
+      .confirm({
+        message: {
+          message: `This will untag "${tagName}" from ${artifact.name}. Are you sure?`,
+          alert:
+            version.tags.length > 1
+              ? {
+                  type: 'info',
+                  message: `The digest ${digest} stays available under its other tags.`,
+                }
+              : {
+                  type: 'warning',
+                  message: `Since this is its only tag, the digest ${digest} may be deleted as well, unless  it is still referenced by a multi-arch index.`,
+                },
+        },
+      })
       .pipe(
         filter((result) => result === true),
         switchMap(() => this.artifacts.deleteArtifactTag(artifact, tagName)),

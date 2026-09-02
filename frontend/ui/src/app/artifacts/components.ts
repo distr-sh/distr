@@ -3,6 +3,7 @@ import {ChangeDetectionStrategy, Component, computed, inject, input, signal} fro
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faDownload, faEllipsis, faUserCircle} from '@fortawesome/free-solid-svg-icons';
+import {shortDigest} from '../../util/digest';
 import {SecureImagePipe} from '../../util/secureImage';
 import {HasDownloads} from '../services/artifacts.service';
 import {CustomerOrganizationsCache} from '../services/customer-organizations.service';
@@ -118,7 +119,7 @@ export class ArtifactsHashComponent {
   public readonly hash = input.required<string>();
   public readonly expandable = input<boolean>(true);
   protected readonly showFull = signal(false);
-  protected readonly hashForDisplay = computed(() => (this.showFull() ? this.hash() : this.hash().substring(0, 17)));
+  protected readonly hashForDisplay = computed(() => (this.showFull() ? this.hash() : shortDigest(this.hash())));
 
   protected readonly faEllipsis = faEllipsis;
 }

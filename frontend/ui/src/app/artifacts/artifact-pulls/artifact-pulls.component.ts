@@ -8,6 +8,7 @@ import {faDownload, faFilterCircleXmark} from '@fortawesome/free-solid-svg-icons
 import dayjs from 'dayjs';
 import {debounceTime, filter, first, map, of, scan, shareReplay, startWith, Subject, switchMap, tap} from 'rxjs';
 import {downloadBlob} from '../../../util/blob';
+import {shortDigest} from '../../../util/digest';
 import {PageComponent} from '../../components/page.component';
 import {ArtifactPullFilters, ArtifactPullsService} from '../../services/artifact-pulls.service';
 import {ToastService} from '../../services/toast.service';
@@ -26,6 +27,7 @@ export class ArtifactPullsComponent {
 
   protected readonly faDownload = faDownload;
   protected readonly faFilterCircleXmark = faFilterCircleXmark;
+  protected readonly formatVersionName = shortDigest;
   protected readonly today = dayjs().format('YYYY-MM-DD');
   protected readonly hasMore = signal(true);
   protected readonly isExporting = signal(false);
@@ -151,14 +153,6 @@ export class ArtifactPullsComponent {
         this.toast.error('Export failed');
       },
     });
-  }
-
-  protected formatVersionName(name: string): string {
-    const shaPrefix = 'sha256:';
-    if (name.startsWith(shaPrefix)) {
-      return name.substring(0, 17);
-    }
-    return name;
   }
 
   private initFromQueryParams() {
