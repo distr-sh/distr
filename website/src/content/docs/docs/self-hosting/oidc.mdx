@@ -53,11 +53,13 @@ A user can connect several providers by signing in with each of them, as long as
 
 ## Automatic sign-up
 
-When a user signs in through an OIDC provider for the first time and no account with that email exists yet, Distr will create the account automatically:
+When a user starts the flow from the **sign-up** page and no account with that email exists yet, Distr will create the account automatically:
 
 - A default organization named after the user's email is created, with the new user as **Admin**.
 - No password is set on the account. The user can only sign in via configured OIDC providers until they add a password through the standard password reset flow.
 - The email address is marked as verified, since it was authenticated by a trusted identity provider.
+
+Starting the same flow from the **login** page never creates an account. If no account with the email address reported by the provider exists, the sign-in is refused and the user is sent back to the login page with a message telling them to ask for an invitation.
 
 If you don't want OIDC sign-in to create a new organization for the user, invite them to your existing organization first. The invite creates a user row tied to your organization, so when they later sign in via OIDC, Distr finds the existing account and skips the new-organization step.
 

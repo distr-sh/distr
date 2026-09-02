@@ -10,6 +10,7 @@ import (
 
 	"github.com/distr-sh/distr/internal/apierrors"
 	internalctx "github.com/distr-sh/distr/internal/context"
+	"github.com/distr-sh/distr/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/oauth2"
@@ -18,31 +19,37 @@ import (
 const OIDCStateMaxAge = 10 * time.Minute
 
 type OIDCState struct {
-	ID                        uuid.UUID  `db:"id"`
-	CreatedAt                 time.Time  `db:"created_at"`
-	PKCECodeVerifier          string     `db:"pkce_code_verifier"`
-	Nonce                     string     `db:"nonce"`
-	CustomOIDCConfigurationID *uuid.UUID `db:"custom_oidc_configuration_id"`
+	ID                        uuid.UUID      `db:"id"`
+	CreatedAt                 time.Time      `db:"created_at"`
+	PKCECodeVerifier          string         `db:"pkce_code_verifier"`
+	Nonce                     string         `db:"nonce"`
+	CustomOIDCConfigurationID *uuid.UUID     `db:"custom_oidc_configuration_id"`
+	Flow                      types.OIDCFlow `db:"flow"`
 }
 
 func (s OIDCState) Expired() bool {
 	return s.CreatedAt.Before(time.Now().UTC().Add(-OIDCStateMaxAge))
 }
 
-func CreateOIDCState(ctx context.Context, customOIDCConfigurationID *uuid.UUID) (OIDCState, error) {
+func CreateOIDCState(
+	ctx context.Context,
+	customOIDCConfigurationID *uuid.UUID,
+	flow types.OIDCFlow,
+) (OIDCState, error) {
 	nonce, err := generateOIDCNonce()
 	if err != nil {
 		return OIDCState{}, err
 	}
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
-		`INSERT INTO OIDCState AS s (pkce_code_verifier, nonce, custom_oidc_configuration_id)
-		VALUES (@pkceCodeVerifier, @nonce, @customOidcConfigurationId)
-		RETURNING s.id, s.created_at, s.pkce_code_verifier, s.nonce, s.custom_oidc_configuration_id`,
+		`INSERT INTO OIDCState AS s (pkce_code_verifier, nonce, custom_oidc_configuration_id, flow)
+		VALUES (@pkceCodeVerifier, @nonce, @customOidcConfigurationId, @flow)
+		RETURNING s.id, s.created_at, s.pkce_code_verifier, s.nonce, s.custom_oidc_configuration_id, s.flow`,
 		pgx.NamedArgs{
 			"pkceCodeVerifier":          oauth2.GenerateVerifier(),
 			"nonce":                     nonce,
 			"customOidcConfigurationId": customOIDCConfigurationID,
+			"flow":                      flow,
 		})
 	if err != nil {
 		return OIDCState{}, fmt.Errorf("could not insert OIDCState: %w", err)
@@ -58,7 +65,7 @@ func DeleteOIDCState(ctx context.Context, id uuid.UUID) (OIDCState, error) {
 	db := internalctx.GetDb(ctx)
 	rows, err := db.Query(ctx,
 		`DELETE FROM OIDCState AS s WHERE s.id = @id
-		RETURNING s.id, s.created_at, s.pkce_code_verifier, s.nonce, s.custom_oidc_configuration_id`,
+		RETURNING s.id, s.created_at, s.pkce_code_verifier, s.nonce, s.custom_oidc_configuration_id, s.flow`,
 		pgx.NamedArgs{"id": id})
 	if err != nil {
 		return OIDCState{}, fmt.Errorf("could not delete OIDCState: %w", err)
