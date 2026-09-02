@@ -61,18 +61,26 @@
               <app-color-scheme-switcher />
             </div>
 
-            @if (isVendorSomewhere() || availableOrgs().length > 0) {
+            @if (isOrganizationSwitcherVisible()) {
               <div class="ms-2 me-4">
                 <button
                   type="button"
                   class="flex items-center text-sm"
-                  aria-expanded="false"
+                  [title]="'Switch organization (' + switcherShortcut + ')'"
+                  [attr.aria-expanded]="organizationsOpened()"
                   cdkOverlayOrigin
                   #organizationsDropdownTrigger="cdkOverlayOrigin"
-                  (click)="organizationsOpened = !organizationsOpened">
+                  (click)="toggleOrganizations()">
                   <span class="sr-only">Show Organizations</span>
                   <span class="flex flex-col text-end text-sm font-medium text-gray-900 dark:text-gray-300" role="none">
-                    {{ currentOrg()?.name }}
+                    <span class="flex items-center justify-end gap-2" role="none">
+                      {{ organization?.name }}
+                      @if (organization && auth.isSuperAdmin()) {
+                        <app-subscription-badge
+                          [plan]="organization.subscriptionType"
+                          [endsAt]="organization.subscriptionEndsAt" />
+                      }
+                    </span>
                     @if (auth.isSuperAdmin()) {
                       <span class="text-xs font-light text-amber-600 dark:text-amber-400" role="none">
                         Super Admin (Read-Only)
@@ -80,7 +88,7 @@
                     } @else {
                       <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
                         @if (isDifferentOrganizationKind() && currentOrg(); as currentOrganization) {
-                          <span class="capitalize">{{ currentOrganization | organizationKind }}</span>
+                          {{ currentOrganization | membershipLabel }}
                           &bull;
                         }
                         {{ user.userRole | userRoleLabel }}
@@ -89,39 +97,58 @@
                   </span>
                   <fa-icon
                     class="ml-2 text-gray-900 dark:text-gray-300 transition duration-150 ease-in-out"
-                    [class.rotate-x-180]="organizationsOpened"
+                    [class.rotate-x-180]="organizationsOpened()"
                     [icon]="faChevronDown" />
                 </button>
               </div>
               <ng-template
                 cdkConnectedOverlay
                 [cdkConnectedOverlayHasBackdrop]="true"
-                (backdropClick)="organizationsOpened = false"
+                (backdropClick)="organizationsOpened.set(false)"
                 [cdkConnectedOverlayBackdropClass]="'transparent'"
                 [cdkConnectedOverlayOrigin]="organizationsDropdownTrigger"
-                [cdkConnectedOverlayOpen]="organizationsOpened">
+                [cdkConnectedOverlayOpen]="organizationsOpened()">
                 <div
-                  class="my-2 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600 origin-top"
+                  class="my-2 flex flex-col max-h-[80vh] text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600 origin-top"
                   animate.enter="animate-flip-in-top"
                   animate.leave="animate-flip-out-top">
+                  @if (isOrganizationSearchVisible()) {
+                    <div class="p-2 min-w-72 shrink-0">
+                      <app-search-bar
+                        [control]="organizationSearch"
+                        placeholder="Filter organizations"
+                        [autofocus]="true" />
+                    </div>
+                  }
                   @if (availableOrgs().length > 0) {
-                    <ul class="py-1 overflow-y-auto max-h-[90vh]" role="none">
-                      @for (org of availableOrgs(); track org.id) {
+                    <ul class="p-2 space-y-1 overflow-y-auto min-h-0" role="none">
+                      @for (org of matchingOrgs(); track org.id; let index = $index) {
                         <li>
                           <button
+                            #orgOption
                             (click)="switchContext(org)"
                             [title]="'Switch to this organization'"
-                            class="flex items-center w-full text-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                            class="flex items-center w-full text-start p-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                            [class]="
+                              index === highlightedOrgIndex() ? 'bg-gray-100 dark:bg-gray-600 dark:text-white' : ''
+                            "
                             role="menuitem">
                             <fa-icon class="me-4" [icon]="faShuffle" />
                             <span
                               class="flex flex-col text-start text-sm font-medium text-gray-900 dark:text-gray-300"
                               role="none">
-                              {{ org.name }}
+                              <span class="flex items-center gap-2" role="none">
+                                {{ org.name }}
+                                @if (auth.isSuperAdmin()) {
+                                  <app-subscription-badge
+                                    [plan]="org.subscriptionType"
+                                    [endsAt]="org.subscriptionEndsAt" />
+                                }
+                              </span>
                               <span class="text-xs font-light text-gray-500 dark:text-gray-400" role="none">
                                 @if (!auth.isSuperAdmin()) {
                                   @if (isDifferentOrganizationKind()) {
-                                    <span class="capitalize">{{ org | organizationKind }}</span>
+                                    {{ org | membershipLabel }}
                                     &bull;
                                   }
                                   {{ org.userRole | userRoleLabel }}
@@ -130,13 +157,19 @@
                             </span>
                           </button>
                         </li>
+                      } @empty {
+                        <li>
+                          <div class="p-2 text-sm text-gray-700 dark:text-gray-300" role="menuitem">
+                            No organization matches your filter.
+                          </div>
+                        </li>
                       }
                     </ul>
                   } @else {
-                    <ul class="py-1" role="none">
+                    <ul class="p-2" role="none">
                       <li>
                         <div
-                          class="flex items-center text-start px-4 py-2 text-sm text-gray-700 dark:text-gray-300"
+                          class="flex items-center text-start p-2 text-sm text-gray-700 dark:text-gray-300"
                           role="menuitem">
                           @if (auth.isCustomOidcSession()) {
                             You signed in through your organization's identity provider,<br />
@@ -150,12 +183,12 @@
                     </ul>
                   }
                   @if (!auth.isSuperAdmin() && isVendorSomewhere() && canCreateOrganization()) {
-                    <ul class="py-1" role="none">
+                    <ul class="p-2 shrink-0" role="none">
                       <li>
                         <button
                           (click)="showCreateOrgModal()"
                           type="button"
-                          class="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                          class="block w-full text-start p-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
                           role="menuitem">
                           <fa-icon [icon]="faPlus" />
                           Create Organization
@@ -171,10 +204,10 @@
               <button
                 type="button"
                 class="flex rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
-                aria-expanded="false"
+                [attr.aria-expanded]="userOpened()"
                 cdkOverlayOrigin
                 #dropdownTrigger="cdkOverlayOrigin"
-                (click)="userOpened = !userOpened">
+                (click)="userOpened.set(!userOpened())">
                 <span class="sr-only">Open user menu</span>
                 @if (user.imageUrl) {
                   <img class="size-8 rounded-full" [attr.src]="user.imageUrl | secureImage | async" alt="user photo" />
@@ -188,10 +221,10 @@
             <ng-template
               cdkConnectedOverlay
               [cdkConnectedOverlayHasBackdrop]="true"
-              (backdropClick)="userOpened = false"
+              (backdropClick)="userOpened.set(false)"
               [cdkConnectedOverlayBackdropClass]="'transparent'"
               [cdkConnectedOverlayOrigin]="dropdownTrigger"
-              [cdkConnectedOverlayOpen]="userOpened">
+              [cdkConnectedOverlayOpen]="userOpened()">
               <div
                 class="my-2 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600 origin-top"
                 animate.enter="animate-flip-in-top"
@@ -202,12 +235,12 @@
                     {{ user.email }}
                   </p>
                 </div>
-                <ul class="py-1" role="none">
+                <ul class="p-2 space-y-1" role="none">
                   <li>
                     <a
-                      (click)="userOpened = false"
+                      (click)="userOpened.set(false)"
                       routerLink="/settings/profile"
-                      class="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                      class="block w-full p-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
                       role="menuitem">
                       Edit Your Profile
                     </a>
@@ -215,21 +248,21 @@
                   @if (!auth.isSuperAdmin()) {
                     <li>
                       <a
-                        (click)="userOpened = false"
+                        (click)="userOpened.set(false)"
                         routerLink="/settings/access-tokens"
-                        class="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                        class="block w-full p-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
                         role="menuitem">
                         Personal Access Tokens
                       </a>
                     </li>
                   }
                 </ul>
-                <ul class="py-1" role="none">
+                <ul class="p-2" role="none">
                   <li>
                     <button
                       type="button"
                       (click)="logout()"
-                      class="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                      class="block w-full text-start p-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
                       role="menuitem">
                       Sign Out
                     </button>

@@ -2,14 +2,17 @@ import {OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
 import {HttpErrorResponse} from '@angular/common/http';
 import {
-  ChangeDetectionStrategy,
   Component,
   computed,
+  ElementRef,
   inject,
   input,
+  linkedSignal,
   OnInit,
+  signal,
   TemplateRef,
   viewChild,
+  viewChildren,
 } from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
@@ -32,7 +35,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import {catchError, EMPTY, lastValueFrom, map, of} from 'rxjs';
 import {getFormDisplayedError} from '../../../util/errors';
-import {organizationKind, OrganizationKindPipe} from '../../../util/organization-kind';
+import {MembershipLabelPipe, organizationKind} from '../../../util/organization-kind';
 import {SecureImagePipe} from '../../../util/secureImage';
 import {UserRoleLabelPipe} from '../../../util/user-role';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
@@ -45,25 +48,40 @@ import {SidebarService} from '../../services/sidebar.service';
 import {ToastService} from '../../services/toast.service';
 import {UsersService} from '../../services/users.service';
 import {Organization} from '../../types/organization';
+import {subscriptionRank} from '../../types/subscription';
 import {ColorSchemeSwitcherComponent} from '../color-scheme-switcher/color-scheme-switcher.component';
+import {SearchBarComponent} from '../search-bar.component';
+import {SubscriptionBadgeComponent} from '../subscription-badge.component';
 import {NavBarSubscriptionBannerComponent} from './nav-bar-subscription-banner/nav-bar-subscription-banner.component';
+
+// above this many switchable organizations the dropdown gets a search field
+const ORGANIZATION_SEARCH_THRESHOLD = 4;
 
 @Component({
   selector: 'app-nav-bar',
   templateUrl: './nav-bar.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  host: {
+    '(document:keydown.control.k)': 'onSwitcherShortcut($event)',
+    '(document:keydown.meta.k)': 'onSwitcherShortcut($event)',
+    '(document:keydown.arrowDown)': 'moveOrgHighlight($event, 1)',
+    '(document:keydown.arrowUp)': 'moveOrgHighlight($event, -1)',
+    '(document:keydown.enter)': 'switchToHighlightedOrg($event)',
+    '(document:keydown.escape)': 'organizationsOpened.set(false)',
+  },
   imports: [
     ColorSchemeSwitcherComponent,
     NavBarSubscriptionBannerComponent,
     OverlayModule,
     FaIconComponent,
     RouterLink,
+    SearchBarComponent,
     SecureImagePipe,
+    SubscriptionBadgeComponent,
     AsyncPipe,
     AutotrimDirective,
     ReactiveFormsModule,
     UserRoleLabelPipe,
-    OrganizationKindPipe,
+    MembershipLabelPipe,
   ],
 })
 export class NavBarComponent implements OnInit {
@@ -95,7 +113,13 @@ export class NavBarComponent implements OnInit {
   protected readonly allOrgs = toSignal(this.ctx.getAvailableOrganizations(), {initialValue: []});
   protected readonly availableOrgs = computed(() => {
     const current = this.currentOrg();
-    return this.allOrgs().filter((org) => org.id !== current?.id);
+    return this.allOrgs()
+      .filter((org) => org.id !== current?.id)
+      .sort(
+        (a, b) =>
+          subscriptionRank(a.subscriptionType, a.subscriptionEndsAt) -
+            subscriptionRank(b.subscriptionType, b.subscriptionEndsAt) || a.name.localeCompare(b.name)
+      );
   });
   protected readonly currentOrg = toSignal(this.ctx.getOrganization());
   protected readonly isVendorSomewhere = computed(() =>
@@ -108,8 +132,25 @@ export class NavBarComponent implements OnInit {
   protected readonly isTrial = computed(() => this.currentOrg()?.subscriptionType === 'trial');
   protected readonly isSubscriptionExpired = this.organizationService.isSubscriptionExpired;
 
-  userOpened = false;
-  organizationsOpened = false;
+  protected readonly userOpened = signal(false);
+  protected readonly organizationsOpened = signal(false);
+  protected readonly isOrganizationSwitcherVisible = computed(
+    () => this.isVendorSomewhere() || this.availableOrgs().length > 0
+  );
+  protected readonly switcherShortcut = navigator.userAgent.includes('Mac') ? '⌘K' : 'Ctrl+K';
+
+  protected readonly organizationSearch = new FormControl<string>('', {nonNullable: true});
+  private readonly organizationSearchTerm = toSignal(this.organizationSearch.valueChanges, {initialValue: ''});
+  protected readonly isOrganizationSearchVisible = computed(
+    () => this.availableOrgs().length > ORGANIZATION_SEARCH_THRESHOLD
+  );
+  protected readonly matchingOrgs = computed(() => {
+    const term = this.organizationSearchTerm().trim().toLowerCase();
+    const orgs = this.availableOrgs();
+    return term ? orgs.filter((org) => org.name.toLowerCase().includes(term)) : orgs;
+  });
+  protected readonly highlightedOrgIndex = linkedSignal({source: this.matchingOrgs, computation: () => 0});
+  private readonly orgOptions = viewChildren<ElementRef<HTMLElement>>('orgOption');
 
   // Derived from the branding service's reactive stream so the navbar updates live when the logo/title is saved.
   private readonly branding = toSignal(this.organizationBranding.branding$);
@@ -141,8 +182,46 @@ export class NavBarComponent implements OnInit {
     }
   }
 
+  protected toggleOrganizations() {
+    this.organizationSearch.setValue('');
+    this.highlightedOrgIndex.set(0);
+    this.organizationsOpened.update((opened) => !opened);
+  }
+
+  protected onSwitcherShortcut(event: Event) {
+    if (!this.isOrganizationSwitcherVisible()) {
+      return;
+    }
+    // Ctrl+K and Cmd+K are the browsers' own shortcuts for their search and address bars
+    event.preventDefault();
+    this.toggleOrganizations();
+  }
+
+  protected moveOrgHighlight(event: Event, offset: number) {
+    const count = this.matchingOrgs().length;
+    if (!this.organizationsOpened() || count === 0) {
+      return;
+    }
+    // the arrow keys would otherwise scroll the page or move the caret inside the search field
+    event.preventDefault();
+    const next = (this.highlightedOrgIndex() + offset + count) % count;
+    this.highlightedOrgIndex.set(next);
+    this.orgOptions()[next]?.nativeElement.scrollIntoView({block: 'nearest'});
+  }
+
+  protected switchToHighlightedOrg(event: Event) {
+    const org = this.matchingOrgs()[this.highlightedOrgIndex()];
+    const isOptionFocused = this.orgOptions().some((option) => option.nativeElement === event.target);
+    if (!this.organizationsOpened() || !org || isOptionFocused) {
+      return;
+    }
+    // the trigger button keeps the focus after a click, and would toggle the dropdown on Enter
+    event.preventDefault();
+    this.switchContext(org);
+  }
+
   async switchContext(org: Organization, targetPath = '/') {
-    this.organizationsOpened = false;
+    this.organizationsOpened.set(false);
     try {
       const switched = await lastValueFrom(this.auth.switchContext(org));
       if (switched) {
@@ -158,10 +237,9 @@ export class NavBarComponent implements OnInit {
 
   showCreateOrgModal(): void {
     this.closeCreateOrgModal();
+    // the dropdown has to give up its key handling before the modal takes over the keyboard
+    this.organizationsOpened.set(false);
     this.modalRef = this.overlay.showModal(this.createOrgModal());
-    this.modalRef.addOnClosedHook((_) => {
-      this.organizationsOpened = false;
-    });
   }
 
   closeCreateOrgModal() {

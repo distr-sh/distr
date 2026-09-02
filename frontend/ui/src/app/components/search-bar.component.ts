@@ -1,4 +1,4 @@
-import {Component, input} from '@angular/core';
+import {afterNextRender, Component, ElementRef, input, viewChild} from '@angular/core';
 import {FormControl, ReactiveFormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faMagnifyingGlass} from '@fortawesome/free-solid-svg-icons';
@@ -17,6 +17,7 @@ let nextId = 0;
       </div>
       <label [for]="id" class="sr-only">Search</label>
       <input
+        #input
         [id]="id"
         [formControl]="control()"
         [placeholder]="placeholder()"
@@ -29,8 +30,19 @@ let nextId = 0;
 export class SearchBarComponent {
   public readonly control = input.required<FormControl>();
   public readonly placeholder = input.required<string>();
+  public readonly autofocus = input(false);
+
+  private readonly input = viewChild.required<ElementRef<HTMLInputElement>>('input');
 
   // the label needs an id to point at, and more than one search bar can be on the page at a time
   protected readonly id = `search-bar-${nextId++}`;
   protected readonly faMagnifyingGlass = faMagnifyingGlass;
+
+  constructor() {
+    afterNextRender(() => {
+      if (this.autofocus()) {
+        this.input().nativeElement.focus();
+      }
+    });
+  }
 }
