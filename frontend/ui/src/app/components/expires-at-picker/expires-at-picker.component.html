@@ -1,4 +1,4 @@
-<input type="date" [id]="inputId()" [formControl]="control" class="distr-input disabled:opacity-60" />
+<input type="date" [id]="inputId()" [formControl]="control" class="distr-input" />
 <div class="flex flex-wrap gap-2 mt-2">
   @for (preset of presets; track preset.label) {
     @let date = presetDate(preset);

@@ -32,6 +32,9 @@ const readOnlyExtension: Extension = [
 @Component({
   selector: 'app-editor',
   template: '',
+  // `.cm-content` is contenteditable, so the browser draws the caret with the inherited
+  // `caret-color`, which the read-only extension above overrides.
+  host: {class: 'font-mono caret-gray-900 dark:caret-white'},
   changeDetection: ChangeDetectionStrategy.Eager,
   providers: [
     {

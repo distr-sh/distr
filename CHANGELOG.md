@@ -1,5 +1,46 @@
 # Changelog
 
+## [3.4.0](https://github.com/distr-sh/distr/compare/3.3.1...3.4.0) (2026-09-01)
+
+
+### Features
+
+* add vendor controlled custom scripts in support bundles ([#3087](https://github.com/distr-sh/distr/issues/3087)) ([2d1a54f](https://github.com/distr-sh/distr/commit/2d1a54f494464f5d62071f7cda5736c15e9b94e7))
+* store deployment target ID with artifact pull record ([#3089](https://github.com/distr-sh/distr/issues/3089)) ([a9aa9ad](https://github.com/distr-sh/distr/commit/a9aa9adbd5c50c6d655cfc43ea254a92f7a27029))
+
+
+### Bug Fixes
+
+* **backend:** add counting user-less pulls for download counts and latest version calculation ([#3098](https://github.com/distr-sh/distr/issues/3098)) ([c10aaf5](https://github.com/distr-sh/distr/commit/c10aaf59540ad262cee274bed615cc16957ff1f1))
+* **deps:** update kubernetes monorepo to v0.37.0 ([#3106](https://github.com/distr-sh/distr/issues/3106)) ([1183b27](https://github.com/distr-sh/distr/commit/1183b27f004899c9a0076d6ec76ba949872a72ca))
+* **deps:** update module github.com/aws/smithy-go to v1.28.0 ([#3092](https://github.com/distr-sh/distr/issues/3092)) ([2fc953c](https://github.com/distr-sh/distr/commit/2fc953cb04d7d30c44e3addd72d49dfaf9f8037c))
+* **deps:** update module github.com/aws/smithy-go to v1.28.1 ([#3102](https://github.com/distr-sh/distr/issues/3102)) ([b899841](https://github.com/distr-sh/distr/commit/b899841c09f7f898194a46f552746b1939f9b436))
+* **deps:** update opentelemetry-go monorepo to v1.46.0 ([#3093](https://github.com/distr-sh/distr/issues/3093)) ([b33ffd7](https://github.com/distr-sh/distr/commit/b33ffd74f4c3cae0b4e30fff4ec36a925dfbd631))
+* **deps:** update opentelemetry-go-contrib monorepo to v0.71.0 ([#3097](https://github.com/distr-sh/distr/issues/3097)) ([41b4f78](https://github.com/distr-sh/distr/commit/41b4f786d8446f4b889a210e1d5d7081b2feb804))
+* **frontend:** log viewer always respects user-defined time range ([#3088](https://github.com/distr-sh/distr/issues/3088)) ([421b3e9](https://github.com/distr-sh/distr/commit/421b3e9347abfd9600ce436de564c3457ed20157))
+
+
+### Other
+
+* **deps:** update anchore/sbom-action action to v0.24.2 ([#3107](https://github.com/distr-sh/distr/issues/3107)) ([cd7881f](https://github.com/distr-sh/distr/commit/cd7881f3485034bcbdde450bd4ca97da54fc14ef))
+* **deps:** update angular monorepo to v22.1.4 ([#3105](https://github.com/distr-sh/distr/issues/3105)) ([fad00d5](https://github.com/distr-sh/distr/commit/fad00d5e53a46ea29c6ad80820907c6885f3f960))
+* **deps:** update angular-cli monorepo to v22.1.6 ([#3095](https://github.com/distr-sh/distr/issues/3095)) ([079aa79](https://github.com/distr-sh/distr/commit/079aa79f09866c7be72aed5415188e1729dff0a7))
+* **deps:** update dependency @angular/cdk to v22.1.4 ([#3099](https://github.com/distr-sh/distr/issues/3099)) ([94a6460](https://github.com/distr-sh/distr/commit/94a646034ccc2794f96c249a8a829c18bbe330b3))
+* **deps:** update dependency git-lfs to v3.8.0 ([#3113](https://github.com/distr-sh/distr/issues/3113)) ([e45dfa6](https://github.com/distr-sh/distr/commit/e45dfa667a0a220dbce94fbdb58d1310dcf9b54b))
+* **deps:** update dependency stripe to v1.50.6 ([#3101](https://github.com/distr-sh/distr/issues/3101)) ([9255892](https://github.com/distr-sh/distr/commit/9255892f1f2ac23da28eabf99ee4747993b9b525))
+* **deps:** update dependency typedoc-plugin-markdown to v4.13.0 ([#3091](https://github.com/distr-sh/distr/issues/3091)) ([e839a09](https://github.com/distr-sh/distr/commit/e839a09de3ef66eac29cbaad8c84ce1ea345d2bc))
+* **deps:** update golangci-lint to v2.13.2 ([#3108](https://github.com/distr-sh/distr/issues/3108)) ([86edfd2](https://github.com/distr-sh/distr/commit/86edfd228a792326b50642aca4960e51b868802c))
+* **deps:** update grafana/loki docker tag to v3.7.7 ([#3109](https://github.com/distr-sh/distr/issues/3109)) ([33d0be1](https://github.com/distr-sh/distr/commit/33d0be1ae0f2c9e918b8dc23afae1c9aeb9ea47c))
+* **deps:** update helm release rustfs to v1.0.0-rc.4 ([#3110](https://github.com/distr-sh/distr/issues/3110)) ([6d89d5c](https://github.com/distr-sh/distr/commit/6d89d5ce1e07c3bf7d4b3b2475aa1c348a615e6f))
+* **deps:** update loki docker tag to v18.11.4 ([#3103](https://github.com/distr-sh/distr/issues/3103)) ([45275b3](https://github.com/distr-sh/distr/commit/45275b37f2640f41e49ee6756f98ff339c80f870))
+* **deps:** update loki docker tag to v18.11.7 ([#3112](https://github.com/distr-sh/distr/issues/3112)) ([88d704e](https://github.com/distr-sh/distr/commit/88d704ee0308edc1696f073c086d2eb64dbff980))
+* improve login and registration error messages ([#3117](https://github.com/distr-sh/distr/issues/3117)) ([71ff10f](https://github.com/distr-sh/distr/commit/71ff10fec425a2208c8fbc729d5d671084a21d69))
+
+
+### Refactoring
+
+* **frontend:** consistent text input and select styling ([#3111](https://github.com/distr-sh/distr/issues/3111)) ([2765a18](https://github.com/distr-sh/distr/commit/2765a18d487cebeaf10375de3d5325bd2ff99c47))
+
 ## [3.3.1](https://github.com/distr-sh/distr/compare/3.3.0...3.3.1) (2026-08-27)
 
 
