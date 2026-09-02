@@ -48,13 +48,17 @@ interface ShownDownloader {
             [attr.src]="imageUrl | secureImage | async"
             [title]="downloader.title" />
         } @else {
-          <fa-icon [icon]="faUserCircle" size="xl" class="text-xl text-gray-400" [title]="downloader.title" />
+          <fa-icon
+            [icon]="faUserCircle"
+            size="xl"
+            class="text-xl text-gray-400 transition-all duration-100 ease-in-out"
+            [title]="downloader.title" />
         }
       }
       @if (remainingCount(); as count) {
         @if (count > 0) {
           <div
-            class="flex items-center justify-center size-8 text-xs font-medium text-white bg-gray-500 dark:bg-gray-700 border-2 border-white rounded-full dark:border-gray-800">
+            class="flex items-center justify-center size-8 text-xs font-medium text-white bg-gray-500 dark:bg-gray-700 border-2 border-white rounded-full dark:border-gray-800 transition-all duration-100 ease-in-out">
             +{{ count }}
           </div>
         }
