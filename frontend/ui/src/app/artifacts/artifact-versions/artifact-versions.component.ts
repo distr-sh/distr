@@ -1,6 +1,6 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
-import {Component, computed, inject, resource, signal, TemplateRef} from '@angular/core';
+import {Component, computed, inject, linkedSignal, resource, signal, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router} from '@angular/router';
@@ -36,6 +36,8 @@ import {SecureImagePipe} from '../../../util/secureImage';
 import {BytesPipe} from '../../../util/units';
 import {ClipComponent} from '../../components/clip.component';
 import {PageComponent} from '../../components/page.component';
+import {PaginationComponent} from '../../components/pagination.component';
+import {SearchBarComponent} from '../../components/search-bar.component';
 import {SpinnerComponent} from '../../components/spinner/spinner.component';
 import {UuidComponent} from '../../components/uuid';
 import {AutotrimDirective} from '../../directives/autotrim.directive';
@@ -76,6 +78,8 @@ import {ArtifactsDownloadCountComponent, ArtifactsDownloadedByComponent, Artifac
     ReactiveFormsModule,
     AutotrimDirective,
     PageComponent,
+    SearchBarComponent,
+    PaginationComponent,
   ],
   templateUrl: './artifact-versions.component.html',
   providers: [CustomerOrganizationsCache],
@@ -156,7 +160,8 @@ export class ArtifactVersionsComponent {
     )
   );
 
-  protected readonly filteredVersions = computed(() => {
+  /** The versions the list shows, each paired with the signature that covers it. */
+  protected readonly listedVersions = computed(() => {
     const versions = this.artifact()?.versions;
     if (!versions) {
       return [];
@@ -172,11 +177,45 @@ export class ArtifactVersionsComponent {
     }
 
     return versions
-      .filter((version) => version.inferredType !== 'signature')
+      .filter((version) => version.inferredType !== 'signature' && version.tags.length > 0)
       .map((version) => ({
         ...version,
         signatureVersion: signatureVersionsByTag.get(`sha256-${version.digest.substring(7)}`),
       }));
+  });
+
+  protected readonly searchControl = this.fb.control('');
+  protected readonly search = toSignal(this.searchControl.valueChanges, {initialValue: ''});
+
+  protected readonly matchingVersions = computed(() => {
+    const search = this.search().toLowerCase();
+    const versions = this.listedVersions();
+    if (!search) {
+      return versions;
+    }
+    return versions.filter(
+      (version) =>
+        version.digest.toLowerCase().includes(search) ||
+        version.tags.some((tag) => tag.name.toLowerCase().includes(search))
+    );
+  });
+
+  protected readonly pageSize = 25;
+
+  protected readonly page = linkedSignal<{search: string; count: number}, number>({
+    source: () => ({search: this.search(), count: this.matchingVersions().length}),
+    computation: (source, previous) => {
+      if (previous === undefined || previous.source.search !== source.search) {
+        return 0;
+      }
+      const lastPage = Math.max(0, Math.ceil(source.count / this.pageSize) - 1);
+      return Math.min(previous.value, lastPage);
+    },
+  });
+
+  protected readonly pagedVersions = computed(() => {
+    const start = this.page() * this.pageSize;
+    return this.matchingVersions().slice(start, start + this.pageSize);
   });
 
   protected readonly org = resource({
@@ -188,7 +227,7 @@ export class ArtifactVersionsComponent {
 
   protected readonly artifactUsage = computed(() => {
     const artifact = this.artifact();
-    const version = artifact?.versions?.find((it) => it.inferredType !== 'signature' && it.tags.length > 0);
+    const version = this.listedVersions()[0];
     if (!artifact || !version) {
       return undefined;
     }
