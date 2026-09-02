@@ -97,15 +97,13 @@
               </button>
             </div>
             @if (descriptionPreview()) {
-              <div
-                class="markdown min-h-40 p-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
-                [innerMarkdown]="form.controls.description.value"></div>
+              <div class="markdown distr-input min-h-40" [innerMarkdown]="form.controls.description.value"></div>
             } @else {
               <textarea
                 formControlName="description"
                 id="description"
                 rows="10"
-                class="distr-input font-mono text-sm"
+                class="distr-input font-mono"
                 placeholder="Describe the vulnerability, its impact and any workarounds. Markdown is supported."></textarea>
             }
           </div>
@@ -236,7 +234,7 @@
                     <div class="flex items-center justify-between gap-4 p-3">
                       <span class="text-sm text-gray-900 dark:text-white">{{ version.name }}</span>
                       <select
-                        class="distr-input w-32 px-2 py-1 text-xs"
+                        class="distr-input distr-input-sm w-32"
                         [value]="relationOf(applicationVersionSelection(), version.id!)"
                         (change)="setApplicationVersionRelation(version.id!, $any($event.target).value)">
                         <option value="">Not affected</option>
@@ -289,7 +287,7 @@
                           </ul>
                         </div>
                         <select
-                          class="distr-input w-32 shrink-0 px-2 py-1 text-xs"
+                          class="distr-input distr-input-sm w-32 shrink-0"
                           [value]="relationOf(artifactVersionSelection(), version.id)"
                           (change)="setArtifactVersionRelation(version.id, $any($event.target).value)">
                           <option value="">Not affected</option>
