@@ -108,9 +108,7 @@ export class LoginComponent implements OnInit {
         this.toast.error('You do not have an account in this organization. Please contact your administrator.');
         break;
       case 'oidc-unknown-user':
-        this.toast.error(
-          'There is no account for this email address. Please note that you must be invited to log in.'
-        );
+        this.toast.error('There is no account for this email address. Please note that you must be invited to log in.');
         break;
       case 'oidc-user-limit':
         this.toast.error(
