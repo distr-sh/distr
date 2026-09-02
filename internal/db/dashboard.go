@@ -21,7 +21,7 @@ func GetLatestPullOfArtifactByCustomerOrganization(
 		FROM ArtifactVersionPull avpl
 		JOIN ArtifactVersion av ON av.id = avpl.artifact_version_id
 		WHERE av.artifact_id = @artifactId
-			AND av.name NOT LIKE '%:%'
+			AND `+artifactVersionIsTagExpr("av")+`
 			AND `+artifactPullOfCustomerOrgExpr+`
 		ORDER BY avpl.created_at DESC
 		LIMIT 1;

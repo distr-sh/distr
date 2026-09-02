@@ -437,6 +437,13 @@ func (handler *manifests) handlePut(resp http.ResponseWriter, req *http.Request,
 		},
 	}
 
+	// A reference containing a colon cannot be a tag, so it has to be this manifest's own digest.
+	// Storing a version named after any other digest would make it indistinguishable from a tag,
+	// which is what every caller telling the two apart compares the name to the digest for.
+	if strings.Contains(target, ":") && target != mf.Digest.String() {
+		return regErrDigestMismatch
+	}
+
 	var blobs []imanifest.Blob
 	if manifest.MIMETypeIsMultiImage(mf.ContentType) {
 		im, err := manifest.ListFromBlob(buf.Bytes(), mf.ContentType)
