@@ -1,6 +1,6 @@
 import {GlobalPositionStrategy, OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
-import {ChangeDetectionStrategy, Component, computed, inject, resource, signal, TemplateRef} from '@angular/core';
+import {Component, computed, inject, resource, signal, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, Router} from '@angular/router';
@@ -78,7 +78,6 @@ import {ArtifactsDownloadCountComponent, ArtifactsDownloadedByComponent, Artifac
     PageComponent,
   ],
   templateUrl: './artifact-versions.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [CustomerOrganizationsCache],
 })
 export class ArtifactVersionsComponent {
@@ -112,7 +111,7 @@ export class ArtifactVersionsComponent {
   protected readonly upstreamURLForm = new FormGroup({
     upstreamUrl: this.fb.control('', Validators.required),
   });
-  protected upstreamURLFormLoading = false;
+  protected readonly upstreamURLFormLoading = signal(false);
   protected upstreamURLModalRef?: DialogRef;
 
   protected readonly upstreamAuthForm = new FormGroup({
@@ -120,7 +119,7 @@ export class ArtifactVersionsComponent {
     upstreamUsername: this.fb.control('', Validators.required),
     upstreamPassword: this.fb.control('', Validators.required),
   });
-  protected upstreamAuthFormLoading = false;
+  protected readonly upstreamAuthFormLoading = signal(false);
   protected upstreamAuthModalRef?: DialogRef;
 
   constructor() {
@@ -163,16 +162,21 @@ export class ArtifactVersionsComponent {
       return [];
     }
 
+    const signatureVersionsByTag = new Map<string, (typeof versions)[number]>();
+    for (const version of versions) {
+      if (version.inferredType === 'signature') {
+        for (const tag of version.tags) {
+          signatureVersionsByTag.set(tag.name, version);
+        }
+      }
+    }
+
     return versions
       .filter((version) => version.inferredType !== 'signature')
-      .map((version) => {
-        const signatureVersionTag = `sha256-${version.digest.substring(7)}`;
-        const signatureVersion = versions.find(
-          (version1) =>
-            version1.inferredType === 'signature' && version1.tags.some((tag) => tag.name === signatureVersionTag)
-        );
-        return {...version, signatureVersion};
-      });
+      .map((version) => ({
+        ...version,
+        signatureVersion: signatureVersionsByTag.get(`sha256-${version.digest.substring(7)}`),
+      }));
   });
 
   protected readonly org = resource({
@@ -182,16 +186,15 @@ export class ArtifactVersionsComponent {
     loader: () => firstValueFrom(this.contextService.getRegistryHost()),
   });
 
-  public getArtifactUsage(artifact: ArtifactWithTags): string | undefined {
-    if (!artifact.versions?.length) {
-      // this should not actually happen
+  protected readonly artifactUsage = computed(() => {
+    const artifact = this.artifact();
+    const version = artifact?.versions?.find((it) => it.inferredType !== 'signature' && it.tags.length > 0);
+    if (!artifact || !version) {
       return undefined;
     }
     const org = this.org.value();
     const registryHost = this.registryHost.value();
-    let url = `${registryHost ?? 'REGISTRY_DOMAIN'}/${org?.slug ?? 'ORG_SLUG'}/${artifact.name}`;
-    const version = artifact.versions.find((it) => it.inferredType !== 'signature' && it.tags && it.tags.length > 0);
-    if (!version) return;
+    const url = `${registryHost ?? 'REGISTRY_DOMAIN'}/${org?.slug ?? 'ORG_SLUG'}/${artifact.name}`;
     switch (version.inferredType) {
       case 'helm-chart':
         return `helm install <release-name> oci://${url} --version ${version.tags[0].name}`;
@@ -200,7 +203,7 @@ export class ArtifactVersionsComponent {
       default:
         return `oras pull ${url}:${version.tags[0].name}`;
     }
-  }
+  });
 
   protected calcVersionDownloads(version: TaggedArtifactVersion): HasDownloads {
     const downloadsTotal = version.tags.reduce(
@@ -241,7 +244,7 @@ export class ArtifactVersionsComponent {
     if (this.upstreamURLForm.invalid) {
       return;
     }
-    this.upstreamURLFormLoading = true;
+    this.upstreamURLFormLoading.set(true);
 
     try {
       const {upstreamUrl} = this.upstreamURLForm.value;
@@ -252,7 +255,7 @@ export class ArtifactVersionsComponent {
       const msg = getFormDisplayedError(e);
       if (msg) this.toast.error(msg);
     } finally {
-      this.upstreamURLFormLoading = false;
+      this.upstreamURLFormLoading.set(false);
     }
   }
 
@@ -273,7 +276,7 @@ export class ArtifactVersionsComponent {
     if (this.upstreamAuthForm.invalid) {
       return;
     }
-    this.upstreamAuthFormLoading = true;
+    this.upstreamAuthFormLoading.set(true);
 
     try {
       const {upstreamAuthType, upstreamUsername, upstreamPassword} = this.upstreamAuthForm.value;
@@ -292,7 +295,7 @@ export class ArtifactVersionsComponent {
       const msg = getFormDisplayedError(e);
       if (msg) this.toast.error(msg);
     } finally {
-      this.upstreamAuthFormLoading = false;
+      this.upstreamAuthFormLoading.set(false);
     }
   }
 

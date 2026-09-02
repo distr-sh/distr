@@ -172,6 +172,7 @@ The website is a separate pnpm project with its own Prettier config; the root co
 - Use [Angular Signals](https://angular.dev/guide/signals) for inputs, child views and everywhere where the current Angular version supports signals.
   If you find usages of non signal usages for inputs, child views etc. change them to signals in the files you would edit anyway.
 - Don't use any responsive design classes in modals. They should always be optimized for the none mobile use case.
+- Never bind a template to a method call (`@if (getUsage(x))`, `{{ formatFoo(y) }}`). A template expression is re-evaluated on every change detection pass, once per instance of the view it sits in, so on a page with many rows the work is multiplied by the row count. Express it as a `computed` instead. The same applies to anything a template reads indirectly: a getter or service method called from a template has to be cheap and must not decode, parse or re-derive anything (see the claims cache in `AuthService`).
 - Use Angular's `takeUntilDestroyed` instead of a manual `destroyed$` subject.
 - Use [Angular Signal Based Animations](https://angular.dev/guide/animations) instead of legacy animations defined in the component.
 - Use Tailwind CSS utility classes for text transformations (e.g. `capitalize`, `uppercase`, `lowercase`) instead of TypeScript string manipulation when possible.
