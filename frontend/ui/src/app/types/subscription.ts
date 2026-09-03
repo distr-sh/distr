@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 export const UNLIMITED_QTY = -1;
 export type SubscriptionType = 'community' | 'pro' | 'business' | 'enterprise' | 'trial';
 
@@ -15,6 +17,23 @@ export function isProSubscription(subscriptionType: SubscriptionType | undefined
 
 export function isPayingSubscription(subscriptionType: SubscriptionType | undefined): boolean {
   return subscriptionType !== undefined && !NON_PAYING_SUBSCRIPTION_TYPES.includes(subscriptionType);
+}
+
+export function isExpiredSubscription(subscriptionType: SubscriptionType, subscriptionEndsAt?: string): boolean {
+  return subscriptionType !== 'community' && !!subscriptionEndsAt && dayjs(subscriptionEndsAt).isBefore();
+}
+
+// the plans from the most to the least capable, for lists that show organizations of several plans
+const SUBSCRIPTION_ORDER: SubscriptionType[] = ['enterprise', 'business', 'pro', 'trial', 'community'];
+
+export function subscriptionRank(subscriptionType: SubscriptionType, subscriptionEndsAt?: string): number {
+  if (isExpiredSubscription(subscriptionType, subscriptionEndsAt)) {
+    // an expired subscription grants nothing, whatever plan it was on
+    return SUBSCRIPTION_ORDER.length + 1;
+  }
+  const rank = SUBSCRIPTION_ORDER.indexOf(subscriptionType);
+  // a plan introduced after this list ranks below the ones it knows, but above anything expired
+  return rank === -1 ? SUBSCRIPTION_ORDER.length : rank;
 }
 
 export type SubscriptionPeriod = 'monthly' | 'yearly';

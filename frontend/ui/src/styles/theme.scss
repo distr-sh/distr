@@ -76,7 +76,6 @@
   .distr-status-badge {
     @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-sm text-xs font-medium;
   }
-
   // the white surface of a page. `distr-panel` is padded for prose and forms, `distr-table-panel`
   // is flush so that a table or list can span its full width.
   // No `overflow-hidden` here, unlike `distr-table-panel`: a padded panel has nothing to clip at its
