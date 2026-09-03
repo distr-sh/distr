@@ -34,6 +34,13 @@ services:
         condition: service_healthy
       loki:
         condition: service_started
+    # The hub runs as a nonroot user (UID 65532), but a freshly created named volume
+    # is owned by root, so this init container fixes ownership of the scratch volume
+    # before the hub starts. It requires Docker Compose >= 5.3.0, see
+    # https://distr.sh/docs/self-hosting/docker/ for a one-shot service alternative.
+    pre_start:
+      - image: 'busybox:1.38.0'
+        command: ['chown', '65532:65532', '/scratch']
     env_file:
       - .env
     ports:
@@ -154,3 +161,4 @@ volumes:
   postgres:
   rustfs:
   loki:
+  scratch:
