@@ -4,7 +4,7 @@ task.output = "prefix"
 
 [tools]
 node = "26"
-go = "1.27.0"
+go = "1.27.1"
 golangci-lint = "2.13.2"
 helm-docs = "1.14.2"
 watchexec = "2.7.0"
@@ -134,11 +134,11 @@ sources = [
 outputs = ["deploy/charts/distr/README.md"]
 
 [tasks."format:frontend"]
-run = 'pnpm format'
+run = ['pnpm dedupe', 'pnpm format']
 depends = ["build:helm-docs"]
 
 [tasks."format:website"]
-run = 'pnpm format'
+run = ['pnpm dedupe', 'pnpm format']
 dir = "website"
 description = 'Format the website. Also deletes unused images'
 

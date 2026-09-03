@@ -34,6 +34,10 @@ export interface JWTClaims {
 export class AuthService {
   private readonly httpClient = inject(HttpClient);
 
+  // Decoding a JWT costs a base64 decode and a JSON.parse, and the role and context checks below are called
+  // from templates, so they can run thousands of times per change detection pass on a page with many rows.
+  private decodeCache?: {token: string; claims: JWTClaims};
+
   private get token(): string | null {
     return localStorage.getItem(tokenStorageKey);
   }
@@ -174,24 +178,28 @@ export class AuthService {
   }
 
   public getTokenAndClaims(): {token: string | null; claims: JWTClaims | undefined} {
-    const actionToken = this.actionToken;
-    if (actionToken !== null) {
-      try {
-        return {token: actionToken, claims: jwtDecode(actionToken)};
-      } catch (e) {
-        console.error(e);
-      }
-    } else {
-      const token = this.token;
-      if (token !== null) {
-        try {
-          return {token, claims: jwtDecode(token)};
-        } catch (e) {
-          console.error(e);
-        }
+    const token = this.actionToken ?? this.token;
+    if (token !== null) {
+      const claims = this.decodeClaims(token);
+      if (claims !== undefined) {
+        return {token, claims};
       }
     }
     return {token: null, claims: undefined};
+  }
+
+  private decodeClaims(token: string): JWTClaims | undefined {
+    if (this.decodeCache?.token === token) {
+      return this.decodeCache.claims;
+    }
+    try {
+      const claims = jwtDecode<JWTClaims>(token);
+      this.decodeCache = {token, claims};
+      return claims;
+    } catch (e) {
+      console.error(e);
+      return undefined;
+    }
   }
 
   public requestEmailVerification(): Observable<void> {
