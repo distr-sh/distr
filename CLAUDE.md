@@ -162,7 +162,7 @@ The website is a separate pnpm project with its own Prettier config; the root co
 - Always use self-closing tags for Angular components when they have no content (e.g. `<fa-icon [icon]="faPlus" />` instead of `<fa-icon [icon]="faPlus"></fa-icon>`)
 - Use standalone components (no NgModules) - This is the default so `standalone: true` is not needed
 - `ChangeDetectionStrategy.OnPush` is the default, so never write `changeDetection: ChangeDetectionStrategy.OnPush`. Only set `changeDetection` to opt a component out with `ChangeDetectionStrategy.Eager`, and remove that opt-out whenever the component's state is fully signal-based
-- Services are singleton by default (`providedIn: 'root'`)
+- Services should be singleton by default with `providedIn: 'root'`
 - Use Angular's `inject()` function for dependency injection (e.g. `private readonly http = inject(HttpClient)`). Do not use constructor injection.
 - Component file structure: `component-name.component.ts`, `component-name.component.html`, and a `component-name.component.scss` only when the component needs styling of its own beyond utility classes in the template
 - Use TypeScript interfaces from `app/types/` for API models
@@ -173,6 +173,7 @@ The website is a separate pnpm project with its own Prettier config; the root co
   If you find usages of non signal usages for inputs, child views etc. change them to signals in the files you would edit anyway.
 - Don't use any responsive design classes in modals. They should always be optimized for the none mobile use case.
 - Never bind a template to a method call (`@if (getUsage(x))`, `{{ formatFoo(y) }}`). A template expression is re-evaluated on every change detection pass, once per instance of the view it sits in, so on a page with many rows the work is multiplied by the row count. Express it as a `computed` instead. The same applies to anything a template reads indirectly: a getter or service method called from a template has to be cheap and must not decode, parse or re-derive anything (see the claims cache in `AuthService`).
+- Never let a pipe perform I/O itself. Angular creates one pipe instance per binding, so an `HttpClient` call inside `transform` becomes one request per element and the same resource is fetched again for every place it appears. Put the request in a `providedIn: 'root'` service that caches by key and shares the in-flight observable (`shareReplay`), and reduce the pipe to a delegate (see `SecureImageCache` and `SecureImagePipe` in `frontend/ui/src/util/secureImage.ts`). Relying on the browser's HTTP cache is not enough: every instance still runs the interceptor chain and allocates its own copy of the response.
 - Use Angular's `takeUntilDestroyed` instead of a manual `destroyed$` subject.
 - Use [Angular Signal Based Animations](https://angular.dev/guide/animations) instead of legacy animations defined in the component.
 - Use Tailwind CSS utility classes for text transformations (e.g. `capitalize`, `uppercase`, `lowercase`) instead of TypeScript string manipulation when possible.
