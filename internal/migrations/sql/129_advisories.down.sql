@@ -1,6 +1,6 @@
 UPDATE Organization
   SET features = array_remove(features, 'vulnerabilities')
-  WHERE subscription_type = 'business';
+  WHERE 'vulnerabilities' = any(features);
 
 DROP TABLE IF EXISTS AdvisoryEvent;
 DROP TABLE IF EXISTS AdvisoryArtifactVersion;
