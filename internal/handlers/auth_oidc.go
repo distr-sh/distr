@@ -32,6 +32,7 @@ const (
 	redirectToLoginOIDCRegistrationDisabled = "/login?reason=oidc-registration-disabled"
 	redirectToLoginOIDCUnavailable          = "/login?reason=oidc-unavailable"
 	redirectToLoginOIDCNoAccount            = "/login?reason=oidc-no-account"
+	redirectToLoginOIDCUnknownUser          = "/login?reason=oidc-unknown-user"
 	redirectToLoginOIDCUserLimit            = "/login?reason=oidc-user-limit"
 	redirectToLoginOIDCOrgLimit             = "/login?reason=oidc-org-limit"
 )
@@ -39,6 +40,10 @@ const (
 func AuthOIDCRouter(r chiopenapi.Router) {
 	type OIDCRequest struct {
 		OIDCProvider string `path:"oidcProvider"`
+	}
+	type OIDCLoginRequest struct {
+		OIDCRequest
+		Flow string `query:"flow"`
 	}
 	type CustomOIDCRequest struct {
 		OrganizationSlug string `path:"organizationSlug"`
@@ -50,7 +55,7 @@ func AuthOIDCRouter(r chiopenapi.Router) {
 	r.Get("/custom/{organizationSlug}/{providerSlug}/callback", authLoginCustomOidcCallbackHandler).
 		With(option.Request(CustomOIDCRequest{}))
 	r.Get("/{oidcProvider}", authLoginOidcHandler).
-		With(option.Request(OIDCRequest{}))
+		With(option.Request(OIDCLoginRequest{}))
 	r.Get("/{oidcProvider}/callback", authLoginOidcCallbackHandler).
 		With(option.Request(OIDCRequest{}))
 }
@@ -73,7 +78,8 @@ func authLoginOidcHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if state, err := db.CreateOIDCState(ctx, nil); err != nil {
+	flow := types.ParseOIDCFlow(r.URL.Query().Get("flow"))
+	if state, err := db.CreateOIDCState(ctx, nil, flow); err != nil {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		log.Error("OIDC state creation failed", zap.Error(err))
 		http.Redirect(w, r, redirectToLoginOIDCFailed, http.StatusFound)
@@ -116,7 +122,7 @@ func authLoginOidcCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = db.RunTx(ctx, func(ctx context.Context) error {
-		user, redirect, err := resolveOIDCUser(ctx, log, identity)
+		user, redirect, err := resolveOIDCUser(ctx, log, identity, state.Flow)
 		if err != nil {
 			return err
 		}
@@ -171,7 +177,8 @@ func authLoginCustomOidcHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	state, err := db.CreateOIDCState(ctx, &configuration.ID)
+	// A custom provider gates account creation through CreateUnknownUsers instead of the flow.
+	state, err := db.CreateOIDCState(ctx, &configuration.ID, types.OIDCFlowLogin)
 	if err != nil {
 		sentry.GetHubFromContext(ctx).CaptureException(err)
 		log.Error("OIDC state creation failed", zap.Error(err))
@@ -585,11 +592,14 @@ func emailDomainAllowed(configuration types.CustomOIDCConfiguration, email strin
 }
 
 // resolveOIDCUser returns the user account for the given OIDC identity, linking or registering it as needed.
+// An account is only registered for an unknown identity when the flow was started on the registration page;
+// a login flow is refused instead, so an unknown user has to be invited.
 // A non-empty redirect return means the login must be aborted with that redirect instead of proceeding.
 func resolveOIDCUser(
 	ctx context.Context,
 	log *zap.Logger,
 	identity oidc.Identity,
+	flow types.OIDCFlow,
 ) (*types.UserAccount, string, error) {
 	user, existingIdentity, err := db.GetUserAccountWithOIDCIdentity(ctx, nil, identity.Issuer, identity.Subject)
 	if err == nil {
@@ -600,6 +610,10 @@ func resolveOIDCUser(
 
 	user, err = db.GetUserAccountByEmail(ctx, identity.Email)
 	if errors.Is(err, apierrors.ErrNotFound) {
+		if flow != types.OIDCFlowRegistration {
+			log.Info("rejecting OIDC login for an unknown user")
+			return nil, redirectToLoginOIDCUnknownUser, nil
+		}
 		var redirect string
 		if user, redirect, err = registerOIDCUser(ctx, log, identity.Email); err != nil || redirect != "" {
 			return nil, redirect, err
