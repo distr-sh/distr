@@ -91,10 +91,6 @@ CREATE INDEX idx_advisory_event_user_account_id
 
 -- The feature gate stays named after the "Vulnerability Management" category, which covers
 -- security advisories today and will cover vulnerability scan logs later.
+-- Must be the last statement: a newly added enum value cannot be used in the transaction
+-- that adds it, which is also why the next migration is the one granting the feature.
 ALTER TYPE FEATURE ADD VALUE IF NOT EXISTS 'vulnerabilities';
-
--- The plans that grant the feature, matching FeaturesForSubscriptionType. Without this they
--- would only receive it once their subscription is reconciled the next time.
-UPDATE Organization
-  SET features = array_append(features, 'vulnerabilities')
-  WHERE subscription_type IN ('business', 'enterprise') AND NOT 'vulnerabilities' = any(features);

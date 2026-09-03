@@ -1,5 +1,5 @@
-<div class="w-4xl max-w-full max-h-full mt-16 bg-white rounded-lg shadow-sm dark:bg-gray-900">
-  <div class="flex items-center justify-between p-6 border-b border-gray-200 rounded-t dark:border-gray-600">
+<div class="p-4 w-4xl max-w-full my-auto max-h-full overflow-y-auto bg-white rounded-lg shadow-sm dark:bg-gray-900">
+  <div class="flex items-center justify-between p-4 border-b border-gray-200 rounded-t dark:border-gray-600">
     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
       {{ advisory() ? 'Edit Security Advisory' : 'New Security Advisory' }}
     </h3>
@@ -13,35 +13,15 @@
   </div>
 
   <form [formGroup]="form" (ngSubmit)="submit()">
-    <div class="px-6 text-gray-500 dark:text-gray-400">
-      <div class="flex flex-wrap gap-4 border-b border-gray-200 dark:border-gray-600">
-        <button
-          type="button"
-          (click)="activeTab.set('details')"
-          class="text-sm font-medium cursor-pointer inline-flex items-center justify-center py-3 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
-          [class.text-blue-600]="activeTab() === 'details'"
-          [class.dark:text-blue-500]="activeTab() === 'details'"
-          [class.border-blue-600]="activeTab() === 'details'"
-          [class.border-transparent]="activeTab() !== 'details'">
-          Details
-        </button>
-        <button
-          type="button"
-          (click)="activeTab.set('versions')"
-          class="text-sm font-medium cursor-pointer inline-flex items-center justify-center py-3 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
-          [class.text-blue-600]="activeTab() === 'versions'"
-          [class.dark:text-blue-500]="activeTab() === 'versions'"
-          [class.border-blue-600]="activeTab() === 'versions'"
-          [class.border-transparent]="activeTab() !== 'versions'">
-          Versions
-          @if (selectedCount() > 0) {
-            <span class="ms-2 distr-tag-badge">{{ selectedCount() }}</span>
-          }
-        </button>
-      </div>
-    </div>
+    <app-tab-bar [tabs]="tabs" [(active)]="activeTab">
+      <ng-template #tabSuffix let-tab>
+        @if (tab.id === 'versions' && selectedCount() > 0) {
+          <span class="ms-2 distr-tag-badge">{{ selectedCount() }}</span>
+        }
+      </ng-template>
+    </app-tab-bar>
 
-    <div class="p-6 h-[60vh] overflow-y-auto [scrollbar-gutter:stable]">
+    <div class="p-4">
       @if (activeTab() === 'details') {
         <div class="space-y-4">
           <div class="grid grid-cols-3 gap-4">
@@ -330,7 +310,7 @@
       }
     </div>
 
-    <div class="flex items-center justify-end p-6 border-t border-gray-200 dark:border-gray-600 gap-2">
+    <div class="flex items-center justify-end p-4 gap-2">
       <button type="button" (click)="cancel()" class="py-2.5 px-5 text-sm font-medium distr-btn-secondary">
         Cancel
       </button>

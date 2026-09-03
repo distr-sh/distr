@@ -17,6 +17,7 @@ import {RelativeDatePipe} from '../../util/dates';
 import {getFormDisplayedError} from '../../util/errors';
 import {ApplicationLogoComponent} from '../applications/components';
 import {ArtifactLogoComponent, ArtifactsHashComponent} from '../artifacts/components';
+import {TabBarComponent, TabItem} from '../components/tab-bar.component';
 import {AutotrimDirective} from '../directives/autotrim.directive';
 import {InnerMarkdownDirective} from '../directives/inner-markdown.directive';
 import {AdvisoriesService} from '../services/advisories.service';
@@ -70,6 +71,7 @@ export interface AdvisoryFormDraft {
     RelativeDatePipe,
     NgPlural,
     NgPluralCase,
+    TabBarComponent,
   ],
 })
 export class AdvisoryFormComponent {
@@ -112,6 +114,10 @@ export class AdvisoryFormComponent {
     references: new FormArray<FormGroup<{url: FormControl<string>; label: FormControl<string>}>>([]),
   });
 
+  protected readonly tabs: TabItem<'details' | 'versions'>[] = [
+    {id: 'details', label: 'Details'},
+    {id: 'versions', label: 'Versions'},
+  ];
   protected readonly activeTab = signal<'details' | 'versions'>('details');
   protected readonly descriptionPreview = signal(false);
   protected readonly loading = signal(false);

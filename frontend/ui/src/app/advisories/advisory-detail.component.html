@@ -7,7 +7,7 @@
   </a>
 
   @if (advisory(); as advisory) {
-    <div class="distr-panel mb-4">
+    <div class="distr-panel mb-6">
       <div class="flex items-start justify-between gap-4">
         <div>
           <div class="flex flex-wrap items-center gap-2">
@@ -74,8 +74,8 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <div class="lg:col-span-2 space-y-4">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 space-y-6">
         <div class="distr-panel">
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Description</h2>
           @if (advisory.description) {
@@ -240,7 +240,7 @@
         }
       </div>
 
-      <div class="space-y-4">
+      <div class="space-y-6">
         <div class="distr-panel">
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Versions</h2>
 
@@ -336,7 +336,12 @@
       @if (version.artifactVersionTags.length > 0) {
         <div class="flex flex-row flex-wrap gap-1 mt-1">
           @for (tag of version.artifactVersionTags; track tag) {
-            <span [class]="tag === 'latest' ? 'distr-artifact-tag-latest' : 'distr-artifact-tag'">{{ tag }}</span>
+            <span
+              class="inline-block max-w-40 truncate"
+              [class]="tag === 'latest' ? 'distr-artifact-tag-latest' : 'distr-artifact-tag'"
+              [title]="tag">
+              {{ tag }}
+            </span>
           }
         </div>
       }
