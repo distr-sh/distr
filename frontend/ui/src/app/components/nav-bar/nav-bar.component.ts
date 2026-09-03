@@ -1,19 +1,7 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {AsyncPipe} from '@angular/common';
 import {HttpErrorResponse} from '@angular/common/http';
-import {
-  Component,
-  computed,
-  ElementRef,
-  inject,
-  input,
-  linkedSignal,
-  OnInit,
-  signal,
-  TemplateRef,
-  viewChild,
-  viewChildren,
-} from '@angular/core';
+import {Component, computed, inject, input, OnInit, signal, TemplateRef, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
@@ -63,9 +51,6 @@ const ORGANIZATION_SEARCH_THRESHOLD = 4;
   host: {
     '(document:keydown.control.k)': 'onSwitcherShortcut($event)',
     '(document:keydown.meta.k)': 'onSwitcherShortcut($event)',
-    '(document:keydown.arrowDown)': 'moveOrgHighlight($event, 1)',
-    '(document:keydown.arrowUp)': 'moveOrgHighlight($event, -1)',
-    '(document:keydown.enter)': 'switchToHighlightedOrg($event)',
     '(document:keydown.escape)': 'organizationsOpened.set(false)',
   },
   imports: [
@@ -149,8 +134,6 @@ export class NavBarComponent implements OnInit {
     const orgs = this.availableOrgs();
     return term ? orgs.filter((org) => org.name.toLowerCase().includes(term)) : orgs;
   });
-  protected readonly highlightedOrgIndex = linkedSignal({source: this.matchingOrgs, computation: () => 0});
-  private readonly orgOptions = viewChildren<ElementRef<HTMLElement>>('orgOption');
 
   // Derived from the branding service's reactive stream so the navbar updates live when the logo/title is saved.
   private readonly branding = toSignal(this.organizationBranding.branding$);
@@ -184,40 +167,16 @@ export class NavBarComponent implements OnInit {
 
   protected toggleOrganizations() {
     this.organizationSearch.setValue('');
-    this.highlightedOrgIndex.set(0);
     this.organizationsOpened.update((opened) => !opened);
   }
 
   protected onSwitcherShortcut(event: Event) {
-    if (!this.isOrganizationSwitcherVisible()) {
+    if (!this.isOrganizationSwitcherVisible() || this.modalRef) {
       return;
     }
     // Ctrl+K and Cmd+K are the browsers' own shortcuts for their search and address bars
     event.preventDefault();
     this.toggleOrganizations();
-  }
-
-  protected moveOrgHighlight(event: Event, offset: number) {
-    const count = this.matchingOrgs().length;
-    if (!this.organizationsOpened() || count === 0) {
-      return;
-    }
-    // the arrow keys would otherwise scroll the page or move the caret inside the search field
-    event.preventDefault();
-    const next = (this.highlightedOrgIndex() + offset + count) % count;
-    this.highlightedOrgIndex.set(next);
-    this.orgOptions()[next]?.nativeElement.scrollIntoView({block: 'nearest'});
-  }
-
-  protected switchToHighlightedOrg(event: Event) {
-    const org = this.matchingOrgs()[this.highlightedOrgIndex()];
-    const isOptionFocused = this.orgOptions().some((option) => option.nativeElement === event.target);
-    if (!this.organizationsOpened() || !org || isOptionFocused) {
-      return;
-    }
-    // the trigger button keeps the focus after a click, and would toggle the dropdown on Enter
-    event.preventDefault();
-    this.switchContext(org);
   }
 
   async switchContext(org: Organization, targetPath = '/') {
@@ -237,9 +196,9 @@ export class NavBarComponent implements OnInit {
 
   showCreateOrgModal(): void {
     this.closeCreateOrgModal();
-    // the dropdown has to give up its key handling before the modal takes over the keyboard
     this.organizationsOpened.set(false);
     this.modalRef = this.overlay.showModal(this.createOrgModal());
+    this.modalRef.result().subscribe(() => (this.modalRef = undefined));
   }
 
   closeCreateOrgModal() {

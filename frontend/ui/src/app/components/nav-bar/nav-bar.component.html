@@ -122,16 +122,12 @@
                   }
                   @if (availableOrgs().length > 0) {
                     <ul class="p-2 space-y-1 overflow-y-auto min-h-0" role="none">
-                      @for (org of matchingOrgs(); track org.id; let index = $index) {
+                      @for (org of matchingOrgs(); track org.id) {
                         <li>
                           <button
-                            #orgOption
                             (click)="switchContext(org)"
                             [title]="'Switch to this organization'"
-                            class="flex items-center w-full text-start p-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
-                            [class]="
-                              index === highlightedOrgIndex() ? 'bg-gray-100 dark:bg-gray-600 dark:text-white' : ''
-                            "
+                            class="flex items-center w-full text-start p-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 focus:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white dark:focus:bg-gray-600 dark:focus:text-white"
                             role="menuitem">
                             <fa-icon class="me-4" [icon]="faShuffle" />
                             <span
