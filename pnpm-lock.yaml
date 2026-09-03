@@ -52,7 +52,7 @@ importers:
         version: 6.43.10
       '@distr-sh/distr-sdk':
         specifier: file:./sdk/js/src
-        version: file:sdk/js/src
+        version: src@file:sdk/js/src
       '@fontsource/inter':
         specifier: ^5.3.0
         version: 5.3.0
@@ -97,7 +97,7 @@ importers:
         version: 18.0.11
       posthog-js:
         specifier: ^1.407.3
-        version: 1.407.3
+        version: 1.424.1
       rxjs:
         specifier: ~7.8.2
         version: 7.8.2
@@ -517,9 +517,6 @@ packages:
   '@csstools/css-tokenizer@4.0.0':
     resolution: {integrity: sha512-QxULHAm7cNu72w97JUNCBFODFaXpbDg+dP8b/oWFAZ2MTRppA3U00Y2L1HqaS4J6yBqxwa/Y3nMBaxVKbB/NsA==}
     engines: {node: '>=20.19.0'}
-
-  '@distr-sh/distr-sdk@file:sdk/js/src':
-    resolution: {directory: sdk/js/src, type: directory}
 
   '@emnapi/core@1.11.1':
     resolution: {integrity: sha512-RSvbQmHzdKzNsLYa/wHrbc3KN4sYLKAdPZxqiM2HATqv/SBk2/ENSHpvXGaLOMcsAyz0poEGqkmmKYG3OWiJEQ==}
@@ -1367,14 +1364,14 @@ packages:
   '@popperjs/core@2.11.8':
     resolution: {integrity: sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==}
 
-  '@posthog/browser-common@0.2.2':
-    resolution: {integrity: sha512-4NHumu2lx7pMeucDLfXnDmeP5CV2oVWY8jBpXBwBUjoYwkQxB7Z3A6q9oDydw+/iSAGl6MaPqW9gsnRK8AvqLA==}
+  '@posthog/browser-common@0.7.1':
+    resolution: {integrity: sha512-JO/5dIVx3NTrbg0W2VciDDmmizsvwaYYHE5cnJE1Gra+UqBnEuVGH9DTE/kBFgVMp+08z5uj/aAprsYD2WG/QQ==}
 
-  '@posthog/core@1.45.1':
-    resolution: {integrity: sha512-tLtvzomavb2PPWdGYKsusyIzIeL2Px47v348Smibkay7sMy/83TyPk+Ptsp2NdeOgJsbuwSxWkR2+XA0aSCAaA==}
+  '@posthog/core@1.50.2':
+    resolution: {integrity: sha512-El7y/ipZ45OFBRTN/+ixat9Nw21bW+pKKnX0G+rG4rWxBtDA47Ub/ZUnHvZNhAufNInQr4AYCUeWQsuJsTcoKg==}
 
-  '@posthog/types@1.398.0':
-    resolution: {integrity: sha512-sJMkl4k+u8yS/0fjHsKqE9xTdsAh30a2WvgChiptellnVoE0e8QJKFgqOMD2sk8FaEArPdeFklAhXvmENAt3Sg==}
+  '@posthog/types@1.407.2':
+    resolution: {integrity: sha512-F/x/qlZSGiianCEZlZ9XRYHUYffH07Zv+1oOllxAw15ifObagxSZzc2IneZE01eFqPl2OmoNuY86ER5Uyvy8Zw==}
 
   '@rolldown/binding-android-arm64@1.1.5':
     resolution: {integrity: sha512-lZg8fqIv2v7FF237bwMgzGZEJvGL79/s5knJ/i6FmsGF4XXlzccZ4jb+TrFIxtSSxFtIpdsgrPZeMk1I9AFcyQ==}
@@ -2189,8 +2186,8 @@ packages:
     resolution: {integrity: sha512-cgwlv/1iFQiFnU96XXgROh8xTeetsnJiDsTc7TYCLFd9+/WNkIqPTxiM/8pSd8VIrhXGTf1Ny1q1hquVqDJB5w==}
     engines: {node: '>= 4'}
 
-  dompurify@3.4.12:
-    resolution: {integrity: sha512-zQvGet8Z2sWbQhCmfFz/T5QWH2oBmjnqK3qvOjaqaNLrLEF912WamU+ohnTp0TCep/MFVHpdJuCZEdFOdTnEFg==}
+  dompurify@3.4.14:
+    resolution: {integrity: sha512-dVoH9z+MY+C9IilgGCk3YfFqjLi3fChm2OiKJMzh6axrJ5qwxqWaZamgmHrpv22CN/KdbZJuGEGgfQoL00LTdg==}
 
   domutils@3.2.2:
     resolution: {integrity: sha512-6kZKyUajlDuqlHKVX1w7gyslj9MPIXzIFiz/rGu35uC1wMi+kMhQwGhl4lt9unC9Vb9INnY9Z3/ZA3+FhASLaw==}
@@ -2797,8 +2794,16 @@ packages:
     resolution: {integrity: sha512-u82N74LFzG8ca+dD8puPnplTXoGH4fTPpVGuIbt36G3qvNlkvfD0lEAZSxaly3KX8TS/L1A1gsCEmvKmBcVbkQ==}
     engines: {node: ^10 || ^12 || >=14}
 
-  posthog-js@1.407.3:
-    resolution: {integrity: sha512-b9Kc7HVN6nh+xsh1JrcLYHv9bbYLwYUM9belJtNVUFZSJWWfFcZRJJP6L+KeanAeu2VxSFSpioVA39pjjolv4A==}
+  posthog-js@1.424.1:
+    resolution: {integrity: sha512-5jJ3PWPDbJ255gcIgANRGt83npqb6hNwgmDt67PmaNMW3ZRTo+arlooEJaSC+poAAJHgsAU4VL0NJ9i/rvmd5g==}
+    peerDependencies:
+      '@types/react': '>=16.8.0'
+      react: '>=16.8.0'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      react:
+        optional: true
 
   preact@10.29.7:
     resolution: {integrity: sha512-DCHYrK/B10yUD3ZjLfhZ3WIE/9Vf9VFUODcRE2dRomTYDpJk6z6L9wecSfhfE6M9ZTHUdyQkoC46arIDhEV84Q==}
@@ -2995,6 +3000,9 @@ packages:
   source-map@0.7.6:
     resolution: {integrity: sha512-i5uvt8C3ikiWeNZSVZNWcfZPItFQOsYTUAOkcUPGd8DqDy1uOUikjt5dG+uRlwyvR108Fb9DOd4GvXfT0N2/uQ==}
     engines: {node: '>= 12'}
+
+  src@file:sdk/js/src:
+    resolution: {directory: sdk/js/src, type: directory}
 
   stackback@0.0.2:
     resolution: {integrity: sha512-1XMJE5fQo1jGH6Y/7ebnwPOBEkIEnT4QF32d5R1+VXdXveM0IBMJt8zfaxX1P3QhVwrYe+576+jkANtSS2mBbw==}
@@ -3216,8 +3224,8 @@ packages:
   weak-lru-cache@1.2.2:
     resolution: {integrity: sha512-DEAoo25RfSYMuTGc9vPJzZcZullwIqRDSI9LOy+fkCJPi6hykCnfKaXTuPBDuXAUcqHXyOgFtHNp/kB2FjYHbw==}
 
-  web-vitals@5.3.0:
-    resolution: {integrity: sha512-q6LWsLatGYZp5VGBIOvbTj6JBV2nOmC8KvWztXBmwJcfFAzhwKwbOxhUH306XY3CcaZDUlSmSuNPBsCn0bFu+g==}
+  web-vitals@6.2.1:
+    resolution: {integrity: sha512-rLcLXA2sx6+9dE88NHFubwTtGxpK4yYBLj6qHPdFoCaLr0cXGb4efOqtKLlm4loGA4OEKHIQKMKzZkKyOh5ctw==}
 
   webidl-conversions@8.0.1:
     resolution: {integrity: sha512-BMhLD/Sw+GbJC21C/UgyaZX41nPt8bUTg+jWyDeg7e7YN4xOM05YPSIXceACnXVtqyEw/LMClUQMtMZ+PGGpqQ==}
@@ -3769,8 +3777,6 @@ snapshots:
       css-tree: 3.2.1
 
   '@csstools/css-tokenizer@4.0.0': {}
-
-  '@distr-sh/distr-sdk@file:sdk/js/src': {}
 
   '@emnapi/core@1.11.1':
     dependencies:
@@ -4391,16 +4397,16 @@ snapshots:
 
   '@popperjs/core@2.11.8': {}
 
-  '@posthog/browser-common@0.2.2':
+  '@posthog/browser-common@0.7.1':
     dependencies:
-      '@posthog/core': 1.45.1
-      '@posthog/types': 1.398.0
+      '@posthog/core': 1.50.2
+      '@posthog/types': 1.407.2
 
-  '@posthog/core@1.45.1':
+  '@posthog/core@1.50.2':
     dependencies:
-      '@posthog/types': 1.398.0
+      '@posthog/types': 1.407.2
 
-  '@posthog/types@1.398.0': {}
+  '@posthog/types@1.407.2': {}
 
   '@rolldown/binding-android-arm64@1.1.5':
     optional: true
@@ -5036,7 +5042,7 @@ snapshots:
     dependencies:
       domelementtype: 2.3.0
 
-  dompurify@3.4.12:
+  dompurify@3.4.14:
     optionalDependencies:
       '@types/trusted-types': 2.0.7
 
@@ -5685,17 +5691,18 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  posthog-js@1.407.3:
+  posthog-js@1.424.1:
     dependencies:
-      '@posthog/browser-common': 0.2.2
-      '@posthog/core': 1.45.1
-      '@posthog/types': 1.398.0
+      '@posthog/browser-common': 0.7.1
+      '@posthog/core': 1.50.2
+      '@posthog/types': 1.407.2
       core-js: 3.49.0
-      dompurify: 3.4.12
+      dompurify: 3.4.14
       fflate: 0.4.9
       preact: 10.29.7
       query-selector-shadow-dom: 1.0.1
-      web-vitals: 5.3.0
+      web-vitals: 6.2.1
+      web-vitals-soft-navs: web-vitals@6.2.1
     transitivePeerDependencies:
       - preact-render-to-string
 
@@ -5950,6 +5957,8 @@ snapshots:
 
   source-map@0.7.6: {}
 
+  src@file:sdk/js/src: {}
+
   stackback@0.0.2: {}
 
   statuses@2.0.2: {}
@@ -6097,7 +6106,7 @@ snapshots:
   weak-lru-cache@1.2.2:
     optional: true
 
-  web-vitals@5.3.0: {}
+  web-vitals@6.2.1: {}
 
   webidl-conversions@8.0.1: {}
 
