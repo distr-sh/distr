@@ -91,6 +91,10 @@ CREATE INDEX idx_advisory_event_user_account_id
 
 -- The feature gate stays named after the "Vulnerability Management" category, which covers
 -- security advisories today and will cover vulnerability scan logs later.
--- Must be the last statement: a newly added enum value cannot be used in the transaction
--- that adds it, which is also why the next migration is the one granting the feature.
 ALTER TYPE FEATURE ADD VALUE IF NOT EXISTS 'vulnerabilities';
+
+-- Enterprise organizations are reconciled on startup, Business ones only once their Stripe
+-- subscription next changes, which is why they are granted the feature here.
+UPDATE Organization
+  SET features = array_append(features, 'vulnerabilities')
+  WHERE subscription_type = 'business' AND NOT 'vulnerabilities' = any(features);

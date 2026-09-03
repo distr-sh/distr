@@ -79,6 +79,8 @@ func (reg *Registry) createDBPoolFor(ctx context.Context, url string, maxConns *
 			"_CUSTOM_DOMAIN_TYPE",
 			"OIDC_PROVIDER",
 			"_OIDC_PROVIDER",
+			"OIDC_FLOW",
+			"_OIDC_FLOW",
 			"ADVISORY_STATUS",
 			"_ADVISORY_STATUS",
 			"ADVISORY_SEVERITY",

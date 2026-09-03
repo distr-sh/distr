@@ -1,5 +1,5 @@
 import {AsyncPipe} from '@angular/common';
-import {ChangeDetectionStrategy, Component, computed, inject, input, signal} from '@angular/core';
+import {Component, computed, inject, input, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
 import {faBox, faDownload, faEllipsis, faUserCircle} from '@fortawesome/free-solid-svg-icons';
@@ -36,7 +36,6 @@ export class ArtifactLogoComponent {
       {{ source().downloadsTotal }}
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [FaIconComponent],
 })
 export class ArtifactsDownloadCountComponent {
@@ -45,43 +44,46 @@ export class ArtifactsDownloadCountComponent {
   protected readonly faDownload = faDownload;
 }
 
+/**
+ * An avatar costs an image request or a rendered icon, and this component is repeated for every artifact version
+ * on the page, so only the first few downloaders are shown and the rest are summarized as a count.
+ */
+const maxShownAvatars = 5;
+
+interface ShownDownloader {
+  id: string;
+  title: string;
+  imageUrl?: string;
+}
+
 @Component({
   selector: 'app-artifacts-downloaded-by',
   template: `
     <div class="flex -space-x-3 hover:-space-x-1 rtl:space-x-reverse justify-end">
-      @let shownUsers = downloadedByUsers();
-      @for (user of shownUsers; track user.id) {
-        @if (user.imageUrl; as imageUrl) {
+      @for (downloader of shownDownloaders(); track downloader.id) {
+        @if (downloader.imageUrl; as imageUrl) {
           <img
             class="size-8 border-2 border-white rounded-full dark:border-gray-800 transition-all duration-100 ease-in-out"
             [attr.src]="imageUrl | secureImage | async"
-            [title]="user.name ?? user.email" />
+            [title]="downloader.title" />
         } @else {
-          <fa-icon [icon]="faUserCircle" size="xl" class="text-xl text-gray-400" [title]="user.name ?? user.email" />
+          <fa-icon
+            [icon]="faUserCircle"
+            size="xl"
+            class="text-xl text-gray-400 transition-all duration-100 ease-in-out"
+            [title]="downloader.title" />
         }
       }
-      @let shownCustomers = downloadedByCustomerOrganizations();
-      @for (customer of shownCustomers; track customer.id) {
-        @if (customer.imageUrl; as imageUrl) {
-          <img
-            class="size-8 border-2 border-white rounded-full dark:border-gray-800 transition-all duration-100 ease-in-out"
-            [attr.src]="imageUrl | secureImage | async"
-            [title]="customer.name" />
-        } @else {
-          <fa-icon [icon]="faUserCircle" size="xl" class="text-xl text-gray-400" [title]="customer.name" />
-        }
-      }
-      @if (count(); as count) {
+      @if (remainingCount(); as count) {
         @if (count > 0) {
           <div
-            class="flex items-center justify-center size-8 text-xs font-medium text-white bg-gray-500 dark:bg-gray-700 border-2 border-white rounded-full dark:border-gray-800">
+            class="flex items-center justify-center size-8 text-xs font-medium text-white bg-gray-500 dark:bg-gray-700 border-2 border-white rounded-full dark:border-gray-800 transition-all duration-100 ease-in-out">
             +{{ count }}
           </div>
         }
       }
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [AsyncPipe, SecureImagePipe, FaIconComponent],
 })
 export class ArtifactsDownloadedByComponent {
@@ -91,27 +93,37 @@ export class ArtifactsDownloadedByComponent {
   private readonly customerOrganizationsService = inject(CustomerOrganizationsCache);
 
   private readonly users = toSignal(this.usersService.getUsers());
-  protected readonly downloadedByUsers = computed(() => {
-    const users = this.users();
-    return this.source()
-      .downloadedByUsers?.map((id) => users?.find((u) => u.id === id))
-      .filter((u) => u !== undefined);
-  });
-
   private readonly customerOrganizations = toSignal(this.customerOrganizationsService.getCustomerOrganizations());
-  protected readonly downloadedByCustomerOrganizations = computed(() => {
-    const orgs = this.customerOrganizations();
-    return this.source()
-      .downloadedByCustomerOrganizations?.map((id) => orgs?.find((o) => o.id === id))
-      .filter((o) => o !== undefined);
+
+  protected readonly shownDownloaders = computed<ShownDownloader[]>(() => {
+    const source = this.source();
+    const users = this.users() ?? [];
+    const orgs = this.customerOrganizations() ?? [];
+    const shown: ShownDownloader[] = [];
+
+    for (const id of source.downloadedByUsers ?? []) {
+      if (shown.length === maxShownAvatars) return shown;
+      const user = users.find((u) => u.id === id);
+      if (user) {
+        shown.push({id, title: user.name ?? user.email, imageUrl: user.imageUrl});
+      }
+    }
+    for (const id of source.downloadedByCustomerOrganizations ?? []) {
+      if (shown.length === maxShownAvatars) return shown;
+      const org = orgs.find((o) => o.id === id);
+      if (org) {
+        shown.push({id, title: org.name, imageUrl: org.imageUrl});
+      }
+    }
+    return shown;
   });
 
-  protected readonly count = computed(() => {
+  protected readonly remainingCount = computed(() => {
+    const source = this.source();
     return (
-      (this.source().downloadedByUsersCount ?? 0) +
-      (this.source().downloadedByCustomerOrganizationsCount ?? 0) -
-      (this.downloadedByUsers()?.length ?? 0) -
-      (this.downloadedByCustomerOrganizations()?.length ?? 0)
+      (source.downloadedByUsersCount ?? 0) +
+      (source.downloadedByCustomerOrganizationsCount ?? 0) -
+      this.shownDownloaders().length
     );
   });
 
@@ -131,7 +143,6 @@ export class ArtifactsDownloadedByComponent {
       </button>
     }
   `,
-  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [FaIconComponent],
 })
 export class ArtifactsHashComponent {
